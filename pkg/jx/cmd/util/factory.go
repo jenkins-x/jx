@@ -1,7 +1,12 @@
 package util
 
+import "github.com/jenkins-x/jx/pkg/jenkins"
+import "github.com/jenkins-x/golang-jenkins"
+
 type Factory interface {
+	 GetJenkinsClient() (*gojenkins.Jenkins, error)
 }
+
 
 type factory struct {
 }
@@ -14,3 +19,7 @@ func NewFactory() Factory {
 	}
 }
 
+// GetJenkinsClient creates a new jenkins client
+func (* factory) GetJenkinsClient() (*gojenkins.Jenkins, error) {
+	return jenkins.GetJenkinsClient()
+}

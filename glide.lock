@@ -1,6 +1,8 @@
-hash: a8b526e8e85ff8d682c1a2b37bf0ae72dad36e82ab0a92b6e8be09c722999240
-updated: 2018-01-05T17:38:11.694883Z
+hash: ed56daafd573d1209d599093ba1d67467e54835d283af3bea7d89b9d22ad12fe
+updated: 2018-01-05T19:57:31.12504Z
 imports:
+- name: github.com/AlecAivazis/survey
+  version: f051d0d636f1be0261d8d320a4b2365e7ccd9888
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/google/go-github
@@ -11,6 +13,12 @@ imports:
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/jenkins-x/golang-jenkins
   version: 5e6c752ea6a4ddbac25ddc34c1a5777edc24c4f6
+- name: github.com/MakeNowJust/heredoc
+  version: bb23615498cded5e105af4ce27de75b089cbe851
+- name: github.com/russross/blackfriday
+  version: 300106c228d52c8941d4b3de6054a6062a86dda3
+- name: github.com/shurcooL/sanitized_anchor_name
+  version: 10ef21a441db47d8b13ebcc5fd2310f636973c77
 - name: github.com/spf13/cobra
   version: 9495bc009a56819bdb0ddbc1a373e29c140bc674
 - name: github.com/spf13/pflag

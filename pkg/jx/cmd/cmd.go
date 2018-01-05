@@ -50,7 +50,8 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	*/
 
 	cmds.AddCommand(NewCmdVersion(f, out))
-
+	cmds.AddCommand(NewCmdGet(f, out, err))
+	
 	return cmds
 }
 

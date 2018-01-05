@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"github.com/golang/glog"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -170,4 +171,10 @@ func StandardErrorMessage(err error) (string, bool) {
 		return fmt.Sprintf("Unable to connect to the server: %v", t.Err), true
 	}
 	return "", false
+}
+
+
+func UsageError(cmd *cobra.Command, format string, args ...interface{}) error {
+	msg := fmt.Sprintf(format, args...)
+	return fmt.Errorf("%s\nSee '%s -h' for help and examples.", msg, cmd.CommandPath())
 }

@@ -7,6 +7,8 @@ import:
 - package: github.com/google/go-querystring
 - package: github.com/spf13/cobra
 - package: github.com/golang/glog
+- package: github.com/MakeNowJust/heredoc
+- package: github.com/AlecAivazis/survey
 testImport:
 - package: github.com/stretchr/testify
   subpackages:
