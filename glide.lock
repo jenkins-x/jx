@@ -1,0 +1,24 @@
+hash: a8b526e8e85ff8d682c1a2b37bf0ae72dad36e82ab0a92b6e8be09c722999240
+updated: 2018-01-05T17:38:11.694883Z
+imports:
+- name: github.com/golang/glog
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+- name: github.com/google/go-github
+  version: fc3c57184028a80ff3979d912cdaf5f08887f98a
+- name: github.com/google/go-querystring
+  version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/jenkins-x/golang-jenkins
+  version: 5e6c752ea6a4ddbac25ddc34c1a5777edc24c4f6
+- name: github.com/spf13/cobra
+  version: 9495bc009a56819bdb0ddbc1a373e29c140bc674
+- name: github.com/spf13/pflag
+  version: 5ccb023bc27df288a957c5e994cd44fd19619465
+- name: k8s.io/client-go
+  version: 78700dec6369ba22221b72770783300f143df150
+testImports:
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert
