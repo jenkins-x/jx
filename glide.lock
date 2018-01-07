@@ -1,12 +1,12 @@
-hash: ed56daafd573d1209d599093ba1d67467e54835d283af3bea7d89b9d22ad12fe
-updated: 2018-01-05T19:57:31.12504Z
+hash: 81701f09f678313427d95bbf657741939def19877356a9fe3a30387a7893825b
+updated: 2018-01-07T08:34:12.376368Z
 imports:
 - name: github.com/AlecAivazis/survey
   version: f051d0d636f1be0261d8d320a4b2365e7ccd9888
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/google/go-github
-  version: fc3c57184028a80ff3979d912cdaf5f08887f98a
+  version: 218ecc238cf77bbaa2e16a54cada252ec87e7d6e
 - name: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
 - name: github.com/inconshreveable/mousetrap
@@ -26,6 +26,14 @@ imports:
 - name: k8s.io/client-go
   version: 78700dec6369ba22221b72770783300f143df150
 testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
 - name: github.com/stretchr/testify
   version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:

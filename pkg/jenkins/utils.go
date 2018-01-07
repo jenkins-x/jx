@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 func GetJenkinsClient() (*gojenkins.Jenkins, error) {
@@ -17,14 +18,15 @@ func GetJenkinsClient() (*gojenkins.Jenkins, error) {
 	}
 	username := os.Getenv("JENKINS_USERNAME")
 	token := os.Getenv("JENKINS_TOKEN")
-	if token == "" {
-		token = os.Getenv("JENKINS_PASSWORD")
-	}
 	bearerToken := os.Getenv("JENKINS_BEARER_TOKEN")
 
-	fmt.Printf("url %s, user %s, token %s\n", url, username, token)
 	if bearerToken == "" && (token == "" || username == "") {
-		return nil, errors.New("no env vars JENKINS_BEARER_TOKEN or JENKINS_USERNAME and (JENKINS_TOKEN or JENKINS_PASSWORD ) set")
+		tokenUrl := util.UrlJoin(url, "/me/configure")
+		fmt.Println("No $JENKINS_USERNAME and $JENKINS_TOKEN environment variables defined!\n")
+		fmt.Printf("Please go to %s and click 'Show API Token' to get your API Token\n", tokenUrl)
+		fmt.Println("Then run this command on your terminal and try again:\n")
+		fmt.Println("export JENKINS_TOKEN=myApiToken\n")
+		return nil, errors.New("No environment variables (JENKINS_USERNAME and JENKINS_TOKEN) or JENKINS_BEARER_TOKEN defined")
 	}
 
 	auth := &gojenkins.Auth{

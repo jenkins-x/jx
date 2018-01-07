@@ -23,6 +23,8 @@ GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 #PACKAGE_DIRS := pkg cmd
 PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/)
 
+GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go
+
 REV        := $(shell git rev-parse --short HEAD 2> /dev/null  || echo 'unknown')
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
@@ -40,11 +42,13 @@ all: build
 
 check: fmt build test
 
-build: 
+build: $(GO_DEPENDENCIES)
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDFLAGS) -o build/$(NAME) cmd/jx/jx.go
 
 test:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jenknis-x-cli/cmds
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS)
+
+#	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jx/cmds
 
 install: *.go */*.go
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) $(NAME).go
