@@ -125,11 +125,21 @@ func (o *GetOptions) getPipelines() error {
 	if err != nil {
 		return err
 	}
+	if len(jobs) == 0 {
+		return outputEmptyListWarning(o.Out)
+	}
+	
+	o.printPipelineRow("NAME", "URL")
 	for _, job := range jobs {
-		fmt.Printf("%s, %s'n", job.Name, job.Url)
+		o.printPipelineRow(job.Name, job.Url)
 	}
 	return nil
 }
+
+func (o *GetOptions) printPipelineRow(name string, url string) {
+	fmt.Fprintf(o.Out, "%-32s %s\n", name, url)
+}
+
 
 // outputEmptyListWarning outputs a warning indicating that no items are available to display
 func outputEmptyListWarning(out io.Writer) error {
