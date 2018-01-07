@@ -11,8 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
-func GetJenkinsClient() (*gojenkins.Jenkins, error) {
-	url := os.Getenv("JENKINS_URL")
+func GetJenkinsClient(url string) (*gojenkins.Jenkins, error) {
 	if url == "" {
 		return nil, errors.New("no JENKINS_URL env var set. Try running this command first:\n\n  eval $(gofabric8 bdd-env)\n")
 	}

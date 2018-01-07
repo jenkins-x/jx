@@ -2,6 +2,8 @@ package: github.com/fabric8io/gofabric8
 import:
 - package: k8s.io/client-go
   version: v6.0.0
+- package: k8s.io/apimachinery
+- package: k8s.io/api
 - package: github.com/jenkins-x/golang-jenkins
 - package: github.com/google/go-github
 - package: github.com/google/go-querystring
