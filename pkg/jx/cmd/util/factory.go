@@ -17,14 +17,15 @@ import (
 type Factory interface {
 	GetJenkinsClient() (*gojenkins.Jenkins, error)
 
-	CreateClient() (*kubernetes.Clientset, error)
+	CreateJenkinsConfigService() (jenkins.JenkinsConfigService, error)
 
-	DefaultNamespace(client *kubernetes.Clientset) (string, error)
+	CreateClient() (*kubernetes.Clientset, string, error)
 
 	CreateTable(out io.Writer) table.Table
 }
 
 type factory struct {
+	Batch bool
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -40,11 +41,7 @@ func (f *factory) GetJenkinsClient() (*gojenkins.Jenkins, error) {
 	url := os.Getenv("JENKINS_URL")
 	if url == "" {
 		// lets find the kubernets service
-		client, err := f.CreateClient()
-		if err != nil {
-			return nil, err
-		}
-		ns, err := f.DefaultNamespace(client)
+		client, ns, err := f.CreateClient()
 		if err != nil {
 			return nil, err
 		}
@@ -53,10 +50,24 @@ func (f *factory) GetJenkinsClient() (*gojenkins.Jenkins, error) {
 			return nil, err
 		}
 	}
-	return jenkins.GetJenkinsClient(url)
+	svc, err := f.CreateJenkinsConfigService()
+	if err != nil {
+		return nil, err
+	}
+	return jenkins.GetJenkinsClient(url, f.Batch, &svc)
 }
 
-func (*factory) CreateClient() (*kubernetes.Clientset, error) {
+func (f *factory) CreateJenkinsConfigService() (jenkins.JenkinsConfigService, error) {
+	svc := jenkins.JenkinsConfigService{}
+	dir, err := ConfigDir()
+	if err != nil {
+		return svc, err
+	}
+	svc.FileName = filepath.Join(dir, "jenkins.yaml")
+	return svc, nil
+}
+
+func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
 	var kubeconfig *string
 	if home := HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
@@ -64,7 +75,15 @@ func (*factory) CreateClient() (*kubernetes.Clientset, error) {
 		// TODO load from kubeconfig argument?
 		//kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
-	return kube.CreateClient(kubeconfig)
+	client, err := kube.CreateClient(kubeconfig)
+	if err != nil {
+		return nil, "", nil
+	}
+	ns, err := f.DefaultNamespace(client)
+	if err != nil {
+		return nil, "", nil
+	}
+	return client, ns, nil
 }
 
 func (*factory) DefaultNamespace(client *kubernetes.Clientset) (string, error) {

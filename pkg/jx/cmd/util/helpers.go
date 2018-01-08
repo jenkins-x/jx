@@ -7,6 +7,7 @@ import (
 	"strings"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	"path/filepath"
 )
 
 const (
@@ -179,11 +180,23 @@ func UsageError(cmd *cobra.Command, format string, args ...interface{}) error {
 	return fmt.Errorf("%s\nSee '%s -h' for help and examples.", msg, cmd.CommandPath())
 }
 
-
-
 func HomeDir() string {
 	if h := os.Getenv("HOME"); h != "" {
 		return h
 	}
-	return os.Getenv("USERPROFILE") // windows
+	h := os.Getenv("USERPROFILE") // windows
+	if h == "" {
+		h = "."
+	}
+	return h
+}
+
+func ConfigDir() (string, error) {
+	h := HomeDir()
+	path := filepath.Join(h, ".jx")
+	err := os.MkdirAll(path, 0644)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
 }

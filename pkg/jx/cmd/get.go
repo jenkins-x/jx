@@ -14,9 +14,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GetOptions struct {
-	Factory cmdutil.Factory
-	Out     io.Writer
-	Err     io.Writer
+	CommonOptions
 }
 
 var (
@@ -36,9 +34,11 @@ var (
 // retrieves one or more resources from a server.
 func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetOptions{
-		Factory: f,
-		Out:     out,
-		Err:     errOut,
+		CommonOptions{
+			Factory: f,
+			Out:     out,
+			Err:     errOut,
+		},
 	}
 
 	// retrieve a list of handled resources from printer as valid args
@@ -132,7 +132,7 @@ func (o *GetOptions) getPipelines() error {
 		return outputEmptyListWarning(o.Out)
 	}
 
-	table := f.CreateTable(o.Out)
+	table := o.CreateTable()
 	table.AddRow("Name", "URL")
 
 	for _, job := range jobs {
@@ -144,11 +144,7 @@ func (o *GetOptions) getPipelines() error {
 
 func (o *GetOptions) getURLs() error {
 	f := o.Factory
-	client, err := f.CreateClient()
-	if err != nil {
-		return err
-	}
-	ns, err := f.DefaultNamespace(client)
+	client, ns, err := f.CreateClient()
 	if err != nil {
 		return err
 	}
@@ -156,7 +152,7 @@ func (o *GetOptions) getURLs() error {
 	if err != nil {
 		return err
 	}
-	table := f.CreateTable(o.Out)
+	table := o.CreateTable()
 	table.AddRow("Name", "URL")
 
 	for _, url := range urls {
