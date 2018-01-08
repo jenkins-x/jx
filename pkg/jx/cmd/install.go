@@ -22,10 +22,15 @@ import (
 
 	"errors"
 
+	"path/filepath"
+
+	"os/exec"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"golang.org/x/crypto/ssh/terminal"
+	"gopkg.in/src-d/go-git.v4"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -38,32 +43,41 @@ type InstallOptions struct {
 }
 
 type InstallFlags struct {
-	Domain      string
-	GitProvider string
-	GitToken    string
-	GHUser      string
-	GHPass      string
+	Domain             string
+	GitProvider        string
+	GitToken           string
+	GitUser            string
+	GitPass            string
+	KubernetesProvider string
+	CloudEnvRepository string
+}
+
+type Secrets struct {
+	Login string
+	Token string
 }
 
 const (
-	JX_GIT_TOKEN = "JX_GIT_TOKEN"
+	JX_GIT_TOKEN    = "JX_GIT_TOKEN"
+	JX_GIT_USER     = "JX_GIT_USER"
+	JX_GIT_PASSWORD = "JX_GIT_PASSWORD"
 )
 
 var (
 	instalLong = templates.LongDesc(`
 		Installs the Jenkins X platform on a Kubernetes cluster
 
+		Requires a --git-username and either --git-token or --git-password that can be used to create a new token.
+		This is so the Jenkins-X platform can git tag your releases
+
 `)
 
 	instalExample = templates.Examples(`
-		# Default installer
+		# Default installer which uses interactive prompts to generate git secrets
 		jx install
 
-		# Install with custom domain
-		jx install -d jenkinsx.io
-
 		# Install with a GitHub personal access token
-		jx install -t 9fdbd2d070cd81eb12bca87861bcd850
+		jx install --git-username jenkins-x-bot --git-token 9fdbd2d070cd81eb12bca87861bcd850
 `)
 )
 
@@ -89,48 +103,144 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 		SuggestFor: []string{"list", "ps"},
 	}
 
-	cmd.Flags().StringP("git-provider", "g", "GitHub", "Git provider, used to create")
+	cmd.Flags().StringP("git-provider", "", "GitHub", "Git provider, used to create tokens if not provided.  Supported providers: [GitHub]")
 	cmd.Flags().StringP("git-token", "t", "", "Git token used to clone and tag releases, typically using a bot user account.  For GitHub use a personal access token with 'public_repo' scope, see https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line")
+	cmd.Flags().StringP("git-username", "u", "", "Git username used to tag releases in pipelines, typically this is a bot user")
+	cmd.Flags().StringP("git-password", "p", "", "Git username if a Personal Access Token should be created")
 	cmd.Flags().StringP("domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
-	cmd.Flags().StringP("gh-username", "u", "", "GitHub username if a Personal Access Token should be created")
-	cmd.Flags().StringP("gh-password", "p", "", "GitHub username if a Personal Access Token should be created")
+	cmd.Flags().StringP("kubernetes-provider", "k", "minikube", "Service providing the kubernetes cluster.  Supported providers: [minikube,gke,thunder]")
+	cmd.Flags().StringP("cloud-environment-repo", "c", "https://github.com/jenkins-x/cloud-environments", "Cloud Environments git repo")
 	return cmd
 }
 
 // RunInstall implements the generic Install command
 func RunInstall(f cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args []string, options *InstallOptions) error {
 	flags := InstallFlags{
-		Domain:      cmd.Flags().Lookup("domain").Value.String(),
-		GitProvider: cmd.Flags().Lookup("git-provider").Value.String(),
-		GitToken:    cmd.Flags().Lookup("git-token").Value.String(),
-		GHUser:      cmd.Flags().Lookup("gh-username").Value.String(),
-		GHPass:      cmd.Flags().Lookup("gh-password").Value.String(),
+		Domain:             cmd.Flags().Lookup("domain").Value.String(),
+		GitProvider:        cmd.Flags().Lookup("git-provider").Value.String(),
+		GitToken:           cmd.Flags().Lookup("git-token").Value.String(),
+		GitUser:            cmd.Flags().Lookup("git-username").Value.String(),
+		GitPass:            cmd.Flags().Lookup("git-password").Value.String(),
+		KubernetesProvider: cmd.Flags().Lookup("kubernetes-provider").Value.String(),
+		CloudEnvRepository: cmd.Flags().Lookup("cloud-environment-repo").Value.String(),
 	}
 	options.Flags = flags
 
-	_, err := options.getGitToken()
+	// get secrets to use in helm install
+	secrets, err := options.getGitSecrets()
 	if err != nil {
 		return err
 	}
 
 	// clone the environments repo
+	wrkDir := filepath.Join(cmdutil.HomeDir(), ".jenkins-x", "cloud-environments")
+	err = options.cloneJXCloudEnvironmentsRepo(wrkDir)
+	if err != nil {
+		return err
+	}
 
 	// run  helm install setting the token and domain values
+	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(options.Flags.KubernetesProvider)))
 
+	err = ioutil.WriteFile(filepath.Join(makefileDir, "secrets.yaml"), []byte(secrets), 0644)
+	if err != nil {
+		return err
+	}
+
+	makefile := exec.Command("make", "install")
+
+	makefile.Dir = makefileDir
+	makefile.Stdout = out
+	makefile.Stderr = errOut
+	err = makefile.Run()
+	if err != nil {
+
+		return err
+	}
+
+	log.Success("Jenkins-X installation completed successfully")
 	return nil
 }
 
+// clones the jenkins-x cloud-environments repo to a local working dir
+func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
+	log.Infof("Cloning the Jenkins-X cloud environments repo to %s\n", wrkDir)
+
+	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
+		URL:           o.Flags.CloudEnvRepository,
+		ReferenceName: "refs/heads/master",
+		SingleBranch:  true,
+		Progress:      o.Out,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "repository already exists") {
+			log.Infof("Jenkins-X cloud environments repository already exists, check for changes? y/n: ")
+			if log.AskForConfirmation(false) {
+
+				r, err := git.PlainOpen(wrkDir)
+				if err != nil {
+					return err
+				}
+
+				// Get the working directory for the repository
+				w, err := r.Worktree()
+				if err != nil {
+					return err
+				}
+
+				// Pull the latest changes from the origin remote and merge into the current branch
+				err = w.Pull(&git.PullOptions{RemoteName: "origin"})
+				if err != nil && !strings.Contains(err.Error(), "already up-to-date") {
+					return err
+				}
+
+			}
+		} else {
+			return err
+		}
+	}
+	return nil
+}
+
+// returns secrets that are used as values during the helm install
+func (o *InstallOptions) getGitSecrets() (string, error) {
+	username, token, err := o.getGitToken()
+	if err != nil {
+		return "", err
+	}
+	pipelineSecrets := `
+PipelineSecrets:
+  Netrc: |-
+    machine github.com
+      login %s
+      password %s`
+	return fmt.Sprintf(pipelineSecrets, username, token), nil
+}
+
 // returns the Git Token that should be used by Jenkins-X to setup credentials to clone repos and creates a secret for pipelines to tag a release
-func (o *InstallOptions) getGitToken() (string, error) {
+func (o *InstallOptions) getGitToken() (string, string, error) {
+
+	username := o.Flags.GitUser
+	if username == "" {
+		if os.Getenv(JX_GIT_USER) != "" {
+			username = os.Getenv(JX_GIT_USER)
+		} else {
+			log.Info("Git username to tag releases: ")
+			_, err := fmt.Scanln(&username)
+			if err != nil {
+				errors.New(fmt.Sprintf("error reading username: %v", err))
+			}
+		}
+	}
 
 	// first check git-token flag
 	if o.Flags.GitToken != "" {
-		return o.Flags.GitToken, nil
+		return username, o.Flags.GitToken, nil
 	}
 
 	// second check for an environment variable
 	if os.Getenv(JX_GIT_TOKEN) != "" {
-		return os.Getenv(JX_GIT_TOKEN), nil
+		return username, os.Getenv(JX_GIT_TOKEN), nil
 	}
 
 	// third if github provider request a new personal access token
@@ -141,11 +251,13 @@ func (o *InstallOptions) getGitToken() (string, error) {
 		log.Info("Would you like to create a new GitHub personal access token now? y/n: ")
 
 		if log.AskForConfirmation(false) {
-			return o.createGitHubPersonalAccessToken()
+			return o.createGitHubPersonalAccessToken(username)
+		} else {
+			os.Exit(-1)
 		}
 	}
 
-	return "", nil
+	return "", "", nil
 }
 
 func basicAuth(username, password string) string {
@@ -153,25 +265,21 @@ func basicAuth(username, password string) string {
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-func (o *InstallOptions) createGitHubPersonalAccessToken() (string, error) {
-	username := o.Flags.GHUser
-	if username == "" {
-		log.Info("GitHub username: ")
-		_, err := fmt.Scanln(&username)
-		if err != nil {
-			errors.New(fmt.Sprintf("error reading username: %v", err))
-		}
-	}
+func (o *InstallOptions) createGitHubPersonalAccessToken(username string) (string, string, error) {
 
-	password := o.Flags.GHPass
+	password := o.Flags.GitPass
 	if password == "" {
-		log.Info("GitHub password: ")
-		b, err := terminal.ReadPassword(0)
-		log.Error("\n")
-		if err != nil {
-			errors.New(fmt.Sprintf("error reading password: %v", err))
+		if os.Getenv(JX_GIT_PASSWORD) != "" {
+			password = os.Getenv(JX_GIT_PASSWORD)
+		} else {
+			log.Infof("GitHub password for user/bot [%s]: ", username)
+			b, err := terminal.ReadPassword(0)
+			log.Error("\n")
+			if err != nil {
+				errors.New(fmt.Sprintf("error reading password: %v", err))
+			}
+			password = string(b)
 		}
-		password = string(b)
 	}
 
 	client := &http.Client{}
@@ -206,5 +314,5 @@ func (o *InstallOptions) createGitHubPersonalAccessToken() (string, error) {
 	token := dat["token"].(string)
 	log.Successf("Your new GitHub personal access token: %s", token)
 
-	return token, nil
+	return username, token, nil
 }
