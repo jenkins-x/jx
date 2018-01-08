@@ -41,17 +41,20 @@ func NewCmdConsole(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 }
 
 func (o *ConsoleOptions) Run() error {
+	return o.Open(kube.ServiceJenkins, "Jenkins Console")
+}
+
+func (o *ConsoleOptions) Open(name string, label string) error {
 	f := o.Factory
 	client, ns, err := f.CreateClient()
 	if err != nil {
 		return err
 	}
-	name := kube.ServiceJenkins
 	url, err := kube.FindServiceURL(client, ns, name)
 	if url == "" {
 		return fmt.Errorf("Could not find service %s in namespace %s", name, ns)
 	}
-	fmt.Fprintf(o.Out, "Jenkins Console: %s\n", url)
+	fmt.Fprintf(o.Out, "%s: %s\n", label, url)
 	if !o.OnlyViewURL {
 		browser.OpenURL(url)
 	}
