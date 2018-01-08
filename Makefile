@@ -23,7 +23,7 @@ GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 #PACKAGE_DIRS := pkg cmd
 PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/)
 
-GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go
+GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go pkg/*//*/*/*.go
 
 REV        := $(shell git rev-parse --short HEAD 2> /dev/null  || echo 'unknown')
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')

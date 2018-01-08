@@ -1,13 +1,17 @@
 package util
 
 import (
-	"github.com/jenkins-x/jx/pkg/jenkins"
-	"k8s.io/client-go/kubernetes"
-	"github.com/jenkins-x/golang-jenkins"
 	"flag"
-	"path/filepath"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"io"
 	"os"
+	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
+
+	"github.com/jenkins-x/golang-jenkins"
+	"k8s.io/client-go/kubernetes"
 )
 
 type Factory interface {
@@ -16,7 +20,9 @@ type Factory interface {
 	CreateClient() (*kubernetes.Clientset, error)
 
 	DefaultNamespace(client *kubernetes.Clientset) (string, error)
-	}
+
+	CreateTable(out io.Writer) table.Table
+}
 
 type factory struct {
 }
@@ -64,4 +70,9 @@ func (*factory) CreateClient() (*kubernetes.Clientset, error) {
 func (*factory) DefaultNamespace(client *kubernetes.Clientset) (string, error) {
 	// TODO
 	return "jx", nil
+}
+
+
+func (f *factory) CreateTable(out io.Writer) table.Table {
+	return table.CreateTable(os.Stdout)
 }

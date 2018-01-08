@@ -1,22 +1,22 @@
 package cmd
 
-
 import (
 	"fmt"
 	"io"
 
 	"github.com/spf13/cobra"
-	
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GetOptions struct {
 	Factory cmdutil.Factory
-	Out io.Writer
-	Err io.Writer
+	Out     io.Writer
+	Err     io.Writer
 }
 
 var (
@@ -37,8 +37,8 @@ var (
 func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetOptions{
 		Factory: f,
-		Out: out,
-		Err: errOut,
+		Out:     out,
+		Err:     errOut,
 	}
 
 	// retrieve a list of handled resources from printer as valid args
@@ -108,16 +108,19 @@ func RunGet(f cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args [
 	case "pipes":
 		return options.getPipelines()
 
+	case "url":
+		return options.getURLs()
+
 	default:
 		return cmdutil.UsageError(cmd, "Unknown resource kind: %s", kind)
 	}
 	return nil
-	
+
 }
 
-
 func (o *GetOptions) getPipelines() error {
-	jenkins, err := o.Factory.GetJenkinsClient()
+	f := o.Factory
+	jenkins, err := f.GetJenkinsClient()
 	if err != nil {
 		return err
 	}
@@ -128,22 +131,43 @@ func (o *GetOptions) getPipelines() error {
 	if len(jobs) == 0 {
 		return outputEmptyListWarning(o.Out)
 	}
-	
-	o.printPipelineRow("NAME", "URL")
+
+	table := f.CreateTable(o.Out)
+	table.AddRow("Name", "URL")
+
 	for _, job := range jobs {
-		o.printPipelineRow(job.Name, job.Url)
+		table.AddRow(job.Name, job.Url)
 	}
+	table.Render()
 	return nil
 }
 
-func (o *GetOptions) printPipelineRow(name string, url string) {
-	fmt.Fprintf(o.Out, "%-32s %s\n", name, url)
-}
+func (o *GetOptions) getURLs() error {
+	f := o.Factory
+	client, err := f.CreateClient()
+	if err != nil {
+		return err
+	}
+	ns, err := f.DefaultNamespace(client)
+	if err != nil {
+		return err
+	}
+	urls, err := kube.FindServiceURLs(client, ns)
+	if err != nil {
+		return err
+	}
+	table := f.CreateTable(o.Out)
+	table.AddRow("Name", "URL")
 
+	for _, url := range urls {
+		table.AddRow(url.Name, url.URL)
+	}
+	table.Render()
+	return nil
+}
 
 // outputEmptyListWarning outputs a warning indicating that no items are available to display
 func outputEmptyListWarning(out io.Writer) error {
 	_, err := fmt.Fprintf(out, "%s\n", "No resources found.")
 	return err
 }
-
