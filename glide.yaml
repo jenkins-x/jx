@@ -9,6 +9,7 @@ import:
 - package: github.com/google/go-querystring
 - package: github.com/spf13/cobra
 - package: github.com/golang/glog
+- package: github.com/pkg/browser
 - package: github.com/MakeNowJust/heredoc
 - package: gopkg.in/AlecAivazis/survey.v1
 - package: github.com/fatih/color

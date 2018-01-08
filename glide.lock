@@ -1,5 +1,5 @@
-hash: 6064c558b03a8f68f2aa88c53373da089eb854d6a217ebd420d4e8e7d389637f
-updated: 2018-01-08T15:41:00.952119Z
+hash: ae42756893d4b298c955a0028b6110ceb8a2b1365efa2763c235ac1f2b7a0c9e
+updated: 2018-01-08T16:54:52.037032Z
 imports:
 - name: github.com/emicklei/go-restful
   version: ff4f55a206334ef123e4f79bbf348980da81ca46
@@ -80,6 +80,8 @@ imports:
   version: 9520e82c474b0a04dd04f8a40959027271bab992
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
+- name: github.com/pkg/browser
+  version: c90ca0c84f15f81c982e32665bffd8d7aac8f097
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc

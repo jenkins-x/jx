@@ -14,6 +14,7 @@ const (
 
     * pipelines (aka 'pipe')
     * runs (aka 'run')
+    * urls (aka 'url')
     `
 )
 
@@ -49,9 +50,10 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 		},
 	*/
 
-	cmds.AddCommand(NewCmdVersion(f, out))
+	cmds.AddCommand(NewCmdConsole(f, out, err))
 	cmds.AddCommand(NewCmdGet(f, out, err))
 	cmds.AddCommand(NewCmdInstall(f, out, err))
+	cmds.AddCommand(NewCmdVersion(f, out))
 
 	return cmds
 }
