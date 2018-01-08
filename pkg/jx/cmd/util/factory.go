@@ -45,7 +45,7 @@ func (f *factory) GetJenkinsClient() (*gojenkins.Jenkins, error) {
 		if err != nil {
 			return nil, err
 		}
-		url, err = kube.FindServiceURL(client, ns, "jenkins")
+		url, err = kube.FindServiceURL(client, ns, kube.ServiceJenkins)
 		if err != nil {
 			return nil, err
 		}
