@@ -1,8 +1,6 @@
-hash: f85c9f0df9d286de4f016c09d7ad5425f0f7f19c16621ba1c4b0ae1e9bb0a56c
-updated: 2018-01-08T09:34:59.448510574Z
+hash: 6064c558b03a8f68f2aa88c53373da089eb854d6a217ebd420d4e8e7d389637f
+updated: 2018-01-08T15:41:00.952119Z
 imports:
-- name: github.com/AlecAivazis/survey
-  version: f051d0d636f1be0261d8d320a4b2365e7ccd9888
 - name: github.com/emicklei/go-restful
   version: ff4f55a206334ef123e4f79bbf348980da81ca46
   subpackages:
@@ -37,7 +35,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-github
-  version: fc3c57184028a80ff3979d912cdaf5f08887f98a
+  version: 218ecc238cf77bbaa2e16a54cada252ec87e7d6e
 - name: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
 - name: github.com/google/gofuzz
@@ -71,13 +69,15 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/MakeNowJust/heredoc
-  version: e9091a26100e9cfb2b6a8f470085bfa541931a91
+  version: bb23615498cded5e105af4ce27de75b089cbe851
 - name: github.com/mattn/go-colorable
   version: 5411d3eea5978e6cdc258b30de592b60df6aba96
   repo: https://github.com/mattn/go-colorable
 - name: github.com/mattn/go-isatty
   version: 57fdcb988a5c543893cc61bce354a6e24ab70022
   repo: https://github.com/mattn/go-isatty
+- name: github.com/mgutz/ansi
+  version: 9520e82c474b0a04dd04f8a40959027271bab992
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/PuerkitoBio/purell
@@ -85,9 +85,11 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/russross/blackfriday
-  version: 6d1ef893fcb01b4f50cb6e57ed7df3e2e627b6b2
+  version: 300106c228d52c8941d4b3de6054a6062a86dda3
+- name: github.com/shurcooL/sanitized_anchor_name
+  version: 10ef21a441db47d8b13ebcc5fd2310f636973c77
 - name: github.com/spf13/cobra
-  version: b95ab734e27d33e0d8fbabf71ca990568d4e2020
+  version: 9495bc009a56819bdb0ddbc1a373e29c140bc674
 - name: github.com/spf13/pflag
   version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
 - name: golang.org/x/crypto
@@ -122,6 +124,11 @@ imports:
   - unicode/bidi
   - unicode/norm
   - width
+- name: gopkg.in/AlecAivazis/survey.v1
+  version: 0aa8b6a162b391fe2d95648b7677d1d6ac2090a6
+  subpackages:
+  - core
+  - terminal
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/yaml.v2
@@ -259,6 +266,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: 87b1dfb5b2fa649f52695dd9eae19abe404a4308
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:
   - assert

@@ -25,6 +25,8 @@ type JenkinsAuth struct {
 
 type JenkinsConfig struct {
 	Servers []JenkinsServer
+
+	DefaultUsername string
 }
 
 func (c *JenkinsConfig) FindAuths(serverURL string) []JenkinsAuth {
@@ -86,7 +88,7 @@ func (s *JenkinsConfigService) LoadConfig() (JenkinsConfig, error) {
 	if fileName != "" {
 		exists, err := util.FileExists(fileName)
 		if err != nil {
-			return config, err
+			return config, fmt.Errorf("Could not check if file exists %s due to %s", fileName, err)
 		}
 		if exists {
 			data, err := ioutil.ReadFile(fileName)
@@ -115,8 +117,8 @@ func (s *JenkinsConfigService) SaveConfig(config *JenkinsConfig) error {
 	return ioutil.WriteFile(fileName, data, DefaultWritePermissions)
 }
 
-func CreateJenkinsAuthFromEnvironment() *JenkinsAuth {
-	return &JenkinsAuth{
+func CreateJenkinsAuthFromEnvironment() JenkinsAuth {
+	return JenkinsAuth{
 		Username:    os.Getenv("JENKINS_USERNAME"),
 		ApiToken:    os.Getenv("JENKINS_API_TOKEN"),
 		BearerToken: os.Getenv("JENKINS_BEARER_TOKEN"),

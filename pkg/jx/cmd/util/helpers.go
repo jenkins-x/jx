@@ -12,6 +12,8 @@ import (
 
 const (
 	DefaultErrorExitCode = 1
+
+	DefaultWritePermissions = 0760
 )
 
 type debugError interface {
@@ -194,7 +196,7 @@ func HomeDir() string {
 func ConfigDir() (string, error) {
 	h := HomeDir()
 	path := filepath.Join(h, ".jx")
-	err := os.MkdirAll(path, 0644)
+	err := os.MkdirAll(path, DefaultWritePermissions)
 	if err != nil {
 		return "", err
 	}
