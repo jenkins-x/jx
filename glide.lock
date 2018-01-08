@@ -1,8 +1,5 @@
-hash: ae42756893d4b298c955a0028b6110ceb8a2b1365efa2763c235ac1f2b7a0c9e
-updated: 2018-01-08T16:54:52.037032Z
-hash: fa52feef91c45652fc6cbd035910b018101582add34cb1c6a031083cd6944e00
-updated: 2018-01-08T14:58:51.900622242Z
->>>>>>> install command now close jx cloud env repo to local dir and runs helm install
+hash: 69de6f4d3ea7cbf7588457d5c3967bdf9fc70ca2d514e9b206885f2066e04e25
+updated: 2018-01-08T21:53:37.348609487Z
 imports:
 - name: github.com/emicklei/go-restful
   version: ff4f55a206334ef123e4f79bbf348980da81ca46
@@ -38,7 +35,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-github
-  version: 218ecc238cf77bbaa2e16a54cada252ec87e7d6e
+  version: fc3c57184028a80ff3979d912cdaf5f08887f98a
 - name: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
 - name: github.com/google/gofuzz
@@ -78,7 +75,7 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/MakeNowJust/heredoc
-  version: bb23615498cded5e105af4ce27de75b089cbe851
+  version: e9091a26100e9cfb2b6a8f470085bfa541931a91
 - name: github.com/mattn/go-colorable
   version: 5411d3eea5978e6cdc258b30de592b60df6aba96
   repo: https://github.com/mattn/go-colorable
@@ -100,15 +97,13 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/russross/blackfriday
-<<<<<<< HEAD
-  version: 300106c228d52c8941d4b3de6054a6062a86dda3
-- name: github.com/shurcooL/sanitized_anchor_name
-  version: 10ef21a441db47d8b13ebcc5fd2310f636973c77
   version: 6d1ef893fcb01b4f50cb6e57ed7df3e2e627b6b2
 - name: github.com/sergi/go-diff
   version: 1744e2970ca51c86172c8190fadad617561ed6e7
   subpackages:
   - diffmatchpatch
+- name: github.com/spf13/cobra
+  version: b95ab734e27d33e0d8fbabf71ca990568d4e2020
 - name: github.com/spf13/pflag
   version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
 - name: github.com/src-d/gcfg
@@ -357,6 +352,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  version: 87b1dfb5b2fa649f52695dd9eae19abe404a4308
   subpackages:
   - assert

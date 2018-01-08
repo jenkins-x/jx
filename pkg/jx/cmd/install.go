@@ -150,12 +150,15 @@ func RunInstall(f cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, ar
 	makefile := exec.Command("make", "install")
 
 	makefile.Dir = makefileDir
-
+	makefile.Stdout = out
+	makefile.Stderr = errOut
 	err = makefile.Run()
 	if err != nil {
-		log.Errorf("error %v", err)
+
 		return err
 	}
+
+	log.Success("Jenkins-X installation completed successfully")
 	return nil
 }
 
@@ -164,8 +167,10 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 	log.Infof("Cloning the Jenkins-X cloud environments repo to %s\n", wrkDir)
 
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
-		URL:      o.Flags.CloudEnvRepository,
-		Progress: o.Out,
+		URL:           o.Flags.CloudEnvRepository,
+		ReferenceName: "refs/heads/master",
+		SingleBranch:  true,
+		Progress:      o.Out,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "repository already exists") {
@@ -184,7 +189,7 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 				}
 
 				// Pull the latest changes from the origin remote and merge into the current branch
-				err = w.Pull(&git.PullOptions{RemoteName: "origin", ReferenceName: "master"})
+				err = w.Pull(&git.PullOptions{RemoteName: "origin"})
 				if err != nil && !strings.Contains(err.Error(), "already up-to-date") {
 					return err
 				}
