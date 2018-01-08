@@ -13,7 +13,7 @@ const (
 	valid_resources = `Valid resource types include:
 
     * pipelines (aka 'pipe')
-    * runs (aka 'run'
+    * runs (aka 'run')
     `
 )
 
@@ -51,7 +51,8 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 
 	cmds.AddCommand(NewCmdVersion(f, out))
 	cmds.AddCommand(NewCmdGet(f, out, err))
-	
+	cmds.AddCommand(NewCmdInstall(f, out, err))
+
 	return cmds
 }
 
