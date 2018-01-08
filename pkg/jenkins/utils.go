@@ -5,25 +5,24 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 func GetJenkinsClient(url string, batch bool, configService *JenkinsConfigService) (*gojenkins.Jenkins, error) {
 	if url == "" {
-		return nil, errors.New("no JENKINS_URL env var set. Try running this command first:\n\n  eval $(gofabric8 bdd-env)\n")
+		return nil, errors.New("no JENKINS_URL environment variable is set nor could a Jenkins service be found in the current namespace!\n")
 	}
-	username := os.Getenv("JENKINS_USERNAME")
-	token := os.Getenv("JENKINS_TOKEN")
-	bearerToken := os.Getenv("JENKINS_BEARER_TOKEN")
-
 	tokenUrl := util.UrlJoin(url, "/me/configure")
 
+	auth := CreateJenkinsAuthFromEnvironment()
+	username := auth.Username
 	var err error
 	config := JenkinsConfig{}
-	auth := CreateJenkinsAuthFromEnvironment()
+
+	showForm := false
 	if auth.IsInvalid() {
 		// lets try load the current auth
 		config, err = configService.LoadConfig()
@@ -34,35 +33,44 @@ func GetJenkinsClient(url string, batch bool, configService *JenkinsConfigServic
 		if len(auths) > 1 {
 			// TODO choose an auth
 		}
-		auth := config.FindAuth(url, username)
-		if auth != nil {
-			username = auth.Username
-			token = auth.ApiToken
-			bearerToken = auth.BearerToken
-
-			if bearerToken == "" && (token == "" || username == "") {
-				EditJenkinsAuth(url, configService, &config, auth)
+		showForm = true
+		a := config.FindAuth(url, username)
+		if a != nil {
+			if a.IsInvalid() {
+				auth, err = EditJenkinsAuth(url, configService, &config, a, tokenUrl)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				auth = *a
 			}
 		} else {
 			// lets create a new Auth
-			auth = &JenkinsAuth{}
-			EditJenkinsAuth(url, configService, &config, auth)
+			auth, err = EditJenkinsAuth(url, configService, &config, &auth, tokenUrl)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
+
 	if auth.IsInvalid() {
-		fmt.Println("No $JENKINS_USERNAME and $JENKINS_TOKEN environment variables defined!\n")
-		fmt.Printf("Please go to %s and click 'Show API Token' to get your API Token\n", tokenUrl)
-		if batch {
-			fmt.Println("Then run this command on your terminal and try again:\n")
-			fmt.Println("export JENKINS_TOKEN=myApiToken\n")
-			return nil, errors.New("No environment variables (JENKINS_USERNAME and JENKINS_TOKEN) or JENKINS_BEARER_TOKEN defined")
+		if showForm {
+			return nil, fmt.Errorf("No valid Username and API Token specified for Jenkins server: %s\n", url)
+		} else {
+			fmt.Println("No $JENKINS_USERNAME and $JENKINS_TOKEN environment variables defined!\n")
+			fmt.Printf("Please go to %s and click 'Show API Token' to get your API Token\n", tokenUrl)
+			if batch {
+				fmt.Println("Then run this command on your terminal and try again:\n")
+				fmt.Println("export JENKINS_TOKEN=myApiToken\n")
+				return nil, errors.New("No environment variables (JENKINS_USERNAME and JENKINS_TOKEN) or JENKINS_BEARER_TOKEN defined")
+			}
 		}
 	}
 
 	jauth := &gojenkins.Auth{
-		Username:    username,
-		ApiToken:    token,
-		BearerToken: bearerToken,
+		Username:    auth.Username,
+		ApiToken:    auth.ApiToken,
+		BearerToken: auth.BearerToken,
 	}
 	jenkins := gojenkins.NewJenkins(jauth, url)
 
@@ -78,9 +86,47 @@ func GetJenkinsClient(url string, batch bool, configService *JenkinsConfigServic
 	return jenkins, nil
 }
 
-func EditJenkinsAuth(url string, configService *JenkinsConfigService, config *JenkinsConfig, auth *JenkinsAuth) error {
-	// TODO let folks edit it
+func EditJenkinsAuth(url string, configService *JenkinsConfigService, config *JenkinsConfig, auth *JenkinsAuth, tokenUrl string) (JenkinsAuth, error) {
+	fmt.Printf("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
+	fmt.Printf("Please go to %s and click 'Show API Token' to get your API Token\n", tokenUrl)
+	fmt.Printf("Then COPY the API token so that you can paste it into the form below:\n\n")
 
-	config.SetAuth(url, *auth)
-	return configService.SaveConfig(config)
+	answers := *auth
+
+	// default the user name
+	defaultUsername := config.DefaultUsername
+	if defaultUsername == "" {
+		defaultUsername = "admin"
+	}
+	if answers.Username == "" {
+		answers.Username = defaultUsername
+	}
+
+	var qs = []*survey.Question{
+		{
+			Name: "username",
+			Prompt: &survey.Input{
+				Message: "Jenkins user name:",
+				Default: answers.Username,
+			},
+			Validate: survey.Required,
+		},
+		{
+			Name: "apiToken",
+			Prompt: &survey.Input{
+				Message: "Jenkins API Token:",
+				Default: answers.ApiToken,
+			},
+			Validate: survey.Required,
+		},
+	}
+	err := survey.Ask(qs, &answers)
+	fmt.Println()
+	if err != nil {
+		return answers, err
+	}
+	config.SetAuth(url, answers)
+	config.DefaultUsername = answers.Username
+	err = configService.SaveConfig(config)
+	return answers, err
 }

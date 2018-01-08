@@ -63,7 +63,7 @@ func (f *factory) CreateJenkinsConfigService() (jenkins.JenkinsConfigService, er
 	if err != nil {
 		return svc, err
 	}
-	svc.FileName = filepath.Join(dir, "jenkins.yaml")
+	svc.FileName = filepath.Join(dir, "jenkins.yml")
 	return svc, nil
 }
 
