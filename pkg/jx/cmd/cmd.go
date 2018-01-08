@@ -14,6 +14,7 @@ const (
 
     * pipelines (aka 'pipe')
     * runs (aka 'run')
+    * urls (aka 'url')
     `
 )
 
