@@ -81,6 +81,6 @@ func GetJenkinsClient(url string, batch bool, configService *JenkinsConfigServic
 func EditJenkinsAuth(url string, configService *JenkinsConfigService, config *JenkinsConfig, auth *JenkinsAuth) error {
 	// TODO let folks edit it
 
-	config.SetAuth(url, auth)
+	config.SetAuth(url, *auth)
 	return configService.SaveConfig(config)
 }

@@ -59,27 +59,23 @@ type JenkinsConfigService struct {
 	FileName string
 }
 
-func (c *JenkinsConfig) SetAuth(url string, auth *JenkinsAuth) {
-	foundServer := false
-	for _, server := range c.Servers {
+func (c *JenkinsConfig) SetAuth(url string, auth JenkinsAuth) {
+	for i, server := range c.Servers {
 		if server.URL == url {
-			foundServer = true
-			for i, a := range server.Auths {
+			for j, a := range server.Auths {
 				if a.Username == auth.Username {
-					server.Auths[i] = *auth
+					c.Servers[i].Auths[j] = auth
 					return
 				}
 			}
-			// new user so lets add the auth
-			server.Auths = append(server.Auths, *auth)
+			c.Servers[i].Auths = append(c.Servers[i].Auths, auth)
+			return
 		}
 	}
-	if !foundServer {
-		c.Servers = append(c.Servers, JenkinsServer{
-			URL:   url,
-			Auths: []JenkinsAuth{*auth},
-		})
-	}
+	c.Servers = append(c.Servers, JenkinsServer{
+		URL:   url,
+		Auths: []JenkinsAuth{auth},
+	})
 }
 
 // LoadConfig loads the configuration from the users JX config directory
