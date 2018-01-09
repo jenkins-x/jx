@@ -306,10 +306,17 @@ func (o *InstallOptions) createGitHubPersonalAccessToken(username string) (strin
 	}
 
 	var dat map[string]interface{}
+
+	if dat == nil{
+		log.Error("Not a valid user\n")
+		log.Info("Ensure the user is valid on GitHub.\n")
+		os.Exit(-1)
+	}
 	err = json.Unmarshal(body, &dat)
 	if err != nil {
 		errors.New(fmt.Sprintf("error unmarshalling authorization response: %v", err))
 	}
+
 
 	token := dat["token"].(string)
 	log.Successf("Your new GitHub personal access token: %s", token)
