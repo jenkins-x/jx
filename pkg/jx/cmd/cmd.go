@@ -9,10 +9,11 @@ import (
 )
 
 const (
+	//     * runs (aka 'run')
+
 	valid_resources = `Valid resource types include:
 
     * pipelines (aka 'pipe')
-    * runs (aka 'run')
     * urls (aka 'url')
     `
 )

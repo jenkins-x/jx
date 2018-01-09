@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	neturl "net/url"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 type ImportOptions struct {
@@ -28,6 +29,29 @@ type ImportOptions struct {
 	Jenkins *gojenkins.Jenkins
 }
 
+var (
+	import_long = templates.LongDesc(`
+		Imports a git repository or folder into Jenkins X.
+
+		If you specify no other options or arguments then the current directory is imported.
+	    Or you can use '--dir' to specify a directory to import.
+
+	    You can specify the git URL as an argument.`)
+
+	import_example = templates.Examples(`
+		# Import the current folder
+		jx import
+
+		# Import a different folder
+		jx import --dir /foo/bar
+
+		# Import a git repository
+		jx import https://github.com/jenkins-x/spring-boot-web-example.git
+
+		# Import a github repository
+		jx import jenkins-x/spring-boot-web-example`)
+)
+
 func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ImportOptions{
 		CommonOptions: CommonOptions{
@@ -39,6 +63,8 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd := &cobra.Command{
 		Use:   "import",
 		Short: "Imports a local project into Jenkins",
+		Long:    import_long,
+		Example: import_example,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

@@ -27,7 +27,11 @@ var (
 
 	get_example = templates.Examples(`
 		# List all pipeines
-		kubectl get pipelines`)
+		kubectl get pipeline
+
+		# List all URLs for services in the current namespace
+		kubectl get url
+	`)
 )
 
 // NewCmdGet creates a command object for the generic "get" action, which

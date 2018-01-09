@@ -6,11 +6,29 @@ import (
 	"github.com/spf13/cobra"
 
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 type OpenOptions struct {
 	ConsoleOptions
 }
+
+var (
+	open_long = templates.LongDesc(`
+		Opens a named service in the browser.
+
+		You can use the '--url' argument to just display the URL without opening it`)
+
+	open_example = templates.Examples(`
+		# Open the Nexus console in a browser
+		jx open jx-sonatype-nexus
+
+		# Print the Nexus console URL but do not open a browser
+		jx open jx-sonatype-nexus -u
+
+		# List all the service URLs
+		jx open`)
+)
 
 func NewCmdOpen(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &OpenOptions{
@@ -23,8 +41,10 @@ func NewCmdOpen(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		},
 	}
 	cmd := &cobra.Command{
-		Use:   "open",
-		Short: "Open a service in a browser",
+		Use:     "open",
+		Short:   "Open a service in a browser",
+		Long:    open_long,
+		Example: open_example,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

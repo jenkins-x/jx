@@ -9,6 +9,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/browser"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 type ConsoleOptions struct {
@@ -16,6 +17,17 @@ type ConsoleOptions struct {
 
 	OnlyViewURL bool
 }
+
+var (
+	console_long = templates.LongDesc(`
+		Opens the Jenkins X console in a browser.`)
+	console_example = templates.Examples(`
+		# Open the Jenkins X console in a browser
+		jx console
+
+		# Print the Jenkins X console URL but do not open a browser
+		jx console -u`)
+)
 
 func NewCmdConsole(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ConsoleOptions{
@@ -26,8 +38,10 @@ func NewCmdConsole(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 		},
 	}
 	cmd := &cobra.Command{
-		Use:   "console",
-		Short: "Opens the Jenkins console",
+		Use:     "console",
+		Short:   "Opens the Jenkins console",
+		Long:    console_long,
+		Example: console_example,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
