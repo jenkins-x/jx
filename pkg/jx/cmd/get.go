@@ -27,7 +27,11 @@ var (
 
 	get_example = templates.Examples(`
 		# List all pipeines
-		kubectl get pipelines`)
+		kubectl get pipeline
+
+		# List all URLs for services in the current namespace
+		kubectl get url
+	`)
 )
 
 // NewCmdGet creates a command object for the generic "get" action, which
@@ -43,15 +47,15 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 
 	// retrieve a list of handled resources from printer as valid args
 	/*
-	validArgs, argAliases := []string{}, []string{}
-	p, err := f.Printer(nil, kubectl.PrintOptions{
-		ColumnLabels: []string{},
-	})
-	cmdutil.CheckErr(err)
-	if p != nil {
-		validArgs = p.HandledResources()
-		argAliases = kubectl.ResourceAliases(validArgs)
-	}
+		validArgs, argAliases := []string{}, []string{}
+		p, err := f.Printer(nil, kubectl.PrintOptions{
+			ColumnLabels: []string{},
+		})
+		cmdutil.CheckErr(err)
+		if p != nil {
+			validArgs = p.HandledResources()
+			argAliases = kubectl.ResourceAliases(validArgs)
+		}
 	*/
 
 	cmd := &cobra.Command{
@@ -65,25 +69,25 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 		},
 		SuggestFor: []string{"list", "ps"},
 		/*
-		ValidArgs:  validArgs,
-		ArgAliases: argAliases,
+			ValidArgs:  validArgs,
+			ArgAliases: argAliases,
 		*/
 	}
 	//cmdutil.AddPrinterFlags(cmd)
 	/*
-	cmd.Flags().StringP("selector", "l", "", "Selector (label query) to filter on")
-	cmd.Flags().BoolP("watch", "w", false, "After listing/getting the requested object, watch for changes.")
-	cmd.Flags().Bool("watch-only", false, "Watch for changes to the requested object(s), without listing/getting first.")
-	cmd.Flags().Bool("show-kind", false, "If present, list the resource type for the requested object(s).")
-	cmd.Flags().Bool("all-namespaces", false, "If present, list the requested object(s) across all namespaces. Namespace in current context is ignored even if specified with --namespace.")
-	cmd.Flags().StringSliceP("label-columns", "L", []string{}, "Accepts a comma separated list of labels that are going to be presented as columns. Names are case-sensitive. You can also use multiple flag options like -L label1 -L label2...")
-	cmd.Flags().Bool("export", false, "If true, use 'export' for the resources.  Exported resources are stripped of cluster-specific information.")
+		cmd.Flags().StringP("selector", "l", "", "Selector (label query) to filter on")
+		cmd.Flags().BoolP("watch", "w", false, "After listing/getting the requested object, watch for changes.")
+		cmd.Flags().Bool("watch-only", false, "Watch for changes to the requested object(s), without listing/getting first.")
+		cmd.Flags().Bool("show-kind", false, "If present, list the resource type for the requested object(s).")
+		cmd.Flags().Bool("all-namespaces", false, "If present, list the requested object(s) across all namespaces. Namespace in current context is ignored even if specified with --namespace.")
+		cmd.Flags().StringSliceP("label-columns", "L", []string{}, "Accepts a comma separated list of labels that are going to be presented as columns. Names are case-sensitive. You can also use multiple flag options like -L label1 -L label2...")
+		cmd.Flags().Bool("export", false, "If true, use 'export' for the resources.  Exported resources are stripped of cluster-specific information.")
 	*/
 	/*
-	usage := "identifying the resource to get from a server."
-	cmdutil.AddFilenameOptionFlags(cmd, &options.FilenameOptions, usage)
-	cmdutil.AddInclude3rdPartyFlags(cmd)
-	cmd.Flags().StringVar(&options.Raw, "raw", options.Raw, "Raw URI to request from the server.  Uses the transport specified by the kubeconfig file.")
+		usage := "identifying the resource to get from a server."
+		cmdutil.AddFilenameOptionFlags(cmd, &options.FilenameOptions, usage)
+		cmdutil.AddInclude3rdPartyFlags(cmd)
+		cmd.Flags().StringVar(&options.Raw, "raw", options.Raw, "Raw URI to request from the server.  Uses the transport specified by the kubeconfig file.")
 	*/
 	return cmd
 }

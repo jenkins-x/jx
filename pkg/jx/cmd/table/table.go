@@ -57,18 +57,18 @@ func (t *Table) Render() {
 }
 
 // SetColumnsAligns sets the alignment of the columns
-func (t *Table) SetColumnsAligns(colAligns[]int)  {
+func (t *Table) SetColumnsAligns(colAligns []int) {
 	t.ColumnAlign = colAligns
 }
 
-// GetColumnAlign return the column alignment  
-func (t *Table) GetColumnAlign(i int)  int {
+// GetColumnAlign return the column alignment
+func (t *Table) GetColumnAlign(i int) int {
 	t.ColumnAlign = ensureArrayCanContain(t.ColumnAlign, i)
 	return t.ColumnAlign[i]
 }
 
 // SetColumnAlign sets the column alignment for the given column index
-func (t *Table) SetColumnAlign(i int, align int)  {
+func (t *Table) SetColumnAlign(i int, align int) {
 	t.ColumnAlign = ensureArrayCanContain(t.ColumnAlign, i)
 	t.ColumnAlign[i] = align
 }
@@ -82,7 +82,7 @@ func ensureArrayCanContain(array []int, idx int) []int {
 }
 
 func pad(s, pad string, width int, align int) string {
-	switch (align) {
+	switch align {
 	case ALIGN_CENTER:
 		return padCenter(s, pad, width)
 	case ALIGN_RIGHT:

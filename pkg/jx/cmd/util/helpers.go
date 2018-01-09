@@ -2,12 +2,12 @@ package util
 
 import (
 	"fmt"
-	"net/url"
-	"os"
-	"strings"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	"net/url"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -39,9 +39,9 @@ func DefaultBehaviorOnFatal() {
 // glog.Fatal is invoked for extended information.
 func fatal(msg string, code int) {
 	/*
-	if glog.V(2) {
-		glog.FatalDepth(2, msg)
-	}
+		if glog.V(2) {
+			glog.FatalDepth(2, msg)
+		}
 	*/
 	if len(msg) > 0 {
 		// add newline if needed
@@ -76,9 +76,9 @@ func checkErrWithPrefix(prefix string, err error) {
 func checkErr(prefix string, err error, handleErr func(string, int)) {
 	// unwrap aggregates of 1
 	/*
-	if agg, ok := err.(utilerrors.Aggregate); ok && len(agg.Errors()) == 1 {
-		err = agg.Errors()[0]
-	}
+		if agg, ok := err.(utilerrors.Aggregate); ok && len(agg.Errors()) == 1 {
+			err = agg.Errors()[0]
+		}
 	*/
 
 	switch {
@@ -88,37 +88,37 @@ func checkErr(prefix string, err error, handleErr func(string, int)) {
 		handleErr("", DefaultErrorExitCode)
 		return
 	/*
-	case kerrors.IsInvalid(err):
-		details := err.(*kerrors.StatusError).Status().Details
-		s := fmt.Sprintf("%sThe %s %q is invalid", prefix, details.Kind, details.Name)
-		if len(details.Causes) > 0 {
-			errs := statusCausesToAggrError(details.Causes)
-			handleErr(MultilineError(s+": ", errs), DefaultErrorExitCode)
-		} else {
-			handleErr(s, DefaultErrorExitCode)
-		}
-	case clientcmd.IsConfigurationInvalid(err):
-		handleErr(MultilineError(fmt.Sprintf("%sError in configuration: ", prefix), err), DefaultErrorExitCode)
+		case kerrors.IsInvalid(err):
+			details := err.(*kerrors.StatusError).Status().Details
+			s := fmt.Sprintf("%sThe %s %q is invalid", prefix, details.Kind, details.Name)
+			if len(details.Causes) > 0 {
+				errs := statusCausesToAggrError(details.Causes)
+				handleErr(MultilineError(s+": ", errs), DefaultErrorExitCode)
+			} else {
+				handleErr(s, DefaultErrorExitCode)
+			}
+		case clientcmd.IsConfigurationInvalid(err):
+			handleErr(MultilineError(fmt.Sprintf("%sError in configuration: ", prefix), err), DefaultErrorExitCode)
 	*/
 	default:
 		switch err := err.(type) {
 		/*
-		case *meta.NoResourceMatchError:
-			switch {
-			case len(err.PartialResource.Group) > 0 && len(err.PartialResource.Version) > 0:
-				handleErr(fmt.Sprintf("%sthe server doesn't have a resource type %q in group %q and version %q", prefix, err.PartialResource.Resource, err.PartialResource.Group, err.PartialResource.Version), DefaultErrorExitCode)
-			case len(err.PartialResource.Group) > 0:
-				handleErr(fmt.Sprintf("%sthe server doesn't have a resource type %q in group %q", prefix, err.PartialResource.Resource, err.PartialResource.Group), DefaultErrorExitCode)
-			case len(err.PartialResource.Version) > 0:
-				handleErr(fmt.Sprintf("%sthe server doesn't have a resource type %q in version %q", prefix, err.PartialResource.Resource, err.PartialResource.Version), DefaultErrorExitCode)
-			default:
-				handleErr(fmt.Sprintf("%sthe server doesn't have a resource type %q", prefix, err.PartialResource.Resource), DefaultErrorExitCode)
-			}
-		case utilerrors.Aggregate:
-			handleErr(MultipleErrors(prefix, err.Errors()), DefaultErrorExitCode)
-		case utilexec.ExitError:
-			// do not print anything, only terminate with given error
-			handleErr("", err.ExitStatus())
+			case *meta.NoResourceMatchError:
+				switch {
+				case len(err.PartialResource.Group) > 0 && len(err.PartialResource.Version) > 0:
+					handleErr(fmt.Sprintf("%sthe server doesn't have a resource type %q in group %q and version %q", prefix, err.PartialResource.Resource, err.PartialResource.Group, err.PartialResource.Version), DefaultErrorExitCode)
+				case len(err.PartialResource.Group) > 0:
+					handleErr(fmt.Sprintf("%sthe server doesn't have a resource type %q in group %q", prefix, err.PartialResource.Resource, err.PartialResource.Group), DefaultErrorExitCode)
+				case len(err.PartialResource.Version) > 0:
+					handleErr(fmt.Sprintf("%sthe server doesn't have a resource type %q in version %q", prefix, err.PartialResource.Resource, err.PartialResource.Version), DefaultErrorExitCode)
+				default:
+					handleErr(fmt.Sprintf("%sthe server doesn't have a resource type %q", prefix, err.PartialResource.Resource), DefaultErrorExitCode)
+				}
+			case utilerrors.Aggregate:
+				handleErr(MultipleErrors(prefix, err.Errors()), DefaultErrorExitCode)
+			case utilexec.ExitError:
+				// do not print anything, only terminate with given error
+				handleErr("", err.ExitStatus())
 		*/
 		default: // for any other error type
 			msg, ok := StandardErrorMessage(err)
@@ -133,7 +133,6 @@ func checkErr(prefix string, err error, handleErr func(string, int)) {
 	}
 }
 
-
 // StandardErrorMessage translates common errors into a human readable message, or returns
 // false if the error is not one of the recognized types. It may also log extended
 // information to glog.
@@ -142,23 +141,23 @@ func checkErr(prefix string, err error, handleErr func(string, int)) {
 // commands.
 func StandardErrorMessage(err error) (string, bool) {
 	/*
-	if debugErr, ok := err.(debugError); ok {
-		glog.V(4).Infof(debugErr.DebugError())
-	}
-	status, isStatus := err.(kerrors.APIStatus)
-	switch {
-	case isStatus:
-		switch s := status.Status(); {
-		case s.Reason == unversioned.StatusReasonUnauthorized:
-			return fmt.Sprintf("error: You must be logged in to the server (%s)", s.Message), true
-		case len(s.Reason) > 0:
-			return fmt.Sprintf("Error from server (%s): %s", s.Reason, err.Error()), true
-		default:
-			return fmt.Sprintf("Error from server: %s", err.Error()), true
+		if debugErr, ok := err.(debugError); ok {
+			glog.V(4).Infof(debugErr.DebugError())
 		}
-	case kerrors.IsUnexpectedObjectError(err):
-		return fmt.Sprintf("Server returned an unexpected response: %s", err.Error()), true
-	}
+		status, isStatus := err.(kerrors.APIStatus)
+		switch {
+		case isStatus:
+			switch s := status.Status(); {
+			case s.Reason == unversioned.StatusReasonUnauthorized:
+				return fmt.Sprintf("error: You must be logged in to the server (%s)", s.Message), true
+			case len(s.Reason) > 0:
+				return fmt.Sprintf("Error from server (%s): %s", s.Reason, err.Error()), true
+			default:
+				return fmt.Sprintf("Error from server: %s", err.Error()), true
+			}
+		case kerrors.IsUnexpectedObjectError(err):
+			return fmt.Sprintf("Server returned an unexpected response: %s", err.Error()), true
+		}
 	*/
 	switch t := err.(type) {
 	case *url.Error:
@@ -175,7 +174,6 @@ func StandardErrorMessage(err error) (string, bool) {
 	}
 	return "", false
 }
-
 
 func UsageError(cmd *cobra.Command, format string, args ...interface{}) error {
 	msg := fmt.Sprintf(format, args...)

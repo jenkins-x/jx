@@ -1,9 +1,9 @@
 package kube
 
 import (
-	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -12,7 +12,7 @@ const (
 
 type ServiceURL struct {
 	Name string
-	URL string
+	URL  string
 }
 
 func FindServiceURL(client *kubernetes.Clientset, namespace string, name string) (string, error) {
@@ -44,7 +44,7 @@ func FindServiceURLs(client *kubernetes.Clientset, namespace string) ([]ServiceU
 		if len(url) > 0 {
 			urls = append(urls, ServiceURL{
 				Name: svc.Name,
-				URL: url,
+				URL:  url,
 			})
 		}
 	}

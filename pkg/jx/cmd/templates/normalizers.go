@@ -89,4 +89,3 @@ func (s normalizer) indent() normalizer {
 	s.string = strings.Join(indentedLines, "\n")
 	return s
 }
-

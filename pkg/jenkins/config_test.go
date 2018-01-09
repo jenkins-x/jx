@@ -2,8 +2,8 @@ package jenkins
 
 import (
 	"io/ioutil"
-	"testing"
 	"path/filepath"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -90,7 +90,7 @@ type ConfigTest struct {
 	config JenkinsConfig
 }
 
-func (c *ConfigTest) Load() *JenkinsConfig  {
+func (c *ConfigTest) Load() *JenkinsConfig {
 	config, err := c.svc.LoadConfig()
 	c.config = config
 	c.AssertNoError(err)
