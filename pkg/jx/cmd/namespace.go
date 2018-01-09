@@ -10,6 +10,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"k8s.io/client-go/tools/clientcmd"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 )
 
 type NamespaceOptions struct {
@@ -68,12 +70,21 @@ func (o *NamespaceOptions) Run() error {
 	}
 	args := o.Args
 	if len(args) > 0 {
+		ns := args[0]
+		client, _, err := o.Factory.CreateClient()
+		if err != nil {
+			return err
+		}
+		_, err = client.CoreV1().Namespaces().Get(ns, meta_v1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("Error: %s\nIf you want to create that namespace then try:\n    kubectl create ns %s", err, ns)
+		}
 		newConfig := *config
 		ctx := kube.CurrentContext(config)
 		if ctx == nil {
 			return fmt.Errorf(noContextDefinedError)
 		}
-		ctx.Namespace = args[0]
+		ctx.Namespace = ns
 		err = clientcmd.ModifyConfig(po, newConfig, false)
 		if err != nil {
 			return fmt.Errorf("Failed to update the kube config %s", err)
