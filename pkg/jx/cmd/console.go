@@ -9,7 +9,6 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/browser"
-
 )
 
 type ConsoleOptions struct {

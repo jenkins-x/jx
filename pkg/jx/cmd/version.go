@@ -20,8 +20,8 @@ func NewCmdVersion(f cmdutil.Factory, out io.Writer) *cobra.Command {
 		},
 	}
 	/*
-	cmd.Flags().BoolP("client", "c", false, "Client version only (no server required).")
-	cmd.Flags().BoolP("short", "", false, "Print just the version number.")
+		cmd.Flags().BoolP("client", "c", false, "Client version only (no server required).")
+		cmd.Flags().BoolP("short", "", false, "Print just the version number.")
 	*/
 	cmd.Flags().MarkShorthandDeprecated("client", "please use --client instead.")
 	return cmd
@@ -30,29 +30,29 @@ func NewCmdVersion(f cmdutil.Factory, out io.Writer) *cobra.Command {
 func RunVersion(f cmdutil.Factory, out io.Writer, cmd *cobra.Command) error {
 	v := fmt.Sprintf("%#v", version.GetVersion())
 	/*
-	if cmdutil.GetFlagBool(cmd, "short") {
-		v = version.Get().GitVersion
-	}
+		if cmdutil.GetFlagBool(cmd, "short") {
+			v = version.Get().GitVersion
+		}
 
-	fmt.Fprintf(out, "Client Version: %s\n", v)
-	if cmdutil.GetFlagBool(cmd, "client") {
-		return nil
-	}
+		fmt.Fprintf(out, "Client Version: %s\n", v)
+		if cmdutil.GetFlagBool(cmd, "client") {
+			return nil
+		}
 
-	clientset, err := f.ClientSet()
-	if err != nil {
-		return err
-	}
+		clientset, err := f.ClientSet()
+		if err != nil {
+			return err
+		}
 
-	serverVersion, err := clientset.Discovery().ServerVersion()
-	if err != nil {
-		return err
-	}
+		serverVersion, err := clientset.Discovery().ServerVersion()
+		if err != nil {
+			return err
+		}
 
-	v = fmt.Sprintf("%#v", *serverVersion)
-	if cmdutil.GetFlagBool(cmd, "short") {
-		v = serverVersion.GitVersion
-	}
+		v = fmt.Sprintf("%#v", *serverVersion)
+		if cmdutil.GetFlagBool(cmd, "short") {
+			v = serverVersion.GitVersion
+		}
 	*/
 
 	fmt.Fprintf(out, "Server Version: %s\n", v)

@@ -1,4 +1,3 @@
-
 package cmd
 
 import (
@@ -27,27 +26,27 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
  `,
 		Run: runHelp,
 		/*
-		BashCompletionFunction: bash_completion_func,
+			BashCompletionFunction: bash_completion_func,
 		*/
 	}
 
 	/*
-	f.BindFlags(cmds.PersistentFlags())
-	f.BindExternalFlags(cmds.PersistentFlags())
+		f.BindFlags(cmds.PersistentFlags())
+		f.BindExternalFlags(cmds.PersistentFlags())
 
-	// From this point and forward we get warnings on flags that contain "_" separators
-	cmds.SetGlobalNormalizationFunc(flag.WarnWordSepNormalizeFunc)
+		// From this point and forward we get warnings on flags that contain "_" separators
+		cmds.SetGlobalNormalizationFunc(flag.WarnWordSepNormalizeFunc)
 
-	groups := templates.CommandGroups{
-		{
-			Message: "Basic Commands (Beginner):",
-			Commands: []*cobra.Command{
-				NewCmdCreate(f, out, err),
-				NewCmdExposeService(f, out),
-				NewCmdRun(f, in, out, err),
-				set.NewCmdSet(f, out, err),
+		groups := templates.CommandGroups{
+			{
+				Message: "Basic Commands (Beginner):",
+				Commands: []*cobra.Command{
+					NewCmdCreate(f, out, err),
+					NewCmdExposeService(f, out),
+					NewCmdRun(f, in, out, err),
+					set.NewCmdSet(f, out, err),
+				},
 			},
-		},
 	*/
 
 	cmds.AddCommand(NewCmdConsole(f, out, err))
@@ -63,4 +62,3 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 func runHelp(cmd *cobra.Command, args []string) {
 	cmd.Help()
 }
-

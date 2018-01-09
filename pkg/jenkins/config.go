@@ -2,10 +2,10 @@ package jenkins
 
 import (
 	"fmt"
-	"os"
-	"io/ioutil"
-	"gopkg.in/yaml.v2"
 	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"os"
 )
 
 const (

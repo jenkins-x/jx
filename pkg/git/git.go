@@ -1,8 +1,8 @@
 package git
 
 import (
-	"path/filepath"
 	"github.com/jenkins-x/jx/pkg/util"
+	"path/filepath"
 )
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories

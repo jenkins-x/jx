@@ -8,23 +8,22 @@ import (
 
 	"github.com/spf13/cobra"
 
-	neturl "net/url"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/git"
-	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/git"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
+	gitcfg "gopkg.in/src-d/go-git.v4/config"
+	neturl "net/url"
 )
 
 type ImportOptions struct {
 	CommonOptions
 
-	Dir string
+	Dir          string
 	Organisation string
-	Repository string
-	Credentials string
-
+	Repository   string
+	Credentials  string
 
 	Jenkins *gojenkins.Jenkins
 }
@@ -81,7 +80,6 @@ func (o *ImportOptions) Run() error {
 	}
 	return nil
 }
-
 
 // ImportDirectory finds the git url by looking in the given directory
 // and looking for a .git/config file

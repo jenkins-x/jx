@@ -9,8 +9,8 @@ import (
 
 func Run() error {
 	/*
-	logs.InitLogs()
-	defer logs.FlushLogs()
+		logs.InitLogs()
+		defer logs.FlushLogs()
 	*/
 
 	cmd := cmd.NewJXCommand(cmdutil.NewFactory(), os.Stdin, os.Stdout, os.Stderr)

@@ -1,23 +1,22 @@
 package git
 
 import (
-	"net/url"
 	"fmt"
-	"strings"
 	"github.com/jenkins-x/jx/pkg/util"
+	"net/url"
+	"strings"
 )
-
 
 const (
 	gitPrefix = "git@"
 )
 
 type GitRepositoryInfo struct {
-	URL string
-	Scheme string
-	Host string
+	URL          string
+	Scheme       string
+	Host         string
 	Organisation string
-	Name string
+	Name         string
 }
 
 // ParseGitURL attempts to parse the given text as a URL or git URL-like string to determine
@@ -60,7 +59,6 @@ func ParseGitURL(text string) (*GitRepositoryInfo, error) {
 	}
 	return nil, fmt.Errorf("Could not parse git url %s", text)
 }
-
 
 func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error) {
 	arr := strings.Split(strings.TrimPrefix(path, "/"), "/")

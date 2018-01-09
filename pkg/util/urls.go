@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-
 // UrlJoin joins the given paths so that there is only ever one '/' character between the paths
 func UrlJoin(paths ...string) string {
 	var buffer bytes.Buffer

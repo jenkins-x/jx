@@ -1,14 +1,14 @@
 package util
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 type regexSplitData struct {
-	input    string
-	separator    string
-	expected []string
+	input     string
+	separator string
+	expected  []string
 }
 
 func TestRegexpSplit(t *testing.T) {
@@ -26,7 +26,6 @@ func TestRegexpSplit(t *testing.T) {
 		//t.Logf("split %s with separator %s into %#v", data.input, data.separator, actual)
 	}
 }
-
 
 func TestStringIndices(t *testing.T) {
 	assertStringIndices(t, "foo/bar", "/", []int{3})

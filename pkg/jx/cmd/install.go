@@ -1,31 +1,20 @@
 package cmd
 
 import (
-	"io"
-
-	"github.com/spf13/cobra"
-
-	"os"
-
-	"net/http"
-
-	"encoding/base64"
-
-	"fmt"
-	"io/ioutil"
-
 	"bytes"
-
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"path/filepath"
+	"os/exec"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
 	"strings"
 
-	"encoding/json"
-
-	"errors"
-
-	"path/filepath"
-
-	"os/exec"
-
+	"github.com/spf13/cobra"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -307,21 +296,19 @@ func (o *InstallOptions) createGitHubPersonalAccessToken(username string) (strin
 
 	var dat map[string]interface{}
 
-
 	err = json.Unmarshal(body, &dat)
 	if err != nil {
 		errors.New(fmt.Sprintf("error unmarshalling authorization response: %v", err))
 	}
 
-
-	if token,ok := dat["token"].(string);ok {
+	if token, ok := dat["token"].(string); ok {
 		log.Successf("Your new GitHub personal access token: %s", token)
 		return username, token, nil
-	} else{
+	} else {
 		log.Error("Not a valid user\n")
 		log.Info("Ensure the user is valid on GitHub.\n")
 		os.Exit(-1)
-		return "","",nil
+		return "", "", nil
 	}
 
 }
