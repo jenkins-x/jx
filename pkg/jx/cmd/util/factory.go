@@ -83,8 +83,13 @@ func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
 	if err != nil {
 		return nil, "", nil
 	}
-	// TODO how to figure out the default namespace context?
-	ns := os.Getenv("NAMESPACE")
+	ns := ""
+	config, _, err := kube.LoadConfig()
+	if err != nil {
+		return client, ns, err
+	}
+	ns = kube.CurrentNamespace(config)
+	// TODO allow namsepace to be specified as a CLI argument!
 	return client, ns, nil
 }
 
