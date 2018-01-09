@@ -3,15 +3,18 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
 
+	neturl "net/url"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/git"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	"io/ioutil"
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 type ImportOptions struct {
@@ -20,6 +23,7 @@ type ImportOptions struct {
 	Dir string
 	Organisation string
 	Repository string
+	Credentials string
 
 
 	Jenkins *gojenkins.Jenkins
@@ -46,6 +50,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The source directory to import. If not specified and no arguments supplied then assumes the current directory")
 	cmd.Flags().StringVarP(&options.Organisation, "org", "o", "", "Specify the git provider organisation to import the project into (if it is not already in one)")
 	cmd.Flags().StringVarP(&options.Organisation, "name", "n", "", "Specify the git repository name to import the project into (if it is not already in one)")
+	cmd.Flags().StringVarP(&options.Credentials, "credentials", "c", "jenkins-x-github", "The Jenkins credentials name used by the job")
 	return cmd
 }
 
@@ -125,17 +130,50 @@ func (o *ImportOptions) ImportDirectory(dir string) error {
 
 func (o *ImportOptions) Import(url string) error {
 	out := o.Out
-	jenkins := o.Jenkins
+	jenk := o.Jenkins
 	gitInfo, err := git.ParseGitURL(url)
 	if err != nil {
 		return fmt.Errorf("Failed to parse git URL %s due to: %s", url, err)
 	}
-	fmt.Fprintf(out, "Organisation %s and Repository %s\n", gitInfo.Organisation, gitInfo.Name)
-	jobs, err := jenkins.GetJobs()
+	org := gitInfo.Organisation
+	folder, err := jenk.GetJob(org)
 	if err != nil {
-		return err
+		// could not find folder so lets try create it
+		jobUrl := util.UrlJoin(jenk.BaseURL(), jenk.GetJobURLPath(org))
+		folderXml := jenkins.CreateFolderXml(jobUrl, org)
+		//fmt.Fprintf(out, "XML: %s\n", folderXml)
+		err = jenk.CreateJobWithXML(folderXml, org)
+		if err != nil {
+			return fmt.Errorf("Failed to create the %s folder in jenkins: %s", org, err)
+		}
+		//fmt.Fprintf(out, "Created Jenkins folder: %s\n", org)
+	} else {
+		c := folder.Class
+		if c != "com.cloudbees.hudson.plugins.folder.Folder" {
+			fmt.Fprintf(out, "Warning the folder %s is of class %s", org, c)
+		}
 	}
-	fmt.Fprintf(out, "Has %d jobs\n", len(jobs))
+	projectXml := jenkins.CreateMultiBranchProjectXml(gitInfo, o.Credentials)
+	jobName := gitInfo.Name
+	job, err := jenk.GetJobByPath(org, jobName)
+	if err == nil {
+		return fmt.Errorf("Job already exists in Jenkins at " + job.Url)
+	}
+	//fmt.Fprintf(out, "Creating MultiBranchProject %s from XML: %s\n", jobName, projectXml)
+	err = jenk.CreateFolderJobWithXML(projectXml, org, jobName)
+	if err != nil {
+		return fmt.Errorf("Failed to create MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
+	}
+	job, err = jenk.GetJobByPath(org, jobName)
+	if err != nil {
+		return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
+	}
+	fmt.Fprintf(out, "Created Project: %s\n", job.Url)
+	params := neturl.Values{}
+	err = jenk.Build(job, params)
+	if err != nil {
+		return fmt.Errorf("Failed to trigger job %s due to %s", job.Url, err)
+	}
 	return nil
 }
 

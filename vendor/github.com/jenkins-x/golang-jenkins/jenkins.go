@@ -52,9 +52,13 @@ func NewJenkins(auth *Auth, baseUrl string) *Jenkins {
 	}
 }
 
+// BaseURL returns the base Jenkins URL
+func (jenkins *Jenkins) BaseURL() string {
+	return jenkins.baseUrl
+}
+
 // SetHTTPClient with timeouts or insecure transport, etc.
 func (jenkins *Jenkins) SetHTTPClient(client *http.Client) {
-
 	jenkins.client = client
 }
 
@@ -443,6 +447,15 @@ func (jenkins *Jenkins) CreateJobWithXML(jobItemXml string, jobName string) erro
 	params := url.Values{"name": []string{jobName}}
 
 	return jenkins.postXml("/createItem", params, reader, nil)
+}
+
+// Create a new job in a folder
+func (jenkins *Jenkins) CreateFolderJobWithXML(jobItemXml string, folder string, jobName string) error {
+
+	reader := bytes.NewReader([]byte(jobItemXml))
+	params := url.Values{"name": []string{jobName}}
+
+	return jenkins.postXml("/job/" + folder + "/createItem", params, reader, nil)
 }
 
 // Create a new job
