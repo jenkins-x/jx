@@ -111,11 +111,9 @@ func (o *NamespaceOptions) Run() error {
 		}
 		fmt.Fprintf(o.Out, "Now using namespace '%s' on server '%s'.\n", ctx.Namespace, kube.Server(config, ctx))
 	} else {
-		ctx := kube.CurrentContext(config)
-		if ctx == nil {
-			return fmt.Errorf(noContextDefinedError)
-		}
-		fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", ctx.Namespace, config.CurrentContext, kube.Server(config, ctx))
+		ns := kube.CurrentNamespace(config)
+		server := kube.CurrentServer(config)
+		fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", ns, config.CurrentContext, server)
 	}
 	return nil
 }
