@@ -78,6 +78,7 @@ func (o *NamespaceOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to update the kube config %s", err)
 		}
+		fmt.Fprintf(o.Out, "Now using namespace '%s' on server '%s'.\n", ctx.Namespace, kube.Server(config, ctx))
 	} else {
 		ctx := kube.CurrentContext(config)
 		if ctx == nil {
