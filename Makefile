@@ -50,7 +50,7 @@ test:
 
 #	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jx/cmds
 
-install: *.go */*.go
+install: $(GO_DEPENDENCIES)
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) $(NAME).go
 
 fmt:
