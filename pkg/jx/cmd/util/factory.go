@@ -2,7 +2,6 @@ package util
 
 import (
 	"flag"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 type Factory interface {
@@ -85,15 +83,12 @@ func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
 	if err != nil {
 		return nil, "", nil
 	}
-	po := clientcmd.NewDefaultPathOptions()
 	ns := ""
-	if po != nil {
-		config, err := po.GetStartingConfig()
-		if err != nil {
-			return client, "", fmt.Errorf("Could not load the starting config %s", err)
-		}
-		ns = kube.CurrentNamespace(config)
+	config, _, err := kube.LoadConfig()
+	if err != nil {
+		return client, ns, err
 	}
+	ns = kube.CurrentNamespace(config)
 	// TODO allow namsepace to be specified as a CLI argument!
 	return client, ns, nil
 }
