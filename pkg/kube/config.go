@@ -7,6 +7,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+const (
+	DefaultNamespace = "default"
+)
+
+// LoadConfig loads the kubernetes configuration
 func LoadConfig() (*api.Config, *clientcmd.PathOptions, error) {
 	po := clientcmd.NewDefaultPathOptions()
 	if po == nil {
@@ -23,9 +28,14 @@ func LoadConfig() (*api.Config, *clientcmd.PathOptions, error) {
 func CurrentNamespace(config *api.Config) string {
 	ctx := CurrentContext(config)
 	if ctx != nil {
-		return ctx.Namespace
+		n := ctx.Namespace
+		if n == "" {
+			// lets use the `default` namespace if there is no namespace in the context yet
+			return DefaultNamespace
+		}
+		return n
 	}
-	return ""
+	return DefaultNamespace
 }
 
 // CurrentContext returns the current context
@@ -39,6 +49,14 @@ func CurrentContext(config *api.Config) *api.Context {
 	return nil
 }
 
+
+// CurrentServer returns the current context's server
+func CurrentServer(config *api.Config) string {
+	context := CurrentContext(config)
+	return Server(config, context)
+}
+
+// Server returns the server of the given context
 func Server(config *api.Config, context *api.Context) string {
 	if context != nil && config != nil && config.Clusters != nil {
 		cluster := config.Clusters[context.Cluster]
