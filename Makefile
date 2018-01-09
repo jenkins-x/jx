@@ -77,8 +77,13 @@ release: check
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/$(NAME)-linux-arm cmd/jx/jx.go
-	cp build/$(NAME)-*-amd64* release
-	cp build/$(NAME)-*-arm* release
+	chmod +x build/$(NAME)-*-amd64*
+	chmod +x build/$(NAME)-*-arm*
+
+	cd ./build; tar -zcvf ../release/jx-darwin-amd64.tgz jx-darwin-amd64
+	cd ./build; tar -zcvf ../release/jx-linux-amd64.tgz jx-linux-amd64
+	cd ./build; tar -zcvf ../release/jx-linux-arm.tgz jx-linux-arm
+
 	go get -u github.com/progrium/gh-release
 	gh-release checksums sha256
 	gh-release create jenkins-x/$(NAME) $(VERSION) $(BRANCH) $(VERSION)
