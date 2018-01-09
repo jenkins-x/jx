@@ -1,5 +1,5 @@
 hash: 9da8c84e4b86b6db17019d5f2c1dd8a89e07c67044a8923ea2e231eae8395319
-updated: 2018-01-09T08:48:09.860105Z
+updated: 2018-01-09T11:24:50.094599Z
 imports:
 - name: github.com/emicklei/go-restful
   version: ff4f55a206334ef123e4f79bbf348980da81ca46
@@ -61,7 +61,7 @@ imports:
   subpackages:
   - io
 - name: github.com/jenkins-x/golang-jenkins
-  version: 5e6c752ea6a4ddbac25ddc34c1a5777edc24c4f6
+  version: eaf30fbf6aaf223dac9ebdd30473d865818d6aa9
 - name: github.com/json-iterator/go
   version: 36b14963da70d11297d313183d7e6388c8510e1e
 - name: github.com/juju/ratelimit
