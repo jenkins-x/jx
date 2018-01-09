@@ -68,26 +68,24 @@ func (f *factory) CreateJenkinsConfigService() (jenkins.JenkinsConfigService, er
 
 func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
 	var kubeconfig *string
-	if home := HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	kubeconfenv := os.Getenv("KUBECONFIG")
+	if kubeconfenv != "" {
+		kubeconfig = &kubeconfenv
 	} else {
-		// TODO load from kubeconfig argument?
-		//kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		if home := HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			// TODO load from kubeconfig CLI option?
+			//kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
 	}
 	client, err := kube.CreateClient(kubeconfig)
 	if err != nil {
 		return nil, "", nil
 	}
-	ns, err := f.DefaultNamespace(client)
-	if err != nil {
-		return nil, "", nil
-	}
+	// TODO how to figure out the default namespace context?
+	ns := os.Getenv("NAMESPACE")
 	return client, ns, nil
-}
-
-func (*factory) DefaultNamespace(client *kubernetes.Clientset) (string, error) {
-	// TODO
-	return "jx", nil
 }
 
 func (f *factory) CreateTable(out io.Writer) table.Table {
