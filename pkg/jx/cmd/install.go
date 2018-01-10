@@ -163,26 +163,14 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "repository already exists") {
-			log.Infof("Jenkins-X cloud environments repository already exists, check for changes? y/n: ")
+			log.Infof("A local Jenkins-X cloud environments repository already exists, recreate with latest? y/n: ")
 			if log.AskForConfirmation(false) {
-
-				r, err := git.PlainOpen(wrkDir)
+				err := os.RemoveAll(wrkDir)
 				if err != nil {
 					return err
 				}
 
-				// Get the working directory for the repository
-				w, err := r.Worktree()
-				if err != nil {
-					return err
-				}
-
-				// Pull the latest changes from the origin remote and merge into the current branch
-				err = w.Pull(&git.PullOptions{RemoteName: "origin"})
-				if err != nil && !strings.Contains(err.Error(), "already up-to-date") {
-					return err
-				}
-
+				return o.cloneJXCloudEnvironmentsRepo(wrkDir)
 			}
 		} else {
 			return err
@@ -197,6 +185,8 @@ func (o *InstallOptions) getGitSecrets() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	// TODO convert to a struct
 	pipelineSecrets := `
 PipelineSecrets:
   Netrc: |-
