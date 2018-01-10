@@ -152,15 +152,16 @@ func (o *ImportOptions) Run() error {
 	o.Jenkins = jenkins
 
 	if o.Dir == "" {
-		dir, err := os.Getwd()
-		if err != nil {
-			return err
+		args := o.Args
+		if len(args) > 0 {
+			o.Dir = args[0]
+		} else {
+			dir, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			o.Dir = dir
 		}
-		o.Dir = dir
-	}
-	args := o.Args
-	if len(args) > 0 {
-		o.Dir = args[0]
 	}
 
 	if o.RepoURL != "" {

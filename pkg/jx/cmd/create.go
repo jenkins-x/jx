@@ -17,10 +17,11 @@ import (
 type CreateOptions struct {
 	CommonOptions
 
+	DisableImport bool
+
+	// spring boot
 	Advanced bool
-
 	SpringForm spring.SpringBootForm
-
 	OutDir string
 }
 
@@ -68,16 +69,17 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Advanced, "advanced", "a", false, "Advanced mode can show more detailed forms for some resource kinds like springboot")
+	cmd.Flags().BoolVarP(&options.Advanced, "advanced", "x", false, "Advanced mode can show more detailed forms for some resource kinds like springboot")
+	cmd.Flags().BoolVarP(&options.DisableImport, "no-import", "c", false, "Disable import after the creation")
 
 	// spring flags
 	cmd.Flags().StringArrayVarP(&options.SpringForm.DependencyKinds, "kind", "k", spring.DefaultDependencyKinds, "Default dependency kinds to choose from")
 	cmd.Flags().StringArrayVarP(&options.SpringForm.Dependencies, "dep", "d", []string{}, "Spring Boot dependencies")
 	cmd.Flags().StringVarP(&options.SpringForm.GroupId, "group", "g", "", "Group ID to generate")
-	cmd.Flags().StringVarP(&options.SpringForm.ArtifactId, "artifact", "i", "", "Artifact ID to generate")
+	cmd.Flags().StringVarP(&options.SpringForm.ArtifactId, "artifact", "a", "", "Artifact ID to generate")
 	cmd.Flags().StringVarP(&options.SpringForm.Language, "language", "l", "", "Language to generate")
-	cmd.Flags().StringVarP(&options.SpringForm.BootVersion, "boot-version", "", "", "Spring Boot version")
-	cmd.Flags().StringVarP(&options.SpringForm.Packaging, "packaging", "", "", "Packaging")
+	cmd.Flags().StringVarP(&options.SpringForm.BootVersion, "boot-version", "b", "", "Spring Boot version")
+	cmd.Flags().StringVarP(&options.SpringForm.Packaging, "packaging", "p", "", "Packaging")
 
 	cmd.Flags().StringVarP(&options.OutDir, "output-dir", "o", "", "Directory to output the project to. Defaults to the current directory")
 	return cmd
@@ -135,6 +137,14 @@ func (o *CreateOptions) createSpringBoot() error {
 	}
 	o.Printf("Created spring boot project at %s\n", outDir)
 
-	// TODO would the user like to import the project?
-	return nil
+	if o.DisableImport {
+		return nil
+	}
+
+	// now lets import
+	importOptions := &ImportOptions{
+		CommonOptions: o.CommonOptions,
+		Dir: outDir,
+	}
+	return importOptions.Run()
 }
