@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
+	"fmt"
 )
 
 // CommonOptions contains common options and helper methods
@@ -19,4 +20,8 @@ type CommonOptions struct {
 
 func (c *CommonOptions) CreateTable() table.Table {
 	return c.Factory.CreateTable(c.Out)
+}
+
+func (c *CommonOptions) Printf(format string, a ...interface{}) (n int, err error) {
+	return fmt.Fprintf(c.Out, format, a...)
 }
