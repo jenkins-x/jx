@@ -19,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"strings"
 )
 
 const (
@@ -318,6 +319,10 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 	  return err
 	}
+	owner := org
+	if org == "" {
+		owner = gitUsername
+	}
 	dir := o.Dir
 	repoName := ""
 	_, defaultRepoName := filepath.Split(dir)
@@ -325,17 +330,24 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 		Message: "Enter the new repository name: ",
 		Default: defaultRepoName,
 	}
-	err = survey.AskOne(prompt, &repoName, nil)
+	validator := func(val interface{}) error {
+		str, ok := val.(string)
+		if !ok {
+			return fmt.Errorf("Expected string value!")
+		}
+		if strings.TrimSpace(str) == "" {
+			return fmt.Errorf("Repository name is required")
+		}
+		return provider.ValidateRepositoryName(owner, str)
+	}
+	err = survey.AskOne(prompt, &repoName, validator)
 	if err != nil {
 		return err
 	}
 	if repoName == "" {
 		return fmt.Errorf("No repository name specified!")
 	}
-	fullName := repoName
-	if org != "" {
-		fullName = org + "/" + repoName
-	}
+	fullName := gits.GitRepoName(org, repoName)
 	o.Printf("\n\nCreating repository %s\n", fullName)
 	privateRepo := false
 	repo, err := provider.CreateRepository(org, repoName, privateRepo)
@@ -403,6 +415,7 @@ func (o *ImportOptions) DiscoverGit() error {
 	flag := false
 	prompt := &survey.Confirm{
 	    Message: "Would you like to initialise git now?",
+	    Default: true,
 	}
 	err = survey.AskOne(prompt, &flag, nil)
 	if err != nil {
@@ -411,7 +424,6 @@ func (o *ImportOptions) DiscoverGit() error {
 	if !flag {
 		return fmt.Errorf("Please initialise git yourself then try again")
 	}
-
 	err = gits.GitInit(dir)
 	if err != nil {
 	  return err

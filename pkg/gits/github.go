@@ -73,6 +73,18 @@ func (p *GitHubProvider) CreateRepository(org string, name string, private bool)
 	return answer, nil
 }
 
+func (p *GitHubProvider) ValidateRepositoryName(org string, name string) error {
+	_, r, err := p.Client.Repositories.Get(p.Context, org, name)
+	if err == nil {
+		return fmt.Errorf("Repository %s already exists", GitRepoName(org, name))
+	}
+	if r.StatusCode == 404 {
+		return nil
+	}
+	return err
+}
+
+
 func asBool(b *bool) bool {
 	if b != nil {
 		return *b
