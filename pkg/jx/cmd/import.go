@@ -5,20 +5,20 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"path/filepath"
+
+	neturl "net/url"
 
 	"github.com/spf13/cobra"
-
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	neturl "net/url"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"path/filepath"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"os/exec"
 )
 
 const (
@@ -265,7 +265,6 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 }
 
 func (o *ImportOptions) CreateNewRemoteRepository() error {
-	o.Printf("\nLets create a new remote git repository\n")
 	f := o.Factory
 	authConfigSvc, err := f.CreateGitAuthConfigService()
 	if err != nil {
@@ -319,8 +318,9 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 	  return err
 	}
+	dir := o.Dir
 	repoName := ""
-	defaultRepoName := "TODO"
+	_, defaultRepoName := filepath.Split(dir)
 	prompt := &survey.Input{
 		Message: "Enter the new repository name: ",
 		Default: defaultRepoName,
@@ -344,6 +344,19 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	}
 	o.Printf("Created repository at %s\n", repo.HTMLURL)
 	o.RepoURL = repo.CloneURL
+	pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, &userAuth)
+	if err != nil {
+	  return err
+	}
+	err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
+	if err != nil {
+	  return err
+	}
+	err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+	if err != nil {
+	  return err
+	}
+	o.Printf("Pushed git repository to %s\n\n", server.Description())
 	return nil
 }
 

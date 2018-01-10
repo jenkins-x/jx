@@ -8,6 +8,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"strings"
+	"github.com/jenkins-x/jx/pkg/auth"
+	"net/url"
 )
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -133,6 +135,47 @@ func GitCommit(dir string, message string) error {
 		return fmt.Errorf("Failed to run git commit in %s due to %s", dir, err)
 	}
 	return nil
+}
+
+func GitRemoteAddOrigin(dir string, url string) error {
+
+	e := exec.Command("git", "remote", "add", "origin", url)
+	e.Dir = dir
+	e.Stdout = os.Stdout
+	e.Stderr = os.Stderr
+	err := e.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to invoke git status in %s due to %s", dir, err)
+	}
+	return nil
+}
+
+
+func GitCmd(dir string, args ...string) error {
+	e := exec.Command("git", args...)
+	e.Dir = dir
+	e.Stdout = os.Stdout
+	e.Stderr = os.Stderr
+	err := e.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to invoke git %s in %s due to %s", strings.Join(args, " "), dir, err)
+	}
+	return nil
+}
+
+
+// GitCreatePushURL creates the git repository URL with the username and password encoded for HTTPS based URLs
+func GitCreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
+	u, err := url.Parse(cloneURL)
+	if err != nil {
+		// already a git/ssh url?
+		return cloneURL, nil
+	}
+	if userAuth.Username != "" || userAuth.ApiToken != ""{
+		u.User = url.UserPassword(userAuth.Username, userAuth.ApiToken)
+		return u.String(), nil
+	}
+	return cloneURL, nil
 }
 
 
