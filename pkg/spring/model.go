@@ -12,6 +12,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"os"
 )
 
 var (
@@ -187,8 +188,7 @@ func (data *SpringBootForm) CreateProject(workDir string) (string, error) {
 	if dirName == "" {
 		dirName = "project"
 	}
-
-	answer := dirName
+	answer := filepath.Join(workDir, dirName)
 
 	u := "http://start.spring.io/starter.zip"
 	client := http.Client{}
@@ -219,6 +219,10 @@ func (data *SpringBootForm) CreateProject(workDir string) (string, error) {
 	err = util.Unzip(zipFile, dir)
 	if err != nil {
 		return answer, fmt.Errorf("Failed to unzip new project file %s due to %s", zipFile, err)
+	}
+	err = os.Remove(zipFile)
+	if err != nil {
+		return answer, err
 	}
 	return answer, nil
 }

@@ -121,8 +121,6 @@ func (o *CreateOptions) createSpringBoot() error {
 		return err
 	}
 
-	o.Printf("Entered data: %#v\n", data)
-
 	dir := o.OutDir
 	if dir == "" {
 		dir, err = os.Getwd()
@@ -131,7 +129,12 @@ func (o *CreateOptions) createSpringBoot() error {
 		}
 	}
 
-	data.CreateProject(dir)
+	outDir, err := data.CreateProject(dir)
+	if err != nil {
+	  return err
+	}
+	o.Printf("Created spring boot project at %s\n", outDir)
 
+	// TODO would the user like to import the project?
 	return nil
 }
