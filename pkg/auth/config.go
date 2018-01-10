@@ -1,4 +1,4 @@
-package jenkins
+package auth
 
 import (
 	"fmt"
@@ -12,35 +12,35 @@ const (
 	DefaultWritePermissions = 0760
 )
 
-type JenkinsServer struct {
+type AuthServer struct {
 	URL   string
-	Auths []JenkinsAuth
+	Users []UserAuth
 }
 
-type JenkinsAuth struct {
+type UserAuth struct {
 	Username    string
 	ApiToken    string
 	BearerToken string
 }
 
-type JenkinsConfig struct {
-	Servers []JenkinsServer
+type AuthConfig struct {
+	Servers []AuthServer
 
 	DefaultUsername string
 }
 
-func (c *JenkinsConfig) FindAuths(serverURL string) []JenkinsAuth {
+func (c *AuthConfig) FindAuths(serverURL string) []UserAuth {
 	for _, server := range c.Servers {
 		if server.URL == serverURL {
-			return server.Auths
+			return server.Users
 		}
 	}
-	return []JenkinsAuth{}
+	return []UserAuth{}
 }
 
 // FindAuth finds the auth for the given user name
 // if no username is specified and there is only one auth then return that else nil
-func (c *JenkinsConfig) FindAuth(serverURL string, username string) *JenkinsAuth {
+func (c *AuthConfig) FindAuth(serverURL string, username string) *UserAuth {
 	auths := c.FindAuths(serverURL)
 	if username == "" {
 		if len(auths) == 1 {
@@ -57,32 +57,32 @@ func (c *JenkinsConfig) FindAuth(serverURL string, username string) *JenkinsAuth
 	return nil
 }
 
-type JenkinsConfigService struct {
+type AuthConfigService struct {
 	FileName string
 }
 
-func (c *JenkinsConfig) SetAuth(url string, auth JenkinsAuth) {
+func (c *AuthConfig) SetAuth(url string, auth UserAuth) {
 	for i, server := range c.Servers {
 		if server.URL == url {
-			for j, a := range server.Auths {
+			for j, a := range server.Users {
 				if a.Username == auth.Username {
-					c.Servers[i].Auths[j] = auth
+					c.Servers[i].Users[j] = auth
 					return
 				}
 			}
-			c.Servers[i].Auths = append(c.Servers[i].Auths, auth)
+			c.Servers[i].Users = append(c.Servers[i].Users, auth)
 			return
 		}
 	}
-	c.Servers = append(c.Servers, JenkinsServer{
+	c.Servers = append(c.Servers, AuthServer{
 		URL:   url,
-		Auths: []JenkinsAuth{auth},
+		Users: []UserAuth{auth},
 	})
 }
 
 // LoadConfig loads the configuration from the users JX config directory
-func (s *JenkinsConfigService) LoadConfig() (JenkinsConfig, error) {
-	config := JenkinsConfig{}
+func (s *AuthConfigService) LoadConfig() (AuthConfig, error) {
+	config := AuthConfig{}
 
 	fileName := s.FileName
 	if fileName != "" {
@@ -105,7 +105,7 @@ func (s *JenkinsConfigService) LoadConfig() (JenkinsConfig, error) {
 }
 
 // SaveConfig loads the configuration from the users JX config directory
-func (s *JenkinsConfigService) SaveConfig(config *JenkinsConfig) error {
+func (s *AuthConfigService) SaveConfig(config *AuthConfig) error {
 	fileName := s.FileName
 	if fileName == "" {
 		return fmt.Errorf("No filename defined!")
@@ -117,14 +117,14 @@ func (s *JenkinsConfigService) SaveConfig(config *JenkinsConfig) error {
 	return ioutil.WriteFile(fileName, data, DefaultWritePermissions)
 }
 
-func CreateJenkinsAuthFromEnvironment() JenkinsAuth {
-	return JenkinsAuth{
-		Username:    os.Getenv("JENKINS_USERNAME"),
-		ApiToken:    os.Getenv("JENKINS_API_TOKEN"),
-		BearerToken: os.Getenv("JENKINS_BEARER_TOKEN"),
+func CreateAuthUserFromEnvironment(prefix string) UserAuth {
+	return UserAuth{
+		Username:    os.Getenv(prefix + "_USERNAME"),
+		ApiToken:    os.Getenv(prefix + "_API_TOKEN"),
+		BearerToken: os.Getenv(prefix + "_BEARER_TOKEN"),
 	}
 }
 
-func (a *JenkinsAuth) IsInvalid() bool {
+func (a *UserAuth) IsInvalid() bool {
 	return a.BearerToken == "" && (a.ApiToken == "" || a.Username == "")
 }

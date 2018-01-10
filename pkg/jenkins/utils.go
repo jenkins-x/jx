@@ -7,20 +7,21 @@ import (
 	"net/http"
 
 	"github.com/jenkins-x/golang-jenkins"
+	jenkauth "github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
-func GetJenkinsClient(url string, batch bool, configService *JenkinsConfigService) (*gojenkins.Jenkins, error) {
+func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfigService) (*gojenkins.Jenkins, error) {
 	if url == "" {
 		return nil, errors.New("no JENKINS_URL environment variable is set nor could a Jenkins service be found in the current namespace!\n")
 	}
 	tokenUrl := util.UrlJoin(url, "/me/configure")
 
-	auth := CreateJenkinsAuthFromEnvironment()
+	auth := jenkauth.CreateAuthUserFromEnvironment("JENKINS")
 	username := auth.Username
 	var err error
-	config := JenkinsConfig{}
+	config := jenkauth.AuthConfig{}
 
 	showForm := false
 	if auth.IsInvalid() {
@@ -37,7 +38,7 @@ func GetJenkinsClient(url string, batch bool, configService *JenkinsConfigServic
 		a := config.FindAuth(url, username)
 		if a != nil {
 			if a.IsInvalid() {
-				auth, err = EditJenkinsAuth(url, configService, &config, a, tokenUrl)
+				auth, err = EditUserAuth(url, configService, &config, a, tokenUrl)
 				if err != nil {
 					return nil, err
 				}
@@ -46,7 +47,7 @@ func GetJenkinsClient(url string, batch bool, configService *JenkinsConfigServic
 			}
 		} else {
 			// lets create a new Auth
-			auth, err = EditJenkinsAuth(url, configService, &config, &auth, tokenUrl)
+			auth, err = EditUserAuth(url, configService, &config, &auth, tokenUrl)
 			if err != nil {
 				return nil, err
 			}
@@ -86,7 +87,7 @@ func GetJenkinsClient(url string, batch bool, configService *JenkinsConfigServic
 	return jenkins, nil
 }
 
-func EditJenkinsAuth(url string, configService *JenkinsConfigService, config *JenkinsConfig, auth *JenkinsAuth, tokenUrl string) (JenkinsAuth, error) {
+func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string) (jenkauth.UserAuth, error) {
 	fmt.Printf("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
 	fmt.Printf("Please go to %s and click 'Show API Token' to get your API Token\n", tokenUrl)
 	fmt.Printf("Then COPY the API token so that you can paste it into the form below:\n\n")
@@ -106,7 +107,7 @@ func EditJenkinsAuth(url string, configService *JenkinsConfigService, config *Je
 		{
 			Name: "username",
 			Prompt: &survey.Input{
-				Message: "Jenkins user name:",
+				Message: "User name:",
 				Default: answers.Username,
 			},
 			Validate: survey.Required,
@@ -114,7 +115,7 @@ func EditJenkinsAuth(url string, configService *JenkinsConfigService, config *Je
 		{
 			Name: "apiToken",
 			Prompt: &survey.Input{
-				Message: "Jenkins API Token:",
+				Message: "API Token:",
 				Default: answers.ApiToken,
 			},
 			Validate: survey.Required,
