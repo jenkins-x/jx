@@ -2,14 +2,14 @@ package gits
 
 import (
 	"fmt"
-	"os/exec"
 	"os"
+	"os/exec"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/util"
-	"strings"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/util"
 	"net/url"
+	"strings"
 )
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -36,10 +36,10 @@ func FindGitConfigDir(dir string) (string, string, error) {
 // GitClone clones the given git URL into the given directory
 func GitClone(url string, directory string) error {
 	/*
-	return git.PlainClone(directory, false, &git.CloneOptions{
-		URL:               url,
-		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
-	})
+		return git.PlainClone(directory, false, &git.CloneOptions{
+			URL:               url,
+			RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		})
 	*/
 	e := exec.Command("git", "clone", url, directory)
 	e.Stdout = os.Stdout
@@ -105,25 +105,23 @@ func HasChanges(dir string) (bool, error) {
 	e.Dir = dir
 	data, err := e.Output()
 	if err != nil {
-	  return false, err
+		return false, err
 	}
 	text := string(data)
 	text = strings.TrimSpace(text)
 	return len(text) > 0, nil
 }
 
-
 func GitCommitIfChanges(dir string, message string) error {
 	changed, err := HasChanges(dir)
 	if err != nil {
-	  return err
+		return err
 	}
 	if !changed {
 		return nil
 	}
 	return GitCommit(dir, message)
 }
-
 
 func GitCommit(dir string, message string) error {
 	e := exec.Command("git", "commit", "-m", message)
@@ -150,7 +148,6 @@ func GitRemoteAddOrigin(dir string, url string) error {
 	return nil
 }
 
-
 func GitCmd(dir string, args ...string) error {
 	e := exec.Command("git", args...)
 	e.Dir = dir
@@ -163,7 +160,6 @@ func GitCmd(dir string, args ...string) error {
 	return nil
 }
 
-
 // GitCreatePushURL creates the git repository URL with the username and password encoded for HTTPS based URLs
 func GitCreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
 	u, err := url.Parse(cloneURL)
@@ -171,11 +167,16 @@ func GitCreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) 
 		// already a git/ssh url?
 		return cloneURL, nil
 	}
-	if userAuth.Username != "" || userAuth.ApiToken != ""{
+	if userAuth.Username != "" || userAuth.ApiToken != "" {
 		u.User = url.UserPassword(userAuth.Username, userAuth.ApiToken)
 		return u.String(), nil
 	}
 	return cloneURL, nil
 }
 
-
+func GitRepoName(org, repoName string) string {
+	if org != "" {
+		return org + "/" + repoName
+	}
+	return repoName
+}

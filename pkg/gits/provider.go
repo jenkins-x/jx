@@ -9,6 +9,8 @@ type GitProvider interface {
 	ListOrganisations() ([]GitOrganisation, error)
 
 	CreateRepository(org string, name string, private bool) (*GitRepository, error)
+
+	ValidateRepositoryName(org string, name string) error
 }
 
 type GitOrganisation struct {

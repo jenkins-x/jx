@@ -11,13 +11,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/golang-jenkins"
-	"k8s.io/client-go/kubernetes"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
 	jenkinsAuthConfigFile = "jenkinsAuth.yaml"
-	GitAuthConfigFile = "gitAuth.yaml"
+	GitAuthConfigFile     = "gitAuth.yaml"
 )
 
 type Factory interface {
@@ -67,18 +67,18 @@ func (f *factory) GetJenkinsClient() (*gojenkins.Jenkins, error) {
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
 	if err != nil {
-	  return authConfigSvc, err
+		return authConfigSvc, err
 	}
 	config, err := authConfigSvc.LoadConfig()
 	if err != nil {
-	  return authConfigSvc, err
+		return authConfigSvc, err
 	}
 
 	// lets add a default if there's none defined yet
 	if len(config.Servers) == 0 {
 		config.Servers = []auth.AuthServer{
 			{
-				Name: "GitHub",
+				Name:  "GitHub",
 				URL:   "github.com",
 				Users: []auth.UserAuth{},
 			},

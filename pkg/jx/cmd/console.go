@@ -6,10 +6,10 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/browser"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 type ConsoleOptions struct {

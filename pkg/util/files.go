@@ -1,15 +1,16 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
-	"fmt"
 )
 
 const (
 	DefaultWritePermissions = 0760
 )
+
 func FileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -20,7 +21,6 @@ func FileExists(path string) (bool, error) {
 	}
 	return true, err
 }
-
 
 // CreateUniqueDirectory creates a new directory but if the combination of dir and name exists
 // then append a number until a unique name is found

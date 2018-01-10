@@ -3,10 +3,10 @@ package cmd
 import (
 	"io"
 
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
-	"fmt"
 )
 
 // CommonOptions contains common options and helper methods

@@ -1,11 +1,11 @@
 package gits
 
 import (
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
 	"context"
 	"fmt"
+	"github.com/google/go-github/github"
+	"github.com/jenkins-x/jx/pkg/auth"
+	"golang.org/x/oauth2"
 )
 
 type GitHubProvider struct {
@@ -66,11 +66,22 @@ func (p *GitHubProvider) CreateRepository(org string, name string, private bool)
 	}
 	answer := &GitRepository{
 		AllowMergeCommit: asBool(repo.AllowMergeCommit),
-		CloneURL: asText(repo.CloneURL),
-		HTMLURL: asText(repo.HTMLURL),
-		SSHURL: asText(repo.SSHURL),
+		CloneURL:         asText(repo.CloneURL),
+		HTMLURL:          asText(repo.HTMLURL),
+		SSHURL:           asText(repo.SSHURL),
 	}
 	return answer, nil
+}
+
+func (p *GitHubProvider) ValidateRepositoryName(org string, name string) error {
+	_, r, err := p.Client.Repositories.Get(p.Context, org, name)
+	if err == nil {
+		return fmt.Errorf("Repository %s already exists", GitRepoName(org, name))
+	}
+	if r.StatusCode == 404 {
+		return nil
+	}
+	return err
 }
 
 func asBool(b *bool) bool {
