@@ -7,10 +7,19 @@ import (
 
 type GitProvider interface {
 	ListOrganisations() ([]GitOrganisation, error)
+
+	CreateRepository(org string, name string, private bool) (*GitRepository, error)
 }
 
 type GitOrganisation struct {
 	Login string
+}
+
+type GitRepository struct {
+	AllowMergeCommit bool
+	HTMLURL          string
+	CloneURL         string
+	SSHURL           string
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
@@ -47,6 +56,9 @@ func PickOrganisation(provider GitProvider, userName string) (string, error) {
 	err = survey.AskOne(prompt, &orgName, nil)
 	if err != nil {
 		return "", err
+	}
+	if orgName == userName {
+		return "", nil
 	}
 	return orgName, nil
 

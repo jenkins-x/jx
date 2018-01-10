@@ -322,7 +322,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	repoName := ""
 	defaultRepoName := "TODO"
 	prompt := &survey.Input{
-		Message: "Enter the new repsitory name: ",
+		Message: "Enter the new repository name: ",
 		Default: defaultRepoName,
 	}
 	err = survey.AskOne(prompt, &repoName, nil)
@@ -332,8 +332,18 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if repoName == "" {
 		return fmt.Errorf("No repository name specified!")
 	}
-	o.Printf("\n\nCreating repository %s/%s\n", org, repoName)
-	//provider.CreateRepository(org, repoName)
+	fullName := repoName
+	if org != "" {
+		fullName = org + "/" + repoName
+	}
+	o.Printf("\n\nCreating repository %s\n", fullName)
+	privateRepo := false
+	repo, err := provider.CreateRepository(org, repoName, privateRepo)
+	if err != nil {
+	  return err
+	}
+	o.Printf("Created repository at %s\n", repo.HTMLURL)
+	o.RepoURL = repo.CloneURL
 	return nil
 }
 

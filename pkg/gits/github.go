@@ -51,8 +51,38 @@ func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
 			}
 			answer = append(answer, o)
 		}
-		fmt.Printf("found org %s with value %#v\n", org)
 	}
 	return answer, nil
 }
 
+func (p *GitHubProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
+	repoConfig := &github.Repository{
+		Name:    github.String(name),
+		Private: github.Bool(private),
+	}
+	repo, _, err := p.Client.Repositories.Create(p.Context, org, repoConfig)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create repository %s/%s due to: %s", org, name, err)
+	}
+	answer := &GitRepository{
+		AllowMergeCommit: asBool(repo.AllowMergeCommit),
+		CloneURL: asText(repo.CloneURL),
+		HTMLURL: asText(repo.HTMLURL),
+		SSHURL: asText(repo.SSHURL),
+	}
+	return answer, nil
+}
+
+func asBool(b *bool) bool {
+	if b != nil {
+		return *b
+	}
+	return false
+}
+
+func asText(text *string) string {
+	if text != nil {
+		return *text
+	}
+	return ""
+}
