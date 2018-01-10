@@ -45,4 +45,3 @@ func StringArrayIndex(array []string, value string) int {
 	}
 	return -1
 }
-

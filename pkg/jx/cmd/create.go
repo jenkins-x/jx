@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -17,6 +18,10 @@ type CreateOptions struct {
 	CommonOptions
 
 	Advanced bool
+
+	SpringForm spring.SpringBootForm
+
+	OutDir string
 }
 
 var (
@@ -64,6 +69,17 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 		},
 	}
 	cmd.Flags().BoolVarP(&options.Advanced, "advanced", "a", false, "Advanced mode can show more detailed forms for some resource kinds like springboot")
+
+	// spring flags
+	cmd.Flags().StringArrayVarP(&options.SpringForm.DependencyKinds, "kind", "k", spring.DefaultDependencyKinds, "Default dependency kinds to choose from")
+	cmd.Flags().StringArrayVarP(&options.SpringForm.Dependencies, "dep", "d", []string{}, "Spring Boot dependencies")
+	cmd.Flags().StringVarP(&options.SpringForm.GroupId, "group", "g", "", "Group ID to generate")
+	cmd.Flags().StringVarP(&options.SpringForm.ArtifactId, "artifact", "i", "", "Artifact ID to generate")
+	cmd.Flags().StringVarP(&options.SpringForm.Language, "language", "l", "", "Language to generate")
+	cmd.Flags().StringVarP(&options.SpringForm.BootVersion, "boot-version", "", "", "Spring Boot version")
+	cmd.Flags().StringVarP(&options.SpringForm.Packaging, "packaging", "", "", "Packaging")
+
+	cmd.Flags().StringVarP(&options.OutDir, "output-dir", "o", "", "Directory to output the project to. Defaults to the current directory")
 	return cmd
 }
 
@@ -99,15 +115,23 @@ func (o *CreateOptions) createSpringBoot() error {
 		return fmt.Errorf("Failed to load Spring Boot model %s", err)
 	}
 
-	data := spring.SpringBootForm{
-	}
-
-	err = model.CreateSurvey(&data, o.Advanced)
+	data := &o.SpringForm
+	err = model.CreateSurvey(&o.SpringForm, o.Advanced)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	o.Printf("Entered data: %#v\n", data)
+
+	dir := o.OutDir
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
+
+	data.CreateProject(dir)
+
 	return nil
 }
-
