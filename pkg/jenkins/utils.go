@@ -9,7 +9,6 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	jenkauth "github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfigService) (*gojenkins.Jenkins, error) {
@@ -21,7 +20,7 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 	auth := jenkauth.CreateAuthUserFromEnvironment("JENKINS")
 	username := auth.Username
 	var err error
-	config := jenkauth.AuthConfig{}
+	config := configService.Config()
 
 	showForm := false
 	if auth.IsInvalid() {
@@ -30,15 +29,15 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 		if err != nil {
 			return nil, err
 		}
-		auths := config.FindAuths(url)
+		auths := config.FindUserAuths(url)
 		if len(auths) > 1 {
 			// TODO choose an auth
 		}
 		showForm = true
-		a := config.FindAuth(url, username)
+		a := config.FindUserAuth(url, username)
 		if a != nil {
 			if a.IsInvalid() {
-				auth, err = EditUserAuth(url, configService, &config, a, tokenUrl)
+				auth, err = EditUserAuth(url, configService, config, a, tokenUrl)
 				if err != nil {
 					return nil, err
 				}
@@ -47,7 +46,7 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 			}
 		} else {
 			// lets create a new Auth
-			auth, err = EditUserAuth(url, configService, &config, &auth, tokenUrl)
+			auth, err = EditUserAuth(url, configService, config, &auth, tokenUrl)
 			if err != nil {
 				return nil, err
 			}
@@ -92,42 +91,12 @@ func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config 
 	fmt.Printf("Please go to %s and click 'Show API Token' to get your API Token\n", tokenUrl)
 	fmt.Printf("Then COPY the API token so that you can paste it into the form below:\n\n")
 
-	answers := *auth
+	defaultUsername := "admin"
 
-	// default the user name
-	defaultUsername := config.DefaultUsername
-	if defaultUsername == "" {
-		defaultUsername = "admin"
-	}
-	if answers.Username == "" {
-		answers.Username = defaultUsername
-	}
-
-	var qs = []*survey.Question{
-		{
-			Name: "username",
-			Prompt: &survey.Input{
-				Message: "User name:",
-				Default: answers.Username,
-			},
-			Validate: survey.Required,
-		},
-		{
-			Name: "apiToken",
-			Prompt: &survey.Input{
-				Message: "API Token:",
-				Default: answers.ApiToken,
-			},
-			Validate: survey.Required,
-		},
-	}
-	err := survey.Ask(qs, &answers)
-	fmt.Println()
+	err := config.EditUserAuth(auth, defaultUsername)
 	if err != nil {
-		return answers, err
+	  return *auth, err
 	}
-	config.SetAuth(url, answers)
-	config.DefaultUsername = answers.Username
-	err = configService.SaveConfig(config)
-	return answers, err
+	err = configService.SaveUserAuth(url, auth)
+	return *auth, err
 }

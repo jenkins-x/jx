@@ -40,71 +40,71 @@ func TestAuthConfig(t *testing.T) {
 		Username: user1,
 		ApiToken: "someToken",
 	}
-	config = configTest.SetAuth(url1, auth1)
+	config = configTest.SetUserAuth(url1, auth1)
 
 	assert.Equal(t, 1, len(config.Servers), "Number of servers")
 	assert.Equal(t, 1, len(config.Servers[0].Users), "Number of auths")
-	assert.Equal(t, &auth1, config.FindAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
-	assert.Equal(t, &auth1, config.FindAuth(url1, ""), "loaded auth for server %s and no user", url1)
+	assert.Equal(t, &auth1, config.FindUserAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
+	assert.Equal(t, &auth1, config.FindUserAuth(url1, ""), "loaded auth for server %s and no user", url1)
 
 	auth2 := UserAuth{
 		Username: user2,
 		ApiToken: "anotherToken",
 	}
-	config = configTest.SetAuth(url1, auth2)
+	config = configTest.SetUserAuth(url1, auth2)
 
-	assert.Equal(t, &auth2, config.FindAuth(url1, user2), "Failed to find auth for server %s and user %s", url1, user2)
-	assert.Equal(t, &auth1, config.FindAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
+	assert.Equal(t, &auth2, config.FindUserAuth(url1, user2), "Failed to find auth for server %s and user %s", url1, user2)
+	assert.Equal(t, &auth1, config.FindUserAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
 	assert.Equal(t, 1, len(config.Servers), "Number of servers")
 	assert.Equal(t, 2, len(config.Servers[0].Users), "Number of auths")
 	assertNoAuth(t, config, url1, userDoesNotExist)
 
 	// lets mutate the auth2
 	auth2.ApiToken = token2v2
-	config = configTest.SetAuth(url1, auth2)
+	config = configTest.SetUserAuth(url1, auth2)
 
 	assertNoAuth(t, config, url1, userDoesNotExist)
 	assert.Equal(t, 1, len(config.Servers), "Number of servers")
 	assert.Equal(t, 2, len(config.Servers[0].Users), "Number of auths")
-	assert.Equal(t, &auth1, config.FindAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
-	assert.Equal(t, &auth2, config.FindAuth(url1, user2), "loaded auth for server %s and user %s", url1, user2)
+	assert.Equal(t, &auth1, config.FindUserAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
+	assert.Equal(t, &auth2, config.FindUserAuth(url1, user2), "loaded auth for server %s and user %s", url1, user2)
 
 	auth3 := UserAuth{
 		Username: user1,
 		ApiToken: "server2User1Token",
 	}
-	configTest.SetAuth(url2, auth3)
+	configTest.SetUserAuth(url2, auth3)
 
 	assertNoAuth(t, config, url1, userDoesNotExist)
 	assert.Equal(t, 2, len(config.Servers), "Number of servers")
 	assert.Equal(t, 2, len(config.Servers[0].Users), "Number of auths for server 0")
 	assert.Equal(t, 1, len(config.Servers[1].Users), "Number of auths for server 1")
-	assert.Equal(t, &auth1, config.FindAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
-	assert.Equal(t, &auth2, config.FindAuth(url1, user2), "loaded auth for server %s and user %s", url1, user2)
-	assert.Equal(t, &auth3, config.FindAuth(url2, user1), "loaded auth for server %s and user %s", url2, user1)
+	assert.Equal(t, &auth1, config.FindUserAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
+	assert.Equal(t, &auth2, config.FindUserAuth(url1, user2), "loaded auth for server %s and user %s", url1, user2)
+	assert.Equal(t, &auth3, config.FindUserAuth(url2, user1), "loaded auth for server %s and user %s", url2, user1)
 }
 
 type ConfigTest struct {
 	t      *testing.T
 	svc    AuthConfigService
-	config AuthConfig
+	config *AuthConfig
 }
 
 func (c *ConfigTest) Load() *AuthConfig {
 	config, err := c.svc.LoadConfig()
 	c.config = config
 	c.AssertNoError(err)
-	return &c.config
+	return c.config
 }
 
-func (c *ConfigTest) SetAuth(url string, auth UserAuth) *AuthConfig {
-	c.config.SetAuth(url, auth)
+func (c *ConfigTest) SetUserAuth(url string, auth UserAuth) *AuthConfig {
+	c.config.SetUserAuth(url, auth)
 	c.SaveAndReload()
-	return &c.config
+	return c.config
 }
 
 func (c *ConfigTest) SaveAndReload() *AuthConfig {
-	err := c.svc.SaveConfig(&c.config)
+	err := c.svc.SaveConfig()
 	c.AssertNoError(err)
 	return c.Load()
 }
@@ -116,7 +116,7 @@ func (c *ConfigTest) AssertNoError(err error) {
 }
 
 func assertNoAuth(t *testing.T, config *AuthConfig, url string, user string) {
-	found := config.FindAuth(url, user)
+	found := config.FindUserAuth(url, user)
 	if found != nil {
 		assert.Fail(t, "Found auth when not expecting it for server %s and user %s", url, user)
 	}
