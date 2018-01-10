@@ -1,7 +1,7 @@
 package jenkins
 
 import (
-	"github.com/jenkins-x/jx/pkg/git"
+	"github.com/jenkins-x/jx/pkg/gits"
 )
 
 func CreateFolderXml(folderUrl string, name string) string {
@@ -44,7 +44,7 @@ func CreateFolderXml(folderUrl string, name string) string {
 `
 }
 
-func createBranchSource(info *git.GitRepositoryInfo, credentials string) string {
+func createBranchSource(info *gits.GitRepositoryInfo, credentials string) string {
 	credXml := ""
 	if credentials != "" {
 		credXml = `		  <credentialsId>` + credentials + `</credentialsId>
@@ -71,7 +71,7 @@ func createBranchSource(info *git.GitRepositoryInfo, credentials string) string 
 `
 }
 
-func CreateMultiBranchProjectXml(info *git.GitRepositoryInfo, credentials string) string {
+func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, credentials string) string {
 	return `<?xml version='1.0' encoding='UTF-8'?>
 <org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch@2.16">
   <actions/>

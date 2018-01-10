@@ -9,24 +9,90 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/git"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	neturl "net/url"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"path/filepath"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"os/exec"
+)
+
+const (
+	maximumNewDirectoryAttempts = 1000
+
+	DefaultWritePermissions = 0760
+
+	defaultGitIgnoreFile = `
+.project
+.classpath
+.idea
+.cache
+.DS_Store
+*.im?
+target
+work
+`
+
+	// TODO replace with the jx-pipelines-plugin version when its available
+	defaultJenkinsfile = `
+pipeline {
+  agent {
+    label "jenkins-maven"
+  }
+
+  stages {
+
+    stage('Build Release') {
+      steps {
+        container('maven') {
+          sh "mvn versions:set -DnewVersion=\$(jx-release-version)"
+        }
+        dir ('./helm/spring-boot-web-example') {
+          container('maven') {
+            // until kubernetes plugin supports init containers https://github.com/jenkinsci/kubernetes-plugin/pull/229/
+            sh 'cp /root/netrc/.netrc ~/.netrc'
+
+            sh "make tag"
+          }
+        }
+        container('maven') {
+          sh "mvn clean deploy fabric8:build fabric8:push -Ddocker.push.registry=$JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT"
+        }
+      }
+    }
+    stage('Deploy Staging') {
+
+      steps {
+        dir ('./helm/spring-boot-web-example') {
+          container('maven') {
+            sh 'make release'
+            sh 'helm install . --namespace staging --name example-release'
+            sh 'exposecontroller --namespace staging --http' // until we switch to git environments where helm hooks will expose services
+          }
+        }
+      }
+    }
+  }
+}
+`
 )
 
 type ImportOptions struct {
 	CommonOptions
+
+	RepoURL string
 
 	Dir          string
 	Organisation string
 	Repository   string
 	Credentials  string
 
-	Jenkins *gojenkins.Jenkins
+	Jenkins    *gojenkins.Jenkins
+	GitConfDir string
 }
 
 var (
@@ -43,13 +109,10 @@ var (
 		jx import
 
 		# Import a different folder
-		jx import --dir /foo/bar
+		jx import /foo/bar
 
-		# Import a git repository
-		jx import https://github.com/jenkins-x/spring-boot-web-example.git
-
-		# Import a github repository
-		jx import jenkins-x/spring-boot-web-example`)
+		# Import a git repository from a URL
+		jx import -repo https://github.com/jenkins-x/spring-boot-web-example.git`)
 )
 
 func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -61,8 +124,8 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 		},
 	}
 	cmd := &cobra.Command{
-		Use:   "import",
-		Short: "Imports a local project into Jenkins",
+		Use:     "import",
+		Short:   "Imports a local project into Jenkins",
 		Long:    import_long,
 		Example: import_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -72,7 +135,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The source directory to import. If not specified and no arguments supplied then assumes the current directory")
+	cmd.Flags().StringVarP(&options.RepoURL, "url", "u", "", "The git clone URL to clone into the current directory and then import")
 	cmd.Flags().StringVarP(&options.Organisation, "org", "o", "", "Specify the git provider organisation to import the project into (if it is not already in one)")
 	cmd.Flags().StringVarP(&options.Organisation, "name", "n", "", "Specify the git repository name to import the project into (if it is not already in one)")
 	cmd.Flags().StringVarP(&options.Credentials, "credentials", "c", "jenkins-x-github", "The Jenkins credentials name used by the job")
@@ -87,35 +150,242 @@ func (o *ImportOptions) Run() error {
 	}
 	o.Jenkins = jenkins
 
-	args := o.Args
-	if len(args) == 0 {
-		if o.Dir != "" {
-			return o.ImportDirectory(o.Dir)
-		}
+	if o.Dir == "" {
 		dir, err := os.Getwd()
 		if err != nil {
 			return err
 		}
-		return o.ImportDirectory(dir)
+		o.Dir = dir
 	}
-	for _, arg := range args {
-		err = o.Import(arg)
+	args := o.Args
+	if len(args) > 0 {
+		o.Dir = args[0]
+	}
+
+	if o.RepoURL != "" {
+		err = o.CloneRepository()
 		if err != nil {
-			return fmt.Errorf("Failed to import %s due to %s", arg, err)
+			return err
+		}
+	} else {
+		err = o.DiscoverGit()
+		if err != nil {
+			return err
+		}
+
+		if o.RepoURL == "" {
+			err = o.DiscoverRemoteGitURL()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	err = o.DraftCreate()
+	if err != nil {
+	  return err
+	}
+	
+	err = o.DefaultJenkinsfile()
+	if err != nil {
+	  return err
+	}
+
+	if o.RepoURL == "" {
+		err = o.CreateNewRemoteRepository()
+		if err != nil {
+			return err
+		}
+	} else {
+		err = gits.GitPush(o.Dir)
+		if err != nil {
+			return err
+		}
+	}
+	return o.DoImport()
+}
+
+func (o *ImportOptions) DraftCreate() error {
+	args := []string{"create"}
+
+	// TODO this is a workaround of this draft issue:
+	// https://github.com/Azure/draft/issues/476
+	dir := o.Dir
+	pomName := filepath.Join(dir, "pom.xml")
+	exists, err := util.FileExists(pomName)
+	if err != nil {
+	  return err
+	}
+	if exists {
+		args = []string{"create", "--pack=github.com/jenkins-x/draft-repo/packs/java"}
+	}
+	e := exec.Command("draft", args...)
+	e.Dir = dir
+	e.Stdout = os.Stdout
+	e.Stderr = os.Stderr
+	err = e.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to run draft create in %s due to %s", dir, err)
+	}
+	err = gits.GitAdd(dir, "*")
+	if err != nil {
+	  return err
+	}
+	err = gits.GitCommit(dir, "Draft create")
+	if err != nil {
+	  return err
+	}
+	return nil
+}
+
+func (o *ImportOptions) DefaultJenkinsfile() error {
+	dir := o.Dir
+	name := filepath.Join(dir, "Jenkinsfile")
+	exists, err := util.FileExists(name)
+	if err != nil {
+	  return err
+	}
+	if exists {
+		return nil
+	}
+	data := []byte(defaultJenkinsfile)
+	err = ioutil.WriteFile(name, data, DefaultWritePermissions)
+	if err != nil {
+		return fmt.Errorf("Failed to write %s due to %s", name, err)
+	}
+	err = gits.GitAdd(dir, "Jenkinsfile")
+	if err != nil {
+	  return err
+	}
+	err = gits.GitCommit(dir, "Added default Jenkinsfile pipeline")
+	if err != nil {
+	  return err
+	}
+	return nil
+}
+
+func (o *ImportOptions) CreateNewRemoteRepository() error {
+	o.Printf("Lets create a new remote git repository on github")
+	return nil
+}
+
+func (o *ImportOptions) CloneRepository() error {
+	url := o.RepoURL
+	if url == "" {
+		return fmt.Errorf("No git repository URL defined!")
+	}
+	gitInfo, err := gits.ParseGitURL(url)
+	if err != nil {
+		return fmt.Errorf("Failed to parse git URL %s due to: %s", url, err)
+	}
+	cloneDir, err := util.CreateUniqueDirectory(o.Dir, gitInfo.Name, maximumNewDirectoryAttempts)
+	if err != nil {
+		return err
+	}
+	err = gits.GitClone(url, cloneDir)
+	if err != nil {
+		return err
+	}
+	o.Dir = cloneDir
+	return nil
+}
+
+// DiscoverGit checks if there is a git clone or prompts the user to import it
+func (o *ImportOptions) DiscoverGit() error {
+	root, gitConf, err := gits.FindGitConfigDir(o.Dir)
+	if err != nil {
+		return err
+	}
+	if root != "" {
+		o.Dir = root
+		o.GitConfDir = gitConf
+		return nil
+	}
+
+	dir := o.Dir
+	if dir == "" {
+		return fmt.Errorf("No directory specified!")
+	}
+
+	// lets prompt the user to initiialse the git repository
+	o.Printf("The directory %s is not yet using git\n", dir)
+	flag := false
+	prompt := &survey.Confirm{
+	    Message: "Would you like to initialise git now?",
+	}
+	err = survey.AskOne(prompt, &flag, nil)
+	if err != nil {
+	  return err
+	}
+	if !flag {
+		return fmt.Errorf("Please initialise git yourself then try again")
+	}
+
+	err = gits.GitInit(dir)
+	if err != nil {
+	  return err
+	}
+	o.GitConfDir = filepath.Join(dir, ".git/config")
+	err = o.DefaultGitIgnore()
+	if err != nil {
+	  return err
+	}
+	err = gits.GitAdd(dir, ".gitignore")
+	if err != nil {
+	  return err
+	}
+	err = gits.GitAdd(dir, "*")
+	if err != nil {
+	  return err
+	}
+
+	err = gits.GitStatus(dir)
+	if err != nil {
+	  return err
+	}
+
+	message := ""
+	messagePrompt := &survey.Input{
+	    Message: "Commit message: ",
+	    Default: "Initial import",
+	}
+	err = survey.AskOne(messagePrompt, &message, nil)
+	if err != nil {
+	  return err
+	}
+	err = gits.GitCommit(dir, message)
+	if err != nil {
+	  return err
+	}
+	o.Printf("\nGit repository created\n")
+	return nil
+}
+
+
+// DiscoverGit checks if there is a git clone or prompts the user to import it
+func (o *ImportOptions) DefaultGitIgnore() error {
+	name := filepath.Join(o.Dir, ".gitignore")
+	exists, err := util.FileExists(name)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		data := []byte(defaultGitIgnoreFile)
+		err = ioutil.WriteFile(name, data, DefaultWritePermissions)
+		if err != nil {
+			return fmt.Errorf("Failed to write %s due to %s", name, err)
 		}
 	}
 	return nil
 }
 
-// ImportDirectory finds the git url by looking in the given directory
+
+// DiscoverRemoteGitURL finds the git url by looking in the directory
 // and looking for a .git/config file
-func (o *ImportOptions) ImportDirectory(dir string) error {
-	root, gitConf, err := git.FindGitConfigDir(dir)
-	if err != nil {
-		return err
-	}
-	if root == "" {
-		return fmt.Errorf("TODO support non-cloned git repos!")
+func (o *ImportOptions) DiscoverRemoteGitURL() error {
+	gitConf := o.GitConfDir
+	if gitConf == "" {
+		return fmt.Errorf("No GitConfDir defined!")
 	}
 	cfg := gitcfg.NewConfig()
 	data, err := ioutil.ReadFile(gitConf)
@@ -129,33 +399,33 @@ func (o *ImportOptions) ImportDirectory(dir string) error {
 	}
 	remotes := cfg.Remotes
 	if len(remotes) == 0 {
-		return fmt.Errorf("Could not find any git remotes in the local %s so please specify a git repository on the command line\n", gitConf)
+		return nil
 	}
 	url := getRemoteUrl(cfg, "upstream")
 	if url == "" {
 		url = getRemoteUrl(cfg, "origin")
 		if url == "" {
-			if len(remotes) == 1 {
-				for _, r := range remotes {
-					u := firstRemoteUrl(r)
-					if u != "" {
-						url = u
-						break
-					}
-				}
+			url, err = o.pickRemoteURL(cfg)
+			if err != nil {
+			  return err
 			}
 		}
 	}
 	if url != "" {
-		return o.Import(url)
+		o.RepoURL = url
 	}
-	return fmt.Errorf("Could not detect the git URL to import. Please try run this command again and specify a URL")
+	return nil
 }
 
-func (o *ImportOptions) Import(url string) error {
+
+func (o *ImportOptions) DoImport() error {
+	url := o.RepoURL
+	if url == "" {
+		return fmt.Errorf("No Git repository URL found!")
+	}
 	out := o.Out
 	jenk := o.Jenkins
-	gitInfo, err := git.ParseGitURL(url)
+	gitInfo, err := gits.ParseGitURL(url)
 	if err != nil {
 		return fmt.Errorf("Failed to parse git URL %s due to: %s", url, err)
 	}
@@ -199,6 +469,35 @@ func (o *ImportOptions) Import(url string) error {
 		return fmt.Errorf("Failed to trigger job %s due to %s", job.Url, err)
 	}
 	return nil
+}
+
+
+func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
+	urls := []string{}
+	if config.Remotes != nil {
+		for _, r := range config.Remotes {
+			if r.URLs != nil {
+				for _, u := range r.URLs {
+					urls = append(urls, u)
+				}
+			}
+		}
+	}
+	if len(urls) == 1 {
+		return urls[0], nil
+	}
+	url := ""
+	if len(urls) > 1 {
+		prompt := &survey.Select{
+		    Message: "Choose a remote git URL:",
+		    Options: urls,
+		}
+		err := survey.AskOne(prompt, &url, nil)
+		if err != nil {
+			return "", err
+		}
+	}
+	return url, nil
 }
 
 func firstRemoteUrl(remote *gitcfg.RemoteConfig) string {

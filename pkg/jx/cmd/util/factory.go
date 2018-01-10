@@ -12,12 +12,18 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"k8s.io/client-go/kubernetes"
+	"github.com/jenkins-x/jx/pkg/auth"
+)
+
+const (
+	jenkinsAuthConfigFile = "jenkinsAuth.yaml"
+	gitAuthConfigFile = "gitAuth.yaml"
 )
 
 type Factory interface {
 	GetJenkinsClient() (*gojenkins.Jenkins, error)
 
-	CreateJenkinsConfigService() (jenkins.JenkinsConfigService, error)
+	CreateAuthConfigService(fileName string) (auth.AuthConfigService, error)
 
 	CreateClient() (*kubernetes.Clientset, string, error)
 
@@ -49,20 +55,20 @@ func (f *factory) GetJenkinsClient() (*gojenkins.Jenkins, error) {
 			return nil, err
 		}
 	}
-	svc, err := f.CreateJenkinsConfigService()
+	svc, err := f.CreateAuthConfigService(jenkinsAuthConfigFile)
 	if err != nil {
 		return nil, err
 	}
 	return jenkins.GetJenkinsClient(url, f.Batch, &svc)
 }
 
-func (f *factory) CreateJenkinsConfigService() (jenkins.JenkinsConfigService, error) {
-	svc := jenkins.JenkinsConfigService{}
+func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigService, error) {
+	svc := auth.AuthConfigService{}
 	dir, err := ConfigDir()
 	if err != nil {
 		return svc, err
 	}
-	svc.FileName = filepath.Join(dir, "jenkins.yml")
+	svc.FileName = filepath.Join(dir, fileName)
 	return svc, nil
 }
 
