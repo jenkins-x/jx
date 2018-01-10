@@ -3,6 +3,7 @@ package gits
 import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"sort"
 )
 
 type GitProvider interface {
@@ -49,6 +50,7 @@ func PickOrganisation(provider GitProvider, userName string) (string, error) {
 			orgNames = append(orgNames, name)
 		}
 	}
+	sort.Strings(orgNames)
 	orgName := ""
 	prompt := &survey.Select{
 		Message: "Which organisation do you want to use?",

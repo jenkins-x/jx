@@ -36,3 +36,12 @@ func StringIndexes(text string, value string) []int {
 	}
 	return answer
 }
+
+func StringArrayIndex(array []string, value string) int {
+	for i, v := range array {
+		if v == value {
+			return i
+		}
+	}
+	return -1
+}
