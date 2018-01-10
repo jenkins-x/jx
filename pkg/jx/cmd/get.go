@@ -27,10 +27,10 @@ var (
 
 	get_example = templates.Examples(`
 		# List all pipeines
-		kubectl get pipeline
+		jx get pipeline
 
 		# List all URLs for services in the current namespace
-		kubectl get url
+		jx get url
 	`)
 )
 
