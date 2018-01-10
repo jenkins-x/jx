@@ -10,15 +10,15 @@ import (
 
 	neturl "net/url"
 
-	"github.com/spf13/cobra"
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
-	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"strings"
 )
 
@@ -184,12 +184,12 @@ func (o *ImportOptions) Run() error {
 
 	err = o.DraftCreate()
 	if err != nil {
-	  return err
+		return err
 	}
-	
+
 	err = o.DefaultJenkinsfile()
 	if err != nil {
-	  return err
+		return err
 	}
 
 	if o.RepoURL == "" {
@@ -215,7 +215,7 @@ func (o *ImportOptions) DraftCreate() error {
 	pomName := filepath.Join(dir, "pom.xml")
 	exists, err := util.FileExists(pomName)
 	if err != nil {
-	  return err
+		return err
 	}
 	if exists {
 		args = []string{"create", "--pack=github.com/jenkins-x/draft-repo/packs/java"}
@@ -230,11 +230,11 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 	err = gits.GitAdd(dir, "*")
 	if err != nil {
-	  return err
+		return err
 	}
 	err = gits.GitCommitIfChanges(dir, "Draft create")
 	if err != nil {
-	  return err
+		return err
 	}
 	return nil
 }
@@ -244,7 +244,7 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 	name := filepath.Join(dir, "Jenkinsfile")
 	exists, err := util.FileExists(name)
 	if err != nil {
-	  return err
+		return err
 	}
 	if exists {
 		return nil
@@ -256,11 +256,11 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 	}
 	err = gits.GitAdd(dir, "Jenkinsfile")
 	if err != nil {
-	  return err
+		return err
 	}
 	err = gits.GitCommitIfChanges(dir, "Added default Jenkinsfile pipeline")
 	if err != nil {
-	  return err
+		return err
 	}
 	return nil
 }
@@ -269,22 +269,22 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	f := o.Factory
 	authConfigSvc, err := f.CreateGitAuthConfigService()
 	if err != nil {
-	  return err
+		return err
 	}
 	config := authConfigSvc.Config()
 
 	server, err := config.PickServer("Which git provider?")
 	if err != nil {
-	  return err
+		return err
 	}
 	o.Printf("Using git provider %s\n", server.Description())
 	url := server.URL
 	userAuth, err := config.PickServerUserAuth(url, "Which user name?")
 	if err != nil {
-	  return err
+		return err
 	}
 	if userAuth.IsInvalid() {
-		tokenUrl := fmt.Sprintf("https://%s/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook", url);
+		tokenUrl := fmt.Sprintf("https://%s/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook", url)
 
 		o.Printf("To be able to create a repository on %s we need an API Token\n", server.Label())
 		o.Printf("Please click this URL %s\n\n", tokenUrl)
@@ -294,7 +294,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 		defaultUserName := ""
 		err = config.EditUserAuth(&userAuth, defaultUserName)
 		if err != nil {
-		  return err
+			return err
 		}
 
 		// TODO lets verify the auth works
@@ -313,11 +313,11 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 
 	provider, err := gits.CreateProvider(server, &userAuth)
 	if err != nil {
-	  return err
+		return err
 	}
 	org, err := gits.PickOrganisation(provider, gitUsername)
 	if err != nil {
-	  return err
+		return err
 	}
 	owner := org
 	if org == "" {
@@ -352,21 +352,21 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	privateRepo := false
 	repo, err := provider.CreateRepository(org, repoName, privateRepo)
 	if err != nil {
-	  return err
+		return err
 	}
 	o.Printf("Created repository at %s\n", repo.HTMLURL)
 	o.RepoURL = repo.CloneURL
 	pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, &userAuth)
 	if err != nil {
-	  return err
+		return err
 	}
 	err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
 	if err != nil {
-	  return err
+		return err
 	}
 	err = gits.GitCmd(dir, "push", "-u", "origin", "master")
 	if err != nil {
-	  return err
+		return err
 	}
 	o.Printf("Pushed git repository to %s\n\n", server.Description())
 	return nil
@@ -414,56 +414,55 @@ func (o *ImportOptions) DiscoverGit() error {
 	o.Printf("The directory %s is not yet using git\n", dir)
 	flag := false
 	prompt := &survey.Confirm{
-	    Message: "Would you like to initialise git now?",
-	    Default: true,
+		Message: "Would you like to initialise git now?",
+		Default: true,
 	}
 	err = survey.AskOne(prompt, &flag, nil)
 	if err != nil {
-	  return err
+		return err
 	}
 	if !flag {
 		return fmt.Errorf("Please initialise git yourself then try again")
 	}
 	err = gits.GitInit(dir)
 	if err != nil {
-	  return err
+		return err
 	}
 	o.GitConfDir = filepath.Join(dir, ".git/config")
 	err = o.DefaultGitIgnore()
 	if err != nil {
-	  return err
+		return err
 	}
 	err = gits.GitAdd(dir, ".gitignore")
 	if err != nil {
-	  return err
+		return err
 	}
 	err = gits.GitAdd(dir, "*")
 	if err != nil {
-	  return err
+		return err
 	}
 
 	err = gits.GitStatus(dir)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	message := ""
 	messagePrompt := &survey.Input{
-	    Message: "Commit message: ",
-	    Default: "Initial import",
+		Message: "Commit message: ",
+		Default: "Initial import",
 	}
 	err = survey.AskOne(messagePrompt, &message, nil)
 	if err != nil {
-	  return err
+		return err
 	}
 	err = gits.GitCommitIfChanges(dir, message)
 	if err != nil {
-	  return err
+		return err
 	}
 	o.Printf("\nGit repository created\n")
 	return nil
 }
-
 
 // DiscoverGit checks if there is a git clone or prompts the user to import it
 func (o *ImportOptions) DefaultGitIgnore() error {
@@ -481,7 +480,6 @@ func (o *ImportOptions) DefaultGitIgnore() error {
 	}
 	return nil
 }
-
 
 // DiscoverRemoteGitURL finds the git url by looking in the directory
 // and looking for a .git/config file
@@ -510,7 +508,7 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 		if url == "" {
 			url, err = o.pickRemoteURL(cfg)
 			if err != nil {
-			  return err
+				return err
 			}
 		}
 	}
@@ -519,7 +517,6 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 	}
 	return nil
 }
-
 
 func (o *ImportOptions) DoImport() error {
 	url := o.RepoURL
@@ -574,7 +571,6 @@ func (o *ImportOptions) DoImport() error {
 	return nil
 }
 
-
 func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 	urls := []string{}
 	if config.Remotes != nil {
@@ -592,8 +588,8 @@ func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 	url := ""
 	if len(urls) > 1 {
 		prompt := &survey.Select{
-		    Message: "Choose a remote git URL:",
-		    Options: urls,
+			Message: "Choose a remote git URL:",
+			Options: urls,
 		}
 		err := survey.AskOne(prompt, &url, nil)
 		if err != nil {

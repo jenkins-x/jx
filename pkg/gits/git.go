@@ -2,14 +2,14 @@ package gits
 
 import (
 	"fmt"
-	"os/exec"
 	"os"
+	"os/exec"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/util"
-	"strings"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/util"
 	"net/url"
+	"strings"
 )
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -36,10 +36,10 @@ func FindGitConfigDir(dir string) (string, string, error) {
 // GitClone clones the given git URL into the given directory
 func GitClone(url string, directory string) error {
 	/*
-	return git.PlainClone(directory, false, &git.CloneOptions{
-		URL:               url,
-		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
-	})
+		return git.PlainClone(directory, false, &git.CloneOptions{
+			URL:               url,
+			RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		})
 	*/
 	e := exec.Command("git", "clone", url, directory)
 	e.Stdout = os.Stdout

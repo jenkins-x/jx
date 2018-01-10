@@ -3,8 +3,8 @@ package kube
 import (
 	"fmt"
 
-	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
@@ -48,7 +48,6 @@ func CurrentContext(config *api.Config) *api.Context {
 	}
 	return nil
 }
-
 
 // CurrentServer returns the current context's server
 func CurrentServer(config *api.Config) string {
