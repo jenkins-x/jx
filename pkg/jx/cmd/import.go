@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"path/filepath"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"os/exec"
 )
 
 const (
@@ -34,6 +35,49 @@ const (
 *.im?
 target
 work
+`
+
+	// TODO replace with the jx-pipelines-plugin version when its available
+	defaultJenkinsfile = `
+pipeline {
+  agent {
+    label "jenkins-maven"
+  }
+
+  stages {
+
+    stage('Build Release') {
+      steps {
+        container('maven') {
+          sh "mvn versions:set -DnewVersion=\$(jx-release-version)"
+        }
+        dir ('./helm/spring-boot-web-example') {
+          container('maven') {
+            // until kubernetes plugin supports init containers https://github.com/jenkinsci/kubernetes-plugin/pull/229/
+            sh 'cp /root/netrc/.netrc ~/.netrc'
+
+            sh "make tag"
+          }
+        }
+        container('maven') {
+          sh "mvn clean deploy fabric8:build fabric8:push -Ddocker.push.registry=$JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT"
+        }
+      }
+    }
+    stage('Deploy Staging') {
+
+      steps {
+        dir ('./helm/spring-boot-web-example') {
+          container('maven') {
+            sh 'make release'
+            sh 'helm install . --namespace staging --name example-release'
+            sh 'exposecontroller --namespace staging --http' // until we switch to git environments where helm hooks will expose services
+          }
+        }
+      }
+    }
+  }
+}
 `
 )
 
@@ -136,12 +180,92 @@ func (o *ImportOptions) Run() error {
 			}
 		}
 	}
-	for _, arg := range args {
-		err = o.Import(arg)
+
+	err = o.DraftCreate()
+	if err != nil {
+	  return err
+	}
+	
+	err = o.DefaultJenkinsfile()
+	if err != nil {
+	  return err
+	}
+
+	if o.RepoURL == "" {
+		err = o.CreateNewRemoteRepository()
 		if err != nil {
-			return fmt.Errorf("Failed to import %s due to %s", arg, err)
+			return err
+		}
+	} else {
+		err = gits.GitPush(o.Dir)
+		if err != nil {
+			return err
 		}
 	}
+	return o.DoImport()
+}
+
+func (o *ImportOptions) DraftCreate() error {
+	args := []string{"create"}
+
+	// TODO this is a workaround of this draft issue:
+	// https://github.com/Azure/draft/issues/476
+	dir := o.Dir
+	pomName := filepath.Join(dir, "pom.xml")
+	exists, err := util.FileExists(pomName)
+	if err != nil {
+	  return err
+	}
+	if exists {
+		args = []string{"create", "--pack=github.com/jenkins-x/draft-repo/packs/java"}
+	}
+	e := exec.Command("draft", args...)
+	e.Dir = dir
+	e.Stdout = os.Stdout
+	e.Stderr = os.Stderr
+	err = e.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to run draft create in %s due to %s", dir, err)
+	}
+	err = gits.GitAdd(dir, "*")
+	if err != nil {
+	  return err
+	}
+	err = gits.GitCommit(dir, "Draft create")
+	if err != nil {
+	  return err
+	}
+	return nil
+}
+
+func (o *ImportOptions) DefaultJenkinsfile() error {
+	dir := o.Dir
+	name := filepath.Join(dir, "Jenkinsfile")
+	exists, err := util.FileExists(name)
+	if err != nil {
+	  return err
+	}
+	if exists {
+		return nil
+	}
+	data := []byte(defaultJenkinsfile)
+	err = ioutil.WriteFile(name, data, DefaultWritePermissions)
+	if err != nil {
+		return fmt.Errorf("Failed to write %s due to %s", name, err)
+	}
+	err = gits.GitAdd(dir, "Jenkinsfile")
+	if err != nil {
+	  return err
+	}
+	err = gits.GitCommit(dir, "Added default Jenkinsfile pipeline")
+	if err != nil {
+	  return err
+	}
+	return nil
+}
+
+func (o *ImportOptions) CreateNewRemoteRepository() error {
+	o.Printf("Lets create a new remote git repository on github")
 	return nil
 }
 
@@ -201,7 +325,7 @@ func (o *ImportOptions) DiscoverGit() error {
 	if err != nil {
 	  return err
 	}
-	o.GitConfDir = filepath.Join(dir, ".git.conf")
+	o.GitConfDir = filepath.Join(dir, ".git/config")
 	err = o.DefaultGitIgnore()
 	if err != nil {
 	  return err
@@ -229,7 +353,12 @@ func (o *ImportOptions) DiscoverGit() error {
 	if err != nil {
 	  return err
 	}
-	return gits.GitCommit(dir, message)
+	err = gits.GitCommit(dir, message)
+	if err != nil {
+	  return err
+	}
+	o.Printf("\nGit repository created\n")
+	return nil
 }
 
 
@@ -270,20 +399,15 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 	}
 	remotes := cfg.Remotes
 	if len(remotes) == 0 {
-		return fmt.Errorf("Could not find any git remotes in the local %s so please specify a git repository on the command line\n", gitConf)
+		return nil
 	}
 	url := getRemoteUrl(cfg, "upstream")
 	if url == "" {
 		url = getRemoteUrl(cfg, "origin")
 		if url == "" {
-			if len(remotes) == 1 {
-				for _, r := range remotes {
-					u := firstRemoteUrl(r)
-					if u != "" {
-						url = u
-						break
-					}
-				}
+			url, err = o.pickRemoteURL(cfg)
+			if err != nil {
+			  return err
 			}
 		}
 	}
@@ -293,7 +417,12 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 	return nil
 }
 
-func (o *ImportOptions) Import(url string) error {
+
+func (o *ImportOptions) DoImport() error {
+	url := o.RepoURL
+	if url == "" {
+		return fmt.Errorf("No Git repository URL found!")
+	}
 	out := o.Out
 	jenk := o.Jenkins
 	gitInfo, err := gits.ParseGitURL(url)
@@ -340,6 +469,35 @@ func (o *ImportOptions) Import(url string) error {
 		return fmt.Errorf("Failed to trigger job %s due to %s", job.Url, err)
 	}
 	return nil
+}
+
+
+func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
+	urls := []string{}
+	if config.Remotes != nil {
+		for _, r := range config.Remotes {
+			if r.URLs != nil {
+				for _, u := range r.URLs {
+					urls = append(urls, u)
+				}
+			}
+		}
+	}
+	if len(urls) == 1 {
+		return urls[0], nil
+	}
+	url := ""
+	if len(urls) > 1 {
+		prompt := &survey.Select{
+		    Message: "Choose a remote git URL:",
+		    Options: urls,
+		}
+		err := survey.AskOne(prompt, &url, nil)
+		if err != nil {
+			return "", err
+		}
+	}
+	return url, nil
 }
 
 func firstRemoteUrl(remote *gitcfg.RemoteConfig) string {

@@ -72,6 +72,18 @@ func GitStatus(dir string) error {
 	return nil
 }
 
+func GitPush(dir string) error {
+	e := exec.Command("git", "push")
+	e.Dir = dir
+	e.Stdout = os.Stdout
+	e.Stderr = os.Stderr
+	err := e.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to invoke git push in %s due to %s", dir, err)
+	}
+	return nil
+}
+
 func GitAdd(dir string, args ...string) error {
 	a := append([]string{"add"}, args...)
 	e := exec.Command("git", a...)
