@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/util"
+	"strings"
 )
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -96,6 +97,31 @@ func GitAdd(dir string, args ...string) error {
 	}
 	return nil
 }
+
+func HasChanges(dir string) (bool, error) {
+	e := exec.Command("git", "status", "-s")
+	e.Dir = dir
+	data, err := e.Output()
+	if err != nil {
+	  return false, err
+	}
+	text := string(data)
+	text = strings.TrimSpace(text)
+	return len(text) > 0, nil
+}
+
+
+func GitCommitIfChanges(dir string, message string) error {
+	changed, err := HasChanges(dir)
+	if err != nil {
+	  return err
+	}
+	if !changed {
+		return nil
+	}
+	return GitCommit(dir, message)
+}
+
 
 func GitCommit(dir string, message string) error {
 	e := exec.Command("git", "commit", "-m", message)

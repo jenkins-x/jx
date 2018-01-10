@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"os/exec"
+	"github.com/jenkins-x/jx/pkg/auth"
 )
 
 const (
@@ -231,7 +232,7 @@ func (o *ImportOptions) DraftCreate() error {
 	if err != nil {
 	  return err
 	}
-	err = gits.GitCommit(dir, "Draft create")
+	err = gits.GitCommitIfChanges(dir, "Draft create")
 	if err != nil {
 	  return err
 	}
@@ -257,7 +258,7 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 	if err != nil {
 	  return err
 	}
-	err = gits.GitCommit(dir, "Added default Jenkinsfile pipeline")
+	err = gits.GitCommitIfChanges(dir, "Added default Jenkinsfile pipeline")
 	if err != nil {
 	  return err
 	}
@@ -265,7 +266,53 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 }
 
 func (o *ImportOptions) CreateNewRemoteRepository() error {
-	o.Printf("Lets create a new remote git repository on github")
+	o.Printf("\nLets create a new remote git repository on github\n")
+	f := o.Factory
+	authConfigSvc, err := f.CreateAuthConfigService(cmdutil.GitAuthConfigFile)
+	if err != nil {
+	  return err
+	}
+	config, err := authConfigSvc.LoadConfig()
+	if err != nil {
+	  return err
+	}
+	// lets add a default if there's none defined yet
+	if len(config.Servers) == 0 {
+		config.Servers = []auth.AuthServer{
+			{
+				URL:   "github.com",
+				Users: []auth.UserAuth{},
+			},
+		}
+	}
+	url, err := config.PickServer("Which git provider?")
+	if err != nil {
+	  return err
+	}
+	userAuth, err := config.PickServerUserAuth(url, "Which user name?")
+	if err != nil {
+	  return err
+	}
+	if userAuth.IsInvalid() {
+		// TODO could we guess this based on the users ~/.git for github?
+		defaultUserName := ""
+		err = config.EditUserAuth(&userAuth, defaultUserName)
+		if err != nil {
+		  return err
+		}
+
+		// TODO lets verify the auth works
+
+		err = authConfigSvc.SaveUserAuth(url, &userAuth)
+		if err != nil {
+			return fmt.Errorf("Failed to store git auth configuration %s", err)
+		}
+		if userAuth.IsInvalid() {
+			return fmt.Errorf("You did not properly define the user authentication!")
+		}
+	}
+
+	o.Printf("\n\nAbout to create a repository on server %s with user %s\n", url, userAuth.Username)
 	return nil
 }
 
@@ -353,7 +400,7 @@ func (o *ImportOptions) DiscoverGit() error {
 	if err != nil {
 	  return err
 	}
-	err = gits.GitCommit(dir, message)
+	err = gits.GitCommitIfChanges(dir, message)
 	if err != nil {
 	  return err
 	}

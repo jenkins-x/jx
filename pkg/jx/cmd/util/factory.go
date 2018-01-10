@@ -17,7 +17,7 @@ import (
 
 const (
 	jenkinsAuthConfigFile = "jenkinsAuth.yaml"
-	gitAuthConfigFile = "gitAuth.yaml"
+	GitAuthConfigFile = "gitAuth.yaml"
 )
 
 type Factory interface {
