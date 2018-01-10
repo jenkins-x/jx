@@ -25,6 +25,8 @@ type Factory interface {
 
 	CreateAuthConfigService(fileName string) (auth.AuthConfigService, error)
 
+	CreateGitAuthConfigService() (auth.AuthConfigService, error)
+
 	CreateClient() (*kubernetes.Clientset, string, error)
 
 	CreateTable(out io.Writer) table.Table
@@ -60,6 +62,29 @@ func (f *factory) GetJenkinsClient() (*gojenkins.Jenkins, error) {
 		return nil, err
 	}
 	return jenkins.GetJenkinsClient(url, f.Batch, &svc)
+}
+
+func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
+	if err != nil {
+	  return authConfigSvc, err
+	}
+	config, err := authConfigSvc.LoadConfig()
+	if err != nil {
+	  return authConfigSvc, err
+	}
+
+	// lets add a default if there's none defined yet
+	if len(config.Servers) == 0 {
+		config.Servers = []auth.AuthServer{
+			{
+				Name: "GitHub",
+				URL:   "github.com",
+				Users: []auth.UserAuth{},
+			},
+		}
+	}
+	return authConfigSvc, nil
 }
 
 func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigService, error) {

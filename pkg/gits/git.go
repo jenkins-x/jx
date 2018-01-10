@@ -134,3 +134,5 @@ func GitCommit(dir string, message string) error {
 	}
 	return nil
 }
+
+

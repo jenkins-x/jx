@@ -19,7 +19,6 @@ import (
 	"path/filepath"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"os/exec"
-	"github.com/jenkins-x/jx/pkg/auth"
 )
 
 const (
@@ -266,34 +265,31 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 }
 
 func (o *ImportOptions) CreateNewRemoteRepository() error {
-	o.Printf("\nLets create a new remote git repository on github\n")
+	o.Printf("\nLets create a new remote git repository\n")
 	f := o.Factory
-	authConfigSvc, err := f.CreateAuthConfigService(cmdutil.GitAuthConfigFile)
+	authConfigSvc, err := f.CreateGitAuthConfigService()
 	if err != nil {
 	  return err
 	}
-	config, err := authConfigSvc.LoadConfig()
+	config := authConfigSvc.Config()
+
+	server, err := config.PickServer("Which git provider?")
 	if err != nil {
 	  return err
 	}
-	// lets add a default if there's none defined yet
-	if len(config.Servers) == 0 {
-		config.Servers = []auth.AuthServer{
-			{
-				URL:   "github.com",
-				Users: []auth.UserAuth{},
-			},
-		}
-	}
-	url, err := config.PickServer("Which git provider?")
-	if err != nil {
-	  return err
-	}
+	o.Printf("Using git provider %s\n", server.Description())
+	url := server.URL
 	userAuth, err := config.PickServerUserAuth(url, "Which user name?")
 	if err != nil {
 	  return err
 	}
 	if userAuth.IsInvalid() {
+		tokenUrl := fmt.Sprintf("https://%s/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook", url);
+
+		o.Printf("To be able to create a repository on %s we need an API Token\n", server.Label())
+		o.Printf("Please click this URL %s\n\n", tokenUrl)
+		o.Printf("Then COPY the token and enter in into the form below:\n\n")
+
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
 		err = config.EditUserAuth(&userAuth, defaultUserName)
@@ -312,7 +308,32 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 		}
 	}
 
-	o.Printf("\n\nAbout to create a repository on server %s with user %s\n", url, userAuth.Username)
+	gitUsername := userAuth.Username
+	o.Printf("\n\nAbout to create a repository on server %s with user %s\n", url, gitUsername)
+
+	provider, err := gits.CreateProvider(server, &userAuth)
+	if err != nil {
+	  return err
+	}
+	org, err := gits.PickOrganisation(provider, gitUsername)
+	if err != nil {
+	  return err
+	}
+	repoName := ""
+	defaultRepoName := "TODO"
+	prompt := &survey.Input{
+		Message: "Enter the new repsitory name: ",
+		Default: defaultRepoName,
+	}
+	err = survey.AskOne(prompt, &repoName, nil)
+	if err != nil {
+		return err
+	}
+	if repoName == "" {
+		return fmt.Errorf("No repository name specified!")
+	}
+	o.Printf("\n\nCreating repository %s/%s\n", org, repoName)
+	//provider.CreateRepository(org, repoName)
 	return nil
 }
 

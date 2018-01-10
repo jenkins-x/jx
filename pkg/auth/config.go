@@ -16,6 +16,7 @@ const (
 type AuthServer struct {
 	URL   string
 	Users []UserAuth
+	Name  string
 
 	CurrentUser string
 }
@@ -31,6 +32,20 @@ type AuthConfig struct {
 
 	DefaultUsername string
 	CurrentServer   string
+}
+
+func (s *AuthServer) Label() string {
+	if s.Name != "" {
+		return s.Name
+	}
+	return s.URL
+}
+
+func (s *AuthServer) Description() string {
+	if s.Name != "" {
+		return s.Name + " at " + s.URL
+	}
+	return s.URL
 }
 
 func (c *AuthConfig) FindUserAuths(serverURL string) []UserAuth {
@@ -83,8 +98,8 @@ func (c *AuthConfig) SetUserAuth(url string, auth UserAuth) {
 		}
 	}
 	c.Servers = append(c.Servers, AuthServer{
-		URL:   url,
-		Users: []UserAuth{auth},
+		URL:         url,
+		Users:       []UserAuth{auth},
 		CurrentUser: username,
 	})
 }
@@ -145,16 +160,16 @@ func (a *UserAuth) IsInvalid() bool {
 	return a.BearerToken == "" && (a.ApiToken == "" || a.Username == "")
 }
 
-func (c *AuthConfig) PickServer(message string) (string, error) {
+func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
 	if c.Servers == nil || len(c.Servers) == 0 {
-		return "", fmt.Errorf("No servers available!")
+		return nil, fmt.Errorf("No servers available!")
+	}
+	if len(c.Servers) == 1 {
+		return &c.Servers[0], nil
 	}
 	urls := []string{}
 	for _, s := range c.Servers {
 		urls = append(urls, s.URL)
-	}
-	if len(urls) == 1 {
-		return urls[0], nil
 	}
 	url := ""
 	if len(urls) > 1 {
@@ -164,10 +179,15 @@ func (c *AuthConfig) PickServer(message string) (string, error) {
 		}
 		err := survey.AskOne(prompt, &url, nil)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
-	return url, nil
+	for _, s := range c.Servers {
+		if s.URL == url {
+			return &s, nil
+		}
+	}
+	return nil, fmt.Errorf("Could not find server for URL %s", url)
 }
 
 func (c *AuthConfig) PickServerUserAuth(url string, message string) (UserAuth, error) {
