@@ -12,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/spring"
 )
 
-
 var (
 	create_spring_long = templates.LongDesc(`
 		Creates a new Spring Boot application on the file system.
@@ -29,16 +28,16 @@ var (
 		jx create spring -d web,actuator
 	`)
 )
+
 // CreateSpringOptions the options for the create spring command
 type CreateSpringOptions struct {
 	CreateOptions
 
 	// spring boot
-	Advanced bool
+	Advanced   bool
 	SpringForm spring.SpringBootForm
-	OutDir string
+	OutDir     string
 }
-
 
 // NewCmdCreateSpring creates a command object for the "create" command
 func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -104,7 +103,7 @@ func (o *CreateSpringOptions) Run() error {
 
 	outDir, err := data.CreateProject(dir)
 	if err != nil {
-	  return err
+		return err
 	}
 	o.Printf("Created spring boot project at %s\n", outDir)
 
