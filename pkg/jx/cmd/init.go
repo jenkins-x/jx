@@ -260,24 +260,24 @@ func (o *InitOptions) installKubectl() error {
 func (o *InitOptions) installHyperkit() error {
 	err := o.runCommand("curl", "-LO", "https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-hyperkit")
 	if err != nil {
-	  return err
+		return err
 	}
 
 	err = o.runCommand("chmod", "+x", "docker-machine-driver-hyperkit")
 	if err != nil {
-	  return err
+		return err
 	}
 
 	log.Warn("Installing hyperkit does require sudo to perform some actions, for more details see https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#hyperkit-driver")
 
 	err = o.runCommand("sudo", "mv", "docker-machine-driver-hyperkit", "/usr/local/bin/")
 	if err != nil {
-	  return err
+		return err
 	}
 
 	err = o.runCommand("sudo", "chown", "root:wheel", "/usr/local/bin/docker-machine-driver-hyperkit")
 	if err != nil {
-	  return err
+		return err
 	}
 
 	return o.runCommand("sudo", "chmod", "u+s", "/usr/local/bin/docker-machine-driver-hyperkit")
@@ -290,7 +290,7 @@ func (o *InitOptions) installHelm() error {
 func (o *InitOptions) installDraft() error {
 	err := o.runCommand("brew", "tap", "azure/draft")
 	if err != nil {
-	  return err
+		return err
 	}
 
 	return o.runCommand("brew", "install", "draft")
@@ -303,7 +303,7 @@ func (o *InitOptions) installMinikube() error {
 func (o *InitOptions) installGcloud() error {
 	err := o.runCommand("brew", "tap", "caskroom/cask")
 	if err != nil {
-	  return err
+		return err
 	}
 
 	return o.runCommand("brew", "install", "google-cloud-sdk")

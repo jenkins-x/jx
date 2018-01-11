@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"io"
 	"github.com/spf13/cobra"
+	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -40,9 +40,9 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	}
 
 	cmd := &cobra.Command{
-		Use:     "create",
-		Short:   "Create a new resource",
-		Long:    create_long,
+		Use:   "create",
+		Short: "Create a new resource",
+		Long:  create_long,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -67,7 +67,7 @@ func (o *CreateOptions) DoImport(outDir string) error {
 
 	importOptions := &ImportOptions{
 		CommonOptions: o.CommonOptions,
-		Dir: outDir,
+		Dir:           outDir,
 	}
 	return importOptions.Run()
 }

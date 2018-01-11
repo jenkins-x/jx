@@ -12,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/spring"
 )
 
-
 var (
 	create_spring_long = templates.LongDesc(`
 		Creates a new Spring Boot application on the file system.
@@ -29,16 +28,16 @@ var (
 		jx create spring -d web,actuator
 	`)
 )
+
 // CreateSpringOptions the options for the create spring command
 type CreateSpringOptions struct {
 	CreateOptions
 
 	// spring boot
-	Advanced bool
+	Advanced   bool
 	SpringForm spring.SpringBootForm
-	OutDir string
+	OutDir     string
 }
-
 
 // NewCmdCreateSpring creates a command object for the "create" command
 func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -68,13 +67,14 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 	cmd.Flags().BoolVarP(&options.DisableImport, "no-import", "c", false, "Disable import after the creation")
 
 	// spring flags
-	cmd.Flags().StringArrayVarP(&options.SpringForm.DependencyKinds, "kind", "k", spring.DefaultDependencyKinds, "Default dependency kinds to choose from")
-	cmd.Flags().StringArrayVarP(&options.SpringForm.Dependencies, "dep", "d", []string{}, "Spring Boot dependencies")
-	cmd.Flags().StringVarP(&options.SpringForm.GroupId, "group", "g", "", "Group ID to generate")
-	cmd.Flags().StringVarP(&options.SpringForm.ArtifactId, "artifact", "a", "", "Artifact ID to generate")
-	cmd.Flags().StringVarP(&options.SpringForm.Language, "language", "l", "", "Language to generate")
-	cmd.Flags().StringVarP(&options.SpringForm.BootVersion, "boot-version", "b", "", "Spring Boot version")
-	cmd.Flags().StringVarP(&options.SpringForm.Packaging, "packaging", "p", "", "Packaging")
+	cmd.Flags().StringArrayVarP(&options.SpringForm.DependencyKinds, spring.OptionDependencyKind, "k", spring.DefaultDependencyKinds, "Default dependency kinds to choose from")
+	cmd.Flags().StringArrayVarP(&options.SpringForm.Dependencies, spring.OptionDependency, "d", []string{}, "Spring Boot dependencies")
+	cmd.Flags().StringVarP(&options.SpringForm.GroupId, spring.OptionGroupId, "g", "", "Group ID to generate")
+	cmd.Flags().StringVarP(&options.SpringForm.ArtifactId, spring.OptionArtifactId, "a", "", "Artifact ID to generate")
+	cmd.Flags().StringVarP(&options.SpringForm.Language, spring.OptionLanguage, "l", "", "Language to generate")
+	cmd.Flags().StringVarP(&options.SpringForm.BootVersion, spring.OptionBootVersion, "b", "", "Spring Boot version")
+	cmd.Flags().StringVarP(&options.SpringForm.JavaVersion, spring.OptionJavaVersion, "j", "", "Java version")
+	cmd.Flags().StringVarP(&options.SpringForm.Packaging, spring.OptionPackaging, "p", "", "Packaging")
 
 	cmd.Flags().StringVarP(&options.OutDir, "output-dir", "o", "", "Directory to output the project to. Defaults to the current directory")
 	return cmd
@@ -103,7 +103,7 @@ func (o *CreateSpringOptions) Run() error {
 
 	outDir, err := data.CreateProject(dir)
 	if err != nil {
-	  return err
+		return err
 	}
 	o.Printf("Created spring boot project at %s\n", outDir)
 
