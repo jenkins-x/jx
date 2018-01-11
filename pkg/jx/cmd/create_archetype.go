@@ -8,6 +8,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/maven"
+	"os"
+	"path/filepath"
 )
 
 var (
@@ -33,8 +35,11 @@ type CreateArchetypeOptions struct {
 
 	ArchetypeCatalogURL string
 
-	Filter maven.ArchetypeFilter
-	PickVersion  bool
+	Filter      maven.ArchetypeFilter
+	PickVersion bool
+	Interactive bool
+
+	Form maven.ArchetypeForm
 }
 
 // NewCmdCreateArchetype creates a command object for the "create" command
@@ -70,7 +75,13 @@ func NewCmdCreateArchetype(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 	cmd.Flags().StringVarP(&options.Filter.GroupIdFilter, "group-filter", "f", "", "Filter the Group IDs to choose from for he Archetypes")
 	cmd.Flags().StringVarP(&options.Filter.ArtifactIdFilter, "artifact", "a", "", "Either the Artifact ID or a text filter of the artifact IDs to pick from")
 	cmd.Flags().StringVarP(&options.Filter.Version, "version", "v", "", "The Version of the Archetype to use")
+
 	cmd.Flags().BoolVarP(&options.PickVersion, "pick", "p", false, "Provide a list of versions to choose from")
+	cmd.Flags().BoolVarP(&options.Interactive, "interactive", "i", false, "Allow interactive input into the maven archetype:generate command")
+
+	cmd.Flags().StringVarP(&options.Form.GroupId, "create-group", "", "", "The group ID for the new application")
+	cmd.Flags().StringVarP(&options.Form.ArtifactId, "create-artifact", "n", "", "The artifact ID for the new application")
+	cmd.Flags().StringVarP(&options.Form.Version, "create-version", "", "", "The version for the new application")
 	return cmd
 }
 
@@ -84,20 +95,49 @@ func (o *CreateArchetypeOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("Failed to load Spring Boot model %s", err)
 	}
-	err = model.CreateSurvey(&o.Filter, o.PickVersion)
+	form := &o.Form
+	err = model.CreateSurvey(&o.Filter, o.PickVersion, form)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	o.Printf("Invoking: jx create archetype -g %s -a %s -v %s\n\n", form.ArchetypeGroupId, form.ArchetypeArtifactId, form.ArchetypeVersion)
 
-	/*
-	outDir, err := data.CreateProject(dir)
+	dir := o.OutDir
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
+	o.Printf("basedir is: %s\n", dir)
+
+	args := []string{}
+	if !o.Interactive {
+		args = append(args, "-B")
+	}
+	args = append(args, "org.apache.maven.plugins:maven-archetype-plugin:"+maven.MavenArchetypePluginVersion+":generate",
+			"-DarchetypeGroupId="+form.ArchetypeGroupId,
+			"-DarchetypeArtifactId="+form.ArchetypeArtifactId,
+			"-DarchetypeVersion="+form.ArchetypeVersion,
+			"-Dbasedir="+dir)
+
+	if form.GroupId != "" {
+		args = append(args, "-DgroupId="+form.GroupId)
+	}
+	if form.ArtifactId != "" {
+		args = append(args, "-DartifactId="+form.ArtifactId)
+	}
+	if form.Version != "" {
+		args = append(args, "-Dversion="+form.Version)
+	}
+
+	err = o.runCommandInteractive(o.Interactive, "mvn", args...)
 	if err != nil {
 		return err
 	}
-	o.Printf("Created spring boot project at %s\n", outDir)
-
+	outDir := filepath.Join(dir, form.ArtifactId)
+	o.Printf("Created project at %s\n\n", outDir)
+	
 	return o.DoImport(outDir)
-	*/
 }

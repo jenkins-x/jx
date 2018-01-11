@@ -14,6 +14,10 @@ import (
 	"fmt"
 )
 
+const (
+	MavenArchetypePluginVersion = "3.0.1"
+)
+
 type ArtifactVersions struct {
 	GroupId     string
 	ArtifactId  string
@@ -42,6 +46,17 @@ type ArchetypeFilter struct {
 	GroupIdFilter    string
 	ArtifactIdFilter string
 	Version          string
+}
+
+type ArchetypeForm struct {
+	ArchetypeGroupId    string
+	ArchetypeArtifactId string
+	ArchetypeVersion    string
+
+	GroupId    string
+	ArtifactId string
+	Package    string
+	Version    string
 }
 
 func NewArchetypeModel() ArchetypeModel {
@@ -196,9 +211,7 @@ func LoadArchetypes(name string, archetypeCatalogURL string, cacheDir string) (*
 	return &model, nil
 }
 
-func (model *ArchetypeModel) CreateSurvey(data *ArchetypeFilter, pickVersion bool) error {
-	form := ArtifactData{}
-
+func (model *ArchetypeModel) CreateSurvey(data *ArchetypeFilter, pickVersion bool, form *ArchetypeForm) error {
 	groupIds := data.GroupIds
 	if len(data.GroupIds) == 0 {
 		filteredGroups := model.GroupIDs(data.GroupIdFilter)
@@ -211,71 +224,100 @@ func (model *ArchetypeModel) CreateSurvey(data *ArchetypeFilter, pickVersion boo
 			Message: "Group ID:",
 			Options: filteredGroups,
 		}
-		err := survey.AskOne(prompt, &form.GroupId, survey.Required)
+		err := survey.AskOne(prompt, &form.ArchetypeGroupId, survey.Required)
 		if err != nil {
 			return err
 		}
-		artifactsWithoutFilter := model.ArtifactIDs(form.GroupId, "")
+		artifactsWithoutFilter := model.ArtifactIDs(form.ArchetypeGroupId, "")
 		if len(artifactsWithoutFilter) == 0 {
-			return fmt.Errorf("Could not find any artifacts for group %s", form.GroupId)
+			return fmt.Errorf("Could not find any artifacts for group %s", form.ArchetypeGroupId)
 		}
 	} else {
 		// TODO for now lets just support a single group ID being passed in
-		form.GroupId = groupIds[0]
+		form.ArchetypeGroupId = groupIds[0]
 
-		artifactsWithoutFilter := model.ArtifactIDs(form.GroupId, "")
+		artifactsWithoutFilter := model.ArtifactIDs(form.ArchetypeGroupId, "")
 		if len(artifactsWithoutFilter) == 0 {
-			return util.InvalidOption("group", form.GroupId, model.GroupIDs(""))
+			return util.InvalidOption("group", form.ArchetypeGroupId, model.GroupIDs(""))
 		}
 	}
-	if form.GroupId == "" {
-		return fmt.Errorf("No groupId selected")
+	if form.ArchetypeGroupId == "" {
+		return fmt.Errorf("No archetype groupId selected")
 	}
 
-	artifactIds := model.ArtifactIDs(form.GroupId, data.ArtifactIdFilter)
+	artifactIds := model.ArtifactIDs(form.ArchetypeGroupId, data.ArtifactIdFilter)
 	if len(artifactIds) == 0 {
-		artifactsWithoutFilter := model.ArtifactIDs(form.GroupId, "")
+		artifactsWithoutFilter := model.ArtifactIDs(form.ArchetypeGroupId, "")
 		return util.InvalidOption("artifact", data.ArtifactIdFilter, artifactsWithoutFilter)
 	}
 
 	if len(artifactIds) == 1 {
-		form.ArtifactId = artifactIds[0]
+		form.ArchetypeArtifactId = artifactIds[0]
 	} else {
 		prompt := &survey.Select{
 			Message: "Artifact ID:",
 			Options: artifactIds,
 		}
-		err := survey.AskOne(prompt, &form.ArtifactId, survey.Required)
+		err := survey.AskOne(prompt, &form.ArchetypeArtifactId, survey.Required)
 		if err != nil {
 			return err
 		}
 	}
-	if form.ArtifactId == "" {
-		return fmt.Errorf("No artifactId selected")
+	if form.ArchetypeArtifactId == "" {
+		return fmt.Errorf("No archetype artifactId selected")
 	}
 
 	version := data.Version
-	versions := model.Versions(form.GroupId, form.ArtifactId, version)
+	versions := model.Versions(form.ArchetypeGroupId, form.ArchetypeArtifactId, version)
 	if len(versions) == 0 {
-		return util.InvalidOption("version", version, model.Versions(form.GroupId, form.ArtifactId, ""))
+		return util.InvalidOption("version", version, model.Versions(form.ArchetypeGroupId, form.ArchetypeArtifactId, ""))
 	}
 
 	if len(versions) == 1 || !pickVersion {
-		form.Version = versions[0]
+		form.ArchetypeVersion = versions[0]
 	} else {
 		prompt := &survey.Select{
 			Message: "Version:",
 			Options: versions,
 		}
-		err := survey.AskOne(prompt, &form.Version, survey.Required)
+		err := survey.AskOne(prompt, &form.ArchetypeVersion, survey.Required)
+		if err != nil {
+			return err
+		}
+	}
+	if form.ArchetypeVersion == "" {
+		return fmt.Errorf("No archetype version selected")
+	}
+
+	if form.GroupId == "" {
+		q := &survey.Input{
+			Message: "Project Group ID:",
+			Default: "com.acme",
+		}
+		err := survey.AskOne(q, &form.GroupId, survey.Required)
+		if err != nil {
+			return err
+		}
+	}
+	if form.ArtifactId == "" {
+		q := &survey.Input{
+			Message: "Project Artifact ID:",
+			Default: "",
+		}
+		err := survey.AskOne(q, &form.ArtifactId, survey.Required)
 		if err != nil {
 			return err
 		}
 	}
 	if form.Version == "" {
-		return fmt.Errorf("No version selected")
+		q := &survey.Input{
+			Message: "Project Version:",
+			Default: "1.0.0-SNAPSHOT",
+		}
+		err := survey.AskOne(q, &form.Version, survey.Required)
+		if err != nil {
+			return err
+		}
 	}
-
-	fmt.Printf("Invoking: jx create archetype -g %s -a %s -v %s\n", form.GroupId, form.ArtifactId, form.Version)
 	return nil
 }
