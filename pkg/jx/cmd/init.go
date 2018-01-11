@@ -18,17 +18,15 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
-// GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
-// referencing the cmd.Flags()
+type KubernetesProvider string
+
+// InitOptions the flags for running init
 type InitOptions struct {
-	Factory  cmdutil.Factory
-	Out      io.Writer
-	Err      io.Writer
+	CommonOptions
+
 	Flags    InitFlags
 	Provider KubernetesProvider
 }
-
-type KubernetesProvider string
 
 const (
 	GKE      KubernetesProvider = "gke"
@@ -73,11 +71,12 @@ var (
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
 func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-
 	options := &InitOptions{
-		Factory: f,
-		Out:     out,
-		Err:     errOut,
+		CommonOptions: CommonOptions{
+			Factory: f,
+			Out:     out,
+			Err:     errOut,
+		},
 	}
 
 	cmd := &cobra.Command{
@@ -86,7 +85,9 @@ func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		Long:    initLong,
 		Example: initExample,
 		Run: func(cmd *cobra.Command, args []string) {
-			err := RunInit(f, out, errOut, cmd, args, options)
+			options.Cmd = cmd
+			options.Args = args
+			err := options.Run()
 			cmdutil.CheckErr(err)
 		},
 	}
@@ -98,13 +99,9 @@ func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	return cmd
 }
 
-// RunInstall implements the generic Install command
-func RunInit(f cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args []string, options *InitOptions) error {
-	flags := InitFlags{
-	//		Domain:             cmd.Flags().Lookup("domain").Value.String(),
-	}
-	options.Flags = flags
-
+func (options *InitOptions) Run() error {
+	args := options.Args
+	cmd := options.Cmd
 	if len(args) != 1 {
 		log.Errorf("You must specify one kubernetes provider you want to setup and configure, if unknown minikube is a great way to trial Jenkins-X locally. %s", valid_providers)
 
@@ -138,7 +135,6 @@ func RunInit(f cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args 
 		log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 		os.Exit(-1)
 	}
-
 	return nil
 }
 
@@ -254,86 +250,76 @@ func getDependenciesToInstall(d string) string {
 }
 
 func (o *InitOptions) installBrew() error {
-
-	e := exec.Command("/usr/bin/ruby", "-e", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	return e.Run()
+	return o.runCommand("/usr/bin/ruby", "-e", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)")
 }
 
 func (o *InitOptions) installKubectl() error {
-	e := exec.Command("brew", "install", "kubectl")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	return e.Run()
+	return o.runCommand("brew", "install", "kubectl")
 }
 
 func (o *InitOptions) installHyperkit() error {
+	err := o.runCommand("curl", "-LO", "https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-hyperkit")
+	if err != nil {
+	  return err
+	}
 
-	e := exec.Command("curl", "-LO", "https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-hyperkit")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
+	err = o.runCommand("chmod", "+x", "docker-machine-driver-hyperkit")
+	if err != nil {
+	  return err
+	}
 
-	e = exec.Command("chmod", "+x", "docker-machine-driver-hyperkit")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
+	log.Warn("Installing hyperkit does require sudo to perform some actions, for more details see https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#hyperkit-driver")
 
-	log.Warn("Installing hyperkit does require sudo to perform some actions, fopr more details see https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#hyperkit-driver")
+	err = o.runCommand("sudo", "mv", "docker-machine-driver-hyperkit", "/usr/local/bin/")
+	if err != nil {
+	  return err
+	}
 
-	e = exec.Command("sudo", "mv", "docker-machine-driver-hyperkit", "/usr/local/bin/")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
+	err = o.runCommand("sudo", "chown", "root:wheel", "/usr/local/bin/docker-machine-driver-hyperkit")
+	if err != nil {
+	  return err
+	}
 
-	e = exec.Command("sudo", "chown", "root:wheel", "/usr/local/bin/docker-machine-driver-hyperkit")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-
-	e = exec.Command("sudo", "chmod", "u+s", "/usr/local/bin/docker-machine-driver-hyperkit")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	return e.Run()
+	return o.runCommand("sudo", "chmod", "u+s", "/usr/local/bin/docker-machine-driver-hyperkit")
 }
 
 func (o *InitOptions) installHelm() error {
-	e := exec.Command("brew", "install", "kubernetes-helm")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	return e.Run()
+	return o.runCommand("brew", "install", "kubernetes-helm")
 }
 
 func (o *InitOptions) installDraft() error {
-	e := exec.Command("brew", "tap", "azure/draft")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	e.Run()
+	err := o.runCommand("brew", "tap", "azure/draft")
+	if err != nil {
+	  return err
+	}
 
-	e = exec.Command("brew", "install", "draft")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	return e.Run()
+	return o.runCommand("brew", "install", "draft")
 }
 
 func (o *InitOptions) installMinikube() error {
-	e := exec.Command("brew", "cask", "install", "minikube")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	return e.Run()
+	return o.runCommand("brew", "cask", "install", "minikube")
 }
 
 func (o *InitOptions) installGcloud() error {
-	e := exec.Command("brew", "tap", "caskroom/cask")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	e.Run()
+	err := o.runCommand("brew", "tap", "caskroom/cask")
+	if err != nil {
+	  return err
+	}
 
-	e = exec.Command("brew", "install", "google-cloud-sdk")
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	return e.Run()
+	return o.runCommand("brew", "install", "google-cloud-sdk")
 }
+
 func (o *InitOptions) installAzureCli() error {
-	e := exec.Command("brew", "install", "azure-cli")
+	return o.runCommand("brew", "install", "azure-cli")
+}
+
+func (o *InitOptions) runCommand(name string, args ...string) error {
+	e := exec.Command(name, args...)
 	e.Stdout = o.Out
 	e.Stderr = o.Err
-	return e.Run()
+	err := e.Run()
+	if err != nil {
+		o.Printf("WARNING: failed to invoke command: %s %s", name, strings.Join(args, " "))
+	}
+	return err
 }
