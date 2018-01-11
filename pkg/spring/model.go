@@ -6,13 +6,24 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"os"
+)
+
+const (
+	OptionGroupId        = "group"
+	OptionArtifactId     = "artifact"
+	OptionLanguage       = "language"
+	OptionJavaVersion    = "java-version"
+	OptionBootVersion    = "boot-version"
+	OptionPackaging      = "packaging"
+	OptionDependency     = "dep"
+	OptionDependencyKind = "kind"
 )
 
 var (
@@ -102,12 +113,39 @@ func LoadSpringBoot() (*SpringBootModel, error) {
 }
 
 func (model *SpringBootModel) CreateSurvey(data *SpringBootForm, advanced bool) error {
+	err := model.ValidateInput(OptionLanguage, &model.Language, data.Language)
+	if err != nil {
+		return err
+	}
+	err = model.ValidateInput(OptionBootVersion, &model.BootVersion, data.BootVersion)
+	if err != nil {
+		return err
+	}
+	err = model.ValidateInput(OptionJavaVersion, &model.JavaVersion, data.JavaVersion)
+	if err != nil {
+		return err
+	}
+	err = model.ValidateInput(OptionPackaging, &model.Packaging, data.Packaging)
+	if err != nil {
+		return err
+	}
+	err = model.ValidateTreeInput(OptionDependency, &model.Dependencies, data.Dependencies)
+	if err != nil {
+		return err
+	}
+
 	var qs = []*survey.Question{}
 	if data.Language == "" {
 		qs = append(qs, CreateValueSelect("Language", "language", &model.Language, data))
 	}
 	if data.BootVersion == "" && advanced {
 		qs = append(qs, CreateValueSelect("Spring Boot version", "bootVersion", &model.BootVersion, data))
+	}
+	if data.JavaVersion == "" && advanced {
+		qs = append(qs, CreateValueSelect("Java version", "javaVersion", &model.JavaVersion, data))
+	}
+	if data.Packaging == "" && advanced {
+		qs = append(qs, CreateValueSelect("Packaging", "packaging", &model.Packaging, data))
 	}
 	if data.GroupId == "" {
 		qs = append(qs, CreateValueInput("Group", "groupId", &model.GroupId, data))
@@ -121,7 +159,7 @@ func (model *SpringBootModel) CreateSurvey(data *SpringBootForm, advanced bool) 
 	return survey.Ask(qs, data)
 }
 
-func CreateValueSelect(message string, name string, options *SpringOptions, data *SpringBootForm) *survey.Question {
+func (options *SpringOptions) StringArray() []string {
 	values := []string{}
 	for _, o := range options.Values {
 		id := o.ID
@@ -130,6 +168,70 @@ func CreateValueSelect(message string, name string, options *SpringOptions, data
 		}
 	}
 	sort.Strings(values)
+	return values
+}
+
+func (options *SpringTreeSelect) StringArray() []string {
+	values := []string{}
+	for _, g := range options.Values {
+		for _, o := range g.Values {
+			id := o.ID
+			if id != "" {
+				values = append(values, id)
+			}
+		}
+	}
+	sort.Strings(values)
+	return values
+}
+
+func (model *SpringBootModel) ValidateInput(name string, options *SpringOptions, value string) error {
+	if value != "" && options != nil {
+		for _, v := range options.Values {
+			if v.ID == value {
+				return nil
+			}
+		}
+		return invalidOption(name, value, options.StringArray())
+	}
+	return nil
+}
+
+func (model *SpringBootModel) ValidateTreeInput(name string, options *SpringTreeSelect, values []string) error {
+	if values != nil && len(values) > 0 && options != nil {
+		for _, value := range values {
+			if value != "" {
+				valid := false
+				for _, g := range options.Values {
+					for _, o := range g.Values {
+						if o.ID == value {
+							valid = true
+							break
+						}
+					}
+				}
+				if !valid {
+					return invalidOption(name, value, options.StringArray())
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func invalidOption(name string, value string, values []string) error {
+	suggestions := util.SuggestionsFor(value, values, util.DefaultSuggestionsMinimumDistance)
+	if len(suggestions) > 0 {
+		if len(suggestions) == 1 {
+			return fmt.Errorf("Invalid option: --%s %s\nDid you mean:  --%s %s", name, value, name, suggestions[0])
+		}
+		return fmt.Errorf("Invalid option: --%s %s\nDid you mean one of: %s", name, value, strings.Join(suggestions, ", "))
+	}
+	return fmt.Errorf("Invalid option: --%s %s\nPossible values: %s", name, value, strings.Join(values, ", "))
+}
+
+func CreateValueSelect(message string, name string, options *SpringOptions, data *SpringBootForm) *survey.Question {
+	values := options.StringArray()
 	return &survey.Question{
 		Name: name,
 		Prompt: &survey.Select{
