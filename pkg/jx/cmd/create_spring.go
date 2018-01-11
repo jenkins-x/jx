@@ -33,10 +33,8 @@ var (
 type CreateSpringOptions struct {
 	CreateOptions
 
-	// spring boot
 	Advanced   bool
 	SpringForm spring.SpringBootForm
-	OutDir     string
 }
 
 // NewCmdCreateSpring creates a command object for the "create" command
@@ -63,8 +61,9 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			cmdutil.CheckErr(err)
 		},
 	}
+	addCreateFlags(cmd, &options.CreateOptions)
+
 	cmd.Flags().BoolVarP(&options.Advanced, "advanced", "x", false, "Advanced mode can show more detailed forms for some resource kinds like springboot")
-	cmd.Flags().BoolVarP(&options.DisableImport, "no-import", "c", false, "Disable import after the creation")
 
 	// spring flags
 	cmd.Flags().StringArrayVarP(&options.SpringForm.DependencyKinds, spring.OptionDependencyKind, "k", spring.DefaultDependencyKinds, "Default dependency kinds to choose from")
@@ -76,7 +75,6 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 	cmd.Flags().StringVarP(&options.SpringForm.JavaVersion, spring.OptionJavaVersion, "j", "", "Java version")
 	cmd.Flags().StringVarP(&options.SpringForm.Packaging, spring.OptionPackaging, "p", "", "Packaging")
 
-	cmd.Flags().StringVarP(&options.OutDir, "output-dir", "o", "", "Directory to output the project to. Defaults to the current directory")
 	return cmd
 }
 

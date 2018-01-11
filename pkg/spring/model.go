@@ -201,7 +201,7 @@ func (model *SpringBootModel) ValidateInput(name string, options *SpringOptions,
 				return nil
 			}
 		}
-		return invalidOption(name, value, options.StringArray())
+		return util.InvalidOption(name, value, options.StringArray())
 	}
 	return nil
 }
@@ -220,7 +220,7 @@ func (model *SpringBootModel) ValidateTreeInput(name string, options *SpringTree
 					}
 				}
 				if !valid {
-					return invalidOption(name, value, options.StringArray())
+					return util.InvalidOption(name, value, options.StringArray())
 				}
 			}
 		}
@@ -228,16 +228,6 @@ func (model *SpringBootModel) ValidateTreeInput(name string, options *SpringTree
 	return nil
 }
 
-func invalidOption(name string, value string, values []string) error {
-	suggestions := util.SuggestionsFor(value, values, util.DefaultSuggestionsMinimumDistance)
-	if len(suggestions) > 0 {
-		if len(suggestions) == 1 {
-			return fmt.Errorf("Invalid option: --%s %s\nDid you mean:  --%s %s", name, value, name, suggestions[0])
-		}
-		return fmt.Errorf("Invalid option: --%s %s\nDid you mean one of: %s", name, value, strings.Join(suggestions, ", "))
-	}
-	return fmt.Errorf("Invalid option: --%s %s\nPossible values: %s", name, value, strings.Join(values, ", "))
-}
 
 func CreateValueSelect(message string, name string, options *SpringOptions, data *SpringBootForm) *survey.Question {
 	values := options.StringArray()
