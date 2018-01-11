@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"sort"
-	"fmt"
 )
 
 const (

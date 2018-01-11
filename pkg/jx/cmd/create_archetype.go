@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"github.com/spf13/cobra"
+	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -117,10 +117,10 @@ func (o *CreateArchetypeOptions) Run() error {
 		args = append(args, "-B")
 	}
 	args = append(args, "org.apache.maven.plugins:maven-archetype-plugin:"+maven.MavenArchetypePluginVersion+":generate",
-			"-DarchetypeGroupId="+form.ArchetypeGroupId,
-			"-DarchetypeArtifactId="+form.ArchetypeArtifactId,
-			"-DarchetypeVersion="+form.ArchetypeVersion,
-			"-Dbasedir="+dir)
+		"-DarchetypeGroupId="+form.ArchetypeGroupId,
+		"-DarchetypeArtifactId="+form.ArchetypeArtifactId,
+		"-DarchetypeVersion="+form.ArchetypeVersion,
+		"-Dbasedir="+dir)
 
 	if form.GroupId != "" {
 		args = append(args, "-DgroupId="+form.GroupId)
@@ -138,6 +138,6 @@ func (o *CreateArchetypeOptions) Run() error {
 	}
 	outDir := filepath.Join(dir, form.ArtifactId)
 	o.Printf("Created project at %s\n\n", outDir)
-	
+
 	return o.DoImport(outDir)
 }

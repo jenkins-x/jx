@@ -228,7 +228,6 @@ func (model *SpringBootModel) ValidateTreeInput(name string, options *SpringTree
 	return nil
 }
 
-
 func CreateValueSelect(message string, name string, options *SpringOptions, data *SpringBootForm) *survey.Question {
 	values := options.StringArray()
 	return &survey.Question{
