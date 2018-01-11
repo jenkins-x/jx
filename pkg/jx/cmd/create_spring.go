@@ -82,7 +82,11 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 
 // Run implements the generic Create command
 func (o *CreateSpringOptions) Run() error {
-	model, err := spring.LoadSpringBoot()
+	cacheDir, err := cmdutil.CacheDir()
+	if err != nil {
+		return err
+	}
+	model, err := spring.LoadSpringBoot(cacheDir)
 	if err != nil {
 		return fmt.Errorf("Failed to load Spring Boot model %s", err)
 	}

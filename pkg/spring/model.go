@@ -24,6 +24,8 @@ const (
 	OptionPackaging      = "packaging"
 	OptionDependency     = "dep"
 	OptionDependencyKind = "kind"
+
+	startSpringURL = "http://start.spring.io"
 )
 
 var (
@@ -86,24 +88,31 @@ type SpringBootForm struct {
 	DependencyKinds []string
 }
 
-func LoadSpringBoot() (*SpringBootModel, error) {
-	url := "http://start.spring.io"
-	spaceClient := http.Client{}
+func LoadSpringBoot(cacheDir string) (*SpringBootModel, error) {
+	loader := func() ([]byte, error) {
+		client := http.Client{}
+		req, err := http.NewRequest(http.MethodGet, startSpringURL, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Accept", "application/json")
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
+		res, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		return ioutil.ReadAll(res.Body)
 	}
-	req.Header.Set("Accept", "application/json")
 
-	res, err := spaceClient.Do(req)
+	cacheFileName := ""
+	if cacheDir != "" {
+		cacheFileName = filepath.Join(cacheDir, "start_spring_io.json")
+	}
+	body, err := util.LoadCacheData(cacheFileName, loader)
 	if err != nil {
 		return nil, err
 	}
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
+
 	model := SpringBootModel{}
 	err = json.Unmarshal(body, &model)
 	if err != nil {
