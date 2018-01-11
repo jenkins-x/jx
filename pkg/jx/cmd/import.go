@@ -355,7 +355,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Created repository at %s\n", repo.HTMLURL)
+	o.Printf("Created repository: %s\n\n", repo.HTMLURL)
 	o.RepoURL = repo.CloneURL
 	pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, &userAuth)
 	if err != nil {
@@ -563,7 +563,7 @@ func (o *ImportOptions) DoImport() error {
 	if err != nil {
 		return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
 	}
-	fmt.Fprintf(out, "Created Project: %s\n", job.Url)
+	fmt.Fprintf(out, "Created Jenkins Project: %s\n", job.Url)
 	params := neturl.Values{}
 	err = jenk.Build(job, params)
 	if err != nil {
