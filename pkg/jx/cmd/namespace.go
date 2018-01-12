@@ -54,7 +54,7 @@ func NewCmdNamespace(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	cmd := &cobra.Command{
 		Use:     "namespace",
 		Aliases: []string{"ns"},
-		Short:   "View or change the current namespace context in the current kubernetes clsuter",
+		Short:   "View or change the current namespace context in the current kubernetes cluster",
 		Long:    namespace_long,
 		Example: namespace_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -64,7 +64,7 @@ func NewCmdNamespace(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Choose, "select", "s", false, "Select which namspace to switch to")
+	cmd.Flags().BoolVarP(&options.Choose, "select", "s", false, "Select which namespace to switch to")
 	return cmd
 }
 
