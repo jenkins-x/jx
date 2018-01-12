@@ -1,12 +1,12 @@
 package kube
 
 import (
+	"fmt"
 	"strings"
 
 	"gopkg.in/AlecAivazis/survey.v1"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"fmt"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
