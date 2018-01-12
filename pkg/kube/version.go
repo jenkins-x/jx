@@ -18,7 +18,7 @@ func GetVersion(r *metav1.ObjectMeta) string {
 			v = labels["chart"]
 			if v != "" {
 				arr := strings.Split(v, "-")
-				last := arr[len(arr) - 1]
+				last := arr[len(arr)-1]
 				if last != "" {
 					return last
 				}
