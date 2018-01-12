@@ -14,18 +14,18 @@ import (
 
 var (
 	create_archetype_long = templates.LongDesc(`
-		Creates a new Spring Boot application on the file system.
+		Creates a new Maven project using an Archetype
 
-		You then get the option to import the source code into a git repository and Jenkins for CI / CD
+		You then get the option to import the generated source code into a git repository and Jenkins for CI / CD
 
 `)
 
 	create_archetype_example = templates.Examples(`
-		# Create a Spring Boot application where you use the terminal to pick the values
-		jx create spring
+		# Create a new application from a Maven Archetype using the UI to choose which archetype to use
+		jx create archetype
 
-		# Creates a Spring Boot application passing in the required dependencies
-		jx create spring -d web,actuator
+		# Creates a Camel Archetype, filtering on the archetypes containing the text 'spring'
+		jx create archetype -g  org.apache.camel.archetypes -a spring
 	`)
 )
 
@@ -56,10 +56,10 @@ func NewCmdCreateArchetype(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 
 	cmd := &cobra.Command{
 		Use:     "archetype",
-		Short:   "Create a new app from a Maven Archetype and import it into git and Jenkins for CI / CD",
+		Short:   "Create a new app from a Maven Archetype and import the generated code into git and Jenkins for CI / CD",
 		Long:    create_archetype_long,
 		Example: create_archetype_example,
-		Aliases: []string{"quickstart"},
+		Aliases: []string{"arch"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

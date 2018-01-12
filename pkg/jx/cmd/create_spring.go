@@ -16,7 +16,7 @@ var (
 	create_spring_long = templates.LongDesc(`
 		Creates a new Spring Boot application on the file system.
 
-		You then get the option to import the source code into a git repository and Jenkins for CI / CD
+		You then get the option to import the generated source code into a git repository and Jenkins for CI / CD
 
 `)
 
@@ -51,7 +51,7 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 
 	cmd := &cobra.Command{
 		Use:     "spring",
-		Short:   "Create a new spring boot application and import it into git and Jenkins for CI / CD",
+		Short:   "Create a new spring boot application and import the generated code into git and Jenkins for CI / CD",
 		Long:    create_spring_long,
 		Example: create_spring_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -65,7 +65,6 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 
 	cmd.Flags().BoolVarP(&options.Advanced, "advanced", "x", false, "Advanced mode can show more detailed forms for some resource kinds like springboot")
 
-	// spring flags
 	cmd.Flags().StringArrayVarP(&options.SpringForm.DependencyKinds, spring.OptionDependencyKind, "k", spring.DefaultDependencyKinds, "Default dependency kinds to choose from")
 	cmd.Flags().StringArrayVarP(&options.SpringForm.Dependencies, spring.OptionDependency, "d", []string{}, "Spring Boot dependencies")
 	cmd.Flags().StringVarP(&options.SpringForm.GroupId, spring.OptionGroupId, "g", "", "Group ID to generate")
@@ -78,7 +77,7 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 	return cmd
 }
 
-// Run implements the generic Create command
+// Run implements the command
 func (o *CreateSpringOptions) Run() error {
 	cacheDir, err := cmdutil.CacheDir()
 	if err != nil {
