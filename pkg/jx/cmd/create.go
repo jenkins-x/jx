@@ -61,6 +61,7 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	return cmd
 }
 
+// Run implements this command
 func (o *CreateOptions) Run() error {
 	return o.Cmd.Help()
 }

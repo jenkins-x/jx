@@ -75,6 +75,7 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	}
 
 	cmd.AddCommand(NewCmdGetEnv(f, out, errOut))
+	cmd.AddCommand(NewCmdGetPipeline(f, out, errOut))
 
 	//cmdutil.AddPrinterFlags(cmd)
 	/*
@@ -106,15 +107,6 @@ func RunGet(f cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args [
 	}
 	kind := args[0]
 	switch kind {
-	case "pipeline":
-		return options.getPipelines()
-	case "pipelines":
-		return options.getPipelines()
-	case "pipe":
-		return options.getPipelines()
-	case "pipes":
-		return options.getPipelines()
-
 	case "url":
 		return options.getURLs()
 
@@ -123,30 +115,6 @@ func RunGet(f cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args [
 	}
 	return nil
 
-}
-
-func (o *GetOptions) getPipelines() error {
-	f := o.Factory
-	jenkins, err := f.GetJenkinsClient()
-	if err != nil {
-		return err
-	}
-	jobs, err := jenkins.GetJobs()
-	if err != nil {
-		return err
-	}
-	if len(jobs) == 0 {
-		return outputEmptyListWarning(o.Out)
-	}
-
-	table := o.CreateTable()
-	table.AddRow("Name", "URL")
-
-	for _, job := range jobs {
-		table.AddRow(job.Name, job.Url)
-	}
-	table.Render()
-	return nil
 }
 
 func (o *GetOptions) getURLs() error {
