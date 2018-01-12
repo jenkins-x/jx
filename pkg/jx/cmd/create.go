@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"io"
+
+	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -21,6 +22,7 @@ var (
 	create_resources = `Valid resource types include:
 
     * spring (aka 'springboot')
+	* cluster
     `
 
 	create_long = templates.LongDesc(`
@@ -55,6 +57,7 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.AddCommand(NewCmdCreateArchetype(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateSpring(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateCluster(f, out, errOut))
 	return cmd
 }
 
