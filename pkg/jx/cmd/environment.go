@@ -14,6 +14,7 @@ import (
 
 	"gopkg.in/AlecAivazis/survey.v1"
 	"k8s.io/client-go/kubernetes"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 type EnvironmentOptions struct {
@@ -105,7 +106,7 @@ func (o *EnvironmentOptions) Run() error {
 	if env != "" {
 		envResource, err := jxClient.JenkinsV1().Environments(devNs).Get(env, meta_v1.GetOptions{})
 		if err != nil {
-			return fmt.Errorf("Error: %s\nIf you want to create that namespace then try:\n    jx create env %s", err, env)
+			return util.InvalidArg(env, envNames)
 		}
 		ns := envResource.Spec.Namespace
 		if ns == "" {
