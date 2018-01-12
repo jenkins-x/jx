@@ -7,7 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/apis/jx/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 )
 
 var (
@@ -77,11 +77,7 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 
 // Run implements the command
 func (o *CreateEnvOptions) Run() error {
-	_, ns, err := o.Factory.CreateClient()
-	if err != nil {
-		return err
-	}
-	jxClient, err := o.Factory.CreateJXClient()
+	jxClient, ns, err := o.Factory.CreateJXClient()
 	if err != nil {
 	  return err
 	}

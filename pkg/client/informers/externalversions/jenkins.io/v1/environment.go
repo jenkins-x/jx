@@ -5,10 +5,10 @@ package v1
 import (
 	time "time"
 
-	jx_v1 "github.com/jenkins-x/jx/pkg/apis/jx/v1"
+	jenkins_io_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	versioned "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/jenkins-x/jx/pkg/client/informers/externalversions/internalinterfaces"
-	v1 "github.com/jenkins-x/jx/pkg/client/listers/jx/v1"
+	v1 "github.com/jenkins-x/jx/pkg/client/listers/jenkins.io/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -54,7 +54,7 @@ func NewFilteredEnvironmentInformer(client versioned.Interface, namespace string
 				return client.JenkinsV1().Environments(namespace).Watch(options)
 			},
 		},
-		&jx_v1.Environment{},
+		&jenkins_io_v1.Environment{},
 		resyncPeriod,
 		indexers,
 	)
@@ -65,7 +65,7 @@ func (f *environmentInformer) defaultInformer(client versioned.Interface, resync
 }
 
 func (f *environmentInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&jx_v1.Environment{}, f.defaultInformer)
+	return f.factory.InformerFor(&jenkins_io_v1.Environment{}, f.defaultInformer)
 }
 
 func (f *environmentInformer) Lister() v1.EnvironmentLister {

@@ -1,7 +1,7 @@
 package fake
 
 import (
-	v1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jx/v1"
+	v1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
