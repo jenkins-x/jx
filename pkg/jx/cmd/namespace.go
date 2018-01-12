@@ -130,7 +130,7 @@ func GetNamespaceNames(client *kubernetes.Clientset) ([]string, error) {
 	names := []string{}
 	list, err := client.CoreV1().Namespaces().List(meta_v1.ListOptions{})
 	if err != nil {
-		return names, fmt.Errorf("Failed to namespaces %s", err)
+		return names, fmt.Errorf("Failed to load Namespaces %s", err)
 	}
 	for _, n := range list.Items {
 		names = append(names, n.Name)
