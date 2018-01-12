@@ -73,6 +73,9 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 			ArgAliases: argAliases,
 		*/
 	}
+
+	cmd.AddCommand(NewCmdGetEnv(f, out, errOut))
+
 	//cmdutil.AddPrinterFlags(cmd)
 	/*
 		cmd.Flags().StringP("selector", "l", "", "Selector (label query) to filter on")

@@ -4,12 +4,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"github.com/jenkins-x/jx/pkg/apis/jx"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 )
 
 // RegisterEnvironmentCRD ensures that the CRD is registered for Environments
 func RegisterEnvironmentCRD(apiClient *apiextensionsclientset.Clientset) error {
-	name := "environments." + jx.GroupName
+	name := "environments." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{
 		Kind:       "Environment",
 		ListKind:   "EnvironmentList",
@@ -32,8 +32,8 @@ func registerCRD(apiClient  *apiextensionsclientset.Clientset, name string, name
 			Name: name,
 		},
 		Spec: v1beta1.CustomResourceDefinitionSpec{
-			Group:   jx.GroupName,
-			Version: jx.Version,
+			Group:   jenkinsio.GroupName,
+			Version: jenkinsio.Version,
 			Scope:   v1beta1.NamespaceScoped,
 			Names:   *names,
 		},

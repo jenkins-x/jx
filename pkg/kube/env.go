@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"gopkg.in/AlecAivazis/survey.v1"
-	"github.com/jenkins-x/jx/pkg/apis/jx/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 )
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options

@@ -1,6 +1,6 @@
 
 
-package jx
+package jenkinsio
 
 const (
 	GroupName = "jenkins.io"

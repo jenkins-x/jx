@@ -1,7 +1,7 @@
 package v1
 
 import (
-	v1 "github.com/jenkins-x/jx/pkg/apis/jx/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"

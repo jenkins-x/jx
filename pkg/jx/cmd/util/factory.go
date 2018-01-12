@@ -33,7 +33,7 @@ type Factory interface {
 
 	CreateClient() (*kubernetes.Clientset, string, error)
 
-	CreateJXClient() (*versioned.Clientset, error)
+	CreateJXClient() (*versioned.Clientset, string, error)
 
 	CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error)
 
@@ -105,14 +105,24 @@ func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigServi
 	return svc, nil
 }
 
-func (f *factory) CreateJXClient() (*versioned.Clientset, error) {
+func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
 	kubeconfig := createKubeConfig()
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		return nil, err
+		return nil,"",  err
 	}
-	return versioned.NewForConfig(config)
+	kubeConfig, _, err := kube.LoadConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	ns := kube.CurrentNamespace(kubeConfig)
+	client, err := versioned.NewForConfig(config)
+	if err != nil {
+		return nil,ns,  err
+	}
+	return client, ns, err
+
 }
 
 
