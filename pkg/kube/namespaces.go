@@ -2,10 +2,32 @@ package kube
 
 import (
 	"fmt"
-	"k8s.io/api/core/v1"
+
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 )
+
+func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, env *v1.Environment, ns string) error {
+	// lets create the namespace if we are on the same cluster
+	spec := &env.Spec
+	if spec.Cluster == "" && spec.Namespace != "" {
+		labels := map[string]string{
+			"team": ns,
+			"env": env.Name,
+		}
+		annotations := map[string]string{}
+
+		err := EnsureNamespaceCreated(kubeClient, spec.Namespace, labels, annotations)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+
+}
+
 
 // Ensure that the namespace exists for the given name
 func EnsureNamespaceCreated(kubeClient *kubernetes.Clientset, name string, labels map[string]string, annotations map[string]string) error {
@@ -44,7 +66,7 @@ func EnsureNamespaceCreated(kubeClient *kubernetes.Clientset, name string, label
 		return nil
 	}
 
-	namespace := &v1.Namespace{
+	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Labels:      labels,
