@@ -14,6 +14,7 @@ type CreateOptions struct {
 	CommonOptions
 
 	DisableImport bool
+	OutDir        string
 }
 
 var (
@@ -51,6 +52,7 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 		},
 	}
 
+	cmd.AddCommand(NewCmdCreateArchetype(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateSpring(f, out, errOut))
 	return cmd
 }
@@ -70,4 +72,9 @@ func (o *CreateOptions) DoImport(outDir string) error {
 		Dir:           outDir,
 	}
 	return importOptions.Run()
+}
+
+func addCreateFlags(cmd *cobra.Command, options *CreateOptions) {
+	cmd.Flags().BoolVarP(&options.DisableImport, "no-import", "", false, "Disable import after the creation")
+	cmd.Flags().StringVarP(&options.OutDir, "output-dir", "o", "", "Directory to output the project to. Defaults to the current directory")
 }

@@ -312,14 +312,3 @@ func (o *InitOptions) installGcloud() error {
 func (o *InitOptions) installAzureCli() error {
 	return o.runCommand("brew", "install", "azure-cli")
 }
-
-func (o *InitOptions) runCommand(name string, args ...string) error {
-	e := exec.Command(name, args...)
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	err := e.Run()
-	if err != nil {
-		o.Printf("WARNING: failed to invoke command: %s %s", name, strings.Join(args, " "))
-	}
-	return err
-}

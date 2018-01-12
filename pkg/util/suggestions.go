@@ -1,10 +1,26 @@
 package util
 
-import "strings"
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
 
 const (
 	DefaultSuggestionsMinimumDistance = 2
 )
+
+func InvalidOption(name string, value string, values []string) error {
+	suggestions := SuggestionsFor(value, values, DefaultSuggestionsMinimumDistance)
+	if len(suggestions) > 0 {
+		if len(suggestions) == 1 {
+			return fmt.Errorf("Invalid option: --%s %s\nDid you mean:  --%s %s", name, value, name, suggestions[0])
+		}
+		return fmt.Errorf("Invalid option: --%s %s\nDid you mean one of: %s", name, value, strings.Join(suggestions, ", "))
+	}
+	sort.Strings(values)
+	return fmt.Errorf("Invalid option: --%s %s\nPossible values: %s", name, value, strings.Join(values, ", "))
+}
 
 func SuggestionsFor(typedName string, values []string, suggestionsMinimumDistance int, explicitSuggestions ...string) []string {
 	suggestions := []string{}

@@ -200,3 +200,16 @@ func ConfigDir() (string, error) {
 	}
 	return path, nil
 }
+
+func CacheDir() (string, error) {
+	h, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(h, "cache")
+	err = os.MkdirAll(path, DefaultWritePermissions)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
