@@ -8,7 +8,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 )
 
 // GetEnvOptions containers the CLI options

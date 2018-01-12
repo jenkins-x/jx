@@ -1,13 +1,13 @@
 package kube
 
 import (
+	"fmt"
 	"strings"
 
-	"gopkg.in/AlecAivazis/survey.v1"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"fmt"
 	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
@@ -41,7 +41,7 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 
 			q := &survey.Input{
 				Message: "Name:",
-				Help: "The Environment name must be unique, lower case and a valid DNS name",
+				Help:    "The Environment name must be unique, lower case and a valid DNS name",
 			}
 			err := survey.AskOne(q, &data.Name, validator)
 			if err != nil {
@@ -59,7 +59,7 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 		q := &survey.Input{
 			Message: "Label:",
 			Default: defaultValue,
-			Help: "The Environment label is a person friendly descriptive text like 'Staging' or 'Production'",
+			Help:    "The Environment label is a person friendly descriptive text like 'Staging' or 'Production'",
 		}
 		err := survey.AskOne(q, &data.Spec.Label, survey.Required)
 		if err != nil {
@@ -91,7 +91,7 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 		q := &survey.Input{
 			Message: "Namespace:",
 			Default: defaultValue,
-			Help: "Th kubernetes namespace name to use for this Environment",
+			Help:    "Th kubernetes namespace name to use for this Environment",
 		}
 		err := survey.AskOne(q, &data.Spec.Namespace, ValidateName)
 		if err != nil {

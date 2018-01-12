@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"io"
 	"github.com/spf13/cobra"
+	"io"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 )
 
 var (
@@ -98,5 +98,24 @@ func (o *CreateEnvOptions) Run() error {
 		return err
 	}
 	o.Printf("Created environment %s\n", env.Name)
+
+	// lets create the namespace if we are on the same cluster
+	spec := &env.Spec
+	if spec.Cluster == "" && spec.Namespace != "" {
+		labels := map[string]string{
+			"team": ns,
+		}
+		annotations := map[string]string{}
+
+		kubeClient, _, err := o.Factory.CreateClient()
+		if err != nil {
+			return err
+		}
+
+		err = kube.EnsureNamespaceCreated(kubeClient, spec.Namespace, labels, annotations)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

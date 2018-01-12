@@ -110,7 +110,7 @@ func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		return nil,"",  err
+		return nil, "", err
 	}
 	kubeConfig, _, err := kube.LoadConfig()
 	if err != nil {
@@ -119,12 +119,11 @@ func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
 	ns := kube.CurrentNamespace(kubeConfig)
 	client, err := versioned.NewForConfig(config)
 	if err != nil {
-		return nil,ns,  err
+		return nil, ns, err
 	}
 	return client, ns, err
 
 }
-
 
 func (f *factory) CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error) {
 	kubeconfig := createKubeConfig()
@@ -135,7 +134,6 @@ func (f *factory) CreateApiExtensionsClient() (*apiextensionsclientset.Clientset
 	}
 	return apiextensionsclientset.NewForConfig(config)
 }
-
 
 func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
 	kubeconfig := createKubeConfig()

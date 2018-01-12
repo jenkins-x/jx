@@ -42,8 +42,6 @@ type EnvironmentList struct {
 	Items []Environment `json:"items"`
 }
 
-
-
 // Promotion Strategy Type string
 type PromotionStrategyType string
 
@@ -67,4 +65,3 @@ type EnvironmentRepository struct {
 	URL  string                    `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
 	Ref  string                    `json:"ref,omitempty" protobuf:"bytes,3,opt,name=ref"`
 }
-

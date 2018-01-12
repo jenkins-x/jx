@@ -1,5 +1,3 @@
-
-
 package v1
 
 import (
@@ -35,7 +33,6 @@ func init() {
 	// makes the code compile even when the generated files are missing.
 	SchemeBuilder.Register(addKnownTypes)
 }
-
 
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
