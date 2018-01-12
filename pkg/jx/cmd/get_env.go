@@ -71,10 +71,10 @@ func (o *GetEnvOptions) Run() error {
 	}
 
 	table := o.CreateTable()
-	table.AddRow("NAME", "LABEL", "PROMOTE", "NAMESPACE", "CLUSTER")
+	table.AddRow("NAME", "LABEL", "PROMOTE", "NAMESPACE", "CLUSTER", "SOURCE URL", "REF")
 
 	for _, env := range envs.Items {
-		table.AddRow(env.Name, env.Spec.Label, string(env.Spec.PromotionStrategy), env.Spec.Namespace, env.Spec.Cluster)
+		table.AddRow(env.Name, env.Spec.Label, string(env.Spec.PromotionStrategy), env.Spec.Namespace, env.Spec.Cluster, env.Spec.Source.URL, env.Spec.Source.Ref)
 	}
 	table.Render()
 	return nil
