@@ -102,17 +102,8 @@ func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	return cmd
 }
 
-func (options *CreateClusterOptions) Run() error {
-	args := options.Args
-	cmd := options.Cmd
-	if len(args) != 1 {
-		log.Errorf("You must specify one kubernetes provider you want to setup and configure, if unknown minikube is a great way to trial Jenkins-X locally.\n%s", valid_providers)
-
-		usageString := "Required kubernetes provider."
-		return cmdutil.UsageError(cmd, usageString)
-	}
-
-	return nil
+func (o *CreateClusterOptions) Run() error {
+	return o.Cmd.Help()
 }
 
 func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {
