@@ -4,6 +4,8 @@ import:
   version: v6.0.0
 - package: k8s.io/apimachinery
 - package: k8s.io/api
+- package: k8s.io/code-generator
+- package: k8s.io/gengo
 - package: github.com/jenkins-x/golang-jenkins
 - package: github.com/google/go-github
 - package: golang.org/x/oauth2
