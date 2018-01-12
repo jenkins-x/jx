@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 // GetEnvOptions containers the CLI options
@@ -57,7 +58,15 @@ func NewCmdGetEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 // Run implements this command
 func (o *GetEnvOptions) Run() error {
 	f := o.Factory
-	client, ns, err := f.CreateJXClient()
+	client, currentNs, err := f.CreateJXClient()
+	if err != nil {
+		return err
+	}
+	kubeClient, _, err := o.Factory.CreateClient()
+	if err != nil {
+		return err
+	}
+	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
 		return err
 	}

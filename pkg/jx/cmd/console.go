@@ -65,6 +65,13 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 	}
 	url, err := kube.FindServiceURL(client, ns, name)
 	if url == "" {
+		devNs, _, err := kube.GetDevNamespace(client, ns)
+		if err != nil {
+			return err
+		}
+		url, err = kube.FindServiceURL(client, devNs, name)
+	}
+	if url == "" {
 		return fmt.Errorf("Could not find service %s in namespace %s", name, ns)
 	}
 	fmt.Fprintf(o.Out, "%s: %s\n", label, url)

@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
@@ -144,4 +145,42 @@ func GetEnvironmentNames(jxClient *versioned.Clientset, ns string) ([]string, er
 	}
 	sort.Strings(envNames)
 	return envNames, nil
+}
+
+
+// GetDevNamespace returns the developer environment namespace
+// which is the namespace that contains the Environments and the developer tools like Jenkins
+func GetDevNamespace(kubeClient *kubernetes.Clientset, ns string) (string, string, error) {
+	env := ""
+	namespace, err := kubeClient.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
+	if err != err {
+		return ns, env, err
+	}
+	if namespace.Labels != nil {
+		answer := namespace.Labels[LabelTeam]
+		if answer != "" {
+			ns = answer
+		}
+		env = namespace.Labels[LabelEnvironment]
+	}
+	return ns, env, nil
+}
+
+func PickEnvironment(envNames []string) (string, error) {
+	name := ""
+	if len(envNames) == 0 {
+		return "", nil
+	} else if len(envNames) == 1 {
+		name = envNames[0]
+	} else {
+		prompt := &survey.Select{
+			Message: "Pick environment:",
+			Options: envNames,
+		}
+		err := survey.AskOne(prompt, &name, nil)
+		if err != nil {
+			return "", err
+		}
+	}
+	return name, nil
 }

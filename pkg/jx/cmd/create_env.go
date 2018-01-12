@@ -78,7 +78,7 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 
 // Run implements the command
 func (o *CreateEnvOptions) Run() error {
-	jxClient, ns, err := o.Factory.CreateJXClient()
+	jxClient, currentNs, err := o.Factory.CreateJXClient()
 	if err != nil {
 		return err
 	}
@@ -92,6 +92,10 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
 
+	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
+	if err != nil {
+		return err
+	}
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
 	err = kube.CreateEnvironmentSurvey(&env, &o.Options, o.NoGitOps, ns, jxClient)
