@@ -51,8 +51,10 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 			},
 	*/
 
+	cmds.AddCommand(NewCmdCompletion(f, out))
 	cmds.AddCommand(NewCmdConsole(f, out, err))
 	cmds.AddCommand(NewCmdCreate(f, out, err))
+	cmds.AddCommand(NewCmdEdit(f, out, err))
 	cmds.AddCommand(NewCmdGet(f, out, err))
 	cmds.AddCommand(NewCmdImport(f, out, err))
 	cmds.AddCommand(NewCmdInit(f, out, err))

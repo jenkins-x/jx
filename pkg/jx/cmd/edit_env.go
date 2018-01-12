@@ -8,29 +8,28 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
-	env_description = `		An Environment maps to a kubernetes cluster and namespace and is a place that your team's applications can be promoted to via Continous Delivery.
-
-			You can optionally use GitOps to manage the configuration of an Environment by storing all configuration in a git repository and then only changing it via Pull Requests and CI / CD.
-	`
-	create_env_long = templates.LongDesc(`
-		Creates a new Environment
+	edit_env_long = templates.LongDesc(`
+		Edits a new Environment
         ` + env_description + `
 `)
 
-	create_env_example = templates.Examples(`
-		# Create a new Environment, prompting for the required data
-		jx create env
+	edit_env_example = templates.Examples(`
+		# Edit the stating Environment, prompting for the required data
+		jx edit env -n stating
 
-		# Creates a new Environment passing in the required data on the command line
-		jx create env -n prod -l Production --no-gitops --namespace my-prod
+		# Edit the prod Environment in batch mode (so not interactive)
+		jx edit env -b -n prod -l Production --no-gitops --namespace my-prod
 	`)
 )
 
-// CreateEnvOptions the options for the create spring command
-type CreateEnvOptions struct {
+// EditEnvOptions the options for the create spring command
+type EditEnvOptions struct {
 	CreateOptions
 
 	Options           v1.Environment
@@ -39,9 +38,9 @@ type CreateEnvOptions struct {
 	NoGitOps bool
 }
 
-// NewCmdCreateEnv creates a command object for the "create" command
-func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &CreateEnvOptions{
+// NewCmdEditEnv creates a command object for the "create" command
+func NewCmdEditEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &EditEnvOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -55,8 +54,8 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 		Use:     "environment",
 		Short:   "Create a new Environment which is used to promote your Team's Applications via Continuous Delivery",
 		Aliases: []string{"env"},
-		Long:    create_env_long,
-		Example: create_env_example,
+		Long:    edit_env_long,
+		Example: edit_env_example,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -77,7 +76,7 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 }
 
 // Run implements the command
-func (o *CreateEnvOptions) Run() error {
+func (o *EditEnvOptions) Run() error {
 	jxClient, ns, err := o.Factory.CreateJXClient()
 	if err != nil {
 		return err
@@ -92,17 +91,47 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
 
-	env := v1.Environment{}
-	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	err = kube.CreateEnvironmentSurvey(&env, &o.Options, o.NoGitOps, ns, jxClient)
+	envNames, err := kube.GetEnvironmentNames(jxClient, ns)
 	if err != nil {
 		return err
 	}
-	_, err = jxClient.JenkinsV1().Environments(ns).Create(&env)
-	if err != nil {
-		return err
-	}
-	o.Printf("Created environment %s\n", env.Name)
 
-	return kube.EnsureEnvironmentNamespaceSetup(kubeClient, &env, ns)
+	name := ""
+	args := o.Args
+	if len(args) > 0 {
+		name = args[0]
+	} else {
+		if len(envNames) == 0 {
+			return outputEmptyListWarning(o.Out)
+		} else if len(envNames) == 1 {
+			name = envNames[0]
+		} else {
+			prompt := &survey.Select{
+				Message: "Pick environment:",
+				Options: envNames,
+			}
+			err := survey.AskOne(prompt, &name, nil)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	env, err := jxClient.JenkinsV1().Environments(ns).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return util.InvalidArg(name, envNames)
+	}
+
+	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
+	err = kube.CreateEnvironmentSurvey(env, &o.Options, o.NoGitOps, ns, jxClient)
+	if err != nil {
+		return err
+	}
+	_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+	if err != nil {
+		return err
+	}
+	o.Printf("Updated environment %s\n", env.Name)
+
+	return kube.EnsureEnvironmentNamespaceSetup(kubeClient, env, ns)
 }
