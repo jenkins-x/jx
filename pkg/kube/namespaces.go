@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 )
 
 const (
@@ -41,9 +41,9 @@ func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, jxClient 
 	annotations := map[string]string{}
 
 	// lets check that the current namespace is marked as the dev environment
-	err :=  EnsureNamespaceCreated(kubeClient, ns, labels, annotations)
+	err := EnsureNamespaceCreated(kubeClient, ns, labels, annotations)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	// lets ensure there is a dev Environment setup so that we can easily switch between all the environments
@@ -52,17 +52,17 @@ func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, jxClient 
 		// lets create a dev environment
 		env := &v1.Environment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        LabelValueDevEnvironment,
+				Name: LabelValueDevEnvironment,
 			},
 			Spec: v1.EnvironmentSpec{
-				Namespace: ns,
-				Label: "Development",
+				Namespace:         ns,
+				Label:             "Development",
 				PromotionStrategy: v1.PromotionStrategyTypeNever,
 			},
 		}
 		_, err = jxClient.JenkinsV1().Environments(ns).Create(env)
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 	return nil

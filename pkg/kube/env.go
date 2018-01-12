@@ -147,7 +147,6 @@ func GetEnvironmentNames(jxClient *versioned.Clientset, ns string) ([]string, er
 	return envNames, nil
 }
 
-
 // GetDevNamespace returns the developer environment namespace
 // which is the namespace that contains the Environments and the developer tools like Jenkins
 func GetDevNamespace(kubeClient *kubernetes.Clientset, ns string) (string, string, error) {

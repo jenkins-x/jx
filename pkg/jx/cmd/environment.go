@@ -12,9 +12,9 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"k8s.io/client-go/kubernetes"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 type EnvironmentOptions struct {
@@ -23,8 +23,7 @@ type EnvironmentOptions struct {
 	Choose bool
 }
 
-const (
-)
+const ()
 
 var (
 	environment_long = templates.LongDesc(`

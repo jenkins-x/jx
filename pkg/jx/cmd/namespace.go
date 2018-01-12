@@ -12,10 +12,10 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"k8s.io/client-go/kubernetes"
 	"sort"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 type NamespaceOptions struct {
@@ -86,7 +86,7 @@ func (o *NamespaceOptions) Run() error {
 	}
 	names, err := GetNamespaceNames(client)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	if o.Choose {
@@ -124,7 +124,6 @@ func (o *NamespaceOptions) Run() error {
 	}
 	return nil
 }
-
 
 // GetNamespaceNames returns the sorted list of environment names
 func GetNamespaceNames(client *kubernetes.Clientset) ([]string, error) {
