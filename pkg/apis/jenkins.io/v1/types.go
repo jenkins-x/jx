@@ -50,6 +50,8 @@ const (
 	PromotionStrategyTypeManual PromotionStrategyType = "Manual"
 	// PromotionStrategyTypeAutomatic specifies that promotion happens automatically
 	PromotionStrategyTypeAutomatic PromotionStrategyType = "Auto"
+	// PromotionStrategyTypeNever specifies that promotion is disabled for this environment
+	PromotionStrategyTypeNever PromotionStrategyType = "Never"
 )
 
 // Environment Repository Type string

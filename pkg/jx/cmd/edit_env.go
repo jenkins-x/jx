@@ -9,7 +9,6 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -77,7 +76,7 @@ func NewCmdEditEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 // Run implements the command
 func (o *EditEnvOptions) Run() error {
-	jxClient, ns, err := o.Factory.CreateJXClient()
+	jxClient, currentNs, err := o.Factory.CreateJXClient()
 	if err != nil {
 		return err
 	}
@@ -91,29 +90,23 @@ func (o *EditEnvOptions) Run() error {
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
 
-	envNames, err := kube.GetEnvironmentNames(jxClient, ns)
+	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
 		return err
 	}
 
+	envNames, err := kube.GetEnvironmentNames(jxClient, ns)
+	if err != nil {
+		return err
+	}
 	name := ""
 	args := o.Args
 	if len(args) > 0 {
 		name = args[0]
 	} else {
-		if len(envNames) == 0 {
-			return outputEmptyListWarning(o.Out)
-		} else if len(envNames) == 1 {
-			name = envNames[0]
-		} else {
-			prompt := &survey.Select{
-				Message: "Pick environment:",
-				Options: envNames,
-			}
-			err := survey.AskOne(prompt, &name, nil)
-			if err != nil {
-				return err
-			}
+		name, err = kube.PickEnvironment(envNames)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -133,5 +126,5 @@ func (o *EditEnvOptions) Run() error {
 	}
 	o.Printf("Updated environment %s\n", env.Name)
 
-	return kube.EnsureEnvironmentNamespaceSetup(kubeClient, env, ns)
+	return kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, env, ns)
 }

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/spf13/cobra"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/spf13/cobra"
 )
 
 const boilerPlate = ""

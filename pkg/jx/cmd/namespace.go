@@ -12,8 +12,10 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"k8s.io/client-go/kubernetes"
+	"sort"
 )
 
 type NamespaceOptions struct {
@@ -54,7 +56,7 @@ func NewCmdNamespace(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	cmd := &cobra.Command{
 		Use:     "namespace",
 		Aliases: []string{"ns"},
-		Short:   "View or change the current namespace context in the current kubernetes clsuter",
+		Short:   "View or change the current namespace context in the current kubernetes cluster",
 		Long:    namespace_long,
 		Example: namespace_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -64,7 +66,7 @@ func NewCmdNamespace(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Choose, "select", "s", false, "Select which namspace to switch to")
+	cmd.Flags().BoolVarP(&options.Choose, "select", "s", false, "Select which namespace to switch to")
 	return cmd
 }
 
@@ -82,13 +84,18 @@ func (o *NamespaceOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	names, err := GetNamespaceNames(client)
+	if err != nil {
+		return err
+	}
+
 	if o.Choose {
 		defaultNamespace := ""
 		ctx := kube.CurrentContext(config)
 		if ctx != nil {
 			defaultNamespace = kube.CurrentNamespace(config)
 		}
-		pick, err := o.PickNamespace(client, defaultNamespace)
+		pick, err := o.PickNamespace(names, defaultNamespace)
 		if err != nil {
 			return err
 		}
@@ -97,7 +104,7 @@ func (o *NamespaceOptions) Run() error {
 	if ns != "" {
 		_, err = client.CoreV1().Namespaces().Get(ns, meta_v1.GetOptions{})
 		if err != nil {
-			return fmt.Errorf("Error: %s\nIf you want to create that namespace then try:\n    kubectl create ns %s", err, ns)
+			return util.InvalidArg(ns, names)
 		}
 		newConfig := *config
 		ctx := kube.CurrentContext(config)
@@ -118,31 +125,33 @@ func (o *NamespaceOptions) Run() error {
 	return nil
 }
 
-func (o *NamespaceOptions) PickNamespace(client *kubernetes.Clientset, defaultNamespace string) (string, error) {
+// GetNamespaceNames returns the sorted list of environment names
+func GetNamespaceNames(client *kubernetes.Clientset) ([]string, error) {
+	names := []string{}
 	list, err := client.CoreV1().Namespaces().List(meta_v1.ListOptions{})
 	if err != nil {
-		return "", fmt.Errorf("Failed to load current namespaces %s", err)
+		return names, fmt.Errorf("Failed to namespaces %s", err)
 	}
-	names := []string{}
 	for _, n := range list.Items {
 		names = append(names, n.Name)
 	}
-	var qs = []*survey.Question{
-		{
-			Name: "namespace",
-			Prompt: &survey.Select{
-				Message: "Change namespace: ",
-				Options: names,
-				Default: defaultNamespace,
-			},
-		},
+	sort.Strings(names)
+	return names, nil
+}
+
+func (o *NamespaceOptions) PickNamespace(names []string, defaultNamespace string) (string, error) {
+	if len(names) == 0 {
+		return "", nil
 	}
-	answers := struct {
-		Namespace string
-	}{}
-	err = survey.Ask(qs, &answers)
-	if err != nil {
-		return "", err
+	if len(names) == 1 {
+		return names[0], nil
 	}
-	return answers.Namespace, nil
+	name := ""
+	prompt := &survey.Select{
+		Message: "Change namespace:",
+		Options: names,
+		Default: defaultNamespace,
+	}
+	err := survey.AskOne(prompt, &name, nil)
+	return name, err
 }

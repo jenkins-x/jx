@@ -4,18 +4,26 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, env *v1.Environment, ns string) error {
+const (
+	LabelValueDevEnvironment = "dev"
+
+	LabelTeam        = "team"
+	LabelEnvironment = "env"
+)
+
+func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, jxClient *versioned.Clientset, env *v1.Environment, ns string) error {
 	// lets create the namespace if we are on the same cluster
 	spec := &env.Spec
 	if spec.Cluster == "" && spec.Namespace != "" {
 		labels := map[string]string{
-			"team": ns,
-			"env":  env.Name,
+			LabelTeam:        ns,
+			LabelEnvironment: env.Name,
 		}
 		annotations := map[string]string{}
 
@@ -24,8 +32,40 @@ func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, env *v1.E
 			return err
 		}
 	}
-	return nil
 
+	// lets annotate the team namespace as being the developer environment
+	labels := map[string]string{
+		LabelTeam:        ns,
+		LabelEnvironment: LabelValueDevEnvironment,
+	}
+	annotations := map[string]string{}
+
+	// lets check that the current namespace is marked as the dev environment
+	err := EnsureNamespaceCreated(kubeClient, ns, labels, annotations)
+	if err != nil {
+		return err
+	}
+
+	// lets ensure there is a dev Environment setup so that we can easily switch between all the environments
+	_, err = jxClient.JenkinsV1().Environments(ns).Get(LabelValueDevEnvironment, metav1.GetOptions{})
+	if err != nil {
+		// lets create a dev environment
+		env := &v1.Environment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: LabelValueDevEnvironment,
+			},
+			Spec: v1.EnvironmentSpec{
+				Namespace:         ns,
+				Label:             "Development",
+				PromotionStrategy: v1.PromotionStrategyTypeNever,
+			},
+		}
+		_, err = jxClient.JenkinsV1().Environments(ns).Create(env)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Ensure that the namespace exists for the given name
