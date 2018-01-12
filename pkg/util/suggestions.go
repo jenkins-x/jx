@@ -10,16 +10,26 @@ const (
 	DefaultSuggestionsMinimumDistance = 2
 )
 
+
+func InvalidOptionError(option string, value string, err error) error {
+	return InvalidOptionf(option, value, "%s", err)
+}
+
+func InvalidOptionf(option string, value string, message string, a ...interface{}) error {
+	text := fmt.Sprintf(message, a...)
+	return fmt.Errorf("Invalid option: --%s %s\n%s", option, value, text)
+}
+
 func InvalidOption(name string, value string, values []string) error {
 	suggestions := SuggestionsFor(value, values, DefaultSuggestionsMinimumDistance)
 	if len(suggestions) > 0 {
 		if len(suggestions) == 1 {
-			return fmt.Errorf("Invalid option: --%s %s\nDid you mean:  --%s %s", name, value, name, suggestions[0])
+			return InvalidOptionf(name, value, "Did you mean:  --%s %s", name, value, name, suggestions[0])
 		}
-		return fmt.Errorf("Invalid option: --%s %s\nDid you mean one of: %s", name, value, strings.Join(suggestions, ", "))
+		return InvalidOptionf(name, value, "Did you mean one of: %s", strings.Join(suggestions, ", "))
 	}
 	sort.Strings(values)
-	return fmt.Errorf("Invalid option: --%s %s\nPossible values: %s", name, value, strings.Join(values, ", "))
+	return InvalidOptionf(name, value, "Possible values: %s", strings.Join(values, ", "))
 }
 
 func SuggestionsFor(typedName string, values []string, suggestionsMinimumDistance int, explicitSuggestions ...string) []string {

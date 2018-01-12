@@ -5,11 +5,14 @@ import (
 
 	"gopkg.in/AlecAivazis/survey.v1"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGitOps bool, ns string) error {
+func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGitOps bool, ns string, jxClient *versioned.Clientset) error {
 	name := data.Name
 	createMode := name == ""
 	if createMode {
@@ -18,13 +21,29 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 			if err != nil {
 				return err
 			}
+			err = ValidateEnvironmentDoesNotExist(jxClient, ns, config.Name)
+			if err != nil {
+				return util.InvalidOptionError(OptionName, config.Name, err)
+			}
 			data.Name = config.Name
 		} else {
+			validator := func(val interface{}) error {
+				err := ValidateName(val)
+				if err != nil {
+					return err
+				}
+				str, ok := val.(string)
+				if !ok {
+					return fmt.Errorf("Expected string value!")
+				}
+				return ValidateEnvironmentDoesNotExist(jxClient, ns, str)
+			}
+
 			q := &survey.Input{
 				Message: "Name:",
 				Help: "The Environment name must be unique, lower case and a valid DNS name",
 			}
-			err := survey.AskOne(q, &data.Name, ValidateName)
+			err := survey.AskOne(q, &data.Name, validator)
 			if err != nil {
 				return err
 			}

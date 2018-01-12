@@ -89,7 +89,7 @@ func (o *CreateEnvOptions) Run() error {
 
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	err = kube.CreateEnvironmentSurvey(&env, &o.Options, o.NoGitOps, ns)
+	err = kube.CreateEnvironmentSurvey(&env, &o.Options, o.NoGitOps, ns, jxClient)
 	if err != nil {
 		return err
 	}
