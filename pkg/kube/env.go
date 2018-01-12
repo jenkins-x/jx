@@ -183,3 +183,22 @@ func PickEnvironment(envNames []string) (string, error) {
 	}
 	return name, nil
 }
+
+func PickName(names []string, message string) (string, error) {
+	name := ""
+	if len(names) == 0 {
+		return "", nil
+	} else if len(names) == 1 {
+		name = names[0]
+	} else {
+		prompt := &survey.Select{
+			Message: message,
+			Options: names,
+		}
+		err := survey.AskOne(prompt, &name, nil)
+		if err != nil {
+			return "", err
+		}
+	}
+	return name, nil
+}

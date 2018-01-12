@@ -10,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,9 +66,6 @@ func NewCmdLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 
 func (o *LogsOptions) Run() error {
 	args := o.Args
-	if len(args) == 0 {
-		return fmt.Errorf("Must specify a Deployment argument!")
-	}
 
 	client, curNs, err := o.Factory.CreateClient()
 	if err != nil {
@@ -78,7 +76,23 @@ func (o *LogsOptions) Run() error {
 	if ns == "" {
 		ns = curNs
 	}
-	name := args[0]
+	name := ""
+	if len(args) == 0 {
+		names, err := GetDeploymentNames(client, ns)
+		if err != nil {
+			return err
+		}
+		if len(names) == 0 {
+			return fmt.Errorf("There are no Deployments running")
+		}
+		n, err := kube.PickName(names, "Pick Deployment:")
+		if err != nil {
+			return err
+		}
+		name = n
+	} else {
+		name = args[0]
+	}
 
 	for {
 		pod, err := waitForReadyPodForDeployment(client, ns, name)
