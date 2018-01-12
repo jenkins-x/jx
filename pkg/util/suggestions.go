@@ -31,6 +31,28 @@ func InvalidOption(name string, value string, values []string) error {
 	return InvalidOptionf(name, value, "Possible values: %s", strings.Join(values, ", "))
 }
 
+func InvalidArg(value string, values []string) error {
+	suggestions := SuggestionsFor(value, values, DefaultSuggestionsMinimumDistance)
+	if len(suggestions) > 0 {
+		if len(suggestions) == 1 {
+			return InvalidArgf(value, "Did you mean: %s", suggestions[0])
+		}
+		return InvalidArgf(value, "Did you mean one of: %s", strings.Join(suggestions, ", "))
+	}
+	sort.Strings(values)
+	return InvalidArgf(value, "Possible values: %s", strings.Join(values, ", "))
+}
+
+
+func InvalidArgError(value string, err error) error {
+	return InvalidArgf(value, "%s", err)
+}
+
+func InvalidArgf(value string, message string, a ...interface{}) error {
+	text := fmt.Sprintf(message, a...)
+	return fmt.Errorf("Invalid argument: %s\n%s", value, text)
+}
+
 func SuggestionsFor(typedName string, values []string, suggestionsMinimumDistance int, explicitSuggestions ...string) []string {
 	suggestions := []string{}
 	for _, value := range values {

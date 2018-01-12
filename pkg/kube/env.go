@@ -2,12 +2,14 @@ package kube
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
@@ -125,4 +127,21 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 		data.Spec.PromotionStrategy = v1.PromotionStrategyTypeAutomatic
 	}
 	return nil
+}
+
+// GetEnvironmentNames returns the sorted list of environment names
+func GetEnvironmentNames(jxClient *versioned.Clientset, ns string) ([]string, error){
+	envNames := []string{}
+	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return envNames, err
+	}
+	for _, env := range envs.Items {
+		n := env.Name
+		if n != "" {
+			envNames = append(envNames, n)
+		}
+	}
+	sort.Strings(envNames)
+	return envNames, nil
 }
