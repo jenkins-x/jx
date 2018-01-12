@@ -13,6 +13,7 @@ const (
 
 	valid_resources = `Valid resource types include:
 
+    * environments (aka 'env')
     * pipelines (aka 'pipe')
     * urls (aka 'url')
     `

@@ -58,10 +58,12 @@ func NewCmdOpen(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 
 func (o *OpenOptions) Run() error {
 	if len(o.Args) == 0 {
-		getOptions := GetOptions{
-			CommonOptions: o.CommonOptions,
+		getOptions := GetURLOptions{
+			GetOptions: GetOptions{
+				CommonOptions: o.CommonOptions,
+			},
 		}
-		return getOptions.getURLs()
+		return getOptions.Run()
 	}
 	name := o.Args[0]
 	return o.ConsoleOptions.Open(name, name)
