@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/apis/jx/v1"
 )
 
 var (
@@ -31,7 +32,7 @@ var (
 type CreateEnvOptions struct {
 	CreateOptions
 
-	Options           kube.Environment
+	Options           v1.Environment
 	PromotionStrategy string
 
 	NoGitOps bool
@@ -68,7 +69,7 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	cmd.Flags().StringVarP(&options.Options.Spec.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
 	cmd.Flags().StringVarP(&options.Options.Spec.Namespace, "namespace", "s", "", "The Kubernetes namespace for the Environment")
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
-	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", string(kube.PromotionStrategyTypeAutomatic), "The promotion strategy")
+	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", string(v1.PromotionStrategyTypeAutomatic), "The promotion strategy")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
 	return cmd
@@ -80,13 +81,21 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	jxClient, err := o.Factory.CreateJXClient()
+	if err != nil {
+	  return err
+	}
 
-	env := kube.Environment{}
-	o.Options.Spec.PromotionStrategy = kube.PromotionStrategyType(o.PromotionStrategy)
+	env := v1.Environment{}
+	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
 	err = kube.CreateEnvironmentSurvey(&env, &o.Options, o.NoGitOps, ns)
 	if err != nil {
 		return err
 	}
-	o.Printf("Created environment %#v\n", env)
+	_, err = jxClient.ApiV1().Environments(ns).Create(&env)
+	if err != nil {
+		return err
+	}
+	o.Printf("Created environment %s\n", env.Name)
 	return nil
 }

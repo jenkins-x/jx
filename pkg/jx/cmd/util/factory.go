@@ -13,6 +13,8 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"k8s.io/client-go/kubernetes"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -28,6 +30,8 @@ type Factory interface {
 	CreateGitAuthConfigService() (auth.AuthConfigService, error)
 
 	CreateClient() (*kubernetes.Clientset, string, error)
+
+	CreateJXClient() (*versioned.Clientset, error)
 
 	CreateTable(out io.Writer) table.Table
 }
@@ -97,19 +101,19 @@ func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigServi
 	return svc, nil
 }
 
-func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
-	var kubeconfig *string
-	kubeconfenv := os.Getenv("KUBECONFIG")
-	if kubeconfenv != "" {
-		kubeconfig = &kubeconfenv
-	} else {
-		if home := HomeDir(); home != "" {
-			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-		} else {
-			// TODO load from kubeconfig CLI option?
-			//kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-		}
+func (f *factory) CreateJXClient() (*versioned.Clientset, error) {
+	kubeconfig := createKubeConfig()
+	// use the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		return nil, err
 	}
+	return versioned.NewForConfig(config)
+}
+
+
+func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
+	kubeconfig := createKubeConfig()
 	client, err := kube.CreateClient(kubeconfig)
 	if err != nil {
 		return nil, "", nil
@@ -122,6 +126,27 @@ func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
 	ns = kube.CurrentNamespace(config)
 	// TODO allow namsepace to be specified as a CLI argument!
 	return client, ns, nil
+}
+
+var kubeConfigCache *string
+
+func createKubeConfig() *string {
+	var kubeconfig *string
+	if kubeConfigCache != nil {
+		return kubeConfigCache
+	}
+	kubeconfenv := os.Getenv("KUBECONFIG")
+	if kubeconfenv != "" {
+		kubeconfig = &kubeconfenv
+	} else {
+		if home := HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+	}
+	kubeConfigCache = kubeconfig
+	return kubeconfig
 }
 
 func (f *factory) CreateTable(out io.Writer) table.Table {

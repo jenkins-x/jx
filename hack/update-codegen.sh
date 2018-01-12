@@ -32,8 +32,6 @@ echo "Generating code to ${OUTDIR}"
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 ${CODEGEN_PKG}/generate-groups.sh all \
   github.com/jenkins-x/jx/pkg/client github.com/jenkins-x/jx/pkg/apis \
-  cr:v1 \
+  jx:v1 \
   --output-base "${OUTDIR}" \
   --go-header-file ${SCRIPT_ROOT}/hack/custom-boilerplate.go.txt
-
-#  --output-base "$(dirname ${BASH_SOURCE})/../../../../.." \

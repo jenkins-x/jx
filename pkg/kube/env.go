@@ -1,13 +1,15 @@
 package kube
 
 import (
-	"gopkg.in/AlecAivazis/survey.v1"
 	"strings"
+
+	"gopkg.in/AlecAivazis/survey.v1"
+	"github.com/jenkins-x/jx/pkg/apis/jx/v1"
 )
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(data *Environment, config *Environment, noGitOps bool, ns string) error {
+func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGitOps bool, ns string) error {
 	name := data.Name
 	createMode := name == ""
 	if createMode {
@@ -95,8 +97,7 @@ func CreateEnvironmentSurvey(data *Environment, config *Environment, noGitOps bo
 		// TODO edit the promotion strategy
 	}
 	if string(data.Spec.PromotionStrategy) == "" {
-		data.Spec.PromotionStrategy = PromotionStrategyTypeAutomatic
+		data.Spec.PromotionStrategy = v1.PromotionStrategyTypeAutomatic
 	}
-
 	return nil
 }
