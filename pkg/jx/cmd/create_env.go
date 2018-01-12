@@ -85,6 +85,11 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 	  return err
 	}
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+	  return err
+	}
+	kube.RegisterEnvironmentCRD(apisClient)
 
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
@@ -92,7 +97,7 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	_, err = jxClient.ApiV1().Environments(ns).Create(&env)
+	_, err = jxClient.JenkinsV1().Environments(ns).Create(&env)
 	if err != nil {
 		return err
 	}

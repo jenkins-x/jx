@@ -35,7 +35,7 @@ type environments struct {
 }
 
 // newEnvironments returns a Environments
-func newEnvironments(c *ApiV1Client, namespace string) *environments {
+func newEnvironments(c *JenkinsV1Client, namespace string) *environments {
 	return &environments{
 		client: c.RESTClient(),
 		ns:     namespace,

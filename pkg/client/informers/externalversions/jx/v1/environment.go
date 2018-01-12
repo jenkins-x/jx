@@ -45,13 +45,13 @@ func NewFilteredEnvironmentInformer(client versioned.Interface, namespace string
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ApiV1().Environments(namespace).List(options)
+				return client.JenkinsV1().Environments(namespace).List(options)
 			},
 			WatchFunc: func(options meta_v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ApiV1().Environments(namespace).Watch(options)
+				return client.JenkinsV1().Environments(namespace).Watch(options)
 			},
 		},
 		&jx_v1.Environment{},

@@ -2,8 +2,8 @@ package fake
 
 import (
 	clientset "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	apiv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jx/v1"
-	fakeapiv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jx/v1/fake"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jx/v1"
+	fakejenkinsv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jx/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -44,12 +44,12 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-// ApiV1 retrieves the ApiV1Client
-func (c *Clientset) ApiV1() apiv1.ApiV1Interface {
-	return &fakeapiv1.FakeApiV1{Fake: &c.Fake}
+// JenkinsV1 retrieves the JenkinsV1Client
+func (c *Clientset) JenkinsV1() jenkinsv1.JenkinsV1Interface {
+	return &fakejenkinsv1.FakeJenkinsV1{Fake: &c.Fake}
 }
 
-// Api retrieves the ApiV1Client
-func (c *Clientset) Api() apiv1.ApiV1Interface {
-	return &fakeapiv1.FakeApiV1{Fake: &c.Fake}
+// Jenkins retrieves the JenkinsV1Client
+func (c *Clientset) Jenkins() jenkinsv1.JenkinsV1Interface {
+	return &fakejenkinsv1.FakeJenkinsV1{Fake: &c.Fake}
 }

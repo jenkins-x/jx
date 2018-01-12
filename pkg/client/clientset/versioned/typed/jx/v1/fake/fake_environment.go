@@ -12,13 +12,13 @@ import (
 
 // FakeEnvironments implements EnvironmentInterface
 type FakeEnvironments struct {
-	Fake *FakeApiV1
+	Fake *FakeJenkinsV1
 	ns   string
 }
 
-var environmentsResource = schema.GroupVersionResource{Group: "api.jenkins.io", Version: "v1", Resource: "environments"}
+var environmentsResource = schema.GroupVersionResource{Group: "jenkins.io", Version: "v1", Resource: "environments"}
 
-var environmentsKind = schema.GroupVersionKind{Group: "api.jenkins.io", Version: "v1", Kind: "Environment"}
+var environmentsKind = schema.GroupVersionKind{Group: "jenkins.io", Version: "v1", Kind: "Environment"}
 
 // Get takes name of the environment, and returns the corresponding environment object, and an error if there is any.
 func (c *FakeEnvironments) Get(name string, options v1.GetOptions) (result *jx_v1.Environment, err error) {

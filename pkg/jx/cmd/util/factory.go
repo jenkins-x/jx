@@ -13,8 +13,10 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"k8s.io/client-go/kubernetes"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 )
 
 const (
@@ -32,6 +34,8 @@ type Factory interface {
 	CreateClient() (*kubernetes.Clientset, string, error)
 
 	CreateJXClient() (*versioned.Clientset, error)
+
+	CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error)
 
 	CreateTable(out io.Writer) table.Table
 }
@@ -109,6 +113,17 @@ func (f *factory) CreateJXClient() (*versioned.Clientset, error) {
 		return nil, err
 	}
 	return versioned.NewForConfig(config)
+}
+
+
+func (f *factory) CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error) {
+	kubeconfig := createKubeConfig()
+	// use the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+	return apiextensionsclientset.NewForConfig(config)
 }
 
 
