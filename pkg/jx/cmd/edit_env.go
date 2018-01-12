@@ -6,11 +6,11 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"gopkg.in/AlecAivazis/survey.v1"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -75,7 +75,6 @@ func NewCmdEditEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	return cmd
 }
 
-
 // Run implements the command
 func (o *EditEnvOptions) Run() error {
 	jxClient, ns, err := o.Factory.CreateJXClient()
@@ -94,9 +93,9 @@ func (o *EditEnvOptions) Run() error {
 
 	envNames, err := kube.GetEnvironmentNames(jxClient, ns)
 	if err != nil {
-	  return err
+		return err
 	}
-	
+
 	name := ""
 	args := o.Args
 	if len(args) > 0 {

@@ -44,7 +44,7 @@ func NewCmdGetURL(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 		Short:   "Display one or many URLs",
 		Long:    get_url_long,
 		Example: get_url_example,
-		Aliases: []string{ "urls"},
+		Aliases: []string{"urls"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

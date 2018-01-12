@@ -3,10 +3,10 @@ package kube
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 )
 
 func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, env *v1.Environment, ns string) error {
@@ -15,7 +15,7 @@ func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, env *v1.E
 	if spec.Cluster == "" && spec.Namespace != "" {
 		labels := map[string]string{
 			"team": ns,
-			"env": env.Name,
+			"env":  env.Name,
 		}
 		annotations := map[string]string{}
 
@@ -27,7 +27,6 @@ func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, env *v1.E
 	return nil
 
 }
-
 
 // Ensure that the namespace exists for the given name
 func EnsureNamespaceCreated(kubeClient *kubernetes.Clientset, name string, labels map[string]string, annotations map[string]string) error {

@@ -54,7 +54,6 @@ func NewCmdEdit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	return cmd
 }
 
-
 // Run implements this command
 func (o *EditOptions) Run() error {
 	return o.Cmd.Help()

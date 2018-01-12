@@ -64,7 +64,6 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	return cmd
 }
 
-
 // Run implements this command
 func (o *GetOptions) Run() error {
 	return o.Cmd.Help()

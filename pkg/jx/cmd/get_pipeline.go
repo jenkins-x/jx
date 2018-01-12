@@ -44,7 +44,7 @@ func NewCmdGetPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 		Short:   "Display one or many Pipelines",
 		Long:    get_pipeline_long,
 		Example: get_pipeline_example,
-		Aliases: []string{ "pipe", "pipes", "pipeline"},
+		Aliases: []string{"pipe", "pipes", "pipeline"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

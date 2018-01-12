@@ -43,7 +43,6 @@ func InvalidArg(value string, values []string) error {
 	return InvalidArgf(value, "Possible values: %s", strings.Join(values, ", "))
 }
 
-
 func InvalidArgError(value string, err error) error {
 	return InvalidArgf(value, "%s", err)
 }

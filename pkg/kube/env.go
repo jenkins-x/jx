@@ -130,7 +130,7 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 }
 
 // GetEnvironmentNames returns the sorted list of environment names
-func GetEnvironmentNames(jxClient *versioned.Clientset, ns string) ([]string, error){
+func GetEnvironmentNames(jxClient *versioned.Clientset, ns string) ([]string, error) {
 	envNames := []string{}
 	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
