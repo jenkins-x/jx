@@ -53,6 +53,7 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	}
 
 	cmd.AddCommand(NewCmdCreateArchetype(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateSpring(f, out, errOut))
 	return cmd
 }
