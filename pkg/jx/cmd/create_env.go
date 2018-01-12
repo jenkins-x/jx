@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"io"
 	"github.com/spf13/cobra"
+	"io"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 )
 
 var (
@@ -107,16 +107,14 @@ func (o *CreateEnvOptions) Run() error {
 		}
 		annotations := map[string]string{}
 
-
 		kubeClient, _, err := o.Factory.CreateClient()
 		if err != nil {
-		  return err
+			return err
 		}
-
 
 		err = kube.EnsureNamespaceCreated(kubeClient, spec.Namespace, labels, annotations)
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 	return nil

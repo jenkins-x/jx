@@ -10,7 +10,6 @@ const (
 	DefaultSuggestionsMinimumDistance = 2
 )
 
-
 func InvalidOptionError(option string, value string, err error) error {
 	return InvalidOptionf(option, value, "%s", err)
 }
