@@ -65,9 +65,9 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	}
 	addCreateFlags(cmd, &options.CreateOptions)
 
-	cmd.Flags().StringVarP(&options.Options.Name, "name", "n", "", "The Environment resource name. Must follow the kubernetes name conventions like Services, Namespaces")
+	cmd.Flags().StringVarP(&options.Options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the kubernetes name conventions like Services, Namespaces")
 	cmd.Flags().StringVarP(&options.Options.Spec.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
-	cmd.Flags().StringVarP(&options.Options.Spec.Namespace, "namespace", "s", "", "The Kubernetes namespace for the Environment")
+	cmd.Flags().StringVarP(&options.Options.Spec.Namespace, kube.OptionNamespace, "s", "", "The Kubernetes namespace for the Environment")
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
 	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", string(v1.PromotionStrategyTypeAutomatic), "The promotion strategy")
 
@@ -79,11 +79,11 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 func (o *CreateEnvOptions) Run() error {
 	jxClient, ns, err := o.Factory.CreateJXClient()
 	if err != nil {
-	  return err
+		return err
 	}
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
 	if err != nil {
-	  return err
+		return err
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
 

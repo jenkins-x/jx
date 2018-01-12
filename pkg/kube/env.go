@@ -14,14 +14,17 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 	createMode := name == ""
 	if createMode {
 		if config.Name != "" {
+			err := ValidNameOption(OptionName, config.Name)
+			if err != nil {
+				return err
+			}
 			data.Name = config.Name
 		} else {
 			q := &survey.Input{
 				Message: "Name:",
 				Help: "The Environment name must be unique, lower case and a valid DNS name",
 			}
-			// TODO validate/transform to match valid kubnernetes names syntax
-			err := survey.AskOne(q, &data.Name, survey.Required)
+			err := survey.AskOne(q, &data.Name, ValidateName)
 			if err != nil {
 				return err
 			}
@@ -45,6 +48,10 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 		}
 	}
 	if config.Spec.Namespace != "" {
+		err := ValidNameOption(OptionNamespace, config.Spec.Namespace)
+		if err != nil {
+			return err
+		}
 		data.Spec.Namespace = config.Spec.Namespace
 	} else {
 		defaultValue := data.Spec.Namespace
@@ -67,8 +74,7 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 			Default: defaultValue,
 			Help: "Th kubernetes namespace name to use for this Environment",
 		}
-		// TODO validate/transform to match valid kubnernetes names syntax
-		err := survey.AskOne(q, &data.Spec.Namespace, survey.Required)
+		err := survey.AskOne(q, &data.Spec.Namespace, ValidateName)
 		if err != nil {
 			return err
 		}
