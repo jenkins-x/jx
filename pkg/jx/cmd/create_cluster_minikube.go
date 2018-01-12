@@ -65,7 +65,7 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 	}
 	cmd := &cobra.Command{
 		Use:     "minikube",
-		Short:   "Create a new kubernetes cluster with minikube",
+		Short:   "Create a new kubernetes cluster with minikube: Runs locally",
 		Long:    createClusterMinikubeLong,
 		Example: createClusterMinikubeExample,
 		Run: func(cmd *cobra.Command, args []string) {

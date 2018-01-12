@@ -58,7 +58,7 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	}
 	cmd := &cobra.Command{
 		Use:     "aks",
-		Short:   "Create a new kubernetes cluster on AKS",
+		Short:   "Create a new kubernetes cluster on AKS: Runs on Azure",
 		Long:    createClusterAKSLong,
 		Example: createClusterAKSExample,
 		Run: func(cmd *cobra.Command, args []string) {

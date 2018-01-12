@@ -60,7 +60,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	}
 	cmd := &cobra.Command{
 		Use:     "gke",
-		Short:   "Create a new kubernetes cluster on GKE",
+		Short:   "Create a new kubernetes cluster on GKE: Runs on Google Cloud",
 		Long:    createClusterGKELong,
 		Example: createClusterGKEExample,
 		Run: func(cmd *cobra.Command, args []string) {
