@@ -11,7 +11,7 @@ On a Mac you can use brew:
     
 Or download the binary `jx` and add it to your `$PATH`
 
-## Quickstart
+## Getting Help
 
 To find out the available commands type:
 
@@ -20,7 +20,9 @@ To find out the available commands type:
 Or to get help on a specific command, say, 'create' then type:
 
     jx help create
-     
+
+## Getting Started
+
 If you don't yet have a kubernetes cluster then try:
 
     jx create cluster
@@ -44,7 +46,7 @@ If you have a Maven Archetype you would like to create then use:
     jx create archetype
     
     
-### Changing Environments
+### Switching Environments
 
 The `jx` CLI tool uses the same kubernetes cluster and namespace context as `kubectl`. 
 
