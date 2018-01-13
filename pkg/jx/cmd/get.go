@@ -61,6 +61,7 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.AddCommand(NewCmdGetEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdGetPipeline(f, out, errOut))
 	cmd.AddCommand(NewCmdGetURL(f, out, errOut))
+	cmd.AddCommand(NewCmdGetVersion(f, out, errOut))
 	return cmd
 }
 
