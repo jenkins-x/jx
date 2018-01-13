@@ -44,8 +44,18 @@ If you have a Maven Archetype you would like to create then use:
 
     jx create archetype
     
+
+## Viewing Apps and Environments
+
+To view environments for a team
+
+    jx get env
     
-### Switching Environments
+To view the application versions across environments
+
+    jx get version
+            
+## Switching Environments
 
 The `jx` CLI tool uses the same kubernetes cluster and namespace context as `kubectl`. 
 
