@@ -6,8 +6,7 @@ JX is a CLI tool for working with [Jenkins X](https://jenkins-x.github.io/jenkin
 
 On a Mac you can use brew:
 
-    brew tap jenkins-x/jx
-    brew install jx
+    brew install Jenkins-x/jx/jx 
     
 Or download the binary `jx` and add it to your `$PATH`
 
