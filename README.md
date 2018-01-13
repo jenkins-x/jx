@@ -111,7 +111,17 @@ If you do not know the name
 
 ### Bash completion
 
-To enable bash completion see
+On a Mac to enable bash completion try:
+
+    jx completion bash > ~/.jx/bash
+    source ~/.jx/bash   
+    
+Or try:
+
+    source <(jx completion bash)
+
+For more help try:
 
     jx help completion bash
+     
                                             
