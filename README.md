@@ -1,16 +1,33 @@
 # JX 
 
-JX is a CLI tool to help work with [Jenkins X](https://jenkins-x.github.io/jenkins-x-website/)
+JX is a CLI tool for working with [Jenkins X](https://jenkins-x.github.io/jenkins-x-website/)
+
+## Installing
+
+On a Mac you can use brew:
+
+    brew tap jenkins-x/jx
+    brew install jx
+    
+Or download the binary `jx` and add it to your `$PATH`
 
 ## Quickstart
 
 To find out the available commands type:
 
-    jx help
-    
-Once you have `jx` downloaded and on your `$PATH` you will want to create a kubernetes cluster:
+    jx
+
+Or to get help on a specific command, say, 'create' then type:
+
+    jx help create
+     
+If you don't yet have a kubernetes cluster then try:
 
     jx create cluster
+ 
+Otherwise you can install Jenkins X in your current kubernetes cluster via:
+
+    jx init
     
 ## Importing or Creating apps
 
