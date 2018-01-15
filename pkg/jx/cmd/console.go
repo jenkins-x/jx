@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
 )
 
@@ -74,7 +75,7 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 	if url == "" {
 		return fmt.Errorf("Could not find service %s in namespace %s", name, ns)
 	}
-	fmt.Fprintf(o.Out, "%s: %s\n", label, url)
+	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
 	if !o.OnlyViewURL {
 		browser.OpenURL(url)
 	}

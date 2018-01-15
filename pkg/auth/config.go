@@ -54,7 +54,7 @@ func (server *AuthServer) PrintGenerateAccessToken(o io.Writer) {
 	tokenUrl := fmt.Sprintf("https://%s/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook", server.URL)
 
 	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())
-	fmt.Fprintf(o, "Please click this URL %s\n\n", tokenUrl)
+	fmt.Fprintf(o, "Please click this URL %s\n\n", util.ColorInfo(tokenUrl))
 	fmt.Fprintf(o, "Then COPY the token and enter in into the form below:\n\n")
 }
 

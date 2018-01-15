@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/maven"
 	"os"
 	"path/filepath"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 var (
@@ -137,7 +138,7 @@ func (o *CreateArchetypeOptions) Run() error {
 		return err
 	}
 	outDir := filepath.Join(dir, form.ArtifactId)
-	o.Printf("Created project at %s\n\n", outDir)
+	o.Printf("Created project at %s\n\n", util.ColorInfo(outDir))
 
 	return o.DoImport(outDir)
 }

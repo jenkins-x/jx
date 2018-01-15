@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 var (
@@ -106,7 +107,7 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Created environment %s\n", env.Name)
+	o.Printf("Created environment %s\n", util.ColorInfo(env.Name))
 
 	return kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, ns)
 }
