@@ -92,18 +92,6 @@ func (o *InitOptions) Run() error {
 		os.Exit(-1)
 	}
 
-	log.Infof("URL %s", DEFAULT_CLOUD_ENVIRONMENTS_URL)
-	// call jx install
-	installOpts := &InstallOptions{
-		CommonOptions:      o.CommonOptions,
-		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		KubernetesProvider: MINIKUBE, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
-	}
-	err = installOpts.Run()
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
