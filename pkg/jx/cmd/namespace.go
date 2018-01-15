@@ -101,6 +101,7 @@ func (o *NamespaceOptions) Run() error {
 		}
 		ns = pick
 	}
+	info := util.ColorInfo
 	if ns != "" {
 		_, err = client.CoreV1().Namespaces().Get(ns, meta_v1.GetOptions{})
 		if err != nil {
@@ -116,11 +117,11 @@ func (o *NamespaceOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to update the kube config %s", err)
 		}
-		fmt.Fprintf(o.Out, "Now using namespace '%s' on server '%s'.\n", ctx.Namespace, kube.Server(config, ctx))
+		fmt.Fprintf(o.Out, "Now using namespace '%s' on server '%s'.\n", info(ctx.Namespace), info(kube.Server(config, ctx)))
 	} else {
 		ns := kube.CurrentNamespace(config)
 		server := kube.CurrentServer(config)
-		fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", ns, config.CurrentContext, server)
+		fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(config.CurrentContext), info(server))
 	}
 	return nil
 }

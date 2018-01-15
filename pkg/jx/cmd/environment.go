@@ -102,6 +102,7 @@ func (o *EnvironmentOptions) Run() error {
 		}
 		env = pick
 	}
+	info := util.ColorInfo
 	if env != "" {
 		envResource, err := jxClient.JenkinsV1().Environments(devNs).Get(env, meta_v1.GetOptions{})
 		if err != nil {
@@ -125,7 +126,7 @@ func (o *EnvironmentOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to update the kube config %s", err)
 		}
-		fmt.Fprintf(o.Out, "Now using environment '%s' in tean '%s' on server '%s'.\n", env, devNs, kube.Server(config, ctx))
+		fmt.Fprintf(o.Out, "Now using environment '%s' in tean '%s' on server '%s'.\n", info(env), info(devNs), info(kube.Server(config, ctx)))
 	} else {
 		ns := kube.CurrentNamespace(config)
 		server := kube.CurrentServer(config)
@@ -133,9 +134,9 @@ func (o *EnvironmentOptions) Run() error {
 			env = currentEnv
 		}
 		if env == "" {
-			fmt.Fprintf(o.Out, "Usingnamespace '%s' from context named '%s' on server '%s'.\n", ns, config.CurrentContext, server)
+			fmt.Fprintf(o.Out, "Usingnamespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(config.CurrentContext), info(server))
 		} else {
-			fmt.Fprintf(o.Out, "Using environment '%s' in team '%s' on server '%s'.\n", env, devNs, server)
+			fmt.Fprintf(o.Out, "Using environment '%s' in team '%s' on server '%s'.\n", info(env), info(devNs), info(server))
 		}
 	}
 	return nil

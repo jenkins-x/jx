@@ -124,7 +124,7 @@ func (o *EditEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Updated environment %s\n", env.Name)
+	o.Printf("Updated environment %s\n", util.ColorInfo(env.Name))
 
 	return kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, env, ns)
 }
