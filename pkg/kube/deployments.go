@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -23,6 +24,24 @@ func IsDeploymentRunning(client *kubernetes.Clientset, name, namespace string) (
 		return true, nil
 	}
 	return false, nil
+}
+
+func WaitForAllDeploymentsToBeReady(client *kubernetes.Clientset, namespace string, timeoutPerDeploy time.Duration) error {
+	deployList, err := client.ExtensionsV1beta1().Deployments(namespace).List(meta_v1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	if deployList == nil || len(deployList.Items) == 0 {
+		return fmt.Errorf("no deployments found in namespace %s", namespace)
+	}
+
+	for _, d := range deployList.Items {
+		err = WaitForDeploymentToBeReady(client, d.Name, namespace, timeoutPerDeploy)
+		if err != nil {
+			log.Warnf("deployment %s failed to become ready in namespase %s", d.Name, namespace)
+		}
+	}
+	return nil
 }
 
 // waits for the pods of a deployment to become ready

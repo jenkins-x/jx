@@ -137,6 +137,11 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
+	err = options.waitForInstallToBeReady()
+	if err != nil {
+		return err
+	}
+
 	err = options.runCommand("kubectl", "get", "ingress")
 	if err != nil {
 		return err
@@ -345,6 +350,27 @@ func (o *InstallOptions) registerLocalHelmRepo() error {
 		}
 	}
 	return o.runCommand("helm", "repo", "add", repoName, helmUrl)
+}
+func (o *InstallOptions) waitForInstallToBeReady() error {
+	f := o.Factory
+	client, _, err := f.CreateClient()
+	if err != nil {
+		return err
+	}
+	config, _, err := kube.LoadConfig()
+	if err != nil {
+		return err
+	}
+	ctx := kube.CurrentContext(config)
+	defaultNamespace := ""
+	if ctx != nil {
+		defaultNamespace = kube.CurrentNamespace(config)
+	}
+
+	log.Warnf("waiting for install to be ready, if this is the first time then it will take a while to download images")
+
+	return kube.WaitForAllDeploymentsToBeReady(client, defaultNamespace, 30*time.Minute)
+
 }
 
 func basicAuth(username, password string) string {
