@@ -71,7 +71,7 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	cmd.Flags().StringVarP(&options.Options.Spec.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
 	cmd.Flags().StringVarP(&options.Options.Spec.Namespace, kube.OptionNamespace, "s", "", "The Kubernetes namespace for the Environment")
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
-	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", string(v1.PromotionStrategyTypeAutomatic), "The promotion strategy")
+	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", "", "The promotion strategy")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
 	return cmd
@@ -79,6 +79,10 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 
 // Run implements the command
 func (o *CreateEnvOptions) Run() error {
+	args := o.Args
+	if len(args) > 0 && o.Options.Name == "" {
+		o.Options.Name = args[0]
+	}
 	jxClient, currentNs, err := o.Factory.CreateJXClient()
 	if err != nil {
 		return err

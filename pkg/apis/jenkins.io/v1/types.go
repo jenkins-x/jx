@@ -25,6 +25,7 @@ type EnvironmentSpec struct {
 	Cluster           string                `json:"cluster,omitempty" protobuf:"bytes,3,opt,name=cluster"`
 	PromotionStrategy PromotionStrategyType `json:"promotionStrategy,omitempty" protobuf:"bytes,4,opt,name=promotionStrategy"`
 	Source            EnvironmentRepository `json:"source,omitempty" protobuf:"bytes,5,opt,name=source"`
+	Order             int32                 `json:"order,omitempty" protobuf:"bytes,6,opt,name=order"`
 }
 
 // EnvironmentStatus is the status for an Envirnment resource

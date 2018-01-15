@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"strconv"
-
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -134,5 +132,5 @@ func (o *GetEnvOptions) Run() error {
 }
 
 func formatInt32(n int32) string {
-	return strconv.FormatInt(int64(n), 10)
+	return util.Int32ToA(n)
 }
