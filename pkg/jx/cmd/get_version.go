@@ -7,14 +7,14 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"k8s.io/api/apps/v1beta2"
-	"k8s.io/client-go/kubernetes"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"k8s.io/api/apps/v1beta2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"k8s.io/client-go/kubernetes"
 )
 
 // GetVersionOptions containers the CLI options
@@ -59,7 +59,7 @@ func NewCmdGetVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 
 type EnvApps struct {
 	Environment v1.Environment
-	Apps map[string]v1beta2.Deployment
+	Apps        map[string]v1beta2.Deployment
 }
 
 // Run implements this command
@@ -89,7 +89,7 @@ func (o *GetVersionOptions) Run() error {
 	apps := []string{}
 	for _, env := range envList.Items {
 		ens := env.Spec.Namespace
-		if ens != "" && env.Name != kube.LabelValueDevEnvironment{
+		if ens != "" && env.Name != kube.LabelValueDevEnvironment {
 			envNames = append(envNames, env.Name)
 			m, err := loadDeployments(kubeClient, ens)
 			if err != nil {
@@ -97,7 +97,7 @@ func (o *GetVersionOptions) Run() error {
 			}
 			envApps = append(envApps, EnvApps{
 				Environment: env,
-				Apps: m,
+				Apps:        m,
 			})
 			for k, _ := range m {
 				if util.StringArrayIndex(apps, k) < 0 {

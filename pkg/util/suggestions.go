@@ -23,7 +23,7 @@ func InvalidOption(name string, value string, values []string) error {
 	suggestions := SuggestionsFor(value, values, DefaultSuggestionsMinimumDistance)
 	if len(suggestions) > 0 {
 		if len(suggestions) == 1 {
-			return InvalidOptionf(name, value, "Did you mean:  --%s %s", name, value, name, suggestions[0])
+			return InvalidOptionf(name, value, "Did you mean:  --%s %s", name, suggestions[0])
 		}
 		return InvalidOptionf(name, value, "Did you mean one of: %s", strings.Join(suggestions, ", "))
 	}
