@@ -309,7 +309,7 @@ func (config *AuthConfig) EditUserAuth(auth *UserAuth, defaultUserName string, e
 
 	var qs = []*survey.Question{}
 
-	if editUser {
+	if editUser || auth.Username == "" {
 		qs = append(qs, &survey.Question{
 			Name: "username",
 			Prompt: &survey.Input{
