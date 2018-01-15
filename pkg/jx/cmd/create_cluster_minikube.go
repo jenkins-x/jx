@@ -34,7 +34,7 @@ type CreateClusterMinikubeFlags struct {
 var (
 	createClusterMinikubeLong = templates.LongDesc(`
 		This command creates a new kubernetes cluster, installing required local dependencies and provisions the
-		Jenkins-X platform
+		Jenkins X platform
 
 		Minikube is a tool that makes it easy to run Kubernetes locally. Minikube runs a single-node Kubernetes
 		cluster inside a VM on your laptop for users looking to try out Kubernetes or develop with it day-to-day.

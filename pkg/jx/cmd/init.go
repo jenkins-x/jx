@@ -31,7 +31,7 @@ type InitFlags struct {
 
 var (
 	initLong = templates.LongDesc(`
-		This command installs the Jenkins-X platform on a connected kubernetes cluster
+		This command installs the Jenkins X platform on a connected kubernetes cluster
 `)
 
 	initExample = templates.Examples(`
@@ -52,7 +52,7 @@ func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 
 	cmd := &cobra.Command{
 		Use:     "init",
-		Short:   "Init Jenkins-X",
+		Short:   "Init Jenkins X",
 		Long:    initLong,
 		Example: initExample,
 		Run: func(cmd *cobra.Command, args []string) {
