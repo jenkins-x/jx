@@ -93,7 +93,7 @@ func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config 
 
 	defaultUsername := "admin"
 
-	err := config.EditUserAuth(auth, defaultUsername)
+	err := config.EditUserAuth(auth, defaultUsername, true)
 	if err != nil {
 		return *auth, err
 	}

@@ -280,20 +280,16 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	}
 	o.Printf("Using git provider %s\n", server.Description())
 	url := server.URL
-	userAuth, err := config.PickServerUserAuth(url, "Which user name?")
+	userAuth, err := config.PickServerUserAuth(server, "Which user name?")
 	if err != nil {
 		return err
 	}
 	if userAuth.IsInvalid() {
-		tokenUrl := fmt.Sprintf("https://%s/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook", url)
-
-		o.Printf("To be able to create a repository on %s we need an API Token\n", server.Label())
-		o.Printf("Please click this URL %s\n\n", tokenUrl)
-		o.Printf("Then COPY the token and enter in into the form below:\n\n")
+		server.PrintGenerateAccessToken(o.Out)
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(&userAuth, defaultUserName)
+		err = config.EditUserAuth(&userAuth, defaultUserName, true)
 		if err != nil {
 			return err
 		}
