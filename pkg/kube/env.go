@@ -147,6 +147,26 @@ func GetEnvironmentNames(jxClient *versioned.Clientset, ns string) ([]string, er
 	return envNames, nil
 }
 
+// GetEnvironments returns a map of the enviroments along with a sorted list of names
+func GetEnvironments(jxClient *versioned.Clientset, ns string) (map[string]*v1.Environment, []string, error) {
+	m := map[string]*v1.Environment{}
+
+	envNames := []string{}
+	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return m, envNames, err
+	}
+	for _, env := range envs.Items {
+		n := env.Name
+		m[n] = &env
+		if n != "" {
+			envNames = append(envNames, n)
+		}
+	}
+	sort.Strings(envNames)
+	return m, envNames, nil
+}
+
 // GetDevNamespace returns the developer environment namespace
 // which is the namespace that contains the Environments and the developer tools like Jenkins
 func GetDevNamespace(kubeClient *kubernetes.Clientset, ns string) (string, string, error) {

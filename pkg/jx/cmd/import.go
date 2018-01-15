@@ -278,7 +278,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Using git provider %s\n", server.Description())
+	o.Printf("Using git provider %s\n", util.ColorInfo(server.Description()))
 	url := server.URL
 	userAuth, err := config.PickServerUserAuth(server, "Which user name?")
 	if err != nil {
@@ -306,7 +306,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	}
 
 	gitUsername := userAuth.Username
-	o.Printf("\n\nAbout to create a repository on server %s with user %s\n", url, gitUsername)
+	o.Printf("\n\nAbout to create a repository on server %s with user %s\n", util.ColorInfo(url), util.ColorInfo(gitUsername))
 
 	provider, err := gits.CreateProvider(server, &userAuth)
 	if err != nil {
@@ -345,13 +345,13 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 		return fmt.Errorf("No repository name specified!")
 	}
 	fullName := gits.GitRepoName(org, repoName)
-	o.Printf("\n\nCreating repository %s\n", fullName)
+	o.Printf("\n\nCreating repository %s\n", util.ColorInfo(fullName))
 	privateRepo := false
 	repo, err := provider.CreateRepository(org, repoName, privateRepo)
 	if err != nil {
 		return err
 	}
-	o.Printf("Created repository: %s\n\n", repo.HTMLURL)
+	o.Printf("Created repository: %s\n\n", util.ColorInfo(repo.HTMLURL))
 	o.RepoURL = repo.CloneURL
 	pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, &userAuth)
 	if err != nil {
@@ -365,7 +365,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Pushed git repository to %s\n\n", server.Description())
+	o.Printf("Pushed git repository to %s\n\n", util.ColorInfo(server.Description()))
 	return nil
 }
 
@@ -408,7 +408,7 @@ func (o *ImportOptions) DiscoverGit() error {
 	}
 
 	// lets prompt the user to initiialse the git repository
-	o.Printf("The directory %s is not yet using git\n", dir)
+	o.Printf("The directory %s is not yet using git\n", util.ColorInfo(dir))
 	flag := false
 	prompt := &survey.Confirm{
 		Message: "Would you like to initialise git now?",
@@ -559,7 +559,7 @@ func (o *ImportOptions) DoImport() error {
 	if err != nil {
 		return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
 	}
-	fmt.Fprintf(out, "Created Jenkins Project: %s\n", job.Url)
+	fmt.Fprintf(out, "Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
 	params := neturl.Values{}
 	err = jenk.Build(job, params)
 	if err != nil {

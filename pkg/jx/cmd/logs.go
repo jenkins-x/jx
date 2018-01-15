@@ -141,7 +141,7 @@ func waitForReadyPodForSelector(c *kubernetes.Clientset, ns string, labels map[s
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("Waiting for a running pod in namespace %s with labels %v\n", ns, labels)
+	fmt.Printf(util.ColorStatus("Waiting for a running pod in namespace %s with labels %v\n"), ns, labels)
 	for {
 		pods, err := c.CoreV1().Pods(ns).List(metav1.ListOptions{
 			LabelSelector: selector.String(),
@@ -162,7 +162,7 @@ func waitForReadyPodForSelector(c *kubernetes.Clientset, ns string, labels map[s
 			}
 		}
 		if name != "" {
-			fmt.Printf("Found newest pod: %s\n", name)
+			fmt.Printf(util.ColorStatus("Found newest pod: %s\n"), util.ColorInfo(name))
 			return name, nil
 		}
 		// TODO replace with a watch flavour

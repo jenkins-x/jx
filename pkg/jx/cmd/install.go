@@ -14,9 +14,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"net/url"
 )
 
@@ -32,7 +32,7 @@ type InstallOptions struct {
 	GitPass            string
 	KubernetesProvider string
 	CloudEnvRepository string
-	LocalHelmRepoName string
+	LocalHelmRepoName  string
 }
 
 type Secrets struct {
@@ -97,7 +97,7 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.Domain, "domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	cmd.Flags().StringVarP(&options.KubernetesProvider, "kubernetes-provider", "k", "minikube", "Service providing the kubernetes cluster.  Supported providers: [minikube,gke,thunder]")
 	cmd.Flags().StringVarP(&options.CloudEnvRepository, "cloud-environment-repo", "c", "https://github.com/jenkins-x/cloud-environments", "Cloud Environments git repo")
-	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "local-helm-repo-name", "", "local", "The name of the helm repository for the installed Chart Museum")
+	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
 	return cmd
 }
 
@@ -136,7 +136,7 @@ func (options *InstallOptions) Run() error {
 
 	err = options.registerLocalHelmRepo()
 	if err != nil {
-	  return err
+		return err
 	}
 
 	log.Success("Jenkins X installation completed successfully")
@@ -257,12 +257,12 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 func (o *InstallOptions) registerLocalHelmRepo() error {
 	repoName := o.LocalHelmRepoName
 	if repoName == "" {
-		repoName = "local"
+		repoName = kube.LocalHelmRepoName
 	}
 
 	text, err := o.getCommandOutput("", "helm", "repo", "list")
 	if err != nil {
-	  return err
+		return err
 	}
 	lines := strings.Split(text, "\n")
 	prefix := repoName + " "
@@ -284,11 +284,11 @@ func (o *InstallOptions) registerLocalHelmRepo() error {
 	}
 	u, err := kube.FindServiceURL(client, ns, "jenkins-x-chartmuseum")
 	if err != nil {
-	  return err
+		return err
 	}
 	u2, err := url.Parse(u)
 	if err != nil {
-	  return err
+		return err
 	}
 	if u2.User == nil {
 		u2.User = url.UserPassword(username, password)
