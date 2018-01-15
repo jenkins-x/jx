@@ -204,7 +204,9 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 
 	// call jx install
 	installOpts := &InstallOptions{
-		CommonOptions: o.CommonOptions,
+		CommonOptions:      o.CommonOptions,
+		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
+		KubernetesProvider: MINIKUBE, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
 	}
 	err = installOpts.Run()
 	if err != nil {

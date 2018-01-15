@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
@@ -44,9 +45,10 @@ type Secrets struct {
 }
 
 const (
-	JX_GIT_TOKEN    = "JX_GIT_TOKEN"
-	JX_GIT_USER     = "JX_GIT_USER"
-	JX_GIT_PASSWORD = "JX_GIT_PASSWORD"
+	JX_GIT_TOKEN                   = "JX_GIT_TOKEN"
+	JX_GIT_USER                    = "JX_GIT_USER"
+	JX_GIT_PASSWORD                = "JX_GIT_PASSWORD"
+	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
 )
 
 var (
@@ -93,14 +95,19 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 		SuggestFor: []string{"list", "ps"},
 	}
 
+	var kubernetesProvoiderStr string
 	cmd.Flags().StringVarP(&options.GitProvider, "git-provider", "", "github.com", "Git provider, used to create tokens if not provided.  Supported providers: [GitHub]")
 	cmd.Flags().StringVarP(&options.GitToken, "git-token", "t", "", "Git token used to clone and tag releases, typically using a bot user account.  For GitHub use a personal access token with 'public_repo' scope, see https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line")
 	cmd.Flags().StringVarP(&options.GitUser, "git-username", "u", "", "Git username used to tag releases in pipelines, typically this is a bot user")
 	cmd.Flags().StringVarP(&options.GitPass, "git-password", "p", "", "Git username if a Personal Access Token should be created")
 	cmd.Flags().StringVarP(&options.Domain, "domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
-	cmd.Flags().StringVarP(&options.KubernetesProvider, "kubernetes-provider", "k", "minikube", "Service providing the kubernetes cluster.  Supported providers: [minikube,gke,thunder]")
-	cmd.Flags().StringVarP(&options.CloudEnvRepository, "cloud-environment-repo", "c", "https://github.com/jenkins-x/cloud-environments", "Cloud Environments git repo")
+	cmd.Flags().StringVarP(&options.KubernetesProvider, "kubernetes-provider", "k", MINIKUBE, "Service providing the kubernetes cluster.  Supported providers: [minikube,gke,thunder]")
+	cmd.Flags().StringVarP(&options.CloudEnvRepository, "cloud-environment-repo", "c", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
+
+	if !KUBERNETES_PROVIDERS[options.KubernetesProvider] {
+		util.InvalidArg(kubernetesProvoiderStr, []string{MINIKUBE, GKE, AKS, EKS})
+	}
 	return cmd
 }
 
@@ -120,8 +127,13 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// run  helm install setting the token and domain values
+	if options.KubernetesProvider == "" {
+		return fmt.Errorf("No kubernetes provider found to match cloud-environment with")
+	}
 	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(options.KubernetesProvider)))
-
+	if _, err := os.Stat(wrkDir); os.IsNotExist(err) {
+		return fmt.Errorf("cloud environment dir %s not found", makefileDir)
+	}
 	err = ioutil.WriteFile(filepath.Join(makefileDir, "secrets.yaml"), []byte(secrets), 0644)
 	if err != nil {
 		return err
@@ -132,12 +144,12 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	err = options.registerLocalHelmRepo()
+	err = options.waitForInstallToBeReady()
 	if err != nil {
 		return err
 	}
 
-	err = options.waitForInstallToBeReady()
+	err = options.registerLocalHelmRepo()
 	if err != nil {
 		return err
 	}
@@ -154,7 +166,9 @@ func (options *InstallOptions) Run() error {
 // clones the jenkins-x cloud-environments repo to a local working dir
 func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
-
+	if o.CloudEnvRepository == "" {
+		return fmt.Errorf("No cloud environment git URL")
+	}
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           o.CloudEnvRepository,
 		ReferenceName: "refs/heads/master",
@@ -272,28 +286,6 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 // registerLocalHelmRepo will register a new local helm repository pointing at the newly installed chart museum
 func (o *InstallOptions) registerLocalHelmRepo() error {
 
-	// need to wait for chartmuseum to be running before adding local repo
-	f := o.Factory
-	client, _, err := f.CreateClient()
-	if err != nil {
-		return err
-	}
-	config, _, err := kube.LoadConfig()
-	if err != nil {
-		return err
-	}
-	ctx := kube.CurrentContext(config)
-	defaultNamespace := ""
-	if ctx != nil {
-		defaultNamespace = kube.CurrentNamespace(config)
-	}
-
-	err = kube.WaitForDeploymentToBeReady(client, "jenkins-x-chartmuseum", defaultNamespace, 10*time.Minute)
-
-	if err != nil {
-		return err
-	}
-
 	repoName := o.LocalHelmRepoName
 	if repoName == "" {
 		repoName = kube.LocalHelmRepoName
@@ -353,23 +345,14 @@ func (o *InstallOptions) registerLocalHelmRepo() error {
 }
 func (o *InstallOptions) waitForInstallToBeReady() error {
 	f := o.Factory
-	client, _, err := f.CreateClient()
+	client, ns, err := f.CreateClient()
 	if err != nil {
 		return err
-	}
-	config, _, err := kube.LoadConfig()
-	if err != nil {
-		return err
-	}
-	ctx := kube.CurrentContext(config)
-	defaultNamespace := ""
-	if ctx != nil {
-		defaultNamespace = kube.CurrentNamespace(config)
 	}
 
 	log.Warnf("waiting for install to be ready, if this is the first time then it will take a while to download images")
 
-	return kube.WaitForAllDeploymentsToBeReady(client, defaultNamespace, 30*time.Minute)
+	return kube.WaitForAllDeploymentsToBeReady(client, ns, 30*time.Minute)
 
 }
 

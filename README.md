@@ -23,17 +23,11 @@ Or to get help on a specific command, say, 'create' then type:
 
 ## Getting Started
 
-If you don't yet have a kubernetes cluster then try create a new cluster:
+The quickest way to get started is to use the `jx create cluster foo` command, this will create the cluster, install client side dependencies and provision the Jenkins X platform.
 
-    jx create cluster
+If you dont have access to a kubernetes cluster then using [minikube](https://github.com/kubernetes/minikube#minikube) is a great way to kick the tires locally on your laptop. 
 
-To setup your laptop and the cluster with the required tools you need (like `kubectl, helm, draft`):
-
-    jx init
-
-To install Jenkins X on the current kubernetes cluster:
-
-    jx install
+    jx create cluster minikube
     
 ## Importing or Creating apps
 
