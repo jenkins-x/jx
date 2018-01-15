@@ -123,5 +123,13 @@ Or try:
 For more help try:
 
     jx help completion bash
-     
+           
+### Setting your prompt
+
+You can use the `jx prompt` to configure your CLI prompt to display the current team and environment you are working within           
                                             
+		# Enable the prompt for bash
+		PS1="[\u@\h \W \$(jx prompt)]\$ "
+
+		# Enable the prompt for zsh
+		PROMPT='$(jx prompt)'$PROMPT
