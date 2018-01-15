@@ -60,6 +60,18 @@ To view the application versions across environments
 
     jx get version
             
+## Manual promotions
+
+Typically we setup Environments to use _automatic_ promotion so that the CI / CD pipelines will automatically promote versions through the available Environments using the CI / CD Pipeline.
+
+However if you wish to manually promote a version to an environment you can use the following command:
+
+    jx promote myapp -e prod 
+    
+Or if you wish to use a custom namespace    
+
+    jx promote myapp -n my-dummy-namespace
+ 
 ## Switching Environments
 
 The `jx` CLI tool uses the same kubernetes cluster and namespace context as `kubectl`. 

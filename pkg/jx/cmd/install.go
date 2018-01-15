@@ -260,19 +260,6 @@ func (o *InstallOptions) registerLocalHelmRepo() error {
 		repoName = kube.LocalHelmRepoName
 	}
 
-	text, err := o.getCommandOutput("", "helm", "repo", "list")
-	if err != nil {
-		return err
-	}
-	lines := strings.Split(text, "\n")
-	prefix := repoName + " "
-	for _, line := range lines {
-		t := strings.TrimSpace(line)
-		if strings.HasPrefix(t, prefix) {
-			return nil
-		}
-	}
-
 	// TODO we should use the auth package to keep a list of server login/pwds
 	username := "admin"
 	password := "admin"
@@ -294,6 +281,35 @@ func (o *InstallOptions) registerLocalHelmRepo() error {
 		u2.User = url.UserPassword(username, password)
 	}
 	helmUrl := u2.String()
+
+	// lets check if we already have the helm repo installed or if we need to add it or remove + add it
+	text, err := o.getCommandOutput("", "helm", "repo", "list")
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(text, "\n")
+	remove := false
+	for _, line := range lines {
+		t := strings.TrimSpace(line)
+		if t != "" {
+			fields := strings.Fields(t)
+			if len(fields) > 1 {
+				if fields[0] == repoName {
+					if fields[1] == helmUrl {
+						return nil
+					} else {
+						remove = true
+					}
+				}
+			}
+		}
+	}
+	if remove {
+		err = o.runCommand("helm", "repo", "remove", repoName)
+		if err != nil {
+			return err
+		}
+	}
 	return o.runCommand("helm", "repo", "add", repoName, helmUrl)
 }
 

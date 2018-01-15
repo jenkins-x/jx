@@ -27,6 +27,7 @@ type PromoteOptions struct {
 	Version           string
 	LocalHelmRepoName string
 	Preview           bool
+	NoHelmUpdate      bool
 }
 
 var (
@@ -67,6 +68,7 @@ func NewCmdPromote(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().BoolVarP(&options.Preview, "preview", "p", false, "Whether to create a new Preview environment for the app")
+	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
 
 	return cmd
 }
@@ -118,6 +120,15 @@ func (o *PromoteOptions) Run() error {
 	fullAppName := app
 	if o.LocalHelmRepoName != "" {
 		fullAppName = o.LocalHelmRepoName + "/" + app
+	}
+
+	// lets do a helm update to ensure we can find the latest version
+	if !o.NoHelmUpdate {
+		o.Printf("Updading the helm repositories to ensure we can find the latest versions...")
+		err = o.runCommand("helm", "repo", "update")
+		if err != nil {
+			return err
+		}
 	}
 	if version != "" {
 		return o.runCommand("helm", "install", "--namespace", targetNS, "--version", version, fullAppName)
