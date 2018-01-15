@@ -52,6 +52,7 @@ func NewCmdLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		Short:   "Tails the log of the latest pod for a deployment",
 		Long:    logs_long,
 		Example: logs_example,
+		Aliases: []string{"log"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
