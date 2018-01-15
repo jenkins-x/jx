@@ -21,15 +21,23 @@ type KubernetesProvider string
 type CreateClusterOptions struct {
 	CreateOptions
 	Flags    InitFlags
-	Provider KubernetesProvider
+	Provider string
 }
 
 const (
-	GKE      KubernetesProvider = "gke"
-	EKS      KubernetesProvider = "eks"
-	AKS      KubernetesProvider = "aks"
-	MINIKUBE KubernetesProvider = "minikube"
+	GKE      string = "gke"
+	EKS      string = "eks"
+	AKS      string = "aks"
+	MINIKUBE string = "minikube"
 )
+
+var KUBERNETES_PROVIDERS = map[string]bool{
+	GKE:      true,
+	EKS:      true,
+	AKS:      true,
+	MINIKUBE: true,
+}
+
 const (
 	valid_providers = `Valid kubernetes providers include:
 
