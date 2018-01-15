@@ -112,7 +112,7 @@ func (o *InitOptions) initHelm() error {
 		return err
 	}
 
-	log.Success("tiller running")
+	log.Success("helm installed and configured")
 
 	return nil
 }
@@ -125,34 +125,59 @@ func (o *InitOptions) initDraft() error {
 	}
 
 	running, err := kube.IsDeploymentRunning(client, "draftd", "kube-system")
-	if running {
-		return nil
-	}
+
 	if err == nil && !running {
 		return errors.New("existing draftd deployment found but not running, please check the kube-system namespace and resolve any issues")
 	}
 
-	if !running {
-		err = o.runCommand("draft", "init", "--auto-accept")
-		if err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				return err
-			}
-		}
-		err = o.runCommand("draft", "pack-repo", "add", "https://github.com/jenkins-x/draft-repo")
-		if err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				return err
-			}
-		}
-	}
-
-	err = kube.WaitForDeploymentToBeReady(client, "draftd", "kube-system", 5*time.Minute)
+	err = o.removeDraftRepoIfInstalled("github.com/Azure/draft")
 	if err != nil {
 		return err
 	}
 
-	log.Success("draftd running")
+	if running {
+		err = o.runCommand("draft", "init", "--auto-accept", "--client-only")
 
+	} else {
+		err = o.runCommand("draft", "init", "--auto-accept")
+
+	}
+	if err != nil {
+		return err
+	}
+
+	err = o.removeDraftRepoIfInstalled("github.com/jenkins-x/draft-repo")
+	if err != nil {
+		return err
+	}
+
+	err = o.runCommand("draft", "pack-repo", "add", "https://github.com/jenkins-x/draft-repo")
+	if err != nil {
+		return err
+	}
+
+	if !running {
+		err = kube.WaitForDeploymentToBeReady(client, "draftd", "kube-system", 5*time.Minute)
+		if err != nil {
+			return err
+		}
+
+	}
+	log.Success("draft installed and configured")
+
+	return nil
+}
+
+// this happens in draft init too except there seems to be a timing issue where the repo add fails if done straight after their repo remove.
+func (o *InitOptions) removeDraftRepoIfInstalled(repo string) error {
+	text, err := o.getCommandOutput("", "draft", "pack-repo", "list")
+	if err != nil {
+		// if pack-repo list fails then it's because no repos currently exist
+		return nil
+	}
+	if strings.Contains(text, repo) {
+		log.Warnf("existing repo %s found, we recommend to remove and let draft init recreate, shall we do this now?", repo)
+		return o.runCommandInteractive(true, "draft", "pack-repo", "remove", repo)
+	}
 	return nil
 }
