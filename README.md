@@ -144,3 +144,9 @@ You can use the `jx prompt` to configure your CLI prompt to display the current 
 
 		# Enable the prompt for zsh
 		PROMPT='$(jx prompt)'$PROMPT
+
+### Uninstall Jenkins x
+
+To remove the Jenkins X platfrom from a namespace on your kubernetes cluster:
+
+    jx uninstall
