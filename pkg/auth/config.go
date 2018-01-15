@@ -2,11 +2,13 @@ package auth
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"os"
 )
 
 const (
@@ -48,6 +50,14 @@ func (s *AuthServer) Description() string {
 	return s.URL
 }
 
+func (server *AuthServer) PrintGenerateAccessToken(o io.Writer) {
+	tokenUrl := fmt.Sprintf("https://%s/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook", server.URL)
+
+	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())
+	fmt.Fprintf(o, "Please click this URL %s\n\n", tokenUrl)
+	fmt.Fprintf(o, "Then COPY the token and enter in into the form below:\n\n")
+}
+
 func (c *AuthConfig) FindUserAuths(serverURL string) []UserAuth {
 	for _, server := range c.Servers {
 		if server.URL == serverURL {
@@ -55,6 +65,22 @@ func (c *AuthConfig) FindUserAuths(serverURL string) []UserAuth {
 		}
 	}
 	return []UserAuth{}
+}
+
+func (c *AuthConfig) GetOrCreateUserAuth(url string, username string) *UserAuth {
+	user := c.FindUserAuth(url, username)
+	if user != nil {
+		return user
+	}
+	server := c.GetOrCreateServer(url)
+	if server.Users == nil {
+		server.Users = []UserAuth{}
+	}
+	user = &UserAuth{
+		Username: username,
+	}
+	server.Users = append(server.Users, *user)
+	return user
 }
 
 // FindUserAuth finds the auth for the given user name
@@ -160,6 +186,35 @@ func (a *UserAuth) IsInvalid() bool {
 	return a.BearerToken == "" && (a.ApiToken == "" || a.Username == "")
 }
 
+func (c *AuthConfig) GetServer(url string) *AuthServer {
+	if c.Servers != nil {
+		for _, s := range c.Servers {
+			if s.URL == url {
+				return &s
+			}
+		}
+	}
+	return nil
+}
+
+func (c *AuthConfig) GetOrCreateServer(url string) *AuthServer {
+	s := c.GetServer(url)
+	if s == nil {
+		if c.Servers == nil {
+			c.Servers = []AuthServer{}
+		}
+		s = &AuthServer{
+			URL:   url,
+			Users: []UserAuth{},
+		}
+		if url == "github.com" {
+			s.Name = "GitHub"
+		}
+		c.Servers = append(c.Servers, *s)
+	}
+	return s
+}
+
 func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
 	if c.Servers == nil || len(c.Servers) == 0 {
 		return nil, fmt.Errorf("No servers available!")
@@ -190,10 +245,34 @@ func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
 	return nil, fmt.Errorf("Could not find server for URL %s", url)
 }
 
-func (c *AuthConfig) PickServerUserAuth(url string, message string) (UserAuth, error) {
+func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string) (UserAuth, error) {
+	url := server.URL
 	userAuths := c.FindUserAuths(url)
 	if len(userAuths) == 1 {
-		return userAuths[0], nil
+		auth := userAuths[0]
+		confirm := &survey.Confirm{
+			Message: fmt.Sprintf("Do you wish to use %s as the %s", auth.Username, message),
+			Default: true,
+		}
+		flag := false
+		err := survey.AskOne(confirm, &flag, nil)
+		if err != nil {
+			return auth, err
+		}
+		if flag {
+			return auth, nil
+		}
+
+		// lets create a new user name
+		prompt := &survey.Input{
+			Message: message,
+		}
+		username := ""
+		err = survey.AskOne(prompt, &username, nil)
+		if err != nil {
+			return auth, err
+		}
+		return *c.GetOrCreateUserAuth(url, username), nil
 	}
 	if len(userAuths) > 1 {
 		usernames := []string{}
@@ -218,7 +297,7 @@ func (c *AuthConfig) PickServerUserAuth(url string, message string) (UserAuth, e
 }
 
 // EditUserAuth Lets the user input/edit the user auth
-func (config *AuthConfig) EditUserAuth(auth *UserAuth, defaultUserName string) error {
+func (config *AuthConfig) EditUserAuth(auth *UserAuth, defaultUserName string, editUser bool) error {
 	// default the user name if its empty
 	defaultUsername := config.DefaultUsername
 	if defaultUsername == "" {
@@ -228,24 +307,26 @@ func (config *AuthConfig) EditUserAuth(auth *UserAuth, defaultUserName string) e
 		auth.Username = defaultUsername
 	}
 
-	var qs = []*survey.Question{
-		{
+	var qs = []*survey.Question{}
+
+	if editUser {
+		qs = append(qs, &survey.Question{
 			Name: "username",
 			Prompt: &survey.Input{
 				Message: "User name:",
 				Default: auth.Username,
 			},
 			Validate: survey.Required,
-		},
-		{
-			Name: "apiToken",
-			Prompt: &survey.Input{
-				Message: "API Token:",
-				Default: auth.ApiToken,
-			},
-			Validate: survey.Required,
-		},
+		})
 	}
+	qs = append(qs, &survey.Question{
+		Name: "apiToken",
+		Prompt: &survey.Input{
+			Message: "API Token:",
+			Default: auth.ApiToken,
+		},
+		Validate: survey.Required,
+	})
 	return survey.Ask(qs, auth)
 }
 
