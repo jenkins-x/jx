@@ -147,7 +147,7 @@ func (o *InitOptions) initDraft() error {
 		}
 	}
 
-	err = kube.WaitForDeploymentToBeReady(client, "draftd", "kube-system", 1*time.Minute)
+	err = kube.WaitForDeploymentToBeReady(client, "draftd", "kube-system", 5*time.Minute)
 	if err != nil {
 		return err
 	}
