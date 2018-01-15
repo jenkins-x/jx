@@ -6,10 +6,11 @@ import (
 	"os/exec"
 	"strings"
 
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // CommonOptions contains common options and helper methods
@@ -27,6 +28,20 @@ func (c *CommonOptions) CreateTable() table.Table {
 
 func (c *CommonOptions) Printf(format string, a ...interface{}) (n int, err error) {
 	return fmt.Fprintf(c.Out, format, a...)
+}
+
+func (o *CommonOptions) runCommandFromDir(dir, name string, args ...string) error {
+	e := exec.Command(name, args...)
+	if dir != "" {
+		e.Dir = dir
+	}
+	e.Stdout = o.Out
+	e.Stderr = o.Err
+	err := e.Run()
+	if err != nil {
+		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+	}
+	return err
 }
 
 func (o *CommonOptions) runCommand(name string, args ...string) error {

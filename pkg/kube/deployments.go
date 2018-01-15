@@ -32,16 +32,16 @@ func WaitForDeploymentToBeReady(client *kubernetes.Clientset, name, namespace st
 	if err != nil {
 		return err
 	}
+
 	selector, err := meta_v1.LabelSelectorAsSelector(d.Spec.Selector)
 	if err != nil {
 		return err
 	}
 
 	options := meta_v1.ListOptions{LabelSelector: selector.String()}
-	podList, err := client.CoreV1().Pods(d.Namespace).List(options)
 
-	options.ResourceVersion = podList.ResourceVersion
 	w, err := client.CoreV1().Pods(namespace).Watch(options)
+
 	if err != nil {
 		return err
 	}
@@ -49,10 +49,6 @@ func WaitForDeploymentToBeReady(client *kubernetes.Clientset, name, namespace st
 
 	condition := func(event watch.Event) (bool, error) {
 		pod := event.Object.(*v1.Pod)
-		if event.Type != watch.Modified {
-			return false, nil
-		}
-
 		return IsPodReady(pod), nil
 	}
 
