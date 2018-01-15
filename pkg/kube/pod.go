@@ -1,11 +1,14 @@
 package kube
 
 import (
-
-	//v1 "k8s.io/kubernetes/pkg/api/v1"
-
 	"k8s.io/api/core/v1"
 )
+
+// credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
+// IsPodReady returns true if a pod is ready; false otherwise.
+func IsPodReady(pod *v1.Pod) bool {
+	return IsPodReadyConditionTrue(pod.Status)
+}
 
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
 // IsPodReady retruns true if a pod is ready; false otherwise.

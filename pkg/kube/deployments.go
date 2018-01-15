@@ -6,7 +6,6 @@ import (
 
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//podutils "k8s.io/kubernetes/pkg/api/v1/pod"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -54,9 +53,7 @@ func WaitForDeploymentToBeReady(client *kubernetes.Clientset, name, namespace st
 			return false, nil
 		}
 
-		return IsPodReadyConditionTrue(pod.Status), nil
-
-		//return podutils.IsPodReady(pod), nil
+		return IsPodReady(pod), nil
 	}
 
 	_, err = watch.Until(timeout, w, condition)
