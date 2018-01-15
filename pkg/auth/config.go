@@ -332,7 +332,7 @@ func (config *AuthConfig) EditUserAuth(auth *UserAuth, defaultUserName string, e
 
 // SaveUserAuth saves the given user auth for the server url
 func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
-	config := s.config
+	config := &s.config
 	config.SetUserAuth(url, *userAuth)
 	user := userAuth.Username
 	if user != "" {
