@@ -6,9 +6,12 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"net/url"
+
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -16,8 +19,8 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
-	"net/url"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -124,17 +127,17 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	makefile := exec.Command("make", "install")
-
-	makefile.Dir = makefileDir
-	makefile.Stdout = options.Out
-	makefile.Stderr = options.Err
-	err = makefile.Run()
+	err = options.runCommandFromDir(makefileDir, "make", "install")
 	if err != nil {
 		return err
 	}
 
 	err = options.registerLocalHelmRepo()
+	if err != nil {
+		return err
+	}
+
+	err = options.runCommand("kubectl", "get", "ingress")
 	if err != nil {
 		return err
 	}
@@ -155,8 +158,16 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "repository already exists") {
-			log.Infof("A local Jenkins X cloud environments repository already exists, recreate with latest? y/n: ")
-			if log.AskForConfirmation(false) {
+			confirm := &survey.Confirm{
+				Message: "A local Jenkins X cloud environments repository already exists, recreate with latest?",
+				Default: true,
+			}
+			flag := false
+			err := survey.AskOne(confirm, &flag, nil)
+			if err != nil {
+				return err
+			}
+			if flag {
 				err := os.RemoveAll(wrkDir)
 				if err != nil {
 					return err
@@ -255,6 +266,29 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 
 // registerLocalHelmRepo will register a new local helm repository pointing at the newly installed chart museum
 func (o *InstallOptions) registerLocalHelmRepo() error {
+
+	// need to wait for chartmuseum to be running before adding local repo
+	f := o.Factory
+	client, _, err := f.CreateClient()
+	if err != nil {
+		return err
+	}
+	config, _, err := kube.LoadConfig()
+	if err != nil {
+		return err
+	}
+	ctx := kube.CurrentContext(config)
+	defaultNamespace := ""
+	if ctx != nil {
+		defaultNamespace = kube.CurrentNamespace(config)
+	}
+
+	err = kube.WaitForDeploymentToBeReady(client, "jenkins-x-chartmuseum", defaultNamespace, 10*time.Minute)
+
+	if err != nil {
+		return err
+	}
+
 	repoName := o.LocalHelmRepoName
 	if repoName == "" {
 		repoName = kube.LocalHelmRepoName

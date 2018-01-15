@@ -1,7 +1,15 @@
 package kube
 
 import (
+	"fmt"
+	"time"
+
 	"k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
 )
 
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
@@ -38,4 +46,28 @@ func GetPodCondition(status *v1.PodStatus, conditionType v1.PodConditionType) (i
 		}
 	}
 	return -1, nil
+}
+
+// waits for the pod to become ready using label selector to match the pod
+func WaitForPodToBeReady(client *kubernetes.Clientset, selector labels.Selector, namespace string, timeout time.Duration) error {
+
+	options := meta_v1.ListOptions{LabelSelector: selector.String()}
+
+	w, err := client.CoreV1().Pods(namespace).Watch(options)
+	if err != nil {
+		return err
+	}
+	defer w.Stop()
+
+	condition := func(event watch.Event) (bool, error) {
+		pod := event.Object.(*v1.Pod)
+
+		return IsPodReady(pod), nil
+	}
+
+	_, err = watch.Until(timeout, w, condition)
+	if err == wait.ErrWaitTimeout {
+		return fmt.Errorf("pod %s never became ready", selector)
+	}
+	return nil
 }
