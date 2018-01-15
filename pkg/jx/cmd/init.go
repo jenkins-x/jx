@@ -92,6 +92,15 @@ func (o *InitOptions) Run() error {
 		os.Exit(-1)
 	}
 
+	// call jx install
+	installOpts := &InstallOptions{
+		CommonOptions: o.CommonOptions,
+	}
+	err = installOpts.Run()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
