@@ -6,7 +6,8 @@ JX is a CLI tool for working with [Jenkins X](https://jenkins-x.github.io/jenkin
 
 On a Mac you can use brew:
 
-    brew install Jenkins-x/jx/jx 
+    brew tap jenkins-x/jx
+    brew install jx 
     
 Or download the binary `jx` and add it to your `$PATH`
 
@@ -22,13 +23,17 @@ Or to get help on a specific command, say, 'create' then type:
 
 ## Getting Started
 
-If you don't yet have a kubernetes cluster then try:
+If you don't yet have a kubernetes cluster then try create a new cluster:
 
     jx create cluster
- 
-Otherwise you can install Jenkins X in your current kubernetes cluster via:
+
+To setup your laptop and the cluster with the required tools you need (like `kubectl, helm, draft`):
 
     jx init
+
+To install Jenkins X on the current kubernetes cluster:
+
+    jx install
     
 ## Importing or Creating apps
 
