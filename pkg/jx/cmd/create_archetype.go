@@ -8,9 +8,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/maven"
+	"github.com/jenkins-x/jx/pkg/util"
 	"os"
 	"path/filepath"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 var (

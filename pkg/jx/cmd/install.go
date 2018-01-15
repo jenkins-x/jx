@@ -305,9 +305,9 @@ func (o *InstallOptions) registerLocalHelmRepo() error {
 		}
 	}
 	if remove {
-		err  = o.runCommand("helm", "repo", "remove", repoName)
+		err = o.runCommand("helm", "repo", "remove", repoName)
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 	return o.runCommand("helm", "repo", "add", repoName, helmUrl)
