@@ -23,13 +23,17 @@ Or to get help on a specific command, say, 'create' then type:
 
 ## Getting Started
 
-If you don't yet have a kubernetes cluster then try:
+If you don't yet have a kubernetes cluster then try create a new cluster:
 
     jx create cluster
- 
-Otherwise you can install Jenkins X in your current kubernetes cluster via:
+
+To setup your laptop and the cluster with the required tools you need (like `kubectl, helm, draft`):
 
     jx init
+
+To install Jenkins X on the current kubernetes cluster:
+
+    jx install
     
 ## Importing or Creating apps
 
