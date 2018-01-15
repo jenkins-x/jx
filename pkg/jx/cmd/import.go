@@ -113,7 +113,7 @@ var (
 		jx import /foo/bar
 
 		# Import a git repository from a URL
-		jx import -repo https://github.com/jenkins-x/spring-boot-web-example.git`)
+		jx import --url https://github.com/jenkins-x/spring-boot-web-example.git`)
 )
 
 func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
