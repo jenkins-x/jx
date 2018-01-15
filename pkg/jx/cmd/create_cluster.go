@@ -46,7 +46,7 @@ type CreateClusterFlags struct {
 
 var (
 	createClusterLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster, installing required local dependencies and provisions the Jenkins-X platform
+		This command creates a new kubernetes cluster, installing required local dependencies and provisions the Jenkins X platform
 
 		%s
 

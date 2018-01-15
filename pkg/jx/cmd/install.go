@@ -16,6 +16,8 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"net/url"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -30,6 +32,7 @@ type InstallOptions struct {
 	GitPass            string
 	KubernetesProvider string
 	CloudEnvRepository string
+	LocalHelmRepoName string
 }
 
 type Secrets struct {
@@ -48,7 +51,7 @@ var (
 		Installs the Jenkins X platform on a Kubernetes cluster
 
 		Requires a --git-username and either --git-token or --git-password that can be used to create a new token.
-		This is so the Jenkins-X platform can git tag your releases
+		This is so the Jenkins X platform can git tag your releases
 
 `)
 
@@ -75,7 +78,7 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	cmd := &cobra.Command{
 		Use:     "install [flags]",
-		Short:   "Install Jenkins-X",
+		Short:   "Install Jenkins X",
 		Long:    instalLong,
 		Example: instalExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -94,6 +97,7 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.Domain, "domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	cmd.Flags().StringVarP(&options.KubernetesProvider, "kubernetes-provider", "k", "minikube", "Service providing the kubernetes cluster.  Supported providers: [minikube,gke,thunder]")
 	cmd.Flags().StringVarP(&options.CloudEnvRepository, "cloud-environment-repo", "c", "https://github.com/jenkins-x/cloud-environments", "Cloud Environments git repo")
+	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "local-helm-repo-name", "", "local", "The name of the helm repository for the installed Chart Museum")
 	return cmd
 }
 
@@ -127,17 +131,21 @@ func (options *InstallOptions) Run() error {
 	makefile.Stderr = options.Err
 	err = makefile.Run()
 	if err != nil {
-
 		return err
 	}
 
-	log.Success("Jenkins-X installation completed successfully")
+	err = options.registerLocalHelmRepo()
+	if err != nil {
+	  return err
+	}
+
+	log.Success("Jenkins X installation completed successfully")
 	return nil
 }
 
 // clones the jenkins-x cloud-environments repo to a local working dir
 func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
-	log.Infof("Cloning the Jenkins-X cloud environments repo to %s\n", wrkDir)
+	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
 
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           o.CloudEnvRepository,
@@ -147,7 +155,7 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "repository already exists") {
-			log.Infof("A local Jenkins-X cloud environments repository already exists, recreate with latest? y/n: ")
+			log.Infof("A local Jenkins X cloud environments repository already exists, recreate with latest? y/n: ")
 			if log.AskForConfirmation(false) {
 				err := os.RemoveAll(wrkDir)
 				if err != nil {
@@ -180,7 +188,7 @@ PipelineSecrets:
 	return fmt.Sprintf(pipelineSecrets, username, token), nil
 }
 
-// returns the Git Token that should be used by Jenkins-X to setup credentials to clone repos and creates a secret for pipelines to tag a release
+// returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release
 func (o *InstallOptions) getGitToken() (string, string, error) {
 	username := o.GitUser
 	if username == "" {
@@ -243,6 +251,50 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 		}
 	}
 	return userAuth.Username, userAuth.ApiToken, nil
+}
+
+// registerLocalHelmRepo will register a new local helm repository pointing at the newly installed chart museum
+func (o *InstallOptions) registerLocalHelmRepo() error {
+	repoName := o.LocalHelmRepoName
+	if repoName == "" {
+		repoName = "local"
+	}
+
+	text, err := o.getCommandOutput("", "helm", "repo", "list")
+	if err != nil {
+	  return err
+	}
+	lines := strings.Split(text, "\n")
+	prefix := repoName + " "
+	for _, line := range lines {
+		t := strings.TrimSpace(line)
+		if strings.HasPrefix(t, prefix) {
+			return nil
+		}
+	}
+
+	// TODO we should use the auth package to keep a list of server login/pwds
+	username := "admin"
+	password := "admin"
+
+	// lets check if we have a local helm repository
+	client, ns, err := o.Factory.CreateClient()
+	if err != nil {
+		return err
+	}
+	u, err := kube.FindServiceURL(client, ns, "jenkins-x-chartmuseum")
+	if err != nil {
+	  return err
+	}
+	u2, err := url.Parse(u)
+	if err != nil {
+	  return err
+	}
+	if u2.User == nil {
+		u2.User = url.UserPassword(username, password)
+	}
+	helmUrl := u2.String()
+	return o.runCommand("helm", "repo", "add", repoName, helmUrl)
 }
 
 func basicAuth(username, password string) string {

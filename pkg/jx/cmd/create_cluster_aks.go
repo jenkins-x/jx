@@ -25,7 +25,7 @@ type CreateClusterAKSFlags struct {
 var (
 	createClusterAKSLong = templates.LongDesc(`
 		This command creates a new kubernetes cluster on AKS, installing required local dependencies and provisions the
-		Jenkins-X platform
+		Jenkins X platform
 
 		Azure Container Service (AKS) manages your hosted Kubernetes environment, making it quick and easy to deploy and
 		manage containerized applications without container orchestration expertise. It also eliminates the burden of

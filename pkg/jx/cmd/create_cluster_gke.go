@@ -25,7 +25,7 @@ type CreateClusterGKEFlags struct {
 var (
 	createClusterGKELong = templates.LongDesc(`
 		This command creates a new kubernetes cluster on GKE, installing required local dependencies and provisions the
-		Jenkins-X platform
+		Jenkins X platform
 
 		Google Kubernetes Engine is a managed environment for deploying containerized applications. It brings our latest
 		innovations in developer productivity, resource efficiency, automated operations, and open source flexibility to
