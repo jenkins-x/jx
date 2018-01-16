@@ -14,7 +14,10 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"k8s.io/client-go/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"path/filepath"
 )
+
+var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
@@ -97,7 +100,7 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 		q := &survey.Input{
 			Message: "Namespace:",
 			Default: defaultValue,
-			Help:    "Th kubernetes namespace name to use for this Environment",
+			Help:    "The kubernetes namespace name to use for this Environment",
 		}
 		err := survey.AskOne(q, &data.Spec.Namespace, ValidateName)
 		if err != nil {
@@ -248,12 +251,19 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 	return nil
 }
 
-func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, envDir string) (string, error) {
+func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string) (string, error) {
 	defaultRepoName := "environment-" + env.Name
 	details, err := gits.PickNewGitRepository(out, authConfigSvc, defaultRepoName)
 	if err != nil {
 		return "", err
 	}
+	org := details.Organisation
+	repoName := details.RepoName
+	owner := org
+	if owner == "" {
+		owner = details.User.Username
+	}
+	envDir := filepath.Join(environmentsDir, owner)
 	provider := details.GitProvider
 	if forkEnvGitURL != "" {
 		gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
@@ -262,22 +272,40 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 		}
 		originalOrg := gitInfo.Organisation
 		originalRepo := gitInfo.Name
-		if gitInfo.IsGitHub() && provider.IsGitHub() && originalOrg != "" && originalRepo != "" {
+		if useForkForEnvGitRepo && gitInfo.IsGitHub() && provider.IsGitHub() && originalOrg != "" && originalRepo != "" {
 			// lets try fork the repository and rename it
-			org := details.Organisation
-			repoName := details.RepoName
 			repo, err := provider.ForkRepository(originalOrg, originalRepo, org)
 			if err != nil {
 				return "", fmt.Errorf("Failed to fork github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
 			}
 			if repoName != originalRepo {
-				owner := org
 				repo, err = provider.RenameRepository(owner, originalRepo, repoName)
 				if err != nil {
 					return "", fmt.Errorf("Failed to rename github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
 				}
 			}
 			fmt.Fprintf(out, "Forked git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+
+			dir, err := util.CreateUniqueDirectory(envDir,repoName, util.MaximumNewDirectoryAttempts)
+			if err != nil {
+				return "", err
+			}
+			err = gits.GitClone(repo.CloneURL, dir)
+			if err != nil {
+				return "", err
+			}
+			err = gits.SetRemoteURL(dir, "upstream", forkEnvGitURL)
+			if err != nil {
+				return "", err
+			}
+			err = gits.GitCmd(dir, "pull", "-r", "upstream", "master")
+			if err != nil {
+				return "", err
+			}
+			err = gits.GitPush(dir)
+			if err != nil {
+				return "", err
+			}
 			return repo.CloneURL, nil
 		}
 	}
@@ -289,7 +317,7 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 
 	if forkEnvGitURL != "" {
 		// now lets clone the fork and push it...
-		dir, err := util.CreateUniqueDirectory(envDir, env.Name, util.MaximumNewDirectoryAttempts)
+		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
 			return "", err
 		}
@@ -305,7 +333,7 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 		if err != nil {
 			return "", err
 		}
-		err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
+		err = gits.GitCmd(dir, "remote", "set-url", "origin", pushGitURL)
 		if err != nil {
 			return "", err
 		}

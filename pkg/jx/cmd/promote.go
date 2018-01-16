@@ -30,6 +30,7 @@ type PromoteOptions struct {
 	Application       string
 	Version           string
 	LocalHelmRepoName string
+	HelmRepositoryURL string
 	Preview           bool
 	NoHelmUpdate      bool
 }
@@ -71,6 +72,7 @@ func NewCmdPromote(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.Application, "app", "a", "", "The Application to promote")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
+	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
 	cmd.Flags().BoolVarP(&options.Preview, "preview", "p", false, "Whether to create a new Preview environment for the app")
 	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
 
@@ -147,23 +149,22 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 	if gitURL == "" {
 		return fmt.Errorf("No source git URL")
 	}
-	team, _, err := o.TeamAndEnvironmentNames()
+	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		return err
+	  return err
 	}
 
-	environmentsDir, err := cmdutil.TeamEnvironmentsDir(team)
+	environmentsDir, err := cmdutil.EnvironmentsDir()
 	if err != nil {
 		return err
 	}
-	dir := filepath.Join(environmentsDir, env.Name)
+	dir := filepath.Join(environmentsDir, gitInfo.Organisation, gitInfo.Name)
 
 	// now lets clone the fork and push it...
 	exists, err := util.FileExists(dir)
 	if err != nil {
 		return err
 	}
-
 	app := o.Application
 	version := o.Version
 	versionName := version
@@ -176,9 +177,10 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 	if base == ""  {
 		base = "master"
 	}
+
 	if exists {
-		// lets make sure that the origin is correct...
-		err = gits.GitCmd(dir, "remote", "add", "origin", gitURL)
+		// lets check the git remote URL is setup correctly
+		err = gits.SetRemoteURL(dir, "origin", gitURL)
 		if err != nil {
 			return err
 		}
@@ -239,17 +241,28 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 		return err
 	}
 
-	requirementsFile := filepath.Join(dir, helm.RequirementsFileName)
+	requirementsFile, err := helm.FindRequirementsFileName(dir)
+	if err != nil {
+	  return err
+	}
 	requirements, err := helm.LoadRequirementsFile(requirementsFile)
 	if err != nil {
 		return err
 	}
-	requirements.SetAppVersion(app, version)
+	requirements.SetAppVersion(app, version, o.HelmRepositoryURL)
 	err = helm.SaveRequirementsFile(requirementsFile, requirements)
 
-	err = gits.GitCmd(dir, "add", helm.RequirementsFileName)
+	err = gits.GitCmd(dir, "add", "*", "*/*")
 	if err != nil {
 		return err
+	}
+	changed, err := gits.HasChanges(dir)
+	if err != nil {
+	  return err
+	}
+	if !changed {
+		o.Printf("%s\n", util.ColorWarning("No changes made to the GitOps Environment source code. Must be already on version!"))
+		return nil
 	}
 	message := fmt.Sprintf("Promote %s to version %s", app, versionName)
 	err = gits.GitCommit(dir, message)
@@ -265,11 +278,6 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 	if err != nil {
 	  return err
 	}
-	gitInfo, err := gits.ParseGitURL(gitURL)
-	if err != nil {
-	  return err
-	}
-
 	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc)
 	if err != nil {
 	  return err

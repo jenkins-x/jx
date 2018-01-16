@@ -208,3 +208,15 @@ func ConvertToValidBranchName(name string) string {
 	}
 	return buffer.String()
 }
+
+
+func SetRemoteURL(dir string, name string, gitURL string) error {
+	err := GitCmd(dir, "remote", "add", name, gitURL)
+	if err != nil {
+		err = GitCmd(dir, "remote", "set-url", name, gitURL)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

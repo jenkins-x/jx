@@ -4,10 +4,16 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
+	"path/filepath"
+	"fmt"
 )
 
 const (
 	RequirementsFileName = "requirements.yaml"
+
+	DefaultHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
+
+	defaultEnvironmentChartDir = "env"
 )
 
 // copied from helm to minimise dependencies...
@@ -56,20 +62,70 @@ type Requirements struct {
 }
 
 // SetAppVersion sets the version of the app to use
-func (r *Requirements) SetAppVersion(app string, version string) {
+func (r *Requirements) SetAppVersion(app string, version string, repository string) {
 	if r.Dependencies == nil {
 		r.Dependencies = []*Dependency{}
 	}
 	for _, dep := range r.Dependencies {
 		if dep != nil && dep.Name == app {
 			dep.Version = version
+			dep.Repository = repository
 			return
 		}
 	}
 	r.Dependencies = append(r.Dependencies, &Dependency{
-		Name: app,
-		Version: version,
+		Name:       app,
+		Version:    version,
+		Repository: repository,
 	})
+}
+
+// FindRequirementsFileName returns the default requirements.yaml file name
+func FindRequirementsFileName(dir string) (string, error) {
+	names := []string{
+		filepath.Join(dir, defaultEnvironmentChartDir, RequirementsFileName),
+		filepath.Join(dir, RequirementsFileName),
+	}
+	for _, name := range names {
+		exists, err := util.FileExists(name)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return name, nil
+		}
+	}
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return "", err
+	}
+	for _, f := range files {
+		if f.IsDir() {
+			name := filepath.Join(dir, f.Name(), RequirementsFileName)
+			exists, err := util.FileExists(name)
+			if err != nil {
+				return "", err
+			}
+			if exists {
+				return name, nil
+			}
+		}
+	}
+	dirs := []string{
+		filepath.Join(dir, defaultEnvironmentChartDir),
+		dir,
+	}
+	for _, d := range dirs {
+		name := filepath.Join(d, RequirementsFileName)
+		exists, err := util.FileExists(d)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return name, nil
+		}
+	}
+	return "", fmt.Errorf("Could not deduce the default requirements.yaml file name")
 }
 
 // LoadRequirementsFile loads the requirements file or creates empty requirements if the file does not exist
