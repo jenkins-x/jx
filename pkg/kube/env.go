@@ -2,6 +2,7 @@ package kube
 
 import (
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 
@@ -11,9 +12,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"io"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
@@ -325,6 +325,7 @@ func GetEnvironmentNames(jxClient *versioned.Clientset, ns string) ([]string, er
 	if err != nil {
 		return envNames, err
 	}
+	SortEnvironments(envs.Items)
 	for _, env := range envs.Items {
 		n := env.Name
 		if n != "" {
@@ -373,7 +374,7 @@ func GetDevNamespace(kubeClient *kubernetes.Clientset, ns string) (string, strin
 	return ns, env, nil
 }
 
-func PickEnvironment(envNames []string) (string, error) {
+func PickEnvironment(envNames []string, defaultEnv string) (string, error) {
 	name := ""
 	if len(envNames) == 0 {
 		return "", nil
@@ -383,6 +384,7 @@ func PickEnvironment(envNames []string) (string, error) {
 		prompt := &survey.Select{
 			Message: "Pick environment:",
 			Options: envNames,
+			Default: defaultEnv,
 		}
 		err := survey.AskOne(prompt, &name, nil)
 		if err != nil {

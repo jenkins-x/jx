@@ -30,16 +30,14 @@ var (
 		Displays or changes the current environment.`)
 	environment_example = templates.Examples(`
 		# view the current environment
-		jx environment
+		jx env -b
 
-		# view the current environment (concise version)
+		# pick which environment to switch to
 		jx env
 
 		# Change the current environment to 'staging'
 		jx env staging
-
-		# Select which environment to change to from the available environments
-		jx ns -s`)
+`)
 )
 
 func NewCmdEnvironment(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -63,7 +61,7 @@ func NewCmdEnvironment(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Choose, "select", "s", false, "Select which environment to switch to")
+	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -95,8 +93,8 @@ func (o *EnvironmentOptions) Run() error {
 	if len(args) > 0 {
 		env = args[0]
 	}
-	if o.Choose {
-		pick, err := kube.PickEnvironment(envNames)
+	if env == "" && !o.BatchMode {
+		pick, err := kube.PickEnvironment(envNames, currentEnv)
 		if err != nil {
 			return err
 		}

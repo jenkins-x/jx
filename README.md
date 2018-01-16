@@ -70,7 +70,7 @@ Or if you wish to use a custom namespace
 
 The `jx` CLI tool uses the same kubernetes cluster and namespace context as `kubectl`. 
 
-You can view your current Environment via:
+You can switch Environments via:
 
     jx env
     
@@ -79,11 +79,11 @@ Or change it via
     jx env staging
     jx env prod
     
-To pick which environment you with to change to try:
+To display the current environment without trying to change it:
 
-    jx env -s
+    jx env -b
 
-To view environments type:
+To view all the environments type:
 
     jx get env
     
@@ -93,9 +93,13 @@ You can create or edit environments too
     
     jx edit env staging
     
-You can change namespaces in the same way via
+You can switch namespaces in the same way via
 
     jx ns
+
+or
+
+    jx ns awesome-staging    
     
 ### Tail logs
 

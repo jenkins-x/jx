@@ -33,16 +33,13 @@ var (
 		Displays or changes the current namespace.`)
 	namespace_example = templates.Examples(`
 		# view the current namespace
-		jx namespace
+		jx ns -b
 
-		# view the current namespace (concise version)
+		# to select the namespace to switch to
 		jx ns
 
 		# Change the current namespace to 'cheese'
-		jx ns cheese
-
-		# Select which namespace to change to from the available namespaces
-		jx ns -s`)
+		jx ns cheese`)
 )
 
 func NewCmdNamespace(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -66,7 +63,7 @@ func NewCmdNamespace(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Choose, "select", "s", false, "Select which namespace to switch to")
+	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -89,7 +86,7 @@ func (o *NamespaceOptions) Run() error {
 		return err
 	}
 
-	if o.Choose {
+	if ns == "" && !o.BatchMode {
 		defaultNamespace := ""
 		ctx := kube.CurrentContext(config)
 		if ctx != nil {
@@ -111,6 +108,9 @@ func (o *NamespaceOptions) Run() error {
 		ctx := kube.CurrentContext(config)
 		if ctx == nil {
 			return fmt.Errorf(noContextDefinedError)
+		}
+		if ctx.Namespace == ns {
+			return nil
 		}
 		ctx.Namespace = ns
 		err = clientcmd.ModifyConfig(po, newConfig, false)
