@@ -8,16 +8,14 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	neturl "net/url"
-
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
@@ -445,56 +443,7 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 }
 
 func (o *ImportOptions) DoImport() error {
-	url := o.RepoURL
-	if url == "" {
-		return fmt.Errorf("No Git repository URL found!")
-	}
-	out := o.Out
-	jenk := o.Jenkins
-	gitInfo, err := gits.ParseGitURL(url)
-	if err != nil {
-		return fmt.Errorf("Failed to parse git URL %s due to: %s", url, err)
-	}
-	org := gitInfo.Organisation
-	folder, err := jenk.GetJob(org)
-	if err != nil {
-		// could not find folder so lets try create it
-		jobUrl := util.UrlJoin(jenk.BaseURL(), jenk.GetJobURLPath(org))
-		folderXml := jenkins.CreateFolderXml(jobUrl, org)
-		//fmt.Fprintf(out, "XML: %s\n", folderXml)
-		err = jenk.CreateJobWithXML(folderXml, org)
-		if err != nil {
-			return fmt.Errorf("Failed to create the %s folder in jenkins: %s", org, err)
-		}
-		//fmt.Fprintf(out, "Created Jenkins folder: %s\n", org)
-	} else {
-		c := folder.Class
-		if c != "com.cloudbees.hudson.plugins.folder.Folder" {
-			fmt.Fprintf(out, "Warning the folder %s is of class %s", org, c)
-		}
-	}
-	projectXml := jenkins.CreateMultiBranchProjectXml(gitInfo, o.Credentials)
-	jobName := gitInfo.Name
-	job, err := jenk.GetJobByPath(org, jobName)
-	if err == nil {
-		return fmt.Errorf("Job already exists in Jenkins at " + job.Url)
-	}
-	//fmt.Fprintf(out, "Creating MultiBranchProject %s from XML: %s\n", jobName, projectXml)
-	err = jenk.CreateFolderJobWithXML(projectXml, org, jobName)
-	if err != nil {
-		return fmt.Errorf("Failed to create MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
-	}
-	job, err = jenk.GetJobByPath(org, jobName)
-	if err != nil {
-		return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
-	}
-	fmt.Fprintf(out, "Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
-	params := neturl.Values{}
-	err = jenk.Build(job, params)
-	if err != nil {
-		return fmt.Errorf("Failed to trigger job %s due to %s", job.Url, err)
-	}
-	return nil
+	return jenkins.ImportProject(o.Out, o.Jenkins, o.RepoURL, o.Credentials, true)
 }
 
 func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
