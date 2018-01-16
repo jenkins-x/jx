@@ -9,6 +9,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/jenkins"
 )
 
 var (
@@ -38,6 +39,7 @@ type CreateEnvOptions struct {
 	PromotionStrategy      string
 	NoGitOps               bool
 	ForkEnvironmentGitRepo string
+	EnvJobCredentials  string
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
@@ -73,6 +75,7 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
 	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", "", "The promotion strategy")
 	cmd.Flags().StringVarP(&options.ForkEnvironmentGitRepo, "git-repo", "g", kube.DefaultEnvironmentGitRepoURL, "The default Git repository used as the fork when creating new Environment git repos")
+	cmd.Flags().StringVarP(&options.EnvJobCredentials, "env-job-credentials", "", "jenkins-x-github", "The Jenkins credentials used by the GitOps Job for this environment")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
 	return cmd
@@ -123,5 +126,18 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	o.Printf("Created environment %s\n", util.ColorInfo(env.Name))
 
-	return kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, ns)
+
+	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, ns)
+	if err != nil {
+	  return err
+	}
+	gitURL := env.Spec.Source.URL
+	if gitURL != "" {
+		jenkinClient, err := f.GetJenkinsClient()
+		if err != nil {
+		  return err
+		}
+		return jenkins.ImportProject(o.Out, jenkinClient, gitURL, o.EnvJobCredentials, false)
+	}
+	return nil
 }

@@ -277,6 +277,7 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 					return "", fmt.Errorf("Failed to rename github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
 				}
 			}
+			fmt.Fprintf(out, "Forked git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 			return repo.CloneURL, nil
 		}
 	}
