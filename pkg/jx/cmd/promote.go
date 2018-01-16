@@ -11,6 +11,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"path/filepath"
+	"os"
+	"github.com/jenkins-x/jx/pkg/helm"
 )
 
 const (
@@ -87,6 +91,7 @@ func (o *PromoteOptions) Run() error {
 		}
 		app = args[0]
 	}
+	o.Application = app
 	version := o.Version
 	info := util.ColorInfo
 	if version == "" {
@@ -137,11 +142,158 @@ func (o *PromoteOptions) Run() error {
 }
 
 func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
-	return fmt.Errorf("TODO")
+	source := &env.Spec.Source
+	gitURL := source.URL
+	if gitURL == "" {
+		return fmt.Errorf("No source git URL")
+	}
+	team, _, err := o.TeamAndEnvironmentNames()
+	if err != nil {
+		return err
+	}
+
+	environmentsDir, err := cmdutil.TeamEnvironmentsDir(team)
+	if err != nil {
+		return err
+	}
+	dir := filepath.Join(environmentsDir, env.Name)
+
+	// now lets clone the fork and push it...
+	exists, err := util.FileExists(dir)
+	if err != nil {
+		return err
+	}
+
+	app := o.Application
+	version := o.Version
+	versionName := version
+	if versionName == "" {
+		versionName = "latest"
+	}
+
+	branchName := gits.ConvertToValidBranchName("promote-" + app + "-" + versionName)
+	base := source.Ref
+	if base == ""  {
+		base = "master"
+	}
+	if exists {
+		// lets make sure that the origin is correct...
+		err = gits.GitCmd(dir, "remote", "add", "origin", gitURL)
+		if err != nil {
+			return err
+		}
+		err = gits.GitCmd(dir, "stash")
+		if err != nil {
+			return err
+		}
+		err = gits.GitCmd(dir, "checkout", base)
+		if err != nil {
+			return err
+		}
+		err = gits.GitCmd(dir, "pull")
+		if err != nil {
+			return err
+		}
+	} else {
+		err := os.MkdirAll(dir, DefaultWritePermissions)
+		if err != nil {
+			return fmt.Errorf("Failed to create directory %s due to %s", dir, err)
+		}
+		err = gits.GitClone(gitURL, dir)
+		if err != nil {
+			return err
+		}
+		if base != "master" {
+			err = gits.GitCmd(dir, "checkout", base)
+			if err != nil {
+				return err
+			}
+		}
+
+		// TODO lets fork if required???
+		/*
+		pushGitURL, err := gits.GitCreatePushURL(gitURL, details.User)
+		if err != nil {
+			return err
+		}
+		err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
+		if err != nil {
+			return err
+		}
+		err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
+		if err != nil {
+			return err
+		}
+		err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+		if err != nil {
+			return err
+		}
+		*/
+	}
+	err = gits.GitCmd(dir, "branch", branchName)
+	if err != nil {
+		return err
+	}
+	err = gits.GitCmd(dir, "checkout", branchName)
+	if err != nil {
+		return err
+	}
+
+	requirementsFile := filepath.Join(dir, helm.RequirementsFileName)
+	requirements, err := helm.LoadRequirementsFile(requirementsFile)
+	if err != nil {
+		return err
+	}
+	requirements.SetAppVersion(app, version)
+	err = helm.SaveRequirementsFile(requirementsFile, requirements)
+
+	err = gits.GitCmd(dir, "add", helm.RequirementsFileName)
+	if err != nil {
+		return err
+	}
+	message := fmt.Sprintf("Promote %s to version %s", app, versionName)
+	err = gits.GitCommit(dir, message)
+	if err != nil {
+		return err
+	}
+	err = gits.GitPush(dir)
+	if err != nil {
+		return err
+	}
+
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+	  return err
+	}
+	gitInfo, err := gits.ParseGitURL(gitURL)
+	if err != nil {
+	  return err
+	}
+
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc)
+	if err != nil {
+	  return err
+	}
+
+	gha := &gits.GitPullRequestArguments{
+		Owner: gitInfo.Organisation,
+		Repo:  gitInfo.Name,
+		Title: app + " to " + versionName,
+		Body:  message,
+		Base:  base,
+		Head:  branchName,
+	}
+
+	pr, err := provider.CreatePullRequest(gha)
+	if err != nil {
+	  return err
+	}
+	o.Printf("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
+	return nil
 }
 
 func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.Environment, error) {
-	kubeClient, currentNs, err := o.Factory.CreateClient()
+	kubeClient, currentNs, err := o.KubeClient()
 	if err != nil {
 		return "", nil, err
 	}
@@ -150,7 +302,7 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 		return "", nil, err
 	}
 
-	jxClient, _, err := o.Factory.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return "", nil, err
 	}

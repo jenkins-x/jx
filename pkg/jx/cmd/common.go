@@ -11,6 +11,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 // CommonOptions contains common options and helper methods
@@ -21,6 +24,11 @@ type CommonOptions struct {
 	Cmd       *cobra.Command
 	Args      []string
 	BatchMode bool
+
+	// common cached clients
+	kubeClient       *kubernetes.Clientset
+	currentNamespace string
+	jxClient         *versioned.Clientset
 }
 
 func (c *CommonOptions) CreateTable() table.Table {
@@ -85,8 +93,41 @@ func (o *CommonOptions) getCommandOutput(dir string, name string, args ...string
 	return text, nil
 }
 
-
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "In batch mode the command never prompts for user input")
 	options.Cmd = cmd
+}
+
+func (o *CommonOptions) KubeClient() (*kubernetes.Clientset, string, error) {
+	if o.kubeClient == nil {
+		kubeClient, currentNs, err := o.Factory.CreateClient()
+		if err != nil {
+			return nil, "", err
+		}
+		o.kubeClient = kubeClient
+		o.currentNamespace = currentNs
+	}
+	return o.kubeClient, o.currentNamespace, nil
+}
+
+func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
+	if o.jxClient == nil {
+		jxClient, ns, err := o.Factory.CreateJXClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.jxClient = jxClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	return o.jxClient, o.currentNamespace, nil
+}
+
+func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
+	kubeClient, currentNs, err := o.KubeClient()
+	if err != nil {
+		return "", "", err
+	}
+	return kube.GetDevNamespace(kubeClient, currentNs)
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"sort"
+	"fmt"
 )
 
 type GitProvider interface {
@@ -17,6 +18,8 @@ type GitProvider interface {
 
 	ValidateRepositoryName(org string, name string) error
 
+	CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error)
+
 	IsGitHub() bool
 }
 
@@ -29,6 +32,19 @@ type GitRepository struct {
 	HTMLURL          string
 	CloneURL         string
 	SSHURL           string
+}
+
+type GitPullRequest struct {
+	URL string
+}
+
+type GitPullRequestArguments struct {
+	Owner string
+	Repo  string
+	Title string
+	Body  string
+	Head  string
+	Base  string
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
@@ -71,5 +87,21 @@ func PickOrganisation(provider GitProvider, userName string) (string, error) {
 		return "", nil
 	}
 	return orgName, nil
+}
 
+func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService) (GitProvider, error) {
+	config := authConfigSvc.Config()
+	server := config.GetOrCreateServer(i.Host)
+	userAuth, err := config.PickServerUserAuth(server, "git user name")
+	if err != nil {
+		return nil, err
+	}
+	return i.CreateProviderForUser(server, &userAuth)
+}
+
+func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+	if i.Host == GitHubHost {
+		return NewGitHubProvider(server, user)
+	}
+	return nil, fmt.Errorf("Git provider not supported for host %s", i.Host)
 }
