@@ -62,7 +62,19 @@ func (f *factory) GetJenkinsClient() (*gojenkins.Jenkins, error) {
 		}
 		url, err = kube.FindServiceURL(client, ns, kube.ServiceJenkins)
 		if err != nil {
-			return nil, err
+			// lets try the real environment
+			realNS, _, err := kube.GetDevNamespace(client, ns)
+			if err != nil {
+				return nil, err
+			}
+			if realNS != ns {
+				url, err = kube.FindServiceURL(client, realNS, kube.ServiceJenkins)
+				if err != nil {
+				  return nil, err
+				}
+			} else {
+				return nil, err
+			}
 		}
 	}
 	svc, err := f.CreateAuthConfigService(jenkinsAuthConfigFile)

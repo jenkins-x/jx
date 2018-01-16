@@ -39,6 +39,10 @@ Or to create a new Spring Boot application from scratch
 
     jx create spring
     
+To create a new WebMVC and Spring Boot Actuator microservice try this:
+
+    jx create spring -d web -d actuator
+        
 If you have a Maven Archetype you would like to create then use:
 
     jx create archetype

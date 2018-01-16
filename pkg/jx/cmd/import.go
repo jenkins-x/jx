@@ -443,6 +443,14 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 }
 
 func (o *ImportOptions) DoImport() error {
+	if o.Jenkins == nil {
+		jenkins, err := o.Factory.GetJenkinsClient()
+		if err != nil {
+			return err
+		}
+		o.Jenkins = jenkins
+	}
+
 	return jenkins.ImportProject(o.Out, o.Jenkins, o.RepoURL, o.Credentials, true)
 }
 
