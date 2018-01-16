@@ -123,7 +123,7 @@ func (o *GetEnvOptions) Run() error {
 		kube.SortEnvironments(environments)
 
 		table := o.CreateTable()
-		table.AddRow("NAME", "LABEL", "PROMOTE", "NAMESPACE", "ORDER", "CLUSTER", "SOURCE URL", "REF")
+		table.AddRow("NAME", "LABEL", "PROMOTE", "NAMESPACE", "ORDER", "CLUSTER", "SOURCE", "REF")
 
 		for _, env := range environments {
 			spec := &env.Spec
