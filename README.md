@@ -158,3 +158,8 @@ You can use the `jx prompt` to configure your CLI prompt to display the current 
 To remove the Jenkins X platfrom from a namespace on your kubernetes cluster:
 
     jx uninstall
+	
+## Contributing
+
+If you're looking to build from source or get started hacking on Draft, please see the
+[hacking guide][hacking] for more information.
