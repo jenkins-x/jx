@@ -134,7 +134,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().StringVarP(&options.RepoURL, "url", "u", "", "The git clone URL to clone into the current directory and then import")
 	cmd.Flags().StringVarP(&options.Organisation, "org", "o", "", "Specify the git provider organisation to import the project into (if it is not already in one)")
 	cmd.Flags().StringVarP(&options.Organisation, "name", "n", "", "Specify the git repository name to import the project into (if it is not already in one)")
-	cmd.Flags().StringVarP(&options.Credentials, "credentials", "c", "jenkins-x-github", "The Jenkins credentials name used by the job")
+	cmd.Flags().StringVarP(&options.Credentials, "credentials", "c", jenkins.DefaultJenkinsCredentials, "The Jenkins credentials name used by the job")
 	return cmd
 }
 
@@ -222,7 +222,9 @@ func (o *ImportOptions) DraftCreate() error {
 	e.Stderr = os.Stderr
 	err = e.Run()
 	if err != nil {
-		return fmt.Errorf("Failed to run draft create in %s due to %s", dir, err)
+		// lets ignore draft errors as sometimes it can't find a pack - e.g. for environments
+		o.Printf(util.ColorWarning("WARNING: Failed to run draft create in %s due to %s"), dir, err)
+		//return fmt.Errorf("Failed to run draft create in %s due to %s", dir, err)
 	}
 	err = gits.GitAdd(dir, "*")
 	if err != nil {
