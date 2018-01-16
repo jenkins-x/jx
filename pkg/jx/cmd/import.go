@@ -8,14 +8,17 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"strings"
+
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
@@ -40,14 +43,22 @@ pipeline {
     label "jenkins-maven"
   }
 
+  environment {
+    ORG 		= 'jenkinsx'
+    APP_NAME    = '%s'
+  }
+
   stages {
 
     stage('Build Release') {
       steps {
         container('maven') {
+          // so we can retrieve the version in later steps
+          sh "echo \$(jx-release-version) > VERSION"
           sh "mvn versions:set -DnewVersion=\$(jx-release-version)"
         }
-        dir ('./helm/spring-boot-web-example') {
+
+        dir ('./charts/%s') {
           container('maven') {
             // until kubernetes plugin supports init containers https://github.com/jenkinsci/kubernetes-plugin/pull/229/
             sh 'cp /root/netrc/.netrc ~/.netrc'
@@ -55,16 +66,20 @@ pipeline {
             sh "make tag"
           }
         }
+
         container('maven') {
-          sh "mvn clean deploy fabric8:build fabric8:push -Ddocker.push.registry=$JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT"
+          sh 'mvn clean deploy'
+          sh "docker build -f Dockerfile.jenkins -t $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:\$(cat VERSION) ."
+          sh "docker push $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:\$(cat VERSION)"
         }
       }
     }
     stage('Deploy Staging') {
 
       steps {
-        dir ('./helm/spring-boot-web-example') {
+        dir ('./charts/%s') {
           container('maven') {
+
             sh 'make release'
             sh 'helm install . --namespace staging --name example-release'
             sh 'exposecontroller --namespace staging --http' // until we switch to git environments where helm hooks will expose services
@@ -86,9 +101,11 @@ type ImportOptions struct {
 	Organisation string
 	Repository   string
 	Credentials  string
+	AppName      string
 
 	Jenkins    *gojenkins.Jenkins
 	GitConfDir string
+	DryRun     bool
 }
 
 var (
@@ -135,6 +152,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().StringVarP(&options.Organisation, "org", "o", "", "Specify the git provider organisation to import the project into (if it is not already in one)")
 	cmd.Flags().StringVarP(&options.Organisation, "name", "n", "", "Specify the git repository name to import the project into (if it is not already in one)")
 	cmd.Flags().StringVarP(&options.Credentials, "credentials", "c", jenkins.DefaultJenkinsCredentials, "The Jenkins credentials name used by the job")
+	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "d", false, "Performs local changes to the repo but skips the import into Jenkins X")
 	return cmd
 }
 
@@ -158,6 +176,7 @@ func (o *ImportOptions) Run() error {
 			o.Dir = dir
 		}
 	}
+	_, o.AppName = filepath.Split(o.Dir)
 
 	if o.RepoURL != "" {
 		err = o.CloneRepository()
@@ -199,6 +218,10 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 	}
+	if o.DryRun {
+		log.Infof("dry-run so skipping import to Jenkins X")
+		return nil
+	}
 	return o.DoImport()
 }
 
@@ -226,6 +249,34 @@ func (o *ImportOptions) DraftCreate() error {
 		o.Printf(util.ColorWarning("WARNING: Failed to run draft create in %s due to %s"), dir, err)
 		//return fmt.Errorf("Failed to run draft create in %s due to %s", dir, err)
 	}
+	// chart expects folder name to be the same as app name
+	pwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	oldChartsDir := filepath.Join(pwd, "charts", "java")
+	newChartsDir := filepath.Join(pwd, "charts", o.AppName)
+	os.Rename(oldChartsDir, newChartsDir)
+
+	// now update the chart.yaml
+	err = o.addAppNameToGeneretedFile("Chart.yaml", "name: ", o.AppName)
+	if err != nil {
+		return err
+	}
+
+	// now update the makefile
+	err = o.addAppNameToGeneretedFile("Makefile", "NAME := ", o.AppName)
+	if err != nil {
+		return err
+	}
+
+	// now update the helm values which contains the image name
+	err = o.addAppNameToGeneretedFile("values.yaml", "  repository: ", fmt.Sprintf("%s/%s", "jenkinsx", o.AppName))
+	if err != nil {
+		return err
+	}
+
 	err = gits.GitAdd(dir, "*")
 	if err != nil {
 		return err
@@ -238,6 +289,7 @@ func (o *ImportOptions) DraftCreate() error {
 }
 
 func (o *ImportOptions) DefaultJenkinsfile() error {
+
 	dir := o.Dir
 	name := filepath.Join(dir, "Jenkinsfile")
 	exists, err := util.FileExists(name)
@@ -247,7 +299,7 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 	if exists {
 		return nil
 	}
-	data := []byte(defaultJenkinsfile)
+	data := []byte(fmt.Sprintf(defaultJenkinsfile, o.AppName, o.AppName, o.AppName))
 	err = ioutil.WriteFile(name, data, DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write %s due to %s", name, err)
@@ -482,6 +534,33 @@ func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 		}
 	}
 	return url, nil
+}
+func (o *ImportOptions) addAppNameToGeneretedFile(filename, field, value string) error {
+	pwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	dir := filepath.Join(pwd, "charts", o.AppName)
+	file := filepath.Join(dir, filename)
+	input, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(input), "\n")
+
+	for i, line := range lines {
+		if strings.Contains(line, field) {
+			lines[i] = fmt.Sprintf("%s%s", field, value)
+		}
+	}
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(file, []byte(output), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func firstRemoteUrl(remote *gitcfg.RemoteConfig) string {
