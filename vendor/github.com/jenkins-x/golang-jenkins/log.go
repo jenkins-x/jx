@@ -24,7 +24,7 @@ func (jenkins *Jenkins) GetLog(job Job, buildNumber int, start int64) (LogData, 
 */
 
 func (jenkins *Jenkins) GetBuildURL(job Job, buildNumber int) string {
-	return fmt.Sprintf("%s/%d", FullPath(job), buildNumber)
+	return fmt.Sprintf("%s/%d", FullPath(job.FullName), buildNumber)
 }
 
 // GetLog returns the log from the given start port (default to zero for all of it)

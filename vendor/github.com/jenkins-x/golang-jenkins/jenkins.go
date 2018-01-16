@@ -38,6 +38,21 @@ type Credentials struct {
 	Class    string `json:"$class"`
 }
 
+type APIError struct {
+	Status     string
+	StatusCode int
+}
+
+func (err APIError) Error() string {
+	return err.Status
+}
+
+
+func (jenkins *Jenkins) IsErrNotFound(err error) bool {
+	te, ok := err.(APIError)
+	return ok && te.StatusCode == 404
+}
+
 func NewJenkins(auth *Auth, baseUrl string) *Jenkins {
 
 	client := &http.Client{
@@ -113,7 +128,7 @@ func (jenkins *Jenkins) parseXmlResponse(resp *http.Response, body interface{}) 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 302 && resp.StatusCode != 405 && resp.StatusCode > 201 {
-		return errors.New(resp.Status)
+		return APIError{ resp.Status, resp.StatusCode }
 	}
 
 	if body == nil {
@@ -132,7 +147,7 @@ func (jenkins *Jenkins) parseXmlResponseWithWrapperElement(resp *http.Response, 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 302 && resp.StatusCode != 405 && resp.StatusCode > 201 {
-		return errors.New(resp.Status)
+		return APIError{ resp.Status, resp.StatusCode }
 	}
 
 	if body == nil {
@@ -161,7 +176,7 @@ func (jenkins *Jenkins) parseResponse(resp *http.Response, body interface{}) (er
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 302 && resp.StatusCode != 405 && resp.StatusCode > 201 {
-		return errors.New(resp.Status)
+		return APIError{ resp.Status, resp.StatusCode }
 	}
 
 	if body == nil {
@@ -344,18 +359,18 @@ func (jenkins *Jenkins) GetJobs() ([]Job, error) {
 
 // GetJob returns a job which has specified name.
 func (jenkins *Jenkins) GetJob(name string) (job Job, err error) {
-	err = jenkins.get(fmt.Sprintf("/job/%s", name), nil, &job)
+	err = jenkins.get(FullPath(name), nil, &job)
 	return
 }
 
 // GetJobUrl returns the URL path for the job with the specified name.
 func (jenkins *Jenkins) GetJobURLPath(name string) string {
-	return fmt.Sprintf("/job/%s", name)
+	return FullPath(name)
 }
 
 //GetJobConfig returns a maven job, has the one used to create Maven job
 func (jenkins *Jenkins) GetJobConfig(name string) (job JobItem, err error) {
-	err = jenkins.getConfigXml(fmt.Sprintf("/job/%s/config.xml", name), nil, &job)
+	err = jenkins.getConfigXml(FullPath(name) + "/config.xml", nil, &job)
 	return
 }
 
@@ -395,8 +410,8 @@ func FullJobPath(path ...string) string {
 }
 
 // FullJobPath returns the full job path URL for the given paths
-func FullPath(job Job) string {
-	paths := strings.Split(job.FullName, "/")
+func FullPath(job string) string {
+	paths := strings.Split(job, "/")
 	return FullJobPath(paths...)
 }
 

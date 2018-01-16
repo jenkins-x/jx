@@ -37,6 +37,15 @@ func (s *ChrootSuite) TestCreateErrCrossedBoundary(c *C) {
 	c.Assert(err, Equals, billy.ErrCrossedBoundary)
 }
 
+func (s *ChrootSuite) TestLeadingPeriodsPathNotCrossedBoundary(c *C) {
+	m := &test.BasicMock{}
+
+	fs := New(m, "/foo")
+	f, err := fs.Create("..foo")
+	c.Assert(err, IsNil)
+	c.Assert(f.Name(), Equals, "..foo")
+}
+
 func (s *ChrootSuite) TestOpen(c *C) {
 	m := &test.BasicMock{}
 
