@@ -34,10 +34,10 @@ var (
 type CreateEnvOptions struct {
 	CreateOptions
 
-	Options           v1.Environment
-	PromotionStrategy string
-
-	NoGitOps bool
+	Options                v1.Environment
+	PromotionStrategy      string
+	NoGitOps               bool
+	ForkEnvironmentGitRepo string
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
@@ -72,6 +72,7 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	cmd.Flags().StringVarP(&options.Options.Spec.Namespace, kube.OptionNamespace, "s", "", "The Kubernetes namespace for the Environment")
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
 	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", "", "The promotion strategy")
+	cmd.Flags().StringVarP(&options.ForkEnvironmentGitRepo, "git-repo", "g", kube.DefaultEnvironmentGitRepoURL, "The default Git repository used as the fork when creating new Environment git repos")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
 	return cmd
@@ -83,15 +84,16 @@ func (o *CreateEnvOptions) Run() error {
 	if len(args) > 0 && o.Options.Name == "" {
 		o.Options.Name = args[0]
 	}
-	jxClient, currentNs, err := o.Factory.CreateJXClient()
+	f := o.Factory
+	jxClient, currentNs, err := f.CreateJXClient()
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.Factory.CreateClient()
+	kubeClient, _, err := f.CreateClient()
 	if err != nil {
 		return err
 	}
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := f.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -101,9 +103,17 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	envDir, err := cmdutil.TeamEnvironmentsDir(ns)
+	if err != nil {
+		return err
+	}
+	authConfigSvc, err := f.CreateGitAuthConfigService()
+	if err != nil {
+		return err
+	}
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	err = kube.CreateEnvironmentSurvey(&env, &o.Options, o.NoGitOps, ns, jxClient)
+	err = kube.CreateEnvironmentSurvey(o.Out, authConfigSvc, &env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, envDir)
 	if err != nil {
 		return err
 	}

@@ -1,10 +1,10 @@
 package kube
 
 import (
-        "github.com/stretchr/testify/assert"
-        "testing"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"testing"
 )
 
 func TestSortEnvironments(t *testing.T) {

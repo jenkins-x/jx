@@ -6,4 +6,6 @@ const (
 
 	// LocalHelmRepoName is the default name of the local chart repository where CI / CD releases go to
 	LocalHelmRepoName = "releases"
+
+	DefaultEnvironmentGitRepoURL = "https://github.com/jenkins-x/default-environment-charts.git"
 )

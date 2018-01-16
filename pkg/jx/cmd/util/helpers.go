@@ -213,3 +213,16 @@ func CacheDir() (string, error) {
 	}
 	return path, nil
 }
+
+func TeamEnvironmentsDir(team string) (string, error) {
+	h, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(h, "enviroments", team)
+	err = os.MkdirAll(path, DefaultWritePermissions)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}

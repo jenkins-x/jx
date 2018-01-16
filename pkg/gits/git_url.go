@@ -8,6 +8,8 @@ import (
 )
 
 const (
+	GitHubHost = "github.com"
+
 	gitPrefix = "git@"
 )
 
@@ -17,6 +19,10 @@ type GitRepositoryInfo struct {
 	Host         string
 	Organisation string
 	Name         string
+}
+
+func (i *GitRepositoryInfo) IsGitHub() bool {
+	return GitHubHost == i.Host
 }
 
 // ParseGitURL attempts to parse the given text as a URL or git URL-like string to determine
@@ -31,7 +37,7 @@ func ParseGitURL(text string) (*GitRepositoryInfo, error) {
 
 		// lets default to github
 		if answer.Host == "" {
-			answer.Host = "github.com"
+			answer.Host = GitHubHost
 		}
 		if answer.Scheme == "" {
 			answer.Scheme = "https"
