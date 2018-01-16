@@ -15,11 +15,12 @@ import (
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory cmdutil.Factory
-	Out     io.Writer
-	Err     io.Writer
-	Cmd     *cobra.Command
-	Args    []string
+	Factory   cmdutil.Factory
+	Out       io.Writer
+	Err       io.Writer
+	Cmd       *cobra.Command
+	Args      []string
+	BatchMode bool
 }
 
 func (c *CommonOptions) CreateTable() table.Table {
@@ -82,4 +83,10 @@ func (o *CommonOptions) getCommandOutput(dir string, name string, args ...string
 	text := string(data)
 	text = strings.TrimSpace(text)
 	return text, nil
+}
+
+
+func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "In batch mode the command never prompts for user input")
+	options.Cmd = cmd
 }

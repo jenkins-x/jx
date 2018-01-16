@@ -99,7 +99,7 @@ func (o *EditEnvOptions) Run() error {
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
 
-	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
+	ns, currentEnv, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (o *EditEnvOptions) Run() error {
 	} else {
 		name = o.Options.Name
 		if name == "" {
-			name, err = kube.PickEnvironment(envNames)
+			name, err = kube.PickEnvironment(envNames, currentEnv)
 			if err != nil {
 				return err
 			}
