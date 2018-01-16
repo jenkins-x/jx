@@ -271,3 +271,22 @@ func PickName(names []string, message string) (string, error) {
 	}
 	return name, nil
 }
+
+type ByOrder []v1.Environment
+
+func (a ByOrder) Len() int      { return len(a) }
+func (a ByOrder) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByOrder) Less(i, j int) bool {
+	env1 := a[i]
+	env2 := a[j]
+	o1 := env1.Spec.Order
+	o2 := env2.Spec.Order
+	if o1 == o2 {
+		return env1.Name < env2.Name
+	}
+	return o1 < o2
+}
+
+func SortEnvironments(environments []v1.Environment) {
+	sort.Sort(ByOrder(environments))
+}
