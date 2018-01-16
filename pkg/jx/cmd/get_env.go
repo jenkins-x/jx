@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"strconv"
-
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -100,7 +98,6 @@ func (o *GetEnvOptions) Run() error {
 			if err != nil {
 				return fmt.Errorf("Could not find deployments in namespace %s: %s", ens, err)
 			}
-
 			table = o.CreateTable()
 			table.AddRow("APP", "VERSION", "DESIRED", "CURRENT", "UP-TO-DATE", "AVAILABLE", "AGE")
 			for _, d := range deps.Items {
@@ -122,11 +119,15 @@ func (o *GetEnvOptions) Run() error {
 			return outputEmptyListWarning(o.Out)
 		}
 
-		table := o.CreateTable()
-		table.AddRow("NAME", "LABEL", "PROMOTE", "NAMESPACE", "CLUSTER", "SOURCE URL", "REF")
+		environments := envs.Items
+		kube.SortEnvironments(environments)
 
-		for _, env := range envs.Items {
-			table.AddRow(env.Name, env.Spec.Label, string(env.Spec.PromotionStrategy), env.Spec.Namespace, env.Spec.Cluster, env.Spec.Source.URL, env.Spec.Source.Ref)
+		table := o.CreateTable()
+		table.AddRow("NAME", "LABEL", "PROMOTE", "NAMESPACE", "ORDER", "CLUSTER", "SOURCE URL", "REF")
+
+		for _, env := range environments {
+			spec := &env.Spec
+			table.AddRow(env.Name, spec.Label, string(spec.PromotionStrategy), spec.Namespace, util.Int32ToA(spec.Order), spec.Cluster, spec.Source.URL, spec.Source.Ref)
 		}
 		table.Render()
 	}
@@ -134,5 +135,5 @@ func (o *GetEnvOptions) Run() error {
 }
 
 func formatInt32(n int32) string {
-	return strconv.FormatInt(int64(n), 10)
+	return util.Int32ToA(n)
 }

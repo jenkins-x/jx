@@ -122,7 +122,56 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 	if string(config.Spec.PromotionStrategy) != "" {
 		data.Spec.PromotionStrategy = config.Spec.PromotionStrategy
 	} else {
-		// TODO edit the promotion strategy
+		promoteValues := []string{
+			string(v1.PromotionStrategyTypeAutomatic),
+			string(v1.PromotionStrategyTypeManual),
+			string(v1.PromotionStrategyTypeNever),
+		}
+		defaultValue := string(data.Spec.PromotionStrategy)
+		if defaultValue == "" {
+			defaultValue = string(v1.PromotionStrategyTypeAutomatic)
+		}
+		q := &survey.Select{
+			Message: "Promotion Strategy:",
+			Options: promoteValues,
+			Default: defaultValue,
+			Help:    "Whether we promote to this Environment automatically, manually or never",
+		}
+		textValue := ""
+		err := survey.AskOne(q, &textValue, survey.Required)
+		if err != nil {
+			return err
+		}
+		if textValue != "" {
+			data.Spec.PromotionStrategy = v1.PromotionStrategyType(textValue)
+		}
+	}
+	if config.Spec.Order != 0 {
+		data.Spec.Order = config.Spec.Order
+	} else {
+		order := data.Spec.Order
+		if order == 0 {
+			// TODO should we generate an order to default to last one?
+			order = 100
+		}
+		defaultValue := util.Int32ToA(order)
+		q := &survey.Input{
+			Message: "Order:",
+			Default: defaultValue,
+			Help:    "This number is used to sort Environments in sequential order, lowest first",
+		}
+		textValue := ""
+		err := survey.AskOne(q, &textValue, survey.Required)
+		if err != nil {
+			return err
+		}
+		if textValue != "" {
+			i, err := util.AtoInt32(textValue)
+			if err != nil {
+				return fmt.Errorf("Failed to convert input '%s' to number: %s", textValue, err)
+			}
+			data.Spec.Order = i
+		}
 	}
 	if string(data.Spec.PromotionStrategy) == "" {
 		data.Spec.PromotionStrategy = v1.PromotionStrategyTypeAutomatic
@@ -221,4 +270,23 @@ func PickName(names []string, message string) (string, error) {
 		}
 	}
 	return name, nil
+}
+
+type ByOrder []v1.Environment
+
+func (a ByOrder) Len() int      { return len(a) }
+func (a ByOrder) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByOrder) Less(i, j int) bool {
+	env1 := a[i]
+	env2 := a[j]
+	o1 := env1.Spec.Order
+	o2 := env2.Spec.Order
+	if o1 == o2 {
+		return env1.Name < env2.Name
+	}
+	return o1 < o2
+}
+
+func SortEnvironments(environments []v1.Environment) {
+	sort.Sort(ByOrder(environments))
 }
