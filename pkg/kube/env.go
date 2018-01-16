@@ -146,6 +146,9 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 			data.Spec.PromotionStrategy = v1.PromotionStrategyType(textValue)
 		}
 	}
+	if string(data.Spec.PromotionStrategy) == "" {
+		data.Spec.PromotionStrategy = v1.PromotionStrategyTypeAutomatic
+	}
 	if config.Spec.Order != 0 {
 		data.Spec.Order = config.Spec.Order
 	} else {
@@ -173,10 +176,77 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 			data.Spec.Order = i
 		}
 	}
-	if string(data.Spec.PromotionStrategy) == "" {
-		data.Spec.PromotionStrategy = v1.PromotionStrategyTypeAutomatic
+	createRepo := false
+	if (config.Spec.Source.URL != "") {
+		data.Spec.Source.URL = config.Spec.Source.URL
+	} else {
+		showUrlEdit := false
+		if data.Spec.Source.URL == "" {
+			confirm := &survey.Confirm{
+				Message: "Would you like to use GitOps to manage this environment? :",
+				Default: false,
+			}
+			err := survey.AskOne(confirm, &showUrlEdit, nil)
+			if err != nil {
+				return err
+			}
+		} else {
+			showUrlEdit = true
+		}
+		if showUrlEdit {
+			if data.Spec.Source.URL == "" {
+				confirm := &survey.Confirm{
+					Message: "Would you like to create a new Git repository to store this Environments source code? :",
+					Default: true,
+				}
+				err := survey.AskOne(confirm, &createRepo, nil)
+				if err != nil {
+					return err
+				}
+				if createRepo {
+					showUrlEdit = false
+
+					err = createEnvironmentGitRepo(data)
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				showUrlEdit = true
+			}
+			if showUrlEdit {
+				q := &survey.Input{
+					Message: "Git URL for the Environment source code:",
+					Default: data.Spec.Source.URL,
+					Help:    "The git clone URL for the Environment's Helm charts source code and custom configuration",
+				}
+				err := survey.AskOne(q, &data.Spec.Source.URL, survey.Required)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	if (config.Spec.Source.Ref != "") {
+		data.Spec.Source.Ref = config.Spec.Source.Ref
+	} else {
+		if data.Spec.Source.URL != "" || data.Spec.Source.Ref != "" {
+			q := &survey.Input{
+				Message: "Git Ref for the Environment source code:",
+				Default: data.Spec.Source.Ref,
+				Help:    "The git clone Ref for the Environment's Helm charts source code and custom configuration",
+			}
+			err := survey.AskOne(q, &data.Spec.Source.Ref, nil)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
+}
+
+func createEnvironmentGitRepo(env *v1.Environment) error {
+	return fmt.Errorf("TODO")
 }
 
 // GetEnvironmentNames returns the sorted list of environment names

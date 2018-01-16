@@ -81,7 +81,9 @@ type Job struct {
 	Description  string   `json:"description"`
 	HealthReport []Health `json:"healthReport"`
 
-	Jobs                  []Job `json:"jobs"`
+	Jobs                  []Job `json:"jobs"` // for folders
+	
+	LastBuild             Build `json:"lastBuild"`
 	LastCompletedBuild    Build `json:"lastCompletedBuild"`
 	LastFailedBuild       Build `json:"lastFailedBuild"`
 	LastStableBuild       Build `json:"lastStableBuild"`
