@@ -10,6 +10,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"net/url"
 	"strings"
+	"bytes"
+)
+
+const (
+	replaceInvalidBranchChars = '_'
 )
 
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
@@ -166,4 +171,40 @@ func GitRepoName(org, repoName string) string {
 		return org + "/" + repoName
 	}
 	return repoName
+}
+
+// ConvertToValidBranchName converts the given branch name into a valid git branch string
+// replacing any dodgy characters
+func ConvertToValidBranchName(name string) string {
+	name = strings.TrimSuffix(name, "/")
+	name = strings.TrimSuffix(name, ".lock")
+	var buffer bytes.Buffer
+
+	last := ' '
+	for _, ch := range name {
+		if ch <= 32 {
+			ch = replaceInvalidBranchChars
+		}
+		switch ch {
+		case '~':
+			ch = replaceInvalidBranchChars
+		case '^':
+			ch = replaceInvalidBranchChars
+		case ':':
+			ch = replaceInvalidBranchChars
+		case ' ':
+			ch = replaceInvalidBranchChars
+		case '\n':
+			ch = replaceInvalidBranchChars
+		case '\r':
+			ch = replaceInvalidBranchChars
+		case '\t':
+			ch = replaceInvalidBranchChars
+		}
+		if ch != replaceInvalidBranchChars || last != replaceInvalidBranchChars {
+			buffer.WriteString(string(ch))
+		}
+		last = ch
+	}
+	return buffer.String()
 }

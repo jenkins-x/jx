@@ -119,6 +119,44 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 	return answer, nil
 }
 
+func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
+	owner := data.Owner
+	repo := data.Repo
+	title := data.Title
+	body := data.Body
+	head := data.Head
+	base := data.Base
+	config := &github.NewPullRequest{
+	}
+	if title != "" {
+		config.Title = github.String(title)
+	}
+	if body != "" {
+		config.Body = github.String(body)
+	}
+	if head != "" {
+		config.Head = github.String(head)
+	}
+	if base != "" {
+		config.Base = github.String(base)
+	}
+	pr, _, err := p.Client.PullRequests.Create(p.Context, owner, repo, config)
+	if err != nil {
+		return nil, err
+	}
+	return &GitPullRequest{
+		URL: notNullString(pr.HTMLURL),
+	}, nil
+}
+
+
+func notNullString(tp *string) string {
+	if tp == nil {
+		return ""
+	}
+	return *tp
+}
+
 func (p *GitHubProvider) RenameRepository(org string, name string, newName string) (*GitRepository, error) {
 	if org == "" {
 		org = p.Username
