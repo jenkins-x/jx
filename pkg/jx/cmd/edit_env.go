@@ -72,7 +72,7 @@ func NewCmdEditEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
 	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", "", "The promotion strategy")
 	cmd.Flags().StringVarP(&options.ForkEnvironmentGitRepo, "git-repo", "g", kube.DefaultEnvironmentGitRepoURL, "The default Git repository used as the fork when creating new Environment git repos")
-	cmd.Flags().StringVarP(&options.EnvJobCredentials, "env-job-credentials", "", "jenkins-x-github", "The Jenkins credentials used by the GitOps Job for this environment")
+	cmd.Flags().StringVarP(&options.EnvJobCredentials, "env-job-credentials", "", jenkins.DefaultJenkinsCredentials, "The Jenkins credentials used by the GitOps Job for this environment")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
 	return cmd
@@ -103,7 +103,7 @@ func (o *EditEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	envDir, err := cmdutil.TeamEnvironmentsDir(ns)
+	envDir, err := cmdutil.EnvironmentsDir()
 	if err != nil {
 		return err
 	}
