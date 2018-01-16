@@ -161,5 +161,8 @@ To remove the Jenkins X platfrom from a namespace on your kubernetes cluster:
 	
 ## Contributing
 
-If you're looking to build from source or get started hacking on Draft, please see the
+If you're looking to build from source or get started hacking on jx, please see the
 [hacking guide][hacking] for more information.
+
+
+[hacking]: docs/contributing/hacking.md
