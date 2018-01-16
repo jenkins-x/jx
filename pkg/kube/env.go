@@ -6,16 +6,19 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGitOps bool, ns string, jxClient *versioned.Clientset) error {
+func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, envDir string) error {
 	name := data.Name
 	createMode := name == ""
 	if createMode {
@@ -177,7 +180,7 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 		}
 	}
 	createRepo := false
-	if (config.Spec.Source.URL != "") {
+	if config.Spec.Source.URL != "" {
 		data.Spec.Source.URL = config.Spec.Source.URL
 	} else {
 		showUrlEdit := false
@@ -205,11 +208,11 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 				}
 				if createRepo {
 					showUrlEdit = false
-
-					err = createEnvironmentGitRepo(data)
+					url, err := createEnvironmentGitRepo(out, authConfigSvc, data, forkEnvGitURL, envDir)
 					if err != nil {
 						return err
 					}
+					data.Spec.Source.URL = url
 				}
 			} else {
 				showUrlEdit = true
@@ -227,7 +230,7 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 			}
 		}
 	}
-	if (config.Spec.Source.Ref != "") {
+	if config.Spec.Source.Ref != "" {
 		data.Spec.Source.Ref = config.Spec.Source.Ref
 	} else {
 		if data.Spec.Source.URL != "" || data.Spec.Source.Ref != "" {
@@ -245,8 +248,73 @@ func CreateEnvironmentSurvey(data *v1.Environment, config *v1.Environment, noGit
 	return nil
 }
 
-func createEnvironmentGitRepo(env *v1.Environment) error {
-	return fmt.Errorf("TODO")
+func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, envDir string) (string, error) {
+	defaultRepoName := "environment-" + env.Name
+	details, err := gits.PickNewGitRepository(out, authConfigSvc, defaultRepoName)
+	if err != nil {
+		return "", err
+	}
+	provider := details.GitProvider
+	if forkEnvGitURL != "" {
+		gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
+		if err != nil {
+			return "", err
+		}
+		originalOrg := gitInfo.Organisation
+		originalRepo := gitInfo.Name
+		if gitInfo.IsGitHub() && provider.IsGitHub() && originalOrg != "" && originalRepo != "" {
+			// lets try fork the repository and rename it
+			org := details.Organisation
+			repoName := details.RepoName
+			repo, err := provider.ForkRepository(originalOrg, originalRepo, org)
+			if err != nil {
+				return "", fmt.Errorf("Failed to fork github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
+			}
+			if repoName != originalRepo {
+				owner := org
+				repo, err = provider.RenameRepository(owner, originalRepo, repoName)
+				if err != nil {
+					return "", fmt.Errorf("Failed to rename github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
+				}
+			}
+			return repo.CloneURL, nil
+		}
+	}
+	// default to forking the URL if possible...
+	repo, err := details.CreateRepository()
+	if err != nil {
+		return "", err
+	}
+
+	if forkEnvGitURL != "" {
+		// now lets clone the fork and push it...
+		dir, err := util.CreateUniqueDirectory(envDir, env.Name, util.MaximumNewDirectoryAttempts)
+		if err != nil {
+			return "", err
+		}
+		err = gits.GitClone(forkEnvGitURL, dir)
+		if err != nil {
+			return "", err
+		}
+		pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
+		if err != nil {
+			return "", err
+		}
+		err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
+		if err != nil {
+			return "", err
+		}
+		err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
+		if err != nil {
+			return "", err
+		}
+		err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+		if err != nil {
+			return "", err
+		}
+		fmt.Fprintf(out, "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+	}
+	return repo.CloneURL, nil
 }
 
 // GetEnvironmentNames returns the sorted list of environment names

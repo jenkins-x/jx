@@ -11,7 +11,13 @@ type GitProvider interface {
 
 	CreateRepository(org string, name string, private bool) (*GitRepository, error)
 
+	ForkRepository(originalOrg string, name string, destinationOrg string) (*GitRepository, error)
+
+	RenameRepository(org string, name string, newName string) (*GitRepository, error)
+
 	ValidateRepositoryName(org string, name string) error
+
+	IsGitHub() bool
 }
 
 type GitOrganisation struct {

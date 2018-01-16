@@ -5,11 +5,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"time"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
-	"github.com/jenkins-x/golang-jenkins"
 )
 
 // GetPipelineOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -97,7 +97,7 @@ func (o *GetPipelineOptions) dump(jenkins *gojenkins.Jenkins, name string, table
 
 	if job.Jobs != nil {
 		for _, child := range job.Jobs {
-			o.dump(jenkins, job.FullName + "/" + child.Name, table)
+			o.dump(jenkins, job.FullName+"/"+child.Name, table)
 		}
 	} else {
 		last, err := jenkins.GetLastBuild(job)
@@ -107,8 +107,8 @@ func (o *GetPipelineOptions) dump(jenkins *gojenkins.Jenkins, name string, table
 			}
 			return nil
 		}
-		if (last.Building) {
-			table.AddRow(job.FullName, job.Url, "#"+last.Id, "Building", time.Duration(last.EstimatedDuration).String() + "(est.)")
+		if last.Building {
+			table.AddRow(job.FullName, job.Url, "#"+last.Id, "Building", time.Duration(last.EstimatedDuration).String()+"(est.)")
 		} else {
 			table.AddRow(job.FullName, job.Url, "#"+last.Id, last.Result, time.Duration(last.Duration).String())
 		}

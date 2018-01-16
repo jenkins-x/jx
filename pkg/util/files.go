@@ -9,6 +9,8 @@ import (
 
 const (
 	DefaultWritePermissions = 0760
+
+	MaximumNewDirectoryAttempts = 1000
 )
 
 func FileExists(path string) (bool, error) {

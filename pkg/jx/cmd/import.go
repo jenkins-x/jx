@@ -19,12 +19,9 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	"strings"
 )
 
 const (
-	maximumNewDirectoryAttempts = 1000
-
 	DefaultWritePermissions = 0760
 
 	defaultGitIgnoreFile = `
@@ -272,88 +269,20 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	config := authConfigSvc.Config()
-
-	server, err := config.PickServer("Which git provider?")
-	if err != nil {
-		return err
-	}
-	o.Printf("Using git provider %s\n", util.ColorInfo(server.Description()))
-	url := server.URL
-	userAuth, err := config.PickServerUserAuth(server, "Which user name?")
-	if err != nil {
-		return err
-	}
-	if userAuth.IsInvalid() {
-		server.PrintGenerateAccessToken(o.Out)
-
-		// TODO could we guess this based on the users ~/.git for github?
-		defaultUserName := ""
-		err = config.EditUserAuth(&userAuth, defaultUserName, true)
-		if err != nil {
-			return err
-		}
-
-		// TODO lets verify the auth works
-
-		err = authConfigSvc.SaveUserAuth(url, &userAuth)
-		if err != nil {
-			return fmt.Errorf("Failed to store git auth configuration %s", err)
-		}
-		if userAuth.IsInvalid() {
-			return fmt.Errorf("You did not properly define the user authentication!")
-		}
-	}
-
-	gitUsername := userAuth.Username
-	o.Printf("\n\nAbout to create a repository on server %s with user %s\n", util.ColorInfo(url), util.ColorInfo(gitUsername))
-
-	provider, err := gits.CreateProvider(server, &userAuth)
-	if err != nil {
-		return err
-	}
-	org, err := gits.PickOrganisation(provider, gitUsername)
-	if err != nil {
-		return err
-	}
-	owner := org
-	if org == "" {
-		owner = gitUsername
-	}
 	dir := o.Dir
-	repoName := ""
 	_, defaultRepoName := filepath.Split(dir)
-	prompt := &survey.Input{
-		Message: "Enter the new repository name: ",
-		Default: defaultRepoName,
-	}
-	validator := func(val interface{}) error {
-		str, ok := val.(string)
-		if !ok {
-			return fmt.Errorf("Expected string value!")
-		}
-		if strings.TrimSpace(str) == "" {
-			return fmt.Errorf("Repository name is required")
-		}
-		return provider.ValidateRepositoryName(owner, str)
-	}
-	err = survey.AskOne(prompt, &repoName, validator)
+
+	details, err := gits.PickNewGitRepository(o.Out, authConfigSvc, defaultRepoName)
 	if err != nil {
 		return err
 	}
-	if repoName == "" {
-		return fmt.Errorf("No repository name specified!")
-	}
-	fullName := gits.GitRepoName(org, repoName)
-	o.Printf("\n\nCreating repository %s\n", util.ColorInfo(fullName))
-	privateRepo := false
-	repo, err := provider.CreateRepository(org, repoName, privateRepo)
+	repo, err := details.CreateRepository()
 	if err != nil {
 		return err
 	}
-	o.Printf("Created repository: %s\n\n", util.ColorInfo(repo.HTMLURL))
+
 	o.RepoURL = repo.CloneURL
-	pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, &userAuth)
+	pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
 	if err != nil {
 		return err
 	}
@@ -365,7 +294,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Pushed git repository to %s\n\n", util.ColorInfo(server.Description()))
+	o.Printf("Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	return nil
 }
 
@@ -378,7 +307,7 @@ func (o *ImportOptions) CloneRepository() error {
 	if err != nil {
 		return fmt.Errorf("Failed to parse git URL %s due to: %s", url, err)
 	}
-	cloneDir, err := util.CreateUniqueDirectory(o.Dir, gitInfo.Name, maximumNewDirectoryAttempts)
+	cloneDir, err := util.CreateUniqueDirectory(o.Dir, gitInfo.Name, util.MaximumNewDirectoryAttempts)
 	if err != nil {
 		return err
 	}
