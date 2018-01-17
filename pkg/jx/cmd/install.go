@@ -47,8 +47,9 @@ type Secrets struct {
 const (
 	JX_GIT_TOKEN                   = "JX_GIT_TOKEN"
 	JX_GIT_USER                    = "JX_GIT_USER"
-	JX_GIT_PASSWORD                = "JX_GIT_PASSWORD"
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
+
+	GitSecretsFile = "gitSecrets.yaml"
 )
 
 var (
@@ -134,12 +135,29 @@ func (options *InstallOptions) Run() error {
 	if _, err := os.Stat(wrkDir); os.IsNotExist(err) {
 		return fmt.Errorf("cloud environment dir %s not found", makefileDir)
 	}
-	err = ioutil.WriteFile(filepath.Join(makefileDir, "secrets.yaml"), []byte(secrets), 0644)
+
+	// create a temporary file that's used to pass current git creds to helm in order to create a secret for pipelines to tag releases
+	dir, err := cmdutil.ConfigDir()
 	if err != nil {
 		return err
 	}
 
-	err = options.runCommandFromDir(makefileDir, "make", "install")
+	fileName := filepath.Join(dir, GitSecretsFile)
+	err = ioutil.WriteFile(fileName, []byte(secrets), 0644)
+	if err != nil {
+		return err
+	}
+
+	arg := fmt.Sprintf("ARGS=--values=%s", fileName)
+
+	// run the helm install
+	err = options.runCommandFromDir(makefileDir, "make", arg, "install")
+	if err != nil {
+		return err
+	}
+
+	// cleanup temporary secrets file
+	err = os.Remove(fileName)
 	if err != nil {
 		return err
 	}
@@ -204,6 +222,7 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 // returns secrets that are used as values during the helm install
 func (o *InstallOptions) getGitSecrets() (string, error) {
 	username, token, err := o.getGitToken()
+	server := o.GitProvider
 	if err != nil {
 		return "", err
 	}
@@ -212,10 +231,10 @@ func (o *InstallOptions) getGitSecrets() (string, error) {
 	pipelineSecrets := `
 PipelineSecrets:
   Netrc: |-
-    machine github.com
+    machine %s
       login %s
       password %s`
-	return fmt.Sprintf(pipelineSecrets, username, token), nil
+	return fmt.Sprintf(pipelineSecrets, server, username, token), nil
 }
 
 // returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release
