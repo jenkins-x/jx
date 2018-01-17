@@ -1,6 +1,6 @@
 # JX 
 
-JX is a CLI tool for working with [Jenkins X](https://jenkins-x.github.io/jenkins-x-website/)
+JX is a command line tool for installing and using [Jenkins X](https://jenkins-x.github.io/jenkins-x-website/)
 
 ## Installing
 
@@ -9,7 +9,9 @@ On a Mac you can use brew:
     brew tap jenkins-x/jx
     brew install jx 
     
-Or download the binary `jx` and add it to your `$PATH`
+Or [download the binary](https://github.com/jenkins-x/jx/releases) for `jx` and add it to your `$PATH`
+
+Or you can try [build it yourself](https://github.com/jenkins-x/jx/blob/master/docs/contributing/hacking.md). Though if build it yourself please be careful to remove any older `jx` binary so your local build is found first on the `$PATH` :)
 
 ## Getting Help
 
@@ -17,29 +19,37 @@ To find out the available commands type:
 
     jx
 
-Or to get help on a specific command, say, 'create' then type:
+Or to get help on a specific command, say, `create` then type:
 
     jx help create
 
 ## Getting Started
 
-The quickest way to get started is to use the `jx create cluster foo` command, this will create the cluster, install client side dependencies and provision the Jenkins X platform.
+The quickest way to get started is to use the `jx create cluster` command - this will create the cluster, install client side dependencies and provision the Jenkins X platform.
 
-If you dont have access to a kubernetes cluster then using [minikube](https://github.com/kubernetes/minikube#minikube) is a great way to kick the tires locally on your laptop. 
+If you don't have access to a kubernetes cluster then using [minikube](https://github.com/kubernetes/minikube#minikube) is a great way to kick the tires locally on your laptop. 
 
     jx create cluster minikube
-    
+
+If that does not work first time for you then please [let us know](https://github.com/jenkins-x/jx/issues/new). A work around is to try [install minikube yourself](https://github.com/kubernetes/minikube#installation) and [start it up](https://github.com/kubernetes/minikube#quickstart) then use `jx install` as described below.
+
+### Using an existing kubernetes cluster
+
+If you already have a kubernetes cluster setup then try:
+
+    jx install
+        
 ## Importing or Creating apps
 
-To import a local application try:
+To import an application from the current directory:
 
     jx import
     
-Or to create a new Spring Boot application from scratch
+Or to create a new Spring Boot application from scratch:
 
     jx create spring
     
-To create a new WebMVC and Spring Boot Actuator microservice try this:
+e.g. to create a new WebMVC and Spring Boot Actuator microservice try this:
 
     jx create spring -d web -d actuator
         
