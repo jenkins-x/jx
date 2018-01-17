@@ -51,9 +51,7 @@ func NewCmdDelete(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 		SuggestFor: []string{"remove", "rm"},
 	}
 
-	/*
 	cmd.AddCommand(NewCmdDeleteEnv(f, out, errOut))
-	*/
 	cmd.AddCommand(NewCmdDeleteRepo(f, out, errOut))
 	return cmd
 }
