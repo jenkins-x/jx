@@ -103,9 +103,10 @@ type ImportOptions struct {
 	Credentials  string
 	AppName      string
 
-	Jenkins    *gojenkins.Jenkins
-	GitConfDir string
-	DryRun     bool
+	Jenkins     *gojenkins.Jenkins
+	GitConfDir  string
+	DryRun      bool
+	GitProvider gits.GitProvider
 }
 
 var (
@@ -332,6 +333,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
+	o.GitProvider = details.GitProvider
 
 	o.RepoURL = repo.CloneURL
 	pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
@@ -504,8 +506,17 @@ func (o *ImportOptions) DoImport() error {
 		}
 		o.Jenkins = jenkins
 	}
+	gitURL := o.RepoURL
+	gitProvider := o.GitProvider
+	if gitProvider == nil {
+		p, err := o.gitProviderForURL(gitURL)
+		if err != nil {
+			return err
+		}
+		gitProvider = p
+	}
 
-	return jenkins.ImportProject(o.Out, o.Jenkins, o.RepoURL, o.Credentials, true)
+	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Credentials, true, gitProvider)
 }
 
 func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {

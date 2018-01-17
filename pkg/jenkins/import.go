@@ -11,7 +11,7 @@ import (
 )
 
 // ImportProject imports a MultiBranchProject into Jeknins for the given git URL
-func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, credentials string, failIfExists bool) error {
+func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, credentials string, failIfExists bool, gitProvider gits.GitProvider) error {
 	if gitURL == "" {
 		return fmt.Errorf("No Git repository URL found!")
 	}
@@ -44,22 +44,31 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, creden
 		if failIfExists {
 			return fmt.Errorf("Job already exists in Jenkins at " + job.Url)
 		}
-		return nil
+	} else {
+		//fmt.Fprintf(out, "Creating MultiBranchProject %s from XML: %s\n", jobName, projectXml)
+		err = jenk.CreateFolderJobWithXML(projectXml, org, jobName)
+		if err != nil {
+			return fmt.Errorf("Failed to create MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
+		}
+		job, err = jenk.GetJobByPath(org, jobName)
+		if err != nil {
+			return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
+		}
+		fmt.Fprintf(out, "Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
+		params := url.Values{}
+		err = jenk.Build(job, params)
+		if err != nil {
+			return fmt.Errorf("Failed to trigger job %s due to %s", job.Url, err)
+		}
 	}
-	//fmt.Fprintf(out, "Creating MultiBranchProject %s from XML: %s\n", jobName, projectXml)
-	err = jenk.CreateFolderJobWithXML(projectXml, org, jobName)
-	if err != nil {
-		return fmt.Errorf("Failed to create MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
+
+	// register the webhook
+	suffix := gitProvider.JenkinsWebHookPath(gitURL, "")
+	webhookUrl := util.UrlJoin(jenk.BaseURL(), suffix)
+	webhook := &gits.GitWebHookArguments{
+		Owner: gitInfo.Organisation,
+		Repo:  gitInfo.Name,
+		URL:   webhookUrl,
 	}
-	job, err = jenk.GetJobByPath(org, jobName)
-	if err != nil {
-		return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
-	}
-	fmt.Fprintf(out, "Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
-	params := url.Values{}
-	err = jenk.Build(job, params)
-	if err != nil {
-		return fmt.Errorf("Failed to trigger job %s due to %s", job.Url, err)
-	}
-	return nil
+	return gitProvider.CreateWebHook(webhook)
 }

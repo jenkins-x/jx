@@ -79,7 +79,7 @@ func (o *CreateOptions) DoImport(outDir string) error {
 	return importOptions.Run()
 }
 
-func addCreateFlags(cmd *cobra.Command, options *CreateOptions) {
+func addCreateAppFlags(cmd *cobra.Command, options *CreateOptions) {
 	cmd.Flags().BoolVarP(&options.DisableImport, "no-import", "", false, "Disable import after the creation")
 	cmd.Flags().StringVarP(&options.OutDir, "output-dir", "o", "", "Directory to output the project to. Defaults to the current directory")
 }

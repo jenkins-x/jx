@@ -67,14 +67,18 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			cmdutil.CheckErr(err)
 		},
 	}
-	addCreateFlags(cmd, &options.CreateOptions)
+	//addCreateAppFlags(cmd, &options.CreateOptions)
 
 	cmd.Flags().StringVarP(&options.Options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the kubernetes name conventions like Services, Namespaces")
 	cmd.Flags().StringVarP(&options.Options.Spec.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
 	cmd.Flags().StringVarP(&options.Options.Spec.Namespace, kube.OptionNamespace, "s", "", "The Kubernetes namespace for the Environment")
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
+	cmd.Flags().StringVarP(&options.Options.Spec.Source.URL, "git-url", "g", "", "The Git clone URL for the source code for GitOps based Environments")
+	cmd.Flags().StringVarP(&options.Options.Spec.Source.Ref, "git-ref", "r", "", "The Git repo reference for the source code for GitOps based Environments")
+	cmd.Flags().Int32VarP(&options.Options.Spec.Order, "order", "o", 100, "The order weighting of the Environment so that they can be sorted by this order before name")
+
 	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", "", "The promotion strategy")
-	cmd.Flags().StringVarP(&options.ForkEnvironmentGitRepo, "git-repo", "g", kube.DefaultEnvironmentGitRepoURL, "The default Git repository used as the fork when creating new Environment git repos")
+	cmd.Flags().StringVarP(&options.ForkEnvironmentGitRepo, "fork-git-repo", "f", kube.DefaultEnvironmentGitRepoURL, "The Git repository used as the fork when creating new Environment git repos")
 	cmd.Flags().StringVarP(&options.EnvJobCredentials, "env-job-credentials", "", jenkins.DefaultJenkinsCredentials, "The Jenkins credentials used by the GitOps Job for this environment")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
@@ -116,7 +120,7 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	err = kube.CreateEnvironmentSurvey(o.Out, authConfigSvc, &env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, envDir)
+	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, authConfigSvc, &env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, envDir)
 	if err != nil {
 		return err
 	}
@@ -136,7 +140,14 @@ func (o *CreateEnvOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		return jenkins.ImportProject(o.Out, jenkinClient, gitURL, o.EnvJobCredentials, false)
+		if gitProvider == nil {
+			p, err := o.gitProviderForURL(gitURL)
+			if err != nil {
+				return err
+			}
+			gitProvider = p
+		}
+		return jenkins.ImportProject(o.Out, jenkinClient, gitURL, o.EnvJobCredentials, false, gitProvider)
 	}
 	return nil
 }

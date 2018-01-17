@@ -23,18 +23,19 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, envDir string) error {
+func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, envDir string) (gits.GitProvider, error) {
+	var gitProvider gits.GitProvider
 	name := data.Name
 	createMode := name == ""
 	if createMode {
 		if config.Name != "" {
 			err := ValidNameOption(OptionName, config.Name)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			err = ValidateEnvironmentDoesNotExist(jxClient, ns, config.Name)
 			if err != nil {
-				return util.InvalidOptionError(OptionName, config.Name, err)
+				return nil, util.InvalidOptionError(OptionName, config.Name, err)
 			}
 			data.Name = config.Name
 		} else {
@@ -56,7 +57,7 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 			}
 			err := survey.AskOne(q, &data.Name, validator)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
@@ -74,13 +75,13 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 		}
 		err := survey.AskOne(q, &data.Spec.Label, survey.Required)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	if config.Spec.Namespace != "" {
 		err := ValidNameOption(OptionNamespace, config.Spec.Namespace)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		data.Spec.Namespace = config.Spec.Namespace
 	} else {
@@ -106,7 +107,7 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 		}
 		err := survey.AskOne(q, &data.Spec.Namespace, ValidateName)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	if config.Spec.Cluster != "" {
@@ -123,7 +124,7 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 			// TODO validate/transform to match valid kubnernetes cluster syntax
 			err := survey.AskOne(q, &data.Spec.Cluster, nil)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
@@ -148,7 +149,7 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 		textValue := ""
 		err := survey.AskOne(q, &textValue, survey.Required)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if textValue != "" {
 			data.Spec.PromotionStrategy = v1.PromotionStrategyType(textValue)
@@ -174,12 +175,12 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 		textValue := ""
 		err := survey.AskOne(q, &textValue, survey.Required)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if textValue != "" {
 			i, err := util.AtoInt32(textValue)
 			if err != nil {
-				return fmt.Errorf("Failed to convert input '%s' to number: %s", textValue, err)
+				return nil, fmt.Errorf("Failed to convert input '%s' to number: %s", textValue, err)
 			}
 			data.Spec.Order = i
 		}
@@ -196,7 +197,7 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 			}
 			err := survey.AskOne(confirm, &showUrlEdit, nil)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		} else {
 			showUrlEdit = true
@@ -209,14 +210,15 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 				}
 				err := survey.AskOne(confirm, &createRepo, nil)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				if createRepo {
 					showUrlEdit = false
-					url, err := createEnvironmentGitRepo(out, authConfigSvc, data, forkEnvGitURL, envDir)
+					url, p, err := createEnvironmentGitRepo(out, authConfigSvc, data, forkEnvGitURL, envDir)
 					if err != nil {
-						return err
+						return nil, err
 					}
+					gitProvider = p
 					data.Spec.Source.URL = url
 				}
 			} else {
@@ -230,7 +232,7 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 				}
 				err := survey.AskOne(q, &data.Spec.Source.URL, survey.Required)
 				if err != nil {
-					return err
+					return nil, err
 				}
 			}
 		}
@@ -246,18 +248,18 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 			}
 			err := survey.AskOne(q, &data.Spec.Source.Ref, nil)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
-	return nil
+	return gitProvider, nil
 }
 
-func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string) (string, error) {
+func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string) (string, gits.GitProvider, error) {
 	defaultRepoName := "environment-" + env.Name
 	details, err := gits.PickNewGitRepository(out, authConfigSvc, defaultRepoName)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	org := details.Organisation
 	repoName := details.RepoName
@@ -270,7 +272,7 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 	if forkEnvGitURL != "" {
 		gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		originalOrg := gitInfo.Organisation
 		originalRepo := gitInfo.Name
@@ -278,82 +280,82 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 			// lets try fork the repository and rename it
 			repo, err := provider.ForkRepository(originalOrg, originalRepo, org)
 			if err != nil {
-				return "", fmt.Errorf("Failed to fork github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
+				return "", nil, fmt.Errorf("Failed to fork github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
 			}
 			if repoName != originalRepo {
 				repo, err = provider.RenameRepository(owner, originalRepo, repoName)
 				if err != nil {
-					return "", fmt.Errorf("Failed to rename github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
+					return "", nil, fmt.Errorf("Failed to rename github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
 				}
 			}
 			fmt.Fprintf(out, "Forked git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 			dir, err := util.CreateUniqueDirectory(envDir, repoName, util.MaximumNewDirectoryAttempts)
 			if err != nil {
-				return "", err
+				return "", nil, err
 			}
 			err = gits.GitClone(repo.CloneURL, dir)
 			if err != nil {
-				return "", err
+				return "", nil, err
 			}
 			err = gits.SetRemoteURL(dir, "upstream", forkEnvGitURL)
 			if err != nil {
-				return "", err
+				return "", nil, err
 			}
 			err = gits.GitCmd(dir, "pull", "-r", "upstream", "master")
 			if err != nil {
-				return "", err
+				return "", nil, err
 			}
 			err = modifyNamespace(out, dir, env)
 			if err != nil {
-				return "", err
+				return "", nil, err
 			}
 			err = gits.GitPush(dir)
 			if err != nil {
-				return "", err
+				return "", nil, err
 			}
-			return repo.CloneURL, nil
+			return repo.CloneURL, provider, nil
 		}
 	}
 	// default to forking the URL if possible...
 	repo, err := details.CreateRepository()
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	if forkEnvGitURL != "" {
 		// now lets clone the fork and push it...
 		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		err = gits.GitClone(forkEnvGitURL, dir)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		err = gits.GitCmd(dir, "remote", "set-url", "origin", pushGitURL)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		err = modifyNamespace(out, dir, env)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		err = gits.GitCmd(dir, "push", "-u", "origin", "master")
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		fmt.Fprintf(out, "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	}
-	return repo.CloneURL, nil
+	return repo.CloneURL, provider, nil
 }
 
 func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {

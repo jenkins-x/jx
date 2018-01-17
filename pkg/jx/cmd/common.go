@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -133,4 +134,17 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 // warnf generates a warning
 func (o *CommonOptions) warnf(format string, a ...interface{}) {
 	o.Printf(util.ColorWarning("WARNING: "+format), a...)
+}
+
+// gitProviderForURL returns a GitProvider for the given git URL
+func (o *CommonOptions) gitProviderForURL(gitURL string) (gits.GitProvider, error) {
+	gitInfo, err := gits.ParseGitURL(gitURL)
+	if err != nil {
+		return nil, err
+	}
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, err
+	}
+	return gitInfo.PickOrCreateProvider(authConfigSvc)
 }

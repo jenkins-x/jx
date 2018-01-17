@@ -62,7 +62,7 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			cmdutil.CheckErr(err)
 		},
 	}
-	addCreateFlags(cmd, &options.CreateOptions)
+	addCreateAppFlags(cmd, &options.CreateOptions)
 
 	cmd.Flags().BoolVarP(&options.Advanced, "advanced", "x", false, "Advanced mode can show more detailed forms for some resource kinds like springboot")
 
