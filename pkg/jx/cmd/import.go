@@ -516,7 +516,7 @@ func (o *ImportOptions) DoImport() error {
 		gitProvider = p
 	}
 
-	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Credentials, true, gitProvider)
+	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Credentials, false, gitProvider)
 }
 
 func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
