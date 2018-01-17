@@ -137,8 +137,9 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		return err
 	}
 	for _, hook := range hooks {
-		u := hook.URL
-		if u != nil && *u == webhookUrl {
+		c := hook.Config["url"]
+		s, ok := c.(string)
+		if ok && s == webhookUrl {
 			fmt.Printf("Already has a webhook registered for %s\n", webhookUrl)
 			return nil
 		}
@@ -152,7 +153,6 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	}
 	hook := &github.Hook{
 		Name:   github.String("web"),
-		URL:    github.String(webhookUrl),
 		Config: config,
 		Events: []string{"*"},
 	}
