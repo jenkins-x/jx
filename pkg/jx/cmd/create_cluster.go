@@ -222,7 +222,13 @@ func (o *CreateClusterOptions) installKubectl() error {
 }
 
 func (o *CreateClusterOptions) installHyperkit() error {
-	err := o.runCommand("curl", "-LO", "https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-hyperkit")
+	info, err := o.getCommandOutput("", "docker-machine-driver-hyperkit")
+	if strings.Contains(info, "Docker") {
+		o.Printf("docker-machine-driver-hyperkit is already installed\n")
+		return nil
+	}
+	o.Printf("Result: %s and %v\n", info, err)
+	err = o.runCommand("curl", "-LO", "https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-hyperkit")
 	if err != nil {
 		return err
 	}

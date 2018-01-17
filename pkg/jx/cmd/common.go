@@ -85,13 +85,10 @@ func (o *CommonOptions) getCommandOutput(dir string, name string, args ...string
 	if dir != "" {
 		e.Dir = dir
 	}
-	data, err := e.Output()
-	if err != nil {
-		return "", err
-	}
+	data, err := e.CombinedOutput()
 	text := string(data)
 	text = strings.TrimSpace(text)
-	return text, nil
+	return text, err
 }
 
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
