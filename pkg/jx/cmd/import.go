@@ -138,7 +138,7 @@ var (
 		jx import --github --org myname --all 
 
         # Import all repositories from a github organisation which contain the text foo
-			jx import --github --org myname --all --filter foo 
+		jx import --github --org myname --all --filter foo 
 		`)
 )
 
@@ -164,7 +164,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	}
 	cmd.Flags().StringVarP(&options.RepoURL, "url", "u", "", "The git clone URL to clone into the current directory and then import")
 	cmd.Flags().StringVarP(&options.Organisation, "org", "o", "", "Specify the git provider organisation to import the project into (if it is not already in one)")
-	cmd.Flags().StringVarP(&options.Organisation, "name", "n", "", "Specify the git repository name to import the project into (if it is not already in one)")
+	cmd.Flags().StringVarP(&options.Repository, "name", "n", "", "Specify the git repository name to import the project into (if it is not already in one)")
 	cmd.Flags().StringVarP(&options.Credentials, "credentials", "c", jenkins.DefaultJenkinsCredentials, "The Jenkins credentials name used by the job")
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "d", false, "Performs local changes to the repo but skips the import into Jenkins X")
 	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wis to pick the repositories from GitHub to import")

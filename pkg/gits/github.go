@@ -86,6 +86,18 @@ func (p *GitHubProvider) CreateRepository(org string, name string, private bool)
 	return toGitHubRepo(name, repo), nil
 }
 
+func (p *GitHubProvider) DeleteRepository(org string, name string) error {
+	owner := org
+	if owner == "" {
+		owner = p.Username
+	}
+	_, err := p.Client.Repositories.Delete(p.Context, owner, name)
+	if err != nil {
+		return fmt.Errorf("Failed to create repository %s/%s due to: %s", owner, name, err)
+	}
+	return err
+}
+
 func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 	return &GitRepository{
 		Name:             name,

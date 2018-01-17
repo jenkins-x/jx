@@ -15,6 +15,8 @@ type GitProvider interface {
 
 	CreateRepository(org string, name string, private bool) (*GitRepository, error)
 
+	DeleteRepository(org string, name string) error
+
 	ForkRepository(originalOrg string, name string, destinationOrg string) (*GitRepository, error)
 
 	RenameRepository(org string, name string, newName string) (*GitRepository, error)
@@ -136,6 +138,9 @@ func PickRepositories(provider GitProvider, owner string, message string, select
 			allRepoNames = append(allRepoNames, n)
 			repoMap[n] = repo
 		}
+	}
+	if len(allRepoNames) == 0 {
+		return answer, fmt.Errorf("No matching repositories could be found!")
 	}
 	sort.Strings(allRepoNames)
 
