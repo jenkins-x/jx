@@ -85,3 +85,19 @@ func TestSortEnvironments2(t *testing.T) {
 	assert.Equal(t, "staging", environments[1].Name, "Environment 1")
 	assert.Equal(t, "prod", environments[2].Name, "Environment 2")
 }
+
+
+func TestReplaceMakeVariable(t *testing.T) {
+	lines := []string{"FOO", "NAMESPACE:=\"abc\"", "BAR", "NAMESPACE := \"abc\"", }
+
+	actual := append([]string{}, lines...)
+	expectedValue := "\"changed\""
+	replaceMakeVariable(actual, "NAMESPACE", expectedValue)
+
+	assert.Equal(t, "FOO", actual[0], "line 0")
+	assert.Equal(t, "NAMESPACE := " + expectedValue, actual[1], "line 1")
+	assert.Equal(t, "BAR", actual[2], "line 2")
+	assert.Equal(t, "NAMESPACE := " + expectedValue, actual[3], "line 3")
+}
+
+
