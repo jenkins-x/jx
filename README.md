@@ -31,7 +31,7 @@ If you don't have access to a kubernetes cluster then using [minikube](https://g
 
     jx create cluster minikube
 
-If that does not work first time for you then please [let us know](https://github.com/jenkins-x/jx/issues/new). A work around is to try [install minikube yourself](https://github.com/kubernetes/minikube#installation) and [start it up](https://github.com/kubernetes/minikube#quickstart) then use `jx install` as described below.
+If that does not work first time for you then please [let us know](https://github.com/jenkins-x/jx/issues/new). The [troubleshooting section](#troubleshooting) may help, othwerise a work around is to try [install minikube yourself](https://github.com/kubernetes/minikube#installation) and [start it up](https://github.com/kubernetes/minikube#quickstart) then use `jx install` as described below.
 
 ### Using an existing kubernetes cluster
 
@@ -168,6 +168,24 @@ You can use the `jx prompt` to configure your CLI prompt to display the current 
 To remove the Jenkins X platfrom from a namespace on your kubernetes cluster:
 
     jx uninstall
+
+## Troubleshooting
+
+If you have issues getting started with minikube here's a few things to try:
+
+    minikube delete
+    rm -rf ~/.minikube
+    
+Now try again - sometimes there are stale certs hanging around from old installations of minikube?
+
+Sometimes a reboot can help in cases where virtualisation goes wrong ;)
+
+Otherwise you could try follow the minikube instructions 
+
+* [install minikube](https://github.com/kubernetes/minikube#installation)
+* [run minikube start](https://github.com/kubernetes/minikube#quickstart) 
+
+Finally you could [let us know](https://github.com/jenkins-x/jx/issues/new) and see if we can help? Good luck! 
 	
 ## Contributing
 
