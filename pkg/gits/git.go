@@ -6,11 +6,11 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"bytes"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 	"net/url"
 	"strings"
-	"bytes"
 )
 
 const (
@@ -208,7 +208,6 @@ func ConvertToValidBranchName(name string) string {
 	}
 	return buffer.String()
 }
-
 
 func SetRemoteURL(dir string, name string, gitURL string) error {
 	err := GitCmd(dir, "remote", "add", name, gitURL)

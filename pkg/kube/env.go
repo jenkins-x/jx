@@ -3,6 +3,9 @@ package kube
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
+	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -12,9 +15,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"k8s.io/client-go/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"path/filepath"
+	"k8s.io/client-go/kubernetes"
 )
 
 var useForkForEnvGitRepo = false
@@ -286,7 +288,7 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 			}
 			fmt.Fprintf(out, "Forked git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
-			dir, err := util.CreateUniqueDirectory(envDir,repoName, util.MaximumNewDirectoryAttempts)
+			dir, err := util.CreateUniqueDirectory(envDir, repoName, util.MaximumNewDirectoryAttempts)
 			if err != nil {
 				return "", err
 			}
@@ -299,6 +301,10 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 				return "", err
 			}
 			err = gits.GitCmd(dir, "pull", "-r", "upstream", "master")
+			if err != nil {
+				return "", err
+			}
+			err = modifyNamespace(out, dir, env)
 			if err != nil {
 				return "", err
 			}
@@ -337,6 +343,10 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 		if err != nil {
 			return "", err
 		}
+		err = modifyNamespace(out, dir, env)
+		if err != nil {
+			return "", err
+		}
 		err = gits.GitCmd(dir, "push", "-u", "origin", "master")
 		if err != nil {
 			return "", err
@@ -344,6 +354,55 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 		fmt.Fprintf(out, "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	}
 	return repo.CloneURL, nil
+}
+
+func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
+	ns := env.Spec.Namespace
+	if ns == "" {
+		return fmt.Errorf("No Namespace is defined for Environment %s", env.Name)
+	}
+	file := filepath.Join(dir, "Makefile")
+	exists, err := util.FileExists(file)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		fmt.Printf(util.ColorWarning("WARNING: Could not find a Makefile in %s\n"), dir)
+		return nil
+	}
+	input, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(input), "\n")
+
+	err = replaceMakeVariable(lines, "NAMESPACE", "\""+ns+"\"")
+	if err != nil {
+		return err
+	}
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(file, []byte(output), 0644)
+	if err != nil {
+		return err
+	}
+	err = gits.GitAdd(dir, "*")
+	if err != nil {
+		return err
+	}
+	return gits.GitCommit(dir, "Use correct namespace for environment")
+}
+
+func replaceMakeVariable(lines []string, name string, value string) error {
+	re, err := regexp.Compile(name + "\\s*:?=\\s*(.*)")
+	if err != nil {
+		return err
+	}
+	replaceValue := name + " := " + value
+	for i, line := range lines {
+		lines[i] = re.ReplaceAllString(line, replaceValue)
+	}
+	return nil
 }
 
 // GetEnvironmentNames returns the sorted list of environment names

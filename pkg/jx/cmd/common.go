@@ -8,13 +8,13 @@ import (
 
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
 )
 
 // CommonOptions contains common options and helper methods
@@ -130,8 +130,7 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 	return kube.GetDevNamespace(kubeClient, currentNs)
 }
 
-
 // warnf generates a warning
-func (o *CommonOptions) warnf(format string, a ...interface{})  {
-	o.Printf(util.ColorWarning("WARNING: " + format), a...)
+func (o *CommonOptions) warnf(format string, a ...interface{}) {
+	o.Printf(util.ColorWarning("WARNING: "+format), a...)
 }

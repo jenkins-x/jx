@@ -5,11 +5,11 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/jenkins"
 )
 
 var (
@@ -39,7 +39,7 @@ type CreateEnvOptions struct {
 	PromotionStrategy      string
 	NoGitOps               bool
 	ForkEnvironmentGitRepo string
-	EnvJobCredentials  string
+	EnvJobCredentials      string
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
@@ -126,16 +126,15 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	o.Printf("Created environment %s\n", util.ColorInfo(env.Name))
 
-
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, ns)
 	if err != nil {
-	  return err
+		return err
 	}
 	gitURL := env.Spec.Source.URL
 	if gitURL != "" {
 		jenkinClient, err := f.GetJenkinsClient()
 		if err != nil {
-		  return err
+			return err
 		}
 		return jenkins.ImportProject(o.Out, jenkinClient, gitURL, o.EnvJobCredentials, false)
 	}

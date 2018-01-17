@@ -126,8 +126,7 @@ func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 	body := data.Body
 	head := data.Head
 	base := data.Base
-	config := &github.NewPullRequest{
-	}
+	config := &github.NewPullRequest{}
 	if title != "" {
 		config.Title = github.String(title)
 	}
@@ -148,7 +147,6 @@ func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 		URL: notNullString(pr.HTMLURL),
 	}, nil
 }
-
 
 func notNullString(tp *string) string {
 	if tp == nil {

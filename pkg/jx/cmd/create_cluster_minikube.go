@@ -13,9 +13,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -120,7 +120,6 @@ func (o *CreateClusterMinikubeOptions) defaultMacVMDriver() string {
 	return "hyperkit"
 }
 
-
 func (o *CreateClusterMinikubeOptions) isExistingMinikubeRunning() bool {
 
 	var cmd_out bytes.Buffer
@@ -195,7 +194,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 
 	err := survey.AskOne(prompts, &driver, nil)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	err = o.doInstallMissingDependencies([]string{driver})

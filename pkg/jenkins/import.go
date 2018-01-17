@@ -1,12 +1,12 @@
 package jenkins
 
 import (
-	"io"
 	"fmt"
+	"io"
 	"net/url"
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
