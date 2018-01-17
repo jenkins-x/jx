@@ -175,6 +175,9 @@ To remove the Jenkins X platfrom from a namespace on your kubernetes cluster:
 
 ## Troubleshooting
 
+We have tried to collate common issues here with work arounds. If your issue isn't listed here please [let us know](https://github.com/jenkins-x/jx/issues/new).
+ 
+### Cannot create cluster minikube
 If you are using a Mac then `hyperkit` is the best VM driver to use - but does require you to install a recent [Docker for Mac](https://docs.docker.com/docker-for-mac/install/) first. Maybe try that then retry `jx create cluster minikube`?
 
 If your minikube is failing to startup then you could try:
@@ -195,7 +198,38 @@ Otherwise you could try follow the minikube instructions
 * [install minikube](https://github.com/kubernetes/minikube#installation)
 * [run minikube start](https://github.com/kubernetes/minikube#quickstart) 
 
-Finally you could [let us know](https://github.com/jenkins-x/jx/issues/new) and see if we can help? Good luck! 
+
+### Cannot access services on minikube
+
+When running minikube locally `jx` defaults to using [nip.io](http://nip.io/) as a way of using nice-isn DNS names for services and working around the fact that most laptops can't do wildcard DNS. However sometimes [nip.io](http://nip.io/) has issues and does not work.
+
+To avoid using [nip.io](http://nip.io/) you can do the following:
+
+Edit the file `~/.jenkins-x/cloud-environments/env-minikube/myvalues.yaml` and add the following content:
+
+```yaml
+expose:
+  Args:
+    - --exposer
+    - NodePort
+    - --http
+    - "true"
+```
+
+Then re-run `jx install` and this will switch the services to be exposed on `node ports` instead of using ingress and DNS.
+
+So if you type:
+
+```
+jx open
+```
+
+You'll see all the URs of the form `http://$(minikube ip):somePortNumber` which then avoids going through [nip.io](http://nip.io/) - it just means the URLs are a little more cryptic using magic port numbers rather than simple host names.
+
+ 
+### Other issues
+
+Please [let us know](https://github.com/jenkins-x/jx/issues/new) and see if we can help? Good luck! 
 	
 ## Contributing
 
