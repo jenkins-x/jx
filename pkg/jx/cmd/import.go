@@ -102,10 +102,13 @@ type ImportOptions struct {
 	Repository   string
 	Credentials  string
 	AppName      string
+	GitHub      bool
+	DryRun      bool
+	SelectAll bool
+	SelectFilter string
 
 	Jenkins     *gojenkins.Jenkins
 	GitConfDir  string
-	DryRun      bool
 	GitProvider gits.GitProvider
 }
 
@@ -126,7 +129,17 @@ var (
 		jx import /foo/bar
 
 		# Import a git repository from a URL
-		jx import --url https://github.com/jenkins-x/spring-boot-web-example.git`)
+		jx import --url https://github.com/jenkins-x/spring-boot-web-example.git
+
+        # Select a number of repositories from a github organisation
+		jx import --github --org myname 
+
+        # Import all repositories from a github organisation selecting ones to not import
+		jx import --github --org myname --all 
+
+        # Import all repositories from a github organisation which contain the text foo
+			jx import --github --org myname --all --filter foo 
+		`)
 )
 
 func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -154,6 +167,9 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().StringVarP(&options.Organisation, "name", "n", "", "Specify the git repository name to import the project into (if it is not already in one)")
 	cmd.Flags().StringVarP(&options.Credentials, "credentials", "c", jenkins.DefaultJenkinsCredentials, "The Jenkins credentials name used by the job")
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "d", false, "Performs local changes to the repo but skips the import into Jenkins X")
+	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wis to pick the repositories from GitHub to import")
+	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a git provider this defaults to selecting them all")
+	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a git provider this filters the list of repositories")
 	return cmd
 }
 
@@ -165,6 +181,9 @@ func (o *ImportOptions) Run() error {
 	}
 	o.Jenkins = jenkins
 
+	if o.GitHub {
+		return o.ImportProjectsFromGitHub()
+	}
 	if o.Dir == "" {
 		args := o.Args
 		if len(args) > 0 {
@@ -224,6 +243,55 @@ func (o *ImportOptions) Run() error {
 		return nil
 	}
 	return o.DoImport()
+}
+
+func (o *ImportOptions) ImportProjectsFromGitHub() error {
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return err
+	}
+	config := authConfigSvc.Config()
+	server := config.GetOrCreateServer(gits.GitHubHost)
+	userAuth, err := config.PickServerUserAuth(server, "git user name")
+	if err != nil {
+		return err
+	}
+	provider, err := gits.CreateProvider(server, &userAuth)
+	if err != nil {
+	  return err
+	}
+
+	username := userAuth.Username
+	org := o.Organisation
+	if org == "" {
+		org, err = gits.PickOrganisation(provider, username)
+		if err != nil {
+		  return err
+		}
+	}
+	repos, err := gits.PickRepositories(provider, org, "Which repositories do you want to import", o.SelectAll, o.SelectFilter)
+	if err != nil {
+	  return err
+	}
+
+	o.Printf("Selected repositories\n")
+	for _, r := range repos {
+		o2 := ImportOptions{
+			CommonOptions: o.CommonOptions,
+			Dir: o.Dir,
+			RepoURL: r.CloneURL,
+			Organisation: org,
+			Repository: r.Name,
+			Jenkins: o.Jenkins,
+			GitProvider: provider,
+		}
+		o.Printf("Importing repository %s\n", util.ColorInfo(r.Name))
+		err = o2.Run()
+		if err != nil {
+		  return err
+		}
+	}
+	return nil
 }
 
 func (o *ImportOptions) DraftCreate() error {

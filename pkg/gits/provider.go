@@ -5,10 +5,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"sort"
+	"strings"
 )
 
 type GitProvider interface {
 	ListOrganisations() ([]GitOrganisation, error)
+
+	ListRepositories(org string) ([]*GitRepository, error)
 
 	CreateRepository(org string, name string, private bool) (*GitRepository, error)
 
@@ -49,6 +52,7 @@ type GitOrganisation struct {
 }
 
 type GitRepository struct {
+	Name             string
 	AllowMergeCommit bool
 	HTMLURL          string
 	CloneURL         string
@@ -117,6 +121,43 @@ func PickOrganisation(provider GitProvider, userName string) (string, error) {
 	return orgName, nil
 }
 
+func PickRepositories(provider GitProvider, owner string, message string, selectAll bool, filter string) ([]*GitRepository, error) {
+	answer := []*GitRepository{}
+	repos, err := provider.ListRepositories(owner)
+	if err != nil {
+		return answer, err
+	}
+
+	repoMap := map[string]*GitRepository{}
+	allRepoNames := []string{}
+	for _, repo := range repos {
+		n := repo.Name
+		if n != "" && (filter == "" || strings.Contains(n, filter)){
+			allRepoNames = append(allRepoNames, n)
+			repoMap[n] = repo
+		}
+	}
+	sort.Strings(allRepoNames)
+
+	prompt := &survey.MultiSelect{
+		Message:message ,
+		Options: allRepoNames,
+	}
+	if selectAll {
+		prompt.Default = allRepoNames
+	}
+	repoNames := []string{}
+	err = survey.AskOne(prompt, &repoNames, nil)
+
+	for _, n := range repoNames {
+		repo := repoMap[n]
+		if repo != nil {
+			answer = append(answer, repo)
+		}
+	}
+	return answer, err
+}
+
 func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(i.Host)
@@ -133,3 +174,5 @@ func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user 
 	}
 	return nil, fmt.Errorf("Git provider not supported for host %s", i.Host)
 }
+
+

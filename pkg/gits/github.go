@@ -57,6 +57,23 @@ func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return answer, nil
 }
 
+func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) {
+	owner := org
+	if owner == "" {
+		owner = p.Username
+	}
+	answer := []*GitRepository{}
+	repos, _, err := p.Client.Repositories.List(p.Context, owner, nil)
+	if err != nil {
+		return answer, err
+	}
+
+	for _, repo := range repos {
+		answer = append(answer, toGitHubRepo(asText(repo.Name), repo))
+	}
+	return answer, nil
+}
+
 func (p *GitHubProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
 	repoConfig := &github.Repository{
 		Name:    github.String(name),
@@ -66,13 +83,17 @@ func (p *GitHubProvider) CreateRepository(org string, name string, private bool)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create repository %s/%s due to: %s", org, name, err)
 	}
-	answer := &GitRepository{
+	return toGitHubRepo(name, repo), nil
+}
+
+func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
+	return &GitRepository{
+		Name:             name,
 		AllowMergeCommit: asBool(repo.AllowMergeCommit),
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
 	}
-	return answer, nil
 }
 
 func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destinationOrg string) (*GitRepository, error) {
@@ -111,6 +132,7 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 		}
 	}
 	answer := &GitRepository{
+		Name:             name,
 		AllowMergeCommit: asBool(repo.AllowMergeCommit),
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
@@ -209,6 +231,7 @@ func (p *GitHubProvider) RenameRepository(org string, name string, newName strin
 		return nil, fmt.Errorf("Failed to edit repository %s/%s due to: %s", org, name, err)
 	}
 	answer := &GitRepository{
+		Name:             name,
 		AllowMergeCommit: asBool(repo.AllowMergeCommit),
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
