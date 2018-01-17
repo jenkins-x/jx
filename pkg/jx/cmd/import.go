@@ -543,6 +543,14 @@ func (o *ImportOptions) addAppNameToGeneretedFile(filename, field, value string)
 
 	dir := filepath.Join(pwd, "charts", o.AppName)
 	file := filepath.Join(dir, filename)
+	exists, err := util.FileExists(file)
+	if err != nil {
+	  return err
+	}
+	if !exists {
+		// no file so lets ignore this
+		return nil
+	}
 	input, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
