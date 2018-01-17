@@ -63,13 +63,25 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 		owner = p.Username
 	}
 	answer := []*GitRepository{}
-	repos, _, err := p.Client.Repositories.List(p.Context, owner, nil)
-	if err != nil {
-		return answer, err
+	pageSize := 100
+	options := &github.RepositoryListOptions{
+		ListOptions: github.ListOptions{
+			Page:    0,
+			PerPage: pageSize,
+		},
 	}
-
-	for _, repo := range repos {
-		answer = append(answer, toGitHubRepo(asText(repo.Name), repo))
+	for {
+		repos, _, err := p.Client.Repositories.List(p.Context, owner, options)
+		if err != nil {
+			return answer, err
+		}
+		for _, repo := range repos {
+			answer = append(answer, toGitHubRepo(asText(repo.Name), repo))
+		}
+		if len(repos) < pageSize || len(repos) == 0 {
+			break
+		}
+		options.ListOptions.Page += 1
 	}
 	return answer, nil
 }
@@ -93,7 +105,7 @@ func (p *GitHubProvider) DeleteRepository(org string, name string) error {
 	}
 	_, err := p.Client.Repositories.Delete(p.Context, owner, name)
 	if err != nil {
-		return fmt.Errorf("Failed to create repository %s/%s due to: %s", owner, name, err)
+		return fmt.Errorf("Failed to delete repository %s/%s due to: %s", owner, name, err)
 	}
 	return err
 }
