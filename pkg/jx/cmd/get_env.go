@@ -71,6 +71,11 @@ func (o *GetEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	apisClient, err := f.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	kube.RegisterEnvironmentCRD(apisClient)
 	args := o.Args
 	if len(args) > 0 {
 		e := args[0]
@@ -116,7 +121,8 @@ func (o *GetEnvOptions) Run() error {
 			return err
 		}
 		if len(envs.Items) == 0 {
-			return outputEmptyListWarning(o.Out)
+			o.Printf("No environments found.\nTo create an environment use: jx create env\n")
+			return nil
 		}
 
 		environments := envs.Items
@@ -137,3 +143,5 @@ func (o *GetEnvOptions) Run() error {
 func formatInt32(n int32) string {
 	return util.Int32ToA(n)
 }
+
+
