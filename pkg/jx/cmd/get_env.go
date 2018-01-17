@@ -143,5 +143,3 @@ func (o *GetEnvOptions) Run() error {
 func formatInt32(n int32) string {
 	return util.Int32ToA(n)
 }
-
-

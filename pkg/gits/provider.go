@@ -20,7 +20,28 @@ type GitProvider interface {
 
 	CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error)
 
+	CreateWebHook(data *GitWebHookArguments) error
+
 	IsGitHub() bool
+
+	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
+	//
+
+	// e.g. for GitHub its /github-webhook/
+	// other examples include:
+	//
+	// * gitlab: /gitlab/notify_commit
+	// https://github.com/elvanja/jenkins-gitlab-hook-plugin#notify-commit-hook
+	//
+	// * git plugin
+	// /git/notifyCommit?url=
+	// http://kohsuke.org/2011/12/01/polling-must-die-triggering-jenkins-builds-from-a-git-hook/
+	//
+	// * generic webhook
+	// /generic-webhook-trigger/invoke?token=abc123
+	// https://wiki.jenkins.io/display/JENKINS/Generic+Webhook+Trigger+Plugin
+
+	JenkinsWebHookPath(gitURL string, secret string) string
 }
 
 type GitOrganisation struct {
@@ -45,6 +66,13 @@ type GitPullRequestArguments struct {
 	Body  string
 	Head  string
 	Base  string
+}
+
+type GitWebHookArguments struct {
+	Owner  string
+	Repo   string
+	URL    string
+	Secret string
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {

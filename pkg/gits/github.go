@@ -119,6 +119,48 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 	return answer, nil
 }
 
+func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
+	owner := data.Owner
+	if owner == "" {
+		owner = p.Username
+	}
+	repo := data.Repo
+	if repo == "" {
+		return fmt.Errorf("Missing property Repo")
+	}
+	webhookUrl := data.URL
+	if repo == "" {
+		return fmt.Errorf("Missing property URL")
+	}
+	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
+	if err != nil {
+		return err
+	}
+	for _, hook := range hooks {
+		u := hook.URL
+		if u != nil && *u == webhookUrl {
+			fmt.Printf("Already has a webhook registered for %s\n", webhookUrl)
+			return nil
+		}
+	}
+	config := map[string]interface{}{
+		"url":          webhookUrl,
+		"content_type": "json",
+	}
+	if data.Secret != "" {
+		config["secret"] = data.Secret
+	}
+	hook := &github.Hook{
+		Name:   github.String("web"),
+		URL:    github.String(webhookUrl),
+		Config: config,
+		Events: []string{"*"},
+	}
+	fmt.Printf("Creating github webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
+	_, _, err = p.Client.Repositories.CreateHook(p.Context, owner, repo, hook)
+	return err
+}
+
 func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
 	owner := data.Owner
 	repo := data.Repo
@@ -188,6 +230,10 @@ func (p *GitHubProvider) ValidateRepositoryName(org string, name string) error {
 
 func (p *GitHubProvider) IsGitHub() bool {
 	return true
+}
+
+func (p *GitHubProvider) JenkinsWebHookPath(gitURL string, secret string) string {
+	return "/github-webhook/"
 }
 
 func asBool(b *bool) bool {

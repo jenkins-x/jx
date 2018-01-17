@@ -68,7 +68,7 @@ func NewCmdCreateArchetype(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			cmdutil.CheckErr(err)
 		},
 	}
-	addCreateFlags(cmd, &options.CreateOptions)
+	addCreateAppFlags(cmd, &options.CreateOptions)
 
 	cmd.Flags().StringVarP(&options.ArchetypeCatalogURL, "catalog", "c", "http://central.maven.org/maven2/archetype-catalog.xml", "The Maven Archetype Catalog to use")
 
