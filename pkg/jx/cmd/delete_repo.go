@@ -153,9 +153,10 @@ func (o *DeleteRepoOptions) Run() error {
 		name := r.Name
 		err = provider.DeleteRepository(owner, name)
 		if err != nil {
-			return fmt.Errorf("Failed to delete repository %s/%s: %s", owner, name, err)
+			o.warnf("%s\n", err)
+		} else {
+			o.Printf("Deleted repository %s/%s\n", info(owner), info(name))
 		}
-		o.Printf("Deleted repository %s/%s\n", info(owner), info(name))
 	}
 	return nil
 }
