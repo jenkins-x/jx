@@ -171,12 +171,18 @@ To remove the Jenkins X platfrom from a namespace on your kubernetes cluster:
 
 ## Troubleshooting
 
-If you have issues getting started with minikube here's a few things to try:
+If you are using a Mac then `hyperkit` is the best VM driver to use - but does require you to install a recent [Docker for Mac](https://docs.docker.com/docker-for-mac/install/) first. Maybe try that then retry `jx create cluster minikube`?
 
+If your minikube is failing to startup then you could try:
+ 
     minikube delete
     rm -rf ~/.minikube
-    
-Now try again - sometimes there are stale certs hanging around from old installations of minikube?
+
+If the `rm` fails you may need to do:
+
+    sudo rm -rf ~/.minikube
+
+Now try `jx create cluster minikube` again - did that help? Sometimes there are stale certs or files hanging around from old installations of minikube that can break things.
 
 Sometimes a reboot can help in cases where virtualisation goes wrong ;)
 
