@@ -15,6 +15,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -84,19 +85,10 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 }
 
 func (o *CreateClusterMinikubeOptions) Run() error {
-
 	var deps []string
 	d := getDependenciesToInstall("minikube")
 	if d != "" {
 		deps = append(deps, d)
-	}
-
-	// Platform specific deps
-	if runtime.GOOS == "darwin" {
-		d = getDependenciesToInstall("hyperkit")
-		if d != "" {
-			deps = append(deps, d)
-		}
 	}
 
 	err := o.installMissingDependencies(deps)
@@ -118,6 +110,16 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 
 	return nil
 }
+
+func (o *CreateClusterMinikubeOptions) defaultMacVMDriver() string {
+	_, err := o.getCommandOutput("", "hyperkit", "-v")
+	if err != nil {
+		o.warnf("Could not find hyperkit on your PATH. If you install Docker for Mac then we could use hyperkit.\nSee: https://docs.docker.com/docker-for-mac/install/\n")
+		return "xhyve"
+	}
+	return "hyperkit"
+}
+
 
 func (o *CreateClusterMinikubeOptions) isExistingMinikubeRunning() bool {
 
@@ -162,7 +164,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	if len(vmDriverValue) == 0 {
 		switch runtime.GOOS {
 		case "darwin":
-			vmDriverValue = "hyperkit"
+			vmDriverValue = o.defaultMacVMDriver()
 		case "windows":
 			vmDriverValue = "hyperv"
 		case "linux":
@@ -178,6 +180,11 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	if vmDriverValue != "virtualbox" {
 		drivers = append(drivers, "virtualbox")
 	}
+	if runtime.GOOS == "darwin" {
+		if util.StringArrayIndex(drivers, "xhyve") < 0 {
+			drivers = append(drivers, "xhyve")
+		}
+	}
 
 	prompts := &survey.Select{
 		Message: "Select driver:",
@@ -186,9 +193,18 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		Help:    "VM driver, defaults to recommended native virtualisation",
 	}
 
-	survey.AskOne(prompts, &driver, nil)
+	err := survey.AskOne(prompts, &driver, nil)
+	if err != nil {
+	  return err
+	}
 
-	err := o.runCommand("minikube", "start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver)
+	err = o.doInstallMissingDependencies([]string{driver})
+	if err != nil {
+		log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
+		os.Exit(-1)
+	}
+
+	err = o.runCommand("minikube", "start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver)
 	if err != nil {
 		return err
 	}

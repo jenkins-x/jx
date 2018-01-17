@@ -13,6 +13,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"strings"
 )
 
 type KubernetesProvider string
@@ -158,6 +159,10 @@ func (o *CreateClusterOptions) installMissingDependencies(providerSpecificDeps [
 	}
 	survey.AskOne(prompt, &install, nil)
 
+	return o.doInstallMissingDependencies(install)
+}
+
+func (o *CreateClusterOptions) doInstallMissingDependencies(install []string) error {
 	// install package managers first
 	for _, i := range install {
 		if i == "brew" {
@@ -173,6 +178,10 @@ func (o *CreateClusterOptions) installMissingDependencies(providerSpecificDeps [
 			err = o.installKubectl()
 		case "hyperkit":
 			err = o.installHyperkit()
+		case "xhyve":
+			err = o.installXhyve()
+		case "virtualbox":
+			err = o.installVirtualBox()
 		case "helm":
 			err = o.installHelm()
 		case "draft":
@@ -236,6 +245,43 @@ func (o *CreateClusterOptions) installHyperkit() error {
 	}
 
 	return o.runCommand("sudo", "chmod", "u+s", "/usr/local/bin/docker-machine-driver-hyperkit")
+}
+
+func (o *CreateClusterOptions) installVirtualBox() error {
+	o.warnf("We cannot yet automate the installation of VirtualBox - can you install this manually please?\nPlease see: https://www.virtualbox.org/wiki/Downloads\n")
+	return nil
+}
+
+func (o *CreateClusterOptions) installXhyve() error {
+	info, err := o.getCommandOutput("", "brew", "info", "docker-machine-driver-xhyve")
+
+	if err != nil || strings.Contains(info, "Not installed") {
+		err = o.runCommand("brew", "install", "docker-machine-driver-xhyve")
+		if err != nil {
+			return err
+		}
+
+		brewPrefix, err := o.getCommandOutput("", "brew", "--prefix")
+		if err != nil {
+			return err
+		}
+
+		file := brewPrefix + "/opt/docker-machine-driver-xhyve/bin/docker-machine-driver-xhyve"
+		err = o.runCommand("sudo", "chown", "root:wheel", file)
+		if err != nil {
+			return err
+		}
+
+		err = o.runCommand("sudo", "chmod", "u+s", file)
+		if err != nil {
+			return err
+		}
+		o.Printf("xhyve driver installed\n")
+	} else {
+		pgmPath, _ := exec.LookPath("docker-machine-driver-xhyve")
+		o.Printf("xhyve driver is already available on your PATH at %s\n", pgmPath)
+	}
+	return nil
 }
 
 func (o *CreateClusterOptions) installHelm() error {
