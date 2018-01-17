@@ -42,9 +42,9 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, creden
 	job, err := jenk.GetJobByPath(org, jobName)
 	if err == nil {
 		if failIfExists {
-			return fmt.Errorf("Job already exists in Jenkins at " + job.Url)
+			return fmt.Errorf("Job already exists in Jenkins at %s", job.Url)
 		} else {
-			fmt.Fprint(out, "Job already exists in Jenkins at " + job.Url)
+			fmt.Fprintf(out, "Job already exists in Jenkins at %s\n", job.Url)
 		}
 	} else {
 		//fmt.Fprintf(out, "Creating MultiBranchProject %s from XML: %s\n", jobName, projectXml)
