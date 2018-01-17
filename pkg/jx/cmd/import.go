@@ -482,9 +482,9 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 	if len(remotes) == 0 {
 		return nil
 	}
-	url := getRemoteUrl(cfg, "upstream")
+	url := getRemoteUrl(cfg, "origin")
 	if url == "" {
-		url = getRemoteUrl(cfg, "origin")
+		url = getRemoteUrl(cfg, "upstream")
 		if url == "" {
 			url, err = o.pickRemoteURL(cfg)
 			if err != nil {
