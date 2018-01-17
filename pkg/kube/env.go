@@ -15,8 +15,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"k8s.io/client-go/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 var useForkForEnvGitRepo = false
@@ -288,7 +288,7 @@ func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigServic
 			}
 			fmt.Fprintf(out, "Forked git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
-			dir, err := util.CreateUniqueDirectory(envDir,repoName, util.MaximumNewDirectoryAttempts)
+			dir, err := util.CreateUniqueDirectory(envDir, repoName, util.MaximumNewDirectoryAttempts)
 			if err != nil {
 				return "", err
 			}
@@ -364,9 +364,9 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 	file := filepath.Join(dir, "Makefile")
 	exists, err := util.FileExists(file)
 	if err != nil {
-	  return err
+		return err
 	}
-	if (!exists) {
+	if !exists {
 		fmt.Printf(util.ColorWarning("WARNING: Could not find a Makefile in %s\n"), dir)
 		return nil
 	}
@@ -377,9 +377,9 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 
 	lines := strings.Split(string(input), "\n")
 
-	err = replaceMakeVariable(lines, "NAMESPACE", "\"" + ns + "\"")
+	err = replaceMakeVariable(lines, "NAMESPACE", "\""+ns+"\"")
 	if err != nil {
-	  return err
+		return err
 	}
 	output := strings.Join(lines, "\n")
 	err = ioutil.WriteFile(file, []byte(output), 0644)
@@ -388,7 +388,7 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 	}
 	err = gits.GitAdd(dir, "*")
 	if err != nil {
-	  return err
+		return err
 	}
 	return gits.GitCommit(dir, "Use correct namespace for environment")
 }
@@ -396,7 +396,7 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 func replaceMakeVariable(lines []string, name string, value string) error {
 	re, err := regexp.Compile(name + "\\s*:?=\\s*(.*)")
 	if err != nil {
-	  return err
+		return err
 	}
 	replaceValue := name + " := " + value
 	for i, line := range lines {

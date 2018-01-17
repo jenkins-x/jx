@@ -1,10 +1,10 @@
 package gits
 
 import (
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"sort"
-	"fmt"
 )
 
 type GitProvider interface {

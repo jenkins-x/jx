@@ -5,16 +5,16 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"path/filepath"
 	"os"
-	"github.com/jenkins-x/jx/pkg/helm"
+	"path/filepath"
 )
 
 const (
@@ -151,7 +151,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 	}
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	environmentsDir, err := cmdutil.EnvironmentsDir()
@@ -174,7 +174,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 
 	branchName := gits.ConvertToValidBranchName("promote-" + app + "-" + versionName)
 	base := source.Ref
-	if base == ""  {
+	if base == "" {
 		base = "master"
 	}
 
@@ -214,22 +214,22 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 
 		// TODO lets fork if required???
 		/*
-		pushGitURL, err := gits.GitCreatePushURL(gitURL, details.User)
-		if err != nil {
-			return err
-		}
-		err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
-		if err != nil {
-			return err
-		}
-		err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
-		if err != nil {
-			return err
-		}
-		err = gits.GitCmd(dir, "push", "-u", "origin", "master")
-		if err != nil {
-			return err
-		}
+			pushGitURL, err := gits.GitCreatePushURL(gitURL, details.User)
+			if err != nil {
+				return err
+			}
+			err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
+			if err != nil {
+				return err
+			}
+			err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
+			if err != nil {
+				return err
+			}
+			err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+			if err != nil {
+				return err
+			}
 		*/
 	}
 	err = gits.GitCmd(dir, "branch", branchName)
@@ -243,7 +243,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 
 	requirementsFile, err := helm.FindRequirementsFileName(dir)
 	if err != nil {
-	  return err
+		return err
 	}
 	requirements, err := helm.LoadRequirementsFile(requirementsFile)
 	if err != nil {
@@ -258,7 +258,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 	}
 	changed, err := gits.HasChanges(dir)
 	if err != nil {
-	  return err
+		return err
 	}
 	if !changed {
 		o.Printf("%s\n", util.ColorWarning("No changes made to the GitOps Environment source code. Must be already on version!"))
@@ -276,11 +276,11 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 
 	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
 	if err != nil {
-	  return err
+		return err
 	}
 	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	gha := &gits.GitPullRequestArguments{
@@ -294,7 +294,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 
 	pr, err := provider.CreatePullRequest(gha)
 	if err != nil {
-	  return err
+		return err
 	}
 	o.Printf("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
 	return nil

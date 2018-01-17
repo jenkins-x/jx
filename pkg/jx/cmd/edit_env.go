@@ -5,12 +5,12 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/jenkins-x/jx/pkg/jenkins"
 )
 
 var (
@@ -36,7 +36,7 @@ type EditEnvOptions struct {
 	PromotionStrategy      string
 	NoGitOps               bool
 	ForkEnvironmentGitRepo string
-	EnvJobCredentials  string
+	EnvJobCredentials      string
 }
 
 // NewCmdEditEnv creates a command object for the "create" command
@@ -144,13 +144,13 @@ func (o *EditEnvOptions) Run() error {
 
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, env, ns)
 	if err != nil {
-	  return err
+		return err
 	}
 	gitURL := env.Spec.Source.URL
 	if gitURL != "" {
 		jenkinClient, err := f.GetJenkinsClient()
 		if err != nil {
-		  return err
+			return err
 		}
 		return jenkins.ImportProject(o.Out, jenkinClient, gitURL, o.EnvJobCredentials, false)
 	}

@@ -545,7 +545,7 @@ func (o *ImportOptions) addAppNameToGeneretedFile(filename, field, value string)
 	file := filepath.Join(dir, filename)
 	exists, err := util.FileExists(file)
 	if err != nil {
-	  return err
+		return err
 	}
 	if !exists {
 		// no file so lets ignore this

@@ -66,7 +66,6 @@ func ParseGitURL(text string) (*GitRepositoryInfo, error) {
 	return nil, fmt.Errorf("Could not parse git url %s", text)
 }
 
-
 func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error) {
 	arr := strings.Split(strings.TrimPrefix(path, "/"), "/")
 	if len(arr) >= 2 {
