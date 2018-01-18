@@ -17,6 +17,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"fmt"
 )
 
 const (
@@ -151,7 +152,10 @@ func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
 	kubeconfig := createKubeConfig()
 	client, err := kube.CreateClient(kubeconfig)
 	if err != nil {
-		return nil, "", nil
+		return nil, "", err
+	}
+	if client == nil {
+		return nil, "", fmt.Errorf("Failed to create Kubernetes Client!")
 	}
 	ns := ""
 	config, _, err := kube.LoadConfig()
