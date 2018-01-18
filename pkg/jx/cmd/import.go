@@ -292,13 +292,15 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 	o.Printf("Selected repositories\n")
 	for _, r := range repos {
 		o2 := ImportOptions{
-			CommonOptions: o.CommonOptions,
-			Dir:           o.Dir,
-			RepoURL:       r.CloneURL,
-			Organisation:  org,
-			Repository:    r.Name,
-			Jenkins:       o.Jenkins,
-			GitProvider:   provider,
+			CommonOptions:           o.CommonOptions,
+			Dir:                     o.Dir,
+			RepoURL:                 r.CloneURL,
+			Organisation:            org,
+			Repository:              r.Name,
+			Jenkins:                 o.Jenkins,
+			GitProvider:             provider,
+			DisableJenkinsfileCheck: o.DisableJenkinsfileCheck,
+			DisableDraft:            o.DisableDraft,
 		}
 		o.Printf("Importing repository %s\n", util.ColorInfo(r.Name))
 		err = o2.Run()
