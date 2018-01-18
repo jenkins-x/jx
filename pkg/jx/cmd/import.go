@@ -107,9 +107,10 @@ type ImportOptions struct {
 	SelectAll    bool
 	SelectFilter string
 
-	Jenkins     *gojenkins.Jenkins
-	GitConfDir  string
-	GitProvider gits.GitProvider
+	DisableDotGitSearch bool
+	Jenkins             *gojenkins.Jenkins
+	GitConfDir          string
+	GitProvider         gits.GitProvider
 }
 
 var (
@@ -203,7 +204,7 @@ func (o *ImportOptions) Run() error {
 		if err != nil {
 			return err
 		}
-	} else {
+	} else if o.DisableDotGitSearch {
 		err = o.DiscoverGit()
 		if err != nil {
 			return err

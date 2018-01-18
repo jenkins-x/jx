@@ -73,8 +73,9 @@ func (o *CreateOptions) DoImport(outDir string) error {
 	}
 
 	importOptions := &ImportOptions{
-		CommonOptions: o.CommonOptions,
-		Dir:           outDir,
+		CommonOptions:       o.CommonOptions,
+		Dir:                 outDir,
+		DisableDotGitSearch: true,
 	}
 	return importOptions.Run()
 }
