@@ -1,15 +1,17 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/spf13/cobra"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 var (
@@ -83,7 +85,7 @@ func (o *DeleteEnvOptions) Run() error {
 		return err
 	}
 
-	envNames, err := kube.GetEnvironmentNames(jxClient, ns)
+	envMap, envNames, err := kube.GetEnvironments(jxClient, ns)
 	if err != nil {
 		return err
 	}
@@ -96,7 +98,7 @@ func (o *DeleteEnvOptions) Run() error {
 			}
 		}
 		for _, arg := range args {
-			err = o.deleteEnviroment(jxClient, ns, arg)
+			err = o.deleteEnviroment(jxClient, ns, arg, envMap)
 			if err != nil {
 				return err
 			}
@@ -106,7 +108,7 @@ func (o *DeleteEnvOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		err = o.deleteEnviroment(jxClient, ns, name)
+		err = o.deleteEnviroment(jxClient, ns, name, envMap)
 		if err != nil {
 			return err
 		}
@@ -114,11 +116,22 @@ func (o *DeleteEnvOptions) Run() error {
 	return nil
 }
 
-func (o *DeleteEnvOptions) deleteEnviroment(jxClient *versioned.Clientset, ns string, name string) error {
+func (o *DeleteEnvOptions) deleteEnviroment(jxClient *versioned.Clientset, ns string, name string, envMap map[string]*v1.Environment) error {
 	err := jxClient.JenkinsV1().Environments(ns).Delete(name, &metav1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
 	o.Printf("Deleted environment %s\n", util.ColorInfo(name))
+
+	env := envMap[name]
+	envNs := env.Spec.Namespace
+	if envNs == "" {
+		return fmt.Errorf("No namespace for environment %s", name)
+	}
+	if o.DeleteNamespace {
+		return o.runCommand("kubectl", "delete", "namespace", envNs)
+	}
+	o.Printf("To delete the associated namespace %s for environment %s then please run this command\n", name, envNs)
+	o.Printf(util.ColorInfo("  kubectl delete namespace %s"), envNs)
 	return nil
 }
