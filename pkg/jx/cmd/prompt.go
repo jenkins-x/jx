@@ -3,11 +3,13 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"io"
+	"os"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"strings"
+	"github.com/fatih/color"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 const (
@@ -72,14 +74,14 @@ func NewCmdPrompt(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Prefix, "prefix", "p", "(", "The prefix text for the prompt")
+	cmd.Flags().StringVarP(&options.Prefix, "prefix", "p", "", "The prefix text for the prompt")
 	cmd.Flags().StringVarP(&options.Label, "label", "l", "k8s", "The label for the prompt")
-	cmd.Flags().StringVarP(&options.Separator, "separator", "s", "|", "The separator between the label and the rest of the prompt")
+	cmd.Flags().StringVarP(&options.Separator, "separator", "s", ":", "The separator between the label and the rest of the prompt")
 	cmd.Flags().StringVarP(&options.Divider, "divider", "d", ":", "The divider between the team and environment for the prompt")
-	cmd.Flags().StringVarP(&options.Suffix, "suffix", "x", ")", "The suffix text for the prompt")
+	cmd.Flags().StringVarP(&options.Suffix, "suffix", "x", ">", "The suffix text for the prompt")
 
 	cmd.Flags().StringArrayVarP(&options.LabelColor, optionLabelColor, "", []string{"blue"}, "The color for the label")
-	cmd.Flags().StringArrayVarP(&options.NamespaceColor, optionNamespaceColor, "", []string{"cyan"}, "The color for the namespace")
+	cmd.Flags().StringArrayVarP(&options.NamespaceColor, optionNamespaceColor, "", []string{"green"}, "The color for the namespace")
 	cmd.Flags().StringArrayVarP(&options.ContextColor, optionContextColor, "", []string{"cyan"}, "The color for the kubernetes context")
 
 	cmd.Flags().BoolVarP(&options.NoLabel, "no-label", "", false, "Disables the use of the label in the prompt")
@@ -95,6 +97,9 @@ func (o *PromptOptions) Run() error {
 	context := config.CurrentContext
 	namespace := kube.CurrentNamespace(config)
 
+	// enable color
+	color.NoColor = os.Getenv("TERM") == "dumb"
+	
 	label := o.Label
 	separator := o.Separator
 	divider := o.Divider
