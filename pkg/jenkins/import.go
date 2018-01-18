@@ -8,10 +8,12 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/auth"
+	"strings"
 )
 
 // ImportProject imports a MultiBranchProject into Jeknins for the given git URL
-func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, credentials string, failIfExists bool, gitProvider gits.GitProvider) error {
+func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService) error {
 	if gitURL == "" {
 		return fmt.Errorf("No Git repository URL found!")
 	}
@@ -19,6 +21,24 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, creden
 	if err != nil {
 		return fmt.Errorf("Failed to parse git URL %s due to: %s", gitURL, err)
 	}
+
+	if credentials == "" {
+		credentials = strings.TrimSuffix(DefaultJenkinsCredentialsPrefix + gitInfo.Host, ".com")
+	}
+	_, err = jenk.GetCredential(credentials)
+	if err !=  nil {
+		config := authConfigSvc.Config()
+		server := config.GetOrCreateServer(gitInfo.Host)
+		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline")
+		if err != nil {
+		  return err
+		}
+		err = jenk.CreateCredential(credentials, user.Username, user.ApiToken)
+		if err != nil {
+			return fmt.Errorf("error creating jenkins credential %s %v", "bdd-test", err)
+		}
+	}
+
 	org := gitInfo.Organisation
 	folder, err := jenk.GetJob(org)
 	if err != nil {

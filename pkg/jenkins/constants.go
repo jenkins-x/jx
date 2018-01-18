@@ -1,5 +1,5 @@
 package jenkins
 
 const (
-	DefaultJenkinsCredentials = "jenkins-x-github"
+	DefaultJenkinsCredentialsPrefix = "jenkins-x-"
 )

@@ -166,7 +166,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().StringVarP(&options.RepoURL, "url", "u", "", "The git clone URL to clone into the current directory and then import")
 	cmd.Flags().StringVarP(&options.Organisation, "org", "o", "", "Specify the git provider organisation to import the project into (if it is not already in one)")
 	cmd.Flags().StringVarP(&options.Repository, "name", "n", "", "Specify the git repository name to import the project into (if it is not already in one)")
-	cmd.Flags().StringVarP(&options.Credentials, "credentials", "c", jenkins.DefaultJenkinsCredentials, "The Jenkins credentials name used by the job")
+	cmd.Flags().StringVarP(&options.Credentials, "credentials", "c", "", "The Jenkins credentials name used by the job")
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "d", false, "Performs local changes to the repo but skips the import into Jenkins X")
 	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wis to pick the repositories from GitHub to import")
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a git provider this defaults to selecting them all")
@@ -585,7 +585,11 @@ func (o *ImportOptions) DoImport() error {
 		gitProvider = p
 	}
 
-	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Credentials, false, gitProvider)
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return  err
+	}
+	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Credentials, false, gitProvider, authConfigSvc)
 }
 
 func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
