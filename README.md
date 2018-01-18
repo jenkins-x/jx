@@ -119,6 +119,8 @@ or
 
     jx ns awesome-staging    
 
+## Switching Clusters
+
 If you have multiple kubernetes clusters (e.g. you are using GKE and minikube together) then you can switch between them via
 
     jx ctx
@@ -127,6 +129,20 @@ In the same way. Or via
 
     jx ctx minikube
             
+**Note** that changing the namespace ,environment or cluster changes the current context for **ALL** shells!
+
+### Sub shells
+
+So if you want to work temporarily with, say, the production cluster we highly recommend you use a sub shell for that.
+
+    jx shell my-prod-context
+    
+Or to pick the context to use for the sub shell
+
+    jx shell 
+
+Then your bash prompt will be updated to reflect that you are in a different context and/or namespace. Any changes to the namespace, environment or context will be local to the current shell only!    
+
 ### Tail logs
 
 To tail the logs of an app type
