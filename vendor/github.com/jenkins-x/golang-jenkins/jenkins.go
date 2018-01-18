@@ -473,7 +473,15 @@ func (jenkins *Jenkins) CreateFolderJobWithXML(jobItemXml string, folder string,
 	return jenkins.postXml("/job/" + folder + "/createItem", params, reader, nil)
 }
 
-// Create a new job
+// Get a credentials
+func (jenkins *Jenkins) GetCredential(id string) (c *Credentials, err error) {
+	c = &Credentials{}
+	requestUrl := "/credentials/store/system/domain/_/credentials/" + strings.TrimPrefix(id, "/")
+	err = jenkins.get(requestUrl, nil, c)
+	return
+}
+
+// Create a new credentials
 func (jenkins *Jenkins) CreateCredential(id, username, pass string) error {
 	c := Credentials{
 		Scope:    "GLOBAL",
