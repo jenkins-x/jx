@@ -105,6 +105,7 @@ type ImportOptions struct {
 	GitHub       bool
 	DryRun       bool
 	SelectAll    bool
+	DisableDraft bool
 	SelectFilter string
 
 	DisableDotGitSearch bool
@@ -170,6 +171,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "d", false, "Performs local changes to the repo but skips the import into Jenkins X")
 	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wis to pick the repositories from GitHub to import")
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a git provider this defaults to selecting them all")
+	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "x", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a git provider this filters the list of repositories")
 	return cmd
 }
@@ -200,6 +202,7 @@ func (o *ImportOptions) Run() error {
 	_, o.AppName = filepath.Split(o.Dir)
 
 	if o.RepoURL != "" {
+		// lets make sure there's a .git at the end for github URLs
 		err = o.CloneRepository()
 		if err != nil {
 			return err
@@ -296,6 +299,9 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 }
 
 func (o *ImportOptions) DraftCreate() error {
+	if o.DisableDraft {
+		return nil
+	}
 	args := []string{"create"}
 
 	// TODO this is a workaround of this draft issue:
@@ -429,6 +435,12 @@ func (o *ImportOptions) CloneRepository() error {
 	gitInfo, err := gits.ParseGitURL(url)
 	if err != nil {
 		return fmt.Errorf("Failed to parse git URL %s due to: %s", url, err)
+	}
+	if gitInfo.Host == gits.GitHubHost && strings.HasPrefix(gitInfo.Scheme, "http") {
+		if !strings.HasSuffix(url, ".git") {
+			url += ".git"
+		}
+		o.RepoURL = url
 	}
 	cloneDir, err := util.CreateUniqueDirectory(o.Dir, gitInfo.Name, util.MaximumNewDirectoryAttempts)
 	if err != nil {
@@ -587,7 +599,7 @@ func (o *ImportOptions) DoImport() error {
 
 	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
 	if err != nil {
-		return  err
+		return err
 	}
 	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Credentials, false, gitProvider, authConfigSvc)
 }
