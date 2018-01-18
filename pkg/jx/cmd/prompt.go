@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	optionLabelColor = "label-color"
-	optionTeamColor  = "team-color"
-	optionEnvColor   = "env-color"
+	optionLabelColor     = "label-color"
+	optionNamespaceColor = "namespace-color"
+	optionContextColor   = "context-color"
 )
 
 // PromptOptions containers the CLI options
@@ -29,14 +29,14 @@ type PromptOptions struct {
 	Divider   string
 	Suffix    string
 
-	LabelColor []string
-	TeamColor  []string
-	EnvColor   []string
+	LabelColor     []string
+	NamespaceColor []string
+	ContextColor   []string
 }
 
 var (
 	get_prompt_long = templates.LongDesc(`
-		Generate a command prompt for the current team and environment.
+		Generate a command prompt for the current namespace and kubernetes context.
 `)
 
 	get_prompt_example = templates.Examples(`
@@ -79,8 +79,8 @@ func NewCmdPrompt(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().StringVarP(&options.Suffix, "suffix", "x", ")", "The suffix text for the prompt")
 
 	cmd.Flags().StringArrayVarP(&options.LabelColor, optionLabelColor, "", []string{"blue"}, "The color for the label")
-	cmd.Flags().StringArrayVarP(&options.TeamColor, optionTeamColor, "", []string{"cyan"}, "The color for the team")
-	cmd.Flags().StringArrayVarP(&options.TeamColor, optionEnvColor, "", []string{"cyan"}, "The color for the environment")
+	cmd.Flags().StringArrayVarP(&options.NamespaceColor, optionNamespaceColor, "", []string{"cyan"}, "The color for the namespace")
+	cmd.Flags().StringArrayVarP(&options.ContextColor, optionContextColor, "", []string{"cyan"}, "The color for the kubernetes context")
 
 	cmd.Flags().BoolVarP(&options.NoLabel, "no-label", "", false, "Disables the use of the label in the prompt")
 	cmd.Flags().BoolVarP(&options.ShowIcon, "icon", "i", false, "Uses an icon for the label in the prompt")
@@ -90,14 +90,11 @@ func NewCmdPrompt(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 
 // Run implements this command
 func (o *PromptOptions) Run() error {
-	kubeClient, currentNs, err := o.Factory.CreateClient()
-	if err != nil {
-		return err
-	}
-	team, env, err := kube.GetDevNamespace(kubeClient, currentNs)
-	if err != nil {
-		return err
-	}
+	config, _, err := kube.LoadConfig()
+
+	context := config.CurrentContext
+	namespace := kube.CurrentNamespace(config)
+
 	label := o.Label
 	separator := o.Separator
 	divider := o.Divider
@@ -108,11 +105,11 @@ func (o *PromptOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	teamColor, err := cmdutil.GetColor(optionLabelColor, o.TeamColor)
+	nsColor, err := cmdutil.GetColor(optionLabelColor, o.NamespaceColor)
 	if err != nil {
 		return err
 	}
-	envColor, err := cmdutil.GetColor(optionLabelColor, o.EnvColor)
+	ctxColor, err := cmdutil.GetColor(optionLabelColor, o.ContextColor)
 	if err != nil {
 		return err
 	}
@@ -127,12 +124,12 @@ func (o *PromptOptions) Run() error {
 			label = labelColor.Sprint(label)
 		}
 	}
-	team = teamColor.Sprint(team)
-	if env == "" {
+	if namespace == "" {
 		divider = ""
 	} else {
-		env = envColor.Sprint(env)
+		namespace = nsColor.Sprint(namespace)
 	}
-	o.Printf("%s\n", strings.Join([]string{prefix, label, separator, team, divider, env, suffix}, ""))
+	context = ctxColor.Sprint(context)
+	o.Printf("%s\n", strings.Join([]string{prefix, label, separator, namespace, divider, context, suffix}, ""))
 	return nil
 }
