@@ -14,6 +14,7 @@ import:
 - package: github.com/golang/glog
 - package: github.com/pkg/browser
 - package: github.com/MakeNowJust/heredoc
+- package: github.com/blang/semver
 - package: gopkg.in/AlecAivazis/survey.v1
 - package: github.com/fatih/color
   version: v1.5.0

@@ -2,12 +2,12 @@ package util
 
 import (
 	"fmt"
-	"github.com/golang/glog"
-	"github.com/spf13/cobra"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
+
+	"github.com/golang/glog"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -189,40 +189,4 @@ func HomeDir() string {
 		h = "."
 	}
 	return h
-}
-
-func ConfigDir() (string, error) {
-	h := HomeDir()
-	path := filepath.Join(h, ".jx")
-	err := os.MkdirAll(path, DefaultWritePermissions)
-	if err != nil {
-		return "", err
-	}
-	return path, nil
-}
-
-func CacheDir() (string, error) {
-	h, err := ConfigDir()
-	if err != nil {
-		return "", err
-	}
-	path := filepath.Join(h, "cache")
-	err = os.MkdirAll(path, DefaultWritePermissions)
-	if err != nil {
-		return "", err
-	}
-	return path, nil
-}
-
-func EnvironmentsDir() (string, error) {
-	h, err := ConfigDir()
-	if err != nil {
-		return "", err
-	}
-	path := filepath.Join(h, "environments")
-	err = os.MkdirAll(path, DefaultWritePermissions)
-	if err != nil {
-		return "", err
-	}
-	return path, nil
 }

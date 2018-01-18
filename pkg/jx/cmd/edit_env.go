@@ -107,7 +107,7 @@ func (o *EditEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	envDir, err := cmdutil.EnvironmentsDir()
+	envDir, err := util.EnvironmentsDir()
 	if err != nil {
 		return err
 	}

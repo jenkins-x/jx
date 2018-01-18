@@ -154,7 +154,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 		return err
 	}
 
-	environmentsDir, err := cmdutil.EnvironmentsDir()
+	environmentsDir, err := util.EnvironmentsDir()
 	if err != nil {
 		return err
 	}

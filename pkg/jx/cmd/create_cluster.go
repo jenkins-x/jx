@@ -1,19 +1,23 @@
 package cmd
 
 import (
-	"io"
-	"os/exec"
-
-	"runtime"
-
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 
+	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"strings"
 )
 
 type KubernetesProvider string
@@ -23,6 +27,7 @@ type CreateClusterOptions struct {
 	CreateOptions
 	Flags    InitFlags
 	Provider string
+	NoBrew   bool
 }
 
 const (
@@ -40,6 +45,8 @@ var KUBERNETES_PROVIDERS = map[string]bool{
 }
 
 const (
+	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
+
 	valid_providers = `Valid kubernetes providers include:
 
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
@@ -115,39 +122,39 @@ func (o *CreateClusterOptions) Run() error {
 	return o.Cmd.Help()
 }
 
+func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(&o.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install dependencies like kubectl, draft, helm etc")
+}
+
 func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {
-
-	d := getDependenciesToInstall("kubectl")
+	d := binaryShouldBeInstalled("kubectl")
 	if d != "" {
 		deps = append(deps, d)
 	}
 
-	d = getDependenciesToInstall("helm")
+	d = binaryShouldBeInstalled("helm")
 	if d != "" {
 		deps = append(deps, d)
 	}
 
-	d = getDependenciesToInstall("draft")
+	d = binaryShouldBeInstalled("draft")
 	if d != "" {
 		deps = append(deps, d)
 	}
 
 	// Platform specific deps
 	if runtime.GOOS == "darwin" {
-		d = getDependenciesToInstall("brew")
-		if d != "" {
-			deps = append(deps, d)
+		if !o.NoBrew {
+			d = binaryShouldBeInstalled("brew")
+			if d != "" {
+				deps = append(deps, d)
+			}
 		}
 	}
 
 	return deps
 }
 func (o *CreateClusterOptions) installMissingDependencies(providerSpecificDeps []string) error {
-	// for now lets only support OSX until we can test on other platforms
-	if runtime.GOOS != "darwin" {
-		return fmt.Errorf("jx create cluster currently only supported on OSX")
-	}
-
 	// get base list of required dependencies and add provider specific ones
 	deps := o.getClusterDependencies(providerSpecificDeps)
 
@@ -196,17 +203,24 @@ func (o *CreateClusterOptions) doInstallMissingDependencies(install []string) er
 			return fmt.Errorf("unknown dependency to install %s\n", i)
 		}
 		if err != nil {
-			return fmt.Errorf("error installing %s\n", i)
+			return fmt.Errorf("error installing %s: %v\n", i, err)
 		}
 	}
 	return nil
 }
 
 // appends the binary to the deps array if it cannot be found on the $PATH
-func getDependenciesToInstall(d string) string {
-
+func binaryShouldBeInstalled(d string) string {
 	_, err := exec.LookPath(d)
 	if err != nil {
+		// look for windows exec
+		if runtime.GOOS == "windows" {
+			d2 := d + ".exe"
+			_, err = exec.LookPath(d2)
+			if err == nil {
+				return ""
+			}
+		}
 		log.Infof("%s not found\n", d)
 		return d
 	}
@@ -214,11 +228,93 @@ func getDependenciesToInstall(d string) string {
 }
 
 func (o *CreateClusterOptions) installBrew() error {
+	if runtime.GOOS != "darwin" {
+		return nil
+	}
 	return o.runCommand("/usr/bin/ruby", "-e", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)")
 }
 
+func (o *CreateClusterOptions) shouldInstallBinary(binDir string, name string) (fileName string, download bool, err error) {
+	fileName = name
+	download = false
+	if runtime.GOOS == "windows" {
+		fileName += ".exe"
+	}
+	pgmPath, err := exec.LookPath(fileName)
+	if err == nil {
+		o.Printf("%s is already available on your PATH at %s\n", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
+		return
+	}
+
+	// lets see if its been installed but just is not on the PATH
+	exists, err := util.FileExists(filepath.Join(binDir, fileName))
+	if err != nil {
+		return
+	}
+	if exists {
+		o.warnf("Please add %s to your PATH\n", util.ColorInfo(binDir))
+		return
+	}
+	download = true
+	return
+}
+
+func (o *CreateClusterOptions) downloadFile(clientURL string, fullPath string) error {
+	o.Printf("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
+	err := util.DownloadFile(fullPath, clientURL)
+	if err != nil {
+		return fmt.Errorf("Unable to download file %s from %s due to: %v", fullPath, clientURL, err)
+	}
+	fmt.Printf("Downloaded %s\n", util.ColorInfo(fullPath))
+	return nil
+}
+
 func (o *CreateClusterOptions) installKubectl() error {
-	return o.runCommand("brew", "install", "kubectl")
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.runCommand("brew", "install", "kubectl")
+	}
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	fileName, flag, err := o.shouldInstallBinary(binDir, "kubectl")
+	if err != nil || !flag {
+		return err
+	}
+	kubernetes := "kubernetes"
+	latestVersion, err := o.getLatestVersionFromKubernetesReleaseUrl()
+	if err != nil {
+		return fmt.Errorf("Unable to get latest version for github.com/%s/%s %v", kubernetes, kubernetes, err)
+	}
+
+	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/%s/%s/%s", latestVersion, runtime.GOOS, runtime.GOARCH, fileName)
+	fullPath := filepath.Join(binDir, fileName)
+	err = o.downloadFile(clientURL, fullPath)
+	if err != nil {
+	  return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
+
+// get the latest version from kubernetes, parse it and return it
+func (o *CreateClusterOptions) getLatestVersionFromKubernetesReleaseUrl() (sem semver.Version, err error) {
+	response, err := http.Get(stableKubeCtlVersionURL)
+	if err != nil {
+		return semver.Version{}, fmt.Errorf("Cannot get url " + stableKubeCtlVersionURL)
+	}
+	defer response.Body.Close()
+
+	bytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return semver.Version{}, fmt.Errorf("Cannot get url body")
+	}
+
+	s := strings.TrimSpace(string(bytes))
+	if s != "" {
+		return semver.Make(strings.TrimPrefix(s, "v"))
+	}
+
+	return semver.Version{}, fmt.Errorf("Cannot get release name")
 }
 
 func (o *CreateClusterOptions) installHyperkit() error {
@@ -291,20 +387,105 @@ func (o *CreateClusterOptions) installXhyve() error {
 }
 
 func (o *CreateClusterOptions) installHelm() error {
-	return o.runCommand("brew", "install", "kubernetes-helm")
-}
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.runCommand("brew", "install", "kubernetes-helm")
+	}
 
-func (o *CreateClusterOptions) installDraft() error {
-	err := o.runCommand("brew", "tap", "azure/draft")
+	binDir, err := util.BinaryLocation()
 	if err != nil {
 		return err
 	}
+	binary := "helm"
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	tarFile := fullPath + ".tgz"
+	err = o.downloadFile(clientURL, tarFile)
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	if err != nil {
+		return err
+	}
+	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
 
-	return o.runCommand("brew", "install", "draft")
+func (o *CreateClusterOptions) installDraft() error {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		err := o.runCommand("brew", "tap", "azure/draft")
+		if err != nil {
+			return err
+		}
+		return o.runCommand("brew", "install", "draft")
+	}
+
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	binary := "draft"
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("Azure", "draft")
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://azuredraft.blob.core.windows.net/draft/draft-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	tarFile := fullPath + ".tgz"
+	err = o.downloadFile(clientURL, tarFile)
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	if err != nil {
+		return err
+	}
+	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
 }
 
 func (o *CreateClusterOptions) installMinikube() error {
-	return o.runCommand("brew", "cask", "install", "minikube")
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.runCommand("brew", "cask", "install", "minikube")
+	}
+
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	fileName, flag, err := o.shouldInstallBinary(binDir, "minikube")
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "minikube")
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://github.com/kubernetes/minikube/releases/download/v%s/minikube-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	err = o.downloadFile(clientURL, fullPath)
+	if err != nil {
+	  return err
+	}
+	return os.Chmod(fullPath, 0755)
 }
 
 func (o *CreateClusterOptions) installGcloud() error {
