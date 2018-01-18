@@ -3,9 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
-
 	"github.com/spf13/cobra"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -20,16 +18,16 @@ type MetricsOptions struct {
 
 var (
 	Metrics_long = templates.LongDesc(`
-		Tails the Metrics of the newest pod for a Deployment.
+		Gets the metrics of the newest pod for a Deployment.
 
 `)
 
 	Metrics_example = templates.Examples(`
-		# Tails the metrics of the latest pod in deployment myapp
-		jx Metrics myapp
+		# displays metrics of the latest pod in deployment myapp
+		jx metrics myapp
 
 		# Tails the metrics of the container foo in the latest pod in deployment myapp
-		jx Metrics myapp -c foo
+		jx metrics myapp -c foo
 `)
 )
 
@@ -43,7 +41,7 @@ func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 	cmd := &cobra.Command{
 		Use:     "metrics [deployment]",
-		Short:   "Tails the metrics of the latest pod for a deployment",
+		Short:   "Gets the metrics of the latest pod for a deployment",
 		Long:    Metrics_long,
 		Example: Metrics_example,
 		Aliases: []string{"metrics"},
@@ -54,7 +52,7 @@ func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to metrics")
+	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "display metrics for the container")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
 	return cmd
 }
@@ -97,12 +95,18 @@ func (o *MetricsOptions) Run() error {
 		if pod == "" {
 			return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
 		}
-		args := []string{"Metrics", "-n", ns, "-f"}
+
+		var args = "top pod "
+		args += pod
+		args += " --namespace=" + ns
+
+
 		if o.Container != "" {
-			args = append(args, "-c", o.Container)
+			args += " --containers"
 		}
-		args = append(args, pod)
-		err = o.runCommand("kubectl", args...)
+
+
+		err = o.runCommand("kubectl", args)
 		if err != nil {
 			return nil
 		}
