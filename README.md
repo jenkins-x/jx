@@ -43,6 +43,30 @@ If you already have a kubernetes cluster setup then try:
 
     jx install
         
+## Opening Consoles
+
+To open the Jenkins console try:
+
+    jx console
+    
+Or to open other consoles
+
+    jx open foo
+    
+If you do not know the name
+
+    jx open
+    
+
+## Tail logs
+
+To tail the logs of anything running on kubernetes (jenkins or your own applications) type
+
+    jx logs
+    
+Which by default tails the logs of the newest pod for an app.
+
+
 ## Importing or Creating apps
 
 To import an application from the current directory:
@@ -143,28 +167,17 @@ Or to pick the context to use for the sub shell
 
 Then your bash prompt will be updated to reflect that you are in a different context and/or namespace. Any changes to the namespace, environment or context will be local to the current shell only!    
 
-### Tail logs
+### Setting your prompt
 
-To tail the logs of an app type
+You can use the `jx prompt` to configure your CLI prompt to display the current team and environment you are working within           
+                                            
+		# Enable the prompt for bash
+		PS1="[\u@\h \W \$(jx prompt)]\$ "
 
-    jx logs
-    
-Which by default tails the logs of the newest pod for an app.
+		# Enable the prompt for zsh
+		PROMPT='$(jx prompt)'$PROMPT
 
-### Opening Consoles
-
-To open the Jenkins console try:
-
-    jx console
-    
-Or to open other consoles
-
-    jx open foo
-    
-If you do not know the name
-
-    jx open
-    
+Note that the prompt is updated automatically for you via the `jx shell` command too
 
 ### Bash completion
 
@@ -181,16 +194,6 @@ For more help try:
 
     jx help completion bash
            
-### Setting your prompt
-
-You can use the `jx prompt` to configure your CLI prompt to display the current team and environment you are working within           
-                                            
-		# Enable the prompt for bash
-		PS1="[\u@\h \W \$(jx prompt)]\$ "
-
-		# Enable the prompt for zsh
-		PROMPT='$(jx prompt)'$PROMPT
-
 ### Uninstall Jenkins x
 
 To remove the Jenkins X platfrom from a namespace on your kubernetes cluster:
