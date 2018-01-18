@@ -97,16 +97,17 @@ type ImportOptions struct {
 
 	RepoURL string
 
-	Dir          string
-	Organisation string
-	Repository   string
-	Credentials  string
-	AppName      string
-	GitHub       bool
-	DryRun       bool
-	SelectAll    bool
-	DisableDraft bool
-	SelectFilter string
+	Dir                     string
+	Organisation            string
+	Repository              string
+	Credentials             string
+	AppName                 string
+	GitHub                  bool
+	DryRun                  bool
+	SelectAll               bool
+	DisableDraft            bool
+	DisableJenkinsfileCheck bool
+	SelectFilter            string
 
 	DisableDotGitSearch bool
 	Jenkins             *gojenkins.Jenkins
@@ -172,6 +173,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wis to pick the repositories from GitHub to import")
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a git provider this defaults to selecting them all")
 	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "x", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
+	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "j", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a git provider this filters the list of repositories")
 	return cmd
 }
@@ -201,11 +203,15 @@ func (o *ImportOptions) Run() error {
 	}
 	_, o.AppName = filepath.Split(o.Dir)
 
+	shouldClone := !o.DisableJenkinsfileCheck || !o.DisableDraft
+
 	if o.RepoURL != "" {
-		// lets make sure there's a .git at the end for github URLs
-		err = o.CloneRepository()
-		if err != nil {
-			return err
+		if shouldClone {
+			// lets make sure there's a .git at the end for github URLs
+			err = o.CloneRepository()
+			if err != nil {
+				return err
+			}
 		}
 	} else if o.DisableDotGitSearch {
 		err = o.DiscoverGit()
@@ -221,14 +227,17 @@ func (o *ImportOptions) Run() error {
 		}
 	}
 
-	err = o.DraftCreate()
-	if err != nil {
-		return err
+	if !o.DisableDraft {
+		err = o.DraftCreate()
+		if err != nil {
+			return err
+		}
 	}
-
-	err = o.DefaultJenkinsfile()
-	if err != nil {
-		return err
+	if !o.DisableJenkinsfileCheck {
+		err = o.DefaultJenkinsfile()
+		if err != nil {
+			return err
+		}
 	}
 
 	if o.RepoURL == "" {
@@ -237,9 +246,11 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 	} else {
-		err = gits.GitPush(o.Dir)
-		if err != nil {
-			return err
+		if shouldClone {
+			err = gits.GitPush(o.Dir)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if o.DryRun {
@@ -299,9 +310,6 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 }
 
 func (o *ImportOptions) DraftCreate() error {
-	if o.DisableDraft {
-		return nil
-	}
 	args := []string{"create"}
 
 	// TODO this is a workaround of this draft issue:
@@ -590,7 +598,7 @@ func (o *ImportOptions) DoImport() error {
 	gitURL := o.RepoURL
 	gitProvider := o.GitProvider
 	if gitProvider == nil {
-		p, err := o.gitProviderForURL(gitURL)
+		p, err := o.gitProviderForURL(gitURL, "user name to register webhook")
 		if err != nil {
 			return err
 		}

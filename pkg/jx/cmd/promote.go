@@ -278,7 +278,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 	if err != nil {
 		return err
 	}
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc)
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request")
 	if err != nil {
 		return err
 	}

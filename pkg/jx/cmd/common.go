@@ -137,7 +137,7 @@ func (o *CommonOptions) warnf(format string, a ...interface{}) {
 }
 
 // gitProviderForURL returns a GitProvider for the given git URL
-func (o *CommonOptions) gitProviderForURL(gitURL string) (gits.GitProvider, error) {
+func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.GitProvider, error) {
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
@@ -146,5 +146,5 @@ func (o *CommonOptions) gitProviderForURL(gitURL string) (gits.GitProvider, erro
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc)
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message)
 }
