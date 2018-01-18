@@ -10,6 +10,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"time"
+	"github.com/kubernetes/kubernetes/cmd/kubeadm/app/phases/upgrade"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -20,6 +23,11 @@ type CreateClusterAKSOptions struct {
 }
 
 type CreateClusterAKSFlags struct {
+	Name              	   string
+	ResourceGroup		   string
+	Location			   string
+	NodeCount			   string
+	KubeVersion            string
 }
 
 var (
@@ -68,11 +76,13 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			cmdutil.CheckErr(err)
 		},
 	}
-
+	
 	options.addCreateClusterFlags(cmd)
-
-	//cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minikube VM in MB")
-	//cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
+	cmd.Flags().StringVarP(&options.Flags.Name, "name", "n", "jenkins-x", "Name of the cluster")
+	cmd.Flags().StringVarP(&options.Flags.ResourceGroup, "resource group", "g", "jenkins-x", "Name of the resource group")
+	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "eastus", "location to run cluster in")
+	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "n", "1", "node count")
+	cmd.Flags().StringVarP(&options.Flags.KubeVersion, "K8Version", "v", "1.8.1", "kubernetes version")
 
 	return cmd
 }
@@ -101,6 +111,76 @@ func (o *CreateClusterAKSOptions) Run() error {
 
 func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
-	// TODO
-	return fmt.Errorf("Create %s cluster not yet implemented", o.Provider)
+	name := o.Flags.Name
+	prompt := &survey.Input{
+		Message: "name",
+		Default: name,
+		Help:    "name of the cluster",
+	}
+	survey.AskOne(prompt, &name, nil)
+
+	location := o.Flags.Location
+	prompt = &survey.Input{
+		Message: "location",
+		Default: location,
+		Help:    "location to run cluster",
+	}
+	survey.AskOne(prompt, &location, nil)
+
+	resourceGroup := o.Flags.ResourceGroup
+	prompt = &survey.Input{
+		Message: "resourceGroup",
+		Default: resourceGroup,
+		Help:    "resource group",
+	}
+	survey.AskOne(prompt, &resourceGroup, nil)
+
+	nodeCount := o.Flags.NodeCount
+	prompt = &survey.Input{
+		Message: "nodes",
+		Default: nodeCount,
+		Help:    "number of nodes",
+	}
+	survey.AskOne(prompt,&nodeCount,nil)
+
+	kubeVersion := o.Flags.KubeVersion
+	prompt = &survey.Input{
+		Message: "k8version",
+		Default: kubeVersion,
+		Help:    "k8 version",
+	}
+	survey.AskOne(prompt,&kubeVersion,nil)
+
+
+
+
+
+	args := []string{" aks create -n", name, "-g", resourceGroup, "--node-count", nodeCount,"--kubernetesVersion",kubeVersion}
+
+	err := o.runCommand("az", args...)
+	if err != nil {
+		return err
+	}
+
+	// call jx init
+	initOpts := &InitOptions{
+		CommonOptions: o.CommonOptions,
+	}
+	err = initOpts.Run()
+	if err != nil {
+		return err
+	}
+
+	// call jx install
+	installOpts := &InstallOptions{
+		CommonOptions:      o.CommonOptions,
+		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
+		KubernetesProvider: MINIKUBE, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
+	}
+	err = installOpts.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
