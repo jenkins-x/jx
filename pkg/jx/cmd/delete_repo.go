@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/spf13/cobra"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 var (
@@ -101,7 +101,7 @@ func (o *DeleteRepoOptions) Run() error {
 		}
 	}
 	if server == nil {
-		return fmt.Errorf("No git server provided!");
+		return fmt.Errorf("No git server provided!")
 	}
 	userAuth, err := config.PickServerUserAuth(server, "git user name")
 	if err != nil {

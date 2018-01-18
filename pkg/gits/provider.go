@@ -134,7 +134,7 @@ func PickRepositories(provider GitProvider, owner string, message string, select
 	allRepoNames := []string{}
 	for _, repo := range repos {
 		n := repo.Name
-		if n != "" && (filter == "" || strings.Contains(n, filter)){
+		if n != "" && (filter == "" || strings.Contains(n, filter)) {
 			allRepoNames = append(allRepoNames, n)
 			repoMap[n] = repo
 		}
@@ -145,7 +145,7 @@ func PickRepositories(provider GitProvider, owner string, message string, select
 	sort.Strings(allRepoNames)
 
 	prompt := &survey.MultiSelect{
-		Message:message ,
+		Message: message,
 		Options: allRepoNames,
 	}
 	if selectAll {
@@ -179,5 +179,3 @@ func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user 
 	}
 	return nil, fmt.Errorf("Git provider not supported for host %s", i.Host)
 }
-
-
