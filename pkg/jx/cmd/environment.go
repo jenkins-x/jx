@@ -64,15 +64,21 @@ func NewCmdEnvironment(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 }
 
 func (o *EnvironmentOptions) Run() error {
-	kubeClient, currentNs, err := o.Factory.CreateClient()
+	f := o.Factory
+	kubeClient, currentNs, err := f.CreateClient()
 	if err != nil {
 		return err
 	}
-	jxClient, _, err := o.Factory.CreateJXClient()
+	jxClient, _, err := f.CreateJXClient()
 	if err != nil {
 		return err
 	}
 
+	apisClient, err := f.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	kube.RegisterEnvironmentCRD(apisClient)
 	devNs, currentEnv, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
 		return err
@@ -99,7 +105,7 @@ func (o *EnvironmentOptions) Run() error {
 		env = pick
 	}
 	info := util.ColorInfo
-	if env != "" {
+	if env != "" && env != currentEnv {
 		envResource, err := jxClient.JenkinsV1().Environments(devNs).Get(env, meta_v1.GetOptions{})
 		if err != nil {
 			return util.InvalidArg(env, envNames)
@@ -130,7 +136,7 @@ func (o *EnvironmentOptions) Run() error {
 			env = currentEnv
 		}
 		if env == "" {
-			fmt.Fprintf(o.Out, "Usingnamespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(config.CurrentContext), info(server))
+			fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(config.CurrentContext), info(server))
 		} else {
 			fmt.Fprintf(o.Out, "Using environment '%s' in team '%s' on server '%s'.\n", info(env), info(devNs), info(server))
 		}

@@ -83,12 +83,13 @@ func (o *NamespaceOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	currentNS := kube.CurrentNamespace(config)
 
 	if ns == "" && !o.BatchMode {
 		defaultNamespace := ""
 		ctx := kube.CurrentContext(config)
 		if ctx != nil {
-			defaultNamespace = kube.CurrentNamespace(config)
+			defaultNamespace = currentNS
 		}
 		pick, err := o.PickNamespace(names, defaultNamespace)
 		if err != nil {
@@ -97,7 +98,7 @@ func (o *NamespaceOptions) Run() error {
 		ns = pick
 	}
 	info := util.ColorInfo
-	if ns != "" {
+	if ns != "" && ns != currentNS {
 		_, err = client.CoreV1().Namespaces().Get(ns, meta_v1.GetOptions{})
 		if err != nil {
 			return util.InvalidArg(ns, names)
