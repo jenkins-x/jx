@@ -6,9 +6,9 @@ import (
 	"net/url"
 
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/auth"
 	"strings"
 )
 
@@ -23,15 +23,15 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, creden
 	}
 
 	if credentials == "" {
-		credentials = strings.TrimSuffix(DefaultJenkinsCredentialsPrefix + gitInfo.Host, ".com")
+		credentials = strings.TrimSuffix(DefaultJenkinsCredentialsPrefix+gitInfo.Host, ".com")
 	}
 	_, err = jenk.GetCredential(credentials)
-	if err !=  nil {
+	if err != nil {
 		config := authConfigSvc.Config()
 		server := config.GetOrCreateServer(gitInfo.Host)
 		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline")
 		if err != nil {
-		  return err
+			return err
 		}
 		err = jenk.CreateCredential(credentials, user.Username, user.ApiToken)
 		if err != nil {
