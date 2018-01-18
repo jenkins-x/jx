@@ -19,8 +19,6 @@ import (
 
 type EnvironmentOptions struct {
 	CommonOptions
-
-	Choose bool
 }
 
 const ()

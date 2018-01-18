@@ -118,7 +118,15 @@ You can switch namespaces in the same way via
 or
 
     jx ns awesome-staging    
+
+If you have multiple kubernetes clusters (e.g. you are using GKE and minikube together) then you can switch between them via
+
+    jx ctx
     
+In the same way. Or via
+
+    jx ctx minikube
+            
 ### Tail logs
 
 To tail the logs of an app type

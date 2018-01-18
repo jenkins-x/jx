@@ -20,8 +20,6 @@ import (
 
 type NamespaceOptions struct {
 	CommonOptions
-
-	Choose bool
 }
 
 const (
