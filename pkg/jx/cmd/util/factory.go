@@ -19,8 +19,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"github.com/jenkins-x/jx/pkg/util"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 const (

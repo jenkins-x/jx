@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -13,10 +14,10 @@ import (
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 type KubernetesProvider string
@@ -127,7 +128,6 @@ func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 
 func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {
 	d := binaryShouldBeInstalled("kubectl")
-	o.Printf("Found kubectl at %s\n", d)
 	if d != "" {
 		deps = append(deps, d)
 	}
@@ -234,56 +234,66 @@ func (o *CreateClusterOptions) installBrew() error {
 	return o.runCommand("/usr/bin/ruby", "-e", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)")
 }
 
-func (o *CreateClusterOptions) installKubectl() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.runCommand("brew", "install", "kubectl")
-	}
-
-	os := runtime.GOOS
-	arch := runtime.GOARCH
-
-	binDir, err := util.BinaryLocation()
-	if err != nil {
-		return err
-	}
-
-	kubectlBinary := "kubectl"
+func (o *CreateClusterOptions) shouldInstallBinary(binDir string, name string) (fileName string, download bool, err error) {
+	fileName = name
+	download = false
 	if runtime.GOOS == "windows" {
-		kubectlBinary += ".exe"
+		fileName += ".exe"
 	}
-
-	pgmPath, err := exec.LookPath(kubectlBinary)
+	pgmPath, err := exec.LookPath(fileName)
 	if err == nil {
-		o.Printf("%s is already available on your PATH at %s\n", util.ColorInfo(kubectlBinary), util.ColorInfo(pgmPath))
-		return nil
+		o.Printf("%s is already available on your PATH at %s\n", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
+		return
 	}
 
 	// lets see if its been installed but just is not on the PATH
-	exists, err := util.FileExists(filepath.Join(binDir, kubectlBinary))
+	exists, err := util.FileExists(filepath.Join(binDir, fileName))
 	if err != nil {
-	  return err
+		return
 	}
 	if exists {
-		o.warnf("Please add %s to your PATH\n", binDir)
-		return nil
+		o.warnf("Please add %s to your PATH\n", util.ColorInfo(binDir))
+		return
 	}
-	kubernetes := "kubernetes"
+	download = true
+	return
+}
 
-	latestVersion, err := o.getLatestVersionFromKubernetesReleaseUrl()
-	if err != nil {
-		return fmt.Errorf("Unable to get latest version for %s/%s %v", kubernetes, kubernetes, err)
-	}
-
-	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/%s/%s/%s", latestVersion, os, arch, kubectlBinary)
-	fullPath := filepath.Join(binDir, kubectlBinary)
-
+func (o *CreateClusterOptions) downloadFile(clientURL string, fullPath string) error {
 	o.Printf("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
-	err = util.DownloadFile(fullPath, clientURL)
+	err := util.DownloadFile(fullPath, clientURL)
 	if err != nil {
 		return fmt.Errorf("Unable to download file %s from %s due to: %v", fullPath, clientURL, err)
 	}
 	fmt.Printf("Downloaded %s\n", util.ColorInfo(fullPath))
 	return nil
+}
+
+func (o *CreateClusterOptions) installKubectl() error {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.runCommand("brew", "install", "kubectl")
+	}
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	fileName, flag, err := o.shouldInstallBinary(binDir, "kubectl")
+	if err != nil || !flag {
+		return err
+	}
+	kubernetes := "kubernetes"
+	latestVersion, err := o.getLatestVersionFromKubernetesReleaseUrl()
+	if err != nil {
+		return fmt.Errorf("Unable to get latest version for github.com/%s/%s %v", kubernetes, kubernetes, err)
+	}
+
+	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/%s/%s/%s", latestVersion, runtime.GOOS, runtime.GOARCH, fileName)
+	fullPath := filepath.Join(binDir, fileName)
+	err = o.downloadFile(clientURL, fullPath)
+	if err != nil {
+	  return err
+	}
+	return os.Chmod(fullPath, 0755)
 }
 
 // get the latest version from kubernetes, parse it and return it
@@ -377,20 +387,105 @@ func (o *CreateClusterOptions) installXhyve() error {
 }
 
 func (o *CreateClusterOptions) installHelm() error {
-	return o.runCommand("brew", "install", "kubernetes-helm")
-}
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.runCommand("brew", "install", "kubernetes-helm")
+	}
 
-func (o *CreateClusterOptions) installDraft() error {
-	err := o.runCommand("brew", "tap", "azure/draft")
+	binDir, err := util.BinaryLocation()
 	if err != nil {
 		return err
 	}
+	binary := "helm"
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	tarFile := fullPath + ".tgz"
+	err = o.downloadFile(clientURL, tarFile)
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	if err != nil {
+		return err
+	}
+	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
 
-	return o.runCommand("brew", "install", "draft")
+func (o *CreateClusterOptions) installDraft() error {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		err := o.runCommand("brew", "tap", "azure/draft")
+		if err != nil {
+			return err
+		}
+		return o.runCommand("brew", "install", "draft")
+	}
+
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	binary := "draft"
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("Azure", "draft")
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://azuredraft.blob.core.windows.net/draft/draft-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	tarFile := fullPath + ".tgz"
+	err = o.downloadFile(clientURL, tarFile)
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	if err != nil {
+		return err
+	}
+	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
 }
 
 func (o *CreateClusterOptions) installMinikube() error {
-	return o.runCommand("brew", "cask", "install", "minikube")
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.runCommand("brew", "cask", "install", "minikube")
+	}
+
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	fileName, flag, err := o.shouldInstallBinary(binDir, "minikube")
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "minikube")
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://github.com/kubernetes/minikube/releases/download/v%s/minikube-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	err = o.downloadFile(clientURL, fullPath)
+	if err != nil {
+	  return err
+	}
+	return os.Chmod(fullPath, 0755)
 }
 
 func (o *CreateClusterOptions) installGcloud() error {

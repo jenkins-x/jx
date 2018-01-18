@@ -2,11 +2,12 @@ package util
 
 import (
 	"fmt"
-	"github.com/golang/glog"
-	"github.com/spf13/cobra"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/golang/glog"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -189,4 +190,3 @@ func HomeDir() string {
 	}
 	return h
 }
-

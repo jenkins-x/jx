@@ -3,11 +3,12 @@ package gits
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"golang.org/x/oauth2"
-	"strings"
-	"time"
 )
 
 type GitHubProvider struct {
