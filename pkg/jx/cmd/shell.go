@@ -13,10 +13,10 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"sort"
 	"io/ioutil"
-	"os/exec"
 	"os"
+	"os/exec"
+	"sort"
 	"strings"
 )
 
@@ -136,14 +136,13 @@ func (o *ShellOptions) Run() error {
 
 	tmpRCfile, err := ioutil.TempFile("/tmp", "jx-shell-rcfile-")
 	if err != nil {
-	  return err
+		return err
 	}
 	tmpRCfileName := tmpRCfile.Name()
 	err = ioutil.WriteFile(tmpRCfileName, []byte(rcFile), util.DefaultWritePermissions)
 	if err != nil {
-	  return err
+		return err
 	}
-
 
 	info := util.ColorInfo
 	o.Printf("Creating a new shell using the kubernetes context %s\n", info(ctxName))
