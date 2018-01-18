@@ -29,6 +29,7 @@ pipeline {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
                     checkout scm
                     container('go') {
+                        sh "echo \$(jx-release-version) > pkg/version/VERSION"
                         sh "GITHUB_ACCESS_TOKEN=$GH_CREDS_PSW make release"
                     }
                 }
