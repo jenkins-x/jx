@@ -121,7 +121,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// clone the environments repo
-	wrkDir := filepath.Join(cmdutil.HomeDir(), ".jenkins-x", "cloud-environments")
+	wrkDir := filepath.Join(util.HomeDir(), ".jenkins-x", "cloud-environments")
 	err = options.cloneJXCloudEnvironmentsRepo(wrkDir)
 	if err != nil {
 		return err
@@ -137,7 +137,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// create a temporary file that's used to pass current git creds to helm in order to create a secret for pipelines to tag releases
-	dir, err := cmdutil.ConfigDir()
+	dir, err := util.ConfigDir()
 	if err != nil {
 		return err
 	}

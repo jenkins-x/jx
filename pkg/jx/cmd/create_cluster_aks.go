@@ -69,6 +69,8 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 		},
 	}
 
+	options.addCreateClusterFlags(cmd)
+
 	//cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minikube VM in MB")
 	//cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
 
@@ -78,13 +80,13 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 func (o *CreateClusterAKSOptions) Run() error {
 
 	var deps []string
-	d := getDependenciesToInstall("az")
+	d := binaryShouldBeInstalled("az")
 	if d != "" {
 		deps = append(deps, d)
 	}
 	err := o.installMissingDependencies(deps)
 	if err != nil {
-		log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
+		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
 	}
 

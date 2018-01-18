@@ -80,7 +80,7 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 
 // Run implements the command
 func (o *CreateSpringOptions) Run() error {
-	cacheDir, err := cmdutil.CacheDir()
+	cacheDir, err := util.CacheDir()
 	if err != nil {
 		return err
 	}

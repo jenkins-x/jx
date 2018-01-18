@@ -20,6 +20,7 @@ import (
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
@@ -112,7 +113,7 @@ func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
 
 func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigService, error) {
 	svc := auth.AuthConfigService{}
-	dir, err := ConfigDir()
+	dir, err := util.ConfigDir()
 	if err != nil {
 		return svc, err
 	}
@@ -180,7 +181,7 @@ func createKubeConfig() *string {
 	if kubeconfenv != "" {
 		kubeconfig = &kubeconfenv
 	} else {
-		if home := HomeDir(); home != "" {
+		if home := util.HomeDir(); home != "" {
 			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 		} else {
 			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")

@@ -71,6 +71,8 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 		},
 	}
 
+	options.addCreateClusterFlags(cmd)
+
 	//cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minikube VM in MB")
 	//cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
 
@@ -80,7 +82,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 func (o *CreateClusterGKEOptions) Run() error {
 
 	var deps []string
-	d := getDependenciesToInstall("gcloud")
+	d := binaryShouldBeInstalled("gcloud")
 	if d != "" {
 		deps = append(deps, d)
 	}

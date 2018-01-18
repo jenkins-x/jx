@@ -1,21 +1,19 @@
 package cmd
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"os/exec"
-	"strings"
-
 	"runtime"
-
-	"bytes"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -78,6 +76,8 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 		},
 	}
 
+	options.addCreateClusterFlags(cmd)
+
 	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minikube VM in MB")
 	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [virtualbox xhyve vmwarefusion hyperkit]")
@@ -88,7 +88,7 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 
 func (o *CreateClusterMinikubeOptions) Run() error {
 	var deps []string
-	d := getDependenciesToInstall("minikube")
+	d := binaryShouldBeInstalled("minikube")
 	if d != "" {
 		deps = append(deps, d)
 	}

@@ -88,7 +88,7 @@ func NewCmdCreateArchetype(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 
 // Run implements the generic Create command
 func (o *CreateArchetypeOptions) Run() error {
-	cacheDir, err := cmdutil.CacheDir()
+	cacheDir, err := util.CacheDir()
 	if err != nil {
 		return err
 	}
