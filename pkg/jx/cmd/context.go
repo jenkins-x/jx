@@ -99,7 +99,7 @@ func (o *ContextOptions) Run() error {
 		ctxName = pick
 	}
 	info := util.ColorInfo
-	if ctxName != "" {
+	if ctxName != "" && ctxName != config.CurrentContext {
 		ctx := config.Contexts[ctxName]
 		if ctx == nil {
 			return fmt.Errorf("Could not find kubernetes context %s", ctxName)
