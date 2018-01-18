@@ -157,7 +157,7 @@ func (o *EditEnvOptions) Run() error {
 			return err
 		}
 		if gitProvider == nil {
-			p, err := o.gitProviderForURL(gitURL)
+			p, err := o.gitProviderForURL(gitURL, "user name to create the git repository")
 			if err != nil {
 				return err
 			}

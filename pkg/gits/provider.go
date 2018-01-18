@@ -163,10 +163,10 @@ func PickRepositories(provider GitProvider, owner string, message string, select
 	return answer, err
 }
 
-func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService) (GitProvider, error) {
+func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(i.Host)
-	userAuth, err := config.PickServerUserAuth(server, "git user name")
+	userAuth, err := config.PickServerUserAuth(server, message)
 	if err != nil {
 		return nil, err
 	}
