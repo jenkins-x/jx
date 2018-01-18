@@ -80,7 +80,6 @@ func (o *ContextOptions) Run() error {
 	}
 	sort.Strings(contextNames)
 
-
 	ctxName := ""
 	args := o.Args
 	if len(args) > 0 {

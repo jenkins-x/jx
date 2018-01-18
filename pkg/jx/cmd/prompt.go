@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/fatih/color"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 const (
@@ -99,7 +99,7 @@ func (o *PromptOptions) Run() error {
 
 	// enable color
 	color.NoColor = os.Getenv("TERM") == "dumb"
-	
+
 	label := o.Label
 	separator := o.Separator
 	divider := o.Divider
