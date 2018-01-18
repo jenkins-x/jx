@@ -19,6 +19,9 @@ pipeline {
         }
     
         stage('Build and Release') {
+            environment {
+                GH_CREDS = credentials('jenkins-x-github')
+            }
             when {
                 branch 'master'
             }
@@ -26,7 +29,7 @@ pipeline {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
                     checkout scm
                     container('go') {
-                        //sh "make release"
+                        sh "GITHUB_ACCESS_TOKEN=$GH_CREDS_PSW make release"
                     }
                 }
             }
