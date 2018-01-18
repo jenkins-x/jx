@@ -102,9 +102,9 @@ type ImportOptions struct {
 	Repository   string
 	Credentials  string
 	AppName      string
-	GitHub      bool
-	DryRun      bool
-	SelectAll bool
+	GitHub       bool
+	DryRun       bool
+	SelectAll    bool
 	SelectFilter string
 
 	Jenkins     *gojenkins.Jenkins
@@ -258,7 +258,7 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 	}
 	provider, err := gits.CreateProvider(server, &userAuth)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	username := userAuth.Username
@@ -266,29 +266,29 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 	if org == "" {
 		org, err = gits.PickOrganisation(provider, username)
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 	repos, err := gits.PickRepositories(provider, org, "Which repositories do you want to import", o.SelectAll, o.SelectFilter)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	o.Printf("Selected repositories\n")
 	for _, r := range repos {
 		o2 := ImportOptions{
 			CommonOptions: o.CommonOptions,
-			Dir: o.Dir,
-			RepoURL: r.CloneURL,
-			Organisation: org,
-			Repository: r.Name,
-			Jenkins: o.Jenkins,
-			GitProvider: provider,
+			Dir:           o.Dir,
+			RepoURL:       r.CloneURL,
+			Organisation:  org,
+			Repository:    r.Name,
+			Jenkins:       o.Jenkins,
+			GitProvider:   provider,
 		}
 		o.Printf("Importing repository %s\n", util.ColorInfo(r.Name))
 		err = o2.Run()
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 	return nil
