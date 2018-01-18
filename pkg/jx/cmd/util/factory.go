@@ -2,6 +2,7 @@ package util
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -14,10 +15,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-
-	"fmt"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+
+	// this is so that we load the auth plugins so we can connect to, say, GCP
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 const (
