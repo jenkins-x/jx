@@ -292,11 +292,11 @@ func (o *CreateClusterOptions) installKubectl() error {
 	tmpFile := fullPath + ".tmp"
 	err = o.downloadFile(clientURL, tmpFile)
 	if err != nil {
-	  return err
+		return err
 	}
 	err = os.Rename(tmpFile, fullPath)
 	if err != nil {
-	  return err
+		return err
 	}
 	return os.Chmod(fullPath, 0755)
 }
@@ -489,11 +489,11 @@ func (o *CreateClusterOptions) installMinikube() error {
 	tmpFile := fullPath + ".tmp"
 	err = o.downloadFile(clientURL, tmpFile)
 	if err != nil {
-	  return err
+		return err
 	}
 	err = os.Rename(tmpFile, fullPath)
 	if err != nil {
-	  return err
+		return err
 	}
 	return os.Chmod(fullPath, 0755)
 }
