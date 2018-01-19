@@ -150,6 +150,7 @@ func (o *StartPipelineOptions) startJob(name string, allNames []string) error {
 
 		if last.Number != previous.Number {
 			o.Printf("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
+			o.Printf("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 			if o.Tail {
 				return o.tailBuild(name, &last)
 			}
