@@ -10,7 +10,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,7 +85,7 @@ func (o *LogsOptions) Run() error {
 		if len(names) == 0 {
 			return fmt.Errorf("There are no Deployments running")
 		}
-		n, err := kube.PickName(names, "Pick Deployment:")
+		n, err := util.PickName(names, "Pick Deployment:")
 		if err != nil {
 			return err
 		}
