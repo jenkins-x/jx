@@ -88,7 +88,7 @@ release: check
 
 	go get -u github.com/progrium/gh-release
 	gh-release checksums sha256
-	gh-release create jenkins-x/$(NAME) $(RELEASE_VERSION) $(BRANCH) $(RELEASE_VERSION)
+	gh-release create jenkins-x/$(NAME) $(RELEASE_VERSION) master $(RELEASE_VERSION)
 
 
 clean:
