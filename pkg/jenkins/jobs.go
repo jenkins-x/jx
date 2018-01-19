@@ -71,7 +71,7 @@ func createBranchSource(info *gits.GitRepositoryInfo, credentials string) string
 `
 }
 
-func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, credentials string) string {
+func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, credentials string, jenkinsfile string) string {
 	return `<?xml version='1.0' encoding='UTF-8'?>
 <org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch@2.16">
   <actions/>
@@ -113,7 +113,7 @@ func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, credentials strin
   </sources>
   <factory class="org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory">
 	<owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
-	<scriptPath>Jenkinsfile</scriptPath>
+	<scriptPath>` + jenkinsfile + `</scriptPath>
   </factory>
 </org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject>
 `

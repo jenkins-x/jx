@@ -147,7 +147,7 @@ func (o *CreateEnvOptions) Run() error {
 			}
 			gitProvider = p
 		}
-		return jenkins.ImportProject(o.Out, jenkinClient, gitURL, o.EnvJobCredentials, false, gitProvider, authConfigSvc)
+		return jenkins.ImportProject(o.Out, jenkinClient, gitURL, jenkins.DefaultJenkinsfile, o.EnvJobCredentials, false, gitProvider, authConfigSvc)
 	}
 	return nil
 }
