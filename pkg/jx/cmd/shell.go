@@ -175,7 +175,6 @@ func (o *ShellOptions) PickContext(names []string, defaultValue string) (string,
 }
 
 func (o *ShellOptions) createNewBashPrompt(prompt string) string {
-	o.Printf("Trying to create prompt for: %s\n", prompt)
 	if prompt == "" {
 		return "[\\u@\\h \\W \\$(jx prompt) ]\\$ "
 	}

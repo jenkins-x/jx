@@ -13,7 +13,7 @@ import (
 )
 
 // ImportProject imports a MultiBranchProject into Jeknins for the given git URL
-func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService) error {
+func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, jenkinsfile string, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService) error {
 	if gitURL == "" {
 		return fmt.Errorf("No Git repository URL found!")
 	}
@@ -57,7 +57,7 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, creden
 			fmt.Fprintf(out, "Warning the folder %s is of class %s", org, c)
 		}
 	}
-	projectXml := CreateMultiBranchProjectXml(gitInfo, credentials)
+	projectXml := CreateMultiBranchProjectXml(gitInfo, credentials, jenkinsfile)
 	jobName := gitInfo.Name
 	job, err := jenk.GetJobByPath(org, jobName)
 	if err == nil {

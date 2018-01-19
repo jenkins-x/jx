@@ -180,7 +180,7 @@ func (options *InstallOptions) Run() error {
 	log.Success("\nJenkins X installation completed successfully")
 
 	options.Printf("\nTo import existing projects into Jenkins: %s\n", util.ColorInfo("jx import"))
-	options.Printf("\nTo create a new Spring Boot microservice: %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
+	options.Printf("To create a new Spring Boot microservice: %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	return nil
 }
 
