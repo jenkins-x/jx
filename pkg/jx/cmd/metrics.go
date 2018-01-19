@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/spf13/cobra"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 type MetricsOptions struct {
@@ -76,7 +77,7 @@ func (o *MetricsOptions) Run() error {
 		if len(names) == 0 {
 			return fmt.Errorf("There are no Deployments running")
 		}
-		n, err := kube.PickName(names, "Pick Deployment:")
+		n, err := util.PickName(names, "Pick Deployment:")
 		if err != nil {
 			return err
 		}
