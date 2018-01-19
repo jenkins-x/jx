@@ -17,7 +17,8 @@
 SHELL := /bin/bash
 NAME := jx
 GO := GO15VENDOREXPERIMENT=1 go
-RELEASE_VERSION := $(shell jx-release-version)
+#RELEASE_VERSION := $(shell jx-release-version)
+RELEASE_VERSION := "snapshot"
 #ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')

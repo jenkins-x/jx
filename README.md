@@ -85,6 +85,9 @@ If you have a Maven Archetype you would like to create then use:
 
     jx create archetype
     
+## Starting builds
+
+To start a pipeline using a specific name try
 
 ## Viewing Apps and Environments
 

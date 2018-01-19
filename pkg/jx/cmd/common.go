@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
+	"github.com/jenkins-x/golang-jenkins"
 )
 
 // CommonOptions contains common options and helper methods
@@ -31,6 +32,7 @@ type CommonOptions struct {
 	kubeClient       *kubernetes.Clientset
 	currentNamespace string
 	jxClient         *versioned.Clientset
+	jenkinsClient    *gojenkins.Jenkins
 }
 
 func (c *CommonOptions) CreateTable() table.Table {
@@ -121,6 +123,17 @@ func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
 		}
 	}
 	return o.jxClient, o.currentNamespace, nil
+}
+
+func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
+	if o.jenkinsClient == nil {
+		jenkins, err := o.Factory.GetJenkinsClient()
+		if err != nil {
+			return nil, err
+		}
+		o.jenkinsClient = jenkins
+	}
+	return o.jenkinsClient, nil
 }
 
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
