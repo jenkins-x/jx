@@ -18,7 +18,8 @@ SHELL := /bin/bash
 NAME := jx
 GO := GO15VENDOREXPERIMENT=1 go
 RELEASE_VERSION := $(shell jx-release-version)
-ROOT_PACKAGE := $(shell $(GO) list .)
+#ROOT_PACKAGE := $(shell $(GO) list .)
+ROOT_PACKAGE := github.com/jenkins-x/jx
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 #PACKAGE_DIRS := pkg cmd
 PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/)
@@ -29,11 +30,11 @@ REV        := $(shell git rev-parse --short HEAD 2> /dev/null  || echo 'unknown'
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
 BUILDFLAGS := -ldflags \
-  " -X $(ROOT_PACKAGE)/version.Version=$(RELEASE_VERSION)\
-		-X $(ROOT_PACKAGE)/version.Revision='$(REV)'\
-		-X $(ROOT_PACKAGE)/version.Branch='$(BRANCH)'\
-		-X $(ROOT_PACKAGE)/version.BuildDate='$(BUILD_DATE)'\
-		-X $(ROOT_PACKAGE)/version.GoVersion='$(GO_VERSION)'"
+  " -X $(ROOT_PACKAGE)/pkg/version.Version=$(RELEASE_VERSION)\
+		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
+		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
+		-X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)'\
+		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'"
 CGO_ENABLED = 0
 
 VENDOR_DIR=vendor
