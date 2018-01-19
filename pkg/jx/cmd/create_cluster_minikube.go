@@ -228,7 +228,8 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	installOpts := &InstallOptions{
 		CommonOptions:      o.CommonOptions,
 		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		KubernetesProvider: MINIKUBE, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
+		KubernetesProvider: MINIKUBE,     // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
+		GitProvider:        "github.com", // TODO use the correct gitserver
 	}
 	err = installOpts.Run()
 	if err != nil {
