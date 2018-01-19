@@ -216,7 +216,7 @@ func (o *ImportOptions) Run() error {
 				return err
 			}
 		}
-	} else if o.DisableDotGitSearch {
+	} else if !o.DisableDotGitSearch {
 		err = o.DiscoverGit()
 		if err != nil {
 			return err
