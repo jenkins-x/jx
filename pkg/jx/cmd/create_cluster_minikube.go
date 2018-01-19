@@ -205,7 +205,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		os.Exit(-1)
 	}
 
-	args := []string{"minikube", "start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver}
+	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver}
 	hyperVVirtualSwitch := o.Flags.HyperVVirtualSwitch
 	if hyperVVirtualSwitch != "" {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
