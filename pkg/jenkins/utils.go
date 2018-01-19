@@ -88,7 +88,7 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 
 func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string) (jenkauth.UserAuth, error) {
 	fmt.Printf("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
-	fmt.Printf("Please go to %s and click 'Show API Token' to get your API Token\n", tokenUrl)
+	fmt.Printf("Please go to %s and click %s to get your API Token\n", util.ColorInfo(tokenUrl), util.ColorInfo("Show API Token"))
 	fmt.Printf("Then COPY the API token so that you can paste it into the form below:\n\n")
 
 	defaultUsername := "admin"
