@@ -289,7 +289,12 @@ func (o *CreateClusterOptions) installKubectl() error {
 
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/%s/%s/%s", latestVersion, runtime.GOOS, runtime.GOARCH, fileName)
 	fullPath := filepath.Join(binDir, fileName)
-	err = o.downloadFile(clientURL, fullPath)
+	tmpFile := fullPath + ".tmp"
+	err = o.downloadFile(clientURL, tmpFile)
+	if err != nil {
+	  return err
+	}
+	err = os.Rename(tmpFile, fullPath)
 	if err != nil {
 	  return err
 	}
@@ -481,7 +486,12 @@ func (o *CreateClusterOptions) installMinikube() error {
 	}
 	clientURL := fmt.Sprintf("https://github.com/kubernetes/minikube/releases/download/v%s/minikube-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
-	err = o.downloadFile(clientURL, fullPath)
+	tmpFile := fullPath + ".tmp"
+	err = o.downloadFile(clientURL, tmpFile)
+	if err != nil {
+	  return err
+	}
+	err = os.Rename(tmpFile, fullPath)
 	if err != nil {
 	  return err
 	}
