@@ -4,16 +4,15 @@ import (
 	"io"
 	"os"
 
-	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"time"
-	"github.com/kubernetes/kubernetes/cmd/kubeadm/app/phases/upgrade"
 )
+
+
 
 // CreateClusterOptions the flags for running crest cluster
 type CreateClusterAKSOptions struct {
@@ -28,6 +27,7 @@ type CreateClusterAKSFlags struct {
 	Location			   string
 	NodeCount			   string
 	KubeVersion            string
+	PathToPublicKey        string
 }
 
 var (
@@ -40,6 +40,10 @@ var (
 		ongoing operations and maintenance by provisioning, upgrading, and scaling resources on demand, without taking
 		your applications offline.
 
+		Please use a location local to you: you can retrieve this from the Azure portal or by 
+		running "az provider list" in your terminal.
+
+		Important: You will need an account on azure, with a storage account (https://portal.azure.com/#create/Microsoft.StorageAccount-ARM)
 `)
 
 	createClusterAKSExample = templates.Examples(`
@@ -76,13 +80,15 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			cmdutil.CheckErr(err)
 		},
 	}
-	
+
 	options.addCreateClusterFlags(cmd)
-	cmd.Flags().StringVarP(&options.Flags.Name, "name", "n", "jenkins-x", "Name of the cluster")
+
+	cmd.Flags().StringVarP(&options.Flags.Name, "name", "n", "jenkins-x-cluster", "Name of the cluster")
 	cmd.Flags().StringVarP(&options.Flags.ResourceGroup, "resource group", "g", "jenkins-x", "Name of the resource group")
-	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "eastus", "location to run cluster in")
-	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "n", "1", "node count")
-	cmd.Flags().StringVarP(&options.Flags.KubeVersion, "K8Version", "v", "1.8.1", "kubernetes version")
+	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "West Europe", "location to run cluster in")
+	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "o", "1", "node count")
+	cmd.Flags().StringVarP(&options.Flags.KubeVersion, "K8Version", "v", "1.8.2", "kubernetes version")
+	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "PathToPublicRSAKey", "p", "", "pathToPublicRSAKey")
 
 	return cmd
 }
@@ -151,13 +157,44 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	}
 	survey.AskOne(prompt,&kubeVersion,nil)
 
+	pathToPublicKey := o.Flags.PathToPublicKey
+	prompt = &survey.Input{
+		Message: "PathToPublicKey",
+		Default: "",
+		Help:    "path to public RSA key",
+	}
+	survey.AskOne(prompt,&pathToPublicKey,nil)
 
 
 
+	//First login
 
-	args := []string{" aks create -n", name, "-g", resourceGroup, "--node-count", nodeCount,"--kubernetesVersion",kubeVersion}
+	err := o.runCommand("az", "login")
+	if err != nil{
+		return err
+	}
 
-	err := o.runCommand("az", args...)
+	//create a resource group
+
+
+	createGroup := []string{"group","create", "-l",location,"-n",resourceGroup}
+
+	err = o.runCommand("az",createGroup...)
+
+	if err != nil{
+		return err
+	}
+
+
+	createCluster := []string{"aks", "create", "-g", resourceGroup,"-n", name,"-k",kubeVersion,"--node-count", nodeCount}
+
+	if pathToPublicKey != ""{
+		createCluster = append(createCluster,"--ssh-key-value",pathToPublicKey)
+	}else {
+		createCluster = append(createCluster,"--generate-ssh-keys")
+	}
+
+	err = o.runCommand("az", createCluster...)
 	if err != nil {
 		return err
 	}
@@ -175,7 +212,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	installOpts := &InstallOptions{
 		CommonOptions:      o.CommonOptions,
 		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		KubernetesProvider: MINIKUBE, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
+		KubernetesProvider: AKS, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
 	}
 	err = installOpts.Run()
 	if err != nil {

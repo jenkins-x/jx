@@ -2,27 +2,25 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"github.com/spf13/cobra"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/spf13/cobra"
+	"io"
 )
 
 type MetricsOptions struct {
 	CommonOptions
-
-	Container string
 	Namespace string
 }
 
 var (
-	Metrics_long = templates.LongDesc(`
+	MetricsLong = templates.LongDesc(`
 		Gets the metrics of the newest pod for a Deployment.
 
 `)
 
-	Metrics_example = templates.Examples(`
+	MetricsExample = templates.Examples(`
 		# displays metrics of the latest pod in deployment myapp
 		jx metrics myapp
 
@@ -42,8 +40,8 @@ func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd := &cobra.Command{
 		Use:     "metrics [deployment]",
 		Short:   "Gets the metrics of the latest pod for a deployment",
-		Long:    Metrics_long,
-		Example: Metrics_example,
+		Long:    MetricsLong,
+		Example: MetricsExample,
 		Aliases: []string{"metrics"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
@@ -52,7 +50,7 @@ func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "display metrics for the container")
+
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
 	return cmd
 }
@@ -87,30 +85,24 @@ func (o *MetricsOptions) Run() error {
 		name = args[0]
 	}
 
-	for {
-		pod, err := waitForReadyPodForDeployment(client, ns, name)
-		if err != nil {
-			return err
-		}
-		if pod == "" {
-			return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
-		}
+	pod, err := waitForReadyPodForDeployment(client, ns, name)
 
-		var args = "top pod "
-		args += pod
-		args += " --namespace=" + ns
-
-
-		if o.Container != "" {
-			args += " --containers"
-		}
-
-
-		err = o.runCommand("kubectl", args)
-		if err != nil {
-			return nil
-		}
+	if err != nil {
+		return err
 	}
+
+	if pod == "" {
+		return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
+	}
+
+	namespaceVar := "--namespace="+ns
+
+	args = []string{"top", "pod", pod,namespaceVar}
+
+	err = o.runCommand("kubectl", args...)
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
-
-
