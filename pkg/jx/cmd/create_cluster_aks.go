@@ -44,6 +44,8 @@ var (
 		running "az provider list" in your terminal.
 
 		Important: You will need an account on azure, with a storage account (https://portal.azure.com/#create/Microsoft.StorageAccount-ARM)
+        and network (https://portal.azure.com/#create/Microsoft.VirtualNetwork-ARM) - both linked to the resource group you use
+		to create the cluster in.
 `)
 
 	createClusterAKSExample = templates.Examples(`
