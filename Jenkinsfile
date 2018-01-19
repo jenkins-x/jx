@@ -30,6 +30,9 @@ pipeline {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
                     checkout scm
                     container('go') {
+                        // until kubernetes plugin supports init containers https://github.com/jenkinsci/kubernetes-plugin/pull/229/
+                        sh 'cp /root/netrc/.netrc ~/.netrc'
+
                         sh "GITHUB_ACCESS_TOKEN=$GH_CREDS_PSW make release"
                     }
                 }
