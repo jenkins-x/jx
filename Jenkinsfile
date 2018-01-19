@@ -12,6 +12,7 @@ pipeline {
                     checkout scm
                     container('go') {
                         sh "make"
+                        sh "make test"
                         sh "./build/jx --help"
                     }
                 }
