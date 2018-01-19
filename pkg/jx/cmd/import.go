@@ -108,7 +108,7 @@ type ImportOptions struct {
 	DisableDraft            bool
 	DisableJenkinsfileCheck bool
 	SelectFilter            string
-	Jenkinsfile            string
+	Jenkinsfile             string
 
 	DisableDotGitSearch bool
 	Jenkins             *gojenkins.Jenkins

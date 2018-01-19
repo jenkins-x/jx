@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"net/url"
 	"sort"
@@ -13,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"fmt"
 )
 
 // StartPipelineOptions contains the command line options
@@ -106,7 +106,7 @@ func (o *StartPipelineOptions) Run() error {
 		}
 		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to start: ", defaultName)
 		if err != nil {
-		  return err
+			return err
 		}
 		args = []string{name}
 	}
@@ -184,7 +184,7 @@ func (o *StartPipelineOptions) addJobs(prefix string, jobs []gojenkins.Job) {
 		if j.Jobs != nil {
 			o.addJobs(name, j.Jobs)
 		} else {
-			job, err := jenkins.GetJob(name)                              
+			job, err := jenkins.GetJob(name)
 			if err == nil && job.Jobs != nil {
 				o.addJobs(name, job.Jobs)
 			}
@@ -194,16 +194,16 @@ func (o *StartPipelineOptions) addJobs(prefix string, jobs []gojenkins.Job) {
 func (o *StartPipelineOptions) tailBuild(jobName string, build *gojenkins.Build) error {
 	jenkins, err := o.JenkinsClient()
 	if err != nil {
-		return  nil
+		return nil
 	}
 
 	u, err := url.Parse(build.Url)
 	if err != nil {
-	  return err
+		return err
 	}
 	buildPath := u.Path
 	o.Printf("%s %s\n", util.ColorStatus("Tailing the log of"), util.ColorInfo(fmt.Sprintf("%s #%d", jobName, build.Number)))
-	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour * 100)
+	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour*100)
 }
 
 func IsPipeline(j *gojenkins.Job) bool {

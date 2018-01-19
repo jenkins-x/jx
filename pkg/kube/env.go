@@ -483,7 +483,6 @@ func PickEnvironment(envNames []string, defaultEnv string) (string, error) {
 	return name, nil
 }
 
-
 type ByOrder []v1.Environment
 
 func (a ByOrder) Len() int      { return len(a) }

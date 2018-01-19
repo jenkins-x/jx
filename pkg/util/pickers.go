@@ -26,7 +26,6 @@ func PickName(names []string, message string) (string, error) {
 	return PickNameWithDefault(names, message, "")
 }
 
-
 func PickNames(names []string, message string) ([]string, error) {
 	picked := []string{}
 	if len(names) == 0 {
@@ -45,5 +44,3 @@ func PickNames(names []string, message string) ([]string, error) {
 	}
 	return picked, nil
 }
-
-
