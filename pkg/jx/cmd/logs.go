@@ -3,17 +3,18 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"sort"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"k8s.io/client-go/kubernetes"
+
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 type LogsOptions struct {
@@ -21,6 +22,7 @@ type LogsOptions struct {
 
 	Container string
 	Namespace string
+	Filter    string
 }
 
 var (
@@ -61,6 +63,7 @@ func NewCmdLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	}
 	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Fitlers the available deployments if no deployment argument is provided")
 	return cmd
 }
 
@@ -76,15 +79,19 @@ func (o *LogsOptions) Run() error {
 	if ns == "" {
 		ns = curNs
 	}
+	names, err := kube.GetDeploymentNames(client, ns, o.Filter)
+	if err != nil {
+		return err
+	}
+	if len(names) == 0 {
+		if o.Filter == "" {
+			return fmt.Errorf("There are no Deployments")
+		} else {
+			return fmt.Errorf("There are no Deployments matching filter: " + o.Filter)
+		}
+	}
 	name := ""
 	if len(args) == 0 {
-		names, err := GetDeploymentNames(client, ns)
-		if err != nil {
-			return err
-		}
-		if len(names) == 0 {
-			return fmt.Errorf("There are no Deployments running")
-		}
 		n, err := util.PickName(names, "Pick Deployment:")
 		if err != nil {
 			return err
@@ -92,10 +99,13 @@ func (o *LogsOptions) Run() error {
 		name = n
 	} else {
 		name = args[0]
+		if util.StringArrayIndex(names, name) < 0 {
+			return util.InvalidArg(name, names)
+		}
 	}
 
 	for {
-		pod, err := waitForReadyPodForDeployment(client, ns, name)
+		pod, err := waitForReadyPodForDeployment(client, ns, name, names)
 		if err != nil {
 			return err
 		}
@@ -115,14 +125,10 @@ func (o *LogsOptions) Run() error {
 }
 
 // waitForReadyPodForDeployment waits for a ready pod in a Deployment in the given namespace with the given name
-func waitForReadyPodForDeployment(c *kubernetes.Clientset, ns string, name string) (string, error) {
+func waitForReadyPodForDeployment(c *kubernetes.Clientset, ns string, name string, names []string) (string, error) {
 	deployment, err := c.AppsV1beta2().Deployments(ns).Get(name, metav1.GetOptions{})
 	if err != nil || deployment == nil {
-		names, e2 := GetDeploymentNames(c, ns)
-		if e2 == nil {
-			return "", util.InvalidArg(name, names)
-		}
-		return "", fmt.Errorf("Could not find a Deployment %s in namespace %s due to %v", name, ns, err)
+		return "", util.InvalidArg(name, names)
 	}
 	selector := deployment.Spec.Selector
 	if selector == nil {
@@ -167,18 +173,4 @@ func waitForReadyPodForSelector(c *kubernetes.Clientset, ns string, labels map[s
 		// TODO replace with a watch flavour
 		time.Sleep(time.Second)
 	}
-}
-
-// TODO move to kube/deployments.go when jrawlings merges his stuff install...
-func GetDeploymentNames(client *kubernetes.Clientset, ns string) ([]string, error) {
-	names := []string{}
-	list, err := client.AppsV1beta2().Deployments(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return names, fmt.Errorf("Failed to load Deployments %s", err)
-	}
-	for _, n := range list.Items {
-		names = append(names, n.Name)
-	}
-	sort.Strings(names)
-	return names, nil
 }

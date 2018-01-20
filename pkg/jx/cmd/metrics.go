@@ -6,13 +6,16 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
 
 type MetricsOptions struct {
 	CommonOptions
+
 	Namespace string
+	Filter    string
 }
 
 var (
@@ -53,6 +56,7 @@ func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Fitlers the available deployments if no deployment argument is provided")
 	return cmd
 }
 
@@ -68,12 +72,12 @@ func (o *MetricsOptions) Run() error {
 	if ns == "" {
 		ns = curNs
 	}
+	names, err := kube.GetDeploymentNames(client, ns, o.Filter)
+	if err != nil {
+		return err
+	}
 	name := ""
 	if len(args) == 0 {
-		names, err := GetDeploymentNames(client, ns)
-		if err != nil {
-			return err
-		}
 		if len(names) == 0 {
 			return fmt.Errorf("There are no Deployments running")
 		}
@@ -84,10 +88,12 @@ func (o *MetricsOptions) Run() error {
 		name = n
 	} else {
 		name = args[0]
+		if util.StringArrayIndex(names, name) < 0 {
+			return util.InvalidArg(name, names)
+		}
 	}
 
-	pod, err := waitForReadyPodForDeployment(client, ns, name)
-
+	pod, err := waitForReadyPodForDeployment(client, ns, name, names)
 	if err != nil {
 		return err
 	}

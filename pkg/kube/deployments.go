@@ -2,6 +2,8 @@ package kube
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -11,6 +13,22 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 )
+
+func GetDeploymentNames(client *kubernetes.Clientset, ns string, filter string) ([]string, error) {
+	names := []string{}
+	list, err := client.AppsV1beta2().Deployments(ns).List(meta_v1.ListOptions{})
+	if err != nil {
+		return names, fmt.Errorf("Failed to load Deployments %s", err)
+	}
+	for _, d := range list.Items {
+		name := d.Name
+		if filter == "" || strings.Contains(name, filter) {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names, nil
+}
 
 func IsDeploymentRunning(client *kubernetes.Clientset, name, namespace string) (bool, error) {
 	options := meta_v1.GetOptions{}

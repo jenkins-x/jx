@@ -64,8 +64,13 @@ To tail the logs of anything running on kubernetes (jenkins or your own applicat
 
     jx logs
     
-Which by default tails the logs of the newest pod for an app.
+Which prompts you for the deployment to log then tails the logs of the newest pod for an app.
 
+You can filter the list of deployments via:
+
+    jx logs -f cheese
+
+Then if there's only one deployment with a name that contains `cheese` then it'll tail the logs of the latest pod or will prompt you to choose the exact deployment to use.
 
 ## Importing or Creating apps
 
