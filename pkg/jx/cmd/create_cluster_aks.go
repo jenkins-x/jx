@@ -4,15 +4,12 @@ import (
 	"io"
 	"os"
 
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
-
-
 
 // CreateClusterOptions the flags for running crest cluster
 type CreateClusterAKSOptions struct {
@@ -22,12 +19,12 @@ type CreateClusterAKSOptions struct {
 }
 
 type CreateClusterAKSFlags struct {
-	Name              	   string
-	ResourceGroup		   string
-	Location			   string
-	NodeCount			   string
-	KubeVersion            string
-	PathToPublicKey        string
+	Name            string
+	ResourceGroup   string
+	Location        string
+	NodeCount       string
+	KubeVersion     string
+	PathToPublicKey string
 }
 
 var (
@@ -149,7 +146,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		Default: nodeCount,
 		Help:    "number of nodes",
 	}
-	survey.AskOne(prompt,&nodeCount,nil)
+	survey.AskOne(prompt, &nodeCount, nil)
 
 	kubeVersion := o.Flags.KubeVersion
 	prompt = &survey.Input{
@@ -157,7 +154,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		Default: kubeVersion,
 		Help:    "k8 version",
 	}
-	survey.AskOne(prompt,&kubeVersion,nil)
+	survey.AskOne(prompt, &kubeVersion, nil)
 
 	pathToPublicKey := o.Flags.PathToPublicKey
 	prompt = &survey.Input{
@@ -165,35 +162,31 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		Default: "",
 		Help:    "path to public RSA key",
 	}
-	survey.AskOne(prompt,&pathToPublicKey,nil)
-
-
+	survey.AskOne(prompt, &pathToPublicKey, nil)
 
 	//First login
 
 	err := o.runCommand("az", "login")
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	//create a resource group
 
+	createGroup := []string{"group", "create", "-l", location, "-n", resourceGroup}
 
-	createGroup := []string{"group","create", "-l",location,"-n",resourceGroup}
+	err = o.runCommand("az", createGroup...)
 
-	err = o.runCommand("az",createGroup...)
-
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
+	createCluster := []string{"aks", "create", "-g", resourceGroup, "-n", name, "-k", kubeVersion, "--node-count", nodeCount}
 
-	createCluster := []string{"aks", "create", "-g", resourceGroup,"-n", name,"-k",kubeVersion,"--node-count", nodeCount}
-
-	if pathToPublicKey != ""{
-		createCluster = append(createCluster,"--ssh-key-value",pathToPublicKey)
-	}else {
-		createCluster = append(createCluster,"--generate-ssh-keys")
+	if pathToPublicKey != "" {
+		createCluster = append(createCluster, "--ssh-key-value", pathToPublicKey)
+	} else {
+		createCluster = append(createCluster, "--generate-ssh-keys")
 	}
 
 	err = o.runCommand("az", createCluster...)

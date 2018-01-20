@@ -12,15 +12,15 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/util"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // StartPipelineOptions contains the command line options
 type StartPipelineOptions struct {
 	GetOptions
 
-	Tail bool
+	Tail   bool
 	Filter string
 
 	Jobs map[string]*gojenkins.Job

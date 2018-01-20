@@ -5,9 +5,9 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 type MetricsOptions struct {
@@ -96,9 +96,9 @@ func (o *MetricsOptions) Run() error {
 		return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
 	}
 
-	namespaceVar := "--namespace="+ns
+	namespaceVar := "--namespace=" + ns
 
-	args = []string{"top", "pod", pod,namespaceVar}
+	args = []string{"top", "pod", pod, namespaceVar}
 
 	err = o.runCommand("kubectl", args...)
 	if err != nil {
