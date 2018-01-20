@@ -4,6 +4,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"fmt"
+	"strings"
+	"sort"
 )
 
 const (
@@ -13,6 +16,22 @@ const (
 type ServiceURL struct {
 	Name string
 	URL  string
+}
+
+func GetServiceNames(client *kubernetes.Clientset, ns string, filter string) ([]string, error) {
+	names := []string{}
+	list, err := client.CoreV1().Services(ns).List(meta_v1.ListOptions{})
+	if err != nil {
+		return names, fmt.Errorf("Failed to load Services %s", err)
+	}
+	for _, r := range list.Items {
+		name := r.Name
+		if filter == "" || strings.Contains(name, filter) {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names, nil
 }
 
 func FindServiceURL(client *kubernetes.Clientset, namespace string, name string) (string, error) {
