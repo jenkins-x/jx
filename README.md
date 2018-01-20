@@ -37,6 +37,12 @@ If you don't have access to a kubernetes cluster then using [minikube](https://g
 
 If that does not work first time for you then please [let us know](https://github.com/jenkins-x/jx/issues/new). The [troubleshooting section](#troubleshooting) may help, othwerise a work around is to try [install minikube yourself](https://github.com/kubernetes/minikube#installation) and [start it up](https://github.com/kubernetes/minikube#quickstart) then use `jx install` as described below.
 
+
+This is an example of installing jx and creating a local cluster:
+
+<a href="https://asciinema.org/a/klBiPGxRCl5tetdC2YAwuTIVn" target="_blank"><img src="https://asciinema.org/a/klBiPGxRCl5tetdC2YAwuTIVn.png" /></a>
+
+
 ### Using an existing kubernetes cluster
 
 If you already have a kubernetes cluster setup then try:
