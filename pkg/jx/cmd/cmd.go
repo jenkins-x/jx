@@ -70,7 +70,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	cmds.AddCommand(NewCmdShell(f, out, err))
 	cmds.AddCommand(NewCmdStart(f, out, err))
 	cmds.AddCommand(NewCmdUninstall(f, out, err))
-	cmds.AddCommand(NewCmdMetrics(f,out,err))
+	cmds.AddCommand(NewCmdMetrics(f, out, err))
 
 	return cmds
 }

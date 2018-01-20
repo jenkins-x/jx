@@ -12,15 +12,16 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/util"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // StartPipelineOptions contains the command line options
 type StartPipelineOptions struct {
 	GetOptions
 
-	Tail bool
+	Tail   bool
+	Filter string
 
 	Jobs map[string]*gojenkins.Job
 }
@@ -38,8 +39,8 @@ var (
 		# Select the pipeline to start
 		jx start pipeline
 
-		# Select the pipeline to start and follow the log (tail it)
-		jx start pipeline -f
+		# Select the pipeline to start and tail the log
+		jx start pipeline -t
 	`)
 )
 
@@ -69,7 +70,8 @@ func NewCmdStartPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Tail, "follow", "f", false, "If enable lets tail the build log")
+	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", false, "Tails the build log to the current terminal")
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Fitlers all the available jobs by those that contain the given text")
 
 	return cmd
 }
@@ -93,8 +95,6 @@ func (o *StartPipelineOptions) Run() error {
 		names = append(names, k)
 	}
 	sort.Strings(names)
-
-	o.Printf("Found jobs %s\n", strings.Join(names, ", "))
 
 	if len(args) == 0 {
 		defaultName := ""
@@ -180,7 +180,9 @@ func (o *StartPipelineOptions) addJobs(prefix string, jobs []gojenkins.Job) {
 		name := jobName(prefix, &j)
 
 		if IsPipeline(&j) {
-			o.Jobs[name] = &j
+			if o.Filter == "" || strings.Contains(name, o.Filter) {
+				o.Jobs[name] = &j
+			}
 		}
 		if j.Jobs != nil {
 			o.addJobs(name, j.Jobs)
@@ -203,7 +205,7 @@ func (o *StartPipelineOptions) tailBuild(jobName string, build *gojenkins.Build)
 		return err
 	}
 	buildPath := u.Path
-	o.Printf("%s %s\n", util.ColorStatus("Tailing the log of"), util.ColorInfo(fmt.Sprintf("%s #%d", jobName, build.Number)))
+	o.Printf("%s %s\n", util.ColorStatus("tailing the log of"), util.ColorInfo(fmt.Sprintf("%s #%d", jobName, build.Number)))
 	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour*100)
 }
 
