@@ -91,13 +91,17 @@ To start a pipeline using a specific name try
 
     jx start pipeline myorg/myrepo
 
-Or to pick the pipeine to start:
+Or to pick the pipeline to start:
 
     jx start pipeline
 
+If you know part of the name of the pipeline to run you can filter the list via:
+
+    jx start pipeline -f thingy
+
 You can start and tail the build log via:
 		
-    jx start pipeline -f
+    jx start pipeline -t
 
 ## Viewing Apps and Environments
 
