@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"github.com/spf13/cobra"
+	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"strings"
 )
 

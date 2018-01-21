@@ -10,8 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	"strings"
 	"sort"
+	"strings"
 )
 
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
@@ -74,7 +74,6 @@ func WaitForPodToBeReady(client *kubernetes.Clientset, selector labels.Selector,
 	return nil
 }
 
-
 func GetReadyPodNames(client *kubernetes.Clientset, ns string, filter string) ([]string, error) {
 	names := []string{}
 	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{})
@@ -83,14 +82,13 @@ func GetReadyPodNames(client *kubernetes.Clientset, ns string, filter string) ([
 	}
 	for _, p := range list.Items {
 		name := p.Name
-		if (filter == "" || strings.Contains(name, filter) && IsPodReady(&p)) {
+		if filter == "" || strings.Contains(name, filter) && IsPodReady(&p) {
 			names = append(names, name)
 		}
 	}
 	sort.Strings(names)
 	return names, nil
 }
-
 
 func GetPodNames(client *kubernetes.Clientset, ns string, filter string) ([]string, error) {
 	names := []string{}
