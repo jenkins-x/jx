@@ -78,6 +78,20 @@ You can filter the list of deployments via:
 
 Then if there's only one deployment with a name that contains `cheese` then it'll tail the logs of the latest pod or will prompt you to choose the exact deployment to use.
 
+## Remote shells
+
+You can open a remote shell inside any pods container via the `rsh` command
+
+    jx rsh
+    
+Or to open a shell inside a pod named foo
+
+    jx rsh foo
+
+Pass `-c` to specify the container name. e.g. to open a shell in a maven build pod
+
+    jx rsh -c maven maven
+
 ## Importing or Creating apps
 
 To import an application from the current directory:
