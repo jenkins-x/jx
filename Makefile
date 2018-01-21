@@ -72,7 +72,7 @@ vendoring:
 
 release: check
 	export RELEASE_VERSION="$(shell jx-release-version)"
-	export RELEASE_BUILDFLAGS="-ldflags \"-X $(ROOT_PACKAGE)/pkg/version.Version=$(RELEASE_VERSION) -X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)' -X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)' -X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)' -X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'\""
+	export RELEASE_BUILDFLAGS="-ldflags \"-X $(ROOT_PACKAGE)/pkg/version.Version=${RELEASE_VERSION} -X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)' -X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)' -X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)' -X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'\""
 
 	rm -rf build release && mkdir build release
 	for os in linux darwin ; do \
@@ -91,7 +91,7 @@ release: check
 
 	go get -u github.com/progrium/gh-release
 	gh-release checksums sha256
-	gh-release create jenkins-x/$(NAME) $(RELEASE_VERSION) master $(RELEASE_VERSION)
+	gh-release create jenkins-x/$(NAME) ${RELEASE_VERSION} master ${RELEASE_VERSION}
 
 
 clean:
