@@ -70,8 +70,8 @@ vendoring:
 	$(GO) get -u github.com/Masterminds/glide
 	GO15VENDOREXPERIMENT=1 glide update --strip-vendor
 
-release: build
-	export RELEASE_VERSION=$(shell jx-release-version)
+release: check
+	export RELEASE_VERSION="$(shell jx-release-version)"
 	export RELEASE_BUILDFLAGS="-ldflags \"-X $(ROOT_PACKAGE)/pkg/version.Version=$(RELEASE_VERSION) -X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)' -X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)' -X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)' -X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'\""
 
 	rm -rf build release && mkdir build release
