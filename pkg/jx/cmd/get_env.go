@@ -10,11 +10,15 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"strings"
 )
 
 // GetEnvOptions containers the CLI options
 type GetEnvOptions struct {
-	CommonOptions
+	GetOptions
+
+	PromotionStrategy string
 }
 
 var (
@@ -34,10 +38,12 @@ var (
 // NewCmdGetEnv creates the new command for: jx get env
 func NewCmdGetEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetEnvOptions{
-		CommonOptions{
-			Factory: f,
-			Out:     out,
-			Err:     errOut,
+		GetOptions: GetOptions{
+			CommonOptions: CommonOptions{
+				Factory: f,
+				Out:     out,
+				Err:     errOut,
+			},
 		},
 	}
 	cmd := &cobra.Command{
@@ -53,6 +59,11 @@ func NewCmdGetEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			cmdutil.CheckErr(err)
 		},
 	}
+
+	options.addGetFlags(cmd)
+
+	cmd.Flags().StringVarP(&options.PromotionStrategy, "promote", "p", "", "Filters the environments by promotion strategy. Possible values: "+strings.Join(v1.PromotionStrategyTypeValues, ", "))
+
 	return cmd
 }
 
@@ -75,7 +86,11 @@ func (o *GetEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kube.RegisterEnvironmentCRD(apisClient)
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	if err != nil {
+		return err
+	}
+
 	args := o.Args
 	if len(args) > 0 {
 		e := args[0]
@@ -125,9 +140,13 @@ func (o *GetEnvOptions) Run() error {
 			return nil
 		}
 
-		environments := envs.Items
+		environments := o.filterEnvironments(envs.Items)
 		kube.SortEnvironments(environments)
 
+		if o.Output != "" {
+			envs.Items = environments
+			return o.renderResult(envs, o.Output)
+		}
 		table := o.CreateTable()
 		table.AddRow("NAME", "LABEL", "PROMOTE", "NAMESPACE", "ORDER", "CLUSTER", "SOURCE", "REF")
 
@@ -140,6 +159,19 @@ func (o *GetEnvOptions) Run() error {
 	return nil
 }
 
-func formatInt32(n int32) string {
-	return util.Int32ToA(n)
+func (o *GetEnvOptions) filterEnvironments(envs []v1.Environment) []v1.Environment {
+	answer := []v1.Environment{}
+	for _, e := range envs {
+		if o.matchesFilter(&e) {
+			answer = append(answer, e)
+		}
+	}
+	return answer
+}
+
+func (o *GetEnvOptions) matchesFilter(env *v1.Environment) bool {
+	if o.PromotionStrategy == "" {
+		return true
+	}
+	return env.Spec.PromotionStrategy == v1.PromotionStrategyType(o.PromotionStrategy)
 }

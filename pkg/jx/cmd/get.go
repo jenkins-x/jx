@@ -8,12 +8,17 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/ghodss/yaml"
+	"encoding/json"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GetOptions struct {
 	CommonOptions
+
+	Output string
 }
 
 var (
@@ -37,7 +42,7 @@ var (
 // retrieves one or more resources from a server.
 func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetOptions{
-		CommonOptions{
+		CommonOptions: CommonOptions{
 			Factory: f,
 			Out:     out,
 			Err:     errOut,
@@ -74,4 +79,35 @@ func (o *GetOptions) Run() error {
 func outputEmptyListWarning(out io.Writer) error {
 	_, err := fmt.Fprintf(out, "%s\n", "No resources found.")
 	return err
+}
+
+func (o *GetOptions) addGetFlags(cmd *cobra.Command) {
+	o.Cmd = cmd
+	cmd.Flags().StringVarP(&o.Output, "output", "o", "", "The output format such as 'yaml'")
+}
+
+// renderResult renders the result in a given output format
+func (o *GetOptions) renderResult(value interface{}, format string) error {
+	switch format {
+	case "json":
+		data, err := json.Marshal(value)
+		if err != nil {
+			return err
+		}
+		_, e := o.Out.Write(data)
+		return e
+	case "yaml":
+		data, err := yaml.Marshal(value)
+		if err != nil {
+			return err
+		}
+		_, e := o.Out.Write(data)
+		return e
+	default:
+		return fmt.Errorf("Unsupported output format: %s", format)
+	}
+}
+
+func formatInt32(n int32) string {
+	return util.Int32ToA(n)
 }
