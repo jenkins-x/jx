@@ -6,11 +6,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"encoding/json"
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/ghodss/yaml"
-	"encoding/json"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
