@@ -17,7 +17,7 @@
 SHELL := /bin/bash
 NAME := jx
 GO := GO15VENDOREXPERIMENT=1 go
-RELEASE_VERSION := $(shell jx-release-version)
+VERSION := $(shell cat pkg/version/VERSION)
 #ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
@@ -30,7 +30,7 @@ REV        := $(shell git rev-parse --short HEAD 2> /dev/null  || echo 'unknown'
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
 BUILDFLAGS := -ldflags \
-  " -X $(ROOT_PACKAGE)/pkg/version.Version=$(RELEASE_VERSION)\
+  " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
 		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
 		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
 		-X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)'\
@@ -88,7 +88,7 @@ release: check
 
 	go get -u github.com/progrium/gh-release
 	gh-release checksums sha256
-	gh-release create jenkins-x/$(NAME) $(RELEASE_VERSION) master $(RELEASE_VERSION)
+	gh-release create jenkins-x/$(NAME) $(VERSION) master $(VERSION)
 
 
 clean:
