@@ -56,6 +56,7 @@ func NewCmdGetPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 		},
 	}
 
+	options.addGetFlags(cmd)
 	return cmd
 }
 
@@ -72,6 +73,10 @@ func (o *GetPipelineOptions) Run() error {
 	}
 	if len(jobs) == 0 {
 		return outputEmptyListWarning(o.Out)
+	}
+
+	if o.Output != "" {
+		return o.renderResult(jobs, o.Output)
 	}
 
 	table := o.CreateTable()
