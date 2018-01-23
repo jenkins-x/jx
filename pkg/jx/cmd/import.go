@@ -15,10 +15,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
@@ -343,7 +343,7 @@ func (o *ImportOptions) DraftCreate() error {
 	newChartsDir := filepath.Join(dir, "charts", o.AppName)
 	exists, err = util.FileExists(oldChartsDir)
 	if err != nil {
-	  return err
+		return err
 	}
 	if exists {
 		os.Rename(oldChartsDir, newChartsDir)
@@ -579,9 +579,9 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 	if len(remotes) == 0 {
 		return nil
 	}
-	url := getRemoteUrl(cfg, "origin")
+	url := gits.GetRemoteUrl(cfg, "origin")
 	if url == "" {
-		url = getRemoteUrl(cfg, "upstream")
+		url = gits.GetRemoteUrl(cfg, "upstream")
 		if url == "" {
 			url, err = o.pickRemoteURL(cfg)
 			if err != nil {
@@ -680,20 +680,4 @@ func (o *ImportOptions) addAppNameToGeneratedFile(filename, field, value string)
 		return err
 	}
 	return nil
-}
-
-func firstRemoteUrl(remote *gitcfg.RemoteConfig) string {
-	if remote != nil {
-		urls := remote.URLs
-		if urls != nil && len(urls) > 0 {
-			return urls[0]
-		}
-	}
-	return ""
-}
-func getRemoteUrl(config *gitcfg.Config, name string) string {
-	if config.Remotes != nil {
-		return firstRemoteUrl(config.Remotes[name])
-	}
-	return ""
 }

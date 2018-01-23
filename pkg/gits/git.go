@@ -1,16 +1,19 @@
 package gits
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
-	"bytes"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
-	"net/url"
-	"strings"
+
+	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
 const (
@@ -218,4 +221,46 @@ func SetRemoteURL(dir string, name string, gitURL string) error {
 		}
 	}
 	return nil
+}
+
+
+func DiscoverRemoteGitURL(gitConf string) (string, error) {
+	if gitConf == "" {
+		return "", fmt.Errorf("No GitConfDir defined!")
+	}
+	cfg := gitcfg.NewConfig()
+	data, err := ioutil.ReadFile(gitConf)
+	if err != nil {
+		return "", fmt.Errorf("Failed to load %s due to %s", gitConf, err)
+	}
+
+	err = cfg.Unmarshal(data)
+	if err != nil {
+		return "", fmt.Errorf("Failed to unmarshal %s due to %s", gitConf, err)
+	}
+	remotes := cfg.Remotes
+	if len(remotes) == 0 {
+		return "", nil
+	}
+	url := GetRemoteUrl(cfg, "origin")
+	if url == "" {
+		url = GetRemoteUrl(cfg, "upstream")
+	}
+	return url, nil
+}
+
+func firstRemoteUrl(remote *gitcfg.RemoteConfig) string {
+	if remote != nil {
+		urls := remote.URLs
+		if urls != nil && len(urls) > 0 {
+			return urls[0]
+		}
+	}
+	return ""
+}
+func GetRemoteUrl(config *gitcfg.Config, name string) string {
+	if config.Remotes != nil {
+		return firstRemoteUrl(config.Remotes[name])
+	}
+	return ""
 }
