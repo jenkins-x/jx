@@ -436,7 +436,8 @@ func GetEnvironments(jxClient *versioned.Clientset, ns string) (map[string]*v1.E
 	}
 	for _, env := range envs.Items {
 		n := env.Name
-		m[n] = &env
+		copy := env
+		m[n] = &copy
 		if n != "" {
 			envNames = append(envNames, n)
 		}

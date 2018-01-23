@@ -3,18 +3,19 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"os"
-	"path/filepath"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -33,6 +34,7 @@ type PromoteOptions struct {
 	HelmRepositoryURL string
 	Preview           bool
 	NoHelmUpdate      bool
+	AllAutomatic      bool
 }
 
 var (
@@ -75,25 +77,80 @@ func NewCmdPromote(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
 	cmd.Flags().BoolVarP(&options.Preview, "preview", "p", false, "Whether to create a new Preview environment for the app")
 	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
+	cmd.Flags().BoolVarP(&options.AllAutomatic, "all-auto", "", false, "Promote to all automatic environments in order")
 
 	return cmd
 }
 
 // Run implements this command
 func (o *PromoteOptions) Run() error {
-	targetNS, env, err := o.GetTargetNamespace(o.Namespace, o.Environment)
-	if err != nil {
-		return err
-	}
 	app := o.Application
 	if app == "" {
 		args := o.Args
 		if len(args) == 0 {
-			return fmt.Errorf("Missing application argument")
+			var err error
+			app, err = o.discoverAppName()
+			if err != nil {
+				return err
+			}
+		} else {
+			app = args[0]
 		}
-		app = args[0]
 	}
 	o.Application = app
+
+	if o.AllAutomatic {
+		return o.PromoteAllAutomatic()
+
+	}
+	targetNS, env, err := o.GetTargetNamespace(o.Namespace, o.Environment)
+	if err != nil {
+		return err
+	}
+	return o.Promote(targetNS, env, true)
+}
+
+func (o *PromoteOptions) PromoteAllAutomatic() error {
+	kubeClient, currentNs, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	team, _, err := kube.GetDevNamespace(kubeClient, currentNs)
+	if err != nil {
+		return err
+	}
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return err
+	}
+	envs, err := jxClient.JenkinsV1().Environments(team).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	environments := envs.Items
+	if len(environments) == 0 {
+		return fmt.Errorf("No Environments have been created yet in team %s. Please create some via 'jx create env'", team)
+	}
+	kube.SortEnvironments(environments)
+
+	for _, env := range environments {
+		if env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic {
+			ns := env.Spec.Namespace
+			err = o.Promote(ns, &env, false)
+			if err != nil {
+				return err
+			}
+			err = o.WaitForPromotion(ns, &env)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAuto bool) error {
+	app := o.Application
 	version := o.Version
 	info := util.ColorInfo
 	if version == "" {
@@ -102,7 +159,7 @@ func (o *PromoteOptions) Run() error {
 		o.Printf("Promoting app %s version %s to namespace %s\n", info(app), info(version), info(targetNS))
 	}
 
-	if env != nil && env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic {
+	if warnIfAuto && env != nil && env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic {
 		o.Printf("%s", util.ColorWarning("WARNING: The Environment %s is setup to promote automatically as part of the CI / CD Pipelines.\n\n", env.Name))
 
 		confirm := &survey.Confirm{
@@ -131,16 +188,17 @@ func (o *PromoteOptions) Run() error {
 
 	// lets do a helm update to ensure we can find the latest version
 	if !o.NoHelmUpdate {
-		o.Printf("Updading the helm repositories to ensure we can find the latest versions...")
-		err = o.runCommand("helm", "repo", "update")
+		o.Printf("Updating the helm repositories to ensure we can find the latest versions...")
+		err := o.runCommand("helm", "repo", "update")
 		if err != nil {
 			return err
 		}
 	}
+	releaseName := targetNS + "-" + app
 	if version != "" {
-		return o.runCommand("helm", "install", "--namespace", targetNS, "--version", version, fullAppName)
+		return o.runCommand("helm", "upgrade", "--install", "--namespace", targetNS, "--version", version, releaseName, fullAppName)
 	}
-	return o.runCommand("helm", "install", "--namespace", targetNS, fullAppName)
+	return o.runCommand("helm", "upgrade", "--install", "--namespace", targetNS, releaseName, fullAppName)
 }
 
 func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
@@ -315,16 +373,17 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 		return "", nil, err
 	}
 
+	m, envNames, err := kube.GetEnvironments(jxClient, team)
+	if err != nil {
+		return "", nil, err
+	}
+	if len(envNames) == 0 {
+		return "", nil, fmt.Errorf("No Environments have been created yet in team %s. Please create some via 'jx create env'", team)
+	}
+
 	var envResource *v1.Environment
 	targetNS := currentNs
 	if env != "" {
-		m, envNames, err := kube.GetEnvironments(jxClient, team)
-		if err != nil {
-			return "", nil, err
-		}
-		if len(envNames) == 0 {
-			return "", nil, fmt.Errorf("No Environments have been created yet in team %s. Please create some via 'jx create env'", team)
-		}
 		envResource = m[env]
 		if envResource == nil {
 			return "", nil, util.InvalidOption(optionEnvironment, env, envNames)
@@ -344,4 +403,34 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 		return "", nil, err
 	}
 	return targetNS, envResource, nil
+}
+
+func (options *PromoteOptions) discoverAppName() (string, error) {
+	answer := ""
+	dir, err := os.Getwd()
+	if err != nil {
+		return answer, err
+	}
+
+	root, gitConf, err := gits.FindGitConfigDir(dir)
+	if err != nil {
+		return answer, err
+	}
+	if root != "" {
+		url, err := gits.DiscoverRemoteGitURL(gitConf)
+		if err != nil {
+			return answer, err
+		}
+		gitInfo, err := gits.ParseGitURL(url)
+		if err != nil {
+			return answer, err
+		}
+		answer = gitInfo.Name
+	}
+	return answer, nil
+}
+
+func (options *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment) error {
+	// TODO
+	return nil
 }
