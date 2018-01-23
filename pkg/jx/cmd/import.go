@@ -216,7 +216,7 @@ func (o *ImportOptions) Run() error {
 				return err
 			}
 		}
-	} else if !o.DisableDotGitSearch {
+	} else {
 		err = o.DiscoverGit()
 		if err != nil {
 			return err
@@ -349,19 +349,19 @@ func (o *ImportOptions) DraftCreate() error {
 	os.Rename(oldChartsDir, newChartsDir)
 
 	// now update the chart.yaml
-	err = o.addAppNameToGeneretedFile("Chart.yaml", "name: ", o.AppName)
+	err = o.addAppNameToGeneratedFile("Chart.yaml", "name: ", o.AppName)
 	if err != nil {
 		return err
 	}
 
 	// now update the makefile
-	err = o.addAppNameToGeneretedFile("Makefile", "NAME := ", o.AppName)
+	err = o.addAppNameToGeneratedFile("Makefile", "NAME := ", o.AppName)
 	if err != nil {
 		return err
 	}
 
 	// now update the helm values which contains the image name
-	err = o.addAppNameToGeneretedFile("values.yaml", "  repository: ", fmt.Sprintf("%s/%s", "jenkinsx", o.AppName))
+	err = o.addAppNameToGeneratedFile("values.yaml", "  repository: ", fmt.Sprintf("%s/%s", "jenkinsx", o.AppName))
 	if err != nil {
 		return err
 	}
@@ -469,14 +469,16 @@ func (o *ImportOptions) CloneRepository() error {
 
 // DiscoverGit checks if there is a git clone or prompts the user to import it
 func (o *ImportOptions) DiscoverGit() error {
-	root, gitConf, err := gits.FindGitConfigDir(o.Dir)
-	if err != nil {
-		return err
-	}
-	if root != "" {
-		o.Dir = root
-		o.GitConfDir = gitConf
-		return nil
+	if !o.DisableDotGitSearch {
+		root, gitConf, err := gits.FindGitConfigDir(o.Dir)
+		if err != nil {
+			return err
+		}
+		if root != "" {
+			o.Dir = root
+			o.GitConfDir = gitConf
+			return nil
+		}
 	}
 
 	dir := o.Dir
@@ -491,7 +493,7 @@ func (o *ImportOptions) DiscoverGit() error {
 		Message: "Would you like to initialise git now?",
 		Default: true,
 	}
-	err = survey.AskOne(prompt, &flag, nil)
+	err := survey.AskOne(prompt, &flag, nil)
 	if err != nil {
 		return err
 	}
@@ -648,13 +650,8 @@ func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 	}
 	return url, nil
 }
-func (o *ImportOptions) addAppNameToGeneretedFile(filename, field, value string) error {
-	pwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	dir := filepath.Join(pwd, "charts", o.AppName)
+func (o *ImportOptions) addAppNameToGeneratedFile(filename, field, value string) error {
+	dir := filepath.Join(o.Dir, "charts", o.AppName)
 	file := filepath.Join(dir, filename)
 	exists, err := util.FileExists(file)
 	if err != nil {

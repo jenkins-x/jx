@@ -12,11 +12,18 @@ import (
 	"strings"
 )
 
+const (
+	DefaultShell = "/bin/sh"
+)
+
 type RshOptions struct {
 	CommonOptions
 
-	Container string
-	Namespace string
+	Container  string
+	Namespace  string
+	Executable string
+
+	stopCh chan struct{}
 }
 
 var (
@@ -57,6 +64,7 @@ func NewCmdRsh(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	}
 	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
+	cmd.Flags().StringVarP(&options.Executable, "shell", "s", DefaultShell, "Path to the shell command")
 	return cmd
 }
 
@@ -114,21 +122,15 @@ func (o *RshOptions) Run() error {
 		return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
 	}
 
-	for {
-		a := []string{"exec", "-it", "-n", ns}
-		if o.Container != "" {
-			a = append(a, "-c", o.Container)
-		}
-		a = append(a, name)
-		if len(args) > 1 {
-			a = append(a, "--")
-			a = append(a, args[1:]...)
-		} else {
-			a = append(a, "bash")
-		}
-		err = o.runCommandInteractive(true, "kubectl", a...)
-		if err != nil {
-			return nil
-		}
+	a := []string{"exec", "-it", "-n", ns}
+	if o.Container != "" {
+		a = append(a, "-c", o.Container)
 	}
+	a = append(a, name)
+	if len(args) > 1 {
+		a = append(a, args[1:]...)
+	} else {
+		a = append(a, o.Executable)
+	}
+	return o.runCommandInteractive(true, "kubectl", a...)
 }

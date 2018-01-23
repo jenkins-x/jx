@@ -55,6 +55,13 @@ const (
 	PromotionStrategyTypeNever PromotionStrategyType = "Never"
 )
 
+// PromotionStrategyTypeValues is the list of all values
+var PromotionStrategyTypeValues = []string{
+	string(PromotionStrategyTypeAutomatic),
+	string(PromotionStrategyTypeManual),
+	string(PromotionStrategyTypeNever),
+}
+
 // Environment Repository Type string
 type EnvironmentRepositoryType string
 
