@@ -339,14 +339,15 @@ func (o *ImportOptions) DraftCreate() error {
 		//return fmt.Errorf("Failed to run draft create in %s due to %s", dir, err)
 	}
 	// chart expects folder name to be the same as app name
-	pwd, err := os.Getwd()
+	oldChartsDir := filepath.Join(dir, "charts", "java")
+	newChartsDir := filepath.Join(dir, "charts", o.AppName)
+	exists, err = util.FileExists(oldChartsDir)
 	if err != nil {
-		return err
+	  return err
 	}
-
-	oldChartsDir := filepath.Join(pwd, "charts", "java")
-	newChartsDir := filepath.Join(pwd, "charts", o.AppName)
-	os.Rename(oldChartsDir, newChartsDir)
+	if exists {
+		os.Rename(oldChartsDir, newChartsDir)
+	}
 
 	// now update the chart.yaml
 	err = o.addAppNameToGeneratedFile("Chart.yaml", "name: ", o.AppName)
