@@ -1,5 +1,5 @@
-hash: ecee2fd0091a30288008c9c025aed46c801a7a7a2910d6eac85a156cdd694590
-updated: 2018-01-18T19:37:59.804999Z
+hash: 851ad1c234d7e889a50f5234942e0197c9d96aba619bbdcb46caa1b40889bd1f
+updated: 2018-01-24T06:32:42.669125+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -55,7 +55,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-github
-  version: 922ceac0585d40f97d283d921f872fc50480e06e
+  version: b1f138353a6287df5156971b3963e9107eca06a1
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -123,6 +123,8 @@ imports:
   version: 9520e82c474b0a04dd04f8a40959027271bab992
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
+- name: github.com/pborman/uuid
+  version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pelletier/go-buffruneio
   version: c37440a7cf42ac63b919c752ca73a85067e05992
 - name: github.com/peterbourgon/diskv
@@ -312,7 +314,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 0b14e80bb6cc3e9b906083c8117103eb1496f7e5
+  version: da698a008336207254bc4722218c99d1f8ba1c6c
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -353,6 +355,7 @@ imports:
   - pkg/util/net
   - pkg/util/runtime
   - pkg/util/sets
+  - pkg/util/uuid
   - pkg/util/validation
   - pkg/util/validation/field
   - pkg/util/wait
@@ -424,7 +427,7 @@ imports:
 - name: k8s.io/code-generator
   version: f4fbdd37ed9c2292ea0abaabd8581008984dffc4
 - name: k8s.io/gengo
-  version: 1ef560bbde5195c01629039ad3b337ce63e7b321
+  version: 93fa717586400daaf96f9c88d0e708c80272627f
 - name: k8s.io/kube-openapi
   version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1
   subpackages:

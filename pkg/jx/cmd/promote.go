@@ -5,17 +5,20 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 const (
@@ -290,6 +293,15 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 			}
 		*/
 	}
+	branchNames, err := gits.GitGetRemoteBranchNames(dir, "remotes/origin/")
+	if err != nil {
+		return fmt.Errorf("Failed to load remote branch names: %s", err)
+	}
+	o.Printf("Found remote branch names %s\n", strings.Join(branchNames, ", "))
+	if util.StringArrayIndex(branchNames, branchName) >= 0 {
+		// lets append a UUID as the branch name already exists
+		branchName += "-" + string(uuid.NewUUID())
+	}
 	err = gits.GitCmd(dir, "branch", branchName)
 	if err != nil {
 		return err
@@ -306,6 +318,12 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 	requirements, err := helm.LoadRequirementsFile(requirementsFile)
 	if err != nil {
 		return err
+	}
+	if version == "" {
+		version, err = o.findLatestVersion(app)
+		if err != nil {
+			return err
+		}
 	}
 	requirements.SetAppVersion(app, version, o.HelmRepositoryURL)
 	err = helm.SaveRequirementsFile(requirementsFile, requirements)
@@ -433,4 +451,42 @@ func (options *PromoteOptions) discoverAppName() (string, error) {
 func (options *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment) error {
 	// TODO
 	return nil
+}
+
+func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
+	output, err := o.getCommandOutput("", "helm", "search", app, "--versions")
+	if err != nil {
+		return "", err
+	}
+	var maxSemVer *semver.Version
+	maxString := ""
+	for i, line := range strings.Split(output, "\n") {
+		if i == 0 {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) > 1 {
+			v := fields[1]
+			if v != "" {
+				sv, err := semver.Parse(v)
+				if err != nil {
+					o.warnf("Invalid semantic version: %s %s\n", v, err)
+				} else {
+					if maxSemVer == nil || maxSemVer.Compare(sv) > 0 {
+						maxSemVer = &sv
+					}
+				}
+				if maxString == "" || strings.Compare(v, maxString) > 0 {
+					maxString = v
+				}
+			}
+		}
+	}
+	if maxSemVer != nil {
+		return maxSemVer.String(), nil
+	}
+	if maxString == "" {
+		return "", fmt.Errorf("Could not find a version of app %s in the helm repositories", app)
+	}
+	return maxString, nil
 }
