@@ -223,7 +223,6 @@ func SetRemoteURL(dir string, name string, gitURL string) error {
 	return nil
 }
 
-
 func DiscoverRemoteGitURL(gitConf string) (string, error) {
 	if gitConf == "" {
 		return "", fmt.Errorf("No GitConfDir defined!")
@@ -270,7 +269,7 @@ func GitGetRemoteBranchNames(dir string, prefix string) ([]string, error) {
 	answer := []string{}
 	text, err := util.GetCommandOutput(dir, "git", "branch", "-a")
 	if err != nil {
-	  return answer, err
+		return answer, err
 	}
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {

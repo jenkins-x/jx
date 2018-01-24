@@ -16,4 +16,3 @@ func GetCommandOutput(dir string, name string, args ...string) (string, error) {
 	text = strings.TrimSpace(text)
 	return text, err
 }
-

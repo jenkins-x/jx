@@ -7,16 +7,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"github.com/blang/semver"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
@@ -295,7 +295,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 	}
 	branchNames, err := gits.GitGetRemoteBranchNames(dir, "remotes/origin/")
 	if err != nil {
-	  return fmt.Errorf("Failed to load remote branch names: %s", err)
+		return fmt.Errorf("Failed to load remote branch names: %s", err)
 	}
 	o.Printf("Found remote branch names %s\n", strings.Join(branchNames, ", "))
 	if util.StringArrayIndex(branchNames, branchName) >= 0 {
