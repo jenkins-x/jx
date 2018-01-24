@@ -18,6 +18,7 @@ import (
 	"github.com/blang/semver"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 const (
@@ -292,6 +293,15 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment) error {
 			}
 		*/
 	}
+	branchNames, err := gits.GitGetRemoteBranchNames(dir, "remotes/origin/")
+	if err != nil {
+	  return fmt.Errorf("Failed to load remote branch names: %s", err)
+	}
+	o.Printf("Found remote branch names %s\n", strings.Join(branchNames, ", "))
+	if util.StringArrayIndex(branchNames, branchName) >= 0 {
+		// lets append a UUID as the branch name already exists
+		branchName += "-" + string(uuid.NewUUID())
+	}
 	err = gits.GitCmd(dir, "branch", branchName)
 	if err != nil {
 		return err
@@ -450,14 +460,17 @@ func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
 	}
 	var maxSemVer *semver.Version
 	maxString := ""
-	for _, line := range strings.Split(output, "\n") {
+	for i, line := range strings.Split(output, "\n") {
+		if i == 0 {
+			continue
+		}
 		fields := strings.Fields(line)
 		if len(fields) > 1 {
 			v := fields[1]
 			if v != "" {
 				sv, err := semver.Parse(v)
 				if err != nil {
-					o.warnf("Invalid semantic version: %s %s", v, err)
+					o.warnf("Invalid semantic version: %s %s\n", v, err)
 				} else {
 					if maxSemVer == nil || maxSemVer.Compare(sv) > 0 {
 						maxSemVer = &sv
