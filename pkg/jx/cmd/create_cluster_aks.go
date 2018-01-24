@@ -84,7 +84,7 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	cmd.Flags().StringVarP(&options.Flags.Name, "name", "n", "jenkins-x-cluster", "Name of the cluster")
 	cmd.Flags().StringVarP(&options.Flags.ResourceGroup, "resource group", "g", "jenkins-x", "Name of the resource group")
-	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "West Europe", "location to run cluster in")
+	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "eastus", "location to run cluster in")
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "o", "1", "node count")
 	cmd.Flags().StringVarP(&options.Flags.KubeVersion, "K8Version", "v", "1.8.2", "kubernetes version")
 	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "PathToPublicRSAKey", "p", "", "pathToPublicRSAKey")
@@ -171,6 +171,19 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		return err
 	}
 
+	//register for Microsoft Compute and Containers
+
+	err = o.runCommand("az", "provider", "register","-n","Microsoft.Compute")
+	if err != nil {
+		return err
+	}
+
+	err = o.runCommand("az", "provider", "register","-n","Microsoft.ContainerService")
+	if err != nil {
+		return err
+	}
+
+
 	//create a resource group
 
 	createGroup := []string{"group", "create", "-l", location, "-n", resourceGroup}
@@ -193,6 +206,14 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	if err != nil {
 		return err
 	}
+
+	//setup the kube context
+
+	getCredentials := []string{"aks", "get-credentials", "-resource-group", resourceGroup, "--name", name}
+
+
+	err = o.runCommand("az",getCredentials...)
+
 
 	// call jx init
 	initOpts := &InitOptions{
