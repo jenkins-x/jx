@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
+	"io"
 )
 
 const (
@@ -280,4 +281,12 @@ func GitGetRemoteBranchNames(dir string, prefix string) ([]string, error) {
 		answer = append(answer, line)
 	}
 	return answer, nil
+}
+
+func PrintGenerateAccessToken(server *auth.AuthServer, o io.Writer) {
+	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL)
+
+	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())
+	fmt.Fprintf(o, "Please click this URL %s\n\n", util.ColorInfo(tokenUrl))
+	fmt.Fprintf(o, "Then COPY the token and enter in into the form below:\n\n")
 }

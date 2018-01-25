@@ -284,6 +284,14 @@ func (p *GitHubProvider) JenkinsWebHookPath(gitURL string, secret string) string
 	return "/github-webhook/"
 }
 
+func GitHubAccessTokenURL(url string) string {
+	return fmt.Sprintf("https://%s/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook", url)
+}
+
+func (p *GitHubProvider) Label() string {
+	return p.Server.Label()
+}
+
 func asBool(b *bool) bool {
 	if b != nil {
 		return *b

@@ -37,7 +37,7 @@ func PickNewGitRepository(out io.Writer, authConfigSvc auth.AuthConfigService, d
 		return nil, err
 	}
 	if userAuth.IsInvalid() {
-		server.PrintGenerateAccessToken(out)
+		PrintGenerateAccessToken(server, out)
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""

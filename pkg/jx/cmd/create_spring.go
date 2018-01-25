@@ -26,7 +26,7 @@ var (
 		jx create spring
 
 		# Creates a Spring Boot application passing in the required dependencies
-		jx create spring -d web,actuator
+		jx create spring -d web -d actuator
 	`)
 )
 

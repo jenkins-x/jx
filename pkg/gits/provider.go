@@ -47,6 +47,8 @@ type GitProvider interface {
 	// https://wiki.jenkins.io/display/JENKINS/Generic+Webhook+Trigger+Plugin
 
 	JenkinsWebHookPath(gitURL string, secret string) string
+
+	Label() string
 }
 
 type GitOrganisation struct {
@@ -82,8 +84,21 @@ type GitWebHookArguments struct {
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
-	// TODO lets default to github
-	return NewGitHubProvider(server, user)
+	switch server.Kind {
+	case "gitea":
+		return NewGiteaProvider(server, user)
+	default:
+		return NewGitHubProvider(server, user)
+	}
+}
+
+func ProviderAccessTokenURL(kind string, url string) string {
+	switch kind {
+	case "gitea":
+		return GiteaAccessTokenURL(url)
+	default:
+		return GitHubAccessTokenURL(url)
+	}
 }
 
 // PickOrganisation picks an organisations login if there is one available

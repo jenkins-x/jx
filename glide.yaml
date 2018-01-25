@@ -23,6 +23,7 @@ import:
   version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
 - package: gopkg.in/src-d/go-git.v4
   version: v4.0.0
+- package: code.gitea.io/sdk/gitea
 testImport:
 - package: github.com/stretchr/testify
   subpackages:
