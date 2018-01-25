@@ -19,6 +19,7 @@ type AuthServer struct {
 	URL   string
 	Users []UserAuth
 	Name  string
+	Kind  string
 
 	CurrentUser string
 }
@@ -198,6 +199,16 @@ func (c *AuthConfig) GetServer(url string) *AuthServer {
 }
 
 func (c *AuthConfig) GetOrCreateServer(url string) *AuthServer {
+	name := ""
+	kind := ""
+	if url == "github.com" {
+		name = "GitHub"
+		kind = "github"
+	}
+	return c.GetOrCreateServerName(url, name, kind)
+}
+
+func (c *AuthConfig) GetOrCreateServerName(url string, name string, kind string) *AuthServer {
 	s := c.GetServer(url)
 	if s == nil {
 		if c.Servers == nil {
@@ -206,9 +217,8 @@ func (c *AuthConfig) GetOrCreateServer(url string) *AuthServer {
 		s = &AuthServer{
 			URL:   url,
 			Users: []UserAuth{},
-		}
-		if url == "github.com" {
-			s.Name = "GitHub"
+			Name: name,
+			Kind: kind,
 		}
 		c.Servers = append(c.Servers, *s)
 	}
