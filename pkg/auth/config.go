@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 
@@ -49,14 +48,6 @@ func (s *AuthServer) Description() string {
 		return s.Name + " at " + s.URL
 	}
 	return s.URL
-}
-
-func (server *AuthServer) PrintGenerateAccessToken(o io.Writer) {
-	tokenUrl := fmt.Sprintf("https://%s/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook", server.URL)
-
-	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())
-	fmt.Fprintf(o, "Please click this URL %s\n\n", util.ColorInfo(tokenUrl))
-	fmt.Fprintf(o, "Then COPY the token and enter in into the form below:\n\n")
 }
 
 func (c *AuthConfig) FindUserAuths(serverURL string) []UserAuth {
@@ -217,8 +208,8 @@ func (c *AuthConfig) GetOrCreateServerName(url string, name string, kind string)
 		s = &AuthServer{
 			URL:   url,
 			Users: []UserAuth{},
-			Name: name,
-			Kind: kind,
+			Name:  name,
+			Kind:  kind,
 		}
 		c.Servers = append(c.Servers, *s)
 	}

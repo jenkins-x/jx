@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -283,7 +284,7 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 		return "", "", err
 	}
 	if userAuth.IsInvalid() {
-		server.PrintGenerateAccessToken(o.Out)
+		gits.PrintGenerateAccessToken(server, o.Out)
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""

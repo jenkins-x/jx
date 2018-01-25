@@ -173,16 +173,15 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	//register for Microsoft Compute and Containers
 
-	err = o.runCommand("az", "provider", "register","-n","Microsoft.Compute")
+	err = o.runCommand("az", "provider", "register", "-n", "Microsoft.Compute")
 	if err != nil {
 		return err
 	}
 
-	err = o.runCommand("az", "provider", "register","-n","Microsoft.ContainerService")
+	err = o.runCommand("az", "provider", "register", "-n", "Microsoft.ContainerService")
 	if err != nil {
 		return err
 	}
-
 
 	//create a resource group
 
@@ -211,9 +210,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	getCredentials := []string{"aks", "get-credentials", "-resource-group", resourceGroup, "--name", name}
 
-
-	err = o.runCommand("az",getCredentials...)
-
+	err = o.runCommand("az", getCredentials...)
 
 	// call jx init
 	initOpts := &InitOptions{

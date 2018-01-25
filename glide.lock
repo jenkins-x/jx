@@ -1,11 +1,15 @@
-hash: 851ad1c234d7e889a50f5234942e0197c9d96aba619bbdcb46caa1b40889bd1f
-updated: 2018-01-24T06:32:42.669125+01:00
+hash: 904d484df6702420468232998b2f3086cc02684cf7eb67fbe229289bc745c9f6
+updated: 2018-01-25T10:29:43.721854+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
   subpackages:
   - compute/metadata
   - internal
+- name: code.gitea.io/sdk
+  version: a184f2d3343623c67b835a51ab1685b568016fd9
+  subpackages:
+  - gitea
 - name: github.com/Azure/go-autorest
   version: e14a70c556c8e0db173358d1a903dca345a8e75e
   subpackages:
@@ -314,7 +318,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: da698a008336207254bc4722218c99d1f8ba1c6c
+  version: ddd9f73609e9a03a76dc8566ba6296db0cda63d3
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -425,7 +429,7 @@ imports:
   - util/integer
   - util/jsonpath
 - name: k8s.io/code-generator
-  version: f4fbdd37ed9c2292ea0abaabd8581008984dffc4
+  version: 64ca0808efd56c2418939848947c06b8d495144d
 - name: k8s.io/gengo
   version: 93fa717586400daaf96f9c88d0e708c80272627f
 - name: k8s.io/kube-openapi
