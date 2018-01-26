@@ -26,6 +26,8 @@ type EnvironmentSpec struct {
 	PromotionStrategy PromotionStrategyType `json:"promotionStrategy,omitempty" protobuf:"bytes,4,opt,name=promotionStrategy"`
 	Source            EnvironmentRepository `json:"source,omitempty" protobuf:"bytes,5,opt,name=source"`
 	Order             int32                 `json:"order,omitempty" protobuf:"bytes,6,opt,name=order"`
+	PullRequest       PullRequestSpec       `json:"pullRequest,omitempty" protobuf:"bytes,7,opt,name=pullRequest"`
+	Kind              EnvironmentKindType   `json:"promotionStrategy,omitempty" protobuf:"bytes,4,opt,name=promotionStrategy"`
 }
 
 // EnvironmentStatus is the status for an Envirnment resource
@@ -55,6 +57,18 @@ const (
 	PromotionStrategyTypeNever PromotionStrategyType = "Never"
 )
 
+// Environment Kind  Type string
+type EnvironmentKindType string
+
+const (
+	// EnvironmentKindTypePermanent specifies that the environment is a regular permanent one
+	EnvironmentKindTypePermanent EnvironmentKindType = "Permanent"
+	// EnvironmentKindTypePreview specifies that an environment is a Preview environment that lasts as long as a Pull Request
+	EnvironmentKindTypePreview EnvironmentKindType = "Preview"
+	// EnvironmentKindTypeNever specifies that promotion is disabled for this environment
+	EnvironmentKindTypeNever EnvironmentKindType = "Never"
+)
+
 // PromotionStrategyTypeValues is the list of all values
 var PromotionStrategyTypeValues = []string{
 	string(PromotionStrategyTypeAutomatic),
@@ -74,4 +88,9 @@ type EnvironmentRepository struct {
 	Kind EnvironmentRepositoryType `json:"kind,omitempty" protobuf:"bytes,1,opt,name=kind"`
 	URL  string                    `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
 	Ref  string                    `json:"ref,omitempty" protobuf:"bytes,3,opt,name=ref"`
+}
+
+type PullRequestSpec struct {
+	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	URL  string `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
 }
