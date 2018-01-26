@@ -14,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/api/apps/v1beta2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 // GetVersionOptions containers the CLI options
@@ -81,17 +80,16 @@ func (o *GetVersionOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	kube.SortEnvironments(envList.Items)
 
-	// TODO sort in env order?
 	envApps := []EnvApps{}
-
 	envNames := []string{}
 	apps := []string{}
 	for _, env := range envList.Items {
 		ens := env.Spec.Namespace
 		if ens != "" && env.Name != kube.LabelValueDevEnvironment {
 			envNames = append(envNames, env.Name)
-			m, err := loadDeployments(kubeClient, ens)
+			m, err := kube.GetDeployments(kubeClient, ens)
 			if err != nil {
 				return err
 			}
@@ -138,16 +136,4 @@ func (o *GetVersionOptions) Run() error {
 	}
 	table.Render()
 	return nil
-}
-
-func loadDeployments(kubeClient *kubernetes.Clientset, ns string) (map[string]v1beta2.Deployment, error) {
-	answer := map[string]v1beta2.Deployment{}
-	deps, err := kubeClient.AppsV1beta2().Deployments(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return answer, err
-	}
-	for _, d := range deps.Items {
-		answer[d.Name] = d
-	}
-	return answer, nil
 }
