@@ -122,7 +122,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// clone the environments repo
-	wrkDir := filepath.Join(util.HomeDir(), ".jenkins-x", "cloud-environments")
+	wrkDir := filepath.Join(util.HomeDir(), ".jx", "cloud-environments")
 	err = options.cloneJXCloudEnvironmentsRepo(wrkDir)
 	if err != nil {
 		return err
@@ -226,9 +226,13 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 // returns secrets that are used as values during the helm install
 func (o *InstallOptions) getGitSecrets() (string, error) {
 	username, token, err := o.getGitToken()
-	server := o.GitProvider
 	if err != nil {
 		return "", err
+	}
+
+	server := o.GitProvider
+	if server == "" {
+		return "", fmt.Errorf("No Git Server found")
 	}
 
 	// TODO convert to a struct

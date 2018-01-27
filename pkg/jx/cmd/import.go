@@ -36,6 +36,16 @@ target
 work
 `
 
+	// TODO figure out how to pass extra dockerfiles from a draft pack
+	defaultDockerfile = `
+FROM openjdk:8-jdk-alpine
+ENV PORT 8080
+EXPOSE 8080
+COPY target/*.jar /opt/app.jar
+WORKDIR /opt
+CMD ["java", "-jar", "app.jar"]
+`
+
 	// TODO replace with the jx-pipelines-plugin version when its available
 	defaultJenkinsfile = `
 pipeline {
@@ -69,7 +79,7 @@ pipeline {
 
         container('maven') {
           sh 'mvn clean deploy'
-          sh "docker build -f Dockerfile.jenkins -t $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:\$(cat VERSION) ."
+          sh "docker build -f Dockerfile.release -t $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:\$(cat VERSION) ."
           sh "docker push $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:\$(cat VERSION)"
         }
       }
@@ -235,7 +245,13 @@ func (o *ImportOptions) Run() error {
 		if err != nil {
 			return err
 		}
+
+		err = o.DefaultDockerfile()
+		if err != nil {
+			return err
+		}
 	}
+
 	if checkForJenkinsfile {
 		err = o.DefaultJenkinsfile()
 		if err != nil {
@@ -399,6 +415,33 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 		return err
 	}
 	err = gits.GitCommitIfChanges(dir, "Added default Jenkinsfile pipeline")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (o *ImportOptions) DefaultDockerfile() error {
+
+	dir := o.Dir
+	name := filepath.Join(dir, "Dockerfile.release")
+	exists, err := util.FileExists(name)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	data := []byte(defaultDockerfile)
+	err = ioutil.WriteFile(name, data, DefaultWritePermissions)
+	if err != nil {
+		return fmt.Errorf("Failed to write %s due to %s", name, err)
+	}
+	err = gits.GitAdd(dir, "Dockerfile.release")
+	if err != nil {
+		return err
+	}
+	err = gits.GitCommitIfChanges(dir, "Added Release Dockerfile pipeline")
 	if err != nil {
 		return err
 	}
