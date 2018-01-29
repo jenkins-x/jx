@@ -186,6 +186,9 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 			drivers = append(drivers, "xhyve")
 		}
 	}
+	if runtime.GOOS == "linux" {
+		drivers = append(drivers,"none")
+	}
 
 	prompts := &survey.Select{
 		Message: "Select driver:",
