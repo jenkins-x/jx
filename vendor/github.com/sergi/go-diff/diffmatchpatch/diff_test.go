@@ -130,6 +130,8 @@ func TestDiffCommonSuffix(t *testing.T) {
 	}
 }
 
+var SinkInt int // exported sink var to avoid compiler optimizations in benchmarks
+
 func BenchmarkDiffCommonSuffix(b *testing.B) {
 	s := "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ"
 
@@ -138,8 +140,40 @@ func BenchmarkDiffCommonSuffix(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		dmp.DiffCommonSuffix(s, s)
+		SinkInt = dmp.DiffCommonSuffix(s, s)
 	}
+}
+
+func BenchmarkCommonLength(b *testing.B) {
+	data := []struct {
+		name string
+		x, y []rune
+	}{
+		{name: "empty", x: nil, y: []rune{}},
+		{name: "short", x: []rune("AABCC"), y: []rune("AA-CC")},
+		{name: "long",
+			x: []rune(strings.Repeat("A", 1000) + "B" + strings.Repeat("C", 1000)),
+			y: []rune(strings.Repeat("A", 1000) + "-" + strings.Repeat("C", 1000)),
+		},
+	}
+	b.Run("prefix", func(b *testing.B) {
+		for _, d := range data {
+			b.Run(d.name, func(b *testing.B) {
+				for i := 0; i < b.N; i++ {
+					SinkInt = commonPrefixLength(d.x, d.y)
+				}
+			})
+		}
+	})
+	b.Run("suffix", func(b *testing.B) {
+		for _, d := range data {
+			b.Run(d.name, func(b *testing.B) {
+				for i := 0; i < b.N; i++ {
+					SinkInt = commonSuffixLength(d.x, d.y)
+				}
+			})
+		}
+	})
 }
 
 func TestCommonSuffixLength(t *testing.T) {
