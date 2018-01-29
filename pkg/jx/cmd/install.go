@@ -238,11 +238,9 @@ func (o *InstallOptions) getGitSecrets() (string, error) {
 	// TODO convert to a struct
 	pipelineSecrets := `
 PipelineSecrets:
-  Netrc: |-
-    machine %s
-      login %s
-      password %s`
-	return fmt.Sprintf(pipelineSecrets, server, username, token), nil
+  GitCreds: |-
+    https://%s:%s@%s`
+	return fmt.Sprintf(pipelineSecrets, username, token, server), nil
 }
 
 // returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release

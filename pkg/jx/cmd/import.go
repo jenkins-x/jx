@@ -70,9 +70,6 @@ pipeline {
 
         dir ('./charts/%s') {
           container('maven') {
-            // until kubernetes plugin supports init containers https://github.com/jenkinsci/kubernetes-plugin/pull/229/
-            sh 'cp /root/netrc/.netrc ~/.netrc'
-
             sh "make tag"
           }
         }
