@@ -1,5 +1,5 @@
-hash: 904d484df6702420468232998b2f3086cc02684cf7eb67fbe229289bc745c9f6
-updated: 2018-01-25T10:29:43.721854+01:00
+hash: cbf67a3028ef6c7736bd22fadc271245f63896b02f1575b94d29fcb179328fca
+updated: 2018-01-29T10:00:21.641942Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -56,10 +56,8 @@ imports:
   - ptypes/any
   - ptypes/duration
   - ptypes/timestamp
-- name: github.com/google/btree
-  version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-github
-  version: b1f138353a6287df5156971b3963e9107eca06a1
+  version: e48060a28fac52d0f1cb758bc8b87c07bac4a87d
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -75,7 +73,7 @@ imports:
   - compiler
   - extensions
 - name: github.com/gophercloud/gophercloud
-  version: 8183543f90d1aef267a5ecc209f2e0715b355acb
+  version: 8e59687aa4b27ab22a0bf3295f1e165ff7bd5f97
   subpackages:
   - openstack
   - openstack/identity/v2/tenants
@@ -83,10 +81,6 @@ imports:
   - openstack/identity/v3/tokens
   - openstack/utils
   - pagination
-- name: github.com/gregjones/httpcache
-  version: 787624de3eb7bd915c329cba748687a3b22666a6
-  subpackages:
-  - diskcache
 - name: github.com/hashicorp/golang-lru
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   subpackages:
@@ -108,7 +102,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kevinburke/ssh_config
-  version: 802051befeb51da415c46972b5caf36e7c33c53d
+  version: 0ff8514904a8ebfcfb3c32ad73e1f8498a7f81b4
 - name: github.com/mailru/easyjson
   version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
   subpackages:
@@ -131,8 +125,6 @@ imports:
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pelletier/go-buffruneio
   version: c37440a7cf42ac63b919c752ca73a85067e05992
-- name: github.com/peterbourgon/diskv
-  version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/pkg/browser
   version: c90ca0c84f15f81c982e32665bffd8d7aac8f097
 - name: github.com/PuerkitoBio/purell
@@ -142,7 +134,7 @@ imports:
 - name: github.com/russross/blackfriday
   version: 300106c228d52c8941d4b3de6054a6062a86dda3
 - name: github.com/sergi/go-diff
-  version: 1744e2970ca51c86172c8190fadad617561ed6e7
+  version: 217d392c389de447c964f954cc5e4774cde4b66b
   subpackages:
   - diffmatchpatch
 - name: github.com/shurcooL/sanitized_anchor_name
@@ -287,7 +279,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
-  version: 11147472b7c934c474a2c484af3c0c5210b7a3af
+  version: fbe336854453ac8e27bffe14e1964555245cbd05
   subpackages:
   - admissionregistration/v1alpha1
   - admissionregistration/v1beta1
@@ -326,7 +318,7 @@ imports:
   - pkg/client/clientset/clientset/scheme
   - pkg/client/clientset/clientset/typed/apiextensions/v1beta1
 - name: k8s.io/apimachinery
-  version: 180eddb345a5be3a157cea1c624700ad5bd27b8f
+  version: 2f1e02d3e57b8fb5206c5326bcb65217edc63a8e
   subpackages:
   - pkg/api/errors
   - pkg/api/meta
@@ -368,7 +360,7 @@ imports:
   - pkg/watch
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
-  version: 78700dec6369ba22221b72770783300f143df150
+  version: 1957ffeb3d06ae9d025d90c0c9948b314680818a
   subpackages:
   - discovery
   - discovery/fake
@@ -428,6 +420,7 @@ imports:
   - util/homedir
   - util/integer
   - util/jsonpath
+  - util/retry
 - name: k8s.io/code-generator
   version: 64ca0808efd56c2418939848947c06b8d495144d
 - name: k8s.io/gengo

@@ -33,5 +33,4 @@ func init() {
 // correctly.
 func AddToScheme(scheme *runtime.Scheme) {
 	jenkinsv1.AddToScheme(scheme)
-
 }

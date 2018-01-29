@@ -324,3 +324,17 @@ func TestMatchUnsupported(t *testing.T) {
 		t.Errorf("wrong error: %v", err)
 	}
 }
+
+func TestIndexInRange(t *testing.T) {
+	us := &UserSettings{
+		userConfigFinder: testConfigFinder("testdata/config4"),
+	}
+
+	user, err := us.GetStrict("wap", "User")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if user != "root" {
+		t.Errorf("expected User to be %q, got %q", "root", user)
+	}
+}

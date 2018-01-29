@@ -7,6 +7,7 @@ import (
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
 
 type Environment struct {
 	metav1.TypeMeta `json:",inline"`
@@ -26,7 +27,7 @@ type EnvironmentSpec struct {
 	PromotionStrategy PromotionStrategyType `json:"promotionStrategy,omitempty" protobuf:"bytes,4,opt,name=promotionStrategy"`
 	Source            EnvironmentRepository `json:"source,omitempty" protobuf:"bytes,5,opt,name=source"`
 	Order             int32                 `json:"order,omitempty" protobuf:"bytes,6,opt,name=order"`
-	PullRequest       PullRequestSpec       `json:"pullRequest,omitempty" protobuf:"bytes,7,opt,name=pullRequest"`
+	PreviewGitSpec    PreviewGitSpec        `json:"previewGitSpec,omitempty" protobuf:"bytes,7,opt,name=previewGitSpec"`
 	Kind              EnvironmentKindType   `json:"promotionStrategy,omitempty" protobuf:"bytes,4,opt,name=promotionStrategy"`
 }
 
@@ -90,7 +91,7 @@ type EnvironmentRepository struct {
 	Ref  string                    `json:"ref,omitempty" protobuf:"bytes,3,opt,name=ref"`
 }
 
-type PullRequestSpec struct {
+type PreviewGitSpec struct {
 	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
 	URL  string `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
 }
