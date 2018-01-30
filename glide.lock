@@ -1,5 +1,5 @@
-hash: c2038395c24761b21a01ea81b1b54e0cb7fdcaf2858bca5734d0986f7b09ed5f
-updated: 2018-01-30T08:35:37.941212Z
+hash: 53ed0690c738e7928aac31067516efada03c8235538c75d785d436e7cc653d4e
+updated: 2018-01-30T14:12:31.376817271Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -103,6 +103,8 @@ imports:
   version: 9520e82c474b0a04dd04f8a40959027271bab992
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
+- name: github.com/Pallinder/go-randomdata
+  version: 442d37d9dbc782dbd737af9ec575d8858b79261b
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pelletier/go-buffruneio
@@ -400,6 +402,12 @@ imports:
   version: a51d59ae25bec1b94f00be3fe970268aed3eadfa
   subpackages:
   - pkg/apis/metrics
+  - pkg/apis/metrics/v1alpha1
+  - pkg/apis/metrics/v1beta1
+  - pkg/client/clientset_generated/clientset
+  - pkg/client/clientset_generated/clientset/scheme
+  - pkg/client/clientset_generated/clientset/typed/metrics/v1alpha1
+  - pkg/client/clientset_generated/clientset/typed/metrics/v1beta1
 testImports:
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
