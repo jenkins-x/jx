@@ -13,13 +13,14 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
-	"github.com/jenkins-x/jx/pkg/util"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
@@ -40,6 +41,8 @@ type Factory interface {
 	CreateJXClient() (*versioned.Clientset, string, error)
 
 	CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error)
+
+ 	CreateMetricsClient() (*metricsclient.Clientset, error)
 
 	CreateTable(out io.Writer) table.Table
 }
@@ -149,6 +152,16 @@ func (f *factory) CreateApiExtensionsClient() (*apiextensionsclientset.Clientset
 		return nil, err
 	}
 	return apiextensionsclientset.NewForConfig(config)
+}
+
+func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
+	kubeconfig := createKubeConfig()
+	// use the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+	return metricsclient.NewForConfig(config)
 }
 
 func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {

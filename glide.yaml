@@ -6,6 +6,7 @@ import:
 - package: k8s.io/api
 - package: k8s.io/code-generator
 - package: k8s.io/gengo
+- package: k8s.io/metrics
 - package: github.com/pborman/uuid
 - package: github.com/jenkins-x/golang-jenkins
 - package: github.com/google/go-github
