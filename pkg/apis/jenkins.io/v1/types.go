@@ -27,8 +27,8 @@ type EnvironmentSpec struct {
 	PromotionStrategy PromotionStrategyType `json:"promotionStrategy,omitempty" protobuf:"bytes,4,opt,name=promotionStrategy"`
 	Source            EnvironmentRepository `json:"source,omitempty" protobuf:"bytes,5,opt,name=source"`
 	Order             int32                 `json:"order,omitempty" protobuf:"bytes,6,opt,name=order"`
-	PreviewGitSpec    PreviewGitSpec        `json:"previewGitSpec,omitempty" protobuf:"bytes,7,opt,name=previewGitSpec"`
-	Kind              EnvironmentKindType   `json:"promotionStrategy,omitempty" protobuf:"bytes,4,opt,name=promotionStrategy"`
+	Kind              EnvironmentKindType   `json:"kind,omitempty" protobuf:"bytes,7,opt,name=kind"`
+	PreviewGitSpec    PreviewGitSpec       `json:"previewGitSpec,omitempty" protobuf:"bytes,8,opt,name=previewGitSpec"`
 }
 
 // EnvironmentStatus is the status for an Envirnment resource
@@ -92,6 +92,14 @@ type EnvironmentRepository struct {
 }
 
 type PreviewGitSpec struct {
-	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
-	URL  string `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
+	Name string    `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	URL  string    `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
+	User UserSpec `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
+}
+
+type UserSpec struct {
+	Username string `json:"username,omitempty" protobuf:"bytes,1,opt,name=username"`
+	Name     string `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
+	LinkURL  string `json:"linkUrl,omitempty" protobuf:"bytes,3,opt,name=linkUrl"`
+	ImageURL string `json:"imageUrl,omitempty" protobuf:"bytes,4,opt,name=imageUrl"`
 }
