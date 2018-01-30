@@ -63,7 +63,7 @@ func NewCmdLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	}
 	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
-	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Fitlers the available deployments if no deployment argument is provided")
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters the available deployments if no deployment argument is provided")
 	return cmd
 }
 

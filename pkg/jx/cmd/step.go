@@ -5,7 +5,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
@@ -19,16 +18,6 @@ type StepOptions struct {
 }
 
 var (
-	step_resources = `Valid resource types include:
-
-    * tag
-    `
-
-	step_long = templates.LongDesc(`
-		Steps a new resource.
-
-		` + step_resources + `
-`)
 )
 
 // NewCmdStep Steps a command object for the "step" command
@@ -45,7 +34,6 @@ func NewCmdStep(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		Use:     "step",
 		Short:   "pipeline steps",
 		Aliases: []string{"steps"},
-		Long:    step_long,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -54,6 +42,7 @@ func NewCmdStep(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		},
 	}
 
+	cmd.AddCommand(NewCmdStepNexus(f, out, errOut))
 	cmd.AddCommand(NewCmdStepTag(f, out, errOut))
 	return cmd
 }

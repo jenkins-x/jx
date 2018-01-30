@@ -71,7 +71,7 @@ func NewCmdStartPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 		},
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", false, "Tails the build log to the current terminal")
-	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Fitlers all the available jobs by those that contain the given text")
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
 
 	return cmd
 }

@@ -45,3 +45,15 @@ func StringArrayIndex(array []string, value string) int {
 	}
 	return -1
 }
+
+// FirstNotEmptyString returns the first non empty string or the empty string if none can be found
+func FirstNotEmptyString(values ...string) string {
+	if values != nil {
+		for _, v := range values {
+			if v != "" {
+				return v
+			}
+		}
+	}
+	return ""
+}
