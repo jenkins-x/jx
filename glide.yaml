@@ -25,6 +25,7 @@ import:
 - package: gopkg.in/src-d/go-git.v4
   version: v4.0.0
 - package: code.gitea.io/sdk/gitea
+- package: github.com/Pallinder/go-randomdata
 testImport:
 - package: github.com/stretchr/testify
   subpackages:
