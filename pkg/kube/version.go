@@ -3,6 +3,7 @@ package kube
 import (
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,23 +30,64 @@ func GetVersion(r *metav1.ObjectMeta) string {
 	return ""
 }
 
+// GetPodVersion returns the version for the given app name
+func GetPodVersion(pod *corev1.Pod, appName string) string {
+	v := GetVersion(&pod.ObjectMeta)
+	if v != "" {
+		return v
+	}
+	if appName == "" {
+		appName = GetName(&pod.ObjectMeta)
+	}
+	if appName != "" {
+		for _, c := range pod.Spec.Containers {
+			image := c.Image
+			idx := strings.LastIndex(image, ":")
+			if idx > 0 {
+				version := image[idx + 1:]
+				prefix := image[0:idx]
+				if prefix == appName || strings.HasSuffix(prefix, "/" + appName) {
+					return version
+				}
+			}
+		}
+	}
+	return ""
+}
+
 // GetName returns the app name
 func GetName(r *metav1.ObjectMeta) string {
 	if r != nil {
-		name := r.Name
 		ns := r.Namespace
+		labels := r.Labels
+		if labels != nil {
+			name := labels["app"]
+			if name != "" {
+				// for helm deployments which prefix the namespace in the name lets strip it
+				prefix := ns + "-"
+				if strings.HasPrefix(name, prefix) {
+					name = strings.TrimPrefix(name, prefix)
+
+					// we often have the app name repeated twice!
+					l := len(name) / 2
+					if name[l] == '-' {
+						first := name[0:l]
+						if name[l+1:] == first {
+							return first
+						}
+					}
+				}
+				return name
+			}
+		}
+		name := r.Name
+
 		if ns != "" {
 			// for helm deployments which prefix the namespace in the name lets strip it
 			prefix := ns + "-"
 			if strings.HasPrefix(name, prefix) {
-				return strings.TrimPrefix(name, prefix)
-			}
-		}
-		labels := r.Labels
-		if labels != nil {
-			v := labels["app"]
-			if v != "" {
-				return v
+				name = strings.TrimPrefix(name, prefix)
+				return name
 			}
 		}
 		return name

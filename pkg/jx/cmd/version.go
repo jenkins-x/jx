@@ -5,10 +5,10 @@ import (
 	"regexp"
 	"strings"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 const (
@@ -58,15 +58,16 @@ func (o *VersionOptions) Run() error {
 	// Jenkins X version
 	output, err := o.getCommandOutput("", "helm", "list")
 	if err != nil {
-		return err
-	}
-	for _, line := range strings.Split(output, "\n") {
-		fields := strings.Fields(line)
-		if len(fields) > 4 && fields[0] == "jenkins-x" {
-			for _, f := range fields[4:] {
-				if strings.HasPrefix(f, jxChartPrefix) {
-					chart := strings.TrimPrefix(f, jxChartPrefix)
-					table.AddRow("Jenkins X", info(chart))
+		o.warnf("Failed to find helm installs: %s\n", err)
+	} else {
+		for _, line := range strings.Split(output, "\n") {
+			fields := strings.Fields(line)
+			if len(fields) > 4 && fields[0] == "jenkins-x" {
+				for _, f := range fields[4:] {
+					if strings.HasPrefix(f, jxChartPrefix) {
+						chart := strings.TrimPrefix(f, jxChartPrefix)
+						table.AddRow("Jenkins X", info(chart))
+					}
 				}
 			}
 		}
@@ -75,31 +76,32 @@ func (o *VersionOptions) Run() error {
 	// kubernetes version
 	client, _, err := o.KubeClient()
 	if err != nil {
-		return err
-	}
-	serverVersion, err := client.Discovery().ServerVersion()
-	if err != nil {
-		return err
-	}
-	if serverVersion != nil {
-		table.AddRow("Kubernetes", info(serverVersion.String()))
+		o.warnf("Failed to connect to kubernetes: %s\n", err)
+	} else {
+		serverVersion, err := client.Discovery().ServerVersion()
+		if err != nil {
+			o.warnf("Failed to get kubernetes server version: %s\n", err)
+		} else if serverVersion != nil {
+			table.AddRow("Kubernetes", info(serverVersion.String()))
+		}
 	}
 
 	// helm version
 	output, err = o.getCommandOutput("", "helm", "version", "--short")
 	if err != nil {
-		return err
-	}
-	for i, line := range strings.Split(output, "\n") {
-		fields := strings.Fields(line)
-		if len(fields) > 1 {
-			v := fields[1]
-			if v != "" {
-				switch i {
-				case 0:
-					table.AddRow("Helm Client", info(v))
-				case 1:
-					table.AddRow("Helm Server", info(v))
+		o.warnf("Failed to get helm version: %s\n", err)
+	}  else {
+		for i, line := range strings.Split(output, "\n") {
+			fields := strings.Fields(line)
+			if len(fields) > 1 {
+				v := fields[1]
+				if v != "" {
+					switch i {
+					case 0:
+						table.AddRow("Helm Client", info(v))
+					case 1:
+						table.AddRow("Helm Server", info(v))
+					}
 				}
 			}
 		}
@@ -108,18 +110,22 @@ func (o *VersionOptions) Run() error {
 	// draft version
 	output, err = o.getCommandOutput("", "draft", "version")
 	if err != nil {
-		return err
-	}
-	for i, line := range strings.Split(output, "\n") {
-		fields := strings.Fields(line)
-		if len(fields) > 1 {
-			v := extractSemVer(fields[1])
-			if v != "" {
-				switch i {
-				case 0:
-					table.AddRow("Draft Client", info(v))
-				case 1:
-					table.AddRow("Draft Server", info(v))
+		o.warnf("Failed to find draft version: %s\n", err)
+		if (output != "") {
+			o.warnf("%s\n", output)
+		}
+	} else {
+		for i, line := range strings.Split(output, "\n") {
+			fields := strings.Fields(line)
+			if len(fields) > 1 {
+				v := extractSemVer(fields[1])
+				if v != "" {
+					switch i {
+					case 0:
+						table.AddRow("Draft Client", info(v))
+					case 1:
+						table.AddRow("Draft Server", info(v))
+					}
 				}
 			}
 		}
