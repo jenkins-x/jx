@@ -10,6 +10,8 @@ import (
 
 	"strings"
 
+	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -19,17 +21,19 @@ import (
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
 )
 
 // InitOptions the flags for running init
 type InitOptions struct {
 	CommonOptions
-	Client   clientset.Clientset
-	Flags    InitFlags
-	Provider string
+	Client clientset.Clientset
+	Flags  InitFlags
 }
 
 type InitFlags struct {
+	Domain   string
+	Provider string
 }
 
 var (
@@ -66,15 +70,15 @@ func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
-
+	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
+	cmd.Flags().StringVarP(&options.Flags.Domain, "domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	return cmd
 }
 
 func (o *InitOptions) Run() error {
 
 	var err error
-	o.Provider, err = GetCloudProvider(o.Provider)
+	o.Flags.Provider, err = GetCloudProvider(o.Flags.Provider)
 	if err != nil {
 		return err
 	}
@@ -153,7 +157,7 @@ func (o *InitOptions) initDraft() error {
 		return err
 	}
 
-	if running || o.Provider == GKE || o.Provider == AKS {
+	if running || o.Flags.Provider == GKE || o.Flags.Provider == AKS {
 		err = o.runCommand("draft", "init", "--auto-accept", "--client-only")
 
 	} else {
@@ -175,7 +179,7 @@ func (o *InitOptions) initDraft() error {
 		return err
 	}
 
-	if !running && o.Provider != GKE && o.Provider != AKS {
+	if !running && o.Flags.Provider != GKE && o.Flags.Provider != AKS {
 		err = kube.WaitForDeploymentToBeReady(client, "draftd", "kube-system", 5*time.Minute)
 		if err != nil {
 			return err
@@ -265,31 +269,63 @@ func (o *InitOptions) initIngress() error {
 		return err
 	}
 
-	if o.Provider == GKE || o.Provider == AKS {
+	if o.Flags.Provider == GKE || o.Flags.Provider == AKS {
 		log.Info("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in kube-system namespace\n")
 		err = kube.WaitForExternalIP(client, "jx-nginx-ingress-controller", "kube-system", 10*time.Minute)
 		if err != nil {
 			return err
 		}
 
-		svc, err := client.CoreV1().Services("kube-system").Get("jx-nginx-ingress-controller", meta_v1.GetOptions{})
+		log.Infof("External loadbalancer created\n")
+
+		o.Flags.Domain, err = GetDomain(client, o.Flags.Domain)
 		if err != nil {
 			return err
 		}
-
-		var address string
-		for _, v := range svc.Status.LoadBalancer.Ingress {
-			if v.IP != "" {
-				address = v.IP
-			} else if v.Hostname != "" {
-				address = v.Hostname
-			}
-		}
-
-		log.Successf("External loadbalancer created %s", address)
 	}
 
 	log.Success("nginx ingress controller installed and configured")
 
 	return nil
+}
+
+func GetDomain(client *kubernetes.Clientset, domain string) (string, error) {
+
+	svc, err := client.CoreV1().Services("kube-system").Get("jx-nginx-ingress-controller", meta_v1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	var address string
+	for _, v := range svc.Status.LoadBalancer.Ingress {
+		if v.IP != "" {
+			address = v.IP
+		} else if v.Hostname != "" {
+			address = v.Hostname
+		}
+	}
+	defaultDomain := fmt.Sprintf("%s.nip.io", address)
+	if domain == "" {
+
+		log.Successf("You can now configure a wildcard DNS pointing to the new loadbalancer address %s", address)
+		log.Infof("If you don't have a wildcard DNS yet you can use the default %s", defaultDomain)
+
+		if domain == "" {
+			prompt := &survey.Input{
+				Message: "Domain",
+				Default: defaultDomain,
+				Help:    "Enter your custom domain that is used to generate Ingress rules, defaults to the magic dns nip.io",
+			}
+			survey.AskOne(prompt, &domain, nil)
+		}
+		if domain == "" {
+			domain = defaultDomain
+		}
+	} else {
+		if domain != defaultDomain {
+			log.Successf("You can now configure your wildcard DNS %s to point to %s\n", domain, address)
+		}
+	}
+
+	return domain, nil
 }

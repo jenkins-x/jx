@@ -230,7 +230,9 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	// call jx init
 	initOpts := &InitOptions{
 		CommonOptions: o.CommonOptions,
-		Provider:      GKE,
+		Flags: InitFlags{
+			Provider: GKE,
+		},
 	}
 	err = initOpts.Run()
 	if err != nil {
@@ -243,6 +245,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
 		Provider:           GKE,
 		GitProvider:        "github.com", // TODO use the correct gitserver
+		Domain:             initOpts.Flags.Domain,
 	}
 	err = installOpts.Run()
 	if err != nil {
