@@ -107,3 +107,12 @@ func ld(s, t string, ignoreCase bool) int {
 	}
 	return d[len(s)][len(t)]
 }
+
+func Contains(arr []string, str string) bool {
+	for _, a := range arr {
+		if a == str {
+			return true
+		}
+	}
+	return false
+}
