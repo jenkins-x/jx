@@ -89,7 +89,9 @@ release: check
 	go get -u github.com/progrium/gh-release
 	gh-release checksums sha256
 	gh-release create jenkins-x/$(NAME) $(VERSION) master $(VERSION)
-
+	
+	updatebot push-version --kind brew jx $(VERSION)
+	updatebot push-version --kind docker JX_VERSION $(VERSION)
 
 clean:
 	rm -rf build release

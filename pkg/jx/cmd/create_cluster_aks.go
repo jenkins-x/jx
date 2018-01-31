@@ -9,6 +9,8 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"strings"
+	"github.com/Pallinder/go-randomdata"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -19,8 +21,8 @@ type CreateClusterAKSOptions struct {
 }
 
 type CreateClusterAKSFlags struct {
-	Name            string
-	ResourceGroup   string
+	ClusterName     string
+	ResourceName    string
 	Location        string
 	NodeCount       string
 	KubeVersion     string
@@ -82,12 +84,12 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	options.addCreateClusterFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.Name, "name", "n", "jenkins-x-cluster", "Name of the cluster")
-	cmd.Flags().StringVarP(&options.Flags.ResourceGroup, "resource group", "g", "jenkins-x", "Name of the resource group")
+	cmd.Flags().StringVarP(&options.Flags.ResourceName, "resource group name", "n", "", "Name of the resource group")
+	cmd.Flags().StringVarP(&options.Flags.ClusterName, "clusterName", "c", "", "Name of the cluster")
 	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "eastus", "location to run cluster in")
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "o", "1", "node count")
 	cmd.Flags().StringVarP(&options.Flags.KubeVersion, "K8Version", "v", "1.8.2", "kubernetes version")
-	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "PathToPublicRSAKey", "p", "", "pathToPublicRSAKey")
+	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "PathToPublicRSAKey", "k", "", "pathToPublicRSAKey")
 
 	return cmd
 }
@@ -116,29 +118,27 @@ func (o *CreateClusterAKSOptions) Run() error {
 
 func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
-	name := o.Flags.Name
-	prompt := &survey.Input{
-		Message: "name",
-		Default: name,
-		Help:    "name of the cluster",
+	resourceName := o.Flags.ResourceName
+	if resourceName == "" {
+		resourceName = strings.ToLower(randomdata.SillyName())
+		log.Infof("No resource name provided so using a generated one: %s", resourceName)
 	}
-	survey.AskOne(prompt, &name, nil)
+
+
+	clusterName := o.Flags.ClusterName
+	if clusterName == "" {
+		clusterName = resourceName +"-cluster"
+		log.Infof("No cluster name provided so using a generated one: %s", clusterName)
+	}
 
 	location := o.Flags.Location
-	prompt = &survey.Input{
+	prompt := &survey.Input{
 		Message: "location",
 		Default: location,
 		Help:    "location to run cluster",
 	}
 	survey.AskOne(prompt, &location, nil)
 
-	resourceGroup := o.Flags.ResourceGroup
-	prompt = &survey.Input{
-		Message: "resourceGroup",
-		Default: resourceGroup,
-		Help:    "resource group",
-	}
-	survey.AskOne(prompt, &resourceGroup, nil)
 
 	nodeCount := o.Flags.NodeCount
 	prompt = &survey.Input{
@@ -157,12 +157,6 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	survey.AskOne(prompt, &kubeVersion, nil)
 
 	pathToPublicKey := o.Flags.PathToPublicKey
-	prompt = &survey.Input{
-		Message: "PathToPublicKey",
-		Default: "",
-		Help:    "path to public RSA key",
-	}
-	survey.AskOne(prompt, &pathToPublicKey, nil)
 
 	//First login
 
@@ -185,7 +179,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	//create a resource group
 
-	createGroup := []string{"group", "create", "-l", location, "-n", resourceGroup}
+	createGroup := []string{"group", "create", "-l", location, "-n", resourceName}
 
 	err = o.runCommand("az", createGroup...)
 
@@ -193,7 +187,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		return err
 	}
 
-	createCluster := []string{"aks", "create", "-g", resourceGroup, "-n", name, "-k", kubeVersion, "--node-count", nodeCount}
+	createCluster := []string{"aks", "create", "-g", resourceName, "-n", clusterName, "-k", kubeVersion, "--node-count", nodeCount}
 
 	if pathToPublicKey != "" {
 		createCluster = append(createCluster, "--ssh-key-value", pathToPublicKey)
@@ -208,9 +202,39 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	//setup the kube context
 
-	getCredentials := []string{"aks", "get-credentials", "-resource-group", resourceGroup, "--name", name}
+	getCredentials := []string{"aks", "get-credentials", "--resource-group", resourceName, "--name", clusterName}
 
 	err = o.runCommand("az", getCredentials...)
+
+	if err != nil {
+		return err
+	}
+
+	/**
+
+	//create Container Registry on azure
+	registryName := resourceName + "Registry"+randomdata.StringNumber(2,"")
+
+	installContainerRegistry := []string{"acr","create","--resource-group",resourceName,"--name",registryName,"--sku Basic"}
+
+	err = o.runCommand("az",installContainerRegistry...)
+
+	if err != nil {
+		return err
+	}
+
+	//login to the registry
+
+	loginRegistry := []string{"acr","login","--name",registryName}
+
+	err = o.runCommand("az",loginRegistry...)
+
+	if err != nil {
+		return err
+	}
+
+	**/
+
 
 	// call jx init
 	initOpts := &InitOptions{
