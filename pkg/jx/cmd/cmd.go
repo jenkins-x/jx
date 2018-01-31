@@ -63,6 +63,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	cmds.AddCommand(NewCmdInit(f, out, err))
 	cmds.AddCommand(NewCmdInstall(f, out, err))
 	cmds.AddCommand(NewCmdLogs(f, out, err))
+	cmds.AddCommand(NewCmdMetrics(f, out, err))
 	cmds.AddCommand(NewCmdNamespace(f, out, err))
 	cmds.AddCommand(NewCmdOpen(f, out, err))
 	cmds.AddCommand(NewCmdPromote(f, out, err))
@@ -72,7 +73,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	cmds.AddCommand(NewCmdStart(f, out, err))
 	cmds.AddCommand(NewCmdStep(f, out, err))
 	cmds.AddCommand(NewCmdUninstall(f, out, err))
-	cmds.AddCommand(NewCmdMetrics(f, out, err))
+	cmds.AddCommand(NewCmdVersion(f, out, err))
 
 	return cmds
 }
