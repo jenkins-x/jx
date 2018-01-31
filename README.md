@@ -295,6 +295,27 @@ jx open
 
 You'll see all the URs of the form `http://$(minikube ip):somePortNumber` which then avoids going through [nip.io](http://nip.io/) - it just means the URLs are a little more cryptic using magic port numbers rather than simple host names.
 
+
+### Minkube and hyperkit: Could not find an IP address
+
+If you are using minikube on a mac with hyperkit and find minikube fails to start with a log like:
+
+```
+Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
+Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
+Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
+Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
+```
+
+It could be you have hit [this issue in minikube and hyperkit](https://github.com/kubernetes/minikube/issues/1926#issuecomment-356378525).
+
+The work around is to try the following:
+
+```
+rm ~/.minikube/machines/minikube/hyperkit.pid
+``` 
+
+Then try again. Hopefully this time it will work!
  
 ### Other issues
 
