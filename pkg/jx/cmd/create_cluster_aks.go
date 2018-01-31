@@ -215,6 +215,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	// call jx init
 	initOpts := &InitOptions{
 		CommonOptions: o.CommonOptions,
+		Provider:      AKS,
 	}
 	err = initOpts.Run()
 	if err != nil {
@@ -225,7 +226,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	installOpts := &InstallOptions{
 		CommonOptions:      o.CommonOptions,
 		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		KubernetesProvider: AKS, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
+		Provider:           AKS, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
 	}
 	err = installOpts.Run()
 	if err != nil {
