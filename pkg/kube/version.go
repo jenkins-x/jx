@@ -3,8 +3,8 @@ package kube
 import (
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"fmt"
 )
 
 // GetVersion returns the version from the labels on the deployment if it can be deduced
@@ -24,6 +24,31 @@ func GetVersion(r *metav1.ObjectMeta) string {
 					return last
 				}
 				return v
+			}
+		}
+	}
+	return ""
+}
+
+// GetPodVersion returns the version for the given app name
+func GetPodVersion(pod *corev1.Pod, appName string) string {
+	v := GetVersion(&pod.ObjectMeta)
+	if v != "" {
+		return v
+	}
+	if appName == "" {
+		appName = GetName(&pod.ObjectMeta)
+	}
+	if appName != "" {
+		for _, c := range pod.Spec.Containers {
+			image := c.Image
+			idx := strings.LastIndex(image, ":")
+			if idx > 0 {
+				version := image[idx + 1:]
+				prefix := image[0:idx]
+				if prefix == appName || strings.HasSuffix(prefix, "/" + appName) {
+					return version
+				}
 			}
 		}
 	}
