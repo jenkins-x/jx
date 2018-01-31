@@ -187,7 +187,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		}
 	}
 	if runtime.GOOS == "linux" {
-		drivers = append(drivers,"none")
+		drivers = append(drivers, "none")
 	}
 
 	prompts := &survey.Select{
@@ -221,6 +221,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	// call jx init
 	initOpts := &InitOptions{
 		CommonOptions: o.CommonOptions,
+		Provider:      MINIKUBE,
 	}
 	err = initOpts.Run()
 	if err != nil {

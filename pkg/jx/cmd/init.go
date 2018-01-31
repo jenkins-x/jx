@@ -26,7 +26,7 @@ type InitOptions struct {
 	CommonOptions
 	Client   clientset.Clientset
 	Flags    InitFlags
-	Provider KubernetesProvider
+	Provider string
 }
 
 type InitFlags struct {
@@ -66,13 +66,21 @@ func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		},
 	}
 
+	cmd.Flags().StringVarP(&options.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
+
 	return cmd
 }
 
 func (o *InitOptions) Run() error {
 
+	var err error
+	o.Provider, err = GetCloudProvider(o.Provider)
+	if err != nil {
+		return err
+	}
+
 	// helm init
-	err := o.initHelm()
+	err = o.initHelm()
 	if err != nil {
 		log.Fatalf("helm init failed: %v", err)
 		os.Exit(-1)
@@ -145,7 +153,7 @@ func (o *InitOptions) initDraft() error {
 		return err
 	}
 
-	if running {
+	if running || o.Provider == GKE || o.Provider == AKS {
 		err = o.runCommand("draft", "init", "--auto-accept", "--client-only")
 
 	} else {
@@ -163,10 +171,11 @@ func (o *InitOptions) initDraft() error {
 
 	err = o.runCommand("draft", "pack-repo", "add", "https://github.com/jenkins-x/draft-repo")
 	if err != nil {
+		log.Warn("error adding pack to draft, if you are using git 2.16.1 take a look at this issue for a workaround https://github.com/jenkins-x/jx/issues/176#issuecomment-361897946")
 		return err
 	}
 
-	if !running {
+	if !running && o.Provider != GKE && o.Provider != AKS {
 		err = kube.WaitForDeploymentToBeReady(client, "draftd", "kube-system", 5*time.Minute)
 		if err != nil {
 			return err
@@ -238,6 +247,7 @@ func (o *InitOptions) initIngress() error {
 	installIngressController := false
 	prompt := &survey.Confirm{
 		Message: "No existing ingress controller found in the kube-system namespace, shall we install one?",
+		Default: true,
 	}
 	survey.AskOne(prompt, &installIngressController, nil)
 
@@ -245,9 +255,38 @@ func (o *InitOptions) initIngress() error {
 		return nil
 	}
 
-	err = o.runCommand("helm", "install", "stable/nginx-ingress", "--namespace", "kube-system")
+	err = o.runCommand("helm", "install", "--name", "jx", "stable/nginx-ingress", "--namespace", "kube-system")
 	if err != nil {
 		return err
+	}
+
+	err = kube.WaitForDeploymentToBeReady(client, "jx-nginx-ingress-controller", "kube-system", 10*time.Minute)
+	if err != nil {
+		return err
+	}
+
+	if o.Provider == GKE || o.Provider == AKS {
+		log.Info("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in kube-system namespace\n")
+		err = kube.WaitForExternalIP(client, "jx-nginx-ingress-controller", "kube-system", 10*time.Minute)
+		if err != nil {
+			return err
+		}
+
+		svc, err := client.CoreV1().Services("kube-system").Get("jx-nginx-ingress-controller", meta_v1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		var address string
+		for _, v := range svc.Status.LoadBalancer.Ingress {
+			if v.IP != "" {
+				address = v.IP
+			} else if v.Hostname != "" {
+				address = v.Hostname
+			}
+		}
+
+		log.Successf("External loadbalancer created %s", address)
 	}
 
 	log.Success("nginx ingress controller installed and configured")

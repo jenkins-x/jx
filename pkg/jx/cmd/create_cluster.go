@@ -37,9 +37,10 @@ const (
 	MINIKUBE string = "minikube"
 )
 
-var KUBERNETES_PROVIDERS = map[string]bool{
+var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS}
+
+var KUBERNETES_PROVIDERS_ENUM = map[string]bool{
 	GKE:      true,
-	EKS:      true,
 	AKS:      true,
 	MINIKUBE: true,
 }
@@ -509,4 +510,24 @@ func (o *CreateClusterOptions) installGcloud() error {
 
 func (o *CreateClusterOptions) installAzureCli() error {
 	return o.runCommand("brew", "install", "azure-cli")
+}
+
+func GetCloudProvider(p string) (string, error) {
+	if p != "" {
+		if !util.Contains(KUBERNETES_PROVIDERS, p) {
+			return "", util.InvalidArg(p, KUBERNETES_PROVIDERS)
+		}
+	}
+
+	if p == "" {
+		prompt := &survey.Select{
+			Message: "Cloud Provider",
+			Options: KUBERNETES_PROVIDERS,
+			Default: MINIKUBE,
+			Help:    "Cloud service providing the kubernetes cluster, local VM (minikube), Google (GKE), Azure (AKS)",
+		}
+
+		survey.AskOne(prompt, &p, nil)
+	}
+	return p, nil
 }

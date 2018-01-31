@@ -2,11 +2,16 @@ package kube
 
 import (
 	"fmt"
-	v1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"sort"
 	"strings"
+	"time"
+
+	v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -68,4 +73,39 @@ func FindServiceURLs(client *kubernetes.Clientset, namespace string) ([]ServiceU
 		}
 	}
 	return urls, nil
+}
+
+// waits for the pods of a deployment to become ready
+func WaitForExternalIP(client *kubernetes.Clientset, name, namespace string, timeout time.Duration) error {
+
+	options := meta_v1.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
+	}
+
+	w, err := client.CoreV1().Services(namespace).Watch(options)
+
+	if err != nil {
+		return err
+	}
+	defer w.Stop()
+
+	condition := func(event watch.Event) (bool, error) {
+		svc := event.Object.(*v1.Service)
+		return HasExternalAddress(svc), nil
+	}
+
+	_, err = watch.Until(timeout, w, condition)
+	if err == wait.ErrWaitTimeout {
+		return fmt.Errorf("service %s never became ready", name)
+	}
+	return nil
+}
+func HasExternalAddress(svc *v1.Service) bool {
+
+	for _, v := range svc.Status.LoadBalancer.Ingress {
+		if v.IP != "" || v.Hostname != "" {
+			return true
+		}
+	}
+	return false
 }
