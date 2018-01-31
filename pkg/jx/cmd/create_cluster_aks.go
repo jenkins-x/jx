@@ -215,7 +215,9 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	// call jx init
 	initOpts := &InitOptions{
 		CommonOptions: o.CommonOptions,
-		Provider:      AKS,
+		Flags: InitFlags{
+			Provider: AKS,
+		},
 	}
 	err = initOpts.Run()
 	if err != nil {

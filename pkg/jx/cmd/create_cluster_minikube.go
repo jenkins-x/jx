@@ -221,7 +221,9 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	// call jx init
 	initOpts := &InitOptions{
 		CommonOptions: o.CommonOptions,
-		Provider:      MINIKUBE,
+		Flags: InitFlags{
+			Provider: MINIKUBE,
+		},
 	}
 	err = initOpts.Run()
 	if err != nil {

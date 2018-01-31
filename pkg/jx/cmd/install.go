@@ -31,6 +31,7 @@ type InstallOptions struct {
 	CommonOptions
 
 	Domain             string
+	HTTPS              bool
 	GitProvider        string
 	GitToken           string
 	GitUser            string
@@ -50,7 +51,8 @@ const (
 	JX_GIT_USER                    = "JX_GIT_USER"
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
 
-	GitSecretsFile = "gitSecrets.yaml"
+	GitSecretsFile  = "gitSecrets.yaml"
+	ExtraValuesFile = "extraValues.yaml"
 )
 
 var (
@@ -102,6 +104,7 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.GitUser, "git-username", "u", "", "Git username used to tag releases in pipelines, typically this is a bot user")
 	cmd.Flags().StringVarP(&options.GitPass, "git-password", "p", "", "Git username if a Personal Access Token should be created")
 	cmd.Flags().StringVarP(&options.Domain, "domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
+	cmd.Flags().BoolVarP(&options.HTTPS, "https", "", false, "Instructs Jenkins X to generate https not http Ingress rules")
 	cmd.Flags().StringVarP(&options.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
 	cmd.Flags().StringVarP(&options.CloudEnvRepository, "cloud-environment-repo", "c", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
@@ -112,7 +115,12 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 // Run implements this command
 func (options *InstallOptions) Run() error {
 
-	var err error
+	client, _, err := options.Factory.CreateClient()
+	if err != nil {
+		return err
+	}
+	options.kubeClient = client
+
 	options.Provider, err = GetCloudProvider(options.Provider)
 	if err != nil {
 		return err
@@ -120,6 +128,11 @@ func (options *InstallOptions) Run() error {
 
 	// get secrets to use in helm install
 	secrets, err := options.getGitSecrets()
+	if err != nil {
+		return err
+	}
+
+	config, err := options.getExposecontrollerConfigValues()
 	if err != nil {
 		return err
 	}
@@ -146,13 +159,18 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	fileName := filepath.Join(dir, GitSecretsFile)
-	err = ioutil.WriteFile(fileName, []byte(secrets), 0644)
+	secretsFileName := filepath.Join(dir, GitSecretsFile)
+	err = ioutil.WriteFile(secretsFileName, []byte(secrets), 0644)
 	if err != nil {
 		return err
 	}
 
-	arg := fmt.Sprintf("ARGS=--values=%s", fileName)
+	configFileName := filepath.Join(dir, ExtraValuesFile)
+	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
+	if err != nil {
+		return err
+	}
+	arg := fmt.Sprintf("ARGS=--values=%s --values=%s", secretsFileName, configFileName)
 
 	// run the helm install
 	err = options.runCommandFromDir(makefileDir, "make", arg, "install")
@@ -160,8 +178,13 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	// cleanup temporary secrets file
-	err = os.Remove(fileName)
+	// cleanup temporary files
+	err = os.Remove(secretsFileName)
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(configFileName)
 	if err != nil {
 		return err
 	}
@@ -244,6 +267,26 @@ PipelineSecrets:
   GitCreds: |-
     https://%s:%s@%s`
 	return fmt.Sprintf(pipelineSecrets, username, token, server), nil
+}
+
+func (o *InstallOptions) getExposecontrollerConfigValues() (string, error) {
+	var err error
+	o.Domain, err = GetDomain(o.kubeClient, o.Domain)
+	if err != nil {
+		return "", err
+	}
+	// TODO convert to a struct
+	config := `
+expose:
+  Args:
+    - --exposer
+    - Ingress
+    - --http
+    - "%v"
+    - --domain
+    - %s
+`
+	return fmt.Sprintf(config, !o.HTTPS, o.Domain), nil
 }
 
 // returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release
