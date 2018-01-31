@@ -16,3 +16,5 @@
 .idea/
 
 build/
+
+.updatebot-repos/

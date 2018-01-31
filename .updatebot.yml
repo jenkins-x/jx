@@ -1,0 +1,6 @@
+github:
+  organisations:
+  - name: jenkins-x
+    repositories:
+    - name: homebrew-jx
+    - name: builder-base
