@@ -241,7 +241,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	installOpts := &InstallOptions{
 		CommonOptions:      o.CommonOptions,
 		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		KubernetesProvider: GKE,
+		Provider:           GKE,
 		GitProvider:        "github.com", // TODO use the correct gitserver
 	}
 	err = installOpts.Run()

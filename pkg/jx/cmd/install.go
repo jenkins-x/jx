@@ -35,7 +35,7 @@ type InstallOptions struct {
 	GitToken           string
 	GitUser            string
 	GitPass            string
-	KubernetesProvider string
+	Provider           string
 	CloudEnvRepository string
 	LocalHelmRepoName  string
 }
@@ -97,24 +97,27 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 		SuggestFor: []string{"list", "ps"},
 	}
 
-	var provider string
 	cmd.Flags().StringVarP(&options.GitProvider, "git-provider", "", "github.com", "Git provider, used to create tokens if not provided.  Supported providers: [GitHub]")
 	cmd.Flags().StringVarP(&options.GitToken, "git-token", "t", "", "Git token used to clone and tag releases, typically using a bot user account.  For GitHub use a personal access token with 'public_repo' scope, see https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line")
 	cmd.Flags().StringVarP(&options.GitUser, "git-username", "u", "", "Git username used to tag releases in pipelines, typically this is a bot user")
 	cmd.Flags().StringVarP(&options.GitPass, "git-password", "p", "", "Git username if a Personal Access Token should be created")
 	cmd.Flags().StringVarP(&options.Domain, "domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
-	cmd.Flags().StringVarP(&provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
+	cmd.Flags().StringVarP(&options.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
 	cmd.Flags().StringVarP(&options.CloudEnvRepository, "cloud-environment-repo", "c", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
 
-	if !KUBERNETES_PROVIDERS_ENUM[provider] {
-		util.InvalidArg(provider, KUBERNETES_PROVIDERS)
-	}
 	return cmd
 }
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
+
+	var err error
+	options.Provider, err = GetCloudProvider(options.Provider)
+	if err != nil {
+		return err
+	}
+
 	// get secrets to use in helm install
 	secrets, err := options.getGitSecrets()
 	if err != nil {
@@ -129,10 +132,10 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// run  helm install setting the token and domain values
-	if options.KubernetesProvider == "" {
+	if options.Provider == "" {
 		return fmt.Errorf("No kubernetes provider found to match cloud-environment with")
 	}
-	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(options.KubernetesProvider)))
+	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(options.Provider)))
 	if _, err := os.Stat(wrkDir); os.IsNotExist(err) {
 		return fmt.Errorf("cloud environment dir %s not found", makefileDir)
 	}
