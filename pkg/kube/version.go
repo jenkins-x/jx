@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"fmt"
 )
 
 // GetVersion returns the version from the labels on the deployment if it can be deduced
@@ -32,20 +33,36 @@ func GetVersion(r *metav1.ObjectMeta) string {
 // GetName returns the app name
 func GetName(r *metav1.ObjectMeta) string {
 	if r != nil {
-		name := r.Name
 		ns := r.Namespace
+		labels := r.Labels
+		if labels != nil {
+			name := labels["app"]
+			if name != "" {
+				// for helm deployments which prefix the namespace in the name lets strip it
+				prefix := ns + "-"
+				if strings.HasPrefix(name, prefix) {
+					name = strings.TrimPrefix(name, prefix)
+
+					// we often have the app name repeated twice!
+					l := len(name) / 2
+					if name[l] == '-' {
+						first := name[0:l]
+						if name[l+1:] == first {
+							return first
+						}
+					}
+				}
+				return name
+			}
+		}
+		name := r.Name
+
 		if ns != "" {
 			// for helm deployments which prefix the namespace in the name lets strip it
 			prefix := ns + "-"
 			if strings.HasPrefix(name, prefix) {
-				return strings.TrimPrefix(name, prefix)
-			}
-		}
-		labels := r.Labels
-		if labels != nil {
-			v := labels["app"]
-			if v != "" {
-				return v
+				name = strings.TrimPrefix(name, prefix)
+				return name
 			}
 		}
 		return name
