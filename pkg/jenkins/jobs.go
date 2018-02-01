@@ -66,6 +66,9 @@ func createBranchSource(info *gits.GitRepositoryInfo, credentials string) string
 			  <strategyId>1</strategyId>
 			  <trust class="org.jenkinsci.plugins.github_branch_source.ForkPullRequestDiscoveryTrait$TrustContributors"/>
 			</org.jenkinsci.plugins.github__branch__source.ForkPullRequestDiscoveryTrait>
+			<jenkins.scm.impl.trait.RegexSCMHeadFilterTrait plugin="scm-api@2.2.6">
+			  <regex>master|PR-.*|feature.*</regex>
+			</jenkins.scm.impl.trait.RegexSCMHeadFilterTrait>
 		  </traits>
 		</source>
 `
