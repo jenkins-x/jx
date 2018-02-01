@@ -44,13 +44,14 @@ func CreateFolderXml(folderUrl string, name string) string {
 `
 }
 
-func createBranchSource(info *gits.GitRepositoryInfo, credentials string) string {
+func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvider, credentials string) string {
 	credXml := ""
 	if credentials != "" {
 		credXml = `		  <credentialsId>` + credentials + `</credentialsId>
 `
 	}
-	return `
+	if gitProvider.IsGitHub() {
+		return `
 	    <source class="org.jenkinsci.plugins.github_branch_source.GitHubSCMSource" plugin="github-branch-source@2.3.1">
 		  <id>b50ee5d4-cb45-42de-9140-d79330bab9ac</id>` + credXml + `
 		  <repoOwner>` + info.Organisation + `</repoOwner>
@@ -72,9 +73,23 @@ func createBranchSource(info *gits.GitRepositoryInfo, credentials string) string
 		  </traits>
 		</source>
 `
+	}
+	return `
+<source class="jenkins.plugins.git.GitSCMSource" plugin="git@3.7.0">
+  <id>3ee777bd-6590-4b97-ac65-1ab01e7062ad</id>
+  <remote>` + info.URL + `</remote>
+` + credXml + `
+<traits>
+	<jenkins.plugins.git.traits.BranchDiscoveryTrait/>
+  </traits>
+</source>
+<strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
+  <properties class="empty-list"/>
+</strategy>
+`
 }
 
-func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, credentials string, jenkinsfile string) string {
+func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, gitProvider gits.GitProvider, credentials string, jenkinsfile string) string {
 	return `<?xml version='1.0' encoding='UTF-8'?>
 <org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch@2.16">
   <actions/>
@@ -106,7 +121,7 @@ func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, credentials strin
   <sources class="jenkins.branch.MultiBranchProject$BranchSourceList" plugin="branch-api@2.0.15">
 	<data>
 	  <jenkins.branch.BranchSource>
-` + createBranchSource(info, credentials) + `
+` + createBranchSource(info, gitProvider, credentials) + `
 		<strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
 		  <properties class="empty-list"/>
 		</strategy>
