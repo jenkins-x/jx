@@ -44,9 +44,9 @@ func GetPodVersion(pod *corev1.Pod, appName string) string {
 			image := c.Image
 			idx := strings.LastIndex(image, ":")
 			if idx > 0 {
-				version := image[idx + 1:]
+				version := image[idx+1:]
 				prefix := image[0:idx]
-				if prefix == appName || strings.HasSuffix(prefix, "/" + appName) {
+				if prefix == appName || strings.HasSuffix(prefix, "/"+appName) {
 					return version
 				}
 			}

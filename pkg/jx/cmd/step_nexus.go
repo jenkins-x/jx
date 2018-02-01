@@ -5,12 +5,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"path/filepath"
 	"fmt"
-	"io/ioutil"
-	"strings"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
 )
 
 const (

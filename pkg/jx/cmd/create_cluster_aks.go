@@ -4,13 +4,13 @@ import (
 	"io"
 	"os"
 
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"strings"
-	"github.com/Pallinder/go-randomdata"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -124,10 +124,9 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		log.Infof("No resource name provided so using a generated one: %s", resourceName)
 	}
 
-
 	clusterName := o.Flags.ClusterName
 	if clusterName == "" {
-		clusterName = resourceName +"-cluster"
+		clusterName = resourceName + "-cluster"
 		log.Infof("No cluster name provided so using a generated one: %s", clusterName)
 	}
 
@@ -140,7 +139,6 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		}
 		survey.AskOne(prompt, &location, nil)
 	}
-
 
 	nodeCount := o.Flags.NodeCount
 	if nodeCount == "" {
@@ -240,7 +238,6 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	}
 
 	**/
-
 
 	// call jx init
 	initOpts := &InitOptions{

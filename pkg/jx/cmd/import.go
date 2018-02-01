@@ -14,10 +14,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
@@ -122,7 +122,7 @@ type ImportOptions struct {
 	SelectFilter            string
 	Jenkinsfile             string
 	GitRepositoryOptions    gits.GitRepositoryOptions
-	ImportGitCommitMessage string
+	ImportGitCommitMessage  string
 
 	DisableDotGitSearch bool
 	Jenkins             *gojenkins.Jenkins
@@ -580,7 +580,7 @@ func (o *ImportOptions) DiscoverGit() error {
 	message := o.ImportGitCommitMessage
 	if message == "" {
 		if o.BatchMode {
-			message = "Initial import";
+			message = "Initial import"
 		} else {
 			messagePrompt := &survey.Input{
 				Message: "Commit message: ",

@@ -2,15 +2,14 @@ package kube
 
 import (
 	"github.com/stretchr/testify/assert"
-	"testing"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"testing"
 )
-
 
 func TestGetName(t *testing.T) {
 	r := &metav1.ObjectMeta{
-		Name: "default-staging-my-spring-boot-demo2-my-spring-boot-demo2-fxfgz",
+		Name:      "default-staging-my-spring-boot-demo2-my-spring-boot-demo2-fxfgz",
 		Namespace: "default-staging",
 		Labels: map[string]string{
 			"app": "default-staging-my-spring-boot-demo2-my-spring-boot-demo2",
@@ -22,7 +21,7 @@ func TestGetName(t *testing.T) {
 func TestGetPodVersion(t *testing.T) {
 	r := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "default-staging-my-spring-boot-demo2-my-spring-boot-demo2-fxfgz",
+			Name:      "default-staging-my-spring-boot-demo2-my-spring-boot-demo2-fxfgz",
 			Namespace: "default-staging",
 			Labels: map[string]string{
 				"app": "default-staging-my-spring-boot-demo2-my-spring-boot-demo2",

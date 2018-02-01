@@ -5,10 +5,10 @@ import (
 	"regexp"
 	"strings"
 
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 const (
@@ -90,7 +90,7 @@ func (o *VersionOptions) Run() error {
 	output, err = o.getCommandOutput("", "helm", "version", "--short")
 	if err != nil {
 		o.warnf("Failed to get helm version: %s\n", err)
-	}  else {
+	} else {
 		for i, line := range strings.Split(output, "\n") {
 			fields := strings.Fields(line)
 			if len(fields) > 1 {
@@ -111,7 +111,7 @@ func (o *VersionOptions) Run() error {
 	output, err = o.getCommandOutput("", "draft", "version")
 	if err != nil {
 		o.warnf("Failed to find draft version: %s\n", err)
-		if (output != "") {
+		if output != "" {
 			o.warnf("%s\n", output)
 		}
 	} else {
