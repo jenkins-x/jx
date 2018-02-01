@@ -259,9 +259,16 @@ func (o *InitOptions) initIngress() error {
 		return nil
 	}
 
-	err = o.runCommand("helm", "install", "--name", "jx", "stable/nginx-ingress", "--namespace", "kube-system")
-	if err != nil {
-		return err
+	i := 0
+	for {
+		err = o.runCommand("helm", "install", "--name", "jx", "stable/nginx-ingress", "--namespace", "kube-system")
+		if err != nil {
+			if  i >= 3 {break}
+			i++
+			time.Sleep(time.Second)
+		}else{
+			break
+		}
 	}
 
 	err = kube.WaitForDeploymentToBeReady(client, "jx-nginx-ingress-controller", "kube-system", 10*time.Minute)

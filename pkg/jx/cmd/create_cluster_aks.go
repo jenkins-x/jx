@@ -132,29 +132,35 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	}
 
 	location := o.Flags.Location
-	prompt := &survey.Input{
-		Message: "location",
-		Default: location,
-		Help:    "location to run cluster",
+	if location == "" {
+		prompt := &survey.Input{
+			Message: "location",
+			Default: location,
+			Help:    "location to run cluster",
+		}
+		survey.AskOne(prompt, &location, nil)
 	}
-	survey.AskOne(prompt, &location, nil)
 
 
 	nodeCount := o.Flags.NodeCount
-	prompt = &survey.Input{
-		Message: "nodes",
-		Default: nodeCount,
-		Help:    "number of nodes",
+	if nodeCount == "" {
+		prompt := &survey.Input{
+			Message: "nodes",
+			Default: nodeCount,
+			Help:    "number of nodes",
+		}
+		survey.AskOne(prompt, &nodeCount, nil)
 	}
-	survey.AskOne(prompt, &nodeCount, nil)
 
 	kubeVersion := o.Flags.KubeVersion
-	prompt = &survey.Input{
-		Message: "k8version",
-		Default: kubeVersion,
-		Help:    "k8 version",
+	if kubeVersion == "" {
+		prompt := &survey.Input{
+			Message: "k8version",
+			Default: kubeVersion,
+			Help:    "k8 version",
+		}
+		survey.AskOne(prompt, &kubeVersion, nil)
 	}
-	survey.AskOne(prompt, &kubeVersion, nil)
 
 	pathToPublicKey := o.Flags.PathToPublicKey
 
