@@ -31,18 +31,20 @@ type CreateClusterOptions struct {
 }
 
 const (
-	GKE      string = "gke"
-	EKS      string = "eks"
-	AKS      string = "aks"
-	MINIKUBE string = "minikube"
+	GKE      = "gke"
+	EKS      = "eks"
+	AKS      = "aks"
+	MINIKUBE = "minikube"
+	JX_INFRA = "jx-infra"
 )
 
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS}
+var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS, JX_INFRA}
 
 var KUBERNETES_PROVIDERS_ENUM = map[string]bool{
 	GKE:      true,
 	AKS:      true,
 	MINIKUBE: true,
+	JX_INFRA: true,
 }
 
 const (

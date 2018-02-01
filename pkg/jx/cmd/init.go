@@ -37,7 +37,7 @@ type InitFlags struct {
 }
 
 const (
-	INGRESS_SERVICE_NAME = "jx-nginx-ingress-controller"
+	INGRESS_SERVICE_NAME = "jxing-nginx-ingress-controller"
 )
 
 var (
@@ -256,6 +256,7 @@ func (o *InitOptions) initIngress() error {
 	prompt := &survey.Confirm{
 		Message: "No existing ingress controller found in the kube-system namespace, shall we install one?",
 		Default: true,
+		Help:    "An ingress controller works with an external loadbalancer so you can access Jenkins X and your applications",
 	}
 	survey.AskOne(prompt, &installIngressController, nil)
 
@@ -265,12 +266,14 @@ func (o *InitOptions) initIngress() error {
 
 	i := 0
 	for {
-		err = o.runCommand("helm", "install", "--name", "jx", "stable/nginx-ingress", "--namespace", "kube-system")
+		err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", "kube-system")
 		if err != nil {
-			if  i >= 3 {break}
+			if i >= 3 {
+				break
+			}
 			i++
 			time.Sleep(time.Second)
-		}else{
+		} else {
 			break
 		}
 	}
