@@ -36,6 +36,10 @@ type InitFlags struct {
 	Provider string
 }
 
+const (
+	INGRESS_SERVICE_NAME = "jx-nginx-ingress-controller"
+)
+
 var (
 	initLong = templates.LongDesc(`
 		This command installs the Jenkins X platform on a connected kubernetes cluster
@@ -271,14 +275,14 @@ func (o *InitOptions) initIngress() error {
 		}
 	}
 
-	err = kube.WaitForDeploymentToBeReady(client, "jx-nginx-ingress-controller", "kube-system", 10*time.Minute)
+	err = kube.WaitForDeploymentToBeReady(client, INGRESS_SERVICE_NAME, "kube-system", 10*time.Minute)
 	if err != nil {
 		return err
 	}
 
 	if o.Flags.Provider == GKE || o.Flags.Provider == AKS {
 		log.Info("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in kube-system namespace\n")
-		err = kube.WaitForExternalIP(client, "jx-nginx-ingress-controller", "kube-system", 10*time.Minute)
+		err = kube.WaitForExternalIP(client, INGRESS_SERVICE_NAME, "kube-system", 10*time.Minute)
 		if err != nil {
 			return err
 		}
@@ -298,7 +302,7 @@ func (o *InitOptions) initIngress() error {
 
 func GetDomain(client *kubernetes.Clientset, domain string) (string, error) {
 
-	svc, err := client.CoreV1().Services("kube-system").Get("jx-nginx-ingress-controller", meta_v1.GetOptions{})
+	svc, err := client.CoreV1().Services("kube-system").Get(INGRESS_SERVICE_NAME, meta_v1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -332,6 +336,7 @@ func GetDomain(client *kubernetes.Clientset, domain string) (string, error) {
 		if domain != defaultDomain {
 			log.Successf("You can now configure your wildcard DNS %s to point to %s\n", domain, address)
 		}
+
 	}
 
 	return domain, nil
