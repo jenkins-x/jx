@@ -35,6 +35,12 @@ type CommonOptions struct {
 	jenkinsClient    *gojenkins.Jenkins
 }
 
+func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitRepositoryOptions) {
+	cmd.Flags().StringVarP(&repositoryOptions.ServerURL, "git-provider-url", "", "", "The git server URL to create new git repositories inside")
+	cmd.Flags().StringVarP(&repositoryOptions.Username, "git-username", "", "", "The git username to use for creating new git repositories")
+	cmd.Flags().StringVarP(&repositoryOptions.ApiToken, "git-api-token", "", "", "The git API token to use for creating new git repositories")
+}
+
 func (c *CommonOptions) CreateTable() table.Table {
 	return c.Factory.CreateTable(c.Out)
 }

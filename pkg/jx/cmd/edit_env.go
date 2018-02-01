@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
 )
 
 var (
@@ -37,6 +38,7 @@ type EditEnvOptions struct {
 	NoGitOps               bool
 	ForkEnvironmentGitRepo string
 	EnvJobCredentials      string
+	GitRepositoryOptions   gits.GitRepositoryOptions
 }
 
 // NewCmdEditEnv creates a command object for the "create" command
@@ -79,6 +81,8 @@ func NewCmdEditEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.EnvJobCredentials, "env-job-credentials", "", "", "The Jenkins credentials used by the GitOps Job for this environment")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
+
+	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	return cmd
 }
 
@@ -136,7 +140,7 @@ func (o *EditEnvOptions) Run() error {
 	}
 
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, authConfigSvc, env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, envDir)
+	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, envDir, o.GitRepositoryOptions)
 	if err != nil {
 		return err
 	}

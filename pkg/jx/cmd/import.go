@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
 	"strings"
 
 	"github.com/jenkins-x/golang-jenkins"
@@ -15,10 +14,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
@@ -122,6 +121,8 @@ type ImportOptions struct {
 	DisableJenkinsfileCheck bool
 	SelectFilter            string
 	Jenkinsfile             string
+	GitRepositoryOptions    gits.GitRepositoryOptions
+	ImportGitCommitMessage string
 
 	DisableDotGitSearch bool
 	Jenkins             *gojenkins.Jenkins
@@ -190,6 +191,10 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "x", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
 	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a git provider this filters the list of repositories")
+	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "The git commit message for the import")
+
+	options.addCommonFlags(cmd)
+	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	return cmd
 }
 
@@ -460,7 +465,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	dir := o.Dir
 	_, defaultRepoName := filepath.Split(dir)
 
-	details, err := gits.PickNewGitRepository(o.Out, authConfigSvc, defaultRepoName)
+	details, err := gits.PickNewGitRepository(o.Out, o.BatchMode, authConfigSvc, defaultRepoName, o.GitRepositoryOptions)
 	if err != nil {
 		return err
 	}
@@ -533,21 +538,23 @@ func (o *ImportOptions) DiscoverGit() error {
 		return fmt.Errorf("No directory specified!")
 	}
 
-	// lets prompt the user to initiialse the git repository
-	o.Printf("The directory %s is not yet using git\n", util.ColorInfo(dir))
-	flag := false
-	prompt := &survey.Confirm{
-		Message: "Would you like to initialise git now?",
-		Default: true,
+	// lets prompt the user to initialise the git repository
+	if !o.BatchMode {
+		o.Printf("The directory %s is not yet using git\n", util.ColorInfo(dir))
+		flag := false
+		prompt := &survey.Confirm{
+			Message: "Would you like to initialise git now?",
+			Default: true,
+		}
+		err := survey.AskOne(prompt, &flag, nil)
+		if err != nil {
+			return err
+		}
+		if !flag {
+			return fmt.Errorf("Please initialise git yourself then try again")
+		}
 	}
-	err := survey.AskOne(prompt, &flag, nil)
-	if err != nil {
-		return err
-	}
-	if !flag {
-		return fmt.Errorf("Please initialise git yourself then try again")
-	}
-	err = gits.GitInit(dir)
+	err := gits.GitInit(dir)
 	if err != nil {
 		return err
 	}
@@ -570,14 +577,20 @@ func (o *ImportOptions) DiscoverGit() error {
 		return err
 	}
 
-	message := ""
-	messagePrompt := &survey.Input{
-		Message: "Commit message: ",
-		Default: "Initial import",
-	}
-	err = survey.AskOne(messagePrompt, &message, nil)
-	if err != nil {
-		return err
+	message := o.ImportGitCommitMessage
+	if message == "" {
+		if o.BatchMode {
+			message = "Initial import";
+		} else {
+			messagePrompt := &survey.Input{
+				Message: "Commit message: ",
+				Default: "Initial import",
+			}
+			err = survey.AskOne(messagePrompt, &message, nil)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	err = gits.GitCommitIfChanges(dir, message)
 	if err != nil {
