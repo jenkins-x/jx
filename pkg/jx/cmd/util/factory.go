@@ -13,11 +13,11 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/util"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
@@ -42,7 +42,7 @@ type Factory interface {
 
 	CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error)
 
- 	CreateMetricsClient() (*metricsclient.Clientset, error)
+	CreateMetricsClient() (*metricsclient.Clientset, error)
 
 	CreateTable(out io.Writer) table.Table
 }

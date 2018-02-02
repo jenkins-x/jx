@@ -17,8 +17,7 @@ type StepOptions struct {
 	OutDir        string
 }
 
-var (
-)
+var ()
 
 // NewCmdStep Steps a command object for the "step" command
 func NewCmdStep(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {

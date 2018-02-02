@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"strings"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
-	"strings"
 )
 
 // ImportProject imports a MultiBranchProject into Jeknins for the given git URL
@@ -57,7 +57,7 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, jenkin
 			fmt.Fprintf(out, "Warning the folder %s is of class %s", org, c)
 		}
 	}
-	projectXml := CreateMultiBranchProjectXml(gitInfo, credentials, jenkinsfile)
+	projectXml := CreateMultiBranchProjectXml(gitInfo, gitProvider, credentials, jenkinsfile)
 	jobName := gitInfo.Name
 	job, err := jenk.GetJobByPath(org, jobName)
 	if err == nil {

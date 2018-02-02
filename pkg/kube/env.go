@@ -23,7 +23,7 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, envDir string) (gits.GitProvider, error) {
+func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, envDir string, gitRepoOptions gits.GitRepositoryOptions) (gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	name := data.Name
 	createMode := name == ""
@@ -214,7 +214,7 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 				}
 				if createRepo {
 					showUrlEdit = false
-					url, p, err := createEnvironmentGitRepo(out, authConfigSvc, data, forkEnvGitURL, envDir)
+					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions)
 					if err != nil {
 						return nil, err
 					}
@@ -255,9 +255,9 @@ func CreateEnvironmentSurvey(out io.Writer, authConfigSvc auth.AuthConfigService
 	return gitProvider, nil
 }
 
-func createEnvironmentGitRepo(out io.Writer, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string) (string, gits.GitProvider, error) {
+func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string, gitRepoOptions gits.GitRepositoryOptions) (string, gits.GitProvider, error) {
 	defaultRepoName := "environment-" + env.Name
-	details, err := gits.PickNewGitRepository(out, authConfigSvc, defaultRepoName)
+	details, err := gits.PickNewGitRepository(out, batchMode, authConfigSvc, defaultRepoName, gitRepoOptions)
 	if err != nil {
 		return "", nil, err
 	}
