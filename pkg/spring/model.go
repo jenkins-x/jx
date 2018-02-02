@@ -121,7 +121,7 @@ func LoadSpringBoot(cacheDir string) (*SpringBootModel, error) {
 	return &model, nil
 }
 
-func (model *SpringBootModel) CreateSurvey(data *SpringBootForm, advanced bool) error {
+func (model *SpringBootModel) CreateSurvey(data *SpringBootForm, advanced bool, batchMode bool) error {
 	err := model.ValidateInput(OptionLanguage, &model.Language, data.Language)
 	if err != nil {
 		return err
@@ -144,6 +144,9 @@ func (model *SpringBootModel) CreateSurvey(data *SpringBootForm, advanced bool) 
 	}
 
 	var qs = []*survey.Question{}
+	if batchMode {
+		return nil
+	}
 	if data.Language == "" {
 		qs = append(qs, CreateValueSelect("Language", "language", &model.Language, data))
 	}

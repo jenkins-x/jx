@@ -92,7 +92,7 @@ func (o *CreateSpringOptions) Run() error {
 	}
 
 	data := &o.SpringForm
-	err = model.CreateSurvey(&o.SpringForm, o.Advanced)
+	err = model.CreateSurvey(&o.SpringForm, o.Advanced, o.BatchMode)
 	if err != nil {
 		return err
 	}
