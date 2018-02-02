@@ -32,7 +32,7 @@ var (
 
 // CreateSpringOptions the options for the create spring command
 type CreateSpringOptions struct {
-	CreateOptions
+	CreateProjectOptions
 
 	Advanced   bool
 	SpringForm spring.SpringBootForm
@@ -41,11 +41,13 @@ type CreateSpringOptions struct {
 // NewCmdCreateSpring creates a command object for the "create" command
 func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateSpringOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				Out:     out,
-				Err:     errOut,
+		CreateProjectOptions: CreateProjectOptions{
+			ImportOptions:  ImportOptions{
+				CommonOptions: CommonOptions{
+					Factory: f,
+					Out:     out,
+					Err:     errOut,
+				},
 			},
 		},
 	}
@@ -62,7 +64,7 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			cmdutil.CheckErr(err)
 		},
 	}
-	addCreateAppFlags(cmd, &options.CreateOptions)
+	options.addCreateAppFlags(cmd)
 
 	cmd.Flags().BoolVarP(&options.Advanced, "advanced", "x", false, "Advanced mode can show more detailed forms for some resource kinds like springboot")
 
@@ -109,5 +111,5 @@ func (o *CreateSpringOptions) Run() error {
 	}
 	o.Printf("Created spring boot project at %s\n", util.ColorInfo(outDir))
 
-	return o.DoImport(outDir)
+	return o.ImportCreatedProject(outDir)
 }

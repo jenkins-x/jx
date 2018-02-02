@@ -56,20 +56,6 @@ func (o *StepNexusOptions) Run() error {
 	return o.Cmd.Help()
 }
 
-// DoImport imports the project Stepd at the given directory
-func (o *StepNexusOptions) DoImport(outDir string) error {
-	if o.DisableImport {
-		return nil
-	}
-
-	importOptions := &ImportOptions{
-		CommonOptions:       o.CommonOptions,
-		Dir:                 outDir,
-		DisableDotGitSearch: true,
-	}
-	return importOptions.Run()
-}
-
 func (o *StepNexusOptions) findStagingRepoIds() ([]string, error) {
 	answer := []string{}
 	files, err := filepath.Glob(statingRepositoryProperties)
