@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -92,6 +93,16 @@ func (c *AuthConfig) FindUserAuth(serverURL string, username string) *UserAuth {
 		}
 	}
 	return nil
+}
+
+
+func (config *AuthConfig) IndexOfServerName(name string) int {
+	for i, server := range config.Servers {
+		if server.Name == name {
+			return i
+		}
+	}
+	return -1
 }
 
 type AuthConfigService struct {
@@ -329,6 +340,18 @@ func (config *AuthConfig) EditUserAuth(auth *UserAuth, defaultUserName string, e
 		Validate: survey.Required,
 	})
 	return survey.Ask(qs, auth)
+}
+
+func (config *AuthConfig) GetServerNames() []string {
+	answer := []string{}
+	for _, server := range config.Servers {
+		name := server.Name
+		if name != "" {
+			answer = append(answer, name)
+		}
+	}
+	sort.Strings(answer)
+	return answer
 }
 
 // SaveUserAuth saves the given user auth for the server url

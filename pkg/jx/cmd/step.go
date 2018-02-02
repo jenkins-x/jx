@@ -50,17 +50,3 @@ func NewCmdStep(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 func (o *StepOptions) Run() error {
 	return o.Cmd.Help()
 }
-
-// DoImport imports the project Stepd at the given directory
-func (o *StepOptions) DoImport(outDir string) error {
-	if o.DisableImport {
-		return nil
-	}
-
-	importOptions := &ImportOptions{
-		CommonOptions:       o.CommonOptions,
-		Dir:                 outDir,
-		DisableDotGitSearch: true,
-	}
-	return importOptions.Run()
-}

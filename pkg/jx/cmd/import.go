@@ -181,21 +181,32 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 		},
 	}
 	cmd.Flags().StringVarP(&options.RepoURL, "url", "u", "", "The git clone URL to clone into the current directory and then import")
-	cmd.Flags().StringVarP(&options.Organisation, "org", "o", "", "Specify the git provider organisation to import the project into (if it is not already in one)")
-	cmd.Flags().StringVarP(&options.Repository, "name", "n", "", "Specify the git repository name to import the project into (if it is not already in one)")
-	cmd.Flags().StringVarP(&options.Credentials, "credentials", "c", "", "The Jenkins credentials name used by the job")
-	cmd.Flags().StringVarP(&options.Jenkinsfile, "jenkinsfile", "j", "", "The name of the Jenkinsfile to use. If not specified then 'Jenkinsfile' will be used")
-	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "d", false, "Performs local changes to the repo but skips the import into Jenkins X")
-	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wis to pick the repositories from GitHub to import")
+	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wish to pick the repositories from GitHub to import")
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a git provider this defaults to selecting them all")
-	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "x", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
-	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a git provider this filters the list of repositories")
+
+	options.addImportFlags(cmd, false)
+	return cmd
+}
+
+func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject bool) {
+	notCreateProject := func(text string) string {
+		if createProject {
+			return ""
+		}
+		return text
+	}
+	cmd.Flags().StringVarP(&options.Organisation, "org", "", "", "Specify the git provider organisation to import the project into (if it is not already in one)")
+	cmd.Flags().StringVarP(&options.Repository, "name", "", notCreateProject("n"), "Specify the git repository name to import the project into (if it is not already in one)")
+	cmd.Flags().StringVarP(&options.Credentials, "credentials", notCreateProject("c"), "", "The Jenkins credentials name used by the job")
+	cmd.Flags().StringVarP(&options.Jenkinsfile, "jenkinsfile", notCreateProject("j"), "", "The name of the Jenkinsfile to use. If not specified then 'Jenkinsfile' will be used")
+	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Performs local changes to the repo but skips the import into Jenkins X")
+	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
+	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "The git commit message for the import")
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
-	return cmd
 }
 
 func (o *ImportOptions) Run() error {

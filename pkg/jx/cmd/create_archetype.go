@@ -32,7 +32,7 @@ var (
 
 // CreateArchetypeOptions the options for the create spring command
 type CreateArchetypeOptions struct {
-	CreateOptions
+	CreateProjectOptions
 
 	ArchetypeCatalogURL string
 
@@ -46,11 +46,13 @@ type CreateArchetypeOptions struct {
 // NewCmdCreateArchetype creates a command object for the "create" command
 func NewCmdCreateArchetype(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateArchetypeOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				Out:     out,
-				Err:     errOut,
+		CreateProjectOptions: CreateProjectOptions{
+			ImportOptions: ImportOptions{
+				CommonOptions: CommonOptions{
+					Factory: f,
+					Out:     out,
+					Err:     errOut,
+				},
 			},
 		},
 	}
@@ -68,7 +70,7 @@ func NewCmdCreateArchetype(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			cmdutil.CheckErr(err)
 		},
 	}
-	addCreateAppFlags(cmd, &options.CreateOptions)
+	options.addCreateAppFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.ArchetypeCatalogURL, "catalog", "c", "http://central.maven.org/maven2/archetype-catalog.xml", "The Maven Archetype Catalog to use")
 
@@ -140,5 +142,5 @@ func (o *CreateArchetypeOptions) Run() error {
 	outDir := filepath.Join(dir, form.ArtifactId)
 	o.Printf("Created project at %s\n\n", util.ColorInfo(outDir))
 
-	return o.DoImport(outDir)
+	return o.ImportCreatedProject(outDir)
 }
