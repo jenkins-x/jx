@@ -82,7 +82,7 @@ func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 func (o *InitOptions) Run() error {
 
 	var err error
-	o.Flags.Provider, err = GetCloudProvider(o.Flags.Provider)
+	o.Flags.Provider, err = o.GetCloudProvider(o.Flags.Provider)
 	if err != nil {
 		return err
 	}
@@ -220,9 +220,10 @@ func (o *InitOptions) initIngress() error {
 	if err != nil {
 		return err
 	}
-
 	if currentContext == "minikube" {
-
+		if  o.Flags.Provider == "" {
+			o.Flags.Provider = MINIKUBE
+		}
 		addons, err := o.getCommandOutput("", "minikube", "addons", "list")
 		if err != nil {
 			return err
@@ -292,7 +293,7 @@ func (o *InitOptions) initIngress() error {
 
 		log.Infof("External loadbalancer created\n")
 
-		o.Flags.Domain, err = GetDomain(client, o.Flags.Domain)
+		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain)
 		if err != nil {
 			return err
 		}
@@ -303,19 +304,27 @@ func (o *InitOptions) initIngress() error {
 	return nil
 }
 
-func GetDomain(client *kubernetes.Clientset, domain string) (string, error) {
-
-	svc, err := client.CoreV1().Services("kube-system").Get(INGRESS_SERVICE_NAME, meta_v1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-
+func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, provider string) (string, error) {
 	var address string
-	for _, v := range svc.Status.LoadBalancer.Ingress {
-		if v.IP != "" {
-			address = v.IP
-		} else if v.Hostname != "" {
-			address = v.Hostname
+	if provider == MINIKUBE {
+		ip, err := o.getCommandOutput("", "minikube", "ip")
+		if err != nil {
+		  return "", err
+		}
+		address = ip
+	} else {
+		svc, err := client.CoreV1().Services("kube-system").Get(INGRESS_SERVICE_NAME, meta_v1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		if svc != nil {
+			for _, v := range svc.Status.LoadBalancer.Ingress {
+				if v.IP != "" {
+					address = v.IP
+				} else if v.Hostname != "" {
+					address = v.Hostname
+				}
+			}
 		}
 	}
 	defaultDomain := fmt.Sprintf("%s.nip.io", address)

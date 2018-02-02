@@ -514,7 +514,14 @@ func (o *CreateClusterOptions) installAzureCli() error {
 	return o.runCommand("brew", "install", "azure-cli")
 }
 
-func GetCloudProvider(p string) (string, error) {
+func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
+	if p == "" {
+		// lets detect minikube
+		currentContext, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+		if err == nil && currentContext == "minikube" {
+			p = MINIKUBE
+		}
+	}
 	if p != "" {
 		if !util.Contains(KUBERNETES_PROVIDERS, p) {
 			return "", util.InvalidArg(p, KUBERNETES_PROVIDERS)
