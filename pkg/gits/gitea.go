@@ -175,11 +175,15 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 		config["secret"] = data.Secret
 	}
 	hook := gitea.CreateHookOption{
+		Type: "gitea",
 		Config: config,
 		Events: []string{"*"},
 	}
 	fmt.Printf("Creating github webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
 	_, err = p.Client.CreateRepoHook(owner, repo, hook)
+	if err != nil {
+	  return fmt.Errorf("Failed to create webhook for %s/%s with %#v due to: %s", owner, repo, hook, err)
+	}
 	return err
 }
 
