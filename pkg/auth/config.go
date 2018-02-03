@@ -2,84 +2,10 @@ package auth
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"sort"
 
-	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/yaml.v2"
 )
-
-const (
-	DefaultWritePermissions = 0760
-)
-
-type AuthServer struct {
-	URL   string
-	Users []*UserAuth
-	Name  string
-	Kind  string
-
-	CurrentUser string
-}
-
-type UserAuth struct {
-	Username    string
-	ApiToken    string
-	BearerToken string
-}
-
-type AuthConfig struct {
-	Servers []*AuthServer
-
-	DefaultUsername string
-	CurrentServer   string
-}
-
-func (s *AuthServer) Label() string {
-	if s.Name != "" {
-		return s.Name
-	}
-	return s.URL
-}
-
-func (s *AuthServer) Description() string {
-	if s.Name != "" {
-		return s.Name + " at " + s.URL
-	}
-	return s.URL
-}
-
-func (s *AuthServer) DeleteUser(username string) error {
-	idx := -1
-	for i, user := range s.Users {
-		if user.Username == username {
-			idx = i
-			break
-		}
-	}
-	if idx < 0 {
-		if len(s.Users) == 0 {
-			return fmt.Errorf("Cannot remote user %s as there are no users for this server", username)
-		}
-		return util.InvalidArg(username, s.GetUsernames())
-	}
-	s.Users = append(s.Users[0:idx], s.Users[idx+1:]...)
-	return nil
-}
-
-func (s *AuthServer) GetUsernames() []string {
-	answer := []string{}
-	for _, user := range s.Users {
-		name := user.Username
-		if name != "" {
-			answer = append(answer, name)
-		}
-	}
-	sort.Strings(answer)
-	return answer
-}
 
 func (c *AuthConfig) FindUserAuths(serverURL string) []*UserAuth {
 	for _, server := range c.Servers {
@@ -139,11 +65,6 @@ func (config *AuthConfig) IndexOfServerName(name string) int {
 	return -1
 }
 
-type AuthConfigService struct {
-	FileName string
-	config   AuthConfig
-}
-
 func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
 	username := auth.Username
 	for i, server := range c.Servers {
@@ -165,62 +86,6 @@ func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
 		Users:       []*UserAuth{auth},
 		CurrentUser: username,
 	})
-}
-
-func (s *AuthConfigService) Config() *AuthConfig {
-	return &s.config
-}
-
-func (s *AuthConfigService) SetConfig(c AuthConfig) {
-	s.config = c
-}
-
-// LoadConfig loads the configuration from the users JX config directory
-func (s *AuthConfigService) LoadConfig() (*AuthConfig, error) {
-	config := &s.config
-	fileName := s.FileName
-	if fileName != "" {
-		exists, err := util.FileExists(fileName)
-		if err != nil {
-			return config, fmt.Errorf("Could not check if file exists %s due to %s", fileName, err)
-		}
-		if exists {
-			data, err := ioutil.ReadFile(fileName)
-			if err != nil {
-				return config, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
-			}
-			err = yaml.Unmarshal(data, &config)
-			if err != nil {
-				return config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
-			}
-		}
-	}
-	return config, nil
-}
-
-// SaveConfig loads the configuration from the users JX config directory
-func (s *AuthConfigService) SaveConfig() error {
-	fileName := s.FileName
-	if fileName == "" {
-		return fmt.Errorf("No filename defined!")
-	}
-	data, err := yaml.Marshal(s.config)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(fileName, data, DefaultWritePermissions)
-}
-
-func CreateAuthUserFromEnvironment(prefix string) UserAuth {
-	return UserAuth{
-		Username:    os.Getenv(prefix + "_USERNAME"),
-		ApiToken:    os.Getenv(prefix + "_API_TOKEN"),
-		BearerToken: os.Getenv(prefix + "_BEARER_TOKEN"),
-	}
-}
-
-func (a *UserAuth) IsInvalid() bool {
-	return a.BearerToken == "" && (a.ApiToken == "" || a.Username == "")
 }
 
 func (c *AuthConfig) GetServer(url string) *AuthServer {
@@ -405,16 +270,4 @@ func (config *AuthConfig) GetServerURLs() []string {
 	}
 	sort.Strings(answer)
 	return answer
-}
-
-// SaveUserAuth saves the given user auth for the server url
-func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
-	config := &s.config
-	config.SetUserAuth(url, userAuth)
-	user := userAuth.Username
-	if user != "" {
-		config.DefaultUsername = user
-	}
-	config.CurrentServer = url
-	return s.SaveConfig()
 }
