@@ -85,6 +85,6 @@ func (o *DeleteGitUserOptions) Run() error {
 		return err
 	}
 	o.Printf("Deleted API tokens for users: %s for git server %s at %s from local settings\n",
-		util.ColorInfo(strings.Join(args, ", "), util.ColorInfo(server.Name), util.ColorInfo(server.URL)))
+		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

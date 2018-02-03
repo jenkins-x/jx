@@ -201,9 +201,11 @@ func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *GitS
 	}
 	if server == nil {
 		name := config.CurrentServer
-		server = config.GetServerByName(name)
-		if server == nil {
-			o.warnf("Current server %s no longer exists\n", name)
+		if name != "" && o.BatchMode {
+			server = config.GetServerByName(name)
+			if server == nil {
+				o.warnf("Current server %s no longer exists\n", name)
+			}
 		}
 	}
 	if server == nil && len(config.Servers) == 1 {
@@ -213,7 +215,14 @@ func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *GitS
 		if o.BatchMode {
 			return nil, fmt.Errorf("Multiple git providers. Please specify one via the %s option", optionServerName)
 		}
-		name, err := util.PickName(config.GetServerNames(), "Pick git service to add a user to: ")
+		defaultServerName := ""
+		if config.CurrentServer != "" {
+			s := config.GetServer(config.CurrentServer)
+			if s != nil {
+				defaultServerName = s.Name
+			}
+		}
+		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick git server to use: ", defaultServerName)
 		if err != nil {
 			return nil, err
 		}
