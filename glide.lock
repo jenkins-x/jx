@@ -1,5 +1,5 @@
-hash: 53ed0690c738e7928aac31067516efada03c8235538c75d785d436e7cc653d4e
-updated: 2018-01-30T14:12:31.376817271Z
+hash: 2dc3d9cb3f2581d196f7e39f9284b3e13ba3d2ab241680fe1d08e4242520c59b
+updated: 2018-02-03T08:19:28.53724Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -19,16 +19,30 @@ imports:
   - autorest/date
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
+- name: github.com/chromedp/chromedp
+  version: 46a6388474e20ef92c34290f62602e9fa18c9e95
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:
   - spew
 - name: github.com/dgrijalva/jwt-go
   version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
+- name: github.com/emicklei/go-restful
+  version: ff4f55a206334ef123e4f79bbf348980da81ca46
+  subpackages:
+  - log
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+- name: github.com/go-openapi/jsonpointer
+  version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
+- name: github.com/go-openapi/jsonreference
+  version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
+- name: github.com/go-openapi/spec
+  version: 7abd5745472fff5eb3685386d5fb8bf38683154d
+- name: github.com/go-openapi/swag
+  version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
 - name: github.com/gogo/protobuf
   version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
   subpackages:
@@ -45,7 +59,7 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: e48060a28fac52d0f1cb758bc8b87c07bac4a87d
+  version: 897969cdc831052c4694e205e24a033fe7248c2f
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -86,11 +100,17 @@ imports:
 - name: github.com/jenkins-x/golang-jenkins
   version: abbc6a467e12819e13d419e9c89f253bf30b0a66
 - name: github.com/json-iterator/go
-  version: 13f86432b882000a51c6e610c620974462691a97
+  version: 36b14963da70d11297d313183d7e6388c8510e1e
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kevinburke/ssh_config
   version: 0ff8514904a8ebfcfb3c32ad73e1f8498a7f81b4
+- name: github.com/mailru/easyjson
+  version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
+  subpackages:
+  - buffer
+  - jlexer
+  - jwriter
 - name: github.com/MakeNowJust/heredoc
   version: bb23615498cded5e105af4ce27de75b089cbe851
 - name: github.com/mattn/go-colorable
@@ -111,6 +131,10 @@ imports:
   version: c37440a7cf42ac63b919c752ca73a85067e05992
 - name: github.com/pkg/browser
   version: c90ca0c84f15f81c982e32665bffd8d7aac8f097
+- name: github.com/PuerkitoBio/purell
+  version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
+- name: github.com/PuerkitoBio/urlesc
+  version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/russross/blackfriday
   version: 300106c228d52c8941d4b3de6054a6062a86dda3
 - name: github.com/sergi/go-diff
@@ -175,10 +199,17 @@ imports:
 - name: golang.org/x/text
   version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
+  - cases
+  - internal
+  - internal/tag
+  - language
+  - runes
   - secure/bidirule
+  - secure/precis
   - transform
   - unicode/bidi
   - unicode/norm
+  - width
 - name: google.golang.org/appengine
   version: 5bee14b453b4c71be47ec1781b0fa61c2ea182db
   subpackages:
@@ -199,7 +230,7 @@ imports:
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/src-d/go-billy.v4
-  version: e940f8b62a8e61adc71f69802c1cc8305b64ec96
+  version: 027dceab1aa836eb310d92c2eb2266e4dc9f4b81
   subpackages:
   - helper/chroot
   - helper/polyfill
@@ -283,7 +314,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 27d22a50314782b60cbb150b34dd1ba8e0c8d55c
+  version: 5d32743e4807506730116986939c94b6c5e1e5fd
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -398,6 +429,11 @@ imports:
   version: 64ca0808efd56c2418939848947c06b8d495144d
 - name: k8s.io/gengo
   version: 8394c995ab8fbe52216f38d0e1a37de36d820528
+- name: k8s.io/kube-openapi
+  version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1
+  subpackages:
+  - pkg/common
+  - pkg/util/proto
 - name: k8s.io/metrics
   version: a51d59ae25bec1b94f00be3fe970268aed3eadfa
   subpackages:
@@ -414,6 +450,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
   subpackages:
   - assert

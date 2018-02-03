@@ -26,6 +26,7 @@ import:
   version: v4.0.0
 - package: code.gitea.io/sdk/gitea
 - package: github.com/Pallinder/go-randomdata
+- package: github.com/chromedp/chromedp
 testImport:
 - package: github.com/stretchr/testify
   subpackages:
