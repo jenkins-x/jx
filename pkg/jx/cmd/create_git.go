@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 // CreateGitOptions the options for the create spring command
 type CreateGitOptions struct {
 	CreateOptions

@@ -25,7 +25,6 @@ var (
 // DeleteGitServerOptions the options for the create spring command
 type DeleteGitServerOptions struct {
 	CreateOptions
-
 }
 
 // NewCmdDeleteGitServer defines the command
@@ -70,14 +69,14 @@ func (o *DeleteGitServerOptions) Run() error {
 	serverNames := config.GetServerNames()
 	for _, arg := range args {
 		idx := config.IndexOfServerName(arg)
-		if idx <0  {
+		if idx < 0 {
 			return util.InvalidArg(arg, serverNames)
 		}
-		config.Servers = append(config.Servers[0:idx],  config.Servers[idx + 1:]...)
+		config.Servers = append(config.Servers[0:idx], config.Servers[idx+1:]...)
 	}
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
-	  return err
+		return err
 	}
 	o.Printf("Deleted git servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
 	return nil

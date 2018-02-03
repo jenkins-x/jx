@@ -65,7 +65,7 @@ func (s *AuthServer) DeleteUser(username string) error {
 		}
 		return util.InvalidArg(username, s.GetUsernames())
 	}
-	s.Users = append(s.Users[0:idx], s.Users[idx + 1:]...)
+	s.Users = append(s.Users[0:idx], s.Users[idx+1:]...)
 	return nil
 }
 

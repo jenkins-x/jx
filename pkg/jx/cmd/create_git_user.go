@@ -3,12 +3,12 @@ package cmd
 import (
 	"io"
 
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"fmt"
-	"github.com/jenkins-x/jx/pkg/gits"
 )
 
 var (
@@ -22,7 +22,6 @@ var (
 		jx create git server gitea mythingy https://my.server.com/
 	`)
 )
-
 
 // CreateGitUserOptions the command line options for the command
 type CreateGitUserOptions struct {
@@ -66,7 +65,6 @@ func NewCmdCreateGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	return cmd
 }
 
-
 // Run implements the command
 func (o *CreateGitUserOptions) Run() error {
 	args := o.Args
@@ -84,7 +82,7 @@ func (o *CreateGitUserOptions) Run() error {
 
 	server, err := o.findGitServer(config, &o.GitServerFlags)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	// TODO add the API thingy...

@@ -42,7 +42,7 @@ type CreateSpringOptions struct {
 func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateSpringOptions{
 		CreateProjectOptions: CreateProjectOptions{
-			ImportOptions:  ImportOptions{
+			ImportOptions: ImportOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
 					Out:     out,
