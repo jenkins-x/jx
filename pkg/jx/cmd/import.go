@@ -309,7 +309,7 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 	if err != nil {
 		return err
 	}
-	provider, err := gits.CreateProvider(server, &userAuth)
+	provider, err := gits.CreateProvider(server, userAuth)
 	if err != nil {
 		return err
 	}

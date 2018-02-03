@@ -283,7 +283,7 @@ func GitGetRemoteBranchNames(dir string, prefix string) ([]string, error) {
 	return answer, nil
 }
 
-func PrintGenerateAccessToken(server *auth.AuthServer, o io.Writer) {
+func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, o io.Writer) {
 	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL)
 
 	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())

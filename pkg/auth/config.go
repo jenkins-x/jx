@@ -17,7 +17,7 @@ const (
 
 type AuthServer struct {
 	URL   string
-	Users []UserAuth
+	Users []*UserAuth
 	Name  string
 	Kind  string
 
@@ -31,7 +31,7 @@ type UserAuth struct {
 }
 
 type AuthConfig struct {
-	Servers []AuthServer
+	Servers []*AuthServer
 
 	DefaultUsername string
 	CurrentServer   string
@@ -51,13 +51,43 @@ func (s *AuthServer) Description() string {
 	return s.URL
 }
 
-func (c *AuthConfig) FindUserAuths(serverURL string) []UserAuth {
+func (s *AuthServer) DeleteUser(username string) error {
+	idx := -1
+	for i, user := range s.Users {
+		if user.Username == username {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		if len(s.Users) == 0 {
+			return fmt.Errorf("Cannot remote user %s as there are no users for this server", username)
+		}
+		return util.InvalidArg(username, s.GetUsernames())
+	}
+	s.Users = append(s.Users[0:idx], s.Users[idx + 1:]...)
+	return nil
+}
+
+func (s *AuthServer) GetUsernames() []string {
+	answer := []string{}
+	for _, user := range s.Users {
+		name := user.Username
+		if name != "" {
+			answer = append(answer, name)
+		}
+	}
+	sort.Strings(answer)
+	return answer
+}
+
+func (c *AuthConfig) FindUserAuths(serverURL string) []*UserAuth {
 	for _, server := range c.Servers {
 		if server.URL == serverURL {
 			return server.Users
 		}
 	}
-	return []UserAuth{}
+	return []*UserAuth{}
 }
 
 func (c *AuthConfig) GetOrCreateUserAuth(url string, username string) *UserAuth {
@@ -67,13 +97,18 @@ func (c *AuthConfig) GetOrCreateUserAuth(url string, username string) *UserAuth 
 	}
 	server := c.GetOrCreateServer(url)
 	if server.Users == nil {
-		server.Users = []UserAuth{}
+		server.Users = []*UserAuth{}
 	}
 	user = &UserAuth{
 		Username: username,
 	}
-	server.Users = append(server.Users, *user)
-	return user
+	server.Users = append(server.Users, user)
+	for _, user := range server.Users {
+		if user.Username == username {
+			return user
+		}
+	}
+	return nil
 }
 
 // FindUserAuth finds the auth for the given user name
@@ -82,19 +117,18 @@ func (c *AuthConfig) FindUserAuth(serverURL string, username string) *UserAuth {
 	auths := c.FindUserAuths(serverURL)
 	if username == "" {
 		if len(auths) == 1 {
-			return &auths[0]
+			return auths[0]
 		} else {
 			return nil
 		}
 	}
 	for _, auth := range auths {
 		if auth.Username == username {
-			return &auth
+			return auth
 		}
 	}
 	return nil
 }
-
 
 func (config *AuthConfig) IndexOfServerName(name string) int {
 	for i, server := range config.Servers {
@@ -110,7 +144,7 @@ type AuthConfigService struct {
 	config   AuthConfig
 }
 
-func (c *AuthConfig) SetUserAuth(url string, auth UserAuth) {
+func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
 	username := auth.Username
 	for i, server := range c.Servers {
 		if server.URL == url {
@@ -126,9 +160,9 @@ func (c *AuthConfig) SetUserAuth(url string, auth UserAuth) {
 			return
 		}
 	}
-	c.Servers = append(c.Servers, AuthServer{
+	c.Servers = append(c.Servers, &AuthServer{
 		URL:         url,
-		Users:       []UserAuth{auth},
+		Users:       []*UserAuth{auth},
 		CurrentUser: username,
 	})
 }
@@ -190,11 +224,18 @@ func (a *UserAuth) IsInvalid() bool {
 }
 
 func (c *AuthConfig) GetServer(url string) *AuthServer {
-	if c.Servers != nil {
-		for _, s := range c.Servers {
-			if s.URL == url {
-				return &s
-			}
+	for _, s := range c.Servers {
+		if s.URL == url {
+			return s
+		}
+	}
+	return nil
+}
+
+func (c *AuthConfig) GetServerByName(name string) *AuthServer {
+	for _, s := range c.Servers {
+		if s.Name == name {
+			return s
 		}
 	}
 	return nil
@@ -214,15 +255,15 @@ func (c *AuthConfig) GetOrCreateServerName(url string, name string, kind string)
 	s := c.GetServer(url)
 	if s == nil {
 		if c.Servers == nil {
-			c.Servers = []AuthServer{}
+			c.Servers = []*AuthServer{}
 		}
 		s = &AuthServer{
 			URL:   url,
-			Users: []UserAuth{},
+			Users: []*UserAuth{},
 			Name:  name,
 			Kind:  kind,
 		}
-		c.Servers = append(c.Servers, *s)
+		c.Servers = append(c.Servers, s)
 	}
 	return s
 }
@@ -232,7 +273,7 @@ func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
 		return nil, fmt.Errorf("No servers available!")
 	}
 	if len(c.Servers) == 1 {
-		return &c.Servers[0], nil
+		return c.Servers[0], nil
 	}
 	urls := []string{}
 	for _, s := range c.Servers {
@@ -251,13 +292,13 @@ func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
 	}
 	for _, s := range c.Servers {
 		if s.URL == url {
-			return &s, nil
+			return s, nil
 		}
 	}
 	return nil, fmt.Errorf("Could not find server for URL %s", url)
 }
 
-func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string) (UserAuth, error) {
+func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string) (*UserAuth, error) {
 	url := server.URL
 	userAuths := c.FindUserAuths(url)
 	if len(userAuths) == 1 {
@@ -284,11 +325,11 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string) (Use
 		if err != nil {
 			return auth, err
 		}
-		return *c.GetOrCreateUserAuth(url, username), nil
+		return c.GetOrCreateUserAuth(url, username), nil
 	}
 	if len(userAuths) > 1 {
 		usernames := []string{}
-		m := map[string]UserAuth{}
+		m := map[string]*UserAuth{}
 		for _, ua := range userAuths {
 			name := ua.Username
 			usernames = append(usernames, name)
@@ -301,11 +342,11 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string) (Use
 		}
 		err := survey.AskOne(prompt, &username, nil)
 		if err != nil {
-			return UserAuth{}, err
+			return &UserAuth{}, err
 		}
 		return m[username], nil
 	}
-	return UserAuth{}, nil
+	return &UserAuth{}, nil
 }
 
 // EditUserAuth Lets the user input/edit the user auth
@@ -354,10 +395,22 @@ func (config *AuthConfig) GetServerNames() []string {
 	return answer
 }
 
+func (config *AuthConfig) GetServerURLs() []string {
+	answer := []string{}
+	for _, server := range config.Servers {
+		u := server.URL
+		if u != "" {
+			answer = append(answer, u)
+		}
+	}
+	sort.Strings(answer)
+	return answer
+}
+
 // SaveUserAuth saves the given user auth for the server url
 func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
 	config := &s.config
-	config.SetUserAuth(url, *userAuth)
+	config.SetUserAuth(url, userAuth)
 	user := userAuth.Username
 	if user != "" {
 		config.DefaultUsername = user

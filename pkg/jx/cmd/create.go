@@ -28,8 +28,11 @@ type CreateProjectOptions struct {
 var (
 	create_resources = `Valid resource types include:
 
-    * spring (aka 'springboot')
+	* archetype
 	* cluster
+	* env
+	* git
+    * spring (aka 'springboot')
     `
 
 	create_long = templates.LongDesc(`

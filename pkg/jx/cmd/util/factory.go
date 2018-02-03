@@ -103,11 +103,11 @@ func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
 
 	// lets add a default if there's none defined yet
 	if len(config.Servers) == 0 {
-		config.Servers = []auth.AuthServer{
+		config.Servers = []*auth.AuthServer{
 			{
 				Name:  "GitHub",
 				URL:   "github.com",
-				Users: []auth.UserAuth{},
+				Users: []*auth.UserAuth{},
 			},
 		}
 	}
