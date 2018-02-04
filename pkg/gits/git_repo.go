@@ -44,9 +44,9 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 	}
 	fmt.Fprintf(out, "Using git provider %s\n", util.ColorInfo(server.Description()))
 	url := server.URL
-	var userAuth auth.UserAuth
+	var userAuth *auth.UserAuth
 	if repoOptions.Username != "" {
-		userAuth = *config.GetOrCreateUserAuth(url, repoOptions.Username)
+		userAuth = config.GetOrCreateUserAuth(url, repoOptions.Username)
 	} else {
 		if batchMode {
 			if len(server.Users) == 0 {
@@ -57,9 +57,9 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 				ua = config.FindUserAuth(url, server.CurrentUser)
 			}
 			if ua == nil {
-				ua = &server.Users[0]
+				ua = server.Users[0]
 			}
-			userAuth = *ua
+			userAuth = ua
 		} else {
 			userAuth, err = config.PickServerUserAuth(server, "git user name?")
 			if err != nil {
@@ -71,18 +71,18 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 		userAuth.ApiToken = repoOptions.ApiToken
 	}
 	if userAuth.IsInvalid() {
-		PrintGenerateAccessToken(server, out)
+		PrintCreateRepositoryGenerateAccessToken(server, out)
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(&userAuth, defaultUserName, true)
+		err = config.EditUserAuth(userAuth, defaultUserName, true)
 		if err != nil {
 			return nil, err
 		}
 
 		// TODO lets verify the auth works
 
-		err = authConfigSvc.SaveUserAuth(url, &userAuth)
+		err = authConfigSvc.SaveUserAuth(url, userAuth)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to store git auth configuration %s", err)
 		}
@@ -94,7 +94,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 	gitUsername := userAuth.Username
 	fmt.Fprintf(out, "\n\nAbout to create a repository on server %s with user %s\n", util.ColorInfo(url), util.ColorInfo(gitUsername))
 
-	provider, err := CreateProvider(server, &userAuth)
+	provider, err := CreateProvider(server, userAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 		RepoName:     repoName,
 		FullName:     fullName,
 		PrivateRepo:  privateRepo,
-		User:         &userAuth,
+		User:         userAuth,
 		GitProvider:  provider,
 	}, err
 }

@@ -1,0 +1,64 @@
+package auth
+
+import (
+	"fmt"
+	"io/ioutil"
+	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/yaml.v2"
+)
+
+func (s *AuthConfigService) Config() *AuthConfig {
+	return &s.config
+}
+
+func (s *AuthConfigService) SetConfig(c AuthConfig) {
+	s.config = c
+}
+
+// LoadConfig loads the configuration from the users JX config directory
+func (s *AuthConfigService) LoadConfig() (*AuthConfig, error) {
+	config := &s.config
+	fileName := s.FileName
+	if fileName != "" {
+		exists, err := util.FileExists(fileName)
+		if err != nil {
+			return config, fmt.Errorf("Could not check if file exists %s due to %s", fileName, err)
+		}
+		if exists {
+			data, err := ioutil.ReadFile(fileName)
+			if err != nil {
+				return config, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
+			}
+			err = yaml.Unmarshal(data, &config)
+			if err != nil {
+				return config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
+			}
+		}
+	}
+	return config, nil
+}
+
+// SaveConfig loads the configuration from the users JX config directory
+func (s *AuthConfigService) SaveConfig() error {
+	fileName := s.FileName
+	if fileName == "" {
+		return fmt.Errorf("No filename defined!")
+	}
+	data, err := yaml.Marshal(s.config)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(fileName, data, DefaultWritePermissions)
+}
+
+// SaveUserAuth saves the given user auth for the server url
+func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
+	config := &s.config
+	config.SetUserAuth(url, userAuth)
+	user := userAuth.Username
+	if user != "" {
+		config.DefaultUsername = user
+	}
+	config.CurrentServer = url
+	return s.SaveConfig()
+}

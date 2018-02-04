@@ -331,18 +331,18 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 		return "", "", err
 	}
 	if userAuth.IsInvalid() {
-		gits.PrintGenerateAccessToken(server, o.Out)
+		gits.PrintCreateRepositoryGenerateAccessToken(server, o.Out)
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(&userAuth, defaultUserName, false)
+		err = config.EditUserAuth(userAuth, defaultUserName, false)
 		if err != nil {
 			return "", "", err
 		}
 
 		// TODO lets verify the auth works
 
-		err = authConfigSvc.SaveUserAuth(url, &userAuth)
+		err = authConfigSvc.SaveUserAuth(url, userAuth)
 		if err != nil {
 			return "", "", fmt.Errorf("Failed to store git auth configuration %s", err)
 		}

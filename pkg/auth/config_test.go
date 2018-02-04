@@ -98,7 +98,8 @@ func (c *ConfigTest) Load() *AuthConfig {
 }
 
 func (c *ConfigTest) SetUserAuth(url string, auth UserAuth) *AuthConfig {
-	c.config.SetUserAuth(url, auth)
+	copy := auth
+	c.config.SetUserAuth(url, &copy)
 	c.SaveAndReload()
 	return c.config
 }

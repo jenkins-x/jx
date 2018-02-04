@@ -221,7 +221,7 @@ func (o *InitOptions) initIngress() error {
 		return err
 	}
 	if currentContext == "minikube" {
-		if  o.Flags.Provider == "" {
+		if o.Flags.Provider == "" {
 			o.Flags.Provider = MINIKUBE
 		}
 		addons, err := o.getCommandOutput("", "minikube", "addons", "list")
@@ -309,7 +309,7 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 	if provider == MINIKUBE {
 		ip, err := o.getCommandOutput("", "minikube", "ip")
 		if err != nil {
-		  return "", err
+			return "", err
 		}
 		address = ip
 	} else {

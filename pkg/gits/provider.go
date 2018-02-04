@@ -185,7 +185,7 @@ func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigSe
 	if err != nil {
 		return nil, err
 	}
-	return i.CreateProviderForUser(server, &userAuth)
+	return i.CreateProviderForUser(server, userAuth)
 }
 
 func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {

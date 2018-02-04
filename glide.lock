@@ -1,5 +1,5 @@
-hash: 53ed0690c738e7928aac31067516efada03c8235538c75d785d436e7cc653d4e
-updated: 2018-01-30T14:12:31.376817271Z
+hash: 2dc3d9cb3f2581d196f7e39f9284b3e13ba3d2ab241680fe1d08e4242520c59b
+updated: 2018-02-03T11:09:46.290008Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -19,12 +19,61 @@ imports:
   - autorest/date
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
+- name: github.com/chromedp/cdproto
+  version: 861b49d6c4ac9bf684dd1a46032d7c8750d0d7da
+  subpackages:
+  - accessibility
+  - animation
+  - applicationcache
+  - audits
+  - browser
+  - cachestorage
+  - cdp
+  - css
+  - database
+  - debugger
+  - deviceorientation
+  - dom
+  - domdebugger
+  - domsnapshot
+  - domstorage
+  - emulation
+  - headlessexperimental
+  - heapprofiler
+  - indexeddb
+  - input
+  - inspector
+  - io
+  - layertree
+  - log
+  - memory
+  - network
+  - overlay
+  - page
+  - performance
+  - profiler
+  - runtime
+  - security
+  - serviceworker
+  - storage
+  - systeminfo
+  - target
+  - tethering
+  - tracing
+- name: github.com/chromedp/chromedp
+  version: 46a6388474e20ef92c34290f62602e9fa18c9e95
+  subpackages:
+  - client
+  - kb
+  - runner
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:
   - spew
 - name: github.com/dgrijalva/jwt-go
   version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
+- name: github.com/disintegration/imaging
+  version: 1884593a19ddc6f2ea050403430d02c1d0fc1283
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
 - name: github.com/ghodss/yaml
@@ -45,7 +94,7 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: e48060a28fac52d0f1cb758bc8b87c07bac4a87d
+  version: 897969cdc831052c4694e205e24a033fe7248c2f
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -69,6 +118,8 @@ imports:
   - openstack/identity/v3/tokens
   - openstack/utils
   - pagination
+- name: github.com/gorilla/websocket
+  version: 4ac909741dfa57448bfadfdbca0cf7eeaa68f0e2
 - name: github.com/hashicorp/golang-lru
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   subpackages:
@@ -91,6 +142,14 @@ imports:
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kevinburke/ssh_config
   version: 0ff8514904a8ebfcfb3c32ad73e1f8498a7f81b4
+- name: github.com/knq/sysutil
+  version: 840643935d35cb81c833b4c142357dc9d519e390
+- name: github.com/mailru/easyjson
+  version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
+  subpackages:
+  - buffer
+  - jlexer
+  - jwriter
 - name: github.com/MakeNowJust/heredoc
   version: bb23615498cded5e105af4ce27de75b089cbe851
 - name: github.com/mattn/go-colorable
@@ -148,6 +207,12 @@ imports:
   - ssh/agent
   - ssh/knownhosts
   - ssh/terminal
+- name: golang.org/x/image
+  version: 12117c17ca67ffa1ce22e9409f3b0b0a93ac08c7
+  subpackages:
+  - bmp
+  - tiff
+  - tiff/lzw
 - name: golang.org/x/net
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
@@ -199,7 +264,7 @@ imports:
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/src-d/go-billy.v4
-  version: e940f8b62a8e61adc71f69802c1cc8305b64ec96
+  version: 027dceab1aa836eb310d92c2eb2266e4dc9f4b81
   subpackages:
   - helper/chroot
   - helper/polyfill
@@ -283,7 +348,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 27d22a50314782b60cbb150b34dd1ba8e0c8d55c
+  version: 5d32743e4807506730116986939c94b6c5e1e5fd
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -414,6 +479,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
   subpackages:
   - assert

@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
@@ -17,6 +18,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	optionServerName = "name"
+	optionServerURL  = "url"
 )
 
 // CommonOptions contains common options and helper methods
@@ -33,6 +39,11 @@ type CommonOptions struct {
 	currentNamespace string
 	jxClient         *versioned.Clientset
 	jenkinsClient    *gojenkins.Jenkins
+}
+
+type GitServerFlags struct {
+	ServerName string
+	ServerURL  string
 }
 
 func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitRepositoryOptions) {
@@ -166,4 +177,62 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 		return nil, err
 	}
 	return gitInfo.PickOrCreateProvider(authConfigSvc, message)
+}
+
+func (o *GitServerFlags) addGitServerFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerName, optionServerURL, "u", "", "The URL of the git server to add a user")
+}
+
+// findGitServer finds the git server from the given flags or returns an error
+func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *GitServerFlags) (*auth.AuthServer, error) {
+	var server *auth.AuthServer
+	if serverFlags.ServerURL != "" {
+		server = config.GetServer(serverFlags.ServerURL)
+		if server == nil {
+			return nil, util.InvalidOption(optionServerURL, serverFlags.ServerURL, config.GetServerURLs())
+		}
+	}
+	if server == nil && serverFlags.ServerName != "" {
+		server = config.GetServerByName(serverFlags.ServerName)
+		if server == nil {
+			return nil, util.InvalidOption(optionServerName, serverFlags.ServerName, config.GetServerNames())
+		}
+	}
+	if server == nil {
+		name := config.CurrentServer
+		if name != "" && o.BatchMode {
+			server = config.GetServerByName(name)
+			if server == nil {
+				o.warnf("Current server %s no longer exists\n", name)
+			}
+		}
+	}
+	if server == nil && len(config.Servers) == 1 {
+		server = config.Servers[0]
+	}
+	if server == nil && len(config.Servers) > 1 {
+		if o.BatchMode {
+			return nil, fmt.Errorf("Multiple git providers. Please specify one via the %s option", optionServerName)
+		}
+		defaultServerName := ""
+		if config.CurrentServer != "" {
+			s := config.GetServer(config.CurrentServer)
+			if s != nil {
+				defaultServerName = s.Name
+			}
+		}
+		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick git server to use: ", defaultServerName)
+		if err != nil {
+			return nil, err
+		}
+		server = config.GetServerByName(name)
+		if server == nil {
+			return nil, fmt.Errorf("Could not find the server for name %s", name)
+		}
+	}
+	if server == nil {
+		return nil, fmt.Errorf("Could not find a git server. Try adding one with: jx create git server")
+	}
+	return server, nil
 }
