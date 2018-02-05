@@ -72,6 +72,7 @@ func (o *CreateGitServerOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 	config.GetOrCreateServerName(gitUrl, name, kind)
+	config.CurrentServer = gitUrl
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
 		return err
