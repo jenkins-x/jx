@@ -507,6 +507,9 @@ func (o *CreateClusterOptions) installMinikube() error {
 }
 
 func (o *CreateClusterOptions) installGcloud() error {
+	if runtime.GOOS != "darwin" || o.NoBrew {
+		return errors.New("please install missing gloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
+	}
 	err := o.runCommand("brew", "tap", "caskroom/cask")
 	if err != nil {
 		return err
