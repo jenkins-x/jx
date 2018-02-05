@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"strings"
 	"time"
 )
 
@@ -63,7 +64,7 @@ func NewCmdGetPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 // Run implements this command
 func (o *GetPipelineOptions) Run() error {
 	f := o.Factory
-	jenkins, err := f.GetJenkinsClient()
+	jenkins, err := f.CreateJenkinsClient()
 	if err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func (o *GetPipelineOptions) Run() error {
 	}
 
 	table := o.CreateTable()
-	table.AddRow("Name", "URL", "lastBuild", "status", "duration")
+	table.AddRow("Name", "URL", "LAST_BUILD", "STATUS", "DURATION")
 
 	for _, j := range jobs {
 		job, err := jenkins.GetJob(j.Name)
@@ -94,7 +95,6 @@ func (o *GetPipelineOptions) Run() error {
 }
 
 func (o *GetPipelineOptions) dump(jenkins *gojenkins.Jenkins, name string, table *table.Table) error {
-
 	job, err := jenkins.GetJob(name)
 	if err != nil {
 		return err
@@ -108,15 +108,33 @@ func (o *GetPipelineOptions) dump(jenkins *gojenkins.Jenkins, name string, table
 		last, err := jenkins.GetLastBuild(job)
 		if err != nil {
 			if jenkins.IsErrNotFound(err) {
-				table.AddRow(job.FullName, job.Url, "", "Never Built", "")
+				if o.matchesFilter(&job) {
+					table.AddRow(job.FullName, job.Url, "", "Never Built", "")
+				}
 			}
 			return nil
 		}
-		if last.Building {
-			table.AddRow(job.FullName, job.Url, "#"+last.Id, "Building", time.Duration(last.EstimatedDuration).String()+"(est.)")
-		} else {
-			table.AddRow(job.FullName, job.Url, "#"+last.Id, last.Result, time.Duration(last.Duration).String())
+		if o.matchesFilter(&job) {
+			if last.Building {
+				table.AddRow(job.FullName, job.Url, "#"+last.Id, "Building", time.Duration(last.EstimatedDuration).String()+"(est.)")
+			} else {
+				table.AddRow(job.FullName, job.Url, "#"+last.Id, last.Result, time.Duration(last.Duration).String())
+			}
 		}
 	}
 	return nil
+}
+
+func (o *GetPipelineOptions) matchesFilter(job *gojenkins.Job) bool {
+	args := o.Args
+	if len(args) == 0 {
+		return true
+	}
+	name := job.FullName
+	for _, arg := range args {
+		if strings.Contains(name, arg) {
+			return true
+		}
+	}
+	return false
 }

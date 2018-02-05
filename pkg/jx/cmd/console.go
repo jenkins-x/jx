@@ -59,39 +59,9 @@ func (o *ConsoleOptions) Run() error {
 }
 
 func (o *ConsoleOptions) Open(name string, label string) error {
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	url, err := o.findService(name)
 	if err != nil {
 		return err
-	}
-	devNs, _, err := kube.GetDevNamespace(client, ns)
-	if err != nil {
-		return err
-	}
-	url, err := kube.FindServiceURL(client, ns, name)
-	if url == "" {
-		url, err = kube.FindServiceURL(client, devNs, name)
-	}
-	if url == "" {
-		names, err := kube.GetServiceNames(client, ns, name)
-		if err != nil {
-			return err
-		}
-		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ")
-			if err != nil {
-				return err
-			}
-			if name != "" {
-				url, err = kube.FindServiceURL(client, ns, name)
-			}
-		} else if len(names) == 1 {
-			// must have been a filter
-			url, err = kube.FindServiceURL(client, ns, names[0])
-		}
-		if url == "" {
-			return fmt.Errorf("Could not find URL for service %s in namespace %s", name, ns)
-		}
 	}
 	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
 	if !o.OnlyViewURL {

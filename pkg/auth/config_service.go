@@ -2,9 +2,9 @@ package auth
 
 import (
 	"fmt"
-	"io/ioutil"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
 func (s *AuthConfigService) Config() *AuthConfig {

@@ -156,7 +156,7 @@ func (o *EditEnvOptions) Run() error {
 	}
 	gitURL := env.Spec.Source.URL
 	if gitURL != "" {
-		jenkinClient, err := f.GetJenkinsClient()
+		jenkinClient, err := f.CreateJenkinsClient()
 		if err != nil {
 			return err
 		}
