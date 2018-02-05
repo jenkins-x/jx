@@ -11,13 +11,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/cdproto/cdp"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
@@ -189,9 +187,11 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	}
 
 	login := false
+	userNameInputName := "j_username"
+	passwordInputSelector := "//input[@name='j_password']"
 	for _, node := range nodeSlice {
 		name := node.AttributeValue("name")
-		if name == "user_name" {
+		if name == userNameInputName {
 			login = true
 		}
 	}
@@ -199,34 +199,32 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	if login {
 		o.Printf("logging in\n")
 		err = c.Run(ctxt, chromedp.Tasks{
-			chromedp.WaitVisible("user_name", chromedp.ByID),
-			chromedp.SendKeys("user_name", userAuth.Username, chromedp.ByID),
-			chromedp.SendKeys("password", o.Password+"\n", chromedp.ByID),
+			chromedp.WaitVisible(userNameInputName, chromedp.ByID),
+			chromedp.SendKeys(userNameInputName, userAuth.Username, chromedp.ByID),
+			chromedp.SendKeys(passwordInputSelector, o.Password+"\n"),
 		})
 		if err != nil {
 			return err
 		}
 	}
-	o.Printf("Generating new token\n")
+	o.Printf("Getting the API Token...\n")
 
-	tokenId := "jx-" + string(uuid.NewUUID())
-	generateNewTokenButtonSelector := "//div[normalize-space(text())='Generate New Token']"
-
-	tokenResultDivSelector := "//div[@class='ui info message']/p"
+	getAPITokenButtonSelector := "//button[normalize-space(text())='Show API Token...']"
+	//tokenInputSelector := "//input[@name='_.apiToken']"
+	nodeSlice = []*cdp.Node{}
 	err = c.Run(ctxt, chromedp.Tasks{
-		chromedp.WaitVisible(generateNewTokenButtonSelector),
-		chromedp.Click(generateNewTokenButtonSelector),
-		chromedp.WaitVisible("name", chromedp.ByID),
-		chromedp.SendKeys("name", tokenId + "\n", chromedp.ByID),
-		chromedp.WaitVisible(tokenResultDivSelector),
-		chromedp.Nodes(tokenResultDivSelector, &nodeSlice),
+		chromedp.WaitVisible(getAPITokenButtonSelector),
+		chromedp.Click(getAPITokenButtonSelector),
+		chromedp.WaitVisible("apiToken", chromedp.ByID),
+		chromedp.Nodes("apiToken", &nodeSlice, chromedp.ByID),
 	})
 	if err != nil {
 		return err
 	}
 	token := ""
+	o.Printf("Got Nodes %#v\n", nodeSlice)
 	for _, node := range nodeSlice {
-		text := nodes.NodeText(node)
+		text := node.AttributeValue("value")
 		if text != "" && token == "" {
 			token = text
 			break
