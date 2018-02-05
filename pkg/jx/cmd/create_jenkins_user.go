@@ -8,8 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -21,24 +22,24 @@ import (
 )
 
 var (
-	create_git_user_long = templates.LongDesc(`
-		Creates a new user and API Token for a Git Server
+	create_jenkins_user_long = templates.LongDesc(`
+		Creates a new user and API Token for the current Jenkins Server
 `)
 
-	create_git_user_example = templates.Examples(`
-		# Add a new API Token for a user for the local git server
+	create_jenkins_user_example = templates.Examples(`
+		# Add a new API Token for a user for the current Jenkins server
         # prompting the user to find and enter the API Token
-		jx create git token -n local someUserName
+		jx create jenkins token someUserName
 
-		# Add a new API Token for a user for the local git server 
+		# Add a new API Token for a user for the current Jenkins server
  		# using browser automation to login to the git server
 		# with the username an password to find the API Token
-		jx create git token -n local -p somePassword someUserName	
+		jx create jenkins token -p somePassword someUserName	
 	`)
 )
 
-// CreateGitUserOptions the command line options for the command
-type CreateGitUserOptions struct {
+// CreateJenkinsUserOptions the command line options for the command
+type CreateJenkinsUserOptions struct {
 	CreateOptions
 
 	ServerFlags ServerFlags
@@ -47,9 +48,9 @@ type CreateGitUserOptions struct {
 	ApiToken    string
 }
 
-// NewCmdCreateGitUser creates a command
-func NewCmdCreateGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &CreateGitUserOptions{
+// NewCmdCreateJenkinsUser creates a command
+func NewCmdCreateJenkinsUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &CreateJenkinsUserOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -61,10 +62,10 @@ func NewCmdCreateGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 
 	cmd := &cobra.Command{
 		Use:     "user [username]",
-		Short:   "Adds a new user name and api token for a git server server",
+		Short:   "Adds a new user name and api token for a jenkins server server",
 		Aliases: []string{"token"},
-		Long:    create_git_user_long,
-		Example: create_git_user_example,
+		Long:    create_jenkins_user_long,
+		Example: create_jenkins_user_example,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -81,7 +82,7 @@ func NewCmdCreateGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 }
 
 // Run implements the command
-func (o *CreateGitUserOptions) Run() error {
+func (o *CreateJenkinsUserOptions) Run() error {
 	args := o.Args
 	if len(args) > 0 {
 		o.Username = args[0]
@@ -89,15 +90,26 @@ func (o *CreateGitUserOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.Factory.CreateJenkinsAuthConfigService()
 	if err != nil {
 		return err
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findGitServer(config, &o.ServerFlags)
-	if err != nil {
-		return err
+
+	var server *auth.AuthServer
+	if o.ServerFlags.IsEmpty() {
+		url := ""
+		url, err = o.findService(kube.ServiceJenkins)
+		if err != nil {
+		  return err
+		}
+		server = config.GetOrCreateServer(url)
+	} else {
+		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team")
+		if err != nil {
+			return err
+		}
 	}
 
 	// TODO add the API thingy...
@@ -110,7 +122,7 @@ func (o *CreateGitUserOptions) Run() error {
 		userAuth.ApiToken = o.ApiToken
 	}
 
-	tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL)
+	tokenUrl := jenkins.JenkinsTokenURL(server.URL)
 
 	if userAuth.IsInvalid() && o.Password != "" {
 		err := o.tryFindAPITokenFromBrowser(tokenUrl, userAuth)
@@ -120,8 +132,7 @@ func (o *CreateGitUserOptions) Run() error {
 	}
 
 	if userAuth.IsInvalid() {
-		o.Printf("Please generate an API Token for server %s\n", server.Label())
-		o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
+		jenkins.PrintGetTokenFromURL(o.Out, tokenUrl)
 		o.Printf("Then COPY the token and enter in into the form below:\n\n")
 
 		err = config.EditUserAuth(userAuth, o.Username, false)
@@ -143,7 +154,7 @@ func (o *CreateGitUserOptions) Run() error {
 }
 
 // lets try use the users browser to find the API token
-func (o *CreateGitUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, userAuth *auth.UserAuth) error {
+func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, userAuth *auth.UserAuth) error {
 	var err error
 
 	ctxt, cancel := context.WithCancel(context.Background())

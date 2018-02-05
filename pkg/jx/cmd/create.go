@@ -67,6 +67,7 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.AddCommand(NewCmdCreateArchetype(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateGit(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateJenkins(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateSpring(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateCluster(f, out, errOut))
 	return cmd

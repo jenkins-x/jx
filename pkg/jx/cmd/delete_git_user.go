@@ -17,8 +17,8 @@ var (
 `)
 
 	delete_git_user_example = templates.Examples(`
-		# Deletes a git provider
-		jx delete git server MyProvider
+		# Deletes a git user token
+		jx delete git user -l local myusername
 	`)
 )
 
@@ -26,7 +26,7 @@ var (
 type DeleteGitUserOptions struct {
 	CreateOptions
 
-	GitServerFlags GitServerFlags
+	ServerFlags ServerFlags
 }
 
 // NewCmdDeleteGitUser defines the command
@@ -54,7 +54,7 @@ func NewCmdDeleteGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			cmdutil.CheckErr(err)
 		},
 	}
-	options.GitServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.addGitServerFlags(cmd)
 	return cmd
 }
 
@@ -70,7 +70,7 @@ func (o *DeleteGitUserOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findGitServer(config, &o.GitServerFlags)
+	server, err := o.findGitServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}

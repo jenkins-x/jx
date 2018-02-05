@@ -41,9 +41,13 @@ type CommonOptions struct {
 	jenkinsClient    *gojenkins.Jenkins
 }
 
-type GitServerFlags struct {
+type ServerFlags struct {
 	ServerName string
 	ServerURL  string
+}
+
+func (f *ServerFlags) IsEmpty() bool {
+	return f.ServerName == "" && f.ServerURL == ""
 }
 
 func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitRepositoryOptions) {
@@ -179,13 +183,17 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	return gitInfo.PickOrCreateProvider(authConfigSvc, message)
 }
 
-func (o *GitServerFlags) addGitServerFlags(cmd *cobra.Command) {
+func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the git server to add a user")
 	cmd.Flags().StringVarP(&o.ServerName, optionServerURL, "u", "", "The URL of the git server to add a user")
 }
 
 // findGitServer finds the git server from the given flags or returns an error
-func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *GitServerFlags) (*auth.AuthServer, error) {
+func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
+	return o.findServer(config, serverFlags, "git server", "Try creating one via: jx create git server")
+}
+
+func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerFlags, kind string, missingServerDescription string) (*auth.AuthServer, error) {
 	var server *auth.AuthServer
 	if serverFlags.ServerURL != "" {
 		server = config.GetServer(serverFlags.ServerURL)
@@ -213,7 +221,7 @@ func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *GitS
 	}
 	if server == nil && len(config.Servers) > 1 {
 		if o.BatchMode {
-			return nil, fmt.Errorf("Multiple git providers. Please specify one via the %s option", optionServerName)
+			return nil, fmt.Errorf("Multiple servers found. Please specify one via the %s option", optionServerName)
 		}
 		defaultServerName := ""
 		if config.CurrentServer != "" {
@@ -222,7 +230,7 @@ func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *GitS
 				defaultServerName = s.Name
 			}
 		}
-		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick git server to use: ", defaultServerName)
+		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName)
 		if err != nil {
 			return nil, err
 		}
@@ -232,7 +240,45 @@ func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *GitS
 		}
 	}
 	if server == nil {
-		return nil, fmt.Errorf("Could not find a git server. Try adding one with: jx create git server")
+		return nil, fmt.Errorf("Could not find a %s. %s", kind, missingServerDescription)
 	}
 	return server, nil
+}
+
+func (o *CommonOptions) findService(name string) (string, error) {
+	f := o.Factory
+	client, ns, err := f.CreateClient()
+	if err != nil {
+		return "", err
+	}
+	devNs, _, err := kube.GetDevNamespace(client, ns)
+	if err != nil {
+		return "", err
+	}
+	url, err := kube.FindServiceURL(client, ns, name)
+	if url == "" {
+		url, err = kube.FindServiceURL(client, devNs, name)
+	}
+	if url == "" {
+		names, err := kube.GetServiceNames(client, ns, name)
+		if err != nil {
+			return "", err
+		}
+		if len(names) > 1 {
+			name, err = util.PickName(names, "Pick service to open: ")
+			if err != nil {
+				return "", err
+			}
+			if name != "" {
+				url, err = kube.FindServiceURL(client, ns, name)
+			}
+		} else if len(names) == 1 {
+			// must have been a filter
+			url, err = kube.FindServiceURL(client, ns, names[0])
+		}
+		if url == "" {
+			return "", fmt.Errorf("Could not find URL for service %s in namespace %s", name, ns)
+		}
+	}
+	return url, nil
 }

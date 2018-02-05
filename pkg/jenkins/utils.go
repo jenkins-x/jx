@@ -9,13 +9,15 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	jenkauth "github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
+	"io"
+	"os"
 )
 
 func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfigService) (*gojenkins.Jenkins, error) {
 	if url == "" {
 		return nil, errors.New("no JENKINS_URL environment variable is set nor could a Jenkins service be found in the current namespace!\n")
 	}
-	tokenUrl := util.UrlJoin(url, "/me/configure")
+	tokenUrl := JenkinsTokenURL(url)
 
 	auth := jenkauth.CreateAuthUserFromEnvironment("JENKINS")
 	username := auth.Username
@@ -58,7 +60,7 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 			return nil, fmt.Errorf("No valid Username and API Token specified for Jenkins server: %s\n", url)
 		} else {
 			fmt.Println("No $JENKINS_USERNAME and $JENKINS_TOKEN environment variables defined!\n")
-			fmt.Printf("Please go to %s and click %s to get your API Token\n", util.ColorInfo(tokenUrl), util.ColorInfo("Show API Token"))
+			PrintGetTokenFromURL(os.Stdout, tokenUrl)
 			if batch {
 				fmt.Println("Then run this command on your terminal and try again:\n")
 				fmt.Println("export JENKINS_TOKEN=myApiToken\n")
@@ -84,6 +86,15 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 		}}
 	jenkins.SetHTTPClient(httpClient)
 	return jenkins, nil
+}
+
+func PrintGetTokenFromURL(out io.Writer, tokenUrl string) (int, error) {
+	return fmt.Fprintf(out, "Please go to %s and click %s to get your API Token\n", util.ColorInfo(tokenUrl), util.ColorInfo("Show API Token"))
+}
+
+func JenkinsTokenURL(url string) string {
+	tokenUrl := util.UrlJoin(url, "/me/configure")
+	return tokenUrl
 }
 
 func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string) (jenkauth.UserAuth, error) {

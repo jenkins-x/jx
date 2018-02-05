@@ -36,6 +36,8 @@ type Factory interface {
 
 	CreateGitAuthConfigService() (auth.AuthConfigService, error)
 
+	CreateJenkinsAuthConfigService() (auth.AuthConfigService, error)
+
 	CreateClient() (*kubernetes.Clientset, string, error)
 
 	CreateJXClient() (*versioned.Clientset, string, error)
@@ -84,11 +86,23 @@ func (f *factory) GetJenkinsClient() (*gojenkins.Jenkins, error) {
 			}
 		}
 	}
-	svc, err := f.CreateAuthConfigService(jenkinsAuthConfigFile)
+	svc, err := f.CreateJenkinsAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
 	return jenkins.GetJenkinsClient(url, f.Batch, &svc)
+}
+
+func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(jenkinsAuthConfigFile)
+	if err != nil {
+		return authConfigSvc, err
+	}
+	_, err = authConfigSvc.LoadConfig()
+	if err != nil {
+		return authConfigSvc, err
+	}
+	return authConfigSvc, err
 }
 
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
