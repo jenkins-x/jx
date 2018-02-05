@@ -64,7 +64,7 @@ func NewCmdGetPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 // Run implements this command
 func (o *GetPipelineOptions) Run() error {
 	f := o.Factory
-	jenkins, err := f.GetJenkinsClient()
+	jenkins, err := f.CreateJenkinsClient()
 	if err != nil {
 		return err
 	}

@@ -30,7 +30,7 @@ const (
 )
 
 type Factory interface {
-	GetJenkinsClient() (*gojenkins.Jenkins, error)
+	CreateJenkinsClient() (*gojenkins.Jenkins, error)
 
 	CreateAuthConfigService(fileName string) (auth.AuthConfigService, error)
 
@@ -60,8 +60,8 @@ func NewFactory() Factory {
 	return &factory{}
 }
 
-// GetJenkinsClient creates a new jenkins client
-func (f *factory) GetJenkinsClient() (*gojenkins.Jenkins, error) {
+// CreateJenkinsClient creates a new jenkins client
+func (f *factory) CreateJenkinsClient() (*gojenkins.Jenkins, error) {
 	url := os.Getenv("JENKINS_URL")
 	if url == "" {
 		// lets find the kubernets service

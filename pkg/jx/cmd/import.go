@@ -211,7 +211,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 
 func (o *ImportOptions) Run() error {
 	f := o.Factory
-	jenkins, err := f.GetJenkinsClient()
+	jenkins, err := f.CreateJenkinsClient()
 	if err != nil {
 		return err
 	}
@@ -667,7 +667,7 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 
 func (o *ImportOptions) DoImport() error {
 	if o.Jenkins == nil {
-		jenkins, err := o.Factory.GetJenkinsClient()
+		jenkins, err := o.Factory.CreateJenkinsClient()
 		if err != nil {
 			return err
 		}

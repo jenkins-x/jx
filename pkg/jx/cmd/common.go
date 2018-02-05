@@ -148,7 +148,7 @@ func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
 
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 	if o.jenkinsClient == nil {
-		jenkins, err := o.Factory.GetJenkinsClient()
+		jenkins, err := o.Factory.CreateJenkinsClient()
 		if err != nil {
 			return nil, err
 		}
