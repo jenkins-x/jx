@@ -8,15 +8,15 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/chromedp"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/chromedp/chromedp"
-	"github.com/chromedp/cdproto/cdp"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 var (
@@ -94,13 +94,12 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-
 	var server *auth.AuthServer
 	if o.ServerFlags.IsEmpty() {
 		url := ""
 		url, err = o.findService(kube.ServiceJenkins)
 		if err != nil {
-		  return err
+			return err
 		}
 		server = config.GetOrCreateServer(url)
 	} else {

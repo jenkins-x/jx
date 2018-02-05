@@ -8,16 +8,16 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/chromedp"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/chromedp/chromedp"
-	"github.com/chromedp/cdproto/cdp"
 	"k8s.io/apimachinery/pkg/util/uuid"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 var (
@@ -206,7 +206,7 @@ func (o *CreateGitUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, userA
 		chromedp.WaitVisible(generateNewTokenButtonSelector),
 		chromedp.Click(generateNewTokenButtonSelector),
 		chromedp.WaitVisible("name", chromedp.ByID),
-		chromedp.SendKeys("name", tokenId + "\n", chromedp.ByID),
+		chromedp.SendKeys("name", tokenId+"\n", chromedp.ByID),
 		chromedp.WaitVisible(tokenResultDivSelector),
 		chromedp.Nodes(tokenResultDivSelector, &nodeSlice),
 	})

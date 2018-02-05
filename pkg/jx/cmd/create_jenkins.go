@@ -25,8 +25,8 @@ func NewCmdCreateJenkins(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	}
 
 	cmd := &cobra.Command{
-		Use:     "jenkins",
-		Short:   "Creates a jenkins resource",
+		Use:   "jenkins",
+		Short: "Creates a jenkins resource",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

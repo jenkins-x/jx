@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"strings"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 var (
@@ -77,7 +77,7 @@ func (o *DeleteJenkinsUserOptions) Run() error {
 		url := ""
 		url, err = o.findService(kube.ServiceJenkins)
 		if err != nil {
-		  return err
+			return err
 		}
 		server = config.GetOrCreateServer(url)
 	} else {

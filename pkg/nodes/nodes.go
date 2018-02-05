@@ -1,8 +1,8 @@
 package nodes
 
 import (
-	"github.com/chromedp/cdproto/cdp"
 	"bytes"
+	"github.com/chromedp/cdproto/cdp"
 	"strings"
 )
 

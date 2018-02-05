@@ -61,7 +61,7 @@ func (o *ConsoleOptions) Run() error {
 func (o *ConsoleOptions) Open(name string, label string) error {
 	url, err := o.findService(name)
 	if err != nil {
-	  return err
+		return err
 	}
 	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
 	if !o.OnlyViewURL {
@@ -69,4 +69,3 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 	}
 	return nil
 }
-

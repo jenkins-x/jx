@@ -9,8 +9,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"time"
 	"strings"
+	"time"
 )
 
 // GetPipelineOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
