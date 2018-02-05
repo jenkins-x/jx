@@ -37,6 +37,7 @@ func NewCmdCreateGit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	}
 
 	cmd.AddCommand(NewCmdCreateGitServer(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateGitToken(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateGitUser(f, out, errOut))
 	return cmd
 }
