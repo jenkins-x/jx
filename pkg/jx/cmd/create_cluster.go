@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"strings"
 
+	"errors"
+
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -161,6 +163,9 @@ func (o *CreateClusterOptions) installMissingDependencies(providerSpecificDeps [
 	// get base list of required dependencies and add provider specific ones
 	deps := o.getClusterDependencies(providerSpecificDeps)
 
+	if o.BatchMode {
+		return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
+	}
 	install := []string{}
 	prompt := &survey.MultiSelect{
 		Message: "Missing required dependencies, deselect to avoid auto installing:",

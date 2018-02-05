@@ -92,6 +92,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	}
 
 	options.addCreateClusterFlags(cmd)
+	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "cluster-name", "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -115,7 +116,7 @@ func (o *CreateClusterGKEOptions) Run() error {
 	}
 	err := o.installMissingDependencies(deps)
 	if err != nil {
-		log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
+		log.Errorf("error creating cluster on GKE, %v", err)
 		os.Exit(-1)
 	}
 
