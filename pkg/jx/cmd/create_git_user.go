@@ -231,12 +231,12 @@ func (o *CreateGitUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, userA
 
 func nodeText(node *cdp.Node) string {
 	var buffer bytes.Buffer
-	for _, node := range node.Children {
-		switch node.NodeType {
+	for _, n := range node.Children {
+		switch n.NodeType {
 		case cdp.NodeTypeText:
-			buffer.WriteString(node.NodeValue)
+			buffer.WriteString(n.NodeValue)
 		case cdp.NodeTypeElement:
-			buffer.WriteString(nodeText(node))
+			buffer.WriteString(nodeText(n))
 		}
 	}
 	return strings.TrimSpace(buffer.String())
