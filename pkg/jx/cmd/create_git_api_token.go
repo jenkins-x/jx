@@ -21,11 +21,11 @@ import (
 )
 
 var (
-	create_git_user_long = templates.LongDesc(`
-		Creates a new user and API Token for a Git Server
+	create_git_token_long = templates.LongDesc(`
+		Creates a new API Token for a user on a Git Server
 `)
 
-	create_git_user_example = templates.Examples(`
+	create_git_token_example = templates.Examples(`
 		# Add a new API Token for a user for the local git server
         # prompting the user to find and enter the API Token
 		jx create git token -n local someUserName
@@ -37,8 +37,8 @@ var (
 	`)
 )
 
-// CreateGitUserOptions the command line options for the command
-type CreateGitUserOptions struct {
+// CreateGitTokenOptions the command line options for the command
+type CreateGitTokenOptions struct {
 	CreateOptions
 
 	ServerFlags ServerFlags
@@ -47,9 +47,9 @@ type CreateGitUserOptions struct {
 	ApiToken    string
 }
 
-// NewCmdCreateGitUser creates a command
-func NewCmdCreateGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &CreateGitUserOptions{
+// NewCmdCreateGitToken creates a command
+func NewCmdCreateGitToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &CreateGitTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -60,11 +60,11 @@ func NewCmdCreateGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	}
 
 	cmd := &cobra.Command{
-		Use:     "user [username]",
-		Short:   "Adds a new user name and api token for a git server server",
-		Aliases: []string{"token"},
-		Long:    create_git_user_long,
-		Example: create_git_user_example,
+		Use:     "token [username]",
+		Short:   "Adds a new API token for a user on a git server",
+		Aliases: []string{"api-token"},
+		Long:    create_git_token_long,
+		Example: create_git_token_example,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -81,7 +81,7 @@ func NewCmdCreateGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 }
 
 // Run implements the command
-func (o *CreateGitUserOptions) Run() error {
+func (o *CreateGitTokenOptions) Run() error {
 	args := o.Args
 	if len(args) > 0 {
 		o.Username = args[0]
@@ -144,7 +144,7 @@ func (o *CreateGitUserOptions) Run() error {
 }
 
 // lets try use the users browser to find the API token
-func (o *CreateGitUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, userAuth *auth.UserAuth) error {
+func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, userAuth *auth.UserAuth) error {
 	var err error
 
 	ctxt, cancel := context.WithCancel(context.Background())
