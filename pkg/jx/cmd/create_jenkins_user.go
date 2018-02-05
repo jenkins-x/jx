@@ -209,19 +209,17 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	o.Printf("Getting the API Token...\n")
 
 	getAPITokenButtonSelector := "//button[normalize-space(text())='Show API Token...']"
-	//tokenInputSelector := "//input[@name='_.apiToken']"
 	nodeSlice = []*cdp.Node{}
 	err = c.Run(ctxt, chromedp.Tasks{
 		chromedp.WaitVisible(getAPITokenButtonSelector),
 		chromedp.Click(getAPITokenButtonSelector),
-		chromedp.WaitVisible("apiToken", chromedp.ByID),
-		chromedp.Nodes("apiToken", &nodeSlice, chromedp.ByID),
+		chromedp.WaitVisible("#apiToken", chromedp.ByID),
+		chromedp.Nodes("#apiToken", &nodeSlice, chromedp.ByID),
 	})
 	if err != nil {
 		return err
 	}
 	token := ""
-	o.Printf("Got Nodes %#v\n", nodeSlice)
 	for _, node := range nodeSlice {
 		text := node.AttributeValue("value")
 		if text != "" && token == "" {
