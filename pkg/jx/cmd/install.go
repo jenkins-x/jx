@@ -163,7 +163,14 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	arg := fmt.Sprintf("ARGS=--values=%s --values=%s", secretsFileName, configFileName)
+
+	f := options.Factory
+	_, ns, _ := f.CreateClient()
+	if err != nil {
+		return err
+	}
+
+	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --namespace=%s", secretsFileName, configFileName, ns)
 
 	// run the helm install
 	err = options.runCommandFromDir(makefileDir, "make", arg, "install")

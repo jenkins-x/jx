@@ -162,8 +162,13 @@ func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {
 	return deps
 }
 func (o *CreateClusterOptions) installMissingDependencies(providerSpecificDeps []string) error {
+
 	// get base list of required dependencies and add provider specific ones
 	deps := o.getClusterDependencies(providerSpecificDeps)
+
+	if len(deps) == 0 {
+		return nil
+	}
 
 	if o.BatchMode {
 		return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
