@@ -14,6 +14,7 @@ import (
 	"errors"
 
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -27,6 +28,7 @@ type KubernetesProvider string
 // CreateClusterOptions the flags for running crest cluster
 type CreateClusterOptions struct {
 	CreateOptions
+	gits.GitRepositoryOptions
 	Flags    InitFlags
 	Provider string
 	NoBrew   bool
