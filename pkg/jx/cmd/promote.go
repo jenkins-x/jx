@@ -128,11 +128,13 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 	}
 	envs, err := jxClient.JenkinsV1().Environments(team).List(metav1.ListOptions{})
 	if err != nil {
-		return err
+		o.warnf("No Environments found: %s/n", err)
+		return nil
 	}
 	environments := envs.Items
 	if len(environments) == 0 {
-		return fmt.Errorf("No Environments have been created yet in team %s. Please create some via 'jx create env'", team)
+		o.warnf("No Environments have been created yet in team %s. Please create some via 'jx create env'\n", team)
+		return nil
 	}
 	kube.SortEnvironments(environments)
 
