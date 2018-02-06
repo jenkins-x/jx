@@ -99,7 +99,10 @@ clean:
 linux:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-linux-amd64 cmd/jx/jx.go
 
-docker: linux
-	docker build --no-cache -t jenkins-x/jx .
+docker-go: linux Dockerfile.go
+	docker build --no-cache -t builder-go -f Dockerfile.go .
+
+docker-maven: linux Dockerfile.maven
+	docker build --no-cache -t builder-maven -f Dockerfile.maven .
 
 .PHONY: release clean arm

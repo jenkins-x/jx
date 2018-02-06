@@ -23,6 +23,7 @@ import (
 
 const (
 	optionEnvironment = "environment"
+	optionApplication = "app"
 )
 
 // PromoteOptions containers the CLI options
@@ -74,7 +75,7 @@ func NewCmdPromote(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Namespace to promote to")
 	cmd.Flags().StringVarP(&options.Environment, optionEnvironment, "e", "", "The Environment to promote to")
-	cmd.Flags().StringVarP(&options.Application, "app", "a", "", "The Application to promote")
+	cmd.Flags().StringVarP(&options.Application, optionApplication, "a", "", "The Application to promote")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
@@ -156,6 +157,10 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 
 func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAuto bool) error {
 	app := o.Application
+	if app == "" {
+		o.warnf("No application name could be detected so cannot promote via Helm. If the detection of the helm chart name is not working consider adding it with the --%s argument on the 'jx promomote' command\n", optionApplication)
+		return nil
+	}
 	version := o.Version
 	info := util.ColorInfo
 	if version == "" {
@@ -446,6 +451,35 @@ func (options *PromoteOptions) discoverAppName() (string, error) {
 			return answer, err
 		}
 		answer = gitInfo.Name
+	}
+	if answer == "" {
+		// lets try find the chart file
+		chartFile := filepath.Join(dir, "Chart.yaml")
+		exists, err := util.FileExists(chartFile)
+		if err != nil {
+		  return answer, err
+		}
+		if !exists {
+			// lets try find all the chart files
+			files, err := filepath.Glob("*/Chart.yaml")
+			if err != nil {
+			  return answer, err
+			}
+			if len(files) > 0 {
+				chartFile = files[0]
+			} else {
+				files, err = filepath.Glob("*/*/Chart.yaml")
+				if err != nil {
+				  return answer, err
+				}
+				if len(files) > 0 {
+					chartFile = files[0]
+				}
+			}
+		}
+		if chartFile != "" {
+			return helm.LoadChartName(chartFile)
+		}
 	}
 	return answer, nil
 }
