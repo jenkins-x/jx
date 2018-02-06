@@ -93,8 +93,7 @@ pipeline {
           container('maven') {
 
             sh 'make release'
-            sh 'helm install . --namespace staging --name example-release'
-            sh 'exposecontroller --namespace staging --http' // until we switch to git environments where helm hooks will expose services
+            sh 'jx promote --all-auto --version \$(cat ../../VERSION)'
           }
         }
       }

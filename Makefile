@@ -100,6 +100,6 @@ linux:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-linux-amd64 cmd/jx/jx.go
 
 docker: linux
-	docker build -t jenkins-x/jx .
+	docker build --no-cache -t jenkins-x/jx .
 
 .PHONY: release clean arm
