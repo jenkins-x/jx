@@ -515,7 +515,6 @@ const (
 	CommandTargetGetTargetInfo                             = target.CommandGetTargetInfo
 	CommandTargetGetTargets                                = target.CommandGetTargets
 	CommandTargetSendMessageToTarget                       = target.CommandSendMessageToTarget
-	CommandTargetSetAttachToFrames                         = target.CommandSetAttachToFrames
 	CommandTargetSetAutoAttach                             = target.CommandSetAutoAttach
 	CommandTargetSetDiscoverTargets                        = target.CommandSetDiscoverTargets
 	CommandTargetSetRemoteLocations                        = target.CommandSetRemoteLocations
@@ -1903,9 +1902,6 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 		v = new(target.GetTargetsReturns)
 
 	case CommandTargetSendMessageToTarget:
-		return emptyVal, nil
-
-	case CommandTargetSetAttachToFrames:
 		return emptyVal, nil
 
 	case CommandTargetSetAutoAttach:

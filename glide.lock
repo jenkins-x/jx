@@ -1,5 +1,5 @@
-hash: 2dc3d9cb3f2581d196f7e39f9284b3e13ba3d2ab241680fe1d08e4242520c59b
-updated: 2018-02-03T11:09:46.290008Z
+hash: 97c63c2bc47babbb394b9eb5e545e3101f8b011cb94adc58263bd693ad23e15f
+updated: 2018-02-06T17:19:39.84634+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,7 +7,7 @@ imports:
   - compute/metadata
   - internal
 - name: code.gitea.io/sdk
-  version: a184f2d3343623c67b835a51ab1685b568016fd9
+  version: 0489f9e4e096654f966ecdd67cee3eb5eba6e3d7
   subpackages:
   - gitea
 - name: github.com/Azure/go-autorest
@@ -19,8 +19,10 @@ imports:
   - autorest/date
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
+- name: github.com/BurntSushi/toml
+  version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/chromedp/cdproto
-  version: 861b49d6c4ac9bf684dd1a46032d7c8750d0d7da
+  version: f100dc013e8818dcb609fa058c3a6dae6d1310d0
   subpackages:
   - accessibility
   - animation
@@ -74,10 +76,32 @@ imports:
   version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
 - name: github.com/disintegration/imaging
   version: 1884593a19ddc6f2ea050403430d02c1d0fc1283
+- name: github.com/emicklei/go-restful
+  version: ff4f55a206334ef123e4f79bbf348980da81ca46
+  subpackages:
+  - log
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+- name: github.com/go-openapi/jsonpointer
+  version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
+- name: github.com/go-openapi/jsonreference
+  version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
+- name: github.com/go-openapi/spec
+  version: 7abd5745472fff5eb3685386d5fb8bf38683154d
+- name: github.com/go-openapi/swag
+  version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
+- name: github.com/gobwas/glob
+  version: bea32b9cd2d6f55753d94a28e959b13f0244797a
+  subpackages:
+  - compiler
+  - match
+  - syntax
+  - syntax/ast
+  - syntax/lexer
+  - util/runes
+  - util/strings
 - name: github.com/gogo/protobuf
   version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
   subpackages:
@@ -94,7 +118,7 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: 897969cdc831052c4694e205e24a033fe7248c2f
+  version: 08e68b58d6369e25c2375020353d0d642aa4b2b1
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -135,9 +159,9 @@ imports:
   subpackages:
   - io
 - name: github.com/jenkins-x/golang-jenkins
-  version: abbc6a467e12819e13d419e9c89f253bf30b0a66
+  version: ec7a97e4a0d7bfebfacb5818e70b77744d9f4d6d
 - name: github.com/json-iterator/go
-  version: 13f86432b882000a51c6e610c620974462691a97
+  version: 36b14963da70d11297d313183d7e6388c8510e1e
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kevinburke/ssh_config
@@ -152,6 +176,8 @@ imports:
   - jwriter
 - name: github.com/MakeNowJust/heredoc
   version: bb23615498cded5e105af4ce27de75b089cbe851
+- name: github.com/Masterminds/semver
+  version: 517734cc7d6470c0d07130e40fd40bdeb9bcd3fd
 - name: github.com/mattn/go-colorable
   version: 5411d3eea5978e6cdc258b30de592b60df6aba96
   repo: https://github.com/mattn/go-colorable
@@ -170,10 +196,14 @@ imports:
   version: c37440a7cf42ac63b919c752ca73a85067e05992
 - name: github.com/pkg/browser
   version: c90ca0c84f15f81c982e32665bffd8d7aac8f097
+- name: github.com/PuerkitoBio/purell
+  version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
+- name: github.com/PuerkitoBio/urlesc
+  version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/russross/blackfriday
   version: 300106c228d52c8941d4b3de6054a6062a86dda3
 - name: github.com/sergi/go-diff
-  version: 217d392c389de447c964f954cc5e4774cde4b66b
+  version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
   - diffmatchpatch
 - name: github.com/shurcooL/sanitized_anchor_name
@@ -240,10 +270,17 @@ imports:
 - name: golang.org/x/text
   version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
+  - cases
+  - internal
+  - internal/tag
+  - language
+  - runes
   - secure/bidirule
+  - secure/precis
   - transform
   - unicode/bidi
   - unicode/norm
+  - width
 - name: google.golang.org/appengine
   version: 5bee14b453b4c71be47ec1781b0fa61c2ea182db
   subpackages:
@@ -348,7 +385,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 5d32743e4807506730116986939c94b6c5e1e5fd
+  version: b357563e8dd364d1be52dbdc8457cd65badc427b
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -460,11 +497,25 @@ imports:
   - util/jsonpath
   - util/retry
 - name: k8s.io/code-generator
-  version: 64ca0808efd56c2418939848947c06b8d495144d
+  version: 2a248ce75d2b247e5ca033ded85ad6a63e0f297e
 - name: k8s.io/gengo
   version: 8394c995ab8fbe52216f38d0e1a37de36d820528
+- name: k8s.io/helm
+  version: 2a9a9f18510bb7dcbf8c8376b5409bfb8659d00d
+  subpackages:
+  - pkg/chartutil
+  - pkg/ignore
+  - pkg/proto/hapi/chart
+  - pkg/proto/hapi/version
+  - pkg/sympath
+  - pkg/version
+- name: k8s.io/kube-openapi
+  version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1
+  subpackages:
+  - pkg/common
+  - pkg/util/proto
 - name: k8s.io/metrics
-  version: a51d59ae25bec1b94f00be3fe970268aed3eadfa
+  version: 7619a6675e2689251ee22bcc56195dc52179f706
   subpackages:
   - pkg/apis/metrics
   - pkg/apis/metrics/v1alpha1

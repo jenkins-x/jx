@@ -353,26 +353,6 @@ func (p *SendMessageToTargetParams) Do(ctxt context.Context, h cdp.Executor) (er
 	return h.Execute(ctxt, CommandSendMessageToTarget, p, nil)
 }
 
-// SetAttachToFramesParams [no description].
-type SetAttachToFramesParams struct {
-	Value bool `json:"value"` // Whether to attach to frames.
-}
-
-// SetAttachToFrames [no description].
-//
-// parameters:
-//   value - Whether to attach to frames.
-func SetAttachToFrames(value bool) *SetAttachToFramesParams {
-	return &SetAttachToFramesParams{
-		Value: value,
-	}
-}
-
-// Do executes Target.setAttachToFrames against the provided context.
-func (p *SetAttachToFramesParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
-	return h.Execute(ctxt, CommandSetAttachToFrames, p, nil)
-}
-
 // SetAutoAttachParams controls whether to automatically attach to new
 // targets which are considered to be related to this one. When turned on,
 // attaches to all existing related targets as well. When turned off,
@@ -458,7 +438,6 @@ const (
 	CommandGetTargetInfo         = "Target.getTargetInfo"
 	CommandGetTargets            = "Target.getTargets"
 	CommandSendMessageToTarget   = "Target.sendMessageToTarget"
-	CommandSetAttachToFrames     = "Target.setAttachToFrames"
 	CommandSetAutoAttach         = "Target.setAutoAttach"
 	CommandSetDiscoverTargets    = "Target.setDiscoverTargets"
 	CommandSetRemoteLocations    = "Target.setRemoteLocations"

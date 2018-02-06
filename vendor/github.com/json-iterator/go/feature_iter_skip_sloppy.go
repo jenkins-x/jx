@@ -1,4 +1,4 @@
-//+build jsoniter_sloppy
+//+build jsoniter-sloppy
 
 package jsoniter
 

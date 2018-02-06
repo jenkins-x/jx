@@ -38,12 +38,6 @@ func Test_any_to_int64(t *testing.T) {
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(int64(10), val)
 
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(int64(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(int64(1), val)
-
 	should.Nil(jsoniter.UnmarshalFromString(`-10`, &val))
 	should.Equal(int64(-10), val)
 	should.NotNil(jsoniter.UnmarshalFromString("{}", &val))
@@ -63,13 +57,6 @@ func Test_any_to_int(t *testing.T) {
 	should.Equal(10, val)
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(10, val)
-
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(0, val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(1, val)
-
 	should.NotNil(jsoniter.UnmarshalFromString("{}", &val))
 	should.NotNil(jsoniter.UnmarshalFromString("[]", &val))
 	// large float to int
@@ -87,13 +74,6 @@ func Test_any_to_int16(t *testing.T) {
 	should.Equal(int16(10), val)
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(int16(10), val)
-
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(int16(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(int16(1), val)
-
 	should.NotNil(jsoniter.UnmarshalFromString("{}", &val))
 	should.NotNil(jsoniter.UnmarshalFromString("[]", &val))
 	// large float to int
@@ -111,13 +91,6 @@ func Test_any_to_int32(t *testing.T) {
 	should.Equal(int32(10), val)
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(int32(10), val)
-
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(int32(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(int32(1), val)
-
 	should.NotNil(jsoniter.UnmarshalFromString("{}", &val))
 	should.NotNil(jsoniter.UnmarshalFromString("[]", &val))
 	// large float to int
@@ -135,13 +108,6 @@ func Test_any_to_int8(t *testing.T) {
 	should.Equal(int8(10), val)
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(int8(10), val)
-
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(int8(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(int8(1), val)
-
 	should.NotNil(jsoniter.UnmarshalFromString("{}", &val))
 	should.NotNil(jsoniter.UnmarshalFromString("[]", &val))
 	// large float to int
@@ -159,13 +125,6 @@ func Test_any_to_uint8(t *testing.T) {
 	should.Equal(uint8(10), val)
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(uint8(10), val)
-
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(uint8(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(uint8(1), val)
-
 	should.NotNil(jsoniter.UnmarshalFromString("{}", &val))
 	should.NotNil(jsoniter.UnmarshalFromString("[]", &val))
 	// large float to int
@@ -184,12 +143,6 @@ func Test_any_to_uint64(t *testing.T) {
 	should.Equal(uint64(10), val)
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(uint64(10), val)
-
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(uint64(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(uint64(1), val)
 
 	// TODO fix?
 	should.NotNil(jsoniter.UnmarshalFromString(`-10`, &val))
@@ -212,12 +165,6 @@ func Test_any_to_uint32(t *testing.T) {
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(uint32(10), val)
 
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(uint32(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(uint32(1), val)
-
 	// TODO fix?
 	should.NotNil(jsoniter.UnmarshalFromString(`-10`, &val))
 	should.Equal(uint32(0), val)
@@ -239,12 +186,6 @@ func Test_any_to_uint16(t *testing.T) {
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(uint16(10), val)
 
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(uint16(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(uint16(1), val)
-
 	// TODO fix?
 	should.NotNil(jsoniter.UnmarshalFromString(`-10`, &val))
 	should.Equal(uint16(0), val)
@@ -264,12 +205,6 @@ func Test_any_to_uint(t *testing.T) {
 	should.Equal(uint(10), val)
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(uint(10), val)
-
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(uint(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(uint(1), val)
-
 	should.NotNil(jsoniter.UnmarshalFromString("{}", &val))
 	should.NotNil(jsoniter.UnmarshalFromString("[]", &val))
 	// large float to int
@@ -288,13 +223,6 @@ func Test_any_to_float32(t *testing.T) {
 	should.Equal(float32(10.1), val)
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(float32(10), val)
-
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(float32(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(float32(1), val)
-
 	should.NotNil(jsoniter.UnmarshalFromString("{}", &val))
 	should.NotNil(jsoniter.UnmarshalFromString("[]", &val))
 }
@@ -312,13 +240,6 @@ func Test_any_to_float64(t *testing.T) {
 	should.Equal(float64(10.1), val)
 	should.Nil(jsoniter.UnmarshalFromString(`10`, &val))
 	should.Equal(float64(10), val)
-
-	// bool part
-	should.Nil(jsoniter.UnmarshalFromString(`false`, &val))
-	should.Equal(float64(0), val)
-	should.Nil(jsoniter.UnmarshalFromString(`true`, &val))
-	should.Equal(float64(1), val)
-
 	should.NotNil(jsoniter.UnmarshalFromString("{}", &val))
 	should.NotNil(jsoniter.UnmarshalFromString("[]", &val))
 }
@@ -335,25 +256,4 @@ func Test_empty_array_as_object(t *testing.T) {
 	var val struct{}
 	should.Nil(jsoniter.UnmarshalFromString(`[]`, &val))
 	should.Equal(struct{}{}, val)
-}
-
-func Test_bad_case(t *testing.T) {
-	var jsonstr = `
-{
-    "extra_type": 181760,
-    "combo_type": 0,
-    "trigger_time_ms": 1498800398000,
-    "_create_time": "2017-06-16 11:21:39",
-    "_msg_type": 41000
-}
-`
-
-	type OrderEventRequestParams struct {
-		ExtraType uint64 `json:"extra_type"`
-	}
-
-	var a OrderEventRequestParams
-	err := jsoniter.UnmarshalFromString(jsonstr, &a)
-	should := require.New(t)
-	should.Nil(err)
 }

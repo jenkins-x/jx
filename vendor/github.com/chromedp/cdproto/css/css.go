@@ -699,12 +699,14 @@ func (p *StartRuleUsageTrackingParams) Do(ctxt context.Context, h cdp.Executor) 
 	return h.Execute(ctxt, CommandStartRuleUsageTracking, nil, nil)
 }
 
-// StopRuleUsageTrackingParams the list of rules with an indication of
-// whether these were used.
+// StopRuleUsageTrackingParams stop tracking rule usage and return the list
+// of rules that were used since last call to takeCoverageDelta (or since start
+// of coverage instrumentation).
 type StopRuleUsageTrackingParams struct{}
 
-// StopRuleUsageTracking the list of rules with an indication of whether
-// these were used.
+// StopRuleUsageTracking stop tracking rule usage and return the list of
+// rules that were used since last call to takeCoverageDelta (or since start of
+// coverage instrumentation).
 func StopRuleUsageTracking() *StopRuleUsageTrackingParams {
 	return &StopRuleUsageTrackingParams{}
 }
