@@ -12,26 +12,26 @@ import (
 )
 
 var (
-	delete_git_user_long = templates.LongDesc(`
-		Deletes one or more git servers from your local settings
+	delete_git_token_long = templates.LongDesc(`
+		Deletes one or more git tokens from your local settings
 `)
 
-	delete_git_user_example = templates.Examples(`
+	delete_git_token_example = templates.Examples(`
 		# Deletes a git user token
-		jx delete git user -l local myusername
+		jx delete git token -n local myusername
 	`)
 )
 
-// DeleteGitUserOptions the options for the create spring command
-type DeleteGitUserOptions struct {
+// DeleteGitTokenOptions the options for the create spring command
+type DeleteGitTokenOptions struct {
 	CreateOptions
 
 	ServerFlags ServerFlags
 }
 
-// NewCmdDeleteGitUser defines the command
-func NewCmdDeleteGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &DeleteGitUserOptions{
+// NewCmdDeleteGitToken defines the command
+func NewCmdDeleteGitToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &DeleteGitTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -42,11 +42,11 @@ func NewCmdDeleteGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	}
 
 	cmd := &cobra.Command{
-		Use:     "user",
-		Short:   "Deletes one or more git user api tokens",
-		Aliases: []string{"token"},
-		Long:    delete_git_user_long,
-		Example: delete_git_user_example,
+		Use:     "token",
+		Short:   "Deletes one or more api tokens for a user on a git server",
+		Aliases: []string{"api-token"},
+		Long:    delete_git_token_long,
+		Example: delete_git_token_example,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -59,7 +59,7 @@ func NewCmdDeleteGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 }
 
 // Run implements the command
-func (o *DeleteGitUserOptions) Run() error {
+func (o *DeleteGitTokenOptions) Run() error {
 	args := o.Args
 	if len(args) == 0 {
 		return fmt.Errorf("Missing git user name")
