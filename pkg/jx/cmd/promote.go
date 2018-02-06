@@ -12,17 +12,18 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	optionEnvironment = "environment"
+	optionApplication = "app"
 )
 
 // PromoteOptions containers the CLI options
@@ -38,6 +39,7 @@ type PromoteOptions struct {
 	Preview           bool
 	NoHelmUpdate      bool
 	AllAutomatic      bool
+
 }
 
 var (
@@ -74,7 +76,7 @@ func NewCmdPromote(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Namespace to promote to")
 	cmd.Flags().StringVarP(&options.Environment, optionEnvironment, "e", "", "The Environment to promote to")
-	cmd.Flags().StringVarP(&options.Application, "app", "a", "", "The Application to promote")
+	cmd.Flags().StringVarP(&options.Application, optionApplication, "a", "", "The Application to promote")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
@@ -128,11 +130,13 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 	}
 	envs, err := jxClient.JenkinsV1().Environments(team).List(metav1.ListOptions{})
 	if err != nil {
-		return err
+		o.warnf("No Environments found: %s/n", err)
+		return nil
 	}
 	environments := envs.Items
 	if len(environments) == 0 {
-		return fmt.Errorf("No Environments have been created yet in team %s. Please create some via 'jx create env'", team)
+		o.warnf("No Environments have been created yet in team %s. Please create some via 'jx create env'\n", team)
+		return nil
 	}
 	kube.SortEnvironments(environments)
 
@@ -154,6 +158,10 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 
 func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAuto bool) error {
 	app := o.Application
+	if app == "" {
+		o.warnf("No application name could be detected so cannot promote via Helm. If the detection of the helm chart name is not working consider adding it with the --%s argument on the 'jx promomote' command\n", optionApplication)
+		return nil
+	}
 	version := o.Version
 	info := util.ColorInfo
 	if version == "" {
@@ -189,10 +197,15 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		fullAppName = o.LocalHelmRepoName + "/" + app
 	}
 
+	err := o.verifyHelmConfigured()
+	if err != nil {
+	  return err
+	}
+
 	// lets do a helm update to ensure we can find the latest version
 	if !o.NoHelmUpdate {
 		o.Printf("Updating the helm repositories to ensure we can find the latest versions...")
-		err := o.runCommand("helm", "repo", "update")
+		err = o.runCommand("helm", "repo", "update")
 		if err != nil {
 			return err
 		}
@@ -445,6 +458,35 @@ func (options *PromoteOptions) discoverAppName() (string, error) {
 		}
 		answer = gitInfo.Name
 	}
+	if answer == "" {
+		// lets try find the chart file
+		chartFile := filepath.Join(dir, "Chart.yaml")
+		exists, err := util.FileExists(chartFile)
+		if err != nil {
+		  return answer, err
+		}
+		if !exists {
+			// lets try find all the chart files
+			files, err := filepath.Glob("*/Chart.yaml")
+			if err != nil {
+			  return answer, err
+			}
+			if len(files) > 0 {
+				chartFile = files[0]
+			} else {
+				files, err = filepath.Glob("*/*/Chart.yaml")
+				if err != nil {
+				  return answer, err
+				}
+				if len(files) > 0 {
+					chartFile = files[0]
+				}
+			}
+		}
+		if chartFile != "" {
+			return helm.LoadChartName(chartFile)
+		}
+	}
 	return answer, nil
 }
 
@@ -489,4 +531,23 @@ func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
 		return "", fmt.Errorf("Could not find a version of app %s in the helm repositories", app)
 	}
 	return maxString, nil
+}
+
+func (o *PromoteOptions) verifyHelmConfigured() error {
+	helmHomeDir := filepath.Join(util.HomeDir(), ".helm")
+	exists, err := util.FileExists(helmHomeDir)
+	if err != nil {
+	  return err
+	}
+	if !exists {
+		o.Printf("No helm home dir at %s so lets initialise helm client\n", helmHomeDir)
+
+		err = o.runCommand("helm", "init", "--client-only")
+		if err != nil {
+			return err
+		}
+	}
+
+	// lets add the releases chart
+	return o.registerLocalHelmRepo(o.LocalHelmRepoName)
 }

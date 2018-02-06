@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
 	"path/filepath"
+	"k8s.io/helm/pkg/chartutil"
 )
 
 const (
@@ -159,4 +160,12 @@ func SaveRequirementsFile(fileName string, requirements *Requirements) error {
 		return err
 	}
 	return ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+}
+
+func LoadChartName(chartFile string) (string, error) {
+	chart, err := chartutil.LoadChartfile(chartFile)
+	if err != nil {
+	  return "", err
+	}
+	return chart.Name, nil
 }

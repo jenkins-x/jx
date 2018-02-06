@@ -541,6 +541,7 @@ type PrintToPDFParams struct {
 	IgnoreInvalidPageRanges bool    `json:"ignoreInvalidPageRanges,omitempty"` // Whether to silently ignore invalid but successfully parsed page ranges, such as '3-2'. Defaults to false.
 	HeaderTemplate          string  `json:"headerTemplate,omitempty"`          // HTML template for the print header. Should be valid HTML markup with following classes used to inject printing values into them: - date - formatted print date - title - document title - url - document location - pageNumber - current page number - totalPages - total pages in the document  For example, <span class=title></span> would generate span containing the title.
 	FooterTemplate          string  `json:"footerTemplate,omitempty"`          // HTML template for the print footer. Should use the same format as the headerTemplate.
+	PreferCSSPageSize       bool    `json:"preferCSSPageSize,omitempty"`       // Whether or not to prefer page size as defined by css. Defaults to false, in which case the content will be scaled to fit the paper size.
 }
 
 // PrintToPDF print page as PDF.
@@ -639,6 +640,14 @@ func (p PrintToPDFParams) WithHeaderTemplate(headerTemplate string) *PrintToPDFP
 // format as the headerTemplate.
 func (p PrintToPDFParams) WithFooterTemplate(footerTemplate string) *PrintToPDFParams {
 	p.FooterTemplate = footerTemplate
+	return &p
+}
+
+// WithPreferCSSPageSize whether or not to prefer page size as defined by
+// css. Defaults to false, in which case the content will be scaled to fit the
+// paper size.
+func (p PrintToPDFParams) WithPreferCSSPageSize(preferCSSPageSize bool) *PrintToPDFParams {
+	p.PreferCSSPageSize = preferCSSPageSize
 	return &p
 }
 

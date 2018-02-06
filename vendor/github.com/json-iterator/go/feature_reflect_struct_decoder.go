@@ -427,18 +427,8 @@ func (decoder *generalStructDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) 
 	if !iter.readObjectStart() {
 		return
 	}
-	var fieldBytes []byte
-	var field string
-	if iter.cfg.objectFieldMustBeSimpleString {
-		fieldBytes = iter.readObjectFieldAsBytes()
-		field = *(*string)(unsafe.Pointer(&fieldBytes))
-	} else {
-		field = iter.ReadString()
-		c := iter.nextToken()
-		if c != ':' {
-			iter.ReportError("ReadObject", "expect : after object field, but found "+string([]byte{c}))
-		}
-	}
+	fieldBytes := iter.readObjectFieldAsBytes()
+	field := *(*string)(unsafe.Pointer(&fieldBytes))
 	fieldDecoder := decoder.fields[strings.ToLower(field)]
 	if fieldDecoder == nil {
 		iter.Skip()
@@ -446,16 +436,8 @@ func (decoder *generalStructDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) 
 		fieldDecoder.Decode(ptr, iter)
 	}
 	for iter.nextToken() == ',' {
-		if iter.cfg.objectFieldMustBeSimpleString {
-			fieldBytes := iter.readObjectFieldAsBytes()
-			field = *(*string)(unsafe.Pointer(&fieldBytes))
-		} else {
-			field = iter.ReadString()
-			c := iter.nextToken()
-			if c != ':' {
-				iter.ReportError("ReadObject", "expect : after object field, but found "+string([]byte{c}))
-			}
-		}
+		fieldBytes = iter.readObjectFieldAsBytes()
+		field = *(*string)(unsafe.Pointer(&fieldBytes))
 		fieldDecoder = decoder.fields[strings.ToLower(field)]
 		if fieldDecoder == nil {
 			iter.Skip()

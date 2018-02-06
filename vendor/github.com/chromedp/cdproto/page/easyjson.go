@@ -1613,6 +1613,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoPage17(in *jlexer.Lexer, out 
 			out.HeaderTemplate = string(in.String())
 		case "footerTemplate":
 			out.FooterTemplate = string(in.String())
+		case "preferCSSPageSize":
+			out.PreferCSSPageSize = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -1766,6 +1768,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoPage17(out *jwriter.Writer, i
 			out.RawString(prefix)
 		}
 		out.String(string(in.FooterTemplate))
+	}
+	if in.PreferCSSPageSize {
+		const prefix string = ",\"preferCSSPageSize\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.PreferCSSPageSize))
 	}
 	out.RawByte('}')
 }
