@@ -141,11 +141,9 @@ func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigServi
 }
 
 func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
-	kubeconfig := createKubeConfig()
-	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	config, err := f.createKubeConfig()
 	if err != nil {
-		return nil, "", err
+	  return nil, "", err
 	}
 	kubeConfig, _, err := kube.LoadConfig()
 	if err != nil {
