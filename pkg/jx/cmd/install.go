@@ -264,8 +264,7 @@ func (o *InstallOptions) getGitSecrets() (string, error) {
 	pipelineSecrets := `
 PipelineSecrets:
   GitCreds: |-
-    https://%s:%s@%s
-    http://%s:%s@%s`
+    https://%s:%s@%s`
 	return fmt.Sprintf(pipelineSecrets, username, token, server), nil
 }
 

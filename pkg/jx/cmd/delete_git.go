@@ -37,7 +37,7 @@ func NewCmdDeleteGit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	}
 
 	cmd.AddCommand(NewCmdDeleteGitServer(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteGitUser(f, out, errOut))
+	cmd.AddCommand(NewCmdDeleteGitToken(f, out, errOut))
 	return cmd
 }
 

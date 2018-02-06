@@ -213,8 +213,8 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	err = c.Run(ctxt, chromedp.Tasks{
 		chromedp.WaitVisible(getAPITokenButtonSelector),
 		chromedp.Click(getAPITokenButtonSelector),
-		chromedp.WaitVisible("#apiToken", chromedp.ByID),
-		chromedp.Nodes("#apiToken", &nodeSlice, chromedp.ByID),
+		//chromedp.WaitVisible("apiToken", chromedp.ByID),
+		chromedp.Nodes("apiToken", &nodeSlice, chromedp.ByID),
 	})
 	if err != nil {
 		return err

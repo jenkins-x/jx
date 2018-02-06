@@ -3,12 +3,13 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"strings"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 var (
