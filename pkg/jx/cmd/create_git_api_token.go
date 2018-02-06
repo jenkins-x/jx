@@ -7,17 +7,25 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/url"
+	"strings"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	jenkinsGitCredentialsSecretKey = "credentials"
 )
 
 var (
@@ -138,8 +146,15 @@ func (o *CreateGitTokenOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	err = o.updateGitCredentialsSecret(server, userAuth)
+	if err != nil {
+	  o.warnf("Failed to update jenkins git credentials secret: %v\n", err)
+	}
+
 	o.Printf("Created user %s API Token for git server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
+
 	return nil
 }
 
@@ -230,6 +245,58 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 	err = c.Shutdown(ctxt)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+
+func (o *CreateGitTokenOptions) updateGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
+	client, ns, err := o.Factory.CreateClient()
+	if err != nil {
+		return err
+	}
+	options := metav1.GetOptions{}
+	secret, err := client.CoreV1().Secrets(ns).Get(kube.SecretJenkinsGitCredentials, options)
+	if err != nil {
+	   // lets try the real dev namespace if we are in a different environment
+		devNs, _, err := kube.GetDevNamespace(client, ns)
+		if err != nil {
+			return err
+		}
+		secret, err = client.CoreV1().Secrets(devNs).Get(kube.SecretJenkinsGitCredentials, options)
+		if err != nil {
+		  return err
+		}
+	}
+	text := ""
+	data := secret.Data[jenkinsGitCredentialsSecretKey]
+	if data != nil {
+		text = string(data)
+	}
+	lines := strings.Split(text, "\n")
+	u, err := url.Parse(server.URL)
+	if err != nil {
+	  return fmt.Errorf("Failed to parse server URL %s due to: %s", server.URL, err)
+	}
+
+	found := false
+	prefix := u.Scheme + "://"
+	host := u.Host
+	for _, line := range lines {
+		if strings.HasPrefix(line, prefix) && strings.HasSuffix(line, host) {
+			found = true
+		}
+	}
+	if !found {
+		if !strings.HasSuffix(text, "\n") {
+			text += "\n"
+		}
+		text += prefix + userAuth.Username + ":" + userAuth.ApiToken + "@" + host
+		secret.Data[jenkinsGitCredentialsSecretKey] = []byte(text)
+		_, err = client.CoreV1().Secrets(ns).Update(secret)
+		if err != nil {
+			return fmt.Errorf("Failed to update secret %s due to %s", secret.Name, err)
+		}
 	}
 	return nil
 }
