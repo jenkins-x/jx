@@ -74,6 +74,8 @@ func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		},
 	}
 
+	options.addCommonFlags(cmd)
+
 	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
 	cmd.Flags().StringVarP(&options.Flags.Domain, "domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	return cmd
@@ -254,12 +256,16 @@ func (o *InitOptions) initIngress() error {
 	}
 
 	installIngressController := false
-	prompt := &survey.Confirm{
-		Message: "No existing ingress controller found in the kube-system namespace, shall we install one?",
-		Default: true,
-		Help:    "An ingress controller works with an external loadbalancer so you can access Jenkins X and your applications",
+	if o.BatchMode {
+		installIngressController = true
+	} else {
+		prompt := &survey.Confirm{
+			Message: "No existing ingress controller found in the kube-system namespace, shall we install one?",
+			Default: true,
+			Help:    "An ingress controller works with an external loadbalancer so you can access Jenkins X and your applications",
+		}
+		survey.AskOne(prompt, &installIngressController, nil)
 	}
-	survey.AskOne(prompt, &installIngressController, nil)
 
 	if !installIngressController {
 		return nil
@@ -330,6 +336,10 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 	defaultDomain := fmt.Sprintf("%s.nip.io", address)
 	if domain == "" {
 
+		if o.BatchMode {
+			log.Successf("No domain flag provided so using default %s to generate Ingress rules", defaultDomain)
+			return defaultDomain, nil
+		}
 		log.Successf("You can now configure a wildcard DNS pointing to the new loadbalancer address %s", address)
 		log.Infof("If you don't have a wildcard DNS yet you can use the default %s", defaultDomain)
 
@@ -348,7 +358,6 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 		if domain != defaultDomain {
 			log.Successf("You can now configure your wildcard DNS %s to point to %s\n", domain, address)
 		}
-
 	}
 
 	return domain, nil

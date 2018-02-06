@@ -26,13 +26,10 @@ import (
 // referencing the cmd.Flags()
 type InstallOptions struct {
 	CommonOptions
+	gits.GitRepositoryOptions
 
 	Domain             string
 	HTTPS              bool
-	GitProvider        string
-	GitToken           string
-	GitUser            string
-	GitPass            string
 	Provider           string
 	CloudEnvRepository string
 	LocalHelmRepoName  string
@@ -75,6 +72,7 @@ var (
 func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 	options := &InstallOptions{
+		GitRepositoryOptions: gits.GitRepositoryOptions{},
 		CommonOptions: CommonOptions{
 			Factory: f,
 			Out:     out,
@@ -96,10 +94,9 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 		SuggestFor: []string{"list", "ps"},
 	}
 
-	cmd.Flags().StringVarP(&options.GitProvider, "git-provider", "", "github.com", "Git provider, used to create tokens if not provided.  Supported providers: [GitHub]")
-	cmd.Flags().StringVarP(&options.GitToken, "git-token", "t", "", "Git token used to clone and tag releases, typically using a bot user account.  For GitHub use a personal access token with 'public_repo' scope, see https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line")
-	cmd.Flags().StringVarP(&options.GitUser, "git-username", "u", "", "Git username used to tag releases in pipelines, typically this is a bot user")
-	cmd.Flags().StringVarP(&options.GitPass, "git-password", "p", "", "Git username if a Personal Access Token should be created")
+	options.addCommonFlags(cmd)
+	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+
 	cmd.Flags().StringVarP(&options.Domain, "domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	cmd.Flags().BoolVarP(&options.HTTPS, "https", "", false, "Instructs Jenkins X to generate https not http Ingress rules")
 	cmd.Flags().StringVarP(&options.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
@@ -166,7 +163,14 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	arg := fmt.Sprintf("ARGS=--values=%s --values=%s", secretsFileName, configFileName)
+
+	f := options.Factory
+	_, ns, _ := f.CreateClient()
+	if err != nil {
+		return err
+	}
+
+	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --namespace=%s", secretsFileName, configFileName, ns)
 
 	// run the helm install
 	err = options.runCommandFromDir(makefileDir, "make", arg, "install")
@@ -252,17 +256,19 @@ func (o *InstallOptions) getGitSecrets() (string, error) {
 		return "", err
 	}
 
-	server := o.GitProvider
+	server := o.GitRepositoryOptions.ServerURL
 	if server == "" {
 		return "", fmt.Errorf("No Git Server found")
 	}
 
+	url := fmt.Sprintf("%s:%s@%s", username, token, server)
 	// TODO convert to a struct
 	pipelineSecrets := `
 PipelineSecrets:
   GitCreds: |-
-    https://%s:%s@%s`
-	return fmt.Sprintf(pipelineSecrets, username, token, server), nil
+    https://%s
+    http://%s`
+	return fmt.Sprintf(pipelineSecrets, url, url), nil
 }
 
 func (o *InstallOptions) getExposecontrollerConfigValues() (string, error) {
@@ -287,7 +293,7 @@ expose:
 
 // returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release
 func (o *InstallOptions) getGitToken() (string, string, error) {
-	username := o.GitUser
+	username := o.GitRepositoryOptions.Username
 	if username == "" {
 		if os.Getenv(JX_GIT_USER) != "" {
 			username = os.Getenv(JX_GIT_USER)
@@ -295,8 +301,8 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 	}
 	if username != "" {
 		// first check git-token flag
-		if o.GitToken != "" {
-			return username, o.GitToken, nil
+		if o.GitRepositoryOptions.ApiToken != "" {
+			return username, o.GitRepositoryOptions.ApiToken, nil
 		}
 
 		// second check for an environment variable
@@ -313,7 +319,7 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 	config := authConfigSvc.Config()
 
 	var server *auth.AuthServer
-	gitProvider := o.GitProvider
+	gitProvider := o.GitRepositoryOptions.ServerURL
 	if gitProvider != "" {
 		server = config.GetOrCreateServer(gitProvider)
 	} else {

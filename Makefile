@@ -105,4 +105,7 @@ docker-go: linux Dockerfile.buildgo
 docker-maven: linux Dockerfile.maven
 	docker build --no-cache -t builder-maven -f Dockerfile.maven .
 
+docker-pipeline: linux
+	docker build -t rawlingsj/builder-base:dev . -f Dockerfile-pipeline
+
 .PHONY: release clean arm

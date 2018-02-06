@@ -4,13 +4,15 @@ import (
 	"io"
 	"os"
 
+	"strings"
+
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"strings"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -59,6 +61,7 @@ var (
 func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAKSOptions{
 		CreateClusterOptions: CreateClusterOptions{
+			GitRepositoryOptions: gits.GitRepositoryOptions{},
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
@@ -83,6 +86,7 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	}
 
 	options.addCreateClusterFlags(cmd)
+	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 
 	cmd.Flags().StringVarP(&options.Flags.ResourceName, "resource group name", "n", "", "Name of the resource group")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "clusterName", "c", "", "Name of the cluster")
@@ -253,9 +257,10 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	// call jx install
 	installOpts := &InstallOptions{
-		CommonOptions:      o.CommonOptions,
-		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		Provider:           AKS, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
+		CommonOptions:        o.CommonOptions,
+		CloudEnvRepository:   DEFAULT_CLOUD_ENVIRONMENTS_URL,
+		Provider:             AKS, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
+		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
 	}
 	err = installOpts.Run()
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"errors"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -68,6 +69,7 @@ var (
 func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKEOptions{
 		CreateClusterOptions: CreateClusterOptions{
+			GitRepositoryOptions: gits.GitRepositoryOptions{},
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
@@ -93,6 +95,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
+	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "cluster-name", "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -242,11 +245,11 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	// call jx install
 	installOpts := &InstallOptions{
-		CommonOptions:      o.CommonOptions,
-		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		Provider:           GKE,
-		GitProvider:        "github.com", // TODO use the correct gitserver
-		Domain:             initOpts.Flags.Domain,
+		CommonOptions:        o.CommonOptions,
+		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
+		CloudEnvRepository:   DEFAULT_CLOUD_ENVIRONMENTS_URL,
+		Provider:             GKE,
+		Domain:               initOpts.Flags.Domain,
 	}
 	err = installOpts.Run()
 	if err != nil {

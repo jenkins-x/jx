@@ -1,0 +1,3 @@
+FROM jenkinsxio/builder-base:latest
+
+COPY build/jx-linux-amd64 /usr/bin/jx

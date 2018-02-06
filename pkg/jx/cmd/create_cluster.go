@@ -14,6 +14,7 @@ import (
 	"errors"
 
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -27,6 +28,7 @@ type KubernetesProvider string
 // CreateClusterOptions the flags for running crest cluster
 type CreateClusterOptions struct {
 	CreateOptions
+	gits.GitRepositoryOptions
 	Flags    InitFlags
 	Provider string
 	NoBrew   bool
@@ -160,8 +162,13 @@ func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {
 	return deps
 }
 func (o *CreateClusterOptions) installMissingDependencies(providerSpecificDeps []string) error {
+
 	// get base list of required dependencies and add provider specific ones
 	deps := o.getClusterDependencies(providerSpecificDeps)
+
+	if len(deps) == 0 {
+		return nil
+	}
 
 	if o.BatchMode {
 		return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))

@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -53,6 +54,7 @@ var (
 func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinikubeOptions{
 		CreateClusterOptions: CreateClusterOptions{
+			GitRepositoryOptions: gits.GitRepositoryOptions{},
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
@@ -78,6 +80,7 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
+	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 
 	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minikube VM in MB")
 	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
@@ -233,10 +236,10 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 
 	// call jx install
 	installOpts := &InstallOptions{
-		CommonOptions:      o.CommonOptions,
-		CloudEnvRepository: DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		Provider:           MINIKUBE,     // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
-		GitProvider:        "github.com", // TODO use the correct gitserver
+		CommonOptions:        o.CommonOptions,
+		CloudEnvRepository:   DEFAULT_CLOUD_ENVIRONMENTS_URL,
+		Provider:             MINIKUBE, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
+		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
 	}
 	err = installOpts.Run()
 	if err != nil {
