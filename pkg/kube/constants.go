@@ -4,6 +4,9 @@ const (
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
+	// ServiceChartMuseum the service name of the Helm Chart Museum service
+	ServiceChartMuseum = "jenkins-x-chartmuseum"
+
 	// the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
 

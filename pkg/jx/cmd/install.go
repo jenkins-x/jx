@@ -8,21 +8,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"net/url"
-
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -193,7 +190,7 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	err = options.registerLocalHelmRepo()
+	err = options.registerLocalHelmRepo(options.LocalHelmRepoName)
 	if err != nil {
 		return err
 	}
@@ -353,66 +350,6 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 	return userAuth.Username, userAuth.ApiToken, nil
 }
 
-// registerLocalHelmRepo will register a new local helm repository pointing at the newly installed chart museum
-func (o *InstallOptions) registerLocalHelmRepo() error {
-
-	repoName := o.LocalHelmRepoName
-	if repoName == "" {
-		repoName = kube.LocalHelmRepoName
-	}
-
-	// TODO we should use the auth package to keep a list of server login/pwds
-	username := "admin"
-	password := "admin"
-
-	// lets check if we have a local helm repository
-	client, ns, err := o.Factory.CreateClient()
-	if err != nil {
-		return err
-	}
-	u, err := kube.FindServiceURL(client, ns, "jenkins-x-chartmuseum")
-	if err != nil {
-		return err
-	}
-	u2, err := url.Parse(u)
-	if err != nil {
-		return err
-	}
-	if u2.User == nil {
-		u2.User = url.UserPassword(username, password)
-	}
-	helmUrl := u2.String()
-
-	// lets check if we already have the helm repo installed or if we need to add it or remove + add it
-	text, err := o.getCommandOutput("", "helm", "repo", "list")
-	if err != nil {
-		return err
-	}
-	lines := strings.Split(text, "\n")
-	remove := false
-	for _, line := range lines {
-		t := strings.TrimSpace(line)
-		if t != "" {
-			fields := strings.Fields(t)
-			if len(fields) > 1 {
-				if fields[0] == repoName {
-					if fields[1] == helmUrl {
-						return nil
-					} else {
-						remove = true
-					}
-				}
-			}
-		}
-	}
-	if remove {
-		err = o.runCommand("helm", "repo", "remove", repoName)
-		if err != nil {
-			return err
-		}
-	}
-	return o.runCommand("helm", "repo", "add", repoName, helmUrl)
-}
 func (o *InstallOptions) waitForInstallToBeReady() error {
 	f := o.Factory
 	client, ns, err := f.CreateClient()

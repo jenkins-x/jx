@@ -12,13 +12,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -39,6 +39,7 @@ type PromoteOptions struct {
 	Preview           bool
 	NoHelmUpdate      bool
 	AllAutomatic      bool
+
 }
 
 var (
@@ -196,10 +197,15 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		fullAppName = o.LocalHelmRepoName + "/" + app
 	}
 
+	err := o.verifyHelmConfigured()
+	if err != nil {
+	  return err
+	}
+
 	// lets do a helm update to ensure we can find the latest version
 	if !o.NoHelmUpdate {
 		o.Printf("Updating the helm repositories to ensure we can find the latest versions...")
-		err := o.runCommand("helm", "repo", "update")
+		err = o.runCommand("helm", "repo", "update")
 		if err != nil {
 			return err
 		}
@@ -525,4 +531,23 @@ func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
 		return "", fmt.Errorf("Could not find a version of app %s in the helm repositories", app)
 	}
 	return maxString, nil
+}
+
+func (o *PromoteOptions) verifyHelmConfigured() error {
+	helmHomeDir := filepath.Join(util.HomeDir(), ".helm")
+	exists, err := util.FileExists(helmHomeDir)
+	if err != nil {
+	  return err
+	}
+	if !exists {
+		o.Printf("No helm home dir at %s so lets initialise helm client\n", helmHomeDir)
+
+		err = o.runCommand("helm", "init", "--client-only")
+		if err != nil {
+			return err
+		}
+	}
+
+	// lets add the releases chart
+	return o.registerLocalHelmRepo(o.LocalHelmRepoName)
 }
