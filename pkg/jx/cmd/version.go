@@ -130,6 +130,13 @@ func (o *VersionOptions) Run() error {
 			}
 		}
 	}
+	// git version
+	output, err = o.getCommandOutput("", "git", "version")
+	if err != nil {
+		o.warnf("Failed to get git version: %s\n", err)
+	} else {
+		table.AddRow("Git", info(output))
+	}
 
 	table.Render()
 	return nil
