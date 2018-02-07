@@ -15,13 +15,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/uuid"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 const (
@@ -132,7 +132,7 @@ func (o *CreateGitTokenOptions) Run() error {
 		o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
 		o.Printf("Then COPY the token and enter in into the form below:\n\n")
 
-		err = config.EditUserAuth(userAuth, o.Username, false)
+		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false)
 		if err != nil {
 			return err
 		}
@@ -149,7 +149,7 @@ func (o *CreateGitTokenOptions) Run() error {
 
 	err = o.updateGitCredentialsSecret(server, userAuth)
 	if err != nil {
-	  o.warnf("Failed to update jenkins git credentials secret: %v\n", err)
+		o.warnf("Failed to update jenkins git credentials secret: %v\n", err)
 	}
 
 	o.Printf("Created user %s API Token for git server %s at %s\n",
@@ -249,7 +249,6 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 	return nil
 }
 
-
 func (o *CreateGitTokenOptions) updateGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
 	client, ns, err := o.Factory.CreateClient()
 	if err != nil {
@@ -258,14 +257,14 @@ func (o *CreateGitTokenOptions) updateGitCredentialsSecret(server *auth.AuthServ
 	options := metav1.GetOptions{}
 	secret, err := client.CoreV1().Secrets(ns).Get(kube.SecretJenkinsGitCredentials, options)
 	if err != nil {
-	   // lets try the real dev namespace if we are in a different environment
+		// lets try the real dev namespace if we are in a different environment
 		devNs, _, err := kube.GetDevNamespace(client, ns)
 		if err != nil {
 			return err
 		}
 		secret, err = client.CoreV1().Secrets(devNs).Get(kube.SecretJenkinsGitCredentials, options)
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 	text := ""
@@ -276,7 +275,7 @@ func (o *CreateGitTokenOptions) updateGitCredentialsSecret(server *auth.AuthServ
 	lines := strings.Split(text, "\n")
 	u, err := url.Parse(server.URL)
 	if err != nil {
-	  return fmt.Errorf("Failed to parse server URL %s due to: %s", server.URL, err)
+		return fmt.Errorf("Failed to parse server URL %s due to: %s", server.URL, err)
 	}
 
 	found := false

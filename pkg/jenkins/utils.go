@@ -104,7 +104,7 @@ func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config 
 
 	defaultUsername := "admin"
 
-	err := config.EditUserAuth(auth, defaultUsername, true)
+	err := config.EditUserAuth("Jenkins", auth, defaultUsername, true)
 	if err != nil {
 		return *auth, err
 	}

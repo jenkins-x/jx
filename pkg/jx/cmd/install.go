@@ -14,12 +14,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -338,7 +338,7 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(userAuth, defaultUserName, false)
+		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false)
 		if err != nil {
 			return "", "", err
 		}

@@ -143,7 +143,7 @@ func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigServi
 func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
 	config, err := f.createKubeConfig()
 	if err != nil {
-	  return nil, "", err
+		return nil, "", err
 	}
 	kubeConfig, _, err := kube.LoadConfig()
 	if err != nil {
@@ -161,11 +161,10 @@ func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
 func (f *factory) CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error) {
 	config, err := f.createKubeConfig()
 	if err != nil {
-	  return nil, err
+		return nil, err
 	}
 	return apiextensionsclientset.NewForConfig(config)
 }
-
 
 func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
 	config, err := f.createKubeConfig()
@@ -180,7 +179,7 @@ func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	client, err :=  kubernetes.NewForConfig(cfg)
+	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, "", err
 	}
@@ -217,7 +216,6 @@ func createKubeConfig() *string {
 	kubeConfigCache = kubeconfig
 	return kubeconfig
 }
-
 
 func (f *factory) createKubeConfig() (*rest.Config, error) {
 	kubeconfig := createKubeConfig()

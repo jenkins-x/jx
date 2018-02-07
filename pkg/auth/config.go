@@ -215,7 +215,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string) (*Us
 }
 
 // EditUserAuth Lets the user input/edit the user auth
-func (config *AuthConfig) EditUserAuth(auth *UserAuth, defaultUserName string, editUser bool) error {
+func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser bool) error {
 	// default the user name if its empty
 	defaultUsername := config.DefaultUsername
 	if defaultUsername == "" {
@@ -231,7 +231,7 @@ func (config *AuthConfig) EditUserAuth(auth *UserAuth, defaultUserName string, e
 		qs = append(qs, &survey.Question{
 			Name: "username",
 			Prompt: &survey.Input{
-				Message: "User name:",
+				Message: serverLabel + " user name:",
 				Default: auth.Username,
 			},
 			Validate: survey.Required,
