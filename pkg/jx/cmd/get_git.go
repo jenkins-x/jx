@@ -67,7 +67,11 @@ func (o *GetGitOptions) Run() error {
 	table.AddRow("Name", "Kind", "URL")
 
 	for _, s := range config.Servers {
-		table.AddRow(s.Name, s.Kind, s.URL)
+		kind := s.Kind
+		if kind == "" {
+			kind = "github"
+		}
+		table.AddRow(s.Name, kind, s.URL)
 	}
 	table.Render()
 	return nil
