@@ -29,18 +29,37 @@ Or to get help on a specific command, say, `create` then type:
 
 ## Getting Started
 
-The quickest way to get started is to use the `jx create cluster` command - this will create the cluster, install client side dependencies and provision the Jenkins X platform.
+### Installing Kubernetes with Minikube on Mac
 
-If you don't have access to a kubernetes cluster then using [minikube](https://github.com/kubernetes/minikube#minikube) is a great way to kick the tires locally on your laptop. 
+The quickest way to get started is to install Minikube using Homebrew:
 
-    jx create cluster minikube
+    brew cask install minikube
+    brew install kubernetes-helm
+    
+Then install [Docker for Mac](https://docs.docker.com/docker-for-mac/install/). This contains the HyperKit binary you will need to run Kubernetes on your Mac
 
-If that does not work first time for you then please [let us know](https://github.com/jenkins-x/jx/issues/new). The [troubleshooting section](#troubleshooting) may help, othwerise a work around is to try [install minikube yourself](https://github.com/kubernetes/minikube#installation) and [start it up](https://github.com/kubernetes/minikube#quickstart) then use `jx install` as described below.
+To start Kubernetes:
 
+    minikube start --vm-driver hyperkit --memory 4028
+    
+### Setup Jenkins X
 
-This is an example of installing jx and creating a local cluster:
+Then ensure that Helm is initialized on your Kubernetes cluster by running:
 
-<a href="https://asciinema.org/a/klBiPGxRCl5tetdC2YAwuTIVn" target="_blank"><img src="https://asciinema.org/a/klBiPGxRCl5tetdC2YAwuTIVn.png" /></a>
+    helm init
+    
+Helm will initialize its services on the cluster. You can continue when the `tiller` service is in the `Running` status
+
+    kubectl get pods --namespace kube-system | grep 'tiller'
+    tiller-deploy-7594bf7b76-5vh8s          1/1       Running   0          1m
+
+To install Jenkins X:
+
+    jx install
+    
+On every machine you interact with Jenkins X you will need to run the following command to interact with Jenkins X using the `jx` command line:
+
+    jx init
 
 
 ### Using an existing kubernetes cluster
