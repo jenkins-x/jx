@@ -61,9 +61,10 @@ func (o *VersionOptions) Run() error {
 		o.warnf("Failed to find helm installs: %s\n", err)
 	} else {
 		for _, line := range strings.Split(output, "\n") {
-			fields := strings.Fields(line)
-			if len(fields) > 4 && fields[0] == "jenkins-x" {
+			fields := strings.Split(line, "\t")
+			if len(fields) > 4 && strings.TrimSpace(fields[0]) == "jenkins-x" {
 				for _, f := range fields[4:] {
+					f = strings.TrimSpace(f)
 					if strings.HasPrefix(f, jxChartPrefix) {
 						chart := strings.TrimPrefix(f, jxChartPrefix)
 						table.AddRow("Jenkins X", info(chart))
