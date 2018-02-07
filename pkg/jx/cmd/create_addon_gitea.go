@@ -68,6 +68,7 @@ func NewCmdCreateAddonGitea(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 		},
 	}
 
+	options.addCommonFlags(cmd)
 	options.addFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Username, "username", "u", "", "The name for the user to create in gitea")
