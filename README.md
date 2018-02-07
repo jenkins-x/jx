@@ -261,6 +261,21 @@ To remove the Jenkins X platfrom from a namespace on your kubernetes cluster:
 
     jx uninstall
 
+## Addons
+
+We are adding a number of addon capabilities to Jenkins X. To add or remove addons use the `jx create addon` or `jx delete addon` commands
+
+For example to add the [gitea git server](https://gitea.io/en-US/) to your Jenkins X installation try:
+
+    jx create addon gitea
+
+This will: 
+
+* install the gitea helm chart
+* add gitea as a git server (via the `jx create git server gitea` command)
+* create a new user in gitea (via the `jx create git user -n gitea` command)
+* create a new git API token in gitea (via the `jx create git token -n gitea -p password username` command)
+     
 ## Troubleshooting
 
 We have tried to collate common issues here with work arounds. If your issue isn't listed here please [let us know](https://github.com/jenkins-x/jx/issues/new).
@@ -286,6 +301,26 @@ Otherwise you could try follow the minikube instructions
 * [install minikube](https://github.com/kubernetes/minikube#installation)
 * [run minikube start](https://github.com/kubernetes/minikube#quickstart) 
 
+### Minkube and hyperkit: Could not find an IP address
+
+If you are using minikube on a mac with hyperkit and find minikube fails to start with a log like:
+
+```
+Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
+Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
+Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
+Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
+```
+
+It could be you have hit [this issue in minikube and hyperkit](https://github.com/kubernetes/minikube/issues/1926#issuecomment-356378525).
+
+The work around is to try the following:
+
+```
+rm ~/.minikube/machines/minikube/hyperkit.pid
+``` 
+
+Then try again. Hopefully this time it will work!
 
 ### Cannot access services on minikube
 
@@ -315,26 +350,7 @@ jx open
 You'll see all the URs of the form `http://$(minikube ip):somePortNumber` which then avoids going through [nip.io](http://nip.io/) - it just means the URLs are a little more cryptic using magic port numbers rather than simple host names.
 
 
-### Minkube and hyperkit: Could not find an IP address
 
-If you are using minikube on a mac with hyperkit and find minikube fails to start with a log like:
-
-```
-Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
-Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
-Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
-Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
-```
-
-It could be you have hit [this issue in minikube and hyperkit](https://github.com/kubernetes/minikube/issues/1926#issuecomment-356378525).
-
-The work around is to try the following:
-
-```
-rm ~/.minikube/machines/minikube/hyperkit.pid
-``` 
-
-Then try again. Hopefully this time it will work!
  
 ### Other issues
 
