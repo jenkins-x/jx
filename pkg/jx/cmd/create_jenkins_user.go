@@ -157,7 +157,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 
 	logger, err := o.createChromeDPLogger()
 	if err != nil {
-	  return err
+		return err
 	}
 
 	c, err := chromedp.New(ctxt, chromedp.WithLog(logger))

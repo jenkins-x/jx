@@ -167,7 +167,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 
 	logger, err := o.createChromeDPLogger()
 	if err != nil {
-	  return err
+		return err
 	}
 
 	c, err := chromedp.New(ctxt, chromedp.WithLog(logger))

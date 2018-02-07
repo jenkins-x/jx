@@ -3,15 +3,15 @@ package cmd
 import (
 	"io"
 
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/spf13/cobra"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"io/ioutil"
 	"github.com/jenkins-x/jx/pkg/util"
-	"fmt"
-	"strings"
+	"github.com/spf13/cobra"
+	"io/ioutil"
 	"net/url"
+	"strings"
 )
 
 const (
