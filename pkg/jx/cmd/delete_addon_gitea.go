@@ -71,7 +71,7 @@ func (o *DeleteAddonGiteaOptions) Run() error {
 
 func (o *DeleteAddonGiteaOptions) deleteGitServer() error {
 	options := &DeleteGitServerOptions{
-		CreateOptions: o.CreateOptions,
+		CreateOptions:       o.CreateOptions,
 		IgnoreMissingServer: true,
 	}
 	options.Args = []string{"gitea"}

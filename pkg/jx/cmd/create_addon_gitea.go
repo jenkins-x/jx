@@ -39,8 +39,8 @@ type CreateAddonGiteaOptions struct {
 	Chart       string
 	Email       string
 	IsAdmin     bool
-	NoUser		bool
-	NoToken		bool
+	NoUser      bool
+	NoToken     bool
 }
 
 // NewCmdCreateAddonGitea creates a command object for the "create" command
@@ -99,7 +99,7 @@ func (o *CreateAddonGiteaOptions) Run() error {
 	}
 	err = o.createGitServer()
 	if err != nil {
-	  return err
+		return err
 	}
 	if !o.NoUser {
 		// now to add the git server + a user
@@ -110,7 +110,7 @@ func (o *CreateAddonGiteaOptions) Run() error {
 				}
 				err = survey.AskOne(prompt, &o.Username, nil)
 				if err != nil {
-				  return err
+					return err
 				}
 			}
 			if o.Username != "" {
@@ -120,7 +120,7 @@ func (o *CreateAddonGiteaOptions) Run() error {
 					}
 					err = survey.AskOne(prompt, &o.Password, nil)
 					if err != nil {
-					  return err
+						return err
 					}
 				}
 			}
@@ -128,7 +128,7 @@ func (o *CreateAddonGiteaOptions) Run() error {
 		if o.Username != "" && o.Password != "" {
 			err = o.createGitUser()
 			if err != nil {
-			  return err
+				return err
 			}
 		}
 	}
@@ -149,10 +149,10 @@ func (o *CreateAddonGiteaOptions) createGitServer() error {
 func (o *CreateAddonGiteaOptions) createGitUser() error {
 	options := &CreateGitUserOptions{
 		CreateOptions: o.CreateOptions,
-		Username: o.Username,
-		Password: o.Password,
-		Email: o.Email,
-		IsAdmin: o.IsAdmin,
+		Username:      o.Username,
+		Password:      o.Password,
+		Email:         o.Email,
+		IsAdmin:       o.IsAdmin,
 	}
 	return options.Run()
 }
@@ -160,8 +160,8 @@ func (o *CreateAddonGiteaOptions) createGitUser() error {
 func (o *CreateAddonGiteaOptions) createGitToken() error {
 	options := &CreateGitTokenOptions{
 		CreateOptions: o.CreateOptions,
-		Username: o.Username,
-		Password: o.Password,
+		Username:      o.Username,
+		Password:      o.Password,
 	}
 	return options.Run()
 }
