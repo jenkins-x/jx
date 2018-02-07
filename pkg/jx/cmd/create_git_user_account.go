@@ -125,7 +125,7 @@ func (o *CreateGitUserOptions) Run() error {
 		}
 	}
 
-	pod, err := waitForReadyPodForDeployment(client, ns, name, names)
+	pod, err := waitForReadyPodForDeployment(client, ns, name, names, true)
 	if err != nil {
 		return err
 	}

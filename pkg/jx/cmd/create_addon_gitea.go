@@ -123,9 +123,20 @@ func (o *CreateAddonGiteaOptions) Run() error {
 						return err
 					}
 				}
+				if o.Password != "" {
+					if o.Email == "" {
+						prompt := &survey.Input{
+							Message: "Enter the email address of the user to create in gitea: ",
+						}
+						err = survey.AskOne(prompt, &o.Email, nil)
+						if err != nil {
+							return err
+						}
+					}
+				}
 			}
 		}
-		if o.Username != "" && o.Password != "" {
+		if o.Username != "" && o.Password != "" && o.Email != "" {
 			err = o.createGitUser()
 			if err != nil {
 				return err
@@ -154,6 +165,7 @@ func (o *CreateAddonGiteaOptions) createGitUser() error {
 		Email:         o.Email,
 		IsAdmin:       o.IsAdmin,
 	}
+	options.ServerFlags.ServerName = "gitea"
 	return options.Run()
 }
 
@@ -163,5 +175,6 @@ func (o *CreateAddonGiteaOptions) createGitToken() error {
 		Username:      o.Username,
 		Password:      o.Password,
 	}
+	options.ServerFlags.ServerName = "gitea"
 	return options.Run()
 }
