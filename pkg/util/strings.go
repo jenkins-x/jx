@@ -2,6 +2,7 @@ package util
 
 import (
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -56,4 +57,14 @@ func FirstNotEmptyString(values ...string) string {
 		}
 	}
 	return ""
+}
+
+// SortedMapKeys returns the sorted keys of the given map
+func SortedMapKeys(m map[string]string) []string {
+	answer := []string{}
+	for k, _ := range m {
+		answer = append(answer, k)
+	}
+	sort.Strings(answer)
+	return answer
 }

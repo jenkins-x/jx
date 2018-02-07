@@ -343,6 +343,35 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	return o.runCommand("helm", "repo", "add", repoName, helmUrl)
 }
 
+// installChart installs the given chart
+func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool) error {
+	if helmUpdate {
+		err := o.runCommand("helm", "repo", "update")
+		if err != nil {
+			return err
+		}
+	}
+	args := []string{"upgrade", "--install"}
+	if version != "" {
+		args = append(args, "--version", version)
+	}
+	if ns != "" {
+		args = append(args, "--namespace", ns)
+	}
+	args = append(args, releaseName, chart)
+	return o.runCommand("helm", args...)
+}
+
+// deleteChart deletes the given chart
+func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {
+	args := []string{"delete"}
+	if purge {
+		args = append(args, "--purge")
+	}
+	args = append(args, releaseName)
+	return o.runCommand("helm", args...)
+}
+
 func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() error) (err error) {
 	for i := 0; ; i++ {
 		err = call()

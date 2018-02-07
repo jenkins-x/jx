@@ -63,16 +63,16 @@ func NewCmdUpgradePlatform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 
 // Run implements the command
 func (o *UpgradePlatformOptions) Run() error {
+	ns := o.Namespace
+	version := o.Version
 	err := o.runCommand("helm", "repo", "update")
 	if err != nil {
 		return err
 	}
 	args := []string{"upgrade"}
-	version := o.Version
 	if version != "" {
 		args = append(args, "--version", version)
 	}
-	ns := o.Namespace
 	if ns != "" {
 		args = append(args, "--namespace", ns)
 	}

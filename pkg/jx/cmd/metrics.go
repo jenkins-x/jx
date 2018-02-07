@@ -103,7 +103,7 @@ func (o *MetricsOptions) Run() error {
 			}
 		}
 
-		p, err := waitForReadyPodForDeployment(client, ns, name, names)
+		p, err := waitForReadyPodForDeployment(client, ns, name, names, false)
 		if err != nil {
 			return err
 		}

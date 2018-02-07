@@ -19,6 +19,10 @@ func InvalidOptionf(option string, value string, message string, a ...interface{
 	return fmt.Errorf("Invalid option: --%s %s\n%s", option, value, text)
 }
 
+func MissingOption(name string) error {
+	return fmt.Errorf("Missing option: --%s", name)
+}
+
 func InvalidOption(name string, value string, values []string) error {
 	suggestions := SuggestionsFor(value, values, DefaultSuggestionsMinimumDistance)
 	if len(suggestions) > 0 {

@@ -105,7 +105,7 @@ func (o *LogsOptions) Run() error {
 	}
 
 	for {
-		pod, err := waitForReadyPodForDeployment(client, ns, name, names)
+		pod, err := waitForReadyPodForDeployment(client, ns, name, names, false)
 		if err != nil {
 			return err
 		}
@@ -125,7 +125,7 @@ func (o *LogsOptions) Run() error {
 }
 
 // waitForReadyPodForDeployment waits for a ready pod in a Deployment in the given namespace with the given name
-func waitForReadyPodForDeployment(c *kubernetes.Clientset, ns string, name string, names []string) (string, error) {
+func waitForReadyPodForDeployment(c *kubernetes.Clientset, ns string, name string, names []string, readyOnly bool) (string, error) {
 	deployment, err := c.AppsV1beta2().Deployments(ns).Get(name, metav1.GetOptions{})
 	if err != nil || deployment == nil {
 		return "", util.InvalidArg(name, names)
@@ -138,10 +138,10 @@ func waitForReadyPodForDeployment(c *kubernetes.Clientset, ns string, name strin
 	if labels == nil {
 		return "", fmt.Errorf("No MatchLabels defined on the Selector of Deployment %s in namespace %s", name, ns)
 	}
-	return waitForReadyPodForSelector(c, ns, labels)
+	return waitForReadyPodForSelector(c, ns, labels, readyOnly)
 }
 
-func waitForReadyPodForSelector(c *kubernetes.Clientset, ns string, labels map[string]string) (string, error) {
+func waitForReadyPodForSelector(c *kubernetes.Clientset, ns string, labels map[string]string, readyOnly bool) (string, error) {
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return "", err
@@ -159,10 +159,12 @@ func waitForReadyPodForSelector(c *kubernetes.Clientset, ns string, labels map[s
 		for _, pod := range pods.Items {
 			phase := pod.Status.Phase
 			if phase == corev1.PodRunning {
-				created := pod.CreationTimestamp
-				if name == "" || created.After(lastTime) {
-					lastTime = created.Time
-					name = pod.Name
+				if !readyOnly || kube.IsPodReady(&pod) {
+					created := pod.CreationTimestamp
+					if name == "" || created.After(lastTime) {
+						lastTime = created.Time
+						name = pod.Name
+					}
 				}
 			}
 		}

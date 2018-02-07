@@ -24,18 +24,18 @@ var (
 
 // DeleteGitServerOptions the options for the create spring command
 type DeleteGitServerOptions struct {
-	CreateOptions
+	CommonOptions
+
+	IgnoreMissingServer bool
 }
 
 // NewCmdDeleteGitServer defines the command
 func NewCmdDeleteGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteGitServerOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				Out:     out,
-				Err:     errOut,
-			},
+		CommonOptions: CommonOptions{
+			Factory: f,
+			Out:     out,
+			Err:     errOut,
 		},
 	}
 
@@ -51,6 +51,7 @@ func NewCmdDeleteGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			cmdutil.CheckErr(err)
 		},
 	}
+	cmd.Flags().BoolVarP(&options.IgnoreMissingServer, "ignore-missing", "i", false, "Silently ignore attempts to remove a git server name that does not exist")
 	return cmd
 }
 
@@ -70,6 +71,9 @@ func (o *DeleteGitServerOptions) Run() error {
 	for _, arg := range args {
 		idx := config.IndexOfServerName(arg)
 		if idx < 0 {
+			if o.IgnoreMissingServer {
+				return nil
+			}
 			return util.InvalidArg(arg, serverNames)
 		}
 		config.Servers = append(config.Servers[0:idx], config.Servers[idx+1:]...)

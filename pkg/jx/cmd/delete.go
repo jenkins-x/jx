@@ -48,9 +48,10 @@ func NewCmdDelete(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			err := options.Run()
 			cmdutil.CheckErr(err)
 		},
-		SuggestFor: []string{"remove", "rm"},
+		SuggestFor: []string{"remove", "rm", "del"},
 	}
 
+	cmd.AddCommand(NewCmdDeleteAddon(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteGit(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteJenkins(f, out, errOut))
