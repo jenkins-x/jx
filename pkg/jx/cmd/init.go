@@ -4,8 +4,6 @@ import (
 	"errors"
 	"io"
 
-	"os"
-
 	"time"
 
 	"strings"
@@ -89,25 +87,29 @@ func (o *InitOptions) Run() error {
 		return err
 	}
 
-	// helm init
-	err = o.initHelm()
+	// helm init, this has been seen to fail intermittently on public clouds, so lets retry a couple of times
+	err = o.retry(3, 2*time.Second, func() (err error) {
+		err = o.initHelm()
+		return
+	})
+
 	if err != nil {
 		log.Fatalf("helm init failed: %v", err)
-		os.Exit(-1)
+		return err
 	}
 
 	// draft init
 	err = o.initDraft()
 	if err != nil {
 		log.Fatalf("draft init failed: %v", err)
-		os.Exit(-1)
+		return err
 	}
 
 	// install ingress
 	err = o.initIngress()
 	if err != nil {
 		log.Fatalf("ingress init failed: %v", err)
-		os.Exit(-1)
+		return err
 	}
 
 	return nil

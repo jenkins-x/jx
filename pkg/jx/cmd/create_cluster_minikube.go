@@ -30,6 +30,7 @@ type CreateClusterMinikubeFlags struct {
 	CPU                 string
 	Driver              string
 	HyperVVirtualSwitch string
+	Namespace           string
 }
 
 var (
@@ -86,7 +87,7 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [virtualbox xhyve vmwarefusion hyperkit]")
 	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with minikube")
-
+	cmd.Flags().StringVarP(&options.Flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	return cmd
 }
 
@@ -242,6 +243,30 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
 	}
 	err = installOpts.Run()
+	if err != nil {
+		return err
+	}
+
+	context, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	if err != nil {
+		return err
+	}
+
+	ns := o.Flags.Namespace
+	if ns == "" {
+		f := o.Factory
+		_, ns, _ = f.CreateClient()
+		if err != nil {
+			return err
+		}
+	}
+
+	err = o.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+	if err != nil {
+		return err
+	}
+
+	err = o.runCommand("kubectl", "get", "ingress")
 	if err != nil {
 		return err
 	}

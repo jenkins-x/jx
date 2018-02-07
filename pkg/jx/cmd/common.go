@@ -9,6 +9,8 @@ import (
 
 	"os"
 
+	"time"
+
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -284,7 +286,7 @@ func (o *CommonOptions) findService(name string) (string, error) {
 	return url, nil
 }
 
-func (o *CommonOptions) registerLocalHelmRepo(repoName string) error {
+func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	if repoName == "" {
 		repoName = kube.LocalHelmRepoName
 	}
@@ -293,7 +295,7 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName string) error {
 	password := "admin"
 
 	// lets check if we have a local helm repository
-	client, ns, err := o.Factory.CreateClient()
+	client, _, err := o.Factory.CreateClient()
 	if err != nil {
 		return err
 	}
@@ -339,4 +341,22 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName string) error {
 		}
 	}
 	return o.runCommand("helm", "repo", "add", repoName, helmUrl)
+}
+
+func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() error) (err error) {
+	for i := 0; ; i++ {
+		err = call()
+		if err == nil {
+			return
+		}
+
+		if i >= (attempts - 1) {
+			break
+		}
+
+		time.Sleep(sleep)
+
+		o.Printf("retrying after error:", err)
+	}
+	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
