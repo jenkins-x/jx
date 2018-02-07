@@ -132,6 +132,6 @@ func (o *DeleteEnvOptions) deleteEnviroment(jxClient *versioned.Clientset, ns st
 		return o.runCommand("kubectl", "delete", "namespace", envNs)
 	}
 	o.Printf("To delete the associated namespace %s for environment %s then please run this command\n", name, envNs)
-	o.Printf(util.ColorInfo("  kubectl delete namespace %s"), envNs)
+	o.Printf(util.ColorInfo("  kubectl delete namespace %s\n"), envNs)
 	return nil
 }
