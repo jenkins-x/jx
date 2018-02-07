@@ -7,8 +7,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
 	"strings"
 )
 
@@ -73,7 +73,6 @@ func (o *GetAddonOptions) Run() error {
 			}
 		}
 	}
-
 
 	charts := kube.AddonCharts
 
