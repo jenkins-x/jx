@@ -18,3 +18,11 @@ const (
 
 	DefaultEnvironmentGitRepoURL = "https://github.com/jenkins-x/default-environment-charts.git"
 )
+
+var (
+	AddonCharts = map[string]string{
+		"gitea":      ChartGitea,
+		"prometheus": "stable/prometheus",
+		"grafana":    "stable/grafana",
+	}
+)

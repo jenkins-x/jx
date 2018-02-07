@@ -22,16 +22,15 @@ var (
 
 // DeleteAddonGiteaOptions the options for the create spring command
 type DeleteAddonGiteaOptions struct {
-	CreateOptions
+	DeleteAddonOptions
 
 	ReleaseName string
-	Purge       bool
 }
 
 // NewCmdDeleteAddonGitea defines the command
 func NewCmdDeleteAddonGitea(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteAddonGiteaOptions{
-		CreateOptions: CreateOptions{
+		DeleteAddonOptions: DeleteAddonOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
 				Out:     out,
@@ -53,7 +52,7 @@ func NewCmdDeleteAddonGitea(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 		},
 	}
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", "gitea", "The chart release name")
-	cmd.Flags().BoolVarP(&options.Purge, "purge", "p", true, "Removes the release name from helm so it can be reused again")
+	options.addFlags(cmd)
 	return cmd
 }
 
@@ -71,7 +70,7 @@ func (o *DeleteAddonGiteaOptions) Run() error {
 
 func (o *DeleteAddonGiteaOptions) deleteGitServer() error {
 	options := &DeleteGitServerOptions{
-		CreateOptions:       o.CreateOptions,
+		CommonOptions:       o.CommonOptions,
 		IgnoreMissingServer: true,
 	}
 	options.Args = []string{"gitea"}

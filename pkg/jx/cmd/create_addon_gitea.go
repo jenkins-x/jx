@@ -31,12 +31,9 @@ var (
 type CreateAddonGiteaOptions struct {
 	CreateAddonOptions
 
+	Chart       string
 	Username    string
 	Password    string
-	Namespace   string
-	Version     string
-	ReleaseName string
-	Chart       string
 	Email       string
 	IsAdmin     bool
 	NoUser      bool
@@ -70,14 +67,13 @@ func NewCmdCreateAddonGitea(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			cmdutil.CheckErr(err)
 		},
 	}
-	//addCreateAppFlags(cmd, &options.CreateOptions)
+
+	options.addFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Username, "username", "u", "", "The name for the user to create in gitea")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The password for the user to create in gitea")
 	cmd.Flags().StringVarP(&options.Email, "email", "e", "", "The email address of the new user to create in gitea")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The verison of the gitea addon to use")
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Namespace to install into")
-	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", "gitea", "The chart release name")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartGitea, "The name of the chart to use")
 	cmd.Flags().BoolVarP(&options.IsAdmin, "admin", "", false, "Should the new user created be an admin of the gitea server")
 	cmd.Flags().BoolVarP(&options.NoUser, "no-user", "", false, "If true disable trying to create a new user in the gitea server")

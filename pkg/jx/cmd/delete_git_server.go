@@ -24,7 +24,7 @@ var (
 
 // DeleteGitServerOptions the options for the create spring command
 type DeleteGitServerOptions struct {
-	CreateOptions
+	CommonOptions
 
 	IgnoreMissingServer bool
 }
@@ -32,12 +32,10 @@ type DeleteGitServerOptions struct {
 // NewCmdDeleteGitServer defines the command
 func NewCmdDeleteGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteGitServerOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				Out:     out,
-				Err:     errOut,
-			},
+		CommonOptions: CommonOptions{
+			Factory: f,
+			Out:     out,
+			Err:     errOut,
 		},
 	}
 
