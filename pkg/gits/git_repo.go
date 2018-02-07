@@ -75,7 +75,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(userAuth, defaultUserName, true)
+		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, true)
 		if err != nil {
 			return nil, err
 		}

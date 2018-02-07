@@ -13,7 +13,6 @@ type UpgradeOptions struct {
 	CommonOptions
 }
 
-
 // NewCmdUpgrade creates the command
 func NewCmdUpgrade(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &UpgradeOptions{

@@ -5,8 +5,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
-	"path/filepath"
 	"k8s.io/helm/pkg/chartutil"
+	"path/filepath"
 )
 
 const (
@@ -165,7 +165,7 @@ func SaveRequirementsFile(fileName string, requirements *Requirements) error {
 func LoadChartName(chartFile string) (string, error) {
 	chart, err := chartutil.LoadChartfile(chartFile)
 	if err != nil {
-	  return "", err
+		return "", err
 	}
 	return chart.Name, nil
 }

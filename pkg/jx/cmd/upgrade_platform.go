@@ -23,10 +23,10 @@ var (
 type UpgradePlatformOptions struct {
 	CreateOptions
 
-	Version string
+	Version     string
 	ReleaseName string
-	Chart string
-	Namespace string
+	Chart       string
+	Namespace   string
 }
 
 // NewCmdUpgradePlatform defines the command

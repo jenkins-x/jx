@@ -132,7 +132,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		jenkins.PrintGetTokenFromURL(o.Out, tokenUrl)
 		o.Printf("Then COPY the token and enter in into the form below:\n\n")
 
-		err = config.EditUserAuth(userAuth, o.Username, false)
+		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false)
 		if err != nil {
 			return err
 		}
