@@ -33,6 +33,7 @@ type InstallOptions struct {
 	Provider           string
 	CloudEnvRepository string
 	LocalHelmRepoName  string
+	Namespace          string
 }
 
 type Secrets struct {
@@ -164,10 +165,13 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	f := options.Factory
-	_, ns, _ := f.CreateClient()
-	if err != nil {
-		return err
+	ns := options.Namespace
+	if ns == "" {
+		f := options.Factory
+		_, ns, _ = f.CreateClient()
+		if err != nil {
+			return err
+		}
 	}
 
 	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --namespace=%s", secretsFileName, configFileName, ns)
@@ -189,17 +193,12 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	err = options.waitForInstallToBeReady()
+	err = options.waitForInstallToBeReady(ns)
 	if err != nil {
 		return err
 	}
 
-	err = options.registerLocalHelmRepo(options.LocalHelmRepoName)
-	if err != nil {
-		return err
-	}
-
-	err = options.runCommand("kubectl", "get", "ingress")
+	err = options.registerLocalHelmRepo(options.LocalHelmRepoName, ns)
 	if err != nil {
 		return err
 	}
@@ -356,9 +355,9 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 	return userAuth.Username, userAuth.ApiToken, nil
 }
 
-func (o *InstallOptions) waitForInstallToBeReady() error {
+func (o *InstallOptions) waitForInstallToBeReady(ns string) error {
 	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, _, err := f.CreateClient()
 	if err != nil {
 		return err
 	}

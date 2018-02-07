@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"io"
-	"os"
 
 	"strings"
 
@@ -39,6 +38,7 @@ type CreateClusterGKEFlags struct {
 	ProjectId       string
 	SkipLogin       bool
 	Zone            string
+	Namespace       string
 }
 
 const CLUSTER_LIST_HEADER = "PROJECT_ID"
@@ -107,6 +107,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
+	cmd.Flags().StringVarP(&options.Flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	return cmd
 }
 
@@ -120,13 +121,13 @@ func (o *CreateClusterGKEOptions) Run() error {
 	err := o.installMissingDependencies(deps)
 	if err != nil {
 		log.Errorf("error creating cluster on GKE, %v", err)
-		os.Exit(-1)
+		return err
 	}
 
 	err = o.createClusterGKE()
 	if err != nil {
 		log.Errorf("error creating cluster %v", err)
-		os.Exit(-1)
+		return err
 	}
 
 	return nil
@@ -250,8 +251,38 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		CloudEnvRepository:   DEFAULT_CLOUD_ENVIRONMENTS_URL,
 		Provider:             GKE,
 		Domain:               initOpts.Flags.Domain,
+		Namespace:            o.Flags.Namespace,
 	}
 	err = installOpts.Run()
+	if err != nil {
+		return err
+	}
+
+	err = o.runCommand("gcloud", "container", "clusters", "get-credentials", clusterName, "--zone", zone, "--project", projectId)
+	if err != nil {
+		return err
+	}
+
+	context, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	if err != nil {
+		return err
+	}
+
+	ns := o.Flags.Namespace
+	if ns == "" {
+		f := o.Factory
+		_, ns, _ = f.CreateClient()
+		if err != nil {
+			return err
+		}
+	}
+
+	err = o.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+	if err != nil {
+		return err
+	}
+
+	err = o.runCommand("kubectl", "get", "ingress")
 	if err != nil {
 		return err
 	}

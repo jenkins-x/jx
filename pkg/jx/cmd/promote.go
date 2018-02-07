@@ -547,6 +547,12 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 		}
 	}
 
+	f := o.Factory
+	_, ns, _ := f.CreateClient()
+	if err != nil {
+		return err
+	}
+
 	// lets add the releases chart
-	return o.registerLocalHelmRepo(o.LocalHelmRepoName)
+	return o.registerLocalHelmRepo(o.LocalHelmRepoName, ns)
 }
