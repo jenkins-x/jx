@@ -170,6 +170,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 		return err
 	}
 	writer := bufio.NewWriter(file)
+	o.Printf("Trying to generate an API token for user: %s\n", util.ColorInfo(userAuth.Username))
 	o.Printf("Chrome debugging logs written to: %s\n", util.ColorInfo(file.Name()))
 
 	logger := func(message string, args ...interface{}) {
