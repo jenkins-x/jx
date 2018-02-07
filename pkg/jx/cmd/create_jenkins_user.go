@@ -152,21 +152,14 @@ func (o *CreateJenkinsUserOptions) Run() error {
 
 // lets try use the users browser to find the API token
 func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, userAuth *auth.UserAuth) error {
-	var err error
-
 	ctxt, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	file, err := ioutil.TempFile("", "jx-browser")
+	logger, err := o.createChromeDPLogger()
 	if err != nil {
-		return err
+	  return err
 	}
-	writer := bufio.NewWriter(file)
-	o.Printf("Chrome debugging logs written to: %s\n", util.ColorInfo(file.Name()))
 
-	logger := func(message string, args ...interface{}) {
-		fmt.Fprintf(writer, message+"\n", args...)
-	}
 	c, err := chromedp.New(ctxt, chromedp.WithLog(logger))
 	if err != nil {
 		log.Fatal(err)
@@ -237,4 +230,25 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 		return err
 	}
 	return nil
+}
+
+func (o *CommonOptions) createChromeDPLogger() (chromedp.LogFunc, error) {
+	var logger chromedp.LogFunc
+	if o.Verbose {
+		logger = func(message string, args ...interface{}) {
+			o.Printf(message+"\n", args...)
+		}
+	} else {
+		file, err := ioutil.TempFile("", "jx-browser")
+		if err != nil {
+			return logger, err
+		}
+		writer := bufio.NewWriter(file)
+		o.Printf("Chrome debugging logs written to: %s\n", util.ColorInfo(file.Name()))
+
+		logger = func(message string, args ...interface{}) {
+			fmt.Fprintf(writer, message+"\n", args...)
+		}
+	}
+	return logger, nil
 }

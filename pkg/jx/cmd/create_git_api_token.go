@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"strings"
@@ -165,17 +163,13 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 	ctxt, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	file, err := ioutil.TempFile("", "jx-browser")
-	if err != nil {
-		return err
-	}
-	writer := bufio.NewWriter(file)
 	o.Printf("Trying to generate an API token for user: %s\n", util.ColorInfo(userAuth.Username))
-	o.Printf("Chrome debugging logs written to: %s\n", util.ColorInfo(file.Name()))
 
-	logger := func(message string, args ...interface{}) {
-		fmt.Fprintf(writer, message+"\n", args...)
+	logger, err := o.createChromeDPLogger()
+	if err != nil {
+	  return err
 	}
+
 	c, err := chromedp.New(ctxt, chromedp.WithLog(logger))
 	if err != nil {
 		log.Fatal(err)
