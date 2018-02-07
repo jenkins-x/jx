@@ -1,6 +1,9 @@
 package kube
 
 const (
+	// ChartGitea the default name of the gitea chart
+	ChartGitea = "jenkins-x/gitea"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
