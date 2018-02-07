@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"io"
 	"fmt"
+	"io"
 
-	"github.com/spf13/cobra"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/kube"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
 )
 
 // CreateAddonOptions the options for the create spring command
@@ -17,8 +17,7 @@ type CreateAddonOptions struct {
 	Namespace   string
 	Version     string
 	ReleaseName string
-	HelmUpdate     bool
-
+	HelmUpdate  bool
 }
 
 // NewCmdCreateAddon creates a command object for the "create" command
@@ -72,7 +71,7 @@ func (o *CreateAddonOptions) Run() error {
 		}
 		err := o.installChart(arg, chart, o.Version, o.Namespace, o.HelmUpdate)
 		if err != nil {
-		  return fmt.Errorf("Failed to install chart %s: %s", chart, err)
+			return fmt.Errorf("Failed to install chart %s: %s", chart, err)
 		}
 	}
 	return nil

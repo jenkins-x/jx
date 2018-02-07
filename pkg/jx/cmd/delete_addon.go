@@ -5,17 +5,17 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"fmt"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
-	"fmt"
 )
 
 // DeleteAddonOptions are the flags for delete commands
 type DeleteAddonOptions struct {
 	CommonOptions
 
-	Purge       bool
+	Purge bool
 }
 
 // NewCmdDeleteAddon creates a command object for the generic "get" action, which
@@ -65,7 +65,7 @@ func (o *DeleteAddonOptions) Run() error {
 		}
 		err := o.deleteChart(arg, o.Purge)
 		if err != nil {
-		  return fmt.Errorf("Failed to delete chart %s: %s", chart, err)
+			return fmt.Errorf("Failed to delete chart %s: %s", chart, err)
 		}
 	}
 	return nil

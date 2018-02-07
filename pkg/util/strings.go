@@ -2,8 +2,8 @@ package util
 
 import (
 	"regexp"
-	"strings"
 	"sort"
+	"strings"
 )
 
 // RegexpSplit splits a string into an array using the regexSep as a separator

@@ -31,13 +31,13 @@ var (
 type CreateAddonGiteaOptions struct {
 	CreateAddonOptions
 
-	Chart       string
-	Username    string
-	Password    string
-	Email       string
-	IsAdmin     bool
-	NoUser      bool
-	NoToken     bool
+	Chart    string
+	Username string
+	Password string
+	Email    string
+	IsAdmin  bool
+	NoUser   bool
+	NoToken  bool
 }
 
 // NewCmdCreateAddonGitea creates a command object for the "create" command
