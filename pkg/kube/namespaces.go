@@ -45,12 +45,17 @@ func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, jxClient 
 	if err != nil {
 		return err
 	}
+	_, err = EnsureDevEnvironmentSetup(jxClient, ns)
+	return err
+}
 
+// EnsureDevEnvironmentSetup ensures that the Environment is created in the given namespace
+func EnsureDevEnvironmentSetup(jxClient *versioned.Clientset, ns string) (*v1.Environment, error) {
 	// lets ensure there is a dev Environment setup so that we can easily switch between all the environments
-	_, err = jxClient.JenkinsV1().Environments(ns).Get(LabelValueDevEnvironment, metav1.GetOptions{})
+	env, err := jxClient.JenkinsV1().Environments(ns).Get(LabelValueDevEnvironment, metav1.GetOptions{})
 	if err != nil {
 		// lets create a dev environment
-		env := &v1.Environment{
+		env = &v1.Environment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: LabelValueDevEnvironment,
 			},
@@ -62,10 +67,10 @@ func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, jxClient 
 		}
 		_, err = jxClient.JenkinsV1().Environments(ns).Create(env)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return env, nil
 }
 
 // Ensure that the namespace exists for the given name
