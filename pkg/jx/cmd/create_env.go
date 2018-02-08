@@ -124,7 +124,7 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	devEnv, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
-	  return err
+		return err
 	}
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)

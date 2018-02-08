@@ -393,3 +393,55 @@ func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() err
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
+
+func (o *CommonOptions) getJobMap(filter string) (map[string]*gojenkins.Job, error) {
+	jobMap := map[string]*gojenkins.Job{}
+	jenkins, err := o.JenkinsClient()
+	if err != nil {
+		return jobMap, err
+	}
+	jobs, err := jenkins.GetJobs()
+	if err != nil {
+		return jobMap, err
+	}
+	o.addJobs(&jobMap, filter, "", jobs)
+	return jobMap, nil
+}
+
+func (o *CommonOptions) addJobs(jobMap *map[string]*gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
+	jenkins, err := o.JenkinsClient()
+	if err != nil {
+		return
+	}
+	for _, j := range jobs {
+		name := jobName(prefix, &j)
+
+		if IsPipeline(&j) {
+			if filter == "" || strings.Contains(name, filter) {
+				(*jobMap)[name] = &j
+			}
+		}
+		if j.Jobs != nil {
+			o.addJobs(jobMap, filter, name, j.Jobs)
+		} else {
+			job, err := jenkins.GetJob(name)
+			if err == nil && job.Jobs != nil {
+				o.addJobs(jobMap, filter, name, job.Jobs)
+			}
+		}
+	}
+}
+func (o *CommonOptions) tailBuild(jobName string, build *gojenkins.Build) error {
+	jenkins, err := o.JenkinsClient()
+	if err != nil {
+		return nil
+	}
+
+	u, err := url.Parse(build.Url)
+	if err != nil {
+		return err
+	}
+	buildPath := u.Path
+	o.Printf("%s %s\n", util.ColorStatus("tailing the log of"), util.ColorInfo(fmt.Sprintf("%s #%d", jobName, build.Number)))
+	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour*100)
+}
