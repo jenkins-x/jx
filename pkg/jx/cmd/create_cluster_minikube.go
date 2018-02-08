@@ -241,6 +241,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		CloudEnvRepository:   DEFAULT_CLOUD_ENVIRONMENTS_URL,
 		Provider:             MINIKUBE, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
 		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
+		Namespace:            o.Flags.Namespace,
 	}
 	err = installOpts.Run()
 	if err != nil {
