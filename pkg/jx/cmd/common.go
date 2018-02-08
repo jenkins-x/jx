@@ -37,6 +37,7 @@ type CommonOptions struct {
 	Args      []string
 	BatchMode bool
 	Verbose   bool
+	Headless   bool
 
 	// common cached clients
 	kubeClient       *kubernetes.Clientset
@@ -122,6 +123,7 @@ func (o *CommonOptions) getCommandOutput(dir string, name string, args ...string
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "In batch mode the command never prompts for user input")
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
+	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
 	options.Cmd = cmd
 }
 

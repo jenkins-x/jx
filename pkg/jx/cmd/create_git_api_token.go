@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/url"
 	"strings"
 
@@ -158,21 +157,14 @@ func (o *CreateGitTokenOptions) Run() error {
 
 // lets try use the users browser to find the API token
 func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, userAuth *auth.UserAuth) error {
-	var err error
-
 	ctxt, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	o.Printf("Trying to generate an API token for user: %s\n", util.ColorInfo(userAuth.Username))
 
-	logger, err := o.createChromeDPLogger()
+	c, err := o.createChromeClient(ctxt)
 	if err != nil {
 		return err
-	}
-
-	c, err := chromedp.New(ctxt, chromedp.WithLog(logger))
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	err = c.Run(ctxt, chromedp.Tasks{
@@ -197,6 +189,8 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 	}
 
 	if login {
+		o.captureScreenshot(ctxt, c, "screenshot-git-login.png", "//div")
+
 		o.Printf("logging in\n")
 		err = c.Run(ctxt, chromedp.Tasks{
 			chromedp.WaitVisible("user_name", chromedp.ByID),
@@ -207,6 +201,9 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 			return err
 		}
 	}
+
+	o.captureScreenshot(ctxt, c, "screenshot-git-api-token.png", "//div")
+
 	o.Printf("Generating new token\n")
 
 	tokenId := "jx-" + string(uuid.NewUUID())
