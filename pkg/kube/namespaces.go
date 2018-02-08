@@ -63,6 +63,10 @@ func EnsureDevEnvironmentSetup(jxClient *versioned.Clientset, ns string) (*v1.En
 				Namespace:         ns,
 				Label:             "Development",
 				PromotionStrategy: v1.PromotionStrategyTypeNever,
+				TeamSettings: v1.TeamSettings{
+					UseGitOPs: true,
+					AskOnCreate: false,
+				},
 			},
 		}
 		_, err = jxClient.JenkinsV1().Environments(ns).Create(env)

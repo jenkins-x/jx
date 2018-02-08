@@ -23,7 +23,7 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, envDir string, gitRepoOptions gits.GitRepositoryOptions) (gits.GitProvider, error) {
+func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, envDir string, gitRepoOptions gits.GitRepositoryOptions) (gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	name := data.Name
 	createMode := name == ""
@@ -189,18 +189,20 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 	if config.Spec.Source.URL != "" {
 		data.Spec.Source.URL = config.Spec.Source.URL
 	} else {
-		showUrlEdit := false
+		showUrlEdit := devEnv.Spec.TeamSettings.UseGitOPs
 		if data.Spec.Source.URL == "" {
-			confirm := &survey.Confirm{
-				Message: "Would you like to use GitOps to manage this environment? :",
-				Default: false,
+			if devEnv.Spec.TeamSettings.AskOnCreate {
+				confirm := &survey.Confirm{
+					Message: "Would you like to use GitOps to manage this environment? :",
+					Default: false,
+				}
+				err := survey.AskOne(confirm, &showUrlEdit, nil)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				showUrlEdit = true
 			}
-			err := survey.AskOne(confirm, &showUrlEdit, nil)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			showUrlEdit = true
 		}
 		if showUrlEdit {
 			if data.Spec.Source.URL == "" {
