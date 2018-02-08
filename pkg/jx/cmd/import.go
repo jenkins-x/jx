@@ -19,6 +19,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -55,6 +56,8 @@ pipeline {
   environment {
     ORG 		= 'jenkinsx'
     APP_NAME    = '%s'
+    GH_CREDS = credentials('jenkins-x-%s')
+    CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
   }
 
   stages {
@@ -216,6 +219,13 @@ func (o *ImportOptions) Run() error {
 	}
 	o.Jenkins = jenkins
 
+	client, ns, err := o.Factory.CreateClient()
+	if err != nil {
+		return err
+	}
+	o.currentNamespace = ns
+	o.kubeClient = client
+
 	if o.GitHub {
 		return o.ImportProjectsFromGitHub()
 	}
@@ -290,10 +300,17 @@ func (o *ImportOptions) Run() error {
 			}
 		}
 	}
+
+	err = o.checkChartmuseumCredentialExists()
+	if err != nil {
+		return err
+	}
+
 	if o.DryRun {
 		log.Infof("dry-run so skipping import to Jenkins X")
 		return nil
 	}
+
 	return o.DoImport()
 }
 
@@ -423,7 +440,15 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 	if exists {
 		return nil
 	}
-	data := []byte(fmt.Sprintf(defaultJenkinsfile, o.AppName, o.AppName, o.AppName))
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return err
+	}
+	config := authConfigSvc.Config()
+	server := config.GetOrCreateServer(gits.GitHubHost)
+	gitServer := strings.TrimSuffix(server.URL, ".com")
+
+	data := []byte(fmt.Sprintf(defaultJenkinsfile, o.AppName, gitServer, o.AppName, o.AppName))
 	err = ioutil.WriteFile(name, data, DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write %s due to %s", name, err)
@@ -747,6 +772,29 @@ func (o *ImportOptions) addAppNameToGeneratedFile(filename, field, value string)
 	err = ioutil.WriteFile(file, []byte(output), 0644)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (o *ImportOptions) checkChartmuseumCredentialExists() error {
+
+	name := jenkins.DefaultJenkinsCredentialsPrefix + jenkins.Chartmuseum
+	_, err := o.Jenkins.GetCredential(name)
+
+	if err != nil {
+		secret, err := o.kubeClient.CoreV1().Secrets(o.currentNamespace).Get(name, meta_v1.GetOptions{})
+		if err != nil {
+			fmt.Errorf("error getting %s secret %v", name, err)
+		}
+
+		data := secret.Data
+		username := string(data["BASIC_AUTH_USER"])
+		password := string(data["BASIC_AUTH_PASS"])
+
+		err = o.Jenkins.CreateCredential(name, username, password)
+		if err != nil {
+			return fmt.Errorf("error creating jenkins credential %s %v", name, err)
+		}
 	}
 	return nil
 }
