@@ -10,6 +10,7 @@ import (
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
+	"github.com/chromedp/chromedp/runner"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -17,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 var (
@@ -155,14 +157,9 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	ctxt, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	logger, err := o.createChromeDPLogger()
+	c, err := o.createChromeClient(ctxt)
 	if err != nil {
 		return err
-	}
-
-	c, err := chromedp.New(ctxt, chromedp.WithLog(logger))
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	err = c.Run(ctxt, chromedp.Tasks{
@@ -189,6 +186,8 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	}
 
 	if login {
+		o.captureScreenshot(ctxt, c, "screenshot-jenkins-login.png", "main-panel", chromedp.ByID)
+
 		o.Printf("logging in\n")
 		err = c.Run(ctxt, chromedp.Tasks{
 			chromedp.WaitVisible(userNameInputName, chromedp.ByID),
@@ -199,11 +198,15 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 			return err
 		}
 	}
-	o.Printf("Getting the API Token...\n")
+
+	o.captureScreenshot(ctxt, c, "screenshot-jenkins-api-token.png", "main-panel", chromedp.ByID)
 
 	getAPITokenButtonSelector := "//button[normalize-space(text())='Show API Token...']"
 	nodeSlice = []*cdp.Node{}
+
+	o.Printf("Getting the API Token...\n")
 	err = c.Run(ctxt, chromedp.Tasks{
+		chromedp.Sleep(2 * time.Second),
 		chromedp.WaitVisible(getAPITokenButtonSelector),
 		chromedp.Click(getAPITokenButtonSelector),
 		//chromedp.WaitVisible("apiToken", chromedp.ByID),
@@ -230,6 +233,47 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 		return err
 	}
 	return nil
+}
+
+// lets try use the users browser to find the API token
+func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
+	logger, err := o.createChromeDPLogger()
+	if err != nil {
+		return nil, err
+	}
+	if o.Headless {
+		options := func(m map[string]interface{}) error {
+			m["remote-debugging-port"] = 9222
+			m["no-sandbox"] = true
+			m["headless"] = true
+			return nil
+		}
+
+		return chromedp.New(ctxt, chromedp.WithLog(logger), chromedp.WithRunnerOptions(runner.CommandLineOption(options)))
+	}
+	return chromedp.New(ctxt, chromedp.WithLog(logger))
+}
+
+func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
+	o.Printf("Creating a screenshot...\n")
+
+	var picture []byte
+	err := c.Run(ctxt, chromedp.Tasks{
+		chromedp.Sleep(2 * time.Second),
+		chromedp.Screenshot(selector, &picture, options...),
+	})
+	if err != nil {
+		return err
+	}
+	o.Printf("Saving a screenshot...\n")
+
+	err = ioutil.WriteFile(screenshotFile, picture, util.DefaultWritePermissions)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	o.Printf("Saved screenshot: %s\n", util.ColorInfo(screenshotFile))
+	return err
 }
 
 func (o *CommonOptions) createChromeDPLogger() (chromedp.LogFunc, error) {
