@@ -37,7 +37,7 @@ type CommonOptions struct {
 	Args      []string
 	BatchMode bool
 	Verbose   bool
-	Headless   bool
+	Headless  bool
 
 	// common cached clients
 	kubeClient       *kubernetes.Clientset

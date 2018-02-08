@@ -10,14 +10,14 @@ import (
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
+	"github.com/chromedp/chromedp/runner"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/chromedp/chromedp/runner"
 	"time"
 )
 
@@ -235,7 +235,6 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	return nil
 }
 
-
 // lets try use the users browser to find the API token
 func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
 	logger, err := o.createChromeDPLogger()
@@ -254,7 +253,6 @@ func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP,
 	}
 	return chromedp.New(ctxt, chromedp.WithLog(logger))
 }
-
 
 func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
 	o.Printf("Creating a screenshot...\n")
