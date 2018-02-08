@@ -42,7 +42,7 @@ To start Kubernetes:
 
     minikube start --vm-driver hyperkit --memory 4028
     
-You will also need to enable the ingress addon
+Once Kubernetes is started, yoiu need to enable the ingress addon (run once after installation):
 
     minikube addons enable ingress
     
