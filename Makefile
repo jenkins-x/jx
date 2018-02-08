@@ -92,6 +92,7 @@ release: check
 	
 	updatebot push-version --kind brew jx $(VERSION)
 	updatebot push-version --kind docker JX_VERSION $(VERSION)
+	updatebot update
 
 clean:
 	rm -rf build release
