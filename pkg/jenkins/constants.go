@@ -4,4 +4,6 @@ const (
 	DefaultJenkinsCredentialsPrefix = "jenkins-x-"
 
 	DefaultJenkinsfile = "Jenkinsfile"
+
+	Chartmuseum = "chartmuseum"
 )
