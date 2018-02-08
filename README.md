@@ -42,6 +42,11 @@ To start Kubernetes:
 
     minikube start --vm-driver hyperkit --memory 4028
     
+You will also need to enable the ingress addon
+
+    minikube addons enable ingress
+    
+
 ### Setup Jenkins X
 
 Then ensure that Helm is initialized on your Kubernetes cluster by running:
