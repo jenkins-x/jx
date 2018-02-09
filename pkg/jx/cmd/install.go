@@ -286,8 +286,12 @@ expose:
     - "%v"
     - --domain
     - %s
+
+exposecontroller:
+  http: "%v""
+  domain: %s
 `
-	return fmt.Sprintf(config, !o.HTTPS, o.Domain), nil
+	return fmt.Sprintf(config, !o.HTTPS, o.Domain, !o.HTTPS, o.Domain), nil
 }
 
 // returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release
