@@ -216,6 +216,33 @@ func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPu
 	}, nil
 }
 
+
+func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
+	if pr.Number == nil {
+		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
+	}
+	n := *pr.Number
+	result, err := p.Client.GetPullRequest(pr.Owner, pr.Repo, int64(n))
+	if err != nil {
+		return err
+	}
+	merged := result.HasMerged
+	pr.Merged = &merged
+	pr.Mergeable = &result.Mergeable
+	pr.MergedAt = result.Merged
+	stateText := string(result.State)
+	pr.State = &stateText
+	/*
+	TODO
+
+	pr.ClosedAt = result.Closed
+	pr.StatusesURL = result.StatusesURL
+	pr.IssueURL = result.IssueURL
+	pr.DiffURL = result.DiffURL
+	*/
+	return nil
+}
+
 func (p *GiteaProvider) RenameRepository(org string, name string, newName string) (*GitRepository, error) {
 	return nil, fmt.Errorf("Rename of repositories is not supported for gitea")
 }
