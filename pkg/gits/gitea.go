@@ -216,7 +216,6 @@ func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPu
 	}, nil
 }
 
-
 func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if pr.Number == nil {
 		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
@@ -233,12 +232,12 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	stateText := string(result.State)
 	pr.State = &stateText
 	/*
-	TODO
+		TODO
 
-	pr.ClosedAt = result.Closed
-	pr.StatusesURL = result.StatusesURL
-	pr.IssueURL = result.IssueURL
-	pr.DiffURL = result.DiffURL
+		pr.ClosedAt = result.Closed
+		pr.StatusesURL = result.StatusesURL
+		pr.IssueURL = result.IssueURL
+		pr.DiffURL = result.DiffURL
 	*/
 	return nil
 }
