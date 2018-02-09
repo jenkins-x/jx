@@ -94,6 +94,10 @@ release: check
 	updatebot push-version --kind docker JX_VERSION $(VERSION)
 	updatebot update-loop
 
+	echo "Updating the JX CLI reference docs"
+	git clone https://github.com/jenkins-x/documentation.git
+	cd documentation/_docs/reference; ../../../build/linux/jx create docs; git add *; git commit -m "updated jx commands from $(VERSION)"; git push origin
+
 clean:
 	rm -rf build release
 
