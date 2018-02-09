@@ -19,6 +19,7 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"time"
 )
 
 const (
@@ -50,6 +51,7 @@ type CreateGitTokenOptions struct {
 	Username    string
 	Password    string
 	ApiToken    string
+	Timeout     string
 }
 
 // NewCmdCreateGitToken creates a command
@@ -81,6 +83,7 @@ func NewCmdCreateGitToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 	options.ServerFlags.addGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
+	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
 
 	return cmd
 }
@@ -157,9 +160,18 @@ func (o *CreateGitTokenOptions) Run() error {
 
 // lets try use the users browser to find the API token
 func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, userAuth *auth.UserAuth) error {
-	ctxt, cancel := context.WithCancel(context.Background())
+	var ctxt context.Context
+	var cancel context.CancelFunc
+	if o.Timeout != "" {
+		duration, err := time.ParseDuration(o.Timeout)
+		if err != nil {
+		  return err
+		}
+		ctxt, cancel = context.WithTimeout(context.Background(), duration)
+	} else {
+		ctxt, cancel = context.WithCancel(context.Background())
+	}
 	defer cancel()
-
 	o.Printf("Trying to generate an API token for user: %s\n", util.ColorInfo(userAuth.Username))
 
 	c, err := o.createChromeClient(ctxt)
