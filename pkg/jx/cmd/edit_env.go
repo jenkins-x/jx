@@ -139,8 +139,12 @@ func (o *EditEnvOptions) Run() error {
 		return util.InvalidArg(name, envNames)
 	}
 
+	devEnv, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
+	if err != nil {
+		return err
+	}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, envDir, o.GitRepositoryOptions)
+	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, envDir, o.GitRepositoryOptions)
 	if err != nil {
 		return err
 	}

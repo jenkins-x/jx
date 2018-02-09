@@ -46,6 +46,7 @@ type CreateJenkinsUserOptions struct {
 	Username    string
 	Password    string
 	ApiToken    string
+	Timeout     string
 }
 
 // NewCmdCreateJenkinsUser creates a command
@@ -77,6 +78,7 @@ func NewCmdCreateJenkinsUser(f cmdutil.Factory, out io.Writer, errOut io.Writer)
 	options.ServerFlags.addGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
+	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
 
 	return cmd
 }
@@ -154,7 +156,17 @@ func (o *CreateJenkinsUserOptions) Run() error {
 
 // lets try use the users browser to find the API token
 func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, userAuth *auth.UserAuth) error {
-	ctxt, cancel := context.WithCancel(context.Background())
+	var ctxt context.Context
+	var cancel context.CancelFunc
+	if o.Timeout != "" {
+		duration, err := time.ParseDuration(o.Timeout)
+		if err != nil {
+		  return err
+		}
+		ctxt, cancel = context.WithTimeout(context.Background(), duration)
+	} else {
+		ctxt, cancel = context.WithCancel(context.Background())
+	}
 	defer cancel()
 
 	c, err := o.createChromeClient(ctxt)

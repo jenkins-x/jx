@@ -41,19 +41,30 @@ func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvide
 
 func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
 	answer := []GitOrganisation{}
-	orgs, _, err := p.Client.Organizations.List(p.Context, p.Username, nil)
-	if err != nil {
-		return answer, err
+	pageSize := 100
+	options := github.ListOptions{
+		Page:    0,
+		PerPage: pageSize,
 	}
-
-	for _, org := range orgs {
-		name := org.Login
-		if name != nil {
-			o := GitOrganisation{
-				Login: *name,
-			}
-			answer = append(answer, o)
+	for {
+		orgs, _, err := p.Client.Organizations.List(p.Context, "", &options)
+		if err != nil {
+			return answer, err
 		}
+
+		for _, org := range orgs {
+			name := org.Login
+			if name != nil {
+				o := GitOrganisation{
+					Login: *name,
+				}
+				answer = append(answer, o)
+			}
+		}
+		if len(orgs) < pageSize || len(orgs) == 0 {
+			break
+		}
+		options.Page += 1
 	}
 	return answer, nil
 }

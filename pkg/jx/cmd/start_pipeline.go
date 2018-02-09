@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"net/url"
 	"sort"
@@ -57,12 +56,11 @@ func NewCmdStartPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	}
 
 	cmd := &cobra.Command{
-		Use:        "pipeline [flags]",
-		Short:      "Starts one or more pipelines",
-		Long:       start_pipeline_long,
-		Example:    start_pipeline_example,
-		Aliases:    []string{"pipe", "pipeline"},
-		SuggestFor: []string{"run", "build"},
+		Use:     "pipeline [flags]",
+		Short:   "Starts one or more pipelines",
+		Long:    start_pipeline_long,
+		Example: start_pipeline_example,
+		Aliases: []string{"pipe", "pipeline", "build", "run"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -78,17 +76,11 @@ func NewCmdStartPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 
 // Run implements this command
 func (o *StartPipelineOptions) Run() error {
-	jenkins, err := o.JenkinsClient()
+	jobMap, err := o.getJobMap(o.Filter)
 	if err != nil {
 		return err
 	}
-	jobs, err := jenkins.GetJobs()
-	if err != nil {
-		return err
-	}
-	o.Jobs = map[string]*gojenkins.Job{}
-	o.addJobs("", jobs)
-
+	o.Jobs = jobMap
 	args := o.Args
 	names := []string{}
 	for k, _ := range o.Jobs {
@@ -169,44 +161,6 @@ func jobName(prefix string, j *gojenkins.Job) string {
 		name = prefix + "/" + name
 	}
 	return name
-}
-
-func (o *StartPipelineOptions) addJobs(prefix string, jobs []gojenkins.Job) {
-	jenkins, err := o.JenkinsClient()
-	if err != nil {
-		return
-	}
-	for _, j := range jobs {
-		name := jobName(prefix, &j)
-
-		if IsPipeline(&j) {
-			if o.Filter == "" || strings.Contains(name, o.Filter) {
-				o.Jobs[name] = &j
-			}
-		}
-		if j.Jobs != nil {
-			o.addJobs(name, j.Jobs)
-		} else {
-			job, err := jenkins.GetJob(name)
-			if err == nil && job.Jobs != nil {
-				o.addJobs(name, job.Jobs)
-			}
-		}
-	}
-}
-func (o *StartPipelineOptions) tailBuild(jobName string, build *gojenkins.Build) error {
-	jenkins, err := o.JenkinsClient()
-	if err != nil {
-		return nil
-	}
-
-	u, err := url.Parse(build.Url)
-	if err != nil {
-		return err
-	}
-	buildPath := u.Path
-	o.Printf("%s %s\n", util.ColorStatus("tailing the log of"), util.ColorInfo(fmt.Sprintf("%s #%d", jobName, build.Number)))
-	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour*100)
 }
 
 func IsPipeline(j *gojenkins.Job) bool {

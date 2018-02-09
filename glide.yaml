@@ -28,6 +28,10 @@ import:
 - package: code.gitea.io/sdk/gitea
 - package: github.com/Pallinder/go-randomdata
 - package: github.com/chromedp/chromedp
+- package: github.com/cpuguy83/go-md2man
+  version: v1.0.4
+- package: github.com/russross/blackfriday
+  version: v1.5
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

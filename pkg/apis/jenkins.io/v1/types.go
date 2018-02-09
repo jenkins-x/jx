@@ -67,8 +67,10 @@ const (
 	EnvironmentKindTypePermanent EnvironmentKindType = "Permanent"
 	// EnvironmentKindTypePreview specifies that an environment is a Preview environment that lasts as long as a Pull Request
 	EnvironmentKindTypePreview EnvironmentKindType = "Preview"
-	// EnvironmentKindTypeNever specifies that promotion is disabled for this environment
-	EnvironmentKindTypeNever EnvironmentKindType = "Never"
+	// EnvironmentKindTypeTest specifies that an environment is a temporary one for a test
+	EnvironmentKindTypeTest EnvironmentKindType = "Test"
+	// EnvironmentKindTypeEdit specifies that an environment is a developers editing workspace
+	EnvironmentKindTypeEdit EnvironmentKindType = "Edit"
 )
 
 // PromotionStrategyTypeValues is the list of all values
@@ -93,7 +95,8 @@ type EnvironmentRepository struct {
 }
 
 type TeamSettings struct {
-	UseGitOPs bool `json:"useGitOps,omitempty" protobuf:"bytes,1,opt,name=useGitOps"`
+	UseGitOPs   bool `json:"useGitOps,omitempty" protobuf:"bytes,1,opt,name=useGitOps"`
+	AskOnCreate bool `json:"askOnCreate,omitempty" protobuf:"bytes,1,opt,name=askOnCreate"`
 }
 type PreviewGitSpec struct {
 	Name string   `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`

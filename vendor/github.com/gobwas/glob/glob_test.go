@@ -120,6 +120,16 @@ func TestGlob(t *testing.T) {
 		glob(true, "/{rate,[0-9][0-9][0-9]}*", "/rate"),
 		glob(true, "/{rate,[a-z][a-z][a-z]}*", "/usd"),
 
+		glob(true, "{*.google.*,*.yandex.*}", "www.google.com", '.'),
+		glob(true, "{*.google.*,*.yandex.*}", "www.yandex.com", '.'),
+		glob(false, "{*.google.*,*.yandex.*}", "yandex.com", '.'),
+		glob(false, "{*.google.*,*.yandex.*}", "google.com", '.'),
+
+		glob(true, "{*.google.*,yandex.*}", "www.google.com", '.'),
+		glob(true, "{*.google.*,yandex.*}", "yandex.com", '.'),
+		glob(false, "{*.google.*,yandex.*}", "www.yandex.com", '.'),
+		glob(false, "{*.google.*,yandex.*}", "google.com", '.'),
+
 		glob(true, pattern_all, fixture_all_match),
 		glob(false, pattern_all, fixture_all_mismatch),
 
@@ -149,16 +159,16 @@ func TestGlob(t *testing.T) {
 		glob(true, pattern_prefix_suffix, fixture_prefix_suffix_match),
 		glob(false, pattern_prefix_suffix, fixture_prefix_suffix_mismatch),
 	} {
-		g, err := Compile(test.pattern, test.delimiters...)
-		if err != nil {
-			t.Errorf("parsing pattern %q error: %s", test.pattern, err)
-			continue
-		}
-
-		result := g.Match(test.match)
-		if result != test.should {
-			t.Errorf("pattern %q matching %q should be %v but got %v\n%s", test.pattern, test.match, test.should, result, g)
-		}
+		t.Run("", func(t *testing.T) {
+			g := MustCompile(test.pattern, test.delimiters...)
+			result := g.Match(test.match)
+			if result != test.should {
+				t.Errorf(
+					"pattern %q matching %q should be %v but got %v\n%s",
+					test.pattern, test.match, test.should, result, g,
+				)
+			}
+		})
 	}
 }
 
