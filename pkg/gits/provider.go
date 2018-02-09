@@ -6,6 +6,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"sort"
 	"strings"
+	"time"
 )
 
 type GitProvider interface {
@@ -24,6 +25,8 @@ type GitProvider interface {
 	ValidateRepositoryName(org string, name string) error
 
 	CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error)
+
+	UpdatePullRequestStatus(pr *GitPullRequest) error
 
 	CreateWebHook(data *GitWebHookArguments) error
 
@@ -64,7 +67,18 @@ type GitRepository struct {
 }
 
 type GitPullRequest struct {
-	URL string
+	URL         string
+	Owner       string
+	Repo        string
+	Number      *int
+	Mergeable   *bool
+	Merged      *bool
+	State       *string
+	StatusesURL *string
+	IssueURL    *string
+	DiffURL     *string
+	ClosedAt    *time.Time
+	MergedAt    *time.Time
 }
 
 type GitPullRequestArguments struct {
@@ -81,6 +95,11 @@ type GitWebHookArguments struct {
 	Repo   string
 	URL    string
 	Secret string
+}
+
+// IsClosed returns true if the PullRequest has been closed
+func (pr *GitPullRequest) IsClosed() bool {
+	return pr.ClosedAt != nil
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {

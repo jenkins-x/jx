@@ -245,7 +245,46 @@ func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 	}
 	return &GitPullRequest{
 		URL: notNullString(pr.HTMLURL),
+		Owner: owner,
+		Repo: repo,
+		Number: pr.Number,
 	}, nil
+}
+
+func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
+	if pr.Number == nil {
+		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
+	}
+	n := *pr.Number
+	result, _, err := p.Client.PullRequests.Get(p.Context, pr.Owner, pr.Repo, n)
+	if err != nil {
+		return err
+	}
+	if result.Mergeable != nil {
+		pr.Mergeable = result.Mergeable
+	}
+	if result.Merged != nil {
+		pr.Merged = result.Merged
+	}
+	if result.ClosedAt != nil {
+		pr.ClosedAt = result.ClosedAt
+	}
+	if result.MergedAt != nil {
+		pr.MergedAt = result.MergedAt
+	}
+	if result.State != nil {
+		pr.State = result.State
+	}
+	if result.StatusesURL != nil {
+		pr.StatusesURL = result.StatusesURL
+	}
+	if result.IssueURL != nil {
+		pr.IssueURL = result.IssueURL
+	}
+	if result.DiffURL != nil {
+		pr.IssueURL = result.DiffURL
+	}
+	return nil
 }
 
 func notNullString(tp *string) string {
