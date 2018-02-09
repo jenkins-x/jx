@@ -5,10 +5,10 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 )
 
 var (
@@ -25,7 +25,6 @@ var (
 // CreateDocsOptions the options for the create spring command
 type CreateDocsOptions struct {
 	CreateOptions
-
 }
 
 // NewCmdCreateDocs creates a command object for the "create" command

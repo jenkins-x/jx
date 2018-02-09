@@ -161,7 +161,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	if o.Timeout != "" {
 		duration, err := time.ParseDuration(o.Timeout)
 		if err != nil {
-		  return err
+			return err
 		}
 		ctxt, cancel = context.WithTimeout(context.Background(), duration)
 	} else {

@@ -23,6 +23,7 @@ import (
 
 	"github.com/russross/blackfriday"
 )
+
 const linebreak = "\n"
 
 // ASCIIRenderer implements blackfriday.Renderer
