@@ -288,7 +288,7 @@ expose:
     - %s
 
 exposecontroller:
-  http: "%v"
+  http: %v
   domain: %s
 `
 	return fmt.Sprintf(config, !o.HTTPS, o.Domain, !o.HTTPS, o.Domain), nil

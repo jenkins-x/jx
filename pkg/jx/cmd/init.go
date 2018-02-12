@@ -37,7 +37,8 @@ type InitFlags struct {
 }
 
 const (
-	INGRESS_SERVICE_NAME = "jxing-nginx-ingress-controller"
+	INGRESS_SERVICE_NAME    = "jxing-nginx-ingress-controller"
+	DEFAULT_CHARTMUSEUM_URL = "http://chartmuseum.build.cd.jenkins-x.io"
 )
 
 var (
@@ -133,11 +134,6 @@ func (o *InitOptions) initHelm() error {
 		}
 	}
 
-	err = o.runCommand("helm", "repo", "add", "jenkins-x", "http://chartmuseum.build.cd.jenkins-x.io")
-	if err != nil {
-		return err
-	}
-
 	running, err := kube.IsDeploymentRunning(client, "tiller-deploy", "kube-system")
 	if running {
 		return nil
@@ -154,6 +150,11 @@ func (o *InitOptions) initHelm() error {
 	}
 
 	err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", "kube-system", 5*time.Minute)
+	if err != nil {
+		return err
+	}
+
+	err = o.runCommand("helm", "repo", "add", "jenkins-x", DEFAULT_CHARTMUSEUM_URL)
 	if err != nil {
 		return err
 	}
