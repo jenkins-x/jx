@@ -108,3 +108,21 @@ func WaitForDeploymentToBeReady(client *kubernetes.Clientset, name, namespace st
 	}
 	return nil
 }
+
+func GetDeploymentPods(client *kubernetes.Clientset, name, namespace string) ([]v1.Pod, error) {
+	d, err := client.ExtensionsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	selector, err := metav1.LabelSelectorAsSelector(d.Spec.Selector)
+	if err != nil {
+		return nil, err
+	}
+
+	options := metav1.ListOptions{LabelSelector: selector.String()}
+
+	pods, err := client.CoreV1().Pods(namespace).List(options)
+
+	return pods.Items, err
+}
