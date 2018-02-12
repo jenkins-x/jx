@@ -30,8 +30,10 @@ type InitOptions struct {
 }
 
 type InitFlags struct {
-	Domain   string
-	Provider string
+	Domain      string
+	Provider    string
+	DraftClient bool
+	HelmClient  bool
 }
 
 const (
@@ -76,6 +78,8 @@ func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 
 	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
 	cmd.Flags().StringVarP(&options.Flags.Domain, "domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
+	cmd.Flags().BoolVarP(&options.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
+	cmd.Flags().BoolVarP(&options.Flags.HelmClient, "helm-client-only", "", false, "Only install helm client")
 	return cmd
 }
 
@@ -118,6 +122,18 @@ func (o *InitOptions) Run() error {
 func (o *InitOptions) initHelm() error {
 	f := o.Factory
 	client, _, err := f.CreateClient()
+	if err != nil {
+		return err
+	}
+
+	if o.Flags.HelmClient {
+		err = o.runCommand("helm", "init", "--client-only")
+		if err != nil {
+			return err
+		}
+	}
+
+	err = o.runCommand("helm", "repo", "add", "jenkins-x", "http://chartmuseum.build.cd.jenkins-x.io")
 	if err != nil {
 		return err
 	}
@@ -165,7 +181,7 @@ func (o *InitOptions) initDraft() error {
 		return err
 	}
 
-	if running || o.Flags.Provider == GKE || o.Flags.Provider == AKS {
+	if running || o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.DraftClient {
 		err = o.runCommand("draft", "init", "--auto-accept", "--client-only")
 
 	} else {
@@ -187,7 +203,7 @@ func (o *InitOptions) initDraft() error {
 		return err
 	}
 
-	if !running && o.Flags.Provider != GKE && o.Flags.Provider != AKS {
+	if !running && o.Flags.Provider != GKE && o.Flags.Provider != AKS && !o.Flags.DraftClient {
 		err = kube.WaitForDeploymentToBeReady(client, "draftd", "kube-system", 5*time.Minute)
 		if err != nil {
 			return err
