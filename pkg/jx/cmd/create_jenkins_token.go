@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"log"
 
+	"time"
+
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/runner"
@@ -18,7 +20,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 var (
@@ -249,10 +250,6 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 
 // lets try use the users browser to find the API token
 func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
-	logger, err := o.createChromeDPLogger()
-	if err != nil {
-		return nil, err
-	}
 	if o.Headless {
 		options := func(m map[string]interface{}) error {
 			m["remote-debugging-port"] = 9222
@@ -261,9 +258,9 @@ func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP,
 			return nil
 		}
 
-		return chromedp.New(ctxt, chromedp.WithLog(logger), chromedp.WithRunnerOptions(runner.CommandLineOption(options)))
+		return chromedp.New(ctxt, chromedp.WithRunnerOptions(runner.CommandLineOption(options)))
 	}
-	return chromedp.New(ctxt, chromedp.WithLog(logger))
+	return chromedp.New(ctxt)
 }
 
 func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
