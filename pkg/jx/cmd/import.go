@@ -188,6 +188,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a git provider this filters the list of repositories")
 
 	options.addImportFlags(cmd, false)
+
 	return cmd
 }
 
@@ -213,10 +214,13 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 
 func (o *ImportOptions) Run() error {
 	f := o.Factory
+	f.SetBatch(o.BatchMode)
+
 	jenkins, err := f.CreateJenkinsClient()
 	if err != nil {
 		return err
 	}
+
 	o.Jenkins = jenkins
 
 	client, ns, err := o.Factory.CreateClient()

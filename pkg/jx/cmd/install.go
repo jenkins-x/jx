@@ -341,7 +341,7 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false)
+		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false, o.BatchMode)
 		if err != nil {
 			return "", "", err
 		}

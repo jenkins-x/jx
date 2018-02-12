@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 
+	"time"
+
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -19,7 +21,6 @@ import (
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
-	"time"
 )
 
 const (
@@ -132,7 +133,7 @@ func (o *CreateGitTokenOptions) Run() error {
 		o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
 		o.Printf("Then COPY the token and enter in into the form below:\n\n")
 
-		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false)
+		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode)
 		if err != nil {
 			return err
 		}

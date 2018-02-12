@@ -215,7 +215,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string) (*Us
 }
 
 // EditUserAuth Lets the user input/edit the user auth
-func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser bool) error {
+func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser, batchMode bool) error {
 	// default the user name if its empty
 	defaultUsername := config.DefaultUsername
 	if defaultUsername == "" {
@@ -225,6 +225,15 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 		auth.Username = defaultUsername
 	}
 
+	if batchMode {
+		if auth.Username == "" {
+			fmt.Errorf("Running in batch mode and no default git username found")
+		}
+		if auth.ApiToken == "" {
+			fmt.Errorf("Running in batch mode and no default api token found")
+		}
+		return nil
+	}
 	var qs = []*survey.Question{}
 
 	if editUser || auth.Username == "" {
