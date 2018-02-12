@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"strings"
 
+	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -107,31 +109,19 @@ func (o *CreateGitUserOptions) Run() error {
 		return err
 	}
 
-	filter := "gitea"
-	names, err := kube.GetDeploymentNames(client, ns, filter)
+	deploymentName := "gitea-gitea"
+	log.Infof("Waiting for pods to be ready for deployment %s\n", deploymentName)
+
+	err = kube.WaitForDeploymentToBeReady(client, deploymentName, ns, 5*time.Minute)
 	if err != nil {
 		return err
-	}
-	if len(names) == 0 {
-		return fmt.Errorf("There are no Deployments matching filter: " + filter)
-	}
-	name := names[0]
-	if len(names) > 1 {
-		for _, n := range names {
-			if strings.HasSuffix(n, "-gitea") || n == "gitea" {
-				name = n
-				break
-			}
-		}
 	}
 
-	pod, err := waitForReadyPodForDeployment(client, ns, name, names, true)
-	if err != nil {
-		return err
+	pods, err := kube.GetDeploymentPods(client, deploymentName, ns)
+	if pods == nil || len(pods) == 0 {
+		return fmt.Errorf("No pod found for namespace %s with name %s", ns, deploymentName)
 	}
-	if pod == "" {
-		return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
-	}
+
 	command := "/app/gitea/gitea admin create-user --admin --name " + o.Username + " --password " + o.Password
 	if o.Email != "" {
 		command += " --email " + o.Email
@@ -139,7 +129,8 @@ func (o *CreateGitUserOptions) Run() error {
 	if o.IsAdmin {
 		command += " --admin"
 	}
-	err = o.runCommand("kubectl", "exec", "-t", pod, "--", "/bin/sh", "-c", command)
+	// default to using the first pods found if more than one exists for the deployment
+	err = o.runCommand("kubectl", "exec", "-t", pods[0].Name, "--", "/bin/sh", "-c", command)
 	if err != nil {
 		return nil
 	}
