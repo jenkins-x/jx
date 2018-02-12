@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"io"
+	"os"
+
 	"github.com/jenkins-x/golang-jenkins"
 	jenkauth "github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
-	"io"
-	"os"
 )
 
 func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfigService) (*gojenkins.Jenkins, error) {
@@ -39,7 +40,7 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 		a := config.FindUserAuth(url, username)
 		if a != nil {
 			if a.IsInvalid() {
-				auth, err = EditUserAuth(url, configService, config, a, tokenUrl)
+				auth, err = EditUserAuth(url, configService, config, a, tokenUrl, batch)
 				if err != nil {
 					return nil, err
 				}
@@ -48,7 +49,7 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 			}
 		} else {
 			// lets create a new Auth
-			auth, err = EditUserAuth(url, configService, config, &auth, tokenUrl)
+			auth, err = EditUserAuth(url, configService, config, &auth, tokenUrl, batch)
 			if err != nil {
 				return nil, err
 			}
@@ -97,14 +98,14 @@ func JenkinsTokenURL(url string) string {
 	return tokenUrl
 }
 
-func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string) (jenkauth.UserAuth, error) {
+func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool) (jenkauth.UserAuth, error) {
 	fmt.Printf("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
 	fmt.Printf("Please go to %s and click %s to get your API Token\n", util.ColorInfo(tokenUrl), util.ColorInfo("Show API Token"))
 	fmt.Printf("Then COPY the API token so that you can paste it into the form below:\n\n")
 
 	defaultUsername := "admin"
 
-	err := config.EditUserAuth("Jenkins", auth, defaultUsername, true)
+	err := config.EditUserAuth("Jenkins", auth, defaultUsername, true, batchMode)
 	if err != nil {
 		return *auth, err
 	}

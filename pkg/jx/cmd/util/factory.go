@@ -49,6 +49,8 @@ type Factory interface {
 	CreateMetricsClient() (*metricsclient.Clientset, error)
 
 	CreateTable(out io.Writer) table.Table
+
+	SetBatch(batch bool)
 }
 
 type factory struct {
@@ -60,6 +62,10 @@ type factory struct {
 // if optionalClientConfig is not nil, then this factory will make use of it.
 func NewFactory() Factory {
 	return &factory{}
+}
+
+func (f *factory) SetBatch(batch bool) {
+	f.Batch = batch
 }
 
 // CreateJenkinsClient creates a new jenkins client
