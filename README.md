@@ -38,7 +38,15 @@ The quickest way to get started is to install Minikube using Homebrew:
     brew cask install minikube
     brew install kubernetes-helm
     
-Then install [Docker for Mac](https://docs.docker.com/docker-for-mac/install/). This contains the HyperKit binary you will need to run Kubernetes on your Mac
+Then install [Docker for Mac](https://docs.docker.com/docker-for-mac/install/). This contains the HyperKit binary you will need to run Kubernetes on your Mac.
+
+Install the HyperKit driver:
+
+   curl -LO https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-hyperkit \
+   && chmod +x docker-machine-driver-hyperkit \
+   && sudo mv docker-machine-driver-hyperkit /usr/local/bin/ \
+   && sudo chown root:wheel /usr/local/bin/docker-machine-driver-hyperkit \
+   && sudo chmod u+s /usr/local/bin/docker-machine-driver-hyperkit
 
 To start Kubernetes:
 
