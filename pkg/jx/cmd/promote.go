@@ -142,14 +142,14 @@ func (o *PromoteOptions) Run() error {
 	if o.PullRequestPollTime != "" {
 		duration, err := time.ParseDuration(o.PullRequestPollTime)
 		if err != nil {
-			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime , optionPullRequestPollTime, err)
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
 		}
 		o.PullRequestPollDuration = &duration
 	}
 	if o.Timeout != "" {
 		duration, err := time.ParseDuration(o.Timeout)
 		if err != nil {
-			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout , optionTimeout, err)
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
 		}
 		o.TimeoutDuration = &duration
 	}
@@ -559,7 +559,7 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 	if pullRequestInfo != nil {
 		err := o.waitForGitOpsPullRequest(ns, env, releaseInfo)
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 	return nil

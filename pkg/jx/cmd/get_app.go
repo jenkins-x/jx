@@ -23,12 +23,12 @@ type GetVersionOptions struct {
 
 var (
 	get_version_long = templates.LongDesc(`
-		Display application versions across environments.
+		Display applications across environments.
 `)
 
 	get_version_example = templates.Examples(`
-		# List application versions for all environments
-		jx get version
+		# List applications for all environments
+		jx get app
 	`)
 )
 
@@ -42,8 +42,9 @@ func NewCmdGetVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 		},
 	}
 	cmd := &cobra.Command{
-		Use:     "version",
-		Short:   "Display one or many Versions",
+		Use:     "app",
+		Short:   "Display one or many Applications and their versions",
+		Aliases: []string{"apps", "version", "versions"},
 		Long:    get_version_long,
 		Example: get_version_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -82,11 +83,13 @@ func (o *GetVersionOptions) Run() error {
 	}
 	kube.SortEnvironments(envList.Items)
 
+	namespaces := []string{}
 	envApps := []EnvApps{}
 	envNames := []string{}
 	apps := []string{}
 	for _, env := range envList.Items {
 		ens := env.Spec.Namespace
+		namespaces = append(namespaces, ens)
 		if ens != "" && env.Name != kube.LabelValueDevEnvironment {
 			envNames = append(envNames, env.Name)
 			m, err := kube.GetDeployments(kubeClient, ens)
@@ -104,6 +107,7 @@ func (o *GetVersionOptions) Run() error {
 			}
 		}
 	}
+	util.ReverseStrings(namespaces)
 	if len(apps) == 0 {
 		o.Printf("No applications found in environments %s\n", strings.Join(envNames, ", "))
 		return nil
@@ -118,7 +122,8 @@ func (o *GetVersionOptions) Run() error {
 	table.AddRow(titles...)
 
 	for _, app := range apps {
-		row := []string{app}
+		appName := kube.GetAppName(app, namespaces...)
+		row := []string{appName}
 		for _, ea := range envApps {
 			version := ""
 			pods := ""

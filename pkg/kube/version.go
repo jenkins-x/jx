@@ -95,6 +95,29 @@ func GetName(r *metav1.ObjectMeta) string {
 	return ""
 }
 
+// GetAppName returns the app name
+func GetAppName(name string, namespaces ...string) string {
+	if name != "" {
+		for _, ns := range namespaces {
+			// for helm deployments which prefix the namespace in the name lets strip it
+			prefix := ns + "-"
+			if strings.HasPrefix(name, prefix) {
+				name = strings.TrimPrefix(name, prefix)
+
+				// we often have the app name repeated twice!
+				l := len(name) / 2
+				if name[l] == '-' {
+					first := name[0:l]
+					if name[l+1:] == first {
+						return first
+					}
+				}
+			}
+		}
+	}
+	return name
+}
+
 // GetCommitSha returns the git commit sha
 func GetCommitSha(r *metav1.ObjectMeta) string {
 	if r != nil {

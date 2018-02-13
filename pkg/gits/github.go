@@ -244,9 +244,9 @@ func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 		return nil, err
 	}
 	return &GitPullRequest{
-		URL: notNullString(pr.HTMLURL),
-		Owner: owner,
-		Repo: repo,
+		URL:    notNullString(pr.HTMLURL),
+		Owner:  owner,
+		Repo:   repo,
 		Number: pr.Number,
 	}, nil
 }
