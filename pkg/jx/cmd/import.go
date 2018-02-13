@@ -56,7 +56,7 @@ pipeline {
   environment {
     ORG 		= 'jenkinsx'
     APP_NAME    = '%s'
-    GH_CREDS = credentials('jenkins-x-%s')
+    GH_CREDS = credentials('jenkins-x-git')
     CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
   }
 
@@ -188,6 +188,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a git provider this filters the list of repositories")
 
 	options.addImportFlags(cmd, false)
+
 	return cmd
 }
 
@@ -213,10 +214,13 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 
 func (o *ImportOptions) Run() error {
 	f := o.Factory
+	f.SetBatch(o.BatchMode)
+
 	jenkins, err := f.CreateJenkinsClient()
 	if err != nil {
 		return err
 	}
+
 	o.Jenkins = jenkins
 
 	client, ns, err := o.Factory.CreateClient()
@@ -440,15 +444,8 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 	if exists {
 		return nil
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
-	if err != nil {
-		return err
-	}
-	config := authConfigSvc.Config()
-	server := config.GetOrCreateServer(gits.GitHubHost)
-	gitServer := strings.TrimSuffix(server.URL, ".com")
 
-	data := []byte(fmt.Sprintf(defaultJenkinsfile, o.AppName, gitServer, o.AppName, o.AppName))
+	data := []byte(fmt.Sprintf(defaultJenkinsfile, o.AppName, o.AppName, o.AppName))
 	err = ioutil.WriteFile(name, data, DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write %s due to %s", name, err)

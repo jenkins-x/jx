@@ -23,6 +23,7 @@ import (
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
@@ -49,6 +50,8 @@ type Factory interface {
 	CreateMetricsClient() (*metricsclient.Clientset, error)
 
 	CreateTable(out io.Writer) table.Table
+
+	SetBatch(batch bool)
 }
 
 type factory struct {
@@ -62,9 +65,13 @@ func NewFactory() Factory {
 	return &factory{}
 }
 
+func (f *factory) SetBatch(batch bool) {
+	f.Batch = batch
+}
+
 // CreateJenkinsClient creates a new jenkins client
 func (f *factory) CreateJenkinsClient() (*gojenkins.Jenkins, error) {
-	url := os.Getenv("JENKINS_URL")
+	var url string
 	if url == "" {
 		// lets find the kubernets service
 		client, ns, err := f.CreateClient()
