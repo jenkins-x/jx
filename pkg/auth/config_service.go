@@ -2,9 +2,10 @@ package auth
 
 import (
 	"fmt"
+	"io/ioutil"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 )
 
 func (s *AuthConfigService) Config() *AuthConfig {
@@ -59,6 +60,7 @@ func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
 	if user != "" {
 		config.DefaultUsername = user
 	}
+
 	config.CurrentServer = url
 	return s.SaveConfig()
 }
