@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"strings"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -23,7 +22,7 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, jenkin
 	}
 
 	if credentials == "" {
-		credentials = strings.TrimSuffix(DefaultJenkinsCredentialsPrefix+gitInfo.Host, ".com")
+		credentials = DefaultJenkinsCredentialsPrefix + "git"
 	}
 	_, err = jenk.GetCredential(credentials)
 	if err != nil {

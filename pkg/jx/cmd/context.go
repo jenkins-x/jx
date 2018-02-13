@@ -11,9 +11,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"sort"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"sort"
 )
 
 type ContextOptions struct {

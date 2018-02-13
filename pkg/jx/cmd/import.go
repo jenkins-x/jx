@@ -56,7 +56,7 @@ pipeline {
   environment {
     ORG 		= 'jenkinsx'
     APP_NAME    = '%s'
-    GH_CREDS = credentials('jenkins-x-%s')
+    GH_CREDS = credentials('jenkins-x-git')
     CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
   }
 
@@ -444,15 +444,8 @@ func (o *ImportOptions) DefaultJenkinsfile() error {
 	if exists {
 		return nil
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
-	if err != nil {
-		return err
-	}
-	config := authConfigSvc.Config()
-	server := config.GetOrCreateServer(gits.GitHubHost)
-	gitServer := strings.TrimSuffix(server.URL, ".com")
 
-	data := []byte(fmt.Sprintf(defaultJenkinsfile, o.AppName, gitServer, o.AppName, o.AppName))
+	data := []byte(fmt.Sprintf(defaultJenkinsfile, o.AppName, o.AppName, o.AppName))
 	err = ioutil.WriteFile(name, data, DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write %s due to %s", name, err)

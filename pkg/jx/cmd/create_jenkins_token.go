@@ -146,6 +146,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		}
 	}
 
+	config.CurrentServer = server.URL
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
 		return err
