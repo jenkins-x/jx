@@ -21,10 +21,10 @@ var (
 
 	open_example = templates.Examples(`
 		# Open the Nexus console in a browser
-		jx open jx-sonatype-nexus
+		jx open jenkins-x-sonatype-nexus
 
 		# Print the Nexus console URL but do not open a browser
-		jx open jx-sonatype-nexus -u
+		jx open jenkins-x-sonatype-nexus -u
 
 		# List all the service URLs
 		jx open`)
