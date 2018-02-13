@@ -33,8 +33,9 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, jenkin
 			return err
 		}
 		err = jenk.CreateCredential(credentials, user.Username, user.ApiToken)
+
 		if err != nil {
-			return fmt.Errorf("error creating jenkins credential %s %v", "bdd-test", err)
+			return fmt.Errorf("error creating jenkins credential %s at %s %v", credentials, jenk.BaseURL(), err)
 		}
 	}
 
