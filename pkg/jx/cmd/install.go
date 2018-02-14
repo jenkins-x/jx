@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -20,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -27,13 +29,15 @@ import (
 type InstallOptions struct {
 	CommonOptions
 	gits.GitRepositoryOptions
-
-	Domain             string
-	HTTPS              bool
-	Provider           string
-	CloudEnvRepository string
-	LocalHelmRepoName  string
-	Namespace          string
+	CreateJenkinsUserOptions
+	CreateEnvOptions
+	Domain              string
+	HTTPS               bool
+	Provider            string
+	CloudEnvRepository  string
+	LocalHelmRepoName   string
+	Namespace           string
+	DefaultEnvironments bool
 }
 
 type Secrets struct {
@@ -73,11 +77,42 @@ var (
 func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 	options := &InstallOptions{
+		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
+			Username: "admin",
+			Password: "admin",
+			CreateOptions: CreateOptions{
+				CommonOptions: CommonOptions{
+					Factory:  f,
+					Out:      out,
+					Err:      errOut,
+					Headless: true,
+				},
+			},
+		},
 		GitRepositoryOptions: gits.GitRepositoryOptions{},
 		CommonOptions: CommonOptions{
 			Factory: f,
 			Out:     out,
 			Err:     errOut,
+		},
+		CreateEnvOptions: CreateEnvOptions{
+			Options: v1.Environment{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec: v1.EnvironmentSpec{
+
+					PromotionStrategy: "auto",
+				},
+			},
+			PromotionStrategy: "auto",
+			CreateOptions: CreateOptions{
+				CommonOptions: CommonOptions{
+					Factory:   f,
+					Out:       out,
+					Err:       errOut,
+					Headless:  true,
+					BatchMode: true,
+				},
+			},
 		},
 	}
 
@@ -103,7 +138,7 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
 	cmd.Flags().StringVarP(&options.CloudEnvRepository, "cloud-environment-repo", "c", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
-
+	cmd.Flags().BoolVarP(&options.DefaultEnvironments, "default-environments", "", true, "Creates default Staging and Production environments")
 	return cmd
 }
 
@@ -196,6 +231,27 @@ func (options *InstallOptions) Run() error {
 	err = options.waitForInstallToBeReady(ns)
 	if err != nil {
 		return err
+	}
+
+	if options.DefaultEnvironments {
+		err = options.CreateJenkinsUserOptions.Run()
+		if err != nil {
+			return err
+		}
+		options.CreateEnvOptions.Options.Name = "staging"
+		options.CreateEnvOptions.Options.Spec.Label = "Staging"
+		options.CreateEnvOptions.Options.Spec.Order = 100
+		err = options.CreateEnvOptions.Run()
+		if err != nil {
+			return err
+		}
+		options.CreateEnvOptions.Options.Name = "production"
+		options.CreateEnvOptions.Options.Spec.Label = "Production"
+		options.CreateEnvOptions.Options.Spec.Order = 200
+		err = options.CreateEnvOptions.Run()
+		if err != nil {
+			return err
+		}
 	}
 
 	err = options.registerLocalHelmRepo(options.LocalHelmRepoName, ns)

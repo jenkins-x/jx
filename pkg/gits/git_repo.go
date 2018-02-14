@@ -92,7 +92,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 	}
 
 	gitUsername := userAuth.Username
-	fmt.Fprintf(out, "\n\nAbout to create a repository on server %s with user %s\n", util.ColorInfo(url), util.ColorInfo(gitUsername))
+	fmt.Fprintf(out, "\n\nAbout to create repository %s on server %s with user %s\n", util.ColorInfo(defaultRepoName), util.ColorInfo(url), util.ColorInfo(gitUsername))
 
 	provider, err := CreateProvider(server, userAuth)
 	if err != nil {
