@@ -31,7 +31,7 @@ var (
 		jx get environments
 
 		# List all environments using the shorter alias
-		jx get env
+		jx get envs
 	`)
 )
 
@@ -47,9 +47,9 @@ func NewCmdGetEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 		},
 	}
 	cmd := &cobra.Command{
-		Use:     "environment",
-		Short:   "Display one or many Enviroments",
-		Aliases: []string{"env"},
+		Use:     "environments",
+		Short:   "Display one or many Environments",
+		Aliases: []string{"envs"},
 		Long:    get_env_long,
 		Example: get_env_example,
 		Run: func(cmd *cobra.Command, args []string) {
