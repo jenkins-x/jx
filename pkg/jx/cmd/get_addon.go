@@ -42,11 +42,11 @@ func NewCmdGetAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 	}
 
 	cmd := &cobra.Command{
-		Use:     "addon [flags]",
+		Use:     "addons [flags]",
 		Short:   "Lists the addons",
 		Long:    get_addon_long,
 		Example: get_addon_example,
-		Aliases: []string{"addons", "add-on"},
+		Aliases: []string{"addon", "add-on"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
