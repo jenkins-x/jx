@@ -104,11 +104,11 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			Options: v1.Environment{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: v1.EnvironmentSpec{
-
-					PromotionStrategy: "auto",
+					PromotionStrategy: v1.PromotionStrategyTypeAutomatic,
 				},
 			},
-			PromotionStrategy: "auto",
+			PromotionStrategy:      string(v1.PromotionStrategyTypeAutomatic),
+			ForkEnvironmentGitRepo: kube.DefaultEnvironmentGitRepoURL,
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory:   f,

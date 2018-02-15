@@ -35,7 +35,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 			}
 			err = ValidateEnvironmentDoesNotExist(jxClient, ns, config.Name)
 			if err != nil {
-				return nil, util.InvalidOptionError(OptionName, config.Name, err)
+				return nil, err
 			}
 			data.Name = config.Name
 		} else {

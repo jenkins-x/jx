@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -200,7 +201,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if numOfNodes == "" {
 		prompt := &survey.Input{
 			Message: "Number of Nodes",
-			Default: "3",
+			Default: "2",
 			Help:    "The number of nodes to be created in each of the cluster's zones",
 		}
 
@@ -270,11 +271,11 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			Options: v1.Environment{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: v1.EnvironmentSpec{
-
-					PromotionStrategy: "auto",
+					PromotionStrategy: v1.PromotionStrategyTypeAutomatic,
 				},
 			},
-			PromotionStrategy: "auto",
+			PromotionStrategy:      string(v1.PromotionStrategyTypeAutomatic),
+			ForkEnvironmentGitRepo: kube.DefaultEnvironmentGitRepoURL,
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory:   o.Factory,
