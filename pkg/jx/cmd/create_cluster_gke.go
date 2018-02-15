@@ -10,6 +10,7 @@ import (
 	"errors"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -17,13 +18,15 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CreateClusterOptions the flags for running crest cluster
 type CreateClusterGKEOptions struct {
 	CreateClusterOptions
 
-	Flags CreateClusterGKEFlags
+	Flags        CreateClusterGKEFlags
+	InstallFlags InstallFlags
 }
 
 type CreateClusterGKEFlags struct {
@@ -96,6 +99,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	addInstallOptionsArguments(cmd, &options.InstallFlags)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "cluster-name", "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -107,7 +111,6 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
-	cmd.Flags().StringVarP(&options.Flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	return cmd
 }
 
@@ -244,14 +247,44 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
+	o.InstallFlags.Provider = GKE
+
 	// call jx install
 	installOpts := &InstallOptions{
 		CommonOptions:        o.CommonOptions,
 		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
-		CloudEnvRepository:   DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		Provider:             GKE,
-		Domain:               initOpts.Flags.Domain,
-		Namespace:            o.Flags.Namespace,
+		Flags:                o.InstallFlags,
+		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
+			Username: "admin",
+			Password: "admin",
+			CreateOptions: CreateOptions{
+				CommonOptions: CommonOptions{
+					Factory:  o.Factory,
+					Out:      o.Out,
+					Err:      o.Err,
+					Headless: true,
+				},
+			},
+		},
+		CreateEnvOptions: CreateEnvOptions{
+			Options: v1.Environment{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec: v1.EnvironmentSpec{
+
+					PromotionStrategy: "auto",
+				},
+			},
+			PromotionStrategy: "auto",
+			CreateOptions: CreateOptions{
+				CommonOptions: CommonOptions{
+					Factory:   o.Factory,
+					Out:       o.Out,
+					Err:       o.Err,
+					Headless:  true,
+					BatchMode: true,
+				},
+			},
+		},
 	}
 	err = installOpts.Run()
 	if err != nil {

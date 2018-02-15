@@ -21,8 +21,9 @@ import (
 type CreateClusterMinikubeOptions struct {
 	CreateClusterOptions
 
-	Flags    CreateClusterMinikubeFlags
-	Provider KubernetesProvider
+	Flags        CreateClusterMinikubeFlags
+	Provider     KubernetesProvider
+	InstallFlags InstallFlags
 }
 
 type CreateClusterMinikubeFlags struct {
@@ -82,12 +83,13 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	addInstallOptionsArguments(cmd, &options.InstallFlags)
 
 	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minikube VM in MB")
 	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [virtualbox xhyve vmwarefusion hyperkit]")
 	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with minikube")
-	cmd.Flags().StringVarP(&options.Flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
+
 	return cmd
 }
 
@@ -235,13 +237,12 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		return err
 	}
 
+	o.InstallFlags.Provider = MINIKUBE
 	// call jx install
 	installOpts := &InstallOptions{
 		CommonOptions:        o.CommonOptions,
-		CloudEnvRepository:   DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		Provider:             MINIKUBE, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
+		Flags:                o.InstallFlags,
 		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
-		Namespace:            o.Flags.Namespace,
 	}
 	err = installOpts.Run()
 	if err != nil {
