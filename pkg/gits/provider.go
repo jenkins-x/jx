@@ -2,11 +2,12 @@ package gits
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/auth"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/auth"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 type GitProvider interface {
@@ -197,10 +198,10 @@ func PickRepositories(provider GitProvider, owner string, message string, select
 	return answer, err
 }
 
-func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string) (GitProvider, error) {
+func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string, batchMode bool) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(i.Host)
-	userAuth, err := config.PickServerUserAuth(server, message)
+	userAuth, err := config.PickServerUserAuth(server, message, batchMode)
 	if err != nil {
 		return nil, err
 	}

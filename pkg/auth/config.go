@@ -163,11 +163,14 @@ func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
 	return nil, fmt.Errorf("Could not find server for URL %s", url)
 }
 
-func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string) (*UserAuth, error) {
+func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batchMode bool) (*UserAuth, error) {
 	url := server.URL
 	userAuths := c.FindUserAuths(url)
 	if len(userAuths) == 1 {
 		auth := userAuths[0]
+		if batchMode {
+			return auth, nil
+		}
 		confirm := &survey.Confirm{
 			Message: fmt.Sprintf("Do you wish to use %s as the %s", auth.Username, message),
 			Default: true,

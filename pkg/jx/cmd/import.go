@@ -69,7 +69,7 @@ pipeline {
           sh "git checkout master"
 
           // until we switch to the new kubernetes / jenkins credential implementation use git credentials store
-          sh "git config credential.helper store"
+          sh "git config --global credential.helper store"
 
           // so we can retrieve the version in later steps
           sh "echo \$(jx-release-version) > VERSION"
@@ -325,7 +325,7 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 	}
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(gits.GitHubHost)
-	userAuth, err := config.PickServerUserAuth(server, "git user name")
+	userAuth, err := config.PickServerUserAuth(server, "git user name", o.BatchMode)
 	if err != nil {
 		return err
 	}

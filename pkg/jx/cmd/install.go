@@ -408,7 +408,7 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 		}
 	}
 	url := server.URL
-	userAuth, err := config.PickServerUserAuth(server, fmt.Sprintf("%s username for CI/CD pipelines:", server.Label()))
+	userAuth, err := config.PickServerUserAuth(server, fmt.Sprintf("%s username for CI/CD pipelines:", server.Label()), o.BatchMode)
 	if err != nil {
 		return "", "", err
 	}

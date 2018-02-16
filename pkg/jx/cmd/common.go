@@ -187,7 +187,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message)
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode)
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
