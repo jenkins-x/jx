@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 const boilerPlate = ""
@@ -47,6 +48,8 @@ var (
 	}
 )
 
+
+
 func NewCmdCompletion(f cmdutil.Factory, out io.Writer) *cobra.Command {
 	options := &CommonOptions{
 		Factory: f,
@@ -76,15 +79,36 @@ func NewCmdCompletion(f cmdutil.Factory, out io.Writer) *cobra.Command {
 }
 
 func (o *CommonOptions) Run() error {
+	shells := []string{}
+	for s := range completion_shells {
+		shells = append(shells, s)
+	}
+	var ShellName string
 	cmd := o.Cmd
 	args := o.Args
 	if len(args) == 0 {
-		return cmdutil.UsageError(cmd, "Shell not specified.")
+		prompts := &survey.Select{
+			Message:  "Shell",
+			Options:  shells,
+			PageSize: len(shells),
+			Help:     "The name of the shell",
+		}
+		err := survey.AskOne(prompts, &ShellName, nil)
+		if err != nil {
+			return err
+		}
+
 	}
 	if len(args) > 1 {
 		return cmdutil.UsageError(cmd, "Too many arguments. Expected only the shell type.")
 	}
-	run, found := completion_shells[args[0]]
+	if ShellName == ""{
+		ShellName = args[0]
+	}
+
+	run, found := completion_shells[ShellName]
+
+
 	if !found {
 		return cmdutil.UsageError(cmd, "Unsupported shell type %q.", args[0])
 	}
