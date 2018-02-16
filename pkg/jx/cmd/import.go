@@ -56,7 +56,7 @@ pipeline {
   environment {
     ORG 		= 'jenkinsx'
     APP_NAME    = '%s'
-    GH_CREDS = credentials('jenkins-x-git')
+    GIT_CREDS = credentials('jenkins-x-git')
     CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
   }
 
@@ -90,13 +90,12 @@ pipeline {
       }
     }
     stage('Deploy Staging') {
-
       steps {
         dir ('./charts/%s') {
           container('maven') {
 
             sh 'make release'
-            sh 'jx promote --all-auto --version \$(cat ../../VERSION)'
+            sh 'GIT_USERNAME=$GIT_CREDS_USR GIT_API_TOKEN=$GIT_CREDS_PSW jx promote -b --all-auto --version \$(cat ../../VERSION)'
           }
         }
       }
