@@ -13,8 +13,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 
-	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"io"
+
+	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
 const (
@@ -85,7 +86,7 @@ func GitStatus(dir string) error {
 }
 
 func GitPush(dir string) error {
-	e := exec.Command("git", "push")
+	e := exec.Command("git", "push", "origin", "HEAD")
 	e.Dir = dir
 	e.Stdout = os.Stdout
 	e.Stderr = os.Stderr
