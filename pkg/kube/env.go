@@ -35,7 +35,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 			}
 			err = ValidateEnvironmentDoesNotExist(jxClient, ns, config.Name)
 			if err != nil {
-				return nil, util.InvalidOptionError(OptionName, config.Name, err)
+				return nil, err
 			}
 			data.Name = config.Name
 		} else {
@@ -100,14 +100,18 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 				}
 			}
 		}
-		q := &survey.Input{
-			Message: "Namespace:",
-			Default: defaultValue,
-			Help:    "The kubernetes namespace name to use for this Environment",
-		}
-		err := survey.AskOne(q, &data.Spec.Namespace, ValidateName)
-		if err != nil {
-			return nil, err
+		if batchMode {
+			data.Spec.Namespace = defaultValue
+		} else {
+			q := &survey.Input{
+				Message: "Namespace:",
+				Default: defaultValue,
+				Help:    "The kubernetes namespace name to use for this Environment",
+			}
+			err := survey.AskOne(q, &data.Spec.Namespace, ValidateName)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	if config.Spec.Cluster != "" {
@@ -116,15 +120,19 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 		// lets not show the UI for this if users specify the namespace via arguments
 		if !createMode || config.Spec.Namespace == "" {
 			defaultValue := data.Spec.Cluster
-			q := &survey.Input{
-				Message: "Cluster URL:",
-				Default: defaultValue,
-				Help:    "The kubernetes cluster URL to use to host this Environment",
-			}
-			// TODO validate/transform to match valid kubnernetes cluster syntax
-			err := survey.AskOne(q, &data.Spec.Cluster, nil)
-			if err != nil {
-				return nil, err
+			if batchMode {
+				data.Spec.Cluster = defaultValue
+			} else {
+				q := &survey.Input{
+					Message: "Cluster URL:",
+					Default: defaultValue,
+					Help:    "The kubernetes cluster URL to use to host this Environment",
+				}
+				// TODO validate/transform to match valid kubnernetes cluster syntax
+				err := survey.AskOne(q, &data.Spec.Cluster, nil)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -206,14 +214,19 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 		}
 		if showUrlEdit {
 			if data.Spec.Source.URL == "" {
-				confirm := &survey.Confirm{
-					Message: "Would you like to create a new Git repository to store this Environments source code? :",
-					Default: true,
+				if batchMode {
+					createRepo = true
+				} else {
+					confirm := &survey.Confirm{
+						Message: fmt.Sprintf("We will now create a Git repository to store your %s environment, ok? :", data.Name),
+						Default: true,
+					}
+					err := survey.AskOne(confirm, &createRepo, nil)
+					if err != nil {
+						return nil, err
+					}
 				}
-				err := survey.AskOne(confirm, &createRepo, nil)
-				if err != nil {
-					return nil, err
-				}
+
 				if createRepo {
 					showUrlEdit = false
 					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions)
@@ -243,14 +256,18 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 		data.Spec.Source.Ref = config.Spec.Source.Ref
 	} else {
 		if data.Spec.Source.URL != "" || data.Spec.Source.Ref != "" {
-			q := &survey.Input{
-				Message: "Git Ref for the Environment source code:",
-				Default: data.Spec.Source.Ref,
-				Help:    "The git clone Ref for the Environment's Helm charts source code and custom configuration",
-			}
-			err := survey.AskOne(q, &data.Spec.Source.Ref, nil)
-			if err != nil {
-				return nil, err
+			if batchMode {
+				createRepo = true
+			} else {
+				q := &survey.Input{
+					Message: "Git Ref for the Environment source code:",
+					Default: data.Spec.Source.Ref,
+					Help:    "The git clone Ref for the Environment's Helm charts source code and custom configuration",
+				}
+				err := survey.AskOne(q, &data.Spec.Source.Ref, nil)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

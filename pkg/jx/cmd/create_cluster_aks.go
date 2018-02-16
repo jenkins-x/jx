@@ -19,7 +19,8 @@ import (
 type CreateClusterAKSOptions struct {
 	CreateClusterOptions
 
-	Flags CreateClusterAKSFlags
+	Flags        CreateClusterAKSFlags
+	InstallFlags InstallFlags
 }
 
 type CreateClusterAKSFlags struct {
@@ -87,6 +88,7 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	options.addCreateClusterFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	addInstallOptionsArguments(cmd, &options.InstallFlags)
 
 	cmd.Flags().StringVarP(&options.Flags.ResourceName, "resource group name", "n", "", "Name of the resource group")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "clusterName", "c", "", "Name of the cluster")
@@ -255,11 +257,11 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		return err
 	}
 
+	o.InstallFlags.Provider = AKS
 	// call jx install
 	installOpts := &InstallOptions{
 		CommonOptions:        o.CommonOptions,
-		CloudEnvRepository:   DEFAULT_CLOUD_ENVIRONMENTS_URL,
-		Provider:             AKS, // TODO replace with context, maybe get from ~/.jx/gitAuth.yaml?
+		Flags:                o.InstallFlags,
 		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
 	}
 	err = installOpts.Run()

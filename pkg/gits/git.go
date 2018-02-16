@@ -13,8 +13,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 
-	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"io"
+
+	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
 const (
@@ -85,7 +86,7 @@ func GitStatus(dir string) error {
 }
 
 func GitPush(dir string) error {
-	e := exec.Command("git", "push")
+	e := exec.Command("git", "push", "origin", "HEAD")
 	e.Dir = dir
 	e.Stdout = os.Stdout
 	e.Stderr = os.Stderr
@@ -175,6 +176,27 @@ func GitRepoName(org, repoName string) string {
 		return org + "/" + repoName
 	}
 	return repoName
+}
+
+func GetGitServer(dir string) (string, error) {
+	e := exec.Command("git", "config", "--get", "remote.origin.url")
+	if dir != "" {
+		e.Dir = dir
+	}
+	data, err := e.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("Failed to run git commit in %s due to %s", dir, err)
+	}
+
+	url := string(data)
+	url = strings.TrimSpace(url)
+
+	repo, err := ParseGitURL(url)
+	if err != nil {
+		return "", fmt.Errorf("Failed to parse git URL %s due to %s", url, err)
+	}
+
+	return repo.Host, err
 }
 
 // ConvertToValidBranchName converts the given branch name into a valid git branch string

@@ -200,7 +200,8 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	}
 
 	if login {
-		o.captureScreenshot(ctxt, c, "screenshot-jenkins-login.png", "main-panel", chromedp.ByID)
+		// disable screenshots to try and reduce errors when running headless
+		//o.captureScreenshot(ctxt, c, "screenshot-jenkins-login.png", "main-panel", chromedp.ByID)
 
 		o.Printf("logging in\n")
 		err = c.Run(ctxt, chromedp.Tasks{
@@ -213,7 +214,8 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 		}
 	}
 
-	o.captureScreenshot(ctxt, c, "screenshot-jenkins-api-token.png", "main-panel", chromedp.ByID)
+	// disable screenshots to try and reduce errors when running headless
+	//o.captureScreenshot(ctxt, c, "screenshot-jenkins-api-token.png", "main-panel", chromedp.ByID)
 
 	getAPITokenButtonSelector := "//button[normalize-space(text())='Show API Token...']"
 	nodeSlice = []*cdp.Node{}

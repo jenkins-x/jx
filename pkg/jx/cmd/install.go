@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -20,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -27,13 +29,20 @@ import (
 type InstallOptions struct {
 	CommonOptions
 	gits.GitRepositoryOptions
+	CreateJenkinsUserOptions
+	CreateEnvOptions
 
-	Domain             string
-	HTTPS              bool
-	Provider           string
-	CloudEnvRepository string
-	LocalHelmRepoName  string
-	Namespace          string
+	Flags InstallFlags
+}
+
+type InstallFlags struct {
+	Domain              string
+	HTTPS               bool
+	Provider            string
+	CloudEnvRepository  string
+	LocalHelmRepoName   string
+	Namespace           string
+	DefaultEnvironments bool
 }
 
 type Secrets struct {
@@ -73,11 +82,42 @@ var (
 func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 	options := &InstallOptions{
+		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
+			Username: "admin",
+			Password: "admin",
+			CreateOptions: CreateOptions{
+				CommonOptions: CommonOptions{
+					Factory:  f,
+					Out:      out,
+					Err:      errOut,
+					Headless: true,
+				},
+			},
+		},
 		GitRepositoryOptions: gits.GitRepositoryOptions{},
 		CommonOptions: CommonOptions{
 			Factory: f,
 			Out:     out,
 			Err:     errOut,
+		},
+		CreateEnvOptions: CreateEnvOptions{
+			Options: v1.Environment{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec: v1.EnvironmentSpec{
+					PromotionStrategy: v1.PromotionStrategyTypeAutomatic,
+				},
+			},
+			PromotionStrategy:      string(v1.PromotionStrategyTypeAutomatic),
+			ForkEnvironmentGitRepo: kube.DefaultEnvironmentGitRepoURL,
+			CreateOptions: CreateOptions{
+				CommonOptions: CommonOptions{
+					Factory:   f,
+					Out:       out,
+					Err:       errOut,
+					Headless:  true,
+					BatchMode: true,
+				},
+			},
 		},
 	}
 
@@ -97,14 +137,19 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
-
-	cmd.Flags().StringVarP(&options.Domain, "domain", "d", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
-	cmd.Flags().BoolVarP(&options.HTTPS, "https", "", false, "Instructs Jenkins X to generate https not http Ingress rules")
-	cmd.Flags().StringVarP(&options.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
-	cmd.Flags().StringVarP(&options.CloudEnvRepository, "cloud-environment-repo", "c", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
-	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
+	addInstallOptionsArguments(cmd, &options.Flags)
 
 	return cmd
+}
+
+func addInstallOptionsArguments(cmd *cobra.Command, flags *InstallFlags) {
+	cmd.Flags().StringVarP(&flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
+	cmd.Flags().BoolVarP(&flags.HTTPS, "https", "", false, "Instructs Jenkins X to generate https not http Ingress rules")
+	cmd.Flags().StringVarP(&flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
+	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
+	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
+	cmd.Flags().BoolVarP(&flags.DefaultEnvironments, "default-environments", "", true, "Creates default Staging and Production environments")
+	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 }
 
 // Run implements this command
@@ -115,7 +160,26 @@ func (options *InstallOptions) Run() error {
 	}
 	options.kubeClient = client
 
-	options.Provider, err = options.GetCloudProvider(options.Provider)
+	context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
+	if err != nil {
+		return err
+	}
+
+	ns := options.Flags.Namespace
+	if ns == "" {
+		f := options.Factory
+		_, ns, _ = f.CreateClient()
+		if err != nil {
+			return err
+		}
+	}
+
+	err = options.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+	if err != nil {
+		return err
+	}
+
+	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
 	if err != nil {
 		return err
 	}
@@ -139,10 +203,10 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// run  helm install setting the token and domain values
-	if options.Provider == "" {
+	if options.Flags.Provider == "" {
 		return fmt.Errorf("No kubernetes provider found to match cloud-environment with")
 	}
-	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(options.Provider)))
+	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(options.Flags.Provider)))
 	if _, err := os.Stat(wrkDir); os.IsNotExist(err) {
 		return fmt.Errorf("cloud environment dir %s not found", makefileDir)
 	}
@@ -163,15 +227,6 @@ func (options *InstallOptions) Run() error {
 	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
 	if err != nil {
 		return err
-	}
-
-	ns := options.Namespace
-	if ns == "" {
-		f := options.Factory
-		_, ns, _ = f.CreateClient()
-		if err != nil {
-			return err
-		}
 	}
 
 	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --namespace=%s", secretsFileName, configFileName, ns)
@@ -198,7 +253,28 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	err = options.registerLocalHelmRepo(options.LocalHelmRepoName, ns)
+	if options.Flags.DefaultEnvironments {
+		err = options.CreateJenkinsUserOptions.Run()
+		if err != nil {
+			return err
+		}
+		options.CreateEnvOptions.Options.Name = "staging"
+		options.CreateEnvOptions.Options.Spec.Label = "Staging"
+		options.CreateEnvOptions.Options.Spec.Order = 100
+		err = options.CreateEnvOptions.Run()
+		if err != nil {
+			return err
+		}
+		options.CreateEnvOptions.Options.Name = "production"
+		options.CreateEnvOptions.Options.Spec.Label = "Production"
+		options.CreateEnvOptions.Options.Spec.Order = 200
+		err = options.CreateEnvOptions.Run()
+		if err != nil {
+			return err
+		}
+	}
+
+	err = options.registerLocalHelmRepo(options.Flags.LocalHelmRepoName, ns)
 	if err != nil {
 		return err
 	}
@@ -213,11 +289,11 @@ func (options *InstallOptions) Run() error {
 // clones the jenkins-x cloud-environments repo to a local working dir
 func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
-	if o.CloudEnvRepository == "" {
+	if o.Flags.CloudEnvRepository == "" {
 		return fmt.Errorf("No cloud environment git URL")
 	}
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
-		URL:           o.CloudEnvRepository,
+		URL:           o.Flags.CloudEnvRepository,
 		ReferenceName: "refs/heads/master",
 		SingleBranch:  true,
 		Progress:      o.Out,
@@ -272,7 +348,7 @@ PipelineSecrets:
 
 func (o *InstallOptions) getExposecontrollerConfigValues() (string, error) {
 	var err error
-	o.Domain, err = o.GetDomain(o.kubeClient, o.Domain, o.Provider)
+	o.Flags.Domain, err = o.GetDomain(o.kubeClient, o.Flags.Domain, o.Flags.Provider)
 	if err != nil {
 		return "", err
 	}
@@ -291,7 +367,7 @@ exposecontroller:
   http: %v
   domain: %s
 `
-	return fmt.Sprintf(config, !o.HTTPS, o.Domain, !o.HTTPS, o.Domain), nil
+	return fmt.Sprintf(config, !o.Flags.HTTPS, o.Flags.Domain, !o.Flags.HTTPS, o.Flags.Domain), nil
 }
 
 // returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release
@@ -332,7 +408,7 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 		}
 	}
 	url := server.URL
-	userAuth, err := config.PickServerUserAuth(server, fmt.Sprintf("%s username for CI/CD pipelines:", server.Label()))
+	userAuth, err := config.PickServerUserAuth(server, fmt.Sprintf("%s username for CI/CD pipelines:", server.Label()), o.BatchMode)
 	if err != nil {
 		return "", "", err
 	}

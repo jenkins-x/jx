@@ -28,13 +28,14 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, jenkin
 	if err != nil {
 		config := authConfigSvc.Config()
 		server := config.GetOrCreateServer(gitInfo.Host)
-		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline")
+		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", false)
 		if err != nil {
 			return err
 		}
 		err = jenk.CreateCredential(credentials, user.Username, user.ApiToken)
+
 		if err != nil {
-			return fmt.Errorf("error creating jenkins credential %s %v", "bdd-test", err)
+			return fmt.Errorf("error creating jenkins credential %s at %s %v", credentials, jenk.BaseURL(), err)
 		}
 	}
 

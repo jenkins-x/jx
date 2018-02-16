@@ -24,6 +24,7 @@ import (
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
 
+	"github.com/jenkins-x/jx/pkg/gits"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
@@ -115,25 +116,49 @@ func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, erro
 }
 
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
-	if err != nil {
-		return authConfigSvc, err
-	}
-	config, err := authConfigSvc.LoadConfig()
-	if err != nil {
-		return authConfigSvc, err
+
+	// if in cluster then there's no user configfile, so check for env vars first
+	userAuth := auth.CreateAuthUserFromEnvironment("GIT")
+	authConfigSvc := auth.AuthConfigService{}
+
+	if userAuth.IsInvalid() {
+		authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
+		if err != nil {
+			return authConfigSvc, err
+		}
+
+		config, err := authConfigSvc.LoadConfig()
+		if err != nil {
+			return authConfigSvc, err
+		}
+
+		// lets add a default if there's none defined yet
+		if len(config.Servers) == 0 {
+			config.Servers = []*auth.AuthServer{
+				{
+					Name:  "GitHub",
+					URL:   "github.com",
+					Users: []*auth.UserAuth{},
+				},
+			}
+		}
+		return authConfigSvc, nil
 	}
 
-	// lets add a default if there's none defined yet
-	if len(config.Servers) == 0 {
-		config.Servers = []*auth.AuthServer{
-			{
-				Name:  "GitHub",
-				URL:   "github.com",
-				Users: []*auth.UserAuth{},
-			},
-		}
+	// if no config file is being used lets grab the git server from the current directory
+	server, err := gits.GetGitServer("")
+	if err != nil {
+		return authConfigSvc, fmt.Errorf("unable to get remote git repo server, %v", err)
 	}
+
+	authConfigSvc.Config().Servers = []*auth.AuthServer{
+		{
+			Name:  "Git",
+			URL:   server,
+			Users: []*auth.UserAuth{&userAuth},
+		},
+	}
+
 	return authConfigSvc, nil
 }
 
