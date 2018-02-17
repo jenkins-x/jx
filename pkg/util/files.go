@@ -51,7 +51,7 @@ func CreateUniqueDirectory(dir string, name string, maximumAttempts int) (string
 }
 
 // credit https://gist.github.com/r0l1/92462b38df26839a3ca324697c8cba04
-func CopyDir(src string, dst string) (err error) {
+func CopyDir(src string, dst string, force bool) (err error) {
 	src = filepath.Clean(src)
 	dst = filepath.Clean(dst)
 
@@ -68,7 +68,11 @@ func CopyDir(src string, dst string) (err error) {
 		return
 	}
 	if err == nil {
-		return fmt.Errorf("destination already exists")
+		if force {
+			os.RemoveAll(dst)
+		} else {
+			return fmt.Errorf("destination already exists")
+		}
 	}
 
 	err = os.MkdirAll(dst, si.Mode())
@@ -86,7 +90,7 @@ func CopyDir(src string, dst string) (err error) {
 		dstPath := filepath.Join(dst, entry.Name())
 
 		if entry.IsDir() {
-			err = CopyDir(srcPath, dstPath)
+			err = CopyDir(srcPath, dstPath, force)
 			if err != nil {
 				return
 			}

@@ -150,7 +150,7 @@ func addInstallOptionsArguments(cmd *cobra.Command, flags *InstallFlags) {
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
 	cmd.Flags().BoolVarP(&flags.DefaultEnvironments, "default-environments", "", true, "Creates default Staging and Production environments")
-	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", true, "Ignores cloud-environment-repo default and uses current directory ")
+	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 }
 
@@ -295,8 +295,13 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 		return fmt.Errorf("No cloud environment git URL")
 	}
 	if o.Flags.LocalCloudEnvironment {
-		log.Infof("Copying local dir to %s", wrkDir)
-		return util.CopyDir("./", wrkDir)
+		currentDir, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("error getting current working directory %v", err)
+		}
+		log.Infof("Copying local dir to %s\n", wrkDir)
+
+		return util.CopyDir(currentDir, wrkDir, true)
 	}
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           o.Flags.CloudEnvRepository,
