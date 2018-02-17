@@ -36,13 +36,14 @@ type InstallOptions struct {
 }
 
 type InstallFlags struct {
-	Domain              string
-	HTTPS               bool
-	Provider            string
-	CloudEnvRepository  string
-	LocalHelmRepoName   string
-	Namespace           string
-	DefaultEnvironments bool
+	Domain                string
+	HTTPS                 bool
+	Provider              string
+	CloudEnvRepository    string
+	LocalHelmRepoName     string
+	Namespace             string
+	DefaultEnvironments   bool
+	LocalCloudEnvironment bool
 }
 
 type Secrets struct {
@@ -149,6 +150,7 @@ func addInstallOptionsArguments(cmd *cobra.Command, flags *InstallFlags) {
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
 	cmd.Flags().BoolVarP(&flags.DefaultEnvironments, "default-environments", "", true, "Creates default Staging and Production environments")
+	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", true, "Ignores cloud-environment-repo default and uses current directory ")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 }
 
@@ -291,6 +293,10 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
 	if o.Flags.CloudEnvRepository == "" {
 		return fmt.Errorf("No cloud environment git URL")
+	}
+	if o.Flags.LocalCloudEnvironment {
+		log.Infof("Copying local dir to %s", wrkDir)
+		return util.CopyDir("./", wrkDir)
 	}
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           o.Flags.CloudEnvRepository,
