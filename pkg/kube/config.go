@@ -3,8 +3,6 @@ package kube
 import (
 	"fmt"
 
-	"io/ioutil"
-
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -28,11 +26,6 @@ func LoadConfig() (*api.Config, *clientcmd.PathOptions, error) {
 
 // CurrentNamespace returns the current namespace in the context
 func CurrentNamespace(config *api.Config) string {
-	// if in cluster we can get the current namespace from the serviceacccount
-	file, err := ioutil.ReadFile("/run/secrets/kubernetes.io/serviceaccount/namespace")
-	if err == nil && len(file) > 0 {
-		return string(file)
-	}
 	ctx := CurrentContext(config)
 	if ctx != nil {
 		n := ctx.Namespace

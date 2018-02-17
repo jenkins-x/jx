@@ -254,12 +254,15 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
+	log.Infof("Jenkins X deployments ready in namespace %s", ns)
 	if options.Flags.DefaultEnvironments {
+		log.Info("Getting Jenkins API Token")
 		err = options.CreateJenkinsUserOptions.Run()
 		if err != nil {
 			return err
 		}
+
+		log.Info("Creating default staging and production environments")
 		options.CreateEnvOptions.Options.Name = "staging"
 		options.CreateEnvOptions.Options.Spec.Label = "Staging"
 		options.CreateEnvOptions.Options.Spec.Order = 100
