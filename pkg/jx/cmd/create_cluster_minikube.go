@@ -53,17 +53,7 @@ var (
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
 func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinikubeOptions{
-		CreateClusterOptions: CreateClusterOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					Out:     out,
-					Err:     errOut,
-				},
-			},
-			Provider:       MINIKUBE,
-			InstallOptions: createInstallOptions(f, out, errOut),
-		},
+		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, MINIKUBE),
 	}
 	cmd := &cobra.Command{
 		Use:     "minikube",

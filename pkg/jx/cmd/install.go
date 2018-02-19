@@ -12,6 +12,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -127,6 +128,9 @@ func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) In
 			Err:     errOut,
 		},
 		CreateEnvOptions: CreateEnvOptions{
+			HelmValuesConfig: config.HelmValuesConfig{
+				ExposeController: &config.ExposeController{},
+			},
 			Options: v1.Environment{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: v1.EnvironmentSpec{
@@ -160,6 +164,7 @@ func (options *InstallOptions) addInstallOptionsArguments(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	options.HelmValuesConfig.AddExposeControllerValues(cmd)
 }
 
 // Run implements this command
@@ -266,18 +271,19 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Jenkins X deployments ready in namespace %s", ns)
+	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 	if options.Flags.DefaultEnvironments {
-		log.Info("Getting Jenkins API Token")
+		log.Info("Getting Jenkins API Token\n")
 		err = options.CreateJenkinsUserOptions.Run()
 		if err != nil {
 			return err
 		}
 
-		log.Info("Creating default staging and production environments")
+		log.Info("Creating default staging and production environments\n")
 		options.CreateEnvOptions.Options.Name = "staging"
 		options.CreateEnvOptions.Options.Spec.Label = "Staging"
 		options.CreateEnvOptions.Options.Spec.Order = 100
+
 		err = options.CreateEnvOptions.Run()
 		if err != nil {
 			return err

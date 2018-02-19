@@ -10,7 +10,6 @@ import (
 	"errors"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -23,8 +22,7 @@ import (
 type CreateClusterGKEOptions struct {
 	CreateClusterOptions
 
-	Flags            CreateClusterGKEFlags
-	HelmValuesConfig config.HelmValuesConfig
+	Flags CreateClusterGKEFlags
 }
 
 type CreateClusterGKEFlags struct {
@@ -69,20 +67,7 @@ var (
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
 func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKEOptions{
-		HelmValuesConfig: config.HelmValuesConfig{
-			ExposeController: &config.ExposeController{},
-		},
-		CreateClusterOptions: CreateClusterOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					Out:     out,
-					Err:     errOut,
-				},
-			},
-			Provider:       GKE,
-			InstallOptions: createInstallOptions(f, out, errOut),
-		},
+		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -99,8 +84,6 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
-
-	config.AddExposeControllerValues(cmd, &options.HelmValuesConfig)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "cluster-name", "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")

@@ -119,7 +119,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 		}
 	}
 
-	if helmValues.ExposeController == nil || helmValues.ExposeController.Domain == "" {
+	if helmValues.ExposeController.Domain == "" {
 
 		expose, err := getTeamExposecontrollerConfig(kubeClient, ns)
 		if err != nil {
@@ -127,7 +127,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 		}
 
 		if batchMode {
-			log.Infof("Running in batch mode and no domain found so defaulting to team domain %s\n", expose["domain"])
+			log.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", expose["domain"])
 			helmValues.ExposeController.Domain = expose["domain"]
 		} else {
 			q := &survey.Input{

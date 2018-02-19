@@ -89,7 +89,7 @@ func NewCmdEditEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
-	config.AddExposeControllerValues(cmd, &options.HelmValuesConfig)
+	options.HelmValuesConfig.AddExposeControllerValues(cmd)
 	return cmd
 }
 
