@@ -22,8 +22,7 @@ import (
 type CreateClusterGKEOptions struct {
 	CreateClusterOptions
 
-	Flags        CreateClusterGKEFlags
-	InstallFlags InstallFlags
+	Flags CreateClusterGKEFlags
 }
 
 type CreateClusterGKEFlags struct {
@@ -242,7 +241,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	o.InstallFlags.Provider = GKE
+	o.InstallOptions.Flags.Provider = GKE
 
 	// call jx install
 	installOpts := &o.InstallOptions

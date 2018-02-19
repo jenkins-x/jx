@@ -20,9 +20,8 @@ import (
 type CreateClusterMinikubeOptions struct {
 	CreateClusterOptions
 
-	Flags        CreateClusterMinikubeFlags
-	Provider     KubernetesProvider
-	InstallFlags InstallFlags
+	Flags    CreateClusterMinikubeFlags
+	Provider KubernetesProvider
 }
 
 type CreateClusterMinikubeFlags struct {
@@ -234,7 +233,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		return err
 	}
 
-	o.InstallFlags.Provider = MINIKUBE
+	o.InstallOptions.Flags.Provider = MINIKUBE
 	// call jx install
 	installOpts := &o.InstallOptions
 	err = installOpts.Run()

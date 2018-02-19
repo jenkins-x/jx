@@ -18,8 +18,7 @@ import (
 type CreateClusterAKSOptions struct {
 	CreateClusterOptions
 
-	Flags        CreateClusterAKSFlags
-	InstallFlags InstallFlags
+	Flags CreateClusterAKSFlags
 }
 
 type CreateClusterAKSFlags struct {
@@ -254,7 +253,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		return err
 	}
 
-	o.InstallFlags.Provider = AKS
+	o.InstallOptions.Flags.Provider = AKS
 	// call jx install
 	installOpts := &o.InstallOptions
 	err = installOpts.Run()
