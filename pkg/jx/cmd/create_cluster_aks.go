@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -19,8 +18,7 @@ import (
 type CreateClusterAKSOptions struct {
 	CreateClusterOptions
 
-	Flags        CreateClusterAKSFlags
-	InstallFlags InstallFlags
+	Flags CreateClusterAKSFlags
 }
 
 type CreateClusterAKSFlags struct {
@@ -62,7 +60,6 @@ var (
 func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAKSOptions{
 		CreateClusterOptions: CreateClusterOptions{
-			GitRepositoryOptions: gits.GitRepositoryOptions{},
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
@@ -70,7 +67,8 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 					Err:     errOut,
 				},
 			},
-			Provider: AKS,
+			Provider:       AKS,
+			InstallOptions: createInstallOptions(f, out, errOut),
 		},
 	}
 	cmd := &cobra.Command{
@@ -87,8 +85,6 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	}
 
 	options.addCreateClusterFlags(cmd)
-	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
-	addInstallOptionsArguments(cmd, &options.InstallFlags)
 
 	cmd.Flags().StringVarP(&options.Flags.ResourceName, "resource group name", "n", "", "Name of the resource group")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "clusterName", "c", "", "Name of the cluster")
@@ -257,13 +253,9 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		return err
 	}
 
-	o.InstallFlags.Provider = AKS
+	o.InstallOptions.Flags.Provider = AKS
 	// call jx install
-	installOpts := &InstallOptions{
-		CommonOptions:        o.CommonOptions,
-		Flags:                o.InstallFlags,
-		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
-	}
+	installOpts := &o.InstallOptions
 	err = installOpts.Run()
 	if err != nil {
 		return err
