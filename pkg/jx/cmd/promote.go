@@ -28,6 +28,12 @@ const (
 	optionApplication         = "app"
 	optionTimeout             = "timeout"
 	optionPullRequestPollTime = "pull-request-poll-time"
+
+	gitStatusSuccess = "success"
+)
+
+var (
+	waitAfterPullRequestCreated = time.Second * 3
 )
 
 // PromoteOptions containers the CLI options
@@ -135,14 +141,6 @@ func (o *PromoteOptions) Run() error {
 	}
 	o.Application = app
 
-	if o.AllAutomatic {
-		return o.PromoteAllAutomatic()
-
-	}
-	targetNS, env, err := o.GetTargetNamespace(o.Namespace, o.Environment)
-	if err != nil {
-		return err
-	}
 	if o.PullRequestPollTime != "" {
 		duration, err := time.ParseDuration(o.PullRequestPollTime)
 		if err != nil {
@@ -156,6 +154,14 @@ func (o *PromoteOptions) Run() error {
 			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
 		}
 		o.TimeoutDuration = &duration
+	}
+
+	if o.AllAutomatic {
+		return o.PromoteAllAutomatic()
+	}
+	targetNS, env, err := o.GetTargetNamespace(o.Namespace, o.Environment)
+	if err != nil {
+		return err
 	}
 	_, err = o.Promote(targetNS, env, true)
 	return err
@@ -189,6 +195,9 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 	for _, env := range environments {
 		if env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic {
 			ns := env.Spec.Namespace
+			if ns == "" {
+				return fmt.Errorf("No namespace for environment %s", env.Name)
+			}
 			releaseInfo, err := o.Promote(ns, &env, false)
 			if err != nil {
 				return err
@@ -247,6 +256,10 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		source := &env.Spec.Source
 		if source.URL != "" {
 			err := o.PromoteViaPullRequest(env, releaseInfo)
+			if err == nil {
+				// lets sleep a little before we try poll for the PR status
+				time.Sleep(waitAfterPullRequestCreated)
+			}
 			return releaseInfo, err
 		}
 	}
@@ -265,9 +278,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		}
 	}
 	if version != "" {
-		err = o.runCommand("helm", "upgrade", "--install", "--namespace", targetNS, "--version", version, releaseName, fullAppName)
+		err = o.runCommand("helm", "upgrade", "--install", "--wait", "--namespace", targetNS, "--version", version, releaseName, fullAppName)
 	} else {
-		err = o.runCommand("helm", "upgrade", "--install", "--namespace", targetNS, releaseName, fullAppName)
+		err = o.runCommand("helm", "upgrade", "--install", "--wait", "--namespace", targetNS, releaseName, fullAppName)
 	}
 	return releaseInfo, err
 }
@@ -560,9 +573,12 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 		o.Printf("No --%s option specified on the 'jx promote' command so not waiting for the promotion to succeed\n", optionPullRequestPollTime)
 		return nil
 	}
+	duration := *o.TimeoutDuration
+	end := time.Now().Add(duration)
+
 	pullRequestInfo := releaseInfo.PullRequestInfo
 	if pullRequestInfo != nil {
-		err := o.waitForGitOpsPullRequest(ns, env, releaseInfo)
+		err := o.waitForGitOpsPullRequest(ns, env, releaseInfo, end, duration)
 		if err != nil {
 			return err
 		}
@@ -570,26 +586,105 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 	return nil
 }
 
-// waitForGitOpsPullRequest waits for a github pull request to merge for the promotion
-func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment, releaseInfo *ReleaseInfo) error {
-	duration := *o.TimeoutDuration
+func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment, releaseInfo *ReleaseInfo, end time.Time, duration time.Duration) error {
 	pullRequestInfo := releaseInfo.PullRequestInfo
+	logMergeFailure := false
+	logNoMergeCommitSha := false
+	logHasMergeSha := false
+	logMergeStatusError := false
+	logNoMergeStatuses := false
+	urlStatusMap := map[string]string{}
+
 	if pullRequestInfo != nil {
 		for {
-			end := time.Now().Add(duration)
 			pr := pullRequestInfo.PullRequest
-			err := pullRequestInfo.GitProvider.UpdatePullRequestStatus(pr)
+			gitProvider := pullRequestInfo.GitProvider
+			err := gitProvider.UpdatePullRequestStatus(pr)
 			if err != nil {
 				return fmt.Errorf("Failed to query the Pull Request status for %s %s", pr.URL, err)
 			}
 			if pr.Merged != nil && *pr.Merged {
-				o.Printf("Pull Request %s is merged\n", util.ColorInfo(pr.URL))
-				return nil
+				if pr.MergeCommitSHA == nil {
+					if !logNoMergeCommitSha {
+						logNoMergeCommitSha = true
+						o.Printf("Pull Request %s is merged but waiting for Merge SHA\n", util.ColorInfo(pr.URL))
+					}
+				} else {
+					mergeSha := *pr.MergeCommitSHA
+					if !logHasMergeSha {
+						logHasMergeSha = true
+						o.Printf("Pull Request %s is merged at sha %s\n", util.ColorInfo(pr.URL), util.ColorInfo(mergeSha))
+					}
+
+					statuses, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, mergeSha)
+					if err != nil {
+						if !logMergeStatusError {
+							logMergeStatusError = true
+							o.warnf("Failed to query merge status of repo %s/%s with merge sha %s due to: %s\n", pr.Owner, pr.Repo, mergeSha, err)
+						}
+					} else {
+						if len(statuses) == 0 {
+							if !logNoMergeStatuses {
+								logNoMergeStatuses = true
+								o.Printf("Merge commit has not yet any statuses on repo %s/%s merge sha %s\n", pr.Owner, pr.Repo, mergeSha)
+							}
+						} else {
+							for _, status := range statuses {
+								if status.IsFailed() {
+									o.warnf("merge status: %s URL: %s description: %s\n",
+										status.State, status.TargetURL, status.Description)
+									return fmt.Errorf("Status: %s URL: %s description: %s\n",
+										status.State, status.TargetURL, status.Description)
+								}
+								url := status.URL
+								state := status.State
+								if urlStatusMap[url] == "" || urlStatusMap[url] != gitStatusSuccess {
+									if urlStatusMap[url] != state {
+										urlStatusMap[url] = state
+										o.Printf("merge status: %s for URL %s with target: %s description: %s\n",
+											util.ColorInfo(state), util.ColorInfo(status.URL), util.ColorInfo(status.TargetURL), util.ColorInfo(status.Description))
+									}
+								}
+							}
+							succeeded := true
+							for _, v := range urlStatusMap {
+								if v != gitStatusSuccess {
+									succeeded = false
+								}
+							}
+							if succeeded {
+								o.Printf("Merge status checks all passed so the promotion worked!\n")
+								return nil
+							}
+						}
+					}
+				}
+			} else {
+				if pr.IsClosed() {
+					o.warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
+					return fmt.Errorf("Promotion failed as Pull Request %s is closed without merging", pr.URL)
+				}
+
+				// lets try merge if the status is good
+				status, err := gitProvider.PullRequestLastCommitStatus(pr)
+				if err != nil {
+					o.warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
+					//return fmt.Errorf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
+				} else {
+					if status == "success" {
+						err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
+						if err != nil {
+							if !logMergeFailure {
+								logMergeFailure = true
+								o.warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
+							}
+						}
+					} else if status == "error" || status == "failure" {
+						return fmt.Errorf("Pull request %s last commit has status %s for ref %s", pr.URL, status, pr.LastCommitSha)
+					}
+				}
 			}
-			if pr.IsClosed() {
-				o.warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
-				return fmt.Errorf("Promotion failed as Pull Request %s is closed without merging", pr.URL)
-			}
+
 			if time.Now().After(end) {
 				return fmt.Errorf("Timed out waiting for pull request %s to merge. Waited %s", pr.URL, duration.String())
 			}

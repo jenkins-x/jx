@@ -229,8 +229,15 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	pr.Merged = &merged
 	pr.Mergeable = &result.Mergeable
 	pr.MergedAt = result.Merged
+	pr.MergeCommitSHA = result.MergedCommitID
 	stateText := string(result.State)
 	pr.State = &stateText
+	head := result.Head
+	if head != nil {
+		pr.LastCommitSha = head.Sha
+	} else {
+		pr.LastCommitSha = ""
+	}
 	/*
 		TODO
 
@@ -240,6 +247,52 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 		pr.DiffURL = result.DiffURL
 	*/
 	return nil
+}
+
+func (p *GiteaProvider) MergePullRequest(pr *GitPullRequest, message string) error {
+	if pr.Number == nil {
+		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
+	}
+	n := *pr.Number
+	return p.Client.MergePullRequest(pr.Owner, pr.Repo, int64(n))
+}
+
+func (p *GiteaProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
+	ref := pr.LastCommitSha
+	if ref == "" {
+		return "", fmt.Errorf("Missing String for LastCommitSha %#v", pr)
+	}
+	results, err := p.Client.ListStatuses(pr.Owner, pr.Repo, ref, gitea.ListStatusesOption{})
+	if err != nil {
+		return "", err
+	}
+	for _, result := range results {
+		text := string(result.State)
+		if text != "" {
+			return text, nil
+		}
+	}
+	return "", fmt.Errorf("Could not find a status for repository %s/%s with ref %s", pr.Owner, pr.Repo, ref)
+}
+
+func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
+	answer := []*GitRepoStatus{}
+	results, err := p.Client.ListStatuses(org, repo, sha, gitea.ListStatusesOption{})
+	if err != nil {
+		return answer, fmt.Errorf("Could not find a status for repository %s/%s with ref %s", org, repo, sha)
+	}
+	for _, result := range results {
+		status := &GitRepoStatus{
+			ID:          result.ID,
+			Context:     result.Context,
+			URL:         result.URL,
+			TargetURL:   result.TargetURL,
+			State:       string(result.State),
+			Description: result.Description,
+		}
+		answer = append(answer, status)
+	}
+	return answer, nil
 }
 
 func (p *GiteaProvider) RenameRepository(org string, name string, newName string) (*GitRepository, error) {

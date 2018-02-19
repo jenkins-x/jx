@@ -260,9 +260,16 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if err != nil {
 		return err
 	}
+	head := result.Head
+	if head != nil {
+		pr.LastCommitSha = notNullString(head.SHA)
+	} else {
+		pr.LastCommitSha = ""
+	}
 	if result.Mergeable != nil {
 		pr.Mergeable = result.Mergeable
 	}
+	pr.MergeCommitSHA = result.MergeCommitSHA
 	if result.Merged != nil {
 		pr.Merged = result.Merged
 	}
@@ -285,6 +292,69 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 		pr.IssueURL = result.DiffURL
 	}
 	return nil
+}
+
+func (p *GitHubProvider) MergePullRequest(pr *GitPullRequest, message string) error {
+	if pr.Number == nil {
+		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
+	}
+	n := *pr.Number
+	ref := pr.LastCommitSha
+	options := &github.PullRequestOptions{
+		SHA: ref,
+	}
+	result, _, err := p.Client.PullRequests.Merge(p.Context, pr.Owner, pr.Repo, n, message, options)
+	if err != nil {
+		return err
+	}
+	if result.Merged == nil || *result.Merged == false {
+		return fmt.Errorf("Failed to merge PR %s for ref %s as result did not return merged", pr.URL)
+	}
+	return nil
+}
+
+func (p *GitHubProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
+	ref := pr.LastCommitSha
+	if ref == "" {
+		return "", fmt.Errorf("Missing String for LastCommitSha %#v", pr)
+	}
+	results, _, err := p.Client.Repositories.ListStatuses(p.Context, pr.Owner, pr.Repo, ref, nil)
+	if err != nil {
+		return "", err
+	}
+	for _, result := range results {
+		if result.State != nil {
+			return *result.State, nil
+		}
+	}
+	return "", fmt.Errorf("Could not find a status for repository %s/%s with ref %s", pr.Owner, pr.Repo, ref)
+}
+
+func (p *GitHubProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
+	answer := []*GitRepoStatus{}
+	results, _, err := p.Client.Repositories.ListStatuses(p.Context, org, repo, sha, nil)
+	if err != nil {
+		return answer, fmt.Errorf("Could not find a status for repository %s/%s with ref %s", org, repo, sha)
+	}
+	for _, result := range results {
+		status := &GitRepoStatus{
+			ID:          notNullInt64(result.ID),
+			Context:     notNullString(result.Context),
+			URL:         notNullString(result.URL),
+			TargetURL:   notNullString(result.TargetURL),
+			State:       notNullString(result.State),
+			Description: notNullString(result.Description),
+		}
+		answer = append(answer, status)
+	}
+	return answer, nil
+}
+
+func notNullInt64(n *int64) int64 {
+	if n != nil {
+		return *n
+	}
+	return 0
 }
 
 func notNullString(tp *string) string {

@@ -29,6 +29,12 @@ type GitProvider interface {
 
 	UpdatePullRequestStatus(pr *GitPullRequest) error
 
+	PullRequestLastCommitStatus(pr *GitPullRequest) (string, error)
+
+	ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error)
+
+	MergePullRequest(pr *GitPullRequest, message string) error
+
 	CreateWebHook(data *GitWebHookArguments) error
 
 	IsGitHub() bool
@@ -68,18 +74,36 @@ type GitRepository struct {
 }
 
 type GitPullRequest struct {
-	URL         string
-	Owner       string
-	Repo        string
-	Number      *int
-	Mergeable   *bool
-	Merged      *bool
-	State       *string
-	StatusesURL *string
-	IssueURL    *string
-	DiffURL     *string
-	ClosedAt    *time.Time
-	MergedAt    *time.Time
+	URL            string
+	Owner          string
+	Repo           string
+	Number         *int
+	Mergeable      *bool
+	Merged         *bool
+	State          *string
+	StatusesURL    *string
+	IssueURL       *string
+	DiffURL        *string
+	MergeCommitSHA *string
+	ClosedAt       *time.Time
+	MergedAt       *time.Time
+	LastCommitSha  string
+}
+
+type GitRepoStatus struct {
+	ID      int64
+	Context string
+	URL     string
+
+	// State is the current state of the repository. Possible values are:
+	// pending, success, error, or failure.
+	State string `json:"state,omitempty"`
+
+	// TargetURL is the URL of the page representing this status
+	TargetURL string `json:"target_url,omitempty"`
+
+	// Description is a short high level summary of the status.
+	Description string
 }
 
 type GitPullRequestArguments struct {
@@ -196,6 +220,34 @@ func PickRepositories(provider GitProvider, owner string, message string, select
 		}
 	}
 	return answer, err
+}
+
+// IsGitRepoStatusSuccess returns true if all the statuses are successful
+func IsGitRepoStatusSuccess(statuses ...*GitRepoStatus) bool {
+	for _, status := range statuses {
+		if !status.IsSuccess() {
+			return false
+		}
+	}
+	return true
+}
+
+// IsGitRepoStatusFailed returns true if any of the statuses have failed
+func IsGitRepoStatusFailed(statuses ...*GitRepoStatus) bool {
+	for _, status := range statuses {
+		if status.IsFailed() {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *GitRepoStatus) IsSuccess() bool {
+	return s.State == "success"
+}
+
+func (s *GitRepoStatus) IsFailed() bool {
+	return s.State == "error" || s.State == "failure"
 }
 
 func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string, batchMode bool) (GitProvider, error) {
