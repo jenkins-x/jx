@@ -151,8 +151,6 @@ func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) In
 
 func (options *InstallOptions) addInstallOptionsArguments(cmd *cobra.Command) {
 	flags := &options.Flags
-	cmd.Flags().StringVarP(&flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
-	cmd.Flags().BoolVarP(&flags.HTTPS, "https", "", false, "Instructs Jenkins X to generate https not http Ingress rules")
 	cmd.Flags().StringVarP(&flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")

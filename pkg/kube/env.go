@@ -9,10 +9,14 @@ import (
 	"sort"
 	"strings"
 
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +27,7 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, envDir string, gitRepoOptions gits.GitRepositoryOptions) (gits.GitProvider, error) {
+func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, kubeClient *kubernetes.Clientset, envDir string, gitRepoOptions gits.GitRepositoryOptions, helmValues config.HelmValuesConfig) (gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	name := data.Name
 	createMode := name == ""
@@ -114,6 +118,30 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 			}
 		}
 	}
+
+	if helmValues.ExposeController == nil || helmValues.ExposeController.Domain == "" {
+
+		expose, err := getTeamExposecontrollerConfig(kubeClient, ns)
+		if err != nil {
+			return nil, err
+		}
+
+		if batchMode {
+			log.Infof("Running in batch mode and no domain found so defaulting to team domain %s\n", expose["domain"])
+			helmValues.ExposeController.Domain = expose["domain"]
+		} else {
+			q := &survey.Input{
+				Message: "Domain:",
+				Default: expose["domain"],
+				Help:    "Domain to expose ingress endpoints.  Example: jenkinsx.io, leave blank if no appplications are to be exposed via ingress rules",
+			}
+			err := survey.AskOne(q, &helmValues.ExposeController.Domain, nil)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	if config.Spec.Cluster != "" {
 		data.Spec.Cluster = config.Spec.Cluster
 	} else {
@@ -229,7 +257,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 
 				if createRepo {
 					showUrlEdit = false
-					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions)
+					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues)
 					if err != nil {
 						return nil, err
 					}
@@ -274,7 +302,26 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 	return gitProvider, nil
 }
 
-func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string, gitRepoOptions gits.GitRepositoryOptions) (string, gits.GitProvider, error) {
+func getTeamExposecontrollerConfig(kubeClient *kubernetes.Clientset, ns string) (map[string]string, error) {
+	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get("exposecontroller", metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to find team environment exposecontroller config %v", err)
+	}
+
+	config := cm.Data["config.yml"]
+
+	lines := strings.Split(config, "\n")
+
+	m := make(map[string]string)
+	for _, pair := range lines {
+		z := strings.Split(pair, ":")
+		m[z[0]] = strings.TrimSpace(z[1])
+	}
+
+	return m, nil
+}
+
+func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string, gitRepoOptions gits.GitRepositoryOptions, helmValues config.HelmValuesConfig) (string, gits.GitProvider, error) {
 	defaultRepoName := "environment-" + env.Name
 	details, err := gits.PickNewGitRepository(out, batchMode, authConfigSvc, defaultRepoName, gitRepoOptions)
 	if err != nil {
@@ -329,6 +376,10 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 			if err != nil {
 				return "", nil, err
 			}
+			err = addValues(out, dir, helmValues)
+			if err != nil {
+				return "", nil, err
+			}
 			err = gits.GitPush(dir)
 			if err != nil {
 				return "", nil, err
@@ -365,6 +416,10 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 			return "", nil, err
 		}
 		err = modifyNamespace(out, dir, env)
+		if err != nil {
+			return "", nil, err
+		}
+		err = addValues(out, dir, helmValues)
 		if err != nil {
 			return "", nil, err
 		}
@@ -412,6 +467,40 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 		return err
 	}
 	return gits.GitCommit(dir, "Use correct namespace for environment")
+}
+
+func addValues(out io.Writer, dir string, values config.HelmValuesConfig) error {
+
+	file := filepath.Join(dir, "env", "values.yaml")
+	exists, err := util.FileExists(file)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("could not find a values.yaml in %s\n", dir)
+	}
+
+	f, err := os.OpenFile(file, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	text, err := values.String()
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString(text)
+	if err != nil {
+		return err
+	}
+
+	f.Close()
+
+	err = gits.GitAdd(dir, "*")
+	if err != nil {
+		return err
+	}
+	return gits.GitCommit(dir, "Add environment configuration")
 }
 
 func replaceMakeVariable(lines []string, name string, value string) error {
