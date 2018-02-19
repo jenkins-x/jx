@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -56,7 +55,6 @@ var (
 func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinikubeOptions{
 		CreateClusterOptions: CreateClusterOptions{
-			GitRepositoryOptions: gits.GitRepositoryOptions{},
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
@@ -65,6 +63,7 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 				},
 			},
 			Provider: MINIKUBE,
+			InstallOptions: createInstallOptions(f, out, errOut),
 		},
 	}
 	cmd := &cobra.Command{
@@ -82,8 +81,6 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
-	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
-	addInstallOptionsArguments(cmd, &options.InstallFlags)
 
 	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minikube VM in MB")
 	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
@@ -239,11 +236,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 
 	o.InstallFlags.Provider = MINIKUBE
 	// call jx install
-	installOpts := &InstallOptions{
-		CommonOptions:        o.CommonOptions,
-		Flags:                o.InstallFlags,
-		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
-	}
+	installOpts := &o.InstallOptions
 	err = installOpts.Run()
 	if err != nil {
 		return err

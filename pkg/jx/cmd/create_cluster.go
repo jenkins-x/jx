@@ -14,7 +14,6 @@ import (
 	"errors"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -28,10 +27,10 @@ type KubernetesProvider string
 // CreateClusterOptions the flags for running crest cluster
 type CreateClusterOptions struct {
 	CreateOptions
-	gits.GitRepositoryOptions
-	Flags    InitFlags
-	Provider string
-	NoBrew   bool
+	InstallOptions InstallOptions
+	Flags          InitFlags
+	Provider       string
+	NoBrew         bool
 }
 
 const (
@@ -110,8 +109,8 @@ func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 		Short:   "Create a new kubernetes cluster",
 		Long:    fmt.Sprintf(createClusterLong, valid_providers),
 		Example: createClusterExample,
-		Run: func(cmd *cobra.Command, args []string) {
-			options.Cmd = cmd
+		Run: func(cmd2 *cobra.Command, args []string) {
+			options.Cmd = cmd2
 			options.Args = args
 			err := options.Run()
 			cmdutil.CheckErr(err)
@@ -131,6 +130,8 @@ func (o *CreateClusterOptions) Run() error {
 
 func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install dependencies like kubectl, draft, helm etc")
+
+	o.InstallOptions.addInstallOptionsArguments(cmd)
 }
 
 func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {

@@ -82,7 +82,30 @@ var (
 // installs the jenkins-x platform on a kubernetes cluster.
 func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
-	options := &InstallOptions{
+	options := createInstallOptions(f, out, errOut)
+
+	cmd := &cobra.Command{
+		Use:     "install [flags]",
+		Short:   "Install Jenkins X",
+		Long:    instalLong,
+		Example: instalExample,
+		Run: func(cmd *cobra.Command, args []string) {
+			options.Cmd = cmd
+			options.Args = args
+			err := options.Run()
+			cmdutil.CheckErr(err)
+		},
+		SuggestFor: []string{"list", "ps"},
+	}
+
+	options.addCommonFlags(cmd)
+	options.addInstallOptionsArguments(cmd)
+
+	return cmd
+}
+
+func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) InstallOptions {
+	options := InstallOptions{
 		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
 			Username: "admin",
 			Password: "admin",
@@ -121,29 +144,11 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			},
 		},
 	}
-
-	cmd := &cobra.Command{
-		Use:     "install [flags]",
-		Short:   "Install Jenkins X",
-		Long:    instalLong,
-		Example: instalExample,
-		Run: func(cmd *cobra.Command, args []string) {
-			options.Cmd = cmd
-			options.Args = args
-			err := options.Run()
-			cmdutil.CheckErr(err)
-		},
-		SuggestFor: []string{"list", "ps"},
-	}
-
-	options.addCommonFlags(cmd)
-	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
-	addInstallOptionsArguments(cmd, &options.Flags)
-
-	return cmd
+	return options
 }
 
-func addInstallOptionsArguments(cmd *cobra.Command, flags *InstallFlags) {
+func (options *InstallOptions) addInstallOptionsArguments(cmd *cobra.Command) {
+	flags := &options.Flags
 	cmd.Flags().StringVarP(&flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	cmd.Flags().BoolVarP(&flags.HTTPS, "https", "", false, "Instructs Jenkins X to generate https not http Ingress rules")
 	cmd.Flags().StringVarP(&flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
@@ -152,6 +157,8 @@ func addInstallOptionsArguments(cmd *cobra.Command, flags *InstallFlags) {
 	cmd.Flags().BoolVarP(&flags.DefaultEnvironments, "default-environments", "", true, "Creates default Staging and Production environments")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
+
+	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
 
 // Run implements this command

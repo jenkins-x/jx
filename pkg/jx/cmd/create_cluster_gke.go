@@ -10,16 +10,12 @@ import (
 	"errors"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -73,7 +69,6 @@ var (
 func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKEOptions{
 		CreateClusterOptions: CreateClusterOptions{
-			GitRepositoryOptions: gits.GitRepositoryOptions{},
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
@@ -82,6 +77,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 				},
 			},
 			Provider: GKE,
+			InstallOptions: createInstallOptions(f, out, errOut),
 		},
 	}
 	cmd := &cobra.Command{
@@ -99,8 +95,6 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
-	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
-	addInstallOptionsArguments(cmd, &options.InstallFlags)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "cluster-name", "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -251,42 +245,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	o.InstallFlags.Provider = GKE
 
 	// call jx install
-	installOpts := &InstallOptions{
-		CommonOptions:        o.CommonOptions,
-		GitRepositoryOptions: o.CreateClusterOptions.GitRepositoryOptions,
-		Flags:                o.InstallFlags,
-		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
-			Username: "admin",
-			Password: "admin",
-			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory:  o.Factory,
-					Out:      o.Out,
-					Err:      o.Err,
-					Headless: true,
-				},
-			},
-		},
-		CreateEnvOptions: CreateEnvOptions{
-			Options: v1.Environment{
-				ObjectMeta: metav1.ObjectMeta{},
-				Spec: v1.EnvironmentSpec{
-					PromotionStrategy: v1.PromotionStrategyTypeAutomatic,
-				},
-			},
-			PromotionStrategy:      string(v1.PromotionStrategyTypeAutomatic),
-			ForkEnvironmentGitRepo: kube.DefaultEnvironmentGitRepoURL,
-			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory:   o.Factory,
-					Out:       o.Out,
-					Err:       o.Err,
-					Headless:  true,
-					BatchMode: true,
-				},
-			},
-		},
-	}
+	installOpts := &o.InstallOptions
 	err = installOpts.Run()
 	if err != nil {
 		return err
