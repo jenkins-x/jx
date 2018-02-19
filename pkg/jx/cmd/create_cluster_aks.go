@@ -59,17 +59,7 @@ var (
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
 func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAKSOptions{
-		CreateClusterOptions: CreateClusterOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					Out:     out,
-					Err:     errOut,
-				},
-			},
-			Provider:       AKS,
-			InstallOptions: createInstallOptions(f, out, errOut),
-		},
+		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aks",

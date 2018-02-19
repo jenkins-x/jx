@@ -1,10 +1,12 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"io"
 
+	"github.com/spf13/cobra"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -37,6 +39,7 @@ type CreateEnvOptions struct {
 	CreateOptions
 
 	Options                v1.Environment
+	HelmValuesConfig       config.HelmValuesConfig
 	PromotionStrategy      string
 	NoGitOps               bool
 	ForkEnvironmentGitRepo string
@@ -47,6 +50,9 @@ type CreateEnvOptions struct {
 // NewCmdCreateEnv creates a command object for the "create" command
 func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateEnvOptions{
+		HelmValuesConfig: config.HelmValuesConfig{
+			ExposeController: &config.ExposeController{},
+		},
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -86,6 +92,8 @@ func NewCmdCreateEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	options.HelmValuesConfig.AddExposeControllerValues(cmd)
+
 	return cmd
 }
 
@@ -128,7 +136,7 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, &env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, envDir, o.GitRepositoryOptions)
+	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, &env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, kubeClient, envDir, o.GitRepositoryOptions, o.HelmValuesConfig)
 	if err != nil {
 		return err
 	}

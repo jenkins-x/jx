@@ -67,17 +67,7 @@ var (
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
 func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKEOptions{
-		CreateClusterOptions: CreateClusterOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					Out:     out,
-					Err:     errOut,
-				},
-			},
-			Provider:       GKE,
-			InstallOptions: createInstallOptions(f, out, errOut),
-		},
+		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -260,7 +250,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	ns := o.Flags.Namespace
+	ns := o.InstallOptions.Flags.Namespace
 	if ns == "" {
 		f := o.Factory
 		_, ns, _ = f.CreateClient()

@@ -14,6 +14,7 @@ import (
 	"errors"
 
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -27,10 +28,11 @@ type KubernetesProvider string
 // CreateClusterOptions the flags for running crest cluster
 type CreateClusterOptions struct {
 	CreateOptions
-	InstallOptions InstallOptions
-	Flags          InitFlags
-	Provider       string
-	NoBrew         bool
+	InstallOptions   InstallOptions
+	Flags            InitFlags
+	Provider         string
+	NoBrew           bool
+	HelmValuesConfig config.HelmValuesConfig
 }
 
 const (
@@ -42,13 +44,6 @@ const (
 )
 
 var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS, JX_INFRA}
-
-var KUBERNETES_PROVIDERS_ENUM = map[string]bool{
-	GKE:      true,
-	AKS:      true,
-	MINIKUBE: true,
-	JX_INFRA: true,
-}
 
 const (
 	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
@@ -94,15 +89,7 @@ var (
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
 func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &CreateClusterOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				Out:     out,
-				Err:     errOut,
-			},
-		},
-	}
+	options := createCreateClusterOptions(f, out, errOut, "")
 
 	cmd := &cobra.Command{
 		Use:     "cluster [kubernetes provider]",
@@ -124,6 +111,21 @@ func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	return cmd
 }
 
+func createCreateClusterOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer, cloudProvider string) CreateClusterOptions {
+	options := CreateClusterOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: CommonOptions{
+				Factory: f,
+				Out:     out,
+				Err:     errOut,
+			},
+		},
+		Provider:       cloudProvider,
+		InstallOptions: createInstallOptions(f, out, errOut),
+	}
+	return options
+}
+
 func (o *CreateClusterOptions) Run() error {
 	return o.Cmd.Help()
 }
@@ -132,6 +134,7 @@ func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install dependencies like kubectl, draft, helm etc")
 
 	o.InstallOptions.addInstallOptionsArguments(cmd)
+
 }
 
 func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {
