@@ -44,6 +44,7 @@ type InstallFlags struct {
 	Namespace             string
 	DefaultEnvironments   bool
 	LocalCloudEnvironment bool
+	Timeout               string
 }
 
 type Secrets struct {
@@ -56,8 +57,9 @@ const (
 	JX_GIT_USER                    = "JX_GIT_USER"
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
 
-	GitSecretsFile  = "gitSecrets.yaml"
-	ExtraValuesFile = "extraValues.yaml"
+	GitSecretsFile        = "gitSecrets.yaml"
+	ExtraValuesFile       = "extraValues.yaml"
+	defaultInstallTimeout = "6000"
 )
 
 var (
@@ -157,6 +159,7 @@ func (options *InstallOptions) addInstallOptionsArguments(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&flags.DefaultEnvironments, "default-environments", "", true, "Creates default Staging and Production environments")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
+	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
@@ -238,7 +241,11 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --namespace=%s", secretsFileName, configFileName, ns)
+	timeout := options.Flags.Timeout
+	if timeout == "" {
+		timeout = defaultInstallTimeout
+	}
+	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --namespace=%s --timeout=%s", secretsFileName, configFileName, ns, timeout)
 
 	// run the helm install
 	err = options.runCommandFromDir(makefileDir, "make", arg, "install")
