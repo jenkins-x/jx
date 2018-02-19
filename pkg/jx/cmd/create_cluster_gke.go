@@ -184,7 +184,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if numOfNodes == "" {
 		prompt := &survey.Input{
 			Message: "Number of Nodes",
-			Default: "2",
+			Default: "3",
 			Help:    "The number of nodes to be created in each of the cluster's zones",
 		}
 
