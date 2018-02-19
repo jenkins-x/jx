@@ -76,7 +76,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 					Err:     errOut,
 				},
 			},
-			Provider: GKE,
+			Provider:       GKE,
 			InstallOptions: createInstallOptions(f, out, errOut),
 		},
 	}

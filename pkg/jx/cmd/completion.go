@@ -48,8 +48,6 @@ var (
 	}
 )
 
-
-
 func NewCmdCompletion(f cmdutil.Factory, out io.Writer) *cobra.Command {
 	options := &CommonOptions{
 		Factory: f,
@@ -102,12 +100,11 @@ func (o *CommonOptions) Run() error {
 	if len(args) > 1 {
 		return cmdutil.UsageError(cmd, "Too many arguments. Expected only the shell type.")
 	}
-	if ShellName == ""{
+	if ShellName == "" {
 		ShellName = args[0]
 	}
 
 	run, found := completion_shells[ShellName]
-
 
 	if !found {
 		return cmdutil.UsageError(cmd, "Unsupported shell type %q.", args[0])

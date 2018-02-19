@@ -68,7 +68,7 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 					Err:     errOut,
 				},
 			},
-			Provider: AKS,
+			Provider:       AKS,
 			InstallOptions: createInstallOptions(f, out, errOut),
 		},
 	}

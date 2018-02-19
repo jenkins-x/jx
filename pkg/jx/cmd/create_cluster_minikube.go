@@ -62,7 +62,7 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 					Err:     errOut,
 				},
 			},
-			Provider: MINIKUBE,
+			Provider:       MINIKUBE,
 			InstallOptions: createInstallOptions(f, out, errOut),
 		},
 	}
