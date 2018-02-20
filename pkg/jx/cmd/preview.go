@@ -283,6 +283,14 @@ func (o *PreviewOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	if o.ReleaseName == "" {
+		o.ReleaseName = ens
+	}
+	_, err = o.PromoteOptions.Promote(ens, env, false)
+	if err != nil {
+	  return err
+	}
 	return nil
 }
 

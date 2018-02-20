@@ -74,6 +74,16 @@ const (
 	EnvironmentKindTypeEdit EnvironmentKindType = "Edit"
 )
 
+// IsPermanent returns true if this environment is permanent
+func (e EnvironmentKindType) IsPermanent() bool {
+	switch (e) {
+	case EnvironmentKindTypePreview, EnvironmentKindTypeTest, EnvironmentKindTypeEdit:
+		return false
+	default:
+		return true
+	}
+}
+
 // PromotionStrategyTypeValues is the list of all values
 var PromotionStrategyTypeValues = []string{
 	string(PromotionStrategyTypeAutomatic),

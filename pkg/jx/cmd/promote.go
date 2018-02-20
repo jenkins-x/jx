@@ -44,6 +44,7 @@ type PromoteOptions struct {
 	Environment         string
 	Application         string
 	Version             string
+	ReleaseName         string
 	LocalHelmRepoName   string
 	HelmRepositoryURL   string
 	NoHelmUpdate        bool
@@ -123,6 +124,7 @@ func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
+	cmd.Flags().StringVarP(&options.ReleaseName, "release", "","", "The name of the helm release")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
@@ -198,7 +200,7 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 
 	for _, env := range environments {
 		kind := env.Spec.Kind
-		if env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic && kind != v1.EnvironmentKindTypePreview  && kind != v1.EnvironmentKindTypeTest {
+		if env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic && kind.IsPermanent() {
 			ns := env.Spec.Namespace
 			if ns == "" {
 				return fmt.Errorf("No namespace for environment %s", env.Name)
@@ -234,7 +236,10 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	if o.LocalHelmRepoName != "" {
 		fullAppName = o.LocalHelmRepoName + "/" + app
 	}
-	releaseName := targetNS + "-" + app
+	releaseName := o.ReleaseName
+	if releaseName == "" {
+		releaseName = targetNS + "-" + app
+	}
 	releaseInfo := &ReleaseInfo{
 		ReleaseName: releaseName,
 		FullAppName: fullAppName,
@@ -259,7 +264,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	if env != nil {
 		source := &env.Spec.Source
-		if source.URL != "" {
+		if source.URL != "" && env.Spec.Kind.IsPermanent() {
 			err := o.PromoteViaPullRequest(env, releaseInfo)
 			if err == nil {
 				// lets sleep a little before we try poll for the PR status
