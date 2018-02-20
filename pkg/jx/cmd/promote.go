@@ -193,7 +193,8 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 	kube.SortEnvironments(environments)
 
 	for _, env := range environments {
-		if env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic {
+		kind := env.Spec.Kind
+		if env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic && kind != v1.EnvironmentKindTypePreview  && kind != v1.EnvironmentKindTypeTest {
 			ns := env.Spec.Namespace
 			if ns == "" {
 				return fmt.Errorf("No namespace for environment %s", env.Name)
