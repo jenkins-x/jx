@@ -718,33 +718,6 @@ func (o *ImportOptions) DoImport() error {
 	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, jenkinsfile, o.Credentials, false, gitProvider, authConfigSvc)
 }
 
-func (o *ImportOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
-	urls := []string{}
-	if config.Remotes != nil {
-		for _, r := range config.Remotes {
-			if r.URLs != nil {
-				for _, u := range r.URLs {
-					urls = append(urls, u)
-				}
-			}
-		}
-	}
-	if len(urls) == 1 {
-		return urls[0], nil
-	}
-	url := ""
-	if len(urls) > 1 {
-		prompt := &survey.Select{
-			Message: "Choose a remote git URL:",
-			Options: urls,
-		}
-		err := survey.AskOne(prompt, &url, nil)
-		if err != nil {
-			return "", err
-		}
-	}
-	return url, nil
-}
 func (o *ImportOptions) addAppNameToGeneratedFile(filename, field, value string) error {
 	dir := filepath.Join(o.Dir, "charts", o.AppName)
 	file := filepath.Join(dir, filename)

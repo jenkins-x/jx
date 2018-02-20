@@ -1,9 +1,9 @@
 # JX 
 
-JX is a command line tool for installing and using [Jenkins X](https://jenkins-x.github.io/jenkins-x-website/)
+JX is a command line tool for installing and using [Jenkins X](http://jenkins-x.io/)
 
-<a href="https://jenkins-x.github.io/jenkins-x-website/">
-  <img src="https://jenkins-x.github.io/jenkins-x-website/img/profile.png" alt="Jenkins X icon" width="100" height="97"/>
+<a href="http://jenkins-x.io/">
+  <img src="http://jenkins-x.io/img/profile.png" alt="Jenkins X icon" width="100" height="97"/>
 </a>
 
 ## Installing

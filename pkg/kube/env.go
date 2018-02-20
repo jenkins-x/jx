@@ -65,6 +65,13 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 			}
 		}
 	}
+	if string(config.Spec.Kind) != "" {
+		data.Spec.Kind = config.Spec.Kind
+	} else {
+		if string(data.Spec.Kind) == "" {
+			data.Spec.Kind = v1.EnvironmentKindTypePermanent
+		}
+	}
 	if config.Spec.Label != "" {
 		data.Spec.Label = config.Spec.Label
 	} else {
@@ -419,7 +426,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 				return repo.CloneURL, provider, nil
 			}
 		}
-		
+
 		// default to forking the URL if possible...
 		repo, err = details.CreateRepository()
 		if err != nil {

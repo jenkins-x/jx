@@ -9,9 +9,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"gopkg.in/AlecAivazis/survey.v1"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -78,9 +78,9 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection( &meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
+	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection(&meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
 	if err != nil {
-	  return err
+		return err
 	}
 	log.Success("Jenkins X has been successfully uninstalled ")
 	return nil

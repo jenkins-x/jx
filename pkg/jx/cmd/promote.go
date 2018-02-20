@@ -44,9 +44,9 @@ type PromoteOptions struct {
 	Environment         string
 	Application         string
 	Version             string
+	ReleaseName         string
 	LocalHelmRepoName   string
 	HelmRepositoryURL   string
-	Preview             bool
 	NoHelmUpdate        bool
 	AllAutomatic        bool
 	Timeout             string
@@ -71,7 +71,7 @@ type ReleasePullRequestInfo struct {
 
 var (
 	promote_long = templates.LongDesc(`
-		Promotes a version of an application to an environment.
+		Promotes a version of an application to zero to many permanent environments.
 `)
 
 	promote_example = templates.Examples(`
@@ -81,6 +81,9 @@ var (
 
 		# Promote a version of the myapp application to production
 		jx promote myapp --version 1.2.3 --env prod
+
+		# To create or update a Preview Environment please see the 'jx preview' command
+		jx preview
 	`)
 )
 
@@ -110,18 +113,21 @@ func NewCmdPromote(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Namespace to promote to")
 	cmd.Flags().StringVarP(&options.Environment, optionEnvironment, "e", "", "The Environment to promote to")
+	cmd.Flags().BoolVarP(&options.AllAutomatic, "all-auto", "", false, "Promote to all automatic environments in order")
+
+	options.addPromoteOptions(cmd)
+	return cmd
+}
+
+func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Application, optionApplication, "a", "", "The Application to promote")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
+	cmd.Flags().StringVarP(&options.ReleaseName, "release", "", "", "The name of the helm release")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
-
-	cmd.Flags().BoolVarP(&options.Preview, "preview", "p", false, "Whether to create a new Preview environment for the app")
 	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
-	cmd.Flags().BoolVarP(&options.AllAutomatic, "all-auto", "", false, "Promote to all automatic environments in order")
-
-	return cmd
 }
 
 // Run implements this command
@@ -131,7 +137,7 @@ func (o *PromoteOptions) Run() error {
 		args := o.Args
 		if len(args) == 0 {
 			var err error
-			app, err = o.discoverAppName()
+			app, err = o.DiscoverAppName()
 			if err != nil {
 				return err
 			}
@@ -193,7 +199,8 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 	kube.SortEnvironments(environments)
 
 	for _, env := range environments {
-		if env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic {
+		kind := env.Spec.Kind
+		if env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic && kind.IsPermanent() {
 			ns := env.Spec.Namespace
 			if ns == "" {
 				return fmt.Errorf("No namespace for environment %s", env.Name)
@@ -229,7 +236,10 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	if o.LocalHelmRepoName != "" {
 		fullAppName = o.LocalHelmRepoName + "/" + app
 	}
-	releaseName := targetNS + "-" + app
+	releaseName := o.ReleaseName
+	if releaseName == "" {
+		releaseName = targetNS + "-" + app
+	}
 	releaseInfo := &ReleaseInfo{
 		ReleaseName: releaseName,
 		FullAppName: fullAppName,
@@ -254,7 +264,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	if env != nil {
 		source := &env.Spec.Source
-		if source.URL != "" {
+		if source.URL != "" && env.Spec.Kind.IsPermanent() {
 			err := o.PromoteViaPullRequest(env, releaseInfo)
 			if err == nil {
 				// lets sleep a little before we try poll for the PR status
@@ -510,7 +520,7 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 	return targetNS, envResource, nil
 }
 
-func (options *PromoteOptions) discoverAppName() (string, error) {
+func (options *PromoteOptions) DiscoverAppName() (string, error) {
 	answer := ""
 	dir, err := os.Getwd()
 	if err != nil {

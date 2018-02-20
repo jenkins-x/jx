@@ -85,6 +85,10 @@ func GitStatus(dir string) error {
 	return nil
 }
 
+func GitGetBranch(dir string) (string, error) {
+	return util.GetCommandOutput(dir, "git", "rev-parse", "--abbrev-ref", "HEAD")
+}
+
 func GitPush(dir string) error {
 	e := exec.Command("git", "push", "origin", "HEAD")
 	e.Dir = dir
