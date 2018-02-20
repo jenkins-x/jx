@@ -94,13 +94,16 @@ func (o *GetVersionOptions) Run() error {
 			envNames = append(envNames, env.Name)
 			m, err := kube.GetDeployments(kubeClient, ens)
 			if err == nil {
-				envApps = append(envApps, EnvApps{
+				envApp := EnvApps{
 					Environment: env,
-					Apps:        m,
-				})
-				for k, _ := range m {
-					if util.StringArrayIndex(apps, k) < 0 {
-						apps = append(apps, k)
+					Apps:        map[string]v1beta1.Deployment{},
+				}
+				envApps = append(envApps, envApp)
+				for k, d := range m {
+					appName := kube.GetAppName(k, ens)
+					envApp.Apps[appName] = d
+					if util.StringArrayIndex(apps, appName) < 0 {
+						apps = append(apps, appName)
 					}
 				}
 			}
@@ -120,13 +123,12 @@ func (o *GetVersionOptions) Run() error {
 	}
 	table.AddRow(titles...)
 
-	for _, app := range apps {
-		appName := kube.GetAppName(app, namespaces...)
+	for _, appName := range apps {
 		row := []string{appName}
 		for _, ea := range envApps {
 			version := ""
 			pods := ""
-			d := ea.Apps[app]
+			d := ea.Apps[appName]
 			version = kube.GetVersion(&d.ObjectMeta)
 			replicas := ""
 			ready := d.Status.ReadyReplicas
