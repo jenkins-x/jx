@@ -6,14 +6,14 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/spf13/cobra"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/spf13/cobra"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
@@ -97,10 +97,10 @@ func NewCmdPreview(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 // Run implements the command
 func (o *PreviewOptions) Run() error {
 	/*
-	args := o.Args
-	if len(args) > 0 && o.Name == "" {
-		o.Name = args[0]
-	}
+		args := o.Args
+		if len(args) > 0 && o.Name == "" {
+			o.Name = args[0]
+		}
 	*/
 	f := o.Factory
 	jxClient, currentNs, err := f.CreateJXClient()
@@ -289,7 +289,7 @@ func (o *PreviewOptions) Run() error {
 	}
 	_, err = o.PromoteOptions.Promote(ens, env, false)
 	if err != nil {
-	  return err
+		return err
 	}
 	return nil
 }

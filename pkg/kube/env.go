@@ -19,8 +19,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"k8s.io/client-go/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 var useForkForEnvGitRepo = false
@@ -426,7 +426,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 				return repo.CloneURL, provider, nil
 			}
 		}
-		
+
 		// default to forking the URL if possible...
 		repo, err = details.CreateRepository()
 		if err != nil {

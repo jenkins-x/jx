@@ -76,7 +76,7 @@ const (
 
 // IsPermanent returns true if this environment is permanent
 func (e EnvironmentKindType) IsPermanent() bool {
-	switch (e) {
+	switch e {
 	case EnvironmentKindTypePreview, EnvironmentKindTypeTest, EnvironmentKindTypeEdit:
 		return false
 	default:

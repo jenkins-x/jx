@@ -14,10 +14,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -717,7 +717,6 @@ func (o *ImportOptions) DoImport() error {
 	}
 	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, jenkinsfile, o.Credentials, false, gitProvider, authConfigSvc)
 }
-
 
 func (o *ImportOptions) addAppNameToGeneratedFile(filename, field, value string) error {
 	dir := filepath.Join(o.Dir, "charts", o.AppName)

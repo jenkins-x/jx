@@ -27,12 +27,12 @@ func (i *GitRepositoryInfo) IsGitHub() bool {
 
 // PullRequestURL returns the URL of a pull request of the given name/number
 func (i *GitRepositoryInfo) PullRequestURL(prName string) string {
-	return util.UrlJoin("https://" + i.Host, i.Organisation, i.Name, "pull", prName)
+	return util.UrlJoin("https://"+i.Host, i.Organisation, i.Name, "pull", prName)
 }
 
 // HttpCloneURL returns the HTTPS git URL this repository
 func (i *GitRepositoryInfo) HttpCloneURL() string {
-	return util.UrlJoin("https://" + i.Host, i.Organisation, i.Name) + ".git"
+	return util.UrlJoin("https://"+i.Host, i.Organisation, i.Name) + ".git"
 }
 
 // ParseGitURL attempts to parse the given text as a URL or git URL-like string to determine

@@ -29,6 +29,7 @@ type GitRepositoryOptions struct {
 func (d *CreateRepoData) GetRepository() (*GitRepository, error) {
 	return d.GitProvider.GetRepository(d.Organisation, d.RepoName)
 }
+
 // CreateRepository creates the repository - failing if it already exists
 func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 	return d.GitProvider.CreateRepository(d.Organisation, d.RepoName, d.PrivateRepo)

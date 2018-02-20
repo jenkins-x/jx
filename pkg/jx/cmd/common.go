@@ -16,13 +16,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
 	"gopkg.in/AlecAivazis/survey.v1"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
