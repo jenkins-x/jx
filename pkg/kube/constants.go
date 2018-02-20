@@ -10,6 +10,9 @@ const (
 	// ServiceChartMuseum the service name of the Helm Chart Museum service
 	ServiceChartMuseum = "jenkins-x-chartmuseum"
 
+	// ServiceKubernetesDashboard the kubernetes dashboard
+	ServiceKubernetesDashboard = "jenkins-x-kubernetes-dashboard"
+
 	// the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
 
