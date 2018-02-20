@@ -44,13 +44,18 @@ func (t *Table) Render() {
 
 	out := t.Out
 	for _, row := range t.Rows {
+		lastColumn := len(row) - 1
 		for ci, col := range row {
 			if ci > 0 {
 				fmt.Fprint(out, " ")
 			}
 			l := t.ColumnWidths[ci]
 			align := t.GetColumnAlign(ci)
-			fmt.Fprint(out, pad(col, " ", l, align))
+			if ci >= lastColumn && align != ALIGN_CENTER && align != ALIGN_RIGHT {
+				fmt.Fprint(out, col)
+			} else {
+				fmt.Fprint(out, pad(col, " ", l, align))
+			}
 		}
 		fmt.Fprint(out, "\n")
 	}
