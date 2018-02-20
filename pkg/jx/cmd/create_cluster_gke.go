@@ -13,10 +13,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"github.com/jenkins-x/jx/pkg/util"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	os_user "os/user"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -39,6 +40,7 @@ type CreateClusterGKEFlags struct {
 	SkipLogin       bool
 	Zone            string
 	Namespace       string
+	Labels          string
 }
 
 const CLUSTER_LIST_HEADER = "PROJECT_ID"
@@ -96,6 +98,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
+	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 	return cmd
 }
 
@@ -215,6 +218,22 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		args = append(args, "--image-type", o.Flags.ImageType)
 	}
 
+	labels := o.Flags.Labels
+	user, err := os_user.Current()
+	if err == nil && user != nil {
+		username := user.Username
+		if username != "" {
+			sep := ""
+			if labels != "" {
+				sep = ","
+			}
+			labels += sep + "created-by=" + username
+		}
+	}
+	if labels != "" {
+		args = append(args, "--labels=" + labels)
+	}
+
 	err = o.runCommand("gcloud", args...)
 	if err != nil {
 		return err
@@ -291,7 +310,7 @@ func (o *CreateClusterGKEOptions) getGoogleProjectId() (string, error) {
 		if flag {
 			return "", errors.New("auto creating projects not yet implemented, please manually create one and rerun the wizard")
 		}
-	} else 	if len(existingProjects) == 1 {
+	} else if len(existingProjects) == 1 {
 		projectId = existingProjects[0]
 		o.Printf("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
 	} else {
