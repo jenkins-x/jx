@@ -17,6 +17,8 @@ type GitProvider interface {
 
 	CreateRepository(org string, name string, private bool) (*GitRepository, error)
 
+	GetRepository(org string, name string) (*GitRepository, error)
+
 	DeleteRepository(org string, name string) error
 
 	ForkRepository(originalOrg string, name string, destinationOrg string) (*GitRepository, error)

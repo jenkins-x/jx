@@ -84,6 +84,14 @@ func (p *GiteaProvider) CreateRepository(org string, name string, private bool) 
 	return toGiteaRepo(name, repo), nil
 }
 
+func (p *GiteaProvider) GetRepository(org string, name string) (*GitRepository, error) {
+	repo, err := p.Client.GetRepo(org, name)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get repository %s/%s due to: %s", org, name, err)
+	}
+	return toGiteaRepo(name, repo), nil
+}
+
 func (p *GiteaProvider) DeleteRepository(org string, name string) error {
 	owner := org
 	if owner == "" {

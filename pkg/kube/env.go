@@ -335,71 +335,11 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 	}
 	envDir := filepath.Join(environmentsDir, owner)
 	provider := details.GitProvider
-	if forkEnvGitURL != "" {
-		gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
-		if err != nil {
-			return "", nil, err
-		}
-		originalOrg := gitInfo.Organisation
-		originalRepo := gitInfo.Name
-		if useForkForEnvGitRepo && gitInfo.IsGitHub() && provider.IsGitHub() && originalOrg != "" && originalRepo != "" {
-			// lets try fork the repository and rename it
-			repo, err := provider.ForkRepository(originalOrg, originalRepo, org)
-			if err != nil {
-				return "", nil, fmt.Errorf("Failed to fork github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
-			}
-			if repoName != originalRepo {
-				repo, err = provider.RenameRepository(owner, originalRepo, repoName)
-				if err != nil {
-					return "", nil, fmt.Errorf("Failed to rename github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
-				}
-			}
-			fmt.Fprintf(out, "Forked git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
-
-			dir, err := util.CreateUniqueDirectory(envDir, repoName, util.MaximumNewDirectoryAttempts)
-			if err != nil {
-				return "", nil, err
-			}
-			err = gits.GitClone(repo.CloneURL, dir)
-			if err != nil {
-				return "", nil, err
-			}
-			err = gits.SetRemoteURL(dir, "upstream", forkEnvGitURL)
-			if err != nil {
-				return "", nil, err
-			}
-			err = gits.GitCmd(dir, "pull", "-r", "upstream", "master")
-			if err != nil {
-				return "", nil, err
-			}
-			err = modifyNamespace(out, dir, env)
-			if err != nil {
-				return "", nil, err
-			}
-			err = addValues(out, dir, helmValues)
-			if err != nil {
-				return "", nil, err
-			}
-			err = gits.GitPush(dir)
-			if err != nil {
-				return "", nil, err
-			}
-			return repo.CloneURL, provider, nil
-		}
-	}
-	// default to forking the URL if possible...
-	repo, err := details.CreateRepository()
-	if err != nil {
-		return "", nil, err
-	}
-
-	if forkEnvGitURL != "" {
-		// now lets clone the fork and push it...
+	repo, err := provider.GetRepository(owner, repoName)
+	if err == nil {
+		fmt.Fprintf(out, "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		// if the repo already exists then lets just modify it if required
 		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
-		if err != nil {
-			return "", nil, err
-		}
-		err = gits.GitClone(forkEnvGitURL, dir)
 		if err != nil {
 			return "", nil, err
 		}
@@ -407,11 +347,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 		if err != nil {
 			return "", nil, err
 		}
-		err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
-		if err != nil {
-			return "", nil, err
-		}
-		err = gits.GitCmd(dir, "remote", "set-url", "origin", pushGitURL)
+		err = gits.GitClone(pushGitURL, dir)
 		if err != nil {
 			return "", nil, err
 		}
@@ -428,6 +364,104 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 			return "", nil, err
 		}
 		fmt.Fprintf(out, "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+	} else {
+		fmt.Fprintf(out, "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+
+		if forkEnvGitURL != "" {
+			gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
+			if err != nil {
+				return "", nil, err
+			}
+			originalOrg := gitInfo.Organisation
+			originalRepo := gitInfo.Name
+			if useForkForEnvGitRepo && gitInfo.IsGitHub() && provider.IsGitHub() && originalOrg != "" && originalRepo != "" {
+				// lets try fork the repository and rename it
+				repo, err := provider.ForkRepository(originalOrg, originalRepo, org)
+				if err != nil {
+					return "", nil, fmt.Errorf("Failed to fork github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
+				}
+				if repoName != originalRepo {
+					repo, err = provider.RenameRepository(owner, originalRepo, repoName)
+					if err != nil {
+						return "", nil, fmt.Errorf("Failed to rename github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
+					}
+				}
+				fmt.Fprintf(out, "Forked git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+
+				dir, err := util.CreateUniqueDirectory(envDir, repoName, util.MaximumNewDirectoryAttempts)
+				if err != nil {
+					return "", nil, err
+				}
+				err = gits.GitClone(repo.CloneURL, dir)
+				if err != nil {
+					return "", nil, err
+				}
+				err = gits.SetRemoteURL(dir, "upstream", forkEnvGitURL)
+				if err != nil {
+					return "", nil, err
+				}
+				err = gits.GitCmd(dir, "pull", "-r", "upstream", "master")
+				if err != nil {
+					return "", nil, err
+				}
+				err = modifyNamespace(out, dir, env)
+				if err != nil {
+					return "", nil, err
+				}
+				err = addValues(out, dir, helmValues)
+				if err != nil {
+					return "", nil, err
+				}
+				err = gits.GitPush(dir)
+				if err != nil {
+					return "", nil, err
+				}
+				return repo.CloneURL, provider, nil
+			}
+		}
+		
+		// default to forking the URL if possible...
+		repo, err = details.CreateRepository()
+		if err != nil {
+			return "", nil, err
+		}
+
+		if forkEnvGitURL != "" {
+			// now lets clone the fork and push it...
+			dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
+			if err != nil {
+				return "", nil, err
+			}
+			err = gits.GitClone(forkEnvGitURL, dir)
+			if err != nil {
+				return "", nil, err
+			}
+			pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
+			if err != nil {
+				return "", nil, err
+			}
+			err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
+			if err != nil {
+				return "", nil, err
+			}
+			err = gits.GitCmd(dir, "remote", "set-url", "origin", pushGitURL)
+			if err != nil {
+				return "", nil, err
+			}
+			err = modifyNamespace(out, dir, env)
+			if err != nil {
+				return "", nil, err
+			}
+			err = addValues(out, dir, helmValues)
+			if err != nil {
+				return "", nil, err
+			}
+			err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+			if err != nil {
+				return "", nil, err
+			}
+			fmt.Fprintf(out, "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+		}
 	}
 	return repo.CloneURL, provider, nil
 }
@@ -466,7 +500,14 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 	if err != nil {
 		return err
 	}
-	return gits.GitCommit(dir, "Use correct namespace for environment")
+	changes, err := gits.HasChanges(dir)
+	if err != nil {
+		return err
+	}
+	if changes {
+		return gits.GitCommit(dir, "Use correct namespace for environment")
+	}
+	return nil
 }
 
 func addValues(out io.Writer, dir string, values config.HelmValuesConfig) error {
@@ -500,7 +541,14 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig) error 
 	if err != nil {
 		return err
 	}
-	return gits.GitCommit(dir, "Add environment configuration")
+	changes, err := gits.HasChanges(dir)
+	if err != nil {
+		return err
+	}
+	if changes {
+		return gits.GitCommit(dir, "Add environment configuration")
+	}
+	return nil
 }
 
 func replaceMakeVariable(lines []string, name string, value string) error {
