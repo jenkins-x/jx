@@ -14,7 +14,6 @@ import (
 	"errors"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -28,11 +27,11 @@ type KubernetesProvider string
 // CreateClusterOptions the flags for running crest cluster
 type CreateClusterOptions struct {
 	CreateOptions
-	InstallOptions   InstallOptions
-	Flags            InitFlags
-	Provider         string
-	NoBrew           bool
-	HelmValuesConfig config.HelmValuesConfig
+	InstallOptions InstallOptions
+	InitOptions    InitOptions
+	Flags          InitFlags
+	Provider       string
+	NoBrew         bool
 }
 
 const (
@@ -112,18 +111,54 @@ func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 }
 
 func createCreateClusterOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer, cloudProvider string) CreateClusterOptions {
+	commonOptions := CommonOptions{
+		Factory: f,
+		Out:     out,
+		Err:     errOut,
+	}
 	options := CreateClusterOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOptions,
 		},
 		Provider:       cloudProvider,
 		InstallOptions: createInstallOptions(f, out, errOut),
+		InitOptions: InitOptions{
+			CommonOptions: commonOptions,
+			Flags:         InitFlags{},
+		},
 	}
 	return options
+}
+
+func (o *CreateClusterOptions) initAndInstall(provider string) error {
+	// call jx init
+	initOpts := &o.InitOptions
+	initOpts.Flags.Provider = provider
+
+	err := initOpts.Run()
+	if err != nil {
+		return err
+	}
+
+	// share the init domain option with the install options
+	if initOpts.Flags.Domain != "" && o.InstallOptions.Flags.Domain == "" {
+		o.InstallOptions.Flags.Domain = initOpts.Flags.Domain
+	}
+	o.InstallOptions.Flags.Provider = provider
+
+	// call jx install
+	installOpts := &o.InstallOptions
+	err = installOpts.Run()
+	if err != nil {
+		return err
+	}
+
+	// lets default the helm domain
+	exposeController := o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController
+	if exposeController != nil && exposeController.Domain == "" && installOpts.Flags.Domain != "" {
+		exposeController.Domain = installOpts.Flags.Domain
+	}
+	return nil
 }
 
 func (o *CreateClusterOptions) Run() error {
@@ -133,8 +168,8 @@ func (o *CreateClusterOptions) Run() error {
 func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install dependencies like kubectl, draft, helm etc")
 
-	o.InstallOptions.addInstallOptionsArguments(cmd)
-
+	o.InstallOptions.addInstallFlags(cmd, true)
+	o.InitOptions.addInitFlags(cmd)
 }
 
 func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {

@@ -9,9 +9,10 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"gopkg.in/AlecAivazis/survey.v1"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type UninstallOptions struct {
@@ -55,6 +56,10 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	jxClient, _, err := o.Factory.CreateJXClient()
+	if err != nil {
+		return err
+	}
 	server := kube.CurrentServer(config)
 	namespace := kube.CurrentNamespace(config)
 	confirm := &survey.Confirm{
@@ -72,6 +77,10 @@ func (o *UninstallOptions) Run() error {
 	err = o.runCommand("helm", "delete", "--purge", "jenkins-x")
 	if err != nil {
 		return err
+	}
+	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection( &meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
+	if err != nil {
+	  return err
 	}
 	log.Success("Jenkins X has been successfully uninstalled ")
 	return nil

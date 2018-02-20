@@ -98,6 +98,14 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 	return answer, nil
 }
 
+func (p *GitHubProvider) GetRepository(org string, name string) (*GitRepository, error) {
+	repo, _, err := p.Client.Repositories.Get(p.Context, org, name)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get repository %s/%s due to: %s", org, name, err)
+	}
+	return toGitHubRepo(name, repo), nil
+}
+
 func (p *GitHubProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
 	repoConfig := &github.Repository{
 		Name:    github.String(name),

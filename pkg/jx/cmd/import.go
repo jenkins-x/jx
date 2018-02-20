@@ -89,12 +89,16 @@ pipeline {
         }
       }
     }
-    stage('Deploy Staging') {
+
+    stage('Promote to Environments') {
       steps {
         dir ('./charts/%s') {
           container('maven') {
 
+			// release the helm chart
             sh 'make release'
+
+			// promote through all 'Auto' promotion Environments 
             sh 'GIT_USERNAME=$GIT_CREDS_USR GIT_API_TOKEN=$GIT_CREDS_PSW jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)'
           }
         }

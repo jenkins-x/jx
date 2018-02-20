@@ -12,7 +12,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
-	"k8s.io/api/apps/v1beta2"
+	"k8s.io/api/apps/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -59,7 +59,7 @@ func NewCmdGetVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 
 type EnvApps struct {
 	Environment v1.Environment
-	Apps        map[string]v1beta2.Deployment
+	Apps        map[string]v1beta1.Deployment
 }
 
 // Run implements this command
@@ -93,16 +93,18 @@ func (o *GetVersionOptions) Run() error {
 		if ens != "" && env.Name != kube.LabelValueDevEnvironment {
 			envNames = append(envNames, env.Name)
 			m, err := kube.GetDeployments(kubeClient, ens)
-			if err != nil {
-				return err
-			}
-			envApps = append(envApps, EnvApps{
-				Environment: env,
-				Apps:        m,
-			})
-			for k, _ := range m {
-				if util.StringArrayIndex(apps, k) < 0 {
-					apps = append(apps, k)
+			if err == nil {
+				envApp := EnvApps{
+					Environment: env,
+					Apps:        map[string]v1beta1.Deployment{},
+				}
+				envApps = append(envApps, envApp)
+				for k, d := range m {
+					appName := kube.GetAppName(k, ens)
+					envApp.Apps[appName] = d
+					if util.StringArrayIndex(apps, appName) < 0 {
+						apps = append(apps, appName)
+					}
 				}
 			}
 		}
@@ -121,13 +123,12 @@ func (o *GetVersionOptions) Run() error {
 	}
 	table.AddRow(titles...)
 
-	for _, app := range apps {
-		appName := kube.GetAppName(app, namespaces...)
+	for _, appName := range apps {
 		row := []string{appName}
 		for _, ea := range envApps {
 			version := ""
 			pods := ""
-			d := ea.Apps[app]
+			d := ea.Apps[appName]
 			version = kube.GetVersion(&d.ObjectMeta)
 			replicas := ""
 			ready := d.Status.ReadyReplicas

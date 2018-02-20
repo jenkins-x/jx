@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
-	"k8s.io/api/apps/v1beta2"
+	"k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -15,9 +15,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func GetDeployments(kubeClient *kubernetes.Clientset, ns string) (map[string]v1beta2.Deployment, error) {
-	answer := map[string]v1beta2.Deployment{}
-	deps, err := kubeClient.AppsV1beta2().Deployments(ns).List(metav1.ListOptions{})
+func GetDeployments(kubeClient *kubernetes.Clientset, ns string) (map[string]v1beta1.Deployment, error) {
+	answer := map[string]v1beta1.Deployment{}
+	deps, err := kubeClient.AppsV1beta1().Deployments(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return answer, err
 	}

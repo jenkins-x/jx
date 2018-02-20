@@ -102,8 +102,9 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 
 	options.addCommonFlags(cmd)
-	options.addInstallOptionsArguments(cmd)
+	options.addInstallFlags(cmd, false)
 
+	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
 	return cmd
 }
 
@@ -153,9 +154,8 @@ func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) In
 	return options
 }
 
-func (options *InstallOptions) addInstallOptionsArguments(cmd *cobra.Command) {
+func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit bool) {
 	flags := &options.Flags
-	cmd.Flags().StringVarP(&flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
 	cmd.Flags().BoolVarP(&flags.DefaultEnvironments, "default-environments", "", true, "Creates default Staging and Production environments")
@@ -164,7 +164,11 @@ func (options *InstallOptions) addInstallOptionsArguments(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
-	options.HelmValuesConfig.AddExposeControllerValues(cmd)
+	ignoreDomain := false
+	if includesInit {
+		ignoreDomain = true
+	}
+	options.HelmValuesConfig.AddExposeControllerValues(cmd, ignoreDomain)
 }
 
 // Run implements this command
