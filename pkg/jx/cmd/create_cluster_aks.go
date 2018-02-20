@@ -231,25 +231,5 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	**/
 
-	// call jx init
-	initOpts := &InitOptions{
-		CommonOptions: o.CommonOptions,
-		Flags: InitFlags{
-			Provider: AKS,
-		},
-	}
-	err = initOpts.Run()
-	if err != nil {
-		return err
-	}
-
-	o.InstallOptions.Flags.Provider = AKS
-	// call jx install
-	installOpts := &o.InstallOptions
-	err = installOpts.Run()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return o.initAndInstall(AKS)
 }

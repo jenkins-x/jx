@@ -211,22 +211,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		return err
 	}
 
-	// call jx init
-	initOpts := &InitOptions{
-		CommonOptions: o.CommonOptions,
-		Flags: InitFlags{
-			Provider: MINIKUBE,
-		},
-	}
-	err = initOpts.Run()
-	if err != nil {
-		return err
-	}
-
-	o.InstallOptions.Flags.Provider = MINIKUBE
-	// call jx install
-	installOpts := &o.InstallOptions
-	err = installOpts.Run()
+	err = o.initAndInstall(MINIKUBE)
 	if err != nil {
 		return err
 	}

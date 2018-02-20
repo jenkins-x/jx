@@ -23,8 +23,10 @@ type HelmValuesConfigService struct {
 	Config   HelmValuesConfig
 }
 
-func (c *HelmValuesConfig) AddExposeControllerValues(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&c.ExposeController.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
+func (c *HelmValuesConfig) AddExposeControllerValues(cmd *cobra.Command, ignoreDomain bool) {
+	if !ignoreDomain {
+		cmd.Flags().StringVarP(&c.ExposeController.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
+	}
 	cmd.Flags().BoolVarP(&c.ExposeController.HTTP, "http", "", true, "Toggle creating http or https ingress rules")
 	cmd.Flags().StringVarP(&c.ExposeController.Exposer, "exposer", "", "Ingress", "Used to describe which strategy exposecontroller should use to access applications")
 	cmd.Flags().BoolVarP(&c.ExposeController.TLSAcme, "tls-acme", "", false, "Used to enable automatic TLS for ingress")

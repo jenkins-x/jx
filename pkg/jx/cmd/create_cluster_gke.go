@@ -219,23 +219,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	// call jx init
-	initOpts := &InitOptions{
-		CommonOptions: o.CommonOptions,
-		Flags: InitFlags{
-			Provider: GKE,
-		},
-	}
-	err = initOpts.Run()
-	if err != nil {
-		return err
-	}
-
-	o.InstallOptions.Flags.Provider = GKE
-
-	// call jx install
-	installOpts := &o.InstallOptions
-	err = installOpts.Run()
+	err = o.initAndInstall(GKE)
 	if err != nil {
 		return err
 	}
