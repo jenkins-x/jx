@@ -16,11 +16,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
+	"gopkg.in/AlecAivazis/survey.v1"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
 const (
@@ -444,4 +446,32 @@ func (o *CommonOptions) tailBuild(jobName string, build *gojenkins.Build) error 
 	buildPath := u.Path
 	o.Printf("%s %s\n", util.ColorStatus("tailing the log of"), util.ColorInfo(fmt.Sprintf("%s #%d", jobName, build.Number)))
 	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour*100)
+}
+
+func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
+	urls := []string{}
+	if config.Remotes != nil {
+		for _, r := range config.Remotes {
+			if r.URLs != nil {
+				for _, u := range r.URLs {
+					urls = append(urls, u)
+				}
+			}
+		}
+	}
+	if len(urls) == 1 {
+		return urls[0], nil
+	}
+	url := ""
+	if len(urls) > 1 {
+		prompt := &survey.Select{
+			Message: "Choose a remote git URL:",
+			Options: urls,
+		}
+		err := survey.AskOne(prompt, &url, nil)
+		if err != nil {
+			return "", err
+		}
+	}
+	return url, nil
 }

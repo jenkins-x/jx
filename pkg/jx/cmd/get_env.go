@@ -107,8 +107,8 @@ func (o *GetEnvOptions) Run() error {
 		spec := &env.Spec
 
 		table := o.CreateTable()
-		table.AddRow("ENV", "LABEL", "NAMESPACE", "SOURCE", "REF")
-		table.AddRow(e, spec.Label, spec.Namespace, spec.Source.URL, spec.Source.Ref)
+		table.AddRow("NAME", "LABEL", "KIND", "NAMESPACE", "SOURCE", "REF", "PR")
+		table.AddRow(e, spec.Label, spec.Namespace, kindString(spec), spec.Source.URL, spec.Source.Ref, spec.PullRequestURL)
 		table.Render()
 		o.Printf("\n")
 
@@ -148,15 +148,23 @@ func (o *GetEnvOptions) Run() error {
 			return o.renderResult(envs, o.Output)
 		}
 		table := o.CreateTable()
-		table.AddRow("NAME", "LABEL", "PROMOTE", "NAMESPACE", "ORDER", "CLUSTER", "SOURCE", "REF")
+		table.AddRow("NAME", "LABEL", "KIND", "PROMOTE", "NAMESPACE", "ORDER", "CLUSTER", "SOURCE", "REF", "PR")
 
 		for _, env := range environments {
 			spec := &env.Spec
-			table.AddRow(env.Name, spec.Label, string(spec.PromotionStrategy), spec.Namespace, util.Int32ToA(spec.Order), spec.Cluster, spec.Source.URL, spec.Source.Ref)
+			table.AddRow(env.Name, spec.Label, kindString(spec), string(spec.PromotionStrategy), spec.Namespace, util.Int32ToA(spec.Order), spec.Cluster, spec.Source.URL, spec.Source.Ref, spec.PullRequestURL)
 		}
 		table.Render()
 	}
 	return nil
+}
+
+func kindString(spec *v1.EnvironmentSpec) string {
+	answer := string(spec.Kind)
+	if answer == "" {
+		return string(v1.EnvironmentKindTypePermanent)
+	}
+	return answer
 }
 
 func (o *GetEnvOptions) filterEnvironments(envs []v1.Environment) []v1.Environment {

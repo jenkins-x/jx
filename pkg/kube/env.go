@@ -19,8 +19,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var useForkForEnvGitRepo = false
@@ -63,6 +63,13 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 			if err != nil {
 				return nil, err
 			}
+		}
+	}
+	if string(config.Spec.Kind) != "" {
+		data.Spec.Kind = config.Spec.Kind
+	} else {
+		if string(data.Spec.Kind) == "" {
+			data.Spec.Kind = v1.EnvironmentKindTypePermanent
 		}
 	}
 	if config.Spec.Label != "" {

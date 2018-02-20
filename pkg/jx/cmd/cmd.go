@@ -67,6 +67,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	cmds.AddCommand(NewCmdMetrics(f, out, err))
 	cmds.AddCommand(NewCmdNamespace(f, out, err))
 	cmds.AddCommand(NewCmdOpen(f, out, err))
+	cmds.AddCommand(NewCmdPreview(f, out, err))
 	cmds.AddCommand(NewCmdPromote(f, out, err))
 	cmds.AddCommand(NewCmdPrompt(f, out, err))
 	cmds.AddCommand(NewCmdRsh(f, out, err))
