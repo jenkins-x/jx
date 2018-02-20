@@ -128,7 +128,8 @@ func (o *DeleteEnvOptions) deleteEnviroment(jxClient *versioned.Clientset, ns st
 	if envNs == "" {
 		return fmt.Errorf("No namespace for environment %s", name)
 	}
-	if o.DeleteNamespace {
+	kind := env.Spec.Kind
+	if o.DeleteNamespace || kind == v1.EnvironmentKindTypePreview || kind == v1.EnvironmentKindTypeTest {
 		return o.runCommand("kubectl", "delete", "namespace", envNs)
 	}
 	o.Printf("To delete the associated namespace %s for environment %s then please run this command\n", name, envNs)
