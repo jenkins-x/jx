@@ -16,6 +16,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -290,6 +291,9 @@ func (o *CreateClusterGKEOptions) getGoogleProjectId() (string, error) {
 		if flag {
 			return "", errors.New("auto creating projects not yet implemented, please manually create one and rerun the wizard")
 		}
+	} else 	if len(existingProjects) == 1 {
+		projectId = existingProjects[0]
+		o.Printf("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
 	} else {
 		prompts := &survey.Select{
 			Message: "Google Cloud Project:",
@@ -304,7 +308,7 @@ func (o *CreateClusterGKEOptions) getGoogleProjectId() (string, error) {
 	}
 
 	if projectId == "" {
-		return "", errors.New("no google project to create cluster in, please manual create one and rerun this wizard")
+		return "", errors.New("no Google Cloud Project to create cluster in, please manual create one and rerun this wizard")
 	}
 
 	return projectId, nil
