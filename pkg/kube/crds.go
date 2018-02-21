@@ -21,6 +21,20 @@ func RegisterEnvironmentCRD(apiClient *apiextensionsclientset.Clientset) error {
 	return registerCRD(apiClient, name, names)
 }
 
+// RegisterPipelineActivityCRD ensures that the CRD is registered for PipelineActivity
+func RegisterPipelineActivityCRD(apiClient *apiextensionsclientset.Clientset) error {
+	name := "pipelineactivities." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "PipelineActivity",
+		ListKind:   "PipelineActivityList",
+		Plural:     "pipelineactivities",
+		Singular:   "pipelineactivity",
+		ShortNames: []string{"activity", "act"},
+	}
+
+	return registerCRD(apiClient, name, names)
+}
+
 func registerCRD(apiClient *apiextensionsclientset.Clientset, name string, names *v1beta1.CustomResourceDefinitionNames) error {
 	_, err := apiClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(name, metav1.GetOptions{})
 	if err == nil {

@@ -33,14 +33,14 @@ type EnvironmentSpec struct {
 	//PreviewGitSpec    PreviewGitSpec        `json:"previewGitSpec,omitempty" protobuf:"bytes,8,opt,name=previewGitSpec"`
 }
 
-// EnvironmentStatus is the status for an Envirnment resource
+// EnvironmentStatus is the status for an Environment resource
 type EnvironmentStatus struct {
 	Version string `json:"version,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// EnvironmentList is a list of Example resources
+// EnvironmentList is a list of TypeMeta resources
 type EnvironmentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
@@ -120,4 +120,96 @@ type UserSpec struct {
 	Name     string `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
 	LinkURL  string `json:"linkUrl,omitempty" protobuf:"bytes,3,opt,name=linkUrl"`
 	ImageURL string `json:"imageUrl,omitempty" protobuf:"bytes,4,opt,name=imageUrl"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+type PipelineActivity struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	Spec   PipelineActivitySpec   `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	Status PipelineActivityStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+}
+
+type PipelineActivitySpec struct {
+	Pipeline           string                 `json:"pipeline,omitempty" protobuf:"bytes,1,opt,name=pipeline"`
+	Build              string                 `json:"build,omitempty" protobuf:"bytes,2,opt,name=build"`
+	Status             ActivityStatusType     `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+	StartedTimestamp   *metav1.Time           `json:"startedTimestamp,omitempty" protobuf:"bytes,4,opt,name=startedTimestamp"`
+	CompletedTimestamp *metav1.Time           `json:"completedTimestamp,omitempty" protobuf:"bytes,5,opt,name=completedTimestamp"`
+	Steps              []PipelineActivityStep `json:"steps,omitempty" protobuf:"bytes,6,opt,name=steps"`
+}
+
+type CoreActivityStep struct {
+	Name               string             `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	Description        string             `json:"description,omitempty" protobuf:"bytes,2,opt,name=description"`
+	Status             ActivityStatusType `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+	StartedTimestamp   *metav1.Time       `json:"startedTimestamp,omitempty" protobuf:"bytes,4,opt,name=startedTimestamp"`
+	CompletedTimestamp *metav1.Time       `json:"completedTimestamp,omitempty" protobuf:"bytes,5,opt,name=completedTimestamp"`
+}
+
+type StageActivityStep struct {
+	CoreActivityStep
+
+	Steps []CoreActivityStep `json:"steps,omitempty" protobuf:"bytes,1,opt,name=steps"`
+}
+
+type PromotePullRequestStep struct {
+	CoreActivityStep
+
+	Environment    string `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
+	PullRequestURL string `json:"pullRequestURL,omitempty" protobuf:"bytes,2,opt,name=pullRequestURL"`
+	BuildURL       string `json:"buildURL,omitempty" protobuf:"bytes,3,opt,name=buildURL"`
+	MergeCommitURL string `json:"mergeCommitURL,omitempty" protobuf:"bytes,4,opt,name=mergeCommitURL"`
+}
+
+type PipelineActivityStep struct {
+	Stage              *CoreActivityStep       `json:"stage,omitempty" protobuf:"bytes,1,opt,name=stage"`
+	Step               *CoreActivityStep       `json:"step,omitempty" protobuf:"bytes,1,opt,name=step"`
+	PromotePullRequest *PromotePullRequestStep `json:"promotePullRequest,omitempty" protobuf:"bytes,3,opt,name=promotePullRequest"`
+	Promote            *PromotePullRequestStep `json:"promote,omitempty" protobuf:"bytes,4,opt,name=promote"`
+}
+
+// PipelineActivityStatus is the status for an Environment resource
+type PipelineActivityStatus struct {
+	Version string `json:"version,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// PipelineActivityList is a list of PipelineActivity resources
+type PipelineActivityList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []PipelineActivity `json:"items"`
+}
+
+// ActivityStatusType
+type ActivityStatusType string
+
+const (
+	// ActivityStatusTypePending an activity step is waiting to start
+	ActivityStatusTypePending ActivityStatusType = "Pending"
+	// ActivityStatusTypeRunning an activity is running
+	ActivityStatusTypeRunning ActivityStatusType = "Running"
+	// ActivityStatusTypeSucceeded an activity completed successfully
+	ActivityStatusTypeSucceeded ActivityStatusType = "Succeeded"
+	// ActivityStatusTypeFailed an activity failed
+	ActivityStatusTypeFailed ActivityStatusType = "Failed"
+	// ActivityStatusTypeWaitingForApproval an activity is waiting for approval
+	ActivityStatusTypeWaitingForApproval ActivityStatusType = "WaitingForApproval"
+	// ActivityStatusTypeError there is some error with an activity
+	ActivityStatusTypeError ActivityStatusType = "Error"
+)
+
+func (s ActivityStatusType) String() string {
+	return string(s)
 }

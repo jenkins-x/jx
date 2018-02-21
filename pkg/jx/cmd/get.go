@@ -63,6 +63,7 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 		SuggestFor: []string{"list", "ps"},
 	}
 
+	cmd.AddCommand(NewCmdGetActivity(f, out, errOut))
 	cmd.AddCommand(NewCmdGetAddon(f, out, errOut))
 	cmd.AddCommand(NewCmdGetBuild(f, out, errOut))
 	cmd.AddCommand(NewCmdGetEnv(f, out, errOut))
