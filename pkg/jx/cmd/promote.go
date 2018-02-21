@@ -169,7 +169,11 @@ func (o *PromoteOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	_, err = o.Promote(targetNS, env, true)
+	releaseInfo, err := o.Promote(targetNS, env, true)
+	err = o.WaitForPromotion(targetNS, env, releaseInfo)
+	if err != nil {
+		return err
+	}
 	return err
 }
 
