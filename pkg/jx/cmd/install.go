@@ -37,15 +37,16 @@ type InstallOptions struct {
 }
 
 type InstallFlags struct {
-	Domain                string
-	HTTPS                 bool
-	Provider              string
-	CloudEnvRepository    string
-	LocalHelmRepoName     string
-	Namespace             string
-	DefaultEnvironments   bool
-	LocalCloudEnvironment bool
-	Timeout               string
+	Domain                   string
+	HTTPS                    bool
+	Provider                 string
+	CloudEnvRepository       string
+	LocalHelmRepoName        string
+	Namespace                string
+	DefaultEnvironments      bool
+	DefaultEnvironmentPrefix string
+	LocalCloudEnvironment    bool
+	Timeout                  string
 }
 
 type Secrets struct {
@@ -159,6 +160,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
 	cmd.Flags().BoolVarP(&flags.DefaultEnvironments, "default-environments", "", true, "Creates default Staging and Production environments")
+	cmd.Flags().StringVarP(&flags.DefaultEnvironmentPrefix, "default-environment-prefix", "", "", "Default environment repo prefix, your git repos will be of the form 'environment-$prefix-$envName'")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
@@ -287,6 +289,7 @@ func (options *InstallOptions) Run() error {
 		options.CreateEnvOptions.Options.Name = "staging"
 		options.CreateEnvOptions.Options.Spec.Label = "Staging"
 		options.CreateEnvOptions.Options.Spec.Order = 100
+		options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
 
 		err = options.CreateEnvOptions.Run()
 		if err != nil {

@@ -27,7 +27,7 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, kubeClient *kubernetes.Clientset, envDir string, gitRepoOptions gits.GitRepositoryOptions, helmValues config.HelmValuesConfig) (gits.GitProvider, error) {
+func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, kubeClient *kubernetes.Clientset, envDir string, gitRepoOptions gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	name := data.Name
 	createMode := name == ""
@@ -126,7 +126,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 		}
 	}
 
-	if helmValues.ExposeController.Domain == "" {
+	if helmValues.ExposeController.Config.Domain == "" {
 
 		expose, err := getTeamExposecontrollerConfig(kubeClient, ns)
 		if err != nil {
@@ -135,14 +135,14 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 
 		if batchMode {
 			log.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", expose["domain"])
-			helmValues.ExposeController.Domain = expose["domain"]
+			helmValues.ExposeController.Config.Domain = expose["domain"]
 		} else {
 			q := &survey.Input{
 				Message: "Domain:",
 				Default: expose["domain"],
 				Help:    "Domain to expose ingress endpoints.  Example: jenkinsx.io, leave blank if no appplications are to be exposed via ingress rules",
 			}
-			err := survey.AskOne(q, &helmValues.ExposeController.Domain, nil)
+			err := survey.AskOne(q, &helmValues.ExposeController.Config.Domain, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -264,7 +264,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 
 				if createRepo {
 					showUrlEdit = false
-					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues)
+					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix)
 					if err != nil {
 						return nil, err
 					}
@@ -328,8 +328,9 @@ func getTeamExposecontrollerConfig(kubeClient *kubernetes.Clientset, ns string) 
 	return m, nil
 }
 
-func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string, gitRepoOptions gits.GitRepositoryOptions, helmValues config.HelmValuesConfig) (string, gits.GitProvider, error) {
-	defaultRepoName := "environment-" + env.Name
+func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string, gitRepoOptions gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (string, gits.GitProvider, error) {
+
+	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
 	details, err := gits.PickNewGitRepository(out, batchMode, authConfigSvc, defaultRepoName, gitRepoOptions)
 	if err != nil {
 		return "", nil, err

@@ -42,6 +42,7 @@ type EditEnvOptions struct {
 	ForkEnvironmentGitRepo string
 	EnvJobCredentials      string
 	GitRepositoryOptions   gits.GitRepositoryOptions
+	Prefix                 string
 }
 
 // NewCmdEditEnv creates a command object for the "create" command
@@ -81,6 +82,7 @@ func NewCmdEditEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.Options.Spec.Source.URL, "git-url", "g", "", "The Git clone URL for the source code for GitOps based Environments")
 	cmd.Flags().StringVarP(&options.Options.Spec.Source.Ref, "git-ref", "r", "", "The Git repo reference for the source code for GitOps based Environments")
 	cmd.Flags().Int32VarP(&options.Options.Spec.Order, "order", "o", 100, "The order weighting of the Environment so that they can be sorted by this order before name")
+	cmd.Flags().StringVarP(&options.Prefix, "prefix", "", "jx", "Environment repo prefix, your git repo will be of the form 'environment-$prefix-$envName'")
 
 	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", "", "The promotion strategy")
 	cmd.Flags().StringVarP(&options.ForkEnvironmentGitRepo, "fork-git-repo", "f", kube.DefaultEnvironmentGitRepoURL, "The Git repository used as the fork when creating new Environment git repos")
@@ -151,7 +153,7 @@ func (o *EditEnvOptions) Run() error {
 		return err
 	}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, kubeClient, envDir, o.GitRepositoryOptions, o.HelmValuesConfig)
+	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, kubeClient, envDir, o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix)
 	if err != nil {
 		return err
 	}

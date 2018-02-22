@@ -9,6 +9,8 @@ import (
 
 	"errors"
 
+	os_user "os/user"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -17,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	os_user "os/user"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -147,10 +148,9 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	clusterName := o.Flags.ClusterName
-	if clusterName == "" {
-		clusterName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No cluster name provided so using a generated one: %s", clusterName)
+	if o.Flags.ClusterName == "" {
+		o.Flags.ClusterName = strings.ToLower(randomdata.SillyName())
+		log.Infof("No cluster name provided so using a generated one: %s", o.Flags.ClusterName)
 	}
 
 	zone := o.Flags.Zone
@@ -196,7 +196,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	// mandatory flags are machine type, num-nodes, zone,
-	args := []string{"container", "clusters", "create", clusterName, "--zone", zone, "--num-nodes", numOfNodes, "--machine-type", machineType}
+	args := []string{"container", "clusters", "create", o.Flags.ClusterName, "--zone", zone, "--num-nodes", numOfNodes, "--machine-type", machineType}
 
 	if o.Flags.DiskSize != "" {
 		args = append(args, "--disk-size", o.Flags.DiskSize)
@@ -239,12 +239,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
+	o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	err = o.initAndInstall(GKE)
 	if err != nil {
 		return err
 	}
 
-	err = o.runCommand("gcloud", "container", "clusters", "get-credentials", clusterName, "--zone", zone, "--project", projectId)
+	err = o.runCommand("gcloud", "container", "clusters", "get-credentials", o.Flags.ClusterName, "--zone", zone, "--project", projectId)
 	if err != nil {
 		return err
 	}
