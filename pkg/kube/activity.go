@@ -1,6 +1,8 @@
 package kube
 
 import (
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -10,6 +12,10 @@ type PipelineActivityKey struct {
 	Name     string
 	Pipeline string
 	Build    string
+}
+
+func (k *PipelineActivityKey) IsValid() bool {
+	return len(k.Name) > 0
 }
 
 type PromotePullRequestKey struct {
@@ -40,6 +46,9 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 type PromotePullRequestFn func(*v1.PipelineActivity, *v1.PromotePullRequestStep) error
 
 func (k *PromotePullRequestKey) OnPromotePullRequest(activities typev1.PipelineActivityInterface, fn PromotePullRequestFn) error {
+	if !k.IsValid() {
+		return nil
+	}
 	a, p, added, err := k.GetOrCreatePromotePullRequest(activities)
 	if err != nil {
 		return err
@@ -85,6 +94,9 @@ func (k *PromotePullRequestKey) matchesPromotePullRequest(step *v1.PipelineActiv
 }
 
 func (k *PromotePullRequestKey) OnPromote(activities typev1.PipelineActivityInterface, fn PromotePullRequestFn) error {
+	if !k.IsValid() {
+		return nil
+	}
 	a, p, added, err := k.GetOrCreatePromote(activities)
 	if err != nil {
 		return err
@@ -127,4 +139,25 @@ func (k *PromotePullRequestKey) GetOrCreatePromote(activities typev1.PipelineAct
 func (k *PromotePullRequestKey) matchesPromote(step *v1.PipelineActivityStep) bool {
 	s := step.Promote
 	return s != nil && s.Environment == k.Environment
+}
+
+
+func CompletePromotion(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
+	if p.CompletedTimestamp == nil {
+		p.CompletedTimestamp = &metav1.Time{
+			Time: time.Now(),
+		}
+	}
+	p.Status = v1.ActivityStatusTypeSucceeded
+	return nil
+}
+
+func FailedPromotion(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
+	if p.CompletedTimestamp == nil {
+		p.CompletedTimestamp = &metav1.Time{
+			Time: time.Now(),
+		}
+	}
+	p.Status = v1.ActivityStatusTypeFailed
+	return nil
 }
