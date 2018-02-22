@@ -1,19 +1,26 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"io"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	tbl "github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // GetActivityOptions containers the CLI options
 type GetActivityOptions struct {
 	CommonOptions
+
+	Filter      string
+	BuildNumber string
 }
 
 var (
@@ -33,7 +40,7 @@ var (
 // NewCmdGetActivity creates the new command for: jx get version
 func NewCmdGetActivity(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetActivityOptions{
-		CommonOptions{
+		CommonOptions: CommonOptions{
 			Factory: f,
 			Out:     out,
 			Err:     errOut,
@@ -52,6 +59,8 @@ func NewCmdGetActivity(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 			cmdutil.CheckErr(err)
 		},
 	}
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Text to filter the pipeline names")
+	cmd.Flags().StringVarP(&options.BuildNumber, "build", "b", "", "The build number to filter on")
 	return cmd
 }
 
@@ -90,69 +99,119 @@ func (o *GetActivityOptions) Run() error {
 		return err
 	}
 	table := o.CreateTable()
-	table.AddRow("STEP", "STATUS", "STARTED", "DURATION", "DESCRIPTION")
+	table.SetColumnAlign(1, tbl.ALIGN_RIGHT)
+	table.SetColumnAlign(2, tbl.ALIGN_RIGHT)
+	table.AddRow("STEP", "STARTED AGO", "DURATION", "STATUS")
 
 	for _, activity := range list.Items {
 		if o.matches(&activity) {
 			spec := &activity.Spec
-			table.AddRow("Pipeline "+spec.Pipeline+" #"+spec.Build,
+			table.AddRow(spec.Pipeline+" #"+spec.Build,
 				spec.Status.String(),
 				timeToString(spec.StartedTimestamp),
 				durationString(spec.StartedTimestamp, spec.CompletedTimestamp))
 
 			indent := "  "
 			for _, step := range spec.Steps {
-				name, description := stepText(&step)
-				table.AddRow(indent+name,
-					spec.Status.String(),
-					timeToString(spec.StartedTimestamp),
-					durationString(spec.StartedTimestamp, spec.CompletedTimestamp),
-					description)
+				o.addStepRow(&table, &step, indent)
 			}
 		}
 	}
-
-	/*
-		for _, ea := range envApps {
-			titles = append(titles, strings.ToUpper(ea.Environment.Name), "PODS")
-		}
-	*/
-
 	table.Render()
 	return nil
 }
 
-func stepText(parent *v1.PipelineActivityStep) (string, string) {
+func (o *CommonOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivityStep, indent string) {
 	stage := parent.Stage
 	step := parent.Step
 	promotePullRequest := parent.PromotePullRequest
 	promote := parent.Promote
 	if stage != nil {
-		return "Stage " + stage.Name, stage.Description
+		addStepRowItem(table, stage, indent, "Stage", "")
 	} else if step != nil {
-		return "Step " + step.Name, step.Description
+		addStepRowItem(table, step, indent, "", "")
 	} else if promotePullRequest != nil {
-		return "PromotePullRequest " + promotePullRequest.Name, promotePullRequest.Description
+		addStepRowItem(table, &promotePullRequest.CoreActivityStep, indent, "PromotePullRequest: "+promotePullRequest.Environment, describePullRequest(promotePullRequest))
 	} else if promote != nil {
-		return "Promote " + promote.Name, promote.Description
+		addStepRowItem(table, &promote.CoreActivityStep, indent, "Promote: "+promote.Environment, describePullRequest(promote))
+	} else {
+		o.warnf("Unknown step kind %#v\n", parent)
 	}
-	return "Unknown", ""
+}
+
+func addStepRowItem(table *tbl.Table, step *v1.CoreActivityStep, indent string, name string, description string) {
+	text := step.Description
+	if description != "" {
+		if text == "" {
+			text = description
+		} else {
+			text += description
+		}
+	}
+	textName := step.Name
+	if textName == "" {
+		textName = name
+	} else {
+		if name != "" {
+			textName = name + ":" + textName
+		}
+	}
+	table.AddRow(indent+textName,
+		timeToString(step.StartedTimestamp),
+		durationString(step.StartedTimestamp, step.CompletedTimestamp),
+		statusString(step.Status)+text)
+}
+
+func statusString(statusType v1.ActivityStatusType) string {
+	text := statusType.String()
+	switch statusType {
+	case v1.ActivityStatusTypeFailed, v1.ActivityStatusTypeError:
+		return util.ColorError(text)
+	case v1.ActivityStatusTypeSucceeded:
+		return util.ColorInfo(text)
+	case v1.ActivityStatusTypeRunning:
+		return util.ColorStatus(text)
+	}
+	return text
+}
+
+func describePullRequest(promotePullRequest *v1.PromotePullRequestStep) string {
+	description := ""
+	if promotePullRequest.PullRequestURL != "" {
+		description += " PullRequest: " + util.ColorInfo(promotePullRequest.PullRequestURL)
+	}
+	if promotePullRequest.MergeCommitSHA != "" {
+		description += " Merge SHA: " + util.ColorInfo(promotePullRequest.MergeCommitSHA)
+	}
+	return description
 }
 
 func durationString(start *metav1.Time, end *metav1.Time) string {
 	if start == nil || end == nil {
 		return ""
 	}
-	return end.Sub(start.Time).String()
+	return end.Sub(start.Time).Round(time.Second).String()
 }
 
-func timeToString(time *metav1.Time) string {
-	if time == nil {
+func timeToString(t *metav1.Time) string {
+	if t == nil {
 		return ""
 	}
-	return time.String()
+	now := &metav1.Time{
+		Time: time.Now(),
+	}
+	return durationString(t, now)
 }
 
 func (o *GetActivityOptions) matches(activity *v1.PipelineActivity) bool {
-	return true
+	answer := true
+	filter := o.Filter
+	if filter != "" {
+		answer = strings.Contains(activity.Name, filter) || strings.Contains(activity.Spec.Pipeline, filter)
+	}
+	build := o.BuildNumber
+	if answer && build != "" {
+		answer = activity.Spec.Build == build
+	}
+	return answer
 }

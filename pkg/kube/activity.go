@@ -142,7 +142,6 @@ func (k *PromotePullRequestKey) matchesPromote(step *v1.PipelineActivityStep) bo
 	return s != nil && s.Environment == k.Environment
 }
 
-
 func StartPromotion(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
 	if p.StartedTimestamp == nil {
 		p.StartedTimestamp = &metav1.Time{

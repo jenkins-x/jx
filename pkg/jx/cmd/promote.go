@@ -10,17 +10,17 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"k8s.io/apimachinery/pkg/util/uuid"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 const (
@@ -336,7 +336,6 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	return releaseInfo, err
 }
 
-
 func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo *ReleaseInfo) error {
 	source := &env.Spec.Source
 	gitURL := source.URL
@@ -642,7 +641,7 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 	return nil
 }
 
-func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment, releaseInfo *ReleaseInfo, end time.Time, duration time.Duration, promoteKey  *kube.PromotePullRequestKey) error {
+func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment, releaseInfo *ReleaseInfo, end time.Time, duration time.Duration, promoteKey *kube.PromotePullRequestKey) error {
 	pullRequestInfo := releaseInfo.PullRequestInfo
 	logMergeFailure := false
 	logNoMergeCommitSha := false
@@ -723,7 +722,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									targetURL = url
 								}
 								prStatuses = append(prStatuses, v1.PullRequestStatus{
-									URL: targetURL,
+									URL:    targetURL,
 									Status: state,
 								})
 							}
@@ -855,9 +854,9 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromotePull
 	o.Printf("Using pipeline name %s\n", name)
 	return &kube.PromotePullRequestKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
-			Name: name,
+			Name:     name,
 			Pipeline: pipeline,
-			Build: build,
+			Build:    build,
 		},
 		Environment: env.Name,
 	}
