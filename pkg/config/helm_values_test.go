@@ -5,13 +5,13 @@ import (
 
 	"io/ioutil"
 
-	"github.com/arschles/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
 
 	testFile, err := ioutil.ReadFile("test_exposecontroller_values.yaml")
-	assert.NoErr(t, err)
+	assert.NoError(t, err)
 
 	a := make(map[string]string)
 	a["helm.sh/hook"] = "post-install,post-upgrade"
@@ -27,6 +27,6 @@ func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
 	values.ExposeController.Config.HTTP = true
 	values.ExposeController.Config.TLSAcme = false
 	s, err := values.String()
-	assert.NoErr(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, s, string(testFile), "expected exposecontroller helm values do not match")
 }

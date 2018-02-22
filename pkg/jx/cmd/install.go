@@ -280,7 +280,10 @@ func (options *InstallOptions) Run() error {
 	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 	if options.Flags.DefaultEnvironments {
 		log.Info("Getting Jenkins API Token\n")
-		err = options.CreateJenkinsUserOptions.Run()
+		err = options.retry(3, 2*time.Second, func() (err error) {
+			err = options.CreateJenkinsUserOptions.Run()
+			return
+		})
 		if err != nil {
 			return err
 		}
