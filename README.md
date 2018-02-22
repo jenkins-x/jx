@@ -3,7 +3,7 @@
 JX is a command line tool for installing and using [Jenkins X](http://jenkins-x.io/)
 
 <a href="http://jenkins-x.io/">
-  <img src="http://jenkins-x.io/img/profile.png" alt="Jenkins X icon" width="100" height="97"/>
+  <img src="http://jenkins-x.io/img/profile.png" alt="Jenkins X icon" width="100" height="123"/>
 </a>
 
 ## Installing
