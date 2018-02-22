@@ -106,10 +106,21 @@ func (o *GetActivityOptions) Run() error {
 	for _, activity := range list.Items {
 		if o.matches(&activity) {
 			spec := &activity.Spec
+			text := ""
+			version := activity.Spec.Version
+			if version != "" {
+				text = "Version: " + util.ColorInfo(version)
+			}
+			statusText := statusString(activity.Spec.Status)
+			if statusText == "" {
+				statusText = text
+			} else {
+				statusText += " " + text
+			}
 			table.AddRow(spec.Pipeline+" #"+spec.Build,
-				spec.Status.String(),
 				timeToString(spec.StartedTimestamp),
-				durationString(spec.StartedTimestamp, spec.CompletedTimestamp))
+				durationString(spec.StartedTimestamp, spec.CompletedTimestamp),
+				statusText)
 
 			indent := "  "
 			for _, step := range spec.Steps {

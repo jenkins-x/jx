@@ -141,10 +141,11 @@ type PipelineActivity struct {
 type PipelineActivitySpec struct {
 	Pipeline           string                 `json:"pipeline,omitempty" protobuf:"bytes,1,opt,name=pipeline"`
 	Build              string                 `json:"build,omitempty" protobuf:"bytes,2,opt,name=build"`
-	Status             ActivityStatusType     `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
-	StartedTimestamp   *metav1.Time           `json:"startedTimestamp,omitempty" protobuf:"bytes,4,opt,name=startedTimestamp"`
-	CompletedTimestamp *metav1.Time           `json:"completedTimestamp,omitempty" protobuf:"bytes,5,opt,name=completedTimestamp"`
-	Steps              []PipelineActivityStep `json:"steps,omitempty" protobuf:"bytes,6,opt,name=steps"`
+	Version            string                 `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
+	Status             ActivityStatusType     `json:"status,omitempty" protobuf:"bytes,4,opt,name=status"`
+	StartedTimestamp   *metav1.Time           `json:"startedTimestamp,omitempty" protobuf:"bytes,5,opt,name=startedTimestamp"`
+	CompletedTimestamp *metav1.Time           `json:"completedTimestamp,omitempty" protobuf:"bytes,6,opt,name=completedTimestamp"`
+	Steps              []PipelineActivityStep `json:"steps,omitempty" protobuf:"bytes,7,opt,name=steps"`
 }
 
 type CoreActivityStep struct {

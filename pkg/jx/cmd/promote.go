@@ -296,6 +296,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 					if pr != nil && pr.PullRequest != nil && p.PullRequestURL == "" {
 						p.PullRequestURL = pr.PullRequest.URL
 					}
+					if version != "" && a.Spec.Version == "" {
+						a.Spec.Version = version
+					}
 					return nil
 				}
 
@@ -321,7 +324,15 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 			return releaseInfo, err
 		}
 	}
-	promoteKey.OnPromote(o.Activities, kube.StartPromotion)
+
+	startPromote := func(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
+		kube.StartPromotion(a, p)
+		if version != "" && a.Spec.Version == "" {
+			a.Spec.Version = version
+		}
+		return nil
+	}
+	promoteKey.OnPromote(o.Activities, startPromote)
 
 	if version != "" {
 		err = o.runCommand("helm", "upgrade", "--install", "--wait", "--namespace", targetNS, "--version", version, releaseName, fullAppName)
