@@ -186,15 +186,35 @@ func statusString(statusType v1.ActivityStatusType) string {
 	return text
 }
 
-func describePullRequest(promotePullRequest *v1.PromotePullRequestStep) string {
+func describePullRequest(promote *v1.PromotePullRequestStep) string {
 	description := ""
-	if promotePullRequest.PullRequestURL != "" {
-		description += " PullRequest: " + util.ColorInfo(promotePullRequest.PullRequestURL)
+	if promote.PullRequestURL != "" {
+		description += " PullRequest: " + util.ColorInfo(promote.PullRequestURL)
 	}
-	if promotePullRequest.MergeCommitSHA != "" {
-		description += " Merge SHA: " + util.ColorInfo(promotePullRequest.MergeCommitSHA)
+	if promote.MergeCommitSHA != "" {
+		description += " Merge SHA: " + util.ColorInfo(promote.MergeCommitSHA)
+	}
+	for _, status := range promote.Statuses {
+		url := status.URL
+		state := status.Status
+
+		if url != "" && state != "" {
+			description += " Status: " + pullRequestStatusString(state) + " at: " + util.ColorInfo(url)
+		}
 	}
 	return description
+}
+
+func pullRequestStatusString(text string) string {
+	title := strings.Title(text)
+	switch text {
+	case "success":
+		return util.ColorInfo(title)
+	case "error", "failed":
+		return util.ColorError(title)
+	default:
+		return util.ColorStatus(title)
+	}
 }
 
 func durationString(start *metav1.Time, end *metav1.Time) string {
