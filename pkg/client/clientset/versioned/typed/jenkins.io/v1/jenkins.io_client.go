@@ -10,6 +10,7 @@ import (
 type JenkinsV1Interface interface {
 	RESTClient() rest.Interface
 	EnvironmentsGetter
+	PipelineActivitiesGetter
 }
 
 // JenkinsV1Client is used to interact with features provided by the jenkins.io group.
@@ -19,6 +20,10 @@ type JenkinsV1Client struct {
 
 func (c *JenkinsV1Client) Environments(namespace string) EnvironmentInterface {
 	return newEnvironments(c, namespace)
+}
+
+func (c *JenkinsV1Client) PipelineActivities(namespace string) PipelineActivityInterface {
+	return newPipelineActivities(c, namespace)
 }
 
 // NewForConfig creates a new JenkinsV1Client for the given config.

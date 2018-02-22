@@ -14,6 +14,10 @@ func (c *FakeJenkinsV1) Environments(namespace string) v1.EnvironmentInterface {
 	return &FakeEnvironments{c, namespace}
 }
 
+func (c *FakeJenkinsV1) PipelineActivities(namespace string) v1.PipelineActivityInterface {
+	return &FakePipelineActivities{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeJenkinsV1) RESTClient() rest.Interface {

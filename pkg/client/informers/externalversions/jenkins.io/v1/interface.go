@@ -10,6 +10,8 @@ import (
 type Interface interface {
 	// Environments returns a EnvironmentInformer.
 	Environments() EnvironmentInformer
+	// PipelineActivities returns a PipelineActivityInformer.
+	PipelineActivities() PipelineActivityInformer
 }
 
 type version struct {
@@ -26,4 +28,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // Environments returns a EnvironmentInformer.
 func (v *version) Environments() EnvironmentInformer {
 	return &environmentInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// PipelineActivities returns a PipelineActivityInformer.
+func (v *version) PipelineActivities() PipelineActivityInformer {
+	return &pipelineActivityInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
