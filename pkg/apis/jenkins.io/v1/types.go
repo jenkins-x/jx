@@ -161,13 +161,18 @@ type StageActivityStep struct {
 	Steps []CoreActivityStep `json:"steps,omitempty" protobuf:"bytes,1,opt,name=steps"`
 }
 
+type PullRequestStatus struct {
+	URL    string `json:"url,omitempty" protobuf:"bytes,1,opt,name=url"`
+	Status string `json:"status,omitempty" protobuf:"bytes,2,opt,name=status"`
+}
+
 type PromotePullRequestStep struct {
 	CoreActivityStep
 
-	Environment    string `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
-	PullRequestURL string `json:"pullRequestURL,omitempty" protobuf:"bytes,2,opt,name=pullRequestURL"`
-	BuildURL       string `json:"buildURL,omitempty" protobuf:"bytes,3,opt,name=buildURL"`
-	MergeCommitURL string `json:"mergeCommitURL,omitempty" protobuf:"bytes,4,opt,name=mergeCommitURL"`
+	Environment    string              `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
+	PullRequestURL string              `json:"pullRequestURL,omitempty" protobuf:"bytes,2,opt,name=pullRequestURL"`
+	Statuses       []PullRequestStatus `json:"statuses,omitempty" protobuf:"bytes,3,opt,name=statuses"`
+	MergeCommitSHA string              `json:"mergeCommitSHA,omitempty" protobuf:"bytes,4,opt,name=mergeCommitSHA"`
 }
 
 type PipelineActivityStep struct {
@@ -196,6 +201,8 @@ type PipelineActivityList struct {
 type ActivityStatusType string
 
 const (
+	// ActivityStatusTypeNone an activity step has not started yet
+	ActivityStatusTypeNone ActivityStatusType = ""
 	// ActivityStatusTypePending an activity step is waiting to start
 	ActivityStatusTypePending ActivityStatusType = "Pending"
 	// ActivityStatusTypeRunning an activity is running

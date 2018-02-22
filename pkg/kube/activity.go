@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -60,7 +61,7 @@ func (k *PromotePullRequestKey) OnPromotePullRequest(activities typev1.PipelineA
 	}
 	p2 := *p
 
-	if added || p1 != p2 {
+	if added || !reflect.DeepEqual(p1, p2) {
 		_, err = activities.Update(a)
 	}
 	return err
@@ -108,7 +109,7 @@ func (k *PromotePullRequestKey) OnPromote(activities typev1.PipelineActivityInte
 	}
 	p2 := *p
 
-	if added || p1 != p2 {
+	if added || !reflect.DeepEqual(p1, p2) {
 		_, err = activities.Update(a)
 	}
 	return err
@@ -142,7 +143,24 @@ func (k *PromotePullRequestKey) matchesPromote(step *v1.PipelineActivityStep) bo
 }
 
 
+func StartPromotion(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
+	if p.StartedTimestamp == nil {
+		p.StartedTimestamp = &metav1.Time{
+			Time: time.Now(),
+		}
+	}
+	if p.Status == v1.ActivityStatusTypeNone {
+		p.Status = v1.ActivityStatusTypeRunning
+	}
+	return nil
+}
+
 func CompletePromotion(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
+	if p.StartedTimestamp == nil {
+		p.StartedTimestamp = &metav1.Time{
+			Time: time.Now(),
+		}
+	}
 	if p.CompletedTimestamp == nil {
 		p.CompletedTimestamp = &metav1.Time{
 			Time: time.Now(),
@@ -153,6 +171,11 @@ func CompletePromotion(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) err
 }
 
 func FailedPromotion(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
+	if p.StartedTimestamp == nil {
+		p.StartedTimestamp = &metav1.Time{
+			Time: time.Now(),
+		}
+	}
 	if p.CompletedTimestamp == nil {
 		p.CompletedTimestamp = &metav1.Time{
 			Time: time.Now(),
