@@ -155,8 +155,8 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 
 	// lets default the helm domain
 	exposeController := o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController
-	if exposeController != nil && exposeController.Domain == "" && installOpts.Flags.Domain != "" {
-		exposeController.Domain = installOpts.Flags.Domain
+	if exposeController != nil && exposeController.Config.Domain == "" && installOpts.Flags.Domain != "" {
+		exposeController.Config.Domain = installOpts.Flags.Domain
 	}
 	return nil
 }

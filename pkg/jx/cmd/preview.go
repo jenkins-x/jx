@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -16,7 +18,6 @@ import (
 	"github.com/spf13/cobra"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
 )
 
 var (

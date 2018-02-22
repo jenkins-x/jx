@@ -7,15 +7,24 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type ExposeController struct {
+type ExposeControllerConfig struct {
 	Domain  string `yaml:"domain,omitempty"`
 	Exposer string `yaml:"exposer"`
 	HTTP    bool   `yaml:"http"`
 	TLSAcme bool   `yaml:"tlsacme"`
 }
+type ExposeController struct {
+	Config      ExposeControllerConfig `yaml:"config,omitempty"`
+	Annotations map[string]string      `yaml:"Annotations,omitempty"`
+}
+
+type Annotation struct {
+	Hook   string `yaml:"helm.sh/hook,omitempty"`
+	Delete string `yaml:"hhelm.sh/hook-delete-policy,omitempty"`
+}
 
 type HelmValuesConfig struct {
-	ExposeController *ExposeController `yaml:"exposecontroller,omitempty"`
+	ExposeController *ExposeController `yaml:"expose,omitempty"`
 }
 
 type HelmValuesConfigService struct {
@@ -25,11 +34,16 @@ type HelmValuesConfigService struct {
 
 func (c *HelmValuesConfig) AddExposeControllerValues(cmd *cobra.Command, ignoreDomain bool) {
 	if !ignoreDomain {
-		cmd.Flags().StringVarP(&c.ExposeController.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
+		cmd.Flags().StringVarP(&c.ExposeController.Config.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	}
-	cmd.Flags().BoolVarP(&c.ExposeController.HTTP, "http", "", true, "Toggle creating http or https ingress rules")
-	cmd.Flags().StringVarP(&c.ExposeController.Exposer, "exposer", "", "Ingress", "Used to describe which strategy exposecontroller should use to access applications")
-	cmd.Flags().BoolVarP(&c.ExposeController.TLSAcme, "tls-acme", "", false, "Used to enable automatic TLS for ingress")
+	cmd.Flags().BoolVarP(&c.ExposeController.Config.HTTP, "http", "", true, "Toggle creating http or https ingress rules")
+	cmd.Flags().StringVarP(&c.ExposeController.Config.Exposer, "exposer", "", "Ingress", "Used to describe which strategy exposecontroller should use to access applications")
+	cmd.Flags().BoolVarP(&c.ExposeController.Config.TLSAcme, "tls-acme", "", false, "Used to enable automatic TLS for ingress")
+
+	annotations := make(map[string]string)
+	annotations["helm.sh/hook"] = "post-install,post-upgrade"
+	annotations["helm.sh/hook-delete-policy"] = "hook-succeeded"
+	c.ExposeController.Annotations = annotations
 }
 
 func (c HelmValuesConfig) String() (string, error) {
