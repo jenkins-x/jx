@@ -145,7 +145,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	if nodeCount == "" {
 		prompt := &survey.Input{
 			Message: "nodes",
-			Default: "2",
+			Default: "3",
 			Help:    "number of nodes",
 		}
 		survey.AskOne(prompt, &nodeCount, nil)
