@@ -28,7 +28,6 @@ type PromoteStepActivityKey struct {
 type PromotePullRequestFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromotePullRequestStep) error
 type PromoteUpdateFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromoteUpdateStep) error
 
-
 // GetOrCreate gets or creates the pipeline activity
 func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, error) {
 	name := k.Name
@@ -66,7 +65,7 @@ func (k *PromoteStepActivityKey) GetOrCreatePromote(activities typev1.PipelineAc
 		startTime := endTime.Add(-1 * time.Minute)
 
 		spec.Steps = append(spec.Steps, v1.PipelineActivityStep{
-			Kind:    v1.ActivityStepKindTypeStage,
+			Kind: v1.ActivityStepKindTypeStage,
 			Stage: &v1.StageActivityStep{
 				CoreActivityStep: v1.CoreActivityStep{
 					StartedTimestamp: &metav1.Time{
@@ -76,7 +75,7 @@ func (k *PromoteStepActivityKey) GetOrCreatePromote(activities typev1.PipelineAc
 						Time: endTime,
 					},
 					Status: v1.ActivityStatusTypeSucceeded,
-					Name: "Release",
+					Name:   "Release",
 				},
 			},
 		})
@@ -123,7 +122,7 @@ func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(activities typev1.Pipe
 	if err != nil {
 		return nil, nil, nil, nil, created, err
 	}
-	
+
 	// lets check the PR is completed
 	if p.PullRequest != nil {
 		if p.PullRequest.Status == v1.ActivityStatusTypeNone {
@@ -189,4 +188,3 @@ func (k *PromoteStepActivityKey) matchesPromote(step *v1.PipelineActivityStep) b
 	s := step.Promote
 	return s != nil && s.Environment == k.Environment
 }
-

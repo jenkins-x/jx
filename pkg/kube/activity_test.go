@@ -7,9 +7,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/stretchr/testify/assert"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type MockPipelineActivityInterface struct {
@@ -154,6 +154,6 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	assert.Equal(t, v1.ActivityStatusTypeSucceeded, pullRequestStep.Status, "pullRequestStep status")
 	assert.Equal(t, v1.ActivityStatusTypeSucceeded, updateStep.Status, "updateStep status")
 	assert.Equal(t, v1.ActivityStatusTypeSucceeded, promote.Status, "promote status")
-	             
+
 	//fmt.Printf("Has Promote %#v\n", promote)
 }
