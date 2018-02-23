@@ -12,6 +12,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/aks"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -22,6 +23,8 @@ type CreateClusterAKSOptions struct {
 }
 
 type CreateClusterAKSFlags struct {
+	UserName		string
+	Password 		string
 	ClusterName     string
 	ResourceName    string
 	Location        string
@@ -76,13 +79,14 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	options.addCreateClusterFlags(cmd)
 
+	cmd.Flags().StringVarP(&options.Flags.ResourceName, "user name", "u", "", "user name")
+	cmd.Flags().StringVarP(&options.Flags.ResourceName, "password", "p", "", "password")
 	cmd.Flags().StringVarP(&options.Flags.ResourceName, "resource group name", "n", "", "Name of the resource group")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "clusterName", "c", "", "Name of the cluster")
-	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "eastus", "location to run cluster in")
-	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "o", "1", "node count")
+	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "", "location to run cluster in")
+	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "o", "", "node count")
 	cmd.Flags().StringVarP(&options.Flags.KubeVersion, "K8Version", "v", "1.8.2", "kubernetes version")
 	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "PathToPublicRSAKey", "k", "", "pathToPublicRSAKey")
-
 	return cmd
 }
 
@@ -124,19 +128,24 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	location := o.Flags.Location
 	if location == "" {
-		prompt := &survey.Input{
+		prompt := &survey.Select{
 			Message: "location",
-			Default: location,
+			Options: aks.GetResourceGrouoLocation(),
+			Default: "eastus",
+			PageSize: 10,
 			Help:    "location to run cluster",
 		}
-		survey.AskOne(prompt, &location, nil)
+		err := survey.AskOne(prompt, &location, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	nodeCount := o.Flags.NodeCount
 	if nodeCount == "" {
 		prompt := &survey.Input{
 			Message: "nodes",
-			Default: nodeCount,
+			Default: "2",
 			Help:    "number of nodes",
 		}
 		survey.AskOne(prompt, &nodeCount, nil)
@@ -154,11 +163,22 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	pathToPublicKey := o.Flags.PathToPublicKey
 
+	userName := o.Flags.UserName
+	password := o.Flags.Password
+
 	//First login
 
-	err := o.runCommand("az", "login")
-	if err != nil {
-		return err
+	var err error
+	if userName != "" && password != "" {
+		err = o.runCommand("az", "login", "-u", userName, "-p", password)
+		if err != nil {
+			return err
+		}
+	}else {
+		err = o.runCommand("az", "login")
+		if err != nil {
+			return err
+		}
 	}
 
 	//register for Microsoft Compute and Containers
