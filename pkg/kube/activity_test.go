@@ -3,13 +3,13 @@ package kube
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/stretchr/testify/assert"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
-	"time"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type MockPipelineActivityInterface struct {
@@ -91,12 +91,12 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	}
 
 	// lazy add a PromotePullRequest
-	promoteKey := PromotePullRequestKey{
+	promoteKey := PromoteStepActivityKey{
 		PipelineActivityKey: key,
 		Environment:         expectedEnvironment,
 	}
 
-	promotePullRequestStarted := func(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
+	promotePullRequestStarted := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromotePullRequestStep) error {
 		assert.NotNil(t, a)
 		assert.NotNil(t, p)
 		if p.StartedTimestamp == nil {
@@ -110,23 +110,14 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	err := promoteKey.OnPromotePullRequest(activities, promotePullRequestStarted)
 	assert.Nil(t, err)
 
-	promoteStarted := func(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
+	promoteStarted := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {
 		assert.NotNil(t, a)
 		assert.NotNil(t, p)
-		if p.StartedTimestamp == nil {
-			p.StartedTimestamp = &meta_v1.Time{
-				Time: time.Now(),
-			}
-		}
-		if p.CompletedTimestamp == nil {
-			p.CompletedTimestamp = &meta_v1.Time{
-				Time: time.Now(),
-			}
-		}
+		CompletePromotionUpdate(a, s, ps, p)
 		return nil
 	}
 
-	err = promoteKey.OnPromote(activities, promoteStarted)
+	err = promoteKey.OnPromoteUpdate(activities, promoteStarted)
 	assert.Nil(t, err)
 
 	// lets validate that we added a PromotePullRequest step
@@ -135,14 +126,34 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	steps := a.Spec.Steps
 	assert.Equal(t, 2, len(steps), "Should have 2 steps!")
 	step := a.Spec.Steps[0]
-	assert.NotNil(t, step.PromotePullRequest, "step 0 should have a PromotePullRequest")
-	assert.NotNil(t, step.PromotePullRequest.StartedTimestamp, "step 0 should have a PromotePullRequest.StartedTimestamp")
-	assert.Nil(t, step.PromotePullRequest.CompletedTimestamp, "step 0 should not have a PromotePullRequest.CompletedTimestamp")
+	stage := step.Stage
+	assert.NotNil(t, stage, "step 0 should have a Stage")
+	assert.Equal(t, v1.ActivityStepKindTypeStage, step.Kind, "step - kind")
+	assert.Equal(t, v1.ActivityStatusTypeSucceeded, stage.Status, "step 0 Stage status")
+	assert.NotNil(t, stage.StartedTimestamp, "stage should have a StartedTimestamp")
+	assert.NotNil(t, stage.CompletedTimestamp, "stage should have a CompletedTimestamp")
 
 	step = a.Spec.Steps[1]
-	assert.NotNil(t, step.Promote, "step 1 should have a PromotePullRequest")
-	assert.NotNil(t, step.Promote.StartedTimestamp, "step 1 should have a PromotePullRequest.StartedTimestamp")
-	assert.NotNil(t, step.Promote.CompletedTimestamp, "step 1 should have a PromotePullRequest.CompletedTimestamp")
+	promote := step.Promote
+	assert.NotNil(t, promote, "step 1 should have a Promote")
+	assert.Equal(t, v1.ActivityStepKindTypePromote, step.Kind, "step 1 kind")
 
-	fmt.Printf("Has PromotePullRequest %#v\n", step.PromotePullRequest)
+	pullRequestStep := promote.PullRequest
+	assert.NotNil(t, pullRequestStep, "Promote should have a PullRequest")
+	assert.NotNil(t, pullRequestStep.StartedTimestamp, "Promote should have a PullRequest.StartedTimestamp")
+	assert.NotNil(t, pullRequestStep.CompletedTimestamp, "Promote should not have a PullRequest.CompletedTimestamp")
+
+	updateStep := promote.Update
+	assert.NotNil(t, updateStep, "Promote should have an Update")
+	assert.NotNil(t, updateStep.StartedTimestamp, "Promote should have a Update.StartedTimestamp")
+	assert.NotNil(t, updateStep.CompletedTimestamp, "Promote should have a Update.CompletedTimestamp")
+
+	assert.NotNil(t, promote.StartedTimestamp, "promote should have a StartedTimestamp")
+	assert.NotNil(t, promote.CompletedTimestamp, "promote should have a CompletedTimestamp")
+
+	assert.Equal(t, v1.ActivityStatusTypeSucceeded, pullRequestStep.Status, "pullRequestStep status")
+	assert.Equal(t, v1.ActivityStatusTypeSucceeded, updateStep.Status, "updateStep status")
+	assert.Equal(t, v1.ActivityStatusTypeSucceeded, promote.Status, "promote status")
+	             
+	//fmt.Printf("Has Promote %#v\n", promote)
 }

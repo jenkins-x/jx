@@ -19,11 +19,15 @@ func (k *PipelineActivityKey) IsValid() bool {
 	return len(k.Name) > 0
 }
 
-type PromotePullRequestKey struct {
+type PromoteStepActivityKey struct {
 	PipelineActivityKey
 
 	Environment string
 }
+
+type PromotePullRequestFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromotePullRequestStep) error
+type PromoteUpdateFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromoteUpdateStep) error
+
 
 // GetOrCreate gets or creates the pipeline activity
 func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, error) {
@@ -44,142 +48,145 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 	return activities.Create(a)
 }
 
-type PromotePullRequestFn func(*v1.PipelineActivity, *v1.PromotePullRequestStep) error
-
-func (k *PromotePullRequestKey) OnPromotePullRequest(activities typev1.PipelineActivityInterface, fn PromotePullRequestFn) error {
-	if !k.IsValid() {
-		return nil
-	}
-	a, p, added, err := k.GetOrCreatePromotePullRequest(activities)
-	if err != nil {
-		return err
-	}
-	p1 := *p
-	err = fn(a, p)
-	if err != nil {
-		return err
-	}
-	p2 := *p
-
-	if added || !reflect.DeepEqual(p1, p2) {
-		_, err = activities.Update(a)
-	}
-	return err
-}
-
-// GetOrCreatePromotePullRequest gets or creates the PromotePullRequest for the key
-func (k *PromotePullRequestKey) GetOrCreatePromotePullRequest(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PromotePullRequestStep, bool, error) {
+// GetOrCreatePromote gets or creates the Promote step for the key
+func (k *PromoteStepActivityKey) GetOrCreatePromote(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, bool, error) {
 	a, err := k.GetOrCreate(activities)
 	if err != nil {
-		return nil, nil, false, err
-	}
-	spec := &a.Spec
-	for _, step := range spec.Steps {
-		if k.matchesPromotePullRequest(&step) {
-			return a, step.PromotePullRequest, false, nil
-		}
-	}
-	// lets add a new step
-	step := v1.PipelineActivityStep{
-		PromotePullRequest: &v1.PromotePullRequestStep{
-			Environment: k.Environment,
-		},
-	}
-	spec.Steps = append(spec.Steps, step)
-	return a, step.PromotePullRequest, true, nil
-}
-
-func (k *PromotePullRequestKey) matchesPromotePullRequest(step *v1.PipelineActivityStep) bool {
-	s := step.PromotePullRequest
-	return s != nil && s.Environment == k.Environment
-}
-
-func (k *PromotePullRequestKey) OnPromote(activities typev1.PipelineActivityInterface, fn PromotePullRequestFn) error {
-	if !k.IsValid() {
-		return nil
-	}
-	a, p, added, err := k.GetOrCreatePromote(activities)
-	if err != nil {
-		return err
-	}
-	p1 := *p
-	err = fn(a, p)
-	if err != nil {
-		return err
-	}
-	p2 := *p
-
-	if added || !reflect.DeepEqual(p1, p2) {
-		_, err = activities.Update(a)
-	}
-	return err
-}
-
-// GetOrCreatePromote gets or creates the Promote for the key
-func (k *PromotePullRequestKey) GetOrCreatePromote(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PromotePullRequestStep, bool, error) {
-	a, err := k.GetOrCreate(activities)
-	if err != nil {
-		return nil, nil, false, err
+		return nil, nil, nil, false, err
 	}
 	spec := &a.Spec
 	for _, step := range spec.Steps {
 		if k.matchesPromote(&step) {
-			return a, step.Promote, false, nil
+			return a, &step, step.Promote, false, nil
 		}
 	}
+	// if there is no initial release Stage lets add one
+	if len(spec.Steps) == 0 {
+		endTime := time.Now()
+		startTime := endTime.Add(-1 * time.Minute)
+
+		spec.Steps = append(spec.Steps, v1.PipelineActivityStep{
+			Kind:    v1.ActivityStepKindTypeStage,
+			Stage: &v1.StageActivityStep{
+				CoreActivityStep: v1.CoreActivityStep{
+					StartedTimestamp: &metav1.Time{
+						Time: startTime,
+					},
+					CompletedTimestamp: &metav1.Time{
+						Time: endTime,
+					},
+					Status: v1.ActivityStatusTypeSucceeded,
+					Name: "Release",
+				},
+			},
+		})
+	}
 	// lets add a new step
-	step := v1.PipelineActivityStep{
-		Promote: &v1.PromotePullRequestStep{
-			Environment: k.Environment,
+	promote := &v1.PromoteActivityStep{
+		CoreActivityStep: v1.CoreActivityStep{
+			StartedTimestamp: &metav1.Time{
+				Time: time.Now(),
+			},
 		},
+		Environment: k.Environment,
+	}
+	step := v1.PipelineActivityStep{
+		Kind:    v1.ActivityStepKindTypePromote,
+		Promote: promote,
 	}
 	spec.Steps = append(spec.Steps, step)
-	return a, step.Promote, true, nil
+	return a, &spec.Steps[len(spec.Steps)-1], promote, true, nil
 }
 
-func (k *PromotePullRequestKey) matchesPromote(step *v1.PipelineActivityStep) bool {
+// GetOrCreatePromotePullRequest gets or creates the PromotePullRequest for the key
+func (k *PromoteStepActivityKey) GetOrCreatePromotePullRequest(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromotePullRequestStep, bool, error) {
+	a, s, p, created, err := k.GetOrCreatePromote(activities)
+	if err != nil {
+		return nil, nil, nil, nil, created, err
+	}
+	if p.PullRequest == nil {
+		created = true
+		p.PullRequest = &v1.PromotePullRequestStep{
+			CoreActivityStep: v1.CoreActivityStep{
+				StartedTimestamp: &metav1.Time{
+					Time: time.Now(),
+				},
+			},
+		}
+	}
+	return a, s, p, p.PullRequest, created, err
+}
+
+// GetOrCreatePromoteUpdate gets or creates the Promote for the key
+func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromoteUpdateStep, bool, error) {
+	a, s, p, created, err := k.GetOrCreatePromote(activities)
+	if err != nil {
+		return nil, nil, nil, nil, created, err
+	}
+	
+	// lets check the PR is completed
+	if p.PullRequest != nil {
+		if p.PullRequest.Status == v1.ActivityStatusTypeNone {
+			p.PullRequest.Status = v1.ActivityStatusTypeSucceeded
+		}
+	}
+	if p.Update == nil {
+		created = true
+		p.Update = &v1.PromoteUpdateStep{
+			CoreActivityStep: v1.CoreActivityStep{
+				StartedTimestamp: &metav1.Time{
+					Time: time.Now(),
+				},
+			},
+		}
+	}
+	return a, s, p, p.Update, created, err
+}
+
+func (k *PromoteStepActivityKey) OnPromotePullRequest(activities typev1.PipelineActivityInterface, fn PromotePullRequestFn) error {
+	if !k.IsValid() {
+		return nil
+	}
+	a, s, ps, p, added, err := k.GetOrCreatePromotePullRequest(activities)
+	if err != nil {
+		return err
+	}
+	p1 := *p
+	err = fn(a, s, ps, p)
+	if err != nil {
+		return err
+	}
+	p2 := *p
+
+	if added || !reflect.DeepEqual(p1, p2) {
+		_, err = activities.Update(a)
+	}
+	return err
+}
+
+func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActivityInterface, fn PromoteUpdateFn) error {
+	if !k.IsValid() {
+		return nil
+	}
+	a, s, ps, p, added, err := k.GetOrCreatePromoteUpdate(activities)
+	if err != nil {
+		return err
+	}
+	p1 := *p
+	err = fn(a, s, ps, p)
+	if err != nil {
+		return err
+	}
+	p2 := *p
+
+	if added || !reflect.DeepEqual(p1, p2) {
+		_, err = activities.Update(a)
+	}
+	return err
+}
+
+func (k *PromoteStepActivityKey) matchesPromote(step *v1.PipelineActivityStep) bool {
 	s := step.Promote
 	return s != nil && s.Environment == k.Environment
 }
 
-func StartPromotion(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
-	if p.StartedTimestamp == nil {
-		p.StartedTimestamp = &metav1.Time{
-			Time: time.Now(),
-		}
-	}
-	if p.Status == v1.ActivityStatusTypeNone {
-		p.Status = v1.ActivityStatusTypeRunning
-	}
-	return nil
-}
-
-func CompletePromotion(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
-	if p.StartedTimestamp == nil {
-		p.StartedTimestamp = &metav1.Time{
-			Time: time.Now(),
-		}
-	}
-	if p.CompletedTimestamp == nil {
-		p.CompletedTimestamp = &metav1.Time{
-			Time: time.Now(),
-		}
-	}
-	p.Status = v1.ActivityStatusTypeSucceeded
-	return nil
-}
-
-func FailedPromotion(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
-	if p.StartedTimestamp == nil {
-		p.StartedTimestamp = &metav1.Time{
-			Time: time.Now(),
-		}
-	}
-	if p.CompletedTimestamp == nil {
-		p.CompletedTimestamp = &metav1.Time{
-			Time: time.Now(),
-		}
-	}
-	p.Status = v1.ActivityStatusTypeFailed
-	return nil
-}
