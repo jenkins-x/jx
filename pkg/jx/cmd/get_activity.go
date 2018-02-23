@@ -15,6 +15,10 @@ import (
 	"strings"
 )
 
+const (
+	indentation = "  "
+)
+
 // GetActivityOptions containers the CLI options
 type GetActivityOptions struct {
 	CommonOptions
@@ -122,7 +126,7 @@ func (o *GetActivityOptions) Run() error {
 				durationString(spec.StartedTimestamp, spec.CompletedTimestamp),
 				statusText)
 
-			indent := "  "
+			indent := indentation
 			for _, step := range spec.Steps {
 				o.addStepRow(&table, &step, indent)
 			}
@@ -134,19 +138,40 @@ func (o *GetActivityOptions) Run() error {
 
 func (o *CommonOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivityStep, indent string) {
 	stage := parent.Stage
-	step := parent.Step
-	promotePullRequest := parent.PromotePullRequest
 	promote := parent.Promote
 	if stage != nil {
-		addStepRowItem(table, stage, indent, "Stage", "")
-	} else if step != nil {
-		addStepRowItem(table, step, indent, "", "")
-	} else if promotePullRequest != nil {
-		addStepRowItem(table, &promotePullRequest.CoreActivityStep, indent, "PromotePullRequest: "+promotePullRequest.Environment, describePullRequest(promotePullRequest))
+		addStageRow(table, stage, indent)
 	} else if promote != nil {
-		addStepRowItem(table, &promote.CoreActivityStep, indent, "Promote: "+promote.Environment, describePullRequest(promote))
+		addPromoteRow(table, promote, indent)
 	} else {
 		o.warnf("Unknown step kind %#v\n", parent)
+	}
+}
+
+func addStageRow(table *tbl.Table, stage *v1.StageActivityStep, indent string) {
+	name := "Stage"
+	if stage.Name != "" {
+		name = ""
+	}
+	addStepRowItem(table, &stage.CoreActivityStep, indent, name, "")
+
+	indent += indentation
+	for _, step := range stage.Steps {
+		addStepRowItem(table, &step, indent, "", "")
+	}
+}
+
+func addPromoteRow(table *tbl.Table, parent *v1.PromoteActivityStep, indent string) {
+	addStepRowItem(table, &parent.CoreActivityStep, indent, "Promote: "+parent.Environment, "")
+	indent += indentation
+
+	pullRequest := parent.PullRequest
+	update := parent.Update
+	if pullRequest != nil {
+		addStepRowItem(table, &pullRequest.CoreActivityStep, indent, "PullRequest", describePromotePullRequest(pullRequest))
+	}
+	if update != nil {
+		addStepRowItem(table, &update.CoreActivityStep, indent, "Update", describePromoteUpdate(update))
 	}
 }
 
@@ -186,7 +211,7 @@ func statusString(statusType v1.ActivityStatusType) string {
 	return text
 }
 
-func describePullRequest(promote *v1.PromotePullRequestStep) string {
+func describePromotePullRequest(promote *v1.PromotePullRequestStep) string {
 	description := ""
 	if promote.PullRequestURL != "" {
 		description += " PullRequest: " + util.ColorInfo(promote.PullRequestURL)
@@ -194,6 +219,11 @@ func describePullRequest(promote *v1.PromotePullRequestStep) string {
 	if promote.MergeCommitSHA != "" {
 		description += " Merge SHA: " + util.ColorInfo(promote.MergeCommitSHA)
 	}
+	return description
+}
+
+func describePromoteUpdate(promote *v1.PromoteUpdateStep) string {
+	description := ""
 	for _, status := range promote.Statuses {
 		url := status.URL
 		state := status.Status

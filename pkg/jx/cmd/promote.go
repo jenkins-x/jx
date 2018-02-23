@@ -290,8 +290,8 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		if source.URL != "" && env.Spec.Kind.IsPermanent() {
 			err := o.PromoteViaPullRequest(env, releaseInfo)
 			if err == nil {
-				startPromotePR := func(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
-					kube.StartPromotion(a, p)
+				startPromotePR := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromotePullRequestStep) error {
+					kube.StartPromotionPullRequest(a, s, ps, p)
 					pr := releaseInfo.PullRequestInfo
 					if pr != nil && pr.PullRequest != nil && p.PullRequestURL == "" {
 						p.PullRequestURL = pr.PullRequest.URL
@@ -325,14 +325,14 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		}
 	}
 
-	startPromote := func(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
-		kube.StartPromotion(a, p)
+	startPromote := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {
+		kube.StartPromotionUpdate(a, s, ps, p)
 		if version != "" && a.Spec.Version == "" {
 			a.Spec.Version = version
 		}
 		return nil
 	}
-	promoteKey.OnPromote(o.Activities, startPromote)
+	promoteKey.OnPromoteUpdate(o.Activities, startPromote)
 
 	if version != "" {
 		err = o.runCommand("helm", "upgrade", "--install", "--wait", "--namespace", targetNS, "--version", version, releaseName, fullAppName)
@@ -340,9 +340,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		err = o.runCommand("helm", "upgrade", "--install", "--wait", "--namespace", targetNS, releaseName, fullAppName)
 	}
 	if err == nil {
-		err = promoteKey.OnPromote(o.Activities, kube.CompletePromotion)
+		err = promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
 	} else {
-		err = promoteKey.OnPromote(o.Activities, kube.FailedPromotion)
+		err = promoteKey.OnPromoteUpdate(o.Activities, kube.FailedPromotionUpdate)
 	}
 	return releaseInfo, err
 }
@@ -645,14 +645,14 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 		err := o.waitForGitOpsPullRequest(ns, env, releaseInfo, end, duration, promoteKey)
 		if err != nil {
 			// TODO based on if the PR completed or not fail the PR or the Promote?
-			promoteKey.OnPromotePullRequest(o.Activities, kube.FailedPromotion)
+			promoteKey.OnPromotePullRequest(o.Activities, kube.FailedPromotionPullRequest)
 			return err
 		}
 	}
 	return nil
 }
 
-func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment, releaseInfo *ReleaseInfo, end time.Time, duration time.Duration, promoteKey *kube.PromotePullRequestKey) error {
+func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment, releaseInfo *ReleaseInfo, end time.Time, duration time.Duration, promoteKey *kube.PromoteStepActivityKey) error {
 	pullRequestInfo := releaseInfo.PullRequestInfo
 	logMergeFailure := false
 	logNoMergeCommitSha := false
@@ -683,15 +683,15 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 						logHasMergeSha = true
 						o.Printf("Pull Request %s is merged at sha %s\n", util.ColorInfo(pr.URL), util.ColorInfo(mergeSha))
 
-						mergedPR := func(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
-							kube.CompletePromotion(a, p)
+						mergedPR := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromotePullRequestStep) error {
+							kube.CompletePromotionPullRequest(a, s, ps, p)
 							p.MergeCommitSHA = mergeSha
 							return nil
 						}
 						promoteKey.OnPromotePullRequest(o.Activities, mergedPR)
 					}
 
-					promoteKey.OnPromote(o.Activities, kube.StartPromotion)
+					promoteKey.OnPromoteUpdate(o.Activities, kube.StartPromotionUpdate)
 
 					statuses, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, mergeSha)
 					if err != nil {
@@ -724,7 +724,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									}
 								}
 							}
-							prStatuses := []v1.PullRequestStatus{}
+							prStatuses := []v1.GitStatus{}
 							keys := util.SortedMapKeys(urlStatusMap)
 							for _, url := range keys {
 								state := urlStatusMap[url]
@@ -732,16 +732,16 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 								if targetURL == "" {
 									targetURL = url
 								}
-								prStatuses = append(prStatuses, v1.PullRequestStatus{
+								prStatuses = append(prStatuses, v1.GitStatus{
 									URL:    targetURL,
 									Status: state,
 								})
 							}
-							updateStatuses := func(a *v1.PipelineActivity, p *v1.PromotePullRequestStep) error {
+							updateStatuses := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {
 								p.Statuses = prStatuses
 								return nil
 							}
-							promoteKey.OnPromote(o.Activities, updateStatuses)
+							promoteKey.OnPromoteUpdate(o.Activities, updateStatuses)
 
 							succeeded := true
 							for _, v := range urlStatusMap {
@@ -751,7 +751,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							}
 							if succeeded {
 								o.Printf("Merge status checks all passed so the promotion worked!\n")
-								return promoteKey.OnPromote(o.Activities, kube.CompletePromotion)
+								return promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
 							}
 						}
 					}
@@ -854,7 +854,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 	return o.registerLocalHelmRepo(o.LocalHelmRepoName, ns)
 }
 
-func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromotePullRequestKey {
+func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
 	pipeline := os.Getenv("JOB_NAME")
 	build := os.Getenv("BUILD_NUMBER")
 	name := pipeline
@@ -863,7 +863,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromotePull
 	}
 	name = kube.ToValidName(name)
 	o.Printf("Using pipeline name %s\n", name)
-	return &kube.PromotePullRequestKey{
+	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:     name,
 			Pipeline: pipeline,

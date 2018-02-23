@@ -146,6 +146,14 @@ type PipelineActivitySpec struct {
 	StartedTimestamp   *metav1.Time           `json:"startedTimestamp,omitempty" protobuf:"bytes,5,opt,name=startedTimestamp"`
 	CompletedTimestamp *metav1.Time           `json:"completedTimestamp,omitempty" protobuf:"bytes,6,opt,name=completedTimestamp"`
 	Steps              []PipelineActivityStep `json:"steps,omitempty" protobuf:"bytes,7,opt,name=steps"`
+	BuildURL           string                 `json:"buildUrl,omitempty" protobuf:"bytes,8,opt,name=buildUrl"`
+	BuildLogsURL       string                 `json:"buildLogsUrl,omitempty" protobuf:"bytes,9,opt,name=buildLogsUrl"`
+}
+
+type PipelineActivityStep struct {
+	Kind    ActivityStepKindType `json:"kind,omitempty" protobuf:"bytes,1,opt,name=kind"`
+	Stage   *StageActivityStep   `json:"stage,omitempty" protobuf:"bytes,2,opt,name=stage"`
+	Promote *PromoteActivityStep `json:"promote,omitempty" protobuf:"bytes,3,opt,name=promote"`
 }
 
 type CoreActivityStep struct {
@@ -162,7 +170,15 @@ type StageActivityStep struct {
 	Steps []CoreActivityStep `json:"steps,omitempty" protobuf:"bytes,1,opt,name=steps"`
 }
 
-type PullRequestStatus struct {
+type PromoteActivityStep struct {
+	CoreActivityStep
+
+	Environment string                  `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
+	PullRequest *PromotePullRequestStep `json:"pullRequest,omitempty" protobuf:"bytes,2,opt,name=pullRequest"`
+	Update      *PromoteUpdateStep      `json:"update,omitempty" protobuf:"bytes,3,opt,name=update"`
+}
+
+type GitStatus struct {
 	URL    string `json:"url,omitempty" protobuf:"bytes,1,opt,name=url"`
 	Status string `json:"status,omitempty" protobuf:"bytes,2,opt,name=status"`
 }
@@ -170,22 +186,19 @@ type PullRequestStatus struct {
 type PromotePullRequestStep struct {
 	CoreActivityStep
 
-	Environment    string              `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
-	PullRequestURL string              `json:"pullRequestURL,omitempty" protobuf:"bytes,2,opt,name=pullRequestURL"`
-	Statuses       []PullRequestStatus `json:"statuses,omitempty" protobuf:"bytes,3,opt,name=statuses"`
-	MergeCommitSHA string              `json:"mergeCommitSHA,omitempty" protobuf:"bytes,4,opt,name=mergeCommitSHA"`
+	PullRequestURL string `json:"pullRequestURL,omitempty" protobuf:"bytes,1,opt,name=pullRequestURL"`
+	MergeCommitSHA string `json:"mergeCommitSHA,omitempty" protobuf:"bytes,2,opt,name=mergeCommitSHA"`
 }
 
-type PipelineActivityStep struct {
-	Stage              *CoreActivityStep       `json:"stage,omitempty" protobuf:"bytes,1,opt,name=stage"`
-	Step               *CoreActivityStep       `json:"step,omitempty" protobuf:"bytes,1,opt,name=step"`
-	PromotePullRequest *PromotePullRequestStep `json:"promotePullRequest,omitempty" protobuf:"bytes,3,opt,name=promotePullRequest"`
-	Promote            *PromotePullRequestStep `json:"promote,omitempty" protobuf:"bytes,4,opt,name=promote"`
+type PromoteUpdateStep struct {
+	CoreActivityStep
+
+	Statuses []GitStatus `json:"statuses,omitempty" protobuf:"bytes,1,opt,name=statuses"`
 }
 
 // PipelineActivityStatus is the status for an Environment resource
 type PipelineActivityStatus struct {
-	Version string `json:"version,omitempty"`
+	Version string `json:"version,omitempty"  protobuf:"bytes,1,opt,name=version"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -197,6 +210,18 @@ type PipelineActivityList struct {
 
 	Items []PipelineActivity `json:"items"`
 }
+
+// ActivityStepKindType
+type ActivityStepKindType string
+
+const (
+	// ActivityStepKindTypeNone no kind yet
+	ActivityStepKindTypeNone ActivityStepKindType = ""
+	// ActivityStepKindTypeStage a group of low level steps
+	ActivityStepKindTypeStage ActivityStepKindType = "Stage"
+	// ActivityStepKindTypePromote a promote activity
+	ActivityStepKindTypePromote ActivityStepKindType = "Promote"
+)
 
 // ActivityStatusType
 type ActivityStatusType string
