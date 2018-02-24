@@ -10,29 +10,27 @@ import (
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
-type StepOptions struct {
-	CommonOptions
-
-	DisableImport bool
-	OutDir        string
+type StepPROptions struct {
+	StepOptions
 }
 
 var ()
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStep(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &StepOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			Out:     out,
-			Err:     errOut,
+func NewCmdStepPR(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &StepPROptions{
+		StepOptions: StepOptions{
+			CommonOptions: CommonOptions{
+				Factory: f,
+				Out:     out,
+				Err:     errOut,
+			},
 		},
 	}
 
 	cmd := &cobra.Command{
-		Use:     "step",
-		Short:   "pipeline steps",
-		Aliases: []string{"steps"},
+		Use:   "pr",
+		Short: "pipeline step pr",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -41,14 +39,13 @@ func NewCmdStep(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		},
 	}
 
-	cmd.AddCommand(NewCmdStepChangelog(f, out, errOut))
-	cmd.AddCommand(NewCmdStepPR(f, out, errOut))
-	cmd.AddCommand(NewCmdStepNexus(f, out, errOut))
-	cmd.AddCommand(NewCmdStepTag(f, out, errOut))
+	cmd.AddCommand(NewCmdStepPRComment(f, out, errOut))
+	options.addCommonFlags(cmd)
+
 	return cmd
 }
 
 // Run implements this command
-func (o *StepOptions) Run() error {
+func (o *StepPROptions) Run() error {
 	return o.Cmd.Help()
 }

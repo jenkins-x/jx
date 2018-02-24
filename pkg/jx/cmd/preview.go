@@ -171,13 +171,19 @@ func (o *PreviewOptions) Run() error {
 		}
 
 	}
+
+	if sourceURL == "" {
+		return fmt.Errorf("No sourceURL could be defaulted for the Preview Environment. Use --dir flag to detect the git source URL")
+	}
+
 	if o.PullRequest == "" {
 		o.PullRequest = os.Getenv("BRANCH_NAME")
 	}
 	prName := strings.TrimPrefix(o.PullRequest, "PR-")
 
+	var gitInfo *gits.GitRepositoryInfo
 	if sourceURL != "" {
-		gitInfo, err := gits.ParseGitURL(sourceURL)
+		gitInfo, err = gits.ParseGitURL(sourceURL)
 		if err != nil {
 			o.warnf("Could not parse the git URL %s due to %s\n", sourceURL, err)
 		} else {
@@ -189,11 +195,9 @@ func (o *PreviewOptions) Run() error {
 					prURL = gitInfo.PullRequestURL(prName)
 				}
 			}
-
 			if envName == "" && prName != "" {
 				envName = gitInfo.Organisation + "-" + gitInfo.Name + "-pr-" + prName
 			}
-
 			if label == "" {
 				label = gitInfo.Organisation + "/" + gitInfo.Name + " PR-" + prName
 			}
@@ -288,11 +292,45 @@ func (o *PreviewOptions) Run() error {
 	if o.ReleaseName == "" {
 		o.ReleaseName = ens
 	}
-	_, err = o.PromoteOptions.Promote(ens, env, false)
+
+	err = o.runCommand("helm", "upgrade", o.ReleaseName, ".", "--install", "--wait", "--namespace", ens)
 	if err != nil {
 		return err
 	}
-	return nil
+
+	ing, err := kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(app, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	comment := ":star: PR built and available in a preview environment"
+	if ing != nil {
+		if len(ing.Spec.Rules) > 0 {
+			hostname := ing.Spec.Rules[0].Host
+			if hostname != "" {
+				comment = fmt.Sprintf(":star: PR built and available [here](http://%s)", hostname)
+			}
+		}
+	}
+
+	stepPRCommentOptions := StepPRCommentOptions{
+		Flags: StepPRCommentFlags{
+			Owner:      gitInfo.Organisation,
+			Repository: gitInfo.Name,
+			Comment:    comment,
+			PR:         prName,
+		},
+		StepPROptions: StepPROptions{
+			StepOptions: StepOptions{
+				CommonOptions: CommonOptions{
+					BatchMode: true,
+					Factory:   o.Factory,
+				},
+			},
+		},
+	}
+	return stepPRCommentOptions.Run()
+
 }
 
 func (o *PreviewOptions) discoverGitURL(gitConf string) (string, error) {

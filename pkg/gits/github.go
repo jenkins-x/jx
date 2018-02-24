@@ -321,6 +321,22 @@ func (p *GitHubProvider) MergePullRequest(pr *GitPullRequest, message string) er
 	return nil
 }
 
+func (p *GitHubProvider) AddPRComment(pr *GitPullRequest, comment string) error {
+	if pr.Number == nil {
+		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
+	}
+	n := *pr.Number
+
+	prComment := &github.IssueComment{
+		Body: &comment,
+	}
+	_, _, err := p.Client.Issues.CreateComment(p.Context, pr.Owner, pr.Repo, n, prComment)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (p *GitHubProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
 	ref := pr.LastCommitSha
 	if ref == "" {

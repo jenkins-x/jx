@@ -318,7 +318,6 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 		u2.User = url.UserPassword(username, password)
 	}
 	helmUrl := u2.String()
-
 	// lets check if we already have the helm repo installed or if we need to add it or remove + add it
 	text, err := o.getCommandOutput("", "helm", "repo", "list")
 	if err != nil {

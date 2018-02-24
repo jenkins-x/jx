@@ -283,6 +283,18 @@ func (p *GiteaProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string,
 	return "", fmt.Errorf("Could not find a status for repository %s/%s with ref %s", pr.Owner, pr.Repo, ref)
 }
 
+func (p *GiteaProvider) AddPRComment(pr *GitPullRequest, comment string) error {
+	if pr.Number == nil {
+		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
+	}
+	n := *pr.Number
+	prComment := gitea.CreateIssueCommentOption{
+		Body: asText(&comment),
+	}
+	_, err := p.Client.CreateIssueComment(pr.Owner, pr.Repo, int64(n), prComment)
+	return err
+}
+
 func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
 	answer := []*GitRepoStatus{}
 	results, err := p.Client.ListStatuses(org, repo, sha, gitea.ListStatusesOption{})
