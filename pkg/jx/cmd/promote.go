@@ -599,42 +599,18 @@ func (o *PromoteOptions) GetGitInfo() (*gits.GitRepositoryInfo, error) {
 	return o.GitInfo, nil
 }
 
-func (options *PromoteOptions) DiscoverAppName() (string, error) {
+func (o *PromoteOptions) DiscoverAppName() (string, error) {
 	answer := ""
-	gitInfo, err := options.GetGitInfo()
+	gitInfo, err := o.GetGitInfo()
 	if err != nil {
 		return answer, err
 	}
 	answer = gitInfo.Name
 
 	if answer == "" {
-		dir, err := os.Getwd()
+		chartFile, err := o.FindHelmChart()
 		if err != nil {
-			return "", err
-		}
-		// lets try find the chart file
-		chartFile := filepath.Join(dir, "Chart.yaml")
-		exists, err := util.FileExists(chartFile)
-		if err != nil {
-			return answer, err
-		}
-		if !exists {
-			// lets try find all the chart files
-			files, err := filepath.Glob("*/Chart.yaml")
-			if err != nil {
-				return answer, err
-			}
-			if len(files) > 0 {
-				chartFile = files[0]
-			} else {
-				files, err = filepath.Glob("*/*/Chart.yaml")
-				if err != nil {
-					return answer, err
-				}
-				if len(files) > 0 {
-					chartFile = files[0]
-				}
-			}
+		  return answer, err
 		}
 		if chartFile != "" {
 			return helm.LoadChartName(chartFile)
@@ -642,6 +618,7 @@ func (options *PromoteOptions) DiscoverAppName() (string, error) {
 	}
 	return answer, nil
 }
+
 
 func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releaseInfo *ReleaseInfo) error {
 	if o.TimeoutDuration == nil {

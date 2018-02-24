@@ -278,6 +278,8 @@ type ReleaseList struct {
 
 type ReleaseSpec struct {
 	Commits []CommitSummary `json:"commits,omitempty" protobuf:"bytes,1,opt,name=commits"`
+	Name    string          `json:"name,omitempty"  protobuf:"bytes,2,opt,name=name"`
+	Version string          `json:"version,omitempty"  protobuf:"bytes,3,opt,name=version"`
 }
 
 // ReleaseStatus is the status of a release

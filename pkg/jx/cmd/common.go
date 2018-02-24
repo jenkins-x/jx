@@ -23,6 +23,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"k8s.io/client-go/kubernetes"
+	"path/filepath"
 )
 
 const (
@@ -474,4 +475,38 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 		}
 	}
 	return url, nil
+}
+
+
+func (* CommonOptions) FindHelmChart() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	// lets try find the chart file
+	chartFile := filepath.Join(dir, "Chart.yaml")
+	exists, err := util.FileExists(chartFile)
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		// lets try find all the chart files
+		files, err := filepath.Glob("*/Chart.yaml")
+		if err != nil {
+			return "", err
+		}
+		if len(files) > 0 {
+			chartFile = files[0]
+		} else {
+			files, err = filepath.Glob("*/*/Chart.yaml")
+			if err != nil {
+				return "", err
+			}
+			if len(files) > 0 {
+				chartFile = files[0]
+				return chartFile, nil
+			}
+		}
+	}
+	return "", nil
 }

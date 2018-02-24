@@ -1,8 +1,11 @@
 package cmd
 
 import (
-	"io"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -11,8 +14,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"gopkg.in/yaml.v2"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	/*
+	"k8s.io/apimachinery/pkg/util/yaml"
+	*/
+	"github.com/ghodss/yaml"
 	chgit "github.com/jenkins-x/chyle/chyle/git"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +31,38 @@ type StepChangelogOptions struct {
 
 	PreviousRevision string
 	CurrentRevision  string
+	TemplatesDir     string
+	ReleaseYamlFile  string
+	CrdYamlFile      string
+	OverwriteCRD      bool
 }
+
+const (
+	ReleaseName = `{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}`
+
+	SpecName    = `{{ .Chart.Name }}`
+	SpecVersion = `{{ .Chart.Version }}`
+
+	ReleaseCrdYaml = `apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: 2018-02-24T14:56:33Z
+  name: releases.jenkins.io
+  resourceVersion: "557150"
+  selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/releases.jenkins.io
+  uid: e77f4e08-1972-11e8-988e-42010a8401df
+spec:
+  group: jenkins.io
+  names:
+    kind: Release
+    listKind: ReleaseList
+    plural: releases
+    shortNames:
+    - rel
+    singular: release
+  scope: Namespaced
+  version: v1`
+)
 
 var (
 	StepChangelogLong = templates.LongDesc(`
@@ -36,26 +74,6 @@ var (
 		jx step changelog
 
 `)
-
-	ReleaseCrdYaml = `apiVersion: apiextensions.k8s.io/v1beta1
-	kind: CustomResourceDefinition
-	metadata:
-	  creationTimestamp: 2018-02-24T14:56:33Z
-	  name: releases.jenkins.io
-	  resourceVersion: "557150"
-	  selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/releases.jenkins.io
-	  uid: e77f4e08-1972-11e8-988e-42010a8401df
-	spec:
-	  group: jenkins.io
-	  names:
-	    kind: Release
-	    listKind: ReleaseList
-	    plural: releases
-	    shortNames:
-	    - rel
-	    singular: release
-	  scope: Namespaced
-	  version: v1`
 )
 
 func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -83,6 +101,10 @@ func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	}
 	cmd.Flags().StringVarP(&options.PreviousRevision, "previous-rev", "p", "", "the previous tag revision")
 	cmd.Flags().StringVarP(&options.CurrentRevision, "rev", "r", "", "the current tag revision")
+	cmd.Flags().StringVarP(&options.TemplatesDir, "templates-dir", "t", "", "the directory containing the helm chart templates to generate the resources")
+	cmd.Flags().StringVarP(&options.ReleaseYamlFile, "release-yaml-file", "", "release.yaml", "the name of the file to generate the Release YAML")
+	cmd.Flags().StringVarP(&options.CrdYamlFile, "crd-yaml-file", "", "release-crd.yaml", "the name of the file to generate the Release CustomResourceDefinition YAML")
+	cmd.Flags().BoolVarP(&options.OverwriteCRD, "overwrite", "o", false, "overwrites the Release CRD YAML file if it exists")
 	return cmd
 }
 
@@ -117,6 +139,20 @@ func (o *StepChangelogOptions) Run() error {
 		}
 	}
 
+	templatesDir := o.TemplatesDir
+	if templatesDir == "" {
+		chartFile, err := o.FindHelmChart()
+		if err != nil {
+			return fmt.Errorf("Could not find helm chart %s", err)
+		}
+		path, _ := filepath.Split(chartFile)
+		templatesDir = filepath.Join(path, "templates")
+	}
+	err = os.MkdirAll(templatesDir, DefaultWritePermissions)
+	if err != nil {
+		return fmt.Errorf("Failed to create the templates directory %s due to %s", templatesDir, err)
+	}
+
 	o.Printf("Generating change log from git ref %s => %s\n", util.ColorInfo(previousRev), util.ColorInfo(currentRev))
 
 	commits, err := chgit.FetchCommits(dir, previousRev, currentRev)
@@ -127,16 +163,18 @@ func (o *StepChangelogOptions) Run() error {
 
 	if commits != nil {
 		for _, commit := range *commits {
-			o.Printf("%#v\n", commit)
 			commitSummaries = append(commitSummaries, o.toCommitSummary(&commit))
 		}
 	}
 
 	// TODO generate release name
-	releaseName := ""
 	release := &v1.Release{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Release",
+			APIVersion: jenkinsio.GroupAndVersion,
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: releaseName,
+			Name: ReleaseName,
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
 			},
@@ -144,6 +182,8 @@ func (o *StepChangelogOptions) Run() error {
 			DeletionTimestamp: &metav1.Time{},
 		},
 		Spec: v1.ReleaseSpec{
+			Name:    SpecName,
+			Version: SpecVersion,
 			Commits: commitSummaries,
 		},
 	}
@@ -154,7 +194,24 @@ func (o *StepChangelogOptions) Run() error {
 	if data == nil {
 		return fmt.Errorf("Could not marshal release to yaml")
 	}
-	o.Printf("%s\n", string(data))
+	releaseFile := filepath.Join(templatesDir, o.ReleaseYamlFile)
+	crdFile := filepath.Join(templatesDir, o.CrdYamlFile)
+	err = ioutil.WriteFile(releaseFile, data, DefaultWritePermissions)
+	if err != nil {
+		return fmt.Errorf("Failed to save Release YAML file %s: %s", releaseFile, err)
+	}
+	exists, err := util.FileExists(crdFile)
+	if err != nil {
+		return fmt.Errorf("Failed to check for CRD YAML file %s: %s", crdFile, err)
+	}
+	o.Printf("generated: %s\n", util.ColorInfo(releaseFile))
+	if o.OverwriteCRD || !exists {
+		err = ioutil.WriteFile(crdFile, []byte(ReleaseCrdYaml), DefaultWritePermissions)
+		if err != nil {
+			return fmt.Errorf("Failed to save Release CRD YAML file %s: %s", crdFile, err)
+		}
+		o.Printf("generated: %s\n", util.ColorInfo(crdFile))
+	}
 	return nil
 }
 
