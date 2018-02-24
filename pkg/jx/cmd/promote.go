@@ -56,6 +56,8 @@ type PromoteOptions struct {
 	TimeoutDuration         *time.Duration
 	PullRequestPollDuration *time.Duration
 	Activities              typev1.PipelineActivityInterface
+	GitInfo                 *gits.GitRepositoryInfo
+	jenkinsURL              string
 }
 
 type ReleaseInfo struct {
@@ -572,29 +574,44 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 	return targetNS, envResource, nil
 }
 
+func (o *PromoteOptions) GetGitInfo() (*gits.GitRepositoryInfo, error) {
+	if o.GitInfo == nil {
+		dir, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		root, gitConf, err := gits.FindGitConfigDir(dir)
+		if err != nil {
+			return nil, err
+		}
+		if root != "" {
+			url, err := gits.DiscoverRemoteGitURL(gitConf)
+			if err != nil {
+				return nil, err
+			}
+			gitInfo, err := gits.ParseGitURL(url)
+			if err != nil {
+				return nil, err
+			}
+			o.GitInfo = gitInfo
+		}
+	}
+	return o.GitInfo, nil
+}
+
 func (options *PromoteOptions) DiscoverAppName() (string, error) {
 	answer := ""
-	dir, err := os.Getwd()
+	gitInfo, err := options.GetGitInfo()
 	if err != nil {
 		return answer, err
 	}
+	answer = gitInfo.Name
 
-	root, gitConf, err := gits.FindGitConfigDir(dir)
-	if err != nil {
-		return answer, err
-	}
-	if root != "" {
-		url, err := gits.DiscoverRemoteGitURL(gitConf)
-		if err != nil {
-			return answer, err
-		}
-		gitInfo, err := gits.ParseGitURL(url)
-		if err != nil {
-			return answer, err
-		}
-		answer = gitInfo.Name
-	}
 	if answer == "" {
+		dir, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
 		// lets try find the chart file
 		chartFile := filepath.Join(dir, "Chart.yaml")
 		exists, err := util.FileExists(chartFile)
@@ -857,18 +874,64 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
 	pipeline := os.Getenv("JOB_NAME")
 	build := os.Getenv("BUILD_NUMBER")
+	buildURL := os.Getenv("BUILD_URL")
+	buildLogsURL := os.Getenv("BUILD_LOG_URL")
 	name := pipeline
 	if build != "" {
 		name += "-" + build
+		if buildURL == "" || buildLogsURL == "" {
+			jenkinsURL := o.getJenkinsURL()
+			if jenkinsURL != "" {
+				path := pipeline
+				if !strings.HasPrefix(path, "job/") && !strings.HasPrefix(path, "/job/") {
+					// lets split the path and prefix it with /job
+					path = strings.Join(strings.Split(path, "/"), "/job/")
+					path = util.UrlJoin("job", path)
+				}
+				path = util.UrlJoin(path, build)
+				if !strings.HasSuffix(path, "/") {
+					path += "/"
+				}
+				if buildURL == "" {
+					buildURL = util.UrlJoin(jenkinsURL, path)
+				}
+				if buildLogsURL == "" {
+					buildLogsURL = util.UrlJoin(buildURL, "console")
+				}
+			}
+		}
 	}
 	name = kube.ToValidName(name)
 	o.Printf("Using pipeline name %s\n", name)
+	gitInfo, err := o.GetGitInfo()
+	if err != nil {
+		o.warnf("Could not discover the git repository info %s\n", err)
+	}
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
-			Name:     name,
-			Pipeline: pipeline,
-			Build:    build,
+			Name:         name,
+			Pipeline:     pipeline,
+			Build:        build,
+			BuildURL:     buildURL,
+			BuildLogsURL: buildLogsURL,
+			GitInfo:      gitInfo,
 		},
 		Environment: env.Name,
 	}
+}
+
+func (o *PromoteOptions) getJenkinsURL() string {
+	if o.jenkinsURL == "" {
+		o.jenkinsURL = os.Getenv("JENKINS_URL")
+	}
+	if o.jenkinsURL == "" {
+		o.jenkinsURL = os.Getenv("JENKINS_URL")
+	}
+	url, err := o.Factory.GetJenkinsURL()
+	if err != nil {
+		o.warnf("Could not find Jenkins URL %s", err)
+	} else {
+		o.jenkinsURL = url
+	}
+	return o.jenkinsURL
 }

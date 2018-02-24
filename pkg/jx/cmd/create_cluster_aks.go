@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/aks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/aks"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -23,8 +23,8 @@ type CreateClusterAKSOptions struct {
 }
 
 type CreateClusterAKSFlags struct {
-	UserName		string
-	Password 		string
+	UserName        string
+	Password        string
 	ClusterName     string
 	ResourceName    string
 	Location        string
@@ -129,11 +129,11 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	location := o.Flags.Location
 	if location == "" {
 		prompt := &survey.Select{
-			Message: "location",
-			Options: aks.GetResourceGrouoLocation(),
-			Default: "eastus",
+			Message:  "location",
+			Options:  aks.GetResourceGrouoLocation(),
+			Default:  "eastus",
 			PageSize: 10,
-			Help:    "location to run cluster",
+			Help:     "location to run cluster",
 		}
 		err := survey.AskOne(prompt, &location, nil)
 		if err != nil {
@@ -174,7 +174,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		if err != nil {
 			return err
 		}
-	}else {
+	} else {
 		err = o.runCommand("az", "login")
 		if err != nil {
 			return err

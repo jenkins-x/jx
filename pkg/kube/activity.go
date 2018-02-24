@@ -6,13 +6,17 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type PipelineActivityKey struct {
-	Name     string
-	Pipeline string
-	Build    string
+	Name         string
+	Pipeline     string
+	Build        string
+	BuildURL     string
+	BuildLogsURL string
+	GitInfo      *gits.GitRepositoryInfo
 }
 
 func (k *PipelineActivityKey) IsValid() bool {
@@ -31,20 +35,47 @@ type PromoteUpdateFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.Pr
 // GetOrCreate gets or creates the pipeline activity
 func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, error) {
 	name := k.Name
+	create := false
 	a, err := activities.Get(name, metav1.GetOptions{})
-	if err == nil {
+	if err != nil {
+		create = true
+		a = &v1.PipelineActivity{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+			Spec: v1.PipelineActivitySpec{},
+		}
+	}
+	spec := &a.Spec
+	if k.Pipeline != "" && spec.Pipeline == "" {
+		spec.Pipeline = k.Pipeline
+	}
+	if k.Build != "" && spec.Build == "" {
+		spec.Build = k.Build
+	}
+	if k.BuildURL != "" && spec.BuildURL == "" {
+		spec.BuildURL = k.BuildURL
+	}
+	if k.BuildLogsURL != "" && spec.BuildLogsURL == "" {
+		spec.BuildLogsURL = k.BuildLogsURL
+	}
+	gi := k.GitInfo
+	if gi != nil {
+		if gi.URL != "" && spec.GitURL == "" {
+			spec.GitURL = gi.URL
+		}
+		if gi.Organisation != "" && spec.GitOwner == "" {
+			spec.GitOwner = gi.Organisation
+		}
+		if gi.Name != "" && spec.GitRepository == "" {
+			spec.GitRepository = gi.Name
+		}
+	}
+	if create {
+		return activities.Create(a)
+	} else {
 		return a, nil
 	}
-	a = &v1.PipelineActivity{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: v1.PipelineActivitySpec{
-			Pipeline: k.Pipeline,
-			Build:    k.Build,
-		},
-	}
-	return activities.Create(a)
 }
 
 // GetOrCreatePromote gets or creates the Promote step for the key
