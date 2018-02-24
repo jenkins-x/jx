@@ -309,6 +309,14 @@ func GitGetRemoteBranchNames(dir string, prefix string) ([]string, error) {
 	return answer, nil
 }
 
+func GetPreviousGitTagSHA(dir string) (string, error) {
+	return util.GetCommandOutput(dir, "git", "rev-list", "--tags", "--skip=1", "--max-count=1")
+}
+
+func GetCurrentGitTagSHA(dir string) (string, error) {
+	return util.GetCommandOutput(dir, "git", "rev-list", "--tags", "--max-count=1")
+}
+
 func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, o io.Writer) {
 	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL)
 

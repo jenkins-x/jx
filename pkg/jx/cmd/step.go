@@ -41,6 +41,7 @@ func NewCmdStep(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		},
 	}
 
+	cmd.AddCommand(NewCmdStepChangelog(f, out, errOut))
 	cmd.AddCommand(NewCmdStepNexus(f, out, errOut))
 	cmd.AddCommand(NewCmdStepTag(f, out, errOut))
 	return cmd

@@ -17,59 +17,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// EnvironmentInformer provides access to a shared informer and lister for
-// Environments.
-type EnvironmentInformer interface {
+// ReleaseInformer provides access to a shared informer and lister for
+// Releases.
+type ReleaseInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1.EnvironmentLister
+	Lister() v1.ReleaseLister
 }
 
-type environmentInformer struct {
+type releaseInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewEnvironmentInformer constructs a new informer for Environment type.
+// NewReleaseInformer constructs a new informer for Release type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewEnvironmentInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredEnvironmentInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewReleaseInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredReleaseInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredEnvironmentInformer constructs a new informer for Environment type.
+// NewFilteredReleaseInformer constructs a new informer for Release type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredEnvironmentInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredReleaseInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options meta_v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.JenkinsV1().Environments(namespace).List(options)
+				return client.JenkinsV1().Releases(namespace).List(options)
 			},
 			WatchFunc: func(options meta_v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.JenkinsV1().Environments(namespace).Watch(options)
+				return client.JenkinsV1().Releases(namespace).Watch(options)
 			},
 		},
-		&jenkins_io_v1.Environment{},
+		&jenkins_io_v1.Release{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *environmentInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredEnvironmentInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *releaseInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredReleaseInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *environmentInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&jenkins_io_v1.Environment{}, f.defaultInformer)
+func (f *releaseInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&jenkins_io_v1.Release{}, f.defaultInformer)
 }
 
-func (f *environmentInformer) Lister() v1.EnvironmentLister {
-	return v1.NewEnvironmentLister(f.Informer().GetIndexer())
+func (f *releaseInformer) Lister() v1.ReleaseLister {
+	return v1.NewReleaseLister(f.Informer().GetIndexer())
 }

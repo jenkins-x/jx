@@ -35,6 +35,20 @@ func RegisterPipelineActivityCRD(apiClient *apiextensionsclientset.Clientset) er
 	return registerCRD(apiClient, name, names)
 }
 
+// RegisterReleaseCRD ensures that the CRD is registered for Release
+func RegisterReleaseCRD(apiClient *apiextensionsclientset.Clientset) error {
+	name := "releases." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "Release",
+		ListKind:   "ReleaseList",
+		Plural:     "releases",
+		Singular:   "release",
+		ShortNames: []string{"rel"},
+	}
+
+	return registerCRD(apiClient, name, names)
+}
+
 func registerCRD(apiClient *apiextensionsclientset.Clientset, name string, names *v1beta1.CustomResourceDefinitionNames) error {
 	_, err := apiClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(name, metav1.GetOptions{})
 	if err == nil {
