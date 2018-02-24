@@ -8,16 +8,16 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/spf13/cobra"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	/*
-	"k8s.io/apimachinery/pkg/util/yaml"
+		"k8s.io/apimachinery/pkg/util/yaml"
 	*/
 	"github.com/ghodss/yaml"
 	chgit "github.com/jenkins-x/chyle/chyle/git"
@@ -34,7 +34,7 @@ type StepChangelogOptions struct {
 	TemplatesDir     string
 	ReleaseYamlFile  string
 	CrdYamlFile      string
-	OverwriteCRD      bool
+	OverwriteCRD     bool
 }
 
 const (

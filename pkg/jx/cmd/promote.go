@@ -610,7 +610,7 @@ func (o *PromoteOptions) DiscoverAppName() (string, error) {
 	if answer == "" {
 		chartFile, err := o.FindHelmChart()
 		if err != nil {
-		  return answer, err
+			return answer, err
 		}
 		if chartFile != "" {
 			return helm.LoadChartName(chartFile)
@@ -618,7 +618,6 @@ func (o *PromoteOptions) DiscoverAppName() (string, error) {
 	}
 	return answer, nil
 }
-
 
 func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releaseInfo *ReleaseInfo) error {
 	if o.TimeoutDuration == nil {

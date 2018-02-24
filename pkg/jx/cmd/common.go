@@ -477,8 +477,7 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 	return url, nil
 }
 
-
-func (* CommonOptions) FindHelmChart() (string, error) {
+func (*CommonOptions) FindHelmChart() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
