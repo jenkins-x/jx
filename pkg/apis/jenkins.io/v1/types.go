@@ -148,6 +148,9 @@ type PipelineActivitySpec struct {
 	Steps              []PipelineActivityStep `json:"steps,omitempty" protobuf:"bytes,7,opt,name=steps"`
 	BuildURL           string                 `json:"buildUrl,omitempty" protobuf:"bytes,8,opt,name=buildUrl"`
 	BuildLogsURL       string                 `json:"buildLogsUrl,omitempty" protobuf:"bytes,9,opt,name=buildLogsUrl"`
+	GitURL             string                 `json:"gitUrl,omitempty" protobuf:"bytes,10,opt,name=gitUrl"`
+	GitRepository      string                 `json:"gitRepository,omitempty" protobuf:"bytes,10,opt,name=gitRepository"`
+	GitOwner           string                 `json:"gitOwner,omitempty" protobuf:"bytes,10,opt,name=gitOwner"`
 }
 
 type PipelineActivityStep struct {
@@ -246,3 +249,71 @@ const (
 func (s ActivityStatusType) String() string {
 	return string(s)
 }
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+type Release struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	Spec   ReleaseSpec   `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	Status ReleaseStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ReleaseList is a list of Release resources
+type ReleaseList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []Release `json:"items"`
+}
+
+type ReleaseSpec struct {
+	Commits []CommitSummary `json:"commits,omitempty" protobuf:"bytes,1,opt,name=commits"`
+	Name    string          `json:"name,omitempty"  protobuf:"bytes,2,opt,name=name"`
+	Version string          `json:"version,omitempty"  protobuf:"bytes,3,opt,name=version"`
+}
+
+// ReleaseStatus is the status of a release
+type ReleaseStatus struct {
+	Status ReleaseStatusType `json:"status,omitempty"  protobuf:"bytes,1,opt,name=status"`
+}
+
+// CommitSummary is the summary of a commit
+type CommitSummary struct {
+	Message   string       `json:"message,omitempty"  protobuf:"bytes,1,opt,name=message"`
+	SHA       string       `json:"sha,omitempty"  protobuf:"bytes,1,opt,name=sha"`
+	URL       string       `json:"url,omitempty"  protobuf:"bytes,1,opt,name=url"`
+	Author    *UserDetails `json:"author,omitempty"  protobuf:"bytes,1,opt,name=author"`
+	Committer *UserDetails `json:"committer,omitempty"  protobuf:"bytes,1,opt,name=committer"`
+}
+
+// UserDetails containers details of a user
+type UserDetails struct {
+	Login             string       `json:"login,omitempty"  protobuf:"bytes,1,opt,name=login"`
+	Name              string       `json:"name,omitempty"  protobuf:"bytes,2,opt,name=name"`
+	Email             string       `json:"email,omitempty"  protobuf:"bytes,3,opt,name=email"`
+	CreationTimestamp *metav1.Time `json:"creationTimestamp,omitempty" protobuf:"bytes,4,opt,name=creationTimestamp"`
+}
+
+// ReleaseStatusType
+type ReleaseStatusType string
+
+const (
+	// ReleaseStatusTypeNone an activity step has not started yet
+	ReleaseStatusTypeNone ReleaseStatusType = ""
+	// ReleaseStatusTypePending the release is pending
+	ReleaseStatusTypePending ReleaseStatusType = "Pending"
+	// ReleaseStatusTypeDeployed a release has been deployed
+	ReleaseStatusTypeDeployed ReleaseStatusType = "Deployed"
+	// ReleaseStatusTypeFailed release failed
+	ReleaseStatusTypeFailed ReleaseStatusType = "Failed"
+)

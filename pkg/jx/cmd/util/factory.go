@@ -36,6 +36,8 @@ const (
 type Factory interface {
 	CreateJenkinsClient() (*gojenkins.Jenkins, error)
 
+	GetJenkinsURL() (string, error)
+
 	CreateAuthConfigService(fileName string) (auth.AuthConfigService, error)
 
 	CreateGitAuthConfigService() (auth.AuthConfigService, error)
@@ -72,35 +74,40 @@ func (f *factory) SetBatch(batch bool) {
 
 // CreateJenkinsClient creates a new jenkins client
 func (f *factory) CreateJenkinsClient() (*gojenkins.Jenkins, error) {
-	var url string
-	if url == "" {
-		// lets find the kubernets service
-		client, ns, err := f.CreateClient()
-		if err != nil {
-			return nil, err
-		}
-		url, err = kube.FindServiceURL(client, ns, kube.ServiceJenkins)
-		if err != nil {
-			// lets try the real environment
-			realNS, _, err := kube.GetDevNamespace(client, ns)
-			if err != nil {
-				return nil, err
-			}
-			if realNS != ns {
-				url, err = kube.FindServiceURL(client, realNS, kube.ServiceJenkins)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				return nil, err
-			}
-		}
-	}
 	svc, err := f.CreateJenkinsAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
+	url, err := f.GetJenkinsURL()
+	if err != nil {
+		return nil, err
+	}
 	return jenkins.GetJenkinsClient(url, f.Batch, &svc)
+}
+
+func (f *factory) GetJenkinsURL() (string, error) {
+	// lets find the kubernets service
+	client, ns, err := f.CreateClient()
+	if err != nil {
+		return "", err
+	}
+	url, err := kube.FindServiceURL(client, ns, kube.ServiceJenkins)
+	if err != nil {
+		// lets try the real environment
+		realNS, _, err := kube.GetDevNamespace(client, ns)
+		if err != nil {
+			return "", err
+		}
+		if realNS != ns {
+			url, err = kube.FindServiceURL(client, realNS, kube.ServiceJenkins)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			return "", err
+		}
+	}
+	return url, err
 }
 
 func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, error) {

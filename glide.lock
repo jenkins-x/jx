@@ -1,5 +1,5 @@
-hash: 4455d4aff806ffa5428d2d380696e4f2bce1bef5294c6af26c522261cbacf0de
-updated: 2018-02-09T07:09:35.420923Z
+hash: f2dbdfd257a7e2e0b2612d41002fd9020f6b789c43e16c221c57ea8edb055f29
+updated: 2018-02-24T12:15:25.85833Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,7 +7,7 @@ imports:
   - compute/metadata
   - internal
 - name: code.gitea.io/sdk
-  version: 0489f9e4e096654f966ecdd67cee3eb5eba6e3d7
+  version: 649bdad70e16f58154dd6d765bb09f99dfaa105d
   subpackages:
   - gitea
 - name: github.com/Azure/go-autorest
@@ -22,7 +22,7 @@ imports:
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/chromedp/cdproto
-  version: f100dc013e8818dcb609fa058c3a6dae6d1310d0
+  version: 6213fdcf29aa52c6d52bc5c7e0c38dd172ea6fa6
   subpackages:
   - accessibility
   - animation
@@ -63,7 +63,7 @@ imports:
   - tethering
   - tracing
 - name: github.com/chromedp/chromedp
-  version: 46a6388474e20ef92c34290f62602e9fa18c9e95
+  version: 54f529fc51b0af6fcec693d0bda2c3f5068fa738
   subpackages:
   - client
   - kb
@@ -110,7 +110,7 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: 08e68b58d6369e25c2375020353d0d642aa4b2b1
+  version: b1658317c4f5c8dd7000d94ab8a9b56039412cc6
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -135,7 +135,7 @@ imports:
   - openstack/utils
   - pagination
 - name: github.com/gorilla/websocket
-  version: 4ac909741dfa57448bfadfdbca0cf7eeaa68f0e2
+  version: f37d1588608ec036fa9b0b7b8afbde47dc06aea9
 - name: github.com/hashicorp/golang-lru
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   subpackages:
@@ -150,6 +150,10 @@ imports:
   version: d14ea06fba99483203c19d92cfcd13ebe73135f4
   subpackages:
   - io
+- name: github.com/jenkins-x/chyle
+  version: e87e54eb726d2ed4d06d754a2aab47f3b3dbb8dc
+  subpackages:
+  - chyle/git
 - name: github.com/jenkins-x/golang-jenkins
   version: ec7a97e4a0d7bfebfacb5818e70b77744d9f4d6d
 - name: github.com/json-iterator/go
@@ -263,7 +267,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/appengine
-  version: 5bee14b453b4c71be47ec1781b0fa61c2ea182db
+  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
   subpackages:
   - internal
   - internal/app_identity
@@ -289,7 +293,7 @@ imports:
   - osfs
   - util
 - name: gopkg.in/src-d/go-git.v4
-  version: bf3b1f1fb9e0a04d0f87511a7ded2562b48a19d8
+  version: 886dc83f3ed518a78772055497bcc7d7621b468e
   subpackages:
   - config
   - internal/revision
@@ -333,7 +337,7 @@ imports:
 - name: gopkg.in/warnings.v0
   version: 8a331561fe74dadba6edfc59f3be66c22c3b065d
 - name: gopkg.in/yaml.v2
-  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
+  version: 670d4cfef0544295bc27a114dbac37980d83185a
 - name: k8s.io/api
   version: fbe336854453ac8e27bffe14e1964555245cbd05
   subpackages:
@@ -366,7 +370,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: b357563e8dd364d1be52dbdc8457cd65badc427b
+  version: 90a5ba227a3ae6414796a5f2910638c3011af740
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -478,11 +482,11 @@ imports:
   - util/jsonpath
   - util/retry
 - name: k8s.io/code-generator
-  version: 4fdcc27750e20a0d0fe12007ddfb235ba657529c
+  version: ac34b62827a65b275fbefe8e041d6f7dcf1f3438
 - name: k8s.io/gengo
-  version: 8394c995ab8fbe52216f38d0e1a37de36d820528
+  version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
 - name: k8s.io/helm
-  version: 8009115d3a96653b2c7d97dc119bb665b1c08f9b
+  version: d0883dd8138947772239c25e212926d1afb1fcef
   subpackages:
   - pkg/chartutil
   - pkg/ignore
@@ -491,7 +495,7 @@ imports:
   - pkg/sympath
   - pkg/version
 - name: k8s.io/metrics
-  version: 7619a6675e2689251ee22bcc56195dc52179f706
+  version: 56681397367c271f0ee7c5e25d670f4384d0cf3f
   subpackages:
   - pkg/apis/metrics
   - pkg/apis/metrics/v1alpha1

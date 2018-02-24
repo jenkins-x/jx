@@ -1,0 +1,20 @@
+[config]
+exclude-merge-commits=true
+check-summary-length=true
+summary-length=72
+
+[matchers]
+simple=".+? : [a-z0-9].+(?:\n)?"
+extended=".+? : [a-z0-9].+?\n(?:\n?.+)+(?:\n)?"
+
+[examples]
+a_simple_commit="""
+module : a commit message
+"""
+an_extended_commit="""
+module : a commit message
+
+* first line
+* second line
+* and so on...
+"""
