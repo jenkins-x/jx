@@ -183,13 +183,22 @@ func GitRepoName(org, repoName string) string {
 }
 
 func GetGitServer(dir string) (string, error) {
+
+	repo, err := GetGitInfo(dir)
+	if err != nil {
+		return "", err
+	}
+	return repo.Host, err
+}
+
+func GetGitInfo(dir string) (*GitRepositoryInfo, error) {
 	e := exec.Command("git", "config", "--get", "remote.origin.url")
 	if dir != "" {
 		e.Dir = dir
 	}
 	data, err := e.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("Failed to run git commit in %s due to %s", dir, err)
+		return nil, fmt.Errorf("Failed to run git commit in %s due to %s", dir, err)
 	}
 
 	url := string(data)
@@ -197,10 +206,9 @@ func GetGitServer(dir string) (string, error) {
 
 	repo, err := ParseGitURL(url)
 	if err != nil {
-		return "", fmt.Errorf("Failed to parse git URL %s due to %s", url, err)
+		return nil, fmt.Errorf("Failed to parse git URL %s due to %s", url, err)
 	}
-
-	return repo.Host, err
+	return repo, err
 }
 
 // ConvertToValidBranchName converts the given branch name into a valid git branch string

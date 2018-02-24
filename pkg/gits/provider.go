@@ -41,6 +41,8 @@ type GitProvider interface {
 
 	IsGitHub() bool
 
+	AddPRComment(pr *GitPullRequest, comment string) error
+
 	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
 	//
 
@@ -265,6 +267,18 @@ func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigSe
 func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	if i.Host == GitHubHost {
 		return NewGitHubProvider(server, user)
+	}
+	return nil, fmt.Errorf("Git provider not supported for host %s", i.Host)
+}
+
+func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService) (GitProvider, error) {
+	config := authConfigSvc.Config()
+	server := config.GetOrCreateServer(i.Host)
+	url := server.URL
+	userAuths := authConfigSvc.Config().FindUserAuths(url)
+	if len(userAuths) == 1 {
+		auth := userAuths[0]
+		return NewGitHubProvider(server, auth)
 	}
 	return nil, fmt.Errorf("Git provider not supported for host %s", i.Host)
 }

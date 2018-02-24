@@ -1,0 +1,4 @@
+# this is used for testing jx inside a cluster in development
+FROM jenkinsxio/builder-nodejs:0.0.2
+
+COPY build/jx-linux-amd64 /usr/bin/jx
