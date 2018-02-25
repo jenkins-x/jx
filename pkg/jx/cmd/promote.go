@@ -574,34 +574,9 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 	return targetNS, envResource, nil
 }
 
-func (o *PromoteOptions) GetGitInfo() (*gits.GitRepositoryInfo, error) {
-	if o.GitInfo == nil {
-		dir, err := os.Getwd()
-		if err != nil {
-			return nil, err
-		}
-		root, gitConf, err := gits.FindGitConfigDir(dir)
-		if err != nil {
-			return nil, err
-		}
-		if root != "" {
-			url, err := gits.DiscoverRemoteGitURL(gitConf)
-			if err != nil {
-				return nil, err
-			}
-			gitInfo, err := gits.ParseGitURL(url)
-			if err != nil {
-				return nil, err
-			}
-			o.GitInfo = gitInfo
-		}
-	}
-	return o.GitInfo, nil
-}
-
 func (o *PromoteOptions) DiscoverAppName() (string, error) {
 	answer := ""
-	gitInfo, err := o.GetGitInfo()
+	gitInfo, err := gits.GetGitInfo("")
 	if err != nil {
 		return answer, err
 	}
@@ -879,7 +854,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	}
 	name = kube.ToValidName(name)
 	o.Printf("Using pipeline name %s\n", name)
-	gitInfo, err := o.GetGitInfo()
+	gitInfo, err := gits.GetGitInfo("")
 	if err != nil {
 		o.warnf("Could not discover the git repository info %s\n", err)
 	}
