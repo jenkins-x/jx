@@ -183,7 +183,6 @@ func GitRepoName(org, repoName string) string {
 }
 
 func GetGitServer(dir string) (string, error) {
-
 	repo, err := GetGitInfo(dir)
 	if err != nil {
 		return "", err
