@@ -580,6 +580,10 @@ func (o *PromoteOptions) DiscoverAppName() (string, error) {
 	if err != nil {
 		return answer, err
 	}
+
+	if gitInfo == nil {
+		return answer, fmt.Errorf("no git info found to discover app name from")
+	}
 	answer = gitInfo.Name
 
 	if answer == "" {
