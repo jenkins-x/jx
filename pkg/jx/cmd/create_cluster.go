@@ -148,16 +148,18 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 
 	// call jx install
 	installOpts := &o.InstallOptions
-	err = installOpts.Run()
-	if err != nil {
-		return err
-	}
 
 	// lets default the helm domain
 	exposeController := o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController
 	if exposeController != nil && exposeController.Config.Domain == "" && installOpts.Flags.Domain != "" {
 		exposeController.Config.Domain = installOpts.Flags.Domain
 	}
+
+	err = installOpts.Run()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
