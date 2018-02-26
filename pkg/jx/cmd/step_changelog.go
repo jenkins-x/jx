@@ -34,7 +34,7 @@ type StepChangelogOptions struct {
 	TemplatesDir     string
 	ReleaseYamlFile  string
 	CrdYamlFile      string
-	Dir      string
+	Dir              string
 	OverwriteCRD     bool
 	GenerateCRD      bool
 }
@@ -165,15 +165,23 @@ func (o *StepChangelogOptions) Run() error {
 
 	o.Printf("Generating change log from git ref %s => %s\n", util.ColorInfo(previousRev), util.ColorInfo(currentRev))
 
-	gitDir, _, err := gits.FindGitConfigDir(dir)
+	gitDir, gitConfDir, err := gits.FindGitConfigDir(dir)
 	if err != nil {
 		return err
 	}
-	if gitDir == "" {
+	if gitDir == "" || gitConfDir == "" {
 		o.warnf("No git directory could be found from dir %s\n", dir)
 		return nil
 	}
 
+	gitUrl, err := gits.DiscoverRemoteGitURL(gitConfDir)
+	if err != nil {
+		return err
+	}
+	gitInfo, err := gits.ParseGitURL(gitUrl)
+	if err != nil {
+		return err
+	}
 	commits, err := chgit.FetchCommits(gitDir, previousRev, currentRev)
 	if err != nil {
 		return err
@@ -201,9 +209,11 @@ func (o *StepChangelogOptions) Run() error {
 			DeletionTimestamp: &metav1.Time{},
 		},
 		Spec: v1.ReleaseSpec{
-			Name:    SpecName,
-			Version: SpecVersion,
-			Commits: commitSummaries,
+			Name:        SpecName,
+			Version:     SpecVersion,
+			Commits:     commitSummaries,
+			GitHttpURL:  gitInfo.HttpURL(),
+			GitCloneURL: gitInfo.HttpCloneURL(),
 		},
 	}
 	data, err := yaml.Marshal(release)
@@ -237,15 +247,19 @@ func (o *StepChangelogOptions) Run() error {
 func (o *StepChangelogOptions) toCommitSummary(commit *object.Commit) v1.CommitSummary {
 	// TODO
 	url := ""
+	branch := "master"
+
 	sha := commit.Hash.String()
 	return v1.CommitSummary{
 		Message:   commit.Message,
 		URL:       url,
 		SHA:       sha,
 		Author:    o.toUserDetails(commit.Author),
+		Branch:    branch,
 		Committer: o.toUserDetails(commit.Committer),
 	}
 }
+
 func (o *StepChangelogOptions) toUserDetails(signature object.Signature) *v1.UserDetails {
 	// TODO
 	login := ""
