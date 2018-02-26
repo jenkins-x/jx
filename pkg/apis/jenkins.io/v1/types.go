@@ -277,9 +277,11 @@ type ReleaseList struct {
 }
 
 type ReleaseSpec struct {
-	Commits []CommitSummary `json:"commits,omitempty" protobuf:"bytes,1,opt,name=commits"`
-	Name    string          `json:"name,omitempty"  protobuf:"bytes,2,opt,name=name"`
-	Version string          `json:"version,omitempty"  protobuf:"bytes,3,opt,name=version"`
+	Commits     []CommitSummary `json:"commits,omitempty" protobuf:"bytes,1,opt,name=commits"`
+	Name        string          `json:"name,omitempty"  protobuf:"bytes,2,opt,name=name"`
+	Version     string          `json:"version,omitempty"  protobuf:"bytes,3,opt,name=version"`
+	GitHttpURL  string          `json:"gitHttpUrl,omitempty"  protobuf:"bytes,4,opt,name=gitHttpUrl"`
+	GitCloneURL string          `json:"gitCloneUrl,omitempty"  protobuf:"bytes,5,opt,name=gitCloneUrl"`
 }
 
 // ReleaseStatus is the status of a release
@@ -290,10 +292,11 @@ type ReleaseStatus struct {
 // CommitSummary is the summary of a commit
 type CommitSummary struct {
 	Message   string       `json:"message,omitempty"  protobuf:"bytes,1,opt,name=message"`
-	SHA       string       `json:"sha,omitempty"  protobuf:"bytes,1,opt,name=sha"`
-	URL       string       `json:"url,omitempty"  protobuf:"bytes,1,opt,name=url"`
-	Author    *UserDetails `json:"author,omitempty"  protobuf:"bytes,1,opt,name=author"`
-	Committer *UserDetails `json:"committer,omitempty"  protobuf:"bytes,1,opt,name=committer"`
+	SHA       string       `json:"sha,omitempty"  protobuf:"bytes,2,opt,name=sha"`
+	URL       string       `json:"url,omitempty"  protobuf:"bytes,3,opt,name=url"`
+	Author    *UserDetails `json:"author,omitempty"  protobuf:"bytes,4,opt,name=author"`
+	Committer *UserDetails `json:"committer,omitempty"  protobuf:"bytes,5,opt,name=committer"`
+	Branch    string       `json:"branch,omitempty"  protobuf:"bytes,6,opt,name=branch"`
 }
 
 // UserDetails containers details of a user
