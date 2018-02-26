@@ -7,6 +7,15 @@ import (
 
 // ToValidName converts the given string into a valid kubernetes resource name
 func ToValidName(name string) string {
+	return toValidName(name, false)
+}
+
+// ToValidNameWithDots converts the given string into a valid kubernetes resource name
+func ToValidNameWithDots(name string) string {
+	return toValidName(name, true)
+}
+
+func toValidName(name string, allowDots bool) string {
 	var buffer bytes.Buffer
 	first := true
 	lastCharDash := false
@@ -19,7 +28,10 @@ func ToValidName(name string) string {
 				first = false
 			}
 		} else {
-			if !(ch >= 'a' && ch <= 'z') && !(ch >= '0' && ch <= '9') && ch != '-' {
+			if !allowDots && ch == '.' {
+				ch = '-'
+			}
+			if !(ch >= 'a' && ch <= 'z') && !(ch >= '0' && ch <= '9') && ch != '-' && ch != '.' {
 				ch = '-'
 			}
 
