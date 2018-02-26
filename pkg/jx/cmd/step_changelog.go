@@ -35,6 +35,7 @@ type StepChangelogOptions struct {
 	ReleaseYamlFile  string
 	CrdYamlFile      string
 	OverwriteCRD     bool
+	GenerateCRD     bool
 }
 
 const (
@@ -105,6 +106,7 @@ func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	cmd.Flags().StringVarP(&options.ReleaseYamlFile, "release-yaml-file", "", "release.yaml", "the name of the file to generate the Release YAML")
 	cmd.Flags().StringVarP(&options.CrdYamlFile, "crd-yaml-file", "", "release-crd.yaml", "the name of the file to generate the Release CustomResourceDefinition YAML")
 	cmd.Flags().BoolVarP(&options.OverwriteCRD, "overwrite", "o", false, "overwrites the Release CRD YAML file if it exists")
+	cmd.Flags().BoolVarP(&options.GenerateCRD, "crd", "c", false, "Generate the CRD in the chart")
 	return cmd
 }
 
@@ -205,7 +207,7 @@ func (o *StepChangelogOptions) Run() error {
 		return fmt.Errorf("Failed to check for CRD YAML file %s: %s", crdFile, err)
 	}
 	o.Printf("generated: %s\n", util.ColorInfo(releaseFile))
-	if o.OverwriteCRD || !exists {
+	if o.GenerateCRD && (o.OverwriteCRD || !exists) {
 		err = ioutil.WriteFile(crdFile, []byte(ReleaseCrdYaml), DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("Failed to save Release CRD YAML file %s: %s", crdFile, err)
