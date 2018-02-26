@@ -17,6 +17,7 @@ type UserAuth struct {
 	Username    string
 	ApiToken    string
 	BearerToken string
+	Password    string `yaml:"password,omitempty"`
 }
 
 type AuthConfig struct {

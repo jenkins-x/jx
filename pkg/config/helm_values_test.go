@@ -10,7 +10,7 @@ import (
 
 func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
 
-	testFile, err := ioutil.ReadFile("test_exposecontroller_values.yaml")
+	testFile, err := ioutil.ReadFile("helm_values_test.yaml")
 	assert.NoError(t, err)
 
 	a := make(map[string]string)
@@ -28,5 +28,5 @@ func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
 	values.ExposeController.Config.TLSAcme = false
 	s, err := values.String()
 	assert.NoError(t, err)
-	assert.Equal(t, s, string(testFile), "expected exposecontroller helm values do not match")
+	assert.Equal(t, string(testFile), s, "expected exposecontroller helm values do not match")
 }
