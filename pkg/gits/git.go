@@ -3,6 +3,7 @@ package gits
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -12,8 +13,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
-
-	"io"
 
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
@@ -34,7 +33,11 @@ func FindGitConfigDir(dir string) (string, string, error) {
 		if f {
 			return d, gitDir, nil
 		}
-		p, _ := filepath.Split(d)
+		dirPath := strings.TrimSuffix(d, "/")
+		if dirPath == "" {
+			return "", "", nil
+		}
+		p, _ := filepath.Split(dirPath)
 		if d == "/" || p == d {
 			return "", "", nil
 		}

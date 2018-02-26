@@ -34,8 +34,9 @@ type StepChangelogOptions struct {
 	TemplatesDir     string
 	ReleaseYamlFile  string
 	CrdYamlFile      string
+	Dir      string
 	OverwriteCRD     bool
-	GenerateCRD     bool
+	GenerateCRD      bool
 }
 
 const (
@@ -105,6 +106,7 @@ func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	cmd.Flags().StringVarP(&options.TemplatesDir, "templates-dir", "t", "", "the directory containing the helm chart templates to generate the resources")
 	cmd.Flags().StringVarP(&options.ReleaseYamlFile, "release-yaml-file", "", "release.yaml", "the name of the file to generate the Release YAML")
 	cmd.Flags().StringVarP(&options.CrdYamlFile, "crd-yaml-file", "", "release-crd.yaml", "the name of the file to generate the Release CustomResourceDefinition YAML")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The directory of the git repository. Defaults to the current working directory")
 	cmd.Flags().BoolVarP(&options.OverwriteCRD, "overwrite", "o", false, "overwrites the Release CRD YAML file if it exists")
 	cmd.Flags().BoolVarP(&options.GenerateCRD, "crd", "c", false, "Generate the CRD in the chart")
 	return cmd
@@ -125,7 +127,13 @@ func (o *StepChangelogOptions) Run() error {
 		return err
 	}
 
-	dir := "."
+	dir := o.Dir
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
 	previousRev := o.PreviousRevision
 	if previousRev == "" {
 		previousRev, err = gits.GetPreviousGitTagSHA(dir)
@@ -157,7 +165,16 @@ func (o *StepChangelogOptions) Run() error {
 
 	o.Printf("Generating change log from git ref %s => %s\n", util.ColorInfo(previousRev), util.ColorInfo(currentRev))
 
-	commits, err := chgit.FetchCommits(dir, previousRev, currentRev)
+	gitDir, _, err := gits.FindGitConfigDir(dir)
+	if err != nil {
+		return err
+	}
+	if gitDir == "" {
+		o.warnf("No git directory could be found from dir %s\n", dir)
+		return nil
+	}
+
+	commits, err := chgit.FetchCommits(gitDir, previousRev, currentRev)
 	if err != nil {
 		return err
 	}
