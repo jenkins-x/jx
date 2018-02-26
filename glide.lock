@@ -1,5 +1,5 @@
 hash: f2dbdfd257a7e2e0b2612d41002fd9020f6b789c43e16c221c57ea8edb055f29
-updated: 2018-02-24T12:15:25.85833Z
+updated: 2018-02-24T19:02:47.293462Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -18,7 +18,7 @@ imports:
   - autorest/azure
   - autorest/date
 - name: github.com/blang/semver
-  version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
+  version: a088618caaf34f5392024fc3386143873033fbea
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/chromedp/cdproto
@@ -165,13 +165,13 @@ imports:
 - name: github.com/knq/sysutil
   version: 840643935d35cb81c833b4c142357dc9d519e390
 - name: github.com/mailru/easyjson
-  version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
+  version: 32fa128f234d041f196a9f3e0fea5ac9772c08e1
   subpackages:
   - buffer
   - jlexer
   - jwriter
 - name: github.com/MakeNowJust/heredoc
-  version: bb23615498cded5e105af4ce27de75b089cbe851
+  version: e9091a26100e9cfb2b6a8f470085bfa541931a91
 - name: github.com/Masterminds/semver
   version: 517734cc7d6470c0d07130e40fd40bdeb9bcd3fd
 - name: github.com/mattn/go-colorable
@@ -189,7 +189,7 @@ imports:
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pelletier/go-buffruneio
-  version: c37440a7cf42ac63b919c752ca73a85067e05992
+  version: e2f66f8164ca709d4c21e815860afd2024e9b894
 - name: github.com/pkg/browser
   version: c90ca0c84f15f81c982e32665bffd8d7aac8f097
 - name: github.com/russross/blackfriday
@@ -199,7 +199,7 @@ imports:
   subpackages:
   - diffmatchpatch
 - name: github.com/spf13/cobra
-  version: 9495bc009a56819bdb0ddbc1a373e29c140bc674
+  version: a1e4933ab784095895e33dbe9f001ba10cfe2060
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -267,7 +267,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/appengine
-  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
+  version: 5bee14b453b4c71be47ec1781b0fa61c2ea182db
   subpackages:
   - internal
   - internal/app_identity
@@ -276,8 +276,6 @@ imports:
   - internal/log
   - internal/modules
   - internal/remote_api
-  - internal/urlfetch
-  - urlfetch
 - name: gopkg.in/AlecAivazis/survey.v1
   version: 0aa8b6a162b391fe2d95648b7677d1d6ac2090a6
   subpackages:
@@ -335,7 +333,7 @@ imports:
   - utils/merkletrie/internal/frame
   - utils/merkletrie/noder
 - name: gopkg.in/warnings.v0
-  version: 8a331561fe74dadba6edfc59f3be66c22c3b065d
+  version: ec4a0fea49c7b46c2aeb0b51aac55779c607e52b
 - name: gopkg.in/yaml.v2
   version: 670d4cfef0544295bc27a114dbac37980d83185a
 - name: k8s.io/api
@@ -510,6 +508,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
+  version: be8372ae8ec5c6daaed3cc28ebf73c54b737c240
   subpackages:
   - assert
