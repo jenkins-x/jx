@@ -29,8 +29,9 @@ import (
 )
 
 const (
-	jenkinsAuthConfigFile = "jenkinsAuth.yaml"
-	GitAuthConfigFile     = "gitAuth.yaml"
+	JenkinsAuthConfigFile     = "jenkinsAuth.yaml"
+	GitAuthConfigFile         = "gitAuth.yaml"
+	ChartmuseumAuthConfigFile = "chartmuseumAuth.yaml"
 )
 
 type Factory interface {
@@ -43,6 +44,8 @@ type Factory interface {
 	CreateGitAuthConfigService() (auth.AuthConfigService, error)
 
 	CreateJenkinsAuthConfigService() (auth.AuthConfigService, error)
+
+	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
 
 	CreateClient() (*kubernetes.Clientset, string, error)
 
@@ -111,7 +114,19 @@ func (f *factory) GetJenkinsURL() (string, error) {
 }
 
 func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(jenkinsAuthConfigFile)
+	authConfigSvc, err := f.CreateAuthConfigService(JenkinsAuthConfigFile)
+	if err != nil {
+		return authConfigSvc, err
+	}
+	_, err = authConfigSvc.LoadConfig()
+	if err != nil {
+		return authConfigSvc, err
+	}
+	return authConfigSvc, err
+}
+
+func (f *factory) CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(ChartmuseumAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
 	}

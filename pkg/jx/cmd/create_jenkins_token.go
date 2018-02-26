@@ -124,6 +124,10 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		userAuth.ApiToken = o.ApiToken
 	}
 
+	if o.Password != "" {
+		userAuth.Password = o.Password
+	}
+
 	tokenUrl := jenkins.JenkinsTokenURL(server.URL)
 
 	if userAuth.IsInvalid() && o.Password != "" {

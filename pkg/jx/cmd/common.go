@@ -11,6 +11,8 @@ import (
 
 	"time"
 
+	"path/filepath"
+
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -23,7 +25,6 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"k8s.io/client-go/kubernetes"
-	"path/filepath"
 )
 
 const (
@@ -298,6 +299,7 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 		repoName = kube.LocalHelmRepoName
 	}
 	// TODO we should use the auth package to keep a list of server login/pwds
+	// TODO we have a chartmuseumAuth.yaml now but sure yet if that's the best thing to do
 	username := "admin"
 	password := "admin"
 

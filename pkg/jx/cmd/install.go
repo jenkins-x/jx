@@ -32,6 +32,7 @@ type InstallOptions struct {
 	gits.GitRepositoryOptions
 	CreateJenkinsUserOptions
 	CreateEnvOptions
+	config.AdminSecretsService
 
 	Flags InstallFlags
 }
@@ -60,6 +61,7 @@ const (
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
 
 	GitSecretsFile        = "gitSecrets.yaml"
+	AdminSecretsFile      = "adminSecrets.yaml"
 	ExtraValuesFile       = "extraValues.yaml"
 	defaultInstallTimeout = "6000"
 )
@@ -113,7 +115,6 @@ func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) In
 	options := InstallOptions{
 		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
 			Username: "admin",
-			Password: "admin",
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory:  f,
@@ -151,6 +152,7 @@ func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) In
 				},
 			},
 		},
+		AdminSecretsService: config.AdminSecretsService{},
 	}
 	return options
 }
@@ -171,6 +173,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 		ignoreDomain = true
 	}
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, ignoreDomain)
+	options.AdminSecretsService.AddAdminSecretsValues(cmd)
 }
 
 // Run implements this command
@@ -211,6 +214,16 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
+	err = options.AdminSecretsService.NewAdminSecretsConfig()
+	if err != nil {
+		return err
+	}
+
+	adminSecrets, err := options.AdminSecretsService.Secrets.String()
+	if err != nil {
+		return err
+	}
+
 	config, err := options.getExposecontrollerConfigValues()
 	if err != nil {
 		return err
@@ -244,6 +257,12 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
+	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
+	err = ioutil.WriteFile(adminSecretsFileName, []byte(adminSecrets), 0644)
+	if err != nil {
+		return err
+	}
+
 	configFileName := filepath.Join(dir, ExtraValuesFile)
 	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
 	if err != nil {
@@ -254,7 +273,7 @@ func (options *InstallOptions) Run() error {
 	if timeout == "" {
 		timeout = defaultInstallTimeout
 	}
-	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --namespace=%s --timeout=%s", secretsFileName, configFileName, ns, timeout)
+	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --values=%s --namespace=%s --timeout=%s", secretsFileName, adminSecretsFileName, configFileName, ns, timeout)
 
 	// run the helm install
 	err = options.runCommandFromDir(makefileDir, "make", arg, "install")
@@ -281,6 +300,7 @@ func (options *InstallOptions) Run() error {
 	if options.Flags.DefaultEnvironments {
 		log.Info("Getting Jenkins API Token\n")
 		err = options.retry(3, 2*time.Second, func() (err error) {
+			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 			err = options.CreateJenkinsUserOptions.Run()
 			return
 		})
@@ -301,10 +321,16 @@ func (options *InstallOptions) Run() error {
 		options.CreateEnvOptions.Options.Name = "production"
 		options.CreateEnvOptions.Options.Spec.Label = "Production"
 		options.CreateEnvOptions.Options.Spec.Order = 200
+
 		err = options.CreateEnvOptions.Run()
 		if err != nil {
 			return err
 		}
+	}
+
+	err = options.saveChartmuseumAuthConfig()
+	if err != nil {
+		return err
 	}
 
 	err = options.registerLocalHelmRepo(options.Flags.LocalHelmRepoName, ns)
@@ -312,7 +338,9 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	log.Success("\nJenkins X installation completed successfully")
+	log.Success("\nJenkins X installation completed successfully\n")
+
+	options.Printf("\nYour admin password is: %s\n", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword))
 
 	options.Printf("\nTo import existing projects into Jenkins: %s\n", util.ColorInfo("jx import"))
 	options.Printf("To create a new Spring Boot microservice: %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
@@ -488,6 +516,40 @@ func (o *InstallOptions) waitForInstallToBeReady(ns string) error {
 
 	return kube.WaitForAllDeploymentsToBeReady(client, ns, 30*time.Minute)
 
+}
+
+func (options *InstallOptions) saveChartmuseumAuthConfig() error {
+
+	authConfigSvc, err := options.Factory.CreateChartmuseumAuthConfigService()
+	if err != nil {
+		return err
+	}
+	config := authConfigSvc.Config()
+
+	var server *auth.AuthServer
+	if options.ServerFlags.IsEmpty() {
+		url := ""
+		url, err = options.findService(kube.ServiceChartMuseum)
+		if err != nil {
+			return err
+		}
+		server = config.GetOrCreateServer(url)
+	} else {
+		server, err = options.findServer(config, &options.ServerFlags, "chartmuseum server", "Try installing one via: jx create team")
+		if err != nil {
+			return err
+		}
+	}
+
+	user := &auth.UserAuth{
+		Username: "admin",
+		Password: options.AdminSecretsService.Flags.DefaultAdminPassword,
+	}
+
+	server.Users = append(server.Users, user)
+
+	config.CurrentServer = server.URL
+	return authConfigSvc.SaveConfig()
 }
 
 func basicAuth(username, password string) string {
