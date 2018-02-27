@@ -321,7 +321,7 @@ type UserDetails struct {
 	Email             string       `json:"email,omitempty"  protobuf:"bytes,3,opt,name=email"`
 	CreationTimestamp *metav1.Time `json:"creationTimestamp,omitempty" protobuf:"bytes,4,opt,name=creationTimestamp"`
 	URL               string       `json:"url,omitempty"  protobuf:"bytes,5,opt,name=url"`
-	AvatarURL         string       `json:"avatarURL,omitempty"  protobuf:"bytes,6,opt,name=avatarURL"`
+	AvatarURL         string       `json:"avatarUrl,omitempty"  protobuf:"bytes,6,opt,name=avatarUrl"`
 }
 
 // ReleaseStatusType
