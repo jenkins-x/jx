@@ -99,15 +99,35 @@ type GitPullRequest struct {
 }
 
 type GitIssue struct {
-	URL         string
-	Owner       string
-	Repo        string
-	Number      *int
-	State       *string
-	StatusesURL *string
-	IssueURL    *string
-	ClosedAt    *time.Time
+	URL           string
+	Owner         string
+	Repo          string
+	Number        *int
+	Title         string
+	Body          string
+	State         *string
+	Labels        []GitLabel
+	StatusesURL   *string
+	IssueURL      *string
+	ClosedAt      *time.Time
 	IsPullRequest bool
+	User          *GitUser
+	ClosedBy      *GitUser
+	Assignees     []GitUser
+}
+
+type GitUser struct {
+	URL       string
+	Login     string
+	Name      string
+	Email     string
+	AvatarURL string
+}
+
+type GitLabel struct {
+	URL   string
+	Name  string
+	Color string
 }
 
 type GitRepoStatus struct {

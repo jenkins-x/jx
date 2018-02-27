@@ -439,12 +439,43 @@ func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssu
 	if  isPull {
 		path = "pull"
 	}
+	labels := []GitLabel{}
+	for _, label := range i.Labels {
+		labels = append(labels, toGitHubLabel(&label))
+	}
+	assignees := []GitUser{}
+	for _, assignee := range i.Assignees {
+		assignees = append(assignees, *toGitHubUser(assignee))
+	}
 	url := util.UrlJoin(serverPrefix, org, name, path, strconv.Itoa(number))
 	return &GitIssue{
 		URL:   url,
 		State: i.State,
+		Title: asText(i.Title),
+		Body: asText(i.Body),
 		IsPullRequest: isPull,
+		Labels: labels,
+		User: toGitHubUser(i.User),
+		ClosedBy: toGitHubUser(i.ClosedBy),
+		Assignees: assignees,
 	}, nil
+}
+
+func toGitHubUser(user *github.User) *GitUser {
+	return &GitUser{
+		Login: asText(user.Login),
+		Name: asText(user.Name),
+		Email: asText(user.Email),
+		AvatarURL: asText(user.AvatarURL),
+	}
+}
+
+func toGitHubLabel(label *github.Label) GitLabel {
+	return GitLabel{
+		Name: asText(label.Name),
+		Color: asText(label.Color),
+		URL: asText(label.URL),
+	}
 }
 
 func (p *GitHubProvider) HasIssues() bool {

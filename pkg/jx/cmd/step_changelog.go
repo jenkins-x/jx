@@ -322,6 +322,11 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 				issueSummary := v1.IssueSummary{
 					ID: numberText,
 					URL: issue.URL,
+					Title: issue.Title,
+					Body: issue.Body,
+					User: o.gitUserToUserDetails(issue.User),
+					ClosedBy: o.gitUserToUserDetails(issue.ClosedBy),
+					Assignees: o.gitUserToUserDetailSlice(issue.Assignees),
 				}
 				state := issue.State
 				if state != nil {
@@ -336,6 +341,30 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		}
 	}
 	return nil
+}
+
+
+func (o *StepChangelogOptions) gitUserToUserDetailSlice(users []gits.GitUser) []v1.UserDetails {
+	answer := []v1.UserDetails{}
+	for _, user := range users {
+		answer = append(answer, *o.gitUserToUserDetails(&user))
+	}
+	return answer
+}
+
+func (o *StepChangelogOptions) gitUserToUserDetails(user *gits.GitUser) *v1.UserDetails {
+	return &v1.UserDetails{
+		Login: user.Login,
+		Name:  user.Name,
+		Email: user.Email,
+		URL: user.URL,
+		AvatarURL: user.AvatarURL,
+		/*
+		CreationTimestamp: &metav1.Time{
+			Time: user.When,
+		},
+		*/
+	}
 }
 
 func (o *StepChangelogOptions) toUserDetails(signature object.Signature) *v1.UserDetails {

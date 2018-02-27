@@ -293,21 +293,25 @@ type ReleaseStatus struct {
 
 // IssueSummary is the summary of an issue
 type IssueSummary struct {
-	ID      string       `json:"id,omitempty"  protobuf:"bytes,1,opt,name=id"`
-	URL     string       `json:"url,omitempty"  protobuf:"bytes,2,opt,name=url"`
-	State   string       `json:"state,omitempty"  protobuf:"bytes,3,opt,name=state"`
-	Message string       `json:"message,omitempty"  protobuf:"bytes,4,opt,name=message"`
-	Author  *UserDetails `json:"author,omitempty"  protobuf:"bytes,5,opt,name=author"`
+	ID        string        `json:"id,omitempty"  protobuf:"bytes,1,opt,name=id"`
+	URL       string        `json:"url,omitempty"  protobuf:"bytes,2,opt,name=url"`
+	Title     string        `json:"title,omitempty"  protobuf:"bytes,3,opt,name=title"`
+	Body      string        `json:"body,omitempty"  protobuf:"bytes,4,opt,name=body"`
+	State     string        `json:"state,omitempty"  protobuf:"bytes,5,opt,name=state"`
+	Message   string        `json:"message,omitempty"  protobuf:"bytes,6,opt,name=message"`
+	User      *UserDetails  `json:"user,omitempty"  protobuf:"bytes,7,opt,name=user"`
+	Assignees []UserDetails `json:"assignees,omitempty"  protobuf:"bytes,8,opt,name=assignees"`
+	ClosedBy  *UserDetails  `json:"closedBy,omitempty"  protobuf:"bytes,9,opt,name=closedBy"`
 }
 
 // CommitSummary is the summary of a commit
 type CommitSummary struct {
-	Message    string       `json:"message,omitempty"  protobuf:"bytes,1,opt,name=message"`
-	SHA        string       `json:"sha,omitempty"  protobuf:"bytes,2,opt,name=sha"`
-	URL        string       `json:"url,omitempty"  protobuf:"bytes,3,opt,name=url"`
-	Author     *UserDetails `json:"author,omitempty"  protobuf:"bytes,4,opt,name=author"`
-	Committer  *UserDetails `json:"committer,omitempty"  protobuf:"bytes,5,opt,name=committer"`
-	Branch     string       `json:"branch,omitempty"  protobuf:"bytes,6,opt,name=branch"`
+	Message   string       `json:"message,omitempty"  protobuf:"bytes,1,opt,name=message"`
+	SHA       string       `json:"sha,omitempty"  protobuf:"bytes,2,opt,name=sha"`
+	URL       string       `json:"url,omitempty"  protobuf:"bytes,3,opt,name=url"`
+	Author    *UserDetails `json:"author,omitempty"  protobuf:"bytes,4,opt,name=author"`
+	Committer *UserDetails `json:"committer,omitempty"  protobuf:"bytes,5,opt,name=committer"`
+	Branch    string       `json:"branch,omitempty"  protobuf:"bytes,6,opt,name=branch"`
 }
 
 // UserDetails containers details of a user
@@ -316,6 +320,8 @@ type UserDetails struct {
 	Name              string       `json:"name,omitempty"  protobuf:"bytes,2,opt,name=name"`
 	Email             string       `json:"email,omitempty"  protobuf:"bytes,3,opt,name=email"`
 	CreationTimestamp *metav1.Time `json:"creationTimestamp,omitempty" protobuf:"bytes,4,opt,name=creationTimestamp"`
+	URL               string       `json:"url,omitempty"  protobuf:"bytes,5,opt,name=url"`
+	AvatarURL         string       `json:"avatarURL,omitempty"  protobuf:"bytes,6,opt,name=avatarURL"`
 }
 
 // ReleaseStatusType

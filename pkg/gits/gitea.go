@@ -258,7 +258,7 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 }
 
 func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
-	i,  err := p.Client.GetIssue(org, name, int64(number))
+	i, err := p.Client.GetIssue(org, name, int64(number))
 	if strings.Contains(err.Error(), "404") {
 		return nil, nil
 	}
@@ -266,13 +266,43 @@ func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue
 		return nil, err
 	}
 	state := string(i.State)
+	labels := []GitLabel{}
+	for _, label := range i.Labels {
+		labels = append(labels, toGiteaLabel(label))
+	}
+	assignees := []GitUser{}
+	assignee := i.Assignee
+	if assignee != nil {
+		assignees = append(assignees, *toGiteaUser(assignee))
+	}
 	return &GitIssue{
-		URL:   i.URL,
-		State: &state,
+		URL:           i.URL,
+		State:         &state,
+		Title:         i.Title,
+		Body:          i.Body,
 		IsPullRequest: i.PullRequest != nil,
+		Labels:        labels,
+		User: toGiteaUser(i.Poster),
+		Assignees: assignees,
 	}, nil
 }
 
+func toGiteaLabel(label *gitea.Label) GitLabel {
+	return GitLabel{
+		Name:  label.Name,
+		Color: label.Color,
+		URL:   label.URL,
+	}
+}
+
+func toGiteaUser(user *gitea.User) *GitUser {
+	return &GitUser{
+		Login:  user.UserName,
+		Name: user.FullName,
+		Email: user.Email,
+		AvatarURL: user.AvatarURL,
+	}
+}
 
 func (p *GiteaProvider) MergePullRequest(pr *GitPullRequest, message string) error {
 	if pr.Number == nil {
