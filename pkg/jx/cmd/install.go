@@ -270,6 +270,7 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	options.Printf("Generated helm values %s\n", util.ColorInfo(configFileName))
 
 	timeout := options.Flags.Timeout
 	if timeout == "" {
@@ -447,9 +448,11 @@ expose:
     - %s
 
 exposecontroller:
-  http: %v
-  domain: %s
+  config:
+    http: %v
+    domain: %s
 `
+	o.Printf("Generating ExposeController ConfigMap with domain %s\n",  util.ColorInfo(o.Flags.Domain))
 	return fmt.Sprintf(config, !o.Flags.HTTPS, o.Flags.Domain, !o.Flags.HTTPS, o.Flags.Domain), nil
 }
 
