@@ -6,8 +6,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -16,13 +18,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	/*
-		"k8s.io/apimachinery/pkg/util/yaml"
-	*/
-	"github.com/ghodss/yaml"
+
 	chgit "github.com/jenkins-x/chyle/chyle/git"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
+	"strings"
 )
 
 // StepChangelogOptions contains the command line flags
@@ -37,6 +38,12 @@ type StepChangelogOptions struct {
 	Dir              string
 	OverwriteCRD     bool
 	GenerateCRD      bool
+	State            StepChangelogState
+}
+
+type StepChangelogState struct {
+	GitInfo     *gits.GitRepositoryInfo
+	GitProvider gits.GitProvider
 }
 
 const (
@@ -76,6 +83,8 @@ var (
 		jx step changelog
 
 `)
+
+	GitHubIssueRegex = regexp.MustCompile(`(\#\d+)`)
 )
 
 func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -174,7 +183,7 @@ func (o *StepChangelogOptions) Run() error {
 		return nil
 	}
 
-	gitUrl, err := gits.DiscoverRemoteGitURL(gitConfDir)
+	gitUrl, err := gits.DiscoverUpstreamGitURL(gitConfDir)
 	if err != nil {
 		return err
 	}
@@ -182,19 +191,22 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	o.State.GitInfo = gitInfo
+
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return err
+	}
+	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc)
+	if err != nil {
+		return err
+	}
+	o.State.GitProvider = gitProvider
+
 	commits, err := chgit.FetchCommits(gitDir, previousRev, currentRev)
 	if err != nil {
 		return err
 	}
-	commitSummaries := []v1.CommitSummary{}
-
-	if commits != nil {
-		for _, commit := range *commits {
-			commitSummaries = append(commitSummaries, o.toCommitSummary(&commit))
-		}
-	}
-
-	// TODO generate release name
 	release := &v1.Release{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Release",
@@ -209,13 +221,22 @@ func (o *StepChangelogOptions) Run() error {
 			DeletionTimestamp: &metav1.Time{},
 		},
 		Spec: v1.ReleaseSpec{
-			Name:        SpecName,
-			Version:     SpecVersion,
-			Commits:     commitSummaries,
-			GitHttpURL:  gitInfo.HttpURL(),
-			GitCloneURL: gitInfo.HttpCloneURL(),
+			Name:         SpecName,
+			Version:      SpecVersion,
+			GitHttpURL:   gitInfo.HttpURL(),
+			GitCloneURL:  gitInfo.HttpCloneURL(),
+			Commits:      []v1.CommitSummary{},
+			Issues:       []v1.IssueSummary{},
+			PullRequests: []v1.IssueSummary{},
 		},
 	}
+
+	if commits != nil {
+		for _, commit := range *commits {
+			o.addCommit(&release.Spec, &commit)
+		}
+	}
+
 	data, err := yaml.Marshal(release)
 	if err != nil {
 		return err
@@ -244,19 +265,104 @@ func (o *StepChangelogOptions) Run() error {
 	return nil
 }
 
-func (o *StepChangelogOptions) toCommitSummary(commit *object.Commit) v1.CommitSummary {
+func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Commit) {
 	// TODO
 	url := ""
 	branch := "master"
 
 	sha := commit.Hash.String()
-	return v1.CommitSummary{
+	commitSummary := v1.CommitSummary{
 		Message:   commit.Message,
 		URL:       url,
 		SHA:       sha,
 		Author:    o.toUserDetails(commit.Author),
 		Branch:    branch,
 		Committer: o.toUserDetails(commit.Committer),
+	}
+	spec.Commits = append(spec.Commits, commitSummary)
+
+	err := o.addIssuesAndPullRequests(spec, &commitSummary)
+	if err != nil {
+		o.warnf("Failed to enrich commits with issues: %s\n", err)
+	}
+}
+
+func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, commit *v1.CommitSummary) error {
+	// TODO for now assume github but allow a JIRA server & project name to be specified...
+
+	gitProvider := o.State.GitProvider
+	if !gitProvider.HasIssues() {
+		return nil
+	}
+	gitInfo := o.State.GitInfo
+	issues := map[string]*gits.GitIssue{}
+	results := GitHubIssueRegex.FindStringSubmatch(commit.Message)
+	for _, result := range results {
+		numberText := strings.TrimPrefix(result, "#")
+		issue := issues[result]
+		if issue == nil {
+			number, err := strconv.Atoi(numberText)
+			if err != nil {
+				o.warnf("Failed to convert issue reference %s into a number %s\n", numberText, err)
+				continue
+			}
+			owner := gitInfo.Organisation
+			repo := gitInfo.Name
+			issue, err = gitProvider.GetIssue(owner, repo, number)
+			if err != nil {
+				o.warnf("Failed to lookup issue %s in repository\n", result, err)
+				continue
+			}
+			if issue == nil {
+				o.warnf("Failed to find issue %d for repository %s/%s\n", number, owner, repo)
+			}
+			issues[result] = issue
+
+			if issue != nil {
+				issueSummary := v1.IssueSummary{
+					ID:        numberText,
+					URL:       issue.URL,
+					Title:     issue.Title,
+					Body:      issue.Body,
+					User:      o.gitUserToUserDetails(issue.User),
+					ClosedBy:  o.gitUserToUserDetails(issue.ClosedBy),
+					Assignees: o.gitUserToUserDetailSlice(issue.Assignees),
+				}
+				state := issue.State
+				if state != nil {
+					issueSummary.State = *state
+				}
+				if issue.IsPullRequest {
+					spec.PullRequests = append(spec.PullRequests, issueSummary)
+				} else {
+					spec.Issues = append(spec.Issues, issueSummary)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (o *StepChangelogOptions) gitUserToUserDetailSlice(users []gits.GitUser) []v1.UserDetails {
+	answer := []v1.UserDetails{}
+	for _, user := range users {
+		answer = append(answer, *o.gitUserToUserDetails(&user))
+	}
+	return answer
+}
+
+func (o *StepChangelogOptions) gitUserToUserDetails(user *gits.GitUser) *v1.UserDetails {
+	return &v1.UserDetails{
+		Login:     user.Login,
+		Name:      user.Name,
+		Email:     user.Email,
+		URL:       user.URL,
+		AvatarURL: user.AvatarURL,
+		/*
+			CreationTimestamp: &metav1.Time{
+				Time: user.When,
+			},
+		*/
 	}
 }
 

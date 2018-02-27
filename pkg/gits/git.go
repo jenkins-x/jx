@@ -260,17 +260,25 @@ func SetRemoteURL(dir string, name string, gitURL string) error {
 	return nil
 }
 
-func DiscoverRemoteGitURL(gitConf string) (string, error) {
+func parseGitConfig(gitConf string) (*gitcfg.Config, error) {
 	if gitConf == "" {
-		return "", fmt.Errorf("No GitConfDir defined!")
+		return nil, fmt.Errorf("No GitConfDir defined!")
 	}
 	cfg := gitcfg.NewConfig()
 	data, err := ioutil.ReadFile(gitConf)
 	if err != nil {
-		return "", fmt.Errorf("Failed to load %s due to %s", gitConf, err)
+		return nil, fmt.Errorf("Failed to load %s due to %s", gitConf, err)
 	}
 
 	err = cfg.Unmarshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to unmarshal %s due to %s", gitConf, err)
+	}
+	return cfg, nil
+}
+
+func DiscoverRemoteGitURL(gitConf string) (string, error) {
+	cfg, err := parseGitConfig(gitConf)
 	if err != nil {
 		return "", fmt.Errorf("Failed to unmarshal %s due to %s", gitConf, err)
 	}
@@ -281,6 +289,22 @@ func DiscoverRemoteGitURL(gitConf string) (string, error) {
 	url := GetRemoteUrl(cfg, "origin")
 	if url == "" {
 		url = GetRemoteUrl(cfg, "upstream")
+	}
+	return url, nil
+}
+
+func DiscoverUpstreamGitURL(gitConf string) (string, error) {
+	cfg, err := parseGitConfig(gitConf)
+	if err != nil {
+		return "", fmt.Errorf("Failed to unmarshal %s due to %s", gitConf, err)
+	}
+	remotes := cfg.Remotes
+	if len(remotes) == 0 {
+		return "", nil
+	}
+	url := GetRemoteUrl(cfg, "upstream")
+	if url == "" {
+		url = GetRemoteUrl(cfg, "origin")
 	}
 	return url, nil
 }

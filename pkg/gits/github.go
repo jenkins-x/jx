@@ -8,7 +8,9 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/util"
 	"golang.org/x/oauth2"
+	"strconv"
 )
 
 type GitHubProvider struct {
@@ -418,6 +420,66 @@ func (p *GitHubProvider) ValidateRepositoryName(org string, name string) error {
 		return nil
 	}
 	return err
+}
+
+func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
+	i, r, err := p.Client.Issues.Get(p.Context, org, name, number)
+	if r.StatusCode == 404 {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	serverPrefix := p.Server.URL
+	if !strings.HasPrefix(serverPrefix, "https://") {
+		serverPrefix = "https://" + serverPrefix
+	}
+	path := "issues"
+	isPull := i.IsPullRequest()
+	if isPull {
+		path = "pull"
+	}
+	labels := []GitLabel{}
+	for _, label := range i.Labels {
+		labels = append(labels, toGitHubLabel(&label))
+	}
+	assignees := []GitUser{}
+	for _, assignee := range i.Assignees {
+		assignees = append(assignees, *toGitHubUser(assignee))
+	}
+	url := util.UrlJoin(serverPrefix, org, name, path, strconv.Itoa(number))
+	return &GitIssue{
+		URL:           url,
+		State:         i.State,
+		Title:         asText(i.Title),
+		Body:          asText(i.Body),
+		IsPullRequest: isPull,
+		Labels:        labels,
+		User:          toGitHubUser(i.User),
+		ClosedBy:      toGitHubUser(i.ClosedBy),
+		Assignees:     assignees,
+	}, nil
+}
+
+func toGitHubUser(user *github.User) *GitUser {
+	return &GitUser{
+		Login:     asText(user.Login),
+		Name:      asText(user.Name),
+		Email:     asText(user.Email),
+		AvatarURL: asText(user.AvatarURL),
+	}
+}
+
+func toGitHubLabel(label *github.Label) GitLabel {
+	return GitLabel{
+		Name:  asText(label.Name),
+		Color: asText(label.Color),
+		URL:   asText(label.URL),
+	}
+}
+
+func (p *GitHubProvider) HasIssues() bool {
+	return true
 }
 
 func (p *GitHubProvider) IsGitHub() bool {
