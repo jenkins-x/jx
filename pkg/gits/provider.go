@@ -41,6 +41,10 @@ type GitProvider interface {
 
 	IsGitHub() bool
 
+	GetIssue(org string, name string, number int) (*GitIssue, error)
+
+	HasIssues() bool
+
 	AddPRComment(pr *GitPullRequest, comment string) error
 
 	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
@@ -92,6 +96,18 @@ type GitPullRequest struct {
 	ClosedAt       *time.Time
 	MergedAt       *time.Time
 	LastCommitSha  string
+}
+
+type GitIssue struct {
+	URL         string
+	Owner       string
+	Repo        string
+	Number      *int
+	State       *string
+	StatusesURL *string
+	IssueURL    *string
+	ClosedAt    *time.Time
+	IsPullRequest bool
 }
 
 type GitRepoStatus struct {

@@ -257,6 +257,23 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
+func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
+	i,  err := p.Client.GetIssue(org, name, int64(number))
+	if strings.Contains(err.Error(), "404") {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	state := string(i.State)
+	return &GitIssue{
+		URL:   i.URL,
+		State: &state,
+		IsPullRequest: i.PullRequest != nil,
+	}, nil
+}
+
+
 func (p *GiteaProvider) MergePullRequest(pr *GitPullRequest, message string) error {
 	if pr.Number == nil {
 		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
@@ -328,6 +345,10 @@ func (p *GiteaProvider) ValidateRepositoryName(org string, name string) error {
 		return nil
 	}
 	return err
+}
+
+func (p *GiteaProvider) HasIssues() bool {
+	return true
 }
 
 func (p *GiteaProvider) IsGitHub() bool {

@@ -9,6 +9,8 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"golang.org/x/oauth2"
+	"github.com/jenkins-x/jx/pkg/util"
+	"strconv"
 )
 
 type GitHubProvider struct {
@@ -418,6 +420,35 @@ func (p *GitHubProvider) ValidateRepositoryName(org string, name string) error {
 		return nil
 	}
 	return err
+}
+
+func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
+	i, r, err := p.Client.Issues.Get(p.Context, org, name, number)
+	if r.StatusCode == 404 {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	serverPrefix := p.Server.URL
+	if !strings.HasPrefix(serverPrefix, "https://") {
+		serverPrefix = "https://" + serverPrefix
+	}
+	path := "issues"
+	isPull := i.IsPullRequest()
+	if  isPull {
+		path = "pull"
+	}
+	url := util.UrlJoin(serverPrefix, org, name, path, strconv.Itoa(number))
+	return &GitIssue{
+		URL:   url,
+		State: i.State,
+		IsPullRequest: isPull,
+	}, nil
+}
+
+func (p *GitHubProvider) HasIssues() bool {
+	return true
 }
 
 func (p *GitHubProvider) IsGitHub() bool {
