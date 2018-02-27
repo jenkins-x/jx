@@ -85,6 +85,7 @@ var (
 `)
 
 	GitHubIssueRegex = regexp.MustCompile(`(\#\d+)`)
+
 )
 
 func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
