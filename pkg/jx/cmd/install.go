@@ -439,15 +439,6 @@ func (o *InstallOptions) getExposecontrollerConfigValues() (string, error) {
 	// TODO convert to a struct
 	config := `
 expose:
-  Args:
-    - --exposer
-    - Ingress
-    - --http
-    - "%v"
-    - --domain
-    - %s
-
-exposecontroller:
   config:
     http: %v
     domain: %s
