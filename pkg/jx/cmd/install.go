@@ -226,7 +226,7 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	config, err := options.getExposecontrollerConfigValues()
+	config, err := options.CreateEnvOptions.HelmValuesConfig.String()
 	if err != nil {
 		return err
 	}
@@ -428,23 +428,6 @@ PipelineSecrets:
     https://%s
     http://%s`
 	return fmt.Sprintf(pipelineSecrets, url, url), nil
-}
-
-func (o *InstallOptions) getExposecontrollerConfigValues() (string, error) {
-	var err error
-	o.Flags.Domain, err = o.GetDomain(o.kubeClient, o.Flags.Domain, o.Flags.Provider)
-	if err != nil {
-		return "", err
-	}
-	// TODO convert to a struct
-	config := `
-expose:
-  config:
-    http: %v
-    domain: %s
-`
-	o.Printf("Generating ExposeController ConfigMap with domain %s\n",  util.ColorInfo(o.Flags.Domain))
-	return fmt.Sprintf(config, !o.Flags.HTTPS, o.Flags.Domain), nil
 }
 
 // returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release
