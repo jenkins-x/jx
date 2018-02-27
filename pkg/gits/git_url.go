@@ -40,6 +40,15 @@ func (i *GitRepositoryInfo) HttpURL() string {
 	return util.UrlJoin("https://"+i.Host, i.Organisation, i.Name)
 }
 
+// HostURL returns the URL to the host
+func (i *GitRepositoryInfo) HostURL() string {
+	answer := i.Host
+	if !strings.HasPrefix(answer, "http:") {
+		return "https://" + answer
+	}
+	return answer
+}
+
 // ParseGitURL attempts to parse the given text as a URL or git URL-like string to determine
 // the protocol, host, organisation and name
 func ParseGitURL(text string) (*GitRepositoryInfo, error) {

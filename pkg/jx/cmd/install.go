@@ -270,6 +270,7 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	options.Printf("Generated helm values %s\n", util.ColorInfo(configFileName))
 
 	timeout := options.Flags.Timeout
 	if timeout == "" {
@@ -438,19 +439,12 @@ func (o *InstallOptions) getExposecontrollerConfigValues() (string, error) {
 	// TODO convert to a struct
 	config := `
 expose:
-  Args:
-    - --exposer
-    - Ingress
-    - --http
-    - "%v"
-    - --domain
-    - %s
-
-exposecontroller:
-  http: %v
-  domain: %s
+  config:
+    http: %v
+    domain: %s
 `
-	return fmt.Sprintf(config, !o.Flags.HTTPS, o.Flags.Domain, !o.Flags.HTTPS, o.Flags.Domain), nil
+	o.Printf("Generating ExposeController ConfigMap with domain %s\n",  util.ColorInfo(o.Flags.Domain))
+	return fmt.Sprintf(config, !o.Flags.HTTPS, o.Flags.Domain), nil
 }
 
 // returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release

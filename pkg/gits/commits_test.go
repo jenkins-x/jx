@@ -15,7 +15,7 @@ func testParseCommits(t *testing.T) {
 	})
 	assertParseCommit(t, "feat(beer): wine is good too", CommitInfo{
 		Kind:    "feat",
-		Feature:    "beer",
+		Feature: "beer",
 		Message: "wine is good too",
 	})
 }
