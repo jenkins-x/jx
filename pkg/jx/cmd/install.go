@@ -48,6 +48,7 @@ type InstallFlags struct {
 	DefaultEnvironmentPrefix string
 	LocalCloudEnvironment    bool
 	Timeout                  string
+	RegisterLocalHelmRepo    bool
 }
 
 type Secrets struct {
@@ -166,6 +167,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
+	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	ignoreDomain := false
@@ -333,9 +335,11 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	err = options.registerLocalHelmRepo(options.Flags.LocalHelmRepoName, ns)
-	if err != nil {
-		return err
+	if options.Flags.RegisterLocalHelmRepo {
+		err = options.registerLocalHelmRepo(options.Flags.LocalHelmRepoName, ns)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Success("\nJenkins X installation completed successfully\n")
