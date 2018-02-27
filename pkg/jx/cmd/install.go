@@ -444,7 +444,7 @@ expose:
     domain: %s
 `
 	o.Printf("Generating ExposeController ConfigMap with domain %s\n",  util.ColorInfo(o.Flags.Domain))
-	return fmt.Sprintf(config, !o.Flags.HTTPS, o.Flags.Domain, !o.Flags.HTTPS, o.Flags.Domain), nil
+	return fmt.Sprintf(config, !o.Flags.HTTPS, o.Flags.Domain), nil
 }
 
 // returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release
