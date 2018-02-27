@@ -377,6 +377,52 @@ func (p *GiteaProvider) ValidateRepositoryName(org string, name string) error {
 	return err
 }
 
+func (p *GiteaProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
+	var release *gitea.Release
+	releases, err := p.Client.ListReleases(owner, repo)
+	found := false
+	for _, rel := range releases {
+		if rel.TagName == tag {
+			release = rel
+			found = true
+			break
+		}
+	}
+	flag := false
+
+	// lets populate the release
+	if !found {
+		createRelease := gitea.CreateReleaseOption{
+			TagName:      releaseInfo.TagName,
+			Title:        releaseInfo.Name,
+			Note:         releaseInfo.Body,
+			IsDraft:      flag,
+			IsPrerelease: flag,
+		}
+		_, err = p.Client.CreateRelease(owner, repo, createRelease)
+		return err
+	} else {
+		editRelease := gitea.EditReleaseOption{
+			TagName:      release.TagName,
+			Title:        release.Title,
+			Note:         release.Note,
+			IsDraft:      &flag,
+			IsPrerelease: &flag,
+		}
+		if editRelease.Title == "" && releaseInfo.Name != "" {
+			editRelease.Title = releaseInfo.Name
+		}
+		if editRelease.TagName == "" && releaseInfo.TagName != "" {
+			editRelease.TagName = releaseInfo.TagName
+		}
+		if editRelease.Note == "" && releaseInfo.Body != "" {
+			editRelease.Note = releaseInfo.Body
+		}
+		_, err = p.Client.EditRelease(owner, repo, release.ID, editRelease)
+	}
+	return err
+}
+
 func (p *GiteaProvider) HasIssues() bool {
 	return true
 }

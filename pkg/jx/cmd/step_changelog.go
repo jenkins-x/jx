@@ -36,14 +36,17 @@ type StepChangelogOptions struct {
 	ReleaseYamlFile  string
 	CrdYamlFile      string
 	Dir              string
+	Version          string
 	OverwriteCRD     bool
 	GenerateCRD      bool
+	UpdateRelease    bool
 	State            StepChangelogState
 }
 
 type StepChangelogState struct {
-	GitInfo     *gits.GitRepositoryInfo
-	GitProvider gits.GitProvider
+	GitInfo         *gits.GitRepositoryInfo
+	GitProvider     gits.GitProvider
+	FoundIssueNames map[string]bool
 }
 
 const (
@@ -85,7 +88,6 @@ var (
 `)
 
 	GitHubIssueRegex = regexp.MustCompile(`(\#\d+)`)
-
 )
 
 func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -116,9 +118,11 @@ func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	cmd.Flags().StringVarP(&options.TemplatesDir, "templates-dir", "t", "", "the directory containing the helm chart templates to generate the resources")
 	cmd.Flags().StringVarP(&options.ReleaseYamlFile, "release-yaml-file", "", "release.yaml", "the name of the file to generate the Release YAML")
 	cmd.Flags().StringVarP(&options.CrdYamlFile, "crd-yaml-file", "", "release-crd.yaml", "the name of the file to generate the Release CustomResourceDefinition YAML")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to release")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The directory of the git repository. Defaults to the current working directory")
 	cmd.Flags().BoolVarP(&options.OverwriteCRD, "overwrite", "o", false, "overwrites the Release CRD YAML file if it exists")
 	cmd.Flags().BoolVarP(&options.GenerateCRD, "crd", "c", false, "Generate the CRD in the chart")
+	cmd.Flags().BoolVarP(&options.UpdateRelease, "update-release", "", true, "Should we update the release on the git repository with the changelog")
 	return cmd
 }
 
@@ -203,6 +207,7 @@ func (o *StepChangelogOptions) Run() error {
 		return err
 	}
 	o.State.GitProvider = gitProvider
+	o.State.FoundIssueNames = map[string]bool{}
 
 	commits, err := chgit.FetchCommits(gitDir, previousRev, currentRev)
 	if err != nil {
@@ -263,6 +268,29 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		o.Printf("generated: %s\n", util.ColorInfo(crdFile))
 	}
+
+	// lets try to update the release
+	markdown, err := gits.GenerateMarkdown(&release.Spec, gitInfo)
+	if err != nil {
+		return err
+	}
+	version := o.Version
+	if version != "" && o.UpdateRelease {
+		releaseInfo := &gits.GitRelease{
+			Name:    version,
+			TagName: version,
+			Body:    markdown,
+		}
+		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, version, releaseInfo)
+		url := util.UrlJoin(gitInfo.HttpURL(), "releases/tag", version)
+		if err != nil {
+			return fmt.Errorf("Failed to update the release at %s: %s", url, err)
+		}
+		o.Printf("Updated the release information at %s\n", util.ColorInfo(url))
+	} else {
+		o.Printf("\nGenerated Changelog:\n")
+		o.Printf("%s\n\n", markdown)
+	}
 	return nil
 }
 
@@ -296,12 +324,11 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		return nil
 	}
 	gitInfo := o.State.GitInfo
-	issues := map[string]*gits.GitIssue{}
 	results := GitHubIssueRegex.FindStringSubmatch(commit.Message)
 	for _, result := range results {
 		numberText := strings.TrimPrefix(result, "#")
-		issue := issues[result]
-		if issue == nil {
+		if _, ok := o.State.FoundIssueNames[result]; !ok {
+			o.State.FoundIssueNames[result] = true
 			number, err := strconv.Atoi(numberText)
 			if err != nil {
 				o.warnf("Failed to convert issue reference %s into a number %s\n", numberText, err)
@@ -309,7 +336,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 			}
 			owner := gitInfo.Organisation
 			repo := gitInfo.Name
-			issue, err = gitProvider.GetIssue(owner, repo, number)
+			issue, err := gitProvider.GetIssue(owner, repo, number)
 			if err != nil {
 				o.warnf("Failed to lookup issue %s in repository\n", result, err)
 				continue
@@ -317,27 +344,23 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 			if issue == nil {
 				o.warnf("Failed to find issue %d for repository %s/%s\n", number, owner, repo)
 			}
-			issues[result] = issue
-
-			if issue != nil {
-				issueSummary := v1.IssueSummary{
-					ID:        numberText,
-					URL:       issue.URL,
-					Title:     issue.Title,
-					Body:      issue.Body,
-					User:      o.gitUserToUserDetails(issue.User),
-					ClosedBy:  o.gitUserToUserDetails(issue.ClosedBy),
-					Assignees: o.gitUserToUserDetailSlice(issue.Assignees),
-				}
-				state := issue.State
-				if state != nil {
-					issueSummary.State = *state
-				}
-				if issue.IsPullRequest {
-					spec.PullRequests = append(spec.PullRequests, issueSummary)
-				} else {
-					spec.Issues = append(spec.Issues, issueSummary)
-				}
+			issueSummary := v1.IssueSummary{
+				ID:        numberText,
+				URL:       issue.URL,
+				Title:     issue.Title,
+				Body:      issue.Body,
+				User:      o.gitUserToUserDetails(issue.User),
+				ClosedBy:  o.gitUserToUserDetails(issue.ClosedBy),
+				Assignees: o.gitUserToUserDetailSlice(issue.Assignees),
+			}
+			state := issue.State
+			if state != nil {
+				issueSummary.State = *state
+			}
+			if issue.IsPullRequest {
+				spec.PullRequests = append(spec.PullRequests, issueSummary)
+			} else {
+				spec.Issues = append(spec.Issues, issueSummary)
 			}
 		}
 	}

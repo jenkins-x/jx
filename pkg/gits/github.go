@@ -422,6 +422,35 @@ func (p *GitHubProvider) ValidateRepositoryName(org string, name string) error {
 	return err
 }
 
+func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
+	release := &github.RepositoryRelease{}
+	rel, r, err := p.Client.Repositories.GetReleaseByTag(p.Context, owner, repo, tag)
+
+	if r != nil && err == nil {
+		release = rel
+	}
+	// lets populate the release
+	if release.Name == nil && releaseInfo.Name != "" {
+		release.Name = &releaseInfo.Name
+	}
+	if release.TagName == nil && releaseInfo.TagName != "" {
+		release.TagName = &releaseInfo.TagName
+	}
+	if release.Body == nil && releaseInfo.Body != "" {
+		release.Body = &releaseInfo.Body
+	}
+	if r.StatusCode == 404 {
+		_, _, err = p.Client.Repositories.CreateRelease(p.Context, owner, repo, release)
+		return err
+	}
+	id := release.ID
+	if id == nil {
+		return fmt.Errorf("The release for %s/%s tag %s has no ID!", owner, repo, tag)
+	}
+	_, _, err = p.Client.Repositories.EditRelease(p.Context, owner, repo, *id, release)
+	return err
+}
+
 func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
 	i, r, err := p.Client.Issues.Get(p.Context, org, name, number)
 	if r.StatusCode == 404 {

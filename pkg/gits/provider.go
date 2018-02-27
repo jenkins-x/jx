@@ -47,6 +47,8 @@ type GitProvider interface {
 
 	AddPRComment(pr *GitPullRequest, comment string) error
 
+	UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error
+
 	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
 	//
 
@@ -122,6 +124,11 @@ type GitUser struct {
 	Name      string
 	Email     string
 	AvatarURL string
+}
+type GitRelease struct {
+	Name    string
+	TagName string
+	Body    string
 }
 
 type GitLabel struct {
