@@ -282,8 +282,8 @@ func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue
 		Body:          i.Body,
 		IsPullRequest: i.PullRequest != nil,
 		Labels:        labels,
-		User: toGiteaUser(i.Poster),
-		Assignees: assignees,
+		User:          toGiteaUser(i.Poster),
+		Assignees:     assignees,
 	}, nil
 }
 
@@ -297,9 +297,9 @@ func toGiteaLabel(label *gitea.Label) GitLabel {
 
 func toGiteaUser(user *gitea.User) *GitUser {
 	return &GitUser{
-		Login:  user.UserName,
-		Name: user.FullName,
-		Email: user.Email,
+		Login:     user.UserName,
+		Name:      user.FullName,
+		Email:     user.Email,
 		AvatarURL: user.AvatarURL,
 	}
 }

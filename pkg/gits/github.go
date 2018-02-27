@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"golang.org/x/oauth2"
 	"github.com/jenkins-x/jx/pkg/util"
+	"golang.org/x/oauth2"
 	"strconv"
 )
 
@@ -436,7 +436,7 @@ func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssu
 	}
 	path := "issues"
 	isPull := i.IsPullRequest()
-	if  isPull {
+	if isPull {
 		path = "pull"
 	}
 	labels := []GitLabel{}
@@ -449,32 +449,32 @@ func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssu
 	}
 	url := util.UrlJoin(serverPrefix, org, name, path, strconv.Itoa(number))
 	return &GitIssue{
-		URL:   url,
-		State: i.State,
-		Title: asText(i.Title),
-		Body: asText(i.Body),
+		URL:           url,
+		State:         i.State,
+		Title:         asText(i.Title),
+		Body:          asText(i.Body),
 		IsPullRequest: isPull,
-		Labels: labels,
-		User: toGitHubUser(i.User),
-		ClosedBy: toGitHubUser(i.ClosedBy),
-		Assignees: assignees,
+		Labels:        labels,
+		User:          toGitHubUser(i.User),
+		ClosedBy:      toGitHubUser(i.ClosedBy),
+		Assignees:     assignees,
 	}, nil
 }
 
 func toGitHubUser(user *github.User) *GitUser {
 	return &GitUser{
-		Login: asText(user.Login),
-		Name: asText(user.Name),
-		Email: asText(user.Email),
+		Login:     asText(user.Login),
+		Name:      asText(user.Name),
+		Email:     asText(user.Email),
 		AvatarURL: asText(user.AvatarURL),
 	}
 }
 
 func toGitHubLabel(label *github.Label) GitLabel {
 	return GitLabel{
-		Name: asText(label.Name),
+		Name:  asText(label.Name),
 		Color: asText(label.Color),
-		URL: asText(label.URL),
+		URL:   asText(label.URL),
 	}
 }
 

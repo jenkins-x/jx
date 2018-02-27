@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -16,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"github.com/ghodss/yaml"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	chgit "github.com/jenkins-x/chyle/chyle/git"
@@ -320,12 +320,12 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 
 			if issue != nil {
 				issueSummary := v1.IssueSummary{
-					ID: numberText,
-					URL: issue.URL,
-					Title: issue.Title,
-					Body: issue.Body,
-					User: o.gitUserToUserDetails(issue.User),
-					ClosedBy: o.gitUserToUserDetails(issue.ClosedBy),
+					ID:        numberText,
+					URL:       issue.URL,
+					Title:     issue.Title,
+					Body:      issue.Body,
+					User:      o.gitUserToUserDetails(issue.User),
+					ClosedBy:  o.gitUserToUserDetails(issue.ClosedBy),
 					Assignees: o.gitUserToUserDetailSlice(issue.Assignees),
 				}
 				state := issue.State
@@ -343,7 +343,6 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 	return nil
 }
 
-
 func (o *StepChangelogOptions) gitUserToUserDetailSlice(users []gits.GitUser) []v1.UserDetails {
 	answer := []v1.UserDetails{}
 	for _, user := range users {
@@ -354,15 +353,15 @@ func (o *StepChangelogOptions) gitUserToUserDetailSlice(users []gits.GitUser) []
 
 func (o *StepChangelogOptions) gitUserToUserDetails(user *gits.GitUser) *v1.UserDetails {
 	return &v1.UserDetails{
-		Login: user.Login,
-		Name:  user.Name,
-		Email: user.Email,
-		URL: user.URL,
+		Login:     user.Login,
+		Name:      user.Name,
+		Email:     user.Email,
+		URL:       user.URL,
 		AvatarURL: user.AvatarURL,
 		/*
-		CreationTimestamp: &metav1.Time{
-			Time: user.When,
-		},
+			CreationTimestamp: &metav1.Time{
+				Time: user.When,
+			},
 		*/
 	}
 }
