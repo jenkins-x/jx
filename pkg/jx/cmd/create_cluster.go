@@ -134,6 +134,7 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 	// call jx init
 	initOpts := &o.InitOptions
 	initOpts.Flags.Provider = provider
+	initOpts.BatchMode = o.BatchMode
 
 	err := initOpts.Run()
 	if err != nil {
@@ -144,6 +145,7 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 	if initOpts.Flags.Domain != "" && o.InstallOptions.Flags.Domain == "" {
 		o.InstallOptions.Flags.Domain = initOpts.Flags.Domain
 	}
+	o.InstallOptions.BatchMode = o.BatchMode
 	o.InstallOptions.Flags.Provider = provider
 
 	// call jx install
