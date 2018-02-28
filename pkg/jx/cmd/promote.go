@@ -864,6 +864,11 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 			}
 		}
 	}
+	if pipeline == "" {
+		o.warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
+	} else if build == "" {
+		o.warnf("No $BUILD_NUMBER environment variablefound so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
+	}
 	name = kube.ToValidName(name)
 	o.Printf("Using pipeline name %s\n", name)
 	gitInfo, err := gits.GetGitInfo("")
