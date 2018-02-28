@@ -166,7 +166,7 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 				buffer.WriteString("\n")
 				if group.Title == "" && hasTitle {
 					group.Title = "Other Changes"
-					legend = "These commits did not use [Conventional Commits](ttps://conventionalcommits.org/) formatted messages:\n\n"
+					legend = "These commits did not use [Conventional Commits](https://conventionalcommits.org/) formatted messages:\n\n"
 				}
 				if group.Title != "" {
 					hasTitle = true
