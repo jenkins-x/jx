@@ -83,9 +83,9 @@ $(PKGS): $(GOLINT) $(FGT)
 
 .PHONY: lint
 lint: vendor | $(PKGS) $(GOLINT) # ❷
-    @cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
-        test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
-     done ; exit $$ret
+	@cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
+	    test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
+	done ; exit $$ret
           
 arm:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/$(NAME)-arm cmd/jx/jx.go
