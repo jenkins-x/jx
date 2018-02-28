@@ -19,7 +19,7 @@ func LoadConfig() (*api.Config, *clientcmd.PathOptions, error) {
 	}
 	config, err := po.GetStartingConfig()
 	if err != nil {
-		return nil, po, fmt.Errorf("Could not load the kube config file %s due to %a", po.GetDefaultFilename(), err)
+		return nil, po, fmt.Errorf("Could not load the kube config file %s due to %s", po.GetDefaultFilename(), err)
 	}
 	return config, po, err
 }
