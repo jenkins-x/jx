@@ -47,6 +47,8 @@ type GitProvider interface {
 
 	AddPRComment(pr *GitPullRequest, comment string) error
 
+	CreateIssueComment(owner string, repo string, number int, comment string) error
+
 	UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error
 
 	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository

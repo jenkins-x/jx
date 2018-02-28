@@ -339,6 +339,17 @@ func (p *GitHubProvider) AddPRComment(pr *GitPullRequest, comment string) error 
 	return nil
 }
 
+func (p *GitHubProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
+	issueComment := &github.IssueComment{
+		Body: &comment,
+	}
+	_, _, err := p.Client.Issues.CreateComment(p.Context, owner, repo, number, issueComment)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (p *GitHubProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
 	ref := pr.LastCommitSha
 	if ref == "" {

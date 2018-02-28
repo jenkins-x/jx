@@ -2,6 +2,7 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // +genclient
@@ -337,3 +338,10 @@ const (
 	// ReleaseStatusTypeFailed release failed
 	ReleaseStatusTypeFailed ReleaseStatusType = "Failed"
 )
+
+// IsClosed returns true if this issue is closed or fixed
+func (i *IssueSummary) IsClosed() bool {
+	lower := strings.ToLower(i.State)
+	return strings.HasPrefix(lower, "clos") || strings.HasPrefix(lower, "fix")
+}
+

@@ -58,6 +58,9 @@ pipeline {
       APP_NAME    = '%s'
       GIT_CREDS = credentials('jenkins-x-git')
       CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
+
+      GIT_USERNAME = "$GIT_CREDS_USR"
+      GIT_API_TOKEN = "$GIT_CREDS_PSW"
     }
 
     stages {
@@ -114,6 +117,7 @@ pipeline {
             sh 'mvn clean deploy'
             sh "docker build -f Dockerfile.release -t $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:\$(cat VERSION) ."
             sh "docker push $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:\$(cat VERSION)"
+            sh 'jx step changelog --version \$(cat ../../VERSION)'
           }
         }
       }
@@ -129,6 +133,7 @@ pipeline {
         steps {
           dir ('./charts/%s') {
             container('maven') {
+
               // release the helm chart
               sh 'make release'
 

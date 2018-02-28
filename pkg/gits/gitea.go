@@ -342,6 +342,19 @@ func (p *GiteaProvider) AddPRComment(pr *GitPullRequest, comment string) error {
 	return err
 }
 
+
+func (p *GiteaProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
+	issueComment := gitea.CreateIssueCommentOption{
+		Body: comment,
+	}
+	_, err := p.Client.CreateIssueComment(owner, repo, int64(number), issueComment)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
 func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
 	answer := []*GitRepoStatus{}
 	results, err := p.Client.ListStatuses(org, repo, sha, gitea.ListStatusesOption{})
