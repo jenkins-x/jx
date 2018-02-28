@@ -5,10 +5,13 @@ const (
 	ChartGitea = "jenkins-x/gitea"
 
 	// ChartCDX the default name of the CDX chart
-	ChartCDX = "jenkins-x/cdx-frontend"
+	ChartCDX = "jenkins-x/cdx"
 
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
+
+	// SeriviceCDX the service name of the Helm Chart Museum service
+	ServiceCDX = "cdx-cdx"
 
 	// ServiceChartMuseum the service name of the Helm Chart Museum service
 	ServiceChartMuseum = "jenkins-x-chartmuseum"
