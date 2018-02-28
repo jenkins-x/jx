@@ -21,6 +21,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"strconv"
 )
 
 const (
@@ -343,6 +344,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	if err == nil {
 		err = promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
+		if err == nil {
+			err = o.commentOnIssues(targetNS, env)
+		}
 	} else {
 		err = promoteKey.OnPromoteUpdate(o.Activities, kube.FailedPromotionUpdate)
 	}
@@ -723,7 +727,11 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							}
 							if succeeded {
 								o.Printf("Merge status checks all passed so the promotion worked!\n")
-								return promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
+								err = promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
+								if err == nil {
+									err = o.commentOnIssues(ns, env)
+								}
+								return err
 							}
 						}
 					}
@@ -861,6 +869,8 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	gitInfo, err := gits.GetGitInfo("")
 	if err != nil {
 		o.warnf("Could not discover the git repository info %s\n", err)
+	} else {
+		o.GitInfo = gitInfo
 	}
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
@@ -889,4 +899,85 @@ func (o *PromoteOptions) getJenkinsURL() string {
 		o.jenkinsURL = url
 	}
 	return o.jenkinsURL
+}
+
+// commentOnIssues comments on any issues for a release that the fix is available in the given environment
+func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Environment) error {
+	ens := environment.Spec.Namespace
+	envName := environment.Spec.Label
+	app := o.Application
+	version := o.Version
+	if ens == "" {
+		o.warnf("Environment %s has no namespace\n", envName)
+		return nil
+	}
+	if app == "" {
+		o.warnf("No appplication name so cannot comment on issues that they are now in %s\n", envName)
+		return nil
+	}
+	if version == "" {
+		o.warnf("No version name so cannot comment on issues that they are now in %s\n", envName)
+		return nil
+	}
+	gitInfo := o.GitInfo
+	if gitInfo == nil {
+		o.warnf("No GitInfo discovered so cannot comment on issues that they are now in %s\n", envName)
+		return nil
+	}
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return err
+	}
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode)
+	if err != nil {
+		return err
+	}
+
+	releaseName := kube.ToValidNameWithDots(app + "-" + version)
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return err
+	}
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	release, err := jxClient.JenkinsV1().Releases(ens).Get(releaseName, metav1.GetOptions{})
+	if err == nil && release != nil {
+		issues := release.Spec.Issues
+
+		available := ""
+		ing, err := kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(app, metav1.GetOptions{})
+		if ing != nil && err == nil {
+			if len(ing.Spec.Rules) > 0 {
+				hostname := ing.Spec.Rules[0].Host
+				if hostname != "" {
+					available = fmt.Sprintf(" and available [here](http://%s)", hostname)
+				}
+			}
+		}
+
+		for _, issue := range issues {
+			if issue.IsClosed() {
+				o.Printf("Commenting that issue %s is now in %s\n", util.ColorInfo(issue.URL), util.ColorInfo(envName))
+
+				comment := fmt.Sprintf(":white_check_mark: fix for issue %s is now deployed to %s%s", issue.URL, envName, available)
+				id := issue.ID
+				if id != "" {
+					number, err := strconv.Atoi(id)
+					if err != nil {
+						o.warnf("Could not parse issue id %s for URL %s\n", id, issue.URL)
+					} else {
+						if number > 0 {
+							err = provider.CreateIssueComment(gitInfo.Organisation, gitInfo.Name, number, comment)
+							if err != nil {
+								o.warnf("Failed to add comment to issue %s: %s", issue.URL, err)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
 }
