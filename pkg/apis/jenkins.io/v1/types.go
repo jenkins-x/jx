@@ -10,6 +10,7 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 
+// Environment represents an environment like Dev, Test, Staging, Production where code lives
 type Environment struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
@@ -21,6 +22,7 @@ type Environment struct {
 	Status EnvironmentStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
 }
 
+// EnvironmentSpec is the specification of an Environment
 type EnvironmentSpec struct {
 	Label             string                `json:"label,omitempty" protobuf:"bytes,1,opt,name=label"`
 	Namespace         string                `json:"namespace,omitempty" protobuf:"bytes,2,opt,name=namespace"`
@@ -49,7 +51,7 @@ type EnvironmentList struct {
 	Items []Environment `json:"items"`
 }
 
-// Promotion Strategy Type string
+// PromotionStrategyType is the type of a promotion strategy
 type PromotionStrategyType string
 
 const (
@@ -61,7 +63,7 @@ const (
 	PromotionStrategyTypeNever PromotionStrategyType = "Never"
 )
 
-// Environment Kind  Type string
+// EnvironmentKindType is the kind of an environment
 type EnvironmentKindType string
 
 const (
@@ -92,7 +94,7 @@ var PromotionStrategyTypeValues = []string{
 	string(PromotionStrategyTypeNever),
 }
 
-// Environment Repository Type string
+// EnvironmentRepositoryType is the repository type
 type EnvironmentRepositoryType string
 
 const (
@@ -100,22 +102,27 @@ const (
 	EnvironmentRepositoryTypeGit EnvironmentRepositoryType = "Git"
 )
 
+// EnvironmentRepository is the repository for an environment using GitOps
 type EnvironmentRepository struct {
 	Kind EnvironmentRepositoryType `json:"kind,omitempty" protobuf:"bytes,1,opt,name=kind"`
 	URL  string                    `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
 	Ref  string                    `json:"ref,omitempty" protobuf:"bytes,3,opt,name=ref"`
 }
 
+// TeamSettings the default settings for a team
 type TeamSettings struct {
 	UseGitOPs   bool `json:"useGitOps,omitempty" protobuf:"bytes,1,opt,name=useGitOps"`
 	AskOnCreate bool `json:"askOnCreate,omitempty" protobuf:"bytes,1,opt,name=askOnCreate"`
 }
+
+// PreviewGitSpec is the preview git branch/pull request details
 type PreviewGitSpec struct {
 	Name string   `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
 	URL  string   `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
 	User UserSpec `json:"user,omitempty" protobuf:"bytes,3,opt,name=user"`
 }
 
+// UserSpec is the user details
 type UserSpec struct {
 	Username string `json:"username,omitempty" protobuf:"bytes,1,opt,name=username"`
 	Name     string `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
@@ -128,6 +135,7 @@ type UserSpec struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 
+// PipelineActivity represents pipeline activity for a particular run of a pipeline
 type PipelineActivity struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
@@ -139,6 +147,7 @@ type PipelineActivity struct {
 	Status PipelineActivityStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
 }
 
+// PipelineActivitySpec is the specification of the pipeline activity
 type PipelineActivitySpec struct {
 	Pipeline           string                 `json:"pipeline,omitempty" protobuf:"bytes,1,opt,name=pipeline"`
 	Build              string                 `json:"build,omitempty" protobuf:"bytes,2,opt,name=build"`
@@ -154,12 +163,14 @@ type PipelineActivitySpec struct {
 	GitOwner           string                 `json:"gitOwner,omitempty" protobuf:"bytes,10,opt,name=gitOwner"`
 }
 
+// PipelineActivityStep represents a step in a pipeline activity
 type PipelineActivityStep struct {
 	Kind    ActivityStepKindType `json:"kind,omitempty" protobuf:"bytes,1,opt,name=kind"`
 	Stage   *StageActivityStep   `json:"stage,omitempty" protobuf:"bytes,2,opt,name=stage"`
 	Promote *PromoteActivityStep `json:"promote,omitempty" protobuf:"bytes,3,opt,name=promote"`
 }
 
+// CoreActivityStep is a base step included in Stages of a pipeline or other kinds of step
 type CoreActivityStep struct {
 	Name               string             `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
 	Description        string             `json:"description,omitempty" protobuf:"bytes,2,opt,name=description"`
@@ -168,12 +179,14 @@ type CoreActivityStep struct {
 	CompletedTimestamp *metav1.Time       `json:"completedTimestamp,omitempty" protobuf:"bytes,5,opt,name=completedTimestamp"`
 }
 
+// StageActivityStep represents a stage of zero to more sub steps in a jenkins pipeline
 type StageActivityStep struct {
 	CoreActivityStep
 
 	Steps []CoreActivityStep `json:"steps,omitempty" protobuf:"bytes,1,opt,name=steps"`
 }
 
+// PromoteActivityStep is the step of promoting a version of an application to an environment
 type PromoteActivityStep struct {
 	CoreActivityStep
 
@@ -182,11 +195,14 @@ type PromoteActivityStep struct {
 	Update      *PromoteUpdateStep      `json:"update,omitempty" protobuf:"bytes,3,opt,name=update"`
 }
 
+// GitStatus the status of a git commit in terms of CI / CD
 type GitStatus struct {
 	URL    string `json:"url,omitempty" protobuf:"bytes,1,opt,name=url"`
 	Status string `json:"status,omitempty" protobuf:"bytes,2,opt,name=status"`
 }
 
+// PromotePullRequestStep is the step for promoting a version to an environment by raising a Pull Request on the
+// git repository of the environment
 type PromotePullRequestStep struct {
 	CoreActivityStep
 
@@ -194,6 +210,7 @@ type PromotePullRequestStep struct {
 	MergeCommitSHA string `json:"mergeCommitSHA,omitempty" protobuf:"bytes,2,opt,name=mergeCommitSHA"`
 }
 
+// PromoteUpdateStep is the step for updating a promotion after the Pull Request merges to master
 type PromoteUpdateStep struct {
 	CoreActivityStep
 
@@ -215,7 +232,7 @@ type PipelineActivityList struct {
 	Items []PipelineActivity `json:"items"`
 }
 
-// ActivityStepKindType
+// ActivityStepKindType is a kind of step
 type ActivityStepKindType string
 
 const (
@@ -227,7 +244,7 @@ const (
 	ActivityStepKindTypePromote ActivityStepKindType = "Promote"
 )
 
-// ActivityStatusType
+// ActivityStatusType is the status of an activity; usually succeeded or failed/error on completion
 type ActivityStatusType string
 
 const (
@@ -256,6 +273,7 @@ func (s ActivityStatusType) String() string {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 
+// Release represents a single version of an app that has been released 
 type Release struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
@@ -277,10 +295,11 @@ type ReleaseList struct {
 	Items []Release `json:"items"`
 }
 
+// ReleaseSpec is the specification of the Release
 type ReleaseSpec struct {
 	Name         string          `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
 	Version      string          `json:"version,omitempty"  protobuf:"bytes,2,opt,name=version"`
-	GitHttpURL   string          `json:"gitHttpUrl,omitempty"  protobuf:"bytes,3,opt,name=gitHttpUrl"`
+	GitHTTPURL   string          `json:"gitHttpUrl,omitempty"  protobuf:"bytes,3,opt,name=gitHttpUrl"`
 	GitCloneURL  string          `json:"gitCloneUrl,omitempty"  protobuf:"bytes,4,opt,name=gitCloneUrl"`
 	Commits      []CommitSummary `json:"commits,omitempty" protobuf:"bytes,5,opt,name=commits"`
 	Issues       []IssueSummary  `json:"issues,omitempty" protobuf:"bytes,6,opt,name=issues"`
@@ -325,7 +344,7 @@ type UserDetails struct {
 	AvatarURL         string       `json:"avatarUrl,omitempty"  protobuf:"bytes,6,opt,name=avatarUrl"`
 }
 
-// ReleaseStatusType
+// ReleaseStatusType is the status of a release; usually deployed or failed at completion
 type ReleaseStatusType string
 
 const (

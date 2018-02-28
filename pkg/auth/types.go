@@ -27,6 +27,7 @@ type AuthConfig struct {
 	CurrentServer   string
 }
 
+// AuthConfigService is a service for handing the config of auth tokens
 type AuthConfigService struct {
 	FileName string
 	config   AuthConfig

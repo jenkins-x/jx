@@ -97,6 +97,6 @@ func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error)
 		info.Name = strings.TrimSuffix(arr[1], ".git")
 		return info, nil
 	} else {
-		return info, fmt.Errorf("Invalid path %s could not determine organisation and repository name")
+		return info, fmt.Errorf("Invalid path %s could not determine organisation and repository name", path)
 	}
 }

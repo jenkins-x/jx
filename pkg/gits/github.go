@@ -318,7 +318,7 @@ func (p *GitHubProvider) MergePullRequest(pr *GitPullRequest, message string) er
 		return err
 	}
 	if result.Merged == nil || *result.Merged == false {
-		return fmt.Errorf("Failed to merge PR %s for ref %s as result did not return merged", pr.URL)
+		return fmt.Errorf("Failed to merge PR %s for ref %s as result did not return merged", pr.URL, ref)
 	}
 	return nil
 }

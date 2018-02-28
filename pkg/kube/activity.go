@@ -1,13 +1,14 @@
 package kube
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 )
 
 type PipelineActivityKey struct {
@@ -36,6 +37,9 @@ type PromoteUpdateFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.Pr
 func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, error) {
 	name := k.Name
 	create := false
+	if activities == nil {
+		return nil, fmt.Errorf("No Activities client available")
+	}
 	a, err := activities.Get(name, metav1.GetOptions{})
 	if err != nil {
 		create = true
