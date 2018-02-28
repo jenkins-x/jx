@@ -49,6 +49,7 @@ type InstallFlags struct {
 	LocalCloudEnvironment    bool
 	Timeout                  string
 	RegisterLocalHelmRepo    bool
+	CleanupTempFiles         bool
 }
 
 type Secrets struct {
@@ -168,6 +169,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
 	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
+	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	ignoreDomain := false
@@ -284,16 +286,17 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	// cleanup temporary files
-	err = os.Remove(secretsFileName)
-	if err != nil {
-		return err
-	}
+	if options.Flags.CleanupTempFiles {
+		err = os.Remove(secretsFileName)
+		if err != nil {
+			return err
+		}
 
-	//err = os.Remove(configFileName)
-	//if err != nil {
-	//	return err
-	//}
+		err = os.Remove(configFileName)
+		if err != nil {
+			return err
+		}
+	}
 
 	err = options.waitForInstallToBeReady(ns)
 	if err != nil {
