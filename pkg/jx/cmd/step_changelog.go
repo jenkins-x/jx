@@ -229,7 +229,7 @@ func (o *StepChangelogOptions) Run() error {
 		Spec: v1.ReleaseSpec{
 			Name:         SpecName,
 			Version:      SpecVersion,
-			GitHttpURL:   gitInfo.HttpURL(),
+			GitHTTPURL:   gitInfo.HttpURL(),
 			GitCloneURL:  gitInfo.HttpCloneURL(),
 			Commits:      []v1.CommitSummary{},
 			Issues:       []v1.IssueSummary{},

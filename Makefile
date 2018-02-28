@@ -23,6 +23,8 @@ ROOT_PACKAGE := github.com/jenkins-x/jx
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 #PACKAGE_DIRS := pkg cmd
 PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/)
+PKGS := $(shell go list ./... | grep -v /vendor | grep -v generated)
+
 
 GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go pkg/*//*/*/*.go
 
@@ -46,10 +48,12 @@ check: fmt build test
 build: $(GO_DEPENDENCIES)
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDFLAGS) -o build/$(NAME) cmd/jx/jx.go
 
-test:
+test: 
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v
 
 #	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jx/cmds
+
+full: $(PKGS)
 
 install: $(GO_DEPENDENCIES)
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) cmd/jx/jx.go
@@ -58,6 +62,31 @@ fmt:
 	@FORMATTED=`$(GO) fmt $(PACKAGE_DIRS)`
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
+FGT := $(GOPATH)/bin/fgt
+$(FGT):
+	go get github.com/GeertJohan/fgt
+
+GOLINT := $(GOPATH)/bin/golint
+$(GOLINT):
+	go get github.com/golang/lint/golint
+
+#	@echo "FORMATTING"
+#	@$(FGT) gofmt -l=true $(GOPATH)/src/$@/*.go
+
+$(PKGS): $(GOLINT) $(FGT)
+	@echo "LINTING"
+	@$(FGT) $(GOLINT) $(GOPATH)/src/$@/*.go
+	@echo "VETTING"
+	@go vet -v $@
+	@echo "TESTING"
+	@go test -v $@
+
+.PHONY: lint
+lint: vendor | $(PKGS) $(GOLINT) # ❷
+    @cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
+        test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
+     done ; exit $$ret
+          
 arm:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/$(NAME)-arm cmd/jx/jx.go
 

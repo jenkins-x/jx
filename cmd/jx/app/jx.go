@@ -7,6 +7,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
+// Run runs the command
 func Run() error {
 	/*
 		logs.InitLogs()
