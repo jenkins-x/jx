@@ -44,6 +44,7 @@ func NewCmdCreateAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 		},
 	}
 
+	cmd.AddCommand(NewCmdCreateAddonCDX(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonGitea(f, out, errOut))
 
 	options.addFlags(cmd)
@@ -62,17 +63,25 @@ func (o *CreateAddonOptions) Run() error {
 	if len(args) == 0 {
 		return o.Cmd.Help()
 	}
-	charts := kube.AddonCharts
 
 	for _, arg := range args {
-		chart := charts[arg]
-		if chart == "" {
-			return util.InvalidArg(arg, util.SortedMapKeys(charts))
-		}
-		err := o.installChart(arg, chart, o.Version, o.Namespace, o.HelmUpdate)
+		err := o.CreateAddon(arg)
 		if err != nil {
-			return fmt.Errorf("Failed to install chart %s: %s", chart, err)
+		  return err
 		}
+	}
+	return nil
+}
+
+func (o *CreateAddonOptions) CreateAddon(arg string) error {
+	charts := kube.AddonCharts
+	chart := charts[arg]
+	if chart == "" {
+		return util.InvalidArg(arg, util.SortedMapKeys(charts))
+	}
+	err := o.installChart(arg, chart, o.Version, o.Namespace, o.HelmUpdate)
+	if err != nil {
+		return fmt.Errorf("Failed to install chart %s: %s", chart, err)
 	}
 	return nil
 }
