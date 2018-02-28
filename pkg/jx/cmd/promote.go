@@ -948,6 +948,9 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 
 		available := ""
 		ing, err := kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(app, metav1.GetOptions{})
+		if err != nil || ing == nil && o.ReleaseName != "" && o.ReleaseName != app {
+			ing, err = kubeClient.ExtensionsV1beta1().Ingresses(o.ReleaseName).Get(app, metav1.GetOptions{})
+		}
 		if ing != nil && err == nil {
 			if len(ing.Spec.Rules) > 0 {
 				hostname := ing.Spec.Rules[0].Host
@@ -961,7 +964,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 			if issue.IsClosed() {
 				o.Printf("Commenting that issue %s is now in %s\n", util.ColorInfo(issue.URL), util.ColorInfo(envName))
 
-				comment := fmt.Sprintf(":white_check_mark: fix for issue %s is now deployed to %s%s", issue.URL, envName, available)
+				comment := fmt.Sprintf(":white_check_mark: the fix for this issue is now deployed to **%s**%s", issue.URL, envName, available)
 				id := issue.ID
 				if id != "" {
 					number, err := strconv.Atoi(id)
