@@ -290,10 +290,10 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	err = os.Remove(configFileName)
-	if err != nil {
-		return err
-	}
+	//err = os.Remove(configFileName)
+	//if err != nil {
+	//	return err
+	//}
 
 	err = options.waitForInstallToBeReady(ns)
 	if err != nil {
@@ -324,6 +324,8 @@ func (options *InstallOptions) Run() error {
 		options.CreateEnvOptions.Options.Name = "production"
 		options.CreateEnvOptions.Options.Spec.Label = "Production"
 		options.CreateEnvOptions.Options.Spec.Order = 200
+		options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
+		options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
 
 		err = options.CreateEnvOptions.Run()
 		if err != nil {
