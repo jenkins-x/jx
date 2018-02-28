@@ -4,6 +4,9 @@ const (
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
 
+	// ChartCDX the default name of the CDX chart
+	ChartCDX = "jenkins-x/cdx-frontend"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
@@ -25,6 +28,7 @@ const (
 var (
 	AddonCharts = map[string]string{
 		"gitea":      ChartGitea,
+		"cdx":        ChartCDX,
 		"prometheus": "stable/prometheus",
 		"grafana":    "stable/grafana",
 	}

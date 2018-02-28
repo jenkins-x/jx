@@ -134,7 +134,7 @@ func TestChangelogMarkdownWithConventionalCommits(t *testing.T) {
 
 ### Other Changes
 
-These commits did not use [Conventional Commits](ttps://conventionalcommits.org/) formatted messages:
+These commits did not use [Conventional Commits](https://conventionalcommits.org/) formatted messages:
 
 * bad comment 4 ([rawlingsj](https://github.com/rawlingsj))
 `
