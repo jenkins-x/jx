@@ -49,6 +49,7 @@ type InstallFlags struct {
 	LocalCloudEnvironment    bool
 	Timeout                  string
 	RegisterLocalHelmRepo    bool
+	CleanupTempFiles         bool
 }
 
 type Secrets struct {
@@ -168,6 +169,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
 	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
+	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	ignoreDomain := false
@@ -226,7 +228,7 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	config, err := options.getExposecontrollerConfigValues()
+	config, err := options.CreateEnvOptions.HelmValuesConfig.String()
 	if err != nil {
 		return err
 	}
@@ -284,15 +286,16 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	// cleanup temporary files
-	err = os.Remove(secretsFileName)
-	if err != nil {
-		return err
-	}
+	if options.Flags.CleanupTempFiles {
+		err = os.Remove(secretsFileName)
+		if err != nil {
+			return err
+		}
 
-	err = os.Remove(configFileName)
-	if err != nil {
-		return err
+		err = os.Remove(configFileName)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = options.waitForInstallToBeReady(ns)
@@ -324,6 +327,8 @@ func (options *InstallOptions) Run() error {
 		options.CreateEnvOptions.Options.Name = "production"
 		options.CreateEnvOptions.Options.Spec.Label = "Production"
 		options.CreateEnvOptions.Options.Spec.Order = 200
+		options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
+		options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
 
 		err = options.CreateEnvOptions.Run()
 		if err != nil {
@@ -428,23 +433,6 @@ PipelineSecrets:
     https://%s
     http://%s`
 	return fmt.Sprintf(pipelineSecrets, url, url), nil
-}
-
-func (o *InstallOptions) getExposecontrollerConfigValues() (string, error) {
-	var err error
-	o.Flags.Domain, err = o.GetDomain(o.kubeClient, o.Flags.Domain, o.Flags.Provider)
-	if err != nil {
-		return "", err
-	}
-	// TODO convert to a struct
-	config := `
-expose:
-  config:
-    http: %v
-    domain: %s
-`
-	o.Printf("Generating ExposeController ConfigMap with domain %s\n",  util.ColorInfo(o.Flags.Domain))
-	return fmt.Sprintf(config, !o.Flags.HTTPS, o.Flags.Domain), nil
 }
 
 // returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release
