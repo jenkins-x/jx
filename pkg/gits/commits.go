@@ -20,7 +20,6 @@ type CommitGroup struct {
 }
 
 var (
-	otherKindOrder = 10
 
 	groupCounter = 0
 
@@ -38,6 +37,8 @@ var (
 		"chore":    createCommitGroup("Chores"),
 		"":         createCommitGroup(""),
 	}
+
+	unknownKindOrder = groupCounter + 1
 )
 
 func createCommitGroup(title string) *CommitGroup {
@@ -53,7 +54,7 @@ func createCommitGroup(title string) *CommitGroup {
 func ConventionalCommitTypeToTitle(kind string) *CommitGroup {
 	answer := ConventionalCommitTitles[strings.ToLower(kind)]
 	if answer == nil {
-		answer = &CommitGroup{strings.Title(kind), otherKindOrder}
+		answer = &CommitGroup{strings.Title(kind), unknownKindOrder}
 	}
 	return answer
 }
@@ -69,11 +70,11 @@ func ParseCommit(message string) *CommitInfo {
 	if idx > 0 {
 		answer.Kind = message[0:idx]
 
-		rest := message[idx+1:]
+		rest := strings.TrimSpace(message[idx+1:])
 		if strings.HasPrefix(rest, "(") {
 			idx = strings.Index(rest, ")")
 			if idx > 0 {
-				answer.Feature = rest[1:idx]
+				answer.Feature = strings.TrimSpace(rest[1:idx])
 				rest = strings.TrimSpace(rest[idx+1:])
 			}
 		}
@@ -113,7 +114,7 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 		if message != "" {
 			ci := ParseCommit(message)
 
-			description := "* " + describeCommit(&cs, ci) + "\n"
+			description := "* " + describeCommit(gitInfo, &cs, ci) + "\n"
 			group := ci.Group()
 			if group != nil {
 				gac := groupAndCommits[group.Order]
@@ -138,7 +139,7 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 		return "", nil
 	}
 
-	buffer.WriteString("## Changes\n\n")
+	buffer.WriteString("## Changes\n")
 
 	if len(issues) > 0 {
 		buffer.WriteString("\n### Issues\n\n")
@@ -155,12 +156,22 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 		}
 	}
 
-	for i := 0; i < groupCounter; i++ {
+	hasTitle := false
+	for i := 0; i <= unknownKindOrder; i++ {
 		gac := groupAndCommits[i]
 		if gac != nil && len(gac.commits) > 0 {
 			group := gac.group
-			if group != nil && group.Title != "" {
-				buffer.WriteString("\n### " + group.Title + "\n\n")
+			if group != nil {
+				legend := ""
+				buffer.WriteString("\n")
+				if group.Title == "" && hasTitle {
+					group.Title = "Other Changes"
+					legend = "These commits did not use [Conventional Commits](ttps://conventionalcommits.org/) formatted messages:\n\n"
+				}
+				if group.Title != "" {
+					hasTitle = true
+					buffer.WriteString("### " + group.Title + "\n\n" + legend)
+				}
 			}
 			for _, msg := range gac.commits {
 				buffer.WriteString(msg)
@@ -171,8 +182,11 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 }
 
 func describeIssue(info *GitRepositoryInfo, issue *v1.IssueSummary) string {
-	postfix := ""
-	user := issue.User
+	return "[#" + issue.ID + "](" + issue.URL + ") " + issue.Title + describeUser(info, issue.User)
+}
+
+func describeUser(info *GitRepositoryInfo, user *v1.UserDetails) string {
+	answer := ""
 	if user != nil {
 		userText := ""
 		login := user.Login
@@ -192,20 +206,24 @@ func describeIssue(info *GitRepositoryInfo, issue *v1.IssueSummary) string {
 			}
 		}
 		if userText != "" {
-			postfix = " (" + userText + ")"
+			answer = " (" + userText + ")"
 		}
 	}
-	return "[#" + issue.ID + "](" + issue.URL + ") " + issue.Title + postfix
+	return answer
 }
 
-func describeCommit(cs *v1.CommitSummary, ci *CommitInfo) string {
+func describeCommit(info *GitRepositoryInfo, cs *v1.CommitSummary, ci *CommitInfo) string {
 	prefix := ""
 	if ci.Feature != "" {
-		prefix = ci.Feature + ":"
+		prefix = ci.Feature + ": "
 	}
 	message := strings.TrimSpace(ci.Message)
 	lines := strings.Split(message, "\n")
 
 	// TODO add link to issue etc...
-	return prefix + lines[0]
+	user := cs.Author
+	if user == nil {
+		user = cs.Committer
+	}
+	return prefix + lines[0] + describeUser(info, user)
 }
