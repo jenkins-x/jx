@@ -344,7 +344,9 @@ func GitGetRemoteBranchNames(dir string, prefix string) ([]string, error) {
 }
 
 func GetPreviousGitTagSHA(dir string) (string, error) {
-	return util.GetCommandOutput(dir, "git", "rev-list", "--tags", "--skip=1", "--max-count=1")
+	// when in a release branch we need to skip 2 rather that 1 to find the revision of the previous tag
+	// no idea why! :)
+	return util.GetCommandOutput(dir, "git", "rev-list", "--tags", "--skip=2", "--max-count=1")
 }
 
 func GetCurrentGitTagSHA(dir string) (string, error) {
