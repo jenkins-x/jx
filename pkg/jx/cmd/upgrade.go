@@ -3,9 +3,9 @@ package cmd
 import (
 	"io"
 
-	"github.com/spf13/cobra"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/spf13/cobra"
 )
 
 // UpgradeOptions are the flags for delete commands
@@ -23,7 +23,6 @@ var (
 		jx upgrade platform
 	`)
 )
-
 
 // NewCmdUpgrade creates the command
 func NewCmdUpgrade(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
