@@ -293,17 +293,21 @@ func (data *SpringBootForm) CreateProject(workDir string) (string, error) {
 	}
 	answer := filepath.Join(workDir, dirName)
 
-	u := "http://start.spring.io/starter.zip"
 	client := http.Client{}
 
 	form := url.Values{}
 	data.AddFormValues(&form)
 
-	req, err := http.NewRequest(http.MethodGet, u, strings.NewReader(form.Encode()))
+	parameters := form.Encode()
+	if parameters != "" {
+		parameters = "?" + parameters
+	}
+	u := "http://start.spring.io/starter.zip" + parameters
+	//fmt.Printf("generating spring project from: %s\n", u)
+	req, err := http.NewRequest(http.MethodGet, u, strings.NewReader(""))
 	if err != nil {
 		return answer, err
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	res, err := client.Do(req)
 	if err != nil {
 		return answer, err
