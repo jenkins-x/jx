@@ -44,7 +44,7 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		Spec: v1.PipelineActivitySpec{},
 	}
 	if activities == nil {
-		fmt.Printf("Warning: no PipelineActivities client available!")
+		fmt.Printf("Warning: no PipelineActivities client available!\n")
 		return defaultActivity, nil
 	}
 	a, err := activities.Get(name, metav1.GetOptions{})
@@ -184,7 +184,7 @@ func (k *PromoteStepActivityKey) OnPromotePullRequest(activities typev1.Pipeline
 		return nil
 	}
 	if activities == nil {
-		fmt.Printf("Warning: no PipelineActivities client available!")
+		fmt.Printf("Warning: no PipelineActivities client available!\n")
 		return nil
 	}
 	a, s, ps, p, added, err := k.GetOrCreatePromotePullRequest(activities)
@@ -209,7 +209,7 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActiv
 		return nil
 	}
 	if activities == nil {
-		fmt.Printf("Warning: no PipelineActivities client available!")
+		fmt.Printf("Warning: no PipelineActivities client available!\n")
 		return nil
 	}
 	a, s, ps, p, added, err := k.GetOrCreatePromoteUpdate(activities)
