@@ -89,7 +89,7 @@ func (f *factory) CreateJenkinsClient() (*gojenkins.Jenkins, error) {
 }
 
 func (f *factory) GetJenkinsURL() (string, error) {
-	// lets find the kubernets service
+	// lets find the kubernetes service
 	client, ns, err := f.CreateClient()
 	if err != nil {
 		return "", err
