@@ -5,6 +5,7 @@ import (
 
 	"io/ioutil"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,6 +20,7 @@ func TestAdminSecrets(t *testing.T) {
 	assert.NoError(t, err)
 
 	s, err := service.Secrets.String()
+	log.Infof("%s", s)
 	assert.NoError(t, err)
 
 	assert.Equal(t, string(testFile), s, "expected admin secret values do not match")
