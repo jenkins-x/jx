@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
-
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
@@ -12,6 +12,18 @@ import (
 type UpgradeOptions struct {
 	CommonOptions
 }
+
+var (
+	upgrade_long = templates.LongDesc(`
+		Upgrade a the whole Jenkins-X platform.
+`)
+
+	upgrade_example = templates.Examples(`
+		# upgrade the platform 
+		jx upgrade platform
+	`)
+)
+
 
 // NewCmdUpgrade creates the command
 func NewCmdUpgrade(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -26,8 +38,8 @@ func NewCmdUpgrade(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd := &cobra.Command{
 		Use:     "upgrade [flags]",
 		Short:   "Upgrades a resource",
-		Long:    delete_long,
-		Example: delete_example,
+		Long:    upgrade_long,
+		Example: upgrade_example,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
