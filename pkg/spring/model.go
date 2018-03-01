@@ -299,7 +299,7 @@ func (data *SpringBootForm) CreateProject(workDir string) (string, error) {
 	form := url.Values{}
 	data.AddFormValues(&form)
 
-	req, err := http.NewRequest(http.MethodPost, u, strings.NewReader(form.Encode()))
+	req, err := http.NewRequest(http.MethodGet, u, strings.NewReader(form.Encode()))
 	if err != nil {
 		return answer, err
 	}
