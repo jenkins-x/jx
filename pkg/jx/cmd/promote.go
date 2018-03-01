@@ -167,9 +167,6 @@ func (o *PromoteOptions) Run() error {
 		o.TimeoutDuration = &duration
 	}
 
-	if o.AllAutomatic {
-		return o.PromoteAllAutomatic()
-	}
 	targetNS, env, err := o.GetTargetNamespace(o.Namespace, o.Environment)
 	if err != nil {
 		return err
@@ -189,6 +186,10 @@ func (o *PromoteOptions) Run() error {
 	}
 	o.Activities = jxClient.JenkinsV1().PipelineActivities(ns)
 
+	
+	if o.AllAutomatic {
+		return o.PromoteAllAutomatic()
+	}
 	releaseInfo, err := o.Promote(targetNS, env, true)
 	err = o.WaitForPromotion(targetNS, env, releaseInfo)
 	if err != nil {
