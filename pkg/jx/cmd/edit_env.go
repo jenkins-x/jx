@@ -47,7 +47,7 @@ type EditEnvOptions struct {
 
 // NewCmdEditEnv creates a command object for the "create" command
 func NewCmdEditEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &CreateEnvOptions{
+	options := &EditEnvOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
 		},
