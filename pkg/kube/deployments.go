@@ -29,7 +29,7 @@ func GetDeployments(kubeClient *kubernetes.Clientset, ns string) (map[string]v1b
 
 func GetDeploymentNames(client *kubernetes.Clientset, ns string, filter string) ([]string, error) {
 	names := []string{}
-	list, err := client.AppsV1beta2().Deployments(ns).List(metav1.ListOptions{})
+	list, err := client.AppsV1beta1().Deployments(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return names, fmt.Errorf("Failed to load Deployments %s", err)
 	}
