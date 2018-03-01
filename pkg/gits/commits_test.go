@@ -1,9 +1,9 @@
 package gits
 
 import (
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 )
 
 func TestParseCommits(t *testing.T) {
@@ -35,32 +35,31 @@ func assertParseCommit(t *testing.T, input string, expected *CommitInfo) {
 	assert.Equal(t, expected, info, "CommitInfo for Commit %s", info)
 }
 
-
 func TestChangelogMarkdown(t *testing.T) {
 	releaseSpec := &v1.ReleaseSpec{
 		Commits: []v1.CommitSummary{
 			{
 				Message: "some commit 1\nfixes #123",
-				SHA: "123",
+				SHA:     "123",
 				Author: &v1.UserDetails{
-					Name: "James Strachan",
+					Name:  "James Strachan",
 					Login: "jstrachan",
 				},
 			},
 			{
 				Message: "some commit 2\nfixes #345",
-				SHA: "456",
+				SHA:     "456",
 				Author: &v1.UserDetails{
-					Name: "James Rawlings",
+					Name:  "James Rawlings",
 					Login: "rawlingsj",
 				},
 			},
 		},
 	}
 	gitInfo := &GitRepositoryInfo{
-		Host: "github.com",
+		Host:         "github.com",
 		Organisation: "jstrachan",
-		Name: "foo",
+		Name:         "foo",
 	}
 	markdown, err := GenerateMarkdown(releaseSpec, gitInfo)
 	assert.Nil(t, err)
@@ -80,42 +79,42 @@ func TestChangelogMarkdownWithConventionalCommits(t *testing.T) {
 		Commits: []v1.CommitSummary{
 			{
 				Message: "fix: some commit 1\nfixes #123",
-				SHA: "123",
+				SHA:     "123",
 				Author: &v1.UserDetails{
-					Name: "James Strachan",
+					Name:  "James Strachan",
 					Login: "jstrachan",
 				},
 			},
 			{
 				Message: "feat: some commit 2\nfixes #345",
-				SHA: "456",
+				SHA:     "456",
 				Author: &v1.UserDetails{
-					Name: "James Rawlings",
+					Name:  "James Rawlings",
 					Login: "rawlingsj",
 				},
 			},
 			{
 				Message: "feat:(has actual feature name) some commit 3\nfixes #456",
-				SHA: "567",
+				SHA:     "567",
 				Author: &v1.UserDetails{
-					Name: "James Rawlings",
+					Name:  "James Rawlings",
 					Login: "rawlingsj",
 				},
 			},
 			{
 				Message: "bad comment 4",
-				SHA: "678",
+				SHA:     "678",
 				Author: &v1.UserDetails{
-					Name: "James Rawlings",
+					Name:  "James Rawlings",
 					Login: "rawlingsj",
 				},
 			},
 		},
 	}
 	gitInfo := &GitRepositoryInfo{
-		Host: "github.com",
+		Host:         "github.com",
 		Organisation: "jstrachan",
-		Name: "foo",
+		Name:         "foo",
 	}
 	markdown, err := GenerateMarkdown(releaseSpec, gitInfo)
 	assert.Nil(t, err)

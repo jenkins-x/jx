@@ -24,6 +24,13 @@ const (
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
 func FindGitConfigDir(dir string) (string, string, error) {
 	d := dir
+	var err error
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			return "", "", err
+		}
+	}
 	for {
 		gitDir := filepath.Join(d, ".git/config")
 		f, err := util.FileExists(gitDir)

@@ -186,7 +186,6 @@ func (o *PromoteOptions) Run() error {
 	}
 	o.Activities = jxClient.JenkinsV1().PipelineActivities(ns)
 
-	
 	if o.AllAutomatic {
 		return o.PromoteAllAutomatic()
 	}

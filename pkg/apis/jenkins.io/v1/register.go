@@ -26,7 +26,7 @@ var (
 	// SchemeBuilder for building the schema :)
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 	// AddToScheme helper
-	AddToScheme   = SchemeBuilder.AddToScheme
+	AddToScheme = SchemeBuilder.AddToScheme
 )
 
 func init() {

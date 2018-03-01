@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"strconv"
 )
 
 type GitProvider interface {
@@ -42,6 +43,8 @@ type GitProvider interface {
 	IsGitHub() bool
 
 	GetIssue(org string, name string, number int) (*GitIssue, error)
+
+	CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error)
 
 	HasIssues() bool
 
@@ -174,6 +177,15 @@ type GitWebHookArguments struct {
 // IsClosed returns true if the PullRequest has been closed
 func (pr *GitPullRequest) IsClosed() bool {
 	return pr.ClosedAt != nil
+}
+
+// Name returns the textual name of the issue
+func (i *GitIssue) Name() string {
+	n := i.Number
+	if n != nil {
+		return "#" + strconv.Itoa(*n)
+	}
+	return "N/A"
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
