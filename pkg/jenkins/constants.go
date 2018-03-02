@@ -6,4 +6,6 @@ const (
 	DefaultJenkinsfile = "Jenkinsfile"
 
 	Chartmuseum = "chartmuseum"
+
+	DefaultBranchPattern = "master|PR-.*|feature.*"
 )

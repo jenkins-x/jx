@@ -111,6 +111,7 @@ func toGiteaRepo(name string, repo *gitea.Repository) *GitRepository {
 		CloneURL:         repo.CloneURL,
 		HTMLURL:          repo.HTMLURL,
 		SSHURL:           repo.SSHURL,
+		Fork:             repo.Fork,
 	}
 }
 

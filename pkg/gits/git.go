@@ -367,3 +367,20 @@ func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, o io.Writ
 	fmt.Fprintf(o, "Please click this URL %s\n\n", util.ColorInfo(tokenUrl))
 	fmt.Fprintf(o, "Then COPY the token and enter in into the form below:\n\n")
 }
+
+
+func GitIsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error) {
+	// lets ignore errors as that just means there's no config
+	originUrl, _ := util.GetCommandOutput(dir, 	"git", "config", "--get", "remote.origin.url")
+upstreamUrl, _ := util.GetCommandOutput(dir, 	"git", "config", "--get", "remote.upstream.url")
+
+	if originUrl != upstreamUrl && originUrl != "" && upstreamUrl != "" {
+		return true, nil
+	}
+
+	repo, err := gitProvider.GetRepository(gitInfo.Organisation, gitInfo.Name)
+	if err != nil {
+	  return false, err
+	}
+	return repo.Fork, nil
+}

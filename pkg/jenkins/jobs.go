@@ -44,7 +44,7 @@ func CreateFolderXml(folderUrl string, name string) string {
 `
 }
 
-func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvider, credentials string) string {
+func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvider, credentials string, branches string) string {
 	credXml := ""
 	if credentials != "" {
 		credXml = `		  <credentialsId>` + credentials + `</credentialsId>
@@ -68,7 +68,7 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
 			  <trust class="org.jenkinsci.plugins.github_branch_source.ForkPullRequestDiscoveryTrait$TrustContributors"/>
 			</org.jenkinsci.plugins.github__branch__source.ForkPullRequestDiscoveryTrait>
 			<jenkins.scm.impl.trait.RegexSCMHeadFilterTrait plugin="scm-api@2.2.6">
-			  <regex>master|PR-.*|feature.*</regex>
+			  <regex>` + branches + `</regex>
 			</jenkins.scm.impl.trait.RegexSCMHeadFilterTrait>
 		  </traits>
 		</source>
@@ -89,7 +89,7 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
 `
 }
 
-func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, gitProvider gits.GitProvider, credentials string, jenkinsfile string) string {
+func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, gitProvider gits.GitProvider, credentials string, branches string, jenkinsfile string) string {
 	return `<?xml version='1.0' encoding='UTF-8'?>
 <org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch@2.16">
   <actions/>
@@ -121,7 +121,7 @@ func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, gitProvider gits.
   <sources class="jenkins.branch.MultiBranchProject$BranchSourceList" plugin="branch-api@2.0.15">
 	<data>
 	  <jenkins.branch.BranchSource>
-` + createBranchSource(info, gitProvider, credentials) + `
+` + createBranchSource(info, gitProvider, credentials, branches) + `
 		<strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
 		  <properties class="empty-list"/>
 		</strategy>
