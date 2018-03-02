@@ -212,6 +212,8 @@ func (o *PreviewOptions) Run() error {
 		label = envName
 	}
 
+	envName = kube.ToValidName(envName)
+
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(envName, metav1.GetOptions{})
 	if err == nil {
 		// lets check for updates...
