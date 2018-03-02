@@ -12,13 +12,35 @@ import (
 )
 
 // ImportProject imports a MultiBranchProject into Jeknins for the given git URL
-func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, jenkinsfile string, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService) error {
+func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService) error {
 	if gitURL == "" {
 		return fmt.Errorf("No Git repository URL found!")
 	}
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return fmt.Errorf("Failed to parse git URL %s due to: %s", gitURL, err)
+	}
+
+	if branchPattern == "" {
+		fork, err := gits.GitIsFork(gitProvider, gitInfo, dir)
+		if err != nil {
+		  return fmt.Errorf("No branch pattern specified and could not determine if the git repository is a fork: %s", err)
+		}
+		if fork {
+			// lets figure out which branches to enable for a fork
+			branch, err := gits.GitGetBranch(dir)
+			if err != nil {
+				return fmt.Errorf("Failed to get current branch in dir %s: %s", dir, err)
+			}
+			if branch == "" {
+				return fmt.Errorf("Failed to get current branch in dir %s", dir)
+			}
+			// TODO do we need to scape any wacky characters to make it a valid branch pattern?
+			branchPattern = branch
+			fmt.Fprintf(out, "No branch pattern specified and this repository appears to be a fork so defaulting the branch patterns to run CI / CD on to: %s\n", branchPattern)
+		} else {
+			branchPattern = DefaultBranchPattern
+		}
 	}
 
 	if credentials == "" {
@@ -57,7 +79,7 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, jenkin
 			fmt.Fprintf(out, "Warning the folder %s is of class %s", org, c)
 		}
 	}
-	projectXml := CreateMultiBranchProjectXml(gitInfo, gitProvider, credentials, jenkinsfile)
+	projectXml := CreateMultiBranchProjectXml(gitInfo, gitProvider, credentials, branchPattern, jenkinsfile)
 	jobName := gitInfo.Name
 	job, err := jenk.GetJobByPath(org, jobName)
 	if err == nil {

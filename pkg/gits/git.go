@@ -24,6 +24,13 @@ const (
 // FindGitConfigDir tries to find the `.git` directory either in the current directory or in parent directories
 func FindGitConfigDir(dir string) (string, string, error) {
 	d := dir
+	var err error
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			return "", "", err
+		}
+	}
 	for {
 		gitDir := filepath.Join(d, ".git/config")
 		f, err := util.FileExists(gitDir)
@@ -359,4 +366,21 @@ func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, o io.Writ
 	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())
 	fmt.Fprintf(o, "Please click this URL %s\n\n", util.ColorInfo(tokenUrl))
 	fmt.Fprintf(o, "Then COPY the token and enter in into the form below:\n\n")
+}
+
+
+func GitIsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error) {
+	// lets ignore errors as that just means there's no config
+	originUrl, _ := util.GetCommandOutput(dir, 	"git", "config", "--get", "remote.origin.url")
+upstreamUrl, _ := util.GetCommandOutput(dir, 	"git", "config", "--get", "remote.upstream.url")
+
+	if originUrl != upstreamUrl && originUrl != "" && upstreamUrl != "" {
+		return true, nil
+	}
+
+	repo, err := gitProvider.GetRepository(gitInfo.Organisation, gitInfo.Name)
+	if err != nil {
+	  return false, err
+	}
+	return repo.Fork, nil
 }

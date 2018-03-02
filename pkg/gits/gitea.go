@@ -111,6 +111,7 @@ func toGiteaRepo(name string, repo *gitea.Repository) *GitRepository {
 		CloneURL:         repo.CloneURL,
 		HTMLURL:          repo.HTMLURL,
 		SSHURL:           repo.SSHURL,
+		Fork:             repo.Fork,
 	}
 }
 
@@ -265,6 +266,10 @@ func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue
 	if err != nil {
 		return nil, err
 	}
+	return p.fromGiteaIssue(i)
+}
+
+func (p *GiteaProvider) fromGiteaIssue(i *gitea.Issue) (*GitIssue, error) {
 	state := string(i.State)
 	labels := []GitLabel{}
 	for _, label := range i.Labels {
@@ -275,7 +280,9 @@ func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue
 	if assignee != nil {
 		assignees = append(assignees, *toGiteaUser(assignee))
 	}
+	number := int(i.ID)
 	return &GitIssue{
+		Number:        &number,
 		URL:           i.URL,
 		State:         &state,
 		Title:         i.Title,
@@ -285,6 +292,18 @@ func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue
 		User:          toGiteaUser(i.Poster),
 		Assignees:     assignees,
 	}, nil
+}
+
+func (p *GiteaProvider) CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error) {
+	config := gitea.CreateIssueOption{
+		Title: issue.Title,
+		Body:  issue.Body,
+	}
+	i, err := p.Client.CreateIssue(owner, repo, config)
+	if err != nil {
+		return nil, err
+	}
+	return p.fromGiteaIssue(i)
 }
 
 func toGiteaLabel(label *gitea.Label) GitLabel {
@@ -342,7 +361,6 @@ func (p *GiteaProvider) AddPRComment(pr *GitPullRequest, comment string) error {
 	return err
 }
 
-
 func (p *GiteaProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
 	issueComment := gitea.CreateIssueCommentOption{
 		Body: comment,
@@ -353,7 +371,6 @@ func (p *GiteaProvider) CreateIssueComment(owner string, repo string, number int
 	}
 	return nil
 }
-
 
 func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
 	answer := []*GitRepoStatus{}

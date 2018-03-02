@@ -273,7 +273,7 @@ func (s ActivityStatusType) String() string {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 
-// Release represents a single version of an app that has been released 
+// Release represents a single version of an app that has been released
 type Release struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
@@ -363,4 +363,3 @@ func (i *IssueSummary) IsClosed() bool {
 	lower := strings.ToLower(i.State)
 	return strings.HasPrefix(lower, "clos") || strings.HasPrefix(lower, "fix")
 }
-

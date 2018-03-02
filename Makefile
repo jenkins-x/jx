@@ -62,31 +62,6 @@ fmt:
 	@FORMATTED=`$(GO) fmt $(PACKAGE_DIRS)`
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
-FGT := $(GOPATH)/bin/fgt
-$(FGT):
-	go get github.com/GeertJohan/fgt
-
-GOLINT := $(GOPATH)/bin/golint
-$(GOLINT):
-	go get github.com/golang/lint/golint
-
-#	@echo "FORMATTING"
-#	@$(FGT) gofmt -l=true $(GOPATH)/src/$@/*.go
-
-$(PKGS): $(GOLINT) $(FGT)
-	@echo "LINTING"
-	@$(FGT) $(GOLINT) $(GOPATH)/src/$@/*.go
-	@echo "VETTING"
-	@go vet -v $@
-	@echo "TESTING"
-	@go test -v $@
-
-.PHONY: lint
-lint: vendor | $(PKGS) $(GOLINT) # ❷
-	@cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
-	    test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
-	done ; exit $$ret
-          
 arm:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/$(NAME)-arm cmd/jx/jx.go
 
@@ -148,3 +123,30 @@ docker-pipeline: linux
 	docker build -t rawlingsj/builder-base:dev . -f Dockerfile-pipeline
 
 .PHONY: release clean arm
+
+FGT := $(GOPATH)/bin/fgt
+$(FGT):
+	go get github.com/GeertJohan/fgt
+
+GOLINT := $(GOPATH)/bin/golint
+$(GOLINT):
+	go get github.com/golang/lint/golint
+
+#	@echo "FORMATTING"
+#	@$(FGT) gofmt -l=true $(GOPATH)/src/$@/*.go
+
+$(PKGS): $(GOLINT) $(FGT)
+	@echo "LINTING"
+	@$(FGT) $(GOLINT) $(GOPATH)/src/$@/*.go
+	@echo "VETTING"
+	@go vet -v $@
+	@echo "TESTING"
+	@go test -v $@
+
+.PHONY: lint
+lint: vendor | $(PKGS) $(GOLINT) # ❷
+	@cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
+	    test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
+	done ; exit $$ret
+
+

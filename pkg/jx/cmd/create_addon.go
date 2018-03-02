@@ -67,7 +67,7 @@ func (o *CreateAddonOptions) Run() error {
 	for _, arg := range args {
 		err := o.CreateAddon(arg)
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 	return nil

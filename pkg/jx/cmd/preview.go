@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"strings"
@@ -16,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -214,6 +212,8 @@ func (o *PreviewOptions) Run() error {
 		label = envName
 	}
 
+	envName = kube.ToValidName(envName)
+
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(envName, metav1.GetOptions{})
 	if err == nil {
 		// lets check for updates...
@@ -331,35 +331,4 @@ func (o *PreviewOptions) Run() error {
 	}
 	return stepPRCommentOptions.Run()
 
-}
-
-func (o *PreviewOptions) discoverGitURL(gitConf string) (string, error) {
-	if gitConf == "" {
-		return "", fmt.Errorf("No GitConfDir defined!")
-	}
-	cfg := gitcfg.NewConfig()
-	data, err := ioutil.ReadFile(gitConf)
-	if err != nil {
-		return "", fmt.Errorf("Failed to load %s due to %s", gitConf, err)
-	}
-
-	err = cfg.Unmarshal(data)
-	if err != nil {
-		return "", fmt.Errorf("Failed to unmarshal %s due to %s", gitConf, err)
-	}
-	remotes := cfg.Remotes
-	if len(remotes) == 0 {
-		return "", nil
-	}
-	url := gits.GetRemoteUrl(cfg, "origin")
-	if url == "" {
-		url = gits.GetRemoteUrl(cfg, "upstream")
-		if url == "" {
-			url, err = o.pickRemoteURL(cfg)
-			if err != nil {
-				return "", err
-			}
-		}
-	}
-	return url, nil
 }

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 )
 
 type PipelineActivityKey struct {

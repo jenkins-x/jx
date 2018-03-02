@@ -168,6 +168,7 @@ type ImportOptions struct {
 	DisableJenkinsfileCheck bool
 	SelectFilter            string
 	Jenkinsfile             string
+	BranchPattern           string
 	GitRepositoryOptions    gits.GitRepositoryOptions
 	ImportGitCommitMessage  string
 
@@ -252,6 +253,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
 	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "The git commit message for the import")
+	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI / CD pipelines on. Defaults to '" + jenkins.DefaultBranchPattern + "'")
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -757,7 +759,7 @@ func (o *ImportOptions) DoImport() error {
 	if jenkinsfile == "" {
 		jenkinsfile = jenkins.DefaultJenkinsfile
 	}
-	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, jenkinsfile, o.Credentials, false, gitProvider, authConfigSvc)
+	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc)
 }
 
 func (o *ImportOptions) addAppNameToGeneratedFile(filename, field, value string) error {

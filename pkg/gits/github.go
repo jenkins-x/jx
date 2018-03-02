@@ -3,6 +3,7 @@ package gits
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 	"golang.org/x/oauth2"
-	"strconv"
 )
 
 type GitHubProvider struct {
@@ -139,6 +139,7 @@ func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
+		Fork: 			 asBool(repo.Fork),
 	}
 }
 
@@ -470,6 +471,34 @@ func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssu
 	if err != nil {
 		return nil, err
 	}
+	return p.fromGithubIssue(org, name, number, i)
+}
+
+func (p *GitHubProvider) CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error) {
+	labels := []string{}
+	for _, label := range issue.Labels {
+		name := label.Name
+		if name != "" {
+			labels = append(labels, name)
+		}
+	}
+	config := &github.IssueRequest{
+		Title: &issue.Title,
+		Body:  &issue.Body,
+		Labels: &labels,
+	}
+	i, _, err := p.Client.Issues.Create(p.Context, owner, repo, config)
+	if err != nil {
+		return nil, err
+	}
+	number := 0
+	if i.Number != nil {
+		number = *i.Number
+	}
+	return p.fromGithubIssue(owner, repo, number, i)
+}
+
+func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i *github.Issue) (*GitIssue, error) {
 	serverPrefix := p.Server.URL
 	if !strings.HasPrefix(serverPrefix, "https://") {
 		serverPrefix = "https://" + serverPrefix
@@ -489,6 +518,7 @@ func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssu
 	}
 	url := util.UrlJoin(serverPrefix, org, name, path, strconv.Itoa(number))
 	return &GitIssue{
+		Number:        &number,
 		URL:           url,
 		State:         i.State,
 		Title:         asText(i.Title),
@@ -502,6 +532,9 @@ func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssu
 }
 
 func toGitHubUser(user *github.User) *GitUser {
+	if user == nil {
+		return nil
+	}
 	return &GitUser{
 		Login:     asText(user.Login),
 		Name:      asText(user.Name),

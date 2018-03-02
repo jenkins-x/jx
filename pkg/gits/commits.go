@@ -20,7 +20,6 @@ type CommitGroup struct {
 }
 
 var (
-
 	groupCounter = 0
 
 	// ConventionalCommitTitles textual descriptions for

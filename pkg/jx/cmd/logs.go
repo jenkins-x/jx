@@ -81,7 +81,7 @@ func (o *LogsOptions) Run() error {
 	}
 	names, err := kube.GetDeploymentNames(client, ns, o.Filter)
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not find deployments in namespace %s with filter %s: %s", ns, o.Filter, err)
 	}
 	if len(names) == 0 {
 		if o.Filter == "" {
@@ -126,7 +126,7 @@ func (o *LogsOptions) Run() error {
 
 // waitForReadyPodForDeployment waits for a ready pod in a Deployment in the given namespace with the given name
 func waitForReadyPodForDeployment(c *kubernetes.Clientset, ns string, name string, names []string, readyOnly bool) (string, error) {
-	deployment, err := c.AppsV1beta2().Deployments(ns).Get(name, metav1.GetOptions{})
+	deployment, err := c.AppsV1beta1().Deployments(ns).Get(name, metav1.GetOptions{})
 	if err != nil || deployment == nil {
 		return "", util.InvalidArg(name, names)
 	}

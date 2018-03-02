@@ -64,7 +64,7 @@ func NewCmdCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 func (o *CDXOptions) Run() error {
 	url, err := o.findService(kube.ServiceCDX)
 	if err != nil {
-		o.warnf("It looks like you are not running the CDX addon.\nDid you try running this command: 'jx create addon cdx'\n");
+		o.warnf("It looks like you are not running the CDX addon.\nDid you try running this command: 'jx create addon cdx'\n")
 		return err
 	}
 	if appendTeam {

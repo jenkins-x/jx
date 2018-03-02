@@ -2,6 +2,23 @@ package util
 
 import "gopkg.in/AlecAivazis/survey.v1"
 
+func PickValue(message string, defaultValue string, required bool) (string, error) {
+	answer := ""
+	prompt := &survey.Input{
+		Message: message,
+		Default: defaultValue,
+	}
+	validator := survey.Required
+	if !required {
+		validator = nil
+	}
+	err := survey.AskOne(prompt, &answer, validator)
+	if err != nil {
+		return "", err
+	}
+	return answer, nil
+}
+
 func PickNameWithDefault(names []string, message string, defaultValue string) (string, error) {
 	name := ""
 	if len(names) == 0 {

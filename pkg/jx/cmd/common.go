@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
+	"io/ioutil"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -509,4 +510,35 @@ func (*CommonOptions) FindHelmChart() (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func (o *CommonOptions) discoverGitURL(gitConf string) (string, error) {
+	if gitConf == "" {
+		return "", fmt.Errorf("No GitConfDir defined!")
+	}
+	cfg := gitcfg.NewConfig()
+	data, err := ioutil.ReadFile(gitConf)
+	if err != nil {
+		return "", fmt.Errorf("Failed to load %s due to %s", gitConf, err)
+	}
+
+	err = cfg.Unmarshal(data)
+	if err != nil {
+		return "", fmt.Errorf("Failed to unmarshal %s due to %s", gitConf, err)
+	}
+	remotes := cfg.Remotes
+	if len(remotes) == 0 {
+		return "", nil
+	}
+	url := gits.GetRemoteUrl(cfg, "origin")
+	if url == "" {
+		url = gits.GetRemoteUrl(cfg, "upstream")
+		if url == "" {
+			url, err = o.pickRemoteURL(cfg)
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+	return url, nil
 }
