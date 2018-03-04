@@ -186,6 +186,12 @@ func (o *PromoteOptions) Run() error {
 	}
 	o.Activities = jxClient.JenkinsV1().PipelineActivities(ns)
 
+	releaseName := o.ReleaseName
+	if releaseName == "" {
+		releaseName = targetNS + "-" + app
+		o.ReleaseName = releaseName
+	}
+
 	if o.AllAutomatic {
 		return o.PromoteAllAutomatic()
 	}
@@ -263,6 +269,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	releaseName := o.ReleaseName
 	if releaseName == "" {
 		releaseName = targetNS + "-" + app
+		o.ReleaseName = releaseName
 	}
 	releaseInfo := &ReleaseInfo{
 		ReleaseName: releaseName,
@@ -992,16 +999,26 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	if err == nil && release != nil {
 		issues := release.Spec.Issues
 
-		available := ""
-		ing, err := kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(app, metav1.GetOptions{})
-		if err != nil || ing == nil && o.ReleaseName != "" && o.ReleaseName != app {
-			ing, err = kubeClient.ExtensionsV1beta1().Ingresses(o.ReleaseName).Get(app, metav1.GetOptions{})
+		url, err := kube.FindServiceURL(kubeClient, ens, app)
+		if url == "" || err != nil {
+			url, err = kube.FindServiceURL(kubeClient, ens, o.ReleaseName)
 		}
-		if ing != nil && err == nil {
-			if len(ing.Spec.Rules) > 0 {
-				hostname := ing.Spec.Rules[0].Host
-				if hostname != "" {
-					available = fmt.Sprintf(" and available [here](http://%s)", hostname)
+		available := ""
+		if url != "" {
+			available = fmt.Sprintf(" and [available here](%s)", url)
+		}
+
+		if available == "" {
+			ing, err := kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(app, metav1.GetOptions{})
+			if err != nil || ing == nil && o.ReleaseName != "" && o.ReleaseName != app {
+				ing, err = kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(o.ReleaseName, metav1.GetOptions{})
+			}
+			if ing != nil {
+				if len(ing.Spec.Rules) > 0 {
+					hostname := ing.Spec.Rules[0].Host
+					if hostname != "" {
+						available = fmt.Sprintf(" and [available here](http://%s)", hostname)
+					}
 				}
 			}
 		}
@@ -1010,7 +1027,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 			if issue.IsClosed() {
 				o.Printf("Commenting that issue %s is now in %s\n", util.ColorInfo(issue.URL), util.ColorInfo(envName))
 
-				comment := fmt.Sprintf(":white_check_mark: the fix for this issue is now deployed to **%s**%s", envName, available)
+				comment := fmt.Sprintf(":white_check_mark: the fix for this issue is now deployed to **%s** in version %s %s", envName, version, available)
 				id := issue.ID
 				if id != "" {
 					number, err := strconv.Atoi(id)
