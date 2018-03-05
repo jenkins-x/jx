@@ -12,6 +12,8 @@ import (
 type Interface interface {
 	// Environments returns a EnvironmentInformer.
 	Environments() EnvironmentInformer
+	// GitServices returns a GitServiceInformer.
+	GitServices() GitServiceInformer
 	// PipelineActivities returns a PipelineActivityInformer.
 	PipelineActivities() PipelineActivityInformer
 	// Releases returns a ReleaseInformer.
@@ -32,6 +34,11 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // Environments returns a EnvironmentInformer.
 func (v *version) Environments() EnvironmentInformer {
 	return &environmentInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// GitServices returns a GitServiceInformer.
+func (v *version) GitServices() GitServiceInformer {
+	return &gitServiceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // PipelineActivities returns a PipelineActivityInformer.

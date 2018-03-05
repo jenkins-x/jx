@@ -135,7 +135,10 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
+	err = kube.RegisterGitServiceCRD(apisClient)
+	if err != nil {
+		return err
+	}
 	err = kube.RegisterReleaseCRD(apisClient)
 	if err != nil {
 		return err
@@ -202,9 +205,17 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc)
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
+	}
+
+	gitKind, err := kube.GetGitServiceKind(jxClient, devNs, gitInfo.Host)
+	foundGitProvider := true
+	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc, gitKind)
+	if err != nil {
+		foundGitProvider = false
+		o.warnf("Could not create GitProvide so cannot update the release notes: %s\n", err)
 	}
 	o.State.GitProvider = gitProvider
 	o.State.FoundIssueNames = map[string]bool{}
@@ -275,7 +286,7 @@ func (o *StepChangelogOptions) Run() error {
 		return err
 	}
 	version := o.Version
-	if version != "" && o.UpdateRelease {
+	if version != "" && o.UpdateRelease && foundGitProvider {
 		releaseInfo := &gits.GitRelease{
 			Name:    version,
 			TagName: version,
@@ -284,7 +295,8 @@ func (o *StepChangelogOptions) Run() error {
 		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, version, releaseInfo)
 		url := util.UrlJoin(gitInfo.HttpURL(), "releases/tag", version)
 		if err != nil {
-			return fmt.Errorf("Failed to update the release at %s: %s", url, err)
+			o.warnf("Failed to update the release at %s: %s\n", url, err)
+			return nil
 		}
 		o.Printf("Updated the release information at %s\n", util.ColorInfo(url))
 	} else {

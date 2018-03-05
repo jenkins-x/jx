@@ -16,6 +16,10 @@ func (c *FakeJenkinsV1) Environments(namespace string) v1.EnvironmentInterface {
 	return &FakeEnvironments{c, namespace}
 }
 
+func (c *FakeJenkinsV1) GitServices(namespace string) v1.GitServiceInterface {
+	return &FakeGitServices{c, namespace}
+}
+
 func (c *FakeJenkinsV1) PipelineActivities(namespace string) v1.PipelineActivityInterface {
 	return &FakePipelineActivities{c, namespace}
 }

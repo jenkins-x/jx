@@ -201,18 +201,18 @@ func (o *PreviewOptions) Run() error {
 			}
 		}
 	}
-
+	envName = kube.ToValidName(envName)
 	if envName == "" {
 		return fmt.Errorf("No name could be defaulted for the Preview Environment. Please supply one!")
 	}
 	if ens == "" {
 		ens = ns + "-" + envName
 	}
+	ens = kube.ToValidName(ens)
+
 	if label == "" {
 		label = envName
 	}
-
-	envName = kube.ToValidName(envName)
 
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(envName, metav1.GetOptions{})
 	if err == nil {
@@ -308,7 +308,7 @@ func (o *PreviewOptions) Run() error {
 		if len(ing.Spec.Rules) > 0 {
 			hostname := ing.Spec.Rules[0].Host
 			if hostname != "" {
-				comment = fmt.Sprintf(":star: PR built and available [here](http://%s)", hostname)
+				comment = fmt.Sprintf(":star: PR built and available in a preview environment at http://%s", hostname)
 			}
 		}
 	}

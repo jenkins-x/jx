@@ -95,7 +95,12 @@ func (o *CreateIssueOptions) Run() error {
 		return fmt.Errorf("Could not discover a git repository in the current directory")
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "creating issue", o.BatchMode)
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return err
+	}
+
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "creating issue", o.BatchMode, gitKind)
 	if err != nil {
 		return err
 	}

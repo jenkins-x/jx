@@ -253,7 +253,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
 	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "The git commit message for the import")
-	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI / CD pipelines on. Defaults to '" + jenkins.DefaultBranchPattern + "'")
+	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI / CD pipelines on. Defaults to '"+jenkins.DefaultBranchPattern+"'")
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)

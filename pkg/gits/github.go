@@ -139,7 +139,7 @@ func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 		CloneURL:         asText(repo.CloneURL),
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
-		Fork: 			 asBool(repo.Fork),
+		Fork:             asBool(repo.Fork),
 	}
 }
 
@@ -483,8 +483,8 @@ func (p *GitHubProvider) CreateIssue(owner string, repo string, issue *GitIssue)
 		}
 	}
 	config := &github.IssueRequest{
-		Title: &issue.Title,
-		Body:  &issue.Body,
+		Title:  &issue.Title,
+		Body:   &issue.Body,
 		Labels: &labels,
 	}
 	i, _, err := p.Client.Issues.Create(p.Context, owner, repo, config)

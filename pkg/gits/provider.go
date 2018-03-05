@@ -312,31 +312,46 @@ func (s *GitRepoStatus) IsFailed() bool {
 	return s.State == "error" || s.State == "failure"
 }
 
-func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string, batchMode bool) (GitProvider, error) {
+func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string, batchMode bool, gitKind string) (GitProvider, error) {
 	config := authConfigSvc.Config()
-	server := config.GetOrCreateServer(i.Host)
+	hostUrl := i.HostURLWithoutUser()
+	server := config.GetOrCreateServer(hostUrl)
 	userAuth, err := config.PickServerUserAuth(server, message, batchMode)
 	if err != nil {
 		return nil, err
 	}
-	return i.CreateProviderForUser(server, userAuth)
+	return i.CreateProviderForUser(server, userAuth, gitKind)
 }
 
-func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user *auth.UserAuth, gitKind string) (GitProvider, error) {
 	if i.Host == GitHubHost {
 		return NewGitHubProvider(server, user)
 	}
-	return nil, fmt.Errorf("Git provider not supported for host %s", i.Host)
+	if gitKind != "" && server.Kind != gitKind {
+		server.Kind = gitKind
+	}
+	return CreateProvider(server, user)
 }
 
-func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService) (GitProvider, error) {
+func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService, gitKind string) (GitProvider, error) {
 	config := authConfigSvc.Config()
-	server := config.GetOrCreateServer(i.Host)
+	hostUrl := i.HostURLWithoutUser()
+	server := config.GetOrCreateServer(hostUrl)
 	url := server.URL
-	userAuths := authConfigSvc.Config().FindUserAuths(url)
-	if len(userAuths) == 1 {
-		auth := userAuths[0]
-		return NewGitHubProvider(server, auth)
+	if gitKind != "" {
+		server.Kind = gitKind
 	}
-	return nil, fmt.Errorf("Git provider not supported for host %s", i.Host)
+	userAuths := authConfigSvc.Config().FindUserAuths(url)
+	if len(userAuths) == 0 {
+		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
+		if !userAuth.IsInvalid() {
+			return CreateProvider(server, &userAuth)
+		}
+	}
+	if len(userAuths) > 0 {
+		// TODO use default user???
+		auth := userAuths[0]
+		return CreateProvider(server, auth)
+	}
+	return nil, fmt.Errorf("Could not create Git provider for host %s as no user auths could be found", hostUrl)
 }

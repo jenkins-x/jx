@@ -130,7 +130,7 @@ func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
 	cmd.Flags().StringVarP(&options.ReleaseName, "release", "", "", "The name of the helm release")
-	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
+	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
 }
@@ -511,7 +511,12 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode)
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return err
+	}
+
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode, gitKind)
 	if err != nil {
 		return err
 	}
@@ -908,7 +913,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 		}
 	}
 	name = kube.ToValidName(name)
-	o.Printf("Using pipeline: %s build: %s\n", util.ColorInfo(pipeline), util.ColorInfo("#" + build))
+	o.Printf("Using pipeline: %s build: %s\n", util.ColorInfo(pipeline), util.ColorInfo("#"+build))
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:         name,
@@ -925,17 +930,17 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 // getLatestPipelineBuild for the given pipeline name lets try find the Jenkins Pipeline and the latest build
 func (o *PromoteOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
 	build := ""
- 	jenkins, err := o.Factory.CreateJenkinsClient()
- 	if err != nil {
- 	  return pipeline, build, err
- 	}
- 	paths := strings.Split(pipeline, "/")
- 	job, err := jenkins.GetJobByPath(paths...)
- 	if err != nil {
- 	  return pipeline, build, err
- 	}
- 	build = strconv.Itoa(job.LastBuild.Number)
- 	return pipeline, build, nil
+	jenkins, err := o.Factory.CreateJenkinsClient()
+	if err != nil {
+		return pipeline, build, err
+	}
+	paths := strings.Split(pipeline, "/")
+	job, err := jenkins.GetJobByPath(paths...)
+	if err != nil {
+		return pipeline, build, err
+	}
+	build = strconv.Itoa(job.LastBuild.Number)
+	return pipeline, build, nil
 }
 
 func (o *PromoteOptions) getJenkinsURL() string {
@@ -965,7 +970,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		return nil
 	}
 	if app == "" {
-		o.warnf("No appplication name so cannot comment on issues that they are now in %s\n", envName)
+		o.warnf("No application name so cannot comment on issues that they are now in %s\n", envName)
 		return nil
 	}
 	if version == "" {
@@ -981,7 +986,12 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	if err != nil {
 		return err
 	}
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode)
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return err
+	}
+
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind)
 	if err != nil {
 		return err
 	}
@@ -1005,7 +1015,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		}
 		available := ""
 		if url != "" {
-			available = fmt.Sprintf(" and [available here](%s)", url)
+			available = fmt.Sprintf(" and available at %s", url)
 		}
 
 		if available == "" {
@@ -1017,7 +1027,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 				if len(ing.Spec.Rules) > 0 {
 					hostname := ing.Spec.Rules[0].Host
 					if hostname != "" {
-						available = fmt.Sprintf(" and [available here](http://%s)", hostname)
+						available = fmt.Sprintf(" and available at %s", hostname)
 					}
 				}
 			}

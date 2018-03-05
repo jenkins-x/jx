@@ -108,6 +108,10 @@ func (o *CreateGitTokenOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	err = o.ensureGitServiceCRD(server)
+	if err != nil {
+		return err
+	}
 
 	// TODO add the API thingy...
 	if o.Username == "" {
@@ -303,4 +307,31 @@ func (o *CreateGitTokenOptions) updateGitCredentialsSecret(server *auth.AuthServ
 		}
 	}
 	return nil
+}
+
+func (o *CreateGitTokenOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
+	kind := server.Kind
+	if kind == "" || kind == "github" || server.URL == "" {
+		return nil
+	}
+	u, err := url.Parse(server.URL)
+	if err != nil {
+		return fmt.Errorf("Could not parse server URL %s: %s", server.URL, err)
+	}
+
+	host := u.Host
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterGitServiceCRD(apisClient)
+	if err != nil {
+		return err
+	}
+
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	return kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, host, o.Out)
 }

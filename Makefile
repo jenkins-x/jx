@@ -93,14 +93,16 @@ release: check
 	go get -u github.com/progrium/gh-release
 	gh-release checksums sha256
 	gh-release create jenkins-x/$(NAME) $(VERSION) master $(VERSION)
-	
+
+	jx step changelog --version $(VERSION)
+
 	updatebot push-version --kind brew jx $(VERSION)
 	updatebot push-version --kind docker JX_VERSION $(VERSION)
 	updatebot update-loop
 
 	echo "Updating the JX CLI reference docs"
-	git clone https://github.com/jenkins-x/documentation.git
-	cd documentation/_docs/reference; \
+	git clone https://github.com/jenkins-x/jx-docs.git
+	cd jx-docs/content/commands; \
 		../../../build/linux/jx create docs; \
 		git config credential.helper store; \
 		git add *; \
@@ -123,6 +125,14 @@ docker-pipeline: linux
 	docker build -t rawlingsj/builder-base:dev . -f Dockerfile-pipeline
 
 .PHONY: release clean arm
+
+preview: linux
+	docker build --no-cache -t docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.maven .
+	docker push docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.buildgo .
+	docker push docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-nodejs:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.nodejs .
+	docker push docker.io/jenkinsxio/builder-nodejs:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
 
 FGT := $(GOPATH)/bin/fgt
 $(FGT):

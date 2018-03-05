@@ -68,6 +68,32 @@ Run `make` to build the `jx`  binaries:
 $ make build      # runs glide and builds `jx`  inside the build/
 ```
 
+## Debugging
+
+First you need to [install Delve](https://github.com/derekparker/delve/blob/master/Documentation/installation/README.md)
+
+Then you should be able to run a debug version of a jx command:
+
+```
+dlv --listen=:2345 --headless=true --api-version=2 exec ./build/jx -- some arguments
+```
+
+Then in you IDE you should be able to then set a breakpoint and connect to `2345`.
+
+e.g. in IntellJ you create a new `Go Remote` execution and then hit `Debug`
+
+### Using a helper script
+
+If you create a bash file called `jxDebug` as the following
+
+```bash
+#!/bin/sh
+echo "Debugging jx"
+dlv --listen=:2345 --headless=true --api-version=2 exec `which jx` -- $*
+```
+
+Then you can change your `jx someArgs` CLI to `jxDebug someArgs` then debug it!
+
 ## Cleaning Up
 
 To remove the Draft chart and local binaries:

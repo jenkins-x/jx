@@ -12,6 +12,14 @@ type EnvironmentListerExpansion interface{}
 // EnvironmentNamespaceLister.
 type EnvironmentNamespaceListerExpansion interface{}
 
+// GitServiceListerExpansion allows custom methods to be added to
+// GitServiceLister.
+type GitServiceListerExpansion interface{}
+
+// GitServiceNamespaceListerExpansion allows custom methods to be added to
+// GitServiceNamespaceLister.
+type GitServiceNamespaceListerExpansion interface{}
+
 // PipelineActivityListerExpansion allows custom methods to be added to
 // PipelineActivityLister.
 type PipelineActivityListerExpansion interface{}
