@@ -338,11 +338,17 @@ func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService,
 		server.Kind = gitKind
 	}
 	userAuths := authConfigSvc.Config().FindUserAuths(url)
+	if len(userAuths) == 0 {
+		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
+		if !userAuth.IsInvalid() {
+			return CreateProvider(server, &userAuth)
+		}
+	}
 	if len(userAuths) > 0 {
 		// TODO use default user???
 		auth := userAuths[0]
 		return CreateProvider(server, auth)
 	}
-	return nil, fmt.Errorf("Git provider not supported for host %s", hostUrl)
+	return nil, fmt.Errorf("Could not create Git provider for host %s as no user auths could be found", hostUrl)
 }
 
