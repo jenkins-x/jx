@@ -220,9 +220,17 @@ func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPu
 	if err != nil {
 		return nil, err
 	}
-	return &GitPullRequest{
-		URL: pr.HTMLURL,
-	}, nil
+	id := int(pr.ID)
+	answer := &GitPullRequest{
+		URL:    pr.HTMLURL,
+		Number: &id,
+		Owner:  data.Owner,
+		Repo:   data.Repo,
+	}
+	if pr.Head != nil {
+		answer.LastCommitSha = pr.Head.Sha
+	}
+	return answer, nil
 }
 
 func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {

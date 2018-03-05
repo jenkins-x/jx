@@ -314,7 +314,8 @@ func (s *GitRepoStatus) IsFailed() bool {
 
 func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string, batchMode bool, gitKind string) (GitProvider, error) {
 	config := authConfigSvc.Config()
-	server := config.GetOrCreateServer(i.Host)
+	hostUrl := i.HostURLWithoutUser()
+	server := config.GetOrCreateServer(hostUrl)
 	userAuth, err := config.PickServerUserAuth(server, message, batchMode)
 	if err != nil {
 		return nil, err
