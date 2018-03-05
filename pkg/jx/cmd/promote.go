@@ -965,7 +965,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		return nil
 	}
 	if app == "" {
-		o.warnf("No appplication name so cannot comment on issues that they are now in %s\n", envName)
+		o.warnf("No application name so cannot comment on issues that they are now in %s\n", envName)
 		return nil
 	}
 	if version == "" {
@@ -1005,7 +1005,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		}
 		available := ""
 		if url != "" {
-			available = fmt.Sprintf(" and [available here](%s)", url)
+			available = fmt.Sprintf(" and available at %s", url)
 		}
 
 		if available == "" {
@@ -1017,7 +1017,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 				if len(ing.Spec.Rules) > 0 {
 					hostname := ing.Spec.Rules[0].Host
 					if hostname != "" {
-						available = fmt.Sprintf(" and [available here](http://%s)", hostname)
+						available = fmt.Sprintf(" and available at %s", hostname)
 					}
 				}
 			}

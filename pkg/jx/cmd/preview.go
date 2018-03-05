@@ -308,7 +308,7 @@ func (o *PreviewOptions) Run() error {
 		if len(ing.Spec.Rules) > 0 {
 			hostname := ing.Spec.Rules[0].Host
 			if hostname != "" {
-				comment = fmt.Sprintf(":star: PR built and available [here](http://%s)", hostname)
+				comment = fmt.Sprintf(":star: PR built and available in a preview environment at http://%s", hostname)
 			}
 		}
 	}
