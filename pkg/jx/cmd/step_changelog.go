@@ -211,9 +211,11 @@ func (o *StepChangelogOptions) Run() error {
 	}
 
 	gitKind, err := kube.GetGitServiceKind(jxClient, devNs, gitInfo.Host)
+	foundGitProvider := true
 	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc, gitKind)
 	if err != nil {
-		return err
+		foundGitProvider = false
+		o.warnf("Could not create GitProvide so cannot update the release notes: %s\n", err)
 	}
 	o.State.GitProvider = gitProvider
 	o.State.FoundIssueNames = map[string]bool{}
@@ -284,7 +286,7 @@ func (o *StepChangelogOptions) Run() error {
 		return err
 	}
 	version := o.Version
-	if version != "" && o.UpdateRelease {
+	if version != "" && o.UpdateRelease && foundGitProvider {
 		releaseInfo := &gits.GitRelease{
 			Name:    version,
 			TagName: version,
