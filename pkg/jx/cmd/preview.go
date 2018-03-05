@@ -201,18 +201,18 @@ func (o *PreviewOptions) Run() error {
 			}
 		}
 	}
-
+	envName = kube.ToValidName(envName)
 	if envName == "" {
 		return fmt.Errorf("No name could be defaulted for the Preview Environment. Please supply one!")
 	}
 	if ens == "" {
 		ens = ns + "-" + envName
 	}
+	ens = kube.ToValidName(ens)
+
 	if label == "" {
 		label = envName
 	}
-
-	envName = kube.ToValidName(envName)
 
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(envName, metav1.GetOptions{})
 	if err == nil {
