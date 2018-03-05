@@ -184,6 +184,18 @@ func (o *CommonOptions) JXClientAndDevNamespace() (*versioned.Clientset, string,
 	return o.jxClient, o.devNamespace, nil
 }
 
+
+func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, error) {
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return "", err
+	}
+
+	return kube.GetGitServiceKind(jxClient, devNs, gitInfo.Host)
+}
+
+
+
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 	if o.jenkinsClient == nil {
 		jenkins, err := o.Factory.CreateJenkinsClient()
@@ -218,7 +230,11 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode)
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+	  return nil, err
+	}
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind)
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {

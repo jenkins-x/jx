@@ -312,21 +312,24 @@ func (s *GitRepoStatus) IsFailed() bool {
 	return s.State == "error" || s.State == "failure"
 }
 
-func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string, batchMode bool) (GitProvider, error) {
+func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string, batchMode bool, gitKind string) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(i.Host)
 	userAuth, err := config.PickServerUserAuth(server, message, batchMode)
 	if err != nil {
 		return nil, err
 	}
-	return i.CreateProviderForUser(server, userAuth)
+	return i.CreateProviderForUser(server, userAuth, gitKind)
 }
 
-func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user *auth.UserAuth, gitKind string) (GitProvider, error) {
 	if i.Host == GitHubHost {
 		return NewGitHubProvider(server, user)
 	}
-	return nil, fmt.Errorf("Git provider not supported for host %s", i.Host)
+	if gitKind != "" && server.Kind != gitKind {
+		server.Kind = gitKind
+	}
+	return CreateProvider(server, user)
 }
 
 func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService, gitKind string) (GitProvider, error) {

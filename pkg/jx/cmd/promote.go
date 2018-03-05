@@ -511,7 +511,12 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode)
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+	  return err
+	}
+
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode, gitKind)
 	if err != nil {
 		return err
 	}
@@ -981,7 +986,12 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	if err != nil {
 		return err
 	}
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode)
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+	  return err
+	}
+
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind)
 	if err != nil {
 		return err
 	}
