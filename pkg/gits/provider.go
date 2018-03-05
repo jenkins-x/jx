@@ -343,6 +343,13 @@ func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService,
 	}
 	userAuths := authConfigSvc.Config().FindUserAuths(url)
 	if len(userAuths) == 0 {
+		kind := server.Kind
+		if kind != "" {
+			userAuth := auth.CreateAuthUserFromEnvironment(strings.ToUpper(kind))
+			if !userAuth.IsInvalid() {
+				return CreateProvider(server, &userAuth)
+			}
+		}
 		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
 		if !userAuth.IsInvalid() {
 			return CreateProvider(server, &userAuth)
