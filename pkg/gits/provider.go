@@ -331,8 +331,8 @@ func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user 
 
 func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService, gitKind string) (GitProvider, error) {
 	config := authConfigSvc.Config()
-	host := i.Host
-	server := config.GetOrCreateServer(host)
+	hostUrl := i.HostURLWithoutUser()
+	server := config.GetOrCreateServer(hostUrl)
 	url := server.URL
 	if gitKind != "" {
 		server.Kind = gitKind
@@ -343,5 +343,6 @@ func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService,
 		auth := userAuths[0]
 		return CreateProvider(server, auth)
 	}
-	return nil, fmt.Errorf("Git provider not supported for host %s", host)
+	return nil, fmt.Errorf("Git provider not supported for host %s", hostUrl)
 }
+
