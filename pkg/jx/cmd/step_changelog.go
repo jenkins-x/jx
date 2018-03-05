@@ -332,7 +332,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 	// TODO for now assume github but allow a JIRA server & project name to be specified...
 
 	gitProvider := o.State.GitProvider
-	if !gitProvider.HasIssues() {
+	if gitProvider == nil || !gitProvider.HasIssues() {
 		return nil
 	}
 	gitInfo := o.State.GitInfo
