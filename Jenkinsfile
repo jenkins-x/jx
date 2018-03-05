@@ -2,6 +2,11 @@ pipeline {
     agent {
         label "jenkins-go"
     }
+    environment {
+        JOB_NAME          = "$JOB_NAME"
+        BRANCH_NAME       = "$BRANCH_NAME"
+        BUILD_NUMBER      = "$BUILD_NUMBER"
+    }
     stages {
         stage('CI Build and Test') {
             when {
