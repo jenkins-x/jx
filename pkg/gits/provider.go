@@ -329,14 +329,19 @@ func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user 
 	return nil, fmt.Errorf("Git provider not supported for host %s", i.Host)
 }
 
-func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService) (GitProvider, error) {
+func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService, gitKind string) (GitProvider, error) {
 	config := authConfigSvc.Config()
-	server := config.GetOrCreateServer(i.Host)
+	host := i.Host
+	server := config.GetOrCreateServer(host)
 	url := server.URL
-	userAuths := authConfigSvc.Config().FindUserAuths(url)
-	if len(userAuths) == 1 {
-		auth := userAuths[0]
-		return NewGitHubProvider(server, auth)
+	if gitKind != "" {
+		server.Kind = gitKind
 	}
-	return nil, fmt.Errorf("Git provider not supported for host %s", i.Host)
+	userAuths := authConfigSvc.Config().FindUserAuths(url)
+	if len(userAuths) > 0 {
+		// TODO use default user???
+		auth := userAuths[0]
+		return CreateProvider(server, auth)
+	}
+	return nil, fmt.Errorf("Git provider not supported for host %s", host)
 }

@@ -47,6 +47,7 @@ type CommonOptions struct {
 	// common cached clients
 	kubeClient       *kubernetes.Clientset
 	currentNamespace string
+	devNamespace     string
 	jxClient         *versioned.Clientset
 	jenkinsClient    *gojenkins.Jenkins
 }
@@ -156,6 +157,31 @@ func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
 		}
 	}
 	return o.jxClient, o.currentNamespace, nil
+}
+
+func (o *CommonOptions) JXClientAndDevNamespace() (*versioned.Clientset, string, error) {
+	if o.jxClient == nil {
+		jxClient, ns, err := o.Factory.CreateJXClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.jxClient = jxClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	if o.devNamespace == "" {
+		client, ns, err := o.KubeClient()
+		if err != nil {
+			return nil, "", err
+		}
+		devNs, _, err := kube.GetDevNamespace(client, ns)
+		if err != nil {
+			return nil, "", err
+		}
+		o.devNamespace = devNs
+	}
+	return o.jxClient, o.devNamespace, nil
 }
 
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {

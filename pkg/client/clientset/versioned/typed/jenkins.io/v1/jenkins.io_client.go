@@ -12,6 +12,7 @@ import (
 type JenkinsV1Interface interface {
 	RESTClient() rest.Interface
 	EnvironmentsGetter
+	GitServicesGetter
 	PipelineActivitiesGetter
 	ReleasesGetter
 }
@@ -23,6 +24,10 @@ type JenkinsV1Client struct {
 
 func (c *JenkinsV1Client) Environments(namespace string) EnvironmentInterface {
 	return newEnvironments(c, namespace)
+}
+
+func (c *JenkinsV1Client) GitServices(namespace string) GitServiceInterface {
+	return newGitServices(c, namespace)
 }
 
 func (c *JenkinsV1Client) PipelineActivities(namespace string) PipelineActivityInterface {

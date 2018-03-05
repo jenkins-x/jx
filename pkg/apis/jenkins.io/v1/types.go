@@ -363,3 +363,35 @@ func (i *IssueSummary) IsClosed() bool {
 	lower := strings.ToLower(i.State)
 	return strings.HasPrefix(lower, "clos") || strings.HasPrefix(lower, "fix")
 }
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+// GitService represents a git provider so we can map the host name to a kinda of git service
+type GitService struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	Spec GitServiceSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+}
+
+// GitServiceSpec is the specification of an GitService
+type GitServiceSpec struct {
+	GitKind string `json:"gitKind,omitempty" protobuf:"bytes,1,opt,name=gitKind"`
+	Host    string `json:"host,omitempty" protobuf:"bytes,2,opt,name=host"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// GitServiceList is a list of GitService resources
+type GitServiceList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []GitService `json:"items"`
+}

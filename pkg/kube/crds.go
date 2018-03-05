@@ -21,6 +21,20 @@ func RegisterEnvironmentCRD(apiClient *apiextensionsclientset.Clientset) error {
 	return registerCRD(apiClient, name, names)
 }
 
+// RegisterGitServiceCRD ensures that the CRD is registered for GitServices
+func RegisterGitServiceCRD(apiClient *apiextensionsclientset.Clientset) error {
+	name := "gitservices." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "GitService",
+		ListKind:   "GitServiceList",
+		Plural:     "gitservices",
+		Singular:   "gitservice",
+		ShortNames: []string{"gits"},
+	}
+
+	return registerCRD(apiClient, name, names)
+}
+
 // RegisterPipelineActivityCRD ensures that the CRD is registered for PipelineActivity
 func RegisterPipelineActivityCRD(apiClient *apiextensionsclientset.Clientset) error {
 	name := "pipelineactivities." + jenkinsio.GroupName

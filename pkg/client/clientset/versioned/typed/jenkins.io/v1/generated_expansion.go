@@ -4,6 +4,8 @@ package v1
 
 type EnvironmentExpansion interface{}
 
+type GitServiceExpansion interface{}
+
 type PipelineActivityExpansion interface{}
 
 type ReleaseExpansion interface{}

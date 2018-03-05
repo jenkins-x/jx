@@ -135,7 +135,10 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
+	err = kube.RegisterGitServiceCRD(apisClient)
+	if err != nil {
+		return err
+	}
 	err = kube.RegisterReleaseCRD(apisClient)
 	if err != nil {
 		return err
@@ -202,7 +205,13 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc)
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+	  return err
+	}
+
+	gitKind, err := kube.GetGitServiceKind(jxClient, devNs, gitInfo.Host)
+	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc, gitKind)
 	if err != nil {
 		return err
 	}
