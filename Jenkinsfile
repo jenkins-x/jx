@@ -3,9 +3,11 @@ pipeline {
         label "jenkins-go"
     }
     environment {
-        JOB_NAME          = "$JOB_NAME"
-        BRANCH_NAME       = "$BRANCH_NAME"
-        BUILD_NUMBER      = "$BUILD_NUMBER"
+        JOB_NAME            = "$JOB_NAME"
+        BRANCH_NAME         = "$BRANCH_NAME"
+        BUILD_NUMBER        = "$BUILD_NUMBER"
+        GITHUB_ACCESS_TOKEN = "$GH_CREDS_PSW"
+        GIT_API_TOKEN       = "$GH_CREDS_PSW"
     }
     stages {
         stage('CI Build and Test') {
