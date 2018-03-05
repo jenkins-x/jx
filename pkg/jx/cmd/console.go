@@ -14,7 +14,7 @@ import (
 )
 
 type ConsoleOptions struct {
-	CommonOptions
+	GetURLOptions
 
 	OnlyViewURL bool
 }
@@ -32,10 +32,14 @@ var (
 
 func NewCmdConsole(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ConsoleOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			Out:     out,
-			Err:     errOut,
+		GetURLOptions: GetURLOptions{
+			GetOptions: GetOptions{
+				CommonOptions: CommonOptions{
+					Factory: f,
+					Out:     out,
+					Err:     errOut,
+				},
+			},
 		},
 	}
 	cmd := &cobra.Command{
@@ -50,8 +54,14 @@ func NewCmdConsole(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
+	options.addConsoleFlags(cmd)
 	return cmd
+}
+
+func (o *ConsoleOptions) addConsoleFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(&o.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
+
+	o.addGetUrlFlags(cmd)
 }
 
 func (o *ConsoleOptions) Run() error {
@@ -59,7 +69,20 @@ func (o *ConsoleOptions) Run() error {
 }
 
 func (o *ConsoleOptions) Open(name string, label string) error {
-	url, err := o.findService(name)
+	var err error
+	url := ""
+	ns := o.Namespace
+	if ns == "" && o.Environment != "" {
+		ns, err = o.findEnvironmentNamespace(o.Environment)
+		if err != nil {
+			return err
+		}
+	}
+	if ns != "" {
+		url, err = o.findServiceInNamespace(name, ns)
+	} else {
+		url, err = o.findService(name)
+	}
 	if err != nil {
 		return err
 	}

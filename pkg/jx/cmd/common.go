@@ -334,6 +334,68 @@ func (o *CommonOptions) findService(name string) (string, error) {
 	return url, nil
 }
 
+func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error) {
+	f := o.Factory
+	client, ns, err := f.CreateClient()
+	if err != nil {
+		return "", err
+	}
+	jxClient, _, err := f.CreateJXClient()
+	if err != nil {
+		return "", err
+	}
+
+	devNs, _, err := kube.GetDevNamespace(client, ns)
+	if err != nil {
+		return "", err
+	}
+
+	envMap, envNames, err := kube.GetEnvironments(jxClient, devNs)
+	if err != nil {
+		return "", err
+	}
+	env := envMap[envName]
+	if env == nil {
+		return "", util.InvalidOption(optionEnvironment, envName, envNames)
+	}
+	answer := env.Spec.Namespace
+	if answer == "" {
+		return "", fmt.Errorf("Environment %s does not have a Namespace!", envName)
+	}
+	return answer, nil
+}
+
+func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, error) {
+	f := o.Factory
+	client, ns, err := f.CreateClient()
+	if err != nil {
+		return "", err
+	}
+	url, err := kube.FindServiceURL(client, ns, name)
+	if url == "" {
+		names, err := kube.GetServiceNames(client, ns, name)
+		if err != nil {
+			return "", err
+		}
+		if len(names) > 1 {
+			name, err = util.PickName(names, "Pick service to open: ")
+			if err != nil {
+				return "", err
+			}
+			if name != "" {
+				url, err = kube.FindServiceURL(client, ns, name)
+			}
+		} else if len(names) == 1 {
+			// must have been a filter
+			url, err = kube.FindServiceURL(client, ns, names[0])
+		}
+		if url == "" {
+			return "", fmt.Errorf("Could not find URL for service %s in namespace %s", name, ns)
+		}
+	}
+	return url, nil
+}
+
 func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	if repoName == "" {
 		repoName = kube.LocalHelmRepoName
