@@ -14,6 +14,7 @@ pipeline {
                         sh "make"
                         sh "make test"
                         sh "./build/jx --help"
+                        sh "make preview"
                     }
                 }
             }
