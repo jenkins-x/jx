@@ -207,7 +207,7 @@ func (o *StepChangelogOptions) Run() error {
 	}
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
-	  return err
+		return err
 	}
 
 	gitKind, err := kube.GetGitServiceKind(jxClient, devNs, gitInfo.Host)
@@ -293,7 +293,8 @@ func (o *StepChangelogOptions) Run() error {
 		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, version, releaseInfo)
 		url := util.UrlJoin(gitInfo.HttpURL(), "releases/tag", version)
 		if err != nil {
-			return fmt.Errorf("Failed to update the release at %s: %s", url, err)
+			o.warnf("Failed to update the release at %s: %s\n", url, err)
+			return nil
 		}
 		o.Printf("Updated the release information at %s\n", util.ColorInfo(url))
 	} else {
