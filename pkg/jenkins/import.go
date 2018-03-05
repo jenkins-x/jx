@@ -24,7 +24,7 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir st
 	if branchPattern == "" {
 		fork, err := gits.GitIsFork(gitProvider, gitInfo, dir)
 		if err != nil {
-		  return fmt.Errorf("No branch pattern specified and could not determine if the git repository is a fork: %s", err)
+			return fmt.Errorf("No branch pattern specified and could not determine if the git repository is a fork: %s", err)
 		}
 		if fork {
 			// lets figure out which branches to enable for a fork

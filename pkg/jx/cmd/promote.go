@@ -513,7 +513,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 
 	gitKind, err := o.GitServerKind(gitInfo)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode, gitKind)
@@ -913,7 +913,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 		}
 	}
 	name = kube.ToValidName(name)
-	o.Printf("Using pipeline: %s build: %s\n", util.ColorInfo(pipeline), util.ColorInfo("#" + build))
+	o.Printf("Using pipeline: %s build: %s\n", util.ColorInfo(pipeline), util.ColorInfo("#"+build))
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:         name,
@@ -930,17 +930,17 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 // getLatestPipelineBuild for the given pipeline name lets try find the Jenkins Pipeline and the latest build
 func (o *PromoteOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
 	build := ""
- 	jenkins, err := o.Factory.CreateJenkinsClient()
- 	if err != nil {
- 	  return pipeline, build, err
- 	}
- 	paths := strings.Split(pipeline, "/")
- 	job, err := jenkins.GetJobByPath(paths...)
- 	if err != nil {
- 	  return pipeline, build, err
- 	}
- 	build = strconv.Itoa(job.LastBuild.Number)
- 	return pipeline, build, nil
+	jenkins, err := o.Factory.CreateJenkinsClient()
+	if err != nil {
+		return pipeline, build, err
+	}
+	paths := strings.Split(pipeline, "/")
+	job, err := jenkins.GetJobByPath(paths...)
+	if err != nil {
+		return pipeline, build, err
+	}
+	build = strconv.Itoa(job.LastBuild.Number)
+	return pipeline, build, nil
 }
 
 func (o *PromoteOptions) getJenkinsURL() string {
@@ -988,7 +988,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind)

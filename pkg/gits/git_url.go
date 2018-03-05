@@ -62,7 +62,6 @@ func (i *GitRepositoryInfo) HostURLWithoutUser() string {
 	return i.HttpURL()
 }
 
-
 // ParseGitURL attempts to parse the given text as a URL or git URL-like string to determine
 // the protocol, host, organisation and name
 func ParseGitURL(text string) (*GitRepositoryInfo, error) {

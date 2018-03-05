@@ -354,4 +354,3 @@ func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService,
 	}
 	return nil, fmt.Errorf("Could not create Git provider for host %s as no user auths could be found", hostUrl)
 }
-
