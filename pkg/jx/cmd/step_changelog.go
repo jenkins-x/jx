@@ -254,6 +254,38 @@ func (o *StepChangelogOptions) Run() error {
 		}
 	}
 
+	// lets try to update the release
+	markdown, err := gits.GenerateMarkdown(&release.Spec, gitInfo)
+	if err != nil {
+		return err
+	}
+	version := o.Version
+	if version != "" && o.UpdateRelease && foundGitProvider {
+		releaseInfo := &gits.GitRelease{
+			Name:    version,
+			TagName: version,
+			Body:    markdown,
+		}
+		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, version, releaseInfo)
+		url := releaseInfo.HTMLURL
+		if url == "" {
+			url = releaseInfo.URL
+		}
+		if url == "" {
+			url = util.UrlJoin(gitInfo.HttpURL(), "releases/tag", version)
+		}
+		release.Spec.ReleaseNotesURL = url
+		if err != nil {
+			o.warnf("Failed to update the release at %s: %s\n", url, err)
+			return nil
+		}
+		o.Printf("Updated the release information at %s\n", util.ColorInfo(url))
+	} else {
+		o.Printf("\nGenerated Changelog:\n")
+		o.Printf("%s\n\n", markdown)
+	}
+
+	// now lets marshal the release YAML
 	data, err := yaml.Marshal(release)
 	if err != nil {
 		return err
@@ -278,34 +310,6 @@ func (o *StepChangelogOptions) Run() error {
 			return fmt.Errorf("Failed to save Release CRD YAML file %s: %s", crdFile, err)
 		}
 		o.Printf("generated: %s\n", util.ColorInfo(crdFile))
-	}
-
-	// lets try to update the release
-	markdown, err := gits.GenerateMarkdown(&release.Spec, gitInfo)
-	if err != nil {
-		return err
-	}
-	version := o.Version
-	if version != "" && o.UpdateRelease && foundGitProvider {
-		releaseInfo := &gits.GitRelease{
-			Name:    version,
-			TagName: version,
-			Body:    markdown,
-		}
-		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, version, releaseInfo)
-		url := releaseInfo.URL
-		if url == "" {
-			url = util.UrlJoin(gitInfo.HttpURL(), "releases/tag", version)
-		}
-		release.Spec.ReleaseNotesURL = url
-		if err != nil {
-			o.warnf("Failed to update the release at %s: %s\n", url, err)
-			return nil
-		}
-		o.Printf("Updated the release information at %s\n", util.ColorInfo(url))
-	} else {
-		o.Printf("\nGenerated Changelog:\n")
-		o.Printf("%s\n\n", markdown)
 	}
 	return nil
 }
