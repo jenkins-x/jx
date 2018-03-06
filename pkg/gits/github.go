@@ -459,7 +459,11 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	if id == nil {
 		return fmt.Errorf("The release for %s/%s tag %s has no ID!", owner, repo, tag)
 	}
-	_, _, err = p.Client.Repositories.EditRelease(p.Context, owner, repo, *id, release)
+	r2, _, err := p.Client.Repositories.EditRelease(p.Context, owner, repo, *id, release)
+	if r != nil {
+		releaseInfo.URL = asText(r2.URL)
+		releaseInfo.HTMLURL = asText(r2.HTMLURL)
+	}
 	return err
 }
 

@@ -293,7 +293,11 @@ func (o *StepChangelogOptions) Run() error {
 			Body:    markdown,
 		}
 		err = gitProvider.UpdateRelease(gitInfo.Organisation, gitInfo.Name, version, releaseInfo)
-		url := util.UrlJoin(gitInfo.HttpURL(), "releases/tag", version)
+		url := releaseInfo.URL
+		if url == "" {
+			url = util.UrlJoin(gitInfo.HttpURL(), "releases/tag", version)
+		}
+		release.Spec.ReleaseNotesURL = url
 		if err != nil {
 			o.warnf("Failed to update the release at %s: %s\n", url, err)
 			return nil

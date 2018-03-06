@@ -456,7 +456,13 @@ func (p *GiteaProvider) UpdateRelease(owner string, repo string, tag string, rel
 		if editRelease.Note == "" && releaseInfo.Body != "" {
 			editRelease.Note = releaseInfo.Body
 		}
-		_, err = p.Client.EditRelease(owner, repo, release.ID, editRelease)
+		r2, err := p.Client.EditRelease(owner, repo, release.ID, editRelease)
+		if err != nil {
+			return err
+		}
+		if r2 != nil {
+			releaseInfo.URL = r2.URL
+		}
 	}
 	return err
 }

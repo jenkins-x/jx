@@ -131,10 +131,13 @@ type GitUser struct {
 	Email     string
 	AvatarURL string
 }
+
 type GitRelease struct {
 	Name    string
 	TagName string
 	Body    string
+	URL     string
+	HTMLURL string
 }
 
 type GitLabel struct {

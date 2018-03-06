@@ -297,13 +297,14 @@ type ReleaseList struct {
 
 // ReleaseSpec is the specification of the Release
 type ReleaseSpec struct {
-	Name         string          `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
-	Version      string          `json:"version,omitempty"  protobuf:"bytes,2,opt,name=version"`
-	GitHTTPURL   string          `json:"gitHttpUrl,omitempty"  protobuf:"bytes,3,opt,name=gitHttpUrl"`
-	GitCloneURL  string          `json:"gitCloneUrl,omitempty"  protobuf:"bytes,4,opt,name=gitCloneUrl"`
-	Commits      []CommitSummary `json:"commits,omitempty" protobuf:"bytes,5,opt,name=commits"`
-	Issues       []IssueSummary  `json:"issues,omitempty" protobuf:"bytes,6,opt,name=issues"`
-	PullRequests []IssueSummary  `json:"pullRequests,omitempty" protobuf:"bytes,7,opt,name=pullRequests"`
+	Name            string          `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
+	Version         string          `json:"version,omitempty"  protobuf:"bytes,2,opt,name=version"`
+	GitHTTPURL      string          `json:"gitHttpUrl,omitempty"  protobuf:"bytes,3,opt,name=gitHttpUrl"`
+	GitCloneURL     string          `json:"gitCloneUrl,omitempty"  protobuf:"bytes,4,opt,name=gitCloneUrl"`
+	Commits         []CommitSummary `json:"commits,omitempty" protobuf:"bytes,5,opt,name=commits"`
+	Issues          []IssueSummary  `json:"issues,omitempty" protobuf:"bytes,6,opt,name=issues"`
+	PullRequests    []IssueSummary  `json:"pullRequests,omitempty" protobuf:"bytes,7,opt,name=pullRequests"`
+	ReleaseNotesURL string          `json:"releaseNotesURL,omitempty" protobuf:"bytes,8,opt,name=releaseNotesURL"`
 }
 
 // ReleaseStatus is the status of a release
