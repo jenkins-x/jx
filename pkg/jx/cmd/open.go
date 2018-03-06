@@ -32,11 +32,15 @@ var (
 
 func NewCmdOpen(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &OpenOptions{
-		ConsoleOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				Out:     out,
-				Err:     errOut,
+		ConsoleOptions: ConsoleOptions{
+			GetURLOptions: GetURLOptions{
+				GetOptions: GetOptions{
+					CommonOptions: CommonOptions{
+						Factory: f,
+						Out:     out,
+						Err:     errOut,
+					},
+				},
 			},
 		},
 	}
@@ -52,18 +56,13 @@ func NewCmdOpen(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
+	options.addConsoleFlags(cmd)
 	return cmd
 }
 
 func (o *OpenOptions) Run() error {
 	if len(o.Args) == 0 {
-		getOptions := GetURLOptions{
-			GetOptions: GetOptions{
-				CommonOptions: o.CommonOptions,
-			},
-		}
-		return getOptions.Run()
+		return o.GetURLOptions.Run()
 	}
 	name := o.Args[0]
 	return o.ConsoleOptions.Open(name, name)

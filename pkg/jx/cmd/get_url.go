@@ -13,6 +13,9 @@ import (
 // GetURLOptions the command line options
 type GetURLOptions struct {
 	GetOptions
+
+	Namespace   string
+	Environment string
 }
 
 var (
@@ -52,8 +55,13 @@ func NewCmdGetURL(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			cmdutil.CheckErr(err)
 		},
 	}
-
+	options.addGetUrlFlags(cmd)
 	return cmd
+}
+
+func (o *GetURLOptions) addGetUrlFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", "", "Specifies the namespace name to look inside")
+	cmd.Flags().StringVarP(&o.Environment, "env", "e", "", "Specifies the Environment name to look inside")
 }
 
 // Run implements this command
@@ -62,6 +70,14 @@ func (o *GetURLOptions) Run() error {
 	client, ns, err := f.CreateClient()
 	if err != nil {
 		return err
+	}
+	if o.Namespace != "" {
+		ns = o.Namespace
+	} else if o.Environment != "" {
+		ns, err = o.findEnvironmentNamespace(o.Environment)
+		if err != nil {
+			return err
+		}
 	}
 	urls, err := kube.FindServiceURLs(client, ns)
 	if err != nil {

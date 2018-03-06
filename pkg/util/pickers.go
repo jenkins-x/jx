@@ -1,6 +1,10 @@
 package util
 
-import "gopkg.in/AlecAivazis/survey.v1"
+import (
+	"fmt"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"sort"
+)
 
 func PickValue(message string, defaultValue string, required bool) (string, error) {
 	answer := ""
@@ -60,4 +64,23 @@ func PickNames(names []string, message string) ([]string, error) {
 		}
 	}
 	return picked, nil
+}
+
+// SelectNames select which names from the list should be chosen
+func SelectNames(names []string, message string, selectAll bool) ([]string, error) {
+	answer := []string{}
+	if len(names) == 0 {
+		return answer, fmt.Errorf("No names to choose from!")
+	}
+	sort.Strings(names)
+
+	prompt := &survey.MultiSelect{
+		Message: message,
+		Options: names,
+	}
+	if selectAll {
+		prompt.Default = names
+	}
+	err := survey.AskOne(prompt, &answer, nil)
+	return answer, err
 }

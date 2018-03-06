@@ -19,6 +19,8 @@ import (
 // GetVersionOptions containers the CLI options
 type GetVersionOptions struct {
 	CommonOptions
+
+	UrlMode bool
 }
 
 var (
@@ -28,14 +30,17 @@ var (
 
 	get_version_example = templates.Examples(`
 		# List applications for all environments
-		jx get app
+		jx get apps
+
+		# List applications and their URLs for all environments
+		jx get apps -u
 	`)
 )
 
 // NewCmdGetVersion creates the new command for: jx get version
 func NewCmdGetVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetVersionOptions{
-		CommonOptions{
+		CommonOptions: CommonOptions{
 			Factory: f,
 			Out:     out,
 			Err:     errOut,
@@ -54,6 +59,7 @@ func NewCmdGetVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			cmdutil.CheckErr(err)
 		},
 	}
+	cmd.Flags().BoolVarP(&options.UrlMode, "url", "u", false, "Show the URLs rather than pod numbers")
 	return cmd
 }
 
@@ -88,22 +94,24 @@ func (o *GetVersionOptions) Run() error {
 	envNames := []string{}
 	apps := []string{}
 	for _, env := range envList.Items {
-		ens := env.Spec.Namespace
-		namespaces = append(namespaces, ens)
-		if ens != "" && env.Name != kube.LabelValueDevEnvironment {
-			envNames = append(envNames, env.Name)
-			m, err := kube.GetDeployments(kubeClient, ens)
-			if err == nil {
-				envApp := EnvApps{
-					Environment: env,
-					Apps:        map[string]v1beta1.Deployment{},
-				}
-				envApps = append(envApps, envApp)
-				for k, d := range m {
-					appName := kube.GetAppName(k, ens)
-					envApp.Apps[appName] = d
-					if util.StringArrayIndex(apps, appName) < 0 {
-						apps = append(apps, appName)
+		if env.Spec.Kind != v1.EnvironmentKindTypePreview {
+			ens := env.Spec.Namespace
+			namespaces = append(namespaces, ens)
+			if ens != "" && env.Name != kube.LabelValueDevEnvironment {
+				envNames = append(envNames, env.Name)
+				m, err := kube.GetDeployments(kubeClient, ens)
+				if err == nil {
+					envApp := EnvApps{
+						Environment: env,
+						Apps:        map[string]v1beta1.Deployment{},
+					}
+					envApps = append(envApps, envApp)
+					for k, d := range m {
+						appName := kube.GetAppName(k, ens)
+						envApp.Apps[appName] = d
+						if util.StringArrayIndex(apps, appName) < 0 {
+							apps = append(apps, appName)
+						}
 					}
 				}
 			}
@@ -119,7 +127,11 @@ func (o *GetVersionOptions) Run() error {
 	table := o.CreateTable()
 	titles := []string{"APPLICATION"}
 	for _, ea := range envApps {
-		titles = append(titles, strings.ToUpper(ea.Environment.Name), "PODS")
+		title := "PODS"
+		if o.UrlMode {
+			title = "URL"
+		}
+		titles = append(titles, strings.ToUpper(ea.Environment.Name), title)
 	}
 	table.AddRow(titles...)
 
@@ -130,11 +142,21 @@ func (o *GetVersionOptions) Run() error {
 			pods := ""
 			d := ea.Apps[appName]
 			version = kube.GetVersion(&d.ObjectMeta)
-			replicas := ""
-			ready := d.Status.ReadyReplicas
-			if d.Spec.Replicas != nil && ready > 0 {
-				replicas = formatInt32(*d.Spec.Replicas)
-				pods = formatInt32(ready) + "/" + replicas
+			if o.UrlMode {
+				url, _ := kube.FindServiceURL(kubeClient, d.Namespace, appName)
+				if url == "" {
+					url, _ = kube.FindServiceURL(kubeClient, d.Namespace, d.Name)
+				}
+				if url != "" {
+					pods = url
+				}
+			} else {
+				replicas := ""
+				ready := d.Status.ReadyReplicas
+				if d.Spec.Replicas != nil && ready > 0 {
+					replicas = formatInt32(*d.Spec.Replicas)
+					pods = formatInt32(ready) + "/" + replicas
+				}
 			}
 			row = append(row, version, pods)
 		}
