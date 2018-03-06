@@ -63,7 +63,7 @@ func NewCmdEditEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	cmd := &cobra.Command{
 		Use:     "environment",
-		Short:   "Create a new Environment which is used to promote your Team's Applications via Continuous Delivery",
+		Short:   "Edits an Environment which is used to promote your Team's Applications via Continuous Delivery",
 		Aliases: []string{"env"},
 		Long:    edit_env_long,
 		Example: edit_env_example,

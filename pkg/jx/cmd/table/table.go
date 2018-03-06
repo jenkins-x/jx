@@ -2,15 +2,8 @@ package table
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/util"
 	"io"
-	"math"
-	"strings"
-)
-
-const (
-	ALIGN_LEFT   = 0
-	ALIGN_CENTER = 1
-	ALIGN_RIGHT  = 2
 )
 
 type Table struct {
@@ -51,10 +44,10 @@ func (t *Table) Render() {
 			}
 			l := t.ColumnWidths[ci]
 			align := t.GetColumnAlign(ci)
-			if ci >= lastColumn && align != ALIGN_CENTER && align != ALIGN_RIGHT {
+			if ci >= lastColumn && align != util.ALIGN_CENTER && align != util.ALIGN_RIGHT {
 				fmt.Fprint(out, col)
 			} else {
-				fmt.Fprint(out, pad(col, " ", l, align))
+				fmt.Fprint(out, util.Pad(col, " ", l, align))
 			}
 		}
 		fmt.Fprint(out, "\n")
@@ -84,41 +77,4 @@ func ensureArrayCanContain(array []int, idx int) []int {
 		array = append(array, 0)
 	}
 	return array
-}
-
-func pad(s, pad string, width int, align int) string {
-	switch align {
-	case ALIGN_CENTER:
-		return padCenter(s, pad, width)
-	case ALIGN_RIGHT:
-		return padLeft(s, pad, width)
-	default:
-		return padRight(s, pad, width)
-	}
-}
-
-func padRight(s, pad string, width int) string {
-	gap := width - len(s)
-	if gap > 0 {
-		return s + strings.Repeat(string(pad), gap)
-	}
-	return s
-}
-
-func padLeft(s, pad string, width int) string {
-	gap := width - len(s)
-	if gap > 0 {
-		return strings.Repeat(string(pad), gap) + s
-	}
-	return s
-}
-
-func padCenter(s, pad string, width int) string {
-	gap := width - len(s)
-	if gap > 0 {
-		gapLeft := int(math.Ceil(float64(gap / 2)))
-		gapRight := gap - gapLeft
-		return strings.Repeat(string(pad), gapLeft) + s + strings.Repeat(string(pad), gapRight)
-	}
-	return s
 }

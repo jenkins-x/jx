@@ -94,7 +94,7 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	cmd := &cobra.Command{
 		Use:     "install [flags]",
-		Short:   "Install Jenkins X",
+		Short:   "Install Jenkins X in the current Kubernetes cluster",
 		Long:    instalLong,
 		Example: instalExample,
 		Run: func(cmd *cobra.Command, args []string) {
