@@ -31,8 +31,6 @@ pipeline {
         }
     
         stage('Build and Release') {
-            environment {
-            }
             when {
                 branch 'master'
             }
