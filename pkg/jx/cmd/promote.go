@@ -1009,6 +1009,10 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	if err == nil && release != nil {
 		issues := release.Spec.Issues
 
+		versionMessage := version
+		if release.Spec.ReleaseNotesURL != "" {
+			versionMessage = "[" + version + "](" + release.Spec.ReleaseNotesURL + ")"
+		}
 		url, err := kube.FindServiceURL(kubeClient, ens, app)
 		if url == "" || err != nil {
 			url, err = kube.FindServiceURL(kubeClient, ens, o.ReleaseName)
@@ -1037,7 +1041,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 			if issue.IsClosed() {
 				o.Printf("Commenting that issue %s is now in %s\n", util.ColorInfo(issue.URL), util.ColorInfo(envName))
 
-				comment := fmt.Sprintf(":white_check_mark: the fix for this issue is now deployed to **%s** in version %s %s", envName, version, available)
+				comment := fmt.Sprintf(":white_check_mark: the fix for this issue is now deployed to **%s** in version %s %s", envName, versionMessage, available)
 				id := issue.ID
 				if id != "" {
 					number, err := strconv.Atoi(id)
