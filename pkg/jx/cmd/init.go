@@ -10,6 +10,9 @@ import (
 
 	"fmt"
 
+	"os"
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -20,6 +23,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/homedir"
 )
 
 // InitOptions the flags for running init
@@ -30,10 +34,11 @@ type InitOptions struct {
 }
 
 type InitFlags struct {
-	Domain      string
-	Provider    string
-	DraftClient bool
-	HelmClient  bool
+	Domain                     string
+	Provider                   string
+	DraftClient                bool
+	HelmClient                 bool
+	RecreateExistingDraftRepos bool
 }
 
 const (
@@ -86,6 +91,7 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	cmd.Flags().BoolVarP(&options.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
 	cmd.Flags().BoolVarP(&options.Flags.HelmClient, "helm-client-only", "", false, "Only install helm client")
+	cmd.Flags().BoolVarP(&options.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
 }
 
 func (o *InitOptions) Run() error {
@@ -181,7 +187,7 @@ func (o *InitOptions) initDraft() error {
 		return errors.New("existing draftd deployment found but not running, please check the kube-system namespace and resolve any issues")
 	}
 
-	err = o.removeDraftRepoIfInstalled("github.com/Azure/draft")
+	err = o.removeDraftRepoIfInstalled("Azure")
 	if err != nil {
 		return err
 	}
@@ -197,7 +203,7 @@ func (o *InitOptions) initDraft() error {
 		return err
 	}
 
-	err = o.removeDraftRepoIfInstalled("github.com/jenkins-x/draft-repo")
+	err = o.removeDraftRepoIfInstalled("jenkins-x")
 	if err != nil {
 		return err
 	}
@@ -222,14 +228,21 @@ func (o *InitOptions) initDraft() error {
 
 // this happens in `draft init` too, except there seems to be a timing issue where the repo add fails if done straight after their repo remove.
 func (o *InitOptions) removeDraftRepoIfInstalled(repo string) error {
-	text, err := o.getCommandOutput("", "draft", "pack-repo", "list")
-	if err != nil {
-		// if pack-repo list fails then it's because no repos currently exist
-		return nil
-	}
-	if strings.Contains(text, repo) {
-		log.Warnf("existing repo %s found, we recommend to remove and let draft init recreate, shall we do this now?", repo)
-		return o.runCommandInteractive(true, "draft", "pack-repo", "remove", repo)
+
+	pack := filepath.Join(homedir.HomeDir(), ".draft", "packs", "github.com", repo)
+	if _, err := os.Stat(pack); err == nil {
+		recreate := o.Flags.RecreateExistingDraftRepos
+		if !recreate {
+			prompt := &survey.Confirm{
+				Message: fmt.Sprintf("Delete existing %s draft pack repo and get latest?", repo),
+				Default: true,
+				Help:    "Draft pack repos contain the files and folders used to install applications on Kubernetes, we recommend getting the latest",
+			}
+			survey.AskOne(prompt, &recreate, nil)
+		}
+		if recreate {
+			os.RemoveAll(pack)
+		}
 	}
 	return nil
 }
