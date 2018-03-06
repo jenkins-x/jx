@@ -236,7 +236,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the git server to add a user")
-	cmd.Flags().StringVarP(&o.ServerName, optionServerURL, "u", "", "The URL of the git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the git server to add a user")
 }
 
 // findGitServer finds the git server from the given flags or returns an error
