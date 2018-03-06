@@ -1017,6 +1017,9 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		if url == "" || err != nil {
 			url, err = kube.FindServiceURL(kubeClient, ens, o.ReleaseName)
 		}
+		if url == "" {
+			o.warnf("Could not find the service URL in namespace %s for name %s or %s\n", ens, app, o.ReleaseName)
+		}
 		available := ""
 		if url != "" {
 			available = fmt.Sprintf(" and available at %s", url)
