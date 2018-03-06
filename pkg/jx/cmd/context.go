@@ -3,18 +3,17 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"sort"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"k8s.io/client-go/tools/clientcmd"
-
-	"sort"
-
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"k8s.io/client-go/tools/clientcmd"
+
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 type ContextOptions struct {
