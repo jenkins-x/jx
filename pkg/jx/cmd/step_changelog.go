@@ -319,10 +319,16 @@ func (o *StepChangelogOptions) Run() error {
 			name := kube.ToValidName(pipeline + "-" + build)
 			// lets see if we can update the pipeline
 			activities := jxClient.JenkinsV1().PipelineActivities(devNs)
-			a, err := activities.Get(name, metav1.GetOptions{})
+			key := &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:            name,
+					Pipeline:        pipeline,
+					Build:           build,
+					ReleaseNotesURL: releaseNotesURL,
+				},
+			}
+			a, err := key.GetOrCreate(activities)
 			if err == nil && a != nil && a.Spec.ReleaseNotesURL == "" {
-				// lets add the release notes to the activity
-				a.Spec.ReleaseNotesURL = releaseNotesURL
 				_, err = activities.Update(a)
 				if err != nil {
 					o.warnf("Failed to update PipelineActivities %s: %s\n", name, err)
