@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ghodss/yaml"
@@ -22,8 +24,6 @@ import (
 	chgit "github.com/jenkins-x/chyle/chyle/git"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
-	"strings"
 )
 
 // StepChangelogOptions contains the command line flags
@@ -310,6 +310,29 @@ func (o *StepChangelogOptions) Run() error {
 			return fmt.Errorf("Failed to save Release CRD YAML file %s: %s", crdFile, err)
 		}
 		o.Printf("generated: %s\n", util.ColorInfo(crdFile))
+	}
+	releaseNotesURL := release.Spec.ReleaseNotesURL
+	if releaseNotesURL != "" {
+		pipeline := os.Getenv("JOB_NAME")
+		build := os.Getenv("BUILD_NUMBER")
+		if pipeline != "" && build != "" {
+			name := kube.ToValidName(pipeline + "-" + build)
+			// lets see if we can update the pipeline
+			activities := jxClient.JenkinsV1().PipelineActivities(devNs)
+			a, err := activities.Get(name, metav1.GetOptions{})
+			if err == nil && a != nil && a.Spec.ReleaseNotesURL == "" {
+				// lets add the release notes to the activity
+				a.Spec.ReleaseNotesURL = releaseNotesURL
+				_, err = activities.Update(a)
+				if err != nil {
+					o.warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+				} else {
+					o.Printf("Updated PipelineActivities %s with release notes URL: %s\n", util.ColorInfo(name), util.ColorInfo(releaseNotesURL))
+				}
+			}
+		} else {
+			o.warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the ReleaseNotesURL\n")
+		}
 	}
 	return nil
 }
