@@ -161,6 +161,7 @@ type PipelineActivitySpec struct {
 	GitURL             string                 `json:"gitUrl,omitempty" protobuf:"bytes,10,opt,name=gitUrl"`
 	GitRepository      string                 `json:"gitRepository,omitempty" protobuf:"bytes,10,opt,name=gitRepository"`
 	GitOwner           string                 `json:"gitOwner,omitempty" protobuf:"bytes,10,opt,name=gitOwner"`
+	ReleaseNotesURL    string                 `json:"releaseNotesURL,omitempty" protobuf:"bytes,11,opt,name=releaseNotesURL"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity
@@ -305,6 +306,8 @@ type ReleaseSpec struct {
 	Issues          []IssueSummary  `json:"issues,omitempty" protobuf:"bytes,6,opt,name=issues"`
 	PullRequests    []IssueSummary  `json:"pullRequests,omitempty" protobuf:"bytes,7,opt,name=pullRequests"`
 	ReleaseNotesURL string          `json:"releaseNotesURL,omitempty" protobuf:"bytes,8,opt,name=releaseNotesURL"`
+	GitRepository   string          `json:"gitRepository,omitempty" protobuf:"bytes,9,opt,name=gitRepository"`
+	GitOwner        string          `json:"gitOwner,omitempty" protobuf:"bytes,10,opt,name=gitOwner"`
 }
 
 // ReleaseStatus is the status of a release

@@ -59,6 +59,7 @@ type PromoteOptions struct {
 	Activities              typev1.PipelineActivityInterface
 	GitInfo                 *gits.GitRepositoryInfo
 	jenkinsURL              string
+	releaseResource         *v1.Release
 }
 
 type ReleaseInfo struct {
@@ -358,10 +359,11 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		err = o.runCommand("helm", "upgrade", "--install", "--wait", "--namespace", targetNS, releaseName, fullAppName)
 	}
 	if err == nil {
-		err = promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
-		if err == nil {
-			err = o.commentOnIssues(targetNS, env)
+		err = o.commentOnIssues(targetNS, env)
+		if err != nil {
+			o.warnf("Failed to comment on issues for release %s: %s\n", releaseName, err)
 		}
+		err = promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
 	} else {
 		err = promoteKey.OnPromoteUpdate(o.Activities, kube.FailedPromotionUpdate)
 	}
@@ -860,6 +862,10 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	buildURL := os.Getenv("BUILD_URL")
 	buildLogsURL := os.Getenv("BUILD_LOG_URL")
 	gitInfo, err := gits.GetGitInfo("")
+	releaseNotesURL := ""
+	if o.releaseResource != nil {
+		releaseNotesURL = o.releaseResource.Spec.ReleaseNotesURL
+	}
 	if err != nil {
 		o.warnf("Could not discover the git repository info %s\n", err)
 	} else {
@@ -924,12 +930,13 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	o.Printf("Using pipeline: %s build: %s\n", util.ColorInfo(pipeline), util.ColorInfo("#"+build))
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
-			Name:         name,
-			Pipeline:     pipeline,
-			Build:        build,
-			BuildURL:     buildURL,
-			BuildLogsURL: buildLogsURL,
-			GitInfo:      gitInfo,
+			Name:            name,
+			Pipeline:        pipeline,
+			Build:           build,
+			BuildURL:        buildURL,
+			BuildLogsURL:    buildLogsURL,
+			GitInfo:         gitInfo,
+			ReleaseNotesURL: releaseNotesURL,
 		},
 		Environment: env.Name,
 	}
@@ -1013,8 +1020,10 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	if err != nil {
 		return err
 	}
+	o.releaseResource = nil
 	release, err := jxClient.JenkinsV1().Releases(ens).Get(releaseName, metav1.GetOptions{})
 	if err == nil && release != nil {
+		o.releaseResource = release
 		issues := release.Spec.Issues
 
 		versionMessage := version
