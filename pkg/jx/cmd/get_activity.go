@@ -103,8 +103,8 @@ func (o *GetActivityOptions) Run() error {
 		return err
 	}
 	table := o.CreateTable()
-	table.SetColumnAlign(1, tbl.ALIGN_RIGHT)
-	table.SetColumnAlign(2, tbl.ALIGN_RIGHT)
+	table.SetColumnAlign(1, util.ALIGN_RIGHT)
+	table.SetColumnAlign(2, util.ALIGN_RIGHT)
 	table.AddRow("STEP", "STARTED AGO", "DURATION", "STATUS")
 
 	for _, activity := range list.Items {

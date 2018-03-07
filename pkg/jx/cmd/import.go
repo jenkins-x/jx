@@ -180,7 +180,7 @@ type ImportOptions struct {
 
 var (
 	import_long = templates.LongDesc(`
-		Imports a git repository or folder into Jenkins X.
+		Imports a local folder or git repository into Jenkins X.
 
 		If you specify no other options or arguments then the current directory is imported.
 	    Or you can use '--dir' to specify a directory to import.
@@ -218,7 +218,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	}
 	cmd := &cobra.Command{
 		Use:     "import",
-		Short:   "Imports a local project into Jenkins",
+		Short:   "Imports a local project or git repository into Jenkins",
 		Long:    import_long,
 		Example: import_example,
 		Run: func(cmd *cobra.Command, args []string) {
