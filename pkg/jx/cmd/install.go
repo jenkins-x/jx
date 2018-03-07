@@ -39,7 +39,6 @@ type InstallOptions struct {
 
 type InstallFlags struct {
 	Domain                   string
-	HTTPS                    bool
 	Provider                 string
 	CloudEnvRepository       string
 	LocalHelmRepoName        string
