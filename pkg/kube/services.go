@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -58,12 +58,34 @@ func GetServiceURLFromMap(services map[string]*v1.Service, name string) string {
 }
 
 func FindServiceURL(client *kubernetes.Clientset, namespace string, name string) (string, error) {
-	options := meta_v1.GetOptions{}
-	svc, err := client.CoreV1().Services(namespace).Get(name, options)
+	svc, err := client.CoreV1().Services(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
-	return GetServiceURL(svc), nil
+	answer := GetServiceURL(svc)
+	if answer != "" {
+		return answer, nil
+	}
+
+	// lets try find the service via Ingress
+	ing, err := client.ExtensionsV1beta1().Ingresses(namespace).Get(name, meta_v1.GetOptions{})
+	if ing != nil && err == nil {
+		if len(ing.Spec.Rules) > 0 {
+			rule := ing.Spec.Rules[0]
+			hostname := rule.Host
+			for _, tls := range ing.Spec.TLS {
+				for _, h := range tls.Hosts {
+					if h != "" {
+						return "https://" + h, nil
+					}
+				}
+			}
+			if hostname != "" {
+				return "http://" + hostname, nil
+			}
+		}
+	}
+	return "", nil
 }
 
 func GetServiceURL(svc *v1.Service) string {

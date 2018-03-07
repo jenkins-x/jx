@@ -175,7 +175,15 @@ func (o *PromoteOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	if err != nil {
+		return err
+	}
 	err = kube.RegisterPipelineActivityCRD(apisClient)
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterGitServiceCRD(apisClient)
 	if err != nil {
 		return err
 	}
