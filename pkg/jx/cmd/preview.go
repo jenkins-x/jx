@@ -114,7 +114,14 @@ func (o *PreviewOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kube.RegisterEnvironmentCRD(apisClient)
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterGitServiceCRD(apisClient)
+	if err != nil {
+		return err
+	}
 
 	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
@@ -298,19 +305,21 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	ing, err := kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(app, metav1.GetOptions{})
-	if err != nil {
-		return err
+	url := ""
+	appNames := []string{app, o.ReleaseName, ens + "-" + app}
+	for _, n := range appNames {
+		url, err = kube.FindServiceURL(kubeClient, ens, n)
+		if url != "" {
+			break
+		}
+	}
+	if url == "" {
+		o.warnf("Could not find the service URL in namespace %s for names %s\n", ens, strings.Join(appNames, ", "))
 	}
 
-	comment := ":star: PR built and available in a preview environment"
-	if ing != nil {
-		if len(ing.Spec.Rules) > 0 {
-			hostname := ing.Spec.Rules[0].Host
-			if hostname != "" {
-				comment = fmt.Sprintf(":star: PR built and available in a preview environment at http://%s", hostname)
-			}
-		}
+	comment := fmt.Sprintf(":star: PR built and available in a preview environment %s", envName)
+	if url != "" {
+		comment += " at " + url
 	}
 
 	stepPRCommentOptions := StepPRCommentOptions{
