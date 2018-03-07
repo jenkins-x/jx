@@ -863,6 +863,16 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	buildLogsURL := os.Getenv("BUILD_LOG_URL")
 	gitInfo, err := gits.GetGitInfo("")
 	releaseNotesURL := ""
+	releaseName := o.ReleaseName
+	if o.releaseResource == nil && releaseName != "" {
+		jxClient, _, err := o.JXClient()
+		if err == nil {
+			release, err := jxClient.JenkinsV1().Releases(env.Spec.Namespace).Get(releaseName, metav1.GetOptions{})
+			if err == nil && release != nil {
+				o.releaseResource = release
+			}
+		}
+	}
 	if o.releaseResource != nil {
 		releaseNotesURL = o.releaseResource.Spec.ReleaseNotesURL
 	}
@@ -1020,7 +1030,6 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	if err != nil {
 		return err
 	}
-	o.releaseResource = nil
 	release, err := jxClient.JenkinsV1().Releases(ens).Get(releaseName, metav1.GetOptions{})
 	if err == nil && release != nil {
 		o.releaseResource = release
