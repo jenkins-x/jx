@@ -12,12 +12,13 @@ import (
 )
 
 type PipelineActivityKey struct {
-	Name         string
-	Pipeline     string
-	Build        string
-	BuildURL     string
-	BuildLogsURL string
-	GitInfo      *gits.GitRepositoryInfo
+	Name            string
+	Pipeline        string
+	Build           string
+	BuildURL        string
+	BuildLogsURL    string
+	ReleaseNotesURL string
+	GitInfo         *gits.GitRepositoryInfo
 }
 
 func (k *PipelineActivityKey) IsValid() bool {
@@ -64,6 +65,9 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 	}
 	if k.BuildLogsURL != "" && spec.BuildLogsURL == "" {
 		spec.BuildLogsURL = k.BuildLogsURL
+	}
+	if k.ReleaseNotesURL != "" && spec.ReleaseNotesURL == "" {
+		spec.ReleaseNotesURL = k.ReleaseNotesURL
 	}
 	gi := k.GitInfo
 	if gi != nil {
