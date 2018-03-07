@@ -101,6 +101,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 				NewCmdConsole(f, out, err),
 				NewCmdCDX(f, out, err),
 				NewCmdLogs(f, out, err),
+				NewCmdOpen(f, out, err),
 				NewCmdRsh(f, out, err),
 			},
 		},
