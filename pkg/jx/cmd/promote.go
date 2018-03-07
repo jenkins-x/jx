@@ -1013,12 +1013,16 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		if release.Spec.ReleaseNotesURL != "" {
 			versionMessage = "[" + version + "](" + release.Spec.ReleaseNotesURL + ")"
 		}
-		url, err := kube.FindServiceURL(kubeClient, ens, app)
-		if url == "" || err != nil {
-			url, err = kube.FindServiceURL(kubeClient, ens, o.ReleaseName)
+		appNames := []string{app, o.ReleaseName, ens + "-" + app}
+		url := ""
+		for _, n := range appNames {
+			url, err = kube.FindServiceURL(kubeClient, ens, n)
+			if url != "" {
+				break
+			}
 		}
 		if url == "" {
-			o.warnf("Could not find the service URL in namespace %s for name %s or %s\n", ens, app, o.ReleaseName)
+			o.warnf("Could not find the service URL in namespace %s for names %s\n", ens, strings.Join(appNames, ", "))
 		}
 		available := ""
 		if url != "" {
