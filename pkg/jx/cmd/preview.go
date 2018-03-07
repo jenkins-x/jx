@@ -317,7 +317,7 @@ func (o *PreviewOptions) Run() error {
 		o.warnf("Could not find the service URL in namespace %s for names %s\n", ens, strings.Join(appNames, ", "))
 	}
 
-	comment := fmt.Sprintf(":star: PR built and available in a preview environment %s", envName)
+	comment := fmt.Sprintf(":star: PR built and available in a preview environment **%s**", envName)
 	if url != "" {
 		comment += " at " + url
 	}
