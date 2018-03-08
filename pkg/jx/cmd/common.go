@@ -190,6 +190,15 @@ func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, 
 		return "", err
 	}
 
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+		return "", err
+	}
+	err = kube.RegisterGitServiceCRD(apisClient)
+	if err != nil {
+		return "", err
+	}
+
 	return kube.GetGitServiceKind(jxClient, devNs, gitInfo.Host)
 }
 
