@@ -139,48 +139,27 @@ func (f *factory) CreateChartmuseumAuthConfigService() (auth.AuthConfigService, 
 
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
 
-	// if in cluster then there's no user configfile, so check for env vars first
-	userAuth := auth.CreateAuthUserFromEnvironment("GIT")
-	authConfigSvc := auth.AuthConfigService{}
-
-	if userAuth.IsInvalid() {
-		authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
-		if err != nil {
-			return authConfigSvc, err
-		}
-
-		config, err := authConfigSvc.LoadConfig()
-		if err != nil {
-			return authConfigSvc, err
-		}
-
-		// lets add a default if there's none defined yet
-		if len(config.Servers) == 0 {
-			config.Servers = []*auth.AuthServer{
-				{
-					Name:  "GitHub",
-					URL:   "github.com",
-					Users: []*auth.UserAuth{},
-				},
-			}
-		}
-		return authConfigSvc, nil
-	}
-
-	// if no config file is being used lets grab the git server from the current directory
-	server, err := gits.GetGitServer("")
+	authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
 	if err != nil {
-		return authConfigSvc, fmt.Errorf("unable to get remote git repo server, %v", err)
+		return authConfigSvc, err
 	}
 
-	authConfigSvc.Config().Servers = []*auth.AuthServer{
-		{
-			Name:  "Git",
-			URL:   server,
-			Users: []*auth.UserAuth{&userAuth},
-		},
+	config, err := authConfigSvc.LoadConfig()
+	if err != nil {
+		return authConfigSvc, err
 	}
 
+	// lets add a default if there's none defined yet
+	if len(config.Servers) == 0 {
+		config.Servers = []*auth.AuthServer{
+			{
+				Name:  "GitHub",
+				URL:   "github.com",
+				Kind:  "GitHub",
+				Users: []*auth.UserAuth{},
+			},
+		}
+	}
 	return authConfigSvc, nil
 }
 
