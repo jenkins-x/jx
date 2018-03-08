@@ -210,7 +210,7 @@ func (o *StepChangelogOptions) Run() error {
 		return err
 	}
 
-	gitKind, err := kube.GetGitServiceKind(jxClient, devNs, gitInfo.Host)
+	gitKind, err := o.GitServerKind(gitInfo)
 	foundGitProvider := true
 	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc, gitKind)
 	if err != nil {
