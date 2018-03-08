@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/yaml.v2"
 )
@@ -21,14 +20,12 @@ func (s *AuthConfigService) SetConfig(c AuthConfig) {
 func (s *AuthConfigService) LoadConfig() (*AuthConfig, error) {
 	config := &s.config
 	fileName := s.FileName
-	hasFile := false
 	if fileName != "" {
 		exists, err := util.FileExists(fileName)
 		if err != nil {
 			return config, fmt.Errorf("Could not check if file exists %s due to %s", fileName, err)
 		}
 		if exists {
-			hasFile = true
 			data, err := ioutil.ReadFile(fileName)
 			if err != nil {
 				return config, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
@@ -37,23 +34,6 @@ func (s *AuthConfigService) LoadConfig() (*AuthConfig, error) {
 			if err != nil {
 				return config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 			}
-		}
-	}
-	if !hasFile && len(config.Servers) == 0 {
-		// if in cluster then there's no user configfile, so check for env vars first
-		userAuth := CreateAuthUserFromEnvironment("GIT")
-
-		// if no config file is being used lets grab the git server from the current directory
-		server, err := gits.GetGitServer("")
-		if err != nil {
-			return config, fmt.Errorf("unable to get remote git repo server, %v", err)
-		}
-		config.Servers = []*AuthServer{
-			{
-				Name:  "Git",
-				URL:   server,
-				Users: []*UserAuth{&userAuth},
-			},
 		}
 	}
 	return config, nil
