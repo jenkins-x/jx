@@ -203,7 +203,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	}
 	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
 	if err != nil {
-		return err
+		fmt.Printf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
 	}
 	for _, hook := range hooks {
 		c := hook.Config["url"]
