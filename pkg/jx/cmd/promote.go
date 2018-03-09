@@ -86,7 +86,7 @@ var (
 		jx promote --version 1.2.3 --env staging
 
 		# Promote a version of the myapp application to production
-		jx promote myapp --version 1.2.3 --env prod
+		jx promote myapp --version 1.2.3 --env production
 
 		# To create or update a Preview Environment please see the 'jx preview' command
 		jx preview
