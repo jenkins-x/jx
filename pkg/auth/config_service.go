@@ -39,6 +39,19 @@ func (s *AuthConfigService) LoadConfig() (*AuthConfig, error) {
 	return config, nil
 }
 
+// HasConfigFile returns true if we have a config file
+func (s *AuthConfigService) HasConfigFile() (bool, error) {
+	fileName := s.FileName
+	if fileName != "" {
+		exists, err := util.FileExists(fileName)
+		if err != nil {
+			return false, err
+		}
+		return exists, nil
+	}
+	return false, nil
+}
+
 // SaveConfig loads the configuration from the users JX config directory
 func (s *AuthConfigService) SaveConfig() error {
 	fileName := s.FileName

@@ -139,48 +139,55 @@ func (f *factory) CreateChartmuseumAuthConfigService() (auth.AuthConfigService, 
 
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
 
-	// if in cluster then there's no user configfile, so check for env vars first
-	userAuth := auth.CreateAuthUserFromEnvironment("GIT")
-	authConfigSvc := auth.AuthConfigService{}
+	authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
+	if err != nil {
+		return authConfigSvc, err
+	}
 
-	if userAuth.IsInvalid() {
-		authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
-		if err != nil {
-			return authConfigSvc, err
-		}
+	config, err := authConfigSvc.LoadConfig()
+	if err != nil {
+		return authConfigSvc, err
+	}
 
-		config, err := authConfigSvc.LoadConfig()
-		if err != nil {
-			return authConfigSvc, err
-		}
-
-		// lets add a default if there's none defined yet
-		if len(config.Servers) == 0 {
-			config.Servers = []*auth.AuthServer{
-				{
-					Name:  "GitHub",
-					URL:   "github.com",
-					Users: []*auth.UserAuth{},
-				},
+	// lets add a default if there's none defined yet
+	if len(config.Servers) == 0 {
+		// if in cluster then there's no user configfile, so check for env vars first
+		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
+		if !userAuth.IsInvalid() {
+			// if no config file is being used lets grab the git server from the current directory
+			server, err := gits.GetGitServer("")
+			if err != nil {
+				fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
+				config.Servers = []*auth.AuthServer{
+					{
+						Name:  "GitHub",
+						URL:   "github.com",
+						Kind:  "GitHub",
+						Users: []*auth.UserAuth{&userAuth},
+					},
+				}
+			} else {
+				config.Servers = []*auth.AuthServer{
+					{
+						Name:  "Git",
+						URL:   server,
+						Users: []*auth.UserAuth{&userAuth},
+					},
+				}
 			}
 		}
-		return authConfigSvc, nil
 	}
 
-	// if no config file is being used lets grab the git server from the current directory
-	server, err := gits.GetGitServer("")
-	if err != nil {
-		return authConfigSvc, fmt.Errorf("unable to get remote git repo server, %v", err)
+	if len(config.Servers) == 0 {
+		config.Servers = []*auth.AuthServer{
+			{
+				Name:  "GitHub",
+				URL:   "github.com",
+				Kind:  "GitHub",
+				Users: []*auth.UserAuth{},
+			},
+		}
 	}
-
-	authConfigSvc.Config().Servers = []*auth.AuthServer{
-		{
-			Name:  "Git",
-			URL:   server,
-			Users: []*auth.UserAuth{&userAuth},
-		},
-	}
-
 	return authConfigSvc, nil
 }
 
