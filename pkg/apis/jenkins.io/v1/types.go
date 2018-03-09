@@ -75,6 +75,8 @@ const (
 	EnvironmentKindTypeTest EnvironmentKindType = "Test"
 	// EnvironmentKindTypeEdit specifies that an environment is a developers editing workspace
 	EnvironmentKindTypeEdit EnvironmentKindType = "Edit"
+	// EnvironmentKindTypeDevelopment specifies that an environment is a development environment; for developer tools like Jenkins, Nexus etc
+	EnvironmentKindTypeDevelopment EnvironmentKindType = "Development"
 )
 
 // IsPermanent returns true if this environment is permanent
