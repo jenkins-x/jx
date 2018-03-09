@@ -438,6 +438,20 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 	release := &github.RepositoryRelease{}
 	rel, r, err := p.Client.Repositories.GetReleaseByTag(p.Context, owner, repo, tag)
 
+	if r.StatusCode == 404 && !strings.HasPrefix(tag, "v") {
+		// sometimes we prepend a v for example when using gh-release
+		// so lets make sure we don't create a double release
+		vtag := "v" + tag
+
+		rel2, r2, err2 := p.Client.Repositories.GetReleaseByTag(p.Context, owner, repo, vtag)
+		if r2.StatusCode != 404 {
+			rel = rel2
+			r = r2
+			err = err2
+			tag = vtag
+		}
+	}
+
 	if r != nil && err == nil {
 		release = rel
 	}
@@ -452,6 +466,7 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 		release.Body = &releaseInfo.Body
 	}
 	if r.StatusCode == 404 {
+		fmt.Printf("No release found for %s/%s and tag %s so creating a new release\n", owner, repo, tag)
 		_, _, err = p.Client.Repositories.CreateRelease(p.Context, owner, repo, release)
 		return err
 	}
