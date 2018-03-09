@@ -24,8 +24,8 @@ func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
 	values.ExposeController.Annotations = a
 	values.ExposeController.Config.Exposer = "Ingress"
 	values.ExposeController.Config.Domain = "jenkinsx.io"
-	values.ExposeController.Config.HTTP = true
-	values.ExposeController.Config.TLSAcme = false
+	values.ExposeController.Config.HTTP = "false"
+	values.ExposeController.Config.TLSAcme = "false"
 	s, err := values.String()
 	assert.NoError(t, err)
 	assert.Equal(t, string(testFile), s, "expected exposecontroller helm values do not match")

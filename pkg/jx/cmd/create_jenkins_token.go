@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/chromedp/chromedp/runner"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -129,10 +129,13 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	tokenUrl := jenkins.JenkinsTokenURL(server.URL)
-
+	if o.Verbose {
+		log.Infof("using url %s\n", tokenUrl)
+	}
 	if userAuth.IsInvalid() && o.Password != "" {
 		err := o.tryFindAPITokenFromBrowser(tokenUrl, userAuth)
 		if err != nil {
+			log.Errorf("error finding API token using URL %s\n", tokenUrl)
 			return err
 		}
 	}
@@ -285,7 +288,7 @@ func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP,
 
 	err = ioutil.WriteFile(screenshotFile, picture, util.DefaultWritePermissions)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 
 	o.Printf("Saved screenshot: %s\n", util.ColorInfo(screenshotFile))

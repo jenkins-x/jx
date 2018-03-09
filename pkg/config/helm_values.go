@@ -10,8 +10,8 @@ import (
 type ExposeControllerConfig struct {
 	Domain  string `yaml:"domain,omitempty"`
 	Exposer string `yaml:"exposer"`
-	HTTP    bool   `yaml:"http"`
-	TLSAcme bool   `yaml:"tlsacme"`
+	HTTP    string `yaml:"http"`
+	TLSAcme string `yaml:"tlsacme"`
 }
 type ExposeController struct {
 	Config      ExposeControllerConfig `yaml:"config,omitempty"`
@@ -32,9 +32,10 @@ func (c *HelmValuesConfig) AddExposeControllerValues(cmd *cobra.Command, ignoreD
 		cmd.Flags().StringVarP(&c.ExposeController.Config.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	}
 	keepJob := false
-	cmd.Flags().BoolVarP(&c.ExposeController.Config.HTTP, "http", "", true, "Toggle creating http or https ingress rules")
+
+	cmd.Flags().StringVarP(&c.ExposeController.Config.HTTP, "http", "", "true", "Toggle creating http or https ingress rules")
 	cmd.Flags().StringVarP(&c.ExposeController.Config.Exposer, "exposer", "", "Ingress", "Used to describe which strategy exposecontroller should use to access applications")
-	cmd.Flags().BoolVarP(&c.ExposeController.Config.TLSAcme, "tls-acme", "", false, "Used to enable automatic TLS for ingress")
+	cmd.Flags().StringVarP(&c.ExposeController.Config.TLSAcme, "tls-acme", "", "false", "Used to enable automatic TLS for ingress")
 	cmd.Flags().BoolVarP(&keepJob, "keep-exposecontroller-job", "", false, "Prevents Helm deleting the exposecontroller Job and Pod after running.  Useful for debugging exposecontroller logs but you will need to manually delete the job if you update an environment")
 
 	annotations := make(map[string]string)
