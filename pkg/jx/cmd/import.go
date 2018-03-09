@@ -5,9 +5,10 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"runtime"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -16,6 +17,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/rawlingsj/draft/pkg/draft/draftpath"
+	"github.com/rawlingsj/draft/pkg/draft/pack"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
@@ -419,7 +422,6 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 }
 
 func (o *ImportOptions) DraftCreate() error {
-	args := []string{"create"}
 
 	// TODO this is a workaround of this draft issue:
 	// https://github.com/Azure/draft/issues/476
@@ -429,14 +431,15 @@ func (o *ImportOptions) DraftCreate() error {
 	if err != nil {
 		return err
 	}
+	lpack := ""
 	if exists {
-		args = []string{"create", "--pack=github.com/jenkins-x/draft-repo/packs/java"}
+		lpack = filepath.Join(draftpath.Home(homePath()).Packs(), "github.com/jenkins-x/draft-repo/packs/java")
 	}
-	e := exec.Command("draft", args...)
-	e.Dir = dir
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err = e.Run()
+
+	err = pack.CreateFrom(dir, lpack)
+	if err != nil {
+		return err
+	}
 	if err != nil {
 		// lets ignore draft errors as sometimes it can't find a pack - e.g. for environments
 		o.Printf(util.ColorWarning("WARNING: Failed to run draft create in %s due to %s"), dir, err)
@@ -480,6 +483,23 @@ func (o *ImportOptions) DraftCreate() error {
 		return err
 	}
 	return nil
+}
+
+func homePath() string {
+	return os.ExpandEnv(defaultDraftHome())
+}
+
+func defaultDraftHome() string {
+	if home := os.Getenv("DRAFT_HOME"); home != "" {
+		return home
+	}
+
+	homeEnvPath := os.Getenv("HOME")
+	if homeEnvPath == "" && runtime.GOOS == "windows" {
+		homeEnvPath = os.Getenv("USERPROFILE")
+	}
+
+	return filepath.Join(homeEnvPath, ".draft")
 }
 
 func (o *ImportOptions) DefaultJenkinsfile() error {
