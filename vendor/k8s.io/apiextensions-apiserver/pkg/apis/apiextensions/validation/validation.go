@@ -169,7 +169,7 @@ func ValidateCustomResourceDefinitionNames(names *apiextensions.CustomResourceDe
 	return allErrs
 }
 
-// specStandardValidator applies validations for different OpenAPI specification versions.
+// specStandardValidator applies validations for different OpenAPI specfication versions.
 type specStandardValidator interface {
 	validate(spec *apiextensions.JSONSchemaProps, fldPath *field.Path) field.ErrorList
 }

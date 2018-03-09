@@ -55,7 +55,7 @@ func (t *PressureLevel) UnmarshalJSON(buf []byte) error {
 // SamplingProfileNode heap profile sample.
 type SamplingProfileNode struct {
 	Size  float64  `json:"size"`  // Size of the sampled allocation.
-	Count float64  `json:"count"` // Number of sampled allocations of that size.
+	Total float64  `json:"total"` // Total bytes attributed to this sample.
 	Stack []string `json:"stack"` // Execution stack at the point of allocation.
 }
 

@@ -21,7 +21,6 @@ import (
 	"strconv"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
-	"k8s.io/helm/pkg/version"
 )
 
 func TestLoadRequirements(t *testing.T) {
@@ -348,24 +347,11 @@ func TestGetAliasDependency(t *testing.T) {
 		t.Fatalf("Dependency chart name should be %s but got %s", req.Dependencies[0].Name, aliasChart.Metadata.Name)
 	}
 
-	if req.Dependencies[0].Version != "" {
-		if !version.IsCompatibleRange(req.Dependencies[0].Version, aliasChart.Metadata.Version) {
-			t.Fatalf("Dependency chart version is not in the compatible range")
-		}
-
-	}
-
 	// Failure case
 	req.Dependencies[0].Name = "something-else"
 	if aliasChart := getAliasDependency(c.Dependencies, req.Dependencies[0]); aliasChart != nil {
 		t.Fatalf("expected no chart but got %s", aliasChart.Metadata.Name)
 	}
-
-	req.Dependencies[0].Version = "something else which is not in the compatible range"
-	if version.IsCompatibleRange(req.Dependencies[0].Version, aliasChart.Metadata.Version) {
-		t.Fatalf("Dependency chart version which is not in the compatible range should cause a failure other than a success ")
-	}
-
 }
 
 func TestDependentChartAliases(t *testing.T) {
@@ -417,25 +403,6 @@ func TestDependentChartWithSubChartsAbsentInRequirements(t *testing.T) {
 		t.Fatal("Expected no changes in dependencies to be, but did something got changed")
 	}
 
-}
-
-func TestDependentChartWithSubChartsHelmignore(t *testing.T) {
-	if _, err := Load("testdata/dependent-chart-helmignore"); err != nil {
-		t.Fatalf("Failed to load testdata: %s", err)
-	}
-}
-
-func TestDependentChartsWithSubChartsSymlink(t *testing.T) {
-	c, err := Load("testdata/joonix")
-	if err != nil {
-		t.Fatalf("Failed to load testdata: %s", err)
-	}
-	if c.Metadata.Name != "joonix" {
-		t.Fatalf("Unexpected chart name: %s", c.Metadata.Name)
-	}
-	if n := len(c.Dependencies); n != 1 {
-		t.Fatalf("Expected 1 dependency for this chart, but got %d", n)
-	}
 }
 
 func TestDependentChartsWithSubchartsAllSpecifiedInRequirements(t *testing.T) {

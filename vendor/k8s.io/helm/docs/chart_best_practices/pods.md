@@ -30,20 +30,11 @@ image: "{{ .Values.redisImage }}:{{ .Values.redisTag }}"
 
 ## ImagePullPolicy
 
-`helm create` sets the `imagePullPolicy` to `IfNotPresent` by default by doing the following in your `deployment.yaml`:
+The `imagePullPolicy` should default to an empty value, but allow users to override it:
 
 ```yaml
-imagePullPolicy: {{ .Values.image.pullPolicy }}
+imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
 ```
-
-And `values.yaml`:
-
-```yaml
-pullPolicy: IfNotPresent
-```
-
-Similarly, Kubernetes defaults the `imagePullPolicy` to `IfNotPresent` if it is not defined at all. If you want a value other than `IfNotPresent`, simply update the value in `values.yaml` to your desired value.
-
 
 ## PodTemplates Should Declare Selectors
 

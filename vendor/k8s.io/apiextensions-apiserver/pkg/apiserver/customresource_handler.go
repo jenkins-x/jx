@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/http"
 	"path"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -42,7 +41,6 @@ import (
 	"k8s.io/apiserver/pkg/admission"
 	"k8s.io/apiserver/pkg/endpoints/handlers"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
-	"k8s.io/apiserver/pkg/endpoints/metrics"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
@@ -189,34 +187,37 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	requestScope := crdInfo.requestScope
 	minRequestTimeout := 1 * time.Minute
 
-	verb := strings.ToUpper(requestInfo.Verb)
-	resource := requestInfo.Resource
-	subresource := requestInfo.Subresource
-	scope := metrics.CleanScope(requestInfo)
-
-	var handler http.HandlerFunc
-
 	switch requestInfo.Verb {
 	case "get":
-		handler = handlers.GetResource(storage, storage, requestScope)
+		handler := handlers.GetResource(storage, storage, requestScope)
+		handler(w, req)
+		return
 	case "list":
 		forceWatch := false
-		handler = handlers.ListResource(storage, storage, requestScope, forceWatch, minRequestTimeout)
+		handler := handlers.ListResource(storage, storage, requestScope, forceWatch, minRequestTimeout)
+		handler(w, req)
+		return
 	case "watch":
 		forceWatch := true
-		handler = handlers.ListResource(storage, storage, requestScope, forceWatch, minRequestTimeout)
+		handler := handlers.ListResource(storage, storage, requestScope, forceWatch, minRequestTimeout)
+		handler(w, req)
+		return
 	case "create":
 		if terminating {
 			http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
 			return
 		}
-		handler = handlers.CreateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)
+		handler := handlers.CreateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)
+		handler(w, req)
+		return
 	case "update":
 		if terminating {
 			http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
 			return
 		}
-		handler = handlers.UpdateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)
+		handler := handlers.UpdateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)
+		handler(w, req)
+		return
 	case "patch":
 		if terminating {
 			http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
@@ -226,20 +227,24 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			string(types.JSONPatchType),
 			string(types.MergePatchType),
 		}
-		handler = handlers.PatchResource(storage, requestScope, r.admission, unstructured.UnstructuredObjectConverter{}, supportedTypes)
+		handler := handlers.PatchResource(storage, requestScope, r.admission, unstructured.UnstructuredObjectConverter{}, supportedTypes)
+		handler(w, req)
+		return
 	case "delete":
 		allowsOptions := true
-		handler = handlers.DeleteResource(storage, allowsOptions, requestScope, r.admission)
+		handler := handlers.DeleteResource(storage, allowsOptions, requestScope, r.admission)
+		handler(w, req)
+		return
 	case "deletecollection":
 		checkBody := true
-		handler = handlers.DeleteCollection(storage, checkBody, requestScope, r.admission)
+		handler := handlers.DeleteCollection(storage, checkBody, requestScope, r.admission)
+		handler(w, req)
+		return
+
 	default:
 		http.Error(w, fmt.Sprintf("unhandled verb %q", requestInfo.Verb), http.StatusMethodNotAllowed)
 		return
 	}
-	handler = metrics.InstrumentHandlerFunc(verb, resource, subresource, scope, handler)
-	handler(w, req)
-	return
 }
 
 func (r *crdHandler) updateCustomResourceDefinition(oldObj, newObj interface{}) {
@@ -304,8 +309,8 @@ func (r *crdHandler) removeDeadStorage() {
 	r.customStorage.Store(storageMap2)
 }
 
-// GetCustomResourceListerCollectionDeleter returns the ListerCollectionDeleter of
-// the given crd.
+// GetCustomResourceListerCollectionDeleter returns the ListerCollectionDeleter for
+// the given uid, or nil if an error occurs.
 func (r *crdHandler) GetCustomResourceListerCollectionDeleter(crd *apiextensions.CustomResourceDefinition) (finalizer.ListerCollectionDeleter, error) {
 	info, err := r.getOrCreateServingInfoFor(crd)
 	if err != nil {
@@ -366,7 +371,7 @@ func (r *crdHandler) getOrCreateServingInfoFor(crd *apiextensions.CustomResource
 	selfLinkPrefix := ""
 	switch crd.Spec.Scope {
 	case apiextensions.ClusterScoped:
-		selfLinkPrefix = "/" + path.Join("apis", crd.Spec.Group, crd.Spec.Version) + "/" + crd.Status.AcceptedNames.Plural + "/"
+		selfLinkPrefix = "/" + path.Join("apis", crd.Spec.Group, crd.Spec.Version) + "/"
 	case apiextensions.NamespaceScoped:
 		selfLinkPrefix = "/" + path.Join("apis", crd.Spec.Group, crd.Spec.Version, "namespaces") + "/"
 	}

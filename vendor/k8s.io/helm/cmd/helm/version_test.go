@@ -38,7 +38,6 @@ func TestVersion(t *testing.T) {
 		{"default", true, true, []string{}, false},
 		{"client", true, false, []string{"-c"}, false},
 		{"server", false, true, []string{"-s"}, false},
-		{"template", true, true, []string{"--template='{{ .Client.SemVer }} {{ .Server.SemVer }}'"}, false},
 	}
 
 	settings.TillerHost = "fake-localhost"

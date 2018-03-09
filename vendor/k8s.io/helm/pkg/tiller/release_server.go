@@ -236,7 +236,7 @@ func GetVersionSet(client discovery.ServerGroupsInterface) (chartutil.VersionSet
 	// for calls to Discovery().ServerGroups(). So in this case, we return
 	// the default API list. This is also a safe value to return in any other
 	// odd-ball case.
-	if groups.Size() == 0 {
+	if groups == nil {
 		return chartutil.DefaultVersionSet, nil
 	}
 
@@ -250,15 +250,6 @@ func (s *ReleaseServer) renderResources(ch *chart.Chart, values chartutil.Values
 	if ch.Metadata.TillerVersion != "" &&
 		!version.IsCompatibleRange(ch.Metadata.TillerVersion, sver) {
 		return nil, nil, "", fmt.Errorf("Chart incompatible with Tiller %s", sver)
-	}
-
-	if ch.Metadata.KubeVersion != "" {
-		cap, _ := values["Capabilities"].(*chartutil.Capabilities)
-		gitVersion := cap.KubeVersion.String()
-		k8sVersion := strings.Split(gitVersion, "+")[0]
-		if !version.IsCompatibleRange(ch.Metadata.KubeVersion, k8sVersion) {
-			return nil, nil, "", fmt.Errorf("Chart requires kubernetesVersion: %s which is incompatible with Kubernetes %s", ch.Metadata.KubeVersion, k8sVersion)
-		}
 	}
 
 	s.Log("rendering %s chart using values", ch.GetMetadata().Name)
@@ -309,8 +300,8 @@ func (s *ReleaseServer) renderResources(ch *chart.Chart, values chartutil.Values
 	// Aggregate all valid manifests into one big doc.
 	b := bytes.NewBuffer(nil)
 	for _, m := range manifests {
-		b.WriteString("\n---\n# Source: " + m.Name + "\n")
-		b.WriteString(m.Content)
+		b.WriteString("\n---\n# Source: " + m.name + "\n")
+		b.WriteString(m.content)
 	}
 
 	return hooks, b, notes, nil

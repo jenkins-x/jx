@@ -854,6 +854,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoDomsnapshot5(in *jlexer.Lexer
 			out.TemplateContentIndex = int64(in.Int64())
 		case "pseudoType":
 			(out.PseudoType).UnmarshalEasyJSON(in)
+		case "shadowRootType":
+			(out.ShadowRootType).UnmarshalEasyJSON(in)
 		case "isClickable":
 			out.IsClickable = bool(in.Bool())
 		case "eventListeners":
@@ -1163,6 +1165,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoDomsnapshot5(out *jwriter.Wri
 			out.RawString(prefix)
 		}
 		(in.PseudoType).MarshalEasyJSON(out)
+	}
+	if in.ShadowRootType != "" {
+		const prefix string = ",\"shadowRootType\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		(in.ShadowRootType).MarshalEasyJSON(out)
 	}
 	if in.IsClickable {
 		const prefix string = ",\"isClickable\":"

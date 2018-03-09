@@ -4,7 +4,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"os/exec"
 	"strings"
 )
 
@@ -89,9 +88,4 @@ func (p *Parser) Parse(fname string, isDir bool) error {
 		ast.Walk(&visitor{Parser: p}, f)
 	}
 	return nil
-}
-
-func getDefaultGoPath() (string, error) {
-	output, err := exec.Command("go", "env", "GOPATH").Output()
-	return string(output), err
 }

@@ -161,12 +161,12 @@ func DeleteRelease(rel *release.Release, vs chartutil.VersionSet, kubeClient env
 
 	filesToKeep, filesToDelete := filterManifestsToKeep(files)
 	if len(filesToKeep) > 0 {
-		kept = summarizeKeptManifests(filesToKeep, kubeClient, rel.Namespace)
+		kept = summarizeKeptManifests(filesToKeep)
 	}
 
 	errs = []error{}
 	for _, file := range filesToDelete {
-		b := bytes.NewBufferString(strings.TrimSpace(file.Content))
+		b := bytes.NewBufferString(strings.TrimSpace(file.content))
 		if b.Len() == 0 {
 			continue
 		}

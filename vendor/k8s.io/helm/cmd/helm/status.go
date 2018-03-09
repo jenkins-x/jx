@@ -17,13 +17,11 @@ limitations under the License.
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"regexp"
 	"text/tabwriter"
 
-	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/gosuri/uitable/util/strutil"
 	"github.com/spf13/cobra"
@@ -50,7 +48,6 @@ type statusCmd struct {
 	out     io.Writer
 	client  helm.Interface
 	version int32
-	outfmt  string
 }
 
 func newStatusCmd(client helm.Interface, out io.Writer) *cobra.Command {
@@ -70,14 +67,13 @@ func newStatusCmd(client helm.Interface, out io.Writer) *cobra.Command {
 			}
 			status.release = args[0]
 			if status.client == nil {
-				status.client = newClient()
+				status.client = helm.NewClient(helm.Host(settings.TillerHost))
 			}
 			return status.run()
 		},
 	}
 
 	cmd.PersistentFlags().Int32Var(&status.version, "revision", 0, "if set, display the status of the named release with revision")
-	cmd.PersistentFlags().StringVarP(&status.outfmt, "output", "o", "", "output the status in the specified format (json or yaml)")
 
 	return cmd
 }
@@ -88,27 +84,8 @@ func (s *statusCmd) run() error {
 		return prettyError(err)
 	}
 
-	switch s.outfmt {
-	case "":
-		PrintStatus(s.out, res)
-		return nil
-	case "json":
-		data, err := json.Marshal(res)
-		if err != nil {
-			return fmt.Errorf("Failed to Marshal JSON output: %s", err)
-		}
-		s.out.Write(data)
-		return nil
-	case "yaml":
-		data, err := yaml.Marshal(res)
-		if err != nil {
-			return fmt.Errorf("Failed to Marshal YAML output: %s", err)
-		}
-		s.out.Write(data)
-		return nil
-	}
-
-	return fmt.Errorf("Unknown output format %q", s.outfmt)
+	PrintStatus(s.out, res)
+	return nil
 }
 
 // PrintStatus prints out the status of a release. Shared because also used by

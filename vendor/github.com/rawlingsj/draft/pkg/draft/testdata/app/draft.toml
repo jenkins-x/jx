@@ -1,0 +1,7 @@
+[environments]
+  [environments.development]
+    name = "example-app"
+    namespace = "example-namespace"
+    wait = false
+    watch = false
+    watch_delay = 2

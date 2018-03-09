@@ -46,11 +46,10 @@ The historical release set is printed as a formatted table, e.g:
 `
 
 type historyCmd struct {
-	max      int32
-	rls      string
-	out      io.Writer
-	helmc    helm.Interface
-	colWidth uint
+	max   int32
+	rls   string
+	out   io.Writer
+	helmc helm.Interface
 }
 
 func newHistoryCmd(c helm.Interface, w io.Writer) *cobra.Command {
@@ -67,16 +66,14 @@ func newHistoryCmd(c helm.Interface, w io.Writer) *cobra.Command {
 			case len(args) == 0:
 				return errReleaseRequired
 			case his.helmc == nil:
-				his.helmc = newClient()
+				his.helmc = helm.NewClient(helm.Host(settings.TillerHost))
 			}
 			his.rls = args[0]
 			return his.run()
 		},
 	}
 
-	f := cmd.Flags()
-	f.Int32Var(&his.max, "max", 256, "maximum number of revision to include in history")
-	f.UintVar(&his.colWidth, "col-width", 60, "specifies the max column width of output")
+	cmd.Flags().Int32Var(&his.max, "max", 256, "maximum number of revision to include in history")
 
 	return cmd
 }
@@ -90,14 +87,13 @@ func (cmd *historyCmd) run() error {
 		return nil
 	}
 
-	fmt.Fprintln(cmd.out, formatHistory(r.Releases, cmd.colWidth))
+	fmt.Fprintln(cmd.out, formatHistory(r.Releases))
 	return nil
 }
 
-func formatHistory(rls []*release.Release, colWidth uint) string {
+func formatHistory(rls []*release.Release) string {
 	tbl := uitable.New()
-
-	tbl.MaxColWidth = colWidth
+	tbl.MaxColWidth = 60
 	tbl.AddRow("REVISION", "UPDATED", "STATUS", "CHART", "DESCRIPTION")
 	for i := len(rls) - 1; i >= 0; i-- {
 		r := rls[i]

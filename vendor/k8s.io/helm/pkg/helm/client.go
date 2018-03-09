@@ -23,7 +23,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/keepalive"
 
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -51,15 +50,14 @@ func (h *Client) Option(opts ...Option) *Client {
 
 // ListReleases lists the current releases.
 func (h *Client) ListReleases(opts ...ReleaseListOption) (*rls.ListReleasesResponse, error) {
-	reqOpts := h.opts
 	for _, opt := range opts {
-		opt(&reqOpts)
+		opt(&h.opts)
 	}
-	req := &reqOpts.listReq
+	req := &h.opts.listReq
 	ctx := NewContext()
 
-	if reqOpts.before != nil {
-		if err := reqOpts.before(ctx, req); err != nil {
+	if h.opts.before != nil {
+		if err := h.opts.before(ctx, req); err != nil {
 			return nil, err
 		}
 	}
@@ -80,20 +78,19 @@ func (h *Client) InstallRelease(chstr, ns string, opts ...InstallOption) (*rls.I
 // InstallReleaseFromChart installs a new chart and returns the release response.
 func (h *Client) InstallReleaseFromChart(chart *chart.Chart, ns string, opts ...InstallOption) (*rls.InstallReleaseResponse, error) {
 	// apply the install options
-	reqOpts := h.opts
 	for _, opt := range opts {
-		opt(&reqOpts)
+		opt(&h.opts)
 	}
-	req := &reqOpts.instReq
+	req := &h.opts.instReq
 	req.Chart = chart
 	req.Namespace = ns
-	req.DryRun = reqOpts.dryRun
-	req.DisableHooks = reqOpts.disableHooks
-	req.ReuseName = reqOpts.reuseName
+	req.DryRun = h.opts.dryRun
+	req.DisableHooks = h.opts.disableHooks
+	req.ReuseName = h.opts.reuseName
 	ctx := NewContext()
 
-	if reqOpts.before != nil {
-		if err := reqOpts.before(ctx, req); err != nil {
+	if h.opts.before != nil {
+		if err := h.opts.before(ctx, req); err != nil {
 			return nil, err
 		}
 	}
@@ -112,12 +109,11 @@ func (h *Client) InstallReleaseFromChart(chart *chart.Chart, ns string, opts ...
 // DeleteRelease uninstalls a named release and returns the response.
 func (h *Client) DeleteRelease(rlsName string, opts ...DeleteOption) (*rls.UninstallReleaseResponse, error) {
 	// apply the uninstall options
-	reqOpts := h.opts
 	for _, opt := range opts {
-		opt(&reqOpts)
+		opt(&h.opts)
 	}
 
-	if reqOpts.dryRun {
+	if h.opts.dryRun {
 		// In the dry run case, just see if the release exists
 		r, err := h.ReleaseContent(rlsName)
 		if err != nil {
@@ -126,13 +122,13 @@ func (h *Client) DeleteRelease(rlsName string, opts ...DeleteOption) (*rls.Unins
 		return &rls.UninstallReleaseResponse{Release: r.Release}, nil
 	}
 
-	req := &reqOpts.uninstallReq
+	req := &h.opts.uninstallReq
 	req.Name = rlsName
-	req.DisableHooks = reqOpts.disableHooks
+	req.DisableHooks = h.opts.disableHooks
 	ctx := NewContext()
 
-	if reqOpts.before != nil {
-		if err := reqOpts.before(ctx, req); err != nil {
+	if h.opts.before != nil {
+		if err := h.opts.before(ctx, req); err != nil {
 			return nil, err
 		}
 	}
@@ -152,24 +148,24 @@ func (h *Client) UpdateRelease(rlsName string, chstr string, opts ...UpdateOptio
 
 // UpdateReleaseFromChart updates a release to a new/different chart.
 func (h *Client) UpdateReleaseFromChart(rlsName string, chart *chart.Chart, opts ...UpdateOption) (*rls.UpdateReleaseResponse, error) {
+
 	// apply the update options
-	reqOpts := h.opts
 	for _, opt := range opts {
-		opt(&reqOpts)
+		opt(&h.opts)
 	}
-	req := &reqOpts.updateReq
+	req := &h.opts.updateReq
 	req.Chart = chart
-	req.DryRun = reqOpts.dryRun
+	req.DryRun = h.opts.dryRun
 	req.Name = rlsName
-	req.DisableHooks = reqOpts.disableHooks
-	req.Recreate = reqOpts.recreate
-	req.Force = reqOpts.force
-	req.ResetValues = reqOpts.resetValues
-	req.ReuseValues = reqOpts.reuseValues
+	req.DisableHooks = h.opts.disableHooks
+	req.Recreate = h.opts.recreate
+	req.Force = h.opts.force
+	req.ResetValues = h.opts.resetValues
+	req.ReuseValues = h.opts.reuseValues
 	ctx := NewContext()
 
-	if reqOpts.before != nil {
-		if err := reqOpts.before(ctx, req); err != nil {
+	if h.opts.before != nil {
+		if err := h.opts.before(ctx, req); err != nil {
 			return nil, err
 		}
 	}
@@ -187,15 +183,14 @@ func (h *Client) UpdateReleaseFromChart(rlsName string, chart *chart.Chart, opts
 
 // GetVersion returns the server version.
 func (h *Client) GetVersion(opts ...VersionOption) (*rls.GetVersionResponse, error) {
-	reqOpts := h.opts
 	for _, opt := range opts {
-		opt(&reqOpts)
+		opt(&h.opts)
 	}
 	req := &rls.GetVersionRequest{}
 	ctx := NewContext()
 
-	if reqOpts.before != nil {
-		if err := reqOpts.before(ctx, req); err != nil {
+	if h.opts.before != nil {
+		if err := h.opts.before(ctx, req); err != nil {
 			return nil, err
 		}
 	}
@@ -204,20 +199,19 @@ func (h *Client) GetVersion(opts ...VersionOption) (*rls.GetVersionResponse, err
 
 // RollbackRelease rolls back a release to the previous version.
 func (h *Client) RollbackRelease(rlsName string, opts ...RollbackOption) (*rls.RollbackReleaseResponse, error) {
-	reqOpts := h.opts
 	for _, opt := range opts {
-		opt(&reqOpts)
+		opt(&h.opts)
 	}
-	req := &reqOpts.rollbackReq
-	req.Recreate = reqOpts.recreate
-	req.Force = reqOpts.force
-	req.DisableHooks = reqOpts.disableHooks
-	req.DryRun = reqOpts.dryRun
+	req := &h.opts.rollbackReq
+	req.Recreate = h.opts.recreate
+	req.Force = h.opts.force
+	req.DisableHooks = h.opts.disableHooks
+	req.DryRun = h.opts.dryRun
 	req.Name = rlsName
 	ctx := NewContext()
 
-	if reqOpts.before != nil {
-		if err := reqOpts.before(ctx, req); err != nil {
+	if h.opts.before != nil {
+		if err := h.opts.before(ctx, req); err != nil {
 			return nil, err
 		}
 	}
@@ -226,16 +220,15 @@ func (h *Client) RollbackRelease(rlsName string, opts ...RollbackOption) (*rls.R
 
 // ReleaseStatus returns the given release's status.
 func (h *Client) ReleaseStatus(rlsName string, opts ...StatusOption) (*rls.GetReleaseStatusResponse, error) {
-	reqOpts := h.opts
 	for _, opt := range opts {
-		opt(&reqOpts)
+		opt(&h.opts)
 	}
-	req := &reqOpts.statusReq
+	req := &h.opts.statusReq
 	req.Name = rlsName
 	ctx := NewContext()
 
-	if reqOpts.before != nil {
-		if err := reqOpts.before(ctx, req); err != nil {
+	if h.opts.before != nil {
+		if err := h.opts.before(ctx, req); err != nil {
 			return nil, err
 		}
 	}
@@ -244,16 +237,15 @@ func (h *Client) ReleaseStatus(rlsName string, opts ...StatusOption) (*rls.GetRe
 
 // ReleaseContent returns the configuration for a given release.
 func (h *Client) ReleaseContent(rlsName string, opts ...ContentOption) (*rls.GetReleaseContentResponse, error) {
-	reqOpts := h.opts
 	for _, opt := range opts {
-		opt(&reqOpts)
+		opt(&h.opts)
 	}
-	req := &reqOpts.contentReq
+	req := &h.opts.contentReq
 	req.Name = rlsName
 	ctx := NewContext()
 
-	if reqOpts.before != nil {
-		if err := reqOpts.before(ctx, req); err != nil {
+	if h.opts.before != nil {
+		if err := h.opts.before(ctx, req); err != nil {
 			return nil, err
 		}
 	}
@@ -262,17 +254,16 @@ func (h *Client) ReleaseContent(rlsName string, opts ...ContentOption) (*rls.Get
 
 // ReleaseHistory returns a release's revision history.
 func (h *Client) ReleaseHistory(rlsName string, opts ...HistoryOption) (*rls.GetHistoryResponse, error) {
-	reqOpts := h.opts
 	for _, opt := range opts {
-		opt(&reqOpts)
+		opt(&h.opts)
 	}
 
-	req := &reqOpts.histReq
+	req := &h.opts.histReq
 	req.Name = rlsName
 	ctx := NewContext()
 
-	if reqOpts.before != nil {
-		if err := reqOpts.before(ctx, req); err != nil {
+	if h.opts.before != nil {
+		if err := h.opts.before(ctx, req); err != nil {
 			return nil, err
 		}
 	}
@@ -281,22 +272,15 @@ func (h *Client) ReleaseHistory(rlsName string, opts ...HistoryOption) (*rls.Get
 
 // RunReleaseTest executes a pre-defined test on a release.
 func (h *Client) RunReleaseTest(rlsName string, opts ...ReleaseTestOption) (<-chan *rls.TestReleaseResponse, <-chan error) {
-	reqOpts := h.opts
 	for _, opt := range opts {
-		opt(&reqOpts)
+		opt(&h.opts)
 	}
 
-	req := &reqOpts.testReq
+	req := &h.opts.testReq
 	req.Name = rlsName
 	ctx := NewContext()
 
 	return h.test(ctx, req)
-}
-
-// PingTiller pings the Tiller pod and ensure's that it is up and running
-func (h *Client) PingTiller() error {
-	ctx := NewContext()
-	return h.ping(ctx)
 }
 
 // connect returns a gRPC connection to Tiller or error. The gRPC dial options
@@ -305,11 +289,6 @@ func (h *Client) connect(ctx context.Context) (conn *grpc.ClientConn, err error)
 	opts := []grpc.DialOption{
 		grpc.WithTimeout(5 * time.Second),
 		grpc.WithBlock(),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			// Send keepalive every 30 seconds to prevent the connection from
-			// getting closed by upstreams
-			Time: time.Duration(30) * time.Second,
-		}),
 	}
 	switch {
 	case h.opts.useTLS:
@@ -472,16 +451,4 @@ func (h *Client) test(ctx context.Context, req *rls.TestReleaseRequest) (<-chan 
 	}()
 
 	return ch, errc
-}
-
-// Executes tiller.Ping RPC.
-func (h *Client) ping(ctx context.Context) error {
-	c, err := h.connect(ctx)
-	if err != nil {
-		return err
-	}
-	defer c.Close()
-
-	rlc := rls.NewReleaseServiceClient(c)
-	return rlc.PingTiller(ctx)
 }

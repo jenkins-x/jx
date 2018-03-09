@@ -1,5 +1,5 @@
-hash: f2dbdfd257a7e2e0b2612d41002fd9020f6b789c43e16c221c57ea8edb055f29
-updated: 2018-02-24T19:02:47.293462Z
+hash: 4567a914b29cfbe9030d5fe256686e3460d666591ab29cfaef9a31e713e05440
+updated: 2018-03-09T13:14:29.896271181Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,9 +7,13 @@ imports:
   - compute/metadata
   - internal
 - name: code.gitea.io/sdk
-  version: 649bdad70e16f58154dd6d765bb09f99dfaa105d
+  version: a184f2d3343623c67b835a51ab1685b568016fd9
   subpackages:
   - gitea
+- name: github.com/Azure/draft
+  version: 90e687c7517f0db323d22c1f4fafb2bb08040a9c
+  subpackages:
+  - pkg/osutil
 - name: github.com/Azure/go-autorest
   version: e14a70c556c8e0db173358d1a903dca345a8e75e
   subpackages:
@@ -18,11 +22,11 @@ imports:
   - autorest/azure
   - autorest/date
 - name: github.com/blang/semver
-  version: a088618caaf34f5392024fc3386143873033fbea
+  version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/chromedp/cdproto
-  version: 6213fdcf29aa52c6d52bc5c7e0c38dd172ea6fa6
+  version: a261ca3d715b95a176019a0f3236b545b8df7733
   subpackages:
   - accessibility
   - animation
@@ -63,7 +67,7 @@ imports:
   - tethering
   - tracing
 - name: github.com/chromedp/chromedp
-  version: 54f529fc51b0af6fcec693d0bda2c3f5068fa738
+  version: 097f1903e5193f8dfa6447d201d79fe51c255b39
   subpackages:
   - client
   - kb
@@ -79,7 +83,9 @@ imports:
 - name: github.com/dgrijalva/jwt-go
   version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
 - name: github.com/disintegration/imaging
-  version: 1884593a19ddc6f2ea050403430d02c1d0fc1283
+  version: b039796423f87e7caca7f8eaace36878f2cce73d
+- name: github.com/facebookgo/symwalk
+  version: 42004b9f322246749dd73ad71008b1f3160c0052
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
 - name: github.com/ghodss/yaml
@@ -110,7 +116,7 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: b1658317c4f5c8dd7000d94ab8a9b56039412cc6
+  version: e48060a28fac52d0f1cb758bc8b87c07bac4a87d
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -135,7 +141,7 @@ imports:
   - openstack/utils
   - pagination
 - name: github.com/gorilla/websocket
-  version: f37d1588608ec036fa9b0b7b8afbde47dc06aea9
+  version: eb925808374e5ca90c83401a40d711dc08c0c0f6
 - name: github.com/hashicorp/golang-lru
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   subpackages:
@@ -151,11 +157,11 @@ imports:
   subpackages:
   - io
 - name: github.com/jenkins-x/chyle
-  version: e87e54eb726d2ed4d06d754a2aab47f3b3dbb8dc
+  version: 68f7a93a63ec3c6485c01103b85f608d0dd2ca97
   subpackages:
   - chyle/git
 - name: github.com/jenkins-x/golang-jenkins
-  version: ec7a97e4a0d7bfebfacb5818e70b77744d9f4d6d
+  version: abbc6a467e12819e13d419e9c89f253bf30b0a66
 - name: github.com/json-iterator/go
   version: 13f86432b882000a51c6e610c620974462691a97
 - name: github.com/juju/ratelimit
@@ -163,17 +169,15 @@ imports:
 - name: github.com/kevinburke/ssh_config
   version: 0ff8514904a8ebfcfb3c32ad73e1f8498a7f81b4
 - name: github.com/knq/sysutil
-  version: 840643935d35cb81c833b4c142357dc9d519e390
+  version: 0218e141a794643e8c0fa283b9cd076fc0df662d
 - name: github.com/mailru/easyjson
-  version: 32fa128f234d041f196a9f3e0fea5ac9772c08e1
+  version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
   subpackages:
   - buffer
   - jlexer
   - jwriter
 - name: github.com/MakeNowJust/heredoc
-  version: e9091a26100e9cfb2b6a8f470085bfa541931a91
-- name: github.com/Masterminds/semver
-  version: 517734cc7d6470c0d07130e40fd40bdeb9bcd3fd
+  version: bb23615498cded5e105af4ce27de75b089cbe851
 - name: github.com/mattn/go-colorable
   version: 5411d3eea5978e6cdc258b30de592b60df6aba96
   repo: https://github.com/mattn/go-colorable
@@ -192,14 +196,19 @@ imports:
   version: e2f66f8164ca709d4c21e815860afd2024e9b894
 - name: github.com/pkg/browser
   version: c90ca0c84f15f81c982e32665bffd8d7aac8f097
+- name: github.com/rawlingsj/draft
+  version: 054949842ca030db8b469eb96ee2465d7794271a
+  subpackages:
+  - pkg/draft/draftpath
+  - pkg/draft/pack
 - name: github.com/russross/blackfriday
   version: 4048872b16cc0fc2c5fd9eacf0ed2c2fedaa0c8c
 - name: github.com/sergi/go-diff
-  version: da645544ed44df016359bd4c0e3dc60ee3a0da43
+  version: 217d392c389de447c964f954cc5e4774cde4b66b
   subpackages:
   - diffmatchpatch
 - name: github.com/spf13/cobra
-  version: a1e4933ab784095895e33dbe9f001ba10cfe2060
+  version: 9495bc009a56819bdb0ddbc1a373e29c140bc674
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -276,6 +285,8 @@ imports:
   - internal/log
   - internal/modules
   - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
 - name: gopkg.in/AlecAivazis/survey.v1
   version: 0aa8b6a162b391fe2d95648b7677d1d6ac2090a6
   subpackages:
@@ -284,7 +295,7 @@ imports:
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/src-d/go-billy.v4
-  version: 027dceab1aa836eb310d92c2eb2266e4dc9f4b81
+  version: e940f8b62a8e61adc71f69802c1cc8305b64ec96
   subpackages:
   - helper/chroot
   - helper/polyfill
@@ -333,9 +344,9 @@ imports:
   - utils/merkletrie/internal/frame
   - utils/merkletrie/noder
 - name: gopkg.in/warnings.v0
-  version: ec4a0fea49c7b46c2aeb0b51aac55779c607e52b
+  version: 8a331561fe74dadba6edfc59f3be66c22c3b065d
 - name: gopkg.in/yaml.v2
-  version: 670d4cfef0544295bc27a114dbac37980d83185a
+  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
   version: fbe336854453ac8e27bffe14e1964555245cbd05
   subpackages:
@@ -368,7 +379,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 90a5ba227a3ae6414796a5f2910638c3011af740
+  version: 27d22a50314782b60cbb150b34dd1ba8e0c8d55c
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -480,20 +491,18 @@ imports:
   - util/jsonpath
   - util/retry
 - name: k8s.io/code-generator
-  version: ac34b62827a65b275fbefe8e041d6f7dcf1f3438
+  version: 64ca0808efd56c2418939848947c06b8d495144d
 - name: k8s.io/gengo
-  version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
+  version: 8394c995ab8fbe52216f38d0e1a37de36d820528
 - name: k8s.io/helm
-  version: d0883dd8138947772239c25e212926d1afb1fcef
+  version: 1dbbace83192680134c96861742cedda243fcd7e
   subpackages:
   - pkg/chartutil
   - pkg/ignore
   - pkg/proto/hapi/chart
   - pkg/proto/hapi/version
-  - pkg/sympath
-  - pkg/version
 - name: k8s.io/metrics
-  version: 56681397367c271f0ee7c5e25d670f4384d0cf3f
+  version: a51d59ae25bec1b94f00be3fe970268aed3eadfa
   subpackages:
   - pkg/apis/metrics
   - pkg/apis/metrics/v1alpha1
@@ -508,6 +517,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: be8372ae8ec5c6daaed3cc28ebf73c54b737c240
+  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
   subpackages:
   - assert

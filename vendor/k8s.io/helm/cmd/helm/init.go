@@ -17,8 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -28,10 +26,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/helm/cmd/helm/installer"
 	"k8s.io/helm/pkg/getter"
-	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/helm/helmpath"
 	"k8s.io/helm/pkg/repo"
 )
@@ -77,16 +73,13 @@ type initCmd struct {
 	upgrade        bool
 	namespace      string
 	dryRun         bool
-	forceUpgrade   bool
 	skipRefresh    bool
 	out            io.Writer
-	client         helm.Interface
 	home           helmpath.Home
 	opts           installer.Options
 	kubeClient     kubernetes.Interface
 	serviceAccount string
 	maxHistory     int
-	wait           bool
 }
 
 func newInitCmd(out io.Writer) *cobra.Command {
@@ -102,8 +95,6 @@ func newInitCmd(out io.Writer) *cobra.Command {
 			}
 			i.namespace = settings.TillerNamespace
 			i.home = settings.Home
-			i.client = ensureHelmClient(i.client)
-
 			return i.run()
 		},
 	}
@@ -112,11 +103,9 @@ func newInitCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&i.image, "tiller-image", "i", "", "override Tiller image")
 	f.BoolVar(&i.canary, "canary-image", false, "use the canary Tiller image")
 	f.BoolVar(&i.upgrade, "upgrade", false, "upgrade if Tiller is already installed")
-	f.BoolVar(&i.forceUpgrade, "force-upgrade", false, "force upgrade of Tiller to the current helm version")
 	f.BoolVarP(&i.clientOnly, "client-only", "c", false, "if set does not install Tiller")
 	f.BoolVar(&i.dryRun, "dry-run", false, "do not install local or remote")
 	f.BoolVar(&i.skipRefresh, "skip-refresh", false, "do not refresh (download) the local repository cache")
-	f.BoolVar(&i.wait, "wait", false, "block until Tiller is running and ready to receive requests")
 
 	f.BoolVar(&tlsEnable, "tiller-tls", false, "install Tiller with TLS enabled")
 	f.BoolVar(&tlsVerify, "tiller-tls-verify", false, "install Tiller with TLS enabled and to verify remote certificates")
@@ -130,10 +119,6 @@ func newInitCmd(out io.Writer) *cobra.Command {
 	f.BoolVar(&i.opts.EnableHostNetwork, "net-host", false, "install Tiller with net=host")
 	f.StringVar(&i.serviceAccount, "service-account", "", "name of service account")
 	f.IntVar(&i.maxHistory, "history-max", 0, "limit the maximum number of revisions saved per release. Use 0 for no limit.")
-
-	f.StringVar(&i.opts.NodeSelectors, "node-selectors", "", "labels to specify the node on which Tiller is installed (app=tiller,helm=rocks)")
-	f.VarP(&i.opts.Output, "output", "o", "skip installation and output Tiller's manifest in specified format (json or yaml)")
-	f.StringArrayVar(&i.opts.Values, "override", []string{}, "override values for the Tiller Deployment manifest (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 
 	return cmd
 }
@@ -172,70 +157,34 @@ func (i *initCmd) run() error {
 	i.opts.Namespace = i.namespace
 	i.opts.UseCanary = i.canary
 	i.opts.ImageSpec = i.image
-	i.opts.ForceUpgrade = i.forceUpgrade
 	i.opts.ServiceAccount = i.serviceAccount
 	i.opts.MaxHistory = i.maxHistory
 
-	writeYAMLManifest := func(apiVersion, kind, body string, first, last bool) error {
-		w := i.out
-		if !first {
-			// YAML starting document boundary marker
-			if _, err := fmt.Fprintln(w, "---"); err != nil {
-				return err
-			}
-		}
-		if _, err := fmt.Fprintln(w, "apiVersion:", apiVersion); err != nil {
-			return err
-		}
-		if _, err := fmt.Fprintln(w, "kind:", kind); err != nil {
-			return err
-		}
-		if _, err := fmt.Fprint(w, body); err != nil {
-			return err
-		}
-		if !last {
-			return nil
-		}
-		// YAML ending document boundary marker
-		_, err := fmt.Fprintln(w, "...")
-		return err
-	}
-	if len(i.opts.Output) > 0 {
-		var body string
-		var err error
-		const tm = `{"apiVersion":"extensions/v1beta1","kind":"Deployment",`
-		if body, err = installer.DeploymentManifest(&i.opts); err != nil {
-			return err
-		}
-		switch i.opts.Output.String() {
-		case "json":
-			var out bytes.Buffer
-			jsonb, err := yaml.ToJSON([]byte(body))
-			if err != nil {
-				return err
-			}
-			buf := bytes.NewBuffer(make([]byte, 0, len(tm)+len(jsonb)-1))
-			buf.WriteString(tm)
-			// Drop the opening object delimiter ('{').
-			buf.Write(jsonb[1:])
-			if err := json.Indent(&out, buf.Bytes(), "", "    "); err != nil {
-				return err
-			}
-			if _, err = i.out.Write(out.Bytes()); err != nil {
-				return err
-			}
-
-			return nil
-		case "yaml":
-			if err := writeYAMLManifest("extensions/v1beta1", "Deployment", body, true, false); err != nil {
-				return err
-			}
-			return nil
-		default:
-			return fmt.Errorf("unknown output format: %q", i.opts.Output)
-		}
-	}
 	if settings.Debug {
+		writeYAMLManifest := func(apiVersion, kind, body string, first, last bool) error {
+			w := i.out
+			if !first {
+				// YAML starting document boundary marker
+				if _, err := fmt.Fprintln(w, "---"); err != nil {
+					return err
+				}
+			}
+			if _, err := fmt.Fprintln(w, "apiVersion:", apiVersion); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintln(w, "kind:", kind); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprint(w, body); err != nil {
+				return err
+			}
+			if !last {
+				return nil
+			}
+			// YAML ending document boundary marker
+			_, err := fmt.Fprintln(w, "...")
+			return err
+		}
 
 		var body string
 		var err error
@@ -298,18 +247,12 @@ func (i *initCmd) run() error {
 				if err := installer.Upgrade(i.kubeClient, &i.opts); err != nil {
 					return fmt.Errorf("error when upgrading: %s", err)
 				}
-				if err := i.ping(); err != nil {
-					return err
-				}
 				fmt.Fprintln(i.out, "\nTiller (the Helm server-side component) has been upgraded to the current version.")
 			} else {
 				fmt.Fprintln(i.out, "Warning: Tiller is already installed in the cluster.\n"+
 					"(Use --client-only to suppress this message, or --upgrade to upgrade Tiller to the current version.)")
 			}
 		} else {
-			if err := i.ping(); err != nil {
-				return err
-			}
 			fmt.Fprintln(i.out, "\nTiller (the Helm server-side component) has been installed into your Kubernetes Cluster.")
 		}
 	} else {
@@ -317,16 +260,6 @@ func (i *initCmd) run() error {
 	}
 
 	fmt.Fprintln(i.out, "Happy Helming!")
-	return nil
-}
-
-func (i *initCmd) ping() error {
-	if i.wait {
-		if err := i.client.PingTiller(); err != nil {
-			return fmt.Errorf("could not ping Tiller: %s", err)
-		}
-	}
-
 	return nil
 }
 
@@ -362,11 +295,11 @@ func ensureDefaultRepos(home helmpath.Home, out io.Writer, skipRefresh bool) err
 	if fi, err := os.Stat(repoFile); err != nil {
 		fmt.Fprintf(out, "Creating %s \n", repoFile)
 		f := repo.NewRepoFile()
-		sr, err := initStableRepo(home.CacheIndex(stableRepository), out, skipRefresh)
+		sr, err := initStableRepo(home.CacheIndex(stableRepository), skipRefresh)
 		if err != nil {
 			return err
 		}
-		lr, err := initLocalRepo(home.LocalRepository(localRepositoryIndexFile), home.CacheIndex("local"), out)
+		lr, err := initLocalRepo(home.LocalRepository(localRepositoryIndexFile), home.CacheIndex("local"))
 		if err != nil {
 			return err
 		}
@@ -381,8 +314,7 @@ func ensureDefaultRepos(home helmpath.Home, out io.Writer, skipRefresh bool) err
 	return nil
 }
 
-func initStableRepo(cacheFile string, out io.Writer, skipRefresh bool) (*repo.Entry, error) {
-	fmt.Fprintf(out, "Adding %s repo with URL: %s \n", stableRepository, stableRepositoryURL)
+func initStableRepo(cacheFile string, skipRefresh bool) (*repo.Entry, error) {
 	c := repo.Entry{
 		Name:  stableRepository,
 		URL:   stableRepositoryURL,
@@ -406,16 +338,15 @@ func initStableRepo(cacheFile string, out io.Writer, skipRefresh bool) (*repo.En
 	return &c, nil
 }
 
-func initLocalRepo(indexFile, cacheFile string, out io.Writer) (*repo.Entry, error) {
+func initLocalRepo(indexFile, cacheFile string) (*repo.Entry, error) {
 	if fi, err := os.Stat(indexFile); err != nil {
-		fmt.Fprintf(out, "Adding %s repo with URL: %s \n", localRepository, localRepositoryURL)
 		i := repo.NewIndexFile()
 		if err := i.WriteFile(indexFile, 0644); err != nil {
 			return nil, err
 		}
 
 		//TODO: take this out and replace with helm update functionality
-		createLink(indexFile, cacheFile)
+		os.Symlink(indexFile, cacheFile)
 	} else if fi.IsDir() {
 		return nil, fmt.Errorf("%s must be a file, not a directory", indexFile)
 	}

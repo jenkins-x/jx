@@ -21,7 +21,6 @@ limitations under the License.
 package metrics
 
 import (
-	v1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -30,7 +29,7 @@ func (in *ContainerMetrics) DeepCopyInto(out *ContainerMetrics) {
 	*out = *in
 	if in.Usage != nil {
 		in, out := &in.Usage, &out.Usage
-		*out = make(v1.ResourceList, len(*in))
+		*out = make(ResourceList, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val.DeepCopy()
 		}
@@ -57,7 +56,7 @@ func (in *NodeMetrics) DeepCopyInto(out *NodeMetrics) {
 	out.Window = in.Window
 	if in.Usage != nil {
 		in, out := &in.Usage, &out.Usage
-		*out = make(v1.ResourceList, len(*in))
+		*out = make(ResourceList, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val.DeepCopy()
 		}

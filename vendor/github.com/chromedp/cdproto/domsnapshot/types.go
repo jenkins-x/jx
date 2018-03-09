@@ -33,6 +33,7 @@ type DOMNode struct {
 	ImportedDocumentIndex int64                        `json:"importedDocumentIndex,omitempty"` // Index of the imported document's node of a link element in the domNodes array returned by getSnapshot, if any.
 	TemplateContentIndex  int64                        `json:"templateContentIndex,omitempty"`  // Index of the content node of a template element in the domNodes array returned by getSnapshot.
 	PseudoType            cdp.PseudoType               `json:"pseudoType,omitempty"`            // Type of a pseudo element node.
+	ShadowRootType        cdp.ShadowRootType           `json:"shadowRootType,omitempty"`        // Shadow root type.
 	IsClickable           bool                         `json:"isClickable,omitempty"`           // Whether this DOM node responds to mouse clicks. This includes nodes that have had click event listeners attached via JavaScript as well as anchor tags that naturally navigate when clicked.
 	EventListeners        []*domdebugger.EventListener `json:"eventListeners,omitempty"`        // Details of the node's event listeners, if any.
 	CurrentSourceURL      string                       `json:"currentSourceURL,omitempty"`      // The selected url for nodes with a srcset attribute.

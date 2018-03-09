@@ -210,6 +210,19 @@ type PlatformFontUsage struct {
 	GlyphCount   float64 `json:"glyphCount"`   // Amount of glyphs that were rendered with this font.
 }
 
+// FontFace properties of a web font:
+// https://www.w3.org/TR/2008/REC-CSS2-20080411/fonts.html#font-descriptions.
+type FontFace struct {
+	FontFamily         string `json:"fontFamily"`         // The font-family.
+	FontStyle          string `json:"fontStyle"`          // The font-style.
+	FontVariant        string `json:"fontVariant"`        // The font-variant.
+	FontWeight         string `json:"fontWeight"`         // The font-weight.
+	FontStretch        string `json:"fontStretch"`        // The font-stretch.
+	UnicodeRange       string `json:"unicodeRange"`       // The unicode-range.
+	Src                string `json:"src"`                // The src.
+	PlatformFontFamily string `json:"platformFontFamily"` // The resolved platform font family
+}
+
 // KeyframesRule CSS keyframes rule representation.
 type KeyframesRule struct {
 	AnimationName *Value          `json:"animationName"` // Animation name.

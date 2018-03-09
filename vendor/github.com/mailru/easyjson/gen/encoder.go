@@ -33,18 +33,16 @@ var primitiveEncoders = map[reflect.Kind]string{
 }
 
 var primitiveStringEncoders = map[reflect.Kind]string{
-	reflect.String:  "out.String(string(%v))",
-	reflect.Int:     "out.IntStr(int(%v))",
-	reflect.Int8:    "out.Int8Str(int8(%v))",
-	reflect.Int16:   "out.Int16Str(int16(%v))",
-	reflect.Int32:   "out.Int32Str(int32(%v))",
-	reflect.Int64:   "out.Int64Str(int64(%v))",
-	reflect.Uint:    "out.UintStr(uint(%v))",
-	reflect.Uint8:   "out.Uint8Str(uint8(%v))",
-	reflect.Uint16:  "out.Uint16Str(uint16(%v))",
-	reflect.Uint32:  "out.Uint32Str(uint32(%v))",
-	reflect.Uint64:  "out.Uint64Str(uint64(%v))",
-	reflect.Uintptr: "out.UintptrStr(uintptr(%v))",
+	reflect.Int:    "out.IntStr(int(%v))",
+	reflect.Int8:   "out.Int8Str(int8(%v))",
+	reflect.Int16:  "out.Int16Str(int16(%v))",
+	reflect.Int32:  "out.Int32Str(int32(%v))",
+	reflect.Int64:  "out.Int64Str(int64(%v))",
+	reflect.Uint:   "out.UintStr(uint(%v))",
+	reflect.Uint8:  "out.Uint8Str(uint8(%v))",
+	reflect.Uint16: "out.Uint16Str(uint16(%v))",
+	reflect.Uint32: "out.Uint32Str(uint32(%v))",
+	reflect.Uint64: "out.Uint64Str(uint64(%v))",
 }
 
 // fieldTags contains parsed version of json struct field tags.
@@ -83,7 +81,7 @@ func parseFieldTags(f reflect.StructField) fieldTags {
 }
 
 // genTypeEncoder generates code that encodes in of type t into the writer, but uses marshaler interface if implemented by t.
-func (g *Generator) genTypeEncoder(t reflect.Type, in string, tags fieldTags, indent int, assumeNonEmpty bool) error {
+func (g *Generator) genTypeEncoder(t reflect.Type, in string, tags fieldTags, indent int) error {
 	ws := strings.Repeat("  ", indent)
 
 	marshalerIface := reflect.TypeOf((*easyjson.Marshaler)(nil)).Elem()
@@ -104,12 +102,12 @@ func (g *Generator) genTypeEncoder(t reflect.Type, in string, tags fieldTags, in
 		return nil
 	}
 
-	err := g.genTypeEncoderNoCheck(t, in, tags, indent, assumeNonEmpty)
+	err := g.genTypeEncoderNoCheck(t, in, tags, indent)
 	return err
 }
 
 // genTypeEncoderNoCheck generates code that encodes in of type t into the writer.
-func (g *Generator) genTypeEncoderNoCheck(t reflect.Type, in string, tags fieldTags, indent int, assumeNonEmpty bool) error {
+func (g *Generator) genTypeEncoderNoCheck(t reflect.Type, in string, tags fieldTags, indent int) error {
 	ws := strings.Repeat("  ", indent)
 
 	// Check whether type is primitive, needs to be done after interface check.
@@ -130,22 +128,16 @@ func (g *Generator) genTypeEncoderNoCheck(t reflect.Type, in string, tags fieldT
 		if t.Elem().Kind() == reflect.Uint8 {
 			fmt.Fprintln(g.out, ws+"out.Base64Bytes("+in+")")
 		} else {
-			if !assumeNonEmpty {
-				fmt.Fprintln(g.out, ws+"if "+in+" == nil && (out.Flags & jwriter.NilSliceAsEmpty) == 0 {")
-				fmt.Fprintln(g.out, ws+`  out.RawString("null")`)
-				fmt.Fprintln(g.out, ws+"} else {")
-			} else {
-				fmt.Fprintln(g.out, ws+"{")
-			}
+			fmt.Fprintln(g.out, ws+"if "+in+" == nil && (out.Flags & jwriter.NilSliceAsEmpty) == 0 {")
+			fmt.Fprintln(g.out, ws+`  out.RawString("null")`)
+			fmt.Fprintln(g.out, ws+"} else {")
 			fmt.Fprintln(g.out, ws+"  out.RawByte('[')")
 			fmt.Fprintln(g.out, ws+"  for "+iVar+", "+vVar+" := range "+in+" {")
 			fmt.Fprintln(g.out, ws+"    if "+iVar+" > 0 {")
 			fmt.Fprintln(g.out, ws+"      out.RawByte(',')")
 			fmt.Fprintln(g.out, ws+"    }")
 
-			if err := g.genTypeEncoder(elem, vVar, tags, indent+2, false); err != nil {
-				return err
-			}
+			g.genTypeEncoder(elem, vVar, tags, indent+2)
 
 			fmt.Fprintln(g.out, ws+"  }")
 			fmt.Fprintln(g.out, ws+"  out.RawByte(']')")
@@ -165,9 +157,7 @@ func (g *Generator) genTypeEncoderNoCheck(t reflect.Type, in string, tags fieldT
 			fmt.Fprintln(g.out, ws+"    out.RawByte(',')")
 			fmt.Fprintln(g.out, ws+"  }")
 
-			if err := g.genTypeEncoder(elem, in+"["+iVar+"]", tags, indent+1, false); err != nil {
-				return err
-			}
+			g.genTypeEncoder(elem, in+"["+iVar+"]", tags, indent+1)
 
 			fmt.Fprintln(g.out, ws+"}")
 			fmt.Fprintln(g.out, ws+"out.RawByte(']')")
@@ -180,45 +170,33 @@ func (g *Generator) genTypeEncoderNoCheck(t reflect.Type, in string, tags fieldT
 		fmt.Fprintln(g.out, ws+enc+"(out, "+in+")")
 
 	case reflect.Ptr:
-		if !assumeNonEmpty {
-			fmt.Fprintln(g.out, ws+"if "+in+" == nil {")
-			fmt.Fprintln(g.out, ws+`  out.RawString("null")`)
-			fmt.Fprintln(g.out, ws+"} else {")
-		}
+		fmt.Fprintln(g.out, ws+"if "+in+" == nil {")
+		fmt.Fprintln(g.out, ws+`  out.RawString("null")`)
+		fmt.Fprintln(g.out, ws+"} else {")
 
-		if err := g.genTypeEncoder(t.Elem(), "*"+in, tags, indent+1, false); err != nil {
-			return err
-		}
+		g.genTypeEncoder(t.Elem(), "*"+in, tags, indent+1)
 
-		if !assumeNonEmpty {
-			fmt.Fprintln(g.out, ws+"}")
-		}
+		fmt.Fprintln(g.out, ws+"}")
 
 	case reflect.Map:
 		key := t.Key()
-		keyEnc, ok := primitiveStringEncoders[key.Kind()]
-		if !ok {
-			return fmt.Errorf("map key type %v not supported: only string and integer keys are allowed", key)
+		if key.Kind() != reflect.String {
+			return fmt.Errorf("map type %v not supported: only string keys are allowed", key)
 		}
 		tmpVar := g.uniqueVarName()
 
-		if !assumeNonEmpty {
-			fmt.Fprintln(g.out, ws+"if "+in+" == nil && (out.Flags & jwriter.NilMapAsEmpty) == 0 {")
-			fmt.Fprintln(g.out, ws+"  out.RawString(`null`)")
-			fmt.Fprintln(g.out, ws+"} else {")
-		} else {
-			fmt.Fprintln(g.out, ws+"{")
-		}
+		fmt.Fprintln(g.out, ws+"if "+in+" == nil && (out.Flags & jwriter.NilMapAsEmpty) == 0 {")
+		fmt.Fprintln(g.out, ws+"  out.RawString(`null`)")
+		fmt.Fprintln(g.out, ws+"} else {")
 		fmt.Fprintln(g.out, ws+"  out.RawByte('{')")
 		fmt.Fprintln(g.out, ws+"  "+tmpVar+"First := true")
 		fmt.Fprintln(g.out, ws+"  for "+tmpVar+"Name, "+tmpVar+"Value := range "+in+" {")
-		fmt.Fprintln(g.out, ws+"    if "+tmpVar+"First { "+tmpVar+"First = false } else { out.RawByte(',') }")
-		fmt.Fprintln(g.out, ws+"    "+fmt.Sprintf(keyEnc, tmpVar+"Name"))
+		fmt.Fprintln(g.out, ws+"    if !"+tmpVar+"First { out.RawByte(',') }")
+		fmt.Fprintln(g.out, ws+"    "+tmpVar+"First = false")
+		fmt.Fprintln(g.out, ws+"    out.String(string("+tmpVar+"Name))")
 		fmt.Fprintln(g.out, ws+"    out.RawByte(':')")
 
-		if err := g.genTypeEncoder(t.Elem(), tmpVar+"Value", tags, indent+2, false); err != nil {
-			return err
-		}
+		g.genTypeEncoder(t.Elem(), tmpVar+"Value", tags, indent+2)
 
 		fmt.Fprintln(g.out, ws+"  }")
 		fmt.Fprintln(g.out, ws+"  out.RawByte('}')")
@@ -276,21 +254,19 @@ func (g *Generator) genStructFieldEncoder(t reflect.Type, f reflect.StructField)
 	if tags.omit {
 		return nil
 	}
-	noOmitEmpty := (!tags.omitEmpty && !g.omitEmpty) || tags.noOmitEmpty
-	if noOmitEmpty {
-		fmt.Fprintln(g.out, "  {")
-	} else {
-		fmt.Fprintln(g.out, "  if", g.notEmptyCheck(f.Type, "in."+f.Name), "{")
+	if !tags.omitEmpty && !g.omitEmpty || tags.noOmitEmpty {
+		fmt.Fprintln(g.out, "  if !first { out.RawByte(',') }")
+		fmt.Fprintln(g.out, "  first = false")
+		fmt.Fprintf(g.out, "  out.RawString(%q)\n", strconv.Quote(jsonName)+":")
+		return g.genTypeEncoder(f.Type, "in."+f.Name, tags, 1)
 	}
-	fmt.Fprintf(g.out, "    const prefix string = %q\n", ","+strconv.Quote(jsonName)+":")
-	fmt.Fprintln(g.out, "    if first {")
-	fmt.Fprintln(g.out, "      first = false")
-	fmt.Fprintln(g.out, "      out.RawString(prefix[1:])")
-	fmt.Fprintln(g.out, "    } else {")
-	fmt.Fprintln(g.out, "      out.RawString(prefix)")
-	fmt.Fprintln(g.out, "    }")
 
-	if err := g.genTypeEncoder(f.Type, "in."+f.Name, tags, 2, !noOmitEmpty); err != nil {
+	fmt.Fprintln(g.out, "  if", g.notEmptyCheck(f.Type, "in."+f.Name), "{")
+	fmt.Fprintln(g.out, "    if !first { out.RawByte(',') }")
+	fmt.Fprintln(g.out, "    first = false")
+
+	fmt.Fprintf(g.out, "    out.RawString(%q)\n", strconv.Quote(jsonName)+":")
+	if err := g.genTypeEncoder(f.Type, "in."+f.Name, tags, 2); err != nil {
 		return err
 	}
 	fmt.Fprintln(g.out, "  }")
@@ -317,7 +293,7 @@ func (g *Generator) genSliceArrayMapEncoder(t reflect.Type) error {
 	typ := g.getType(t)
 
 	fmt.Fprintln(g.out, "func "+fname+"(out *jwriter.Writer, in "+typ+") {")
-	err := g.genTypeEncoderNoCheck(t, "in", fieldTags{}, 1, false)
+	err := g.genTypeEncoderNoCheck(t, "in", fieldTags{}, 1)
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,7 @@
 Helm is a tool for managing Kubernetes charts. Charts are packages of
 pre-configured Kubernetes resources.
 
-Use Helm to:
+Use Helm to...
 
 - Find and use [popular software packaged as Kubernetes charts](https://github.com/kubernetes/charts)
 - Share your own applications as Kubernetes charts
@@ -34,10 +34,9 @@ Think of it like apt/yum/homebrew for Kubernetes.
 
 Binary downloads of the Helm client can be found at the following links:
 
-- [OSX](https://kubernetes-helm.storage.googleapis.com/helm-v2.8.1-darwin-amd64.tar.gz)
-- [Linux](https://kubernetes-helm.storage.googleapis.com/helm-v2.8.1-linux-amd64.tar.gz)
-- [Linux 32-bit](https://kubernetes-helm.storage.googleapis.com/helm-v2.8.1-linux-386.tar.gz)
-- [Windows](https://kubernetes-helm.storage.googleapis.com/helm-v2.8.1-windows-amd64.tar.gz)
+- [OSX](https://kubernetes-helm.storage.googleapis.com/helm-v2.6.0-darwin-amd64.tar.gz)
+- [Linux](https://kubernetes-helm.storage.googleapis.com/helm-v2.6.0-linux-amd64.tar.gz)
+- [Linux 32-bit](https://kubernetes-helm.storage.googleapis.com/helm-v2.6.0-linux-386.tar.gz)
 
 Unpack the `helm` binary and add it to your PATH and you are good to go!
 macOS/[homebrew](https://brew.sh/) users can also use `brew install kubernetes-helm`.
@@ -53,7 +52,7 @@ Get started with the [Quick Start guide](https://docs.helm.sh/using_helm/#quicks
 
 ## Roadmap
 
-The [Helm roadmap uses Github milestones](https://github.com/kubernetes/helm/milestones) to track the progress of the project.
+The [Helm roadmap is currently located on the wiki](https://github.com/kubernetes/helm/wiki/Roadmap).
 
 ## Community, discussion, contribution, and support
 
@@ -63,9 +62,7 @@ You can reach the Helm community and developers via the following channels:
   - #helm-users
   - #helm-dev
   - #charts
-- Mailing Lists:
-  - [Helm Mailing List](https://lists.cncf.io/g/cncf-kubernetes-helm)
-  - [Kubernetes SIG Apps Mailing List](https://groups.google.com/forum/#!forum/kubernetes-sig-apps)
+- Mailing List: https://groups.google.com/forum/#!forum/kubernetes-sig-apps
 - Developer Call: Thursdays at 9:30-10:00 Pacific. [https://zoom.us/j/4526666954](https://zoom.us/j/4526666954)
 
 ### Code of conduct

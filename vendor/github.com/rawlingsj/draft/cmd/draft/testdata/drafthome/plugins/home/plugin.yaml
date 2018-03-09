@@ -1,0 +1,4 @@
+name: home
+usage: "home stuff"
+description: "show DRAFT_HOME"
+command: "echo $DRAFT_HOME"

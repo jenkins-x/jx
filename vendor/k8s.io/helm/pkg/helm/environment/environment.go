@@ -28,12 +28,11 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"k8s.io/client-go/util/homedir"
 	"k8s.io/helm/pkg/helm/helmpath"
 )
 
 // DefaultHelmHome is the default HELM_HOME.
-var DefaultHelmHome = filepath.Join(homedir.HomeDir(), ".helm")
+var DefaultHelmHome = filepath.Join("$HOME", ".helm")
 
 // EnvSettings describes all of the environment settings.
 type EnvSettings struct {

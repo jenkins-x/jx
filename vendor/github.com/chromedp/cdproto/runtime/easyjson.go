@@ -3357,6 +3357,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoRuntime29(in *jlexer.Lexer, o
 			out.UserGesture = bool(in.Bool())
 		case "awaitPromise":
 			out.AwaitPromise = bool(in.Bool())
+		case "throwOnSideEffect":
+			out.ThrowOnSideEffect = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -3460,6 +3462,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoRuntime29(out *jwriter.Writer
 			out.RawString(prefix)
 		}
 		out.Bool(bool(in.AwaitPromise))
+	}
+	if in.ThrowOnSideEffect {
+		const prefix string = ",\"throwOnSideEffect\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.ThrowOnSideEffect))
 	}
 	out.RawByte('}')
 }

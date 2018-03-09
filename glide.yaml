@@ -33,6 +33,9 @@ import:
 - package: github.com/russross/blackfriday
   version: v1.5
 - package: github.com/jenkins-x/chyle
+- package: github.com/rawlingsj/draft
+- package: github.com/pelletier/go-buffruneio
+  version: e2f66f8164ca709d4c21e815860afd2024e9b894
 testImport:
 - package: github.com/stretchr/testify
   subpackages:
