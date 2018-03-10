@@ -45,9 +45,9 @@ func NewCmdDeleteEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	}
 
 	cmd := &cobra.Command{
-		Use:     "env",
+		Use:     "environment",
 		Short:   "Deletes one or more environments",
-		Aliases: []string{"environment"},
+		Aliases: []string{"env"},
 		Long:    delete_env_long,
 		Example: delete_env_example,
 		Run: func(cmd *cobra.Command, args []string) {

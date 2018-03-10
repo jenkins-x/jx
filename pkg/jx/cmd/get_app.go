@@ -47,9 +47,9 @@ func NewCmdGetVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 		},
 	}
 	cmd := &cobra.Command{
-		Use:     "apps",
+		Use:     "applications",
 		Short:   "Display one or many Applications and their versions",
-		Aliases: []string{"app", "version", "versions"},
+		Aliases: []string{"app", "apps", "version", "versions"},
 		Long:    get_version_long,
 		Example: get_version_example,
 		Run: func(cmd *cobra.Command, args []string) {
