@@ -26,6 +26,7 @@ import (
 )
 
 const (
+	PlaceHolder             = "REPLACE_ME"
 	DefaultWritePermissions = 0760
 
 	defaultGitIgnoreFile = `
@@ -37,122 +38,6 @@ const (
 *.im?
 target
 work
-`
-
-	// TODO figure out how to pass extra dockerfiles from a draft pack
-	defaultDockerfile = `
-FROM openjdk:8-jdk-alpine
-ENV PORT 8080
-EXPOSE 8080
-COPY target/*.jar /opt/app.jar
-WORKDIR /opt
-CMD ["java", "-jar", "app.jar"]
-`
-
-	// TODO replace with the jx-pipelines-plugin version when its available
-	defaultJenkinsfile = `
-pipeline {
-    agent {
-      label "jenkins-maven"
-    }
-
-    environment {
-      ORG 		        = 'jenkinsx'
-      APP_NAME          = '%s'
-      GIT_CREDS         = credentials('jenkins-x-git')
-      CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
-
-      GIT_USERNAME      = "$GIT_CREDS_USR"
-      GIT_API_TOKEN     = "$GIT_CREDS_PSW"
-      JOB_NAME          = "$JOB_NAME"
-      BUILD_NUMBER      = "$BUILD_NUMBER"
-      BUILD_LOG_URL     = "$BUILD_LOG_URL"
-      BUILD_URL         = "$BUILD_URL"
-    }
-
-    stages {
-      stage('CI Build and push snapshpt') {
-        when {
-          branch 'PR-*'
-        }
-        environment {
-          PREVIEW_VERSION = "0.0.0-SNAPSHOT-$BRANCH_NAME-$BUILD_NUMBER"
-          PREVIEW_NAMESPACE = "$APP_NAME-$BRANCH_NAME".toLowerCase()
-          HELM_RELEASE = "$PREVIEW_NAMESPACE".toLowerCase()
-        }
-        steps {
-          container('maven') {
-            sh "mvn versions:set -DnewVersion=$PREVIEW_VERSION"
-            sh "mvn install"
-            sh "docker build -f Dockerfile.release -t $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:$PREVIEW_VERSION ."
-            sh "docker push $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:$PREVIEW_VERSION"
-          }
-
-		  // comment out until draft pack includes preview environment charts
-          //dir ('./charts/preview') {
-          //  container('maven') {
-          //    sh "make preview"
-          //  }
-          //}
-        }
-      }
-
-      stage('Build Release') {
-        when {
-          branch 'master'
-        }
-        steps {
-          container('maven') {
-            // ensure we're not on a detached head
-            sh "git checkout master"
-
-            // until we switch to the new kubernetes / jenkins credential implementation use git credentials store
-            sh "git config --global credential.helper store"
-
-            // so we can retrieve the version in later steps
-            sh "echo \$(jx-release-version) > VERSION"
-            sh "mvn versions:set -DnewVersion=\$(cat VERSION)"
-          }
-
-          dir ('./charts/%s') {
-            container('maven') {
-              sh "make tag"
-            }
-          }
-
-          container('maven') {
-            sh 'mvn clean deploy'
-            sh "docker build -f Dockerfile.release -t $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:\$(cat VERSION) ."
-            sh "docker push $JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST:$JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT/$ORG/$APP_NAME:\$(cat VERSION)"
-            sh 'jx step changelog --version \$(cat VERSION)'
-          }
-        }
-      }
-
-      stage('Promote to Environments') {
-        environment {
-          GIT_USERNAME = "$GIT_CREDS_USR"
-          GIT_API_TOKEN = "$GIT_CREDS_PSW"
-        }
-        when {
-          branch 'master'
-        }
-        steps {
-          dir ('./charts/%s') {
-            container('maven') {
-
-              // release the helm chart
-              sh 'make release'
-
-              // promote through all 'Auto' promotion Environments
-              sh 'jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)'
-            }
-          }
-        }
-      }
-
-    }
-  }
 `
 )
 
@@ -330,17 +215,6 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 
-		err = o.DefaultDockerfile()
-		if err != nil {
-			return err
-		}
-	}
-
-	if checkForJenkinsfile {
-		err = o.DefaultJenkinsfile()
-		if err != nil {
-			return err
-		}
 	}
 
 	if o.RepoURL == "" {
@@ -433,7 +307,7 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 	lpack := ""
 	if exists {
-		lpack = filepath.Join(draftpath.Home(homePath()).Packs(), "github.com/jenkins-x/draft-repo/packs/java")
+		lpack = filepath.Join(draftpath.Home(homePath()).Packs(), "github.com/jenkins-x/draft-packs/packs/java")
 	}
 
 	err = pack.CreateFrom(dir, lpack)
@@ -445,15 +319,24 @@ func (o *ImportOptions) DraftCreate() error {
 		o.Printf(util.ColorWarning("WARNING: Failed to run draft create in %s due to %s"), dir, err)
 		//return fmt.Errorf("Failed to run draft create in %s due to %s", dir, err)
 	}
+
 	// chart expects folder name to be the same as app name
 	oldChartsDir := filepath.Join(dir, "charts", "java")
 	newChartsDir := filepath.Join(dir, "charts", o.AppName)
+
 	exists, err = util.FileExists(oldChartsDir)
 	if err != nil {
 		return err
 	}
 	if exists {
-		os.Rename(oldChartsDir, newChartsDir)
+		err = os.Rename(oldChartsDir, newChartsDir)
+		if err != nil {
+			return fmt.Errorf("error renaming %s to %s, %v", oldChartsDir, newChartsDir, err)
+		}
+		_, err = os.Stat(newChartsDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	// now update the chart.yaml
@@ -462,14 +345,8 @@ func (o *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	// now update the makefile
-	err = o.addAppNameToGeneratedFile("Makefile", "NAME := ", o.AppName)
-	if err != nil {
-		return err
-	}
-
-	// now update the helm values which contains the image name
-	err = o.addAppNameToGeneratedFile("values.yaml", "  repository: ", fmt.Sprintf("%s/%s", "jenkinsx", o.AppName))
+	//walk through every file in the given dir and update the placeholders
+	err = o.replacePlaceholders(o.AppName, o.AppName)
 	if err != nil {
 		return err
 	}
@@ -500,61 +377,6 @@ func defaultDraftHome() string {
 	}
 
 	return filepath.Join(homeEnvPath, ".draft")
-}
-
-func (o *ImportOptions) DefaultJenkinsfile() error {
-
-	dir := o.Dir
-	name := filepath.Join(dir, "Jenkinsfile")
-	exists, err := util.FileExists(name)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-
-	data := []byte(fmt.Sprintf(defaultJenkinsfile, o.AppName, o.AppName, o.AppName))
-	err = ioutil.WriteFile(name, data, DefaultWritePermissions)
-	if err != nil {
-		return fmt.Errorf("Failed to write %s due to %s", name, err)
-	}
-	err = gits.GitAdd(dir, "Jenkinsfile")
-	if err != nil {
-		return err
-	}
-	err = gits.GitCommitIfChanges(dir, "Added default Jenkinsfile pipeline")
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (o *ImportOptions) DefaultDockerfile() error {
-
-	dir := o.Dir
-	name := filepath.Join(dir, "Dockerfile.release")
-	exists, err := util.FileExists(name)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-	data := []byte(defaultDockerfile)
-	err = ioutil.WriteFile(name, data, DefaultWritePermissions)
-	if err != nil {
-		return fmt.Errorf("Failed to write %s due to %s", name, err)
-	}
-	err = gits.GitAdd(dir, "Dockerfile.release")
-	if err != nil {
-		return err
-	}
-	err = gits.GitCommitIfChanges(dir, "Added Release Dockerfile pipeline")
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (o *ImportOptions) CreateNewRemoteRepository() error {
@@ -782,6 +604,41 @@ func (o *ImportOptions) DoImport() error {
 		jenkinsfile = jenkins.DefaultJenkinsfile
 	}
 	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc)
+}
+
+func (o *ImportOptions) replacePlaceholders(dir, value string) error {
+
+	if err := filepath.Walk(dir, func(f string, fi os.FileInfo, err error) error {
+		if fi.Name() == ".git" {
+			return filepath.SkipDir
+		}
+		if !fi.IsDir() {
+			input, err := ioutil.ReadFile(f)
+			if err != nil {
+				log.Errorf("failed to read file %s: %v", f, err)
+				return err
+			}
+
+			lines := strings.Split(string(input), "\n")
+
+			for i, line := range lines {
+				lines[i] = strings.Replace(line, PlaceHolder, value, -1)
+
+			}
+			output := strings.Join(lines, "\n")
+			err = ioutil.WriteFile(f, []byte(output), 0644)
+			if err != nil {
+				log.Errorf("failed to write file %s: %v", f, err)
+				return err
+			}
+		}
+		return nil
+
+	}); err != nil {
+		return fmt.Errorf("error replacing placeholders %v", err)
+	}
+
+	return nil
 }
 
 func (o *ImportOptions) addAppNameToGeneratedFile(filename, field, value string) error {

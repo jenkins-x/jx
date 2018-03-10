@@ -3,13 +3,17 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 
 	"strings"
 
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -27,6 +31,14 @@ var (
 		# Create or updates the Preview Environment for the Pull Request
 		jx preview
 	`)
+)
+
+const (
+	JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST = "JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST"
+	JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT = "JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT"
+	ORG                                    = "ORG"
+	APP_NAME                               = "APP_NAME"
+	PREVIEW_VERSION                        = "PREVIEW_VERSION"
 )
 
 // PreviewOptions the options for the create spring command
@@ -300,26 +312,73 @@ func (o *PreviewOptions) Run() error {
 		o.ReleaseName = ens
 	}
 
-	err = o.runCommand("helm", "upgrade", o.ReleaseName, ".", "--install", "--wait", "--namespace", ens)
+	domain, err := kube.GetCurrentDomain(kubeClient, ns)
+	if err != nil {
+		return err
+	}
+
+	repository, err := getImageName()
+	if err != nil {
+		return err
+	}
+
+	tag, err := getImageTag()
+	if err != nil {
+		return err
+	}
+
+	values := config.PreviewValuesConfig{
+		ExposeController: &config.ExposeController{
+			Config: config.ExposeControllerConfig{
+				Domain: domain,
+			},
+		},
+		Preview: &config.Preview{
+			Image: &config.Image{
+				Repository: repository,
+				Tag:        tag,
+			},
+		},
+	}
+
+	config, err := values.String()
+	if err != nil {
+		return err
+	}
+
+	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	configFileName := filepath.Join(dir, ExtraValuesFile)
+	log.Infof("%s", config)
+	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
+	if err != nil {
+		return err
+	}
+
+	err = o.runCommand("helm", "upgrade", o.ReleaseName, ".", "--install", "--wait", "--namespace", ens, fmt.Sprintf("--values=%s", configFileName))
 	if err != nil {
 		return err
 	}
 
 	url := ""
-	appNames := []string{app, o.ReleaseName, ens + "-" + app}
+	appNames := []string{app, o.ReleaseName, ens + "-preview"}
 	for _, n := range appNames {
 		url, err = kube.FindServiceURL(kubeClient, ens, n)
 		if url != "" {
 			break
 		}
 	}
+
 	if url == "" {
 		o.warnf("Could not find the service URL in namespace %s for names %s\n", ens, strings.Join(appNames, ", "))
 	}
 
 	comment := fmt.Sprintf(":star: PR built and available in a preview environment **%s**", envName)
 	if url != "" {
-		comment += " at " + url
+		comment += fmt.Sprintf(" [here](%s) ", url)
 	}
 
 	stepPRCommentOptions := StepPRCommentOptions{
@@ -340,4 +399,37 @@ func (o *PreviewOptions) Run() error {
 	}
 	return stepPRCommentOptions.Run()
 
+}
+
+func getImageName() (string, error) {
+	registryHost := os.Getenv(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
+	if registryHost == "" {
+		return "", fmt.Errorf("no %s environment variable found", JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
+	}
+	registryPort := os.Getenv(JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT)
+	if registryHost == "" {
+		return "", fmt.Errorf("no %s environment variable found", JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT)
+	}
+
+	organisation := os.Getenv(ORG)
+	if registryHost == "" {
+		return "", fmt.Errorf("no %s environment variable found", ORG)
+	}
+
+	app := os.Getenv(APP_NAME)
+	if registryHost == "" {
+		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
+	}
+
+	return fmt.Sprintf("%s:%s/%s/%s", registryHost, registryPort, organisation, app), nil
+}
+
+func getImageTag() (string, error) {
+
+	tag := os.Getenv(PREVIEW_VERSION)
+	if tag == "" {
+		return "", fmt.Errorf("no %s environment variable found", PREVIEW_VERSION)
+	}
+
+	return tag, nil
 }
