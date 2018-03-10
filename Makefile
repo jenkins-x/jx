@@ -94,7 +94,7 @@ release: check
 	gh-release checksums sha256
 	gh-release create jenkins-x/$(NAME) $(VERSION) master $(VERSION)
 
-	jx step changelog --version $(VERSION)
+	jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
 
 	updatebot push-version --kind brew jx $(VERSION)
 	updatebot push-version --kind docker JX_VERSION $(VERSION)
