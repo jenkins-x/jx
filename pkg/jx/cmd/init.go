@@ -208,7 +208,7 @@ func (o *InitOptions) initDraft() error {
 		return err
 	}
 
-	err = o.runCommand("draft", "pack-repo", "add", "https://github.com/jenkins-x/draft-repo")
+	err = o.runCommand("draft", "pack-repo", "add", "https://github.com/jenkins-x/draft-packs")
 	if err != nil {
 		log.Warn("error adding pack to draft, if you are using git 2.16.1 take a look at this issue for a workaround https://github.com/jenkins-x/jx/issues/176#issuecomment-361897946")
 		return err
