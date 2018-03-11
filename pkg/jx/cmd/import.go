@@ -63,6 +63,8 @@ pipeline {
       GIT_API_TOKEN     = "$GIT_CREDS_PSW"
       JOB_NAME          = "$JOB_NAME"
       BUILD_NUMBER      = "$BUILD_NUMBER"
+      BUILD_LOG_URL     = "$BUILD_LOG_URL"
+      BUILD_URL         = "$BUILD_URL"
     }
 
     stages {
