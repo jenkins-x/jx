@@ -50,16 +50,16 @@ var deletePolices = map[string]release.Hook_DeletePolicy{
 	hooks.HookFailed:    release.Hook_FAILED,
 }
 
-// Manifest represents a manifest file, which has a name and some content.
-type Manifest struct {
-	Name    string
-	Content string
-	Head    *util.SimpleHead
+// manifest represents a manifest file, which has a name and some content.
+type manifest struct {
+	name    string
+	content string
+	head    *util.SimpleHead
 }
 
 type result struct {
 	hooks   []*release.Hook
-	generic []Manifest
+	generic []manifest
 }
 
 type manifestFile struct {
@@ -77,7 +77,7 @@ type manifestFile struct {
 //
 // Files that do not parse into the expected format are simply placed into a map and
 // returned.
-func sortManifests(files map[string]string, apis chartutil.VersionSet, sort SortOrder) ([]*release.Hook, []Manifest, error) {
+func sortManifests(files map[string]string, apis chartutil.VersionSet, sort SortOrder) ([]*release.Hook, []manifest, error) {
 	result := &result{}
 
 	for filePath, c := range files {
@@ -141,20 +141,20 @@ func (file *manifestFile) sort(result *result) error {
 		}
 
 		if !hasAnyAnnotation(entry) {
-			result.generic = append(result.generic, Manifest{
-				Name:    file.path,
-				Content: m,
-				Head:    &entry,
+			result.generic = append(result.generic, manifest{
+				name:    file.path,
+				content: m,
+				head:    &entry,
 			})
 			continue
 		}
 
 		hookTypes, ok := entry.Metadata.Annotations[hooks.HookAnno]
 		if !ok {
-			result.generic = append(result.generic, Manifest{
-				Name:    file.path,
-				Content: m,
-				Head:    &entry,
+			result.generic = append(result.generic, manifest{
+				name:    file.path,
+				content: m,
+				head:    &entry,
 			})
 			continue
 		}
@@ -171,18 +171,17 @@ func (file *manifestFile) sort(result *result) error {
 			DeletePolicies: []release.Hook_DeletePolicy{},
 		}
 
-		isUnknownHook := false
+		isKnownHook := false
 		for _, hookType := range strings.Split(hookTypes, ",") {
 			hookType = strings.ToLower(strings.TrimSpace(hookType))
 			e, ok := events[hookType]
-			if !ok {
-				isUnknownHook = true
-				break
+			if ok {
+				isKnownHook = true
+				h.Events = append(h.Events, e)
 			}
-			h.Events = append(h.Events, e)
 		}
 
-		if isUnknownHook {
+		if !isKnownHook {
 			log.Printf("info: skipping unknown hook: %q", hookTypes)
 			continue
 		}
@@ -220,7 +219,7 @@ func hasAnyAnnotation(entry util.SimpleHead) bool {
 }
 
 func calculateHookWeight(entry util.SimpleHead) int32 {
-	hws := entry.Metadata.Annotations[hooks.HookWeightAnno]
+	hws, _ := entry.Metadata.Annotations[hooks.HookWeightAnno]
 	hw, err := strconv.Atoi(hws)
 	if err != nil {
 		hw = 0

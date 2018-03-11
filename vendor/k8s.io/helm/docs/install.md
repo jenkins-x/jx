@@ -4,8 +4,6 @@ There are two parts to Helm: The Helm client (`helm`) and the Helm
 server (Tiller). This guide shows how to install the client, and then
 proceeds to show two ways to install the server.
 
-**IMPORTANT**: If you are responsible for ensuring your cluster is a controlled environment, especially when resources are shared, it is strongly recommended installing Tiller using a secured configuration. For guidance, see [Securing your Helm Installation](securing_installation.md).
-
 ## Installing the Helm Client
 
 The Helm client can be installed either from source, or from pre-built binary
@@ -50,7 +48,7 @@ $ chmod 700 get_helm.sh
 $ ./get_helm.sh
 ```
 
-Yes, you can `curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash` that if you want to live on the edge.
+Yes, you can `curl ...| bash` that if you want to live on the edge.
 
 ### From Canary Builds
 
@@ -104,7 +102,7 @@ whatever cluster `kubectl` connects to by default (`kubectl config
 view`). Once it connects, it will install `tiller` into the
 `kube-system` namespace.
 
-After `helm init`, you should be able to run `kubectl get pods --namespace
+After `helm init`, you should be able to run `kubectl get po --namespace
 kube-system` and see Tiller running.
 
 You can explicitly tell `helm init` to...
@@ -198,144 +196,6 @@ Tiller can then be re-installed from the client with:
 ```console
 $ helm init
 ```
-
-## Advanced Usage
-
-`helm init` provides additional flags for modifying Tiller's deployment
-manifest before it is installed.
-
-### Using `--node-selectors`
-
-The `--node-selectors` flag allows us to specify the node labels required
-for scheduling the Tiller pod.
-
-The example below will create the specified label under the nodeSelector
-property.
-
-```
-helm init --node-selectors "beta.kubernetes.io/os"="linux"
-```
-
-The installed deployment manifest will contain our node selector label.
-
-```
-...
-spec:
-  template:
-    spec:
-      nodeSelector:
-        beta.kubernetes.io/os: linux
-...
-```
-
-
-### Using `--override`
-
-`--override` allows you to specify properties of Tiller's
-deployment manifest. Unlike the `--set` command used elsewhere in Helm,
-`helm init --override` manipulates the specified properties of the final
-manifest (there is no "values" file). Therefore you may specify any valid
-value for any valid property in the deployment manifest.
-
-#### Override annotation
-
-In the example below we use `--override` to add the revision property and set
-its value to 1.
-
-```
-helm init --override metadata.annotations."deployment\.kubernetes\.io/revision"="1"
-```
-Output:
-
-```
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "1"
-...
-```
-
-#### Override affinity
-
-In the example below we set properties for node affinity. Multiple
-`--override` commands may be combined to modify different properties of the
-same list item.
-
-```
-helm init --override "spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight"="1" --override "spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key"="e2e-az-name"
-```
-
-The specified properties are combined into the
-"preferredDuringSchedulingIgnoredDuringExecution" property's first
-list item.
-
-```
-...
-spec:
-  strategy: {}
-  template:
-    ...
-    spec:
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - preference:
-              matchExpressions:
-              - key: e2e-az-name
-                operator: ""
-            weight: 1
-...
-```
-
-### Using `--output`
-
-The `--output` flag allows us skip the installation of Tiller's deployment
-manifest and simply output the deployment manifest to stdout in either
-JSON or YAML format. The output may then be modified with tools like `jq`
-and installed manually with `kubectl`.
-
-In the example below we execute `helm init` with the `--output json` flag.
-
-```
-helm init --output json
-```
-
-The Tiller installation is skipped and the manifest is output to stdout
-in JSON format.
-
-```
-"apiVersion": "extensions/v1beta1",
-"kind": "Deployment",
-"metadata": {
-    "creationTimestamp": null,
-    "labels": {
-        "app": "helm",
-        "name": "tiller"
-    },
-    "name": "tiller-deploy",
-    "namespace": "kube-system"
-},
-...
-```
-
-### Storage backends
-By default, `tiller` stores release information in `ConfigMaps` in the namespace
-where it is running. As of Helm 2.7.0, there is now a beta storage backend that
-uses `Secrets` for storing release information. This was added for additional
-security in protecting charts in conjunction with the release of `Secret` 
-encryption in Kubernetes. 
-
-To enable the secrets backend, you'll need to init Tiller with the following
-options:
-
-```shell
-helm init --override 'spec.template.spec.containers[0].command'='{/tiller,--storage=secret}'
-```
-
-Currently, if you want to switch from the default backend to the secrets
-backend, you'll have to do the migration for this on your own. When this backend
-graduates from beta, there will be a more official path of migration
 
 ## Conclusion
 

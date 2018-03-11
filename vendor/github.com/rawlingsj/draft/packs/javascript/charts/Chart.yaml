@@ -1,0 +1,4 @@
+name: javascript
+description: A Helm chart for Kubernetes
+apiVersion: v1
+version: v0.1.0

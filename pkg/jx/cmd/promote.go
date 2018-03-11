@@ -8,11 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"strconv"
+
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -21,7 +24,6 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
-	"strconv"
 )
 
 const (
@@ -270,7 +272,6 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	} else {
 		o.Printf("Promoting app %s version %s to namespace %s\n", info(app), info(version), info(targetNS))
 	}
-
 	fullAppName := app
 	if o.LocalHelmRepoName != "" {
 		fullAppName = o.LocalHelmRepoName + "/" + app
@@ -303,7 +304,6 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		}
 	}
 	promoteKey := o.createPromoteKey(env)
-
 	if env != nil {
 		source := &env.Spec.Source
 		if source.URL != "" && env.Spec.Kind.IsPermanent() {
@@ -320,21 +320,17 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 					}
 					return nil
 				}
-
 				err = promoteKey.OnPromotePullRequest(o.Activities, startPromotePR)
 				// lets sleep a little before we try poll for the PR status
 				time.Sleep(waitAfterPullRequestCreated)
 			}
-
 			return releaseInfo, err
 		}
 	}
-
 	err := o.verifyHelmConfigured()
 	if err != nil {
 		return releaseInfo, err
 	}
-
 	// lets do a helm update to ensure we can find the latest version
 	if !o.NoHelmUpdate {
 		o.Printf("Updating the helm repositories to ensure we can find the latest versions...")
@@ -954,6 +950,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 
 // getLatestPipelineBuild for the given pipeline name lets try find the Jenkins Pipeline and the latest build
 func (o *PromoteOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
+	log.Infof("pipeline %s\n", pipeline)
 	build := ""
 	jenkins, err := o.Factory.CreateJenkinsClient()
 	if err != nil {

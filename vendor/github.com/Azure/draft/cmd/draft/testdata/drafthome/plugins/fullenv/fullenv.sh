@@ -1,0 +1,6 @@
+#!/bin/sh
+echo $DRAFT_PLUGIN_NAME
+echo $DRAFT_PLUGIN_DIR
+echo $DRAFT_PLUGIN
+echo $DRAFT_HOME
+echo $DRAFT_BIN

@@ -19,11 +19,11 @@ package portforwarder
 import (
 	"fmt"
 
-	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 
 	"k8s.io/helm/pkg/kube"
@@ -40,7 +40,7 @@ func New(namespace string, client kubernetes.Interface, config *rest.Config) (*k
 		return nil, err
 	}
 	const tillerPort = 44134
-	t := kube.NewTunnel(client.CoreV1().RESTClient(), config, namespace, podName, tillerPort)
+	t := kube.NewTunnel(client.Core().RESTClient(), config, namespace, podName, tillerPort)
 	return t, t.ForwardPort()
 }
 

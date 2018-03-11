@@ -322,8 +322,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoMemory4(in *jlexer.Lexer, out
 		switch key {
 		case "size":
 			out.Size = float64(in.Float64())
-		case "count":
-			out.Count = float64(in.Float64())
+		case "total":
+			out.Total = float64(in.Float64())
 		case "stack":
 			if in.IsNull() {
 				in.Skip()
@@ -372,14 +372,14 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoMemory4(out *jwriter.Writer, 
 		out.Float64(float64(in.Size))
 	}
 	{
-		const prefix string = ",\"count\":"
+		const prefix string = ",\"total\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Float64(float64(in.Count))
+		out.Float64(float64(in.Total))
 	}
 	{
 		const prefix string = ",\"stack\":"

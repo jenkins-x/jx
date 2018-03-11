@@ -98,8 +98,8 @@ func newUpgradeCmd(client helm.Interface, out io.Writer) *cobra.Command {
 			}
 
 			if upgrade.version == "" && upgrade.devel {
-				debug("setting version to >0.0.0-0")
-				upgrade.version = ">0.0.0-0"
+				debug("setting version to >0.0.0-a")
+				upgrade.version = ">0.0.0-a"
 			}
 
 			upgrade.release = args[0]
@@ -111,7 +111,7 @@ func newUpgradeCmd(client helm.Interface, out io.Writer) *cobra.Command {
 	}
 
 	f := cmd.Flags()
-	f.VarP(&upgrade.valueFiles, "values", "f", "specify values in a YAML file or a URL(can specify multiple)")
+	f.VarP(&upgrade.valueFiles, "values", "f", "specify values in a YAML file (can specify multiple)")
 	f.BoolVar(&upgrade.dryRun, "dry-run", false, "simulate an upgrade")
 	f.BoolVar(&upgrade.recreate, "recreate-pods", false, "performs pods restart for the resource if applicable")
 	f.BoolVar(&upgrade.force, "force", false, "force resource update through delete/recreate if needed")
@@ -121,7 +121,7 @@ func newUpgradeCmd(client helm.Interface, out io.Writer) *cobra.Command {
 	f.BoolVar(&upgrade.verify, "verify", false, "verify the provenance of the chart before upgrading")
 	f.StringVar(&upgrade.keyring, "keyring", defaultKeyring(), "path to the keyring that contains public signing keys")
 	f.BoolVarP(&upgrade.install, "install", "i", false, "if a release by this name doesn't already exist, run an install")
-	f.StringVar(&upgrade.namespace, "namespace", "", "namespace to install the release into (only used if --install is set). Defaults to the current kube config namespace")
+	f.StringVar(&upgrade.namespace, "namespace", "default", "namespace to install the release into (only used if --install is set)")
 	f.StringVar(&upgrade.version, "version", "", "specify the exact chart version to use. If this is not specified, the latest version is used")
 	f.Int64Var(&upgrade.timeout, "timeout", 300, "time in seconds to wait for any individual Kubernetes operation (like Jobs for hooks)")
 	f.BoolVar(&upgrade.resetValues, "reset-values", false, "when upgrading, reset the values to the ones built into the chart")
@@ -131,7 +131,7 @@ func newUpgradeCmd(client helm.Interface, out io.Writer) *cobra.Command {
 	f.StringVar(&upgrade.certFile, "cert-file", "", "identify HTTPS client using this SSL certificate file")
 	f.StringVar(&upgrade.keyFile, "key-file", "", "identify HTTPS client using this SSL key file")
 	f.StringVar(&upgrade.caFile, "ca-file", "", "verify certificates of HTTPS-enabled servers using this CA bundle")
-	f.BoolVar(&upgrade.devel, "devel", false, "use development versions, too. Equivalent to version '>0.0.0-0'. If --version is set, this is ignored.")
+	f.BoolVar(&upgrade.devel, "devel", false, "use development versions, too. Equivalent to version '>0.0.0-a'. If --version is set, this is ignored.")
 
 	f.MarkDeprecated("disable-hooks", "use --no-hooks instead")
 
@@ -151,15 +151,7 @@ func (u *upgradeCmd) run() error {
 		// The returned error is a grpc.rpcError that wraps the message from the original error.
 		// So we're stuck doing string matching against the wrapped error, which is nested somewhere
 		// inside of the grpc.rpcError message.
-		releaseHistory, err := u.client.ReleaseHistory(u.release, helm.WithMaxHistory(1))
-
-		if err == nil {
-			previousReleaseNamespace := releaseHistory.Releases[0].Namespace
-			if previousReleaseNamespace != u.namespace {
-				fmt.Fprintf(u.out, "WARNING: Namespace doesn't match with previous. Release will be deployed to %s\n", previousReleaseNamespace)
-			}
-		}
-
+		_, err := u.client.ReleaseHistory(u.release, helm.WithMaxHistory(1))
 		if err != nil && strings.Contains(err.Error(), driver.ErrReleaseNotFound(u.release).Error()) {
 			fmt.Fprintf(u.out, "Release %q does not exist. Installing it now.\n", u.release)
 			ic := &installCmd{

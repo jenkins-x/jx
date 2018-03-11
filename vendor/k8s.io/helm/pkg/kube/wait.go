@@ -19,19 +19,20 @@ package kube // import "k8s.io/helm/pkg/kube"
 import (
 	"time"
 
-	appsv1 "k8s.io/api/apps/v1"
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
-	appsv1beta2 "k8s.io/api/apps/v1beta2"
-	"k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/kubernetes/pkg/api/v1"
+	"k8s.io/kubernetes/pkg/api/v1/helper"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
-	"k8s.io/kubernetes/pkg/apis/core/v1/helper"
+	apps "k8s.io/kubernetes/pkg/apis/apps/v1beta1"
+	extensions "k8s.io/kubernetes/pkg/apis/extensions/v1beta1"
+	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
+	core "k8s.io/kubernetes/pkg/client/clientset_generated/clientset/typed/core/v1"
+	extensionsclient "k8s.io/kubernetes/pkg/client/clientset_generated/clientset/typed/extensions/v1beta1"
+	internalclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	deploymentutil "k8s.io/kubernetes/pkg/controller/deployment/util"
 )
 
@@ -46,10 +47,11 @@ type deployment struct {
 func (c *Client) waitForResources(timeout time.Duration, created Result) error {
 	c.Log("beginning wait for %d resources with timeout of %v", len(created), timeout)
 
-	kcs, err := c.KubernetesClientSet()
+	cs, err := c.ClientSet()
 	if err != nil {
 		return err
 	}
+	client := versionedClientsetForDeployment(cs)
 	return wait.Poll(2*time.Second, timeout, func() (bool, error) {
 		pods := []v1.Pod{}
 		services := []v1.Service{}
@@ -61,25 +63,25 @@ func (c *Client) waitForResources(timeout time.Duration, created Result) error {
 				return false, err
 			}
 			switch value := obj.(type) {
-			case *v1.ReplicationController:
-				list, err := getPods(kcs, value.Namespace, value.Spec.Selector)
+			case (*v1.ReplicationController):
+				list, err := getPods(client, value.Namespace, value.Spec.Selector)
 				if err != nil {
 					return false, err
 				}
 				pods = append(pods, list...)
-			case *v1.Pod:
-				pod, err := kcs.CoreV1().Pods(value.Namespace).Get(value.Name, metav1.GetOptions{})
+			case (*v1.Pod):
+				pod, err := client.Core().Pods(value.Namespace).Get(value.Name, metav1.GetOptions{})
 				if err != nil {
 					return false, err
 				}
 				pods = append(pods, *pod)
-			case *appsv1.Deployment:
-				currentDeployment, err := kcs.ExtensionsV1beta1().Deployments(value.Namespace).Get(value.Name, metav1.GetOptions{})
+			case (*extensions.Deployment):
+				currentDeployment, err := client.Extensions().Deployments(value.Namespace).Get(value.Name, metav1.GetOptions{})
 				if err != nil {
 					return false, err
 				}
 				// Find RS associated with deployment
-				newReplicaSet, err := deploymentutil.GetNewReplicaSet(currentDeployment, kcs.ExtensionsV1beta1())
+				newReplicaSet, err := deploymentutil.GetNewReplicaSet(currentDeployment, client)
 				if err != nil || newReplicaSet == nil {
 					return false, err
 				}
@@ -88,135 +90,54 @@ func (c *Client) waitForResources(timeout time.Duration, created Result) error {
 					currentDeployment,
 				}
 				deployments = append(deployments, newDeployment)
-			case *appsv1beta1.Deployment:
-				currentDeployment, err := kcs.ExtensionsV1beta1().Deployments(value.Namespace).Get(value.Name, metav1.GetOptions{})
-				if err != nil {
-					return false, err
-				}
-				// Find RS associated with deployment
-				newReplicaSet, err := deploymentutil.GetNewReplicaSet(currentDeployment, kcs.ExtensionsV1beta1())
-				if err != nil || newReplicaSet == nil {
-					return false, err
-				}
-				newDeployment := deployment{
-					newReplicaSet,
-					currentDeployment,
-				}
-				deployments = append(deployments, newDeployment)
-			case *appsv1beta2.Deployment:
-				currentDeployment, err := kcs.ExtensionsV1beta1().Deployments(value.Namespace).Get(value.Name, metav1.GetOptions{})
-				if err != nil {
-					return false, err
-				}
-				// Find RS associated with deployment
-				newReplicaSet, err := deploymentutil.GetNewReplicaSet(currentDeployment, kcs.ExtensionsV1beta1())
-				if err != nil || newReplicaSet == nil {
-					return false, err
-				}
-				newDeployment := deployment{
-					newReplicaSet,
-					currentDeployment,
-				}
-				deployments = append(deployments, newDeployment)
-			case *extensions.Deployment:
-				currentDeployment, err := kcs.ExtensionsV1beta1().Deployments(value.Namespace).Get(value.Name, metav1.GetOptions{})
-				if err != nil {
-					return false, err
-				}
-				// Find RS associated with deployment
-				newReplicaSet, err := deploymentutil.GetNewReplicaSet(currentDeployment, kcs.ExtensionsV1beta1())
-				if err != nil || newReplicaSet == nil {
-					return false, err
-				}
-				newDeployment := deployment{
-					newReplicaSet,
-					currentDeployment,
-				}
-				deployments = append(deployments, newDeployment)
-			case *extensions.DaemonSet:
-				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
+			case (*extensions.DaemonSet):
+				list, err := getPods(client, value.Namespace, value.Spec.Selector.MatchLabels)
 				if err != nil {
 					return false, err
 				}
 				pods = append(pods, list...)
-			case *appsv1.DaemonSet:
-				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
+			case (*apps.StatefulSet):
+				list, err := getPods(client, value.Namespace, value.Spec.Selector.MatchLabels)
 				if err != nil {
 					return false, err
 				}
 				pods = append(pods, list...)
-			case *appsv1beta2.DaemonSet:
-				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
+			case (*extensions.ReplicaSet):
+				list, err := getPods(client, value.Namespace, value.Spec.Selector.MatchLabels)
 				if err != nil {
 					return false, err
 				}
 				pods = append(pods, list...)
-			case *appsv1.StatefulSet:
-				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
-				if err != nil {
-					return false, err
-				}
-				pods = append(pods, list...)
-			case *appsv1beta1.StatefulSet:
-				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
-				if err != nil {
-					return false, err
-				}
-				pods = append(pods, list...)
-			case *appsv1beta2.StatefulSet:
-				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
-				if err != nil {
-					return false, err
-				}
-				pods = append(pods, list...)
-			case *extensions.ReplicaSet:
-				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
-				if err != nil {
-					return false, err
-				}
-				pods = append(pods, list...)
-			case *appsv1beta2.ReplicaSet:
-				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
-				if err != nil {
-					return false, err
-				}
-				pods = append(pods, list...)
-			case *appsv1.ReplicaSet:
-				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
-				if err != nil {
-					return false, err
-				}
-				pods = append(pods, list...)
-			case *v1.PersistentVolumeClaim:
-				claim, err := kcs.CoreV1().PersistentVolumeClaims(value.Namespace).Get(value.Name, metav1.GetOptions{})
+			case (*v1.PersistentVolumeClaim):
+				claim, err := client.Core().PersistentVolumeClaims(value.Namespace).Get(value.Name, metav1.GetOptions{})
 				if err != nil {
 					return false, err
 				}
 				pvc = append(pvc, *claim)
-			case *v1.Service:
-				svc, err := kcs.CoreV1().Services(value.Namespace).Get(value.Name, metav1.GetOptions{})
+			case (*v1.Service):
+				svc, err := client.Core().Services(value.Namespace).Get(value.Name, metav1.GetOptions{})
 				if err != nil {
 					return false, err
 				}
 				services = append(services, *svc)
 			}
 		}
-		isReady := c.podsReady(pods) && c.servicesReady(services) && c.volumesReady(pvc) && c.deploymentsReady(deployments)
+		isReady := podsReady(pods) && servicesReady(services) && volumesReady(pvc) && deploymentsReady(deployments)
+		c.Log("resources ready: %v", isReady)
 		return isReady, nil
 	})
 }
 
-func (c *Client) podsReady(pods []v1.Pod) bool {
+func podsReady(pods []v1.Pod) bool {
 	for _, pod := range pods {
 		if !podutil.IsPodReady(&pod) {
-			c.Log("Pod is not ready: %s/%s", pod.GetNamespace(), pod.GetName())
 			return false
 		}
 	}
 	return true
 }
 
-func (c *Client) servicesReady(svc []v1.Service) bool {
+func servicesReady(svc []v1.Service) bool {
 	for _, s := range svc {
 		// ExternalName Services are external to cluster so helm shouldn't be checking to see if they're 'ready' (i.e. have an IP Set)
 		if s.Spec.Type == v1.ServiceTypeExternalName {
@@ -225,42 +146,48 @@ func (c *Client) servicesReady(svc []v1.Service) bool {
 
 		// Make sure the service is not explicitly set to "None" before checking the IP
 		if s.Spec.ClusterIP != v1.ClusterIPNone && !helper.IsServiceIPSet(&s) {
-			c.Log("Service is not ready: %s/%s", s.GetNamespace(), s.GetName())
 			return false
 		}
 		// This checks if the service has a LoadBalancer and that balancer has an Ingress defined
 		if s.Spec.Type == v1.ServiceTypeLoadBalancer && s.Status.LoadBalancer.Ingress == nil {
-			c.Log("Service is not ready: %s/%s", s.GetNamespace(), s.GetName())
 			return false
 		}
 	}
 	return true
 }
 
-func (c *Client) volumesReady(vols []v1.PersistentVolumeClaim) bool {
+func volumesReady(vols []v1.PersistentVolumeClaim) bool {
 	for _, v := range vols {
 		if v.Status.Phase != v1.ClaimBound {
-			c.Log("PersistentVolumeClaim is not ready: %s/%s", v.GetNamespace(), v.GetName())
 			return false
 		}
 	}
 	return true
 }
 
-func (c *Client) deploymentsReady(deployments []deployment) bool {
+func deploymentsReady(deployments []deployment) bool {
 	for _, v := range deployments {
 		if !(v.replicaSets.Status.ReadyReplicas >= *v.deployment.Spec.Replicas-deploymentutil.MaxUnavailable(*v.deployment)) {
-			c.Log("Deployment is not ready: %s/%s", v.deployment.GetNamespace(), v.deployment.GetName())
 			return false
 		}
 	}
 	return true
 }
 
-func getPods(client kubernetes.Interface, namespace string, selector map[string]string) ([]v1.Pod, error) {
-	list, err := client.CoreV1().Pods(namespace).List(metav1.ListOptions{
+func getPods(client clientset.Interface, namespace string, selector map[string]string) ([]v1.Pod, error) {
+	list, err := client.Core().Pods(namespace).List(metav1.ListOptions{
 		FieldSelector: fields.Everything().String(),
 		LabelSelector: labels.Set(selector).AsSelector().String(),
 	})
 	return list.Items, err
+}
+
+func versionedClientsetForDeployment(internalClient internalclientset.Interface) clientset.Interface {
+	if internalClient == nil {
+		return &clientset.Clientset{}
+	}
+	return &clientset.Clientset{
+		CoreV1Client:            core.New(internalClient.Core().RESTClient()),
+		ExtensionsV1beta1Client: extensionsclient.New(internalClient.Extensions().RESTClient()),
+	}
 }

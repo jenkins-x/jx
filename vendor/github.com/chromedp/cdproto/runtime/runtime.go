@@ -290,6 +290,7 @@ type EvaluateParams struct {
 	GeneratePreview       bool               `json:"generatePreview,omitempty"`       // Whether preview should be generated for the result.
 	UserGesture           bool               `json:"userGesture,omitempty"`           // Whether execution should be treated as initiated by user in the UI.
 	AwaitPromise          bool               `json:"awaitPromise,omitempty"`          // Whether execution should await for resulting value and return once awaited promise is resolved.
+	ThrowOnSideEffect     bool               `json:"throwOnSideEffect,omitempty"`     // Whether to throw an exception if side effect cannot be ruled out during evaluation.
 }
 
 // Evaluate evaluates expression on global object.
@@ -355,6 +356,13 @@ func (p EvaluateParams) WithUserGesture(userGesture bool) *EvaluateParams {
 // return once awaited promise is resolved.
 func (p EvaluateParams) WithAwaitPromise(awaitPromise bool) *EvaluateParams {
 	p.AwaitPromise = awaitPromise
+	return &p
+}
+
+// WithThrowOnSideEffect whether to throw an exception if side effect cannot
+// be ruled out during evaluation.
+func (p EvaluateParams) WithThrowOnSideEffect(throwOnSideEffect bool) *EvaluateParams {
+	p.ThrowOnSideEffect = throwOnSideEffect
 	return &p
 }
 

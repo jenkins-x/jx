@@ -64,6 +64,36 @@ func (p *GetVersionParams) Do(ctxt context.Context, h cdp.Executor) (protocolVer
 	return res.ProtocolVersion, res.Product, res.Revision, res.UserAgent, res.JsVersion, nil
 }
 
+// GetCommandLineParams returns the command line switches for the browser
+// process if, and only if --enable-automation is on the commandline.
+type GetCommandLineParams struct{}
+
+// GetCommandLine returns the command line switches for the browser process
+// if, and only if --enable-automation is on the commandline.
+func GetCommandLine() *GetCommandLineParams {
+	return &GetCommandLineParams{}
+}
+
+// GetCommandLineReturns return values.
+type GetCommandLineReturns struct {
+	Arguments []string `json:"arguments,omitempty"` // Commandline parameters
+}
+
+// Do executes Browser.getCommandLine against the provided context.
+//
+// returns:
+//   arguments - Commandline parameters
+func (p *GetCommandLineParams) Do(ctxt context.Context, h cdp.Executor) (arguments []string, err error) {
+	// execute
+	var res GetCommandLineReturns
+	err = h.Execute(ctxt, CommandGetCommandLine, nil, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Arguments, nil
+}
+
 // GetHistogramsParams get Chrome histograms.
 type GetHistogramsParams struct {
 	Query string `json:"query,omitempty"` // Requested substring in name. Only histograms which have query as a substring in their name are extracted. An empty or absent query returns all histograms.
@@ -240,6 +270,7 @@ func (p *SetWindowBoundsParams) Do(ctxt context.Context, h cdp.Executor) (err er
 const (
 	CommandClose              = "Browser.close"
 	CommandGetVersion         = "Browser.getVersion"
+	CommandGetCommandLine     = "Browser.getCommandLine"
 	CommandGetHistograms      = "Browser.getHistograms"
 	CommandGetHistogram       = "Browser.getHistogram"
 	CommandGetWindowBounds    = "Browser.getWindowBounds"

@@ -18,7 +18,6 @@ package storage // import "k8s.io/helm/pkg/storage"
 
 import (
 	"fmt"
-	"strings"
 
 	rspb "k8s.io/helm/pkg/proto/hapi/release"
 	relutil "k8s.io/helm/pkg/releaseutil"
@@ -128,13 +127,14 @@ func (s *Storage) Deployed(name string) (*rspb.Release, error) {
 		"OWNER":  "TILLER",
 		"STATUS": "DEPLOYED",
 	})
-	if err == nil {
+	switch {
+	case err != nil:
+		return nil, err
+	case len(ls) == 0:
+		return nil, fmt.Errorf("%q has no deployed releases", name)
+	default:
 		return ls[0], nil
 	}
-	if strings.Contains(err.Error(), "not found") {
-		return nil, fmt.Errorf("%q has no deployed releases", name)
-	}
-	return nil, err
 }
 
 // History returns the revision history for the release with the provided name, or

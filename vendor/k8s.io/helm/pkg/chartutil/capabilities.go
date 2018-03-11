@@ -16,27 +16,12 @@ limitations under the License.
 package chartutil
 
 import (
-	"fmt"
-	"runtime"
-
 	"k8s.io/apimachinery/pkg/version"
 	tversion "k8s.io/helm/pkg/proto/hapi/version"
 )
 
-var (
-	// DefaultVersionSet is the default version set, which includes only Core V1 ("v1").
-	DefaultVersionSet = NewVersionSet("v1")
-
-	// DefaultKubeVersion is the default kubernetes version
-	DefaultKubeVersion = &version.Info{
-		Major:      "1",
-		Minor:      "9",
-		GitVersion: "v1.9.0",
-		GoVersion:  runtime.Version(),
-		Compiler:   runtime.Compiler,
-		Platform:   fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-	}
-)
+// DefaultVersionSet is the default version set, which includes only Core V1 ("v1").
+var DefaultVersionSet = NewVersionSet("v1")
 
 // Capabilities describes the capabilities of the Kubernetes cluster that Tiller is attached to.
 type Capabilities struct {

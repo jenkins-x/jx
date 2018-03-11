@@ -106,11 +106,10 @@ func Test_isRootedUnder(t *testing.T) {
 	}
 }
 
-func Test_deepCopyMethod(t *testing.T) {
+func Test_hasDeepCopyMethod(t *testing.T) {
 	testCases := []struct {
 		typ    types.Type
 		expect bool
-		error  bool
 	}{
 		{
 			typ: types.Type{
@@ -131,10 +130,6 @@ func Test_deepCopyMethod(t *testing.T) {
 						Name: types.Name{Package: "pkgname", Name: "func()"},
 						Kind: types.Func,
 						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
 							Parameters: []*types.Type{},
 							Results:    []*types.Type{},
 						},
@@ -153,10 +148,6 @@ func Test_deepCopyMethod(t *testing.T) {
 						Name: types.Name{Package: "pkgname", Name: "func()"},
 						Kind: types.Func,
 						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
 							Parameters: []*types.Type{},
 							Results:    []*types.Type{},
 						},
@@ -164,7 +155,6 @@ func Test_deepCopyMethod(t *testing.T) {
 				},
 			},
 			expect: false,
-			error:  true,
 		},
 		{
 			typ: types.Type{
@@ -176,10 +166,6 @@ func Test_deepCopyMethod(t *testing.T) {
 						Name: types.Name{Package: "pkgname", Name: "func() int"},
 						Kind: types.Func,
 						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
 							Parameters: []*types.Type{},
 							Results: []*types.Type{
 								{
@@ -192,104 +178,22 @@ func Test_deepCopyMethod(t *testing.T) {
 				},
 			},
 			expect: false,
-			error:  true,
 		},
 		{
 			typ: types.Type{
 				Name: types.Name{Package: "pkgname", Name: "typename"},
 				Kind: types.Builtin,
 				Methods: map[string]*types.Type{
-					// Wrong signature with pointer receiver, but non-pointer result.
+					// Correct signature.
 					"DeepCopy": {
 						Name: types.Name{Package: "pkgname", Name: "func() pkgname.typename"},
 						Kind: types.Func,
 						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
 							Parameters: []*types.Type{},
 							Results: []*types.Type{
 								{
 									Name: types.Name{Package: "pkgname", Name: "typename"},
 									Kind: types.Builtin,
-								},
-							},
-						},
-					},
-				},
-			},
-			expect: false,
-			error:  true,
-		},
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				Methods: map[string]*types.Type{
-					// Wrong signature with non-pointer receiver, but pointer result.
-					"DeepCopy": {
-						Name: types.Name{Package: "pkgname", Name: "func() pkgname.typename"},
-						Kind: types.Func,
-						Signature: &types.Signature{
-							Receiver:   &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							Parameters: []*types.Type{},
-							Results: []*types.Type{
-								{
-									Kind: types.Pointer,
-									Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-								},
-							},
-						},
-					},
-				},
-			},
-			expect: false,
-			error:  true,
-		},
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				Methods: map[string]*types.Type{
-					// Correct signature with non-pointer receiver.
-					"DeepCopy": {
-						Name: types.Name{Package: "pkgname", Name: "func() pkgname.typename"},
-						Kind: types.Func,
-						Signature: &types.Signature{
-							Receiver:   &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							Parameters: []*types.Type{},
-							Results: []*types.Type{
-								{
-									Name: types.Name{Package: "pkgname", Name: "typename"},
-									Kind: types.Builtin,
-								},
-							},
-						},
-					},
-				},
-			},
-			expect: true,
-		},
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				Methods: map[string]*types.Type{
-					// Correct signature with pointer receiver.
-					"DeepCopy": {
-						Name: types.Name{Package: "pkgname", Name: "func() pkgname.typename"},
-						Kind: types.Func,
-						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
-							Parameters: []*types.Type{},
-							Results: []*types.Type{
-								{
-									Kind: types.Pointer,
-									Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
 								},
 							},
 						},
@@ -308,10 +212,6 @@ func Test_deepCopyMethod(t *testing.T) {
 						Name: types.Name{Package: "pkgname", Name: "func(int) pkgname.typename"},
 						Kind: types.Func,
 						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
 							Parameters: []*types.Type{
 								{
 									Name: types.Name{Name: "int"},
@@ -329,7 +229,6 @@ func Test_deepCopyMethod(t *testing.T) {
 				},
 			},
 			expect: false,
-			error:  true,
 		},
 		{
 			typ: types.Type{
@@ -341,10 +240,6 @@ func Test_deepCopyMethod(t *testing.T) {
 						Name: types.Name{Package: "pkgname", Name: "func() (pkgname.typename, int)"},
 						Kind: types.Func,
 						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
 							Parameters: []*types.Type{},
 							Results: []*types.Type{
 								{
@@ -361,223 +256,13 @@ func Test_deepCopyMethod(t *testing.T) {
 				},
 			},
 			expect: false,
-			error:  true,
 		},
 	}
 
 	for i, tc := range testCases {
-		r, err := deepCopyMethod(&tc.typ)
-		if tc.error && err == nil {
-			t.Errorf("case[%d]: expected an error, got none", i)
-		} else if !tc.error && err != nil {
-			t.Errorf("case[%d]: expected no error, got: %v", i, err)
-		} else if !tc.error && (r != nil) != tc.expect {
-			t.Errorf("case[%d]: expected result %v, got: %v", i, tc.expect, r)
-		}
-	}
-}
-
-func Test_deepCopyIntoMethod(t *testing.T) {
-	testCases := []struct {
-		typ    types.Type
-		expect bool
-		error  bool
-	}{
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				// No DeepCopyInto method.
-				Methods: map[string]*types.Type{},
-			},
-			expect: false,
-		},
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				Methods: map[string]*types.Type{
-					// No DeepCopyInto method.
-					"method": {
-						Name: types.Name{Package: "pkgname", Name: "func()"},
-						Kind: types.Func,
-						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
-							Parameters: []*types.Type{},
-							Results:    []*types.Type{},
-						},
-					},
-				},
-			},
-			expect: false,
-		},
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				Methods: map[string]*types.Type{
-					// Wrong signature (no parameter).
-					"DeepCopyInto": {
-						Name: types.Name{Package: "pkgname", Name: "func()"},
-						Kind: types.Func,
-						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
-							Parameters: []*types.Type{},
-							Results:    []*types.Type{},
-						},
-					},
-				},
-			},
-			expect: false,
-			error:  true,
-		},
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				Methods: map[string]*types.Type{
-					// Wrong signature (unexpected result).
-					"DeepCopyInto": {
-						Name: types.Name{Package: "pkgname", Name: "func(*pkgname.typename) int"},
-						Kind: types.Func,
-						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
-							Parameters: []*types.Type{
-								{
-									Kind: types.Pointer,
-									Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-								},
-							},
-							Results: []*types.Type{
-								{
-									Name: types.Name{Name: "int"},
-									Kind: types.Builtin,
-								},
-							},
-						},
-					},
-				},
-			},
-			expect: false,
-			error:  true,
-		},
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				Methods: map[string]*types.Type{
-					// Wrong signature (non-pointer parameter, pointer receiver).
-					"DeepCopyInto": {
-						Name: types.Name{Package: "pkgname", Name: "func(pkgname.typename)"},
-						Kind: types.Func,
-						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
-							Parameters: []*types.Type{
-								{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
-							Results: []*types.Type{},
-						},
-					},
-				},
-			},
-			expect: false,
-			error:  true,
-		},
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				Methods: map[string]*types.Type{
-					// Wrong signature (non-pointer parameter, non-pointer receiver).
-					"DeepCopyInto": {
-						Name: types.Name{Package: "pkgname", Name: "func(pkgname.typename)"},
-						Kind: types.Func,
-						Signature: &types.Signature{
-							Receiver: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							Parameters: []*types.Type{
-								{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
-							Results: []*types.Type{},
-						},
-					},
-				},
-			},
-			expect: false,
-			error:  true,
-		},
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				Methods: map[string]*types.Type{
-					// Correct signature with non-pointer receiver.
-					"DeepCopyInto": {
-						Name: types.Name{Package: "pkgname", Name: "func(*pkgname.typename)"},
-						Kind: types.Func,
-						Signature: &types.Signature{
-							Receiver: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							Parameters: []*types.Type{
-								{
-									Kind: types.Pointer,
-									Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-								},
-							},
-							Results: []*types.Type{},
-						},
-					},
-				},
-			},
-			expect: true,
-		},
-		{
-			typ: types.Type{
-				Name: types.Name{Package: "pkgname", Name: "typename"},
-				Kind: types.Builtin,
-				Methods: map[string]*types.Type{
-					// Correct signature with pointer receiver.
-					"DeepCopyInto": {
-						Name: types.Name{Package: "pkgname", Name: "func(*pkgname.typename)"},
-						Kind: types.Func,
-						Signature: &types.Signature{
-							Receiver: &types.Type{
-								Kind: types.Pointer,
-								Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-							},
-							Parameters: []*types.Type{
-								{
-									Kind: types.Pointer,
-									Elem: &types.Type{Kind: types.Struct, Name: types.Name{Package: "pkgname", Name: "typename"}},
-								},
-							},
-							Results: []*types.Type{},
-						},
-					},
-				},
-			},
-			expect: true,
-		},
-	}
-
-	for i, tc := range testCases {
-		r, err := deepCopyIntoMethod(&tc.typ)
-		if tc.error && err == nil {
-			t.Errorf("case[%d]: expected an error, got none", i)
-		} else if !tc.error && err != nil {
-			t.Errorf("case[%d]: expected no error, got: %v", i, err)
-		} else if !tc.error && (r != nil) != tc.expect {
-			t.Errorf("case[%d]: expected result %v, got: %v", i, tc.expect, r)
+		r := hasDeepCopyMethod(&tc.typ)
+		if r != tc.expect {
+			t.Errorf("case[%d]: expected %t, got %t", i, tc.expect, r)
 		}
 	}
 }
@@ -666,7 +351,7 @@ func Test_extractInterfacesTag(t *testing.T) {
 	}{
 		{
 			comments: []string{},
-			expect:   nil,
+			expect: nil,
 		},
 		{
 			comments: []string{

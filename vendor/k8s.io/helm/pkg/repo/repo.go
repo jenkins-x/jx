@@ -23,6 +23,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/facebookgo/atomicfile"
 	"github.com/ghodss/yaml"
 )
 
@@ -55,13 +56,6 @@ func NewRepoFile() *RepoFile {
 func LoadRepositoriesFile(path string) (*RepoFile, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf(
-				"Couldn't load repositories file (%s).\n"+
-					"You might need to run `helm init` (or "+
-					"`helm init --client-only` if tiller is "+
-					"already installed)", path)
-		}
 		return nil, err
 	}
 
@@ -141,9 +135,20 @@ func (r *RepoFile) Remove(name string) bool {
 
 // WriteFile writes a repositories file to the given path.
 func (r *RepoFile) WriteFile(path string, perm os.FileMode) error {
+	f, err := atomicfile.New(path, perm)
+	if err != nil {
+		return err
+	}
+
 	data, err := yaml.Marshal(r)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path, data, perm)
+
+	_, err = f.File.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return f.Close()
 }

@@ -7,8 +7,8 @@ import (
 )
 
 func TestFlipH(t *testing.T) {
-	td := []struct {
-		desc string
+	testCases := []struct {
+		name string
 		src  image.Image
 		want *image.NRGBA
 	}{
@@ -34,18 +34,26 @@ func TestFlipH(t *testing.T) {
 			},
 		},
 	}
-	for _, d := range td {
-		got := FlipH(d.src)
-		want := d.want
-		if !compareNRGBA(got, want, 0) {
-			t.Errorf("test [%s] failed: %#v", d.desc, got)
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := FlipH(tc.src)
+			if !compareNRGBA(got, tc.want, 0) {
+				t.Fatalf("got result %#v want %#v", got, tc.want)
+			}
+		})
+	}
+}
+
+func BenchmarkFlipH(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		FlipH(testdataBranchesJPG)
 	}
 }
 
 func TestFlipV(t *testing.T) {
-	td := []struct {
-		desc string
+	testCases := []struct {
+		name string
 		src  image.Image
 		want *image.NRGBA
 	}{
@@ -71,18 +79,26 @@ func TestFlipV(t *testing.T) {
 			},
 		},
 	}
-	for _, d := range td {
-		got := FlipV(d.src)
-		want := d.want
-		if !compareNRGBA(got, want, 0) {
-			t.Errorf("test [%s] failed: %#v", d.desc, got)
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := FlipV(tc.src)
+			if !compareNRGBA(got, tc.want, 0) {
+				t.Fatalf("got result %#v want %#v", got, tc.want)
+			}
+		})
+	}
+}
+
+func BenchmarkFlipV(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		FlipV(testdataBranchesJPG)
 	}
 }
 
 func TestTranspose(t *testing.T) {
-	td := []struct {
-		desc string
+	testCases := []struct {
+		name string
 		src  image.Image
 		want *image.NRGBA
 	}{
@@ -107,18 +123,26 @@ func TestTranspose(t *testing.T) {
 			},
 		},
 	}
-	for _, d := range td {
-		got := Transpose(d.src)
-		want := d.want
-		if !compareNRGBA(got, want, 0) {
-			t.Errorf("test [%s] failed: %#v", d.desc, got)
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Transpose(tc.src)
+			if !compareNRGBA(got, tc.want, 0) {
+				t.Fatalf("got result %#v want %#v", got, tc.want)
+			}
+		})
+	}
+}
+
+func BenchmarkTranspose(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		Transpose(testdataBranchesJPG)
 	}
 }
 
 func TestTransverse(t *testing.T) {
-	td := []struct {
-		desc string
+	testCases := []struct {
+		name string
 		src  image.Image
 		want *image.NRGBA
 	}{
@@ -143,18 +167,26 @@ func TestTransverse(t *testing.T) {
 			},
 		},
 	}
-	for _, d := range td {
-		got := Transverse(d.src)
-		want := d.want
-		if !compareNRGBA(got, want, 0) {
-			t.Errorf("test [%s] failed: %#v", d.desc, got)
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Transverse(tc.src)
+			if !compareNRGBA(got, tc.want, 0) {
+				t.Fatalf("got result %#v want %#v", got, tc.want)
+			}
+		})
+	}
+}
+
+func BenchmarkTransverse(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		Transverse(testdataBranchesJPG)
 	}
 }
 
 func TestRotate90(t *testing.T) {
-	td := []struct {
-		desc string
+	testCases := []struct {
+		name string
 		src  image.Image
 		want *image.NRGBA
 	}{
@@ -179,18 +211,26 @@ func TestRotate90(t *testing.T) {
 			},
 		},
 	}
-	for _, d := range td {
-		got := Rotate90(d.src)
-		want := d.want
-		if !compareNRGBA(got, want, 0) {
-			t.Errorf("test [%s] failed: %#v", d.desc, got)
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Rotate90(tc.src)
+			if !compareNRGBA(got, tc.want, 0) {
+				t.Fatalf("got result %#v want %#v", got, tc.want)
+			}
+		})
+	}
+}
+
+func BenchmarkRotate90(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		Rotate90(testdataBranchesJPG)
 	}
 }
 
 func TestRotate180(t *testing.T) {
-	td := []struct {
-		desc string
+	testCases := []struct {
+		name string
 		src  image.Image
 		want *image.NRGBA
 	}{
@@ -216,18 +256,26 @@ func TestRotate180(t *testing.T) {
 			},
 		},
 	}
-	for _, d := range td {
-		got := Rotate180(d.src)
-		want := d.want
-		if !compareNRGBA(got, want, 0) {
-			t.Errorf("test [%s] failed: %#v", d.desc, got)
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Rotate180(tc.src)
+			if !compareNRGBA(got, tc.want, 0) {
+				t.Fatalf("got result %#v want %#v", got, tc.want)
+			}
+		})
+	}
+}
+
+func BenchmarkRotate180(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		Rotate180(testdataBranchesJPG)
 	}
 }
 
 func TestRotate270(t *testing.T) {
-	td := []struct {
-		desc string
+	testCases := []struct {
+		name string
 		src  image.Image
 		want *image.NRGBA
 	}{
@@ -252,18 +300,26 @@ func TestRotate270(t *testing.T) {
 			},
 		},
 	}
-	for _, d := range td {
-		got := Rotate270(d.src)
-		want := d.want
-		if !compareNRGBA(got, want, 0) {
-			t.Errorf("test [%s] failed: %#v", d.desc, got)
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Rotate270(tc.src)
+			if !compareNRGBA(got, tc.want, 0) {
+				t.Fatalf("got result %#v want %#v", got, tc.want)
+			}
+		})
+	}
+}
+
+func BenchmarkRotate270(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		Rotate270(testdataBranchesJPG)
 	}
 }
 
 func TestRotate(t *testing.T) {
 	testCases := []struct {
-		desc  string
+		name  string
 		src   image.Image
 		angle float64
 		bg    color.Color
@@ -571,11 +627,19 @@ func TestRotate(t *testing.T) {
 			},
 		},
 	}
-	for _, test := range testCases {
-		got := Rotate(test.src, test.angle, test.bg)
-		want := test.want
-		if !compareNRGBA(got, want, 0) {
-			t.Errorf("test [%s] failed: %#v", test.desc, got)
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Rotate(tc.src, tc.angle, tc.bg)
+			if !compareNRGBA(got, tc.want, 0) {
+				t.Fatalf("got result %#v want %#v", got, tc.want)
+			}
+		})
+	}
+}
+
+func BenchmarkRotate(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		Rotate(testdataBranchesJPG, 30, color.Transparent)
 	}
 }

@@ -20,17 +20,21 @@ import (
 // BeginFrameParams sends a BeginFrame to the target and returns when the
 // frame was completed. Optionally captures a screenshot from the resulting
 // frame. Requires that the target was created with enabled BeginFrameControl.
+// Designed for use with --run-all-compositor-stages-before-draw, see also
+// https://goo.gl/3zHXhB for more background.
 type BeginFrameParams struct {
 	FrameTime        *runtime.Timestamp `json:"frameTime,omitempty"`        // Timestamp of this BeginFrame (milliseconds since epoch). If not set, the current time will be used.
 	Deadline         *runtime.Timestamp `json:"deadline,omitempty"`         // Deadline of this BeginFrame (milliseconds since epoch). If not set, the deadline will be calculated from the frameTime and interval.
 	Interval         float64            `json:"interval,omitempty"`         // The interval between BeginFrames that is reported to the compositor, in milliseconds. Defaults to a 60 frames/second interval, i.e. about 16.666 milliseconds.
 	NoDisplayUpdates bool               `json:"noDisplayUpdates,omitempty"` // Whether updates should not be committed and drawn onto the display. False by default. If true, only side effects of the BeginFrame will be run, such as layout and animations, but any visual updates may not be visible on the display or in screenshots.
-	Screenshot       *ScreenshotParams  `json:"screenshot,omitempty"`       // If set, a screenshot of the frame will be captured and returned in the response. Otherwise, no screenshot will be captured.
+	Screenshot       *ScreenshotParams  `json:"screenshot,omitempty"`       // If set, a screenshot of the frame will be captured and returned in the response. Otherwise, no screenshot will be captured. Note that capturing a screenshot can fail, for example, during renderer initialization. In such a case, no screenshot data will be returned.
 }
 
 // BeginFrame sends a BeginFrame to the target and returns when the frame was
 // completed. Optionally captures a screenshot from the resulting frame.
-// Requires that the target was created with enabled BeginFrameControl.
+// Requires that the target was created with enabled BeginFrameControl. Designed
+// for use with --run-all-compositor-stages-before-draw, see also
+// https://goo.gl/3zHXhB for more background.
 //
 // parameters:
 func BeginFrame() *BeginFrameParams {
@@ -69,7 +73,9 @@ func (p BeginFrameParams) WithNoDisplayUpdates(noDisplayUpdates bool) *BeginFram
 }
 
 // WithScreenshot if set, a screenshot of the frame will be captured and
-// returned in the response. Otherwise, no screenshot will be captured.
+// returned in the response. Otherwise, no screenshot will be captured. Note
+// that capturing a screenshot can fail, for example, during renderer
+// initialization. In such a case, no screenshot data will be returned.
 func (p BeginFrameParams) WithScreenshot(screenshot *ScreenshotParams) *BeginFrameParams {
 	p.Screenshot = screenshot
 	return &p
@@ -77,32 +83,30 @@ func (p BeginFrameParams) WithScreenshot(screenshot *ScreenshotParams) *BeginFra
 
 // BeginFrameReturns return values.
 type BeginFrameReturns struct {
-	HasDamage               bool   `json:"hasDamage,omitempty"`               // Whether the BeginFrame resulted in damage and, thus, a new frame was committed to the display.
-	MainFrameContentUpdated bool   `json:"mainFrameContentUpdated,omitempty"` // Whether the main frame submitted a new display frame in response to this BeginFrame.
-	ScreenshotData          string `json:"screenshotData,omitempty"`          // Base64-encoded image data of the screenshot, if one was requested and successfully taken.
+	HasDamage      bool   `json:"hasDamage,omitempty"`      // Whether the BeginFrame resulted in damage and, thus, a new frame was committed to the display. Reported for diagnostic uses, may be removed in the future.
+	ScreenshotData string `json:"screenshotData,omitempty"` // Base64-encoded image data of the screenshot, if one was requested and successfully taken.
 }
 
 // Do executes HeadlessExperimental.beginFrame against the provided context.
 //
 // returns:
-//   hasDamage - Whether the BeginFrame resulted in damage and, thus, a new frame was committed to the display.
-//   mainFrameContentUpdated - Whether the main frame submitted a new display frame in response to this BeginFrame.
+//   hasDamage - Whether the BeginFrame resulted in damage and, thus, a new frame was committed to the display. Reported for diagnostic uses, may be removed in the future.
 //   screenshotData - Base64-encoded image data of the screenshot, if one was requested and successfully taken.
-func (p *BeginFrameParams) Do(ctxt context.Context, h cdp.Executor) (hasDamage bool, mainFrameContentUpdated bool, screenshotData []byte, err error) {
+func (p *BeginFrameParams) Do(ctxt context.Context, h cdp.Executor) (hasDamage bool, screenshotData []byte, err error) {
 	// execute
 	var res BeginFrameReturns
 	err = h.Execute(ctxt, CommandBeginFrame, p, &res)
 	if err != nil {
-		return false, false, nil, err
+		return false, nil, err
 	}
 
 	// decode
 	var dec []byte
 	dec, err = base64.StdEncoding.DecodeString(res.ScreenshotData)
 	if err != nil {
-		return false, false, nil, err
+		return false, nil, err
 	}
-	return res.HasDamage, res.MainFrameContentUpdated, dec, nil
+	return res.HasDamage, dec, nil
 }
 
 // DisableParams disables headless events for the target.

@@ -107,13 +107,6 @@ func TestGetRepoNames(t *testing.T) {
 			err: true,
 		},
 		{
-			name: "no repo definition failure -- stable repo",
-			req: []*chartutil.Dependency{
-				{Name: "oedipus-rex", Repository: "stable"},
-			},
-			err: true,
-		},
-		{
 			name: "no repo definition failure",
 			req: []*chartutil.Dependency{
 				{Name: "oedipus-rex", Repository: "http://example.com"},

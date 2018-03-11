@@ -27,7 +27,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/code-generator/pkg/util"
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/generator"
 	"k8s.io/gengo/namer"
@@ -56,7 +55,7 @@ func New() *Generator {
 	sourceTree := args.DefaultSourceTree()
 	common := args.GeneratorArgs{
 		OutputBase:       sourceTree,
-		GoHeaderFilePath: filepath.Join(sourceTree, util.BoilerplatePath()),
+		GoHeaderFilePath: filepath.Join(sourceTree, "k8s.io/kubernetes/hack/boilerplate/boilerplate.go.txt"),
 	}
 	defaultProtoImport := filepath.Join(sourceTree, "k8s.io", "kubernetes", "vendor", "github.com", "gogo", "protobuf", "protobuf")
 	cwd, err := os.Getwd()
@@ -74,8 +73,7 @@ func New() *Generator {
 			`+k8s.io/apimachinery/pkg/runtime/schema`,
 			`+k8s.io/apimachinery/pkg/runtime`,
 			`k8s.io/apimachinery/pkg/apis/meta/v1`,
-			`k8s.io/apimachinery/pkg/apis/meta/v1beta1`,
-			`k8s.io/apimachinery/pkg/apis/testapigroup/v1`,
+			`k8s.io/apimachinery/pkg/apis/meta/v1alpha1`,
 		}, ","),
 		Packages:           "",
 		DropEmbeddedFields: "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta",

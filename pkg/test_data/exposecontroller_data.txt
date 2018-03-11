@@ -1,0 +1,4 @@
+exposer: Ingress
+domain: foo.io
+http: true
+tls-acme: false

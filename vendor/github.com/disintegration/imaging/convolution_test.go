@@ -7,7 +7,7 @@ import (
 
 func TestConvolve3x3(t *testing.T) {
 	testCases := []struct {
-		desc    string
+		name    string
 		src     image.Image
 		kernel  [9]float64
 		options *ConvolveOptions
@@ -174,17 +174,18 @@ func TestConvolve3x3(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		got := Convolve3x3(tc.src, tc.kernel, tc.options)
-		want := tc.want
-		if !compareNRGBA(got, want, 0) {
-			t.Errorf("test [%s] failed: want %#v got %#v", tc.desc, want, got)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			got := Convolve3x3(tc.src, tc.kernel, tc.options)
+			if !compareNRGBA(got, tc.want, 0) {
+				t.Fatalf("got result %#v want %#v", got, tc.want)
+			}
+		})
 	}
 }
 
 func TestConvolve5x5(t *testing.T) {
 	testCases := []struct {
-		desc    string
+		name    string
 		src     image.Image
 		kernel  [25]float64
 		options *ConvolveOptions
@@ -224,24 +225,91 @@ func TestConvolve5x5(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		got := Convolve5x5(tc.src, tc.kernel, tc.options)
-		want := tc.want
-		if !compareNRGBA(got, want, 0) {
-			t.Errorf("test [%s] failed: want %#v got %#v", tc.desc, want, got)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			got := Convolve5x5(tc.src, tc.kernel, tc.options)
+			if !compareNRGBA(got, tc.want, 0) {
+				t.Fatalf("got result %#v want %#v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestNormalizeKernel(t *testing.T) {
+	testCases := []struct {
+		name   string
+		kernel []float64
+		want   []float64
+	}{
+		{
+			name: "positive sum",
+			kernel: []float64{
+				2, 0, 2,
+				0, 2, 0,
+				2, 0, 2,
+			},
+			want: []float64{
+				0.2, 0, 0.2,
+				0, 0.2, 0,
+				0.2, 0, 0.2,
+			},
+		},
+		{
+			name: "negative sum",
+			kernel: []float64{
+				-2, 0, -2,
+				2, 2, 2,
+				-2, 0, -2,
+			},
+			want: []float64{
+				1, 0, 1,
+				-1, -1, -1,
+				1, 0, 1,
+			},
+		},
+		{
+			name: "zero sum",
+			kernel: []float64{
+				0, 2, 0,
+				2, 0, -2,
+				0, -2, 0,
+			},
+			want: []float64{
+				0, 0.5, 0,
+				0.5, 0, -0.5,
+				0, -0.5, 0,
+			},
+		},
+		{
+			name: "all zero",
+			kernel: []float64{
+				0, 0, 0,
+				0, 0, 0,
+				0, 0, 0,
+			},
+			want: []float64{
+				0, 0, 0,
+				0, 0, 0,
+				0, 0, 0,
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			normalizeKernel(tc.kernel)
+			for i := range tc.kernel {
+				if tc.kernel[i] != tc.want[i] {
+					t.Fatalf("got kernel %v want %v", tc.kernel, tc.want)
+				}
+			}
+		})
 	}
 }
 
 func BenchmarkConvolve3x3(b *testing.B) {
-	b.StopTimer()
-	img, err := Open("testdata/lena_512.png")
-	if err != nil {
-		b.Fatalf("Open: %v", err)
-	}
-	b.StartTimer()
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		Convolve3x3(
-			img,
+			testdataBranchesJPG,
 			[9]float64{
 				-1, -1, 0,
 				-1, 0, 1,
@@ -253,15 +321,10 @@ func BenchmarkConvolve3x3(b *testing.B) {
 }
 
 func BenchmarkConvolve5x5(b *testing.B) {
-	b.StopTimer()
-	img, err := Open("testdata/lena_512.png")
-	if err != nil {
-		b.Fatalf("Open: %v", err)
-	}
-	b.StartTimer()
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		Convolve5x5(
-			img,
+			testdataBranchesJPG,
 			[25]float64{
 				-1, -1, -1, -1, 0,
 				-1, -1, -1, 0, 1,

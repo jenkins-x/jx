@@ -92,6 +92,7 @@ const (
 	CommandAuditsGetEncodedResponse                        = audits.CommandGetEncodedResponse
 	CommandBrowserClose                                    = browser.CommandClose
 	CommandBrowserGetVersion                               = browser.CommandGetVersion
+	CommandBrowserGetCommandLine                           = browser.CommandGetCommandLine
 	CommandBrowserGetHistograms                            = browser.CommandGetHistograms
 	CommandBrowserGetHistogram                             = browser.CommandGetHistogram
 	CommandBrowserGetWindowBounds                          = browser.CommandGetWindowBounds
@@ -261,7 +262,6 @@ const (
 	CommandHeadlessExperimentalBeginFrame                  = headlessexperimental.CommandBeginFrame
 	CommandHeadlessExperimentalDisable                     = headlessexperimental.CommandDisable
 	CommandHeadlessExperimentalEnable                      = headlessexperimental.CommandEnable
-	EventHeadlessExperimentalMainFrameReadyForScreenshots  = "HeadlessExperimental.mainFrameReadyForScreenshots"
 	EventHeadlessExperimentalNeedsBeginFramesChanged       = "HeadlessExperimental.needsBeginFramesChanged"
 	CommandHeapProfilerAddInspectedHeapObject              = heapprofiler.CommandAddInspectedHeapObject
 	CommandHeapProfilerCollectGarbage                      = heapprofiler.CommandCollectGarbage
@@ -635,6 +635,9 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 
 	case CommandBrowserGetVersion:
 		v = new(browser.GetVersionReturns)
+
+	case CommandBrowserGetCommandLine:
+		v = new(browser.GetCommandLineReturns)
 
 	case CommandBrowserGetHistograms:
 		v = new(browser.GetHistogramsReturns)
@@ -1142,9 +1145,6 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 
 	case CommandHeadlessExperimentalEnable:
 		return emptyVal, nil
-
-	case EventHeadlessExperimentalMainFrameReadyForScreenshots:
-		v = new(headlessexperimental.EventMainFrameReadyForScreenshots)
 
 	case EventHeadlessExperimentalNeedsBeginFramesChanged:
 		v = new(headlessexperimental.EventNeedsBeginFramesChanged)

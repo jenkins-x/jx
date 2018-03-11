@@ -8,7 +8,7 @@ type Item struct {
 	Actions                    []Action `json:"actions"`
 	Blocked                    bool     `json:"blocked"`
 	Buildable                  bool     `json:"buildable"`
-	Id                         int64    `json:"id"`
+	Id                         int      `json:"id"`
 	InQueueSince               int64    `json:"inQueueSince"`
 	Params                     string   `json:"params"`
 	Stuck                      bool     `json:"stuck"`

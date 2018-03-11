@@ -42,9 +42,6 @@ type Call struct {
 	// this method is called.
 	ReturnArguments Arguments
 
-	// Holds the caller info for the On() call
-	callerInfo []string
-
 	// The number of times to return the return arguments when setting
 	// expectations. 0 means to always return the value.
 	Repeatability int
@@ -67,13 +64,12 @@ type Call struct {
 	RunFn func(Arguments)
 }
 
-func newCall(parent *Mock, methodName string, callerInfo []string, methodArguments ...interface{}) *Call {
+func newCall(parent *Mock, methodName string, methodArguments ...interface{}) *Call {
 	return &Call{
 		Parent:          parent,
 		Method:          methodName,
 		Arguments:       methodArguments,
 		ReturnArguments: make([]interface{}, 0),
-		callerInfo:      callerInfo,
 		Repeatability:   0,
 		WaitFor:         nil,
 		RunFn:           nil,
@@ -226,7 +222,7 @@ func (m *Mock) On(methodName string, arguments ...interface{}) *Call {
 
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	c := newCall(m, methodName, assert.CallerInfo(), arguments...)
+	c := newCall(m, methodName, arguments...)
 	m.ExpectedCalls = append(m.ExpectedCalls, c)
 	return c
 }
@@ -344,7 +340,7 @@ func (m *Mock) MethodCalled(methodName string, arguments ...interface{}) Argumen
 	call.totalCalls++
 
 	// add the call
-	m.Calls = append(m.Calls, *newCall(m, methodName, assert.CallerInfo(), arguments...))
+	m.Calls = append(m.Calls, *newCall(m, methodName, arguments...))
 	m.mutex.Unlock()
 
 	// block if specified
@@ -389,7 +385,6 @@ func AssertExpectationsForObjects(t TestingT, testObjects ...interface{}) bool {
 		}
 		m := obj.(assertExpectationser)
 		if !m.AssertExpectations(t) {
-			t.Logf("Expectations didn't match for Mock: %+v", reflect.TypeOf(m))
 			return false
 		}
 	}
@@ -410,12 +405,12 @@ func (m *Mock) AssertExpectations(t TestingT) bool {
 		if !expectedCall.optional && !m.methodWasCalled(expectedCall.Method, expectedCall.Arguments) && expectedCall.totalCalls == 0 {
 			somethingMissing = true
 			failedExpectations++
-			t.Logf("FAIL:\t%s(%s)\n\t\tat: %s", expectedCall.Method, expectedCall.Arguments.String(), expectedCall.callerInfo)
+			t.Logf("FAIL:\t%s(%s)", expectedCall.Method, expectedCall.Arguments.String())
 		} else {
 			if expectedCall.Repeatability > 0 {
 				somethingMissing = true
 				failedExpectations++
-				t.Logf("FAIL:\t%s(%s)\n\t\tat: %s", expectedCall.Method, expectedCall.Arguments.String(), expectedCall.callerInfo)
+				t.Logf("FAIL:\t%s(%s)", expectedCall.Method, expectedCall.Arguments.String())
 			} else {
 				t.Logf("PASS:\t%s(%s)", expectedCall.Method, expectedCall.Arguments.String())
 			}

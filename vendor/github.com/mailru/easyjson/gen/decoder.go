@@ -36,22 +36,16 @@ var primitiveDecoders = map[reflect.Kind]string{
 }
 
 var primitiveStringDecoders = map[reflect.Kind]string{
-	reflect.String:  "in.String()",
-	reflect.Int:     "in.IntStr()",
-	reflect.Int8:    "in.Int8Str()",
-	reflect.Int16:   "in.Int16Str()",
-	reflect.Int32:   "in.Int32Str()",
-	reflect.Int64:   "in.Int64Str()",
-	reflect.Uint:    "in.UintStr()",
-	reflect.Uint8:   "in.Uint8Str()",
-	reflect.Uint16:  "in.Uint16Str()",
-	reflect.Uint32:  "in.Uint32Str()",
-	reflect.Uint64:  "in.Uint64Str()",
-	reflect.Uintptr: "in.UintptrStr()",
-}
-
-var customDecoders = map[string]string{
-	"json.Number":    "in.JsonNumber()",
+	reflect.Int:    "in.IntStr()",
+	reflect.Int8:   "in.Int8Str()",
+	reflect.Int16:  "in.Int16Str()",
+	reflect.Int32:  "in.Int32Str()",
+	reflect.Int64:  "in.Int64Str()",
+	reflect.Uint:   "in.UintStr()",
+	reflect.Uint8:  "in.Uint8Str()",
+	reflect.Uint16: "in.Uint16Str()",
+	reflect.Uint32: "in.Uint32Str()",
+	reflect.Uint64: "in.Uint64Str()",
 }
 
 // genTypeDecoder generates decoding code for the type t, but uses unmarshaler interface if implemented by t.
@@ -88,10 +82,7 @@ func (g *Generator) genTypeDecoder(t reflect.Type, out string, tags fieldTags, i
 func (g *Generator) genTypeDecoderNoCheck(t reflect.Type, out string, tags fieldTags, indent int) error {
 	ws := strings.Repeat("  ", indent)
 	// Check whether type is primitive, needs to be done after interface check.
-	if dec := customDecoders[t.String()]; dec != ""  {
-		fmt.Fprintln(g.out, ws+out+" = "+dec)
-		return nil
-	} else if dec := primitiveStringDecoders[t.Kind()]; dec != "" && tags.asString {
+	if dec := primitiveStringDecoders[t.Kind()]; dec != "" && tags.asString {
 		fmt.Fprintln(g.out, ws+out+" = "+g.getType(t)+"("+dec+")")
 		return nil
 	} else if dec := primitiveDecoders[t.Kind()]; dec != "" {
@@ -136,9 +127,7 @@ func (g *Generator) genTypeDecoderNoCheck(t reflect.Type, out string, tags field
 			fmt.Fprintln(g.out, ws+"  for !in.IsDelim(']') {")
 			fmt.Fprintln(g.out, ws+"    var "+tmpVar+" "+g.getType(elem))
 
-			if err := g.genTypeDecoder(elem, tmpVar, tags, indent+2); err != nil {
-				return err
-			}
+			g.genTypeDecoder(elem, tmpVar, tags, indent+2)
 
 			fmt.Fprintln(g.out, ws+"    "+out+" = append("+out+", "+tmpVar+")")
 			fmt.Fprintln(g.out, ws+"    in.WantComma()")
@@ -170,9 +159,7 @@ func (g *Generator) genTypeDecoderNoCheck(t reflect.Type, out string, tags field
 			fmt.Fprintln(g.out, ws+"  for !in.IsDelim(']') {")
 			fmt.Fprintln(g.out, ws+"    if "+iterVar+" < "+fmt.Sprint(length)+" {")
 
-			if err := g.genTypeDecoder(elem, out+"["+iterVar+"]", tags, indent+3); err != nil {
-				return err
-			}
+			g.genTypeDecoder(elem, out+"["+iterVar+"]", tags, indent+3)
 
 			fmt.Fprintln(g.out, ws+"      "+iterVar+"++")
 			fmt.Fprintln(g.out, ws+"    } else {")
@@ -199,17 +186,14 @@ func (g *Generator) genTypeDecoderNoCheck(t reflect.Type, out string, tags field
 		fmt.Fprintln(g.out, ws+"    "+out+" = new("+g.getType(t.Elem())+")")
 		fmt.Fprintln(g.out, ws+"  }")
 
-		if err := g.genTypeDecoder(t.Elem(), "*"+out, tags, indent+1); err != nil {
-			return err
-		}
+		g.genTypeDecoder(t.Elem(), "*"+out, tags, indent+1)
 
 		fmt.Fprintln(g.out, ws+"}")
 
 	case reflect.Map:
 		key := t.Key()
-		keyDec, ok := primitiveStringDecoders[key.Kind()]
-		if !ok {
-			return fmt.Errorf("map type %v not supported: only string and integer keys are allowed", key)
+		if key.Kind() != reflect.String {
+			return fmt.Errorf("map type %v not supported: only string keys are allowed", key)
 		}
 		elem := t.Elem()
 		tmpVar := g.uniqueVarName()
@@ -225,13 +209,11 @@ func (g *Generator) genTypeDecoderNoCheck(t reflect.Type, out string, tags field
 		fmt.Fprintln(g.out, ws+"  }")
 
 		fmt.Fprintln(g.out, ws+"  for !in.IsDelim('}') {")
-		fmt.Fprintln(g.out, ws+"    key := "+g.getType(key)+"("+keyDec+")")
+		fmt.Fprintln(g.out, ws+"    key := "+g.getType(t.Key())+"(in.String())")
 		fmt.Fprintln(g.out, ws+"    in.WantColon()")
 		fmt.Fprintln(g.out, ws+"    var "+tmpVar+" "+g.getType(elem))
 
-		if err := g.genTypeDecoder(elem, tmpVar, tags, indent+2); err != nil {
-			return err
-		}
+		g.genTypeDecoder(elem, tmpVar, tags, indent+2)
 
 		fmt.Fprintln(g.out, ws+"    ("+out+")[key] = "+tmpVar)
 		fmt.Fprintln(g.out, ws+"    in.WantComma()")
