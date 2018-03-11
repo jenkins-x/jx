@@ -64,11 +64,6 @@ func (s *serverImpl) GetVersion(ctx context.Context, _ *empty.Empty) (*Version, 
 	return &Version{SemVer: v.SemVer, GitCommit: v.GitCommit, GitTreeState: v.GitTreeState}, nil
 }
 
-// GetLogs returns the logs for the draft build specified by req.
-func (s *serverImpl) GetLogs(ctx context.Context, req *GetLogsRequest) (*GetLogsResponse, error) {
-	return s.h.Logs(ctx, req)
-}
-
 // UpStream accepts a stream of UpMessages each representing a separate draft up.
 // This is the rpc invoked by the draft client when doing a draft up with watch
 // enabled.

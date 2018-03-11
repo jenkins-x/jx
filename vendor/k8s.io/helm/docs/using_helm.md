@@ -230,6 +230,10 @@ There are two ways to pass configuration data during install:
 - `--set`: Specify overrides on the command line.
 
 If both are used, `--set` values are merged into `--values` with higher precedence.
+Overrides specified with `--set` are persisted in a configmap. Values that have been
+`--set` can be viewed for a given release with `helm get values <release-name>`. 
+Values that have been `--set` can be cleared by running `helm upgrade` with `--reset-values`
+specified.
 
 #### The Format and Limitations of `--set`
 
@@ -375,10 +379,9 @@ is not a full list of cli flags. To see a description of all flags, just run
   Services have an IP address (and Ingress if a `LoadBalancer`) before 
   marking the release as successful. It will wait for as long as the 
   `--timeout` value. If timeout is reached, the release will be marked as 
-  `FAILED`.
-
-  Note: In scenario where Deployment has `replicas` set to 1 and `maxUnavailable` is not set to 0 as part of rolling
-  update strategy, `--wait` will return as ready as it has satisfied the minimum Pod in ready condition.
+  `FAILED`. Note: In scenario where Deployment has `replicas` set to 1 and 
+  `maxUnavailable` is not set to 0 as part of rolling update strategy, 
+  `--wait` will return as ready as it has satisfied the minimum Pod in ready condition.
 - `--no-hooks`: This skips running hooks for the command
 - `--recreate-pods` (only available for `upgrade` and `rollback`): This flag
   will cause all pods to be recreated (with the exception of pods belonging to
@@ -494,7 +497,7 @@ accepts chart source code, and (after audit) packages those for you.
 In some cases you may wish to scope Tiller or deploy multiple Tillers to a single cluster. Here are some best practices when operating in those circumstances.
 
 1. Tiller can be [installed](install.md) into any namespace. By default, it is installed into kube-system. You can run multiple Tillers provided they each run in their own namespace.
-2. Limiting Tiller to only be able to install into specific namespaces and/or resource types is controlled by Kubernetes [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) roles and rolebindings. You can add a service account to Tiller when configuring Helm via `helm init --service-acount <NAME>`. You can find more information about that [here](service_accounts.md).
+2. Limiting Tiller to only be able to install into specific namespaces and/or resource types is controlled by Kubernetes [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) roles and rolebindings. You can add a service account to Tiller when configuring Helm via `helm init --service-account <NAME>`. You can find more information about that [here](rbac.md).
 3. Release names are unique PER TILLER INSTANCE.
 4. Charts should only contain resources that exist in a single namespace.
 5. It is not recommended to have multiple Tillers configured to manage resources in the same namespace.

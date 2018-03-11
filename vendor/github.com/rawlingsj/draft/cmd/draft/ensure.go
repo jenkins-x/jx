@@ -112,17 +112,17 @@ func (i *initCmd) ensurePlugin(builtin *plugin.Builtin, existingPlugins []*plugi
 		if builtin.Name == pl.Metadata.Name {
 			if builtin.Version == pl.Metadata.Version {
 				return nil
+			} else {
+				debug("Currently have %v version %v. Removing to install %v",
+					pl.Metadata.Name, pl.Metadata.Version, builtin.Version)
+
+				if err := removePlugin(pl); err != nil {
+					return err
+				}
+
+				debug("Successfully removed %v %v",
+					pl.Metadata.Name, pl.Metadata.Version)
 			}
-
-			debug("Currently have %v version %v. Removing to install %v",
-				pl.Metadata.Name, pl.Metadata.Version, builtin.Version)
-
-			if err := removePlugin(pl); err != nil {
-				return err
-			}
-
-			debug("Successfully removed %v %v",
-				pl.Metadata.Name, pl.Metadata.Version)
 		}
 	}
 

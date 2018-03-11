@@ -8,8 +8,11 @@ import (
 
 // Required does not allow an empty value
 func Required(val interface{}) error {
+	// the reflect value of the result
+	value := reflect.ValueOf(val)
+
 	// if the value passed in is the zero value of the appropriate type
-	if isZero(reflect.ValueOf(val)) {
+	if isZero(value) && value.Kind() != reflect.Bool {
 		return errors.New("Value is required")
 	}
 	return nil

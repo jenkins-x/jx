@@ -16,12 +16,9 @@ import (
 
 	"github.com/Azure/draft/pkg/draft/local"
 	"github.com/Azure/draft/pkg/rpc"
-	"github.com/Azure/draft/pkg/storage"
 )
 
-// AppContext contains state information carried across the various draft stage boundaries.
 type AppContext struct {
-	obj  *storage.Object
 	srv  *Server
 	req  *rpc.UpRequest
 	buf  *bytes.Buffer
@@ -44,8 +41,7 @@ func newAppContext(s *Server, req *rpc.UpRequest, out io.Writer) (*AppContext, e
 	}
 	// truncate checksum to the first 40 characters (20 bytes) this is the
 	// equivalent of `shasum build.tar.gz | awk '{print $1}'`.
-	ctxtID := h.Sum(nil)
-	imgtag := fmt.Sprintf("%.20x", ctxtID)
+	imgtag := fmt.Sprintf("%.20x", h.Sum(nil))
 	image := fmt.Sprintf("%s/%s:%s", s.cfg.Registry.URL, req.AppName, imgtag)
 
 	// inject certain values into the chart such as the registry location,
@@ -60,10 +56,8 @@ func newAppContext(s *Server, req *rpc.UpRequest, out io.Writer) (*AppContext, e
 	if err := strvals.ParseInto(inject, vals); err != nil {
 		return nil, err
 	}
-	buildID := getulid()
 	return &AppContext{
-		obj:  &storage.Object{BuildID: buildID, ContextID: ctxtID},
-		id:   buildID,
+		id:   getulid(),
 		srv:  s,
 		req:  req,
 		buf:  b,

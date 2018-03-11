@@ -46,10 +46,11 @@ The historical release set is printed as a formatted table, e.g:
 `
 
 type historyCmd struct {
-	max   int32
-	rls   string
-	out   io.Writer
-	helmc helm.Interface
+	max      int32
+	rls      string
+	out      io.Writer
+	helmc    helm.Interface
+	colWidth uint
 }
 
 func newHistoryCmd(c helm.Interface, w io.Writer) *cobra.Command {
@@ -60,20 +61,22 @@ func newHistoryCmd(c helm.Interface, w io.Writer) *cobra.Command {
 		Long:    historyHelp,
 		Short:   "fetch release history",
 		Aliases: []string{"hist"},
-		PreRunE: setupConnection,
+		PreRunE: func(_ *cobra.Command, _ []string) error { return setupConnection() },
 		RunE: func(cmd *cobra.Command, args []string) error {
 			switch {
 			case len(args) == 0:
 				return errReleaseRequired
 			case his.helmc == nil:
-				his.helmc = helm.NewClient(helm.Host(settings.TillerHost))
+				his.helmc = newClient()
 			}
 			his.rls = args[0]
 			return his.run()
 		},
 	}
 
-	cmd.Flags().Int32Var(&his.max, "max", 256, "maximum number of revision to include in history")
+	f := cmd.Flags()
+	f.Int32Var(&his.max, "max", 256, "maximum number of revision to include in history")
+	f.UintVar(&his.colWidth, "col-width", 60, "specifies the max column width of output")
 
 	return cmd
 }
@@ -87,13 +90,14 @@ func (cmd *historyCmd) run() error {
 		return nil
 	}
 
-	fmt.Fprintln(cmd.out, formatHistory(r.Releases))
+	fmt.Fprintln(cmd.out, formatHistory(r.Releases, cmd.colWidth))
 	return nil
 }
 
-func formatHistory(rls []*release.Release) string {
+func formatHistory(rls []*release.Release, colWidth uint) string {
 	tbl := uitable.New()
-	tbl.MaxColWidth = 60
+
+	tbl.MaxColWidth = colWidth
 	tbl.AddRow("REVISION", "UPDATED", "STATUS", "CHART", "DESCRIPTION")
 	for i := len(rls) - 1; i >= 0; i-- {
 		r := rls[i]

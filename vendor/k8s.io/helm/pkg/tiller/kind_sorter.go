@@ -32,9 +32,11 @@ var InstallOrder SortOrder = []string{
 	"LimitRange",
 	"Secret",
 	"ConfigMap",
+	"StorageClass",
 	"PersistentVolume",
 	"PersistentVolumeClaim",
 	"ServiceAccount",
+	"CustomResourceDefinition",
 	"ClusterRole",
 	"ClusterRoleBinding",
 	"Role",
@@ -71,9 +73,11 @@ var UninstallOrder SortOrder = []string{
 	"Role",
 	"ClusterRoleBinding",
 	"ClusterRole",
+	"CustomResourceDefinition",
 	"ServiceAccount",
 	"PersistentVolumeClaim",
 	"PersistentVolume",
+	"StorageClass",
 	"ConfigMap",
 	"Secret",
 	"LimitRange",
@@ -84,7 +88,7 @@ var UninstallOrder SortOrder = []string{
 // sortByKind does an in-place sort of manifests by Kind.
 //
 // Results are sorted by 'ordering'
-func sortByKind(manifests []manifest, ordering SortOrder) []manifest {
+func sortByKind(manifests []Manifest, ordering SortOrder) []Manifest {
 	ks := newKindSorter(manifests, ordering)
 	sort.Sort(ks)
 	return ks.manifests
@@ -92,10 +96,10 @@ func sortByKind(manifests []manifest, ordering SortOrder) []manifest {
 
 type kindSorter struct {
 	ordering  map[string]int
-	manifests []manifest
+	manifests []Manifest
 }
 
-func newKindSorter(m []manifest, s SortOrder) *kindSorter {
+func newKindSorter(m []Manifest, s SortOrder) *kindSorter {
 	o := make(map[string]int, len(s))
 	for v, k := range s {
 		o[k] = v
@@ -114,11 +118,15 @@ func (k *kindSorter) Swap(i, j int) { k.manifests[i], k.manifests[j] = k.manifes
 func (k *kindSorter) Less(i, j int) bool {
 	a := k.manifests[i]
 	b := k.manifests[j]
-	first, aok := k.ordering[a.head.Kind]
-	second, bok := k.ordering[b.head.Kind]
+	first, aok := k.ordering[a.Head.Kind]
+	second, bok := k.ordering[b.Head.Kind]
+	// if same kind (including unknown) sub sort alphanumeric
 	if first == second {
-		// same kind (including unknown) so sub sort alphanumeric
-		return a.name < b.name
+		// if both are unknown and of different kind sort by kind alphabetically
+		if !aok && !bok && a.Head.Kind != b.Head.Kind {
+			return a.Head.Kind < b.Head.Kind
+		}
+		return a.Name < b.Name
 	}
 	// unknown kind is last
 	if !aok {
@@ -129,4 +137,12 @@ func (k *kindSorter) Less(i, j int) bool {
 	}
 	// sort different kinds
 	return first < second
+}
+
+// SortByKind sorts manifests in InstallOrder
+func SortByKind(manifests []Manifest) []Manifest {
+	ordering := InstallOrder
+	ks := newKindSorter(manifests, ordering)
+	sort.Sort(ks)
+	return ks.manifests
 }

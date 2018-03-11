@@ -28,7 +28,6 @@ tls:
   cacert: %s
 `
 
-// DraftConfig holds the configuration options for draftd
 type DraftConfig struct {
 	Basedomain   string
 	Image        string
@@ -90,7 +89,6 @@ func FromClientConfig(config clientcmd.ClientConfig) (*DraftConfig, string, erro
 	return draftConfig, cloudProviderName, nil
 }
 
-// WithTLS returns true if set in DraftConfig
 func (cfg *DraftConfig) WithTLS() bool { return cfg.EnableTLS || cfg.VerifyTLS }
 
 // String returns the string representation of a DraftConfig.

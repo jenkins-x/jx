@@ -39,7 +39,7 @@ func TestMultiSelectRender(t *testing.T) {
 				PageEntries:   prompt.Options,
 				Checked:       map[string]bool{"bar": true, "buz": true},
 			},
-			`? Pick your words:
+			`? Pick your words:  [Use arrows to move, type to filter]
   ◯  foo
   ◉  bar
 ❯ ◯  baz
@@ -63,7 +63,7 @@ func TestMultiSelectRender(t *testing.T) {
 				PageEntries:   prompt.Options,
 				Checked:       map[string]bool{"bar": true, "buz": true},
 			},
-			`? Pick your words: [? for help]
+			`? Pick your words:  [Use arrows to move, type to filter, ? for more help]
   ◯  foo
   ◉  bar
 ❯ ◯  baz
@@ -80,7 +80,7 @@ func TestMultiSelectRender(t *testing.T) {
 				ShowHelp:      true,
 			},
 			`ⓘ This is helpful
-? Pick your words:
+? Pick your words:  [Use arrows to move, type to filter]
   ◯  foo
   ◉  bar
 ❯ ◯  baz

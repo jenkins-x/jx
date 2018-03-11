@@ -1,33 +1,5 @@
 # Changelog
 
-## v0.10.0
-
-### Features
-
-* Introduced `draft init --upgrade`
-* TLS support added via `draft init`:
-   * --draftd-tls
-   * --draftd-tls-cert string
-   * --draftd-tls-key string
-   * --draftd-tls-verify
-* Reverted back to using a docker-in-docker container for draft builds for cross-cloud support
-* Added ability to save application state information in Kubernetes as ConfigMaps
-* New packs added:
-   * Clojure (thanks to @kstrempel)
-* New example-spring-boot application added (thanks to @jstrachan)
-* Introduced `draft connect --environment`
-* When `draft create` fails on the first language, it now attempts all other detected languages for packs
-
-### Bugs
-
-* `draft up -e` and `draft connect -e` will now return an error if the environment is not found in draft.toml
-
-### Housekeeping
-
-* switched from [glide](https://github.com/Masterminds/glide) to [dep](https://github.com/golang/dep)
-* removed unused/flaky end-to-end tests; to be refactored in #486
-
-
 ## v0.9.0
 
 ### Client

@@ -4,9 +4,18 @@ This guide covers how you can quickly get started using Helm.
 
 ## Prerequisites
 
-- You must have Kubernetes installed. We recommend version 1.4.1 or
-  later.
+The following prerequisites are required for a successful and properly secured use of Helm.
+
+1. A Kubernetes cluster
+2. Deciding what security configurations to apply to your installation, if any
+3. Installing and configuring Helm and Tiller, the cluster-side service.
+
+
+### Install Kubernetes or have access to a cluster
+- You must have Kubernetes installed. For the latest release of Helm, we recommend the latest stable release of Kubernetes, which in most cases is the second-latest minor release. 
 - You should also have a local configured copy of `kubectl`.
+
+NOTE: Kubernetes versions prior to 1.6 have limited or no support for role-based access controls (RBAC).
 
 Helm will figure out where to install Tiller by reading your Kubernetes
 configuration file (usually `$HOME/.kube/config`). This is the same file
@@ -19,6 +28,17 @@ To find out which cluster Tiller would install to, you can run
 $ kubectl config current-context
 my-cluster
 ```
+
+### Understand your Security Context
+
+As with all powerful tools, ensure you are installing it correctly for your scenario.
+
+If you're using Helm on a cluster that you completely control, like minikube or a cluster on a private network in which sharing is not a concern, the default installation -- which applies no security configuration -- is fine, and it's definitely the easiest. To install Helm without additional security steps, [install Helm](#Install-Helm) and then [initialize Helm](#initialize-helm-and-install-tiller).
+
+However, if your cluster is exposed to a larger network or if you share your cluster with others -- production clusters fall into this category -- you must take extra steps to secure your installation to prevent careless or malicious actors from damaging the cluster or its data. To apply configurations that secure Helm for use in production environments and other multi-tenant scenarios, see [Securing a Helm installation](securing_installation.md)
+
+If your cluster has Role-Based Access Control (RBAC) enabled, you may want
+to [configure a service account and rules](rbac.md) before proceeding.
 
 ## Install Helm
 
@@ -44,6 +64,10 @@ This will install Tiller into the Kubernetes cluster you saw with
 `--kube-context` flag.
 
 **TIP:** When you want to upgrade Tiller, just run `helm init --upgrade`.
+
+By default, when Tiller is installed,it does not have authentication enabled.
+To learn more about configuring strong TLS authentication for Tiller, consult
+[the Tiller TLS guide](tiller_ssl.md).
 
 ## Install an Example Chart
 
@@ -75,8 +99,8 @@ It's easy to see what has been released using Helm:
 
 ```console
 $ helm ls
-NAME           	VERSION	 UPDATED                       	STATUS         	CHART
-smiling-penguin	 1      	Wed Sep 28 12:59:46 2016      	DEPLOYED       	mysql-0.1.0
+NAME             VERSION   UPDATED                   STATUS    CHART
+smiling-penguin  1         Wed Sep 28 12:59:46 2016  DEPLOYED  mysql-0.1.0
 ```
 
 The `helm list` function will show you a list of all deployed releases.

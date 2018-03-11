@@ -2,41 +2,30 @@ package main
 
 import (
 	"fmt"
-	"github.com/Azure/draft/pkg/draft"
-	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 	"io"
+
+	"github.com/spf13/cobra"
+
+	"github.com/Azure/draft/pkg/draft/local"
 )
 
 const logsDesc = `This command outputs logs from the draft server to help debug builds.`
 
 type logsCmd struct {
-	client   *draft.Client
 	out      io.Writer
-	appName  string
-	buildID  string
 	logLines int64
-	args     []string
 }
 
 func newLogsCmd(out io.Writer) *cobra.Command {
 	lc := &logsCmd{
-		out:  out,
-		args: []string{"app-name", "build-id"},
+		out: out,
 	}
 
 	cmd := &cobra.Command{
-		Use:   "logs <app-name> <build-id>",
+		Use:   "logs",
 		Short: logsDesc,
 		Long:  logsDesc,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := setupConnection(cmd, args); err != nil {
-				return err
-			}
-			return lc.complete(args)
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			lc.client = ensureDraftClient(lc.client)
 			return lc.run()
 		},
 	}
@@ -47,20 +36,38 @@ func newLogsCmd(out io.Writer) *cobra.Command {
 	return cmd
 }
 
-func (l *logsCmd) complete(args []string) error {
-	if err := validateArgs(args, l.args); err != nil {
-		return err
-	}
-	l.appName = args[0]
-	l.buildID = args[1]
-	return nil
-}
-
 func (l *logsCmd) run() error {
-	b, err := l.client.GetLogs(context.Background(), l.appName, l.buildID, draft.WithLogsLimit(l.logLines))
+	client, clientConfig, err := getKubeClient(kubeContext)
+	if err != nil {
+		return fmt.Errorf("Could not get a kube client: %s", err)
+	}
+	restClientConfig, err := clientConfig.ClientConfig()
+	if err != nil {
+		return fmt.Errorf("Could not retrieve client config from the kube client: %s", err)
+	}
+
+	draftApp := &local.App{
+		Name:      "draftd",
+		Namespace: "kube-system",
+		Container: "draftd",
+	}
+
+	connection, err := draftApp.Connect(client, restClientConfig)
+	if err != nil {
+		return fmt.Errorf("Could not connect to draftd: %s", err)
+	}
+
+	fmt.Fprintf(l.out, "Starting a log stream from the draft server...\n")
+	readCloser, err := connection.RequestLogStream(draftApp, l.logLines)
+	if err != nil {
+		return fmt.Errorf("Could not get log stream: %s", err)
+	}
+
+	defer readCloser.Close()
+	_, err = io.Copy(l.out, readCloser)
 	if err != nil {
 		return err
 	}
-	fmt.Print(string(b))
+
 	return nil
 }

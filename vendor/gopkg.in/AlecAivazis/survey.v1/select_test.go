@@ -35,7 +35,7 @@ func TestSelectRender(t *testing.T) {
 			"Test Select question output",
 			prompt,
 			SelectTemplateData{SelectedIndex: 2, PageEntries: prompt.Options},
-			`? Pick your word:
+			`? Pick your word:  [Use arrows to move, type to filter]
   foo
   bar
 ❯ baz
@@ -52,7 +52,7 @@ func TestSelectRender(t *testing.T) {
 			"Test Select question output with help hidden",
 			helpfulPrompt,
 			SelectTemplateData{SelectedIndex: 2, PageEntries: prompt.Options},
-			`? Pick your word: [? for help]
+			`? Pick your word:  [Use arrows to move, type to filter, ? for more help]
   foo
   bar
 ❯ baz
@@ -64,7 +64,7 @@ func TestSelectRender(t *testing.T) {
 			helpfulPrompt,
 			SelectTemplateData{SelectedIndex: 2, ShowHelp: true, PageEntries: prompt.Options},
 			`ⓘ This is helpful
-? Pick your word:
+? Pick your word:  [Use arrows to move, type to filter]
   foo
   bar
 ❯ baz

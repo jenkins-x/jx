@@ -23,12 +23,10 @@ func TestCreate(t *testing.T) {
 		src         string
 		expectedErr error
 	}{
-		{"testdata/create/src/empty", nil},
-		{"testdata/create/src/html-but-actually-go", nil},
 		{"testdata/create/src/simple-go", nil},
 		{"testdata/create/src/simple-go-with-draftignore", nil},
 		{"testdata/create/src/simple-go-with-chart", nil},
-		{"testdata/create/src/simple-go-with-multiple-charts", nil},
+		{"testdata/create/src/empty", nil},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("create %s", tc.src), func(t *testing.T) {
@@ -40,7 +38,7 @@ func TestCreate(t *testing.T) {
 			// Test
 			create := &createCmd{
 				appName: "myapp",
-				out:     ioutil.Discard,
+				out:     os.Stdout,
 				home:    draftpath.Home("testdata/drafthome/"),
 				dest:    pDir,
 			}
@@ -59,30 +57,6 @@ func TestCreate(t *testing.T) {
 
 			// Compare directories to ensure they are identical
 			assertIdentical(t, pDir, destcompare)
-		})
-	}
-}
-
-func TestNormalizeApplicationName(t *testing.T) {
-	testCases := []string{
-		"AppName",
-		"appName",
-		"appname",
-	}
-
-	expected := "appname"
-
-	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("normalizeApplicationName %s", tc), func(t *testing.T) {
-			create := &createCmd{
-				appName: tc,
-				out:     os.Stdout,
-				home:    draftpath.Home("../../"),
-				dest:    "",
-			}
-
-			create.normalizeApplicationName()
-			assertEqualString(t, create.appName, expected)
 		})
 	}
 }
@@ -124,15 +98,6 @@ func addGitKeep(t *testing.T, p string) {
 	}); err != nil {
 		t.Fatalf("couldn't stamp git keep files: %v", err)
 	}
-}
-
-// Compares two strings and asserts equivalence.
-func assertEqualString(t *testing.T, is string, shouldBe string) {
-	if is == shouldBe {
-		return
-	}
-
-	t.Fatalf("Assertion failed: Expected: %s. Got: %s", shouldBe, is)
 }
 
 // assertIdentical compares recursively all original and generated file content

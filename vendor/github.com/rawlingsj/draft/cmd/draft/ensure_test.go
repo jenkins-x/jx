@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -21,7 +20,7 @@ func TestEnsureDirectories(t *testing.T) {
 
 	cmd := &initCmd{
 		home: draftpath.Home(tempHome),
-		out:  ioutil.Discard,
+		out:  os.Stdout,
 	}
 
 	if err := cmd.ensureDirectories(); err != nil {
@@ -67,7 +66,7 @@ func TestEnsurePlugin(t *testing.T) {
 
 	cmd := &initCmd{
 		home: draftpath.Home(tempHome),
-		out:  ioutil.Discard,
+		out:  os.Stdout,
 		in:   os.Stdin,
 	}
 
@@ -106,7 +105,7 @@ func TestEnsurePluginExisting(t *testing.T) {
 
 	builtinPlugin := &plugin.Builtin{Name: "something", Version: "1.0.0"}
 	existingPlugins := []*pluginbase.Plugin{
-		{Metadata: &pluginbase.Metadata{
+		&pluginbase.Plugin{Metadata: &pluginbase.Metadata{
 			Name: "something", Version: "1.0.0"},
 		},
 	}

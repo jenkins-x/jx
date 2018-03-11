@@ -11,6 +11,7 @@ import (
 
 	"github.com/Azure/draft/pkg/osutil"
 	log "github.com/Sirupsen/logrus"
+	"github.com/generaltso/linguist"
 )
 
 var (
@@ -30,8 +31,6 @@ type (
 	}
 )
 
-// sortableResult is a list or programming languages, sorted based on the likelihood of the
-// primary programming language the application was written in.
 type sortableResult []*Language
 
 func (s sortableResult) Len() int {
@@ -213,7 +212,7 @@ func ProcessDir(dirname string) ([]*Language, error) {
 				return filepath.SkipDir
 			}
 		} else if (file.Mode() & os.ModeSymlink) == 0 {
-			if ShouldIgnoreFilename(path) {
+			if linguist.ShouldIgnoreFilename(path) {
 				log.Debugln(path, ": filename should be ignored, skipping")
 				return nil
 			}
@@ -226,7 +225,7 @@ func ProcessDir(dirname string) ([]*Language, error) {
 				return nil
 			}
 
-			if byName := LanguageByFilename(path); byName != "" {
+			if byName := linguist.LanguageByFilename(path); byName != "" {
 				log.Debugln(path, "got result by name: ", byName)
 				langs[byName] += size
 				totalSize += size
@@ -238,14 +237,14 @@ func ProcessDir(dirname string) ([]*Language, error) {
 				return err
 			}
 
-			if ShouldIgnoreContents(contents) {
+			if linguist.ShouldIgnoreContents(contents) {
 				log.Debugln(path, ": contents should be ignored, skipping")
 				return nil
 			}
 
-			hints := LanguageHints(path)
+			hints := linguist.LanguageHints(path)
 			log.Debugf("%s got language hints: %#v\n", path, hints)
-			byData := LanguageByContents(contents, hints)
+			byData := linguist.LanguageByContents(contents, hints)
 
 			if byData != "" {
 				log.Debugln(path, "got result by data: ", byData)
@@ -266,7 +265,7 @@ func ProcessDir(dirname string) ([]*Language, error) {
 		l := &Language{
 			Language: lang,
 			Percent:  (float64(size) / float64(totalSize)) * 100.0,
-			Color:    LanguageColor(lang),
+			Color:    linguist.LanguageColor(lang),
 		}
 		results = append(results, l)
 		log.Debugf("language: %s percent: %f color: %s", l.Language, l.Percent, l.Color)

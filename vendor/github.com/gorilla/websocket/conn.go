@@ -76,7 +76,7 @@ const (
 	// is UTF-8 encoded text.
 	PingMessage = 9
 
-	// PongMessage denotes a pong control message. The optional message payload
+	// PongMessage denotes a ping control message. The optional message payload
 	// is UTF-8 encoded text.
 	PongMessage = 10
 )
@@ -100,8 +100,9 @@ func (e *netError) Error() string   { return e.msg }
 func (e *netError) Temporary() bool { return e.temporary }
 func (e *netError) Timeout() bool   { return e.timeout }
 
-// CloseError represents a close message.
+// CloseError represents close frame.
 type CloseError struct {
+
 	// Code is defined in RFC 6455, section 11.7.
 	Code int
 
@@ -264,70 +265,26 @@ type Conn struct {
 }
 
 func newConn(conn net.Conn, isServer bool, readBufferSize, writeBufferSize int) *Conn {
-	return newConnBRW(conn, isServer, readBufferSize, writeBufferSize, nil)
-}
-
-type writeHook struct {
-	p []byte
-}
-
-func (wh *writeHook) Write(p []byte) (int, error) {
-	wh.p = p
-	return len(p), nil
-}
-
-func newConnBRW(conn net.Conn, isServer bool, readBufferSize, writeBufferSize int, brw *bufio.ReadWriter) *Conn {
 	mu := make(chan bool, 1)
 	mu <- true
 
-	var br *bufio.Reader
-	if readBufferSize == 0 && brw != nil && brw.Reader != nil {
-		// Reuse the supplied bufio.Reader if the buffer has a useful size.
-		// This code assumes that peek on a reader returns
-		// bufio.Reader.buf[:0].
-		brw.Reader.Reset(conn)
-		if p, err := brw.Reader.Peek(0); err == nil && cap(p) >= 256 {
-			br = brw.Reader
-		}
+	if readBufferSize == 0 {
+		readBufferSize = defaultReadBufferSize
 	}
-	if br == nil {
-		if readBufferSize == 0 {
-			readBufferSize = defaultReadBufferSize
-		}
-		if readBufferSize < maxControlFramePayloadSize {
-			readBufferSize = maxControlFramePayloadSize
-		}
-		br = bufio.NewReaderSize(conn, readBufferSize)
+	if readBufferSize < maxControlFramePayloadSize {
+		readBufferSize = maxControlFramePayloadSize
 	}
-
-	var writeBuf []byte
-	if writeBufferSize == 0 && brw != nil && brw.Writer != nil {
-		// Use the bufio.Writer's buffer if the buffer has a useful size. This
-		// code assumes that bufio.Writer.buf[:1] is passed to the
-		// bufio.Writer's underlying writer.
-		var wh writeHook
-		brw.Writer.Reset(&wh)
-		brw.Writer.WriteByte(0)
-		brw.Flush()
-		if cap(wh.p) >= maxFrameHeaderSize+256 {
-			writeBuf = wh.p[:cap(wh.p)]
-		}
-	}
-
-	if writeBuf == nil {
-		if writeBufferSize == 0 {
-			writeBufferSize = defaultWriteBufferSize
-		}
-		writeBuf = make([]byte, writeBufferSize+maxFrameHeaderSize)
+	if writeBufferSize == 0 {
+		writeBufferSize = defaultWriteBufferSize
 	}
 
 	c := &Conn{
 		isServer:               isServer,
-		br:                     br,
+		br:                     bufio.NewReaderSize(conn, readBufferSize),
 		conn:                   conn,
 		mu:                     mu,
 		readFinal:              true,
-		writeBuf:               writeBuf,
+		writeBuf:               make([]byte, writeBufferSize+maxFrameHeaderSize),
 		enableWriteCompression: true,
 		compressionLevel:       defaultCompressionLevel,
 	}
@@ -342,8 +299,7 @@ func (c *Conn) Subprotocol() string {
 	return c.subprotocol
 }
 
-// Close closes the underlying network connection without sending or waiting
-// for a close message.
+// Close closes the underlying network connection without sending or waiting for a close frame.
 func (c *Conn) Close() error {
 	return c.conn.Close()
 }
@@ -370,7 +326,7 @@ func (c *Conn) writeFatal(err error) error {
 	return err
 }
 
-func (c *Conn) write(frameType int, deadline time.Time, buf0, buf1 []byte) error {
+func (c *Conn) write(frameType int, deadline time.Time, bufs ...[]byte) error {
 	<-c.mu
 	defer func() { c.mu <- true }()
 
@@ -382,14 +338,15 @@ func (c *Conn) write(frameType int, deadline time.Time, buf0, buf1 []byte) error
 	}
 
 	c.conn.SetWriteDeadline(deadline)
-	if len(buf1) == 0 {
-		_, err = c.conn.Write(buf0)
-	} else {
-		err = c.writeBufs(buf0, buf1)
+	for _, buf := range bufs {
+		if len(buf) > 0 {
+			_, err := c.conn.Write(buf)
+			if err != nil {
+				return c.writeFatal(err)
+			}
+		}
 	}
-	if err != nil {
-		return c.writeFatal(err)
-	}
+
 	if frameType == CloseMessage {
 		c.writeFatal(ErrCloseSent)
 	}
@@ -483,9 +440,6 @@ func (c *Conn) prepWrite(messageType int) error {
 //
 // There can be at most one open writer on a connection. NextWriter closes the
 // previous writer if the application has not already done so.
-//
-// All message types (TextMessage, BinaryMessage, CloseMessage, PingMessage and
-// PongMessage) are supported.
 func (c *Conn) NextWriter(messageType int) (io.WriteCloser, error) {
 	if err := c.prepWrite(messageType); err != nil {
 		return nil, err
@@ -705,33 +659,12 @@ func (w *messageWriter) Close() error {
 	return nil
 }
 
-// WritePreparedMessage writes prepared message into connection.
-func (c *Conn) WritePreparedMessage(pm *PreparedMessage) error {
-	frameType, frameData, err := pm.frame(prepareKey{
-		isServer:         c.isServer,
-		compress:         c.newCompressionWriter != nil && c.enableWriteCompression && isData(pm.messageType),
-		compressionLevel: c.compressionLevel,
-	})
-	if err != nil {
-		return err
-	}
-	if c.isWriting {
-		panic("concurrent write to websocket connection")
-	}
-	c.isWriting = true
-	err = c.write(frameType, c.writeDeadline, frameData, nil)
-	if !c.isWriting {
-		panic("concurrent write to websocket connection")
-	}
-	c.isWriting = false
-	return err
-}
-
 // WriteMessage is a helper method for getting a writer using NextWriter,
 // writing the message and closing the writer.
 func (c *Conn) WriteMessage(messageType int, data []byte) error {
 
 	if c.isServer && (c.newCompressionWriter == nil || !c.enableWriteCompression) {
+
 		// Fast path with no allocations and single frame.
 
 		if err := c.prepWrite(messageType); err != nil {
@@ -766,6 +699,7 @@ func (c *Conn) SetWriteDeadline(t time.Time) error {
 // Read methods
 
 func (c *Conn) advanceFrame() (int, error) {
+
 	// 1. Skip remainder of previous frame.
 
 	if c.readRemaining > 0 {
@@ -1034,7 +968,7 @@ func (c *Conn) SetReadDeadline(t time.Time) error {
 }
 
 // SetReadLimit sets the maximum size for a message read from the peer. If a
-// message exceeds the limit, the connection sends a close message to the peer
+// message exceeds the limit, the connection sends a close frame to the peer
 // and returns ErrReadLimit to the application.
 func (c *Conn) SetReadLimit(limit int64) {
 	c.readLimit = limit
@@ -1047,22 +981,24 @@ func (c *Conn) CloseHandler() func(code int, text string) error {
 
 // SetCloseHandler sets the handler for close messages received from the peer.
 // The code argument to h is the received close code or CloseNoStatusReceived
-// if the close message is empty. The default close handler sends a close
-// message back to the peer.
+// if the close message is empty. The default close handler sends a close frame
+// back to the peer.
 //
-// The handler function is called from the NextReader, ReadMessage and message
-// reader Read methods. The application must read the connection to process
-// close messages as described in the section on Control Messages above.
+// The application must read the connection to process close messages as
+// described in the section on Control Frames above.
 //
-// The connection read methods return a CloseError when a close message is
+// The connection read methods return a CloseError when a close frame is
 // received. Most applications should handle close messages as part of their
 // normal error handling. Applications should only set a close handler when the
-// application must perform some action before sending a close message back to
+// application must perform some action before sending a close frame back to
 // the peer.
 func (c *Conn) SetCloseHandler(h func(code int, text string) error) {
 	if h == nil {
 		h = func(code int, text string) error {
-			message := FormatCloseMessage(code, "")
+			message := []byte{}
+			if code != CloseNoStatusReceived {
+				message = FormatCloseMessage(code, "")
+			}
 			c.WriteControl(CloseMessage, message, time.Now().Add(writeWait))
 			return nil
 		}
@@ -1076,12 +1012,11 @@ func (c *Conn) PingHandler() func(appData string) error {
 }
 
 // SetPingHandler sets the handler for ping messages received from the peer.
-// The appData argument to h is the PING message application data. The default
+// The appData argument to h is the PING frame application data. The default
 // ping handler sends a pong to the peer.
 //
-// The handler function is called from the NextReader, ReadMessage and message
-// reader Read methods. The application must read the connection to process
-// ping messages as described in the section on Control Messages above.
+// The application must read the connection to process ping messages as
+// described in the section on Control Frames above.
 func (c *Conn) SetPingHandler(h func(appData string) error) {
 	if h == nil {
 		h = func(message string) error {
@@ -1103,12 +1038,11 @@ func (c *Conn) PongHandler() func(appData string) error {
 }
 
 // SetPongHandler sets the handler for pong messages received from the peer.
-// The appData argument to h is the PONG message application data. The default
+// The appData argument to h is the PONG frame application data. The default
 // pong handler does nothing.
 //
-// The handler function is called from the NextReader, ReadMessage and message
-// reader Read methods. The application must read the connection to process
-// pong messages as described in the section on Control Messages above.
+// The application must read the connection to process ping messages as
+// described in the section on Control Frames above.
 func (c *Conn) SetPongHandler(h func(appData string) error) {
 	if h == nil {
 		h = func(string) error { return nil }
@@ -1142,14 +1076,7 @@ func (c *Conn) SetCompressionLevel(level int) error {
 }
 
 // FormatCloseMessage formats closeCode and text as a WebSocket close message.
-// An empty message is returned for code CloseNoStatusReceived.
 func FormatCloseMessage(closeCode int, text string) []byte {
-	if closeCode == CloseNoStatusReceived {
-		// Return empty message because it's illegal to send
-		// CloseNoStatusReceived. Return non-nil value in case application
-		// checks for nil.
-		return []byte{}
-	}
 	buf := make([]byte, 2+len(text))
 	binary.BigEndian.PutUint16(buf, uint16(closeCode))
 	copy(buf[2:], text)

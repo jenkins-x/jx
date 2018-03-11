@@ -12,10 +12,7 @@ import (
 	"k8s.io/helm/pkg/tlsutil"
 
 	"github.com/Azure/draft/pkg/draft"
-	"github.com/Azure/draft/pkg/draftd/portforwarder"
 	"github.com/Azure/draft/pkg/kube"
-	"github.com/Azure/draft/pkg/storage/inprocess"
-	cfgmaps "github.com/Azure/draft/pkg/storage/kube"
 )
 
 const startDesc = `
@@ -48,8 +45,6 @@ type startCmd struct {
 	local bool
 	// ingressEnabled sets whether we want to use ingress or not for applications
 	ingressEnabled bool
-	// storage engine draftd should use (default "inprocess").
-	storageEngine string
 }
 
 func newStartCmd(out io.Writer) *cobra.Command {
@@ -75,7 +70,6 @@ func newStartCmd(out io.Writer) *cobra.Command {
 	f.StringVar(&sc.registryURL, "registry-url", "127.0.0.1:5000", "the URL of the registry (e.g. quay.io, docker.io, gcr.io)")
 	f.StringVar(&sc.basedomain, "basedomain", "", "the base domain in which a wildcard DNS entry points to an ingress controller")
 	f.StringVar(&sc.tillerURI, "tiller-uri", "tiller-deploy:44134", "the URI used to connect to tiller")
-	f.StringVar(&sc.storageEngine, "storage", "inprocess", "storage engine draftd should use")
 	f.BoolVarP(&sc.local, "local", "", false, "run draftd locally (uses local kubecfg)")
 	f.BoolVarP(&sc.ingressEnabled, "ingress-enabled", "", false, "configure ingress")
 	// add TLS flags
@@ -125,17 +119,9 @@ func (c *startCmd) run() (err error) {
 		cfg.UseTLS = true
 		cfg.TLSConfig = tlscfg
 	}
-	switch c.storageEngine {
-	case "configmaps":
-		namespace := envOr(namespaceEnvVar, portforwarder.DefaultDraftNamespace)
-		cfg.Storage = cfgmaps.NewConfigMaps(cfg.Kube.CoreV1().ConfigMaps(namespace))
-	case "inprocess":
-		cfg.Storage = inprocess.NewStore()
-	default:
-		return fmt.Errorf("unknown storage engine name provided: %q", c.storageEngine)
-	}
 
 	cfg.Helm = helm.NewClient(helm.Host(c.tillerURI))
+
 	log.Printf("server is now listening at %s (tls=%t)", c.listenAddr, tlsEnable || tlsVerify)
 
 	return draft.NewServer(cfg).Serve(context.Background())

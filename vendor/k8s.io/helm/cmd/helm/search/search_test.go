@@ -91,10 +91,10 @@ var indexfileEntries = map[string]repo.ChartVersions{
 			},
 		},
 		{
-			URLs: []string{"http://example.com/charts/santa-maria-1.2.2.tgz"},
+			URLs: []string{"http://example.com/charts/santa-maria-1.2.2-rc-1.tgz"},
 			Metadata: &chart.Metadata{
 				Name:        "santa-maria",
-				Version:     "1.2.2",
+				Version:     "1.2.2-RC-1",
 				Description: "Three boat",
 			},
 		},
@@ -135,7 +135,7 @@ func TestAll(t *testing.T) {
 
 func TestAddRepo_Sort(t *testing.T) {
 	i := loadTestIndex(t, true)
-	sr, err := i.Search("testing/santa-maria", 100, false)
+	sr, err := i.Search("TESTING/SANTA-MARIA", 100, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,13 +203,21 @@ func TestSearchByName(t *testing.T) {
 			},
 		},
 		{
+			name:  "description upper search, two results",
+			query: "TWO",
+			expect: []*Result{
+				{Name: "testing/pinta"},
+				{Name: "ztesting/pinta"},
+			},
+		},
+		{
 			name:   "nothing found",
 			query:  "mayflower",
 			expect: []*Result{},
 		},
 		{
 			name:  "regexp, one result",
-			query: "th[ref]*",
+			query: "Th[ref]*",
 			expect: []*Result{
 				{Name: "testing/santa-maria"},
 			},

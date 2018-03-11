@@ -57,6 +57,10 @@ func (rr *RuneReader) ReadRune() (rune, int, error) {
 	}
 	// parse ^[ sequences to look for arrow keys
 	if r == '\033' {
+		if rr.state.buf.Buffered() == 0 {
+			// no more characters so must be `Esc` key
+			return KeyEscape, 1, nil
+		}
 		r, size, err = rr.state.buf.ReadRune()
 		if err != nil {
 			return r, size, err

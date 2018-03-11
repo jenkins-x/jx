@@ -36,6 +36,8 @@ wordpress/
 Helm reserves use of the `charts/` and `templates/` directories, and of
 the listed file names. Other files will be left as they are.
 
+While the `charts` and `templates` directories are optional there must be at least one chart dependency or template file for the chart to be valid.
+
 ## The Chart.yaml File
 
 The `Chart.yaml` file is required for a chart. It contains the following fields:
@@ -43,6 +45,7 @@ The `Chart.yaml` file is required for a chart. It contains the following fields:
 ```yaml
 name: The name of the chart (required)
 version: A SemVer 2 version (required)
+kubeVersion: A SemVer range of compatible Kubernetes versions (optional)
 description: A single-sentence description of this project (optional)
 keywords:
   - A list of keywords about this project (optional)
@@ -52,10 +55,11 @@ sources:
 maintainers: # (optional)
   - name: The maintainer's name (required for each maintainer)
     email: The maintainer's email (optional for each maintainer)
+    url: A URL for the maintainer (optional for each maintainer)
 engine: gotpl # The name of the template engine (optional, defaults to gotpl)
 icon: A URL to an SVG or PNG image to be used as an icon (optional).
 appVersion: The version of the app that this contains (optional). This needn't be SemVer.
-deprecated: Whether or not this chart is deprecated (optional, boolean)
+deprecated: Whether this chart is deprecated (optional, boolean)
 tillerVersion: The version of Tiller that this chart requires. This should be expressed as a SemVer range: ">2.0.0" (optional)
 ```
 
@@ -172,7 +176,7 @@ dependencies:
   that you must also use `helm repo add` to add that repo locally.
 
 Once you have a dependencies file, you can run `helm dependency update`
-and it will use your dependency file to download all of the specified
+and it will use your dependency file to download all the specified
 charts into your `charts/` directory for you.
 
 ```console
@@ -273,7 +277,7 @@ dependencies:
         condition: subchart2.enabled,global.subchart2.enabled
         tags:
           - back-end
-          - subchart1
+          - subchart2
 
 ````
 ````
@@ -291,7 +295,7 @@ In the above example all charts with the tag `front-end` would be disabled but s
 `front-end` tag and `subchart1` will be enabled.  
 
 Since `subchart2` is tagged with `back-end` and that tag evaluates to `true`, `subchart2` will be
-enabled. Also note that although `subchart2` has a condition specified in `requirements.yaml`, there
+enabled. Also notes that although `subchart2` has a condition specified in `requirements.yaml`, there
 is no corresponding path and value in the parent's values so that condition has no effect.  
 
 ##### Using the CLI with Tags and Conditions
@@ -322,7 +326,7 @@ tooling to introspect user-settable values.
 The keys containing the values to be imported can be specified in the parent chart's `requirements.yaml` file 
 using a YAML list. Each item in the list is a key which is imported from the child chart's `exports` field. 
 
-To import values not contained in the `exports` key, use the [child/parent](#using-the-child/parent-format) format.
+To import values not contained in the `exports` key, use the [child-parent](#using-the-child-parent-format) format.
 Examples of both formats are described below.
 
 ##### Using the exports format
@@ -344,7 +348,7 @@ exports:
     myint: 99
 ```
 
-Since we are specifying the key `data` in our import list, Helm looks in the the `exports` field of the child 
+Since we are specifying the key `data` in our import list, Helm looks in the `exports` field of the child 
 chart for `data` key and imports its contents. 
 
 The final parent values would contain our exported field:
@@ -357,9 +361,9 @@ myint: 99
 ```
 
 Please note the parent key `data` is not contained in the parent's final values. If you need to specify the 
-parent key, use the 'child/parent' format. 
+parent key, use the 'child-parent' format. 
 
-##### Using the child/parent format
+##### Using the child-parent format
 
 To access values that are not contained in the `exports` key of the child chart's values, you will need to 
 specify the source key of the values to be imported (`child`) and the destination path in the parent chart's 
@@ -448,6 +452,45 @@ directory.
 
 **TIP:** _To drop a dependency into your `charts/` directory, use the
 `helm fetch` command_
+
+### Operational aspects of using dependencies
+
+The above sections explain how to specify chart dependencies, but how does this affect
+chart installation using `helm install` and `helm upgrade`?
+
+Suppose that a chart named "A" creates the following Kubernetes objects
+
+- namespace "A-Namespace"
+- statefulset "A-StatefulSet"
+- service "A-Service"
+
+Furthermore, A is dependent on chart B that creates objects
+
+- namespace "B-Namespace"
+- replicaset "B-ReplicaSet"
+- service "B-Service"
+
+After installation/upgrade of chart A a single Helm release is created/modified. The release will 
+create/update all of the above Kubernetes objects in the following order:
+
+- A-Namespace
+- B-Namespace
+- A-StatefulSet
+- B-ReplicaSet
+- A-Service
+- B-Service
+
+This is because when Helm installs/upgrades charts, 
+the Kubernetes objects from the charts and all its dependencies are 
+
+- aggregrated into a single set; then 
+- sorted by type followed by name; and then 
+- created/updated in that order. 
+
+Hence a single release is created with all the objects for the chart and its dependencies.
+
+The install order of Kubernetes types is given by the enumeration InstallOrder in kind_sorter.go 
+(see [the Helm source file](https://github.com/kubernetes/helm/blob/master/pkg/tiller/kind_sorter.go#L26)).
 
 ## Templates and Values
 
@@ -548,9 +591,10 @@ sensitive_.
   `Chart.Maintainers`.
 - `Files`: A map-like object containing all non-special files in the chart. This
   will not give you access to templates, but will give you access to additional
-  files that are present. Files can be accessed using `{{index .Files "file.name"}}`
-  or using the `{{.Files.Get name}}` or `{{.Files.GetString name}}` functions. You can
-  also access the contents of the file as `[]byte` using `{{.Files.GetBytes}}`
+  files that are present (unless they are excluded using `.helmignore`). Files can be
+  accessed using `{{index .Files "file.name"}}` or using the `{{.Files.Get name}}` or
+  `{{.Files.GetString name}}` functions. You can also access the contents of the file
+  as `[]byte` using `{{.Files.GetBytes}}`
 - `Capabilities`: A map-like object that contains information about the versions
   of Kubernetes (`{{.Capabilities.KubeVersion}}`, Tiller
   (`{{.Capabilities.TillerVersion}}`, and the supported Kubernetes API versions
@@ -806,6 +850,8 @@ considerations in mind:
 - The `Chart.yaml` will be overwritten by the generator.
 - Users will expect to modify such a chart's contents, so documentation
   should indicate how users can do so.
+- All occurences of `<CHARTNAME>` will be replaced with the specified chart
+  name so that starter charts can be used as templates.
 
 Currently the only way to add a chart to `$HELM_HOME/starters` is to manually
 copy it there. In your chart's documentation, you may want to explain that

@@ -12,6 +12,7 @@ To compile and test Draft binaries and to build Docker images, you will need:
  - [git][]
  - [helm][], using the same version as recommended in the [installation guide][install].
  - [Go][] 1.8 or later, with support for compiling to `linux/amd64`
+ - [glide][]
  - [upx][] (optional) to compress binaries for a smaller Docker image
 
 In most cases, install the prerequisite according to its instructions. See the next section
@@ -67,16 +68,14 @@ source code.
 Run `make` to build the `draft` and `draftd` binaries:
 
 ```shell
-$ make bootstrap  # runs `dep ensure`
+$ make bootstrap  # runs `glide install`
 $ make build      # compiles `draft` and `draftd` inside bin/
 ```
 
 ## Test Your Changes
 
-Draft includes a suite of tests.
-- `make test-lint`: runs linter/style checks
-- `make test-unit`: runs basic unit tests
-- `make test`: runs all of the above
+Draft includes a suite of tests. Run `make test` for basic unit tests or `make test-e2e` for more
+comprehensive, end-to-end tests.
 
 ## Deploying Your Changes
 
@@ -125,8 +124,8 @@ helm delete --purge draft
 
 
 [docker]: https://www.docker.com/
-[install]: ../install.md
 [git]: https://git-scm.com/
+[glide]: https://github.com/Masterminds/glide
 [go]: https://golang.org/
 [helm]: https://github.com/kubernetes/helm
 [Homebrew]: https://brew.sh/

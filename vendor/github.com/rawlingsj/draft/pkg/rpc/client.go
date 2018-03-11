@@ -41,24 +41,6 @@ func (c *clientImpl) Version(ctx context.Context) (*version.Version, error) {
 	return v, nil
 }
 
-// GetLogs implements rpc.Client.GetLogs
-func (c *clientImpl) GetLogs(ctx context.Context, req *GetLogsRequest) (*GetLogsResponse, error) {
-	conn, err := connect(c)
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Close()
-
-	client := NewDraftClient(conn)
-	rpcctx := context.Background()
-
-	r, err := client.GetLogs(rpcctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("error getting logs from server: %v", err)
-	}
-	return r, nil
-}
-
 // UpBuild implements rpc.Client.UpBuild
 func (c *clientImpl) UpBuild(ctx context.Context, req *UpRequest, outc chan<- *UpSummary) (err error) {
 	conn, err := connect(c)
@@ -71,7 +53,7 @@ func (c *clientImpl) UpBuild(ctx context.Context, req *UpRequest, outc chan<- *U
 	msgc := make(chan *UpMessage, 1)
 	errc := make(chan error, 1)
 	go func() {
-		if err := upBuild(ctx, client, req, msgc); err != nil {
+		if err := up_build(ctx, client, req, msgc); err != nil {
 			errc <- err
 		}
 		close(errc)
@@ -118,13 +100,13 @@ func (c *clientImpl) UpStream(apictx context.Context, reqc <-chan *UpRequest, ou
 		}
 		close(outc)
 	}()
-	return upStream(rpcctx, client, reqc, msgc)
+	return up_stream(rpcctx, client, reqc, msgc)
 }
 
-func upBuild(ctx context.Context, rpc DraftClient, msg *UpRequest, outc chan<- *UpMessage) error {
+func up_build(ctx context.Context, rpc DraftClient, msg *UpRequest, outc chan<- *UpMessage) error {
 	s, err := rpc.UpBuild(ctx, &UpMessage{&UpMessage_UpRequest{msg}})
 	if err != nil {
-		return fmt.Errorf("rpc error handling upBuild: %v", err)
+		return fmt.Errorf("rpc error handling up_build: %v", err)
 	}
 	defer close(outc)
 	for {
@@ -133,16 +115,16 @@ func upBuild(ctx context.Context, rpc DraftClient, msg *UpRequest, outc chan<- *
 			return nil
 		}
 		if err != nil {
-			return fmt.Errorf("rpc error handling upBuild recv: %v", err)
+			return fmt.Errorf("rpc error handling up_build recv: %v", err)
 		}
 		outc <- resp
 	}
 }
 
-func upStream(ctx context.Context, rpc DraftClient, send <-chan *UpRequest, recv chan<- *UpMessage) error {
+func up_stream(ctx context.Context, rpc DraftClient, send <-chan *UpRequest, recv chan<- *UpMessage) error {
 	stream, err := rpc.UpStream(ctx)
 	if err != nil {
-		return fmt.Errorf("rpc error handling upStream: %v", err)
+		return fmt.Errorf("rpc error handling up_stream: %v", err)
 	}
 	done := make(chan struct{})
 	errc := make(chan error)

@@ -54,6 +54,7 @@ func TestLoadChartRepository(t *testing.T) {
 		filepath.Join(testRepository, "frobnitz-1.2.3.tgz"),
 		filepath.Join(testRepository, "sprocket-1.1.0.tgz"),
 		filepath.Join(testRepository, "sprocket-1.2.0.tgz"),
+		filepath.Join(testRepository, "universe/zarthal-1.0.0.tgz"),
 	}
 
 	if r.Config.Name != testRepository {
@@ -118,8 +119,8 @@ func verifyIndex(t *testing.T, actual *IndexFile) {
 	}
 
 	entries := actual.Entries
-	if numEntries := len(entries); numEntries != 2 {
-		t.Errorf("Expected 2 charts to be listed in index file but got %v", numEntries)
+	if numEntries := len(entries); numEntries != 3 {
+		t.Errorf("Expected 3 charts to be listed in index file but got %v", numEntries)
 	}
 
 	expects := map[string]ChartVersions{
@@ -142,6 +143,14 @@ func verifyIndex(t *testing.T, actual *IndexFile) {
 				Metadata: &chart.Metadata{
 					Name:    "sprocket",
 					Version: "1.1.0",
+				},
+			},
+		},
+		"zarthal": {
+			{
+				Metadata: &chart.Metadata{
+					Name:    "zarthal",
+					Version: "1.0.0",
 				},
 			},
 		},
@@ -266,5 +275,23 @@ func TestErrorFindChartInRepoURL(t *testing.T) {
 	}
 	if err != nil && err.Error() != `chart "chartWithNoURL" has no downloadable URLs` {
 		t.Errorf("Expected error for chart not found, but got a different error (%v)", err)
+	}
+}
+
+func TestResolveReferenceURL(t *testing.T) {
+	chartURL, err := ResolveReferenceURL("http://localhost:8123/charts/", "nginx-0.2.0.tgz")
+	if err != nil {
+		t.Errorf("%s", err)
+	}
+	if chartURL != "http://localhost:8123/charts/nginx-0.2.0.tgz" {
+		t.Errorf("%s", chartURL)
+	}
+
+	chartURL, err = ResolveReferenceURL("http://localhost:8123", "https://kubernetes-charts.storage.googleapis.com/nginx-0.2.0.tgz")
+	if err != nil {
+		t.Errorf("%s", err)
+	}
+	if chartURL != "https://kubernetes-charts.storage.googleapis.com/nginx-0.2.0.tgz" {
+		t.Errorf("%s", chartURL)
 	}
 }

@@ -35,6 +35,13 @@ var table = []TestUtil.TestTableEntry{
 			Default: []string{"Sundayaa"},
 		}, &answer,
 	},
+	{
+		"can navigate with j/k", &survey.MultiSelect{
+			Message: "What days do you prefer:",
+			Options: []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"},
+			Default: []string{"Sundayaa"},
+		}, &answer,
+	},
 }
 
 func main() {
