@@ -192,7 +192,7 @@ func (o *InitOptions) initDraft() error {
 		return err
 	}
 
-	if running || o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.DraftClient {
+	if running || o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES || o.Flags.DraftClient {
 		err = o.runCommand("draft", "init", "--auto-accept", "--client-only")
 
 	} else {
@@ -214,7 +214,7 @@ func (o *InitOptions) initDraft() error {
 		return err
 	}
 
-	if !running && o.Flags.Provider != GKE && o.Flags.Provider != AKS && !o.Flags.DraftClient {
+	if !running && o.Flags.Provider != GKE && o.Flags.Provider != AKS && o.Flags.Provider != EKS && o.Flags.Provider != KUBERNETES && !o.Flags.DraftClient {
 		err = kube.WaitForDeploymentToBeReady(client, "draftd", "kube-system", 5*time.Minute)
 		if err != nil {
 			return err
@@ -326,7 +326,7 @@ func (o *InitOptions) initIngress() error {
 		return err
 	}
 
-	if o.Flags.Provider == GKE || o.Flags.Provider == AKS {
+	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES {
 		log.Info("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in kube-system namespace\n")
 		err = kube.WaitForExternalIP(client, INGRESS_SERVICE_NAME, "kube-system", 10*time.Minute)
 		if err != nil {
