@@ -310,6 +310,13 @@ func (o *ImportOptions) DraftCreate() error {
 		lpack = filepath.Join(draftpath.Home(homePath()).Packs(), "github.com/jenkins-x/draft-packs/packs/java")
 	}
 
+	chartsDir := filepath.Join(dir, "charts")
+	exists, err = util.FileExists(chartsDir)
+	if exists {
+		log.Warn("existing charts folder found so skipping 'draft create' step\n")
+		return nil
+	}
+
 	err = pack.CreateFrom(dir, lpack)
 	if err != nil {
 		return err
