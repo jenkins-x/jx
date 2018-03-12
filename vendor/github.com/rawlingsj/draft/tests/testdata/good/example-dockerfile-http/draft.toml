@@ -1,0 +1,10 @@
+[environments]
+  [environments.nowatch]
+    name = "example-dockerfile-http"
+    namespace = "default"
+    watch = false
+  [environments.watch]
+    name = "example-dockerfile-http"
+    namespace = "default"
+    watch = true
+    watch_delay = 1

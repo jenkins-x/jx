@@ -1,5 +1,5 @@
-hash: 4567a914b29cfbe9030d5fe256686e3460d666591ab29cfaef9a31e713e05440
-updated: 2018-03-11T17:57:10.92013507Z
+hash: 5877dcef334a4b41147f0e732a72994eead52eb87b90f663c2a685ee625f2764
+updated: 2018-03-12T06:03:30.517064912Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -139,9 +139,7 @@ imports:
   - openstack/utils
   - pagination
 - name: github.com/gorilla/websocket
-  version: 7fe3183ee95b29153898356cc2c6026a8cb7afe5
-  repo: https://github.com/bacongobbler/websocket
-  vcs: git
+  version: ea4d1f681babbce9545c9c5f3d5194a789c89f5b
 - name: github.com/hashicorp/golang-lru
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   subpackages:
@@ -381,7 +379,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 955bcb081458c5ab2fae667b9663ce6fc9589951
+  version: 5e3a17f7ca0526b839f67e3e91f8bfe542bb5903
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1

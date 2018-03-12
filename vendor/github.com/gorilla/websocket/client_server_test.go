@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"reflect"
@@ -166,7 +167,7 @@ func TestProxyDial(t *testing.T) {
 			origHandler.ServeHTTP(w, r)
 		})
 
-	ws, _, err := cstDialer.Dial(DefaultRequest(surl))
+	ws, _, err := cstDialer.Dial(s.URL, nil)
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
@@ -181,9 +182,8 @@ func TestProxyAuthorizationDial(t *testing.T) {
 	defer s.Close()
 
 	surl, _ := url.Parse(s.URL)
-	purl, _ := url.Parse(s.URL)
-	purl.User = url.UserPassword("username", "password")
-	cstDialer.Proxy = http.ProxyURL(purl)
+	surl.User = url.UserPassword("username", "password")
+	cstDialer.Proxy = http.ProxyURL(surl)
 
 	connect := false
 	origHandler := s.Server.Config.Handler
@@ -207,7 +207,7 @@ func TestProxyAuthorizationDial(t *testing.T) {
 			origHandler.ServeHTTP(w, r)
 		})
 
-	ws, _, err := cstDialer.Dial(DefaultRequest(surl))
+	ws, _, err := cstDialer.Dial(s.URL, nil)
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
@@ -221,9 +221,7 @@ func TestDial(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-
-	ws, _, err := cstDialer.Dial(DefaultRequest(surl))
+	ws, _, err := cstDialer.Dial(s.URL, nil)
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
@@ -235,40 +233,44 @@ func TestDialCookieJar(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-	req := DefaultRequest(surl)
+	jar, _ := cookiejar.New(nil)
+	d := cstDialer
+	d.Jar = jar
 
-	req.AddCookie(&http.Cookie{Name: "gorilla", Value: "ws", Path: "/"})
+	u, _ := parseURL(s.URL)
 
-	ws, resp, err := cstDialer.Dial(req)
+	switch u.Scheme {
+	case "ws":
+		u.Scheme = "http"
+	case "wss":
+		u.Scheme = "https"
+	}
+
+	cookies := []*http.Cookie{&http.Cookie{Name: "gorilla", Value: "ws", Path: "/"}}
+	d.Jar.SetCookies(u, cookies)
+
+	ws, _, err := d.Dial(s.URL, nil)
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
 	defer ws.Close()
 
-	gorillaCookie, err := req.Cookie("gorilla")
-	if err == http.ErrNoCookie {
-		t.Errorf("Cookie 'gorilla' not present in request.",)
+	var gorilla string
+	var sessionID string
+	for _, c := range d.Jar.Cookies(u) {
+		if c.Name == "gorilla" {
+			gorilla = c.Value
+		}
+
+		if c.Name == "sessionID" {
+			sessionID = c.Value
+		}
 	}
-	if gorillaCookie.Value != "ws" {
-		t.Error("Cookie 'gorilla' != 'ws'; got '%s'", gorillaCookie.Value)
+	if gorilla != "ws" {
+		t.Error("Cookie not present in jar.")
 	}
 
-	var (
-		exists bool
-		sessionID string
-	)
-	for _, cookie := range resp.Cookies() {
-		if cookie.Name == "sessionID" {
-			exists = true
-			sessionID = cookie.Value
-		}
-	}
-	if exists {
-		if sessionID != "1234" {
-			t.Errorf("Cookie 'sessionID' != '1234'; got '%s'", sessionID)
-		}
-	} else {
+	if sessionID != "1234" {
 		t.Error("Set-Cookie not received from the server.")
 	}
 
@@ -278,8 +280,6 @@ func TestDialCookieJar(t *testing.T) {
 func TestDialTLS(t *testing.T) {
 	s := newTLSServer(t)
 	defer s.Close()
-
-	surl, _ := url.Parse(s.URL)
 
 	certs := x509.NewCertPool()
 	for _, c := range s.TLS.Certificates {
@@ -294,7 +294,7 @@ func TestDialTLS(t *testing.T) {
 
 	d := cstDialer
 	d.TLSClientConfig = &tls.Config{RootCAs: certs}
-	ws, _, err := d.Dial(DefaultRequest(surl))
+	ws, _, err := d.Dial(s.URL, nil)
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
@@ -307,9 +307,7 @@ func xTestDialTLSBadCert(t *testing.T) {
 	s := newTLSServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-
-	ws, _, err := cstDialer.Dial(DefaultRequest(surl))
+	ws, _, err := cstDialer.Dial(s.URL, nil)
 	if err == nil {
 		ws.Close()
 		t.Fatalf("Dial: nil")
@@ -320,11 +318,9 @@ func TestDialTLSNoVerify(t *testing.T) {
 	s := newTLSServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-
 	d := cstDialer
 	d.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	ws, _, err := d.Dial(DefaultRequest(surl))
+	ws, _, err := d.Dial(s.URL, nil)
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
@@ -336,11 +332,9 @@ func TestDialTimeout(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-
 	d := cstDialer
 	d.HandshakeTimeout = -1
-	ws, _, err := d.Dial(DefaultRequest(surl))
+	ws, _, err := d.Dial(s.URL, nil)
 	if err == nil {
 		ws.Close()
 		t.Fatalf("Dial: nil")
@@ -351,9 +345,7 @@ func TestDialBadScheme(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.Server.URL)
-
-	ws, _, err := cstDialer.Dial(DefaultRequest(surl))
+	ws, _, err := cstDialer.Dial(s.Server.URL, nil)
 	if err == nil {
 		ws.Close()
 		t.Fatalf("Dial: nil")
@@ -364,12 +356,7 @@ func TestDialBadOrigin(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-
-	req := DefaultRequest(surl)
-	req.Header = http.Header{"Origin": {"bad"}}
-
-	ws, resp, err := cstDialer.Dial(req)
+	ws, resp, err := cstDialer.Dial(s.URL, http.Header{"Origin": {"bad"}})
 	if err == nil {
 		ws.Close()
 		t.Fatalf("Dial: nil")
@@ -386,8 +373,6 @@ func TestDialBadHeader(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-
 	for _, k := range []string{"Upgrade",
 		"Connection",
 		"Sec-Websocket-Key",
@@ -395,10 +380,7 @@ func TestDialBadHeader(t *testing.T) {
 		"Sec-Websocket-Protocol"} {
 		h := http.Header{}
 		h.Set(k, "bad")
-
-		req := DefaultRequest(surl)
-		req.Header = h
-		ws, _, err := cstDialer.Dial(req)
+		ws, _, err := cstDialer.Dial(s.URL, http.Header{"Origin": {"bad"}})
 		if err == nil {
 			ws.Close()
 			t.Errorf("Dial with header %s returned nil", k)
@@ -406,15 +388,31 @@ func TestDialBadHeader(t *testing.T) {
 	}
 }
 
+func TestBadMethod(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ws, err := cstUpgrader.Upgrade(w, r, nil)
+		if err == nil {
+			t.Errorf("handshake succeeded, expect fail")
+			ws.Close()
+		}
+	}))
+	defer s.Close()
+
+	resp, err := http.PostForm(s.URL, url.Values{})
+	if err != nil {
+		t.Fatalf("PostForm returned error %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Errorf("Status = %d, want %d", resp.StatusCode, http.StatusMethodNotAllowed)
+	}
+}
+
 func TestHandshake(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-	req := DefaultRequest(surl)
-	req.Header = http.Header{"Origin": {s.URL}}
-
-	ws, resp, err := cstDialer.Dial(req)
+	ws, resp, err := cstDialer.Dial(s.URL, http.Header{"Origin": {s.URL}})
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
@@ -446,10 +444,7 @@ func TestRespOnBadHandshake(t *testing.T) {
 	}))
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-	surl.Scheme = makeWsProto(surl.Scheme)
-
-	ws, resp, err := cstDialer.Dial(DefaultRequest(surl))
+	ws, resp, err := cstDialer.Dial(makeWsProto(s.URL), nil)
 	if err == nil {
 		ws.Close()
 		t.Fatalf("Dial: nil")
@@ -479,8 +474,6 @@ func TestHostHeader(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-
 	specifiedHost := make(chan string, 1)
 	origHandler := s.Server.Config.Handler
 
@@ -491,10 +484,7 @@ func TestHostHeader(t *testing.T) {
 			origHandler.ServeHTTP(w, r)
 		})
 
-	req := DefaultRequest(surl)
-	req.Host = "testhost"
-
-	ws, _, err := cstDialer.Dial(req)
+	ws, _, err := cstDialer.Dial(s.URL, http.Header{"Host": {"testhost"}})
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
@@ -511,11 +501,9 @@ func TestDialCompression(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	surl, _ := url.Parse(s.URL)
-
 	dialer := cstDialer
 	dialer.EnableCompression = true
-	ws, _, err := dialer.Dial(DefaultRequest(surl))
+	ws, _, err := dialer.Dial(s.URL, nil)
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
