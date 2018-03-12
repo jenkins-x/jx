@@ -216,6 +216,7 @@ func (options *InstallOptions) Run() error {
 
 	initOpts := &options.InitOptions
 	initOpts.Flags.Provider = options.Flags.Provider
+	initOpts.Flags.Namespace = options.Flags.Namespace
 	initOpts.BatchMode = options.BatchMode
 	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
 		initOpts.Flags.Domain = options.Flags.Domain
