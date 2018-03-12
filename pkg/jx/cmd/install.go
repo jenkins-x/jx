@@ -34,7 +34,8 @@ type InstallOptions struct {
 	CreateEnvOptions
 	config.AdminSecretsService
 
-	Flags InstallFlags
+	InitOptions InitOptions
+	Flags       InstallFlags
 }
 
 type InstallFlags struct {
@@ -113,6 +114,11 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 }
 
 func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) InstallOptions {
+	commonOptions := CommonOptions{
+		Factory: f,
+		Out:     out,
+		Err:     errOut,
+	}
 	options := InstallOptions{
 		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
 			Username: "admin",
@@ -126,11 +132,7 @@ func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) In
 			},
 		},
 		GitRepositoryOptions: gits.GitRepositoryOptions{},
-		CommonOptions: CommonOptions{
-			Factory: f,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions:        commonOptions,
 		CreateEnvOptions: CreateEnvOptions{
 			HelmValuesConfig: config.HelmValuesConfig{
 				ExposeController: &config.ExposeController{},
@@ -153,6 +155,10 @@ func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) In
 				},
 			},
 		},
+		InitOptions: InitOptions{
+			CommonOptions: commonOptions,
+			Flags:         InitFlags{},
+		},
 		AdminSecretsService: config.AdminSecretsService{},
 	}
 	return options
@@ -171,12 +177,9 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
-	ignoreDomain := false
-	if includesInit {
-		ignoreDomain = true
-	}
-	options.HelmValuesConfig.AddExposeControllerValues(cmd, ignoreDomain)
+	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
 	options.AdminSecretsService.AddAdminSecretsValues(cmd)
+	options.InitOptions.addInitFlags(cmd)
 }
 
 // Run implements this command
@@ -230,6 +233,20 @@ func (options *InstallOptions) Run() error {
 	config, err := options.CreateEnvOptions.HelmValuesConfig.String()
 	if err != nil {
 		return err
+	}
+
+	initOpts := &options.InitOptions
+	initOpts.Flags.Provider = options.Flags.Provider
+	initOpts.BatchMode = options.BatchMode
+
+	err = initOpts.Run()
+	if err != nil {
+		return err
+	}
+
+	// share the init domain option with the install options
+	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
+		options.Flags.Domain = initOpts.Flags.Domain
 	}
 
 	// clone the environments repo
