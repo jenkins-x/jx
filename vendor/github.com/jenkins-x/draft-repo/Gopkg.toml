@@ -1,0 +1,72 @@
+[[constraint]]
+  name = "github.com/BurntSushi/toml"
+
+[[constraint]]
+  name = "github.com/Masterminds/semver"
+
+[[constraint]]
+  name = "github.com/Masterminds/vcs"
+  version = "1.11.1"
+
+[[constraint]]
+  name = "github.com/Sirupsen/logrus"
+  version = "v1.0.4"
+
+[[constraint]]
+  name = "github.com/docker/docker"
+  source = "https://github.com/moby/moby"
+  version = "=v17.05.0-ce"
+
+[[override]]
+  name = "github.com/docker/distribution"
+  revision = "b38e5838b7b2f2ad48e06ec4b500011976080621"
+
+[[constraint]]
+  name = "github.com/fatih/color"
+
+[[constraint]]
+  name = "github.com/golang/protobuf"
+
+[[constraint]]
+  name = "github.com/gosuri/uitable"
+
+[[constraint]]
+  name = "github.com/oklog/ulid"
+
+[[constraint]]
+  name = "github.com/rjeczalik/notify"
+
+[[constraint]]
+  name = "github.com/spf13/cobra"
+
+[[constraint]]
+  name = "github.com/technosophos/moniker"
+
+[[constraint]]
+  name = "golang.org/x/crypto"
+
+[[constraint]]
+  name = "golang.org/x/net"
+
+[[constraint]]
+  name = "github.com/ghodss/yaml"
+
+[[constraint]]
+  name = "k8s.io/helm"
+  version = "~v2.7.0"
+
+[[override]]
+  name = "k8s.io/kubernetes"
+  version = "=v1.8.0"
+
+[[override]]
+  name = "github.com/imdario/mergo"
+  revision = "6633656539c1639d9d78127b7d47c622b5d7b6dc"
+
+[[override]]
+  name = "google.golang.org/grpc"
+  version = "=v1.2.1"
+
+[[constraint]]
+  name = "github.com/jbrukh/bayesian"
+  branch = "master"

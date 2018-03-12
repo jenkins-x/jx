@@ -21,18 +21,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/ghodss/yaml"
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/engine"
 	"k8s.io/helm/pkg/lint/support"
-	cpb "k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/timeconv"
 	tversion "k8s.io/helm/pkg/version"
 )
 
 // Templates lints the templates in the Linter.
-func Templates(linter *support.Linter, values []byte, namespace string, strict bool) {
+func Templates(linter *support.Linter) {
 	path := "templates/"
 	templatesPath := filepath.Join(linter.ChartDir, path)
 
@@ -52,34 +53,26 @@ func Templates(linter *support.Linter, values []byte, namespace string, strict b
 		return
 	}
 
-	options := chartutil.ReleaseOptions{Name: "testRelease", Time: timeconv.Now(), Namespace: namespace}
+	options := chartutil.ReleaseOptions{Name: "testRelease", Time: timeconv.Now(), Namespace: "testNamespace"}
 	caps := &chartutil.Capabilities{
-		APIVersions:   chartutil.DefaultVersionSet,
-		KubeVersion:   chartutil.DefaultKubeVersion,
+		APIVersions: chartutil.DefaultVersionSet,
+		KubeVersion: &version.Info{
+			Major:     "1",
+			Minor:     "6",
+			GoVersion: runtime.Version(),
+			Compiler:  runtime.Compiler,
+			Platform:  fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+		},
 		TillerVersion: tversion.GetVersionProto(),
 	}
-	cvals, err := chartutil.CoalesceValues(chart, &cpb.Config{Raw: string(values)})
-	if err != nil {
-		return
-	}
-	// convert our values back into config
-	yvals, err := cvals.YAML()
-	if err != nil {
-		return
-	}
-	cc := &cpb.Config{Raw: yvals}
-	valuesToRender, err := chartutil.ToRenderValuesCaps(chart, cc, options, caps)
+	valuesToRender, err := chartutil.ToRenderValuesCaps(chart, chart.Values, options, caps)
 	if err != nil {
 		// FIXME: This seems to generate a duplicate, but I can't find where the first
 		// error is coming from.
 		//linter.RunLinterRule(support.ErrorSev, err)
 		return
 	}
-	e := engine.New()
-	if strict {
-		e.Strict = true
-	}
-	renderedContentMap, err := e.Render(chart, valuesToRender)
+	renderedContentMap, err := engine.New().Render(chart, valuesToRender)
 
 	renderOk := linter.RunLinterRule(support.ErrorSev, path, err)
 

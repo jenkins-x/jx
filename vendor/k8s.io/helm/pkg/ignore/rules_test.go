@@ -102,9 +102,6 @@ func TestIgnore(t *testing.T) {
 		// "." should never get ignored. https://github.com/kubernetes/helm/issues/1776
 		{`.*`, ".", false},
 		{`.*`, "./", false},
-		{`.*`, ".joonix", true},
-		{`.*`, "helm.txt", false},
-		{`.*`, "", false},
 
 		// Directory tests
 		{`cargo/`, "cargo", true},

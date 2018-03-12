@@ -319,7 +319,7 @@ refer to that value by reference. YAML refers to this as "anchoring":
 ```yaml
 coffee: "yes, please"
 favorite: &favoriteCoffee "Cappucino"
-coffees:
+coffess:
   - Latte
   - *favoriteCoffee
   - Espresso
@@ -339,7 +339,7 @@ YAML would be:
 ```YAML
 coffee: yes, please
 favorite: Cappucino
-coffees:
+coffess:
 - Latte
 - Cappucino
 - Espresso

@@ -10,6 +10,8 @@ import (
 
 	"runtime"
 
+	"github.com/jenkins-x/draft-repo/pkg/draft/draftpath"
+	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
@@ -17,8 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/rawlingsj/draft/pkg/draft/draftpath"
-	"github.com/rawlingsj/draft/pkg/draft/pack"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"

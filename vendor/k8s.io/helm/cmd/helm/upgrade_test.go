@@ -28,7 +28,6 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/proto/hapi/chart"
-	"k8s.io/helm/pkg/proto/hapi/release"
 )
 
 func TestUpgradeCmd(t *testing.T) {
@@ -44,9 +43,9 @@ func TestUpgradeCmd(t *testing.T) {
 		t.Errorf("Error creating chart for upgrade: %v", err)
 	}
 	ch, _ := chartutil.Load(chartPath)
-	_ = helm.ReleaseMock(&helm.MockReleaseOptions{
-		Name:  "funny-bunny",
-		Chart: ch,
+	_ = releaseMock(&releaseOptions{
+		name:  "funny-bunny",
+		chart: ch,
 	})
 
 	// update chart version
@@ -95,68 +94,61 @@ func TestUpgradeCmd(t *testing.T) {
 		{
 			name:     "upgrade a release",
 			args:     []string{"funny-bunny", chartPath},
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "funny-bunny", Version: 2, Chart: ch}),
+			resp:     releaseMock(&releaseOptions{name: "funny-bunny", version: 2, chart: ch}),
 			expected: "Release \"funny-bunny\" has been upgraded. Happy Helming!\n",
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "funny-bunny", Version: 2, Chart: ch})},
 		},
 		{
 			name:     "upgrade a release with timeout",
 			args:     []string{"funny-bunny", chartPath},
 			flags:    []string{"--timeout", "120"},
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "funny-bunny", Version: 3, Chart: ch2}),
+			resp:     releaseMock(&releaseOptions{name: "funny-bunny", version: 3, chart: ch2}),
 			expected: "Release \"funny-bunny\" has been upgraded. Happy Helming!\n",
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "funny-bunny", Version: 3, Chart: ch2})},
 		},
 		{
 			name:     "upgrade a release with --reset-values",
 			args:     []string{"funny-bunny", chartPath},
 			flags:    []string{"--reset-values", "true"},
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "funny-bunny", Version: 4, Chart: ch2}),
+			resp:     releaseMock(&releaseOptions{name: "funny-bunny", version: 4, chart: ch2}),
 			expected: "Release \"funny-bunny\" has been upgraded. Happy Helming!\n",
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "funny-bunny", Version: 4, Chart: ch2})},
 		},
 		{
 			name:     "upgrade a release with --reuse-values",
 			args:     []string{"funny-bunny", chartPath},
 			flags:    []string{"--reuse-values", "true"},
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "funny-bunny", Version: 5, Chart: ch2}),
+			resp:     releaseMock(&releaseOptions{name: "funny-bunny", version: 5, chart: ch2}),
 			expected: "Release \"funny-bunny\" has been upgraded. Happy Helming!\n",
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "funny-bunny", Version: 5, Chart: ch2})},
 		},
 		{
 			name:     "install a release with 'upgrade --install'",
 			args:     []string{"zany-bunny", chartPath},
 			flags:    []string{"-i"},
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "zany-bunny", Version: 1, Chart: ch}),
+			resp:     releaseMock(&releaseOptions{name: "zany-bunny", version: 1, chart: ch}),
 			expected: "Release \"zany-bunny\" has been upgraded. Happy Helming!\n",
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "zany-bunny", Version: 1, Chart: ch})},
 		},
 		{
 			name:     "install a release with 'upgrade --install' and timeout",
 			args:     []string{"crazy-bunny", chartPath},
 			flags:    []string{"-i", "--timeout", "120"},
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "crazy-bunny", Version: 1, Chart: ch}),
+			resp:     releaseMock(&releaseOptions{name: "crazy-bunny", version: 1, chart: ch}),
 			expected: "Release \"crazy-bunny\" has been upgraded. Happy Helming!\n",
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "crazy-bunny", Version: 1, Chart: ch})},
 		},
 		{
 			name:     "upgrade a release with wait",
 			args:     []string{"crazy-bunny", chartPath},
 			flags:    []string{"--wait"},
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "crazy-bunny", Version: 2, Chart: ch2}),
+			resp:     releaseMock(&releaseOptions{name: "crazy-bunny", version: 2, chart: ch2}),
 			expected: "Release \"crazy-bunny\" has been upgraded. Happy Helming!\n",
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "crazy-bunny", Version: 2, Chart: ch2})},
 		},
 		{
 			name: "upgrade a release with missing dependencies",
 			args: []string{"bonkers-bunny", missingDepsPath},
-			resp: helm.ReleaseMock(&helm.MockReleaseOptions{Name: "bonkers-bunny", Version: 1, Chart: ch3}),
+			resp: releaseMock(&releaseOptions{name: "bonkers-bunny", version: 1, chart: ch3}),
 			err:  true,
 		},
 		{
 			name: "upgrade a release with bad dependencies",
 			args: []string{"bonkers-bunny", badDepsPath},
-			resp: helm.ReleaseMock(&helm.MockReleaseOptions{Name: "bonkers-bunny", Version: 1, Chart: ch3}),
+			resp: releaseMock(&releaseOptions{name: "bonkers-bunny", version: 1, chart: ch3}),
 			err:  true,
 		},
 	}

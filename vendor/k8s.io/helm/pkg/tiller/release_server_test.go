@@ -19,13 +19,13 @@ package tiller
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"testing"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
+	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/fake"
 
@@ -40,7 +40,8 @@ import (
 
 const notesText = "my notes here"
 
-var manifestWithHook = `kind: ConfigMap
+var manifestWithHook = `apiVersion: v1
+kind: ConfigMap
 metadata:
   name: test-cm
   annotations:
@@ -48,7 +49,9 @@ metadata:
 data:
   name: value`
 
-var manifestWithTestHook = `kind: Pod
+var manifestWithTestHook = `
+apiVersion: v1
+kind: Pod
 metadata:
   name: finding-nemo,
   annotations:
@@ -60,7 +63,8 @@ spec:
     cmd: fake-command
 `
 
-var manifestWithKeep = `kind: ConfigMap
+var manifestWithKeep = `apiVersion: v1
+kind: ConfigMap
 metadata:
   name: test-cm-keep
   annotations:
@@ -69,7 +73,8 @@ data:
   name: value
 `
 
-var manifestWithUpgradeHooks = `kind: ConfigMap
+var manifestWithUpgradeHooks = `apiVersion: v1
+kind: ConfigMap
 metadata:
   name: test-cm
   annotations:
@@ -77,7 +82,8 @@ metadata:
 data:
   name: value`
 
-var manifestWithRollbackHooks = `kind: ConfigMap
+var manifestWithRollbackHooks = `apiVersion: v1
+kind: ConfigMap
 metadata:
   name: test-cm
   annotations:
@@ -285,7 +291,7 @@ func releaseWithKeepStub(rlsName string) *release.Release {
 func MockEnvironment() *environment.Environment {
 	e := environment.New()
 	e.Releases = storage.Init(driver.NewMemory())
-	e.KubeClient = &environment.PrintingKubeClient{Out: ioutil.Discard}
+	e.KubeClient = &environment.PrintingKubeClient{Out: os.Stdout}
 	return e
 }
 
@@ -306,7 +312,7 @@ func (u *updateFailingKubeClient) Update(namespace string, originalReader, modif
 
 func newHookFailingKubeClient() *hookFailingKubeClient {
 	return &hookFailingKubeClient{
-		PrintingKubeClient: environment.PrintingKubeClient{Out: ioutil.Discard},
+		PrintingKubeClient: environment.PrintingKubeClient{Out: os.Stdout},
 	}
 }
 
@@ -334,7 +340,9 @@ func (l *mockListServer) SendHeader(m metadata.MD) error { return nil }
 func (l *mockListServer) SetTrailer(m metadata.MD)       {}
 func (l *mockListServer) SetHeader(m metadata.MD) error  { return nil }
 
-type mockRunReleaseTestServer struct{}
+type mockRunReleaseTestServer struct {
+	stream grpc.ServerStream
+}
 
 func (rs mockRunReleaseTestServer) Send(m *services.TestReleaseResponse) error {
 	return nil

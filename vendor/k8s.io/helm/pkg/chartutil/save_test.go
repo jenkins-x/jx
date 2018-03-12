@@ -22,7 +22,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/any"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
@@ -40,9 +39,6 @@ func TestSave(t *testing.T) {
 		},
 		Values: &chart.Config{
 			Raw: "ship: Pequod",
-		},
-		Files: []*any.Any{
-			{TypeUrl: "scheherazade/shahryar.txt", Value: []byte("1,001 Nights")},
 		},
 	}
 
@@ -68,9 +64,6 @@ func TestSave(t *testing.T) {
 	if c2.Values.Raw != c.Values.Raw {
 		t.Fatal("Values data did not match")
 	}
-	if len(c2.Files) != 1 || c2.Files[0].TypeUrl != "scheherazade/shahryar.txt" {
-		t.Fatal("Files data did not match")
-	}
 }
 
 func TestSaveDir(t *testing.T) {
@@ -88,9 +81,6 @@ func TestSaveDir(t *testing.T) {
 		Values: &chart.Config{
 			Raw: "ship: Pequod",
 		},
-		Files: []*any.Any{
-			{TypeUrl: "scheherazade/shahryar.txt", Value: []byte("1,001 Nights")},
-		},
 	}
 
 	if err := SaveDir(c, tmp); err != nil {
@@ -107,8 +97,5 @@ func TestSaveDir(t *testing.T) {
 	}
 	if c2.Values.Raw != c.Values.Raw {
 		t.Fatal("Values data did not match")
-	}
-	if len(c2.Files) != 1 || c2.Files[0].TypeUrl != "scheherazade/shahryar.txt" {
-		t.Fatal("Files data did not match")
 	}
 }

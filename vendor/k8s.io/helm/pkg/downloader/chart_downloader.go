@@ -93,7 +93,7 @@ func (c *ChartDownloader) DownloadTo(ref, version, dest string) (string, *proven
 
 	name := filepath.Base(u.Path)
 	destfile := filepath.Join(dest, name)
-	if err := ioutil.WriteFile(destfile, data.Bytes(), 0644); err != nil {
+	if err := ioutil.WriteFile(destfile, data.Bytes(), 0655); err != nil {
 		return destfile, nil, err
 	}
 
@@ -109,7 +109,7 @@ func (c *ChartDownloader) DownloadTo(ref, version, dest string) (string, *proven
 			return destfile, ver, nil
 		}
 		provfile := destfile + ".prov"
-		if err := ioutil.WriteFile(provfile, body.Bytes(), 0644); err != nil {
+		if err := ioutil.WriteFile(provfile, body.Bytes(), 0655); err != nil {
 			return destfile, nil, err
 		}
 
@@ -217,15 +217,7 @@ func (c *ChartDownloader) ResolveChartVersion(ref, version string) (*url.URL, ge
 
 	// If the URL is relative (no scheme), prepend the chart repo's base URL
 	if !u.IsAbs() {
-		repoURL, err := url.Parse(rc.URL)
-		if err != nil {
-			return repoURL, r.Client, err
-		}
-		q := repoURL.Query()
-		// We need a trailing slash for ResolveReference to work, but make sure there isn't already one
-		repoURL.Path = strings.TrimSuffix(repoURL.Path, "/") + "/"
-		u = repoURL.ResolveReference(u)
-		u.RawQuery = q.Encode()
+		u, err = url.Parse(rc.URL + "/" + u.Path)
 		return u, r.Client, err
 	}
 

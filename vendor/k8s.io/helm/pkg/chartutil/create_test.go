@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -125,10 +124,5 @@ func TestCreateFrom(t *testing.T) {
 		} else if fi.IsDir() {
 			t.Errorf("Expected %s to be a file.", f)
 		}
-	}
-
-	// Ensure we replace `<CHARTNAME>`
-	if strings.Contains(mychart.Values.Raw, "<CHARTNAME>") {
-		t.Errorf("Did not expect %s to be present in %s", "<CHARTNAME>", mychart.Values.Raw)
 	}
 }

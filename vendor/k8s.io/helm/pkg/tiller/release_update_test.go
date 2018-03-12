@@ -20,8 +20,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/proto/hapi/release"
@@ -61,7 +59,10 @@ func TestUpdateRelease(t *testing.T) {
 		t.Errorf("Expected release namespace '%s', got '%s'.", rel.Namespace, res.Release.Namespace)
 	}
 
-	updated := compareStoredAndReturnedRelease(t, *rs, *res)
+	updated, err := rs.env.Releases.Get(res.Release.Name, res.Release.Version)
+	if err != nil {
+		t.Errorf("Expected release for %s (%v).", res.Release.Name, rs.env.Releases)
+	}
 
 	if len(updated.Hooks) != 1 {
 		t.Fatalf("Expected 1 hook, got %d", len(updated.Hooks))
@@ -78,8 +79,8 @@ func TestUpdateRelease(t *testing.T) {
 		t.Errorf("Expected event 0 to be pre upgrade")
 	}
 
-	if len(updated.Manifest) == 0 {
-		t.Errorf("Expected manifest in %v", res)
+	if len(res.Release.Manifest) == 0 {
+		t.Errorf("No manifest returned: %v", res.Release)
 	}
 
 	if res.Release.Config == nil {
@@ -88,8 +89,12 @@ func TestUpdateRelease(t *testing.T) {
 		t.Errorf("Expected release values %q, got %q", rel.Config.Raw, res.Release.Config.Raw)
 	}
 
+	if len(updated.Manifest) == 0 {
+		t.Errorf("Expected manifest in %v", res)
+	}
+
 	if !strings.Contains(updated.Manifest, "---\n# Source: hello/templates/hello\nhello: world") {
-		t.Errorf("unexpected output: %s", updated.Manifest)
+		t.Errorf("unexpected output: %s", rel.Manifest)
 	}
 
 	if res.Release.Version != 2 {
@@ -162,7 +167,6 @@ func TestUpdateRelease_ReuseValues(t *testing.T) {
 	if res.Release.Config != nil && res.Release.Config.Raw != expect {
 		t.Errorf("Expected request config to be %q, got %q", expect, res.Release.Config.Raw)
 	}
-	compareStoredAndReturnedRelease(t, *rs, *res)
 }
 
 func TestUpdateRelease_ResetReuseValues(t *testing.T) {
@@ -192,7 +196,6 @@ func TestUpdateRelease_ResetReuseValues(t *testing.T) {
 	if res.Release.Config != nil && res.Release.Config.Raw != "" {
 		t.Errorf("Expected chart config to be empty, got %q", res.Release.Config.Raw)
 	}
-	compareStoredAndReturnedRelease(t, *rs, *res)
 }
 
 func TestUpdateReleaseFailure(t *testing.T) {
@@ -201,7 +204,6 @@ func TestUpdateReleaseFailure(t *testing.T) {
 	rel := releaseStub()
 	rs.env.Releases.Create(rel)
 	rs.env.KubeClient = newUpdateFailingKubeClient()
-	rs.Log = t.Logf
 
 	req := &services.UpdateReleaseRequest{
 		Name:         rel.Name,
@@ -223,63 +225,17 @@ func TestUpdateReleaseFailure(t *testing.T) {
 		t.Errorf("Expected FAILED release. Got %d", updatedStatus)
 	}
 
-	compareStoredAndReturnedRelease(t, *rs, *res)
-
-	expectedDescription := "Upgrade \"angry-panda\" failed: Failed update in kube client"
-	if got := res.Release.Info.Description; got != expectedDescription {
-		t.Errorf("Expected description %q, got %q", expectedDescription, got)
+	edesc := "Upgrade \"angry-panda\" failed: Failed update in kube client"
+	if got := res.Release.Info.Description; got != edesc {
+		t.Errorf("Expected description %q, got %q", edesc, got)
 	}
 
 	oldRelease, err := rs.env.Releases.Get(rel.Name, rel.Version)
 	if err != nil {
 		t.Errorf("Expected to be able to get previous release")
 	}
-	if oldStatus := oldRelease.Info.Status.Code; oldStatus != release.Status_DEPLOYED {
-		t.Errorf("Expected Deployed status on previous Release version. Got %v", oldStatus)
-	}
-}
-
-func TestUpdateReleaseFailure_Force(t *testing.T) {
-	c := helm.NewContext()
-	rs := rsFixture()
-	rel := namedReleaseStub("forceful-luke", release.Status_FAILED)
-	rs.env.Releases.Create(rel)
-	rs.Log = t.Logf
-
-	req := &services.UpdateReleaseRequest{
-		Name:         rel.Name,
-		DisableHooks: true,
-		Chart: &chart.Chart{
-			Metadata: &chart.Metadata{Name: "hello"},
-			Templates: []*chart.Template{
-				{Name: "templates/something", Data: []byte("text: 'Did you ever hear the tragedy of Darth Plagueis the Wise? I thought not. It’s not a story the Jedi would tell you. It’s a Sith legend. Darth Plagueis was a Dark Lord of the Sith, so powerful and so wise he could use the Force to influence the Midichlorians to create life... He had such a knowledge of the Dark Side that he could even keep the ones he cared about from dying. The Dark Side of the Force is a pathway to many abilities some consider to be unnatural. He became so powerful... The only thing he was afraid of was losing his power, which eventually, of course, he did. Unfortunately, he taught his apprentice everything he knew, then his apprentice killed him in his sleep. Ironic. He could save others from death, but not himself.'")},
-			},
-		},
-		Force: true,
-	}
-
-	res, err := rs.UpdateRelease(c, req)
-	if err != nil {
-		t.Errorf("Expected successful update, got %v", err)
-	}
-
-	if updatedStatus := res.Release.Info.Status.Code; updatedStatus != release.Status_DEPLOYED {
-		t.Errorf("Expected DEPLOYED release. Got %d", updatedStatus)
-	}
-
-	compareStoredAndReturnedRelease(t, *rs, *res)
-
-	expectedDescription := "Upgrade complete"
-	if got := res.Release.Info.Description; got != expectedDescription {
-		t.Errorf("Expected description %q, got %q", expectedDescription, got)
-	}
-
-	oldRelease, err := rs.env.Releases.Get(rel.Name, rel.Version)
-	if err != nil {
-		t.Errorf("Expected to be able to get previous release")
-	}
-	if oldStatus := oldRelease.Info.Status.Code; oldStatus != release.Status_DELETED {
-		t.Errorf("Expected Deleted status on previous Release version. Got %v", oldStatus)
+	if oldStatus := oldRelease.Info.Status.Code; oldStatus != release.Status_SUPERSEDED {
+		t.Errorf("Expected SUPERSEDED status on previous Release version. Got %v", oldStatus)
 	}
 }
 
@@ -328,17 +284,4 @@ func TestUpdateReleaseNoChanges(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed updated: %s", err)
 	}
-}
-
-func compareStoredAndReturnedRelease(t *testing.T, rs ReleaseServer, res services.UpdateReleaseResponse) *release.Release {
-	storedRelease, err := rs.env.Releases.Get(res.Release.Name, res.Release.Version)
-	if err != nil {
-		t.Fatalf("Expected release for %s (%v).", res.Release.Name, rs.env.Releases)
-	}
-
-	if !proto.Equal(storedRelease, res.Release) {
-		t.Errorf("Stored release doesn't match returned Release")
-	}
-
-	return storedRelease
 }

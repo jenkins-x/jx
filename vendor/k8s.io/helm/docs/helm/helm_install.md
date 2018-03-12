@@ -8,8 +8,8 @@ install a chart archive
 
 This command installs a chart archive.
 
-The install argument must be a chart reference, a path to a packaged chart,
-a path to an unpacked chart directory or a URL.
+The install argument must be either a relative path to a chart directory or the
+name of a chart in the current working directory.
 
 To override values in a chart, use either the '--values' flag and pass in a file
 or use the '--set' flag and pass configuration from the command line.
@@ -37,22 +37,21 @@ To check the generated manifests of a release without installing the chart,
 the '--debug' and '--dry-run' flags can be combined. This will still require a
 round-trip to the Tiller server.
 
-If --verify is set, the chart MUST have a provenance file, and the provenance
-file MUST pass all verification steps.
+If --verify is set, the chart MUST have a provenance file, and the provenenace
+fall MUST pass all verification steps.
 
-There are five different ways you can express the chart you want to install:
+There are four different ways you can express the chart you want to install:
 
 1. By chart reference: helm install stable/mariadb
 2. By path to a packaged chart: helm install ./nginx-1.2.3.tgz
 3. By path to an unpacked chart directory: helm install ./nginx
 4. By absolute URL: helm install https://example.com/charts/nginx-1.2.3.tgz
-5. By chart reference and repo url: helm install --repo https://example.com/charts/ nginx
 
 CHART REFERENCES
 
 A chart reference is a convenient way of reference a chart in a chart repository.
 
-When you use a chart reference with a repo prefix ('stable/mariadb'), Helm will look in the local
+When you use a chart reference ('stable/mariadb'), Helm will look in the local
 configuration for a chart repository named 'stable', and will then look for a
 chart in that repository whose name is 'mariadb'. It will install the latest
 version of that chart unless you also supply a version number with the
@@ -71,14 +70,13 @@ helm install [CHART]
 ```
       --ca-file string         verify certificates of HTTPS-enabled servers using this CA bundle
       --cert-file string       identify HTTPS client using this SSL certificate file
-      --dep-up                 run helm dependency update before installing the chart
-      --devel                  use development versions, too. Equivalent to version '>0.0.0-0'. If --version is set, this is ignored.
+      --devel                  use development versions, too. Equivalent to version '>0.0.0-a'. If --version is set, this is ignored.
       --dry-run                simulate an install
       --key-file string        identify HTTPS client using this SSL key file
       --keyring string         location of public keys used for verification (default "~/.gnupg/pubring.gpg")
   -n, --name string            release name. If unspecified, it will autogenerate one for you
       --name-template string   specify template used to name the release
-      --namespace string       namespace to install the release into. Defaults to the current kube config namespace.
+      --namespace string       namespace to install the release into
       --no-hooks               prevent hooks from running during install
       --replace                re-use the given name, even if that name is already used. This is unsafe in production
       --repo string            chart repository url where to locate the requested chart
@@ -89,7 +87,7 @@ helm install [CHART]
       --tls-cert string        path to TLS certificate file (default "$HELM_HOME/cert.pem")
       --tls-key string         path to TLS key file (default "$HELM_HOME/key.pem")
       --tls-verify             enable TLS for request and verify remote
-  -f, --values valueFiles      specify values in a YAML file or a URL(can specify multiple) (default [])
+  -f, --values valueFiles      specify values in a YAML file (can specify multiple) (default [])
       --verify                 verify the package before installing it
       --version string         specify the exact chart version to install. If this is not specified, the latest version is installed
       --wait                   if set, will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment are in a ready state before marking the release as successful. It will wait for as long as --timeout
@@ -98,15 +96,14 @@ helm install [CHART]
 ### Options inherited from parent commands
 
 ```
-      --debug                           enable verbose output
-      --home string                     location of your Helm config. Overrides $HELM_HOME (default "~/.helm")
-      --host string                     address of Tiller. Overrides $HELM_HOST
-      --kube-context string             name of the kubeconfig context to use
-      --tiller-connection-timeout int   the duration (in seconds) Helm will wait to establish a connection to tiller (default 300)
-      --tiller-namespace string         namespace of Tiller (default "kube-system")
+      --debug                     enable verbose output
+      --home string               location of your Helm config. Overrides $HELM_HOME (default "$HOME/.helm")
+      --host string               address of Tiller. Overrides $HELM_HOST
+      --kube-context string       name of the kubeconfig context to use
+      --tiller-namespace string   namespace of Tiller (default "kube-system")
 ```
 
 ### SEE ALSO
 * [helm](helm.md)	 - The Helm package manager for Kubernetes.
 
-###### Auto generated by spf13/cobra on 8-Mar-2018
+###### Auto generated by spf13/cobra on 23-Jun-2017
