@@ -1052,7 +1052,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		}
 		available := ""
 		if url != "" {
-			available = fmt.Sprintf(" and available at %s", url)
+			available = fmt.Sprintf(" and available [here](%s)", url)
 		}
 
 		if available == "" {
