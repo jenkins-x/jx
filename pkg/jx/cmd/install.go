@@ -214,6 +214,22 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
+	initOpts := &options.InitOptions
+	initOpts.Flags.Provider = options.Flags.Provider
+	initOpts.BatchMode = options.BatchMode
+	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
+		initOpts.Flags.Domain = options.Flags.Domain
+	}
+	err = initOpts.Run()
+	if err != nil {
+		return err
+	}
+
+	// share the init domain option with the install options
+	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
+		options.Flags.Domain = initOpts.Flags.Domain
+	}
+
 	// get secrets to use in helm install
 	secrets, err := options.getGitSecrets()
 	if err != nil {
@@ -230,23 +246,13 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	config, err := options.CreateEnvOptions.HelmValuesConfig.String()
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	if helmConfig.ExposeController.Config.Domain == "" {
+		helmConfig.ExposeController.Config.Domain = options.InitOptions.Flags.Domain
+	}
+	config, err := helmConfig.String()
 	if err != nil {
 		return err
-	}
-
-	initOpts := &options.InitOptions
-	initOpts.Flags.Provider = options.Flags.Provider
-	initOpts.BatchMode = options.BatchMode
-
-	err = initOpts.Run()
-	if err != nil {
-		return err
-	}
-
-	// share the init domain option with the install options
-	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
-		options.Flags.Domain = initOpts.Flags.Domain
 	}
 
 	// clone the environments repo
