@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	apiVersion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/helm/pkg/helm"
 	pb "k8s.io/helm/pkg/proto/hapi/version"
 	"k8s.io/helm/pkg/version"
@@ -54,6 +55,7 @@ type versionCmd struct {
 	showClient bool
 	showServer bool
 	short      bool
+	template   string
 }
 
 func newVersionCmd(c helm.Interface, out io.Writer) *cobra.Command {
@@ -74,7 +76,7 @@ func newVersionCmd(c helm.Interface, out io.Writer) *cobra.Command {
 			if version.showServer {
 				// We do this manually instead of in PreRun because we only
 				// need a tunnel if server version is requested.
-				setupConnection(cmd, args)
+				setupConnection()
 			}
 			version.client = ensureHelmClient(version.client)
 			return version.run()
@@ -84,19 +86,34 @@ func newVersionCmd(c helm.Interface, out io.Writer) *cobra.Command {
 	f.BoolVarP(&version.showClient, "client", "c", false, "client version only")
 	f.BoolVarP(&version.showServer, "server", "s", false, "server version only")
 	f.BoolVar(&version.short, "short", false, "print the version number")
+	f.StringVar(&version.template, "template", "", "template for version string format")
 
 	return cmd
 }
 
 func (v *versionCmd) run() error {
+	// Store map data for template rendering
+	data := map[string]interface{}{}
 
 	if v.showClient {
 		cv := version.GetVersionProto()
-		fmt.Fprintf(v.out, "Client: %s\n", formatVersion(cv, v.short))
+		if v.template != "" {
+			data["Client"] = cv
+		} else {
+			fmt.Fprintf(v.out, "Client: %s\n", formatVersion(cv, v.short))
+		}
 	}
 
 	if !v.showServer {
-		return nil
+		return tpl(v.template, data, v.out)
+	}
+
+	if settings.Debug {
+		k8sVersion, err := getK8sVersion()
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(v.out, "Kubernetes: %#v\n", k8sVersion)
 	}
 
 	resp, err := v.client.GetVersion()
@@ -107,8 +124,23 @@ func (v *versionCmd) run() error {
 		debug("%s", err)
 		return errors.New("cannot connect to Tiller")
 	}
-	fmt.Fprintf(v.out, "Server: %s\n", formatVersion(resp.Version, v.short))
-	return nil
+
+	if v.template != "" {
+		data["Server"] = resp.Version
+	} else {
+		fmt.Fprintf(v.out, "Server: %s\n", formatVersion(resp.Version, v.short))
+	}
+	return tpl(v.template, data, v.out)
+}
+
+func getK8sVersion() (*apiVersion.Info, error) {
+	var v *apiVersion.Info
+	_, client, err := getKubeClient(settings.KubeContext)
+	if err != nil {
+		return v, err
+	}
+	v, err = client.Discovery().ServerVersion()
+	return v, err
 }
 
 func formatVersion(v *pb.Version, short bool) string {

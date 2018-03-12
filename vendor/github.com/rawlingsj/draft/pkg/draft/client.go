@@ -26,7 +26,6 @@ type ClientConfig struct {
 	TLSConfig  *tls.Config
 }
 
-// Client is the draft grpc client used to communicate with draftd
 type Client struct {
 	cfg *ClientConfig
 	rpc rpc.Client
@@ -50,28 +49,12 @@ func NewClient(cfg *ClientConfig) *Client {
 	}
 }
 
-// Results returns the summary of events from an invocation of `draft up`
 func (c *Client) Results() <-chan *rpc.UpSummary { return c.res }
 
-// Version gets server-side version information from draftd
 func (c *Client) Version(ctx context.Context) (*version.Version, error) {
 	return c.rpc.Version(ctx)
 }
 
-// GetLogs returns the logs for a draft build.
-func (c *Client) GetLogs(ctx context.Context, appName, buildID string, opts ...ClientOpt) ([]byte, error) {
-	o := defaultClientOpts()
-	for _, opt := range opts {
-		opt(o)
-	}
-	r, err := c.rpc.GetLogs(ctx, &rpc.GetLogsRequest{AppName: appName, BuildID: buildID, Limit: int64(o.logLimit)})
-	if err != nil {
-		return nil, err
-	}
-	return r.Content, nil
-}
-
-// Up uploads the build context and chart up to draftd, streaming results back to the client.
 func (c *Client) Up(ctx context.Context, app *build.Context) error {
 	req := &rpc.UpRequest{
 		Namespace:  app.Env.Namespace,

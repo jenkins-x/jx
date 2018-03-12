@@ -2,7 +2,6 @@ package pack
 
 import (
 	"bytes"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,16 +15,12 @@ const testDockerfile = `FROM nginx:latest
 
 func TestSaveDir(t *testing.T) {
 	p := &Pack{
-		Charts: []*chart.Chart{
-			{
-				Metadata: &chart.Metadata{
-					Name: "chart-for-nigel-thornberry",
-				},
+		Chart: &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name: "chart-for-nigel-thornberry",
 			},
 		},
-		Files: map[string]io.ReadCloser{
-			dockerfileName: ioutil.NopCloser(bytes.NewBufferString(testDockerfile)),
-		},
+		Dockerfile: []byte(testDockerfile),
 	}
 	dir, err := ioutil.TempDir("", "draft-pack-test")
 	if err != nil {
@@ -40,16 +35,12 @@ func TestSaveDir(t *testing.T) {
 
 func TestSaveDirDockerfileExistsInAppDir(t *testing.T) {
 	p := &Pack{
-		Charts: []*chart.Chart{
-			{
-				Metadata: &chart.Metadata{
-					Name: "chart-for-nigel-thornberry",
-				},
+		Chart: &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name: "chart-for-nigel-thornberry",
 			},
 		},
-		Files: map[string]io.ReadCloser{
-			dockerfileName: ioutil.NopCloser(bytes.NewBufferString(testDockerfile)),
-		},
+		Dockerfile: []byte(testDockerfile),
 	}
 	dir, err := ioutil.TempDir("", "draft-pack-test")
 	if err != nil {

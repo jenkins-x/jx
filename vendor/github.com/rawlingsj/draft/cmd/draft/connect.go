@@ -1,12 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -18,91 +14,66 @@ const (
 `
 )
 
-var containerName string
-
 type connectCmd struct {
 	out      io.Writer
 	logLines int64
 }
 
 func newConnectCmd(out io.Writer) *cobra.Command {
-	var (
-		cc                 = &connectCmd{out: out}
-		runningEnvironment string
-	)
+	cc := &connectCmd{
+		out: out,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "connect",
 		Short: "connect to your application locally",
 		Long:  connectDesc,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return cc.run(runningEnvironment)
+			return cc.run()
 		},
 	}
-
 	f := cmd.Flags()
 	f.Int64Var(&cc.logLines, "tail", 5, "lines of recent log lines to display")
-	f.StringVarP(&runningEnvironment, environmentFlagName, environmentFlagShorthand, defaultDraftEnvironment(), environmentFlagUsage)
-	f.StringVarP(&containerName, "container", "c", "", "name of the container to connect to")
 
 	return cmd
 }
 
-func (cn *connectCmd) run(runningEnvironment string) (err error) {
-	deployedApp, err := local.DeployedApplication(draftToml, runningEnvironment)
+func (cn *connectCmd) run() (err error) {
+
+	deployedApp, err := local.DeployedApplication(draftToml, defaultDraftEnvironment())
 	if err != nil {
 		return err
 	}
 
-	client, config, err := getKubeClient(kubeContext)
+	clientset, config, err := getKubeClient(kubeContext)
+	if err != nil {
+		return err
+	}
+	clientConfig, err := config.ClientConfig()
 	if err != nil {
 		return err
 	}
 
-	connection, err := deployedApp.Connect(client, config, containerName)
+	fmt.Fprintf(cn.out, "Connecting to your app...")
+	connection, err := deployedApp.Connect(clientset, clientConfig)
 	if err != nil {
 		return err
 	}
 
-	// output all local ports first - easier to spot
-	for _, cc := range connection.ContainerConnections {
-		for _, t := range cc.Tunnels {
-			err = t.ForwardPort()
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cn.out, "Connect to %v:%v on localhost:%#v\n", cc.ContainerName, t.Remote, t.Local)
-		}
+	detail := fmt.Sprintf("localhost:%#v", connection.Tunnel.Local)
+	fmt.Fprintln(cn.out, "SUCCESS...Connect to your app on "+detail)
+
+	fmt.Fprintln(cn.out, "Starting log streaming...")
+	readCloser, err := connection.RequestLogStream(deployedApp, cn.logLines)
+	if err != nil {
+		return err
 	}
 
-	for _, cc := range connection.ContainerConnections {
-		readCloser, err := connection.RequestLogStream(deployedApp.Namespace, cc.ContainerName, cn.logLines)
-		if err != nil {
-			return err
-		}
-
-		defer readCloser.Close()
-		go writeContainerLogs(cn.out, readCloser, cc.ContainerName)
+	defer readCloser.Close()
+	_, err = io.Copy(cn.out, readCloser)
+	if err != nil {
+		return err
 	}
 
-	stop := make(chan os.Signal, 2)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-stop
-		os.Exit(0)
-	}()
-
-	<-stop
 	return nil
-}
-
-func writeContainerLogs(out io.Writer, in io.ReadCloser, containerName string) error {
-	b := bufio.NewReader(in)
-	for {
-		line, err := b.ReadString('\n')
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(out, "[%v]: %v", containerName, line)
-	}
 }

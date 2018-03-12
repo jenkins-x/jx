@@ -9,7 +9,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"unicode"
 
 	"github.com/BurntSushi/toml"
 	log "github.com/Sirupsen/logrus"
@@ -29,11 +28,7 @@ const (
 `
 )
 
-// ErrNoLanguageDetected is raised when `draft create` does not detect source
-// code for linguist to classify, or if there are no packs available for the detected languages.
-var ErrNoLanguageDetected = errors.New("no languages were detected")
-
-type CreateCmd struct {
+type createCmd struct {
 	appName string
 	out     io.Writer
 	pack    string
@@ -42,7 +37,7 @@ type CreateCmd struct {
 }
 
 func newCreateCmd(out io.Writer) *cobra.Command {
-	cc := &CreateCmd{
+	cc := &createCmd{
 		out: out,
 	}
 
@@ -56,10 +51,6 @@ func newCreateCmd(out io.Writer) *cobra.Command {
 			}
 			return cc.run()
 		},
-		PreRun: func(cmd *cobra.Command, args []string) {
-			// Docker naming convention doesn't allow upper case names for repositories.
-			cc.normalizeApplicationName()
-		},
 	}
 
 	cc.home = draftpath.Home(homePath())
@@ -71,7 +62,7 @@ func newCreateCmd(out io.Writer) *cobra.Command {
 	return cmd
 }
 
-func (c *CreateCmd) run() error {
+func (c *createCmd) run() error {
 	var err error
 	mfest := manifest.New()
 
@@ -131,33 +122,6 @@ func (c *CreateCmd) run() error {
 	return nil
 }
 
-func (c *CreateCmd) normalizeApplicationName() {
-	if c.appName == "" {
-		return
-	}
-
-	nameIsUpperCase := false
-	for _, char := range c.appName {
-		if unicode.IsUpper(char) {
-			nameIsUpperCase = true
-			break
-		}
-	}
-
-	if !nameIsUpperCase {
-		return
-	}
-
-	lowerCaseName := strings.ToLower(c.appName)
-	fmt.Fprintf(
-		c.out,
-		"--> Application %s will be renamed to %s for docker compatibility\n",
-		c.appName,
-		lowerCaseName,
-	)
-	c.appName = lowerCaseName
-}
-
 // doPackDetection performs pack detection across all the packs available in $(draft home)/packs in
 // alphabetical order, returning the pack dirpath and any errors that occurred during the pack detection.
 func doPackDetection(home draftpath.Home, out io.Writer) (string, error) {
@@ -170,28 +134,25 @@ func doPackDetection(home draftpath.Home, out io.Writer) (string, error) {
 		log.Debugf("%s:\t%f (%s)", lang.Language, lang.Percent, lang.Color)
 	}
 	if len(langs) == 0 {
-		return "", ErrNoLanguageDetected
+		return "", errors.New("No languages were detected. Are you sure there's code in here?")
 	}
-	for _, lang := range langs {
-		detectedLang := linguist.Alias(lang)
-		fmt.Fprintf(out, "--> Draft detected %s (%f%%)\n", detectedLang.Language, detectedLang.Percent)
-		for _, repository := range repo.FindRepositories(home.Packs()) {
-			packDir := path.Join(repository.Dir, repo.PackDirName)
-			packs, err := ioutil.ReadDir(packDir)
-			if err != nil {
-				return "", fmt.Errorf("there was an error reading %s: %v", packDir, err)
-			}
-			for _, file := range packs {
-				if file.IsDir() {
-					if strings.Compare(strings.ToLower(detectedLang.Language), strings.ToLower(file.Name())) == 0 {
-						packPath := filepath.Join(packDir, file.Name())
-						log.Debugf("pack path: %s", packPath)
-						return packPath, nil
-					}
+	detectedLang := linguist.Alias(langs[0])
+	fmt.Fprintf(out, "--> Draft detected the primary language as %s with %f%% certainty.\n", detectedLang.Language, detectedLang.Percent)
+	for _, repository := range repo.FindRepositories(home.Packs()) {
+		packDir := path.Join(repository.Dir, repo.PackDirName)
+		packs, err := ioutil.ReadDir(packDir)
+		if err != nil {
+			return "", fmt.Errorf("there was an error reading %s: %v", packDir, err)
+		}
+		for _, file := range packs {
+			if file.IsDir() {
+				if strings.Compare(strings.ToLower(detectedLang.Language), strings.ToLower(file.Name())) == 0 {
+					packPath := filepath.Join(packDir, file.Name())
+					log.Debugf("pack path: %s", packPath)
+					return packPath, nil
 				}
 			}
 		}
-		fmt.Fprintf(out, "--> Could not find a pack for %s. Trying to find the next likely language match...\n", detectedLang.Language)
 	}
-	return "", ErrNoLanguageDetected
+	return "", pack.NotFound
 }

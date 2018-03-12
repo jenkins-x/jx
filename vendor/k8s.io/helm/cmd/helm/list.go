@@ -74,6 +74,7 @@ type listCmd struct {
 	superseded bool
 	pending    bool
 	client     helm.Interface
+	colWidth   uint
 }
 
 func newListCmd(client helm.Interface, out io.Writer) *cobra.Command {
@@ -87,13 +88,13 @@ func newListCmd(client helm.Interface, out io.Writer) *cobra.Command {
 		Short:   "list releases",
 		Long:    listHelp,
 		Aliases: []string{"ls"},
-		PreRunE: setupConnection,
+		PreRunE: func(_ *cobra.Command, _ []string) error { return setupConnection() },
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				list.filter = strings.Join(args, " ")
 			}
 			if list.client == nil {
-				list.client = helm.NewClient(helm.Host(settings.TillerHost))
+				list.client = newClient()
 			}
 			return list.run()
 		},
@@ -112,6 +113,7 @@ func newListCmd(client helm.Interface, out io.Writer) *cobra.Command {
 	f.BoolVar(&list.failed, "failed", false, "show failed releases")
 	f.BoolVar(&list.pending, "pending", false, "show pending releases")
 	f.StringVar(&list.namespace, "namespace", "", "show releases within a specific namespace")
+	f.UintVar(&list.colWidth, "col-width", 60, "specifies the max column width of output")
 
 	// TODO: Do we want this as a feature of 'helm list'?
 	//f.BoolVar(&list.superseded, "history", true, "show historical releases")
@@ -154,7 +156,7 @@ func (l *listCmd) run() error {
 		fmt.Fprintf(l.out, "\tnext: %s\n", res.Next)
 	}
 
-	rels := res.Releases
+	rels := filterList(res.Releases)
 
 	if l.short {
 		for _, r := range rels {
@@ -162,8 +164,32 @@ func (l *listCmd) run() error {
 		}
 		return nil
 	}
-	fmt.Fprintln(l.out, formatList(rels))
+	fmt.Fprintln(l.out, formatList(rels, l.colWidth))
 	return nil
+}
+
+// filterList returns a list scrubbed of old releases.
+func filterList(rels []*release.Release) []*release.Release {
+	idx := map[string]int32{}
+
+	for _, r := range rels {
+		name, version := r.GetName(), r.GetVersion()
+		if max, ok := idx[name]; ok {
+			// check if we have a greater version already
+			if max > version {
+				continue
+			}
+		}
+		idx[name] = version
+	}
+
+	uniq := make([]*release.Release, 0, len(idx))
+	for _, r := range rels {
+		if idx[r.GetName()] == r.GetVersion() {
+			uniq = append(uniq, r)
+		}
+	}
+	return uniq
 }
 
 // statusCodes gets the list of status codes that are to be included in the results.
@@ -207,9 +233,10 @@ func (l *listCmd) statusCodes() []release.Status_Code {
 	return status
 }
 
-func formatList(rels []*release.Release) string {
+func formatList(rels []*release.Release, colWidth uint) string {
 	table := uitable.New()
-	table.MaxColWidth = 60
+
+	table.MaxColWidth = colWidth
 	table.AddRow("NAME", "REVISION", "UPDATED", "STATUS", "CHART", "NAMESPACE")
 	for _, r := range rels {
 		c := fmt.Sprintf("%s-%s", r.Chart.Metadata.Name, r.Chart.Metadata.Version)

@@ -1,8 +1,9 @@
 # Survey
+
 [![Build Status](https://travis-ci.org/AlecAivazis/survey.svg?branch=feature%2Fpretty)](https://travis-ci.org/AlecAivazis/survey)
 [![GoDoc](http://img.shields.io/badge/godoc-reference-5272B4.svg)](https://godoc.org/gopkg.in/AlecAivazis/survey.v1)
 
-A library for building interactive prompts. Heavily inspired by the great [inquirer.js](https://github.com/SBoudrias/Inquirer.js/).
+A library for building interactive prompts. 
 
 ![](https://zippy.gfycat.com/AmusingBossyArrowworm.gif)
 
@@ -59,16 +60,16 @@ func main() {
 
 1. [Examples](#examples)
 1. [Prompts](#prompts)
-    1. [Input](#input)
-    1. [Password](#password)
-    1. [Confirm](#confirm)
-    1. [Select](#select)
-    1. [MultiSelect](#multiselect)
-    1. [Editor](#editor)
+   1. [Input](#input)
+   1. [Password](#password)
+   1. [Confirm](#confirm)
+   1. [Select](#select)
+   1. [MultiSelect](#multiselect)
+   1. [Editor](#editor)
 1. [Validation](#validation)
-    1. [Built-in Validators](#built-in-validators)
+   1. [Built-in Validators](#built-in-validators)
 1. [Help Text](#help-text)
-    1. [Changing the input rune](#changing-the-input-run)
+   1. [Changing the input rune](#changing-the-input-run)
 1. [Custom Types](#custom-types)
 1. [Customizing Output](#customizing-output)
 1. [Versioning](#versioning)
@@ -81,7 +82,7 @@ to see basic behavior:
 ```bash
 go get gopkg.in/AlecAivazis/survey.v1
 
-# ... navigate to the repo in your GOPATH
+cd $GOPATH/src/gopkg.in/AlecAivazis/survey.v1
 
 go run examples/simple.go
 go run examples/validation.go
@@ -101,7 +102,6 @@ prompt := &survey.Input{
 survey.AskOne(prompt, &name, nil)
 ```
 
-
 ### Password
 
 <img src="https://media.giphy.com/media/26FmQr6mUivkq71GE/giphy.gif" width="400px" />
@@ -114,7 +114,6 @@ prompt := &survey.Password{
 survey.AskOne(prompt, &password, nil)
 ```
 
-
 ### Confirm
 
 <img src="https://media.giphy.com/media/3oKIPgsUmTp4m3eo4E/giphy.gif" width="400px"/>
@@ -126,7 +125,6 @@ prompt := &survey.Confirm{
 }
 survey.AskOne(prompt, &name, nil)
 ```
-
 
 ### Select
 
@@ -141,9 +139,12 @@ prompt := &survey.Select{
 survey.AskOne(prompt, &color, nil)
 ```
 
+The user can filter for options by typing while the prompt is active. The user can also press `esc` to toggle 
+the ability cycle through the options with the j and k keys to do down and up respectively.
+
 By default, the select prompt is limited to showing 7 options at a time
 and will paginate lists of options longer than that. To increase, you can either
-change the global `survey.PageCount`, or set the `PageSize` field on the prompt:
+change the global `survey.PageSize`, or set the `PageSize` field on the prompt:
 
 ```golang
 prompt := &survey.Select{..., PageSize: 10}
@@ -162,9 +163,12 @@ prompt := &survey.MultiSelect{
 survey.AskOne(prompt, &days, nil)
 ```
 
+The user can filter for options by typing while the prompt is active. The user can also press `esc` to toggle 
+the ability cycle through the options with the j and k keys to do down and up respectively.
+
 By default, the MultiSelect prompt is limited to showing 7 options at a time
 and will paginate lists of options longer than that. To increase, you can either
-change the global `survey.PageCount`, or set the `PageSize` field on the prompt:
+change the global `survey.PageSize`, or set the `PageSize` field on the prompt:
 
 ```golang
 prompt := &survey.MultiSelect{..., PageSize: 10}
@@ -172,10 +176,9 @@ prompt := &survey.MultiSelect{..., PageSize: 10}
 
 ### Editor
 
-Launches the user's preferred editor (defined by the $EDITOR environment variable) on a 
-temporary file. Once the user exits their editor, the contents of the temporary file are read in as 
+Launches the user's preferred editor (defined by the $EDITOR environment variable) on a
+temporary file. Once the user exits their editor, the contents of the temporary file are read in as
 the result. If neither of those are present, notepad (on Windows) or vim (Linux or Mac) is used.
-
 
 ## Validation
 
@@ -201,11 +204,11 @@ q := &survey.Question{
 `survey` comes prepackaged with a few validators to fit common situations. Currently these
 validators include:
 
-|    name      |   valid types   |       description                                             |
-|--------------|-----------------|---------------------------------------------------------------|
-| Required     |   any           |   Rejects zero values of the response type                    |
-| MinLength(n) |   string        |   Enforces that a response is at least the given length       |
-| MaxLength(n) |   string        |   Enforces that a response is no longer than the given length |
+| name         | valid types | description                                                 | notes                                                                                 |
+| ------------ | ----------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Required     | any         | Rejects zero values of the response type                    | Boolean values pass straight through since the zero value (false) is a valid response |
+| MinLength(n) | string      | Enforces that a response is at least the given length       |                                                                                       |
+| MaxLength(n) | string      | Enforces that a response is no longer than the given length |                                                                                       |
 
 ## Help Text
 
@@ -226,7 +229,6 @@ In some situations, `?` is a perfectly valid response. To handle this, you can c
 looks for by setting the `HelpInputRune` variable in `survey/core`:
 
 ```golang
-
 import (
     "gopkg.in/AlecAivazis/survey.v1"
     surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
@@ -238,7 +240,7 @@ prompt := &survey.Input{
     Help:    "I couldn't come up with one.",
 }
 
-surveyCore.HelpInputRune = '^'
+surveyCore.HelpIcon = '^'
 
 survey.AskOne(prompt, &number, nil)
 ```
@@ -278,14 +280,14 @@ survey.AskOne(
 Customizing the icons and various parts of survey can easily be done by setting the following variables
 in `survey/core`:
 
-|   name              |     default    |    description                                                    |
-|---------------------|----------------|-------------------------------------------------------------------|
-| ErrorIcon           |       ✘        | Before an error                                                   |
-| HelpIcon            |       ⓘ       | Before help text                                                   |
-| QuestionIcon        |       ?        | Before the message of a prompt                                    |
-| SelectFocusIcon     |       ❯        | Marks the current focus in `Select` and `MultiSelect` prompts     |
-| MarkedOptionIcon    |       ◉        | Marks a chosen selection in a `MultiSelect` prompt                |
-| UnmarkedOptionIcon  |       ◯        | Marks an unselected option in a `MultiSelect` prompt              |
+| name               | default | description                                                   |
+| ------------------ | ------- | ------------------------------------------------------------- |
+| ErrorIcon          | ✘       | Before an error                                               |
+| HelpIcon           | ⓘ       | Before help text                                              |
+| QuestionIcon       | ?       | Before the message of a prompt                                |
+| SelectFocusIcon    | ❯       | Marks the current focus in `Select` and `MultiSelect` prompts |
+| MarkedOptionIcon   | ◉       | Marks a chosen selection in a `MultiSelect` prompt            |
+| UnmarkedOptionIcon | ◯       | Marks an unselected option in a `MultiSelect` prompt          |
 
 ## Versioning
 

@@ -18,6 +18,7 @@ package helm
 
 import (
 	"crypto/tls"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -78,6 +79,8 @@ type options struct {
 	reuseValues bool
 	// release test options are applied directly to the test release history request
 	testReq rls.TestReleaseRequest
+	// connectTimeout specifies the time duration Helm will wait to establish a connection to tiller
+	connectTimeout time.Duration
 }
 
 // Host specifies the host address of the Tiller release server, (default = ":44134").
@@ -177,6 +180,13 @@ func ValueOverrides(raw []byte) InstallOption {
 func ReleaseName(name string) InstallOption {
 	return func(opts *options) {
 		opts.instReq.Name = name
+	}
+}
+
+// ConnectTimeout specifies the duration (in seconds) Helm will wait to establish a connection to tiller
+func ConnectTimeout(timeout int64) Option {
+	return func(opts *options) {
+		opts.connectTimeout = time.Duration(timeout) * time.Second
 	}
 }
 
@@ -348,7 +358,8 @@ func ResetValues(reset bool) UpdateOption {
 	}
 }
 
-// ReuseValues will (if true) trigger resetting the values to their original state.
+// ReuseValues will cause Tiller to reuse the values from the last release.
+// This is ignored if ResetValues is true.
 func ReuseValues(reuse bool) UpdateOption {
 	return func(opts *options) {
 		opts.reuseValues = reuse
@@ -374,7 +385,7 @@ func UpgradeForce(force bool) UpdateOption {
 type ContentOption func(*options)
 
 // ContentReleaseVersion will instruct Tiller to retrieve the content
-// of a paritcular version of a release.
+// of a particular version of a release.
 func ContentReleaseVersion(version int32) ContentOption {
 	return func(opts *options) {
 		opts.contentReq.Version = version
@@ -425,7 +436,7 @@ func WithMaxHistory(max int32) HistoryOption {
 // NewContext creates a versioned context.
 func NewContext() context.Context {
 	md := metadata.Pairs("x-helm-api-client", version.GetVersion())
-	return metadata.NewContext(context.TODO(), md)
+	return metadata.NewOutgoingContext(context.TODO(), md)
 }
 
 // ReleaseTestOption allows configuring optional request data for

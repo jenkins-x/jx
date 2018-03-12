@@ -35,6 +35,17 @@ func TestRequired_canSucceedOnMap(t *testing.T) {
 	}
 }
 
+func TestRequired_passesOnFalse(t *testing.T) {
+	// a false value to pass to the validator
+	val := false
+
+	// if the boolean is invalid
+	if notValid := Required(val); notValid != nil {
+		//
+		t.Error("False failed a required check.")
+	}
+}
+
 func TestRequired_canFailOnMap(t *testing.T) {
 	// an non-empty map to test
 	val := map[string]int{}

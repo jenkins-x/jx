@@ -11,9 +11,6 @@ option go_package = "rpc";
 service Draft {
 	// GetVersion returns the current version of the server.
 	rpc GetVersion(google.protobuf.Empty) returns (Version) {}
-	
-	// GetLogs returns the logs for a particular draft build.
-	rpc GetLogs(GetLogsRequest) returns (GetLogsResponse) {}
 
 	// UpBuild returns a stream of the UpSummary within
 	// for a given draft upload.
@@ -29,19 +26,6 @@ service Draft {
 	// draft up. This is the api invoked by the draft client when
 	// doing a draft up with watch enabled. 
 	rpc UpStream(stream UpMessage) returns (stream UpMessage) {}
-}
-
-// GetLogsRequest is the message sent to draftd to retrieve logs for a draft build.
-message GetLogsRequest {
-	string app_name = 1;
-	string buildID = 2;
-	int64 limit = 3;
-}
-
-// GetLogsResponse is the message returned by draftd containing the logs (up to limit)
-// for a draft build.
-message GetLogsResponse {
-	bytes content = 1;
 }
 
 // AppArchive represents the archived application included in a `draft up`.

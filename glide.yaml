@@ -36,6 +36,8 @@ import:
 - package: github.com/rawlingsj/draft
 - package: github.com/pelletier/go-buffruneio
   version: e2f66f8164ca709d4c21e815860afd2024e9b894
+- package: github.com/gorilla/websocket
+  version: v1.2.0
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

@@ -31,12 +31,13 @@ import (
 
 // maxMsgSize use 20MB as the default message size limit.
 // grpc library default is 4MB
-var maxMsgSize = 1024 * 1024 * 20
+const maxMsgSize = 1024 * 1024 * 20
 
 // DefaultServerOpts returns the set of default grpc ServerOption's that Tiller requires.
 func DefaultServerOpts() []grpc.ServerOption {
 	return []grpc.ServerOption{
-		grpc.MaxMsgSize(maxMsgSize),
+		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.MaxSendMsgSize(maxMsgSize),
 		grpc.UnaryInterceptor(newUnaryInterceptor()),
 		grpc.StreamInterceptor(newStreamInterceptor()),
 	}
@@ -78,7 +79,7 @@ func splitMethod(fullMethod string) (string, string) {
 }
 
 func versionFromContext(ctx context.Context) string {
-	if md, ok := metadata.FromContext(ctx); ok {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		if v, ok := md["x-helm-api-client"]; ok && len(v) > 0 {
 			return v[0]
 		}

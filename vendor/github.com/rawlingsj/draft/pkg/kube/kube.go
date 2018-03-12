@@ -7,7 +7,6 @@ import (
 	"os"
 )
 
-// GetInClusterClient returns an in cluster Kubernetes client
 func GetInClusterClient() (kubernetes.Interface, error) {
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
@@ -20,7 +19,6 @@ func GetInClusterClient() (kubernetes.Interface, error) {
 	return k8s, nil
 }
 
-// GetOutOfClusterClient returns a client side Kubernetes client
 func GetOutOfClusterClient() (kubernetes.Interface, error) {
 	k8scfg := os.Getenv("KUBECONFIG")
 	if k8scfg == "" {

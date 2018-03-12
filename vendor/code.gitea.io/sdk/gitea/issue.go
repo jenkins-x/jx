@@ -39,6 +39,7 @@ type Issue struct {
 	Labels    []*Label   `json:"labels"`
 	Milestone *Milestone `json:"milestone"`
 	Assignee  *User      `json:"assignee"`
+	Assignees []*User    `json:"assignees"`
 	// Whether the issue is open or closed
 	//
 	// type: string

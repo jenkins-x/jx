@@ -1,19 +1,13 @@
 package draft
 
 import (
-	"bufio"
-	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -25,18 +19,15 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/proto/hapi/release"
 
 	"github.com/Azure/draft/pkg/rpc"
-	"github.com/Azure/draft/pkg/storage"
 )
-
-const draftLogsDirPrefix = "draft-logs"
 
 // ServerConfig specifies draft.Server configuration.
 type ServerConfig struct {
@@ -49,14 +40,12 @@ type ServerConfig struct {
 	Kube           k8s.Interface
 	UseTLS         bool
 	TLSConfig      *tls.Config
-	Storage        storage.Store
 }
 
 // Server is a draft Server.
 type Server struct {
-	cfg     *ServerConfig
-	srv     rpc.Server
-	logsDir string
+	cfg *ServerConfig
+	srv rpc.Server
 }
 
 // NewServer returns a draft.Server initialized with the
@@ -65,15 +54,7 @@ func NewServer(cfg *ServerConfig) *Server {
 	return &Server{cfg: cfg}
 }
 
-// Serve starts draftd
 func (s *Server) Serve(ctx context.Context) error {
-	// create temporary logs directory
-	var err error
-	if s.logsDir, err = ioutil.TempDir("", draftLogsDirPrefix); err != nil {
-		return fmt.Errorf("could not create logs directory: %v", err)
-	}
-	defer os.RemoveAll(s.logsDir)
-
 	// start probes server
 	cancelctx, cancel := context.WithCancel(ctx)
 	var wg sync.WaitGroup
@@ -120,32 +101,6 @@ func (s *Server) Serve(ctx context.Context) error {
 	}
 }
 
-// regular expression to sanitize build ids.
-var reBuildID = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
-
-// Logs handles incoming requests to retrieve logs for a draft build.
-//
-// Logs implements rpc.LogsHandler
-func (s *Server) Logs(ctx context.Context, req *rpc.GetLogsRequest) (*rpc.GetLogsResponse, error) {
-	if !reBuildID.MatchString(req.BuildID) {
-		return nil, fmt.Errorf("invalid build id %q", req.BuildID)
-	}
-	obj, err := s.cfg.Storage.GetBuild(context.Background(), req.AppName, req.BuildID)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to retrieve application (%q) storage object for build %q: %v",
-			req.AppName,
-			req.BuildID,
-			err,
-		)
-	}
-	var buf bytes.Buffer
-	if err := tail(&buf, req.Limit, obj.LogsFileRef); err != nil {
-		return nil, err
-	}
-	return &rpc.GetLogsResponse{Content: buf.Bytes()}, nil
-}
-
 // Up handles incoming draft up requests and returns a stream of summaries or error.
 //
 // Up implements rpc.UpHandler
@@ -158,17 +113,12 @@ func (s *Server) buildApp(ctx context.Context, req *rpc.UpRequest) <-chan *rpc.U
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		var (
-			buf = new(bytes.Buffer)
 			app *AppContext
 			err error
 		)
-		defer func() {
-			s.finish(app, buf)
-			wg.Done()
-		}()
-		w := io.MultiWriter(buf, os.Stdout, os.Stderr)
-		if app, err = newAppContext(s, req, w); err != nil {
+		if app, err = newAppContext(s, req, os.Stdout); err != nil {
 			fmt.Printf("buildApp: error creating app context: %v\n", err)
 			return
 		}
@@ -190,23 +140,6 @@ func (s *Server) buildApp(ctx context.Context, req *rpc.UpRequest) <-chan *rpc.U
 		close(ch)
 	}()
 	return ch
-}
-
-// finish updates storage with the information collected during the stages of a draft build and
-// writes the aggregated logs to a tempoarary file.
-func (s *Server) finish(app *AppContext, buf *bytes.Buffer) {
-	logsFile := filepath.Join(s.logsDir, app.id)
-	app.obj.LogsFileRef = logsFile
-	if err := s.cfg.Storage.UpdateBuild(context.Background(), app.req.AppName, app.obj); err != nil {
-		fmt.Printf("complete: failed to store build object for app %q: %v\n", app.req.AppName, err)
-		return
-	}
-
-	if err := ioutil.WriteFile(logsFile, buf.Bytes(), 0666); err != nil {
-		fmt.Printf("complete: failed to write logs to file for build %q: %v\n", app.id, err)
-		return
-	}
-	fmt.Printf("complete: wrote logs to %s\n", logsFile)
 }
 
 // buildImg builds the docker image.
@@ -379,7 +312,6 @@ func (s *Server) release(ctx context.Context, app *AppContext, out chan<- *rpc.U
 		if err != nil {
 			return fmt.Errorf("could not upgrade release: %v", grpcError(err))
 		}
-		app.obj.Release = rls.Release.Name
 		formatReleaseStatus(app, rls.Release, summary)
 	}
 	return nil
@@ -511,14 +443,14 @@ func formatReleaseStatus(app *AppContext, rls *release.Release, summary func(str
 	}
 }
 
-// summarize returns a function closure that wraps writing rpc.UpSummary_StatusCode.
+// TODO: This is a half-measure solution.
 func summarize(id, desc string, out chan<- *rpc.UpSummary) func(string, rpc.UpSummary_StatusCode) {
 	return func(info string, code rpc.UpSummary_StatusCode) {
 		out <- &rpc.UpSummary{StageDesc: desc, StatusText: info, StatusCode: code, BuildId: id}
 	}
 }
 
-// complete marks the end of a draft build stage.
+// TODO: This is a half-measure solution.
 func complete(id, desc string, out chan<- *rpc.UpSummary, err *error) {
 	switch fn := summarize(id, desc, out); {
 	case *err != nil:
@@ -530,57 +462,4 @@ func complete(id, desc string, out chan<- *rpc.UpSummary, err *error) {
 
 func grpcError(err error) error {
 	return errors.New(grpc.ErrorDesc(err))
-}
-
-// tail writes up to limit number of lines of the file specified by path relative to the file end.
-func tail(buf *bytes.Buffer, limit int64, path string) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	var (
-		offset = int64(-1)
-		nlines = int64(0)
-		endPos int64
-	)
-	for nlines <= limit-1 {
-		begPos, err := f.Seek(offset, 2)
-		if err != nil {
-			return err
-		}
-		if begPos == 0 {
-			endPos = -1
-			break
-		}
-		b := make([]byte, 1)
-		if _, err = f.ReadAt(b, begPos); err != nil {
-			return err
-		}
-		if offset == int64(-1) && string(b) == "\n" {
-			offset--
-			continue
-		}
-		if string(b) == "\n" {
-			nlines++
-			endPos = begPos
-		}
-		offset--
-	}
-
-	if _, err = f.Seek(endPos+1, 0); err != nil {
-		return err
-	}
-
-	scanner := bufio.NewScanner(f)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return err
-		}
-		buf.Write(scanner.Bytes())
-		buf.WriteString("\n")
-	}
-	return nil
 }

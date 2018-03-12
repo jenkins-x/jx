@@ -6,7 +6,6 @@ import (
 	"strings"
 )
 
-// PackDirName is name for the packs directory
 const PackDirName = "packs"
 
 // Repository represents a pack repository.

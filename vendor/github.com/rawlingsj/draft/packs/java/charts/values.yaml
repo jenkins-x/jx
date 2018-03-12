@@ -1,18 +1,33 @@
 # Default values for Maven projects.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-replicaCount: 2
+replicaCount: 1
 image:
+  repository: draft
+  tag: dev
   pullPolicy: IfNotPresent
 service:
-  name: java
+  name: REPLACE_ME
   type: ClusterIP
   externalPort: 80
-  internalPort: 4567
+  internalPort: 8080
+  annotations:
+    fabric8.io/expose: "true"
 resources:
   limits:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 500m
+    memory: 512Mi
   requests:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 400m
+    memory: 512Mi
+probePath: /actuator/health
+livenessProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+readinessProbe:
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 1
+terminationGracePeriodSeconds: 10

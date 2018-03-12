@@ -51,6 +51,12 @@ var goodTable = []TestUtil.TestTableEntry{
 			Options: []string{"red", "blue"},
 		}, &answer,
 	},
+	{
+		"can navigate with j/k", &survey.Select{
+			Message: "Choose one:",
+			Options: []string{"red", "blue", "green"},
+		}, &answer,
+	},
 }
 
 var badTable = []TestUtil.TestTableEntry{
