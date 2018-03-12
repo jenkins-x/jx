@@ -1153,9 +1153,9 @@ func TestDiffLevenshtein(t *testing.T) {
 	dmp := New()
 
 	for i, tc := range []TestCase{
-		{"Levenshtein with trailing equality", []Diff{{DiffDelete, "абв"}, {DiffInsert, "1234"}, {DiffEqual, "эюя"}}, 4},
-		{"Levenshtein with leading equality", []Diff{{DiffEqual, "эюя"}, {DiffDelete, "абв"}, {DiffInsert, "1234"}}, 4},
-		{"Levenshtein with middle equality", []Diff{{DiffDelete, "абв"}, {DiffEqual, "эюя"}, {DiffInsert, "1234"}}, 7},
+		{"Levenshtein with trailing equality", []Diff{{DiffDelete, "abc"}, {DiffInsert, "1234"}, {DiffEqual, "xyz"}}, 4},
+		{"Levenshtein with leading equality", []Diff{{DiffEqual, "xyz"}, {DiffDelete, "abc"}, {DiffInsert, "1234"}}, 4},
+		{"Levenshtein with middle equality", []Diff{{DiffDelete, "abc"}, {DiffEqual, "xyz"}, {DiffInsert, "1234"}}, 7},
 	} {
 		actual := dmp.DiffLevenshtein(tc.Diffs)
 		assert.Equal(t, tc.Expected, actual, fmt.Sprintf("Test case #%d, %s", i, tc.Name))

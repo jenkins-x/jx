@@ -96,7 +96,7 @@ func (d *dependencyUpdateCmd) run() error {
 		Getters:    getter.All(settings),
 	}
 	if d.verify {
-		man.Verify = downloader.VerifyAlways
+		man.Verify = downloader.VerifyIfPossible
 	}
 	if settings.Debug {
 		man.Debug = true

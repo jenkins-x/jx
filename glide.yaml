@@ -19,6 +19,7 @@ import:
 - package: github.com/MakeNowJust/heredoc
 - package: github.com/blang/semver
 - package: gopkg.in/AlecAivazis/survey.v1
+  version: 9d3458c219bae9653d267883634bdb5375281fd8
 - package: github.com/fatih/color
   version: v1.5.0
 - package: github.com/spf13/pflag
@@ -33,7 +34,8 @@ import:
 - package: github.com/russross/blackfriday
   version: v1.5
 - package: github.com/jenkins-x/chyle
-- package: github.com/rawlingsj/draft
+- package: github.com/jenkins-x/draft-repo
+  version: copy-pack-contents
 - package: github.com/pelletier/go-buffruneio
   version: e2f66f8164ca709d4c21e815860afd2024e9b894
 - package: github.com/gorilla/websocket

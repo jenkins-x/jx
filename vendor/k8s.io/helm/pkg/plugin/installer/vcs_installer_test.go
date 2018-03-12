@@ -69,20 +69,20 @@ func TestVCSInstaller(t *testing.T) {
 
 	i, err := NewForSource(source, "~0.1.0", home)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Errorf("unexpected error: %s", err)
 	}
 
 	// ensure a VCSInstaller was returned
 	vcsInstaller, ok := i.(*VCSInstaller)
 	if !ok {
-		t.Fatal("expected a VCSInstaller")
+		t.Error("expected a VCSInstaller")
 	}
 
 	// set the testRepo in the VCSInstaller
 	vcsInstaller.Repo = repo
 
 	if err := Install(i); err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	if repo.current != "0.1.1" {
 		t.Errorf("expected version '0.1.1', got %q", repo.current)
@@ -123,13 +123,13 @@ func TestVCSInstallerNonExistentVersion(t *testing.T) {
 
 	i, err := NewForSource(source, version, home)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Errorf("unexpected error: %s", err)
 	}
 
 	// ensure a VCSInstaller was returned
 	_, ok := i.(*VCSInstaller)
 	if !ok {
-		t.Fatal("expected a VCSInstaller")
+		t.Error("expected a VCSInstaller")
 	}
 
 	if err := Install(i); err == nil {
@@ -155,40 +155,40 @@ func TestVCSInstallerUpdate(t *testing.T) {
 
 	i, err := NewForSource(source, "", home)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Errorf("unexpected error: %s", err)
 	}
 
 	// ensure a VCSInstaller was returned
 	_, ok := i.(*VCSInstaller)
 	if !ok {
-		t.Fatal("expected a VCSInstaller")
+		t.Error("expected a VCSInstaller")
 	}
 
 	if err := Update(i); err == nil {
-		t.Fatal("expected error for plugin does not exist, got none")
+		t.Error("expected error for plugin does not exist, got none")
 	} else if err.Error() != "plugin does not exist" {
-		t.Fatalf("expected error for plugin does not exist, got (%v)", err)
+		t.Errorf("expected error for plugin does not exist, got (%v)", err)
 	}
 
 	// Install plugin before update
 	if err := Install(i); err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	// Test FindSource method for positive result
 	pluginInfo, err := FindSource(i.Path(), home)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	repoRemote := pluginInfo.(*VCSInstaller).Repo.Remote()
 	if repoRemote != source {
-		t.Fatalf("invalid source found, expected %q got %q", source, repoRemote)
+		t.Errorf("invalid source found, expected %q got %q", source, repoRemote)
 	}
 
 	// Update plugin
 	if err := Update(i); err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	// Test update failure

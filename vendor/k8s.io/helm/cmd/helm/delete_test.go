@@ -23,7 +23,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8s.io/helm/pkg/helm"
-	"k8s.io/helm/pkg/proto/hapi/release"
 )
 
 func TestDelete(t *testing.T) {
@@ -34,32 +33,28 @@ func TestDelete(t *testing.T) {
 			args:     []string{"aeneas"},
 			flags:    []string{},
 			expected: "", // Output of a delete is an empty string and exit 0.
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "aeneas"}),
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "aeneas"})},
+			resp:     releaseMock(&releaseOptions{name: "aeneas"}),
 		},
 		{
 			name:     "delete with timeout",
 			args:     []string{"aeneas"},
 			flags:    []string{"--timeout", "120"},
 			expected: "",
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "aeneas"}),
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "aeneas"})},
+			resp:     releaseMock(&releaseOptions{name: "aeneas"}),
 		},
 		{
 			name:     "delete without hooks",
 			args:     []string{"aeneas"},
 			flags:    []string{"--no-hooks"},
 			expected: "",
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "aeneas"}),
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "aeneas"})},
+			resp:     releaseMock(&releaseOptions{name: "aeneas"}),
 		},
 		{
 			name:     "purge",
 			args:     []string{"aeneas"},
 			flags:    []string{"--purge"},
 			expected: "",
-			resp:     helm.ReleaseMock(&helm.MockReleaseOptions{Name: "aeneas"}),
-			rels:     []*release.Release{helm.ReleaseMock(&helm.MockReleaseOptions{Name: "aeneas"})},
+			resp:     releaseMock(&releaseOptions{name: "aeneas"}),
 		},
 		{
 			name: "delete without release",

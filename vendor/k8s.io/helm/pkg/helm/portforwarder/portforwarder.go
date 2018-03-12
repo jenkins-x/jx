@@ -19,33 +19,32 @@ package portforwarder
 import (
 	"fmt"
 
-	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 
 	"k8s.io/helm/pkg/kube"
 )
 
 var (
-	tillerPodLabels = labels.Set{"app": "helm", "name": "tiller"}
+	tillerPodLabels labels.Set = labels.Set{"app": "helm", "name": "tiller"}
 )
 
 // New creates a new and initialized tunnel.
 func New(namespace string, client kubernetes.Interface, config *rest.Config) (*kube.Tunnel, error) {
-	podName, err := GetTillerPodName(client.CoreV1(), namespace)
+	podName, err := getTillerPodName(client.CoreV1(), namespace)
 	if err != nil {
 		return nil, err
 	}
 	const tillerPort = 44134
-	t := kube.NewTunnel(client.CoreV1().RESTClient(), config, namespace, podName, tillerPort)
+	t := kube.NewTunnel(client.Core().RESTClient(), config, namespace, podName, tillerPort)
 	return t, t.ForwardPort()
 }
 
-// GetTillerPodName fetches the name of tiller pod running in the given namespace.
-func GetTillerPodName(client corev1.PodsGetter, namespace string) (string, error) {
+func getTillerPodName(client corev1.PodsGetter, namespace string) (string, error) {
 	selector := tillerPodLabels.AsSelector()
 	pod, err := getFirstRunningPod(client, namespace, selector)
 	if err != nil {

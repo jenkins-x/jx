@@ -433,43 +433,45 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		return nil
 	}
 	gitInfo := o.State.GitInfo
-	results := GitHubIssueRegex.FindStringSubmatch(commit.Message)
-	for _, result := range results {
-		numberText := strings.TrimPrefix(result, "#")
-		if _, ok := o.State.FoundIssueNames[result]; !ok {
-			o.State.FoundIssueNames[result] = true
-			number, err := strconv.Atoi(numberText)
-			if err != nil {
-				o.warnf("Failed to convert issue reference %s into a number %s\n", numberText, err)
-				continue
-			}
-			owner := gitInfo.Organisation
-			repo := gitInfo.Name
-			issue, err := gitProvider.GetIssue(owner, repo, number)
-			if err != nil {
-				o.warnf("Failed to lookup issue %s in repository\n", result, err)
-				continue
-			}
-			if issue == nil {
-				o.warnf("Failed to find issue %d for repository %s/%s\n", number, owner, repo)
-			}
-			issueSummary := v1.IssueSummary{
-				ID:        numberText,
-				URL:       issue.URL,
-				Title:     issue.Title,
-				Body:      issue.Body,
-				User:      o.gitUserToUserDetails(issue.User),
-				ClosedBy:  o.gitUserToUserDetails(issue.ClosedBy),
-				Assignees: o.gitUserToUserDetailSlice(issue.Assignees),
-			}
-			state := issue.State
-			if state != nil {
-				issueSummary.State = *state
-			}
-			if issue.IsPullRequest {
-				spec.PullRequests = append(spec.PullRequests, issueSummary)
-			} else {
-				spec.Issues = append(spec.Issues, issueSummary)
+	matches := GitHubIssueRegex.FindAllStringSubmatch(commit.Message, -1)
+	for _, match := range matches {
+		for _, result := range match {
+			numberText := strings.TrimPrefix(result, "#")
+			if _, ok := o.State.FoundIssueNames[result]; !ok {
+				o.State.FoundIssueNames[result] = true
+				number, err := strconv.Atoi(numberText)
+				if err != nil {
+					o.warnf("Failed to convert issue reference %s into a number %s\n", numberText, err)
+					continue
+				}
+				owner := gitInfo.Organisation
+				repo := gitInfo.Name
+				issue, err := gitProvider.GetIssue(owner, repo, number)
+				if err != nil {
+					o.warnf("Failed to lookup issue %s in repository\n", result, err)
+					continue
+				}
+				if issue == nil {
+					o.warnf("Failed to find issue %d for repository %s/%s\n", number, owner, repo)
+				}
+				issueSummary := v1.IssueSummary{
+					ID:        numberText,
+					URL:       issue.URL,
+					Title:     issue.Title,
+					Body:      issue.Body,
+					User:      o.gitUserToUserDetails(issue.User),
+					ClosedBy:  o.gitUserToUserDetails(issue.ClosedBy),
+					Assignees: o.gitUserToUserDetailSlice(issue.Assignees),
+				}
+				state := issue.State
+				if state != nil {
+					issueSummary.State = *state
+				}
+				if issue.IsPullRequest {
+					spec.PullRequests = append(spec.PullRequests, issueSummary)
+				} else {
+					spec.Issues = append(spec.Issues, issueSummary)
+				}
 			}
 		}
 	}

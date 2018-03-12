@@ -28,14 +28,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	goprom "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/health"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
-	"google.golang.org/grpc/keepalive"
 
 	"k8s.io/helm/pkg/kube"
 	"k8s.io/helm/pkg/proto/hapi/services"
@@ -61,7 +57,6 @@ const (
 
 	storageMemory    = "memory"
 	storageConfigMap = "configmap"
-	storageSecret    = "secret"
 
 	probeAddr = ":44135"
 	traceAddr = ":44136"
@@ -73,7 +68,7 @@ const (
 var (
 	grpcAddr             = flag.String("listen", ":44134", "address:port to listen on")
 	enableTracing        = flag.Bool("trace", false, "enable rpc tracing")
-	store                = flag.String("storage", storageConfigMap, "storage driver to use. One of 'configmap', 'memory', or 'secret'")
+	store                = flag.String("storage", storageConfigMap, "storage driver to use. One of 'configmap' or 'memory'")
 	remoteReleaseModules = flag.Bool("experimental-release", false, "enable experimental release modules")
 	tlsEnable            = flag.Bool("tls", tlsEnableEnvVarDefault(), "enable TLS")
 	tlsVerify            = flag.Bool("tls-verify", tlsVerifyEnvVarDefault(), "enable TLS and verify remote certificate")
@@ -81,7 +76,6 @@ var (
 	certFile             = flag.String("tls-cert", tlsDefaultsFromEnv("tls-cert"), "path to TLS certificate file")
 	caCertFile           = flag.String("tls-ca-cert", tlsDefaultsFromEnv("tls-ca-cert"), "trust certificates signed by this CA")
 	maxHistory           = flag.Int("history-max", historyMaxFromEnv(), "maximum number of releases kept in release history, with 0 meaning no limit")
-	printVersion         = flag.Bool("version", false, "print the version number")
 
 	// rootServer is the root gRPC server.
 	//
@@ -97,13 +91,7 @@ var (
 )
 
 func main() {
-	// TODO: use spf13/cobra for tiller instead of flags
 	flag.Parse()
-
-	if *printVersion {
-		fmt.Println(version.GetVersion())
-		os.Exit(0)
-	}
 
 	if *enableTracing {
 		log.SetFlags(log.Lshortfile)
@@ -114,9 +102,6 @@ func main() {
 }
 
 func start() {
-
-	healthSrv := health.NewServer()
-	healthSrv.SetServingStatus("Tiller", healthpb.HealthCheckResponse_NOT_SERVING)
 
 	clientset, err := kube.New(nil).ClientSet()
 	if err != nil {
@@ -131,12 +116,6 @@ func start() {
 		cfgmaps.Log = newLogger("storage/driver").Printf
 
 		env.Releases = storage.Init(cfgmaps)
-		env.Releases.Log = newLogger("storage").Printf
-	case storageSecret:
-		secrets := driver.NewSecrets(clientset.Core().Secrets(namespace()))
-		secrets.Log = newLogger("storage/driver").Printf
-
-		env.Releases = storage.Init(secrets)
 		env.Releases.Log = newLogger("storage").Printf
 	}
 
@@ -164,16 +143,7 @@ func start() {
 		opts = append(opts, grpc.Creds(credentials.NewTLS(cfg)))
 	}
 
-	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
-		MaxConnectionIdle: 10 * time.Minute,
-		// If needed, we can configure the max connection age
-	}))
-	opts = append(opts, grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-		MinTime: time.Duration(20) * time.Second, // For compatibility with the client keepalive.ClientParameters
-	}))
-
 	rootServer = tiller.NewServer(opts...)
-	healthpb.RegisterHealthServer(rootServer, healthSrv)
 
 	lstn, err := net.Listen("tcp", *grpcAddr)
 	if err != nil {
@@ -213,8 +183,6 @@ func start() {
 		}
 	}()
 
-	healthSrv.SetServingStatus("Tiller", healthpb.HealthCheckResponse_SERVING)
-
 	select {
 	case err := <-srvErrCh:
 		logger.Fatalf("Server died: %s", err)
@@ -250,11 +218,7 @@ func tlsOptions() tlsutil.Options {
 	opts := tlsutil.Options{CertFile: *certFile, KeyFile: *keyFile}
 	if *tlsVerify {
 		opts.CaCertFile = *caCertFile
-
-		// We want to force the client to not only provide a cert, but to
-		// provide a cert that we can validate.
-		// http://www.bite-code.com/2015/06/25/tls-mutual-auth-in-golang/
-		opts.ClientAuth = tls.RequireAndVerifyClientCert
+		opts.ClientAuth = tls.VerifyClientCertIfGiven
 	}
 	return opts
 }

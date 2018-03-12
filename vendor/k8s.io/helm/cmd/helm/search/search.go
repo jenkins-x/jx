@@ -30,6 +30,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
+
 	"k8s.io/helm/pkg/repo"
 )
 
@@ -146,11 +147,9 @@ func (i *Index) SearchLiteral(term string, threshold int) []*Result {
 	term = strings.ToLower(term)
 	buf := []*Result{}
 	for k, v := range i.lines {
-		lk := strings.ToLower(k)
-		lv := strings.ToLower(v)
-		res := strings.Index(lv, term)
-		if score := i.calcScore(res, lv); res != -1 && score < threshold {
-			parts := strings.Split(lk, verSep) // Remove version, if it is there.
+		res := strings.Index(v, term)
+		if score := i.calcScore(res, v); res != -1 && score < threshold {
+			parts := strings.Split(k, verSep) // Remove version, if it is there.
 			buf = append(buf, &Result{Name: parts[0], Score: score, Chart: i.charts[k]})
 		}
 	}
@@ -232,5 +231,5 @@ func (s scoreSorter) Less(a, b int) bool {
 func indstr(name string, ref *repo.ChartVersion) string {
 	i := ref.Name + sep + name + "/" + ref.Name + sep +
 		ref.Description + sep + strings.Join(ref.Keywords, " ")
-	return i
+	return strings.ToLower(i)
 }

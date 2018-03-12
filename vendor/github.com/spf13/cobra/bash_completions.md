@@ -6,20 +6,19 @@ Generating bash completions from a cobra command is incredibly easy. An actual p
 package main
 
 import (
-	"io/ioutil"
-	"os"
+        "io/ioutil"
+        "os"
 
-	"k8s.io/kubernetes/pkg/kubectl/cmd"
-	"k8s.io/kubernetes/pkg/kubectl/cmd/util"
+        "github.com/GoogleCloudPlatform/kubernetes/pkg/kubectl/cmd"
 )
 
 func main() {
-	kubectl := cmd.NewKubectlCommand(util.NewFactory(nil), os.Stdin, ioutil.Discard, ioutil.Discard)
-	kubectl.GenBashCompletionFile("out.sh")
+        kubectl := cmd.NewFactory(nil).NewKubectlCommand(os.Stdin, ioutil.Discard, ioutil.Discard)
+        kubectl.GenBashCompletionFile("out.sh")
 }
 ```
 
-`out.sh` will get you completions of subcommands and flags. Copy it to `/etc/bash_completion.d/` as described [here](https://debian-administration.org/article/316/An_introduction_to_bash_completion_part_1) and reset your terminal to use autocompletion. If you make additional annotations to your code, you can get even more intelligent and flexible behavior.
+That will get you completions of subcommands and flags. If you make additional annotations to your code, you can get even more intelligent and flexible behavior.
 
 ## Creating your own custom functions
 
@@ -107,7 +106,7 @@ node                 pod                    replicationcontroller  service
 
 If your nouns have a number of aliases, you can define them alongside `ValidArgs` using `ArgAliases`:
 
-```go
+```go`
 argAliases []string = { "pods", "nodes", "services", "svc", "replicationcontrollers", "rc" }
 
 cmd := &cobra.Command{
@@ -174,9 +173,9 @@ hello.yml                     test.json
 
 So while there are many other files in the CWD it only shows me subdirs and those with valid extensions.
 
-# Specify custom flag completion
+# Specifiy custom flag completion
 
-Similar to the filename completion and filtering using cobra.BashCompFilenameExt, you can specify
+Similar to the filename completion and filtering using cobra.BashCompFilenameExt, you can specifiy
 a custom flag completion function with cobra.BashCompCustom:
 
 ```go
@@ -204,18 +203,4 @@ __kubectl_get_namespaces()
         COMPREPLY=( $( compgen -W "${kubectl_out}[*]" -- "$cur" ) )
     fi
 }
-```
-# Using bash aliases for commands
-
-You can also configure the `bash aliases` for the commands and they will also support completions.
-
-```bash
-alias aliasname=origcommand
-complete -o default -F __start_origcommand aliasname
-
-# and now when you run `aliasname` completion will make
-# suggestions as it did for `origcommand`.
-
-$) aliasname <tab><tab>
-completion     firstcommand   secondcommand
 ```

@@ -90,7 +90,6 @@ func (c *createCmd) run() error {
 		Name:        chartname,
 		Description: "A Helm chart for Kubernetes",
 		Version:     "0.1.0",
-		AppVersion:  "1.0",
 		ApiVersion:  chartutil.ApiVersionV1,
 	}
 

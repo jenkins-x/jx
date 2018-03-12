@@ -23,7 +23,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	"k8s.io/helm/pkg/proto/hapi/chart"
-	"k8s.io/helm/pkg/version"
 )
 
 const (
@@ -231,7 +230,7 @@ func getAliasDependency(charts []*chart.Chart, aliasChart *Dependency) *chart.Ch
 		if existingChart.Metadata.Name != aliasChart.Name {
 			continue
 		}
-		if !version.IsCompatibleRange(aliasChart.Version, existingChart.Metadata.Version) {
+		if existingChart.Metadata.Version != aliasChart.Version {
 			continue
 		}
 		chartFound = *existingChart
@@ -267,7 +266,7 @@ func ProcessRequirementsEnabled(c *chart.Chart, v *chart.Config) error {
 	for _, existingDependency := range c.Dependencies {
 		var dependencyFound bool
 		for _, req := range reqs.Dependencies {
-			if existingDependency.Metadata.Name == req.Name && version.IsCompatibleRange(req.Version, existingDependency.Metadata.Version) {
+			if existingDependency.Metadata.Name == req.Name && existingDependency.Metadata.Version == req.Version {
 				dependencyFound = true
 				break
 			}

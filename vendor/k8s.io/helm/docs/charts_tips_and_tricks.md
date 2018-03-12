@@ -18,11 +18,11 @@ We also added two special template functions: `include` and `required`. The `inc
 function allows you to bring in another template, and then pass the results to other
 template functions.
 
-For example, this template snippet includes a template called `mytpl`, then
+For example, this template snippet includes a template called `mytpl.tpl`, then
 lowercases the result, then wraps that in double quotes.
 
 ```yaml
-value: {{include "mytpl" . | lower | quote}}
+value: {{include "mytpl.tpl" . | lower | quote}}
 ```
 
 The `required` function allows you to declare a particular
@@ -50,16 +50,6 @@ many cases, cause parsing errors inside of Kubernetes.
 
 ```
 port: {{ .Values.Port }}
-```
-
-This remark does not apply to env variables values which are expected to be string, even if they represent integers:
-
-```
-env:
-  -name: HOST
-    value: "http://host"
-  -name: PORT
-    value: "1234"
 ```
 
 ## Using the 'include' Function
@@ -106,35 +96,6 @@ For example:
 The above will render the template when .Values.foo is defined, but will fail
 to render and exit when .Values.foo is undefined.
 
-## Creating Image Pull Secrets
-Image pull secrets are essentially a combination of _registry_, _username_, and _password_.  You may need them in an application you are deploying, but to create them requires running _base64_ a couple of times.  We can write a helper template to compose the Docker configuration file for use as the Secret's payload.  Here is an example:
-
-First, assume that the credentials are defined in the `values.yaml` file like so:
-```
-imageCredentials:
-  registry: quay.io
-  username: someone
-  password: sillyness
-```  
-
-We then define our helper template as follows:
-```
-{{- define "imagePullSecret" }}
-{{- printf "{\"auths\": {\"%s\": {\"auth\": \"%s\"}}}" .Values.imageCredentials.registry (printf "%s:%s" .Values.imageCredentials.username .Values.imageCredentials.password | b64enc) | b64enc }}
-{{- end }}
-```
-
-Finally, we use the helper template in a larger template to create the Secret manifest:
-```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: myregistrykey
-type: kubernetes.io/dockerconfigjson
-data:
-  .dockerconfigjson: {{ template "imagePullSecret" . }}
-```
-
 ## Automatically Roll Deployments When ConfigMaps or Secrets change
 
 Often times configmaps or secrets are injected as configuration
@@ -144,8 +105,9 @@ be updated with a subsequent `helm upgrade`, but if the
 deployment spec itself didn't change the application keeps running
 with the old configuration resulting in an inconsistent deployment.
 
-The `sha256sum` function can be used to ensure a deployment's
-annotation section is updated if another file changes: 
+The `sha256sum` function can be used together with the `include`
+function to ensure a deployments template section is updated if another
+spec changes: 
 
 ```yaml
 kind: Deployment
@@ -153,12 +115,9 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
 [...]
 ```
-
-See also the `helm upgrade --recreate-pods` flag for a slightly
-different way of addressing this issue.
 
 ## Tell Tiller Not To Delete a Resource
 
@@ -214,7 +173,7 @@ together in one GitHub repository.
 
 **Deis's [Workflow](https://github.com/deis/workflow/tree/master/charts/workflow):**
 This chart exposes the entire Deis PaaS system with one chart. But it's different
-from the SAP chart in that this umbrella chart is built from each component, and
+from the SAP chart in that this master chart is built from each component, and
 each component is tracked in a different Git repository. Check out the
 `requirements.yaml` file to see how this chart is composed by their CI/CD
 pipeline.
@@ -241,10 +200,3 @@ cryptographic keys, and so on. These are fine to use. But be aware that
 during upgrades, templates are re-executed. When a template run
 generates data that differs from the last run, that will trigger an
 update of that resource.
-
-## Upgrade a release idempotently
-
-In order to use the same command when installing and upgrading a release, use the following command:
-```shell
-helm upgrade --install <release name> --values <values file> <chart directory>
-```

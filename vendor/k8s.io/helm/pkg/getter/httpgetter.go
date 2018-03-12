@@ -20,11 +20,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"k8s.io/helm/pkg/tlsutil"
 	"k8s.io/helm/pkg/urlutil"
-	"k8s.io/helm/pkg/version"
 )
 
 //httpGetter is the efault HTTP(/S) backend handler
@@ -36,15 +34,7 @@ type httpGetter struct {
 func (g *httpGetter) Get(href string) (*bytes.Buffer, error) {
 	buf := bytes.NewBuffer(nil)
 
-	// Set a helm specific user agent so that a repo server and metrics can
-	// separate helm calls from other tools interacting with repos.
-	req, err := http.NewRequest("GET", href, nil)
-	if err != nil {
-		return buf, err
-	}
-	req.Header.Set("User-Agent", "Helm/"+strings.TrimPrefix(version.GetVersion(), "v"))
-
-	resp, err := g.client.Do(req)
+	resp, err := g.client.Get(href)
 	if err != nil {
 		return buf, err
 	}
@@ -76,7 +66,6 @@ func newHTTPGetter(URL, CertFile, KeyFile, CAFile string) (Getter, error) {
 		client.client = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: tlsConf,
-				Proxy:           http.ProxyFromEnvironment,
 			},
 		}
 	} else {

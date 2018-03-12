@@ -62,7 +62,7 @@ func NewChartRepository(cfg *Entry, getters getter.Providers) (*ChartRepository,
 	}
 	client, err := getterConstructor(cfg.URL, cfg.CertFile, cfg.KeyFile, cfg.CAFile)
 	if err != nil {
-		return nil, fmt.Errorf("Could not construct protocol handler for: %s error: %v", u.Scheme, err)
+		return nil, fmt.Errorf("Could not construct protocol handler for: %s", u.Scheme)
 	}
 
 	return &ChartRepository{
@@ -110,13 +110,8 @@ func (r *ChartRepository) Load() error {
 // is for pre-2.2.0 repo files.
 func (r *ChartRepository) DownloadIndexFile(cachePath string) error {
 	var indexURL string
-	parsedURL, err := url.Parse(r.Config.URL)
-	if err != nil {
-		return err
-	}
-	parsedURL.Path = strings.TrimSuffix(parsedURL.Path, "/") + "/index.yaml"
 
-	indexURL = parsedURL.String()
+	indexURL = strings.TrimSuffix(r.Config.URL, "/") + "/index.yaml"
 	resp, err := r.Client.Get(indexURL)
 	if err != nil {
 		return err
@@ -184,7 +179,7 @@ func (r *ChartRepository) generateIndex() error {
 }
 
 // FindChartInRepoURL finds chart in chart repository pointed by repoURL
-// without adding repo to repositories
+// without adding repo to repostiories
 func FindChartInRepoURL(repoURL, chartName, chartVersion, certFile, keyFile, caFile string, getters getter.Providers) (string, error) {
 
 	// Download and write the index file to a temporary location
@@ -227,28 +222,5 @@ func FindChartInRepoURL(repoURL, chartName, chartVersion, certFile, keyFile, caF
 		return "", fmt.Errorf("%s has no downloadable URLs", errMsg)
 	}
 
-	chartURL := cv.URLs[0]
-
-	absoluteChartURL, err := ResolveReferenceURL(repoURL, chartURL)
-	if err != nil {
-		return "", fmt.Errorf("failed to make chart URL absolute: %v", err)
-	}
-
-	return absoluteChartURL, nil
-}
-
-// ResolveReferenceURL resolves refURL relative to baseURL.
-// If refURL is absolute, it simply returns refURL.
-func ResolveReferenceURL(baseURL, refURL string) (string, error) {
-	parsedBaseURL, err := url.Parse(baseURL)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse %s as URL: %v", baseURL, err)
-	}
-
-	parsedRefURL, err := url.Parse(refURL)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse %s as URL: %v", refURL, err)
-	}
-
-	return parsedBaseURL.ResolveReference(parsedRefURL).String(), nil
+	return cv.URLs[0], nil
 }

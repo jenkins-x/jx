@@ -69,46 +69,46 @@ func (s *ReleaseServer) prepareRollback(req *services.RollbackReleaseRequest) (*
 		return nil, nil, errInvalidRevision
 	}
 
-	currentRelease, err := s.env.Releases.Last(req.Name)
+	crls, err := s.env.Releases.Last(req.Name)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	previousVersion := req.Version
+	rbv := req.Version
 	if req.Version == 0 {
-		previousVersion = currentRelease.Version - 1
+		rbv = crls.Version - 1
 	}
 
-	s.Log("rolling back %s (current: v%d, target: v%d)", req.Name, currentRelease.Version, previousVersion)
+	s.Log("rolling back %s (current: v%d, target: v%d)", req.Name, crls.Version, rbv)
 
-	previousRelease, err := s.env.Releases.Get(req.Name, previousVersion)
+	prls, err := s.env.Releases.Get(req.Name, rbv)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Store a new release object with previous release's configuration
-	targetRelease := &release.Release{
+	target := &release.Release{
 		Name:      req.Name,
-		Namespace: currentRelease.Namespace,
-		Chart:     previousRelease.Chart,
-		Config:    previousRelease.Config,
+		Namespace: crls.Namespace,
+		Chart:     prls.Chart,
+		Config:    prls.Config,
 		Info: &release.Info{
-			FirstDeployed: currentRelease.Info.FirstDeployed,
+			FirstDeployed: crls.Info.FirstDeployed,
 			LastDeployed:  timeconv.Now(),
 			Status: &release.Status{
 				Code:  release.Status_PENDING_ROLLBACK,
-				Notes: previousRelease.Info.Status.Notes,
+				Notes: prls.Info.Status.Notes,
 			},
-			// Because we lose the reference to previous version elsewhere, we set the
+			// Because we lose the reference to rbv elsewhere, we set the
 			// message here, and only override it later if we experience failure.
-			Description: fmt.Sprintf("Rollback to %d", previousVersion),
+			Description: fmt.Sprintf("Rollback to %d", rbv),
 		},
-		Version:  currentRelease.Version + 1,
-		Manifest: previousRelease.Manifest,
-		Hooks:    previousRelease.Hooks,
+		Version:  crls.Version + 1,
+		Manifest: prls.Manifest,
+		Hooks:    prls.Hooks,
 	}
 
-	return currentRelease, targetRelease, nil
+	return crls, target, nil
 }
 
 func (s *ReleaseServer) performRollback(currentRelease, targetRelease *release.Release, req *services.RollbackReleaseRequest) (*services.RollbackReleaseResponse, error) {
@@ -146,16 +146,8 @@ func (s *ReleaseServer) performRollback(currentRelease, targetRelease *release.R
 		}
 	}
 
-	deployed, err := s.env.Releases.DeployedAll(currentRelease.Name)
-	if err != nil {
-		return nil, err
-	}
-	// Supersede all previous deployments, see issue #2941.
-	for _, r := range deployed {
-		s.Log("superseding previous deployment %d", r.Version)
-		r.Info.Status.Code = release.Status_SUPERSEDED
-		s.recordRelease(r, true)
-	}
+	currentRelease.Info.Status.Code = release.Status_SUPERSEDED
+	s.recordRelease(currentRelease, true)
 
 	targetRelease.Info.Status.Code = release.Status_DEPLOYED
 
