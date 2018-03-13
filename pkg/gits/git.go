@@ -66,7 +66,36 @@ func GitClone(url string, directory string) error {
 	e.Stderr = os.Stderr
 	err := e.Run()
 	if err != nil {
-		return fmt.Errorf("Failed to invoke git init in %s due to %s", directory, err)
+		return fmt.Errorf("Failed to invoke git clone to %s due to %s", directory, err)
+	}
+	return nil
+}
+
+// GitCloneOrPull will clone the given git URL or pull if it alreasy exists
+func GitCloneOrPull(url string, directory string) error {
+
+	empty, err := util.IsEmpty(directory)
+	if err != nil {
+		return err
+	}
+
+	if !empty {
+		e := exec.Command("git", "pull")
+		e.Dir = directory
+		e.Stdout = os.Stdout
+		e.Stderr = os.Stderr
+		err = e.Run()
+		if err != nil {
+			return fmt.Errorf("Failed to git pull in %s due to %s", directory, err)
+		}
+		return nil
+	}
+	e := exec.Command("git", "clone", url, directory)
+	e.Stdout = os.Stdout
+	e.Stderr = os.Stderr
+	err = e.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to git clone to %s due to %s", directory, err)
 	}
 	return nil
 }

@@ -1,9 +1,10 @@
 package rpc
 
 import (
+	"time"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
-	"time"
 )
 
 // clientOpts specifies the union of all configurable

@@ -17,7 +17,6 @@ limitations under the License.
 package main // import "k8s.io/helm/cmd/helm"
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -25,8 +24,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/status"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
@@ -44,6 +43,10 @@ var (
 	tlsKeyFile    string // path to TLS key file
 	tlsVerify     bool   // enable TLS and verify remote certificates
 	tlsEnable     bool   // enable TLS
+
+	tlsCaCertDefault = "$HELM_HOME/ca.pem"
+	tlsCertDefault   = "$HELM_HOME/cert.pem"
+	tlsKeyDefault    = "$HELM_HOME/key.pem"
 
 	tillerTunnel *kube.Tunnel
 	settings     helm_env.EnvSettings
@@ -69,7 +72,7 @@ Environment:
   $HELM_HOME          set an alternative location for Helm files. By default, these are stored in ~/.helm
   $HELM_HOST          set an alternative Tiller host. The format is host:port
   $HELM_NO_PLUGINS    disable plugins. Set HELM_NO_PLUGINS=1 to disable plugins.
-  $TILLER_NAMESPACE   set an alternative Tiller namespace (default "kube-namespace")
+  $TILLER_NAMESPACE   set an alternative Tiller namespace (default "kube-system")
   $KUBECONFIG         set an alternative Kubernetes configuration file (default "~/.kube/config")
 `
 
@@ -125,6 +128,7 @@ func newRootCmd(args []string) *cobra.Command {
 		newHomeCmd(out),
 		newInitCmd(out),
 		newPluginCmd(out),
+		newTemplateCmd(out),
 
 		// Hidden documentation generator command: 'helm docs'
 		newDocsCmd(out),
@@ -161,7 +165,7 @@ func markDeprecated(cmd *cobra.Command, notice string) *cobra.Command {
 	return cmd
 }
 
-func setupConnection(c *cobra.Command, args []string) error {
+func setupConnection() error {
 	if settings.TillerHost == "" {
 		config, client, err := getKubeClient(settings.KubeContext)
 		if err != nil {
@@ -173,7 +177,7 @@ func setupConnection(c *cobra.Command, args []string) error {
 			return err
 		}
 
-		settings.TillerHost = fmt.Sprintf("localhost:%d", tunnel.Local)
+		settings.TillerHost = fmt.Sprintf("127.0.0.1:%d", tunnel.Local)
 		debug("Created tunnel using local port: '%d'\n", tunnel.Local)
 	}
 
@@ -204,13 +208,16 @@ func checkArgsLength(argsReceived int, requiredArgs ...string) error {
 
 // prettyError unwraps or rewrites certain errors to make them more user-friendly.
 func prettyError(err error) error {
+	// Add this check can prevent the object creation if err is nil.
 	if err == nil {
 		return nil
 	}
-	// This is ridiculous. Why is 'grpc.rpcError' not exported? The least they
-	// could do is throw an interface on the lib that would let us get back
-	// the desc. Instead, we have to pass ALL errors through this.
-	return errors.New(grpc.ErrorDesc(err))
+	// If it's grpc's error, make it more user-friendly.
+	if s, ok := status.FromError(err); ok {
+		return s.Err()
+	}
+	// Else return the original error.
+	return err
 }
 
 // configForContext creates a Kubernetes REST client configuration for a given kubeconfig context.
@@ -238,16 +245,16 @@ func getKubeClient(context string) (*rest.Config, kubernetes.Interface, error) {
 // getInternalKubeClient creates a Kubernetes config and an "internal" client for a given kubeconfig context.
 //
 // Prefer the similar getKubeClient if you don't need to use such an internal client.
-func getInternalKubeClient(context string) (*rest.Config, internalclientset.Interface, error) {
+func getInternalKubeClient(context string) (internalclientset.Interface, error) {
 	config, err := configForContext(context)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	client, err := internalclientset.NewForConfig(config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not get Kubernetes client: %s", err)
+		return nil, fmt.Errorf("could not get Kubernetes client: %s", err)
 	}
-	return config, client, nil
+	return client, nil
 }
 
 // ensureHelmClient returns a new helm client impl. if h is not nil.
@@ -259,9 +266,19 @@ func ensureHelmClient(h helm.Interface) helm.Interface {
 }
 
 func newClient() helm.Interface {
-	options := []helm.Option{helm.Host(settings.TillerHost)}
+	options := []helm.Option{helm.Host(settings.TillerHost), helm.ConnectTimeout(settings.TillerConnectionTimeout)}
 
 	if tlsVerify || tlsEnable {
+		if tlsCaCertFile == "" {
+			tlsCaCertFile = settings.Home.TLSCaCert()
+		}
+		if tlsCertFile == "" {
+			tlsCertFile = settings.Home.TLSCert()
+		}
+		if tlsKeyFile == "" {
+			tlsKeyFile = settings.Home.TLSKey()
+		}
+		debug("Key=%q, Cert=%q, CA=%q\n", tlsKeyFile, tlsCertFile, tlsCaCertFile)
 		tlsopts := tlsutil.Options{KeyFile: tlsKeyFile, CertFile: tlsCertFile, InsecureSkipVerify: true}
 		if tlsVerify {
 			tlsopts.CaCertFile = tlsCaCertFile
@@ -280,12 +297,6 @@ func newClient() helm.Interface {
 // addFlagsTLS adds the flags for supporting client side TLS to the
 // helm command (only those that invoke communicate to Tiller.)
 func addFlagsTLS(cmd *cobra.Command) *cobra.Command {
-	// defaults
-	var (
-		tlsCaCertDefault = "$HELM_HOME/ca.pem"
-		tlsCertDefault   = "$HELM_HOME/cert.pem"
-		tlsKeyDefault    = "$HELM_HOME/key.pem"
-	)
 
 	// add flags
 	cmd.Flags().StringVar(&tlsCaCertFile, "tls-ca-cert", tlsCaCertDefault, "path to TLS CA certificate file")

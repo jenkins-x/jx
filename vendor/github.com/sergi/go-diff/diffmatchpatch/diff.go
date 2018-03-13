@@ -1236,9 +1236,9 @@ func (dmp *DiffMatchPatch) DiffLevenshtein(diffs []Diff) int {
 	for _, aDiff := range diffs {
 		switch aDiff.Type {
 		case DiffInsert:
-			insertions += len(aDiff.Text)
+			insertions += utf8.RuneCountInString(aDiff.Text)
 		case DiffDelete:
-			deletions += len(aDiff.Text)
+			deletions += utf8.RuneCountInString(aDiff.Text)
 		case DiffEqual:
 			// A deletion and an insertion is one substitution.
 			levenshtein += max(insertions, deletions)

@@ -2,6 +2,7 @@ package inprocess
 
 import (
 	"context"
+
 	"github.com/Azure/draft/pkg/storage"
 )
 

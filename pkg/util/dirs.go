@@ -21,7 +21,7 @@ func DraftDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	path := filepath.Join(c, "packs")
+	path := filepath.Join(c, "draft")
 	err = os.MkdirAll(path, DefaultWritePermissions)
 	if err != nil {
 		return "", err

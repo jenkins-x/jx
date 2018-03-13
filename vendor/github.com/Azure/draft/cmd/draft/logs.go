@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/Azure/draft/pkg/draft"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
-	"io"
 )
 
 const logsDesc = `This command outputs logs from the draft server to help debug builds.`

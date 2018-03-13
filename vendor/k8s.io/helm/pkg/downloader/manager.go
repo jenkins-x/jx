@@ -264,6 +264,9 @@ func (m *Manager) downloadAll(deps []*chartutil.Dependency) error {
 				return err
 			}
 		}
+		if err := move(tmpPath, destPath); err != nil {
+			return err
+		}
 		if err := os.RemoveAll(tmpPath); err != nil {
 			return fmt.Errorf("Failed to remove %v: %v", tmpPath, err)
 		}
@@ -351,7 +354,7 @@ func (m *Manager) hasAllRepos(deps []*chartutil.Dependency) error {
 		}
 	}
 	if len(missing) > 0 {
-		return fmt.Errorf("no repository definition for %s. Try 'helm repo add'", strings.Join(missing, ", "))
+		return fmt.Errorf("no repository definition for %s. Please add the missing repos via 'helm repo add'", strings.Join(missing, ", "))
 	}
 	return nil
 }
@@ -403,7 +406,24 @@ func (m *Manager) getRepoNames(deps []*chartutil.Dependency) (map[string]string,
 		}
 	}
 	if len(missing) > 0 {
-		return nil, fmt.Errorf("no repository definition for %s. Try 'helm repo add'", strings.Join(missing, ", "))
+		if len(missing) > 0 {
+			errorMessage := fmt.Sprintf("no repository definition for %s. Please add them via 'helm repo add'", strings.Join(missing, ", "))
+			// It is common for people to try to enter "stable" as a repository instead of the actual URL.
+			// For this case, let's give them a suggestion.
+			containsNonURL := false
+			for _, repo := range missing {
+				if !strings.Contains(repo, "//") && !strings.HasPrefix(repo, "@") && !strings.HasPrefix(repo, "alias:") {
+					containsNonURL = true
+				}
+			}
+			if containsNonURL {
+				errorMessage += `
+Note that repositories must be URLs or aliases. For example, to refer to the stable
+repository, use "https://kubernetes-charts.storage.googleapis.com/" or "@stable" instead of
+"stable". Don't forget to add the repo, too ('helm repo add').`
+			}
+			return nil, errors.New(errorMessage)
+		}
 	}
 	return reposMap, nil
 }
@@ -609,4 +629,18 @@ func tarFromLocalDir(chartpath string, name string, repo string, version string)
 	}
 
 	return "", fmt.Errorf("can't get a valid version for dependency %s", name)
+}
+
+// move files from tmppath to destpath
+func move(tmpPath, destPath string) error {
+	files, _ := ioutil.ReadDir(tmpPath)
+	for _, file := range files {
+		filename := file.Name()
+		tmpfile := filepath.Join(tmpPath, filename)
+		destfile := filepath.Join(destPath, filename)
+		if err := os.Rename(tmpfile, destfile); err != nil {
+			return fmt.Errorf("Unable to move local charts to charts dir: %v", err)
+		}
+	}
+	return nil
 }

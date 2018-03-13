@@ -19,9 +19,9 @@ package portforwarder
 import (
 	"testing"
 
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/pkg/api/v1"
 )
 
 func mockTillerPod() v1.Pod {
@@ -76,7 +76,7 @@ func TestGetFirstPod(t *testing.T) {
 
 	for _, tt := range tests {
 		client := fake.NewSimpleClientset(&v1.PodList{Items: tt.pods})
-		name, err := getTillerPodName(client.Core(), v1.NamespaceDefault)
+		name, err := GetTillerPodName(client.Core(), v1.NamespaceDefault)
 		if (err != nil) != tt.err {
 			t.Errorf("%q. expected error: %v, got %v", tt.name, tt.err, err)
 		}

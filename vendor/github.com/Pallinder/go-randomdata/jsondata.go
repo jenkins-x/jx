@@ -2391,7 +2391,6 @@ var data = []byte(`{
         "Canada/Atlantic",
         "Canada/Central",
         "Canada/Eastern",
-        "Canada/East-Saskatchewan",
         "Canada/Mountain",
         "Canada/Newfoundland",
         "Canada/Pacific",

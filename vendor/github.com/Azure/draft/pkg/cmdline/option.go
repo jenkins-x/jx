@@ -1,9 +1,10 @@
 package cmdline
 
 import (
-	"github.com/fatih/color"
 	"io"
 	"os"
+
+	"github.com/fatih/color"
 )
 
 // Option defines a configurable cmdline interface option.

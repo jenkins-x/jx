@@ -27,10 +27,9 @@ import (
 )
 
 const (
-	libraryVersion = "15"
 	defaultBaseURL = "https://api.github.com/"
 	uploadBaseURL  = "https://uploads.github.com/"
-	userAgent      = "go-github/" + libraryVersion
+	userAgent      = "go-github"
 
 	headerRateLimit     = "X-RateLimit-Limit"
 	headerRateRemaining = "X-RateLimit-Remaining"
@@ -100,9 +99,6 @@ const (
 	// https://developer.github.com/changes/2017-07-17-update-topics-on-repositories/
 	mediaTypeTopicsPreview = "application/vnd.github.mercy-preview+json"
 
-	// https://developer.github.com/changes/2017-07-26-team-review-request-thor-preview/
-	mediaTypeTeamReviewPreview = "application/vnd.github.thor-preview+json"
-
 	// https://developer.github.com/v3/apps/marketplace/
 	mediaTypeMarketplacePreview = "application/vnd.github.valkyrie-preview+json"
 
@@ -114,6 +110,9 @@ const (
 
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/
 	mediaTypeGraphQLNodeIDPreview = "application/vnd.github.jean-grey-preview+json"
+
+	// https://developer.github.com/changes/2018-01-25-organization-invitation-api-preview/
+	mediaTypeOrganizationInvitationPreview = "application/vnd.github.dazzler-preview+json"
 )
 
 // A Client manages communication with the GitHub API.
@@ -478,12 +477,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Res
 
 		return nil, err
 	}
-
-	defer func() {
-		// Drain up to 512 bytes and close the body to let the Transport reuse the connection
-		io.CopyN(ioutil.Discard, resp.Body, 512)
-		resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 
 	response := newResponse(resp)
 

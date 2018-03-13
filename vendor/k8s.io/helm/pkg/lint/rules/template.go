@@ -21,19 +21,18 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/ghodss/yaml"
-	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/engine"
 	"k8s.io/helm/pkg/lint/support"
+	cpb "k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/timeconv"
 	tversion "k8s.io/helm/pkg/version"
 )
 
 // Templates lints the templates in the Linter.
-func Templates(linter *support.Linter) {
+func Templates(linter *support.Linter, values []byte, namespace string, strict bool) {
 	path := "templates/"
 	templatesPath := filepath.Join(linter.ChartDir, path)
 
@@ -53,26 +52,34 @@ func Templates(linter *support.Linter) {
 		return
 	}
 
-	options := chartutil.ReleaseOptions{Name: "testRelease", Time: timeconv.Now(), Namespace: "testNamespace"}
+	options := chartutil.ReleaseOptions{Name: "testRelease", Time: timeconv.Now(), Namespace: namespace}
 	caps := &chartutil.Capabilities{
-		APIVersions: chartutil.DefaultVersionSet,
-		KubeVersion: &version.Info{
-			Major:     "1",
-			Minor:     "6",
-			GoVersion: runtime.Version(),
-			Compiler:  runtime.Compiler,
-			Platform:  fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-		},
+		APIVersions:   chartutil.DefaultVersionSet,
+		KubeVersion:   chartutil.DefaultKubeVersion,
 		TillerVersion: tversion.GetVersionProto(),
 	}
-	valuesToRender, err := chartutil.ToRenderValuesCaps(chart, chart.Values, options, caps)
+	cvals, err := chartutil.CoalesceValues(chart, &cpb.Config{Raw: string(values)})
+	if err != nil {
+		return
+	}
+	// convert our values back into config
+	yvals, err := cvals.YAML()
+	if err != nil {
+		return
+	}
+	cc := &cpb.Config{Raw: yvals}
+	valuesToRender, err := chartutil.ToRenderValuesCaps(chart, cc, options, caps)
 	if err != nil {
 		// FIXME: This seems to generate a duplicate, but I can't find where the first
 		// error is coming from.
 		//linter.RunLinterRule(support.ErrorSev, err)
 		return
 	}
-	renderedContentMap, err := engine.New().Render(chart, valuesToRender)
+	e := engine.New()
+	if strict {
+		e.Strict = true
+	}
+	renderedContentMap, err := e.Render(chart, valuesToRender)
 
 	renderOk := linter.RunLinterRule(support.ErrorSev, path, err)
 
@@ -94,7 +101,7 @@ func Templates(linter *support.Linter) {
 		linter.RunLinterRule(support.ErrorSev, path, validateAllowedExtension(fileName))
 
 		// We only apply the following lint rules to yaml files
-		if filepath.Ext(fileName) != ".yaml" {
+		if filepath.Ext(fileName) != ".yaml" || filepath.Ext(fileName) == ".yml" {
 			continue
 		}
 
@@ -131,7 +138,7 @@ func validateTemplatesDir(templatesPath string) error {
 
 func validateAllowedExtension(fileName string) error {
 	ext := filepath.Ext(fileName)
-	validExtensions := []string{".yaml", ".tpl", ".txt"}
+	validExtensions := []string{".yaml", ".yml", ".tpl", ".txt"}
 
 	for _, b := range validExtensions {
 		if b == ext {
@@ -139,7 +146,7 @@ func validateAllowedExtension(fileName string) error {
 		}
 	}
 
-	return fmt.Errorf("file extension '%s' not valid. Valid extensions are .yaml, .tpl, or .txt", ext)
+	return fmt.Errorf("file extension '%s' not valid. Valid extensions are .yaml, .yml, .tpl, or .txt", ext)
 }
 
 func validateYamlContent(err error) error {

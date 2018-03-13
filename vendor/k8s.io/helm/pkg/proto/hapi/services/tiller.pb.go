@@ -275,7 +275,7 @@ type GetReleaseStatusResponse struct {
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// Info contains information about the release.
 	Info *hapi_release4.Info `protobuf:"bytes,2,opt,name=info" json:"info,omitempty"`
-	// Namesapce the release was released into
+	// Namespace the release was released into
 	Namespace string `protobuf:"bytes,3,opt,name=namespace" json:"namespace,omitempty"`
 }
 

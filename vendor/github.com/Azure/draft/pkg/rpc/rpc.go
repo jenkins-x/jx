@@ -1,9 +1,10 @@
 package rpc
 
 import (
+	"net"
+
 	"github.com/Azure/draft/pkg/version"
 	"golang.org/x/net/context"
-	"net"
 )
 
 // RecvStream is returned by a Client for streaming summaries

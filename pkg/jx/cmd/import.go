@@ -10,9 +10,10 @@ import (
 
 	"runtime"
 
-	"github.com/jenkins-x/draft-repo/pkg/draft/draftpath"
+	"github.com/Azure/draft/pkg/draft/draftpath"
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/golang-jenkins"
+	jxdraft "github.com/jenkins-x/jx/pkg/draft"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -23,6 +24,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	//_ "github.com/Azure/draft/pkg/linguist"
 )
 
 const (
@@ -297,21 +299,22 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 
 func (o *ImportOptions) DraftCreate() error {
 
-	// TODO this is a workaround of this draft issue:
-	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
-	pomName := filepath.Join(dir, "pom.xml")
-	exists, err := util.FileExists(pomName)
+
+	// pack detection time
+	draftDir, err := util.DraftDir()
 	if err != nil {
 		return err
 	}
-	lpack := ""
-	if exists {
-		lpack = filepath.Join(draftpath.Home(homePath()).Packs(), "github.com/jenkins-x/draft-packs/packs/java")
+	draftHome := draftpath.Home(draftDir)
+	lpack, err := jxdraft.DoPackDetection(draftHome, o.Out)
+
+	if err != nil {
+		return err
 	}
 
 	chartsDir := filepath.Join(dir, "charts")
-	exists, err = util.FileExists(chartsDir)
+	exists, err := util.FileExists(chartsDir)
 	if exists {
 		log.Warn("existing charts folder found so skipping 'draft create' step\n")
 		return nil
@@ -353,7 +356,7 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 
 	//walk through every file in the given dir and update the placeholders
-	err = o.replacePlaceholders(o.AppName, o.AppName)
+	err = o.replacePlaceholders(newChartsDir, o.AppName)
 	if err != nil {
 		return err
 	}
