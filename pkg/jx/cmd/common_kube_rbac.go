@@ -57,7 +57,7 @@ func (o *CommonOptions) ensureClusterRoleBinding(clusterRoleBindingName string, 
 			},
 			RoleRef: rbacv1.RoleRef{
 				Kind:     "ClusterRole",
-				Name:     clusterRoleBindingName,
+				Name:     role,
 				APIGroup: "rbac.authorization.k8s.io",
 			},
 		}

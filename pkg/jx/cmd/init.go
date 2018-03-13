@@ -16,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -50,8 +49,9 @@ type InitFlags struct {
 }
 
 const (
-	optionUsername  = "username"
-	optionNamespace = "namespace"
+	optionUsername        = "username"
+	optionNamespace       = "namespace"
+	optionTillerNamespace = "tiller-namespace"
 
 	INGRESS_SERVICE_NAME    = "jxing-nginx-ingress-controller"
 	DEFAULT_CHARTMUSEUM_URL = "http://chartmuseum.build.cd.jenkins-x.io"
@@ -104,7 +104,7 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.Username, optionUsername, "", "", "The kubernetes username used to initialise helm. Usually your email address for your kubernetes account")
 	cmd.Flags().StringVarP(&options.Flags.UserClusterRole, "user-cluster-role", "", "cluster-admin", "The cluster role for the current user to be able to administer helm")
 	cmd.Flags().StringVarP(&options.Flags.TillerClusterRole, "tiller-cluster-role", "", "cluster-admin", "The cluster role for Helm's tiller")
-	cmd.Flags().StringVarP(&options.Flags.TillerNamespace, "tiller-namespace", "", "kube-system", "The namespace for the Tiller when using a gloabl tiller")
+	cmd.Flags().StringVarP(&options.Flags.TillerNamespace, optionTillerNamespace, "", "kube-system", "The namespace for the Tiller when using a gloabl tiller")
 	cmd.Flags().StringVarP(&options.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
 	cmd.Flags().StringVarP(&options.Flags.IngressNamespace, "ingress-namespace", "", "kube-system", "The namespace for the Ingress controller")
 	cmd.Flags().BoolVarP(&options.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
@@ -211,12 +211,25 @@ func (o *InitOptions) initHelm() error {
 
 	serviceAccountName := "tiller"
 	tillerNamespace := o.Flags.TillerNamespace
-	ns := o.Flags.Namespace
-	if ns == "" {
-		ns = curNs
+
+	if o.Flags.GlobalTiller {
+		if tillerNamespace == "" {
+			return util.MissingOption(optionTillerNamespace)
+		}
+	} else {
+		ns := o.Flags.Namespace
+		if ns == "" {
+			ns = curNs
+		}
+		if ns == "" {
+			return util.MissingOption(optionNamespace)
+		}
+		tillerNamespace = ns
 	}
-	if ns == "" {
-		return util.MissingOption(optionNamespace)
+
+	err = o.ensureServiceAccount(tillerNamespace, serviceAccountName)
+	if err != nil {
+		return err
 	}
 
 	if o.Flags.GlobalTiller {
@@ -228,36 +241,17 @@ func (o *InitOptions) initHelm() error {
 			return err
 		}
 	} else {
-		tillerNamespace = ns
-		_, err = client.CoreV1().Namespaces().Get(ns, meta_v1.GetOptions{})
-		if err != nil {
-			n := &corev1.Namespace{
-				ObjectMeta: meta_v1.ObjectMeta{
-					Name: ns,
-				},
-			}
-			_, err = client.CoreV1().Namespaces().Create(n)
-			if err != nil {
-				return fmt.Errorf("Failed to create Namespace %s: %s", ns, err)
-			}
-			o.Printf("Created Namespace %s\n", util.ColorInfo(ns))
-		}
-
 		// lets create a tiller service account
 		roleName := "tiller-manager"
 		roleBindingName := "tiller-binding"
 
-		err = o.ensureServiceAccount(ns, serviceAccountName)
-		if err != nil {
-			return err
-		}
-		_, err = client.RbacV1().Roles(ns).Get(roleName, meta_v1.GetOptions{})
+		_, err = client.RbacV1().Roles(tillerNamespace).Get(roleName, meta_v1.GetOptions{})
 		if err != nil {
 			// lets create a Role for tiller
 			role := &rbacv1.Role{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      roleName,
-					Namespace: ns,
+					Namespace: tillerNamespace,
 				},
 				Rules: []rbacv1.PolicyRule{
 					{
@@ -267,25 +261,25 @@ func (o *InitOptions) initHelm() error {
 					},
 				},
 			}
-			_, err = client.RbacV1().Roles(ns).Create(role)
+			_, err = client.RbacV1().Roles(tillerNamespace).Create(role)
 			if err != nil {
-				return fmt.Errorf("Failed to create Role %s in namespace %s: %s", roleName, ns, err)
+				return fmt.Errorf("Failed to create Role %s in namespace %s: %s", roleName, tillerNamespace, err)
 			}
-			o.Printf("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(ns))
+			o.Printf("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 		}
-		_, err = client.RbacV1().RoleBindings(ns).Get(roleBindingName, meta_v1.GetOptions{})
+		_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, meta_v1.GetOptions{})
 		if err != nil {
 			// lets create a RoleBinding for tiller
 			roleBinding := &rbacv1.RoleBinding{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      roleBindingName,
-					Namespace: ns,
+					Namespace: tillerNamespace,
 				},
 				Subjects: []rbacv1.Subject{
 					{
 						Kind:      "ServiceAccount",
 						Name:      serviceAccountName,
-						Namespace: ns,
+						Namespace: tillerNamespace,
 					},
 				},
 				RoleRef: rbacv1.RoleRef{
@@ -294,11 +288,11 @@ func (o *InitOptions) initHelm() error {
 					APIGroup: "rbac.authorization.k8s.io",
 				},
 			}
-			_, err = client.RbacV1().RoleBindings(ns).Create(roleBinding)
+			_, err = client.RbacV1().RoleBindings(tillerNamespace).Create(roleBinding)
 			if err != nil {
-				return fmt.Errorf("Failed to create RoleBinding %s in namespace %s: %s", roleName, ns, err)
+				return fmt.Errorf("Failed to create RoleBinding %s in namespace %s: %s", roleName, tillerNamespace, err)
 			}
-			o.Printf("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(ns))
+			o.Printf("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 		}
 	}
 
@@ -315,27 +309,23 @@ func (o *InitOptions) initHelm() error {
 		return nil
 	}
 	if err == nil && !running {
-		return errors.New("existing tiller deployment found but not running, please check the kube-system namespace and resolve any issues")
+		return fmt.Errorf("existing tiller deployment found but not running, please check the %s namespace and resolve any issues", tillerNamespace)
 	}
 
 	if !running {
-		args := []string{"init"}
-		if !o.Flags.GlobalTiller {
-			args = []string{"init", "--service-account", serviceAccountName, "--tiller-namespace", ns}
-		}
-		o.Printf("Initialising helm via: %s\n", util.ColorInfo("helm "+strings.Join(args, " ")))
+		o.Printf("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
 
-		err = o.runCommand("helm", args...)
+		err = o.runCommand("helm", "init", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
 		if err != nil {
 			return err
 		}
-		err = o.runCommand("helm", "init", "--upgrade")
+		err = o.runCommand("helm", "init", "--upgrade", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 5*time.Minute)
+	err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
 	if err != nil {
 		return err
 	}
@@ -344,7 +334,6 @@ func (o *InitOptions) initHelm() error {
 	if err != nil {
 		return err
 	}
-
 	log.Success("helm installed and configured")
 
 	return nil
@@ -430,9 +419,9 @@ func (o *InitOptions) initIngress() error {
 		return err
 	}
 
-	ingressServiceAccount := "ingress"
 	ingressNamespace := o.Flags.IngressNamespace
 	/*
+		ingressServiceAccount := "ingress"
 		err = o.ensureServiceAccount(ingressNamespace, ingressServiceAccount)
 		if err != nil {
 			return err
@@ -502,7 +491,8 @@ func (o *InitOptions) initIngress() error {
 
 	i := 0
 	for {
-		err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true", "--set", "rbac.serviceAccountName="+ingressServiceAccount)
+		//err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true", "--set", "rbac.serviceAccountName="+ingressServiceAccount)
+		err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true")
 		if err != nil {
 			if i >= 3 {
 				break
