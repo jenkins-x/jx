@@ -2,11 +2,12 @@ package rpc
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/Azure/draft/pkg/version"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"io"
 )
 
 type clientImpl struct {
@@ -50,9 +51,8 @@ func (c *clientImpl) GetLogs(ctx context.Context, req *GetLogsRequest) (*GetLogs
 	defer conn.Close()
 
 	client := NewDraftClient(conn)
-	rpcctx := context.Background()
 
-	r, err := client.GetLogs(rpcctx, req)
+	r, err := client.GetLogs(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("error getting logs from server: %v", err)
 	}

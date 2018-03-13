@@ -61,6 +61,6 @@ func (l *logsCmd) run() error {
 	if err != nil {
 		return err
 	}
-	fmt.Print(string(b))
+	fmt.Fprint(l.out, string(b))
 	return nil
 }

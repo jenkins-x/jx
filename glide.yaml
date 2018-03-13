@@ -36,6 +36,8 @@ import:
 - package: github.com/jenkins-x/chyle
 - package: github.com/jenkins-x/draft-repo
   version: copy-pack-contents
+- package: github.com/Azure/draft-pack-repo
+  version: eb183f3312de377e6431d167f7ec7db78c49d573
 - package: github.com/pelletier/go-buffruneio
   version: e2f66f8164ca709d4c21e815860afd2024e9b894
 - package: github.com/gorilla/websocket

@@ -1,5 +1,5 @@
-hash: 9f327b0551cd56a42f66a4f6a4345e4d0ea2db954d16cb9398835eb4808a2965
-updated: 2018-03-12T11:47:56.363530914Z
+hash: 0ef991a7d698724bbecbdf3269f92127eaf67cda0a34139da57ce3855804dbbb
+updated: 2018-03-13T19:13:29.526285629Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -11,9 +11,11 @@ imports:
   subpackages:
   - gitea
 - name: github.com/Azure/draft
-  version: 90e687c7517f0db323d22c1f4fafb2bb08040a9c
+  version: 4db19f3edcd7193cef5df34db798bc5648c4076f
   subpackages:
   - pkg/osutil
+- name: github.com/Azure/draft-pack-repo
+  version: eb183f3312de377e6431d167f7ec7db78c49d573
 - name: github.com/Azure/go-autorest
   version: e14a70c556c8e0db173358d1a903dca345a8e75e
   subpackages:
@@ -83,7 +85,7 @@ imports:
 - name: github.com/dgrijalva/jwt-go
   version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
 - name: github.com/disintegration/imaging
-  version: b039796423f87e7caca7f8eaace36878f2cce73d
+  version: 416305ba3d5df4b8a3cd217f43e6710711b13afa
 - name: github.com/facebookgo/symwalk
   version: 42004b9f322246749dd73ad71008b1f3160c0052
 - name: github.com/fatih/color

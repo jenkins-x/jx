@@ -2,12 +2,13 @@ package cmdline
 
 import (
 	"fmt"
-	"github.com/Azure/draft/pkg/rpc"
-	"github.com/fatih/color"
-	"golang.org/x/net/context"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/Azure/draft/pkg/rpc"
+	"github.com/fatih/color"
+	"golang.org/x/net/context"
 )
 
 var (
@@ -87,6 +88,7 @@ func Display(ctx context.Context, app string, summaries <-chan *rpc.UpSummary, o
 		cli.Stop()
 		wg.Wait()
 		fmt.Fprintf(cli.opts.stdout, "%s: %s: %s\n", cyan(app), blue("Build ID"), yellow(id))
+		fmt.Fprintf(cli.opts.stdout, "%s `%s`\n", blue("Inspect the logs with"), yellow("draft logs ", app, " ", id))
 	}()
 	for {
 		select {
