@@ -25,7 +25,11 @@ const ()
 
 var (
 	environment_long = templates.LongDesc(`
-		Displays or changes the current environment.`)
+		Displays or changes the current environment.
+
+		For more documentation on Environments see: [http://jenkins-x.io/about/features/#environments](http://jenkins-x.io/about/features/#environments)
+
+`)
 	environment_example = templates.Examples(`
 		# view the current environment
 		jx env -b

@@ -49,12 +49,12 @@ const (
 
 	valid_providers = `Valid kubernetes providers include:
 
-    * minikube (single-node Kubernetes cluster inside a VM on your laptop)
-    * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
     * aks (Azure Container Service - https://docs.microsoft.com/en-us/azure/aks)
+    * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
+    * kubernetes for custom installations of Kubernetes
+    * minikube (single-node Kubernetes cluster inside a VM on your laptop)
     * coming soon:
-        eks (Amazon Elastic Container Service - https://aws.amazon.com/eks)
-    `
+        eks (Amazon Elastic Container Service - https://aws.amazon.com/eks)    `
 )
 
 type CreateClusterFlags struct {
@@ -63,6 +63,8 @@ type CreateClusterFlags struct {
 var (
 	createClusterLong = templates.LongDesc(`
 		This command creates a new kubernetes cluster, installing required local dependencies and provisions the Jenkins X platform
+
+		You can see a demo of this command here: [http://jenkins-x.io/demos/create_cluster/](http://jenkins-x.io/demos/create_cluster/)
 
 		%s
 
