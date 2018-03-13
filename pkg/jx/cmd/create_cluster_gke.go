@@ -91,7 +91,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "cluster-name", "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
-	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, "cluster-version", "v", "1.7.12-gke.2", "The Kubernetes version to use for the master and nodes. Defaults to server-specified")
+	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, "cluster-version", "v", "", "The Kubernetes version to use for the master and nodes. Defaults to server-specified")
 	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "d", "", "Size in GB for node VM boot disks. Defaults to 100GB")
 	cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, "enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
 	cmd.Flags().StringVarP(&options.Flags.MachineType, "machine-type", "m", "", "The type of machine to use for nodes")

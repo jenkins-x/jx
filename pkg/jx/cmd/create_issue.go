@@ -100,7 +100,7 @@ func (o *CreateIssueOptions) Run() error {
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "creating issue", o.BatchMode, gitKind)
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user to create the issue", o.BatchMode, gitKind)
 	if err != nil {
 		return err
 	}

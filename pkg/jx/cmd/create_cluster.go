@@ -28,7 +28,6 @@ type KubernetesProvider string
 type CreateClusterOptions struct {
 	CreateOptions
 	InstallOptions InstallOptions
-	InitOptions    InitOptions
 	Flags          InitFlags
 	Provider       string
 	NoBrew         bool
@@ -123,29 +122,12 @@ func createCreateClusterOptions(f cmdutil.Factory, out io.Writer, errOut io.Writ
 		},
 		Provider:       cloudProvider,
 		InstallOptions: createInstallOptions(f, out, errOut),
-		InitOptions: InitOptions{
-			CommonOptions: commonOptions,
-			Flags:         InitFlags{},
-		},
 	}
 	return options
 }
 
 func (o *CreateClusterOptions) initAndInstall(provider string) error {
 	// call jx init
-	initOpts := &o.InitOptions
-	initOpts.Flags.Provider = provider
-	initOpts.BatchMode = o.BatchMode
-
-	err := initOpts.Run()
-	if err != nil {
-		return err
-	}
-
-	// share the init domain option with the install options
-	if initOpts.Flags.Domain != "" && o.InstallOptions.Flags.Domain == "" {
-		o.InstallOptions.Flags.Domain = initOpts.Flags.Domain
-	}
 	o.InstallOptions.BatchMode = o.BatchMode
 	o.InstallOptions.Flags.Provider = provider
 
@@ -158,7 +140,7 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 		exposeController.Config.Domain = installOpts.Flags.Domain
 	}
 
-	err = installOpts.Run()
+	err := installOpts.Run()
 	if err != nil {
 		return err
 	}
@@ -174,7 +156,6 @@ func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install dependencies like kubectl, draft, helm etc")
 
 	o.InstallOptions.addInstallFlags(cmd, true)
-	o.InitOptions.addInitFlags(cmd)
 }
 
 func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {
