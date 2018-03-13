@@ -16,6 +16,19 @@ func HomeDir() string {
 	return h
 }
 
+func DraftDir() (string, error) {
+	c, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(c, "packs")
+	err = os.MkdirAll(path, DefaultWritePermissions)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func ConfigDir() (string, error) {
 	h := HomeDir()
 	path := filepath.Join(h, ".jx")
