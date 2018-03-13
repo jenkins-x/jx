@@ -24,7 +24,10 @@ import (
 
 var (
 	preview_long = templates.LongDesc(`
-		Creates or updates a Preview environment for the given Pull Request or Branch
+		Creates or updates a Preview Environment for the given Pull Request or Branch.
+
+		For more documentation on Preview Environments see: [http://jenkins-x.io/about/features/#preview-environments](http://jenkins-x.io/about/features/#preview-environments)
+
 `)
 
 	preview_example = templates.Examples(`
