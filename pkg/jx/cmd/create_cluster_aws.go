@@ -146,7 +146,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 		name = name + ".cluster.k8s.local"
 	}
 
-	args := []string{"--name", name}
+	args := []string{"create", "cluster", "--name", name}
 	if flags.NodeCount != "" {
 		args = append(args, "--node-count", flags.NodeCount)
 	}
