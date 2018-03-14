@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -345,7 +344,7 @@ func (o *InitOptions) initDraft() error {
 	if err != nil {
 		return err
 	}
-	dir := filepath.Join(draftDir, "packs", "packs", "github.com", "jenkins-x", "draft-packs")
+	dir := filepath.Join(draftDir, "packs", "github.com", "jenkins-x", "draft-packs")
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("Could not create %s: %s", dir, err)
@@ -353,30 +352,6 @@ func (o *InitOptions) initDraft() error {
 
 	return gits.GitCloneOrPull("https://github.com/jenkins-x/draft-packs", dir)
 
-}
-
-// this happens in `draft init` too, except there seems to be a timing issue where the repo add fails if done straight after their repo remove.
-func (o *InitOptions) removeDraftRepoIfInstalled(repo string, prompt bool) error {
-	dir, err := util.DraftDir()
-	if err != nil {
-		return err
-	}
-	pack := filepath.Join(dir, "packs", "github.com", repo)
-	if _, err := os.Stat(pack); err == nil {
-		recreate := o.Flags.RecreateExistingDraftRepos
-		if !recreate || prompt {
-			prompt := &survey.Confirm{
-				Message: fmt.Sprintf("Delete existing %s draft pack repo and get latest?", repo),
-				Default: true,
-				Help:    "Draft pack repos contain the files and folders used to install applications on Kubernetes, we recommend getting the latest",
-			}
-			survey.AskOne(prompt, &recreate, nil)
-		}
-		if recreate {
-			os.RemoveAll(pack)
-		}
-	}
-	return nil
 }
 
 func (o *InitOptions) initIngress() error {

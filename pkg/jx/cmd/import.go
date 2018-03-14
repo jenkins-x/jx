@@ -299,22 +299,34 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 
 func (o *ImportOptions) DraftCreate() error {
 
-	dir := o.Dir
-
-	// pack detection time
 	draftDir, err := util.DraftDir()
 	if err != nil {
 		return err
 	}
 	draftHome := draftpath.Home(draftDir)
-	lpack, err := jxdraft.DoPackDetection(draftHome, o.Out)
 
+	// TODO this is a workaround of this draft issue:
+	// https://github.com/Azure/draft/issues/476
+	dir := o.Dir
+	pomName := filepath.Join(dir, "pom.xml")
+	exists, err := util.FileExists(pomName)
 	if err != nil {
 		return err
 	}
+	lpack := ""
+	if exists {
+		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/java")
+	} else {
+		// pack detection time
+		lpack, err = jxdraft.DoPackDetection(draftHome, o.Out)
+
+		if err != nil {
+			return err
+		}
+	}
 
 	chartsDir := filepath.Join(dir, "charts")
-	exists, err := util.FileExists(chartsDir)
+	exists, err = util.FileExists(chartsDir)
 	if exists {
 		log.Warn("existing charts folder found so skipping 'draft create' step\n")
 		return nil
@@ -356,7 +368,7 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 
 	//walk through every file in the given dir and update the placeholders
-	err = o.replacePlaceholders(newChartsDir, o.AppName)
+	err = o.replacePlaceholders(dir, o.AppName)
 	if err != nil {
 		return err
 	}
@@ -617,7 +629,7 @@ func (o *ImportOptions) DoImport() error {
 }
 
 func (o *ImportOptions) replacePlaceholders(dir, value string) error {
-
+	log.Infof("replacing placeholders in direcory %s\n", dir)
 	if err := filepath.Walk(dir, func(f string, fi os.FileInfo, err error) error {
 		if fi.Name() == ".git" {
 			return filepath.SkipDir
