@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -201,7 +203,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		os.Exit(-1)
 	}
 
-	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver}
+	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver, "--extra-config", "apiserver.Authorization.Mode=RBAC"}
 	hyperVVirtualSwitch := o.Flags.HyperVVirtualSwitch
 	if hyperVVirtualSwitch != "" {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
@@ -210,6 +212,20 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	if err != nil {
 		return err
 	}
+
+	err = o.retry(3, 10*time.Second, func() (err error) {
+		err = o.runCommand("kubectl", "create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
+		return
+	})
+	if err != nil {
+		return err
+	}
+
+	ip, err := o.getCommandOutput("", "minikube", "ip")
+	if err != nil {
+		return err
+	}
+	o.InstallOptions.Flags.Domain = ip + ".nip.io"
 
 	err = o.initAndInstall(MINIKUBE)
 	if err != nil {
