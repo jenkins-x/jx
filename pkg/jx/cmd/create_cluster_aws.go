@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -14,9 +15,9 @@ import (
 )
 
 const (
- optionZones = "zones"
-
+	optionZones = "zones"
 )
+
 // CreateClusterAWSOptions contains the CLI flags
 type CreateClusterAWSOptions struct {
 	CreateClusterOptions
@@ -25,10 +26,11 @@ type CreateClusterAWSOptions struct {
 }
 
 type CreateClusterAWSFlags struct {
-	NodeCount       string
-	KubeVersion     string
-	Zones     string
-	UseRBAC bool
+	ClusterName string
+	NodeCount   string
+	KubeVersion string
+	Zones       string
+	UseRBAC     bool
 }
 
 var (
@@ -71,6 +73,7 @@ func NewCmdCreateClusterAWS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	options.addCreateClusterFlags(cmd)
 
 	cmd.Flags().BoolVarP(&options.Flags.UseRBAC, "rbac", "r", true, "whether to enable RBAC on the Kubernetes cluster")
+	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "aws1", "The name of this cluster.")
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, optionNodes, "o", "", "node count")
 	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "", "kubernetes version")
 	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability zones. Defaults to $AWS_AVAILABILITY_ZONES")
@@ -127,7 +130,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			}
 			err = survey.AskOne(prompt, &zones, survey.Required)
 			if err != nil {
-			  return err
+				return err
 			}
 		}
 	}
@@ -135,9 +138,15 @@ func (o *CreateClusterAWSOptions) Run() error {
 		return fmt.Errorf("No Availility zones provided!")
 	}
 
+	name := flags.ClusterName
+	if name == "" {
+		name = "aws1"
+	}
+	if !strings.Contains(name, ".") {
+		name = name + ".cluster.k8s.local"
+	}
 
-
-	args := []string{}
+	args := []string{"--name", name}
 	if flags.NodeCount != "" {
 		args = append(args, "--node-count", flags.NodeCount)
 	}
@@ -154,14 +163,14 @@ func (o *CreateClusterAWSOptions) Run() error {
 
 	err = o.runCommand("kops", args...)
 	if err != nil {
-	  return err
+		return err
 	}
 
 	time.Sleep(30 * time.Second)
 
 	err = o.waitForClusterToComeUp()
 	if err != nil {
-	  return fmt.Errorf("Failed to wait for Kubernetes cluster to start: %s\n", err)
+		return fmt.Errorf("Failed to wait for Kubernetes cluster to start: %s\n", err)
 	}
 
 	return o.initAndInstall(AWS)
@@ -171,5 +180,5 @@ func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 	f := func() error {
 		return o.runCommand("kubectl", "get", "node")
 	}
-	return o.retry(200, time.Second + 20, f)
+	return o.retry(200, time.Second+20, f)
 }
