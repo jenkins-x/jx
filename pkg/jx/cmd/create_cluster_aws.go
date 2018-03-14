@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
@@ -161,6 +162,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 
 	// TODO allow add custom args?
 
+	o.Printf("running command: %s\n", util.ColorInfo("kops " + strings.Join(args, " ")))
 	err = o.runCommand("kops", args...)
 	if err != nil {
 		return err
