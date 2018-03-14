@@ -85,7 +85,7 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "clusterName", "c", "", "Name of the cluster")
 	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "", "location to run cluster in")
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "o", "", "node count")
-	cmd.Flags().StringVarP(&options.Flags.KubeVersion, "K8Version", "v", "1.8.2", "kubernetes version")
+	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "1.8.2", "kubernetes version")
 	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "PathToPublicRSAKey", "k", "", "pathToPublicRSAKey")
 	return cmd
 }

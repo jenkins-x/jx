@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,8 +11,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"errors"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -40,6 +39,8 @@ const (
 	MINIKUBE   = "minikube"
 	KUBERNETES = "kubernetes"
 	JX_INFRA   = "jx-infra"
+
+	optionKubernetesVersion = "kubernetes-version"
 )
 
 var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS, EKS, KUBERNETES, JX_INFRA}
@@ -50,6 +51,7 @@ const (
 	valid_providers = `Valid kubernetes providers include:
 
     * aks (Azure Container Service - https://docs.microsoft.com/en-us/azure/aks)
+    * aws (Amazon Web Services via kops - https://github.com/aws-samples/aws-workshop-for-kubernetes/blob/master/readme.adoc)
     * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
     * kubernetes for custom installations of Kubernetes
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
@@ -105,9 +107,10 @@ func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateClusterMinikube(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterGKE(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterAKS(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterAWS(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterGKE(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterMinikube(f, out, errOut))
 
 	return cmd
 }
