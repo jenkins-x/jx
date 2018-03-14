@@ -502,7 +502,10 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 			}
 		}
 	}
-	defaultDomain := fmt.Sprintf("%s.nip.io", address)
+	defaultDomain := address
+	if !strings.HasSuffix(address, ".amazonaws.com") {
+		defaultDomain = fmt.Sprintf("%s.nip.io", address)
+	}
 	if domain == "" {
 
 		if o.BatchMode {
