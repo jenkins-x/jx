@@ -79,8 +79,8 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	options.addCreateClusterFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.ResourceName, "user name", "u", "", "user name")
-	cmd.Flags().StringVarP(&options.Flags.ResourceName, "password", "p", "", "password")
+	cmd.Flags().StringVarP(&options.Flags.UserName, "user name", "u", "", "user name")
+	cmd.Flags().StringVarP(&options.Flags.Password, "password", "p", "", "password")
 	cmd.Flags().StringVarP(&options.Flags.ResourceName, "resource group name", "n", "", "Name of the resource group")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "clusterName", "c", "", "Name of the cluster")
 	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "", "location to run cluster in")
