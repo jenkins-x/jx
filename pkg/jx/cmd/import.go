@@ -10,9 +10,10 @@ import (
 
 	"runtime"
 
-	"github.com/jenkins-x/draft-repo/pkg/draft/draftpath"
+	"github.com/Azure/draft/pkg/draft/draftpath"
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/golang-jenkins"
+	jxdraft "github.com/jenkins-x/jx/pkg/draft"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -23,6 +24,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	//_ "github.com/Azure/draft/pkg/linguist"
 )
 
 const (
@@ -297,6 +299,12 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 
 func (o *ImportOptions) DraftCreate() error {
 
+	draftDir, err := util.DraftDir()
+	if err != nil {
+		return err
+	}
+	draftHome := draftpath.Home(draftDir)
+
 	// TODO this is a workaround of this draft issue:
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
@@ -307,7 +315,14 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 	lpack := ""
 	if exists {
-		lpack = filepath.Join(draftpath.Home(homePath()).Packs(), "github.com/jenkins-x/draft-packs/packs/java")
+		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/java")
+	} else {
+		// pack detection time
+		lpack, err = jxdraft.DoPackDetection(draftHome, o.Out)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	chartsDir := filepath.Join(dir, "charts")
@@ -353,7 +368,7 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 
 	//walk through every file in the given dir and update the placeholders
-	err = o.replacePlaceholders(o.AppName, o.AppName)
+	err = o.replacePlaceholders(dir, o.AppName)
 	if err != nil {
 		return err
 	}
@@ -614,7 +629,7 @@ func (o *ImportOptions) DoImport() error {
 }
 
 func (o *ImportOptions) replacePlaceholders(dir, value string) error {
-
+	log.Infof("replacing placeholders in direcory %s\n", dir)
 	if err := filepath.Walk(dir, func(f string, fi os.FileInfo, err error) error {
 		if fi.Name() == ".git" {
 			return filepath.SkipDir

@@ -1,5 +1,5 @@
-hash: 9f327b0551cd56a42f66a4f6a4345e4d0ea2db954d16cb9398835eb4808a2965
-updated: 2018-03-12T11:47:56.363530914Z
+hash: aa49ddf022b5b891edef1238681920435469b267cfaadadeff470273eef07977
+updated: 2018-03-14T16:57:13.79081475Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,13 +7,20 @@ imports:
   - compute/metadata
   - internal
 - name: code.gitea.io/sdk
-  version: a184f2d3343623c67b835a51ab1685b568016fd9
+  version: fa91af7569e6ba34bfa382109847cbc79c3fdad8
   subpackages:
   - gitea
 - name: github.com/Azure/draft
-  version: 90e687c7517f0db323d22c1f4fafb2bb08040a9c
+  version: 213ee5fb49691b691f3ed84b62472b997d297039
   subpackages:
+  - pkg/draft/draftpath
+  - pkg/draft/pack/repo
+  - pkg/linguist/data
+  - pkg/linguist/tokenizer
   - pkg/osutil
+  - pkg/version
+- name: github.com/Azure/draft-pack-repo
+  version: eb183f3312de377e6431d167f7ec7db78c49d573
 - name: github.com/Azure/go-autorest
   version: e14a70c556c8e0db173358d1a903dca345a8e75e
   subpackages:
@@ -22,7 +29,7 @@ imports:
   - autorest/azure
   - autorest/date
 - name: github.com/blang/semver
-  version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
+  version: c5e971dbed7850a93c23aa6ff69db5771d8e23b3
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/chromedp/cdproto
@@ -83,13 +90,11 @@ imports:
 - name: github.com/dgrijalva/jwt-go
   version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
 - name: github.com/disintegration/imaging
-  version: b039796423f87e7caca7f8eaace36878f2cce73d
-- name: github.com/facebookgo/symwalk
-  version: 42004b9f322246749dd73ad71008b1f3160c0052
+  version: 416305ba3d5df4b8a3cd217f43e6710711b13afa
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
 - name: github.com/ghodss/yaml
-  version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+  version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - name: github.com/gobwas/glob
   version: 5ccd90ef52e1e632236f7326478d4faa74f99438
   subpackages:
@@ -116,7 +121,7 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: e48060a28fac52d0f1cb758bc8b87c07bac4a87d
+  version: d2b80df1e3eeccae96eb1cb489e65372cc9550c8
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -156,6 +161,8 @@ imports:
   version: d14ea06fba99483203c19d92cfcd13ebe73135f4
   subpackages:
   - io
+- name: github.com/jbrukh/bayesian
+  version: bf3f261f9a9c61145c60d47665b0518cc32c774f
 - name: github.com/jenkins-x/chyle
   version: 68f7a93a63ec3c6485c01103b85f608d0dd2ca97
   subpackages:
@@ -163,10 +170,9 @@ imports:
 - name: github.com/jenkins-x/draft-repo
   version: db61a304db2a3c57e8f09134b010a28aa39fff36
   subpackages:
-  - pkg/draft/draftpath
   - pkg/draft/pack
 - name: github.com/jenkins-x/golang-jenkins
-  version: abbc6a467e12819e13d419e9c89f253bf30b0a66
+  version: ec7a97e4a0d7bfebfacb5818e70b77744d9f4d6d
 - name: github.com/json-iterator/go
   version: 13f86432b882000a51c6e610c620974462691a97
 - name: github.com/juju/ratelimit
@@ -182,7 +188,9 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/MakeNowJust/heredoc
-  version: bb23615498cded5e105af4ce27de75b089cbe851
+  version: e9091a26100e9cfb2b6a8f470085bfa541931a91
+- name: github.com/Masterminds/semver
+  version: 517734cc7d6470c0d07130e40fd40bdeb9bcd3fd
 - name: github.com/mattn/go-colorable
   version: 5411d3eea5978e6cdc258b30de592b60df6aba96
   repo: https://github.com/mattn/go-colorable
@@ -194,7 +202,7 @@ imports:
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/Pallinder/go-randomdata
-  version: 442d37d9dbc782dbd737af9ec575d8858b79261b
+  version: 0eb4fb8a64d92747aa9c557b4c3cafca945802cd
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pelletier/go-buffruneio
@@ -204,11 +212,13 @@ imports:
 - name: github.com/russross/blackfriday
   version: 4048872b16cc0fc2c5fd9eacf0ed2c2fedaa0c8c
 - name: github.com/sergi/go-diff
-  version: 217d392c389de447c964f954cc5e4774cde4b66b
+  version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
   - diffmatchpatch
+- name: github.com/Sirupsen/logrus
+  version: c155da19408a8799da419ed3eeb0cb5db0ad5dbc
 - name: github.com/spf13/cobra
-  version: 9495bc009a56819bdb0ddbc1a373e29c140bc674
+  version: c6c44e6fdcc30161c7f4480754da7230d01c06e3
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -295,7 +305,7 @@ imports:
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/src-d/go-billy.v4
-  version: e940f8b62a8e61adc71f69802c1cc8305b64ec96
+  version: 027dceab1aa836eb310d92c2eb2266e4dc9f4b81
   subpackages:
   - helper/chroot
   - helper/polyfill
@@ -344,9 +354,9 @@ imports:
   - utils/merkletrie/internal/frame
   - utils/merkletrie/noder
 - name: gopkg.in/warnings.v0
-  version: 8a331561fe74dadba6edfc59f3be66c22c3b065d
+  version: ec4a0fea49c7b46c2aeb0b51aac55779c607e52b
 - name: gopkg.in/yaml.v2
-  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
+  version: 670d4cfef0544295bc27a114dbac37980d83185a
 - name: k8s.io/api
   version: fbe336854453ac8e27bffe14e1964555245cbd05
   subpackages:
@@ -379,7 +389,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 27d22a50314782b60cbb150b34dd1ba8e0c8d55c
+  version: c24c8a4688fdc21fb421160954fdbb4197a88e52
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -491,18 +501,20 @@ imports:
   - util/jsonpath
   - util/retry
 - name: k8s.io/code-generator
-  version: 64ca0808efd56c2418939848947c06b8d495144d
+  version: 893b4433a4ba929dd0dacebf7c8956682d7a5d5f
 - name: k8s.io/gengo
-  version: 8394c995ab8fbe52216f38d0e1a37de36d820528
+  version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
 - name: k8s.io/helm
-  version: 1dbbace83192680134c96861742cedda243fcd7e
+  version: dede3ff1e1739825e2a039f93acd7cba97c9cd92
   subpackages:
   - pkg/chartutil
   - pkg/ignore
   - pkg/proto/hapi/chart
   - pkg/proto/hapi/version
+  - pkg/sympath
+  - pkg/version
 - name: k8s.io/metrics
-  version: a51d59ae25bec1b94f00be3fe970268aed3eadfa
+  version: 9de7b8b42ee02a196dd1822988718c6574732901
   subpackages:
   - pkg/apis/metrics
   - pkg/apis/metrics/v1alpha1
@@ -517,6 +529,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
+  version: b89eecf5ca5db6d3ba60b237ffe3df7bafb7662f
   subpackages:
   - assert

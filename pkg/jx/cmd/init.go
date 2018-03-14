@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -22,7 +22,6 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/util/homedir"
 )
 
 // InitOptions the flags for running init
@@ -340,76 +339,19 @@ func (o *InitOptions) initHelm() error {
 }
 
 func (o *InitOptions) initDraft() error {
-	f := o.Factory
-	client, _, err := f.CreateClient()
+
+	draftDir, err := util.DraftDir()
 	if err != nil {
 		return err
 	}
+	dir := filepath.Join(draftDir, "packs", "github.com", "jenkins-x", "draft-packs")
 
-	running, err := kube.IsDeploymentRunning(client, "draftd", "kube-system")
-
-	if err == nil && !running {
-		return errors.New("existing draftd deployment found but not running, please check the kube-system namespace and resolve any issues")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("Could not create %s: %s", dir, err)
 	}
 
-	err = o.removeDraftRepoIfInstalled("Azure")
-	if err != nil {
-		return err
-	}
+	return gits.GitCloneOrPull("https://github.com/jenkins-x/draft-packs", dir)
 
-	if running || o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES || o.Flags.DraftClient {
-		err = o.runCommand("draft", "init", "--auto-accept", "--client-only")
-
-	} else {
-		err = o.runCommand("draft", "init", "--auto-accept")
-
-	}
-	if err != nil {
-		return err
-	}
-
-	err = o.removeDraftRepoIfInstalled("jenkins-x")
-	if err != nil {
-		return err
-	}
-
-	err = o.runCommand("draft", "pack-repo", "add", "https://github.com/jenkins-x/draft-packs")
-	if err != nil {
-		log.Warn("error adding pack to draft, if you are using git 2.16.1 take a look at this issue for a workaround https://github.com/jenkins-x/jx/issues/176#issuecomment-361897946")
-		return err
-	}
-
-	if !running && o.Flags.Provider != GKE && o.Flags.Provider != AKS && o.Flags.Provider != EKS && o.Flags.Provider != KUBERNETES && !o.Flags.DraftClient {
-		err = kube.WaitForDeploymentToBeReady(client, "draftd", "kube-system", 5*time.Minute)
-		if err != nil {
-			return err
-		}
-
-	}
-	log.Success("draft installed and configured")
-
-	return nil
-}
-
-// this happens in `draft init` too, except there seems to be a timing issue where the repo add fails if done straight after their repo remove.
-func (o *InitOptions) removeDraftRepoIfInstalled(repo string) error {
-
-	pack := filepath.Join(homedir.HomeDir(), ".draft", "packs", "github.com", repo)
-	if _, err := os.Stat(pack); err == nil {
-		recreate := o.Flags.RecreateExistingDraftRepos
-		if !recreate {
-			prompt := &survey.Confirm{
-				Message: fmt.Sprintf("Delete existing %s draft pack repo and get latest?", repo),
-				Default: true,
-				Help:    "Draft pack repos contain the files and folders used to install applications on Kubernetes, we recommend getting the latest",
-			}
-			survey.AskOne(prompt, &recreate, nil)
-		}
-		if recreate {
-			os.RemoveAll(pack)
-		}
-	}
-	return nil
 }
 
 func (o *InitOptions) initIngress() error {

@@ -1,10 +1,11 @@
 package kube
 
 import (
+	"os"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
 )
 
 // GetInClusterClient returns an in cluster Kubernetes client

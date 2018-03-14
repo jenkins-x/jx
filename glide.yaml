@@ -36,10 +36,16 @@ import:
 - package: github.com/jenkins-x/chyle
 - package: github.com/jenkins-x/draft-repo
   version: copy-pack-contents
+- package: github.com/Azure/draft-pack-repo
+  version: eb183f3312de377e6431d167f7ec7db78c49d573
 - package: github.com/pelletier/go-buffruneio
   version: e2f66f8164ca709d4c21e815860afd2024e9b894
 - package: github.com/gorilla/websocket
   version: v1.2.0
+- package: github.com/jbrukh/bayesian
+  version: bf3f261f9a9c61145c60d47665b0518cc32c774f
+- package: github.com/ghodss/yaml
+  version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

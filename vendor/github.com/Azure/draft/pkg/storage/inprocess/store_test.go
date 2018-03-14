@@ -2,9 +2,10 @@ package inprocess
 
 import (
 	"context"
-	"github.com/Azure/draft/pkg/storage"
 	"reflect"
 	"testing"
+
+	"github.com/Azure/draft/pkg/storage"
 )
 
 func TestStoreDeleteBuilds(t *testing.T) {

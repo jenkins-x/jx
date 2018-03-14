@@ -70,6 +70,12 @@ func SaveDir(c *chart.Chart, dest string) error {
 	// Save files
 	for _, f := range c.Files {
 		n := filepath.Join(outdir, f.TypeUrl)
+
+		d := filepath.Dir(n)
+		if err := os.MkdirAll(d, 0755); err != nil {
+			return err
+		}
+
 		if err := ioutil.WriteFile(n, f.Value, 0755); err != nil {
 			return err
 		}
@@ -115,6 +121,14 @@ func Save(c *chart.Chart, outDir string) (string, error) {
 
 	filename := fmt.Sprintf("%s-%s.tgz", cfile.Name, cfile.Version)
 	filename = filepath.Join(outDir, filename)
+	if stat, err := os.Stat(filepath.Dir(filename)); os.IsNotExist(err) {
+		if err := os.MkdirAll(filepath.Dir(filename), 0755); !os.IsExist(err) {
+			return "", err
+		}
+	} else if !stat.IsDir() {
+		return "", fmt.Errorf("is not a directory: %s", filepath.Dir(filename))
+	}
+
 	f, err := os.Create(filename)
 	if err != nil {
 		return "", err

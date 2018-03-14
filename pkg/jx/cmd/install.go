@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -335,6 +336,10 @@ func (options *InstallOptions) Run() error {
 		})
 		if err != nil {
 			return err
+		}
+
+		if options.Flags.DefaultEnvironmentPrefix == "" {
+			options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
 		}
 
 		log.Info("Creating default staging and production environments\n")

@@ -19,6 +19,7 @@ package repo
 import "testing"
 import "io/ioutil"
 import "os"
+import "strings"
 
 const testRepositoriesFile = "testdata/repositories.yaml"
 
@@ -201,16 +202,8 @@ func TestWriteFile(t *testing.T) {
 		t.Errorf("failed to create test-file (%v)", err)
 	}
 	defer os.Remove(repoFile.Name())
-
-	fileMode := os.FileMode(0744)
-	if err := sampleRepository.WriteFile(repoFile.Name(), fileMode); err != nil {
+	if err := sampleRepository.WriteFile(repoFile.Name(), 744); err != nil {
 		t.Errorf("failed to write file (%v)", err)
-	}
-
-	info, _ := os.Stat(repoFile.Name())
-	mode := info.Mode()
-	if mode != fileMode {
-		t.Errorf("incorrect file mode: %s (expected %s)", mode, fileMode)
 	}
 
 	repos, err := LoadRepositoriesFile(repoFile.Name())
@@ -221,5 +214,14 @@ func TestWriteFile(t *testing.T) {
 		if !repos.Has(repo.Name) {
 			t.Errorf("expected repository %s not found", repo.Name)
 		}
+	}
+}
+
+func TestRepoNotExists(t *testing.T) {
+	_, err := LoadRepositoriesFile("/this/path/does/not/exist.yaml")
+	if err == nil {
+		t.Errorf("expected err to be non-nil when path does not exist")
+	} else if !strings.Contains(err.Error(), "You might need to run `helm init`") {
+		t.Errorf("expected prompt to run `helm init` when repositories file does not exist")
 	}
 }

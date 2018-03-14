@@ -4,9 +4,10 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"strconv"
+
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const chartConfigTpl = `
