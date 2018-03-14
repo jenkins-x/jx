@@ -20,7 +20,6 @@ import (
 
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -407,15 +406,9 @@ func (o *InitOptions) initIngress() error {
 
 	}
 
-	podLabels := labels.SelectorFromSet(labels.Set(map[string]string{"app": "nginx-ingress", "component": "controller"}))
-	options := meta_v1.ListOptions{LabelSelector: podLabels.String()}
-	podList, err := client.CoreV1().Pods(ingressNamespace).List(options)
-	if err != nil {
-		return err
-	}
-
-	if podList != nil && len(podList.Items) > 0 {
-		log.Info("existing nginx ingress controller found, no need to install")
+	podCount, err := kube.DeploymentPodCount(client, o.Flags.IngressDeployment, ingressNamespace)
+	if podCount > 0  {
+		log.Info("existing ingress controller found, no need to install")
 		return nil
 	}
 

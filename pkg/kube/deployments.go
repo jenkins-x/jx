@@ -109,6 +109,15 @@ func WaitForDeploymentToBeReady(client *kubernetes.Clientset, name, namespace st
 	return nil
 }
 
+func DeploymentPodCount(client *kubernetes.Clientset, name, namespace string) (int, error) {
+	pods, err := GetDeploymentPods(client, name, namespace)
+	if err == nil {
+		return len(pods), err
+	}
+	return 0, err
+}
+
+
 func GetDeploymentPods(client *kubernetes.Clientset, name, namespace string) ([]v1.Pod, error) {
 	d, err := client.ExtensionsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
