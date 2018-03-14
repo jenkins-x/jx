@@ -128,7 +128,7 @@ func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) In
 					Factory:  f,
 					Out:      out,
 					Err:      errOut,
-					Headless: true,
+					Headless: false,
 				},
 			},
 		},
