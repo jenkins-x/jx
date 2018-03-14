@@ -327,6 +327,9 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
+
+	options.logAdminPassword()
+
 	if options.Flags.DefaultEnvironments {
 		log.Info("Getting Jenkins API Token\n")
 		err = options.retry(3, 2*time.Second, func() (err error) {
@@ -378,20 +381,24 @@ func (options *InstallOptions) Run() error {
 
 	log.Success("\nJenkins X installation completed successfully\n")
 
-	astrix := `
-
-********************************************************
-
-     NOTE: %s
-
-********************************************************
-
-`
-	options.Printf(astrix, fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
+	options.logAdminPassword()
 
 	options.Printf("\nTo import existing projects into Jenkins: %s\n", util.ColorInfo("jx import"))
 	options.Printf("To create a new Spring Boot microservice: %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	return nil
+}
+
+func (options *InstallOptions) logAdminPassword() {
+	astrix := `
+	
+	********************************************************
+	
+	     NOTE: %s
+	
+	********************************************************
+	
+	`
+	options.Printf(astrix, fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
 }
 
 // clones the jenkins-x cloud-environments repo to a local working dir
