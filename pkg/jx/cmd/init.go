@@ -449,7 +449,7 @@ func (o *InitOptions) initIngress() error {
 		log.Info("existing ingress controller found, no need to install a new one\n")
 	}
 
-	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES {
+	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == AWS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES {
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
 		err = kube.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
 		if err != nil {

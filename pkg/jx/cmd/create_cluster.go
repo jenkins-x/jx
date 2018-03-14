@@ -36,14 +36,16 @@ const (
 	GKE        = "gke"
 	EKS        = "eks"
 	AKS        = "aks"
+	AWS        = "aws"
 	MINIKUBE   = "minikube"
 	KUBERNETES = "kubernetes"
 	JX_INFRA   = "jx-infra"
 
 	optionKubernetesVersion = "kubernetes-version"
+	optionNodes             = "nodes"
 )
 
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS, EKS, KUBERNETES, JX_INFRA}
+var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS, AWS, EKS, KUBERNETES, JX_INFRA}
 
 const (
 	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
@@ -240,6 +242,8 @@ func (o *CreateClusterOptions) doInstallMissingDependencies(install []string) er
 			err = o.installDraft()
 		case "gcloud":
 			err = o.installGcloud()
+		case "kops":
+			err = o.installKops()
 		case "minikube":
 			err = o.installMinikube()
 		case "az":
@@ -506,6 +510,37 @@ func (o *CreateClusterOptions) installDraft() error {
 		return err
 	}
 	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
+
+func (o *CreateClusterOptions) installKops() error {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.runCommand("brew", "install", "kops")
+	}
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	binary := "kops"
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "kops")
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://github.com/kubernetes/kops/releases/download/%s/kops-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	tmpFile := fullPath + ".tmp"
+	err = o.downloadFile(clientURL, tmpFile)
+	if err != nil {
+		return err
+	}
+	err = os.Rename(tmpFile, fullPath)
 	if err != nil {
 		return err
 	}
