@@ -524,7 +524,7 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 					return fmt.Errorf("Address cannot be resolved yet %s", address)
 				}
 
-				o.retry(60*2, time.Second*1, f)
+				o.retry(6, time.Second*20, f)
 			}
 			if addressIP == "" {
 				addNip = false
