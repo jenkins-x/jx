@@ -407,45 +407,45 @@ func (o *InitOptions) initIngress() error {
 	}
 
 	podCount, err := kube.DeploymentPodCount(client, o.Flags.IngressDeployment, ingressNamespace)
-	if podCount > 0  {
-		log.Info("existing ingress controller found, no need to install")
-		return nil
-	}
-
-	installIngressController := false
-	if o.BatchMode {
-		installIngressController = true
-	} else {
-		prompt := &survey.Confirm{
-			Message: "No existing ingress controller found in the " + ingressNamespace + " namespace, shall we install one?",
-			Default: true,
-			Help:    "An ingress controller works with an external loadbalancer so you can access Jenkins X and your applications",
+	if podCount == 0 {
+		installIngressController := false
+		if o.BatchMode {
+			installIngressController = true
+		} else {
+			prompt := &survey.Confirm{
+				Message: "No existing ingress controller found in the " + ingressNamespace + " namespace, shall we install one?",
+				Default: true,
+				Help:    "An ingress controller works with an external loadbalancer so you can access Jenkins X and your applications",
+			}
+			survey.AskOne(prompt, &installIngressController, nil)
 		}
-		survey.AskOne(prompt, &installIngressController, nil)
-	}
 
-	if !installIngressController {
-		return nil
-	}
+		if !installIngressController {
+			return nil
+		}
 
-	i := 0
-	for {
-		//err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true", "--set", "rbac.serviceAccountName="+ingressServiceAccount)
-		err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true")
-		if err != nil {
-			if i >= 3 {
+		i := 0
+		for {
+			//err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true", "--set", "rbac.serviceAccountName="+ingressServiceAccount)
+			err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true")
+			if err != nil {
+				if i >= 3 {
+					break
+				}
+				i++
+				time.Sleep(time.Second)
+			} else {
 				break
 			}
-			i++
-			time.Sleep(time.Second)
-		} else {
-			break
 		}
-	}
 
-	err = kube.WaitForDeploymentToBeReady(client, o.Flags.IngressDeployment, ingressNamespace, 10*time.Minute)
-	if err != nil {
-		return err
+		err = kube.WaitForDeploymentToBeReady(client, o.Flags.IngressDeployment, ingressNamespace, 10*time.Minute)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		log.Info("existing ingress controller found, no need to install a new one\n")
 	}
 
 	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES {
