@@ -41,6 +41,8 @@ type InitFlags struct {
 	IngressClusterRole         string
 	TillerNamespace            string
 	IngressNamespace           string
+	IngressService             string
+	IngressDeployment          string
 	DraftClient                bool
 	HelmClient                 bool
 	RecreateExistingDraftRepos bool
@@ -106,6 +108,8 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.TillerNamespace, optionTillerNamespace, "", "kube-system", "The namespace for the Tiller when using a gloabl tiller")
 	cmd.Flags().StringVarP(&options.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
 	cmd.Flags().StringVarP(&options.Flags.IngressNamespace, "ingress-namespace", "", "kube-system", "The namespace for the Ingress controller")
+	cmd.Flags().StringVarP(&options.Flags.IngressService, "ingress-service", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Service")
+	cmd.Flags().StringVarP(&options.Flags.IngressDeployment, "ingress-deployment", "", INGRESS_SERVICE_NAME, "The namespace for the Ingress controller Deployment")
 	cmd.Flags().BoolVarP(&options.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
 	cmd.Flags().BoolVarP(&options.Flags.HelmClient, "helm-client-only", "", false, "Only install helm client")
 	cmd.Flags().BoolVarP(&options.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
@@ -446,21 +450,21 @@ func (o *InitOptions) initIngress() error {
 		}
 	}
 
-	err = kube.WaitForDeploymentToBeReady(client, INGRESS_SERVICE_NAME, ingressNamespace, 10*time.Minute)
+	err = kube.WaitForDeploymentToBeReady(client, o.Flags.IngressDeployment, ingressNamespace, 10*time.Minute)
 	if err != nil {
 		return err
 	}
 
 	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES {
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
-		err = kube.WaitForExternalIP(client, INGRESS_SERVICE_NAME, ingressNamespace, 10*time.Minute)
+		err = kube.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
 		if err != nil {
 			return err
 		}
 
 		log.Infof("External loadbalancer created\n")
 
-		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain, ingressNamespace)
+		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain, ingressNamespace, o.Flags.IngressService)
 		if err != nil {
 			return err
 		}
@@ -479,7 +483,7 @@ func (o *InitOptions) ingressNamespace() string {
 	return ingressNamespace
 }
 
-func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, provider string, ingressNamespace string) (string, error) {
+func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, provider string, ingressNamespace string, ingressService string) (string, error) {
 	var address string
 	if provider == MINIKUBE {
 		ip, err := o.getCommandOutput("", "minikube", "ip")
@@ -488,7 +492,7 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 		}
 		address = ip
 	} else {
-		svc, err := client.CoreV1().Services(ingressNamespace).Get(INGRESS_SERVICE_NAME, meta_v1.GetOptions{})
+		svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, meta_v1.GetOptions{})
 		if err != nil {
 			return "", err
 		}

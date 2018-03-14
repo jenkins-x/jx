@@ -51,8 +51,9 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	addProjectCommands := []*cobra.Command{
 		NewCmdImport(f, out, err),
 	}
-	addProjectCommands = append(addProjectCommands, findCommands("create spring", createCommands, deleteCommands)...)
 	addProjectCommands = append(addProjectCommands, findCommands("create archetype", createCommands, deleteCommands)...)
+	addProjectCommands = append(addProjectCommands, findCommands("create spring", createCommands, deleteCommands)...)
+	addProjectCommands = append(addProjectCommands, findCommands("create quickstart", createCommands, deleteCommands)...)
 
 	gitCommands := []*cobra.Command{}
 	gitCommands = append(gitCommands, findCommands("git server", createCommands, deleteCommands)...)
