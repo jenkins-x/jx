@@ -251,7 +251,7 @@ func (o *CreateClusterAWSOptions) modifyInstanceGroupDockerConfig(json string, i
 	if newJson == json {
 		return nil
 	}
-
+	o.Printf("new json: %s\n", newJson)
 	tmpFile, err := ioutil.TempFile("", "kops-ig-json-")
 	if err != nil {
 		return err
