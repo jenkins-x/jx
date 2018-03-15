@@ -274,7 +274,7 @@ func (o *CreateClusterAWSOptions) modifyInstanceGroupDockerConfig(json string, i
 	}
 
 	o.Printf("Rolling update the cluster\n")
-	err = o.runCommand("kops", "rolling-update", "cluster", "--yes")
+	err = o.runCommand("kops", "rolling-update", "cluster", "--cloudonly", "--yes")
 	if err != nil {
 		return err
 	}
