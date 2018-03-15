@@ -7,4 +7,3 @@ var (
 		GitHubQuickstart("jenkins-x-quickstarts", "golang-http", "go", ""),
 	}
 )
-

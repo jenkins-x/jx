@@ -117,7 +117,6 @@ func DeploymentPodCount(client *kubernetes.Clientset, name, namespace string) (i
 	return 0, err
 }
 
-
 func GetDeploymentPods(client *kubernetes.Clientset, name, namespace string) ([]v1.Pod, error) {
 	d, err := client.ExtensionsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {

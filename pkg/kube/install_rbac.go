@@ -265,7 +265,6 @@ rules:
   - watch`
 }
 
-
 func RoleKubeSystemYaml(user string) string {
 	return `apiVersion: rbac.authorization.k8s.io/v1
 	  kind: Role
@@ -396,4 +395,3 @@ func ClusterRoleBindingYaml(user string) string {
 		  kind: User
 		  name: ` + user + ``
 }
-
