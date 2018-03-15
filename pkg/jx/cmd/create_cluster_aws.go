@@ -222,8 +222,7 @@ func (o *CreateClusterAWSOptions) waitForInstanceGroupJson(clusterName string) (
 
 func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 	f := func() error {
-		_, err := o.getCommandOutput("", "kubectl", "get", "node")
-		return err
+		return o.runCommandQuietly("", "kubectl", "get", "node")
 	}
 	return o.retryQuiet(200, time.Second+10, f)
 }

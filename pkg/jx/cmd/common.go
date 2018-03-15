@@ -100,6 +100,13 @@ func (o *CommonOptions) runCommand(name string, args ...string) error {
 	return err
 }
 
+func (o *CommonOptions) runCommandQuietly(name string, args ...string) error {
+	e := exec.Command(name, args...)
+	e.Stdout = o.Out
+	e.Stderr = o.Err
+	return e.Run()
+}
+
 func (o *CommonOptions) runCommandInteractive(interactive bool, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
