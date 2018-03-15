@@ -234,7 +234,8 @@ func (o *CreateClusterAWSOptions) waitForInstanceGroupJson() (string, error) {
 
 func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 	f := func() error {
-		return o.runCommand("kubectl", "get", "node")
+		_, err := o.getCommandOutput("", "kubectl", "get", "node")
+		return err
 	}
 	return o.retryQuiet(200, time.Second+10, f)
 }
