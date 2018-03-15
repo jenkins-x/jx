@@ -81,7 +81,7 @@ func NewCmdCreateClusterAWS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, optionNodes, "o", "", "node count")
 	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "", "kubernetes version")
 	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability zones. Defaults to $AWS_AVAILABILITY_ZONES")
-	cmd.Flags().StringVarP(&options.Flags.InsecureDockerRegistry, "insecure-registry", "", "10.1.0.0/16", "The insecure docker registries to allow")
+	cmd.Flags().StringVarP(&options.Flags.InsecureDockerRegistry, "insecure-registry", "", "100.64.0.0/10", "The insecure docker registries to allow")
 	return cmd
 }
 
@@ -224,7 +224,7 @@ func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 	f := func() error {
 		return o.runCommandQuietly("", "kubectl", "get", "node")
 	}
-	return o.retryQuiet(200, time.Second+10, f)
+	return o.retryQuiet(2000, time.Second+10, f)
 }
 
 func (o *CreateClusterAWSOptions) modifyInstanceGroupDockerConfig(json string, insecureRegistries string) error {
