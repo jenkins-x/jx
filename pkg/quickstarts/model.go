@@ -69,7 +69,7 @@ func (m *QuickstartModel) Add(q *Quickstart) bool {
 }
 
 // CreateSurvey creates a survey to query pick a quickstart
-func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter) (*Quickstart, error) {
+func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter) (*QuickstartForm, error) {
 	language := filter.Language
 	if language != "" {
 		languages := model.Languages()
@@ -110,7 +110,25 @@ func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter) (*Quickstar
 			return nil, err
 		}
 	}
-	return m[answer], nil
+	if answer == "" {
+		return nil, fmt.Errorf("No quickstart chosen")
+	}
+	q := m[answer]
+	if q == nil {
+		return nil, fmt.Errorf("Could not find chosen quickstart for %s", answer)
+	}
+	name, err := util.PickValue("Project name", q.Name, true)
+	if err != nil {
+		return nil, err
+	}
+	if name == "" {
+		return nil, fmt.Errorf("No project name")
+	}
+	form := &QuickstartForm{
+		Quickstart: q,
+		Name:       name,
+	}
+	return form, nil
 }
 
 // Filter filters all the available quickstarts with the filter and return the matches

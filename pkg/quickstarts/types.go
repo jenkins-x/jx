@@ -21,3 +21,8 @@ type QuickstartFilter struct {
 	Text      string
 	Tags      []string
 }
+
+type QuickstartForm struct {
+	Quickstart *Quickstart
+	Name       string
+}

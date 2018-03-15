@@ -117,12 +117,9 @@ func (o *CreateQuickstartOptions) Run() error {
 	return o.ImportCreatedProject(genDir)
 }
 
-func (o *CreateQuickstartOptions) createQuickstart(q *quickstarts.Quickstart, dir string) (string, error) {
-	answer := filepath.Join(dir, q.Name)
-	err := os.Mkdir(answer, DefaultWritePermissions)
-	if err != nil {
-		return answer, fmt.Errorf("Failed to create %s: %s", answer, err)
-	}
+func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm, dir string) (string, error) {
+	q := f.Quickstart
+	answer := filepath.Join(dir, f.Name)
 	u := q.DownloadZipURL
 	if u == "" {
 		return answer, fmt.Errorf("Quickstart %s does not have a download zip URL", q.ID)
@@ -148,7 +145,11 @@ func (o *CreateQuickstartOptions) createQuickstart(q *quickstarts.Quickstart, di
 	if err != nil {
 		return answer, fmt.Errorf("Failed to download file %s due to %s", zipFile, err)
 	}
-	err = util.Unzip(zipFile, dir)
+	tmpDir, err := ioutil.TempDir("", "jx-source-")
+	if err != nil {
+		return answer, fmt.Errorf("Failed to create temporary directory: %s", err)
+	}
+	err = util.Unzip(zipFile, tmpDir)
 	if err != nil {
 		return answer, fmt.Errorf("Failed to unzip new project file %s due to %s", zipFile, err)
 	}
@@ -156,8 +157,29 @@ func (o *CreateQuickstartOptions) createQuickstart(q *quickstarts.Quickstart, di
 	if err != nil {
 		return answer, err
 	}
+	tmpDir, err = findFirstDirectory(tmpDir)
+	if err != nil {
+		return answer, fmt.Errorf("Failed to find a directory inside the source download: %s", err)
+	}
+	err = os.Rename(tmpDir, answer)
+	if err != nil {
+		return answer, fmt.Errorf("Failed to rename temp dir %s to %s: %s", tmpDir, answer, err)
+	}
 	o.Printf("Generated quickstart at %s\n", answer)
 	return answer, nil
+}
+
+func findFirstDirectory(dir string) (string, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return dir, err
+	}
+	for _, f := range files {
+		if f.IsDir() {
+			return filepath.Join(dir, f.Name()), nil
+		}
+	}
+	return "", fmt.Errorf("No child directory found in %s", dir)
 }
 
 func (o *CreateQuickstartOptions) LoadQuickstarts() (*quickstarts.QuickstartModel, error) {
