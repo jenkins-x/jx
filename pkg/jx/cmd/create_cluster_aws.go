@@ -215,6 +215,20 @@ func (o *CreateClusterAWSOptions) waitForInstanceGroupJson() (string, error) {
 		return nil
 	}
 	err := o.retryQuiet(200, time.Second+10, f)
+	if err != nil {
+		lines := strings.Split(yamlOutput, "\n")
+		for {
+			if len(lines) == 0 {
+				break
+			}
+			l1 := strings.TrimSpace(lines[0])
+			if strings.HasPrefix(l1, "{") {
+				break
+			}
+			lines = lines[1:]
+		}
+		yamlOutput = strings.Join(lines, "\n")
+	}
 	return yamlOutput, err
 }
 
