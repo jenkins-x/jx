@@ -174,12 +174,12 @@ func (o *CreateClusterAWSOptions) Run() error {
 
 	o.Printf("\nKops has created cluster %s it will take a minute or so to startup\n", util.ColorInfo(name))
 	o.Printf("You can check on the status in another terminal via the command: %s\n", util.ColorStatus("kops validate cluster"))
-	o.Printf("Waiting for the kubernetes cluster to be ready so we can continue...\n")
 
-	time.Sleep(30 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	insecureRegistries := flags.InsecureDockerRegistry
 	if insecureRegistries != "" {
+		o.Printf("Waiting for the Cluster configuration...\n")
 		igJson, err := o.waitForInstanceGroupJson(name)
 		if err != nil {
 			return fmt.Errorf("Failed to wait for the Cluster JSON: %s\n", err)
@@ -190,8 +190,10 @@ func (o *CreateClusterAWSOptions) Run() error {
 		if err != nil {
 			return err
 		}
+		o.Printf("Cluster configuration updated\n")
 	}
 
+	o.Printf("Waiting for the kubernetes cluster to be ready so we can continue...\n")
 	err = o.waitForClusterToComeUp()
 	if err != nil {
 		return fmt.Errorf("Failed to wait for Kubernetes cluster to start: %s\n", err)
@@ -232,7 +234,7 @@ func (o *CreateClusterAWSOptions) modifyInstanceGroupDockerConfig(json string, i
 	}
 	newJson, err := kube.EnableInsecureRegistry(json, insecureRegistries)
 	if err != nil {
-		return fmt.Errorf("Failed to modify InstanceGroup JSON to add insecure registries %s: %s", insecureRegistries, err)
+		return fmt.Errorf("Failed to modify Cluster JSON to add insecure registries %s: %s", insecureRegistries, err)
 	}
 	if newJson == json {
 		return nil
@@ -248,7 +250,7 @@ func (o *CreateClusterAWSOptions) modifyInstanceGroupDockerConfig(json string, i
 		return fmt.Errorf("Failed to write InstanceGroup JSON %s: %s", fileName, err)
 	}
 
-	o.Printf("Updating nodes InstanceGroup to enable insecure docker registries %s\n", util.ColorInfo(insecureRegistries))
+	o.Printf("Updating Cluster configuration to enable insecure docker registries %s\n", util.ColorInfo(insecureRegistries))
 	err = o.runCommand("kops", "replace", "-f", fileName)
 	if err != nil {
 		return err
