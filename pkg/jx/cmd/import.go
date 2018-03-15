@@ -342,27 +342,8 @@ func (o *ImportOptions) DraftCreate() error {
 		//return fmt.Errorf("Failed to run draft create in %s due to %s", dir, err)
 	}
 
-	// chart expects folder name to be the same as app name
-	oldChartsDir := filepath.Join(dir, "charts", "java")
-	newChartsDir := filepath.Join(dir, "charts", o.AppName)
-
-	exists, err = util.FileExists(oldChartsDir)
-	if err != nil {
-		return err
-	}
-	if exists {
-		err = os.Rename(oldChartsDir, newChartsDir)
-		if err != nil {
-			return fmt.Errorf("error renaming %s to %s, %v", oldChartsDir, newChartsDir, err)
-		}
-		_, err = os.Stat(newChartsDir)
-		if err != nil {
-			return err
-		}
-	}
-
-	// now update the chart.yaml
-	err = o.addAppNameToGeneratedFile("Chart.yaml", "name: ", o.AppName)
+	// lets rename the chart to be the same as our app name
+	err = o.renameChartToMatchAppName()
 	if err != nil {
 		return err
 	}
@@ -712,6 +693,76 @@ func (o *ImportOptions) checkChartmuseumCredentialExists() error {
 		err = o.Jenkins.CreateCredential(name, username, password)
 		if err != nil {
 			return fmt.Errorf("error creating jenkins credential %s %v", name, err)
+		}
+	}
+	return nil
+}
+func (o *ImportOptions) renameChartToMatchAppName() error {
+	var oldChartsDir string
+	dir := o.Dir
+	if err := filepath.Walk(dir, func(f string, fi os.FileInfo, err error) error {
+		if fi.Name() == ".git" {
+			return filepath.SkipDir
+		}
+		if fi.IsDir() {
+			switch fi.Name() {
+			case "csharp":
+				oldChartsDir = filepath.Join(dir, "charts", "csharp")
+				break
+			case "go":
+				oldChartsDir = filepath.Join(dir, "charts", "go")
+				break
+			case "gradle":
+				oldChartsDir = filepath.Join(dir, "charts", "gradle")
+				break
+			case "java":
+				oldChartsDir = filepath.Join(dir, "charts", "java")
+				break
+			case "javascript":
+				oldChartsDir = filepath.Join(dir, "charts", "javascript")
+				break
+			case "php":
+				oldChartsDir = filepath.Join(dir, "charts", "php")
+				break
+			case "python":
+				oldChartsDir = filepath.Join(dir, "charts", "python")
+				break
+			case "ruby":
+				oldChartsDir = filepath.Join(dir, "charts", "ruby")
+				break
+			case "swift":
+				oldChartsDir = filepath.Join(dir, "charts", "swift")
+				break
+			}
+		}
+		return nil
+
+	}); err != nil {
+		return fmt.Errorf("error matching a jenkins x draft pack name with chart folder %v", err)
+	}
+
+	if oldChartsDir != "" {
+		// chart expects folder name to be the same as app name
+		newChartsDir := filepath.Join(dir, "charts", o.AppName)
+
+		exists, err := util.FileExists(oldChartsDir)
+		if err != nil {
+			return err
+		}
+		if exists {
+			err = os.Rename(oldChartsDir, newChartsDir)
+			if err != nil {
+				return fmt.Errorf("error renaming %s to %s, %v", oldChartsDir, newChartsDir, err)
+			}
+			_, err = os.Stat(newChartsDir)
+			if err != nil {
+				return err
+			}
+		}
+		// now update the chart.yaml
+		err = o.addAppNameToGeneratedFile("Chart.yaml", "name: ", o.AppName)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
