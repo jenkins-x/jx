@@ -505,11 +505,13 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 		addNip := true
 		aip := net.ParseIP(address)
 		if aip == nil {
-			o.Printf("The Ingress address %s is not an IP address. We recommend we try resolve it to a public IP address and use that for the domain to access services externally.", util.ColorInfo(address))
+			o.Printf("The Ingress address %s is not an IP address. We recommend we try resolve it to a public IP address and use that for the domain to access services externally.\n", util.ColorInfo(address))
 
 			addressIP := ""
 			if util.Confirm("Would you like wait and resolve this address to an IP address and use it for the domain?", true,
 				"Should we convert "+address+" to an IP address so we can access resources externally") {
+
+				o.Printf("Waiting for %s to be resolvable to an IP address...\n", util.ColorInfo(address))
 				f := func() error {
 					ips, err := net.LookupIP(address)
 					if err == nil {
@@ -524,12 +526,13 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 					return fmt.Errorf("Address cannot be resolved yet %s", address)
 				}
 
-				o.retry(6, time.Second*20, f)
+				o.retryQuiet(5*6, time.Second*10, f)
 			}
 			if addressIP == "" {
 				addNip = false
 				o.warnf("Still not managed to resolve address %s into an IP address. Please try figure out the domain by hand\n", address)
 			} else {
+				o.Printf("%s resolved to IP %s\n", util.ColorInfo(address), util.ColorInfo(addressIP))
 				address = addressIP
 			}
 		}

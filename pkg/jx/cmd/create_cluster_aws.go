@@ -107,15 +107,15 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 
 	/*
-	kubeVersion := o.Flags.KubeVersion
-	if kubeVersion == "" {
-		prompt := &survey.Input{
-			Message: "Kubernetes version",
-			Default: kubeVersion,
-			Help:    "The release version of kubernetes to install in the cluster",
+		kubeVersion := o.Flags.KubeVersion
+		if kubeVersion == "" {
+			prompt := &survey.Input{
+				Message: "Kubernetes version",
+				Default: kubeVersion,
+				Help:    "The release version of kubernetes to install in the cluster",
+			}
+			survey.AskOne(prompt, &kubeVersion, nil)
 		}
-		survey.AskOne(prompt, &kubeVersion, nil)
-	}
 	*/
 
 	zones := flags.Zones
@@ -162,11 +162,15 @@ func (o *CreateClusterAWSOptions) Run() error {
 
 	// TODO allow add custom args?
 
-	o.Printf("running command: %s\n", util.ColorInfo("kops " + strings.Join(args, " ")))
+	o.Printf("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
 	err = o.runCommand("kops", args...)
 	if err != nil {
 		return err
 	}
+
+	o.Printf("\nKops has created cluster %s it will take a minute or so to startup\n", util.ColorInfo(name))
+	o.Printf("You can check on the status in another terminal via the command: %s\n", util.ColorStatus("kops validate cluster"))
+	o.Printf("Waiting for the kubernetes cluster to be ready so we can continue...\n")
 
 	time.Sleep(30 * time.Second)
 
@@ -175,6 +179,10 @@ func (o *CreateClusterAWSOptions) Run() error {
 		return fmt.Errorf("Failed to wait for Kubernetes cluster to start: %s\n", err)
 	}
 
+	o.Printf("\n")
+	o.runCommand("kops", "validate", "cluster")
+	o.Printf("\n")
+
 	return o.initAndInstall(AWS)
 }
 
@@ -182,5 +190,5 @@ func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 	f := func() error {
 		return o.runCommand("kubectl", "get", "node")
 	}
-	return o.retry(200, time.Second+20, f)
+	return o.retryQuiet(200, time.Second+10, f)
 }
