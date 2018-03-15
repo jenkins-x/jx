@@ -169,7 +169,7 @@ func LoadBytes(dir, name string) ([]byte, error) {
 	path := filepath.Join(dir, name) // relative path
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("error loading file % in directory %s, %v", name, dir, err)
+		return nil, fmt.Errorf("error loading file %s in directory %s, %v", name, dir, err)
 	}
 	return bytes, nil
 }

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -27,11 +29,12 @@ type CreateClusterAWSOptions struct {
 }
 
 type CreateClusterAWSFlags struct {
-	ClusterName string
-	NodeCount   string
-	KubeVersion string
-	Zones       string
-	UseRBAC     bool
+	ClusterName            string
+	NodeCount              string
+	KubeVersion            string
+	Zones                  string
+	InsecureDockerRegistry string
+	UseRBAC                bool
 }
 
 var (
@@ -78,6 +81,7 @@ func NewCmdCreateClusterAWS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, optionNodes, "o", "", "node count")
 	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "", "kubernetes version")
 	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability zones. Defaults to $AWS_AVAILABILITY_ZONES")
+	cmd.Flags().StringVarP(&options.Flags.InsecureDockerRegistry, "insecure-registry", "10.1.0.0/16", "", "The insecure docker registries to allow")
 	return cmd
 }
 
@@ -174,6 +178,20 @@ func (o *CreateClusterAWSOptions) Run() error {
 
 	time.Sleep(30 * time.Second)
 
+	insecureRegistries := flags.InsecureDockerRegistry
+	if insecureRegistries != "" {
+		igJson, err := o.waitForInstanceGroupJson()
+		if err != nil {
+			return fmt.Errorf("Failed to wait for the InstanceGroup YAML: %s\n", err)
+		}
+		o.Printf("Loaded nodes InstanceGroup JSON: %s\n", igJson)
+
+		err = o.modifyInstanceGroupDockerConfig(igJson, insecureRegistries)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = o.waitForClusterToComeUp()
 	if err != nil {
 		return fmt.Errorf("Failed to wait for Kubernetes cluster to start: %s\n", err)
@@ -186,9 +204,65 @@ func (o *CreateClusterAWSOptions) Run() error {
 	return o.initAndInstall(AWS)
 }
 
+func (o *CreateClusterAWSOptions) waitForInstanceGroupJson() (string, error) {
+	yamlOutput := ""
+	f := func() error {
+		text, err := o.getCommandOutput("", "kops", "get", "ig", "nodes", "-ojson")
+		if err != nil {
+			return err
+		}
+		yamlOutput = text
+		return nil
+	}
+	err := o.retryQuiet(200, time.Second+10, f)
+	return yamlOutput, err
+}
+
 func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 	f := func() error {
 		return o.runCommand("kubectl", "get", "node")
 	}
 	return o.retryQuiet(200, time.Second+10, f)
+}
+
+func (o *CreateClusterAWSOptions) modifyInstanceGroupDockerConfig(json string, insecureRegistries string) error {
+	if insecureRegistries == "" {
+		return nil
+	}
+	newJson, err := kube.EnableInsecureRegistry(json, insecureRegistries)
+	if err != nil {
+		return fmt.Errorf("Failed to modify InstanceGroup JSON to add insecure registries %s: %s", insecureRegistries, err)
+	}
+	if newJson == json {
+		return nil
+	}
+
+	tmpFile, err := ioutil.TempFile("", "kops-ig-json-")
+	if err != nil {
+		return err
+	}
+	fileName := tmpFile.Name()
+	err = ioutil.WriteFile(fileName, []byte(newJson), DefaultWritePermissions)
+	if err != nil {
+		return fmt.Errorf("Failed to write InstanceGroup JSON %s: %s", fileName, err)
+	}
+
+	o.Printf("Updating nodes InstanceGroup to enable insecure docker registries %s\n", util.ColorInfo(insecureRegistries))
+	err = o.runCommand("kops", "replace", "-f", fileName)
+	if err != nil {
+		return err
+	}
+
+	o.Printf("Updating the cluster\n")
+	err = o.runCommand("kops", "update", "cluster", "--yes")
+	if err != nil {
+		return err
+	}
+
+	o.Printf("Rolling update the cluster\n")
+	err = o.runCommand("kops", "rolling-update", "cluster", "--yes")
+	if err != nil {
+		return err
+	}
+	return nil
 }
