@@ -215,7 +215,7 @@ func (o *CreateClusterAWSOptions) waitForInstanceGroupJson() (string, error) {
 		return nil
 	}
 	err := o.retryQuiet(200, time.Second+10, f)
-	if err != nil {
+	if err == nil {
 		lines := strings.Split(yamlOutput, "\n")
 		for {
 			if len(lines) == 0 {
