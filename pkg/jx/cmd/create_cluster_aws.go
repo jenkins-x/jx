@@ -264,7 +264,9 @@ func (o *CreateClusterAWSOptions) modifyInstanceGroupDockerConfig(json string, i
 	o.Printf("Rolling update the cluster\n")
 	err = o.runCommand("kops", "rolling-update", "cluster", "--cloudonly", "--yes")
 	if err != nil {
-		return err
+		// lets not fail to install if the rolling upgrade fails
+		o.warnf("Failed to perform rolling upgrade: %s\n", err)
+		//return err
 	}
 	return nil
 }
