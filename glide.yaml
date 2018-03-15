@@ -46,6 +46,7 @@ import:
   version: bf3f261f9a9c61145c60d47665b0518cc32c774f
 - package: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
+- package: github.com/Jeffail/gabs
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

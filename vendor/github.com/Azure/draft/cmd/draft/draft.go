@@ -120,7 +120,7 @@ func setupConnection(c *cobra.Command, args []string) error {
 			return err
 		}
 
-		draftHost = fmt.Sprintf("localhost:%d", tunnel.Local)
+		draftHost = fmt.Sprintf("127.0.0.1:%d", tunnel.Local)
 		log.Debugf("Created tunnel using local port: '%d'", tunnel.Local)
 	}
 
@@ -263,7 +263,7 @@ func setupHelm(kubeClient kubernetes.Interface, config *rest.Config, namespace s
 		return nil, err
 	}
 
-	return helm.NewClient(helm.Host(fmt.Sprintf("localhost:%d", tunnel.Local))), nil
+	return helm.NewClient(helm.Host(fmt.Sprintf("127.0.0.1:%d", tunnel.Local))), nil
 }
 
 func setupTillerConnection(client kubernetes.Interface, config *rest.Config, namespace string) (*kube.Tunnel, error) {
