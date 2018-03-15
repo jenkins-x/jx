@@ -247,7 +247,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 			break
 		}
 	}
-	o.Printf("Found API Token %s\n", util.ColorInfo(token))
+	o.Printf("Found API Token\n")
 	if token != "" {
 		userAuth.ApiToken = token
 	}
