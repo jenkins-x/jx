@@ -535,7 +535,7 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 
 		time.Sleep(sleep)
 
-		message := fmt.Sprintf("retrying after error: %s\n", err)
+		message := fmt.Sprintf("retrying after error: %s", err)
 		if lastMessage == message {
 			o.Printf(".")
 			dot = true
