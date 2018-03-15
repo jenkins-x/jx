@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -48,6 +47,7 @@ type CreateJenkinsUserOptions struct {
 	Password    string
 	ApiToken    string
 	Timeout     string
+	UseBrowser  bool
 }
 
 // NewCmdCreateJenkinsUser creates a command
@@ -80,6 +80,7 @@ func NewCmdCreateJenkinsUser(f cmdutil.Factory, out io.Writer, errOut io.Writer)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
+	cmd.Flags().BoolVarP(&options.UseBrowser, "browser", "", false, "Use a Chrome browser to automatically find the API token if the user and password are known")
 
 	return cmd
 }
@@ -132,7 +133,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	if o.Verbose {
 		log.Infof("using url %s\n", tokenUrl)
 	}
-	if userAuth.IsInvalid() && o.Password != "" {
+	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
 		err := o.tryFindAPITokenFromBrowser(tokenUrl, userAuth)
 		if err != nil {
 			log.Errorf("error finding API token using URL %s\n", tokenUrl)

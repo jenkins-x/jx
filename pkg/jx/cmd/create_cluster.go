@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,8 +11,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"errors"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -37,12 +36,17 @@ const (
 	GKE        = "gke"
 	EKS        = "eks"
 	AKS        = "aks"
+	AWS        = "aws"
 	MINIKUBE   = "minikube"
 	KUBERNETES = "kubernetes"
 	JX_INFRA   = "jx-infra"
+
+	optionKubernetesVersion = "kubernetes-version"
+	optionNodes             = "nodes"
+	optionClusterName       = "cluster-name"
 )
 
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS, EKS, KUBERNETES, JX_INFRA}
+var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS, AWS, EKS, KUBERNETES, JX_INFRA}
 
 const (
 	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
@@ -50,6 +54,7 @@ const (
 	valid_providers = `Valid kubernetes providers include:
 
     * aks (Azure Container Service - https://docs.microsoft.com/en-us/azure/aks)
+    * aws (Amazon Web Services via kops - https://github.com/aws-samples/aws-workshop-for-kubernetes/blob/master/readme.adoc)
     * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
     * kubernetes for custom installations of Kubernetes
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
@@ -105,9 +110,10 @@ func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateClusterMinikube(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterGKE(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterAKS(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterAWS(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterGKE(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterMinikube(f, out, errOut))
 
 	return cmd
 }
@@ -237,6 +243,8 @@ func (o *CreateClusterOptions) doInstallMissingDependencies(install []string) er
 			err = o.installDraft()
 		case "gcloud":
 			err = o.installGcloud()
+		case "kops":
+			err = o.installKops()
 		case "minikube":
 			err = o.installMinikube()
 		case "az":
@@ -503,6 +511,37 @@ func (o *CreateClusterOptions) installDraft() error {
 		return err
 	}
 	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
+
+func (o *CreateClusterOptions) installKops() error {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.runCommand("brew", "install", "kops")
+	}
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	binary := "kops"
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "kops")
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://github.com/kubernetes/kops/releases/download/%s/kops-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	tmpFile := fullPath + ".tmp"
+	err = o.downloadFile(clientURL, tmpFile)
+	if err != nil {
+		return err
+	}
+	err = os.Rename(tmpFile, fullPath)
 	if err != nil {
 		return err
 	}

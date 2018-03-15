@@ -2,8 +2,9 @@ package util
 
 import (
 	"fmt"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"sort"
+
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 func PickValue(message string, defaultValue string, required bool) (string, error) {
@@ -83,4 +84,16 @@ func SelectNames(names []string, message string, selectAll bool) ([]string, erro
 	}
 	err := survey.AskOne(prompt, &answer, nil)
 	return answer, err
+}
+
+// Confirm prompts the user to confirm something
+func Confirm(message string, defaultValue bool, help string) bool {
+	answer := defaultValue
+	prompt := &survey.Confirm{
+		Message: message,
+		Default: defaultValue,
+		Help:    help,
+	}
+	survey.AskOne(prompt, &answer, nil)
+	return answer
 }

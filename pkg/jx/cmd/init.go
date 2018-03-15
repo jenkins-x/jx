@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,7 +21,6 @@ import (
 
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -41,6 +41,8 @@ type InitFlags struct {
 	IngressClusterRole         string
 	TillerNamespace            string
 	IngressNamespace           string
+	IngressService             string
+	IngressDeployment          string
 	DraftClient                bool
 	HelmClient                 bool
 	RecreateExistingDraftRepos bool
@@ -106,6 +108,8 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.TillerNamespace, optionTillerNamespace, "", "kube-system", "The namespace for the Tiller when using a gloabl tiller")
 	cmd.Flags().StringVarP(&options.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
 	cmd.Flags().StringVarP(&options.Flags.IngressNamespace, "ingress-namespace", "", "kube-system", "The namespace for the Ingress controller")
+	cmd.Flags().StringVarP(&options.Flags.IngressService, "ingress-service", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Service")
+	cmd.Flags().StringVarP(&options.Flags.IngressDeployment, "ingress-deployment", "", INGRESS_SERVICE_NAME, "The namespace for the Ingress controller Deployment")
 	cmd.Flags().BoolVarP(&options.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
 	cmd.Flags().BoolVarP(&options.Flags.HelmClient, "helm-client-only", "", false, "Only install helm client")
 	cmd.Flags().BoolVarP(&options.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
@@ -403,64 +407,58 @@ func (o *InitOptions) initIngress() error {
 
 	}
 
-	podLabels := labels.SelectorFromSet(labels.Set(map[string]string{"app": "nginx-ingress", "component": "controller"}))
-	options := meta_v1.ListOptions{LabelSelector: podLabels.String()}
-	podList, err := client.CoreV1().Pods(ingressNamespace).List(options)
-	if err != nil {
-		return err
-	}
-
-	if podList != nil && len(podList.Items) > 0 {
-		log.Info("existing nginx ingress controller found, no need to install")
-		return nil
-	}
-
-	installIngressController := false
-	if o.BatchMode {
-		installIngressController = true
-	} else {
-		prompt := &survey.Confirm{
-			Message: "No existing ingress controller found in the " + ingressNamespace + " namespace, shall we install one?",
-			Default: true,
-			Help:    "An ingress controller works with an external loadbalancer so you can access Jenkins X and your applications",
+	podCount, err := kube.DeploymentPodCount(client, o.Flags.IngressDeployment, ingressNamespace)
+	if podCount == 0 {
+		installIngressController := false
+		if o.BatchMode {
+			installIngressController = true
+		} else {
+			prompt := &survey.Confirm{
+				Message: "No existing ingress controller found in the " + ingressNamespace + " namespace, shall we install one?",
+				Default: true,
+				Help:    "An ingress controller works with an external loadbalancer so you can access Jenkins X and your applications",
+			}
+			survey.AskOne(prompt, &installIngressController, nil)
 		}
-		survey.AskOne(prompt, &installIngressController, nil)
-	}
 
-	if !installIngressController {
-		return nil
-	}
+		if !installIngressController {
+			return nil
+		}
 
-	i := 0
-	for {
-		//err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true", "--set", "rbac.serviceAccountName="+ingressServiceAccount)
-		err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true")
-		if err != nil {
-			if i >= 3 {
+		i := 0
+		for {
+			//err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true", "--set", "rbac.serviceAccountName="+ingressServiceAccount)
+			err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true")
+			if err != nil {
+				if i >= 3 {
+					break
+				}
+				i++
+				time.Sleep(time.Second)
+			} else {
 				break
 			}
-			i++
-			time.Sleep(time.Second)
-		} else {
-			break
 		}
+
+		err = kube.WaitForDeploymentToBeReady(client, o.Flags.IngressDeployment, ingressNamespace, 10*time.Minute)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		log.Info("existing ingress controller found, no need to install a new one\n")
 	}
 
-	err = kube.WaitForDeploymentToBeReady(client, INGRESS_SERVICE_NAME, ingressNamespace, 10*time.Minute)
-	if err != nil {
-		return err
-	}
-
-	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES {
+	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == AWS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES {
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
-		err = kube.WaitForExternalIP(client, INGRESS_SERVICE_NAME, ingressNamespace, 10*time.Minute)
+		err = kube.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
 		if err != nil {
 			return err
 		}
 
 		log.Infof("External loadbalancer created\n")
 
-		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain, ingressNamespace)
+		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain, ingressNamespace, o.Flags.IngressService)
 		if err != nil {
 			return err
 		}
@@ -479,7 +477,7 @@ func (o *InitOptions) ingressNamespace() string {
 	return ingressNamespace
 }
 
-func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, provider string, ingressNamespace string) (string, error) {
+func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, provider string, ingressNamespace string, ingressService string) (string, error) {
 	var address string
 	if provider == MINIKUBE {
 		ip, err := o.getCommandOutput("", "minikube", "ip")
@@ -488,7 +486,7 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 		}
 		address = ip
 	} else {
-		svc, err := client.CoreV1().Services(ingressNamespace).Get(INGRESS_SERVICE_NAME, meta_v1.GetOptions{})
+		svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, meta_v1.GetOptions{})
 		if err != nil {
 			return "", err
 		}
@@ -502,9 +500,47 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 			}
 		}
 	}
-	defaultDomain := fmt.Sprintf("%s.nip.io", address)
-	if domain == "" {
+	defaultDomain := address
+	if address != "" {
+		addNip := true
+		aip := net.ParseIP(address)
+		if aip == nil {
+			o.Printf("The Ingress address %s is not an IP address. We recommend we try resolve it to a public IP address and use that for the domain to access services externally.\n", util.ColorInfo(address))
 
+			addressIP := ""
+			if util.Confirm("Would you like wait and resolve this address to an IP address and use it for the domain?", true,
+				"Should we convert "+address+" to an IP address so we can access resources externally") {
+
+				o.Printf("Waiting for %s to be resolvable to an IP address...\n", util.ColorInfo(address))
+				f := func() error {
+					ips, err := net.LookupIP(address)
+					if err == nil {
+						for _, ip := range ips {
+							t := ip.String()
+							if t != "" && !ip.IsLoopback() {
+								addressIP = t
+								return nil
+							}
+						}
+					}
+					return fmt.Errorf("Address cannot be resolved yet %s", address)
+				}
+
+				o.retryQuiet(5*6, time.Second*10, f)
+			}
+			if addressIP == "" {
+				addNip = false
+				o.warnf("Still not managed to resolve address %s into an IP address. Please try figure out the domain by hand\n", address)
+			} else {
+				o.Printf("%s resolved to IP %s\n", util.ColorInfo(address), util.ColorInfo(addressIP))
+				address = addressIP
+			}
+		}
+		if addNip && !strings.HasSuffix(address, ".amazonaws.com") {
+			defaultDomain = fmt.Sprintf("%s.nip.io", address)
+		}
+	}
+	if domain == "" {
 		if o.BatchMode {
 			log.Successf("No domain flag provided so using default %s to generate Ingress rules", defaultDomain)
 			return defaultDomain, nil

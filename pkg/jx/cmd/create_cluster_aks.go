@@ -79,14 +79,14 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	options.addCreateClusterFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.ResourceName, "user name", "u", "", "user name")
-	cmd.Flags().StringVarP(&options.Flags.ResourceName, "password", "p", "", "password")
-	cmd.Flags().StringVarP(&options.Flags.ResourceName, "resource group name", "n", "", "Name of the resource group")
-	cmd.Flags().StringVarP(&options.Flags.ClusterName, "clusterName", "c", "", "Name of the cluster")
+	cmd.Flags().StringVarP(&options.Flags.UserName, "user name", "u", "", "user name")
+	cmd.Flags().StringVarP(&options.Flags.Password, "password", "p", "", "password")
+	cmd.Flags().StringVarP(&options.Flags.ResourceName, "resource-group-name", "n", "", "Name of the resource group")
+	cmd.Flags().StringVarP(&options.Flags.ClusterName, "cluster-name", "c", "", "Name of the cluster")
 	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "", "location to run cluster in")
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "o", "", "node count")
-	cmd.Flags().StringVarP(&options.Flags.KubeVersion, "K8Version", "v", "1.8.2", "kubernetes version")
-	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "PathToPublicRSAKey", "k", "", "pathToPublicRSAKey")
+	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "1.8.2", "kubernetes version")
+	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "path-To-public-rsa-key", "k", "", "pathToPublicRSAKey")
 	return cmd
 }
 

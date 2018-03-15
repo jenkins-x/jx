@@ -86,6 +86,7 @@ type GitRepository struct {
 	HTMLURL          string
 	CloneURL         string
 	SSHURL           string
+	Language         string
 	Fork             bool
 }
 

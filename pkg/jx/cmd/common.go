@@ -100,6 +100,13 @@ func (o *CommonOptions) runCommand(name string, args ...string) error {
 	return err
 }
 
+func (o *CommonOptions) runCommandQuietly(name string, args ...string) error {
+	e := exec.Command(name, args...)
+	e.Stdout = o.Out
+	e.Stderr = o.Err
+	return e.Run()
+}
+
 func (o *CommonOptions) runCommandInteractive(interactive bool, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
@@ -504,7 +511,42 @@ func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() err
 
 		time.Sleep(sleep)
 
-		o.Printf("retrying after error:", err)
+		o.Printf("retrying after error:%s\n", err)
+	}
+	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
+}
+
+func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func() error) (err error) {
+	lastMessage := ""
+	dot := false
+
+	for i := 0; ; i++ {
+		err = call()
+		if err == nil {
+			if dot {
+				o.Printf("\n")
+			}
+			return
+		}
+
+		if i >= (attempts - 1) {
+			break
+		}
+
+		time.Sleep(sleep)
+
+		message := fmt.Sprintf("retrying after error: %s", err)
+		if lastMessage == message {
+			o.Printf(".")
+			dot = true
+		} else {
+			lastMessage = message
+			if dot {
+				dot = false
+				o.Printf("\n")
+			}
+			o.Printf("%s\n", lastMessage)
+		}
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }

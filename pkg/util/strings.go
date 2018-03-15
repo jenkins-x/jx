@@ -74,3 +74,12 @@ func ReverseStrings(a []string) {
 		a[i], a[j] = a[j], a[i]
 	}
 }
+
+// StringArrayToLower returns a string slice with all the values converted to lower case
+func StringArrayToLower(values []string) []string {
+	answer := []string{}
+	for _, v := range values {
+		answer = append(answer, strings.ToLower(v))
+	}
+	return answer
+}
