@@ -180,11 +180,11 @@ func (o *CreateClusterAWSOptions) Run() error {
 
 	insecureRegistries := flags.InsecureDockerRegistry
 	if insecureRegistries != "" {
-		igJson, err := o.waitForInstanceGroupJson()
+		igJson, err := o.waitForInstanceGroupJson(name)
 		if err != nil {
-			return fmt.Errorf("Failed to wait for the InstanceGroup YAML: %s\n", err)
+			return fmt.Errorf("Failed to wait for the Cluster JSON: %s\n", err)
 		}
-		o.Printf("Loaded nodes InstanceGroup JSON: %s\n", igJson)
+		o.Printf("Loaded Cluster JSON: %s\n", igJson)
 
 		err = o.modifyInstanceGroupDockerConfig(igJson, insecureRegistries)
 		if err != nil {
@@ -204,32 +204,18 @@ func (o *CreateClusterAWSOptions) Run() error {
 	return o.initAndInstall(AWS)
 }
 
-func (o *CreateClusterAWSOptions) waitForInstanceGroupJson() (string, error) {
-	yamlOutput := ""
+func (o *CreateClusterAWSOptions) waitForInstanceGroupJson(clusterName string) (string, error) {
+	jsonOutput := ""
 	f := func() error {
-		text, err := o.getCommandOutput("", "kops", "get", "ig", "nodes", "-ojson")
+		text, err := o.getCommandOutput("", "kops", "get", "cluster", clusterName, "-ojson")
 		if err != nil {
 			return err
 		}
-		yamlOutput = text
+		jsonOutput = text
 		return nil
 	}
 	err := o.retryQuiet(200, time.Second+10, f)
-	if err == nil {
-		lines := strings.Split(yamlOutput, "\n")
-		for {
-			if len(lines) == 0 {
-				break
-			}
-			l1 := strings.TrimSpace(lines[0])
-			if strings.HasPrefix(l1, "{") {
-				break
-			}
-			lines = lines[1:]
-		}
-		yamlOutput = strings.Join(lines, "\n")
-	}
-	return yamlOutput, err
+	return jsonOutput, err
 }
 
 func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
