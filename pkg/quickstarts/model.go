@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -27,12 +29,31 @@ func GitHubQuickstart(owner string, repo string, language string, framework stri
 	}
 }
 
-func (q *Quickstart) SurveyName() string {
-	if q.Owner == JenkinsXQuickstartsOwner {
-		return q.Name
+func toGitHubQuickstart(owner string, repo *gits.GitRepository) *Quickstart {
+	language := repo.Language
+	// TODO find this from GitHub???
+	framework := ""
+	tags := []string{}
+	return GitHubQuickstart(owner, repo.Name, language, framework, tags...)
+}
+
+func (m *QuickstartModel) LoadGithubQuickstarts(provider gits.GitProvider, owners []string) error {
+	for _, owner := range owners {
+		repos, err := provider.ListRepositories(owner)
+		if err != nil {
+			return err
+		}
+		for _, repo := range repos {
+			m.Add(toGitHubQuickstart(owner, repo))
+		}
 	}
-	// TODO maybe make a nicer string?
-	return q.ID
+	return nil
+}
+
+func NewQuickstartModel() *QuickstartModel {
+	return &QuickstartModel{
+		Quickstarts: map[string]*Quickstart{},
+	}
 }
 
 // Add adds the given quickstart to this mode. Returns true if it was added
@@ -47,24 +68,22 @@ func (m *QuickstartModel) Add(q *Quickstart) bool {
 	return false
 }
 
-func (f *QuickstartFilter) Matches(q *Quickstart) bool {
-	text := f.Text
-	if text != "" && !strings.Contains(q.ID, text) {
-		return false
-	}
-	owner := strings.ToLower(f.Owner)
-	if owner != "" && strings.ToLower(q.Owner) != owner {
-		return false
-	}
-	language := strings.ToLower(f.Language)
-	if owner != "" && strings.ToLower(q.Language) != language {
-		return false
-	}
-	return true
-}
-
 // CreateSurvey creates a survey to query pick a quickstart
 func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter) (*Quickstart, error) {
+	language := filter.Language
+	if language != "" {
+		languages := model.Languages()
+		if len(languages) == 0 {
+			// lets ignore this filter as there are none available
+			filter.Language = ""
+		} else {
+			lower := strings.ToLower(language)
+			lowerLanguages := util.StringArrayToLower(languages)
+			if util.StringArrayIndex(lowerLanguages, lower) < 0 {
+				return nil, util.InvalidOption("language", language, languages)
+			}
+		}
+	}
 	quickstarts := model.Filter(filter)
 	names := []string{}
 	m := map[string]*Quickstart{}
@@ -94,6 +113,7 @@ func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter) (*Quickstar
 	return m[answer], nil
 }
 
+// Filter filters all the available quickstarts with the filter and return the matches
 func (model *QuickstartModel) Filter(filter *QuickstartFilter) []*Quickstart {
 	answer := []*Quickstart{}
 	for _, q := range model.Quickstarts {
@@ -102,4 +122,16 @@ func (model *QuickstartModel) Filter(filter *QuickstartFilter) []*Quickstart {
 		}
 	}
 	return answer
+}
+
+// Languages returns all the languages in the quickstarts sorted
+func (model *QuickstartModel) Languages() []string {
+	m := map[string]string{}
+	for _, q := range model.Quickstarts {
+		l := q.Language
+		if l != "" {
+			m[l] = l
+		}
+	}
+	return util.SortedMapKeys(m)
 }

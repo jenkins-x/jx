@@ -9,12 +9,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
+)
+
+const (
+	JenkinsXQuickstartsOrganisation = "jenkins-x-quickstarts"
 )
 
 var (
@@ -38,7 +43,8 @@ var (
 type CreateQuickstartOptions struct {
 	CreateProjectOptions
 
-	Filter quickstarts.QuickstartFilter
+	GitHubOrganisations []string
+	Filter              quickstarts.QuickstartFilter
 }
 
 // NewCmdCreateQuickstart creates a command object for the "create" command
@@ -70,6 +76,7 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	}
 	options.addCreateAppFlags(cmd)
 
+	cmd.Flags().StringArrayVarP(&options.GitHubOrganisations, "organisations", "g", []string{}, "The github organisations to query for quickstarts")
 	cmd.Flags().StringArrayVarP(&options.Filter.Tags, "tag", "t", []string{}, "The tags on the quickstarts to filter")
 	cmd.Flags().StringVarP(&options.Filter.Owner, "owner", "", "", "The owner to filter on")
 	cmd.Flags().StringVarP(&options.Filter.Language, "language", "l", "", "The language to filter on")
@@ -155,8 +162,27 @@ func (o *CreateQuickstartOptions) createQuickstart(q *quickstarts.Quickstart, di
 
 func (o *CreateQuickstartOptions) LoadQuickstarts() (*quickstarts.QuickstartModel, error) {
 	model := quickstarts.NewQuickstartModel()
-	for _, q := range quickstarts.JenkinsXQuickstarts {
-		model.Add(q)
+
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return model, err
 	}
+	config := authConfigSvc.Config()
+	server := config.GetOrCreateServer(gits.GitHubHost)
+
+	userAuth, err := config.PickServerUserAuth(server, "git user name", o.BatchMode)
+	if err != nil {
+		return model, err
+	}
+	provider, err := gits.CreateProvider(server, userAuth)
+	if err != nil {
+		return model, err
+	}
+	groups := o.GitHubOrganisations
+	if util.StringArrayIndex(groups, JenkinsXQuickstartsOrganisation) < 0 {
+		groups = append(groups, JenkinsXQuickstartsOrganisation)
+	}
+
+	model.LoadGithubQuickstarts(provider, groups)
 	return model, nil
 }

@@ -14,12 +14,6 @@ type QuickstartModel struct {
 	Quickstarts map[string]*Quickstart
 }
 
-func NewQuickstartModel() *QuickstartModel {
-	return &QuickstartModel{
-		Quickstarts: map[string]*Quickstart{},
-	}
-}
-
 type QuickstartFilter struct {
 	Language  string
 	Framework string

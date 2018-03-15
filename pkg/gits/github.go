@@ -140,6 +140,7 @@ func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 		HTMLURL:          asText(repo.HTMLURL),
 		SSHURL:           asText(repo.SSHURL),
 		Fork:             asBool(repo.Fork),
+		Language:         asText(repo.Language),
 	}
 }
 
