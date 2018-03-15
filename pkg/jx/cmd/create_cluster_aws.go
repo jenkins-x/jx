@@ -216,15 +216,15 @@ func (o *CreateClusterAWSOptions) waitForInstanceGroupJson(clusterName string) (
 		jsonOutput = text
 		return nil
 	}
-	err := o.retryQuiet(200, time.Second+10, f)
+	err := o.retryQuiet(200, time.Second*10, f)
 	return jsonOutput, err
 }
 
 func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 	f := func() error {
-		return o.runCommandQuietly("", "kubectl", "get", "node")
+		return o.runCommandQuietly("kubectl", "get", "node")
 	}
-	return o.retryQuiet(2000, time.Second+10, f)
+	return o.retryQuiet(2000, time.Second*10, f)
 }
 
 func (o *CreateClusterAWSOptions) modifyInstanceGroupDockerConfig(json string, insecureRegistries string) error {
