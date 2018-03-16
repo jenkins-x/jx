@@ -251,9 +251,8 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 	}
 	qs = append(qs, &survey.Question{
 		Name: "apiToken",
-		Prompt: &survey.Input{
+		Prompt: &survey.Password{
 			Message: "API Token:",
-			Default: auth.ApiToken,
 		},
 		Validate: survey.Required,
 	})
