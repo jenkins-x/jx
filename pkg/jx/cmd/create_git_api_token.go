@@ -246,7 +246,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 			break
 		}
 	}
-	o.Printf("Found API Token %s\n", util.ColorInfo(token))
+	o.Printf("Found API Token\n")
 	if token != "" {
 		userAuth.ApiToken = token
 	}

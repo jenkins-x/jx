@@ -1,6 +1,8 @@
 package quickstarts
 
-import "strings"
+import (
+	"strings"
+)
 
 func (q *Quickstart) SurveyName() string {
 	if q.Owner == JenkinsXQuickstartsOwner {
@@ -11,6 +13,9 @@ func (q *Quickstart) SurveyName() string {
 }
 
 func (f *QuickstartFilter) Matches(q *Quickstart) bool {
+	if strings.Contains(q.ID, "WIP-") {
+		return false
+	}
 	text := f.Text
 	if text != "" && !strings.Contains(q.ID, text) {
 		return false

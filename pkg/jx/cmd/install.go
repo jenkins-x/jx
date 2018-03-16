@@ -128,7 +128,7 @@ func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) In
 					Factory:  f,
 					Out:      out,
 					Err:      errOut,
-					Headless: false,
+					Headless: true,
 				},
 			},
 		},
@@ -334,6 +334,7 @@ func (options *InstallOptions) Run() error {
 		log.Info("Getting Jenkins API Token\n")
 		err = options.retry(3, 2*time.Second, func() (err error) {
 			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
+			options.CreateJenkinsUserOptions.UseBrowser = true
 			err = options.CreateJenkinsUserOptions.Run()
 			return
 		})

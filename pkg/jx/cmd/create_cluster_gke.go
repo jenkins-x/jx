@@ -152,7 +152,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if o.Flags.ClusterName == "" {
 		o.Flags.ClusterName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No cluster name provided so using a generated one: %s", o.Flags.ClusterName)
+		log.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
 	}
 
 	zone := o.Flags.Zone
