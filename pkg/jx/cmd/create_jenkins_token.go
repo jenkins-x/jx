@@ -136,8 +136,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
 		err := o.tryFindAPITokenFromBrowser(tokenUrl, userAuth)
 		if err != nil {
-			log.Errorf("error finding API token using URL %s\n", tokenUrl)
-			return err
+			log.Warnf("unable to automaticaly find API token with chromedp using URL %s\n", tokenUrl)
 		}
 	}
 
