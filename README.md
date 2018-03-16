@@ -8,14 +8,7 @@ JX is a command line tool for installing and using [Jenkins X](http://jenkins-x.
 
 ## Installing
 
-On a Mac you can use brew:
-
-    brew tap jenkins-x/jx
-    brew install jx 
-    
-Or [download the binary](https://github.com/jenkins-x/jx/releases) for `jx` and add it to your `$PATH`
-
-Or you can try [build it yourself](https://github.com/jenkins-x/jx/blob/master/docs/contributing/hacking.md). Though if build it yourself please be careful to remove any older `jx` binary so your local build is found first on the `$PATH` :)
+Check out [how to install jx](http://jenkins-x.io/getting-started/install/)
 
 ## Getting Help
 
@@ -31,58 +24,18 @@ You can also browse the [jx command reference documentation](https://github.com/
 
 ## Getting Started
 
-### Installing Kubernetes with Minikube on Mac
+Please check out the [Getting Started Guide](http://jenkins-x.io/getting-started/ on how to 
 
-The quickest way to get started is to install Minikube using Homebrew:
+* [create new kubernetes clusters with Jenkins X](http://jenkins-x.io/getting-started/create-cluster/)
+* [install Jenkins X on existing clusters](http://jenkins-x.io/getting-started/install-on-cluster/)
 
-    brew cask install minikube
-    brew install kubernetes-helm
+Then [what to do next when you have Jenkins X installed](http://jenkins-x.io/getting-started/next/)
     
-Then install [Docker for Mac](https://docs.docker.com/docker-for-mac/install/). This contains the HyperKit binary you will need to run Kubernetes on your Mac.
+## Reference
 
-Install the HyperKit driver:
-
-    curl -LO https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-hyperkit && \
-    chmod +x docker-machine-driver-hyperkit && \
-    sudo mv docker-machine-driver-hyperkit /usr/local/bin/ && \
-    sudo chown root:wheel /usr/local/bin/docker-machine-driver-hyperkit && \
-    sudo chmod u+s /usr/local/bin/docker-machine-driver-hyperkit
-
-To start Kubernetes:
-
-    minikube start --vm-driver hyperkit --memory 4028
-    
-Once Kubernetes is started, yoiu need to enable the ingress addon (run once after installation):
-
-    minikube addons enable ingress
-    
-
-### Setup Jenkins X
-
-Then ensure that Helm is initialized on your Kubernetes cluster by running:
-
-    helm init
-    
-Helm will initialize its services on the cluster. You can continue when the `tiller` service is in the `Running` status
-
-    kubectl get pods --namespace kube-system | grep 'tiller'
-    tiller-deploy-7594bf7b76-5vh8s          1/1       Running   0          1m
-
-To install Jenkins X:
-
-    jx install
-    
-On every machine you interact with Jenkins X you will need to run the following command to interact with Jenkins X using the `jx` command line:
-
-    jx init
-
-
-### Using an existing kubernetes cluster
-
-If you already have a kubernetes cluster setup then try:
-
-    jx install
-        
+* [Command Line Reference](http://jenkins-x.io/commands/jx/#jx)
+  
+  
 ## Opening Consoles
 
 To open the Jenkins console try:
@@ -270,12 +223,6 @@ For more help try:
 
     jx help completion bash
            
-### Uninstall Jenkins x
-
-To remove the Jenkins X platfrom from a namespace on your kubernetes cluster:
-
-    jx uninstall
-
 ## Addons
 
 We are adding a number of addon capabilities to Jenkins X. To add or remove addons use the `jx create addon` or `jx delete addon` commands
