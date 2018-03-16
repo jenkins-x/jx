@@ -24,7 +24,7 @@ You can also browse the [jx command reference documentation](https://github.com/
 
 ## Getting Started
 
-Please check out the [Getting Started Guide](http://jenkins-x.io/getting-started/ on how to 
+Please check out the [Getting Started Guide](http://jenkins-x.io/getting-started/) on how to 
 
 * [create new kubernetes clusters with Jenkins X](http://jenkins-x.io/getting-started/create-cluster/)
 * [install Jenkins X on existing clusters](http://jenkins-x.io/getting-started/install-on-cluster/)
