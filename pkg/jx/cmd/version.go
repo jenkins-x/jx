@@ -108,29 +108,6 @@ func (o *VersionOptions) Run() error {
 		}
 	}
 
-	// draft version
-	output, err = o.getCommandOutput("", "draft", "version")
-	if err != nil {
-		o.warnf("Failed to find draft version: %s\n", err)
-		if output != "" {
-			o.warnf("%s\n", output)
-		}
-	} else {
-		for i, line := range strings.Split(output, "\n") {
-			fields := strings.Fields(line)
-			if len(fields) > 1 {
-				v := extractSemVer(fields[1])
-				if v != "" {
-					switch i {
-					case 0:
-						table.AddRow("Draft Client", info(v))
-					case 1:
-						table.AddRow("Draft Server", info(v))
-					}
-				}
-			}
-		}
-	}
 	// git version
 	output, err = o.getCommandOutput("", "git", "version")
 	if err != nil {
