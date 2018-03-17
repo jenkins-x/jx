@@ -177,11 +177,6 @@ func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {
 		deps = append(deps, d)
 	}
 
-	d = binaryShouldBeInstalled("draft")
-	if d != "" {
-		deps = append(deps, d)
-	}
-
 	// Platform specific deps
 	if runtime.GOOS == "darwin" {
 		if !o.NoBrew {
@@ -239,8 +234,6 @@ func (o *CreateClusterOptions) doInstallMissingDependencies(install []string) er
 			err = o.installVirtualBox()
 		case "helm":
 			err = o.installHelm()
-		case "draft":
-			err = o.installDraft()
 		case "gcloud":
 			err = o.installGcloud()
 		case "kops":
@@ -460,46 +453,6 @@ func (o *CreateClusterOptions) installHelm() error {
 		return err
 	}
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, fileName)
-	tarFile := fullPath + ".tgz"
-	err = o.downloadFile(clientURL, tarFile)
-	if err != nil {
-		return err
-	}
-	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
-	if err != nil {
-		return err
-	}
-	err = os.Remove(tarFile)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(fullPath, 0755)
-}
-
-func (o *CreateClusterOptions) installDraft() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		err := o.runCommand("brew", "tap", "azure/draft")
-		if err != nil {
-			return err
-		}
-		return o.runCommand("brew", "install", "draft")
-	}
-
-	binDir, err := util.BinaryLocation()
-	if err != nil {
-		return err
-	}
-	binary := "draft"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
-	if err != nil || !flag {
-		return err
-	}
-	latestVersion, err := util.GetLatestVersionFromGitHub("Azure", "draft")
-	if err != nil {
-		return err
-	}
-	clientURL := fmt.Sprintf("https://azuredraft.blob.core.windows.net/draft/draft-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
 	err = o.downloadFile(clientURL, tarFile)
