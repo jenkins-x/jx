@@ -77,6 +77,7 @@ func (f *factory) SetBatch(batch bool) {
 
 // CreateJenkinsClient creates a new jenkins client
 func (f *factory) CreateJenkinsClient() (*gojenkins.Jenkins, error) {
+
 	svc, err := f.CreateJenkinsAuthConfigService()
 	if err != nil {
 		return nil, err

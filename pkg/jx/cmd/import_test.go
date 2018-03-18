@@ -25,20 +25,24 @@ func TestReplacePlaceholders(t *testing.T) {
 
 	assert.NoError(t, err)
 	o := ImportOptions{}
-	o.replacePlaceholders(f, "foo")
+	o.Dir = f
+	o.AppName = "bar"
+	o.GitRepositoryOptions.ServerURL = "github.com"
+	o.Organisation = "foo"
+	o.replacePlaceholders()
 
 	// root file
 	testFile, err := util.LoadBytes(f, "file.txt")
-	assert.Equal(t, string(testFile), "foo", "replaced placeholder")
+	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
 
 	// dir1
 	testDir1 := path.Join(f, "dir1")
 	testFile, err = util.LoadBytes(testDir1, "file.txt")
-	assert.Equal(t, string(testFile), "foo", "replaced placeholder")
+	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
 
 	// dir2
 	testDir2 := path.Join(f, "dir2")
 	testFile, err = util.LoadBytes(testDir2, "file.txt")
-	assert.Equal(t, string(testFile), "foo", "replaced placeholder")
+	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
 
 }

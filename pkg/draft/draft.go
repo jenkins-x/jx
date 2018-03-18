@@ -19,8 +19,8 @@ import (
 
 // doPackDetection performs pack detection across all the packs available in $(draft home)/packs in
 // alphabetical order, returning the pack dirpath and any errors that occurred during the pack detection.
-func DoPackDetection(home draftpath.Home, out io.Writer) (string, error) {
-	langs, err := linguist.ProcessDir(".")
+func DoPackDetection(home draftpath.Home, out io.Writer, dir string) (string, error) {
+	langs, err := linguist.ProcessDir(dir)
 	if err != nil {
 		return "", fmt.Errorf("there was an error detecting the language: %s", err)
 	}
