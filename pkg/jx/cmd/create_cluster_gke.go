@@ -233,7 +233,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 	if labels != "" {
-		args = append(args, "--labels="+labels)
+		args = append(args, "--labels="+strings.ToLower(labels))
 	}
 
 	err = o.runCommand("gcloud", args...)
