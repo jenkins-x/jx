@@ -101,6 +101,7 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir st
 		fmt.Fprintf(out, "Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
 		fmt.Fprintln(out)
 		fmt.Fprintf(out, "You can view the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
+		fmt.Fprintf(out, "Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
 		fmt.Fprintf(out, "Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
 		fmt.Fprintf(out, "View pipeline activity via:     %s\n", util.ColorInfo("jx get activity"))
 		fmt.Fprintf(out, "When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
