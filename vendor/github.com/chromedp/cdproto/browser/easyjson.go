@@ -1088,7 +1088,7 @@ func (v *GetHistogramParams) UnmarshalJSON(data []byte) error {
 func (v *GetHistogramParams) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser11(l, v)
 }
-func easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser12(in *jlexer.Lexer, out *GetCommandLineReturns) {
+func easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser12(in *jlexer.Lexer, out *GetBrowserCommandLineReturns) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1140,7 +1140,7 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser12(in *jlexer.Lexer, o
 		in.Consumed()
 	}
 }
-func easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser12(out *jwriter.Writer, in GetCommandLineReturns) {
+func easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser12(out *jwriter.Writer, in GetBrowserCommandLineReturns) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1167,29 +1167,29 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser12(out *jwriter.Writer
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v GetCommandLineReturns) MarshalJSON() ([]byte, error) {
+func (v GetBrowserCommandLineReturns) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser12(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v GetCommandLineReturns) MarshalEasyJSON(w *jwriter.Writer) {
+func (v GetBrowserCommandLineReturns) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser12(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *GetCommandLineReturns) UnmarshalJSON(data []byte) error {
+func (v *GetBrowserCommandLineReturns) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser12(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *GetCommandLineReturns) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *GetBrowserCommandLineReturns) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser12(l, v)
 }
-func easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser13(in *jlexer.Lexer, out *GetCommandLineParams) {
+func easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser13(in *jlexer.Lexer, out *GetBrowserCommandLineParams) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1218,7 +1218,7 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser13(in *jlexer.Lexer, o
 		in.Consumed()
 	}
 }
-func easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser13(out *jwriter.Writer, in GetCommandLineParams) {
+func easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser13(out *jwriter.Writer, in GetBrowserCommandLineParams) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1226,26 +1226,26 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser13(out *jwriter.Writer
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v GetCommandLineParams) MarshalJSON() ([]byte, error) {
+func (v GetBrowserCommandLineParams) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
 	easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser13(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v GetCommandLineParams) MarshalEasyJSON(w *jwriter.Writer) {
+func (v GetBrowserCommandLineParams) MarshalEasyJSON(w *jwriter.Writer) {
 	easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser13(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *GetCommandLineParams) UnmarshalJSON(data []byte) error {
+func (v *GetBrowserCommandLineParams) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
 	easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser13(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *GetCommandLineParams) UnmarshalEasyJSON(l *jlexer.Lexer) {
+func (v *GetBrowserCommandLineParams) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser13(l, v)
 }
 func easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser14(in *jlexer.Lexer, out *CloseParams) {

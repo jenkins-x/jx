@@ -168,6 +168,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoDomsnapshot1(in *jlexer.Lexer
 			}
 		case "styleIndex":
 			out.StyleIndex = int64(in.Int64())
+		case "paintOrder":
+			out.PaintOrder = int64(in.Int64())
 		default:
 			in.SkipRecursive()
 		}
@@ -248,6 +250,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoDomsnapshot1(out *jwriter.Wri
 			out.RawString(prefix)
 		}
 		out.Int64(int64(in.StyleIndex))
+	}
+	if in.PaintOrder != 0 {
+		const prefix string = ",\"paintOrder\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.PaintOrder))
 	}
 	out.RawByte('}')
 }
@@ -647,6 +659,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoDomsnapshot4(in *jlexer.Lexer
 			}
 		case "includeEventListeners":
 			out.IncludeEventListeners = bool(in.Bool())
+		case "includePaintOrder":
+			out.IncludePaintOrder = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -691,6 +705,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoDomsnapshot4(out *jwriter.Wri
 			out.RawString(prefix)
 		}
 		out.Bool(bool(in.IncludeEventListeners))
+	}
+	if in.IncludePaintOrder {
+		const prefix string = ",\"includePaintOrder\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.IncludePaintOrder))
 	}
 	out.RawByte('}')
 }

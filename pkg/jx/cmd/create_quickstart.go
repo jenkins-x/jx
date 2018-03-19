@@ -28,6 +28,8 @@ var (
 
 		This will create a new project for you from the selected template.
 
+		For more documentation see: [http://jenkins-x.io/developing/create-quickstart/](http://jenkins-x.io/developing/create-quickstart/)
+
 `)
 
 	create_quickstart_example = templates.Examples(`

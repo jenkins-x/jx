@@ -99,11 +99,23 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir st
 			return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
 		}
 		fmt.Fprintf(out, "Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
+		fmt.Fprintln(out)
+		fmt.Fprintf(out, "You can view the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
+		fmt.Fprintf(out, "Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
+		fmt.Fprintf(out, "Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
+		fmt.Fprintf(out, "View pipeline activity via:     %s\n", util.ColorInfo("jx get activity"))
+		fmt.Fprintf(out, "When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
+		fmt.Fprintln(out)
+		fmt.Fprintf(out, "For more help on available commands see: %s\n", util.ColorInfo("http://jenkins-x.io/developing/browsing/"))
+		fmt.Fprintln(out)
+		fmt.Fprintf(out, util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary docker images get downloaded!\n\n"))
+
 		params := url.Values{}
 		err = jenk.Build(job, params)
 		if err != nil {
 			return fmt.Errorf("Failed to trigger job %s due to %s", job.Url, err)
 		}
+
 	}
 
 	// register the webhook

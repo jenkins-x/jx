@@ -30,51 +30,12 @@ func (t RemoteObjectID) String() string {
 }
 
 // UnserializableValue primitive value which cannot be JSON-stringified.
+// Includes values -0, NaN, Infinity, -Infinity, and bigint literals.
 type UnserializableValue string
 
 // String returns the UnserializableValue as string value.
 func (t UnserializableValue) String() string {
 	return string(t)
-}
-
-// UnserializableValue values.
-const (
-	UnserializableValueInfinity         UnserializableValue = "Infinity"
-	UnserializableValueNaN              UnserializableValue = "NaN"
-	UnserializableValueNegativeInfinity UnserializableValue = "-Infinity"
-	UnserializableValueNegative         UnserializableValue = "-0"
-)
-
-// MarshalEasyJSON satisfies easyjson.Marshaler.
-func (t UnserializableValue) MarshalEasyJSON(out *jwriter.Writer) {
-	out.String(string(t))
-}
-
-// MarshalJSON satisfies json.Marshaler.
-func (t UnserializableValue) MarshalJSON() ([]byte, error) {
-	return easyjson.Marshal(t)
-}
-
-// UnmarshalEasyJSON satisfies easyjson.Unmarshaler.
-func (t *UnserializableValue) UnmarshalEasyJSON(in *jlexer.Lexer) {
-	switch UnserializableValue(in.String()) {
-	case UnserializableValueInfinity:
-		*t = UnserializableValueInfinity
-	case UnserializableValueNaN:
-		*t = UnserializableValueNaN
-	case UnserializableValueNegativeInfinity:
-		*t = UnserializableValueNegativeInfinity
-	case UnserializableValueNegative:
-		*t = UnserializableValueNegative
-
-	default:
-		in.AddError(errors.New("unknown UnserializableValue value"))
-	}
-}
-
-// UnmarshalJSON satisfies json.Unmarshaler.
-func (t *UnserializableValue) UnmarshalJSON(buf []byte) error {
-	return easyjson.Unmarshal(buf, t)
 }
 
 // RemoteObject mirror object referencing original JavaScript object.
@@ -272,6 +233,7 @@ const (
 	TypeNumber    Type = "number"
 	TypeBoolean   Type = "boolean"
 	TypeSymbol    Type = "symbol"
+	TypeBigint    Type = "bigint"
 	TypeAccessor  Type = "accessor"
 )
 
@@ -302,6 +264,8 @@ func (t *Type) UnmarshalEasyJSON(in *jlexer.Lexer) {
 		*t = TypeBoolean
 	case TypeSymbol:
 		*t = TypeSymbol
+	case TypeBigint:
+		*t = TypeBigint
 	case TypeAccessor:
 		*t = TypeAccessor
 

@@ -64,29 +64,29 @@ func (p *GetVersionParams) Do(ctxt context.Context, h cdp.Executor) (protocolVer
 	return res.ProtocolVersion, res.Product, res.Revision, res.UserAgent, res.JsVersion, nil
 }
 
-// GetCommandLineParams returns the command line switches for the browser
-// process if, and only if --enable-automation is on the commandline.
-type GetCommandLineParams struct{}
+// GetBrowserCommandLineParams returns the command line switches for the
+// browser process if, and only if --enable-automation is on the commandline.
+type GetBrowserCommandLineParams struct{}
 
-// GetCommandLine returns the command line switches for the browser process
-// if, and only if --enable-automation is on the commandline.
-func GetCommandLine() *GetCommandLineParams {
-	return &GetCommandLineParams{}
+// GetBrowserCommandLine returns the command line switches for the browser
+// process if, and only if --enable-automation is on the commandline.
+func GetBrowserCommandLine() *GetBrowserCommandLineParams {
+	return &GetBrowserCommandLineParams{}
 }
 
-// GetCommandLineReturns return values.
-type GetCommandLineReturns struct {
+// GetBrowserCommandLineReturns return values.
+type GetBrowserCommandLineReturns struct {
 	Arguments []string `json:"arguments,omitempty"` // Commandline parameters
 }
 
-// Do executes Browser.getCommandLine against the provided context.
+// Do executes Browser.getBrowserCommandLine against the provided context.
 //
 // returns:
 //   arguments - Commandline parameters
-func (p *GetCommandLineParams) Do(ctxt context.Context, h cdp.Executor) (arguments []string, err error) {
+func (p *GetBrowserCommandLineParams) Do(ctxt context.Context, h cdp.Executor) (arguments []string, err error) {
 	// execute
-	var res GetCommandLineReturns
-	err = h.Execute(ctxt, CommandGetCommandLine, nil, &res)
+	var res GetBrowserCommandLineReturns
+	err = h.Execute(ctxt, CommandGetBrowserCommandLine, nil, &res)
 	if err != nil {
 		return nil, err
 	}
@@ -268,12 +268,12 @@ func (p *SetWindowBoundsParams) Do(ctxt context.Context, h cdp.Executor) (err er
 
 // Command names.
 const (
-	CommandClose              = "Browser.close"
-	CommandGetVersion         = "Browser.getVersion"
-	CommandGetCommandLine     = "Browser.getCommandLine"
-	CommandGetHistograms      = "Browser.getHistograms"
-	CommandGetHistogram       = "Browser.getHistogram"
-	CommandGetWindowBounds    = "Browser.getWindowBounds"
-	CommandGetWindowForTarget = "Browser.getWindowForTarget"
-	CommandSetWindowBounds    = "Browser.setWindowBounds"
+	CommandClose                 = "Browser.close"
+	CommandGetVersion            = "Browser.getVersion"
+	CommandGetBrowserCommandLine = "Browser.getBrowserCommandLine"
+	CommandGetHistograms         = "Browser.getHistograms"
+	CommandGetHistogram          = "Browser.getHistogram"
+	CommandGetWindowBounds       = "Browser.getWindowBounds"
+	CommandGetWindowForTarget    = "Browser.getWindowForTarget"
+	CommandSetWindowBounds       = "Browser.setWindowBounds"
 )

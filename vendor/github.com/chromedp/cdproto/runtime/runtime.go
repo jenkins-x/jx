@@ -495,7 +495,8 @@ func (p *GlobalLexicalScopeNamesParams) Do(ctxt context.Context, h cdp.Executor)
 
 // QueryObjectsParams [no description].
 type QueryObjectsParams struct {
-	PrototypeObjectID RemoteObjectID `json:"prototypeObjectId"` // Identifier of the prototype to return objects for.
+	PrototypeObjectID RemoteObjectID `json:"prototypeObjectId"`     // Identifier of the prototype to return objects for.
+	ObjectGroup       string         `json:"objectGroup,omitempty"` // Symbolic group name that can be used to release the results.
 }
 
 // QueryObjects [no description].
@@ -506,6 +507,13 @@ func QueryObjects(prototypeObjectID RemoteObjectID) *QueryObjectsParams {
 	return &QueryObjectsParams{
 		PrototypeObjectID: prototypeObjectID,
 	}
+}
+
+// WithObjectGroup symbolic group name that can be used to release the
+// results.
+func (p QueryObjectsParams) WithObjectGroup(objectGroup string) *QueryObjectsParams {
+	p.ObjectGroup = objectGroup
+	return &p
 }
 
 // QueryObjectsReturns return values.

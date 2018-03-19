@@ -77,7 +77,11 @@ var (
 		If you specify no other options or arguments then the current directory is imported.
 	    Or you can use '--dir' to specify a directory to import.
 
-	    You can specify the git URL as an argument.`)
+	    You can specify the git URL as an argument.
+	    
+		For more documentation see: [http://jenkins-x.io/developing/import/](http://jenkins-x.io/developing/import/)
+	    
+	`)
 
 	import_example = templates.Examples(`
 		# Import the current folder

@@ -1,7 +1,7 @@
 package: github.com/jenkins-x/jx
 import:
 - package: k8s.io/client-go
-  version: kubernetes-1.10.0-alpha.2
+  version: kubernetes-1.10.0-beta.4
 - package: k8s.io/apimachinery
 - package: k8s.io/api
 - package: k8s.io/code-generator

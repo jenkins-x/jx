@@ -20,7 +20,8 @@ import (
 type GetVersionOptions struct {
 	CommonOptions
 
-	UrlMode bool
+	HideUrl bool
+	HidePod bool
 }
 
 var (
@@ -29,11 +30,14 @@ var (
 `)
 
 	get_version_example = templates.Examples(`
-		# List applications for all environments
+		# List applications, their URL and pod counts for all environments
 		jx get apps
 
-		# List applications and their URLs for all environments
+		# List applications hiding the URLs
 		jx get apps -u
+
+		# List applications just showing the versions (hiding urls and pod counts)
+		jx get apps -u -p
 	`)
 )
 
@@ -59,7 +63,8 @@ func NewCmdGetVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.UrlMode, "url", "u", false, "Show the URLs rather than pod numbers")
+	cmd.Flags().BoolVarP(&options.HideUrl, "url", "u", false, "Hide the URLs")
+	cmd.Flags().BoolVarP(&options.HidePod, "pod", "p", false, "Hide the pod counts")
 	return cmd
 }
 
@@ -127,11 +132,13 @@ func (o *GetVersionOptions) Run() error {
 	table := o.CreateTable()
 	titles := []string{"APPLICATION"}
 	for _, ea := range envApps {
-		title := "PODS"
-		if o.UrlMode {
-			title = "URL"
+		titles = append(titles, strings.ToUpper(ea.Environment.Name))
+		if !o.HidePod {
+			titles = append(titles, "PODS")
 		}
-		titles = append(titles, strings.ToUpper(ea.Environment.Name), title)
+		if !o.HideUrl {
+			titles = append(titles, "URL")
+		}
 	}
 	table.AddRow(titles...)
 
@@ -139,26 +146,27 @@ func (o *GetVersionOptions) Run() error {
 		row := []string{appName}
 		for _, ea := range envApps {
 			version := ""
-			pods := ""
 			d := ea.Apps[appName]
 			version = kube.GetVersion(&d.ObjectMeta)
-			if o.UrlMode {
-				url, _ := kube.FindServiceURL(kubeClient, d.Namespace, appName)
-				if url == "" {
-					url, _ = kube.FindServiceURL(kubeClient, d.Namespace, d.Name)
-				}
-				if url != "" {
-					pods = url
-				}
-			} else {
+			row = append(row, version)
+
+			if !o.HidePod {
+				pods := ""
 				replicas := ""
 				ready := d.Status.ReadyReplicas
 				if d.Spec.Replicas != nil && ready > 0 {
 					replicas = formatInt32(*d.Spec.Replicas)
 					pods = formatInt32(ready) + "/" + replicas
 				}
+				row = append(row, pods)
 			}
-			row = append(row, version, pods)
+			if !o.HideUrl {
+				url, _ := kube.FindServiceURL(kubeClient, d.Namespace, appName)
+				if url == "" {
+					url, _ = kube.FindServiceURL(kubeClient, d.Namespace, d.Name)
+				}
+				row = append(row, url)
+			}
 		}
 		table.AddRow(row...)
 	}

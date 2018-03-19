@@ -92,7 +92,7 @@ const (
 	CommandAuditsGetEncodedResponse                        = audits.CommandGetEncodedResponse
 	CommandBrowserClose                                    = browser.CommandClose
 	CommandBrowserGetVersion                               = browser.CommandGetVersion
-	CommandBrowserGetCommandLine                           = browser.CommandGetCommandLine
+	CommandBrowserGetBrowserCommandLine                    = browser.CommandGetBrowserCommandLine
 	CommandBrowserGetHistograms                            = browser.CommandGetHistograms
 	CommandBrowserGetHistogram                             = browser.CommandGetHistogram
 	CommandBrowserGetWindowBounds                          = browser.CommandGetWindowBounds
@@ -260,6 +260,7 @@ const (
 	EventEmulationVirtualTimeBudgetExpired                 = "Emulation.virtualTimeBudgetExpired"
 	EventEmulationVirtualTimePaused                        = "Emulation.virtualTimePaused"
 	CommandHeadlessExperimentalBeginFrame                  = headlessexperimental.CommandBeginFrame
+	CommandHeadlessExperimentalEnterDeterministicMode      = headlessexperimental.CommandEnterDeterministicMode
 	CommandHeadlessExperimentalDisable                     = headlessexperimental.CommandDisable
 	CommandHeadlessExperimentalEnable                      = headlessexperimental.CommandEnable
 	EventHeadlessExperimentalNeedsBeginFramesChanged       = "HeadlessExperimental.needsBeginFramesChanged"
@@ -636,8 +637,8 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 	case CommandBrowserGetVersion:
 		v = new(browser.GetVersionReturns)
 
-	case CommandBrowserGetCommandLine:
-		v = new(browser.GetCommandLineReturns)
+	case CommandBrowserGetBrowserCommandLine:
+		v = new(browser.GetBrowserCommandLineReturns)
 
 	case CommandBrowserGetHistograms:
 		v = new(browser.GetHistogramsReturns)
@@ -1139,6 +1140,9 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 
 	case CommandHeadlessExperimentalBeginFrame:
 		v = new(headlessexperimental.BeginFrameReturns)
+
+	case CommandHeadlessExperimentalEnterDeterministicMode:
+		return emptyVal, nil
 
 	case CommandHeadlessExperimentalDisable:
 		return emptyVal, nil

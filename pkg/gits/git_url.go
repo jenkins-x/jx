@@ -65,6 +65,12 @@ func (i *GitRepositoryInfo) HostURLWithoutUser() string {
 	return i.HttpURL()
 }
 
+// PipelinePath returns the pipeline path for the master branch which can be used to query
+// pipeline logs in `jx get build logs myPipelinePath`
+func (i *GitRepositoryInfo) PipelinePath() string {
+	return i.Organisation + "/" + i.Name + "/master"
+}
+
 // ParseGitURL attempts to parse the given text as a URL or git URL-like string to determine
 // the protocol, host, organisation and name
 func ParseGitURL(text string) (*GitRepositoryInfo, error) {

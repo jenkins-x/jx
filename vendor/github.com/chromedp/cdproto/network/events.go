@@ -75,6 +75,7 @@ type EventRequestWillBeSent struct {
 	RedirectResponse *Response           `json:"redirectResponse,omitempty"` // Redirect response data.
 	Type             page.ResourceType   `json:"type,omitempty"`             // Type of this resource.
 	FrameID          cdp.FrameID         `json:"frameId,omitempty"`          // Frame identifier.
+	HasUserGesture   bool                `json:"hasUserGesture,omitempty"`   // Whether the request is initiated by a user gesture. Defaults to false.
 }
 
 // EventResourceChangedPriority fired when resource loading priority is

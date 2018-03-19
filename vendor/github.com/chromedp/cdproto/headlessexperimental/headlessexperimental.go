@@ -109,6 +109,33 @@ func (p *BeginFrameParams) Do(ctxt context.Context, h cdp.Executor) (hasDamage b
 	return res.HasDamage, dec, nil
 }
 
+// EnterDeterministicModeParams puts the browser into deterministic mode.
+// Only effective for subsequently created web contents. Only supported in
+// headless mode. Once set there's no way of leaving deterministic mode.
+type EnterDeterministicModeParams struct {
+	InitialDate float64 `json:"initialDate,omitempty"` // Number of seconds since the Epoch
+}
+
+// EnterDeterministicMode puts the browser into deterministic mode. Only
+// effective for subsequently created web contents. Only supported in headless
+// mode. Once set there's no way of leaving deterministic mode.
+//
+// parameters:
+func EnterDeterministicMode() *EnterDeterministicModeParams {
+	return &EnterDeterministicModeParams{}
+}
+
+// WithInitialDate number of seconds since the Epoch.
+func (p EnterDeterministicModeParams) WithInitialDate(initialDate float64) *EnterDeterministicModeParams {
+	p.InitialDate = initialDate
+	return &p
+}
+
+// Do executes HeadlessExperimental.enterDeterministicMode against the provided context.
+func (p *EnterDeterministicModeParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandEnterDeterministicMode, p, nil)
+}
+
 // DisableParams disables headless events for the target.
 type DisableParams struct{}
 
@@ -137,7 +164,8 @@ func (p *EnableParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
 
 // Command names.
 const (
-	CommandBeginFrame = "HeadlessExperimental.beginFrame"
-	CommandDisable    = "HeadlessExperimental.disable"
-	CommandEnable     = "HeadlessExperimental.enable"
+	CommandBeginFrame             = "HeadlessExperimental.beginFrame"
+	CommandEnterDeterministicMode = "HeadlessExperimental.enterDeterministicMode"
+	CommandDisable                = "HeadlessExperimental.disable"
+	CommandEnable                 = "HeadlessExperimental.enable"
 )
