@@ -23,6 +23,7 @@ import (
 type GetSnapshotParams struct {
 	ComputedStyleWhitelist []string `json:"computedStyleWhitelist"`          // Whitelist of computed styles to return.
 	IncludeEventListeners  bool     `json:"includeEventListeners,omitempty"` // Whether or not to retrieve details of DOM listeners (default false).
+	IncludePaintOrder      bool     `json:"includePaintOrder,omitempty"`     // Whether to determine and include the paint order index of LayoutTreeNodes (default false).
 }
 
 // GetSnapshot returns a document snapshot, including the full DOM tree of
@@ -42,6 +43,13 @@ func GetSnapshot(computedStyleWhitelist []string) *GetSnapshotParams {
 // listeners (default false).
 func (p GetSnapshotParams) WithIncludeEventListeners(includeEventListeners bool) *GetSnapshotParams {
 	p.IncludeEventListeners = includeEventListeners
+	return &p
+}
+
+// WithIncludePaintOrder whether to determine and include the paint order
+// index of LayoutTreeNodes (default false).
+func (p GetSnapshotParams) WithIncludePaintOrder(includePaintOrder bool) *GetSnapshotParams {
+	p.IncludePaintOrder = includePaintOrder
 	return &p
 }
 

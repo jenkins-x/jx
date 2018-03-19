@@ -54,6 +54,7 @@ type LayoutTreeNode struct {
 	LayoutText      string           `json:"layoutText,omitempty"`      // Contents of the LayoutText, if any.
 	InlineTextNodes []*InlineTextBox `json:"inlineTextNodes,omitempty"` // The post-layout inline text nodes, if any.
 	StyleIndex      int64            `json:"styleIndex,omitempty"`      // Index into the computedStyles array returned by getSnapshot.
+	PaintOrder      int64            `json:"paintOrder,omitempty"`      // Global paint order index, which is determined by the stacking order of the nodes. Nodes that are painted together will have the same index. Only provided if includePaintOrder in getSnapshot was true.
 }
 
 // ComputedStyle a subset of the full ComputedStyle as defined by the request

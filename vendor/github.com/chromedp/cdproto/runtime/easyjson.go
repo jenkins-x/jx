@@ -679,7 +679,7 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoRuntime6(in *jlexer.Lexer, ou
 		case "value":
 			(out.Value).UnmarshalEasyJSON(in)
 		case "unserializableValue":
-			(out.UnserializableValue).UnmarshalEasyJSON(in)
+			out.UnserializableValue = UnserializableValue(in.String())
 		case "description":
 			out.Description = string(in.String())
 		case "objectId":
@@ -766,7 +766,7 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoRuntime6(out *jwriter.Writer,
 		} else {
 			out.RawString(prefix)
 		}
-		(in.UnserializableValue).MarshalEasyJSON(out)
+		out.String(string(in.UnserializableValue))
 	}
 	if in.Description != "" {
 		const prefix string = ",\"description\":"
@@ -1076,6 +1076,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoRuntime10(in *jlexer.Lexer, o
 		switch key {
 		case "prototypeObjectId":
 			out.PrototypeObjectID = RemoteObjectID(in.String())
+		case "objectGroup":
+			out.ObjectGroup = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -1099,6 +1101,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoRuntime10(out *jwriter.Writer
 			out.RawString(prefix)
 		}
 		out.String(string(in.PrototypeObjectID))
+	}
+	if in.ObjectGroup != "" {
+		const prefix string = ",\"objectGroup\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.ObjectGroup))
 	}
 	out.RawByte('}')
 }
@@ -4557,7 +4569,7 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoRuntime40(in *jlexer.Lexer, o
 		case "value":
 			(out.Value).UnmarshalEasyJSON(in)
 		case "unserializableValue":
-			(out.UnserializableValue).UnmarshalEasyJSON(in)
+			out.UnserializableValue = UnserializableValue(in.String())
 		case "objectId":
 			out.ObjectID = RemoteObjectID(in.String())
 		default:
@@ -4592,7 +4604,7 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoRuntime40(out *jwriter.Writer
 		} else {
 			out.RawString(prefix)
 		}
-		(in.UnserializableValue).MarshalEasyJSON(out)
+		out.String(string(in.UnserializableValue))
 	}
 	if in.ObjectID != "" {
 		const prefix string = ",\"objectId\":"

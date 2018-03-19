@@ -5428,6 +5428,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoNetwork44(in *jlexer.Lexer, o
 			(out.Type).UnmarshalEasyJSON(in)
 		case "frameId":
 			(out.FrameID).UnmarshalEasyJSON(in)
+		case "hasUserGesture":
+			out.HasUserGesture = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -5557,6 +5559,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoNetwork44(out *jwriter.Writer
 			out.RawString(prefix)
 		}
 		out.String(string(in.FrameID))
+	}
+	if in.HasUserGesture {
+		const prefix string = ",\"hasUserGesture\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.HasUserGesture))
 	}
 	out.RawByte('}')
 }

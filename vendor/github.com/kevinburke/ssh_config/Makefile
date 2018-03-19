@@ -16,9 +16,9 @@ test: lint
 	go test -timeout=50ms ./...
 
 $(BUMP_VERSION):
-	go get github.com/Shyp/bump_version
+	go get -u github.com/Shyp/bump_version
 
-release: $(BUMP_VERSION)
+release: test | $(BUMP_VERSION)
 	$(BUMP_VERSION) minor config.go
 
 force: ;
