@@ -83,6 +83,8 @@ var (
 		- gcloud (Google Cloud CLI)
 		- az (Azure CLI)
 
+		For more documentation see: [http://jenkins-x.io/getting-started/create-cluster/](http://jenkins-x.io/getting-started/create-cluster/)
+
 `)
 
 	createClusterExample = templates.Examples(`

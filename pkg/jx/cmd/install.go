@@ -76,6 +76,9 @@ var (
 		Requires a --git-username and either --git-token or --git-password that can be used to create a new token.
 		This is so the Jenkins X platform can git tag your releases
 
+		For more documentation see: [http://jenkins-x.io/getting-started/install-on-cluster/](http://jenkins-x.io/getting-started/install-on-cluster/)
+
+
 `)
 
 	instalExample = templates.Examples(`
