@@ -83,6 +83,9 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 	} else {
 		url, err = o.findService(name)
 	}
+	if err != nil && name != "" {
+		o.Printf("If the app %s is running in a different environment you could try: %s\n", util.ColorInfo(name), util.ColorInfo("jx get applications"))
+	}
 	if err != nil {
 		return err
 	}
