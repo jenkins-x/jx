@@ -175,7 +175,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		prompts := &survey.Select{
 			Message:  "Google Cloud Machine Type:",
 			Options:  gke.GetGoogleMachineTypes(),
-			Help:     "A table of machine descriptions can be found here https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-architecture",
+			Help:     "We recommend a minimum of n1-standard-2 for Jenkins X,  a table of machine descriptions can be found here https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-architecture",
 			PageSize: 10,
 			Default:  "n1-standard-2",
 		}
@@ -191,7 +191,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		prompt := &survey.Input{
 			Message: "Number of Nodes",
 			Default: "3",
-			Help:    "The number of nodes to be created in each of the cluster's zones",
+			Help:    "We recommend a minimum of 3 for Jenkins X,  the number of nodes to be created in each of the cluster's zones",
 		}
 
 		survey.AskOne(prompt, &numOfNodes, nil)
