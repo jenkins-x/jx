@@ -118,6 +118,10 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir st
 
 	}
 
+	// lets disable webhooks for gitea
+	if gitProvider.IsGitea() {
+		return nil
+	}
 	// register the webhook
 	suffix := gitProvider.JenkinsWebHookPath(gitURL, "")
 	webhookUrl := util.UrlJoin(jenk.BaseURL(), suffix)

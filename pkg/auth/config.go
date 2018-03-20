@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -150,7 +151,7 @@ func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
 			Message: message,
 			Options: urls,
 		}
-		err := survey.AskOne(prompt, &url, nil)
+		err := survey.AskOne(prompt, &url, survey.Required)
 		if err != nil {
 			return nil, err
 		}
@@ -282,4 +283,36 @@ func (config *AuthConfig) GetServerURLs() []string {
 	}
 	sort.Strings(answer)
 	return answer
+}
+
+// PickOrCreateServer picks the server to use defaulting to the current server
+func (config *AuthConfig) PickOrCreateServer(defaultServerURL string, message string) (*AuthServer, error) {
+	servers := config.Servers
+	if len(servers) == 1 {
+		return servers[0], nil
+	}
+	if len(servers) == 0 {
+		return config.GetOrCreateServer(defaultServerURL), nil
+	}
+	// lets let the user pick which server to use defaulting to the current server
+	names := []string{}
+	for _, s := range servers {
+		u := s.URL
+		if u != "" {
+			names = append(names, u)
+		}
+	}
+	defaultValue := config.CurrentServer
+	if defaultValue == "" {
+		defaultValue = names[0]
+	}
+	name, err := util.PickRequiredNameWithDefault(names, message, defaultValue)
+	if err != nil {
+		return nil, err
+	}
+	if name == "" {
+		return nil, fmt.Errorf("No server URL chosen!")
+	}
+	return config.GetOrCreateServer(name), nil
+
 }
