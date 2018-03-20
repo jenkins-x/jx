@@ -43,6 +43,10 @@ type GitProvider interface {
 
 	IsGitHub() bool
 
+	IsGitea() bool
+
+	Kind() string
+
 	GetIssue(org string, name string, number int) (*GitIssue, error)
 
 	CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error)
@@ -67,6 +71,9 @@ type GitProvider interface {
 	// * git plugin
 	// /git/notifyCommit?url=
 	// http://kohsuke.org/2011/12/01/polling-must-die-triggering-jenkins-builds-from-a-git-hook/
+	//
+	// * gitea
+	// /gitea-webhook/post
 	//
 	// * generic webhook
 	// /generic-webhook-trigger/invoke?token=abc123

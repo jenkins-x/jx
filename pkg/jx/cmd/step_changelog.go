@@ -288,7 +288,7 @@ func (o *StepChangelogOptions) Run() error {
 		Spec: v1.ReleaseSpec{
 			Name:         SpecName,
 			Version:      version,
-			GitHTTPURL:   gitInfo.HttpURL(),
+			GitHTTPURL:   gitInfo.HttpsURL(),
 			GitCloneURL:  gitInfo.HttpCloneURL(),
 			Commits:      []v1.CommitSummary{},
 			Issues:       []v1.IssueSummary{},
@@ -328,7 +328,7 @@ func (o *StepChangelogOptions) Run() error {
 			url = releaseInfo.URL
 		}
 		if url == "" {
-			url = util.UrlJoin(gitInfo.HttpURL(), "releases/tag", version)
+			url = util.UrlJoin(gitInfo.HttpsURL(), "releases/tag", version)
 		}
 		release.Spec.ReleaseNotesURL = url
 		if err != nil {

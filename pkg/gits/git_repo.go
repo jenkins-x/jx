@@ -35,41 +35,43 @@ func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 	return d.GitProvider.CreateRepository(d.Organisation, d.RepoName, d.PrivateRepo)
 }
 
-func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string, repoOptions GitRepositoryOptions) (*CreateRepoData, error) {
+func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string, repoOptions GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth) (*CreateRepoData, error) {
 	config := authConfigSvc.Config()
 
 	var err error
-	var server *auth.AuthServer
-	if repoOptions.ServerURL != "" {
-		server = config.GetOrCreateServer(repoOptions.ServerURL)
-	} else {
-		server, err = config.PickServer("Which git provider?")
-		if err != nil {
-			return nil, err
+	if server == nil {
+		if repoOptions.ServerURL != "" {
+			server = config.GetOrCreateServer(repoOptions.ServerURL)
+		} else {
+			server, err = config.PickServer("Which git service?")
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	fmt.Fprintf(out, "Using git provider %s\n", util.ColorInfo(server.Description()))
 	url := server.URL
-	var userAuth *auth.UserAuth
-	if repoOptions.Username != "" {
-		userAuth = config.GetOrCreateUserAuth(url, repoOptions.Username)
-	} else {
-		if batchMode {
-			if len(server.Users) == 0 {
-				return nil, fmt.Errorf("Server %s has no user auths defined!", url)
-			}
-			var ua *auth.UserAuth
-			if server.CurrentUser != "" {
-				ua = config.FindUserAuth(url, server.CurrentUser)
-			}
-			if ua == nil {
-				ua = server.Users[0]
-			}
-			userAuth = ua
+	if userAuth == nil {
+		if repoOptions.Username != "" {
+			userAuth = config.GetOrCreateUserAuth(url, repoOptions.Username)
 		} else {
-			userAuth, err = config.PickServerUserAuth(server, "git user name?", batchMode)
-			if err != nil {
-				return nil, err
+			if batchMode {
+				if len(server.Users) == 0 {
+					return nil, fmt.Errorf("Server %s has no user auths defined!", url)
+				}
+				var ua *auth.UserAuth
+				if server.CurrentUser != "" {
+					ua = config.FindUserAuth(url, server.CurrentUser)
+				}
+				if ua == nil {
+					ua = server.Users[0]
+				}
+				userAuth = ua
+			} else {
+				userAuth, err = config.PickServerUserAuth(server, "git user name?", batchMode)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

@@ -32,18 +32,46 @@ func (i *GitRepositoryInfo) PullRequestURL(prName string) string {
 
 // HttpCloneURL returns the HTTPS git URL this repository
 func (i *GitRepositoryInfo) HttpCloneURL() string {
-	return i.HttpURL() + ".git"
+	return i.HttpsURL() + ".git"
 }
 
 // HttpURL returns the URL to browse this repository in a web browser
 func (i *GitRepositoryInfo) HttpURL() string {
-	return util.UrlJoin("https://"+i.Host, i.Organisation, i.Name)
+	host := i.Host
+	if !strings.Contains(host, ":/") {
+		host = "http://" + host
+	}
+	return util.UrlJoin(host, i.Organisation, i.Name)
+}
+
+// HttpsURL returns the URL to browse this repository in a web browser
+func (i *GitRepositoryInfo) HttpsURL() string {
+	host := i.Host
+	if !strings.Contains(host, ":/") {
+		host = "https://" + host
+	}
+	return util.UrlJoin(host, i.Organisation, i.Name)
 }
 
 // HostURL returns the URL to the host
 func (i *GitRepositoryInfo) HostURL() string {
 	answer := i.Host
-	if !strings.HasPrefix(answer, "http:") {
+	if !strings.Contains(answer, ":/") {
+		// lets find the scheme from the URL
+		u := i.URL
+		if u != "" {
+			u2, err := url.Parse(u)
+			if err != nil {
+				fmt.Printf("WARNING: could not parse URL: %s due to %s\n", u, err)
+			}
+			s := u2.Scheme
+			if s != "" {
+				if !strings.HasSuffix(s, "://") {
+					s += "://"
+				}
+				return s + answer
+			}
+		}
 		return "https://" + answer
 	}
 	return answer
@@ -62,7 +90,7 @@ func (i *GitRepositoryInfo) HostURLWithoutUser() string {
 			return u2.String()
 		}
 	}
-	return i.HttpURL()
+	return i.HttpsURL()
 }
 
 // PipelinePath returns the pipeline path for the master branch which can be used to query

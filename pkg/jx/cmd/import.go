@@ -69,6 +69,8 @@ type ImportOptions struct {
 	DisableDotGitSearch bool
 	Jenkins             *gojenkins.Jenkins
 	GitConfDir          string
+	GitServer           *auth.AuthServer
+	GitUserAuth         *auth.UserAuth
 	GitProvider         gits.GitProvider
 }
 
@@ -182,11 +184,17 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 		config := authConfigSvc.Config()
-		server := config.GetOrCreateServer(gits.GitHubHost)
+		server, err := config.PickOrCreateServer(gits.GitHubHost, "Which git service do you wish to use")
+		if err != nil {
+			return err
+		}
 		userAuth, err = config.PickServerUserAuth(server, "git user name", o.BatchMode)
 		if err != nil {
 			return err
 		}
+
+		o.GitServer = server
+		o.GitUserAuth = userAuth
 		o.GitProvider, err = gits.CreateProvider(server, userAuth)
 		if err != nil {
 			return err
@@ -274,7 +282,6 @@ func (o *ImportOptions) Run() error {
 }
 
 func (o *ImportOptions) ImportProjectsFromGitHub() error {
-
 	repos, err := gits.PickRepositories(o.GitProvider, o.Organisation, "Which repositories do you want to import", o.SelectAll, o.SelectFilter)
 	if err != nil {
 		return err
@@ -390,7 +397,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	dir := o.Dir
 	_, defaultRepoName := filepath.Split(dir)
 
-	details, err := gits.PickNewGitRepository(o.Out, o.BatchMode, authConfigSvc, defaultRepoName, o.GitRepositoryOptions)
+	details, err := gits.PickNewGitRepository(o.Out, o.BatchMode, authConfigSvc, defaultRepoName, o.GitRepositoryOptions, o.GitServer, o.GitUserAuth)
 	if err != nil {
 		return err
 	}

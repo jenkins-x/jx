@@ -74,6 +74,31 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
 		</source>
 `
 	}
+	if gitProvider.IsGitea() {
+		return `
+	    <source class="org.jenkinsci.plugin.gitea.GiteaSCMSource" plugin="gitea@1.0.5">
+          <id>db44ccb9-31c0-4b78-8989-614af3a87b9f</id>` + credXml + `
+          <serverUrl>` + info.HostURLWithoutUser() + `</serverUrl>
+          <repoOwner>` + info.Organisation + `</repoOwner>
+		  <repository>` + info.Name + `</repository>
+          <traits>
+            <org.jenkinsci.plugin.gitea.BranchDiscoveryTrait>
+              <strategyId>1</strategyId>
+            </org.jenkinsci.plugin.gitea.BranchDiscoveryTrait>
+            <org.jenkinsci.plugin.gitea.OriginPullRequestDiscoveryTrait>
+              <strategyId>1</strategyId>
+            </org.jenkinsci.plugin.gitea.OriginPullRequestDiscoveryTrait>
+            <org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait>
+              <strategyId>1</strategyId>
+              <trust class="org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait$TrustContributors"/>
+            </org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait>
+			<jenkins.scm.impl.trait.RegexSCMHeadFilterTrait plugin="scm-api@2.2.6">
+			  <regex>` + branches + `</regex>
+			</jenkins.scm.impl.trait.RegexSCMHeadFilterTrait>
+		  </traits>
+		</source>
+`
+	}
 	return `
 <source class="jenkins.plugins.git.GitSCMSource" plugin="git@3.7.0">
   <id>3ee777bd-6590-4b97-ac65-1ab01e7062ad</id>

@@ -475,8 +475,16 @@ func (p *GiteaProvider) IsGitHub() bool {
 	return false
 }
 
+func (p *GiteaProvider) IsGitea() bool {
+	return true
+}
+
+func (p *GiteaProvider) Kind() string {
+	return "gitea"
+}
+
 func (p *GiteaProvider) JenkinsWebHookPath(gitURL string, secret string) string {
-	return "/generic-webhook-trigger/invoke"
+	return "/gitea-webhook/post"
 }
 
 func GiteaAccessTokenURL(url string) string {

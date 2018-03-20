@@ -44,21 +44,43 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir st
 	}
 
 	if credentials == "" {
+		/*
+				TODO if we use git kind specific credentials then we'll have to edit the Jenkinsfile too...
+
+			kind := gitProvider.Kind()
+			if kind == "" {
+				kind = "git"
+			}
+			credentials = DefaultJenkinsCredentialsPrefix + strings.ToLower(kind)
+		*/
 		credentials = DefaultJenkinsCredentialsPrefix + "git"
 	}
 	_, err = jenk.GetCredential(credentials)
 	if err != nil {
 		config := authConfigSvc.Config()
-		server := config.GetOrCreateServer(gitInfo.Host)
+		u := gitInfo.HostURL()
+		server := config.GetOrCreateServer(u)
+		if len(server.Users) == 0 {
+			// lets check if the host was used in `~/.jx/gitAuth.yaml` instead of URL
+			s2 := config.GetOrCreateServer(gitInfo.Host)
+			if s2 != nil && len(s2.Users) > 0 {
+				server = s2
+				u = gitInfo.Host
+			}
+		}
 		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", false)
 		if err != nil {
 			return err
+		}
+		if user.Username == "" {
+			return fmt.Errorf("Could find a username for git server %s", u)
 		}
 		err = jenk.CreateCredential(credentials, user.Username, user.ApiToken)
 
 		if err != nil {
 			return fmt.Errorf("error creating jenkins credential %s at %s %v", credentials, jenk.BaseURL(), err)
 		}
+		fmt.Fprintf(out, "Created credential %s for host %s user %s\n", util.ColorInfo(credentials), util.ColorInfo(u), util.ColorInfo(user.Username))
 	}
 
 	org := gitInfo.Organisation
