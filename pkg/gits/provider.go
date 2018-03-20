@@ -43,6 +43,8 @@ type GitProvider interface {
 
 	IsGitHub() bool
 
+	IsGitea() bool
+
 	GetIssue(org string, name string, number int) (*GitIssue, error)
 
 	CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error)

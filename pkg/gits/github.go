@@ -579,6 +579,10 @@ func (p *GitHubProvider) IsGitHub() bool {
 	return true
 }
 
+func (p *GitHubProvider) IsGitea() bool {
+	return false
+}
+
 func (p *GitHubProvider) JenkinsWebHookPath(gitURL string, secret string) string {
 	return "/github-webhook/"
 }
