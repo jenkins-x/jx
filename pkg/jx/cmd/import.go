@@ -310,6 +310,17 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 	draftHome := draftpath.Home(draftDir)
 
+	// lets make sure we have the latest draft packs
+	initOpts := InitOptions{
+		CommonOptions: CommonOptions{
+			Out: o.Out,
+		},
+	}
+	err = initOpts.initDraft()
+	if err != nil {
+		return err
+	}
+
 	// TODO this is a workaround of this draft issue:
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
