@@ -63,6 +63,29 @@ func CreateUniqueDirectory(dir string, name string, maximumAttempts int) (string
 	}
 	return "", fmt.Errorf("Could not create a unique file in %s starting with %s after %d attempts", dir, name, maximumAttempts)
 }
+func RenameDir(src string, dst string, force bool) (err error) {
+	err = CopyDir(src, dst, force)
+	if err != nil {
+		return fmt.Errorf("failed to copy source dir %s to %s: %s", src, dst, err)
+	}
+	err = os.RemoveAll(src)
+	if err != nil {
+		return fmt.Errorf("failed to cleanup source dir %s: %s", src, err)
+	}
+	return nil
+}
+
+func RenameFile(src string, dst string) (err error) {
+	err = CopyFile(src, dst)
+	if err != nil {
+		return fmt.Errorf("failed to copy source file %s to %s: %s", src, dst, err)
+	}
+	err = os.RemoveAll(src)
+	if err != nil {
+		return fmt.Errorf("failed to cleanup source file %s: %s", src, err)
+	}
+	return nil
+}
 
 // credit https://gist.github.com/r0l1/92462b38df26839a3ca324697c8cba04
 func CopyDir(src string, dst string, force bool) (err error) {

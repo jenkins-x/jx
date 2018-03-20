@@ -753,7 +753,7 @@ func (o *ImportOptions) renameChartToMatchAppName() error {
 			return err
 		}
 		if exists {
-			err = os.Rename(oldChartsDir, newChartsDir)
+			err = util.RenameDir(oldChartsDir, newChartsDir, false)
 			if err != nil {
 				return fmt.Errorf("error renaming %s to %s, %v", oldChartsDir, newChartsDir, err)
 			}

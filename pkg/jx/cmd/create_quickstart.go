@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	create_quickstart_long = templates.LongDesc(`
+	createQuickstartLong = templates.LongDesc(`
 		Create a new project from a sample/starter (found in https://github.com/jenkins-x-quickstarts)
 
 		This will create a new project for you from the selected template.
@@ -33,7 +33,7 @@ var (
 
 `)
 
-	create_quickstart_example = templates.Examples(`
+	createQuickstartExample = templates.Examples(`
 		Create a new project from a sample/starter (found in https://github.com/jenkins-x-quickstarts)
 
 		This will create a new project for you from the selected template.
@@ -71,8 +71,8 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd := &cobra.Command{
 		Use:     "quickstart",
 		Short:   "Create a new app from a Quickstart and import the generated code into git and Jenkins for CI / CD",
-		Long:    create_quickstart_long,
-		Example: create_quickstart_example,
+		Long:    createQuickstartLong,
+		Example: createQuickstartExample,
 		Aliases: []string{"arch"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
@@ -136,14 +136,14 @@ func (o *CreateQuickstartOptions) Run() error {
 
 	model, err := o.LoadQuickstarts()
 	if err != nil {
-		return fmt.Errorf("Failed to load quickstarts: %s", err)
+		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
 	q, err := model.CreateSurvey(&o.Filter)
 	if err != nil {
 		return err
 	}
 	if q == nil {
-		return fmt.Errorf("No quickstart chosen")
+		return fmt.Errorf("no quickstart chosen")
 	}
 
 	dir := o.OutDir
@@ -170,7 +170,7 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	answer := filepath.Join(dir, f.Name)
 	u := q.DownloadZipURL
 	if u == "" {
-		return answer, fmt.Errorf("Quickstart %s does not have a download zip URL", q.ID)
+		return answer, fmt.Errorf("quickstart %s does not have a download zip URL", q.ID)
 	}
 	client := http.Client{}
 
@@ -191,15 +191,15 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	zipFile := filepath.Join(dir, "source.zip")
 	err = ioutil.WriteFile(zipFile, body, util.DefaultWritePermissions)
 	if err != nil {
-		return answer, fmt.Errorf("Failed to download file %s due to %s", zipFile, err)
+		return answer, fmt.Errorf("failed to download file %s due to %s", zipFile, err)
 	}
 	tmpDir, err := ioutil.TempDir("", "jx-source-")
 	if err != nil {
-		return answer, fmt.Errorf("Failed to create temporary directory: %s", err)
+		return answer, fmt.Errorf("failed to create temporary directory: %s", err)
 	}
 	err = util.Unzip(zipFile, tmpDir)
 	if err != nil {
-		return answer, fmt.Errorf("Failed to unzip new project file %s due to %s", zipFile, err)
+		return answer, fmt.Errorf("failed to unzip new project file %s due to %s", zipFile, err)
 	}
 	err = os.Remove(zipFile)
 	if err != nil {
@@ -207,11 +207,11 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	}
 	tmpDir, err = findFirstDirectory(tmpDir)
 	if err != nil {
-		return answer, fmt.Errorf("Failed to find a directory inside the source download: %s", err)
+		return answer, fmt.Errorf("failed to find a directory inside the source download: %s", err)
 	}
-	err = os.Rename(tmpDir, answer)
+	err = util.RenameDir(tmpDir, answer, false)
 	if err != nil {
-		return answer, fmt.Errorf("Failed to rename temp dir %s to %s: %s", tmpDir, answer, err)
+		return answer, fmt.Errorf("failed to rename temp dir %s to %s: %s", tmpDir, answer, err)
 	}
 	o.Printf("Generated quickstart at %s\n", answer)
 	return answer, nil
@@ -227,7 +227,7 @@ func findFirstDirectory(dir string) (string, error) {
 			return filepath.Join(dir, f.Name()), nil
 		}
 	}
-	return "", fmt.Errorf("No child directory found in %s", dir)
+	return "", fmt.Errorf("no child directory found in %s", dir)
 }
 
 func (o *CreateQuickstartOptions) LoadQuickstarts() (*quickstarts.QuickstartModel, error) {
