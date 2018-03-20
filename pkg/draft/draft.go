@@ -12,6 +12,7 @@ import (
 	"github.com/Azure/draft/pkg/draft/pack/repo"
 
 	"github.com/Azure/draft/pkg/linguist"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 )
 
 // copied from draft so we can change the $DRAFT_HOME to ~/.jx/draft and lookup jx draft packs
@@ -20,6 +21,7 @@ import (
 // doPackDetection performs pack detection across all the packs available in $(draft home)/packs in
 // alphabetical order, returning the pack dirpath and any errors that occurred during the pack detection.
 func DoPackDetection(home draftpath.Home, out io.Writer, dir string) (string, error) {
+	log.Infof("perforning pack detection in folder %s\n", dir)
 	langs, err := linguist.ProcessDir(dir)
 	if err != nil {
 		return "", fmt.Errorf("there was an error detecting the language: %s", err)

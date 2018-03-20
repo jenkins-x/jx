@@ -454,14 +454,36 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 				if issue == nil {
 					o.warnf("Failed to find issue %d for repository %s/%s\n", number, owner, repo)
 				}
+
+				var user v1.UserDetails
+				if issue.User == nil {
+					o.warnf("Failed to find user for issue %d repository %s/%s\n", number, owner, repo)
+				} else {
+					user = *o.gitUserToUserDetails(issue.User)
+				}
+
+				var closedBy v1.UserDetails
+				if issue.ClosedBy == nil {
+					o.warnf("Failed to find closedBy user for issue %d repository %s/%s\n", number, owner, repo)
+				} else {
+					closedBy = *o.gitUserToUserDetails(issue.User)
+				}
+
+				var assignees []v1.UserDetails
+				if issue.Assignees == nil {
+					o.warnf("Failed to find assignees for issue %d repository %s/%s\n", number, owner, repo)
+				} else {
+					assignees = o.gitUserToUserDetailSlice(issue.Assignees)
+				}
+
 				issueSummary := v1.IssueSummary{
 					ID:        numberText,
 					URL:       issue.URL,
 					Title:     issue.Title,
 					Body:      issue.Body,
-					User:      o.gitUserToUserDetails(issue.User),
-					ClosedBy:  o.gitUserToUserDetails(issue.ClosedBy),
-					Assignees: o.gitUserToUserDetailSlice(issue.Assignees),
+					User:      &user,
+					ClosedBy:  &closedBy,
+					Assignees: assignees,
 				}
 				state := issue.State
 				if state != nil {

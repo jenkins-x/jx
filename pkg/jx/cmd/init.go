@@ -47,6 +47,8 @@ type InitFlags struct {
 	HelmClient                 bool
 	RecreateExistingDraftRepos bool
 	GlobalTiller               bool
+	SkipIngress                bool
+	SkipTiller                 bool
 }
 
 const (
@@ -114,6 +116,8 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.Flags.HelmClient, "helm-client-only", "", false, "Only install helm client")
 	cmd.Flags().BoolVarP(&options.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
 	cmd.Flags().BoolVarP(&options.Flags.GlobalTiller, "global-tiller", "", true, "Whether or not to use a cluster global tiller")
+	cmd.Flags().BoolVarP(&options.Flags.SkipIngress, "skip-ingress", "", false, "Dont install an ingress controller")
+	cmd.Flags().BoolVarP(&options.Flags.SkipTiller, "skip-tiller", "", false, "Dont install a Helms Tiller service")
 }
 
 func (o *InitOptions) Run() error {
@@ -148,10 +152,13 @@ func (o *InitOptions) Run() error {
 	}
 
 	// install ingress
-	err = o.initIngress()
-	if err != nil {
-		log.Fatalf("ingress init failed: %v", err)
-		return err
+
+	if !o.Flags.SkipIngress {
+		err = o.initIngress()
+		if err != nil {
+			log.Fatalf("ingress init failed: %v", err)
+			return err
+		}
 	}
 
 	return nil
@@ -206,131 +213,136 @@ func (o *InitOptions) enableClusterAdminRole() error {
 }
 
 func (o *InitOptions) initHelm() error {
-	f := o.Factory
-	client, curNs, err := f.CreateClient()
-	if err != nil {
-		return err
-	}
+	var err error
 
-	serviceAccountName := "tiller"
-	tillerNamespace := o.Flags.TillerNamespace
+	if !o.Flags.SkipTiller {
 
-	if o.Flags.GlobalTiller {
-		if tillerNamespace == "" {
-			return util.MissingOption(optionTillerNamespace)
-		}
-	} else {
-		ns := o.Flags.Namespace
-		if ns == "" {
-			ns = curNs
-		}
-		if ns == "" {
-			return util.MissingOption(optionNamespace)
-		}
-		tillerNamespace = ns
-	}
-
-	err = o.ensureServiceAccount(tillerNamespace, serviceAccountName)
-	if err != nil {
-		return err
-	}
-
-	if o.Flags.GlobalTiller {
-		clusterRoleBindingName := serviceAccountName
-		role := o.Flags.TillerClusterRole
-
-		err = o.ensureClusterRoleBinding(clusterRoleBindingName, role, tillerNamespace, serviceAccountName)
+		f := o.Factory
+		client, curNs, err := f.CreateClient()
 		if err != nil {
 			return err
 		}
-	} else {
-		// lets create a tiller service account
-		roleName := "tiller-manager"
-		roleBindingName := "tiller-binding"
 
-		_, err = client.RbacV1().Roles(tillerNamespace).Get(roleName, meta_v1.GetOptions{})
-		if err != nil {
-			// lets create a Role for tiller
-			role := &rbacv1.Role{
-				ObjectMeta: meta_v1.ObjectMeta{
-					Name:      roleName,
-					Namespace: tillerNamespace,
-				},
-				Rules: []rbacv1.PolicyRule{
-					{
-						APIGroups: []string{"", "extensions", "apps"},
-						Resources: []string{"*"},
-						Verbs:     []string{"*"},
-					},
-				},
+		serviceAccountName := "tiller"
+		tillerNamespace := o.Flags.TillerNamespace
+
+		if o.Flags.GlobalTiller {
+			if tillerNamespace == "" {
+				return util.MissingOption(optionTillerNamespace)
 			}
-			_, err = client.RbacV1().Roles(tillerNamespace).Create(role)
-			if err != nil {
-				return fmt.Errorf("Failed to create Role %s in namespace %s: %s", roleName, tillerNamespace, err)
+		} else {
+			ns := o.Flags.Namespace
+			if ns == "" {
+				ns = curNs
 			}
-			o.Printf("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+			if ns == "" {
+				return util.MissingOption(optionNamespace)
+			}
+			tillerNamespace = ns
 		}
-		_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, meta_v1.GetOptions{})
+
+		err = o.ensureServiceAccount(tillerNamespace, serviceAccountName)
 		if err != nil {
-			// lets create a RoleBinding for tiller
-			roleBinding := &rbacv1.RoleBinding{
-				ObjectMeta: meta_v1.ObjectMeta{
-					Name:      roleBindingName,
-					Namespace: tillerNamespace,
-				},
-				Subjects: []rbacv1.Subject{
-					{
-						Kind:      "ServiceAccount",
-						Name:      serviceAccountName,
+			return err
+		}
+
+		if o.Flags.GlobalTiller {
+			clusterRoleBindingName := serviceAccountName
+			role := o.Flags.TillerClusterRole
+
+			err = o.ensureClusterRoleBinding(clusterRoleBindingName, role, tillerNamespace, serviceAccountName)
+			if err != nil {
+				return err
+			}
+		} else {
+			// lets create a tiller service account
+			roleName := "tiller-manager"
+			roleBindingName := "tiller-binding"
+
+			_, err = client.RbacV1().Roles(tillerNamespace).Get(roleName, meta_v1.GetOptions{})
+			if err != nil {
+				// lets create a Role for tiller
+				role := &rbacv1.Role{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      roleName,
 						Namespace: tillerNamespace,
 					},
-				},
-				RoleRef: rbacv1.RoleRef{
-					Kind:     "Role",
-					Name:     roleName,
-					APIGroup: "rbac.authorization.k8s.io",
-				},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{"", "extensions", "apps"},
+							Resources: []string{"*"},
+							Verbs:     []string{"*"},
+						},
+					},
+				}
+				_, err = client.RbacV1().Roles(tillerNamespace).Create(role)
+				if err != nil {
+					return fmt.Errorf("Failed to create Role %s in namespace %s: %s", roleName, tillerNamespace, err)
+				}
+				o.Printf("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
-			_, err = client.RbacV1().RoleBindings(tillerNamespace).Create(roleBinding)
+			_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, meta_v1.GetOptions{})
 			if err != nil {
-				return fmt.Errorf("Failed to create RoleBinding %s in namespace %s: %s", roleName, tillerNamespace, err)
+				// lets create a RoleBinding for tiller
+				roleBinding := &rbacv1.RoleBinding{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      roleBindingName,
+						Namespace: tillerNamespace,
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							Kind:      "ServiceAccount",
+							Name:      serviceAccountName,
+							Namespace: tillerNamespace,
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						Kind:     "Role",
+						Name:     roleName,
+						APIGroup: "rbac.authorization.k8s.io",
+					},
+				}
+				_, err = client.RbacV1().RoleBindings(tillerNamespace).Create(roleBinding)
+				if err != nil {
+					return fmt.Errorf("Failed to create RoleBinding %s in namespace %s: %s", roleName, tillerNamespace, err)
+				}
+				o.Printf("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
-			o.Printf("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+		}
+
+		running, err := kube.IsDeploymentRunning(client, "tiller-deploy", tillerNamespace)
+		if running {
+			o.Printf("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
+			return nil
+		}
+		if err == nil && !running {
+			return fmt.Errorf("existing tiller deployment found but not running, please check the %s namespace and resolve any issues", tillerNamespace)
+		}
+
+		if !running {
+			o.Printf("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
+
+			err = o.runCommand("helm", "init", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
+			if err != nil {
+				return err
+			}
+			err = o.runCommand("helm", "init", "--upgrade", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
+		if err != nil {
+			return err
 		}
 	}
 
-	if o.Flags.HelmClient {
+	if o.Flags.HelmClient || o.Flags.SkipTiller {
 		err = o.runCommand("helm", "init", "--client-only")
 		if err != nil {
 			return err
 		}
-	}
-
-	running, err := kube.IsDeploymentRunning(client, "tiller-deploy", tillerNamespace)
-	if running {
-		o.Printf("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
-		return nil
-	}
-	if err == nil && !running {
-		return fmt.Errorf("existing tiller deployment found but not running, please check the %s namespace and resolve any issues", tillerNamespace)
-	}
-
-	if !running {
-		o.Printf("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
-
-		err = o.runCommand("helm", "init", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
-		if err != nil {
-			return err
-		}
-		err = o.runCommand("helm", "init", "--upgrade", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
-	if err != nil {
-		return err
 	}
 
 	err = o.runCommand("helm", "repo", "add", "jenkins-x", DEFAULT_CHARTMUSEUM_URL)
@@ -451,6 +463,7 @@ func (o *InitOptions) initIngress() error {
 
 	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == AWS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES {
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
+		log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run `gcloud compute project-info describe`\n")
 		err = kube.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
 		if err != nil {
 			return err
