@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -493,48 +492,10 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 			return username, os.Getenv(JX_GIT_TOKEN), nil
 		}
 	}
-
 	o.Printf("Lets set up a git username and API token to be able to perform CI / CD\n\n")
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	userAuth, err := o.getGitUser("")
 	if err != nil {
 		return "", "", err
-	}
-	config := authConfigSvc.Config()
-
-	var server *auth.AuthServer
-	gitProvider := o.GitRepositoryOptions.ServerURL
-	if gitProvider != "" {
-		server = config.GetOrCreateServer(gitProvider)
-	} else {
-		server, err = config.PickServer("Which git provider?")
-		if err != nil {
-			return "", "", err
-		}
-	}
-	url := server.URL
-	userAuth, err := config.PickServerUserAuth(server, fmt.Sprintf("%s username for CI/CD pipelines:", server.Label()), o.BatchMode)
-	if err != nil {
-		return "", "", err
-	}
-	if userAuth.IsInvalid() {
-		gits.PrintCreateRepositoryGenerateAccessToken(server, o.Out)
-
-		// TODO could we guess this based on the users ~/.git for github?
-		defaultUserName := ""
-		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false, o.BatchMode)
-		if err != nil {
-			return "", "", err
-		}
-
-		// TODO lets verify the auth works
-
-		err = authConfigSvc.SaveUserAuth(url, userAuth)
-		if err != nil {
-			return "", "", fmt.Errorf("Failed to store git auth configuration %s", err)
-		}
-		if userAuth.IsInvalid() {
-			return "", "", fmt.Errorf("You did not properly define the user authentication!")
-		}
 	}
 	return userAuth.Username, userAuth.ApiToken, nil
 }
@@ -585,8 +546,51 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 	config.CurrentServer = server.URL
 	return authConfigSvc.SaveConfig()
 }
+func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
+	var userAuth *auth.UserAuth
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return userAuth, err
+	}
+	config := authConfigSvc.Config()
 
-func basicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
+	var server *auth.AuthServer
+	gitProvider := o.GitRepositoryOptions.ServerURL
+	if gitProvider != "" {
+		server = config.GetOrCreateServer(gitProvider)
+	} else {
+		server, err = config.PickServer("Which git provider?")
+		if err != nil {
+			return userAuth, err
+		}
+	}
+	url := server.URL
+	if message == "" {
+		fmt.Sprintf("%s username for CI/CD pipelines:", server.Label())
+	}
+	userAuth, err = config.PickServerUserAuth(server, message, o.BatchMode)
+	if err != nil {
+		return userAuth, err
+	}
+	if userAuth.IsInvalid() {
+		gits.PrintCreateRepositoryGenerateAccessToken(server, o.Out)
+
+		// TODO could we guess this based on the users ~/.git for github?
+		defaultUserName := ""
+		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false, o.BatchMode)
+		if err != nil {
+			return userAuth, err
+		}
+
+		// TODO lets verify the auth works
+
+		err = authConfigSvc.SaveUserAuth(url, userAuth)
+		if err != nil {
+			return userAuth, fmt.Errorf("failed to store git auth configuration %s", err)
+		}
+		if userAuth.IsInvalid() {
+			return userAuth, fmt.Errorf("you did not properly define the user authentication")
+		}
+	}
+	return userAuth, nil
 }

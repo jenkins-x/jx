@@ -310,6 +310,17 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 	draftHome := draftpath.Home(draftDir)
 
+	// lets make sure we have the latest draft packs
+	initOpts := InitOptions{
+		CommonOptions: CommonOptions{
+			Out: o.Out,
+		},
+	}
+	err = initOpts.initDraft()
+	if err != nil {
+		return err
+	}
+
 	// TODO this is a workaround of this draft issue:
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
@@ -742,7 +753,7 @@ func (o *ImportOptions) renameChartToMatchAppName() error {
 			return err
 		}
 		if exists {
-			err = os.Rename(oldChartsDir, newChartsDir)
+			err = util.RenameDir(oldChartsDir, newChartsDir, false)
 			if err != nil {
 				return fmt.Errorf("error renaming %s to %s, %v", oldChartsDir, newChartsDir, err)
 			}

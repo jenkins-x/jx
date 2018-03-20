@@ -56,6 +56,8 @@ const (
 	optionNamespace       = "namespace"
 	optionTillerNamespace = "tiller-namespace"
 
+	jenkinsPackURL = "https://github.com/jenkins-x/draft-packs"
+
 	INGRESS_SERVICE_NAME    = "jxing-nginx-ingress-controller"
 	DEFAULT_CHARTMUSEUM_URL = "http://chartmuseum.build.cd.jenkins-x.io"
 )
@@ -366,7 +368,7 @@ func (o *InitOptions) initDraft() error {
 		return fmt.Errorf("Could not create %s: %s", dir, err)
 	}
 
-	return gits.GitCloneOrPull("https://github.com/jenkins-x/draft-packs", dir)
+	return gits.GitCloneOrPull(jenkinsPackURL, dir)
 
 }
 

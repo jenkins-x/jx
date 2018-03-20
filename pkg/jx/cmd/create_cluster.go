@@ -339,7 +339,7 @@ func (o *CreateClusterOptions) installKubectl() error {
 	if err != nil {
 		return err
 	}
-	err = os.Rename(tmpFile, fullPath)
+	err = util.RenameFile(tmpFile, fullPath)
 	if err != nil {
 		return err
 	}
@@ -496,7 +496,7 @@ func (o *CreateClusterOptions) installKops() error {
 	if err != nil {
 		return err
 	}
-	err = os.Rename(tmpFile, fullPath)
+	err = util.RenameFile(tmpFile, fullPath)
 	if err != nil {
 		return err
 	}
@@ -527,7 +527,7 @@ func (o *CreateClusterOptions) installMinikube() error {
 	if err != nil {
 		return err
 	}
-	err = os.Rename(tmpFile, fullPath)
+	err = util.RenameFile(tmpFile, fullPath)
 	if err != nil {
 		return err
 	}
