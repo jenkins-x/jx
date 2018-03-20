@@ -8,11 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"runtime"
-
 	"github.com/Azure/draft/pkg/draft/draftpath"
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/auth"
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
@@ -28,7 +27,10 @@ import (
 )
 
 const (
-	PlaceHolder             = "REPLACE_ME"
+	PlaceHolderAppName     = "REPLACE_ME_APP_NAME"
+	PlaceHolderGitProvider = "REPLACE_ME_GIT_PROVIDER"
+	PlaceHolderOrg         = "REPLACE_ME_ORG"
+
 	DefaultWritePermissions = 0760
 
 	defaultGitIgnoreFile = `
@@ -173,6 +175,27 @@ func (o *ImportOptions) Run() error {
 	o.currentNamespace = ns
 	o.kubeClient = client
 
+	var userAuth *auth.UserAuth
+	if o.GitProvider == nil {
+		authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+		if err != nil {
+			return err
+		}
+		config := authConfigSvc.Config()
+		server := config.GetOrCreateServer(gits.GitHubHost)
+		userAuth, err = config.PickServerUserAuth(server, "git user name", o.BatchMode)
+		if err != nil {
+			return err
+		}
+		o.GitProvider, err = gits.CreateProvider(server, userAuth)
+		if err != nil {
+			return err
+		}
+	}
+	if o.Organisation == "" {
+		o.Organisation = userAuth.Username
+	}
+
 	if o.GitHub {
 		return o.ImportProjectsFromGitHub()
 	}
@@ -251,30 +274,8 @@ func (o *ImportOptions) Run() error {
 }
 
 func (o *ImportOptions) ImportProjectsFromGitHub() error {
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
-	if err != nil {
-		return err
-	}
-	config := authConfigSvc.Config()
-	server := config.GetOrCreateServer(gits.GitHubHost)
-	userAuth, err := config.PickServerUserAuth(server, "git user name", o.BatchMode)
-	if err != nil {
-		return err
-	}
-	provider, err := gits.CreateProvider(server, userAuth)
-	if err != nil {
-		return err
-	}
 
-	username := userAuth.Username
-	org := o.Organisation
-	if org == "" {
-		org, err = gits.PickOrganisation(provider, username)
-		if err != nil {
-			return err
-		}
-	}
-	repos, err := gits.PickRepositories(provider, org, "Which repositories do you want to import", o.SelectAll, o.SelectFilter)
+	repos, err := gits.PickRepositories(o.GitProvider, o.Organisation, "Which repositories do you want to import", o.SelectAll, o.SelectFilter)
 	if err != nil {
 		return err
 	}
@@ -285,10 +286,10 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 			CommonOptions:           o.CommonOptions,
 			Dir:                     o.Dir,
 			RepoURL:                 r.CloneURL,
-			Organisation:            org,
+			Organisation:            o.Organisation,
 			Repository:              r.Name,
 			Jenkins:                 o.Jenkins,
-			GitProvider:             provider,
+			GitProvider:             o.GitProvider,
 			DisableJenkinsfileCheck: o.DisableJenkinsfileCheck,
 			DisableDraft:            o.DisableDraft,
 		}
@@ -322,13 +323,12 @@ func (o *ImportOptions) DraftCreate() error {
 		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/java")
 	} else {
 		// pack detection time
-		lpack, err = jxdraft.DoPackDetection(draftHome, o.Out)
+		lpack, err = jxdraft.DoPackDetection(draftHome, o.Out, dir)
 
 		if err != nil {
 			return err
 		}
 	}
-
 	chartsDir := filepath.Join(dir, "charts")
 	exists, err = util.FileExists(chartsDir)
 	if exists {
@@ -353,7 +353,7 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 
 	//walk through every file in the given dir and update the placeholders
-	err = o.replacePlaceholders(dir, o.AppName)
+	err = o.replacePlaceholders()
 	if err != nil {
 		return err
 	}
@@ -369,29 +369,13 @@ func (o *ImportOptions) DraftCreate() error {
 	return nil
 }
 
-func homePath() string {
-	return os.ExpandEnv(defaultDraftHome())
-}
-
-func defaultDraftHome() string {
-	if home := os.Getenv("DRAFT_HOME"); home != "" {
-		return home
-	}
-
-	homeEnvPath := os.Getenv("HOME")
-	if homeEnvPath == "" && runtime.GOOS == "windows" {
-		homeEnvPath = os.Getenv("USERPROFILE")
-	}
-
-	return filepath.Join(homeEnvPath, ".draft")
-}
-
 func (o *ImportOptions) CreateNewRemoteRepository() error {
 	f := o.Factory
 	authConfigSvc, err := f.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
+
 	dir := o.Dir
 	_, defaultRepoName := filepath.Split(dir)
 
@@ -425,11 +409,11 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 func (o *ImportOptions) CloneRepository() error {
 	url := o.RepoURL
 	if url == "" {
-		return fmt.Errorf("No git repository URL defined!")
+		return fmt.Errorf("no git repository URL defined!")
 	}
 	gitInfo, err := gits.ParseGitURL(url)
 	if err != nil {
-		return fmt.Errorf("Failed to parse git URL %s due to: %s", url, err)
+		return fmt.Errorf("failed to parse git URL %s due to: %s", url, err)
 	}
 	if gitInfo.Host == gits.GitHubHost && strings.HasPrefix(gitInfo.Scheme, "http") {
 		if !strings.HasSuffix(url, ".git") {
@@ -465,7 +449,7 @@ func (o *ImportOptions) DiscoverGit() error {
 
 	dir := o.Dir
 	if dir == "" {
-		return fmt.Errorf("No directory specified!")
+		return fmt.Errorf("no directory specified!")
 	}
 
 	// lets prompt the user to initialise the git repository
@@ -481,7 +465,7 @@ func (o *ImportOptions) DiscoverGit() error {
 			return err
 		}
 		if !flag {
-			return fmt.Errorf("Please initialise git yourself then try again")
+			return fmt.Errorf("please initialise git yourself then try again")
 		}
 	}
 	err := gits.GitInit(dir)
@@ -541,7 +525,7 @@ func (o *ImportOptions) DefaultGitIgnore() error {
 		data := []byte(defaultGitIgnoreFile)
 		err = ioutil.WriteFile(name, data, DefaultWritePermissions)
 		if err != nil {
-			return fmt.Errorf("Failed to write %s due to %s", name, err)
+			return fmt.Errorf("failed to write %s due to %s", name, err)
 		}
 	}
 	return nil
@@ -552,17 +536,17 @@ func (o *ImportOptions) DefaultGitIgnore() error {
 func (o *ImportOptions) DiscoverRemoteGitURL() error {
 	gitConf := o.GitConfDir
 	if gitConf == "" {
-		return fmt.Errorf("No GitConfDir defined!")
+		return fmt.Errorf("no GitConfDir defined!")
 	}
 	cfg := gitcfg.NewConfig()
 	data, err := ioutil.ReadFile(gitConf)
 	if err != nil {
-		return fmt.Errorf("Failed to load %s due to %s", gitConf, err)
+		return fmt.Errorf("failed to load %s due to %s", gitConf, err)
 	}
 
 	err = cfg.Unmarshal(data)
 	if err != nil {
-		return fmt.Errorf("Failed to unmarshal %s due to %s", gitConf, err)
+		return fmt.Errorf("failed to unmarshal %s due to %s", gitConf, err)
 	}
 	remotes := cfg.Remotes
 	if len(remotes) == 0 {
@@ -586,11 +570,11 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 
 func (o *ImportOptions) DoImport() error {
 	if o.Jenkins == nil {
-		jenkins, err := o.Factory.CreateJenkinsClient()
+		jclient, err := o.Factory.CreateJenkinsClient()
 		if err != nil {
 			return err
 		}
-		o.Jenkins = jenkins
+		o.Jenkins = jclient
 	}
 	gitURL := o.RepoURL
 	gitProvider := o.GitProvider
@@ -613,9 +597,11 @@ func (o *ImportOptions) DoImport() error {
 	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc)
 }
 
-func (o *ImportOptions) replacePlaceholders(dir, value string) error {
-	log.Infof("replacing placeholders in direcory %s\n", dir)
-	if err := filepath.Walk(dir, func(f string, fi os.FileInfo, err error) error {
+func (o *ImportOptions) replacePlaceholders() error {
+	log.Infof("replacing placeholders in direcory %s\n", o.Dir)
+	log.Infof("app name: %s, git server: %s, org: %s\n", o.AppName, o.GitRepositoryOptions.ServerURL, o.Organisation)
+
+	if err := filepath.Walk(o.Dir, func(f string, fi os.FileInfo, err error) error {
 		if fi.Name() == ".git" {
 			return filepath.SkipDir
 		}
@@ -629,8 +615,10 @@ func (o *ImportOptions) replacePlaceholders(dir, value string) error {
 			lines := strings.Split(string(input), "\n")
 
 			for i, line := range lines {
-				lines[i] = strings.Replace(line, PlaceHolder, value, -1)
-
+				line = strings.Replace(line, PlaceHolderAppName, o.AppName, -1)
+				line = strings.Replace(line, PlaceHolderGitProvider, o.GitRepositoryOptions.ServerURL, -1)
+				line = strings.Replace(line, PlaceHolderOrg, o.Organisation, -1)
+				lines[i] = line
 			}
 			output := strings.Join(lines, "\n")
 			err = ioutil.WriteFile(f, []byte(output), 0644)

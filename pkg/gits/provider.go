@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"strconv"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"strconv"
 )
 
 type GitProvider interface {

@@ -49,6 +49,7 @@ type CreateQuickstartOptions struct {
 
 	GitHubOrganisations []string
 	Filter              quickstarts.QuickstartFilter
+	GitProvider         gits.GitProvider
 }
 
 // NewCmdCreateQuickstart creates a command object for the "create" command
@@ -92,6 +93,22 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 // Run implements the generic Create command
 func (o *CreateQuickstartOptions) Run() error {
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return err
+	}
+	config := authConfigSvc.Config()
+	server := config.GetOrCreateServer(gits.GitHubHost)
+
+	userAuth, err := config.PickServerUserAuth(server, "git user name", o.BatchMode)
+	if err != nil {
+		return err
+	}
+	o.GitProvider, err = gits.CreateProvider(server, userAuth)
+	if err != nil {
+		return err
+	}
+
 	model, err := o.LoadQuickstarts()
 	if err != nil {
 		return fmt.Errorf("Failed to load quickstarts: %s", err)
@@ -118,6 +135,8 @@ func (o *CreateQuickstartOptions) Run() error {
 
 	o.Printf("Created project at %s\n\n", util.ColorInfo(genDir))
 
+	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
+	o.Organisation = userAuth.Username
 	return o.ImportCreatedProject(genDir)
 }
 
@@ -189,26 +208,11 @@ func findFirstDirectory(dir string) (string, error) {
 func (o *CreateQuickstartOptions) LoadQuickstarts() (*quickstarts.QuickstartModel, error) {
 	model := quickstarts.NewQuickstartModel()
 
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
-	if err != nil {
-		return model, err
-	}
-	config := authConfigSvc.Config()
-	server := config.GetOrCreateServer(gits.GitHubHost)
-
-	userAuth, err := config.PickServerUserAuth(server, "git user name", o.BatchMode)
-	if err != nil {
-		return model, err
-	}
-	provider, err := gits.CreateProvider(server, userAuth)
-	if err != nil {
-		return model, err
-	}
 	groups := o.GitHubOrganisations
 	if util.StringArrayIndex(groups, JenkinsXQuickstartsOrganisation) < 0 {
 		groups = append(groups, JenkinsXQuickstartsOrganisation)
 	}
 
-	model.LoadGithubQuickstarts(provider, groups)
+	model.LoadGithubQuickstarts(o.GitProvider, groups)
 	return model, nil
 }
