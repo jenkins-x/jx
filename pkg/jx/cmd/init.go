@@ -451,6 +451,7 @@ func (o *InitOptions) initIngress() error {
 
 	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == AWS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES {
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
+		log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run `gcloud compute project-info describe`\n")
 		err = kube.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
 		if err != nil {
 			return err
