@@ -79,9 +79,9 @@ var (
 
 		- kubectl (CLI to interact with kubernetes clusters)
 		- helm (package manager for kubernetes)
-		- draft (CLI that makes it easy to build applications that run on kubernetes)\n
-		- minikube (single-node Kubernetes cluster inside a VM on your laptop )\n
-		- virtualisation drivers (to run minikube in a VM)\n
+		- draft (CLI that makes it easy to build applications that run on kubernetes)
+		- minikube (single-node Kubernetes cluster inside a VM on your laptop )
+		- virtualisation drivers (to run minikube in a VM)
 		- gcloud (Google Cloud CLI)
 		- az (Azure CLI)
 
