@@ -480,7 +480,7 @@ func (p *GiteaProvider) IsGitea() bool {
 }
 
 func (p *GiteaProvider) JenkinsWebHookPath(gitURL string, secret string) string {
-	return "/generic-webhook-trigger/invoke"
+	return "/gitea-webhook/post"
 }
 
 func GiteaAccessTokenURL(url string) string {

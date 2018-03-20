@@ -70,6 +70,9 @@ type GitProvider interface {
 	// /git/notifyCommit?url=
 	// http://kohsuke.org/2011/12/01/polling-must-die-triggering-jenkins-builds-from-a-git-hook/
 	//
+	// * gitea
+	// /gitea-webhook/post
+	//
 	// * generic webhook
 	// /generic-webhook-trigger/invoke?token=abc123
 	// https://wiki.jenkins.io/display/JENKINS/Generic+Webhook+Trigger+Plugin
