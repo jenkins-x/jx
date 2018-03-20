@@ -167,6 +167,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 	url := server.URL
 	userAuths := c.FindUserAuths(url)
 	if len(userAuths) == 1 {
+
 		auth := userAuths[0]
 		if batchMode {
 			return auth, nil

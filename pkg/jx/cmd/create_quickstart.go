@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -50,6 +51,7 @@ type CreateQuickstartOptions struct {
 	GitHubOrganisations []string
 	Filter              quickstarts.QuickstartFilter
 	GitProvider         gits.GitProvider
+	GitHost             string
 }
 
 // NewCmdCreateQuickstart creates a command object for the "create" command
@@ -86,25 +88,48 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Filter.Owner, "owner", "", "", "The owner to filter on")
 	cmd.Flags().StringVarP(&options.Filter.Language, "language", "l", "", "The language to filter on")
 	cmd.Flags().StringVarP(&options.Filter.Framework, "framework", "", "", "The framework to filter on")
-
+	cmd.Flags().StringVarP(&options.GitHost, "git-host", "", "", "The Git server host if not using GitHub when pushing created project")
 	cmd.Flags().StringVarP(&options.Filter.Text, "filter", "f", "", "The text filter")
 	return cmd
 }
 
 // Run implements the generic Create command
 func (o *CreateQuickstartOptions) Run() error {
+	installOpts := InstallOptions{
+		CommonOptions: CommonOptions{
+			Factory: o.Factory,
+			Out:     o.Out,
+		},
+	}
+	userAuth, err := installOpts.getGitUser("git username to create the quickstart")
+	if err != nil {
+		return err
+	}
+
 	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
+	var server *auth.AuthServer
 	config := authConfigSvc.Config()
-	server := config.GetOrCreateServer(gits.GitHubHost)
-
-	userAuth, err := config.PickServerUserAuth(server, "git user name", o.BatchMode)
-	if err != nil {
-		return err
+	if o.GitHub {
+		server = config.GetOrCreateServer(gits.GitHubHost)
+	} else {
+		if o.GitHost != "" {
+			server = config.GetOrCreateServer(o.GitHost)
+		} else {
+			server, err = config.PickServer("Pick the git server to search for repositories")
+			if err != nil {
+				return err
+			}
+		}
 	}
+	if server == nil {
+		return fmt.Errorf("no git server provided")
+	}
+
 	o.GitProvider, err = gits.CreateProvider(server, userAuth)
+
 	if err != nil {
 		return err
 	}
