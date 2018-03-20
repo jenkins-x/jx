@@ -60,6 +60,14 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir st
 		config := authConfigSvc.Config()
 		u := gitInfo.HostURL()
 		server := config.GetOrCreateServer(u)
+		if len(server.Users) == 0 {
+			// lets check if the host was used in `~/.jx/gitAuth.yaml` instead of URL
+			s2 := config.GetOrCreateServer(gitInfo.Host)
+			if s2 != nil && len(s2.Users) > 0 {
+				server = s2
+				u = gitInfo.Host
+			}
+		}
 		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", false)
 		if err != nil {
 			return err
