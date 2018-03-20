@@ -73,7 +73,7 @@ var (
 	instalLong = templates.LongDesc(`
 		Installs the Jenkins X platform on a Kubernetes cluster
 
-		Requires a --git-username and either --git-token or --git-password that can be used to create a new token.
+		Requires a --git-username and --git-api-token that can be used to create a new token.
 		This is so the Jenkins X platform can git tag your releases
 
 		For more documentation see: [http://jenkins-x.io/getting-started/install-on-cluster/](http://jenkins-x.io/getting-started/install-on-cluster/)
@@ -86,7 +86,7 @@ var (
 		jx install
 
 		# Install with a GitHub personal access token
-		jx install --git-username jenkins-x-bot --git-token 9fdbd2d070cd81eb12bca87861bcd850
+		jx install --git-username jenkins-x-bot --git-api-token 9fdbd2d070cd81eb12bca87861bcd850
 `)
 )
 
