@@ -338,7 +338,12 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 	lpack := ""
 	if exists {
-		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/java")
+		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/maven")
+
+		exists, _ = util.FileExists(lpack)
+		if !exists {
+			lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/java")
+		}
 	} else {
 		// pack detection time
 		lpack, err = jxdraft.DoPackDetection(draftHome, o.Out, dir)
@@ -710,47 +715,21 @@ func (o *ImportOptions) checkChartmuseumCredentialExists() error {
 func (o *ImportOptions) renameChartToMatchAppName() error {
 	var oldChartsDir string
 	dir := o.Dir
-	if err := filepath.Walk(dir, func(f string, fi os.FileInfo, err error) error {
-		if fi.Name() == ".git" {
-			return filepath.SkipDir
-		}
+	chartsDir := filepath.Join(dir, "charts")
+	files, err := ioutil.ReadDir(chartsDir)
+	if err != nil {
+		return fmt.Errorf("error matching a jenkins x draft pack name with chart folder %v", err)
+	}
+	for _, fi := range files {
 		if fi.IsDir() {
-			switch fi.Name() {
-			case "csharp":
-				oldChartsDir = filepath.Join(dir, "charts", "csharp")
-				break
-			case "go":
-				oldChartsDir = filepath.Join(dir, "charts", "go")
-				break
-			case "gradle":
-				oldChartsDir = filepath.Join(dir, "charts", "gradle")
-				break
-			case "java":
-				oldChartsDir = filepath.Join(dir, "charts", "java")
-				break
-			case "javascript":
-				oldChartsDir = filepath.Join(dir, "charts", "javascript")
-				break
-			case "php":
-				oldChartsDir = filepath.Join(dir, "charts", "php")
-				break
-			case "python":
-				oldChartsDir = filepath.Join(dir, "charts", "python")
-				break
-			case "ruby":
-				oldChartsDir = filepath.Join(dir, "charts", "ruby")
-				break
-			case "swift":
-				oldChartsDir = filepath.Join(dir, "charts", "swift")
+			name := fi.Name()
+			// TODO we maybe need to try check if the sub dir named after the build pack matches first?
+			if name != "preview" && name != ".git" {
+				oldChartsDir = filepath.Join(chartsDir, name)
 				break
 			}
 		}
-		return nil
-
-	}); err != nil {
-		return fmt.Errorf("error matching a jenkins x draft pack name with chart folder %v", err)
 	}
-
 	if oldChartsDir != "" {
 		// chart expects folder name to be the same as app name
 		newChartsDir := filepath.Join(dir, "charts", o.AppName)

@@ -24,6 +24,7 @@ const (
 	OptionPackaging      = "packaging"
 	OptionDependency     = "dep"
 	OptionDependencyKind = "kind"
+	OptionType           = "type"
 
 	startSpringURL = "http://start.spring.io"
 )
@@ -65,6 +66,7 @@ type SpringBootModel struct {
 	Language     SpringOptions
 	JavaVersion  SpringOptions
 	BootVersion  SpringOptions
+	Type         SpringOptions
 	GroupId      SpringValue
 	ArtifactId   SpringValue
 	Version      SpringValue
@@ -86,6 +88,7 @@ type SpringBootForm struct {
 	PackageName     string
 	Dependencies    []string
 	DependencyKinds []string
+	Type            string
 }
 
 func LoadSpringBoot(cacheDir string) (*SpringBootModel, error) {
@@ -117,6 +120,24 @@ func LoadSpringBoot(cacheDir string) (*SpringBootModel, error) {
 	err = json.Unmarshal(body, &model)
 	if err != nil {
 		return nil, err
+	}
+	// default the build tool
+	if model.Type.Default == "" {
+		model.Type.Default = "maven"
+	}
+	if len(model.Type.Values) == 0 {
+		model.Type.Values = []SpringOption{
+			{
+				ID:          "gradle",
+				Name:        "Gradle",
+				Description: "Build with the gradle build tool",
+			},
+			{
+				ID:          "maven",
+				Name:        "Maven",
+				Description: "Build with the maven build tool",
+			},
+		}
 	}
 	return &model, nil
 }
@@ -158,6 +179,9 @@ func (model *SpringBootModel) CreateSurvey(data *SpringBootForm, advanced bool, 
 	}
 	if data.Packaging == "" && advanced {
 		qs = append(qs, CreateValueSelect("Packaging", "packaging", &model.Packaging, data))
+	}
+	if data.Type == "" && advanced {
+		qs = append(qs, CreateValueSelect("Build Tool", "type", &model.Type, data))
 	}
 	if data.GroupId == "" {
 		qs = append(qs, CreateValueInput("Group", "groupId", &model.GroupId, data))
@@ -343,6 +367,7 @@ func (data *SpringBootForm) AddFormValues(form *url.Values) {
 	AddFormValue(form, "artifactId", data.ArtifactId)
 	AddFormValue(form, "version", data.Version)
 	AddFormValue(form, "name", data.Name)
+	AddFormValue(form, "type", data.Type)
 	AddFormValues(form, "dependencies", data.Dependencies)
 }
 
