@@ -29,6 +29,12 @@ var (
 
 		# Creates a Spring Boot application passing in the required dependencies
 		jx create spring -d web -d actuator
+
+		# To pick the advanced options (such as what package type maven-project/gradle-project) etc then use
+		jx create spring -x
+
+		# To create a gradle project use:
+		jx create spring --type gradle-project
 	`)
 )
 
@@ -78,6 +84,7 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 	cmd.Flags().StringVarP(&options.SpringForm.BootVersion, spring.OptionBootVersion, "t", "", "Spring Boot version")
 	cmd.Flags().StringVarP(&options.SpringForm.JavaVersion, spring.OptionJavaVersion, "j", "", "Java version")
 	cmd.Flags().StringVarP(&options.SpringForm.Packaging, spring.OptionPackaging, "p", "", "Packaging")
+	cmd.Flags().StringVarP(&options.SpringForm.Type, spring.OptionType, "", "", "Project Type (such as maven-project or gradle-project)")
 
 	return cmd
 }

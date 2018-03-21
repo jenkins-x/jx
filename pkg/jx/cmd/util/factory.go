@@ -30,6 +30,7 @@ import (
 
 const (
 	JenkinsAuthConfigFile     = "jenkinsAuth.yaml"
+	IssuesAuthConfigFile      = "issuesAuth.yaml"
 	GitAuthConfigFile         = "gitAuth.yaml"
 	ChartmuseumAuthConfigFile = "chartmuseumAuth.yaml"
 )
@@ -46,6 +47,8 @@ type Factory interface {
 	CreateJenkinsAuthConfigService() (auth.AuthConfigService, error)
 
 	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
+
+	CreateIssuesAuthConfigService() (auth.AuthConfigService, error)
 
 	CreateClient() (*kubernetes.Clientset, string, error)
 
@@ -138,8 +141,35 @@ func (f *factory) CreateChartmuseumAuthConfigService() (auth.AuthConfigService, 
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
+func (f *factory) CreateIssuesAuthConfigService() (auth.AuthConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(IssuesAuthConfigFile)
+	if err != nil {
+		return authConfigSvc, err
+	}
+	config, err := authConfigSvc.LoadConfig()
+	if err != nil {
+		return authConfigSvc, err
+	}
 
+	// lets add a default if there's none defined yet
+	if len(config.Servers) == 0 {
+		// if in cluster then there's no user configfile, so check for env vars first
+		userAuth := auth.CreateAuthUserFromEnvironment("ISSUES")
+		// TODO discover via the Dev Environment?
+		// TODO discover the kind too
+		defaultServer := ""
+		config.Servers = []*auth.AuthServer{
+			{
+				Name:  "Issues",
+				URL:   defaultServer,
+				Users: []*auth.UserAuth{&userAuth},
+			},
+		}
+	}
+	return authConfigSvc, err
+}
+
+func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
