@@ -361,13 +361,13 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	err = o.runCommand("helm", "upgrade", o.ReleaseName, ".", "--install", "--wait", "--namespace", ens, fmt.Sprintf("--values=%s", configFileName))
+	err = o.runCommand("helm", "upgrade", o.ReleaseName, ".", "--force", "--install", "--wait", "--namespace", ens, fmt.Sprintf("--values=%s", configFileName))
 	if err != nil {
 		return err
 	}
 
 	url := ""
-	appNames := []string{app, o.ReleaseName, ens + "-preview"}
+	appNames := []string{app, o.ReleaseName, ens + "-preview", o.ReleaseName + "-" + app}
 	for _, n := range appNames {
 		url, err = kube.FindServiceURL(kubeClient, ens, n)
 		if url != "" {
