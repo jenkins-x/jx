@@ -106,16 +106,6 @@ dlv --listen=:2345 --headless=true --api-version=2 exec `which jx` -- $*
 
 Then you can change your `jx someArgs` CLI to `jxDebug someArgs` then debug it!
 
-## Cleaning Up
-
-To remove the Draft chart and local binaries:
-
-```shell
-$ make clean 
-rm build/*
-```
-
-
 [git]: https://git-scm.com/
 [glide]: https://github.com/Masterminds/glide
 [go]: https://golang.org/
