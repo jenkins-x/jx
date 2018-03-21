@@ -20,7 +20,7 @@ Or to get help on a specific command, say, `create` then type:
 
     jx help create
 
-You can also browse the [jx command reference documentation](https://github.com/jenkins-x/documentation/blob/master/_docs/reference/jx.md)
+You can also browse the [jx command reference documentation](http://jenkins-x.io/commands/jx/)
 
 ## Getting Started
 
