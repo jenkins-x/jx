@@ -2,6 +2,8 @@ package gits
 
 import (
 	"context"
+	"net/http"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/wbrefvem/go-bitbucket"
@@ -39,7 +41,10 @@ func NewBitbucketProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProv
 	}
 
 	cfg := bitbucket.NewConfiguration()
-	// FIXME: don't use DefaultClient
+	cfg.HTTPClient = &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
 	provider.Client = bitbucket.NewAPIClient(cfg)
 
 	return &provider, nil
