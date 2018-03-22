@@ -28,11 +28,11 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 		}
 	}
 
-	gitDir, gitConfDir, err := gits.FindGitConfigDir(dir)
+	_, gitConfDir, err := gits.FindGitConfigDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("No issue tracker configured for this project and cannot find the .git directory: %s", err)
 	}
-	if gitDir == "" || gitConfDir == "" {
+	if gitConfDir == "" {
 		return nil, fmt.Errorf("No issue tracker configured and no git directory could be found from dir %s\n", dir)
 	}
 	gitUrl, err := gits.DiscoverUpstreamGitURL(gitConfDir)

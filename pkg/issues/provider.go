@@ -10,6 +10,8 @@ import (
 type IssueProvider interface {
 	GetIssue(key string) (*gits.GitIssue, error)
 
+	SearchIssues(query string) ([]*gits.GitIssue, error)
+
 	CreateIssue(issue *gits.GitIssue) (*gits.GitIssue, error)
 
 	CreateIssueComment(key string, comment string) error

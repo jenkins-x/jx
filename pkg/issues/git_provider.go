@@ -35,6 +35,10 @@ func (i *GitIssueProvider) GetIssue(key string) (*gits.GitIssue, error) {
 	return i.GitProvider.GetIssue(i.Owner, i.Repository, n)
 }
 
+func (i *GitIssueProvider) SearchIssues(query string) ([]*gits.GitIssue, error) {
+	return i.GitProvider.SearchIssues(i.Owner, i.Repository, query)
+}
+
 func issueKeyToNumber(key string) (int, error) {
 	n, err := strconv.Atoi(key)
 	if err != nil {

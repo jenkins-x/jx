@@ -277,6 +277,28 @@ func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue
 	return p.fromGiteaIssue(i)
 }
 
+func (p *GiteaProvider) SearchIssues(org string, name string, filter string) ([]*GitIssue, error) {
+	opts := gitea.ListIssueOption{}
+	answer := []*GitIssue{}
+	issues, err := p.Client.ListRepoIssues(org, name, opts)
+	if strings.Contains(err.Error(), "404") {
+		return answer, nil
+	}
+	if err != nil {
+		return answer, err
+	}
+	for _, issue := range issues {
+		i, err := p.fromGiteaIssue(issue)
+		if err != nil {
+			return answer, err
+		}
+
+		// TODO apply the filter?
+		answer = append(answer, i)
+	}
+	return answer, nil
+}
+
 func (p *GiteaProvider) fromGiteaIssue(i *gitea.Issue) (*GitIssue, error) {
 	state := string(i.State)
 	labels := []GitLabel{}

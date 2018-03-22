@@ -33,6 +33,18 @@ func (i *JiraService) GetIssue(key string) (*gits.GitIssue, error) {
 	return jiraToGitIssue(issue), nil
 }
 
+func (i *JiraService) SearchIssues(query string) ([]*gits.GitIssue, error) {
+	answer := []*gits.GitIssue{}
+	issues, _, err := i.JiraClient.Issue.Search(query, nil)
+	if err != nil {
+		return answer, err
+	}
+	for _, issue := range issues {
+		answer = append(answer, jiraToGitIssue(&issue))
+	}
+	return answer, nil
+}
+
 func (i *JiraService) CreateIssue(issue *gits.GitIssue) (*gits.GitIssue, error) {
 	if !i.JiraClient.Authentication.Authenticated() {
 		return nil, fmt.Errorf("Cannot create issue as there is no authentication for server %s", i.ServerName())

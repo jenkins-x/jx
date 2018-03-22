@@ -49,6 +49,8 @@ type GitProvider interface {
 
 	GetIssue(org string, name string, number int) (*GitIssue, error)
 
+	SearchIssues(org string, name string, query string) ([]*GitIssue, error)
+
 	CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error)
 
 	HasIssues() bool
