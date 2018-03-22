@@ -1,5 +1,6 @@
-hash: 8b222e5bfe322c05c34fcf350a2ba26c0cdd3fc4960c8e70713e51d161d5217d
-updated: 2018-03-22T10:55:40.185290251Z
+
+hash: 3fe3f41b331184358ce2ac5eb7c6a97cf0e46c1c4ce2971836910f41bb895f56
+updated: 2018-03-21T19:56:47.044503-04:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -236,11 +237,16 @@ imports:
   - scanner
   - token
   - types
+<<<<<<< HEAD
 - name: github.com/trivago/tgo
   version: e4d1ddd28c17dd89ed26327cf69fded22060671b
   subpackages:
   - tcontainer
   - treflect
+=======
+- name: github.com/wbrefvem/go-bitbucket
+  version: af37587e0cb4b34a2e192f4a4394a4e8349dcde7
+>>>>>>> Added go-bitbucket to glide.lock
 - name: github.com/xanzy/ssh-agent
   version: ba9c9e33906f58169366275e3450db66139a31a9
 - name: golang.org/x/crypto
