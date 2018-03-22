@@ -23,7 +23,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 				}
 				config := authConfigSvc.Config()
 				server := config.GetOrCreateServer(it.URL)
-				return issues.CreateIssueProvider(it.Kind, server)
+				return issues.CreateIssueProvider(it.Kind, server, it.Project)
 			}
 		}
 	}

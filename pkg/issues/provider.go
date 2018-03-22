@@ -17,10 +17,10 @@ type IssueProvider interface {
 	CreateIssueComment(key string, comment string) error
 }
 
-func CreateIssueProvider(kind string, server *auth.AuthServer) (IssueProvider, error) {
+func CreateIssueProvider(kind string, server *auth.AuthServer, project string) (IssueProvider, error) {
 	switch kind {
 	case Jira:
-		return CreateJiraIssueProvider(server)
+		return CreateJiraIssueProvider(server, project)
 	default:
 		return nil, fmt.Errorf("Unsupported issue provider kind: %s", kind)
 	}

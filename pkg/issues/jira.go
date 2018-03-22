@@ -12,9 +12,10 @@ import (
 type JiraService struct {
 	JiraClient *jira.Client
 	Server     *auth.AuthServer
+	Project    string
 }
 
-func CreateJiraIssueProvider(server *auth.AuthServer) (IssueProvider, error) {
+func CreateJiraIssueProvider(server *auth.AuthServer, project string) (IssueProvider, error) {
 	if server.URL == "" {
 		return nil, fmt.Errorf("No base URL for server!")
 	}
@@ -22,6 +23,7 @@ func CreateJiraIssueProvider(server *auth.AuthServer) (IssueProvider, error) {
 	return &JiraService{
 		JiraClient: jiraClient,
 		Server:     server,
+		Project:    project,
 	}, nil
 }
 
@@ -34,8 +36,12 @@ func (i *JiraService) GetIssue(key string) (*gits.GitIssue, error) {
 }
 
 func (i *JiraService) SearchIssues(query string) ([]*gits.GitIssue, error) {
+	jql := "project = " + i.Project + " AND status NOT IN (Closed, Resolved)"
+	if query != "" {
+		jql += " AND text ~ " + query
+	}
 	answer := []*gits.GitIssue{}
-	issues, _, err := i.JiraClient.Issue.Search(query, nil)
+	issues, _, err := i.JiraClient.Issue.Search(jql, nil)
 	if err != nil {
 		return answer, err
 	}
