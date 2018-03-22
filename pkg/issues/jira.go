@@ -1,6 +1,7 @@
 package issues
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"time"
@@ -8,11 +9,13 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 type JiraService struct {
 	JiraClient *jira.Client
 	Server     *auth.AuthServer
+	UserAuth   *auth.UserAuth
 	Project    string
 }
 
@@ -31,11 +34,11 @@ func CreateJiraIssueProvider(server *auth.AuthServer, userAuth *auth.UserAuth, p
 		 */
 		httpClient = tp.Client()
 	}
-	fmt.Printf("Conecting to server %s with user %s token %s\n", server.URL, userAuth.Username, userAuth.ApiToken)
 	jiraClient, _ := jira.NewClient(httpClient, server.URL)
 	return &JiraService{
 		JiraClient: jiraClient,
 		Server:     server,
+		UserAuth:   userAuth,
 		Project:    project,
 	}, nil
 }
@@ -45,7 +48,7 @@ func (i *JiraService) GetIssue(key string) (*gits.GitIssue, error) {
 	if err != nil {
 		return nil, err
 	}
-	return jiraToGitIssue(issue), nil
+	return i.jiraToGitIssue(issue), nil
 }
 
 func (i *JiraService) SearchIssues(query string) ([]*gits.GitIssue, error) {
@@ -59,31 +62,41 @@ func (i *JiraService) SearchIssues(query string) ([]*gits.GitIssue, error) {
 		return answer, err
 	}
 	for _, issue := range issues {
-		answer = append(answer, jiraToGitIssue(&issue))
+		answer = append(answer, i.jiraToGitIssue(&issue))
 	}
 	return answer, nil
 }
 
 func (i *JiraService) CreateIssue(issue *gits.GitIssue) (*gits.GitIssue, error) {
-	if !i.JiraClient.Authentication.Authenticated() {
-		return nil, fmt.Errorf("Cannot create issue as there is no authentication for server %s", i.ServerName())
-	}
-	jira, _, err := i.JiraClient.Issue.Create(gitToJiraIssue(issue))
+	project, _, err := i.JiraClient.Project.Get(i.Project)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Could not find project %s: %s", i.Project, err)
 	}
-	return jiraToGitIssue(jira), nil
+	ji := i.gitToJiraIssue(issue)
+	issueTypes := project.IssueTypes
+	if len(issueTypes) > 0 {
+		it := issueTypes[0]
+		ji.Fields.Type.Name = it.Name
+	}
+	jira, resp, err := i.JiraClient.Issue.Create(ji)
+	if err != nil {
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(resp.Body)
+		msg := buf.String()
+		return nil, fmt.Errorf("Failed to create issue: %s due to: %s", msg, err)
+	}
+	return i.jiraToGitIssue(jira), nil
 }
 
 func (i *JiraService) CreateIssueComment(key string, comment string) error {
-	if !i.JiraClient.Authentication.Authenticated() {
-		return fmt.Errorf("Cannot create issue comments as there is no authentication for server %s", i.ServerName())
-	}
 	return fmt.Errorf("TODO")
 }
 
-func jiraToGitIssue(issue *jira.Issue) *gits.GitIssue {
+func (i *JiraService) jiraToGitIssue(issue *jira.Issue) *gits.GitIssue {
 	answer := &gits.GitIssue{}
+	key := issue.Key
+	answer.Key = key
+	answer.URL = util.UrlJoin(i.Server.URL, "browse", key)
 	fields := issue.Fields
 	if fields != nil {
 		answer.Title = fields.Summary
@@ -99,8 +112,19 @@ func jiraTimeToTimeP(t jira.Time) *time.Time {
 	return &tt
 }
 
-func gitToJiraIssue(issue *gits.GitIssue) *jira.Issue {
-	answer := &jira.Issue{}
+func (i *JiraService) gitToJiraIssue(issue *gits.GitIssue) *jira.Issue {
+	answer := &jira.Issue{
+		Fields: &jira.IssueFields{
+			Project: jira.Project{
+				Key: i.Project,
+			},
+			Summary:     issue.Title,
+			Description: issue.Body,
+			Type: jira.IssueType{
+				Name: "Bug",
+			},
+		},
+	}
 	return answer
 }
 

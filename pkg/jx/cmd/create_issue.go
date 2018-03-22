@@ -83,28 +83,10 @@ func NewCmdCreateIssue(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 
 // Run implements the command
 func (o *CreateIssueOptions) Run() error {
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	tracker, err := o.createIssueProvider(o.Dir)
 	if err != nil {
 		return err
 	}
-	gitInfo, err := o.FindGitInfo(o.Dir)
-	if err != nil {
-		return err
-	}
-	if gitInfo == nil {
-		return fmt.Errorf("Could not discover a git repository in the current directory")
-	}
-
-	gitKind, err := o.GitServerKind(gitInfo)
-	if err != nil {
-		return err
-	}
-
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user to create the issue", o.BatchMode, gitKind)
-	if err != nil {
-		return err
-	}
-
 	issue := &gits.GitIssue{}
 
 	err = o.PopulateIssue(issue)
@@ -112,7 +94,7 @@ func (o *CreateIssueOptions) Run() error {
 		return err
 	}
 
-	createdIssue, err := provider.CreateIssue(gitInfo.Organisation, gitInfo.Name, issue)
+	createdIssue, err := tracker.CreateIssue(issue)
 	if err != nil {
 		return err
 	}

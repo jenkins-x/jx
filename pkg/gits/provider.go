@@ -3,10 +3,9 @@ package gits
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
-
-	"strconv"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -122,6 +121,7 @@ type GitIssue struct {
 	Owner         string
 	Repo          string
 	Number        *int
+	Key           string
 	Title         string
 	Body          string
 	State         *string
@@ -196,6 +196,9 @@ func (pr *GitPullRequest) IsClosed() bool {
 
 // Name returns the textual name of the issue
 func (i *GitIssue) Name() string {
+	if i.Key != "" {
+		return i.Key
+	}
 	n := i.Number
 	if n != nil {
 		return "#" + strconv.Itoa(*n)
