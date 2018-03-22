@@ -50,6 +50,7 @@ func NewCmdEdit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		SuggestFor: []string{"list", "ps"},
 	}
 
+	cmd.AddCommand(NewCmdEditConfig(f, out, errOut))
 	cmd.AddCommand(NewCmdEditEnv(f, out, errOut))
 	return cmd
 }
