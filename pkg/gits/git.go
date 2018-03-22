@@ -412,3 +412,12 @@ func GitIsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) 
 	}
 	return repo.Fork, nil
 }
+
+// ToGitLabels converts the list of label names into an array of GitLabels
+func ToGitLabels(names []string) []GitLabel {
+	answer := []GitLabel{}
+	for _, n := range names {
+		answer = append(answer, GitLabel{Name: n})
+	}
+	return answer
+}
