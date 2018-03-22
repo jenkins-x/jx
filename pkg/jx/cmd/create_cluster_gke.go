@@ -19,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"regexp"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -67,6 +68,7 @@ var (
 		jx create cluster gke
 
 `)
+	disallowedLabelCharacters = regexp.MustCompile("[^a-z0-9-]")
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
@@ -223,7 +225,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	labels := o.Flags.Labels
 	user, err := os_user.Current()
 	if err == nil && user != nil {
-		username := user.Username
+		username := sanitizeLabel(user.Username)
 		if username != "" {
 			sep := ""
 			if labels != "" {
@@ -276,6 +278,11 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 	return nil
+}
+
+func sanitizeLabel(username string) string {
+	sanitized := strings.ToLower(username)
+	return disallowedLabelCharacters.ReplaceAllString(sanitized, "-")
 }
 
 // asks to chose from existing projects or optionally creates one if none exist
