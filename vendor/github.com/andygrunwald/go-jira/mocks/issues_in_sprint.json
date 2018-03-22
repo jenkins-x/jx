@@ -1,0 +1,115 @@
+{
+  "expand": "schema,names",
+  "startAt": 0,
+  "maxResults": 50,
+  "total": 10,
+  "issues": [
+    {
+      "expand": "operations,versionedRepresentations,editmeta,changelog,renderedFields",
+      "id": "12338",
+      "self": "https://example.atlassian.net/rest/agile/1.0/issue/12338",
+      "key": "AR-86",
+      "fields": {
+        "issuetype": {
+          "self": "https://example.atlassian.net/rest/api/2/issuetype/3",
+          "id": "3",
+          "description": "A task that needs to be done.",
+          "iconUrl": "https://example.atlassian.net/secure/viewavatar?size=xsmall&avatarId=10418&avatarType=issuetype",
+          "name": "Task",
+          "subtask": false,
+          "avatarId": 10418
+        },
+        "timespent": null,
+        "project": {
+          "self": "https://example.atlassian.net/rest/api/2/project/10302",
+          "id": "10302",
+          "key": "AR",
+          "name": "Team Argon",
+          "avatarUrls": {
+            "48x48": "https://example.atlassian.net/secure/projectavatar?pid=10302&avatarId=10610",
+            "24x24": "https://example.atlassian.net/secure/projectavatar?size=small&pid=10302&avatarId=10610",
+            "16x16": "https://example.atlassian.net/secure/projectavatar?size=xsmall&pid=10302&avatarId=10610",
+            "32x32": "https://example.atlassian.net/secure/projectavatar?size=medium&pid=10302&avatarId=10610"
+          }
+        },
+        "fixVersions": [],
+        "customfield_11200": "0|0zzzzd:vi",
+        "aggregatetimespent": null,
+        "resolution": {
+          "self": "https://example.atlassian.net/rest/api/2/resolution/6",
+          "id": "6",
+          "description": "",
+          "name": "Done"
+        },
+        "customfield_11401": null,
+        "customfield_11400": null,
+        "customfield_10105": 13.0,
+        "customfield_10700": "AR-37",
+        "resolutiondate": "2015-12-07T14:19:13.000-0800",
+        "workratio": -1,
+        "lastViewed": null,
+        "watches": {
+          "self": "https://example.atlassian.net/rest/api/2/issue/AR-86/watchers",
+          "watchCount": 2,
+          "isWatching": true
+        },
+        "created": "2015-12-02T07:39:15.000-0800",
+        "epic": {
+          "id": 11900,
+          "key": "AR-37",
+          "self": "https://example.atlassian.net/rest/agile/1.0/epic/11900",
+          "name": "Moderation: Design",
+          "summary": "Moderation design",
+          "color": {
+            "key": "color_8"
+          },
+          "done": true
+        },
+        "priority": {
+          "self": "https://example.atlassian.net/rest/api/2/priority/3",
+          "iconUrl": "https://example.atlassian.net/images/icons/priorities/major.svg",
+          "name": "Major",
+          "id": "3"
+        },
+        "customfield_10102": null,
+        "customfield_10103": null,
+        "labels": [],
+        "customfield_11700": null,
+        "timeestimate": null,
+        "aggregatetimeoriginalestimate": null,
+        "versions": [],
+        "issuelinks": [],
+        "assignee": {
+          "self": "https://example.atlassian.net/rest/api/2/user?username=mister.morris",
+          "name": "mister.morris",
+          "key": "mister.morris",
+          "emailAddress": "mister.morris@uservoice.com",
+          "avatarUrls": {
+            "48x48": "https://example.atlassian.net/secure/useravatar?ownerId=mister.morris&avatarId=10604",
+            "24x24": "https://example.atlassian.net/secure/useravatar?size=small&ownerId=mister.morris&avatarId=10604",
+            "16x16": "https://example.atlassian.net/secure/useravatar?size=xsmall&ownerId=mister.morris&avatarId=10604",
+            "32x32": "https://example.atlassian.net/secure/useravatar?size=medium&ownerId=mister.morris&avatarId=10604"
+          },
+          "displayName": "mister Morris",
+          "active": true,
+          "timeZone": "America/New_York"
+        },
+        "updated": "2016-02-01T08:17:04.000-0800",
+        "status": {
+          "self": "https://example.atlassian.net/rest/api/2/status/10000",
+          "description": "Ready to move to dev team for grooming",
+          "iconUrl": "https://example.atlassian.net/images/icons/statuses/closed.png",
+          "name": "Ready",
+          "id": "10000",
+          "statusCategory": {
+            "self": "https://example.atlassian.net/rest/api/2/statuscategory/2",
+            "id": 2,
+            "key": "new",
+            "colorName": "blue-gray",
+            "name": "To Do"
+          }
+        }
+      }
+    }
+  ]
+}

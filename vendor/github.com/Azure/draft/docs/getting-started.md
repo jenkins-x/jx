@@ -34,7 +34,7 @@ $ cat draft.toml
     namespace = "default"
     wait = false
     watch = false
-    watch_delay = 2
+    watch-delay = 2
 ```
 
 See [DEP 6](reference/dep-006.md) for more information and available configuration on the `draft.toml`.
