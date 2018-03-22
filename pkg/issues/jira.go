@@ -2,6 +2,7 @@ package issues
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/andygrunwald/go-jira"
@@ -15,11 +16,23 @@ type JiraService struct {
 	Project    string
 }
 
-func CreateJiraIssueProvider(server *auth.AuthServer, project string) (IssueProvider, error) {
+func CreateJiraIssueProvider(server *auth.AuthServer, userAuth *auth.UserAuth, project string) (IssueProvider, error) {
 	if server.URL == "" {
 		return nil, fmt.Errorf("No base URL for server!")
 	}
-	jiraClient, _ := jira.NewClient(nil, server.URL)
+	var httpClient *http.Client
+	if userAuth != nil && !userAuth.IsInvalid() {
+		user := userAuth.Username
+		tp := jira.BasicAuthTransport{
+			Username: user,
+			Password: userAuth.ApiToken,
+		}
+		/*
+		 */
+		httpClient = tp.Client()
+	}
+	fmt.Printf("Conecting to server %s with user %s token %s\n", server.URL, userAuth.Username, userAuth.ApiToken)
+	jiraClient, _ := jira.NewClient(httpClient, server.URL)
 	return &JiraService{
 		JiraClient: jiraClient,
 		Server:     server,

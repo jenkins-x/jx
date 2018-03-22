@@ -17,11 +17,21 @@ type IssueProvider interface {
 	CreateIssueComment(key string, comment string) error
 }
 
-func CreateIssueProvider(kind string, server *auth.AuthServer, project string) (IssueProvider, error) {
+func CreateIssueProvider(kind string, server *auth.AuthServer, userAuth *auth.UserAuth, project string) (IssueProvider, error) {
 	switch kind {
 	case Jira:
-		return CreateJiraIssueProvider(server, project)
+		return CreateJiraIssueProvider(server, userAuth, project)
 	default:
 		return nil, fmt.Errorf("Unsupported issue provider kind: %s", kind)
+	}
+}
+
+func ProviderAccessTokenURL(kind string, url string) string {
+	switch kind {
+	case Jira:
+		// TODO handle on premise servers too by detecting the URL is at atlassian.com
+		return "https://id.atlassian.com/manage/api-tokens"
+	default:
+		return ""
 	}
 }

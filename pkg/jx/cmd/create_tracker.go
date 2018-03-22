@@ -37,10 +37,7 @@ func NewCmdCreateTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	}
 
 	cmd.AddCommand(NewCmdCreateTrackerServer(f, out, errOut))
-	/*
-		cmd.AddCommand(NewCmdCreateTrackerToken(f, out, errOut))
-		cmd.AddCommand(NewCmdCreateTrackerUser(f, out, errOut))
-	*/
+	cmd.AddCommand(NewCmdCreateTrackerToken(f, out, errOut))
 	return cmd
 }
 
