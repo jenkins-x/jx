@@ -141,6 +141,10 @@ func (o *EditConfigOptions) EditIssueTracker(pc *config.ProjectConfig) (bool, er
 		return answer, fmt.Errorf("No issue tracker server URL found!")
 	}
 	it.URL = server.URL
+	if server.Kind != "" {
+		it.Kind = server.Kind
+	}
+	answer = true
 
 	it.Project, err = util.PickValue("Issue tracker project name: ", it.Project, true)
 	if err != nil {
