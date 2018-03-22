@@ -47,29 +47,71 @@ func NewBitbucketProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProv
 
 func (b *BitbucketProvider) ListOrganisations() ([]GitOrganisation, error) {
 
-	// Organizations i
-	teams, response, err := b.Client.TeamsApi.TeamsGet(b.Context, nil)
+	teams := []GitOrganisation{}
 
-	if err != nil {
-		return nil, err
+	// Pagination is gross.
+	for {
+		results, _, err := b.Client.TeamsApi.TeamsGet(b.Context, nil)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, team := range results.Values {
+			teams = append(teams, GitOrganisation{Login: team.Username})
+		}
+
+		if results.Next == "" {
+			break
+		}
 	}
 
-	// Some said his numbers were magical. Others said they were int-significant.
-	// TODO: process 404 "not a team account" responses
-	if response.StatusCode == 404 {
-		return nil, err
-	}
-
-	bTeams := []GitOrganisation{}
-
-	for _, team := range teams.Values {
-		bTeams = append(bTeams, GitOrganisation{Login: team.Username})
-	}
-
-	return bTeams, nil
+	return teams, nil
 }
 
 func (b *BitbucketProvider) ListRepositories(org string) ([]*GitRepository, error) {
+
+	repos := []*GitRepository{}
+
+	for {
+		results, _, err := b.Client.RepositoriesApi.RepositoriesGet(b.Context, nil)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, repo := range results.Values {
+
+			var sshURL string
+			for _, link := range repo.Links.Clone {
+				if link.Name == "ssh" {
+					sshURL = link.Href
+				}
+			}
+
+			isFork := false
+			if repo.Parent != nil {
+				isFork = true
+			}
+
+			repos = append(
+				repos,
+				&GitRepository{
+					Name:     repo.Name,
+					HTMLURL:  repo.Links.Html.Href,
+					CloneURL: sshURL,
+					SSHURL:   sshURL,
+					Language: repo.Language,
+					Fork:     isFork,
+				},
+			)
+		}
+
+		if results.Next == "" {
+			break
+		}
+	}
+
 	return nil, nil
 }
 
@@ -147,6 +189,10 @@ func (b *BitbucketProvider) IsGitHub() bool {
 
 func (b *BitbucketProvider) IsGitea() bool {
 	return false
+}
+
+func (b *BitbucketProvider) IsBitbucket() bool {
+	return true
 }
 
 func (b *BitbucketProvider) Kind() string {
