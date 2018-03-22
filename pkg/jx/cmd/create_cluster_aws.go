@@ -180,13 +180,13 @@ func (o *CreateClusterAWSOptions) Run() error {
 	insecureRegistries := flags.InsecureDockerRegistry
 	if insecureRegistries != "" {
 		o.Printf("Waiting for the Cluster configuration...\n")
-		igJson, err := o.waitForInstanceGroupJson(name)
+		igJson, err := o.waitForClusterJson(name)
 		if err != nil {
 			return fmt.Errorf("Failed to wait for the Cluster JSON: %s\n", err)
 		}
 		o.Printf("Loaded Cluster JSON: %s\n", igJson)
 
-		err = o.modifyInstanceGroupDockerConfig(igJson, insecureRegistries)
+		err = o.modifyClusterConfigJson(igJson, insecureRegistries)
 		if err != nil {
 			return err
 		}
@@ -206,7 +206,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	return o.initAndInstall(AWS)
 }
 
-func (o *CreateClusterAWSOptions) waitForInstanceGroupJson(clusterName string) (string, error) {
+func (o *CreateClusterAWSOptions) waitForClusterJson(clusterName string) (string, error) {
 	jsonOutput := ""
 	f := func() error {
 		text, err := o.getCommandOutput("", "kops", "get", "cluster", clusterName, "-ojson")
@@ -227,7 +227,7 @@ func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 	return o.retryQuiet(2000, time.Second*10, f)
 }
 
-func (o *CreateClusterAWSOptions) modifyInstanceGroupDockerConfig(json string, insecureRegistries string) error {
+func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureRegistries string) error {
 	if insecureRegistries == "" {
 		return nil
 	}
