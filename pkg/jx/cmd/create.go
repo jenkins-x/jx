@@ -32,7 +32,7 @@ var (
 	* cluster
 	* env
 	* git
-    * spring (aka 'springboot')
+	* spring (aka 'springboot')
     `
 
 	create_long = templates.LongDesc(`
