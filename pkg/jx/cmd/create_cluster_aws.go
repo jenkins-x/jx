@@ -50,9 +50,11 @@ var (
 `)
 
 	createClusterAWSExample = templates.Examples(`
-
+        # to create a new kubernetes cluster with Jenkins X in your default zones (from $AWS_AVAILABILITY_ZONES)
 		jx create cluster aws
 
+		# to specify the zones
+		jx create cluster aws --zones us-west-2a,us-west-2b,us-west-2c
 `)
 )
 

@@ -2,6 +2,7 @@ package gits
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -275,6 +276,19 @@ func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue
 		return nil, err
 	}
 	return p.fromGiteaIssue(i)
+}
+
+func (p *GiteaProvider) IssueURL(org string, name string, number int, isPull bool) string {
+	serverPrefix := p.Server.URL
+	if !strings.HasPrefix(serverPrefix, "https://") {
+		serverPrefix = "https://" + serverPrefix
+	}
+	path := "issues"
+	if isPull {
+		path = "pull"
+	}
+	url := util.UrlJoin(serverPrefix, org, name, path, strconv.Itoa(number))
+	return url
 }
 
 func (p *GiteaProvider) SearchIssues(org string, name string, filter string) ([]*GitIssue, error) {

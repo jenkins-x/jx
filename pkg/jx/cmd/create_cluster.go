@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 
 	"github.com/blang/semver"
@@ -95,6 +96,14 @@ var (
 
 `)
 )
+
+// KubernetesProviderOptions returns all the kubernetes providers as a string
+func KubernetesProviderOptions() string {
+	values := []string{}
+	values = append(values, KUBERNETES_PROVIDERS...)
+	sort.Strings(values)
+	return strings.Join(values, ", ")
+}
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.

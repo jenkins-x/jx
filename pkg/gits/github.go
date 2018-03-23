@@ -544,15 +544,9 @@ func (p *GitHubProvider) CreateIssue(owner string, repo string, issue *GitIssue)
 }
 
 func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i *github.Issue) (*GitIssue, error) {
-	serverPrefix := p.Server.URL
-	if !strings.HasPrefix(serverPrefix, "https://") {
-		serverPrefix = "https://" + serverPrefix
-	}
-	path := "issues"
 	isPull := i.IsPullRequest()
-	if isPull {
-		path = "pull"
-	}
+	url := p.IssueURL(org, name, number, isPull)
+
 	labels := []GitLabel{}
 	for _, label := range i.Labels {
 		labels = append(labels, toGitHubLabel(&label))
@@ -561,7 +555,6 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 	for _, assignee := range i.Assignees {
 		assignees = append(assignees, *toGitHubUser(assignee))
 	}
-	url := util.UrlJoin(serverPrefix, org, name, path, strconv.Itoa(number))
 	return &GitIssue{
 		Number:        &number,
 		URL:           url,
@@ -574,6 +567,19 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 		ClosedBy:      toGitHubUser(i.ClosedBy),
 		Assignees:     assignees,
 	}, nil
+}
+
+func (p *GitHubProvider) IssueURL(org string, name string, number int, isPull bool) string {
+	serverPrefix := p.Server.URL
+	if !strings.HasPrefix(serverPrefix, "https://") {
+		serverPrefix = "https://" + serverPrefix
+	}
+	path := "issues"
+	if isPull {
+		path = "pull"
+	}
+	url := util.UrlJoin(serverPrefix, org, name, path, strconv.Itoa(number))
+	return url
 }
 
 func toGitHubUser(user *github.User) *GitUser {
