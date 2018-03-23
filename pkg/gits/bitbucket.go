@@ -2,8 +2,8 @@ package gits
 
 import (
 	"context"
-	"net/http"
-	"time"
+
+	"golang.org/x/oauth2"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/wbrefvem/go-bitbucket"
@@ -23,28 +23,20 @@ type BitbucketProvider struct {
 func NewBitbucketProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	ctx := context.Background()
 
-	// FIXME: don't use basic auth
-	basicAuthContext := context.WithValue(
-		ctx,
-		bitbucket.ContextBasicAuth,
-		bitbucket.BasicAuth{
-			UserName: user.Username,
-			// App Password, equivalent to GH personal access token
-			Password: user.ApiToken,
-		},
-	)
-
 	provider := BitbucketProvider{
 		Server:   *server,
 		User:     *user,
 		Username: user.Username,
-		Context:  basicAuthContext,
+		Context:  ctx,
 	}
 
+	tokenSource := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: user.ApiToken},
+	)
+	tokenContext := oauth2.NewClient(ctx, tokenSource)
+
 	cfg := bitbucket.NewConfiguration()
-	cfg.HTTPClient = &http.Client{
-		Timeout: 30 * time.Second,
-	}
+	cfg.HTTPClient = tokenContext
 
 	provider.Client = bitbucket.NewAPIClient(cfg)
 
@@ -138,7 +130,9 @@ func (b *BitbucketProvider) CreateRepository(org string, name string, private bo
 }
 
 func (b *BitbucketProvider) GetRepository(org string, name string) (*GitRepository, error) {
-	return nil, nil
+
+	result, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(b.Context, b.Username, name)
+	return RepoFromRepo(result), err
 }
 
 func (b *BitbucketProvider) DeleteRepository(org string, name string) error {
