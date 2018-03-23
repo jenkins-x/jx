@@ -358,7 +358,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		err = o.runCommand("helm", "upgrade", "--install", "--wait", "--namespace", targetNS, releaseName, fullAppName)
 	}
 	if err == nil {
-		err = o.commentOnIssues(targetNS, env)
+		err = o.commentOnIssues(targetNS, env, promoteKey)
 		if err != nil {
 			o.warnf("Failed to comment on issues for release %s: %s\n", releaseName, err)
 		}
@@ -748,9 +748,9 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							}
 							if succeeded {
 								o.Printf("Merge status checks all passed so the promotion worked!\n")
-								err = promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
+								err = o.commentOnIssues(ns, env, promoteKey)
 								if err == nil {
-									err = o.commentOnIssues(ns, env)
+									err = promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
 								}
 								return err
 							}
@@ -985,7 +985,7 @@ func (o *PromoteOptions) getJenkinsURL() string {
 }
 
 // commentOnIssues comments on any issues for a release that the fix is available in the given environment
-func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Environment) error {
+func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Environment, promoteKey *kube.PromoteStepActivityKey) error {
 	ens := environment.Spec.Namespace
 	envName := environment.Spec.Label
 	app := o.Application
@@ -1030,6 +1030,44 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	if err != nil {
 		return err
 	}
+	appNames := []string{app, o.ReleaseName, ens + "-" + app}
+	url := ""
+	for _, n := range appNames {
+		url, err = kube.FindServiceURL(kubeClient, ens, n)
+		if url != "" {
+			break
+		}
+	}
+	if url == "" {
+		o.warnf("Could not find the service URL in namespace %s for names %s\n", ens, strings.Join(appNames, ", "))
+	}
+	available := ""
+	if url != "" {
+		available = fmt.Sprintf(" and available [here](%s)", url)
+	}
+
+	if available == "" {
+		ing, err := kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(app, metav1.GetOptions{})
+		if err != nil || ing == nil && o.ReleaseName != "" && o.ReleaseName != app {
+			ing, err = kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(o.ReleaseName, metav1.GetOptions{})
+		}
+		if ing != nil {
+			if len(ing.Spec.Rules) > 0 {
+				hostname := ing.Spec.Rules[0].Host
+				if hostname != "" {
+					available = fmt.Sprintf(" and available at %s", hostname)
+					url = hostname
+				}
+			}
+		}
+	}
+
+	// lets try update the PipelineActivity
+	if url != "" && promoteKey.ApplicationURL == "" {
+		promoteKey.ApplicationURL = url
+		o.Printf("Application is available at: %s\n", util.ColorInfo(url))
+	}
+
 	release, err := jxClient.JenkinsV1().Releases(ens).Get(releaseName, metav1.GetOptions{})
 	if err == nil && release != nil {
 		o.releaseResource = release
@@ -1039,37 +1077,6 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		if release.Spec.ReleaseNotesURL != "" {
 			versionMessage = "[" + version + "](" + release.Spec.ReleaseNotesURL + ")"
 		}
-		appNames := []string{app, o.ReleaseName, ens + "-" + app}
-		url := ""
-		for _, n := range appNames {
-			url, err = kube.FindServiceURL(kubeClient, ens, n)
-			if url != "" {
-				break
-			}
-		}
-		if url == "" {
-			o.warnf("Could not find the service URL in namespace %s for names %s\n", ens, strings.Join(appNames, ", "))
-		}
-		available := ""
-		if url != "" {
-			available = fmt.Sprintf(" and available [here](%s)", url)
-		}
-
-		if available == "" {
-			ing, err := kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(app, metav1.GetOptions{})
-			if err != nil || ing == nil && o.ReleaseName != "" && o.ReleaseName != app {
-				ing, err = kubeClient.ExtensionsV1beta1().Ingresses(ens).Get(o.ReleaseName, metav1.GetOptions{})
-			}
-			if ing != nil {
-				if len(ing.Spec.Rules) > 0 {
-					hostname := ing.Spec.Rules[0].Host
-					if hostname != "" {
-						available = fmt.Sprintf(" and available at %s", hostname)
-					}
-				}
-			}
-		}
-
 		for _, issue := range issues {
 			if issue.IsClosed() {
 				o.Printf("Commenting that issue %s is now in %s\n", util.ColorInfo(issue.URL), util.ColorInfo(envName))

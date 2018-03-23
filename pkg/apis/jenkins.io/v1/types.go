@@ -193,9 +193,10 @@ type StageActivityStep struct {
 type PromoteActivityStep struct {
 	CoreActivityStep
 
-	Environment string                  `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
-	PullRequest *PromotePullRequestStep `json:"pullRequest,omitempty" protobuf:"bytes,2,opt,name=pullRequest"`
-	Update      *PromoteUpdateStep      `json:"update,omitempty" protobuf:"bytes,3,opt,name=update"`
+	Environment    string                  `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
+	PullRequest    *PromotePullRequestStep `json:"pullRequest,omitempty" protobuf:"bytes,2,opt,name=pullRequest"`
+	Update         *PromoteUpdateStep      `json:"update,omitempty" protobuf:"bytes,3,opt,name=update"`
+	ApplicationURL string                  `json:"applicationURL,omitempty" protobuf:"bytes,4,opt,name=environment"`
 }
 
 // GitStatus the status of a git commit in terms of CI / CD
