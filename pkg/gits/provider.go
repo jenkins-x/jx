@@ -11,8 +11,12 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
-type GitProvider interface {
+type OrganisationLister interface {
 	ListOrganisations() ([]GitOrganisation, error)
+}
+
+type GitProvider interface {
+	OrganisationLister
 
 	ListRepositories(org string) ([]*GitRepository, error)
 
@@ -227,33 +231,15 @@ func ProviderAccessTokenURL(kind string, url string) string {
 }
 
 // PickOrganisation picks an organisations login if there is one available
-func PickOrganisation(provider GitProvider, userName string) (string, error) {
-	answer := ""
-	orgs, err := provider.ListOrganisations()
-	if err != nil {
-		return answer, err
-	}
-	if len(orgs) == 0 {
-		return answer, nil
-	}
-	if len(orgs) == 1 {
-		return orgs[0].Login, nil
-	}
-	orgNames := []string{userName}
-	for _, o := range orgs {
-		name := o.Login
-		if name != "" {
-			orgNames = append(orgNames, name)
-		}
-	}
-	sort.Strings(orgNames)
-	orgName := ""
+func PickOrganisation(orgLister OrganisationLister, userName string) (string, error) {
 	prompt := &survey.Select{
 		Message: "Which organisation do you want to use?",
-		Options: orgNames,
+		Options: getOrganizations(orgLister, userName),
 		Default: userName,
 	}
-	err = survey.AskOne(prompt, &orgName, nil)
+
+	orgName := ""
+	err := survey.AskOne(prompt, &orgName, nil)
 	if err != nil {
 		return "", err
 	}
@@ -261,6 +247,20 @@ func PickOrganisation(provider GitProvider, userName string) (string, error) {
 		return "", nil
 	}
 	return orgName, nil
+}
+
+func getOrganizations(orgLister OrganisationLister, userName string) []string {
+	// Always include the username as a pseudo organization
+	orgNames := []string{userName}
+
+	orgs, _ := orgLister.ListOrganisations()
+	for _, o := range orgs {
+		if name := o.Login; name != "" {
+			orgNames = append(orgNames, name)
+		}
+	}
+	sort.Strings(orgNames)
+	return orgNames
 }
 
 func PickRepositories(provider GitProvider, owner string, message string, selectAll bool, filter string) ([]*GitRepository, error) {
