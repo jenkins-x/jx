@@ -118,7 +118,7 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	options.addCommonFlags(cmd)
 	options.addInstallFlags(cmd, false)
 
-	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [minikube,gke,aks]")
+	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 	return cmd
 }
 

@@ -98,7 +98,7 @@ func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 
 	options.addCommonFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: [aks,eks,gke,kubernetes,minikube]")
+	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 	cmd.Flags().StringVarP(&options.Flags.Namespace, optionNamespace, "", "jx", "The namespace the Jenkins X platform should be installed into")
 	options.addInitFlags(cmd)
 	return cmd
