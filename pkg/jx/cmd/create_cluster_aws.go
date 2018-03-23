@@ -35,6 +35,7 @@ type CreateClusterAWSFlags struct {
 	Zones                  string
 	InsecureDockerRegistry string
 	UseRBAC                bool
+	TerraformDirectory     string
 }
 
 var (
@@ -55,6 +56,9 @@ var (
 
 		# to specify the zones
 		jx create cluster aws --zones us-west-2a,us-west-2b,us-west-2c
+
+		# to output terraform configuration
+		jx create cluster aws --terraform /Users/jx/jx-infra
 `)
 )
 
@@ -84,6 +88,7 @@ func NewCmdCreateClusterAWS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "", "kubernetes version")
 	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability zones. Defaults to $AWS_AVAILABILITY_ZONES")
 	cmd.Flags().StringVarP(&options.Flags.InsecureDockerRegistry, "insecure-registry", "", "100.64.0.0/10", "The insecure docker registries to allow")
+	cmd.Flags().StringVarP(&options.Flags.TerraformDirectory, "terraform", "t", "", "The directory to save terraform configuration.")
 	return cmd
 }
 
@@ -160,11 +165,16 @@ func (o *CreateClusterAWSOptions) Run() error {
 	if flags.KubeVersion != "" {
 		args = append(args, "--kubernetes-version", flags.KubeVersion)
 	}
+
 	auth := "RBAC"
 	if !flags.UseRBAC {
 		auth = "AlwaysAllow"
 	}
 	args = append(args, "--authorization", auth, "--zones", zones, "--yes")
+
+	if flags.TerraformDirectory != "" {
+		args = append(args, "--out", flags.TerraformDirectory, "--target=terraform")
+	}
 
 	// TODO allow add custom args?
 
