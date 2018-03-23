@@ -2,7 +2,10 @@ package gits
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
+	"github.com/jenkins-x/jx/pkg/util"
 	"golang.org/x/oauth2"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -181,6 +184,19 @@ func (b *BitbucketProvider) SearchIssues(org string, name string, query string) 
 
 func (b *BitbucketProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
 	return nil, nil
+}
+
+func (p *BitbucketProvider) IssueURL(org string, name string, number int, isPull bool) string {
+	serverPrefix := p.Server.URL
+	if !strings.HasPrefix(serverPrefix, "https://") {
+		serverPrefix = "https://" + serverPrefix
+	}
+	path := "issues"
+	if isPull {
+		path = "pull"
+	}
+	url := util.UrlJoin(serverPrefix, org, name, path, strconv.Itoa(number))
+	return url
 }
 
 func (b *BitbucketProvider) CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error) {
