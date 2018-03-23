@@ -175,6 +175,10 @@ func (b *BitbucketProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return nil
 }
 
+func (b *BitbucketProvider) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {
+	return nil, nil
+}
+
 func (b *BitbucketProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
 	return nil, nil
 }
