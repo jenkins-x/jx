@@ -22,6 +22,9 @@ const (
 	// the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
 
+	// the issue tracker credentials secret
+	SecretJenkinsIssueCredentials = "jenkins-issues-"
+
 	// LocalHelmRepoName is the default name of the local chart repository where CI / CD releases go to
 	LocalHelmRepoName = "releases"
 

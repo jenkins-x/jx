@@ -2,7 +2,7 @@ package draft
 
 import (
 	"bytes"
-	"crypto/sha1"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"math/rand"
@@ -35,9 +35,9 @@ type AppContext struct {
 // newAppContext prepares state carried across the various draft stage boundaries.
 func newAppContext(s *Server, req *rpc.UpRequest, out io.Writer) (*AppContext, error) {
 	raw := bytes.NewBuffer(req.AppArchive.Content)
-	// write build context to a buffer so we can also write to the sha1 hash.
+	// write build context to a buffer so we can also write to the sha256 hash.
 	b := new(bytes.Buffer)
-	h := sha1.New()
+	h := sha256.New()
 	w := io.MultiWriter(b, h)
 	if _, err := io.Copy(w, raw); err != nil {
 		return nil, err

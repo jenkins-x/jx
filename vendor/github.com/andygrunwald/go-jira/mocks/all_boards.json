@@ -1,0 +1,43 @@
+{
+  "maxResults": 50,
+  "startAt": 0,
+  "isLast": true,
+  "values": [
+    {
+      "id": 4,
+      "self": "https://test.jira.org/rest/agile/1.0/board/4",
+      "name": "Test Weekly",
+      "type": "scrum"
+    },
+    {
+      "id": 5,
+      "self": "https://test.jira.org/rest/agile/1.0/board/5",
+      "name": "Test Production Support",
+      "type": "kanban"
+    },
+    {
+      "id": 6,
+      "self": "https://test.jira.org/rest/agile/1.0/board/6",
+      "name": "Test To Give",
+      "type": "kanban"
+    },
+    {
+      "id": 7,
+      "self": "https://test.jira.org/rest/agile/1.0/board/7",
+      "name": "Test Journey App",
+      "type": "kanban"
+    },
+    {
+      "id": 9,
+      "self": "https://test.jira.org/rest/agile/1.0/board/9",
+      "name": "Testix",
+      "type": "scrum"
+    },
+    {
+      "id": 1,
+      "self": "https://test.jira.org/rest/agile/1.0/board/1",
+      "name": "Test Mobile",
+      "type": "scrum"
+    }
+  ]
+}

@@ -69,7 +69,7 @@ func WaitForAllDeploymentsToBeReady(client *kubernetes.Clientset, namespace stri
 	for _, d := range deployList.Items {
 		err = WaitForDeploymentToBeReady(client, d.Name, namespace, timeoutPerDeploy)
 		if err != nil {
-			log.Warnf("deployment %s failed to become ready in namespase %s", d.Name, namespace)
+			log.Warnf("deployment %s failed to become ready in namespace %s", d.Name, namespace)
 		}
 	}
 	return nil

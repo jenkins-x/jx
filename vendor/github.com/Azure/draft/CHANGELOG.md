@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.11.0
+
+### Features
+
+* Improved and more granular `draft logs` functionality
+   * Each instance of `draft up` results in a Build ID and you can now get logs by build ID
+* `draft connect`
+   * Now connects to every containerPort in application pod by default
+   * Added `--container/-c` flag to support connecting to a specific container in the pod
+
+### Bugs
+
+* Corrected readiness/liveness probe port in draftd chart
+
+### Housekeeping
+
+* CI upkeep, docs, and go format improvements
+* Updates to Dockerfiles in Java/Gradle packs
+   * Notably, switched from Alpine to Debian based Docker image
+
+
 ## v0.10.0
 
 ### Features
@@ -55,8 +76,7 @@
 * implemented `draft delete` to remove applications from Kubernetes
 * implemented `draft logs` to view build logs after `draft up`
 * added --tail flag to `draft connect` (as well as `draft logs`)
-* added -i/--image flag to `draft init` to override the draftd image
-* added "upgrade" workflow to `draft init`
+* added -i/--image flag to `draft init` to override the draftd image * added "upgrade" workflow to `draft init`
 * installed the pack-repo plugin by default on `draft init`
 * switched default listening port to 3000 for apps deployed with the default Ruby pack
 * added global flag `--draft-namespace` for talking to draftd in another namespace

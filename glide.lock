@@ -1,5 +1,5 @@
-hash: 3fe3f41b331184358ce2ac5eb7c6a97cf0e46c1c4ce2971836910f41bb895f56
-updated: 2018-03-18T09:58:48.135971255Z
+hash: 8b222e5bfe322c05c34fcf350a2ba26c0cdd3fc4960c8e70713e51d161d5217d
+updated: 2018-03-22T10:55:40.185290251Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -10,8 +10,10 @@ imports:
   version: 39c609e903992e25deca0e7aa2c5304fd680530f
   subpackages:
   - gitea
+- name: github.com/andygrunwald/go-jira
+  version: f9c91e2a6be53464f27662c88c89938be4fbe1c6
 - name: github.com/Azure/draft
-  version: fb51c98eddada7f6c0dc39c91ee9093b1b68e68a
+  version: 8979aa6154f7ae97a5e678222532479c402de130
   subpackages:
   - pkg/draft/draftpath
   - pkg/draft/pack/repo
@@ -34,7 +36,7 @@ imports:
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/chromedp/cdproto
-  version: 0a203f8ab4339bb8860e9d79fdcc2ede82da5e70
+  version: dfcd948f5402632d92038cc1138b6f041a6cbc32
   subpackages:
   - accessibility
   - animation
@@ -75,7 +77,7 @@ imports:
   - tethering
   - tracing
 - name: github.com/chromedp/chromedp
-  version: 097f1903e5193f8dfa6447d201d79fe51c255b39
+  version: 117d42c3dd4faa94aae004405000ab7dad42cbbd
   subpackages:
   - client
   - kb
@@ -94,6 +96,8 @@ imports:
   version: fd34ef7671b12cdf1b024d98c6b327b2770d32c4
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
+- name: github.com/fatih/structs
+  version: a720dfa8df582c51dee1b36feabb906bde1588bd
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - name: github.com/gobwas/glob
@@ -122,7 +126,7 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: d2b80df1e3eeccae96eb1cb489e65372cc9550c8
+  version: 8eefe6bfbb002707f4216cd75783898e1b663f99
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -210,6 +214,8 @@ imports:
   version: e2f66f8164ca709d4c21e815860afd2024e9b894
 - name: github.com/pkg/browser
   version: c90ca0c84f15f81c982e32665bffd8d7aac8f097
+- name: github.com/pkg/errors
+  version: 816c9085562cd7ee03e7f8188a1cfd942858cded
 - name: github.com/russross/blackfriday
   version: 4048872b16cc0fc2c5fd9eacf0ed2c2fedaa0c8c
 - name: github.com/sergi/go-diff
@@ -219,7 +225,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 90150a8ed11b6ce285e77e8af2b0109559ce4777
 - name: github.com/spf13/cobra
-  version: c6c44e6fdcc30161c7f4480754da7230d01c06e3
+  version: a1f051bc3eba734da4772d60e2d677f47cf93ef4
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -230,6 +236,11 @@ imports:
   - scanner
   - token
   - types
+- name: github.com/trivago/tgo
+  version: e4d1ddd28c17dd89ed26327cf69fded22060671b
+  subpackages:
+  - tcontainer
+  - treflect
 - name: github.com/xanzy/ssh-agent
   version: ba9c9e33906f58169366275e3450db66139a31a9
 - name: golang.org/x/crypto
@@ -394,7 +405,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 120eba0f136be6142fefe948176dcc216f05b9f1
+  version: ed8399210f2ab8b7f0b78226673236f753b0fc69
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -509,11 +520,11 @@ imports:
   - util/jsonpath
   - util/retry
 - name: k8s.io/code-generator
-  version: d5be28d178a49209fe9c2fcb48960cdf2a0a31c0
+  version: a9a9141027a9e4b47e915a91401df91ef7fa583b
 - name: k8s.io/gengo
   version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
 - name: k8s.io/helm
-  version: 4711d5b8b8283a045b0ee118a5ac450346417919
+  version: 48e703997016f3edeb4f0b90e6cfdb3456ce3db0
   subpackages:
   - pkg/chartutil
   - pkg/ignore

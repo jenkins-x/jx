@@ -66,7 +66,7 @@ func NewCmdCreateGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 func (o *CreateGitServerOptions) Run() error {
 	args := o.Args
 	if len(args) < 1 {
-		return missingArguments()
+		return missingGitServerArguments()
 	}
 	kind := args[0]
 	name := o.Name
@@ -89,7 +89,7 @@ func (o *CreateGitServerOptions) Run() error {
 	}
 
 	if gitUrl == "" {
-		return missingArguments()
+		return missingGitServerArguments()
 	}
 	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
 	if err != nil {
@@ -106,6 +106,6 @@ func (o *CreateGitServerOptions) Run() error {
 	return nil
 }
 
-func missingArguments() error {
+func missingGitServerArguments() error {
 	return fmt.Errorf("Missing git server URL arguments. Usage: jx create git server kind [url]")
 }

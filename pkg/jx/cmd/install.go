@@ -77,6 +77,9 @@ var (
 
 		For more documentation see: [http://jenkins-x.io/getting-started/install-on-cluster/](http://jenkins-x.io/getting-started/install-on-cluster/)
 
+		The current requirements are:
+		* RBAC is enabled on the cluster
+		* insecure docker registry is enabled for docker registries running locally inside kubernetes on the service IP range. See the above documentation for more detail 
 
 `)
 
@@ -86,6 +89,9 @@ var (
 
 		# Install with a GitHub personal access token
 		jx install --git-username jenkins-x-bot --git-api-token 9fdbd2d070cd81eb12bca87861bcd850
+
+		# If you know the cloud provider you can pass this as a CLI argument. E.g. for AWS
+		jx install --provider=aws
 `)
 )
 

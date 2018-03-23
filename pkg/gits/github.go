@@ -494,6 +494,31 @@ func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssu
 	return p.fromGithubIssue(org, name, number, i)
 }
 
+func (p *GitHubProvider) SearchIssues(org string, name string, filter string) ([]*GitIssue, error) {
+	opts := &github.IssueListByRepoOptions{}
+	answer := []*GitIssue{}
+	issues, r, err := p.Client.Issues.ListByRepo(p.Context, org, name, opts)
+	if r.StatusCode == 404 {
+		return answer, nil
+	}
+	if err != nil {
+		return answer, err
+	}
+	for _, issue := range issues {
+		if issue.Number != nil {
+			n := *issue.Number
+			i, err := p.fromGithubIssue(org, name, n, issue)
+			if err != nil {
+				return answer, err
+			}
+
+			// TODO apply the filter?
+			answer = append(answer, i)
+		}
+	}
+	return answer, nil
+}
+
 func (p *GitHubProvider) CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error) {
 	labels := []string{}
 	for _, label := range issue.Labels {

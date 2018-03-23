@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 
 	"github.com/spf13/cobra"
 
-	"encoding/json"
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -66,9 +66,12 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.AddCommand(NewCmdGetActivity(f, out, errOut))
 	cmd.AddCommand(NewCmdGetAddon(f, out, errOut))
 	cmd.AddCommand(NewCmdGetBuild(f, out, errOut))
+	cmd.AddCommand(NewCmdGetConfig(f, out, errOut))
 	cmd.AddCommand(NewCmdGetEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdGetGit(f, out, errOut))
+	cmd.AddCommand(NewCmdGetIssues(f, out, errOut))
 	cmd.AddCommand(NewCmdGetPipeline(f, out, errOut))
+	cmd.AddCommand(NewCmdGetTracker(f, out, errOut))
 	cmd.AddCommand(NewCmdGetURL(f, out, errOut))
 	cmd.AddCommand(NewCmdGetVersion(f, out, errOut))
 	return cmd

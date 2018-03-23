@@ -47,6 +47,11 @@ import:
 - package: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - package: github.com/Jeffail/gabs
+- package: github.com/andygrunwald/go-jira
+- package: github.com/fatih/structs
+  version: 1.0.0
+- package: github.com/trivago/tgo
+  version: 1.0.1
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

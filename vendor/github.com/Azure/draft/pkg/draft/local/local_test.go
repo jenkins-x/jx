@@ -56,6 +56,34 @@ func TestGetTargetContainerPort(t *testing.T) {
 	}
 }
 
+func TestGetPortMapping(t *testing.T) {
+	testCases := []struct {
+		description     string
+		portMapping     []string
+		expectedMapping map[int]int
+		expectedErr     bool
+	}{
+		{"single port mapping", []string{"8080:8080"}, map[int]int{8080: 8080}, false},
+		{"multiple port mappings", []string{"8080:80", "8081:81"}, map[int]int{80: 8080, 81: 8081}, false},
+		{"multiple port mappings, same local port", []string{"8080:8080", "8080:8081"}, map[int]int{}, true},
+		{"multiple port mappings, same remote port", []string{"8081:8081", "8080:8081"}, map[int]int{}, true},
+	}
+
+	for _, tc := range testCases {
+		m, err := getPortMapping(tc.portMapping)
+
+		if tc.expectedErr {
+			if err == nil {
+				t.Errorf("Expected err but did not get one for test case: %s", tc.description)
+			}
+		} else {
+			if !reflect.DeepEqual(m, tc.expectedMapping) {
+				t.Errorf("For scenario %v - expected: %v, actual: %v", tc.description, tc.expectedMapping, m)
+			}
+		}
+	}
+}
+
 func areEqual(a, b []int) bool {
 
 	if a == nil && b == nil {

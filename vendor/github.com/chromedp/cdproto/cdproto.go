@@ -462,6 +462,8 @@ const (
 	CommandRuntimeDiscardConsoleEntries                    = runtime.CommandDiscardConsoleEntries
 	CommandRuntimeEnable                                   = runtime.CommandEnable
 	CommandRuntimeEvaluate                                 = runtime.CommandEvaluate
+	CommandRuntimeGetIsolateID                             = runtime.CommandGetIsolateID
+	CommandRuntimeGetHeapUsage                             = runtime.CommandGetHeapUsage
 	CommandRuntimeGetProperties                            = runtime.CommandGetProperties
 	CommandRuntimeGlobalLexicalScopeNames                  = runtime.CommandGlobalLexicalScopeNames
 	CommandRuntimeQueryObjects                             = runtime.CommandQueryObjects
@@ -470,6 +472,7 @@ const (
 	CommandRuntimeRunIfWaitingForDebugger                  = runtime.CommandRunIfWaitingForDebugger
 	CommandRuntimeRunScript                                = runtime.CommandRunScript
 	CommandRuntimeSetCustomObjectFormatterEnabled          = runtime.CommandSetCustomObjectFormatterEnabled
+	CommandRuntimeTerminateExecution                       = runtime.CommandTerminateExecution
 	EventRuntimeConsoleAPICalled                           = "Runtime.consoleAPICalled"
 	EventRuntimeExceptionRevoked                           = "Runtime.exceptionRevoked"
 	EventRuntimeExceptionThrown                            = "Runtime.exceptionThrown"
@@ -1747,6 +1750,12 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 	case CommandRuntimeEvaluate:
 		v = new(runtime.EvaluateReturns)
 
+	case CommandRuntimeGetIsolateID:
+		v = new(runtime.GetIsolateIDReturns)
+
+	case CommandRuntimeGetHeapUsage:
+		v = new(runtime.GetHeapUsageReturns)
+
 	case CommandRuntimeGetProperties:
 		v = new(runtime.GetPropertiesReturns)
 
@@ -1769,6 +1778,9 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 		v = new(runtime.RunScriptReturns)
 
 	case CommandRuntimeSetCustomObjectFormatterEnabled:
+		return emptyVal, nil
+
+	case CommandRuntimeTerminateExecution:
 		return emptyVal, nil
 
 	case EventRuntimeConsoleAPICalled:
