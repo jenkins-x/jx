@@ -28,7 +28,8 @@ func (k *PipelineActivityKey) IsValid() bool {
 type PromoteStepActivityKey struct {
 	PipelineActivityKey
 
-	Environment string
+	Environment    string
+	ApplicationURL string
 }
 
 type PromotePullRequestFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromotePullRequestStep) error
@@ -221,9 +222,15 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActiv
 		return err
 	}
 	p1 := *p
+	if k.ApplicationURL != "" {
+		ps.ApplicationURL = k.ApplicationURL
+	}
 	err = fn(a, s, ps, p)
 	if err != nil {
 		return err
+	}
+	if k.ApplicationURL != "" {
+		ps.ApplicationURL = k.ApplicationURL
 	}
 	p2 := *p
 
