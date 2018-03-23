@@ -23,6 +23,7 @@ type BitbucketProvider struct {
 func NewBitbucketProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	ctx := context.Background()
 
+	// FIXME: don't use basic auth
 	basicAuthContext := context.WithValue(
 		ctx,
 		bitbucket.ContextBasicAuth,
@@ -74,6 +75,29 @@ func (b *BitbucketProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return teams, nil
 }
 
+// Map bitbucket.Repository to GitRepository
+func RepoFromRepo(bRepo bitbucket.Repository) *GitRepository {
+	var sshURL string
+	for _, link := range bRepo.Links.Clone {
+		if link.Name == "ssh" {
+			sshURL = link.Href
+		}
+	}
+
+	isFork := false
+	if bRepo.Parent != nil {
+		isFork = true
+	}
+	return &GitRepository{
+		Name:     bRepo.Name,
+		HTMLURL:  bRepo.Links.Html.Href,
+		CloneURL: sshURL,
+		SSHURL:   sshURL,
+		Language: bRepo.Language,
+		Fork:     isFork,
+	}
+}
+
 func (b *BitbucketProvider) ListRepositories(org string) ([]*GitRepository, error) {
 
 	repos := []*GitRepository{}
@@ -86,30 +110,7 @@ func (b *BitbucketProvider) ListRepositories(org string) ([]*GitRepository, erro
 		}
 
 		for _, repo := range results.Values {
-
-			var sshURL string
-			for _, link := range repo.Links.Clone {
-				if link.Name == "ssh" {
-					sshURL = link.Href
-				}
-			}
-
-			isFork := false
-			if repo.Parent != nil {
-				isFork = true
-			}
-
-			repos = append(
-				repos,
-				&GitRepository{
-					Name:     repo.Name,
-					HTMLURL:  repo.Links.Html.Href,
-					CloneURL: sshURL,
-					SSHURL:   sshURL,
-					Language: repo.Language,
-					Fork:     isFork,
-				},
-			)
+			repos = append(repos, RepoFromRepo(repo))
 		}
 
 		if results.Next == "" {
@@ -121,7 +122,19 @@ func (b *BitbucketProvider) ListRepositories(org string) ([]*GitRepository, erro
 }
 
 func (b *BitbucketProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
-	return nil, nil
+
+	var options map[string]interface{}
+	options["body"] = bitbucket.Repository{
+		IsPrivate: private,
+	}
+
+	result, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPost(b.Context, b.Username, name, options)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return RepoFromRepo(result), nil
 }
 
 func (b *BitbucketProvider) GetRepository(org string, name string) (*GitRepository, error) {
