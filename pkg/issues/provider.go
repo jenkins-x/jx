@@ -8,13 +8,20 @@ import (
 )
 
 type IssueProvider interface {
+	// GetIssue returns the issue of the given key
 	GetIssue(key string) (*gits.GitIssue, error)
 
+	// SearchIssues searches for issues (open by default)
 	SearchIssues(query string) ([]*gits.GitIssue, error)
 
+	// Creates a new issue in the current project
 	CreateIssue(issue *gits.GitIssue) (*gits.GitIssue, error)
 
+	// Creates a comment on the given issue
 	CreateIssueComment(key string, comment string) error
+
+	// IssueURL returns the URL of the given issue for this project
+	IssueURL(key string) string
 }
 
 func CreateIssueProvider(kind string, server *auth.AuthServer, userAuth *auth.UserAuth, project string) (IssueProvider, error) {

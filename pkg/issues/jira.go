@@ -92,11 +92,15 @@ func (i *JiraService) CreateIssueComment(key string, comment string) error {
 	return fmt.Errorf("TODO")
 }
 
+func (i *JiraService) IssueURL(key string) string {
+	return util.UrlJoin(i.Server.URL, "browse", key)
+}
+
 func (i *JiraService) jiraToGitIssue(issue *jira.Issue) *gits.GitIssue {
 	answer := &gits.GitIssue{}
 	key := issue.Key
 	answer.Key = key
-	answer.URL = util.UrlJoin(i.Server.URL, "browse", key)
+	answer.URL = i.IssueURL(key)
 	fields := issue.Fields
 	if fields != nil {
 		answer.Title = fields.Summary

@@ -39,6 +39,14 @@ func (i *GitIssueProvider) SearchIssues(query string) ([]*gits.GitIssue, error) 
 	return i.GitProvider.SearchIssues(i.Owner, i.Repository, query)
 }
 
+func (i *GitIssueProvider) IssueURL(key string) string {
+	n, err := issueKeyToNumber(key)
+	if err != nil {
+		return ""
+	}
+	return i.GitProvider.IssueURL(i.Owner, i.Repository, n, false)
+}
+
 func issueKeyToNumber(key string) (int, error) {
 	n, err := strconv.Atoi(key)
 	if err != nil {
