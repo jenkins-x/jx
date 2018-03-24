@@ -108,6 +108,27 @@ func (o *VersionOptions) Run() error {
 		}
 	}
 
+	// kubectl version
+	output, err = o.getCommandOutput("", "kubectl", "version", "--short")
+	if err != nil {
+		o.warnf("Failed to get kubectl version: %s\n", err)
+	} else {
+		for i, line := range strings.Split(output, "\n") {
+			fields := strings.Fields(line)
+			if len(fields) > 1 {
+				v := fields[2]
+				if v != "" {
+					switch i {
+					case 0:
+						table.AddRow("Kubectl Client", info(v))
+					case 1:
+						// Ignore K8S server details as we have these above
+					}
+				}
+			}
+		}
+	}
+
 	// git version
 	output, err = o.getCommandOutput("", "git", "version")
 	if err != nil {
