@@ -226,7 +226,50 @@ func (b *BitbucketProvider) ValidateRepositoryName(org string, name string) erro
 }
 
 func (b *BitbucketProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
-	return nil, nil
+
+	head := bitbucket.PullrequestEndpointBranch{Name: data.Head}
+	sourceFullName := fmt.Sprintf("%s/%s", b.Username, data.Repo)
+	sourceRepo := bitbucket.Repository{FullName: sourceFullName}
+	source := bitbucket.PullrequestEndpoint{
+		Repository: &sourceRepo,
+		Branch:     &head,
+	}
+
+	base := bitbucket.PullrequestEndpointBranch{Name: data.Base}
+	destination := bitbucket.PullrequestEndpoint{
+		Branch: &base,
+	}
+
+	bPullrequest := bitbucket.Pullrequest{
+		Source:      &source,
+		Destination: &destination,
+		Title:       data.Title,
+	}
+
+	var options map[string]interface{}
+	options["body"] = bPullrequest
+
+	pr, response, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPost(b.Context, b.Username, data.Repo, options)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode >= 400 {
+		return nil, handleErrorStatusCode(response)
+	}
+
+	i := int(pr.Id)
+	prID := &i
+
+	newPR := &GitPullRequest{
+		URL:    pr.Links.Html.Href,
+		Owner:  pr.Author.Username,
+		Repo:   pr.Destination.Repository.FullName,
+		Number: prID,
+	}
+
+	return newPR, nil
 }
 
 func (b *BitbucketProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
