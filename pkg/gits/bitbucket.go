@@ -2,6 +2,8 @@ package gits
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -12,7 +14,7 @@ import (
 	"github.com/wbrefvem/go-bitbucket"
 )
 
-// BitbucketProvider mplements GitProvider interface for bitbucket.org
+// BitbucketProvider implements GitProvider interface for bitbucket.org
 type BitbucketProvider struct {
 	Client   *bitbucket.APIClient
 	Username string
@@ -22,7 +24,6 @@ type BitbucketProvider struct {
 	User   auth.UserAuth
 }
 
-// NewBitbucketProvider is a constructor for type BitbucketProvider
 func NewBitbucketProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	ctx := context.Background()
 
@@ -70,8 +71,7 @@ func (b *BitbucketProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return teams, nil
 }
 
-// Map bitbucket.Repository to GitRepository
-func RepoFromRepo(bRepo bitbucket.Repository) *GitRepository {
+func repoFromRepo(bRepo bitbucket.Repository) *GitRepository {
 	var sshURL string
 	for _, link := range bRepo.Links.Clone {
 		if link.Name == "ssh" {
@@ -93,19 +93,28 @@ func RepoFromRepo(bRepo bitbucket.Repository) *GitRepository {
 	}
 }
 
+func handleErrorStatusCode(response *http.Response) error {
+	return fmt.Errorf("Bitbucket API returned status %s with the following explanation: %s", response.Status, response.Body)
+}
+
 func (b *BitbucketProvider) ListRepositories(org string) ([]*GitRepository, error) {
 
 	repos := []*GitRepository{}
 
 	for {
-		results, _, err := b.Client.RepositoriesApi.RepositoriesGet(b.Context, nil)
+		results, response, err := b.Client.RepositoriesApi.RepositoriesGet(b.Context, nil)
 
 		if err != nil {
 			return nil, err
 		}
 
+		// https://i.giphy.com/media/12NUbkX6p4xOO4/giphy.webp
+		if response.StatusCode >= 400 {
+			return nil, handleErrorStatusCode(response)
+		}
+
 		for _, repo := range results.Values {
-			repos = append(repos, RepoFromRepo(repo))
+			repos = append(repos, repoFromRepo(repo))
 		}
 
 		if results.Next == "" {
@@ -123,35 +132,97 @@ func (b *BitbucketProvider) CreateRepository(org string, name string, private bo
 		IsPrivate: private,
 	}
 
-	result, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPost(b.Context, b.Username, name, options)
+	result, response, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPost(b.Context, b.Username, name, options)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return RepoFromRepo(result), nil
+	if response.StatusCode >= 400 {
+		return nil, handleErrorStatusCode(response)
+	}
+
+	return repoFromRepo(result), nil
 }
 
 func (b *BitbucketProvider) GetRepository(org string, name string) (*GitRepository, error) {
 
-	result, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(b.Context, b.Username, name)
-	return RepoFromRepo(result), err
+	repo, response, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(b.Context, org, name)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode >= 400 {
+		return nil, handleErrorStatusCode(response)
+	}
+
+	return repoFromRepo(repo), nil
 }
 
 func (b *BitbucketProvider) DeleteRepository(org string, name string) error {
+
+	response, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugDelete(b.Context, b.Username, name, nil)
+
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode >= 400 {
+		return handleErrorStatusCode(response)
+	}
+
 	return nil
 }
 
 func (b *BitbucketProvider) ForkRepository(originalOrg string, name string, destinationOrg string) (*GitRepository, error) {
-	return nil, nil
+
+	repo, response, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugForksPost(b.Context, b.Username, name, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode >= 400 {
+		return nil, handleErrorStatusCode(response)
+	}
+
+	return repoFromRepo(repo), err
 }
 
 func (b *BitbucketProvider) RenameRepository(org string, name string, newName string) (*GitRepository, error) {
-	return nil, nil
+
+	var options map[string]interface{}
+
+	options["name"] = newName
+
+	repo, response, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPut(b.Context, b.Username, name, options)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode >= 400 {
+		return nil, handleErrorStatusCode(response)
+	}
+
+	return repoFromRepo(repo), nil
 }
 
 func (b *BitbucketProvider) ValidateRepositoryName(org string, name string) error {
-	return nil
+
+	_, response, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(b.Context, b.Username, name)
+
+	if err == nil && response.StatusCode == http.StatusOK {
+		return fmt.Errorf("Repository %s/%s already exists!", b.Username, name)
+	} else if err == nil && response.StatusCode >= 400 {
+		return handleErrorStatusCode(response)
+	}
+
+	if response.StatusCode == 404 {
+		return nil
+	}
+	return err
 }
 
 func (b *BitbucketProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
