@@ -64,7 +64,7 @@ func NewCmdCreateJenkinsUser(f cmdutil.Factory, out io.Writer, errOut io.Writer)
 
 	cmd := &cobra.Command{
 		Use:     "token [username]",
-		Short:   "Adds a new user name and api token for a Jenkins server",
+		Short:   "Adds a new username and api token for a Jenkins server",
 		Aliases: []string{"api-token"},
 		Long:    create_jenkins_user_long,
 		Example: create_jenkins_user_example,
