@@ -28,23 +28,12 @@ import (
 )
 
 //httpGetter is the efault HTTP(/S) backend handler
-type HttpGetter struct {
-	client   *http.Client
-	username string
-	password string
-}
-
-func (g *HttpGetter) SetCredentials(username, password string) {
-	g.username = username
-	g.password = password
+type httpGetter struct {
+	client *http.Client
 }
 
 //Get performs a Get from repo.Getter and returns the body.
-func (g *HttpGetter) Get(href string) (*bytes.Buffer, error) {
-	return g.get(href)
-}
-
-func (g *HttpGetter) get(href string) (*bytes.Buffer, error) {
+func (g *httpGetter) Get(href string) (*bytes.Buffer, error) {
 	buf := bytes.NewBuffer(nil)
 
 	// Set a helm specific user agent so that a repo server and metrics can
@@ -54,10 +43,6 @@ func (g *HttpGetter) get(href string) (*bytes.Buffer, error) {
 		return buf, err
 	}
 	req.Header.Set("User-Agent", "Helm/"+strings.TrimPrefix(version.GetVersion(), "v"))
-
-	if g.username != "" && g.password != "" {
-		req.SetBasicAuth(g.username, g.password)
-	}
 
 	resp, err := g.client.Do(req)
 	if err != nil {
@@ -74,22 +59,17 @@ func (g *HttpGetter) get(href string) (*bytes.Buffer, error) {
 
 // newHTTPGetter constructs a valid http/https client as Getter
 func newHTTPGetter(URL, CertFile, KeyFile, CAFile string) (Getter, error) {
-	return NewHTTPGetter(URL, CertFile, KeyFile, CAFile)
-}
-
-// NewHTTPGetter constructs a valid http/https client as HttpGetter
-func NewHTTPGetter(URL, CertFile, KeyFile, CAFile string) (*HttpGetter, error) {
-	var client HttpGetter
+	var client httpGetter
 	if CertFile != "" && KeyFile != "" {
 		tlsConf, err := tlsutil.NewClientTLS(CertFile, KeyFile, CAFile)
 		if err != nil {
-			return &client, fmt.Errorf("can't create TLS config for client: %s", err.Error())
+			return nil, fmt.Errorf("can't create TLS config for client: %s", err.Error())
 		}
 		tlsConf.BuildNameToCertificate()
 
 		sni, err := urlutil.ExtractHostname(URL)
 		if err != nil {
-			return &client, err
+			return nil, err
 		}
 		tlsConf.ServerName = sni
 

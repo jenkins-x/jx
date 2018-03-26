@@ -3,5 +3,11 @@ go:
   - 1.9.x
   - 1.10.x
   - tip
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - libstdc++6
 script:
   - go build ./...

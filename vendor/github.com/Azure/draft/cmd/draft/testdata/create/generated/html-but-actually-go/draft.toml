@@ -4,4 +4,4 @@
     namespace = "default"
     wait = false
     watch = false
-    watch-delay = 2
+    watch_delay = 2

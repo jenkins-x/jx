@@ -1,5 +1,5 @@
 hash: 8b222e5bfe322c05c34fcf350a2ba26c0cdd3fc4960c8e70713e51d161d5217d
-updated: 2018-03-23T09:06:40.899098-04:00
+updated: 2018-03-26T01:40:06.418956163-04:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -11,7 +11,7 @@ imports:
   subpackages:
   - gitea
 - name: github.com/andygrunwald/go-jira
-  version: f9c91e2a6be53464f27662c88c89938be4fbe1c6
+  version: 73a371cdd95da260b5a70b19336ad03fd62a79e7
 - name: github.com/Azure/draft
   version: fb51c98eddada7f6c0dc39c91ee9093b1b68e68a
   subpackages:
@@ -242,7 +242,7 @@ imports:
   - tcontainer
   - treflect
 - name: github.com/wbrefvem/go-bitbucket
-  version: af37587e0cb4b34a2e192f4a4394a4e8349dcde7
+  version: 9f0898648d6ff69569623c39526ae13c314b974d
 - name: github.com/xanzy/ssh-agent
   version: ba9c9e33906f58169366275e3450db66139a31a9
 - name: golang.org/x/crypto

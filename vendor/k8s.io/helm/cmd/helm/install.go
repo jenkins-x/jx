@@ -50,18 +50,13 @@ The install argument must be a chart reference, a path to a packaged chart,
 a path to an unpacked chart directory or a URL.
 
 To override values in a chart, use either the '--values' flag and pass in a file
-or use the '--set' flag and pass configuration from the command line, to force
-a string value use '--set-string'.
+or use the '--set' flag and pass configuration from the command line.
 
 	$ helm install -f myvalues.yaml ./redis
 
 or
 
 	$ helm install --set name=prod ./redis
-
-or
-
-	$ helm install --set-string long_int=1234567890 ./redis
 
 You can specify the '--values'/'-f' flag multiple times. The priority will be given to the
 last (right-most) file specified. For example, if both myvalues.yaml and override.yaml
@@ -118,14 +113,11 @@ type installCmd struct {
 	out          io.Writer
 	client       helm.Interface
 	values       []string
-	stringValues []string
 	nameTemplate string
 	version      string
 	timeout      int64
 	wait         bool
 	repoURL      string
-	username     string
-	password     string
 	devel        bool
 	depUp        bool
 
@@ -173,7 +165,7 @@ func newInstallCmd(c helm.Interface, out io.Writer) *cobra.Command {
 				inst.version = ">0.0.0-0"
 			}
 
-			cp, err := locateChartPath(inst.repoURL, inst.username, inst.password, args[0], inst.version, inst.verify, inst.keyring,
+			cp, err := locateChartPath(inst.repoURL, args[0], inst.version, inst.verify, inst.keyring,
 				inst.certFile, inst.keyFile, inst.caFile)
 			if err != nil {
 				return err
@@ -192,7 +184,6 @@ func newInstallCmd(c helm.Interface, out io.Writer) *cobra.Command {
 	f.BoolVar(&inst.disableHooks, "no-hooks", false, "prevent hooks from running during install")
 	f.BoolVar(&inst.replace, "replace", false, "re-use the given name, even if that name is already used. This is unsafe in production")
 	f.StringArrayVar(&inst.values, "set", []string{}, "set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
-	f.StringArrayVar(&inst.stringValues, "set-string", []string{}, "set STRING values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	f.StringVar(&inst.nameTemplate, "name-template", "", "specify template used to name the release")
 	f.BoolVar(&inst.verify, "verify", false, "verify the package before installing it")
 	f.StringVar(&inst.keyring, "keyring", defaultKeyring(), "location of public keys used for verification")
@@ -200,8 +191,6 @@ func newInstallCmd(c helm.Interface, out io.Writer) *cobra.Command {
 	f.Int64Var(&inst.timeout, "timeout", 300, "time in seconds to wait for any individual Kubernetes operation (like Jobs for hooks)")
 	f.BoolVar(&inst.wait, "wait", false, "if set, will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment are in a ready state before marking the release as successful. It will wait for as long as --timeout")
 	f.StringVar(&inst.repoURL, "repo", "", "chart repository url where to locate the requested chart")
-	f.StringVar(&inst.username, "username", "", "chart repository username where to locate the requested chart")
-	f.StringVar(&inst.password, "password", "", "chart repository password where to locate the requested chart")
 	f.StringVar(&inst.certFile, "cert-file", "", "identify HTTPS client using this SSL certificate file")
 	f.StringVar(&inst.keyFile, "key-file", "", "identify HTTPS client using this SSL key file")
 	f.StringVar(&inst.caFile, "ca-file", "", "verify certificates of HTTPS-enabled servers using this CA bundle")
@@ -218,7 +207,7 @@ func (i *installCmd) run() error {
 		i.namespace = defaultNamespace()
 	}
 
-	rawVals, err := vals(i.valueFiles, i.values, i.stringValues)
+	rawVals, err := vals(i.valueFiles, i.values)
 	if err != nil {
 		return err
 	}
@@ -240,7 +229,7 @@ func (i *installCmd) run() error {
 	}
 
 	if req, err := chartutil.LoadRequirements(chartRequested); err == nil {
-		// If checkDependencies returns an error, we have unfulfilled dependencies.
+		// If checkDependencies returns an error, we have unfullfilled dependencies.
 		// As of Helm 2.4.0, this is treated as a stopping condition:
 		// https://github.com/kubernetes/helm/issues/2209
 		if err := checkDependencies(chartRequested, req); err != nil {
@@ -332,8 +321,8 @@ func mergeValues(dest map[string]interface{}, src map[string]interface{}) map[st
 }
 
 // vals merges values from files specified via -f/--values and
-// directly via --set or --set-string, marshaling them to YAML
-func vals(valueFiles valueFiles, values []string, stringValues []string) ([]byte, error) {
+// directly via --set, marshaling them to YAML
+func vals(valueFiles valueFiles, values []string) ([]byte, error) {
 	base := map[string]interface{}{}
 
 	// User specified a values files via -f/--values
@@ -366,13 +355,6 @@ func vals(valueFiles valueFiles, values []string, stringValues []string) ([]byte
 		}
 	}
 
-	// User specified a value via --set-string
-	for _, value := range stringValues {
-		if err := strvals.ParseIntoString(value, base); err != nil {
-			return []byte{}, fmt.Errorf("failed parsing --set-string data: %s", err)
-		}
-	}
-
 	return yaml.Marshal(base)
 }
 
@@ -399,7 +381,7 @@ func (i *installCmd) printRelease(rel *release.Release) {
 // - URL
 //
 // If 'verify' is true, this will attempt to also verify the chart.
-func locateChartPath(repoURL, username, password, name, version string, verify bool, keyring,
+func locateChartPath(repoURL, name, version string, verify bool, keyring,
 	certFile, keyFile, caFile string) (string, error) {
 	name = strings.TrimSpace(name)
 	version = strings.TrimSpace(version)
@@ -432,14 +414,12 @@ func locateChartPath(repoURL, username, password, name, version string, verify b
 		Out:      os.Stdout,
 		Keyring:  keyring,
 		Getters:  getter.All(settings),
-		Username: username,
-		Password: password,
 	}
 	if verify {
 		dl.Verify = downloader.VerifyAlways
 	}
 	if repoURL != "" {
-		chartURL, err := repo.FindChartInAuthRepoURL(repoURL, username, password, name, version,
+		chartURL, err := repo.FindChartInRepoURL(repoURL, name, version,
 			certFile, keyFile, caFile, getter.All(settings))
 		if err != nil {
 			return "", err

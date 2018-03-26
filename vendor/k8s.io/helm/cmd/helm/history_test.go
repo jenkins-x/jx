@@ -57,26 +57,6 @@ func TestHistoryCmd(t *testing.T) {
 			},
 			expected: "REVISION\tUPDATED                 \tSTATUS    \tCHART           \tDESCRIPTION \n3       \t(.*)\tSUPERSEDED\tfoo-0.1.0-beta.1\tRelease mock\n4       \t(.*)\tDEPLOYED  \tfoo-0.1.0-beta.1\tRelease mock\n",
 		},
-		{
-			name:  "get history with yaml output format",
-			args:  []string{"angry-bird"},
-			flags: []string{"--output", "yaml"},
-			rels: []*rpb.Release{
-				mk("angry-bird", 4, rpb.Status_DEPLOYED),
-				mk("angry-bird", 3, rpb.Status_SUPERSEDED),
-			},
-			expected: "- chart: foo-0.1.0-beta.1\n  description: Release mock\n  revision: 3\n  status: SUPERSEDED\n  updated: (.*)\n- chart: foo-0.1.0-beta.1\n  description: Release mock\n  revision: 4\n  status: DEPLOYED\n  updated: (.*)\n\n",
-		},
-		{
-			name:  "get history with json output format",
-			args:  []string{"angry-bird"},
-			flags: []string{"--output", "json"},
-			rels: []*rpb.Release{
-				mk("angry-bird", 4, rpb.Status_DEPLOYED),
-				mk("angry-bird", 3, rpb.Status_SUPERSEDED),
-			},
-			expected: `[{"revision":3,"updated":".*","status":"SUPERSEDED","chart":"foo\-0.1.0-beta.1","description":"Release mock"},{"revision":4,"updated":".*","status":"DEPLOYED","chart":"foo\-0.1.0-beta.1","description":"Release mock"}]\n`,
-		},
 	}
 
 	runReleaseCases(t, tests, func(c *helm.FakeClient, out io.Writer) *cobra.Command {
