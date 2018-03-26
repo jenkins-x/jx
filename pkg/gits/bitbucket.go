@@ -255,7 +255,7 @@ func (b *BitbucketProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	values := commits["values"].([]interface{})
 	commit := values[0].(map[string]interface{})
 
-	pr.LastCommitSha = commit["hash"]
+	pr.LastCommitSha = commit["hash"].(string)
 
 	return nil
 }
