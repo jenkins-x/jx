@@ -234,6 +234,29 @@ func (b *BitbucketProvider) CreatePullRequest(data *GitPullRequestArguments) (*G
 }
 
 func (b *BitbucketProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
+
+	prID := int32(*pr.Number)
+	bitbucketPR, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(b.Context, b.Username, pr.Repo, prID)
+
+	if err != nil {
+		return err
+	}
+
+	pr.State = &bitbucketPR.State
+	pr.MergeCommitSHA = &bitbucketPR.MergeCommit.Hash
+	pr.DiffURL = &bitbucketPR.Links.Diff.Href
+
+	commits, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(b.Context, b.Username, string(prID), pr.Repo)
+
+	if err != nil {
+		return err
+	}
+
+	values := commits["values"].([]interface{})
+	commit := values[0].(map[string]interface{})
+
+	pr.LastCommitSha = commit["hash"]
+
 	return nil
 }
 
