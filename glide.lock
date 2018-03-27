@@ -1,5 +1,5 @@
 hash: 8b222e5bfe322c05c34fcf350a2ba26c0cdd3fc4960c8e70713e51d161d5217d
-updated: 2018-03-26T01:40:06.418956163-04:00
+updated: 2018-03-27T01:21:45.387006155-04:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -549,7 +549,10 @@ testImports:
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
   - difflib
+- name: github.com/stretchr/objx
+  version: 8a3f7159479fbc75b30357fbc48f380b7320f08e
 - name: github.com/stretchr/testify
   version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
   subpackages:
   - assert
+  - mock
