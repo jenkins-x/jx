@@ -158,8 +158,10 @@ func (o *GetActivityOptions) addTableRow(table *tbl.Table, activity *v1.Pipeline
 func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient *versioned.Clientset, ns string) error {
 	yamlSpecMap := map[string]string{}
 	activity := &v1.PipelineActivity{}
+	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "pipelineactivities", ns, fields.Everything())
+	kube.SortListWatchByName(listWatch)
 	_, controller := cache.NewInformer(
-		cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "pipelineactivities", ns, fields.Everything()),
+		listWatch,
 		activity,
 		time.Minute*10,
 		cache.ResourceEventHandlerFuncs{
