@@ -2,9 +2,12 @@ package cmd
 
 import (
 	"io"
+	"strings"
 	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	tbl "github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -12,7 +15,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -25,6 +29,7 @@ type GetActivityOptions struct {
 
 	Filter      string
 	BuildNumber string
+	Watch       bool
 }
 
 var (
@@ -37,7 +42,10 @@ var (
 		jx get activities
 
 		# List the current activities for application 'foo'
-		jx get act foo
+		jx get act -f foo
+
+		# Watch the  activities for application 'foo'
+		jx get act -f foo -w
 	`)
 )
 
@@ -65,6 +73,7 @@ func NewCmdGetActivity(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 	}
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Text to filter the pipeline names")
 	cmd.Flags().StringVarP(&options.BuildNumber, "build", "b", "", "The build number to filter on")
+	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "Whether to watch the activities for changes")
 	return cmd
 }
 
@@ -98,42 +107,102 @@ func (o *GetActivityOptions) Run() error {
 		return err
 	}
 
-	list, err := client.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
 	table := o.CreateTable()
 	table.SetColumnAlign(1, util.ALIGN_RIGHT)
 	table.SetColumnAlign(2, util.ALIGN_RIGHT)
 	table.AddRow("STEP", "STARTED AGO", "DURATION", "STATUS")
 
-	for _, activity := range list.Items {
-		if o.matches(&activity) {
-			spec := &activity.Spec
-			text := ""
-			version := activity.Spec.Version
-			if version != "" {
-				text = "Version: " + util.ColorInfo(version)
-			}
-			statusText := statusString(activity.Spec.Status)
-			if statusText == "" {
-				statusText = text
-			} else {
-				statusText += " " + text
-			}
-			table.AddRow(spec.Pipeline+" #"+spec.Build,
-				timeToString(spec.StartedTimestamp),
-				durationString(spec.StartedTimestamp, spec.CompletedTimestamp),
-				statusText)
+	if o.Watch {
+		return o.WatchActivities(&table, client, ns)
+	}
 
-			indent := indentation
-			for _, step := range spec.Steps {
-				o.addStepRow(&table, &step, indent)
+	list, err := client.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, activity := range list.Items {
+		o.addTableRow(&table, &activity)
+	}
+	table.Render()
+
+	return nil
+}
+
+func (o *GetActivityOptions) addTableRow(table *tbl.Table, activity *v1.PipelineActivity) bool {
+	if o.matches(activity) {
+		spec := &activity.Spec
+		text := ""
+		version := activity.Spec.Version
+		if version != "" {
+			text = "Version: " + util.ColorInfo(version)
+		}
+		statusText := statusString(activity.Spec.Status)
+		if statusText == "" {
+			statusText = text
+		} else {
+			statusText += " " + text
+		}
+		table.AddRow(spec.Pipeline+" #"+spec.Build,
+			timeToString(spec.StartedTimestamp),
+			durationString(spec.StartedTimestamp, spec.CompletedTimestamp),
+			statusText)
+		indent := indentation
+		for _, step := range spec.Steps {
+			o.addStepRow(table, &step, indent)
+		}
+		return true
+	}
+	return false
+}
+
+func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient *versioned.Clientset, ns string) error {
+	yamlSpecMap := map[string]string{}
+	activity := &v1.PipelineActivity{}
+	_, controller := cache.NewInformer(
+		cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "pipelineactivities", ns, fields.Everything()),
+		activity,
+		time.Minute*10,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				o.onActivity(table, obj, yamlSpecMap)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				o.onActivity(table, newObj, yamlSpecMap)
+			},
+			DeleteFunc: func(obj interface{}) {
+			},
+		},
+	)
+
+	stop := make(chan struct{})
+	go controller.Run(stop)
+
+	// Wait forever
+	select {}
+	return nil
+}
+
+func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlSpecMap map[string]string) {
+	activity, ok := obj.(*v1.PipelineActivity)
+	if !ok {
+		o.Printf("Object is not a PipelineActivity %#v\n", obj)
+		return
+	}
+	data, err := yaml.Marshal(&activity.Spec)
+	if err != nil {
+		o.warnf("Failed to marshal Activity.Spec to YAML: %s", err)
+	} else {
+		text := string(data)
+		name := activity.Name
+		old := yamlSpecMap[name]
+		if old == "" || old != text {
+			yamlSpecMap[name] = text
+			if o.addTableRow(table, activity) {
+				table.Render()
+				table.Clear()
 			}
 		}
 	}
-	table.Render()
-	return nil
 }
 
 func (o *CommonOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivityStep, indent string) {
