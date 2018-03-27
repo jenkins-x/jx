@@ -2,8 +2,8 @@ package gits
 
 import (
 	"errors"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 type FakeOrgLister struct {

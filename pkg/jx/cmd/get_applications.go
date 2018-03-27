@@ -16,12 +16,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetVersionOptions containers the CLI options
-type GetVersionOptions struct {
+// GetApplicationsOptions containers the CLI options
+type GetApplicationsOptions struct {
 	CommonOptions
 
-	HideUrl bool
-	HidePod bool
+	Namespace   string
+	Environment string
+	HideUrl     bool
+	HidePod     bool
 }
 
 var (
@@ -33,6 +35,15 @@ var (
 		# List applications, their URL and pod counts for all environments
 		jx get apps
 
+		# List applications only in the Staging environment
+		jx get apps -e staging
+
+		# List applications only in the Production environment
+		jx get apps -e production
+
+		# List applications only in a specific namespace
+		jx get apps -n jx-staging
+
 		# List applications hiding the URLs
 		jx get apps -u
 
@@ -41,9 +52,9 @@ var (
 	`)
 )
 
-// NewCmdGetVersion creates the new command for: jx get version
-func NewCmdGetVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &GetVersionOptions{
+// NewCmdGetApplications creates the new command for: jx get version
+func NewCmdGetApplications(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &GetApplicationsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
 			Out:     out,
@@ -65,6 +76,8 @@ func NewCmdGetVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 	}
 	cmd.Flags().BoolVarP(&options.HideUrl, "url", "u", false, "Hide the URLs")
 	cmd.Flags().BoolVarP(&options.HidePod, "pod", "p", false, "Hide the pod counts")
+	cmd.Flags().StringVarP(&options.Environment, "env", "e", "", "Filter applications in the given environment")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Filter applications in the given namespace")
 	return cmd
 }
 
@@ -74,7 +87,7 @@ type EnvApps struct {
 }
 
 // Run implements this command
-func (o *GetVersionOptions) Run() error {
+func (o *GetApplicationsOptions) Run() error {
 	f := o.Factory
 	client, currentNs, err := f.CreateJXClient()
 	if err != nil {
@@ -99,7 +112,9 @@ func (o *GetVersionOptions) Run() error {
 	envNames := []string{}
 	apps := []string{}
 	for _, env := range envList.Items {
-		if env.Spec.Kind != v1.EnvironmentKindTypePreview {
+		if env.Spec.Kind != v1.EnvironmentKindTypePreview &&
+			(o.Environment == "" || o.Environment == env.Name) &&
+			(o.Namespace == "" || o.Namespace == env.Spec.Namespace) {
 			ens := env.Spec.Namespace
 			namespaces = append(namespaces, ens)
 			if ens != "" && env.Name != kube.LabelValueDevEnvironment {

@@ -64,6 +64,7 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	}
 
 	cmd.AddCommand(NewCmdGetActivity(f, out, errOut))
+	cmd.AddCommand(NewCmdGetApplications(f, out, errOut))
 	cmd.AddCommand(NewCmdGetAddon(f, out, errOut))
 	cmd.AddCommand(NewCmdGetBuild(f, out, errOut))
 	cmd.AddCommand(NewCmdGetConfig(f, out, errOut))
@@ -73,7 +74,6 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.AddCommand(NewCmdGetPipeline(f, out, errOut))
 	cmd.AddCommand(NewCmdGetTracker(f, out, errOut))
 	cmd.AddCommand(NewCmdGetURL(f, out, errOut))
-	cmd.AddCommand(NewCmdGetVersion(f, out, errOut))
 	return cmd
 }
 

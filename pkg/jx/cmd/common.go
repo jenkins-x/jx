@@ -388,9 +388,12 @@ func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error)
 
 func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, error) {
 	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, curNs, err := f.CreateClient()
 	if err != nil {
 		return "", err
+	}
+	if ns == "" {
+		ns = curNs
 	}
 	url, err := kube.FindServiceURL(client, ns, name)
 	if url == "" {

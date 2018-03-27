@@ -19,6 +19,12 @@ func CreateTable(out io.Writer) Table {
 	}
 }
 
+// Clear removes all rows while preserving the layout
+func (t *Table) Clear() {
+	t.Rows = [][]string{}
+}
+
+// AddRow adds a new row to the table
 func (t *Table) AddRow(col ...string) {
 	t.Rows = append(t.Rows, col)
 }
