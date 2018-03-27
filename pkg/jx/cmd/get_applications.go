@@ -20,6 +20,7 @@ import (
 type GetApplicationsOptions struct {
 	CommonOptions
 
+	Namespace   string
 	Environment string
 	HideUrl     bool
 	HidePod     bool
@@ -39,6 +40,9 @@ var (
 
 		# List applications only in the Production environment
 		jx get apps -e production
+
+		# List applications only in a specific namespace
+		jx get apps -n jx-staging
 
 		# List applications hiding the URLs
 		jx get apps -u
@@ -72,7 +76,8 @@ func NewCmdGetApplications(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 	}
 	cmd.Flags().BoolVarP(&options.HideUrl, "url", "u", false, "Hide the URLs")
 	cmd.Flags().BoolVarP(&options.HidePod, "pod", "p", false, "Hide the pod counts")
-	cmd.Flags().StringVarP(&options.Environment, "env", "e", "", "Filter only the given environment")
+	cmd.Flags().StringVarP(&options.Environment, "env", "e", "", "Filter applications in the given environment")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Filter applications in the given namespace")
 	return cmd
 }
 
@@ -108,7 +113,8 @@ func (o *GetApplicationsOptions) Run() error {
 	apps := []string{}
 	for _, env := range envList.Items {
 		if env.Spec.Kind != v1.EnvironmentKindTypePreview &&
-			(o.Environment == "" || o.Environment == env.Name) {
+			(o.Environment == "" || o.Environment == env.Name) &&
+			(o.Namespace == "" || o.Namespace == env.Spec.Namespace) {
 			ens := env.Spec.Namespace
 			namespaces = append(namespaces, ens)
 			if ens != "" && env.Name != kube.LabelValueDevEnvironment {
