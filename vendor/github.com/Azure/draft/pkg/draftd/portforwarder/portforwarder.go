@@ -3,7 +3,6 @@ package portforwarder
 import (
 	"fmt"
 
-	"github.com/Azure/draft/pkg/draft/tunnel"
 	"github.com/Azure/draft/pkg/kube/podutil"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,6 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/helm/pkg/kube"
 	"k8s.io/helm/pkg/tiller/environment"
 )
 
@@ -20,13 +20,13 @@ const (
 )
 
 // New returns a tunnel to the Draft pod.
-func New(client kubernetes.Interface, config *restclient.Config, namespace string) (*tunnel.Tunnel, error) {
+func New(client kubernetes.Interface, config *restclient.Config, namespace string) (*kube.Tunnel, error) {
 	podName, err := getDraftPodName(client.CoreV1(), namespace)
 	if err != nil {
 		return nil, err
 	}
 	const draftPort = 44135
-	t := tunnel.NewTunnel(client.Core().RESTClient(), config, namespace, podName, draftPort)
+	t := kube.NewTunnel(client.Core().RESTClient(), config, namespace, podName, draftPort)
 	return t, t.ForwardPort()
 }
 

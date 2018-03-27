@@ -489,6 +489,8 @@ type SearchOptions struct {
 	// Expand: Expand specific sections in the returned issues
 	Expand string `url:"expand,omitempty"`
 	Fields []string
+	// ValidateQuery: The validateQuery param offers control over whether to validate and how strictly to treat the validation. Default: strict.
+	ValidateQuery string `url:"validateQuery,omitempty"`
 }
 
 // searchResult is only a small wrapper around the Search (with JQL) method
@@ -785,8 +787,8 @@ func (s *IssueService) Search(jql string, options *SearchOptions) ([]Issue, *Res
 	if options == nil {
 		u = fmt.Sprintf("rest/api/2/search?jql=%s", url.QueryEscape(jql))
 	} else {
-		u = fmt.Sprintf("rest/api/2/search?jql=%s&startAt=%d&maxResults=%d&expand=%s&fields=%s", url.QueryEscape(jql),
-			options.StartAt, options.MaxResults, options.Expand, strings.Join(options.Fields, ","))
+		u = fmt.Sprintf("rest/api/2/search?jql=%s&startAt=%d&maxResults=%d&expand=%s&fields=%s&validateQuery=%s", url.QueryEscape(jql),
+			options.StartAt, options.MaxResults, options.Expand, strings.Join(options.Fields, ","), options.ValidateQuery)
 	}
 
 	req, err := s.client.NewRequest("GET", u, nil)

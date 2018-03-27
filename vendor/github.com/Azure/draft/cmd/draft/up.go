@@ -20,7 +20,7 @@ the draft server.
 Adding the "watch" option to draft.toml makes draft automatically archive and
 upload whenever local files are saved. Draft delays a couple seconds to ensure
 that changes have stopped before uploading, but that can be altered by the
-"watch-delay" option.
+"watch_delay" option.
 `
 
 const (

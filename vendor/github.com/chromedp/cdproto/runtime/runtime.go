@@ -388,66 +388,6 @@ func (p *EvaluateParams) Do(ctxt context.Context, h cdp.Executor) (result *Remot
 	return res.Result, res.ExceptionDetails, nil
 }
 
-// GetIsolateIDParams returns the isolate id.
-type GetIsolateIDParams struct{}
-
-// GetIsolateID returns the isolate id.
-func GetIsolateID() *GetIsolateIDParams {
-	return &GetIsolateIDParams{}
-}
-
-// GetIsolateIDReturns return values.
-type GetIsolateIDReturns struct {
-	ID string `json:"id,omitempty"` // The isolate id.
-}
-
-// Do executes Runtime.getIsolateId against the provided context.
-//
-// returns:
-//   id - The isolate id.
-func (p *GetIsolateIDParams) Do(ctxt context.Context, h cdp.Executor) (id string, err error) {
-	// execute
-	var res GetIsolateIDReturns
-	err = h.Execute(ctxt, CommandGetIsolateID, nil, &res)
-	if err != nil {
-		return "", err
-	}
-
-	return res.ID, nil
-}
-
-// GetHeapUsageParams returns the JavaScript heap usage. It is the total
-// usage of the corresponding isolate not scoped to a particular Runtime.
-type GetHeapUsageParams struct{}
-
-// GetHeapUsage returns the JavaScript heap usage. It is the total usage of
-// the corresponding isolate not scoped to a particular Runtime.
-func GetHeapUsage() *GetHeapUsageParams {
-	return &GetHeapUsageParams{}
-}
-
-// GetHeapUsageReturns return values.
-type GetHeapUsageReturns struct {
-	UsedSize  float64 `json:"usedSize,omitempty"`  // Used heap size in bytes.
-	TotalSize float64 `json:"totalSize,omitempty"` // Allocated heap size in bytes.
-}
-
-// Do executes Runtime.getHeapUsage against the provided context.
-//
-// returns:
-//   usedSize - Used heap size in bytes.
-//   totalSize - Allocated heap size in bytes.
-func (p *GetHeapUsageParams) Do(ctxt context.Context, h cdp.Executor) (usedSize float64, totalSize float64, err error) {
-	// execute
-	var res GetHeapUsageReturns
-	err = h.Execute(ctxt, CommandGetHeapUsage, nil, &res)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	return res.UsedSize, res.TotalSize, nil
-}
-
 // GetPropertiesParams returns properties of a given object. Object group of
 // the result is inherited from the target object.
 type GetPropertiesParams struct {
@@ -766,21 +706,6 @@ func (p *SetCustomObjectFormatterEnabledParams) Do(ctxt context.Context, h cdp.E
 	return h.Execute(ctxt, CommandSetCustomObjectFormatterEnabled, p, nil)
 }
 
-// TerminateExecutionParams terminate current or next JavaScript execution.
-// Will cancel the termination when the outer-most script execution ends.
-type TerminateExecutionParams struct{}
-
-// TerminateExecution terminate current or next JavaScript execution. Will
-// cancel the termination when the outer-most script execution ends.
-func TerminateExecution() *TerminateExecutionParams {
-	return &TerminateExecutionParams{}
-}
-
-// Do executes Runtime.terminateExecution against the provided context.
-func (p *TerminateExecutionParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
-	return h.Execute(ctxt, CommandTerminateExecution, nil, nil)
-}
-
 // Command names.
 const (
 	CommandAwaitPromise                    = "Runtime.awaitPromise"
@@ -790,8 +715,6 @@ const (
 	CommandDiscardConsoleEntries           = "Runtime.discardConsoleEntries"
 	CommandEnable                          = "Runtime.enable"
 	CommandEvaluate                        = "Runtime.evaluate"
-	CommandGetIsolateID                    = "Runtime.getIsolateId"
-	CommandGetHeapUsage                    = "Runtime.getHeapUsage"
 	CommandGetProperties                   = "Runtime.getProperties"
 	CommandGlobalLexicalScopeNames         = "Runtime.globalLexicalScopeNames"
 	CommandQueryObjects                    = "Runtime.queryObjects"
@@ -800,5 +723,4 @@ const (
 	CommandRunIfWaitingForDebugger         = "Runtime.runIfWaitingForDebugger"
 	CommandRunScript                       = "Runtime.runScript"
 	CommandSetCustomObjectFormatterEnabled = "Runtime.setCustomObjectFormatterEnabled"
-	CommandTerminateExecution              = "Runtime.terminateExecution"
 )
