@@ -10,6 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	defaultOptionRelease = "gitea"
+)
+
 // CreateAddonOptions the options for the create spring command
 type CreateAddonOptions struct {
 	CreateOptions
@@ -53,7 +57,7 @@ func NewCmdCreateAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 
 func (options *CreateAddonOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Namespace to install into")
-	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", "gitea", "The chart release name")
+	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultOptionRelease, "The chart release name")
 	cmd.Flags().BoolVarP(&options.HelmUpdate, "helm-update", "", true, "Should we run helm update first to ensure we use the latest version")
 }
 
