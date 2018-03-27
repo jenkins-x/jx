@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -62,6 +63,16 @@ func NewCmdGetAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 func (o *GetAddonOptions) Run() error {
 	statusMap := map[string]string{}
 
+	addonConfig, err := addon.LoadAddonsConfig()
+	if err != nil {
+		return err
+	}
+	addonEnabled := map[string]bool{}
+	for _, addon := range addonConfig.Addons {
+		if addon.Enabled {
+			addonEnabled[addon.Name] = true
+		}
+	}
 	output, err := o.getCommandOutput("", "helm", "list")
 	if err != nil {
 		o.warnf("Failed to find helm installs: %s\n", err)
@@ -77,13 +88,17 @@ func (o *GetAddonOptions) Run() error {
 	charts := kube.AddonCharts
 
 	table := o.CreateTable()
-	table.AddRow("NAME", "CHART", "STATUS")
+	table.AddRow("NAME", "CHART", "ENABLED", "STATUS")
 
 	keys := util.SortedMapKeys(charts)
 	for _, k := range keys {
 		chart := charts[k]
 		status := statusMap[k]
-		table.AddRow(k, chart, status)
+		enableText := ""
+		if addonEnabled[k] {
+			enableText = "yes"
+		}
+		table.AddRow(k, chart, enableText, status)
 	}
 
 	table.Render()

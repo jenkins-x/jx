@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -336,6 +337,20 @@ func (options *InstallOptions) Run() error {
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 
+	addonConfig, err := addon.LoadAddonsConfig()
+	if err != nil {
+		return err
+	}
+
+	for _, ac := range addonConfig.Addons {
+		if ac.Enabled {
+			err = options.installAddon(ac.Name)
+			if err != nil {
+				return fmt.Errorf("Failed to install addon %s: %s", ac.Name, err)
+			}
+		}
+	}
+
 	options.logAdminPassword()
 
 	if options.Flags.DefaultEnvironments {
@@ -599,4 +614,24 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 		}
 	}
 	return userAuth, nil
+}
+
+func (o *InstallOptions) installAddon(name string) error {
+	o.Printf("Installing addon %s\n", util.ColorInfo(name))
+
+	options := &CreateAddonOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: o.CommonOptions,
+		},
+		HelmUpdate: true,
+	}
+	if name == "gitea" {
+		options.ReleaseName = defaultOptionRelease
+		giteaOptions := &CreateAddonGiteaOptions{
+			CreateAddonOptions: *options,
+			Chart:              kube.ChartGitea,
+		}
+		return giteaOptions.Run()
+	}
+	return options.CreateAddon(name)
 }
