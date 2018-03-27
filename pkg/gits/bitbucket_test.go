@@ -1,12 +1,14 @@
 package gits
 
 import (
+	"context"
+	"net/http"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
+	bitbucket "github.com/wbrefvem/go-bitbucket"
 )
 
 type MockBitbucketAPIClient struct {
@@ -30,11 +32,11 @@ type MockCommitsApi struct {
 }
 
 func (mbAPIc *MockBitbucketAPIClient) MockTeamsGet200OK(
-		ctx context.Context,
-		options map[string]interface{}
-	) (bitbucket.PaginatedTeams, *http.Response, error) {
-
-	return nil, nil, nil
+	ctx context.Context,
+	options map[string]interface{},
+) (bitbucket.PaginatedTeams, *http.Response, error) {
+	var teams bitbucket.PaginatedTeams
+	return teams, nil, nil
 }
 
 func TestListOrganisations(t *testing.T) {
@@ -55,7 +57,8 @@ func TestListOrganisations(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, bp)
 
-	bitbucketProvider, err := bp.(*BitbucketProvider)
+	bitbucketProvider, ok := bp.(*BitbucketProvider)
 
-	assert.Nil(err)
+	assert.True(t, ok)
+	assert.NotNil(t, bitbucketProvider)
 }
