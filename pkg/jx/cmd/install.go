@@ -263,7 +263,7 @@ func (options *InstallOptions) Run() error {
 	}
 	domain := helmConfig.ExposeController.Config.Domain
 	if domain != "" && addon.IsAddonEnabled("gitea") {
-		helmConfig.Jenkins.Servers.GetOrCreateFirstGitea().Url = "http://gitea-gitea." + domain
+		helmConfig.Jenkins.Servers.GetOrCreateFirstGitea().Url = "http://gitea-gitea." + ns + "." + domain
 	}
 	config, err := helmConfig.String()
 	if err != nil {
