@@ -1,42 +1,60 @@
 package gits
 
 import (
-	"context"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	bitbucket "github.com/wbrefvem/go-bitbucket"
+	"github.com/stretchr/testify/suite"
 )
 
-type MockBitbucketAPIClient struct {
-	mock.Mock
+const (
+	username = "test-user"
+	orgName  = "test-org"
+)
+
+type BitbucketProviderSuite struct {
+	suite.Suite
+	mux      *http.ServeMux
+	server   *httptest.Server
+	provider *BitbucketProvider
 }
 
-type MockTeamsApi struct {
-	mock.Mock
+func handleNotFound(response http.ResponseWriter, err error) {
+	response.WriteHeader(http.StatusNotFound)
+	response.Write([]byte(err.Error()))
 }
 
-type MockPullrequestsApi struct {
-	mock.Mock
+func handleOk(response http.ResponseWriter, body []byte) {
+	response.WriteHeader(http.StatusOK)
+	response.Write(body)
 }
 
-type MockRepositoriesApi struct {
-	mock.Mock
+// Are you a mod or a rocker? I'm a
+type mocker func(http.ResponseWriter, *http.Request)
+
+// "get" as in getter not HTTP GET; supports all methods since this is a mock.
+func getMockAPIResponseFromFile(dataDir string, fileName string) mocker {
+
+	return func(response http.ResponseWriter, request *http.Request) {
+		obj, err := util.LoadBytes(dataDir, fileName)
+
+		if err != nil {
+			handleNotFound(response, err)
+		}
+
+		handleOk(response, obj)
+	}
 }
 
-type MockCommitsApi struct {
-	mock.Mock
-}
+func (suite *BitbucketProviderSuite) SetupSuite() {
+	mux := http.NewServeMux()
 
-func (mbAPIc *MockBitbucketAPIClient) MockTeamsGet200OK(
-	ctx context.Context,
-	options map[string]interface{},
-) (bitbucket.PaginatedTeams, *http.Response, error) {
-	var teams bitbucket.PaginatedTeams
-	return teams, nil, nil
+	mux.HandleFunc(fmt.Sprintf("/respositories/%s", username), getMockAPIResponseFromFile("test_data", "teams.json"))
 }
 
 func TestListOrganisations(t *testing.T) {
