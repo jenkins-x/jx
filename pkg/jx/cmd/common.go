@@ -485,7 +485,8 @@ func (o *CommonOptions) installChart(releaseName string, chart string, version s
 			return err
 		}
 	}
-	args := []string{"upgrade", "--install"}
+	timeout := fmt.Sprintf("--timeout=%s", defaultInstallTimeout)
+	args := []string{"upgrade", "--install", timeout}
 	if version != "" {
 		args = append(args, "--version", version)
 	}
