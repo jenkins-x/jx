@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	userName = "testperson"
-	orgName  = "testorg"
+	gitlabUserName = "testperson"
+	gitlabOrgName  = "testorg"
 )
 
 type GitlabProviderSuite struct {
@@ -51,7 +51,7 @@ func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *Gitla
 	client.SetBaseURL(server.URL)
 
 	userAuth := &auth.UserAuth{
-		Username: userName,
+		Username: gitlabUserName,
 		ApiToken: "test",
 	}
 	// Gitlab provider that we want to test
@@ -68,14 +68,14 @@ func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
 		w.Write(src)
 	})
 
-	mux.HandleFunc(fmt.Sprintf("/groups/%s/projects", orgName), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/groups/%s/projects", gitlabOrgName), func(w http.ResponseWriter, r *http.Request) {
 		src, err := ioutil.ReadFile("test-fixtures/group-projects.json")
 
 		suite.Require().Nil(err)
 		w.Write(src)
 	})
 
-	mux.HandleFunc(fmt.Sprintf("/users/%s/projects", userName), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/users/%s/projects", gitlabUserName), func(w http.ResponseWriter, r *http.Request) {
 		src, err := ioutil.ReadFile("test-fixtures/user-projects.json")
 
 		suite.Require().Nil(err)
@@ -88,7 +88,7 @@ func (suite *GitlabProviderSuite) TestListOrganizations() {
 
 	suite.Require().Nil(err)
 	suite.Require().Len(orgs, 1)
-	suite.Require().Equal(orgName, orgs[0].Login)
+	suite.Require().Equal(gitlabOrgName, orgs[0].Login)
 }
 
 func (suite *GitlabProviderSuite) TestListRepositories() {
@@ -100,7 +100,7 @@ func (suite *GitlabProviderSuite) TestListRepositories() {
 		expectedSshUrl   string
 		expectedHtmlUrl  string
 	} {
-		{"List repositories for organization", orgName, "orgproject", "git@gitlab.com:testorg/orgproject.git", "https://gitlab.com/testorg/orgproject"},
+		{"List repositories for organization", gitlabOrgName, "orgproject", "git@gitlab.com:testorg/orgproject.git", "https://gitlab.com/testorg/orgproject"},
 		{"List repositories without organization", "", "userproject", "git@gitlab.com:testperson/userproject.git", "https://gitlab.com/testperson/userproject"},
 	}
 
