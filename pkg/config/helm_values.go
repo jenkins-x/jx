@@ -18,13 +18,41 @@ type ExposeController struct {
 	Annotations map[string]string      `yaml:"Annotations,omitempty"`
 }
 
+type JenkinsValuesConfig struct {
+	Servers JenkinsServersValuesConfig `yaml:"Servers,omitempty"`
+}
+
+type JenkinsServersValuesConfig struct {
+	Gitea []JenkinsGiteaServersValuesConfig `yaml:"Gitea,omitempty"`
+}
+
+type JenkinsGiteaServersValuesConfig struct {
+	Name       string `yaml:"Name,omitempty"`
+	Url        string `yaml:"Url,omitempty"`
+	Credential string `yaml:"Credential,omitempty"`
+}
+
 type HelmValuesConfig struct {
-	ExposeController *ExposeController `yaml:"expose,omitempty"`
+	ExposeController *ExposeController   `yaml:"expose,omitempty"`
+	Jenkins          JenkinsValuesConfig `yaml:"jenkins,omitempty"`
 }
 
 type HelmValuesConfigService struct {
 	FileName string
 	Config   HelmValuesConfig
+}
+
+// GetOrCreateFirstGitea returns the first gitea server creating one if required
+func (c *JenkinsServersValuesConfig) GetOrCreateFirstGitea() *JenkinsGiteaServersValuesConfig {
+	if len(c.Gitea) == 0 {
+		c.Gitea = []JenkinsGiteaServersValuesConfig{
+			{
+				Name:       "gitea",
+				Credential: "jenkins-x-git",
+			},
+		}
+	}
+	return &c.Gitea[0]
 }
 
 func (c *HelmValuesConfig) AddExposeControllerValues(cmd *cobra.Command, ignoreDomain bool) {
