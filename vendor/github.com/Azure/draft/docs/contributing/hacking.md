@@ -7,7 +7,7 @@ development environment for working on the Draft source code.
 
 To compile and test Draft binaries and to build Docker images, you will need:
 
- - a [Kubernetes][] cluster with [Draft already installed][install]. We recommend [minikube][].
+ - a [Kubernetes][] cluster. We recommend [minikube][].
  - [docker][]
  - [git][]
  - [helm][], using the same version as recommended in the [installation guide][install].
@@ -33,7 +33,7 @@ It is also straightforward to build Go from source:
 
 ```shell
 $ sudo su
-$ curl -sSL https://storage.googleapis.com/golang/go1.7.5.src.tar.gz | tar -C /usr/local -xz
+$ curl -sSL https://storage.googleapis.com/golang/go1.10.src.tar.gz | tar -C /usr/local -xz
 $ cd /usr/local/go/src
 $ # compile Go for the default platform first, then add cross-compile support
 $ ./make.bash --no-clean
@@ -64,11 +64,11 @@ $ git remote add upstream https://github.com/Azure/draft.git
 With the prerequisites installed and your fork of Draft cloned, you can make changes to local Draft
 source code.
 
-Run `make` to build the `draft` and `draftd` binaries:
+Run `make` to build `draft`:
 
 ```shell
-$ make bootstrap  # runs `dep ensure`
-$ make build      # compiles `draft` and `draftd` inside bin/
+$ make bootstrap
+$ make
 ```
 
 ## Test Your Changes
@@ -78,49 +78,10 @@ Draft includes a suite of tests.
 - `make test-unit`: runs basic unit tests
 - `make test`: runs all of the above
 
-## Deploying Your Changes
-
-To test interactively, you will likely want to deploy your changes to Draft on a Kubernetes cluster.
-This requires a Docker registry where you can push your customized draftd images so Kubernetes can
-pull them.
-
-Because Draft deploys Kubernetes applications and Draft is a Kubernetes application itself, you can
-use Draft to deploy Draft. How neat is that?!
-
-To build your changes and upload it to draftd, run
-
-```shell
-$ make build docker-binary
-$ draft up
---> Building Dockerfile
---> Pushing 10.0.0.237/draft/draftd:6f3b53003dcbf43821aea43208fc51455674d00e
---> Deploying to Kubernetes
---> Status: DEPLOYED
---> Notes:
-     Now you can deploy an app using Draft!
-
-        $ cd my-app
-        $ draft create
-        $ draft up
-        --> Building Dockerfile
-        --> Pushing my-app:latest
-        --> Deploying to Kubernetes
-        --> Deployed!
-
-That's it! You're now running your app in a Kubernetes cluster.
-```
-
-You should see a new release of Draft available and deployed with `helm list`.
-
 ## Cleaning Up
 
-To remove the Draft chart and local binaries:
-
 ```shell
-$ make clean unserve
-rm bin/*
-rm rootfs/bin/*
-helm delete --purge draft
+$ make clean
 ```
 
 

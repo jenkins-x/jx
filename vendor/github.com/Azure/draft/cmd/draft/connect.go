@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/Azure/draft/pkg/draft/draftpath"
 	"github.com/Azure/draft/pkg/draft/local"
 )
 
@@ -18,7 +21,10 @@ const (
 `
 )
 
-var containerName string
+var (
+	targetContainer string
+	overridePorts   []string
+)
 
 type connectCmd struct {
 	out      io.Writer
@@ -43,7 +49,8 @@ func newConnectCmd(out io.Writer) *cobra.Command {
 	f := cmd.Flags()
 	f.Int64Var(&cc.logLines, "tail", 5, "lines of recent log lines to display")
 	f.StringVarP(&runningEnvironment, environmentFlagName, environmentFlagShorthand, defaultDraftEnvironment(), environmentFlagUsage)
-	f.StringVarP(&containerName, "container", "c", "", "name of the container to connect to")
+	f.StringVarP(&targetContainer, "container", "c", "", "name of the container to connect to")
+	f.StringSliceVarP(&overridePorts, "override-port", "p", []string{}, "specify a local port to connect to, in the form <local>:<remote>")
 
 	return cmd
 }
@@ -59,10 +66,27 @@ func (cn *connectCmd) run(runningEnvironment string) (err error) {
 		return err
 	}
 
-	connection, err := deployedApp.Connect(client, config, containerName)
+	var ports []string
+	if len(deployedApp.OverridePorts) != 0 {
+		ports = deployedApp.OverridePorts
+	}
+
+	// --override-port takes precedence
+	if len(overridePorts) != 0 {
+		ports = overridePorts
+	}
+
+	buildID, err := getLatestBuildID()
 	if err != nil {
 		return err
 	}
+
+	connection, err := deployedApp.Connect(client, config, targetContainer, ports, buildID)
+	if err != nil {
+		return err
+	}
+
+	var connectionMessage = "Your connection is still active.\n"
 
 	// output all local ports first - easier to spot
 	for _, cc := range connection.ContainerConnections {
@@ -71,7 +95,9 @@ func (cn *connectCmd) run(runningEnvironment string) (err error) {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cn.out, "Connect to %v:%v on localhost:%#v\n", cc.ContainerName, t.Remote, t.Local)
+			m := fmt.Sprintf("Connect to %v:%v on localhost:%#v\n", cc.ContainerName, t.Remote, t.Local)
+			connectionMessage += m
+			fmt.Fprintf(cn.out, m)
 		}
 	}
 
@@ -92,8 +118,10 @@ func (cn *connectCmd) run(runningEnvironment string) (err error) {
 		os.Exit(0)
 	}()
 
-	<-stop
-	return nil
+	for {
+		fmt.Fprintf(cn.out, connectionMessage)
+		time.Sleep(5 * time.Minute)
+	}
 }
 
 func writeContainerLogs(out io.Writer, in io.ReadCloser, containerName string) error {
@@ -105,4 +133,17 @@ func writeContainerLogs(out io.Writer, in io.ReadCloser, containerName string) e
 		}
 		fmt.Fprintf(out, "[%v]: %v", containerName, line)
 	}
+}
+
+func getLatestBuildID() (string, error) {
+	h := draftpath.Home(homePath())
+	files, err := ioutil.ReadDir(h.Logs())
+	if err != nil {
+		return "", err
+	}
+	n := len(files)
+	if n == 0 {
+		return "", fmt.Errorf("could not find the latest build ID of your application. Try `draft up` first")
+	}
+	return files[n-1].Name(), nil
 }

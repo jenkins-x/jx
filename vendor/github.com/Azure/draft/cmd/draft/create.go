@@ -12,7 +12,7 @@ import (
 	"unicode"
 
 	"github.com/BurntSushi/toml"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/Azure/draft/pkg/draft/draftpath"
@@ -34,11 +34,12 @@ const (
 var ErrNoLanguageDetected = errors.New("no languages were detected")
 
 type createCmd struct {
-	appName string
-	out     io.Writer
-	pack    string
-	home    draftpath.Home
-	dest    string
+	appName        string
+	out            io.Writer
+	pack           string
+	home           draftpath.Home
+	dest           string
+	repositoryName string
 }
 
 func newCreateCmd(out io.Writer) *cobra.Command {

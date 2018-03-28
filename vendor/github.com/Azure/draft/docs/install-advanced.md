@@ -7,9 +7,29 @@ In certain situations, users are given a Kubernetes cluster with tighter securit
 
 This document explains some of these situations as well as how it can be handled using draft.
 
-## Running Draftd with RBAC enabled
+## Drafting in the Cloud
 
-To install draftd in a cluster with RBAC enabled, a few additional steps are required to grant tiller access to deploy in namespaces.
+When using Draft with cloud-provided Kubernetes solutions like [Azure Container Service](https://azure.microsoft.com/en-us/services/container-service/), we need a way to distribute the built image across the cluster. A container registry allows all nodes in the Kubernetes cluster to pull the images we build using Draft, and we have a way for our local Docker daemon to distribute the built image.
+
+For this example, we want to push images to our registry sitting at `myregistry.azurecr.io`, and pull those images down to the Kubernetes cluster from that same registry. To do that, we run
+
+```shell
+$ draft config set registry myregistry.azurecr.io
+```
+
+This command tells Draft to push images to this container registry as well as to tell Kubernetes to pull images from this container registry.
+
+We'll also need to log into the cluster to push images from our local docker daemon to the container registry:
+
+```
+$ az acr login -n myregistry -g myresourcegroup
+```
+
+NOTE: Kubernetes distributions like Azure Container Service are automatically authorized to pull from container registries in the same resource group. If this is not the case, then you'll need to [add a container registry secret to your chart](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry) to pull the private image.
+
+## Running Tiller with RBAC enabled
+
+To install Tiller in a cluster with RBAC enabled, a few additional steps are required to grant tiller access to deploy in namespaces.
 
 [Helm's documentation](https://docs.helm.sh/using_helm/#role-based-access-control) on setting up Tiller in RBAC-enabled clusters is the best document on the subject, but for new users who just want to get started, let's create a new service account for tiller with the right roles to deploy to the `default` namespace.
 
@@ -102,37 +122,30 @@ $ kubectl create -f rolebinding-tiller-kube-system.yaml
 rolebinding "tiller-binding" created
 ```
 
-Then, install tiller and draftd.
+Then, install tiller.
 
 ```shell
 $ helm init --service-account=tiller
-$ draft init
 ```
 
-## Running Draftd in a namespace other than kube-system
+## Running Tiller in a namespace other than kube-system
 
-To install draftd in a namespace other than kube-system, a user can run `draft init` with the `--draft-namespace` feature flag. This feature flag will deploy draftd in that namespace.
+To install Tiller in a namespace other than kube-system, a user can run `helm init` with the `--tiller-namespace` feature flag. This feature flag will deploy Tiller in that namespace.
 
 There are a few prerequisites to make this work, however:
 
-1. tiller must be running in that same namespace
-1. unless it's external to the cluster, the docker registry must also be running in that same namespace
-
-For minikube users, the setup documentation starts to look like this when deploying draftd to the `draft` namespace:
+For minikube users, the setup documentation starts to look like this when deploying Tiller to the `draft` namespace:
 
 ```shell
 $ minikube start
 $ kubectl create namespace draft
-$ kubectl --namespace draft run registry --image registry --port 5000
-$ kubectl --namespace draft expose deployment registry --port 80 --target-port 5000
 $ helm init --tiller-namespace draft
-$ draft init --draft-namespace draft
 ```
 
-From then on, you can interact with draft either with the `--draft-namespace` flag or by setting `$DRAFT_NAMESPACE` in your client's environment.
+From then on, you can interact with Tiller either with the `--tiller-namespace` flag or by setting `$TILLER_NAMESPACE` in your client's environment.
 
 ```
-$ draft version --draft-namespace draft
-$ export DRAFT_NAMESPACE=draft
-$ draft version
+$ draft up --tiller-namespace draft
+$ export TILLER_NAMESPACE=draft
+$ draft up
 ```

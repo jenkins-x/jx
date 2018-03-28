@@ -25,14 +25,17 @@ type Manifest struct {
 
 // Environment represents the environment for a given app at build time
 type Environment struct {
-	Name         string   `toml:"name,omitempty"`
-	BuildTarPath string   `toml:"build_tar,omitempty"`
-	ChartTarPath string   `toml:"chart_tar,omitempty"`
-	Namespace    string   `toml:"namespace,omitempty"`
-	Values       []string `toml:"set,omitempty"`
-	Wait         bool     `toml:"wait"`
-	Watch        bool     `toml:"watch"`
-	WatchDelay   int      `toml:"watch_delay,omitempty"`
+	Name          string   `toml:"name,omitempty"`
+	Registry      string   `toml:"registry,omitempty"`
+	BuildTarPath  string   `toml:"build-tar,omitempty"`
+	ChartTarPath  string   `toml:"chart-tar,omitempty"`
+	Namespace     string   `toml:"namespace,omitempty"`
+	Values        []string `toml:"set,omitempty"`
+	Wait          bool     `toml:"wait"`
+	Watch         bool     `toml:"watch"`
+	WatchDelay    int      `toml:"watch-delay,omitempty"`
+	OverridePorts []string `toml:"override-ports,omitempty"`
+	AutoConnect   bool     `toml:"auto-connect"`
 }
 
 // New creates a new manifest with the Environments intialized.
@@ -41,10 +44,11 @@ func New() *Manifest {
 		Environments: make(map[string]*Environment),
 	}
 	m.Environments[DefaultEnvironmentName] = &Environment{
-		Name:       generateName(),
-		Namespace:  DefaultNamespace,
-		Watch:      false,
-		WatchDelay: DefaultWatchDelaySeconds,
+		Name:        generateName(),
+		Namespace:   DefaultNamespace,
+		Watch:       false,
+		WatchDelay:  DefaultWatchDelaySeconds,
+		AutoConnect: false,
 	}
 	return &m
 }

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/Azure/draft/pkg/osutil"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var (

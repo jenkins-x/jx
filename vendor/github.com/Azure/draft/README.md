@@ -39,8 +39,6 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 This software is covered under the MIT license. You can read the license [here][license].
 
-This software contains code from Heroku Buildpacks, which are also covered by the MIT license.
-
 This software contains code from [Helm][], which is covered by the Apache v2.0 license.
 
 You can read third-party software licenses [here][Third-Party Licenses].

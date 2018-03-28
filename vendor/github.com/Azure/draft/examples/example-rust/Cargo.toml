@@ -1,0 +1,9 @@
+[package]
+name = "example-rust"
+version = "0.1.0"
+
+[dependencies]
+
+[[bin]]
+name = "example-rust"
+path = "src/bin.rs"

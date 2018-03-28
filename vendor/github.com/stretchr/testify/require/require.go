@@ -32,6 +32,8 @@ func Conditionf(t TestingT, comp assert.Comparison, msg string, args ...interfac
 //    assert.Contains(t, "Hello World", "World")
 //    assert.Contains(t, ["Hello", "World"], "World")
 //    assert.Contains(t, {"Hello": "World"}, "Hello")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Contains(t TestingT, s interface{}, contains interface{}, msgAndArgs ...interface{}) {
 	if !assert.Contains(t, s, contains, msgAndArgs...) {
 		t.FailNow()
@@ -44,44 +46,10 @@ func Contains(t TestingT, s interface{}, contains interface{}, msgAndArgs ...int
 //    assert.Containsf(t, "Hello World", "World", "error message %s", "formatted")
 //    assert.Containsf(t, ["Hello", "World"], "World", "error message %s", "formatted")
 //    assert.Containsf(t, {"Hello": "World"}, "Hello", "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Containsf(t TestingT, s interface{}, contains interface{}, msg string, args ...interface{}) {
 	if !assert.Containsf(t, s, contains, msg, args...) {
-		t.FailNow()
-	}
-}
-
-// DirExists checks whether a directory exists in the given path. It also fails if the path is a file rather a directory or there is an error checking whether it exists.
-func DirExists(t TestingT, path string, msgAndArgs ...interface{}) {
-	if !assert.DirExists(t, path, msgAndArgs...) {
-		t.FailNow()
-	}
-}
-
-// DirExistsf checks whether a directory exists in the given path. It also fails if the path is a file rather a directory or there is an error checking whether it exists.
-func DirExistsf(t TestingT, path string, msg string, args ...interface{}) {
-	if !assert.DirExistsf(t, path, msg, args...) {
-		t.FailNow()
-	}
-}
-
-// ElementsMatch asserts that the specified listA(array, slice...) is equal to specified
-// listB(array, slice...) ignoring the order of the elements. If there are duplicate elements,
-// the number of appearances of each of them in both lists should match.
-//
-// assert.ElementsMatch(t, [1, 3, 2, 3], [1, 3, 3, 2])
-func ElementsMatch(t TestingT, listA interface{}, listB interface{}, msgAndArgs ...interface{}) {
-	if !assert.ElementsMatch(t, listA, listB, msgAndArgs...) {
-		t.FailNow()
-	}
-}
-
-// ElementsMatchf asserts that the specified listA(array, slice...) is equal to specified
-// listB(array, slice...) ignoring the order of the elements. If there are duplicate elements,
-// the number of appearances of each of them in both lists should match.
-//
-// assert.ElementsMatchf(t, [1, 3, 2, 3], [1, 3, 3, 2], "error message %s", "formatted")
-func ElementsMatchf(t TestingT, listA interface{}, listB interface{}, msg string, args ...interface{}) {
-	if !assert.ElementsMatchf(t, listA, listB, msg, args...) {
 		t.FailNow()
 	}
 }
@@ -90,6 +58,8 @@ func ElementsMatchf(t TestingT, listA interface{}, listB interface{}, msg string
 // a slice or a channel with len == 0.
 //
 //  assert.Empty(t, obj)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Empty(t TestingT, object interface{}, msgAndArgs ...interface{}) {
 	if !assert.Empty(t, object, msgAndArgs...) {
 		t.FailNow()
@@ -100,6 +70,8 @@ func Empty(t TestingT, object interface{}, msgAndArgs ...interface{}) {
 // a slice or a channel with len == 0.
 //
 //  assert.Emptyf(t, obj, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Emptyf(t TestingT, object interface{}, msg string, args ...interface{}) {
 	if !assert.Emptyf(t, object, msg, args...) {
 		t.FailNow()
@@ -109,6 +81,8 @@ func Emptyf(t TestingT, object interface{}, msg string, args ...interface{}) {
 // Equal asserts that two objects are equal.
 //
 //    assert.Equal(t, 123, 123)
+//
+// Returns whether the assertion was successful (true) or not (false).
 //
 // Pointer variable equality is determined based on the equality of the
 // referenced values (as opposed to the memory addresses). Function equality
@@ -124,6 +98,8 @@ func Equal(t TestingT, expected interface{}, actual interface{}, msgAndArgs ...i
 //
 //   actualObj, err := SomeFunction()
 //   assert.EqualError(t, err,  expectedErrorString)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func EqualError(t TestingT, theError error, errString string, msgAndArgs ...interface{}) {
 	if !assert.EqualError(t, theError, errString, msgAndArgs...) {
 		t.FailNow()
@@ -135,6 +111,8 @@ func EqualError(t TestingT, theError error, errString string, msgAndArgs ...inte
 //
 //   actualObj, err := SomeFunction()
 //   assert.EqualErrorf(t, err,  expectedErrorString, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func EqualErrorf(t TestingT, theError error, errString string, msg string, args ...interface{}) {
 	if !assert.EqualErrorf(t, theError, errString, msg, args...) {
 		t.FailNow()
@@ -145,6 +123,8 @@ func EqualErrorf(t TestingT, theError error, errString string, msg string, args 
 // and equal.
 //
 //    assert.EqualValues(t, uint32(123), int32(123))
+//
+// Returns whether the assertion was successful (true) or not (false).
 func EqualValues(t TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
 	if !assert.EqualValues(t, expected, actual, msgAndArgs...) {
 		t.FailNow()
@@ -155,6 +135,8 @@ func EqualValues(t TestingT, expected interface{}, actual interface{}, msgAndArg
 // and equal.
 //
 //    assert.EqualValuesf(t, uint32(123, "error message %s", "formatted"), int32(123))
+//
+// Returns whether the assertion was successful (true) or not (false).
 func EqualValuesf(t TestingT, expected interface{}, actual interface{}, msg string, args ...interface{}) {
 	if !assert.EqualValuesf(t, expected, actual, msg, args...) {
 		t.FailNow()
@@ -164,6 +146,8 @@ func EqualValuesf(t TestingT, expected interface{}, actual interface{}, msg stri
 // Equalf asserts that two objects are equal.
 //
 //    assert.Equalf(t, 123, 123, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 //
 // Pointer variable equality is determined based on the equality of the
 // referenced values (as opposed to the memory addresses). Function equality
@@ -180,6 +164,8 @@ func Equalf(t TestingT, expected interface{}, actual interface{}, msg string, ar
 //   if assert.Error(t, err) {
 // 	   assert.Equal(t, expectedError, err)
 //   }
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Error(t TestingT, err error, msgAndArgs ...interface{}) {
 	if !assert.Error(t, err, msgAndArgs...) {
 		t.FailNow()
@@ -192,24 +178,30 @@ func Error(t TestingT, err error, msgAndArgs ...interface{}) {
 //   if assert.Errorf(t, err, "error message %s", "formatted") {
 // 	   assert.Equal(t, expectedErrorf, err)
 //   }
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Errorf(t TestingT, err error, msg string, args ...interface{}) {
 	if !assert.Errorf(t, err, msg, args...) {
 		t.FailNow()
 	}
 }
 
-// Exactly asserts that two objects are equal in value and type.
+// Exactly asserts that two objects are equal is value and type.
 //
 //    assert.Exactly(t, int32(123), int64(123))
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Exactly(t TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
 	if !assert.Exactly(t, expected, actual, msgAndArgs...) {
 		t.FailNow()
 	}
 }
 
-// Exactlyf asserts that two objects are equal in value and type.
+// Exactlyf asserts that two objects are equal is value and type.
 //
 //    assert.Exactlyf(t, int32(123, "error message %s", "formatted"), int64(123))
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Exactlyf(t TestingT, expected interface{}, actual interface{}, msg string, args ...interface{}) {
 	if !assert.Exactlyf(t, expected, actual, msg, args...) {
 		t.FailNow()
@@ -247,6 +239,8 @@ func Failf(t TestingT, failureMessage string, msg string, args ...interface{}) {
 // False asserts that the specified value is false.
 //
 //    assert.False(t, myBool)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func False(t TestingT, value bool, msgAndArgs ...interface{}) {
 	if !assert.False(t, value, msgAndArgs...) {
 		t.FailNow()
@@ -256,22 +250,10 @@ func False(t TestingT, value bool, msgAndArgs ...interface{}) {
 // Falsef asserts that the specified value is false.
 //
 //    assert.Falsef(t, myBool, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Falsef(t TestingT, value bool, msg string, args ...interface{}) {
 	if !assert.Falsef(t, value, msg, args...) {
-		t.FailNow()
-	}
-}
-
-// FileExists checks whether a file exists in the given path. It also fails if the path points to a directory or there is an error when trying to check the file.
-func FileExists(t TestingT, path string, msgAndArgs ...interface{}) {
-	if !assert.FileExists(t, path, msgAndArgs...) {
-		t.FailNow()
-	}
-}
-
-// FileExistsf checks whether a file exists in the given path. It also fails if the path points to a directory or there is an error when trying to check the file.
-func FileExistsf(t TestingT, path string, msg string, args ...interface{}) {
-	if !assert.FileExistsf(t, path, msg, args...) {
 		t.FailNow()
 	}
 }
@@ -282,8 +264,8 @@ func FileExistsf(t TestingT, path string, msg string, args ...interface{}) {
 //  assert.HTTPBodyContains(t, myHandler, "www.google.com", nil, "I'm Feeling Lucky")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func HTTPBodyContains(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, str interface{}, msgAndArgs ...interface{}) {
-	if !assert.HTTPBodyContains(t, handler, method, url, values, str, msgAndArgs...) {
+func HTTPBodyContains(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, str interface{}) {
+	if !assert.HTTPBodyContains(t, handler, method, url, values, str) {
 		t.FailNow()
 	}
 }
@@ -294,8 +276,8 @@ func HTTPBodyContains(t TestingT, handler http.HandlerFunc, method string, url s
 //  assert.HTTPBodyContainsf(t, myHandler, "www.google.com", nil, "I'm Feeling Lucky", "error message %s", "formatted")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func HTTPBodyContainsf(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, str interface{}, msg string, args ...interface{}) {
-	if !assert.HTTPBodyContainsf(t, handler, method, url, values, str, msg, args...) {
+func HTTPBodyContainsf(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, str interface{}) {
+	if !assert.HTTPBodyContainsf(t, handler, method, url, values, str) {
 		t.FailNow()
 	}
 }
@@ -306,8 +288,8 @@ func HTTPBodyContainsf(t TestingT, handler http.HandlerFunc, method string, url 
 //  assert.HTTPBodyNotContains(t, myHandler, "www.google.com", nil, "I'm Feeling Lucky")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func HTTPBodyNotContains(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, str interface{}, msgAndArgs ...interface{}) {
-	if !assert.HTTPBodyNotContains(t, handler, method, url, values, str, msgAndArgs...) {
+func HTTPBodyNotContains(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, str interface{}) {
+	if !assert.HTTPBodyNotContains(t, handler, method, url, values, str) {
 		t.FailNow()
 	}
 }
@@ -318,8 +300,8 @@ func HTTPBodyNotContains(t TestingT, handler http.HandlerFunc, method string, ur
 //  assert.HTTPBodyNotContainsf(t, myHandler, "www.google.com", nil, "I'm Feeling Lucky", "error message %s", "formatted")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func HTTPBodyNotContainsf(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, str interface{}, msg string, args ...interface{}) {
-	if !assert.HTTPBodyNotContainsf(t, handler, method, url, values, str, msg, args...) {
+func HTTPBodyNotContainsf(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, str interface{}) {
+	if !assert.HTTPBodyNotContainsf(t, handler, method, url, values, str) {
 		t.FailNow()
 	}
 }
@@ -329,8 +311,8 @@ func HTTPBodyNotContainsf(t TestingT, handler http.HandlerFunc, method string, u
 //  assert.HTTPError(t, myHandler, "POST", "/a/b/c", url.Values{"a": []string{"b", "c"}}
 //
 // Returns whether the assertion was successful (true) or not (false).
-func HTTPError(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, msgAndArgs ...interface{}) {
-	if !assert.HTTPError(t, handler, method, url, values, msgAndArgs...) {
+func HTTPError(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values) {
+	if !assert.HTTPError(t, handler, method, url, values) {
 		t.FailNow()
 	}
 }
@@ -340,8 +322,8 @@ func HTTPError(t TestingT, handler http.HandlerFunc, method string, url string, 
 //  assert.HTTPErrorf(t, myHandler, "POST", "/a/b/c", url.Values{"a": []string{"b", "c"}}
 //
 // Returns whether the assertion was successful (true, "error message %s", "formatted") or not (false).
-func HTTPErrorf(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, msg string, args ...interface{}) {
-	if !assert.HTTPErrorf(t, handler, method, url, values, msg, args...) {
+func HTTPErrorf(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values) {
+	if !assert.HTTPErrorf(t, handler, method, url, values) {
 		t.FailNow()
 	}
 }
@@ -351,8 +333,8 @@ func HTTPErrorf(t TestingT, handler http.HandlerFunc, method string, url string,
 //  assert.HTTPRedirect(t, myHandler, "GET", "/a/b/c", url.Values{"a": []string{"b", "c"}}
 //
 // Returns whether the assertion was successful (true) or not (false).
-func HTTPRedirect(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, msgAndArgs ...interface{}) {
-	if !assert.HTTPRedirect(t, handler, method, url, values, msgAndArgs...) {
+func HTTPRedirect(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values) {
+	if !assert.HTTPRedirect(t, handler, method, url, values) {
 		t.FailNow()
 	}
 }
@@ -362,8 +344,8 @@ func HTTPRedirect(t TestingT, handler http.HandlerFunc, method string, url strin
 //  assert.HTTPRedirectf(t, myHandler, "GET", "/a/b/c", url.Values{"a": []string{"b", "c"}}
 //
 // Returns whether the assertion was successful (true, "error message %s", "formatted") or not (false).
-func HTTPRedirectf(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, msg string, args ...interface{}) {
-	if !assert.HTTPRedirectf(t, handler, method, url, values, msg, args...) {
+func HTTPRedirectf(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values) {
+	if !assert.HTTPRedirectf(t, handler, method, url, values) {
 		t.FailNow()
 	}
 }
@@ -373,8 +355,8 @@ func HTTPRedirectf(t TestingT, handler http.HandlerFunc, method string, url stri
 //  assert.HTTPSuccess(t, myHandler, "POST", "http://www.google.com", nil)
 //
 // Returns whether the assertion was successful (true) or not (false).
-func HTTPSuccess(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, msgAndArgs ...interface{}) {
-	if !assert.HTTPSuccess(t, handler, method, url, values, msgAndArgs...) {
+func HTTPSuccess(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values) {
+	if !assert.HTTPSuccess(t, handler, method, url, values) {
 		t.FailNow()
 	}
 }
@@ -384,8 +366,8 @@ func HTTPSuccess(t TestingT, handler http.HandlerFunc, method string, url string
 //  assert.HTTPSuccessf(t, myHandler, "POST", "http://www.google.com", nil, "error message %s", "formatted")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func HTTPSuccessf(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values, msg string, args ...interface{}) {
-	if !assert.HTTPSuccessf(t, handler, method, url, values, msg, args...) {
+func HTTPSuccessf(t TestingT, handler http.HandlerFunc, method string, url string, values url.Values) {
+	if !assert.HTTPSuccessf(t, handler, method, url, values) {
 		t.FailNow()
 	}
 }
@@ -411,22 +393,10 @@ func Implementsf(t TestingT, interfaceObject interface{}, object interface{}, ms
 // InDelta asserts that the two numerals are within delta of each other.
 //
 // 	 assert.InDelta(t, math.Pi, (22 / 7.0), 0.01)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func InDelta(t TestingT, expected interface{}, actual interface{}, delta float64, msgAndArgs ...interface{}) {
 	if !assert.InDelta(t, expected, actual, delta, msgAndArgs...) {
-		t.FailNow()
-	}
-}
-
-// InDeltaMapValues is the same as InDelta, but it compares all values between two maps. Both maps must have exactly the same keys.
-func InDeltaMapValues(t TestingT, expected interface{}, actual interface{}, delta float64, msgAndArgs ...interface{}) {
-	if !assert.InDeltaMapValues(t, expected, actual, delta, msgAndArgs...) {
-		t.FailNow()
-	}
-}
-
-// InDeltaMapValuesf is the same as InDelta, but it compares all values between two maps. Both maps must have exactly the same keys.
-func InDeltaMapValuesf(t TestingT, expected interface{}, actual interface{}, delta float64, msg string, args ...interface{}) {
-	if !assert.InDeltaMapValuesf(t, expected, actual, delta, msg, args...) {
 		t.FailNow()
 	}
 }
@@ -448,6 +418,8 @@ func InDeltaSlicef(t TestingT, expected interface{}, actual interface{}, delta f
 // InDeltaf asserts that the two numerals are within delta of each other.
 //
 // 	 assert.InDeltaf(t, math.Pi, (22 / 7.0, "error message %s", "formatted"), 0.01)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func InDeltaf(t TestingT, expected interface{}, actual interface{}, delta float64, msg string, args ...interface{}) {
 	if !assert.InDeltaf(t, expected, actual, delta, msg, args...) {
 		t.FailNow()
@@ -455,6 +427,8 @@ func InDeltaf(t TestingT, expected interface{}, actual interface{}, delta float6
 }
 
 // InEpsilon asserts that expected and actual have a relative error less than epsilon
+//
+// Returns whether the assertion was successful (true) or not (false).
 func InEpsilon(t TestingT, expected interface{}, actual interface{}, epsilon float64, msgAndArgs ...interface{}) {
 	if !assert.InEpsilon(t, expected, actual, epsilon, msgAndArgs...) {
 		t.FailNow()
@@ -476,6 +450,8 @@ func InEpsilonSlicef(t TestingT, expected interface{}, actual interface{}, epsil
 }
 
 // InEpsilonf asserts that expected and actual have a relative error less than epsilon
+//
+// Returns whether the assertion was successful (true) or not (false).
 func InEpsilonf(t TestingT, expected interface{}, actual interface{}, epsilon float64, msg string, args ...interface{}) {
 	if !assert.InEpsilonf(t, expected, actual, epsilon, msg, args...) {
 		t.FailNow()
@@ -499,6 +475,8 @@ func IsTypef(t TestingT, expectedType interface{}, object interface{}, msg strin
 // JSONEq asserts that two JSON strings are equivalent.
 //
 //  assert.JSONEq(t, `{"hello": "world", "foo": "bar"}`, `{"foo": "bar", "hello": "world"}`)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func JSONEq(t TestingT, expected string, actual string, msgAndArgs ...interface{}) {
 	if !assert.JSONEq(t, expected, actual, msgAndArgs...) {
 		t.FailNow()
@@ -508,6 +486,8 @@ func JSONEq(t TestingT, expected string, actual string, msgAndArgs ...interface{
 // JSONEqf asserts that two JSON strings are equivalent.
 //
 //  assert.JSONEqf(t, `{"hello": "world", "foo": "bar"}`, `{"foo": "bar", "hello": "world"}`, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func JSONEqf(t TestingT, expected string, actual string, msg string, args ...interface{}) {
 	if !assert.JSONEqf(t, expected, actual, msg, args...) {
 		t.FailNow()
@@ -518,6 +498,8 @@ func JSONEqf(t TestingT, expected string, actual string, msg string, args ...int
 // Len also fails if the object has a type that len() not accept.
 //
 //    assert.Len(t, mySlice, 3)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Len(t TestingT, object interface{}, length int, msgAndArgs ...interface{}) {
 	if !assert.Len(t, object, length, msgAndArgs...) {
 		t.FailNow()
@@ -528,6 +510,8 @@ func Len(t TestingT, object interface{}, length int, msgAndArgs ...interface{}) 
 // Lenf also fails if the object has a type that len() not accept.
 //
 //    assert.Lenf(t, mySlice, 3, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Lenf(t TestingT, object interface{}, length int, msg string, args ...interface{}) {
 	if !assert.Lenf(t, object, length, msg, args...) {
 		t.FailNow()
@@ -537,6 +521,8 @@ func Lenf(t TestingT, object interface{}, length int, msg string, args ...interf
 // Nil asserts that the specified object is nil.
 //
 //    assert.Nil(t, err)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Nil(t TestingT, object interface{}, msgAndArgs ...interface{}) {
 	if !assert.Nil(t, object, msgAndArgs...) {
 		t.FailNow()
@@ -546,6 +532,8 @@ func Nil(t TestingT, object interface{}, msgAndArgs ...interface{}) {
 // Nilf asserts that the specified object is nil.
 //
 //    assert.Nilf(t, err, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Nilf(t TestingT, object interface{}, msg string, args ...interface{}) {
 	if !assert.Nilf(t, object, msg, args...) {
 		t.FailNow()
@@ -558,6 +546,8 @@ func Nilf(t TestingT, object interface{}, msg string, args ...interface{}) {
 //   if assert.NoError(t, err) {
 // 	   assert.Equal(t, expectedObj, actualObj)
 //   }
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NoError(t TestingT, err error, msgAndArgs ...interface{}) {
 	if !assert.NoError(t, err, msgAndArgs...) {
 		t.FailNow()
@@ -570,6 +560,8 @@ func NoError(t TestingT, err error, msgAndArgs ...interface{}) {
 //   if assert.NoErrorf(t, err, "error message %s", "formatted") {
 // 	   assert.Equal(t, expectedObj, actualObj)
 //   }
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NoErrorf(t TestingT, err error, msg string, args ...interface{}) {
 	if !assert.NoErrorf(t, err, msg, args...) {
 		t.FailNow()
@@ -582,6 +574,8 @@ func NoErrorf(t TestingT, err error, msg string, args ...interface{}) {
 //    assert.NotContains(t, "Hello World", "Earth")
 //    assert.NotContains(t, ["Hello", "World"], "Earth")
 //    assert.NotContains(t, {"Hello": "World"}, "Earth")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotContains(t TestingT, s interface{}, contains interface{}, msgAndArgs ...interface{}) {
 	if !assert.NotContains(t, s, contains, msgAndArgs...) {
 		t.FailNow()
@@ -594,6 +588,8 @@ func NotContains(t TestingT, s interface{}, contains interface{}, msgAndArgs ...
 //    assert.NotContainsf(t, "Hello World", "Earth", "error message %s", "formatted")
 //    assert.NotContainsf(t, ["Hello", "World"], "Earth", "error message %s", "formatted")
 //    assert.NotContainsf(t, {"Hello": "World"}, "Earth", "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotContainsf(t TestingT, s interface{}, contains interface{}, msg string, args ...interface{}) {
 	if !assert.NotContainsf(t, s, contains, msg, args...) {
 		t.FailNow()
@@ -606,6 +602,8 @@ func NotContainsf(t TestingT, s interface{}, contains interface{}, msg string, a
 //  if assert.NotEmpty(t, obj) {
 //    assert.Equal(t, "two", obj[1])
 //  }
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotEmpty(t TestingT, object interface{}, msgAndArgs ...interface{}) {
 	if !assert.NotEmpty(t, object, msgAndArgs...) {
 		t.FailNow()
@@ -618,6 +616,8 @@ func NotEmpty(t TestingT, object interface{}, msgAndArgs ...interface{}) {
 //  if assert.NotEmptyf(t, obj, "error message %s", "formatted") {
 //    assert.Equal(t, "two", obj[1])
 //  }
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotEmptyf(t TestingT, object interface{}, msg string, args ...interface{}) {
 	if !assert.NotEmptyf(t, object, msg, args...) {
 		t.FailNow()
@@ -627,6 +627,8 @@ func NotEmptyf(t TestingT, object interface{}, msg string, args ...interface{}) 
 // NotEqual asserts that the specified values are NOT equal.
 //
 //    assert.NotEqual(t, obj1, obj2)
+//
+// Returns whether the assertion was successful (true) or not (false).
 //
 // Pointer variable equality is determined based on the equality of the
 // referenced values (as opposed to the memory addresses).
@@ -640,6 +642,8 @@ func NotEqual(t TestingT, expected interface{}, actual interface{}, msgAndArgs .
 //
 //    assert.NotEqualf(t, obj1, obj2, "error message %s", "formatted")
 //
+// Returns whether the assertion was successful (true) or not (false).
+//
 // Pointer variable equality is determined based on the equality of the
 // referenced values (as opposed to the memory addresses).
 func NotEqualf(t TestingT, expected interface{}, actual interface{}, msg string, args ...interface{}) {
@@ -651,6 +655,8 @@ func NotEqualf(t TestingT, expected interface{}, actual interface{}, msg string,
 // NotNil asserts that the specified object is not nil.
 //
 //    assert.NotNil(t, err)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotNil(t TestingT, object interface{}, msgAndArgs ...interface{}) {
 	if !assert.NotNil(t, object, msgAndArgs...) {
 		t.FailNow()
@@ -660,6 +666,8 @@ func NotNil(t TestingT, object interface{}, msgAndArgs ...interface{}) {
 // NotNilf asserts that the specified object is not nil.
 //
 //    assert.NotNilf(t, err, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotNilf(t TestingT, object interface{}, msg string, args ...interface{}) {
 	if !assert.NotNilf(t, object, msg, args...) {
 		t.FailNow()
@@ -669,6 +677,8 @@ func NotNilf(t TestingT, object interface{}, msg string, args ...interface{}) {
 // NotPanics asserts that the code inside the specified PanicTestFunc does NOT panic.
 //
 //   assert.NotPanics(t, func(){ RemainCalm() })
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotPanics(t TestingT, f assert.PanicTestFunc, msgAndArgs ...interface{}) {
 	if !assert.NotPanics(t, f, msgAndArgs...) {
 		t.FailNow()
@@ -678,6 +688,8 @@ func NotPanics(t TestingT, f assert.PanicTestFunc, msgAndArgs ...interface{}) {
 // NotPanicsf asserts that the code inside the specified PanicTestFunc does NOT panic.
 //
 //   assert.NotPanicsf(t, func(){ RemainCalm() }, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotPanicsf(t TestingT, f assert.PanicTestFunc, msg string, args ...interface{}) {
 	if !assert.NotPanicsf(t, f, msg, args...) {
 		t.FailNow()
@@ -688,6 +700,8 @@ func NotPanicsf(t TestingT, f assert.PanicTestFunc, msg string, args ...interfac
 //
 //  assert.NotRegexp(t, regexp.MustCompile("starts"), "it's starting")
 //  assert.NotRegexp(t, "^start", "it's not starting")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotRegexp(t TestingT, rx interface{}, str interface{}, msgAndArgs ...interface{}) {
 	if !assert.NotRegexp(t, rx, str, msgAndArgs...) {
 		t.FailNow()
@@ -698,6 +712,8 @@ func NotRegexp(t TestingT, rx interface{}, str interface{}, msgAndArgs ...interf
 //
 //  assert.NotRegexpf(t, regexp.MustCompile("starts", "error message %s", "formatted"), "it's starting")
 //  assert.NotRegexpf(t, "^start", "it's not starting", "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotRegexpf(t TestingT, rx interface{}, str interface{}, msg string, args ...interface{}) {
 	if !assert.NotRegexpf(t, rx, str, msg, args...) {
 		t.FailNow()
@@ -708,6 +724,8 @@ func NotRegexpf(t TestingT, rx interface{}, str interface{}, msg string, args ..
 // elements given in the specified subset(array, slice...).
 //
 //    assert.NotSubset(t, [1, 3, 4], [1, 2], "But [1, 3, 4] does not contain [1, 2]")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotSubset(t TestingT, list interface{}, subset interface{}, msgAndArgs ...interface{}) {
 	if !assert.NotSubset(t, list, subset, msgAndArgs...) {
 		t.FailNow()
@@ -718,20 +736,22 @@ func NotSubset(t TestingT, list interface{}, subset interface{}, msgAndArgs ...i
 // elements given in the specified subset(array, slice...).
 //
 //    assert.NotSubsetf(t, [1, 3, 4], [1, 2], "But [1, 3, 4] does not contain [1, 2]", "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func NotSubsetf(t TestingT, list interface{}, subset interface{}, msg string, args ...interface{}) {
 	if !assert.NotSubsetf(t, list, subset, msg, args...) {
 		t.FailNow()
 	}
 }
 
-// NotZero asserts that i is not the zero value for its type.
+// NotZero asserts that i is not the zero value for its type and returns the truth.
 func NotZero(t TestingT, i interface{}, msgAndArgs ...interface{}) {
 	if !assert.NotZero(t, i, msgAndArgs...) {
 		t.FailNow()
 	}
 }
 
-// NotZerof asserts that i is not the zero value for its type.
+// NotZerof asserts that i is not the zero value for its type and returns the truth.
 func NotZerof(t TestingT, i interface{}, msg string, args ...interface{}) {
 	if !assert.NotZerof(t, i, msg, args...) {
 		t.FailNow()
@@ -741,6 +761,8 @@ func NotZerof(t TestingT, i interface{}, msg string, args ...interface{}) {
 // Panics asserts that the code inside the specified PanicTestFunc panics.
 //
 //   assert.Panics(t, func(){ GoCrazy() })
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Panics(t TestingT, f assert.PanicTestFunc, msgAndArgs ...interface{}) {
 	if !assert.Panics(t, f, msgAndArgs...) {
 		t.FailNow()
@@ -751,6 +773,8 @@ func Panics(t TestingT, f assert.PanicTestFunc, msgAndArgs ...interface{}) {
 // the recovered panic value equals the expected panic value.
 //
 //   assert.PanicsWithValue(t, "crazy error", func(){ GoCrazy() })
+//
+// Returns whether the assertion was successful (true) or not (false).
 func PanicsWithValue(t TestingT, expected interface{}, f assert.PanicTestFunc, msgAndArgs ...interface{}) {
 	if !assert.PanicsWithValue(t, expected, f, msgAndArgs...) {
 		t.FailNow()
@@ -761,6 +785,8 @@ func PanicsWithValue(t TestingT, expected interface{}, f assert.PanicTestFunc, m
 // the recovered panic value equals the expected panic value.
 //
 //   assert.PanicsWithValuef(t, "crazy error", func(){ GoCrazy() }, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func PanicsWithValuef(t TestingT, expected interface{}, f assert.PanicTestFunc, msg string, args ...interface{}) {
 	if !assert.PanicsWithValuef(t, expected, f, msg, args...) {
 		t.FailNow()
@@ -770,6 +796,8 @@ func PanicsWithValuef(t TestingT, expected interface{}, f assert.PanicTestFunc, 
 // Panicsf asserts that the code inside the specified PanicTestFunc panics.
 //
 //   assert.Panicsf(t, func(){ GoCrazy() }, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Panicsf(t TestingT, f assert.PanicTestFunc, msg string, args ...interface{}) {
 	if !assert.Panicsf(t, f, msg, args...) {
 		t.FailNow()
@@ -780,6 +808,8 @@ func Panicsf(t TestingT, f assert.PanicTestFunc, msg string, args ...interface{}
 //
 //  assert.Regexp(t, regexp.MustCompile("start"), "it's starting")
 //  assert.Regexp(t, "start...$", "it's not starting")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Regexp(t TestingT, rx interface{}, str interface{}, msgAndArgs ...interface{}) {
 	if !assert.Regexp(t, rx, str, msgAndArgs...) {
 		t.FailNow()
@@ -790,6 +820,8 @@ func Regexp(t TestingT, rx interface{}, str interface{}, msgAndArgs ...interface
 //
 //  assert.Regexpf(t, regexp.MustCompile("start", "error message %s", "formatted"), "it's starting")
 //  assert.Regexpf(t, "start...$", "it's not starting", "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Regexpf(t TestingT, rx interface{}, str interface{}, msg string, args ...interface{}) {
 	if !assert.Regexpf(t, rx, str, msg, args...) {
 		t.FailNow()
@@ -800,6 +832,8 @@ func Regexpf(t TestingT, rx interface{}, str interface{}, msg string, args ...in
 // elements given in the specified subset(array, slice...).
 //
 //    assert.Subset(t, [1, 2, 3], [1, 2], "But [1, 2, 3] does contain [1, 2]")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Subset(t TestingT, list interface{}, subset interface{}, msgAndArgs ...interface{}) {
 	if !assert.Subset(t, list, subset, msgAndArgs...) {
 		t.FailNow()
@@ -810,6 +844,8 @@ func Subset(t TestingT, list interface{}, subset interface{}, msgAndArgs ...inte
 // elements given in the specified subset(array, slice...).
 //
 //    assert.Subsetf(t, [1, 2, 3], [1, 2], "But [1, 2, 3] does contain [1, 2]", "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Subsetf(t TestingT, list interface{}, subset interface{}, msg string, args ...interface{}) {
 	if !assert.Subsetf(t, list, subset, msg, args...) {
 		t.FailNow()
@@ -819,6 +855,8 @@ func Subsetf(t TestingT, list interface{}, subset interface{}, msg string, args 
 // True asserts that the specified value is true.
 //
 //    assert.True(t, myBool)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func True(t TestingT, value bool, msgAndArgs ...interface{}) {
 	if !assert.True(t, value, msgAndArgs...) {
 		t.FailNow()
@@ -828,6 +866,8 @@ func True(t TestingT, value bool, msgAndArgs ...interface{}) {
 // Truef asserts that the specified value is true.
 //
 //    assert.Truef(t, myBool, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func Truef(t TestingT, value bool, msg string, args ...interface{}) {
 	if !assert.Truef(t, value, msg, args...) {
 		t.FailNow()
@@ -837,6 +877,8 @@ func Truef(t TestingT, value bool, msg string, args ...interface{}) {
 // WithinDuration asserts that the two times are within duration delta of each other.
 //
 //   assert.WithinDuration(t, time.Now(), time.Now(), 10*time.Second)
+//
+// Returns whether the assertion was successful (true) or not (false).
 func WithinDuration(t TestingT, expected time.Time, actual time.Time, delta time.Duration, msgAndArgs ...interface{}) {
 	if !assert.WithinDuration(t, expected, actual, delta, msgAndArgs...) {
 		t.FailNow()
@@ -846,20 +888,22 @@ func WithinDuration(t TestingT, expected time.Time, actual time.Time, delta time
 // WithinDurationf asserts that the two times are within duration delta of each other.
 //
 //   assert.WithinDurationf(t, time.Now(), time.Now(), 10*time.Second, "error message %s", "formatted")
+//
+// Returns whether the assertion was successful (true) or not (false).
 func WithinDurationf(t TestingT, expected time.Time, actual time.Time, delta time.Duration, msg string, args ...interface{}) {
 	if !assert.WithinDurationf(t, expected, actual, delta, msg, args...) {
 		t.FailNow()
 	}
 }
 
-// Zero asserts that i is the zero value for its type.
+// Zero asserts that i is the zero value for its type and returns the truth.
 func Zero(t TestingT, i interface{}, msgAndArgs ...interface{}) {
 	if !assert.Zero(t, i, msgAndArgs...) {
 		t.FailNow()
 	}
 }
 
-// Zerof asserts that i is the zero value for its type.
+// Zerof asserts that i is the zero value for its type and returns the truth.
 func Zerof(t TestingT, i interface{}, msg string, args ...interface{}) {
 	if !assert.Zerof(t, i, msg, args...) {
 		t.FailNow()

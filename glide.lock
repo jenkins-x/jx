@@ -1,5 +1,5 @@
-hash: 8b222e5bfe322c05c34fcf350a2ba26c0cdd3fc4960c8e70713e51d161d5217d
-updated: 2018-03-27T01:21:45.387006155-04:00
+hash: 33bcd0e6e6364aaa7dc46525f9f49ea0521041d13b9292340d167b0a6f176c5c
+updated: 2018-03-28T16:18:54.466007+02:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,13 +7,13 @@ imports:
   - compute/metadata
   - internal
 - name: code.gitea.io/sdk
-  version: 39c609e903992e25deca0e7aa2c5304fd680530f
+  version: 92585b27a0893099fd988bf0796e3c8d3cbf59db
   subpackages:
   - gitea
 - name: github.com/andygrunwald/go-jira
   version: 73a371cdd95da260b5a70b19336ad03fd62a79e7
 - name: github.com/Azure/draft
-  version: fb51c98eddada7f6c0dc39c91ee9093b1b68e68a
+  version: 086e092ba82b8bc9aaebad9bf456c168a5c12c6f
   subpackages:
   - pkg/draft/draftpath
   - pkg/draft/pack/repo
@@ -36,7 +36,7 @@ imports:
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/chromedp/cdproto
-  version: 0a203f8ab4339bb8860e9d79fdcc2ede82da5e70
+  version: dfcd948f5402632d92038cc1138b6f041a6cbc32
   subpackages:
   - accessibility
   - animation
@@ -77,7 +77,7 @@ imports:
   - tethering
   - tracing
 - name: github.com/chromedp/chromedp
-  version: 097f1903e5193f8dfa6447d201d79fe51c255b39
+  version: f683cfc4c190d6a24ca66ee436184b533fd126b8
   subpackages:
   - client
   - kb
@@ -126,7 +126,7 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: d2b80df1e3eeccae96eb1cb489e65372cc9550c8
+  version: 1ce85f4eb585f22e22dbd214dd4610aafa516c4c
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -222,10 +222,14 @@ imports:
   version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
   - diffmatchpatch
+- name: github.com/sirupsen/logrus
+  version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/Sirupsen/logrus
-  version: 90150a8ed11b6ce285e77e8af2b0109559ce4777
+  version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
+  repo: git@github.com:/sirupsen/logrus
+  vcs: git
 - name: github.com/spf13/cobra
-  version: c6c44e6fdcc30161c7f4480754da7230d01c06e3
+  version: a1f051bc3eba734da4772d60e2d677f47cf93ef4
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -243,6 +247,8 @@ imports:
   - treflect
 - name: github.com/wbrefvem/go-bitbucket
   version: 9f0898648d6ff69569623c39526ae13c314b974d
+- name: github.com/xanzy/go-gitlab
+  version: 3109bb13e379d3ada1ff1ca81557c6e7bce8e881
 - name: github.com/xanzy/ssh-agent
   version: ba9c9e33906f58169366275e3450db66139a31a9
 - name: golang.org/x/crypto
@@ -304,7 +310,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/appengine
-  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
+  version: 540132eeda33c2b26cca331a6adfd50519cd29f7
   subpackages:
   - internal
   - internal/app_identity
@@ -374,7 +380,7 @@ imports:
 - name: gopkg.in/warnings.v0
   version: ec4a0fea49c7b46c2aeb0b51aac55779c607e52b
 - name: gopkg.in/yaml.v2
-  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
+  version: 670d4cfef0544295bc27a114dbac37980d83185a
 - name: k8s.io/api
   version: 73d903622b7391f3312dcbac6483fed484e185f8
   subpackages:
@@ -407,7 +413,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 120eba0f136be6142fefe948176dcc216f05b9f1
+  version: ff57e07d715fea4c8b69d1e1356a306d3b582bd3
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -522,11 +528,11 @@ imports:
   - util/jsonpath
   - util/retry
 - name: k8s.io/code-generator
-  version: d5be28d178a49209fe9c2fcb48960cdf2a0a31c0
+  version: a9a9141027a9e4b47e915a91401df91ef7fa583b
 - name: k8s.io/gengo
   version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
 - name: k8s.io/helm
-  version: 4711d5b8b8283a045b0ee118a5ac450346417919
+  version: c574e03ed457ebb1bb1da8cde8db5c550f0c800f
   subpackages:
   - pkg/chartutil
   - pkg/ignore
@@ -535,7 +541,7 @@ imports:
   - pkg/sympath
   - pkg/version
 - name: k8s.io/metrics
-  version: ce2480a71dc1efc665f45f498218d0cf7a133327
+  version: 4cc74194f563d1ac90a61b654083a4da01c1ae61
   subpackages:
   - pkg/apis/metrics
   - pkg/apis/metrics/v1alpha1
@@ -549,10 +555,9 @@ testImports:
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
   - difflib
-- name: github.com/stretchr/objx
-  version: 8a3f7159479fbc75b30357fbc48f380b7320f08e
 - name: github.com/stretchr/testify
-  version: 12b6f73e6084dad08a7c6e575284b177ecafbc71
+  version: f6abca593680b2315d2075e0f5e2a9751e3f431a
   subpackages:
   - assert
-  - mock
+  - require
+  - suite

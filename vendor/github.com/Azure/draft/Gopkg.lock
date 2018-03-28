@@ -76,10 +76,13 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
-  name = "github.com/Sirupsen/logrus"
-  packages = ["."]
-  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
-  version = "v1.0.4"
+  branch = "master"
+  name = "github.com/agl/ed25519"
+  packages = [
+    ".",
+    "edwards25519"
+  ]
+  revision = "5312a61534124124185d41f09206b9fef1d88403"
 
 [[projects]]
   name = "github.com/aokoli/goutils"
@@ -94,6 +97,12 @@
   revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/containerd/continuity"
+  packages = ["pathdriver"]
+  revision = "d8fb8589b0e8e85b8c8bbaa8840226d0dfeb7371"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -106,12 +115,45 @@
   version = "v3.1.0"
 
 [[projects]]
+  name = "github.com/docker/cli"
+  packages = [
+    "cli",
+    "cli/command",
+    "cli/command/image/build",
+    "cli/config",
+    "cli/config/configfile",
+    "cli/config/credentials",
+    "cli/debug",
+    "cli/flags",
+    "cli/manifest/store",
+    "cli/manifest/types",
+    "cli/registry/client",
+    "cli/trust",
+    "opts"
+  ]
+  revision = "37eebe5cb6eff08bde94d17111caa8fc099d7a94"
+
+[[projects]]
   name = "github.com/docker/distribution"
   packages = [
+    ".",
+    "context",
     "digestset",
-    "reference"
+    "manifest",
+    "manifest/manifestlist",
+    "manifest/schema2",
+    "reference",
+    "registry/api/errcode",
+    "registry/api/v2",
+    "registry/client",
+    "registry/client/auth",
+    "registry/client/auth/challenge",
+    "registry/client/transport",
+    "registry/storage/cache",
+    "registry/storage/cache/memory",
+    "uuid"
   ]
-  revision = "b38e5838b7b2f2ad48e06ec4b500011976080621"
+  revision = "a97d7c0c155be14d1380c075d3197a5d89c2abc2"
 
 [[projects]]
   name = "github.com/docker/docker"
@@ -128,35 +170,53 @@
     "api/types/registry",
     "api/types/strslice",
     "api/types/swarm",
+    "api/types/swarm/runtime",
     "api/types/time",
     "api/types/versions",
     "api/types/volume",
     "builder/dockerignore",
-    "cli/command/image/build",
+    "builder/remotecontext/git",
     "client",
+    "errdefs",
     "pkg/archive",
     "pkg/fileutils",
-    "pkg/gitutils",
-    "pkg/httputils",
+    "pkg/homedir",
     "pkg/idtools",
     "pkg/ioutils",
-    "pkg/jsonlog",
     "pkg/jsonmessage",
     "pkg/longpath",
+    "pkg/mount",
     "pkg/pools",
     "pkg/progress",
-    "pkg/promise",
     "pkg/streamformatter",
+    "pkg/stringid",
     "pkg/symlink",
     "pkg/system",
+    "pkg/tarsum",
     "pkg/term",
     "pkg/term/windows",
-    "pkg/tlsconfig",
-    "pkg/urlutil"
+    "pkg/urlutil",
+    "registry",
+    "registry/resumable"
   ]
-  revision = "89658bed64c2a8fe05a978e5b87dbec409d57a0f"
+  revision = "ae7016427f8cba4e4d8fcb979d6ba313ee2c0702"
   source = "https://github.com/moby/moby"
-  version = "v17.05.0-ce"
+
+[[projects]]
+  name = "github.com/docker/docker-credential-helpers"
+  packages = [
+    "client",
+    "credentials",
+    "pass"
+  ]
+  revision = "d68f9aeca33f5fd3f08eeae5e9d175edf4e731d1"
+  version = "v0.6.0"
+
+[[projects]]
+  name = "github.com/docker/go"
+  packages = ["canonical/json"]
+  revision = "62e5ec7cf43f795986ec658df7cb317255772993"
+  version = "v1.5.1-1"
 
 [[projects]]
   name = "github.com/docker/go-connections"
@@ -173,12 +233,6 @@
   packages = ["."]
   revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
   version = "v0.3.2"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/docker/libtrust"
-  packages = ["."]
-  revision = "aabc10ec26b754e797f9028f4589c5b7bd90dc20"
 
 [[projects]]
   branch = "master"
@@ -302,7 +356,6 @@
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
-    "ptypes/empty",
     "ptypes/timestamp"
   ]
   revision = "c65a0412e71e8b9b3bfd22925720d23c0f054237"
@@ -344,6 +397,18 @@
   revision = "4a3f5ae58624b68283375060dad06a214b05a32b"
 
 [[projects]]
+  name = "github.com/gorilla/context"
+  packages = ["."]
+  revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
+  version = "v1.1"
+
+[[projects]]
+  name = "github.com/gorilla/mux"
+  packages = ["."]
+  revision = "53c1911da2b537f792e7cafcb446b05ffe33b996"
+  version = "v1.6.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/gosuri/uitable"
   packages = [
@@ -378,10 +443,10 @@
   revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
 
 [[projects]]
-  branch = "master"
   name = "github.com/huandu/xstrings"
   packages = ["."]
-  revision = "37469d0c81a7910b49d64a0d308ded4823e90937"
+  revision = "2bf18b218c51864a87384c06996e40ff9dcff8e1"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/imdario/mergo"
@@ -447,6 +512,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/miekg/pkcs11"
+  packages = ["."]
+  revision = "6dbd569b952ec150d1425722dbbe80f2c6193f83"
+
+[[projects]]
   name = "github.com/oklog/ulid"
   packages = ["."]
   revision = "d311cb43c92434ec4072dfbbda3400741d0a6337"
@@ -457,6 +528,15 @@
   packages = ["."]
   revision = "279bed98673dd5bef374d3b6e4b09e2af76183bf"
   version = "v1.0.0-rc1"
+
+[[projects]]
+  name = "github.com/opencontainers/image-spec"
+  packages = [
+    "specs-go",
+    "specs-go/v1"
+  ]
+  revision = "d60099175f88c47cd379c4738d158884749ed235"
+  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/opencontainers/runc"
@@ -537,6 +617,12 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
+
+[[projects]]
   name = "github.com/spf13/cobra"
   packages = ["."]
   revision = "7b2c5ac9fc04fc5efafb60700713d4fa609b777b"
@@ -553,6 +639,27 @@
   packages = ["."]
   revision = "4d1d2a7d4b69cee56dadb6a7634945f829154858"
   version = "0.1.0"
+
+[[projects]]
+  name = "github.com/theupdateframework/notary"
+  packages = [
+    ".",
+    "client",
+    "client/changelist",
+    "cryptoservice",
+    "passphrase",
+    "storage",
+    "trustmanager",
+    "trustmanager/yubikey",
+    "trustpinning",
+    "tuf",
+    "tuf/data",
+    "tuf/signed",
+    "tuf/utils",
+    "tuf/validation"
+  ]
+  revision = "34f53ad8a7f85c005be104cc90a66a9a89bb7421"
+  version = "v0.6.0"
 
 [[projects]]
   branch = "master"
@@ -896,7 +1003,7 @@
     "pkg/storage/driver",
     "pkg/strvals",
     "pkg/tiller/environment",
-    "pkg/tlsutil",
+    "pkg/timeconv",
     "pkg/version"
   ]
   revision = "8478fb4fc723885b155c924d1c8c410b7a9444e6"
@@ -1092,6 +1199,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "09d18ea0a7471f02dc11146d4b00bf98f305601fc7ec6f28c01e052a8c46f90d"
+  inputs-digest = "d4a356e270ec480b87d32abd3109ed70e01431319a7e529a058031a22176ff5f"
   solver-name = "gps-cdcl"
   solver-version = 1

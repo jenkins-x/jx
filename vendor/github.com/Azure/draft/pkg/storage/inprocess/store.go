@@ -2,8 +2,9 @@ package inprocess
 
 import (
 	"context"
-
 	"github.com/Azure/draft/pkg/storage"
+	"github.com/golang/protobuf/ptypes"
+	"time"
 )
 
 // Store is an inprocess storage engine for draft.
@@ -58,6 +59,11 @@ func (s *Store) CreateBuild(ctx context.Context, appName string, build *storage.
 	if _, ok := s.builds[appName]; ok {
 		return storage.NewErrAppStorageExists(appName)
 	}
+	now, err := ptypes.TimestampProto(time.Now())
+	if err != nil {
+		return err
+	}
+	build.CreatedAt = now
 	s.builds[appName] = []*storage.Object{build}
 	return nil
 }
@@ -68,9 +74,12 @@ func (s *Store) CreateBuild(ctx context.Context, appName string, build *storage.
 // is updated.
 //
 // UpdateBuild implements storage.Updater.
-func (s *Store) UpdateBuild(ctx context.Context, appName string, build *storage.Object) error {
+func (s *Store) UpdateBuild(ctx context.Context, appName string, build *storage.Object) (err error) {
 	if _, ok := s.builds[appName]; !ok {
 		return s.CreateBuild(ctx, appName, build)
+	}
+	if build.CreatedAt, err = ptypes.TimestampProto(time.Now()); err != nil {
+		return err
 	}
 	s.builds[appName] = append(s.builds[appName], build)
 	// TODO(fibonacci1729): deduplication of builds.

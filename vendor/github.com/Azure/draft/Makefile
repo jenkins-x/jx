@@ -26,7 +26,7 @@ all: build
 build:
 	GOBIN=$(BINDIR) $(GO) install $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' github.com/Azure/draft/cmd/...
 
-# usage: make clean build-cross dist APP=draft|draftd VERSION=v2.0.0-alpha.3
+# usage: make clean build-cross dist APP=draft VERSION=v2.0.0-alpha.3
 .PHONY: build-cross
 build-cross: LDFLAGS += -extldflags "-static"
 build-cross:
@@ -46,49 +46,6 @@ checksum:
 	for f in _dist/*.gz ; do \
 		shasum -a 256 "$${f}"  | awk '{print $$1}' > "$${f}.sha256" ; \
 	done
-
-.PHONY: check-docker
-check-docker:
-	@if [ -z $$(which docker) ]; then \
-	  echo "Missing \`docker\` client which is required for development"; \
-	  exit 2; \
-	fi
-
-.PHONY: check-helm
-check-helm:
-	@if [ -z $$(which helm) ]; then \
-	  echo "Missing \`helm\` client which is required for development"; \
-	  exit 2; \
-	fi
-
-.PHONY: docker-binary
-docker-binary: BINDIR = ./rootfs/bin
-docker-binary: GOFLAGS += -a -installsuffix cgo
-docker-binary:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(GO) build -o $(BINDIR)/draftd $(GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' github.com/Azure/draft/cmd/draftd
-
-.PHONY: docker-build
-docker-build: check-docker docker-binary compress-binary
-	docker build --rm -t ${IMAGE} .
-	docker tag ${IMAGE} ${MUTABLE_IMAGE}
-
-.PHONY: compress-binary
-compress-binary: BINDIR = ./rootfs/bin
-compress-binary:
-	@if [ -z $$(which upx) ]; then \
-	  echo "Missing \`upx\` tool to compress binaries"; \
-	else \
-	  upx --quiet ${BINDIR}/draftd; \
-	fi
-
-.PHONY: serve
-serve: check-helm
-	helm install chart/ --name ${APP} --namespace kube-system \
-		--set image.repository=${DOCKER_REGISTRY}/${IMAGE_PREFIX}/${SHORT_NAME},image.tag=${IMAGE_TAG}
-
-.PHONY: unserve
-unserve: check-helm
-	-helm delete --purge ${APP}
 
 .PHONY: clean
 clean:

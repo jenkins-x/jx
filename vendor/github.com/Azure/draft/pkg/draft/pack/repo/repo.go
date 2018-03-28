@@ -32,7 +32,7 @@ func FindRepositories(path string) []Repository {
 		}
 		if fileInfo.IsDir() {
 			repos = append(repos, Repository{
-				Name: strings.TrimPrefix(walkPath, path+"/"),
+				Name: filepath.ToSlash(strings.TrimPrefix(walkPath, path+string(os.PathSeparator))),
 				Dir:  walkPath,
 			})
 		}

@@ -52,6 +52,14 @@ import:
   version: 1.0.0
 - package: github.com/trivago/tgo
   version: 1.0.1
+- package: github.com/xanzy/go-gitlab
+  version: 3109bb13e379d3ada1ff1ca81557c6e7bce8e881
+- package: github.com/sirupsen/logrus
+  version: v1.0.4
+- package: github.com/Sirupsen/logrus
+  repo: git@github.com:/sirupsen/logrus
+  vcs: git
+  version: v1.0.4
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

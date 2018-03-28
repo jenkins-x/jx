@@ -1764,6 +1764,22 @@ func (d *DeploymentStatusRequest) GetState() string {
 	return *d.State
 }
 
+// GetTeams returns the Teams field if it's non-nil, zero value otherwise.
+func (d *DismissalRestrictionsRequest) GetTeams() []string {
+	if d == nil || d.Teams == nil {
+		return nil
+	}
+	return *d.Teams
+}
+
+// GetUsers returns the Users field if it's non-nil, zero value otherwise.
+func (d *DismissalRestrictionsRequest) GetUsers() []string {
+	if d == nil || d.Users == nil {
+		return nil
+	}
+	return *d.Users
+}
+
 // GetBody returns the Body field if it's non-nil, zero value otherwise.
 func (d *DraftReviewComment) GetBody() string {
 	if d == nil || d.Body == nil {
@@ -5828,12 +5844,28 @@ func (p *PullRequest) GetComments() int {
 	return *p.Comments
 }
 
+// GetCommentsURL returns the CommentsURL field if it's non-nil, zero value otherwise.
+func (p *PullRequest) GetCommentsURL() string {
+	if p == nil || p.CommentsURL == nil {
+		return ""
+	}
+	return *p.CommentsURL
+}
+
 // GetCommits returns the Commits field if it's non-nil, zero value otherwise.
 func (p *PullRequest) GetCommits() int {
 	if p == nil || p.Commits == nil {
 		return 0
 	}
 	return *p.Commits
+}
+
+// GetCommitsURL returns the CommitsURL field if it's non-nil, zero value otherwise.
+func (p *PullRequest) GetCommitsURL() string {
+	if p == nil || p.CommitsURL == nil {
+		return ""
+	}
+	return *p.CommitsURL
 }
 
 // GetCreatedAt returns the CreatedAt field if it's non-nil, zero value otherwise.
@@ -6266,6 +6298,14 @@ func (p *PullRequestEvent) GetRepo() *Repository {
 		return nil
 	}
 	return p.Repo
+}
+
+// GetRequestedReviewer returns the RequestedReviewer field.
+func (p *PullRequestEvent) GetRequestedReviewer() *User {
+	if p == nil {
+		return nil
+	}
+	return p.RequestedReviewer
 }
 
 // GetSender returns the Sender field.

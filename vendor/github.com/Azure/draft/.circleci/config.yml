@@ -10,7 +10,6 @@ jobs:
       DOCKER_USERNAME: "bacongobbler"
     steps:
       - checkout
-      - setup_remote_docker
       - run: echo 'export PATH=/go/src/github.com/Azure/draft/bin:$PATH' >> $BASH_ENV
       - run:
           name: install dependencies
@@ -25,9 +24,6 @@ jobs:
       - run:
           name: Test
           command: .circleci/test.sh
-      - run:
-          name: Deploy to DockerHub
-          command: .circleci/deploy-dockerhub.sh
       - run:
           name: Deploy to Azure
           command: .circleci/deploy-azure.sh
