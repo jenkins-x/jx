@@ -1,0 +1,198 @@
+{
+    "pagelen": 10,
+    "values": [
+        {
+            "scm": "git",
+            "website": "",
+            "has_wiki": false,
+            "name": "python-jolokia",
+            "links": {
+                "watchers": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/watchers"
+                },
+                "branches": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/refs/branches"
+                },
+                "tags": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/refs/tags"
+                },
+                "commits": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/commits"
+                },
+                "clone": [
+                    {
+                        "href": "https://wbrefvem@bitbucket.org/wbrefvem/python-jolokia.git",
+                        "name": "https"
+                    },
+                    {
+                        "href": "git@bitbucket.org:wbrefvem/python-jolokia.git",
+                        "name": "ssh"
+                    }
+                ],
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia"
+                },
+                "source": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/src"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/wbrefvem/python-jolokia"
+                },
+                "avatar": {
+                    "href": "https://bitbucket.org/wbrefvem/python-jolokia/avatar/32/"
+                },
+                "hooks": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/hooks"
+                },
+                "forks": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/forks"
+                },
+                "downloads": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/downloads"
+                },
+                "pullrequests": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/pullrequests"
+                }
+            },
+            "fork_policy": "no_public_forks",
+            "uuid": "{6b96c974-39f0-40cd-a56f-e1efe5095aba}",
+            "language": "python",
+            "created_on": "2018-03-07T14:47:19.040628+00:00",
+            "mainbranch": {
+                "type": "branch",
+                "name": "master"
+            },
+            "full_name": "wbrefvem/python-jolokia",
+            "has_issues": false,
+            "owner": {
+                "username": "wbrefvem",
+                "display_name": "Will Refvem",
+                "type": "user",
+                "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/users/wbrefvem"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/wbrefvem/"
+                    },
+                    "avatar": {
+                        "href": "https://bitbucket.org/account/wbrefvem/avatar/32/"
+                    }
+                }
+            },
+            "updated_on": "2018-03-23T23:43:25.264279+00:00",
+            "size": 428407,
+            "type": "repository",
+            "slug": "python-jolokia",
+            "is_private": false,
+            "description": ""
+        },
+        {
+            "scm": "git",
+            "website": null,
+            "has_wiki": false,
+            "name": "pyjolokia_fork",
+            "links": {
+                "watchers": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/watchers"
+                },
+                "branches": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/refs/branches"
+                },
+                "tags": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/refs/tags"
+                },
+                "commits": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/commits"
+                },
+                "clone": [
+                    {
+                        "href": "https://wbrefvem@bitbucket.org/wbrefvem/pyjolokia_fork.git",
+                        "name": "https"
+                    },
+                    {
+                        "href": "git@bitbucket.org:wbrefvem/pyjolokia_fork.git",
+                        "name": "ssh"
+                    }
+                ],
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork"
+                },
+                "source": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/src"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/wbrefvem/pyjolokia_fork"
+                },
+                "avatar": {
+                    "href": "https://bitbucket.org/wbrefvem/pyjolokia_fork/avatar/32/"
+                },
+                "hooks": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/hooks"
+                },
+                "forks": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/forks"
+                },
+                "downloads": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/downloads"
+                },
+                "pullrequests": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/pullrequests"
+                }
+            },
+            "fork_policy": "allow_forks",
+            "uuid": "{7ade3f8c-5aad-4f1e-8a08-74e7cad03339}",
+            "language": "python",
+            "created_on": "2018-03-26T02:15:40.883208+00:00",
+            "parent": {
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/wbrefvem/python-jolokia"
+                    },
+                    "avatar": {
+                        "href": "https://bitbucket.org/wbrefvem/python-jolokia/avatar/32/"
+                    }
+                },
+                "type": "repository",
+                "name": "python-jolokia",
+                "full_name": "wbrefvem/python-jolokia",
+                "uuid": "{6b96c974-39f0-40cd-a56f-e1efe5095aba}"
+            },
+            "mainbranch": {
+                "type": "branch",
+                "name": "master"
+            },
+            "full_name": "wbrefvem/pyjolokia_fork",
+            "has_issues": false,
+            "owner": {
+                "username": "wbrefvem",
+                "display_name": "Will Refvem",
+                "type": "user",
+                "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/users/wbrefvem"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/wbrefvem/"
+                    },
+                    "avatar": {
+                        "href": "https://bitbucket.org/account/wbrefvem/avatar/32/"
+                    }
+                }
+            },
+            "updated_on": "2018-03-26T02:17:22.116763+00:00",
+            "size": 432127,
+            "type": "repository",
+            "slug": "pyjolokia_fork",
+            "is_private": true,
+            "description": ""
+        }
+    ],
+    "page": 1,
+    "size": 2
+}

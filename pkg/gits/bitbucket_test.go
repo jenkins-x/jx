@@ -1,64 +1,102 @@
 package gits
 
 import (
-	"context"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/stretchr/testify/suite"
 	bitbucket "github.com/wbrefvem/go-bitbucket"
 )
 
-type MockBitbucketAPIClient struct {
-	mock.Mock
+const (
+	username = "test-user"
+	orgName  = "test-org"
+)
+
+type BitbucketProviderTestSuite struct {
+	suite.Suite
+	mux      *http.ServeMux
+	server   *httptest.Server
+	provider *BitbucketProvider
 }
 
-type MockTeamsApi struct {
-	mock.Mock
+func handleNotFound(response http.ResponseWriter, err error) {
+	//response.WriteHeader(http.StatusNotFound)
+	response.Write([]byte(err.Error()))
 }
 
-type MockPullrequestsApi struct {
-	mock.Mock
+func handleOk(response http.ResponseWriter, body []byte) {
+	response.WriteHeader(http.StatusOK)
+	response.Write(body)
 }
 
-type MockRepositoriesApi struct {
-	mock.Mock
+// Are you a mod or a rocker? I'm a
+type mocker func(http.ResponseWriter, *http.Request)
+
+// "get" as in getter not HTTP GET; supports all methods since this is a mock.
+func getMockAPIResponseFromFile(dataDir string, fileName string) mocker {
+
+	return func(response http.ResponseWriter, request *http.Request) {
+		obj, err := util.LoadBytes(dataDir, fileName)
+
+		if err != nil {
+			handleNotFound(response, err)
+		}
+
+		handleOk(response, obj)
+	}
 }
 
-type MockCommitsApi struct {
-	mock.Mock
-}
+func (suite *BitbucketProviderTestSuite) SetupSuite() {
+	suite.mux = http.NewServeMux()
 
-func (mbAPIc *MockBitbucketAPIClient) MockTeamsGet200OK(
-	ctx context.Context,
-	options map[string]interface{},
-) (bitbucket.PaginatedTeams, *http.Response, error) {
-	var teams bitbucket.PaginatedTeams
-	return teams, nil, nil
-}
-
-func TestListOrganisations(t *testing.T) {
+	suite.mux.HandleFunc("/repositories/test-user", getMockAPIResponseFromFile("test_data", "repos.json"))
 
 	as := auth.AuthServer{
 		URL:         "https://auth.example.com",
 		Name:        "Test Auth Server",
 		Kind:        "Oauth2",
-		CurrentUser: "wbrefvem",
+		CurrentUser: "test-user",
 	}
 	ua := auth.UserAuth{
-		Username: "wbrefvem",
+		Username: "test-user",
 		ApiToken: "0123456789abdef",
 	}
 
 	bp, err := NewBitbucketProvider(&as, &ua)
 
-	assert.Nil(t, err)
-	assert.NotNil(t, bp)
+	suite.Require().NotNil(bp)
+	suite.Require().Nil(err)
 
-	bitbucketProvider, ok := bp.(*BitbucketProvider)
+	var ok bool
+	suite.provider, ok = bp.(*BitbucketProvider)
+	suite.Require().True(ok)
+	suite.Require().NotNil(suite.provider)
 
-	assert.True(t, ok)
-	assert.NotNil(t, bitbucketProvider)
+	suite.server = httptest.NewServer(suite.mux)
+	suite.Require().NotNil(suite.server)
+
+	cfg := bitbucket.NewConfiguration()
+	cfg.BasePath = suite.server.URL
+
+	suite.provider.Client = bitbucket.NewAPIClient(cfg)
+}
+
+func (suite *BitbucketProviderTestSuite) TestListRepositories() {
+
+	repos, _, err := suite.provider.Client.RepositoriesApi.RepositoriesUsernameGet(suite.provider.Context, suite.provider.Username, nil)
+
+	suite.Require().Nil(err)
+	suite.Require().NotNil(repos)
+}
+
+func TestBitbucketProviderTestSuite(t *testing.T) {
+	suite.Run(t, new(BitbucketProviderTestSuite))
+}
+
+func (suite *BitbucketProviderTestSuite) TearDownSuite() {
+	suite.server.Close()
 }
