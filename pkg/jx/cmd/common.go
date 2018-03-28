@@ -239,7 +239,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigServiceForURL(gitInfo.HostURL())
 	if err != nil {
 		return nil, err
 	}

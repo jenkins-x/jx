@@ -44,6 +44,8 @@ type Factory interface {
 
 	CreateGitAuthConfigService() (auth.AuthConfigService, error)
 
+	CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConfigService, error)
+
 	CreateJenkinsAuthConfigService() (auth.AuthConfigService, error)
 
 	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
@@ -172,6 +174,10 @@ func (f *factory) CreateIssueTrackerAuthConfigService() (auth.AuthConfigService,
 }
 
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
+	return f.CreateGitAuthConfigServiceForURL("")
+}
+
+func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
@@ -188,25 +194,20 @@ func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
 		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
 		if !userAuth.IsInvalid() {
 			// if no config file is being used lets grab the git server from the current directory
-			server, err := gits.GetGitServer("")
-			if err != nil {
-				fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
-				config.Servers = []*auth.AuthServer{
-					{
-						Name:  "GitHub",
-						URL:   "github.com",
-						Kind:  "GitHub",
-						Users: []*auth.UserAuth{&userAuth},
-					},
+			server := gitURL
+			if server == "" {
+				server, err = gits.GetGitServer("")
+				if err != nil {
+					fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
+					server = "github.com"
 				}
-			} else {
-				config.Servers = []*auth.AuthServer{
-					{
-						Name:  "Git",
-						URL:   server,
-						Users: []*auth.UserAuth{&userAuth},
-					},
-				}
+			}
+			config.Servers = []*auth.AuthServer{
+				{
+					Name:  "Git",
+					URL:   server,
+					Users: []*auth.UserAuth{&userAuth},
+				},
 			}
 		}
 	}
