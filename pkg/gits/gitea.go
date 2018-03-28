@@ -222,7 +222,7 @@ func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPu
 	if err != nil {
 		return nil, err
 	}
-	id := int(pr.ID)
+	id := int(pr.Index)
 	answer := &GitPullRequest{
 		URL:    pr.HTMLURL,
 		Number: &id,
@@ -242,7 +242,7 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	n := *pr.Number
 	result, err := p.Client.GetPullRequest(pr.Owner, pr.Repo, int64(n))
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not find pull request for %s/%s #%d: %s", pr.Owner, pr.Repo, n, err)
 	}
 	merged := result.HasMerged
 	pr.Merged = &merged
