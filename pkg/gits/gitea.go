@@ -187,7 +187,8 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 	hook := gitea.CreateHookOption{
 		Type:   "gitea",
 		Config: config,
-		Events: []string{"*"},
+		Events: []string{"create", "push", "pull_request"},
+		Active: true,
 	}
 	fmt.Printf("Creating github webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
 	_, err = p.Client.CreateRepoHook(owner, repo, hook)
