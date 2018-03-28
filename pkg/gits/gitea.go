@@ -269,18 +269,18 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 
 func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
 	i, err := p.Client.GetIssue(org, name, int64(number))
-	if strings.Contains(err.Error(), "404") {
-		return nil, nil
-	}
 	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			return nil, nil
+		}
 		return nil, err
 	}
-	return p.fromGiteaIssue(i)
+	return p.fromGiteaIssue(org, name, i)
 }
 
 func (p *GiteaProvider) IssueURL(org string, name string, number int, isPull bool) string {
 	serverPrefix := p.Server.URL
-	if !strings.HasPrefix(serverPrefix, "https://") {
+	if strings.Index(serverPrefix, "://") < 0 {
 		serverPrefix = "https://" + serverPrefix
 	}
 	path := "issues"
@@ -295,14 +295,14 @@ func (p *GiteaProvider) SearchIssues(org string, name string, filter string) ([]
 	opts := gitea.ListIssueOption{}
 	answer := []*GitIssue{}
 	issues, err := p.Client.ListRepoIssues(org, name, opts)
-	if strings.Contains(err.Error(), "404") {
-		return answer, nil
-	}
 	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			return answer, nil
+		}
 		return answer, err
 	}
 	for _, issue := range issues {
-		i, err := p.fromGiteaIssue(issue)
+		i, err := p.fromGiteaIssue(org, name, issue)
 		if err != nil {
 			return answer, err
 		}
@@ -313,7 +313,7 @@ func (p *GiteaProvider) SearchIssues(org string, name string, filter string) ([]
 	return answer, nil
 }
 
-func (p *GiteaProvider) fromGiteaIssue(i *gitea.Issue) (*GitIssue, error) {
+func (p *GiteaProvider) fromGiteaIssue(org string, name string, i *gitea.Issue) (*GitIssue, error) {
 	state := string(i.State)
 	labels := []GitLabel{}
 	for _, label := range i.Labels {
@@ -327,7 +327,7 @@ func (p *GiteaProvider) fromGiteaIssue(i *gitea.Issue) (*GitIssue, error) {
 	number := int(i.ID)
 	return &GitIssue{
 		Number:        &number,
-		URL:           i.URL,
+		URL:           p.IssueURL(org, name, number, false),
 		State:         &state,
 		Title:         i.Title,
 		Body:          i.Body,
@@ -347,7 +347,7 @@ func (p *GiteaProvider) CreateIssue(owner string, repo string, issue *GitIssue) 
 	if err != nil {
 		return nil, err
 	}
-	return p.fromGiteaIssue(i)
+	return p.fromGiteaIssue(owner, repo, i)
 }
 
 func toGiteaLabel(label *gitea.Label) GitLabel {

@@ -286,7 +286,7 @@ func (b *BitbucketProvider) GetIssue(org string, name string, number int) (*GitI
 
 func (p *BitbucketProvider) IssueURL(org string, name string, number int, isPull bool) string {
 	serverPrefix := p.Server.URL
-	if !strings.HasPrefix(serverPrefix, "https://") {
+	if strings.Index(serverPrefix, "://") < 0 {
 		serverPrefix = "https://" + serverPrefix
 	}
 	path := "issues"
