@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Azure/draft/pkg/rpc"
+	"github.com/Azure/draft/pkg/builder"
 	"github.com/fatih/color"
 	"golang.org/x/net/context"
 )
@@ -71,12 +71,12 @@ func (cli *cmdline) Stop() error {
 // Display provides a UI for the draft client. When performing a draft 'up'
 // Display will output a measure of progress for each summary yielded by the
 // draft state machine.
-func Display(ctx context.Context, app string, summaries <-chan *rpc.UpSummary, opts ...Option) {
+func Display(ctx context.Context, app string, summaries <-chan *builder.Summary, opts ...Option) {
 	var cli cmdline
 	cli.Init(ctx, WithStdout(os.Stdout))
 
 	fmt.Fprintf(cli.opts.stdout, "%s: '%s'\n", blue("Draft Up Started"), cyan(app))
-	ongoing := make(map[string]chan rpc.UpSummary_StatusCode)
+	ongoing := make(map[string]chan builder.SummaryStatusCode)
 	var (
 		wg sync.WaitGroup
 		id string
@@ -88,7 +88,7 @@ func Display(ctx context.Context, app string, summaries <-chan *rpc.UpSummary, o
 		cli.Stop()
 		wg.Wait()
 		fmt.Fprintf(cli.opts.stdout, "%s: %s: %s\n", cyan(app), blue("Build ID"), yellow(id))
-		fmt.Fprintf(cli.opts.stdout, "%s `%s`\n", blue("Inspect the logs with"), yellow("draft logs ", app, " ", id))
+		fmt.Fprintf(cli.opts.stdout, "%s `%s`\n", blue("Inspect the logs with"), yellow("draft logs ", id))
 	}()
 	for {
 		select {
@@ -97,13 +97,13 @@ func Display(ctx context.Context, app string, summaries <-chan *rpc.UpSummary, o
 				return
 			}
 			if id == "" {
-				id = summary.BuildId
+				id = summary.BuildID
 			}
 			if ch, ok := ongoing[summary.StageDesc]; !ok {
-				ch = make(chan rpc.UpSummary_StatusCode, 1)
+				ch = make(chan builder.SummaryStatusCode, 1)
 				ongoing[summary.StageDesc] = ch
 				wg.Add(1)
-				go func(desc string, ch chan rpc.UpSummary_StatusCode, wg *sync.WaitGroup) {
+				go func(desc string, ch chan builder.SummaryStatusCode, wg *sync.WaitGroup) {
 					progress(&cli, app, desc, ch)
 					delete(ongoing, desc)
 					wg.Done()
@@ -117,17 +117,17 @@ func Display(ctx context.Context, app string, summaries <-chan *rpc.UpSummary, o
 	}
 }
 
-func progress(cli *cmdline, app, desc string, codes <-chan rpc.UpSummary_StatusCode) {
+func progress(cli *cmdline, app, desc string, codes <-chan builder.SummaryStatusCode) {
 	start := time.Now()
 	done := make(chan string, 1)
 	go func() {
 		defer close(done)
 		for code := range codes {
 			switch code {
-			case rpc.UpSummary_SUCCESS:
+			case builder.SummarySuccess:
 				done <- fmt.Sprintf("%s: %s  (%.4fs)\n", cyan(app), passStr(desc), time.Since(start).Seconds())
 				return
-			case rpc.UpSummary_FAILURE:
+			case builder.SummaryFailure:
 				done <- fmt.Sprintf("%s: %s  (%.4fs)\n", cyan(app), failStr(desc), time.Since(start).Seconds())
 				return
 			}

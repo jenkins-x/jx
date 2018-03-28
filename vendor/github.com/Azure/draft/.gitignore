@@ -9,6 +9,7 @@ examples/**/Dockerfile
 examples/**/charts/
 examples/**/draft.toml
 examples/**/.draftignore
+examples/**/target
 pkg/linguist/data/classifier
 pkg/linguist/data/linguist
 pkg/linguist/data/*.yml

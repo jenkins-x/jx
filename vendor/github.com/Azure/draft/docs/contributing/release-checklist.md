@@ -82,37 +82,10 @@ This new branch is going to be the base for the release, which we are going to i
 
 ## 2. Change the Version Number in Git
 
-Package `pkg/version` stores release-related information for Draft, including which version of
-`draftd` is installed when running `draft init`. We want to change the `Release` field to the first
-release candidate which we are releasing (more on that in step 5), along with a few chart-related
-fields.
+Package `pkg/version` stores release-related information for Draft. We want to change the `Release`
+field to the first release candidate which we are releasing (more on that in step 5).
 
 ```
-diff --git a/charts/draftd/Chart.yaml b/chart/draftd/Chart.yaml
-index 954fa08..e3cf2d4 100644
---- a/chart/draftd/Chart.yaml
-+++ b/chart/draftd/Chart.yaml
-@@ -1,4 +1,4 @@
- name: draftd
- description: The Draft server
--version: canary
-+version: v0.2.0-rc1
- apiVersion: v1
-diff --git a/charts/draftd/values.yaml b/chart/draftd/values.yaml
-index 3de6092..4c6314d 100644
---- a/chart/draftd/values.yaml
-+++ b/chart/draftd/values.yaml
-@@ -5,8 +5,8 @@ basedomain: example.com
- replicaCount: 1
- image:
-   repository: microsoft/draft
--  tag: canary
--  pullPolicy: Always
-+  tag: v0.2.0-rc1
-+  pullPolicy: IfNotPresent
- debug: false
- service:
-   http:
 diff --git a/pkg/version/version.go b/pkg/version/version.go
 index 4077fa4..b366797 100644
 --- a/pkg/version/version.go

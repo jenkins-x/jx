@@ -1,0 +1,73 @@
+[
+  {
+    "id": 5860291,
+    "description": "",
+    "name": "userproject",
+    "name_with_namespace": "Test person / userproject",
+    "path": "userproject",
+    "path_with_namespace": "testperson/userproject",
+    "created_at": "2018-03-24T12:49:51.369Z",
+    "default_branch": null,
+    "tag_list": [],
+    "ssh_url_to_repo": "git@gitlab.com:testperson/userproject.git",
+    "http_url_to_repo": "https://gitlab.com/testperson/userproject.git",
+    "web_url": "https://gitlab.com/testperson/userproject",
+    "avatar_url": null,
+    "star_count": 0,
+    "forks_count": 0,
+    "last_activity_at": "2018-03-24T12:49:51.369Z",
+    "_links": {
+      "self": "https://gitlab.com/api/v4/projects/5860291",
+      "issues": "https://gitlab.com/api/v4/projects/5860291/issues",
+      "merge_requests": "https://gitlab.com/api/v4/projects/5860291/merge_requests",
+      "repo_branches": "https://gitlab.com/api/v4/projects/5860291/repository/branches",
+      "labels": "https://gitlab.com/api/v4/projects/5860291/labels",
+      "events": "https://gitlab.com/api/v4/projects/5860291/events",
+      "members": "https://gitlab.com/api/v4/projects/5860291/members"
+    },
+    "archived": false,
+    "visibility": "private",
+    "owner": {
+      "id": 2148104,
+      "name": "Test person",
+      "username": "testperson",
+      "state": "active",
+      "avatar_url": "https://secure.gravatar.com/avatar/bdcbdf7090b0b363beb229016c0e2ef1?s=80&d=identicon",
+      "web_url": "https://gitlab.com/testperson"
+    },
+    "resolve_outdated_diff_discussions": false,
+    "container_registry_enabled": true,
+    "issues_enabled": true,
+    "merge_requests_enabled": true,
+    "wiki_enabled": true,
+    "jobs_enabled": true,
+    "snippets_enabled": true,
+    "shared_runners_enabled": true,
+    "lfs_enabled": true,
+    "creator_id": 2148104,
+    "namespace": {
+      "id": 2671760,
+      "name": "testperson",
+      "path": "testperson",
+      "kind": "user",
+      "full_path": "testperson",
+      "parent_id": null
+    },
+    "import_status": "none",
+    "open_issues_count": 0,
+    "public_jobs": true,
+    "ci_config_path": null,
+    "shared_with_groups": [],
+    "only_allow_merge_if_pipeline_succeeds": false,
+    "request_access_enabled": false,
+    "only_allow_merge_if_all_discussions_are_resolved": false,
+    "printing_merge_request_link_enabled": true,
+    "permissions": {
+      "project_access": {
+        "access_level": 40,
+        "notification_level": 3
+      },
+      "group_access": null
+    }
+  }
+]

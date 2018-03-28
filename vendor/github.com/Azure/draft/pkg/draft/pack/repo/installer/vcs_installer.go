@@ -3,7 +3,6 @@ package installer
 import (
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 
@@ -67,15 +66,17 @@ func (i *VCSInstaller) Install() error {
 		return err
 	}
 
-	if err := i.setVersion(i.Repo, ref); err != nil {
-		return err
+	if ref != "" {
+		if err := i.setVersion(i.Repo, ref); err != nil {
+			return err
+		}
 	}
 
 	if !isPackRepo(i.Repo.LocalPath()) {
 		return repo.ErrHomeMissing
 	}
 
-	if err := os.MkdirAll(path.Dir(i.Path()), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(i.Path()), 0755); err != nil {
 		return err
 	}
 

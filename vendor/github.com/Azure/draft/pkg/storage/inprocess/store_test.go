@@ -2,10 +2,10 @@ package inprocess
 
 import (
 	"context"
+	"github.com/Azure/draft/pkg/storage"
+	"github.com/golang/protobuf/ptypes"
 	"reflect"
 	"testing"
-
-	"github.com/Azure/draft/pkg/storage"
 )
 
 func TestStoreDeleteBuilds(t *testing.T) {
@@ -42,7 +42,7 @@ func TestStoreDeleteBuild(t *testing.T) {
 
 func TestStoreCreateBuild(t *testing.T) {
 	var (
-		build = &storage.Object{BuildID: "foo", Release: "bar", ContextID: []byte("foobar")}
+		build = objectStub("foo", "bar", []byte("foobar"))
 		store = NewStoreWithMocks()
 		ctx   = context.TODO()
 	)
@@ -63,7 +63,7 @@ func TestStoreCreateBuild(t *testing.T) {
 
 func TestStoreUpdateBuild(t *testing.T) {
 	var (
-		build = &storage.Object{BuildID: "foo", Release: "bar", ContextID: []byte("foobar")}
+		build = objectStub("foo", "bar", []byte("foobar"))
 		store = NewStoreWithMocks()
 		ctx   = context.TODO()
 	)
@@ -109,11 +109,7 @@ func TestStoreGetBuild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not get build: %v", err)
 	}
-	assertEqual(t, "GetBuild", obj, &storage.Object{
-		BuildID:   "foo1",
-		Release:   "bar1",
-		ContextID: []byte("foobar1"),
-	})
+	assertEqual(t, "GetBuild", obj, objectStub("foo1", "bar1", []byte("foobar1")))
 	// try fetching a build with an unknown appID; should fail.
 	if alt, err := store.GetBuild(ctx, "bad", ""); err == nil {
 		t.Fatalf("want err != nil; got alt: %+v", alt)
@@ -142,5 +138,8 @@ func objectStub(buildID, release string, contextID []byte) *storage.Object {
 		BuildID:   buildID,
 		Release:   release,
 		ContextID: contextID,
+		CreatedAt: createdAt,
 	}
 }
+
+var createdAt = ptypes.TimestampNow()

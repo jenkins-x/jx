@@ -9,17 +9,21 @@
   version = "1.11.1"
 
 [[constraint]]
-  name = "github.com/Sirupsen/logrus"
+  name = "github.com/sirupsen/logrus"
   version = "v1.0.4"
 
 [[constraint]]
   name = "github.com/docker/docker"
   source = "https://github.com/moby/moby"
-  version = "=v17.05.0-ce"
+  revision = "ae7016427f8cba4e4d8fcb979d6ba313ee2c0702"
+
+[[constraint]]
+  name = "github.com/docker/cli"
+  revision = "37eebe5cb6eff08bde94d17111caa8fc099d7a94"
 
 [[override]]
   name = "github.com/docker/distribution"
-  revision = "b38e5838b7b2f2ad48e06ec4b500011976080621"
+  revision = "a97d7c0c155be14d1380c075d3197a5d89c2abc2"
 
 [[constraint]]
   name = "github.com/fatih/color"

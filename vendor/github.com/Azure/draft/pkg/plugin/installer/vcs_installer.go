@@ -53,8 +53,10 @@ func (i *VCSInstaller) Install() error {
 		return err
 	}
 
-	if err := i.setVersion(i.Repo, ref); err != nil {
-		return err
+	if ref != "" {
+		if err := i.setVersion(i.Repo, ref); err != nil {
+			return err
+		}
 	}
 
 	if !isPlugin(i.Repo.LocalPath()) {

@@ -9,11 +9,6 @@ import (
 // This helper builds paths relative to a Draft Home directory.
 type Home string
 
-// Packs returns the path to the Draft starter packs.
-func (h Home) Packs() string {
-	return filepath.Join(string(h), "packs")
-}
-
 // Path returns Home with elements appended.
 func (h Home) Path(elem ...string) string {
 	p := []string{h.String()}
@@ -21,9 +16,24 @@ func (h Home) Path(elem ...string) string {
 	return filepath.Join(p...)
 }
 
+// Config returns the path to the Draft config file.
+func (h Home) Config() string {
+	return h.Path("config.toml")
+}
+
+// Packs returns the path to the Draft starter packs.
+func (h Home) Packs() string {
+	return h.Path("packs")
+}
+
+// Logs returns the path to the Draft logs.
+func (h Home) Logs() string {
+	return h.Path("logs")
+}
+
 // Plugins returns the path to the Draft plugins.
 func (h Home) Plugins() string {
-	return filepath.Join(string(h), "plugins")
+	return h.Path("plugins")
 }
 
 // String returns Home as a string.

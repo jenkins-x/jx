@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "name": "Foobar Group",
+    "path": "testorg",
+    "description": "An interesting group",
+    "visibility": "public",
+    "lfs_enabled": true,
+    "avatar_url": "http://localhost:3000/uploads/group/avatar/1/foo.jpg",
+    "web_url": "http://localhost:3000/groups/foo-bar",
+    "request_access_enabled": false,
+    "full_name": "Foobar Group",
+    "full_path": "foo-bar",
+    "parent_id": null
+  }
+]

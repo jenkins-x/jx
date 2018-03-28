@@ -6,10 +6,12 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"k8s.io/helm/pkg/helm"
 
 	"github.com/Azure/draft/pkg/draft/local"
+	"github.com/Azure/draft/pkg/storage/kube/configmap"
 )
 
 const deleteDesc = `This command deletes an application from your Kubernetes environment.`
@@ -75,7 +77,7 @@ func Delete(app string) error {
 		return fmt.Errorf("Could not get a kube client: %s", err)
 	}
 
-	helmClient, err := setupHelm(client, config, draftNamespace)
+	helmClient, err := setupHelm(client, config, tillerNamespace)
 	if err != nil {
 		return err
 	}
@@ -86,5 +88,10 @@ func Delete(app string) error {
 		return errors.New(grpc.ErrorDesc(err))
 	}
 
+	// delete Draft storage for app
+	store := configmap.NewConfigMaps(client.CoreV1().ConfigMaps(tillerNamespace))
+	if _, err := store.DeleteBuilds(context.Background(), app); err != nil {
+		return err
+	}
 	return nil
 }
