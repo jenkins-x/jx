@@ -44,6 +44,15 @@ func LoadAddonsConfig() (*AddonsConfig, error) {
 	return config, nil
 }
 
+// IsAddonEnabled returns true if the given addon is enabled
+func IsAddonEnabled(name string) bool {
+	configs, err := LoadAddonsConfig()
+	if err != nil {
+		return false
+	}
+	return configs.GetOrCreate(name).Enabled
+}
+
 // Save saves the addons configuration to the `~/.jx/addon.yml` file
 func (c *AddonsConfig) Save() error {
 	fileName, err := addonConfigFileName()

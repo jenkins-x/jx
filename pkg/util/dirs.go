@@ -30,8 +30,12 @@ func DraftDir() (string, error) {
 }
 
 func ConfigDir() (string, error) {
+	path := os.Getenv("JX_HOME")
+	if path != "" {
+		return path, nil
+	}
 	h := HomeDir()
-	path := filepath.Join(h, ".jx")
+	path = filepath.Join(h, ".jx")
 	err := os.MkdirAll(path, DefaultWritePermissions)
 	if err != nil {
 		return "", err

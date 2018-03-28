@@ -226,7 +226,7 @@ func GetGitServer(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return repo.Host, err
+	return repo.HostURL(), err
 }
 
 func GetGitInfo(dir string) (*GitRepositoryInfo, error) {
