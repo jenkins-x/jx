@@ -2,53 +2,53 @@
     "scm": "git",
     "website": "",
     "has_wiki": false,
-    "name": "python-jolokia",
+    "name": "test-repo",
     "links": {
         "watchers": {
-            "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/watchers"
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/watchers"
         },
         "branches": {
-            "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/refs/branches"
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/refs/branches"
         },
         "tags": {
-            "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/refs/tags"
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/refs/tags"
         },
         "commits": {
-            "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/commits"
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commits"
         },
         "clone": [
             {
-                "href": "https://test-user@bitbucket.org/test-user/python-jolokia.git",
+                "href": "https://test-user@bitbucket.org/test-user/test-repo.git",
                 "name": "https"
             },
             {
-                "href": "git@bitbucket.org:test-user/python-jolokia.git",
+                "href": "git@bitbucket.org:test-user/test-repo.git",
                 "name": "ssh"
             }
         ],
         "self": {
-            "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia"
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo"
         },
         "source": {
-            "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/src"
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/src"
         },
         "html": {
-            "href": "https://bitbucket.org/test-user/python-jolokia"
+            "href": "https://bitbucket.org/test-user/test-repo"
         },
         "avatar": {
-            "href": "https://bitbucket.org/test-user/python-jolokia/avatar/32/"
+            "href": "https://bitbucket.org/test-user/test-repo/avatar/32/"
         },
         "hooks": {
-            "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/hooks"
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/hooks"
         },
         "forks": {
-            "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/forks"
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/forks"
         },
         "downloads": {
-            "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/downloads"
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/downloads"
         },
         "pullrequests": {
-            "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/pullrequests"
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/pullrequests"
         }
     },
     "fork_policy": "no_public_forks",
@@ -59,11 +59,11 @@
         "type": "branch",
         "name": "master"
     },
-    "full_name": "test-user/python-jolokia",
+    "full_name": "test-user/test-repo",
     "has_issues": false,
     "owner": {
         "username": "test-user",
-        "display_name": "Will Refvem",
+        "display_name": "Test User",
         "type": "user",
         "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
         "links": {
@@ -81,7 +81,7 @@
     "updated_on": "2018-03-23T23:43:25.264279+00:00",
     "size": 428407,
     "type": "repository",
-    "slug": "python-jolokia",
+    "slug": "test-repo",
     "is_private": false,
     "description": ""
 }

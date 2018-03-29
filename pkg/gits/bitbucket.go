@@ -227,7 +227,7 @@ func (b *BitbucketProvider) ValidateRepositoryName(org string, name string) erro
 	)
 
 	if err == nil {
-		return fmt.Errorf("Repository %s/%s already exists!", b.Username, name)
+		return fmt.Errorf("repository %s/%s already exists", b.Username, name)
 	}
 
 	return err
