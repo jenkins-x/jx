@@ -55,11 +55,11 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 
 	suite.mux.HandleFunc(
 		"/repositories/test-user",
-		getMockAPIResponseFromFile("test_data", "repos.json"),
+		getMockAPIResponseFromFile("test_data/bitbucket", "repos.json"),
 	)
 	suite.mux.HandleFunc(
 		"/repositories/test-user/python-jolokia",
-		getMockAPIResponseFromFile("test_data", "repos.python-jolokia.json"),
+		getMockAPIResponseFromFile("test_data/bitbucket", "repos.python-jolokia.json"),
 	)
 
 	as := auth.AuthServer{

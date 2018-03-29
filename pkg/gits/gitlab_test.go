@@ -3,13 +3,14 @@ package gits
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/auth"
-	"net/http/httptest"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
+
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/stretchr/testify/suite"
 	"github.com/xanzy/go-gitlab"
-	"io/ioutil"
-	"fmt"
 )
 
 const (
@@ -62,21 +63,21 @@ func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *Gitla
 
 func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
 	mux.HandleFunc("/groups", func(w http.ResponseWriter, r *http.Request) {
-		src, err := ioutil.ReadFile("test-fixtures/groups.json")
+		src, err := ioutil.ReadFile("test_data/gitlab/groups.json")
 
 		suite.Require().Nil(err)
 		w.Write(src)
 	})
 
 	mux.HandleFunc(fmt.Sprintf("/groups/%s/projects", gitlabOrgName), func(w http.ResponseWriter, r *http.Request) {
-		src, err := ioutil.ReadFile("test-fixtures/group-projects.json")
+		src, err := ioutil.ReadFile("test_data/gitlab/group-projects.json")
 
 		suite.Require().Nil(err)
 		w.Write(src)
 	})
 
 	mux.HandleFunc(fmt.Sprintf("/users/%s/projects", gitlabUserName), func(w http.ResponseWriter, r *http.Request) {
-		src, err := ioutil.ReadFile("test-fixtures/user-projects.json")
+		src, err := ioutil.ReadFile("test_data/gitlab/user-projects.json")
 
 		suite.Require().Nil(err)
 		w.Write(src)
@@ -99,7 +100,7 @@ func (suite *GitlabProviderSuite) TestListRepositories() {
 		expectedRepoName string
 		expectedSshUrl   string
 		expectedHtmlUrl  string
-	} {
+	}{
 		{"List repositories for organization", gitlabOrgName, "orgproject", "git@gitlab.com:testorg/orgproject.git", "https://gitlab.com/testorg/orgproject"},
 		{"List repositories without organization", "", "userproject", "git@gitlab.com:testperson/userproject.git", "https://gitlab.com/testperson/userproject"},
 	}
