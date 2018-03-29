@@ -54,6 +54,7 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 	suite.mux = http.NewServeMux()
 
 	suite.mux.HandleFunc("/repositories/test-user", getMockAPIResponseFromFile("test_data", "repos.json"))
+	suite.mux.HandleFunc("/repositories/test-user/python-jolokia", getMockAPIResponseFromFile("test_data", "repos.python-jolokia.json"))
 
 	as := auth.AuthServer{
 		URL:         "https://auth.example.com",
@@ -91,6 +92,24 @@ func (suite *BitbucketProviderTestSuite) TestListRepositories() {
 
 	suite.Require().Nil(err)
 	suite.Require().NotNil(repos)
+	suite.Require().NotNil(repos.Values)
+
+	suite.Require().Equal(repos.Size, int32(2))
+
+	for _, repo := range repos.Values {
+		suite.Require().NotNil(repo)
+		suite.Require().Equal(repo.Owner.Username, "test-user")
+	}
+}
+
+func (suite *BitbucketProviderTestSuite) TestGetRepository() {
+
+	repo, _, err := suite.provider.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(suite.provider.Context, "test-user", "python-jolokia")
+
+	suite.Require().NotNil(repo)
+	suite.Require().Nil(err)
+
+	suite.Require().Equal(repo.Owner.Username, "test-user")
 }
 
 func TestBitbucketProviderTestSuite(t *testing.T) {
