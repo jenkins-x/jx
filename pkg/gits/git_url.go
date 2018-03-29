@@ -79,9 +79,6 @@ func (i *GitRepositoryInfo) HostURL() string {
 }
 
 func (i *GitRepositoryInfo) HostURLWithoutUser() string {
-	if i.Host == "github.com" {
-		return i.Host
-	}
 	u := i.URL
 	if u != "" {
 		u2, err := url.Parse(u)
