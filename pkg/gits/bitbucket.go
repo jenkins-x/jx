@@ -115,14 +115,23 @@ func (b *BitbucketProvider) ListRepositories(org string) ([]*GitRepository, erro
 	return nil, nil
 }
 
-func (b *BitbucketProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
+func (b *BitbucketProvider) CreateRepository(
+	org string,
+	name string,
+	private bool,
+) (*GitRepository, error) {
 
 	var options map[string]interface{}
 	options["body"] = bitbucket.Repository{
 		IsPrivate: private,
 	}
 
-	result, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPost(b.Context, b.Username, name, options)
+	result, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPost(
+		b.Context,
+		b.Username,
+		name,
+		options,
+	)
 
 	if err != nil {
 		return nil, err
@@ -131,9 +140,16 @@ func (b *BitbucketProvider) CreateRepository(org string, name string, private bo
 	return repoFromRepo(result), nil
 }
 
-func (b *BitbucketProvider) GetRepository(org string, name string) (*GitRepository, error) {
+func (b *BitbucketProvider) GetRepository(
+	org string,
+	name string,
+) (*GitRepository, error) {
 
-	repo, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(b.Context, org, name)
+	repo, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(
+		b.Context,
+		org,
+		name,
+	)
 
 	if err != nil {
 		return nil, err
@@ -144,7 +160,12 @@ func (b *BitbucketProvider) GetRepository(org string, name string) (*GitReposito
 
 func (b *BitbucketProvider) DeleteRepository(org string, name string) error {
 
-	_, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugDelete(b.Context, b.Username, name, nil)
+	_, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugDelete(
+		b.Context,
+		b.Username,
+		name,
+		nil,
+	)
 
 	if err != nil {
 		return err
@@ -153,9 +174,18 @@ func (b *BitbucketProvider) DeleteRepository(org string, name string) error {
 	return nil
 }
 
-func (b *BitbucketProvider) ForkRepository(originalOrg string, name string, destinationOrg string) (*GitRepository, error) {
+func (b *BitbucketProvider) ForkRepository(
+	originalOrg string,
+	name string,
+	destinationOrg string,
+) (*GitRepository, error) {
 
-	repo, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugForksPost(b.Context, b.Username, name, nil)
+	repo, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugForksPost(
+		b.Context,
+		b.Username,
+		name,
+		nil,
+	)
 
 	if err != nil {
 		return nil, err
@@ -164,13 +194,22 @@ func (b *BitbucketProvider) ForkRepository(originalOrg string, name string, dest
 	return repoFromRepo(repo), err
 }
 
-func (b *BitbucketProvider) RenameRepository(org string, name string, newName string) (*GitRepository, error) {
+func (b *BitbucketProvider) RenameRepository(
+	org string,
+	name string,
+	newName string,
+) (*GitRepository, error) {
 
 	var options map[string]interface{}
 
 	options["name"] = newName
 
-	repo, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPut(b.Context, b.Username, name, options)
+	repo, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPut(
+		b.Context,
+		b.Username,
+		name,
+		options,
+	)
 
 	if err != nil {
 		return nil, err
@@ -181,7 +220,11 @@ func (b *BitbucketProvider) RenameRepository(org string, name string, newName st
 
 func (b *BitbucketProvider) ValidateRepositoryName(org string, name string) error {
 
-	_, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(b.Context, b.Username, name)
+	_, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(
+		b.Context,
+		b.Username,
+		name,
+	)
 
 	if err == nil {
 		return fmt.Errorf("Repository %s/%s already exists!", b.Username, name)
@@ -190,7 +233,9 @@ func (b *BitbucketProvider) ValidateRepositoryName(org string, name string) erro
 	return err
 }
 
-func (b *BitbucketProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
+func (b *BitbucketProvider) CreatePullRequest(
+	data *GitPullRequestArguments,
+) (*GitPullRequest, error) {
 
 	head := bitbucket.PullrequestEndpointBranch{Name: data.Head}
 	sourceFullName := fmt.Sprintf("%s/%s", b.Username, data.Repo)
@@ -214,7 +259,12 @@ func (b *BitbucketProvider) CreatePullRequest(data *GitPullRequestArguments) (*G
 	var options map[string]interface{}
 	options["body"] = bPullrequest
 
-	pr, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPost(b.Context, b.Username, data.Repo, options)
+	pr, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPost(
+		b.Context,
+		b.Username,
+		data.Repo,
+		options,
+	)
 
 	if err != nil {
 		return nil, err
@@ -236,7 +286,12 @@ func (b *BitbucketProvider) CreatePullRequest(data *GitPullRequestArguments) (*G
 func (b *BitbucketProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 
 	prID := int32(*pr.Number)
-	bitbucketPR, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(b.Context, b.Username, pr.Repo, prID)
+	bitbucketPR, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
+		b.Context,
+		b.Username,
+		pr.Repo,
+		prID,
+	)
 
 	if err != nil {
 		return err
@@ -246,7 +301,12 @@ func (b *BitbucketProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	pr.MergeCommitSHA = &bitbucketPR.MergeCommit.Hash
 	pr.DiffURL = &bitbucketPR.Links.Diff.Href
 
-	commits, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(b.Context, b.Username, string(prID), pr.Repo)
+	commits, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(
+		b.Context,
+		b.Username,
+		string(prID),
+		pr.Repo,
+	)
 
 	if err != nil {
 		return err
