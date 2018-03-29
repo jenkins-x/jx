@@ -8,50 +8,50 @@
             "name": "python-jolokia",
             "links": {
                 "watchers": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/watchers"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/watchers"
                 },
                 "branches": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/refs/branches"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/refs/branches"
                 },
                 "tags": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/refs/tags"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/refs/tags"
                 },
                 "commits": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/commits"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/commits"
                 },
                 "clone": [
                     {
-                        "href": "https://wbrefvem@bitbucket.org/wbrefvem/python-jolokia.git",
+                        "href": "https://test-user@bitbucket.org/test-user/python-jolokia.git",
                         "name": "https"
                     },
                     {
-                        "href": "git@bitbucket.org:wbrefvem/python-jolokia.git",
+                        "href": "git@bitbucket.org:test-user/python-jolokia.git",
                         "name": "ssh"
                     }
                 ],
                 "self": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia"
                 },
                 "source": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/src"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/src"
                 },
                 "html": {
-                    "href": "https://bitbucket.org/wbrefvem/python-jolokia"
+                    "href": "https://bitbucket.org/test-user/python-jolokia"
                 },
                 "avatar": {
-                    "href": "https://bitbucket.org/wbrefvem/python-jolokia/avatar/32/"
+                    "href": "https://bitbucket.org/test-user/python-jolokia/avatar/32/"
                 },
                 "hooks": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/hooks"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/hooks"
                 },
                 "forks": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/forks"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/forks"
                 },
                 "downloads": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/downloads"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/downloads"
                 },
                 "pullrequests": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia/pullrequests"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia/pullrequests"
                 }
             },
             "fork_policy": "no_public_forks",
@@ -62,22 +62,22 @@
                 "type": "branch",
                 "name": "master"
             },
-            "full_name": "wbrefvem/python-jolokia",
+            "full_name": "test-user/python-jolokia",
             "has_issues": false,
             "owner": {
-                "username": "wbrefvem",
+                "username": "test-user",
                 "display_name": "Will Refvem",
                 "type": "user",
                 "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
                 "links": {
                     "self": {
-                        "href": "https://api.bitbucket.org/2.0/users/wbrefvem"
+                        "href": "https://api.bitbucket.org/2.0/users/test-user"
                     },
                     "html": {
-                        "href": "https://bitbucket.org/wbrefvem/"
+                        "href": "https://bitbucket.org/test-user/"
                     },
                     "avatar": {
-                        "href": "https://bitbucket.org/account/wbrefvem/avatar/32/"
+                        "href": "https://bitbucket.org/account/test-user/avatar/32/"
                     }
                 }
             },
@@ -95,50 +95,50 @@
             "name": "pyjolokia_fork",
             "links": {
                 "watchers": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/watchers"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/pyjolokia_fork/watchers"
                 },
                 "branches": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/refs/branches"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/pyjolokia_fork/refs/branches"
                 },
                 "tags": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/refs/tags"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/pyjolokia_fork/refs/tags"
                 },
                 "commits": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/commits"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/pyjolokia_fork/commits"
                 },
                 "clone": [
                     {
-                        "href": "https://wbrefvem@bitbucket.org/wbrefvem/pyjolokia_fork.git",
+                        "href": "https://test-user@bitbucket.org/test-user/pyjolokia_fork.git",
                         "name": "https"
                     },
                     {
-                        "href": "git@bitbucket.org:wbrefvem/pyjolokia_fork.git",
+                        "href": "git@bitbucket.org:test-user/pyjolokia_fork.git",
                         "name": "ssh"
                     }
                 ],
                 "self": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/pyjolokia_fork"
                 },
                 "source": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/src"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/pyjolokia_fork/src"
                 },
                 "html": {
-                    "href": "https://bitbucket.org/wbrefvem/pyjolokia_fork"
+                    "href": "https://bitbucket.org/test-user/pyjolokia_fork"
                 },
                 "avatar": {
-                    "href": "https://bitbucket.org/wbrefvem/pyjolokia_fork/avatar/32/"
+                    "href": "https://bitbucket.org/test-user/pyjolokia_fork/avatar/32/"
                 },
                 "hooks": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/hooks"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/pyjolokia_fork/hooks"
                 },
                 "forks": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/forks"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/pyjolokia_fork/forks"
                 },
                 "downloads": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/downloads"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/pyjolokia_fork/downloads"
                 },
                 "pullrequests": {
-                    "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/pyjolokia_fork/pullrequests"
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/pyjolokia_fork/pullrequests"
                 }
             },
             "fork_policy": "allow_forks",
@@ -148,40 +148,40 @@
             "parent": {
                 "links": {
                     "self": {
-                        "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/python-jolokia"
+                        "href": "https://api.bitbucket.org/2.0/repositories/test-user/python-jolokia"
                     },
                     "html": {
-                        "href": "https://bitbucket.org/wbrefvem/python-jolokia"
+                        "href": "https://bitbucket.org/test-user/python-jolokia"
                     },
                     "avatar": {
-                        "href": "https://bitbucket.org/wbrefvem/python-jolokia/avatar/32/"
+                        "href": "https://bitbucket.org/test-user/python-jolokia/avatar/32/"
                     }
                 },
                 "type": "repository",
                 "name": "python-jolokia",
-                "full_name": "wbrefvem/python-jolokia",
+                "full_name": "test-user/python-jolokia",
                 "uuid": "{6b96c974-39f0-40cd-a56f-e1efe5095aba}"
             },
             "mainbranch": {
                 "type": "branch",
                 "name": "master"
             },
-            "full_name": "wbrefvem/pyjolokia_fork",
+            "full_name": "test-user/pyjolokia_fork",
             "has_issues": false,
             "owner": {
-                "username": "wbrefvem",
+                "username": "test-user",
                 "display_name": "Will Refvem",
                 "type": "user",
                 "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
                 "links": {
                     "self": {
-                        "href": "https://api.bitbucket.org/2.0/users/wbrefvem"
+                        "href": "https://api.bitbucket.org/2.0/users/test-user"
                     },
                     "html": {
-                        "href": "https://bitbucket.org/wbrefvem/"
+                        "href": "https://bitbucket.org/test-user/"
                     },
                     "avatar": {
-                        "href": "https://bitbucket.org/account/wbrefvem/avatar/32/"
+                        "href": "https://bitbucket.org/account/test-user/avatar/32/"
                     }
                 }
             },

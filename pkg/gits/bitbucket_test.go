@@ -24,7 +24,7 @@ type BitbucketProviderTestSuite struct {
 }
 
 func handleNotFound(response http.ResponseWriter, err error) {
-	//response.WriteHeader(http.StatusNotFound)
+	response.WriteHeader(http.StatusNotFound)
 	response.Write([]byte(err.Error()))
 }
 
@@ -53,7 +53,14 @@ func getMockAPIResponseFromFile(dataDir string, fileName string) mocker {
 func (suite *BitbucketProviderTestSuite) SetupSuite() {
 	suite.mux = http.NewServeMux()
 
-	suite.mux.HandleFunc("/repositories/test-user", getMockAPIResponseFromFile("test_data", "repos.json"))
+	suite.mux.HandleFunc(
+		"/repositories/test-user",
+		getMockAPIResponseFromFile("test_data/bitbucket", "repos.json"),
+	)
+	suite.mux.HandleFunc(
+		"/repositories/test-user/python-jolokia",
+		getMockAPIResponseFromFile("test_data/bitbucket", "repos.python-jolokia.json"),
+	)
 
 	as := auth.AuthServer{
 		URL:         "https://auth.example.com",
@@ -87,10 +94,36 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 
 func (suite *BitbucketProviderTestSuite) TestListRepositories() {
 
-	repos, _, err := suite.provider.Client.RepositoriesApi.RepositoriesUsernameGet(suite.provider.Context, suite.provider.Username, nil)
+	repos, _, err := suite.provider.Client.RepositoriesApi.RepositoriesUsernameGet(
+		suite.provider.Context,
+		suite.provider.Username,
+		nil,
+	)
 
 	suite.Require().Nil(err)
 	suite.Require().NotNil(repos)
+	suite.Require().NotNil(repos.Values)
+
+	suite.Require().Equal(repos.Size, int32(2))
+
+	for _, repo := range repos.Values {
+		suite.Require().NotNil(repo)
+		suite.Require().Equal(repo.Owner.Username, "test-user")
+	}
+}
+
+func (suite *BitbucketProviderTestSuite) TestGetRepository() {
+
+	repo, _, err := suite.provider.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(
+		suite.provider.Context,
+		"test-user",
+		"python-jolokia",
+	)
+
+	suite.Require().NotNil(repo)
+	suite.Require().Nil(err)
+
+	suite.Require().Equal(repo.Owner.Username, "test-user")
 }
 
 func TestBitbucketProviderTestSuite(t *testing.T) {
