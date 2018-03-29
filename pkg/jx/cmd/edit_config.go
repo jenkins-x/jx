@@ -17,7 +17,7 @@ import (
 const (
 	chatKind  = "chat"
 	issueKind = "issues"
-	wikiKind  = "issues"
+	wikiKind  = "wiki"
 )
 
 var (

@@ -184,7 +184,7 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 		config := authConfigSvc.Config()
-		server, err := config.PickOrCreateServer(gits.GitHubHost, "Which git service do you wish to use")
+		server, err := config.PickOrCreateServer(gits.GitHubURL, "Which git service do you wish to use")
 		if err != nil {
 			return err
 		}
@@ -617,12 +617,14 @@ func (o *ImportOptions) DoImport() error {
 	if jenkinsfile == "" {
 		jenkinsfile = jenkins.DefaultJenkinsfile
 	}
-	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc)
+	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc, false)
 }
 
 func (o *ImportOptions) replacePlaceholders() error {
-	log.Infof("replacing placeholders in direcory %s\n", o.Dir)
-	log.Infof("app name: %s, git server: %s, org: %s\n", o.AppName, o.GitRepositoryOptions.ServerURL, o.Organisation)
+	log.Infof("replacing placeholders in directory %s\n", o.Dir)
+	gitServer := strings.TrimSuffix(strings.TrimPrefix(o.GitRepositoryOptions.ServerURL, "https://"), "/")
+
+	log.Infof("app name: %s, git server: %s, org: %s\n", o.AppName, gitServer, o.Organisation)
 
 	if err := filepath.Walk(o.Dir, func(f string, fi os.FileInfo, err error) error {
 		if fi.Name() == ".git" {
@@ -639,7 +641,7 @@ func (o *ImportOptions) replacePlaceholders() error {
 
 			for i, line := range lines {
 				line = strings.Replace(line, PlaceHolderAppName, o.AppName, -1)
-				line = strings.Replace(line, PlaceHolderGitProvider, o.GitRepositoryOptions.ServerURL, -1)
+				line = strings.Replace(line, PlaceHolderGitProvider, gitServer, -1)
 				line = strings.Replace(line, PlaceHolderOrg, o.Organisation, -1)
 				lines[i] = line
 			}

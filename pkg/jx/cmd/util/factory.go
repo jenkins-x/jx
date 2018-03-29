@@ -199,7 +199,7 @@ func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConf
 				server, err = gits.GetGitServer("")
 				if err != nil {
 					fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
-					server = "github.com"
+					server = "https://github.com"
 				}
 			}
 			config.Servers = []*auth.AuthServer{
@@ -216,7 +216,7 @@ func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConf
 		config.Servers = []*auth.AuthServer{
 			{
 				Name:  "GitHub",
-				URL:   "github.com",
+				URL:   "https://github.com",
 				Kind:  "GitHub",
 				Users: []*auth.UserAuth{},
 			},

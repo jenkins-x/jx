@@ -578,7 +578,7 @@ func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, p
 				Default: defaultDomain,
 				Help:    "Enter your custom domain that is used to generate Ingress rules, defaults to the magic dns nip.io",
 			}
-			survey.AskOne(prompt, &domain, nil)
+			survey.AskOne(prompt, &domain, survey.Required)
 		}
 		if domain == "" {
 			domain = defaultDomain

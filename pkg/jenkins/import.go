@@ -12,7 +12,7 @@ import (
 )
 
 // ImportProject imports a MultiBranchProject into Jeknins for the given git URL
-func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService) error {
+func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService, isEnvironment bool) error {
 	if gitURL == "" {
 		return fmt.Errorf("No Git repository URL found!")
 	}
@@ -122,14 +122,16 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir st
 		}
 		fmt.Fprintf(out, "Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
 		fmt.Fprintln(out)
-		fmt.Fprintf(out, "You can view the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
-		fmt.Fprintf(out, "Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
-		fmt.Fprintf(out, "Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
-		fmt.Fprintf(out, "Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
-		fmt.Fprintf(out, "When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
-		fmt.Fprintln(out)
-		fmt.Fprintf(out, "For more help on available commands see: %s\n", util.ColorInfo("http://jenkins-x.io/developing/browsing/"))
-		fmt.Fprintln(out)
+		if !isEnvironment {
+			fmt.Fprintf(out, "You can view the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
+			fmt.Fprintf(out, "Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
+			fmt.Fprintf(out, "Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
+			fmt.Fprintf(out, "Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
+			fmt.Fprintf(out, "When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
+			fmt.Fprintln(out)
+			fmt.Fprintf(out, "For more help on available commands see: %s\n", util.ColorInfo("http://jenkins-x.io/developing/browsing/"))
+			fmt.Fprintln(out)
+		}
 		fmt.Fprintf(out, util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary docker images get downloaded!\n\n"))
 
 		params := url.Values{}

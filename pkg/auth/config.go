@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -10,7 +11,7 @@ import (
 
 func (c *AuthConfig) FindUserAuths(serverURL string) []*UserAuth {
 	for _, server := range c.Servers {
-		if server.URL == serverURL {
+		if urlsEqual(server.URL, serverURL) {
 			return server.Users
 		}
 	}
@@ -69,7 +70,7 @@ func (config *AuthConfig) IndexOfServerName(name string) int {
 func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
 	username := auth.Username
 	for i, server := range c.Servers {
-		if server.URL == url {
+		if urlsEqual(server.URL, url) {
 			for j, a := range server.Users {
 				if a.Username == auth.Username {
 					c.Servers[i].Users[j] = auth
@@ -89,9 +90,13 @@ func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
 	})
 }
 
+func urlsEqual(url1, url2 string) bool {
+	return url1 == url2 || strings.TrimSuffix(url1, "/") == strings.TrimSuffix(url2, "/")
+}
+
 func (c *AuthConfig) GetServer(url string) *AuthServer {
 	for _, s := range c.Servers {
-		if s.URL == url {
+		if urlsEqual(s.URL, url) {
 			return s
 		}
 	}
@@ -110,7 +115,7 @@ func (c *AuthConfig) GetServerByName(name string) *AuthServer {
 func (c *AuthConfig) GetOrCreateServer(url string) *AuthServer {
 	name := ""
 	kind := ""
-	if url == "github.com" {
+	if url == "github.com" || strings.HasPrefix(url, "https://github.com") {
 		name = "GitHub"
 		kind = "github"
 	}
@@ -157,7 +162,7 @@ func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
 		}
 	}
 	for _, s := range c.Servers {
-		if s.URL == url {
+		if urlsEqual(s.URL, url) {
 			return s, nil
 		}
 	}
