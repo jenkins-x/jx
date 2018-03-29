@@ -27,7 +27,7 @@ func TestReplacePlaceholders(t *testing.T) {
 	o := ImportOptions{}
 	o.Dir = f
 	o.AppName = "bar"
-	o.GitRepositoryOptions.ServerURL = "github.com"
+	o.GitRepositoryOptions.ServerURL = "https://github.com"
 	o.Organisation = "foo"
 	o.replacePlaceholders()
 

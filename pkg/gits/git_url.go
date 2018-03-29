@@ -9,6 +9,7 @@ import (
 
 const (
 	GitHubHost = "github.com"
+	GitHubURL  = "https://github.com"
 
 	gitPrefix = "git@"
 )
@@ -22,7 +23,7 @@ type GitRepositoryInfo struct {
 }
 
 func (i *GitRepositoryInfo) IsGitHub() bool {
-	return GitHubHost == i.Host
+	return GitHubHost == i.Host || strings.HasSuffix(i.URL, "https://github.com")
 }
 
 // PullRequestURL returns the URL of a pull request of the given name/number

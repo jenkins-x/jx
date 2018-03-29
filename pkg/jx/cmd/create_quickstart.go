@@ -113,7 +113,7 @@ func (o *CreateQuickstartOptions) Run() error {
 	var server *auth.AuthServer
 	config := authConfigSvc.Config()
 	if o.GitHub {
-		server = config.GetOrCreateServer(gits.GitHubHost)
+		server = config.GetOrCreateServer(gits.GitHubURL)
 	} else {
 		if o.GitHost != "" {
 			server = config.GetOrCreateServer(o.GitHost)

@@ -623,7 +623,10 @@ func (p *GitHubProvider) JenkinsWebHookPath(gitURL string, secret string) string
 }
 
 func GitHubAccessTokenURL(url string) string {
-	return fmt.Sprintf("https://%s/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook", url)
+	if strings.Index(url, "://") < 0 {
+		url = "https://" + url
+	}
+	return util.UrlJoin(url, "/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook")
 }
 
 func (p *GitHubProvider) Label() string {
