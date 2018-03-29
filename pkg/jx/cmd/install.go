@@ -487,6 +487,8 @@ func (o *InstallOptions) getGitSecrets() (string, error) {
 	if server == "" {
 		return "", fmt.Errorf("No Git Server found")
 	}
+	server = strings.TrimPrefix(server, "https://")
+	server = strings.TrimPrefix(server, "http://")
 
 	url := fmt.Sprintf("%s:%s@%s", username, token, server)
 	// TODO convert to a struct
