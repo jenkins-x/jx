@@ -97,7 +97,7 @@ func (b *BitbucketProvider) ListRepositories(org string) ([]*GitRepository, erro
 	repos := []*GitRepository{}
 
 	for {
-		results, _, err := b.Client.RepositoriesApi.RepositoriesGet(b.Context, nil)
+		results, _, err := b.Client.RepositoriesApi.RepositoriesUsernameGet(b.Context, org, nil)
 
 		if err != nil {
 			return nil, err
@@ -112,7 +112,7 @@ func (b *BitbucketProvider) ListRepositories(org string) ([]*GitRepository, erro
 		}
 	}
 
-	return nil, nil
+	return repos, nil
 }
 
 func (b *BitbucketProvider) CreateRepository(
@@ -191,7 +191,7 @@ func (b *BitbucketProvider) ForkRepository(
 		return nil, err
 	}
 
-	return repoFromRepo(repo), err
+	return repoFromRepo(repo), nil
 }
 
 func (b *BitbucketProvider) RenameRepository(
