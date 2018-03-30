@@ -94,6 +94,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 				NewCmdNamespace(f, out, err),
 				NewCmdPrompt(f, out, err),
 				NewCmdShell(f, out, err),
+				NewCmdStatus(f,out,err),
 			},
 		},
 		{
