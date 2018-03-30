@@ -23,8 +23,8 @@ type BitbucketProviderTestSuite struct {
 	provider *BitbucketProvider
 }
 
-func handleNotFound(response http.ResponseWriter, err error) {
-	response.WriteHeader(http.StatusNotFound)
+func handleErr(response http.ResponseWriter, err error) {
+	response.WriteHeader(http.StatusInternalServerError)
 	response.Write([]byte(err.Error()))
 }
 
@@ -36,14 +36,15 @@ func handleOk(response http.ResponseWriter, body []byte) {
 // Are you a mod or a rocker? I'm a
 type mocker func(http.ResponseWriter, *http.Request)
 
-// "get" as in getter not HTTP GET; supports all methods since this is a mock.
+// TODO: Find a DRY abstraction for mapping (url, method) -> file
+// e.g., ("/foo", "PUT") -> updated-foo.json
 func getMockAPIResponseFromFile(dataDir string, fileName string) mocker {
 
 	return func(response http.ResponseWriter, request *http.Request) {
 		obj, err := util.LoadBytes(dataDir, fileName)
 
 		if err != nil {
-			handleNotFound(response, err)
+			handleErr(response, err)
 		}
 
 		handleOk(response, obj)
@@ -58,8 +59,12 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 		getMockAPIResponseFromFile("test_data/bitbucket", "repos.json"),
 	)
 	suite.mux.HandleFunc(
-		"/repositories/test-user/python-jolokia",
-		getMockAPIResponseFromFile("test_data/bitbucket", "repos.python-jolokia.json"),
+		"/repositories/test-user/test-repo",
+		getMockAPIResponseFromFile("test_data/bitbucket", "repos.test-repo.json"),
+	)
+	suite.mux.HandleFunc(
+		"/repositories/test-user/test-repo/forks",
+		getMockAPIResponseFromFile("test_data/bitbucket", "repos.test-fork.json"),
 	)
 
 	as := auth.AuthServer{
@@ -94,36 +99,62 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 
 func (suite *BitbucketProviderTestSuite) TestListRepositories() {
 
-	repos, _, err := suite.provider.Client.RepositoriesApi.RepositoriesUsernameGet(
-		suite.provider.Context,
-		suite.provider.Username,
-		nil,
-	)
+	repos, err := suite.provider.ListRepositories("test-user")
 
 	suite.Require().Nil(err)
 	suite.Require().NotNil(repos)
-	suite.Require().NotNil(repos.Values)
 
-	suite.Require().Equal(repos.Size, int32(2))
+	suite.Require().Equal(len(repos), 2)
 
-	for _, repo := range repos.Values {
+	for _, repo := range repos {
 		suite.Require().NotNil(repo)
-		suite.Require().Equal(repo.Owner.Username, "test-user")
 	}
 }
 
 func (suite *BitbucketProviderTestSuite) TestGetRepository() {
 
-	repo, _, err := suite.provider.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(
-		suite.provider.Context,
-		"test-user",
-		"python-jolokia",
+	repo, err := suite.provider.GetRepository(
+		suite.provider.Username,
+		"test-repo",
 	)
 
 	suite.Require().NotNil(repo)
 	suite.Require().Nil(err)
 
-	suite.Require().Equal(repo.Owner.Username, "test-user")
+	suite.Require().Equal(repo.Name, "test-repo")
+}
+
+func (suite *BitbucketProviderTestSuite) TestDeleteRepository() {
+
+	err := suite.provider.DeleteRepository(
+		suite.provider.Username,
+		"test-repo",
+	)
+
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketProviderTestSuite) TestForkRepository() {
+
+	fork, err := suite.provider.ForkRepository(
+		suite.provider.Username,
+		"test-repo",
+		"",
+	)
+
+	suite.Require().NotNil(fork)
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketProviderTestSuite) TestValidateRepositoryName() {
+
+	err := suite.provider.ValidateRepositoryName(suite.provider.Username, "test-repo")
+
+	suite.Require().NotNil(err)
+
+	err = suite.provider.ValidateRepositoryName(suite.provider.Username, "foo-repo")
+
+	suite.Require().NotNil(err)
 }
 
 func TestBitbucketProviderTestSuite(t *testing.T) {
