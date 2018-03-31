@@ -23,7 +23,7 @@ type BitbucketProviderTestSuite struct {
 	provider *BitbucketProvider
 }
 
-func handleErr(response http.ResponseWriter, err error) {
+func handleErr(request *http.Request, response http.ResponseWriter, err error) {
 	response.WriteHeader(http.StatusInternalServerError)
 	response.Write([]byte(err.Error()))
 }
@@ -40,17 +40,25 @@ var router = map[string]interface{}{
 	"/repositories/test-user/test-repo": map[string]interface{}{
 		"GET":    "repos.test-repo.json",
 		"DELETE": "repos.test-repo.nil.json",
+		"PUT":    "repos.test-repo-renamed.json",
 	},
 	"/repositories/test-user/test-repo/forks": map[string]interface{}{
 		"POST": "repos.test-fork.json",
+	},
+	"/repositories/test-user/test-repo/pullrequests": map[string]interface{}{
+		"POST": "pullrequests.test-repo.json",
+	},
+	"/repositories/test-user/test-repo/pullrequests/3/": map[string]interface{}{
+		"GET": "pullrequests.test-repo-closed.json",
+	},
+	"/repositories/test-user/test-repo/pullrequests/3/commits": map[string]interface{}{
+		"GET": "pullrequests.test-repo.commits.json",
 	},
 }
 
 // Are you a mod or a rocker? I'm a
 type mocker func(http.ResponseWriter, *http.Request)
 
-// TODO: Find a DRY abstraction for mapping (url, method) -> file
-// e.g., ("/foo", "PUT") -> updated-foo.json
 func getMockAPIResponseFromFile(dataDir string) mocker {
 
 	return func(response http.ResponseWriter, request *http.Request) {
@@ -60,7 +68,7 @@ func getMockAPIResponseFromFile(dataDir string) mocker {
 		obj, err := util.LoadBytes(dataDir, fileName)
 
 		if err != nil {
-			handleErr(response, err)
+			handleErr(request, response, err)
 		}
 
 		handleOk(response, obj)
@@ -80,6 +88,18 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 	)
 	suite.mux.HandleFunc(
 		"/repositories/test-user/test-repo/forks",
+		getMockAPIResponseFromFile("test_data/bitbucket"),
+	)
+	suite.mux.HandleFunc(
+		"/repositories/test-user/test-repo/pullrequests",
+		getMockAPIResponseFromFile("test_data/bitbucket"),
+	)
+	suite.mux.HandleFunc(
+		"/repositories/test-user/test-repo/pullrequests/3/",
+		getMockAPIResponseFromFile("test_data/bitbucket"),
+	)
+	suite.mux.HandleFunc(
+		"/repositories/test-user/test-repo/pullrequests/3/commits",
 		getMockAPIResponseFromFile("test_data/bitbucket"),
 	)
 
@@ -171,6 +191,46 @@ func (suite *BitbucketProviderTestSuite) TestValidateRepositoryName() {
 	err = suite.provider.ValidateRepositoryName(suite.provider.Username, "foo-repo")
 
 	suite.Require().NotNil(err)
+}
+
+func (suite *BitbucketProviderTestSuite) TestRenameRepository() {
+
+	repo, err := suite.provider.RenameRepository(suite.provider.Username, "test-repo", "test-repo-renamed")
+
+	suite.Require().Nil(err)
+	suite.Require().NotNil(repo)
+
+	suite.Require().Equal(repo.Name, "test-repo-renamed")
+}
+
+func (suite *BitbucketProviderTestSuite) TestCreatePullRequest() {
+	args := GitPullRequestArguments{
+		Repo:  "test-repo",
+		Head:  "83777f6",
+		Base:  "77d0a923f297",
+		Title: "Test Pull Request",
+	}
+
+	pr, err := suite.provider.CreatePullRequest(&args)
+
+	suite.Require().NotNil(pr)
+	suite.Require().Nil(err)
+	suite.Require().Equal(*pr.State, "OPEN")
+}
+
+func (suite *BitbucketProviderTestSuite) TestUpdatePullRequestStatus() {
+	number := 3
+	state := "OPEN"
+
+	pr := &GitPullRequest{
+		Repo:   "test-repo",
+		Number: &number,
+		State:  &state,
+	}
+
+	err := suite.provider.UpdatePullRequestStatus(pr)
+
+	suite.Require().Nil(err)
 }
 
 func TestBitbucketProviderTestSuite(t *testing.T) {
