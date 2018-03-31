@@ -309,7 +309,7 @@ func (b *BitbucketProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	commits, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(
 		b.Context,
 		b.Username,
-		string(prID),
+		strconv.FormatInt(int64(prID), 10),
 		pr.Repo,
 	)
 
