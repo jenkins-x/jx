@@ -33,14 +33,30 @@ func handleOk(response http.ResponseWriter, body []byte) {
 	response.Write(body)
 }
 
+var router = map[string]interface{}{
+	"/repositories/test-user": map[string]interface{}{
+		"GET": "repos.json",
+	},
+	"/repositories/test-user/test-repo": map[string]interface{}{
+		"GET":    "repos.test-repo.json",
+		"DELETE": "repos.test-repo.nil.json",
+	},
+	"/repositories/test-user/test-repo/forks": map[string]interface{}{
+		"POST": "repos.test-fork.json",
+	},
+}
+
 // Are you a mod or a rocker? I'm a
 type mocker func(http.ResponseWriter, *http.Request)
 
 // TODO: Find a DRY abstraction for mapping (url, method) -> file
 // e.g., ("/foo", "PUT") -> updated-foo.json
-func getMockAPIResponseFromFile(dataDir string, fileName string) mocker {
+func getMockAPIResponseFromFile(dataDir string) mocker {
 
 	return func(response http.ResponseWriter, request *http.Request) {
+		route := router[request.URL.Path].(map[string]interface{})
+		fileName := route[request.Method].(string)
+
 		obj, err := util.LoadBytes(dataDir, fileName)
 
 		if err != nil {
@@ -56,15 +72,15 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 
 	suite.mux.HandleFunc(
 		"/repositories/test-user",
-		getMockAPIResponseFromFile("test_data/bitbucket", "repos.json"),
+		getMockAPIResponseFromFile("test_data/bitbucket"),
 	)
 	suite.mux.HandleFunc(
 		"/repositories/test-user/test-repo",
-		getMockAPIResponseFromFile("test_data/bitbucket", "repos.test-repo.json"),
+		getMockAPIResponseFromFile("test_data/bitbucket"),
 	)
 	suite.mux.HandleFunc(
 		"/repositories/test-user/test-repo/forks",
-		getMockAPIResponseFromFile("test_data/bitbucket", "repos.test-fork.json"),
+		getMockAPIResponseFromFile("test_data/bitbucket"),
 	)
 
 	as := auth.AuthServer{
