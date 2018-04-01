@@ -200,9 +200,9 @@ func (b *BitbucketProvider) RenameRepository(
 	newName string,
 ) (*GitRepository, error) {
 
-	var options map[string]interface{}
-
-	options["name"] = newName
+	var options = map[string]interface{}{
+		"name": newName,
+	}
 
 	repo, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPut(
 		b.Context,
@@ -256,8 +256,9 @@ func (b *BitbucketProvider) CreatePullRequest(
 		Title:       data.Title,
 	}
 
-	var options map[string]interface{}
-	options["body"] = bPullrequest
+	var options = map[string]interface{}{
+		"body": bPullrequest,
+	}
 
 	pr, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPost(
 		b.Context,
@@ -278,6 +279,7 @@ func (b *BitbucketProvider) CreatePullRequest(
 		Owner:  pr.Author.Username,
 		Repo:   pr.Destination.Repository.FullName,
 		Number: prID,
+		State:  &pr.State,
 	}
 
 	return newPR, nil
@@ -298,13 +300,16 @@ func (b *BitbucketProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	}
 
 	pr.State = &bitbucketPR.State
-	pr.MergeCommitSHA = &bitbucketPR.MergeCommit.Hash
+
+	if bitbucketPR.MergeCommit != nil {
+		pr.MergeCommitSHA = &bitbucketPR.MergeCommit.Hash
+	}
 	pr.DiffURL = &bitbucketPR.Links.Diff.Href
 
 	commits, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(
 		b.Context,
 		b.Username,
-		string(prID),
+		strconv.FormatInt(int64(prID), 10),
 		pr.Repo,
 	)
 

@@ -1,0 +1,87 @@
+{
+    "scm": "git",
+    "website": "",
+    "has_wiki": false,
+    "name": "test-repo-renamed",
+    "links": {
+        "watchers": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo-renamed/watchers"
+        },
+        "branches": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo-renamed/refs/branches"
+        },
+        "tags": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo-renamed/refs/tags"
+        },
+        "commits": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo-renamed/commits"
+        },
+        "clone": [
+            {
+                "href": "https://test-user@bitbucket.org/test-user/test-repo-renamed.git",
+                "name": "https"
+            },
+            {
+                "href": "git@bitbucket.org:test-user/test-repo-renamed.git",
+                "name": "ssh"
+            }
+        ],
+        "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo-renamed"
+        },
+        "source": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo-renamed/src"
+        },
+        "html": {
+            "href": "https://bitbucket.org/test-user/test-repo-renamed"
+        },
+        "avatar": {
+            "href": "https://bitbucket.org/test-user/test-repo-renamed/avatar/32/"
+        },
+        "hooks": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo-renamed/hooks"
+        },
+        "forks": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo-renamed/forks"
+        },
+        "downloads": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo-renamed/downloads"
+        },
+        "pullrequests": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo-renamed/pullrequests"
+        }
+    },
+    "fork_policy": "no_public_forks",
+    "uuid": "{6b96c974-39f0-40cd-a56f-e1efe5095aba}",
+    "language": "python",
+    "created_on": "2018-03-07T14:47:19.040628+00:00",
+    "mainbranch": {
+        "type": "branch",
+        "name": "master"
+    },
+    "full_name": "test-user/test-repo-renamed",
+    "has_issues": false,
+    "owner": {
+        "username": "test-user",
+        "display_name": "Test User",
+        "type": "user",
+        "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/users/test-user"
+            },
+            "html": {
+                "href": "https://bitbucket.org/test-user/"
+            },
+            "avatar": {
+                "href": "https://bitbucket.org/account/test-user/avatar/32/"
+            }
+        }
+    },
+    "updated_on": "2018-03-23T23:43:25.264279+00:00",
+    "size": 428407,
+    "type": "repository",
+    "slug": "test-repo-renamed",
+    "is_private": false,
+    "description": ""
+}
