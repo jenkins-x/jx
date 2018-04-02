@@ -1,0 +1,103 @@
+{
+    "pagelen": 10,
+    "values": [
+        {
+            "key": "-1081267614",
+            "description": "",
+            "repository": {
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/test-user/test-repo"
+                    },
+                    "avatar": {
+                        "href": "https://bitbucket.org/test-user/test-repo/avatar/32/"
+                    }
+                },
+                "type": "repository",
+                "name": "test-repo",
+                "full_name": "test-user/test-repo",
+                "uuid": "{2422942f-0f92-4c12-80b8-bc07b9bf3064}"
+            },
+            "url": "https://bitbucket.org/test-user/test-repo/addon/pipelines/home#!/results/1",
+            "links": {
+                "commit": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/5c8afc5fdabc7e82350f8d391c5767066aa1b6ac"
+                },
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/5c8afc5fdabc7e82350f8d391c5767066aa1b6ac/statuses/build/-1081267614"
+                }
+            },
+            "refname": "master",
+            "state": "SUCCESSFUL",
+            "created_on": "2018-04-02T01:11:47.212347+00:00",
+            "commit": {
+                "hash": "5c8afc5fdabc7e82350f8d391c5767066aa1b6ac",
+                "type": "commit",
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/5c8afc5fdabc7e82350f8d391c5767066aa1b6ac"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/test-user/test-repo/commits/5c8afc5fdabc7e82350f8d391c5767066aa1b6ac"
+                    }
+                }
+            },
+            "updated_on": "2018-04-02T01:13:03.827835+00:00",
+            "type": "build",
+            "name": "Pipeline #1 for master"
+        },
+        {
+            "key": "1651225011",
+            "description": "",
+            "repository": {
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/test-user/test-repo"
+                    },
+                    "avatar": {
+                        "href": "https://bitbucket.org/test-user/test-repo/avatar/32/"
+                    }
+                },
+                "type": "repository",
+                "name": "test-repo",
+                "full_name": "test-user/test-repo",
+                "uuid": "{2422942f-0f92-4c12-80b8-bc07b9bf3064}"
+            },
+            "url": "https://bitbucket.org/test-user/test-repo/addon/pipelines/home#!/results/2",
+            "links": {
+                "commit": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/5c8afc5fdabc7e82350f8d391c5767066aa1b6ac"
+                },
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/5c8afc5fdabc7e82350f8d391c5767066aa1b6ac/statuses/build/1651225011"
+                }
+            },
+            "refname": null,
+            "state": "INPROGRESS",
+            "created_on": "2018-04-02T01:26:02.936440+00:00",
+            "commit": {
+                "hash": "5c8afc5fdabc7e82350f8d391c5767066aa1b6ac",
+                "type": "commit",
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/5c8afc5fdabc7e82350f8d391c5767066aa1b6ac"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/test-user/test-repo/commits/5c8afc5fdabc7e82350f8d391c5767066aa1b6ac"
+                    }
+                }
+            },
+            "updated_on": "2018-04-02T01:26:24.477531+00:00",
+            "type": "build",
+            "name": "Successful"
+        }
+    ],
+    "page": 1,
+    "size": 2
+}

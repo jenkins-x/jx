@@ -54,6 +54,9 @@ var router = map[string]interface{}{
 	"/repositories/test-user/test-repo/pullrequests/3/commits": map[string]interface{}{
 		"GET": "pullrequests.test-repo.commits.json",
 	},
+	"/repositories/test-user/test-repo/commit/5c8afc5/statuses": map[string]interface{}{
+		"GET": "repos.test-repo.statuses.json",
+	},
 }
 
 // Are you a mod or a rocker? I'm a
@@ -100,6 +103,10 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 	)
 	suite.mux.HandleFunc(
 		"/repositories/test-user/test-repo/pullrequests/3/commits",
+		getMockAPIResponseFromFile("test_data/bitbucket"),
+	)
+	suite.mux.HandleFunc(
+		"/repositories/test-user/test-repo/commit/5c8afc5/statuses",
 		getMockAPIResponseFromFile("test_data/bitbucket"),
 	)
 
@@ -231,6 +238,19 @@ func (suite *BitbucketProviderTestSuite) TestUpdatePullRequestStatus() {
 	err := suite.provider.UpdatePullRequestStatus(pr)
 
 	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketProviderTestSuite) TestPullRequestLastCommitStatus() {
+
+	pr := &GitPullRequest{
+		Repo:          "test-repo",
+		LastCommitSha: "5c8afc5",
+	}
+	lastCommitStatus, err := suite.provider.PullRequestLastCommitStatus(pr)
+
+	suite.Require().Nil(err)
+	suite.Require().NotEmpty(lastCommitStatus)
+	suite.Require().Equal(lastCommitStatus, "INPROGRESS")
 }
 
 func TestBitbucketProviderTestSuite(t *testing.T) {

@@ -326,7 +326,37 @@ func (b *BitbucketProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 }
 
 func (b *BitbucketProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
-	return "", nil
+
+	latestCommitStatus := bitbucket.Commitstatus{}
+
+	for {
+		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
+			b.Context,
+			b.Username,
+			pr.Repo,
+			pr.LastCommitSha,
+		)
+
+		if err != nil {
+			return "", err
+		}
+
+		if result.Size == 0 {
+			return "", fmt.Errorf("this commit doesn't have any statuses")
+		}
+
+		for _, status := range result.Values {
+			if status.CreatedOn.After(latestCommitStatus.CreatedOn) {
+				latestCommitStatus = status
+			}
+		}
+
+		if result.Next == "" {
+			break
+		}
+	}
+
+	return latestCommitStatus.State, nil
 }
 
 func (b *BitbucketProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
