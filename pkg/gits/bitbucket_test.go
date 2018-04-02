@@ -60,6 +60,9 @@ var router = map[string]interface{}{
 	"/repositories/test-user/test-repo/pullrequests/1/merge": map[string]interface{}{
 		"POST": "pullrequests.test-repo.merged.json",
 	},
+	"/repositories/test-user/test-repo/hooks": map[string]interface{}{
+		"POST": "webhooks.example.json",
+	},
 }
 
 // Are you a mod or a rocker? I'm a
@@ -114,6 +117,10 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 	)
 	suite.mux.HandleFunc(
 		"/repositories/test-user/test-repo/pullrequests/1/merge",
+		getMockAPIResponseFromFile("test_data/bitbucket"),
+	)
+	suite.mux.HandleFunc(
+		"/repositories/test-user/test-repo/hooks",
 		getMockAPIResponseFromFile("test_data/bitbucket"),
 	)
 
@@ -282,6 +289,17 @@ func (suite *BitbucketProviderTestSuite) TestMergePullRequest() {
 		Number: &id,
 	}
 	err := suite.provider.MergePullRequest(pr, "Merging from unit tests")
+
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketProviderTestSuite) TestCreateWebHook() {
+
+	data := &GitWebHookArguments{
+		Repo: "test-repo",
+		URL:  "https://my-jenkins.example.com/bitbucket-webhook/",
+	}
+	err := suite.provider.CreateWebHook(data)
 
 	suite.Require().Nil(err)
 }

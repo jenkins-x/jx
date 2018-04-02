@@ -1,0 +1,36 @@
+{
+    "read_only": null,
+    "description": "Testing Webhook via API",
+    "links": {
+        "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/test-repo/hooks/%7B81c9cddc-38ef-4ea2-bae7-4bf581f82c6c%7D"
+        }
+    },
+    "url": "https://example.com/bitbucket-webhook/",
+    "created_at": "2018-04-02T04:43:03.541878Z",
+    "skip_cert_verification": false,
+    "source": null,
+    "active": true,
+    "subject": {
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/repositories/wbrefvem/test-repo"
+            },
+            "html": {
+                "href": "https://bitbucket.org/wbrefvem/test-repo"
+            },
+            "avatar": {
+                "href": "https://bitbucket.org/wbrefvem/test-repo/avatar/32/"
+            }
+        },
+        "type": "repository",
+        "name": "test-repo",
+        "full_name": "wbrefvem/test-repo",
+        "uuid": "{2422942f-0f92-4c12-80b8-bc07b9bf3064}"
+    },
+    "type": "webhook_subscription",
+    "events": [
+        "repo:push"
+    ],
+    "uuid": "{81c9cddc-38ef-4ea2-bae7-4bf581f82c6c}"
+}
