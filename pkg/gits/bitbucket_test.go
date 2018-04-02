@@ -253,6 +253,20 @@ func (suite *BitbucketProviderTestSuite) TestPullRequestLastCommitStatus() {
 	suite.Require().Equal(lastCommitStatus, "INPROGRESS")
 }
 
+func (suite *BitbucketProviderTestSuite) TestListCommitStatus() {
+
+	statuses, err := suite.provider.ListCommitStatus("test-user", "test-repo", "5c8afc5")
+
+	suite.Require().Nil(err)
+	suite.Require().NotNil(statuses)
+	suite.Require().Equal(len(statuses), 2)
+
+	for _, status := range statuses {
+		suite.Require().NotEmpty(status.State)
+		suite.Require().NotEmpty(status.URL)
+	}
+}
+
 func TestBitbucketProviderTestSuite(t *testing.T) {
 	suite.Run(t, new(BitbucketProviderTestSuite))
 }
