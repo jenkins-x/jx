@@ -326,14 +326,98 @@ func (b *BitbucketProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 }
 
 func (b *BitbucketProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
-	return "", nil
+
+	latestCommitStatus := bitbucket.Commitstatus{}
+
+	for {
+		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
+			b.Context,
+			b.Username,
+			pr.Repo,
+			pr.LastCommitSha,
+		)
+
+		if err != nil {
+			return "", err
+		}
+
+		if result.Size == 0 {
+			return "", fmt.Errorf("this commit doesn't have any statuses")
+		}
+
+		for _, status := range result.Values {
+			if status.CreatedOn.After(latestCommitStatus.CreatedOn) {
+				latestCommitStatus = status
+			}
+		}
+
+		if result.Next == "" {
+			break
+		}
+	}
+
+	return latestCommitStatus.State, nil
 }
 
 func (b *BitbucketProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
-	return nil, nil
+
+	statuses := []*GitRepoStatus{}
+
+	for {
+		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
+			b.Context,
+			org,
+			repo,
+			sha,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, status := range result.Values {
+
+			id, err := strconv.ParseInt(status.Key, 10, 64)
+
+			if err != nil {
+				return nil, err
+			}
+
+			newStatus := &GitRepoStatus{
+				ID:          id,
+				URL:         status.Links.Commit.Href,
+				State:       status.State,
+				TargetURL:   status.Links.Self.Href,
+				Description: status.Description,
+			}
+			statuses = append(statuses, newStatus)
+		}
+
+		if result.Next == "" {
+			break
+		}
+	}
+	return statuses, nil
 }
 
 func (b *BitbucketProvider) MergePullRequest(pr *GitPullRequest, message string) error {
+
+	options := map[string]interface{}{
+		"message": message,
+	}
+
+	_, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdMergePost(
+		b.Context,
+		b.Username,
+		strconv.FormatInt(int64(*pr.Number), 10),
+		pr.Repo,
+		options,
+	)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -394,8 +478,9 @@ func (b *BitbucketProvider) Kind() string {
 	return "bitbucket"
 }
 
+// Exposed by Jenkins plugin; this one is for https://wiki.jenkins.io/display/JENKINS/BitBucket+Plugin
 func (b *BitbucketProvider) JenkinsWebHookPath(gitURL string, secret string) string {
-	return ""
+	return "/bitbucket-hook/"
 }
 
 func (b *BitbucketProvider) Label() string {

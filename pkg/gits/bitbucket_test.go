@@ -54,6 +54,12 @@ var router = map[string]interface{}{
 	"/repositories/test-user/test-repo/pullrequests/3/commits": map[string]interface{}{
 		"GET": "pullrequests.test-repo.commits.json",
 	},
+	"/repositories/test-user/test-repo/commit/5c8afc5/statuses": map[string]interface{}{
+		"GET": "repos.test-repo.statuses.json",
+	},
+	"/repositories/test-user/test-repo/pullrequests/1/merge": map[string]interface{}{
+		"POST": "pullrequests.test-repo.merged.json",
+	},
 }
 
 // Are you a mod or a rocker? I'm a
@@ -100,6 +106,14 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 	)
 	suite.mux.HandleFunc(
 		"/repositories/test-user/test-repo/pullrequests/3/commits",
+		getMockAPIResponseFromFile("test_data/bitbucket"),
+	)
+	suite.mux.HandleFunc(
+		"/repositories/test-user/test-repo/commit/5c8afc5/statuses",
+		getMockAPIResponseFromFile("test_data/bitbucket"),
+	)
+	suite.mux.HandleFunc(
+		"/repositories/test-user/test-repo/pullrequests/1/merge",
 		getMockAPIResponseFromFile("test_data/bitbucket"),
 	)
 
@@ -229,6 +243,45 @@ func (suite *BitbucketProviderTestSuite) TestUpdatePullRequestStatus() {
 	}
 
 	err := suite.provider.UpdatePullRequestStatus(pr)
+
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketProviderTestSuite) TestPullRequestLastCommitStatus() {
+
+	pr := &GitPullRequest{
+		Repo:          "test-repo",
+		LastCommitSha: "5c8afc5",
+	}
+	lastCommitStatus, err := suite.provider.PullRequestLastCommitStatus(pr)
+
+	suite.Require().Nil(err)
+	suite.Require().NotEmpty(lastCommitStatus)
+	suite.Require().Equal(lastCommitStatus, "INPROGRESS")
+}
+
+func (suite *BitbucketProviderTestSuite) TestListCommitStatus() {
+
+	statuses, err := suite.provider.ListCommitStatus("test-user", "test-repo", "5c8afc5")
+
+	suite.Require().Nil(err)
+	suite.Require().NotNil(statuses)
+	suite.Require().Equal(len(statuses), 2)
+
+	for _, status := range statuses {
+		suite.Require().NotEmpty(status.State)
+		suite.Require().NotEmpty(status.URL)
+	}
+}
+
+func (suite *BitbucketProviderTestSuite) TestMergePullRequest() {
+
+	id := 1
+	pr := &GitPullRequest{
+		Repo:   "test-repo",
+		Number: &id,
+	}
+	err := suite.provider.MergePullRequest(pr, "Merging from unit tests")
 
 	suite.Require().Nil(err)
 }

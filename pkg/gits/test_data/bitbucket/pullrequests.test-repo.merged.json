@@ -1,0 +1,155 @@
+{
+    "merge_commit": {
+        "hash": "2b9385208a9b",
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/2b9385208a9b"
+            }
+        }
+    },
+    "description": "fixes #1",
+    "links": {
+        "decline": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/pullrequests/1/decline"
+        },
+        "commits": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/pullrequests/1/commits"
+        },
+        "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/pullrequests/1"
+        },
+        "comments": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/pullrequests/1/comments"
+        },
+        "merge": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/pullrequests/1/merge"
+        },
+        "html": {
+            "href": "https://bitbucket.org/test-user/test-repo/pull-requests/1"
+        },
+        "activity": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/pullrequests/1/activity"
+        },
+        "diff": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/pullrequests/1/diff"
+        },
+        "approve": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/pullrequests/1/approve"
+        },
+        "statuses": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/pullrequests/1/statuses"
+        }
+    },
+    "title": "Add nice home page",
+    "close_source_branch": false,
+    "reviewers": [],
+    "destination": {
+        "commit": {
+            "hash": "5c8afc5fdabc",
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/5c8afc5fdabc"
+                }
+            }
+        },
+        "repository": {
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/test-user/test-repo"
+                },
+                "avatar": {
+                    "href": "https://bitbucket.org/test-user/test-repo/avatar/32/"
+                }
+            },
+            "type": "repository",
+            "name": "test-repo",
+            "full_name": "test-user/test-repo",
+            "uuid": "{2422942f-0f92-4c12-80b8-bc07b9bf3064}"
+        },
+        "branch": {
+            "name": "master"
+        }
+    },
+    "state": "MERGED",
+    "closed_by": {
+        "username": "test-user",
+        "display_name": "Test User",
+        "type": "user",
+        "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/users/test-user"
+            },
+            "html": {
+                "href": "https://bitbucket.org/test-user/"
+            },
+            "avatar": {
+                "href": "https://bitbucket.org/account/test-user/avatar/32/"
+            }
+        }
+    },
+    "summary": {
+        "raw": "fixes #1",
+        "markup": "markdown",
+        "html": "<p>fixes #1</p>",
+        "type": "rendered"
+    },
+    "source": {
+        "commit": {
+            "hash": "54e4d81d07d6",
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/54e4d81d07d6"
+                }
+            }
+        },
+        "repository": {
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/test-user/test-repo"
+                },
+                "avatar": {
+                    "href": "https://bitbucket.org/test-user/test-repo/avatar/32/"
+                }
+            },
+            "type": "repository",
+            "name": "test-repo",
+            "full_name": "test-user/test-repo",
+            "uuid": "{2422942f-0f92-4c12-80b8-bc07b9bf3064}"
+        },
+        "branch": {
+            "name": "cheese"
+        }
+    },
+    "comment_count": 0,
+    "author": {
+        "username": "test-user",
+        "display_name": "Test User",
+        "type": "user",
+        "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/users/test-user"
+            },
+            "html": {
+                "href": "https://bitbucket.org/test-user/"
+            },
+            "avatar": {
+                "href": "https://bitbucket.org/account/test-user/avatar/32/"
+            }
+        }
+    },
+    "created_on": "2018-04-02T01:16:31.331983+00:00",
+    "participants": [],
+    "reason": "",
+    "updated_on": "2018-04-02T02:37:07.186294+00:00",
+    "type": "pullrequest",
+    "id": 1,
+    "task_count": 0
+}
