@@ -422,3 +422,28 @@ func findInSlice(source []string, toFind string) bool {
 	}
 	return false
 }
+
+func TestPhoneNumbers(t *testing.T) {
+	CheckPhoneNumber(PhoneNumber(), t)
+}
+
+func CheckPhoneNumber(str string, t *testing.T) bool {
+	if (len(str) - strings.Count(str, " ")) > 16 {
+		t.Error("phone number too long")
+		return false
+	}
+
+	matched, err := regexp.MatchString("\\+\\d{1,3}\\s\\d{1,3}", str)
+
+	if err != nil {
+		t.Errorf("error matching %v", err)
+		return false
+	}
+
+	if !matched {
+		t.Error("phone number did not match expectations")
+		return false
+	}
+
+	return true
+}

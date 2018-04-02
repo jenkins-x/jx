@@ -96,6 +96,7 @@ func (cn *connectCmd) run(runningEnvironment string) (err error) {
 				return err
 			}
 			m := fmt.Sprintf("Connect to %v:%v on localhost:%#v\n", cc.ContainerName, t.Remote, t.Local)
+
 			connectionMessage += m
 			fmt.Fprintf(cn.out, m)
 		}
@@ -119,8 +120,8 @@ func (cn *connectCmd) run(runningEnvironment string) (err error) {
 	}()
 
 	for {
-		fmt.Fprintf(cn.out, connectionMessage)
 		time.Sleep(5 * time.Minute)
+		fmt.Fprintf(cn.out, connectionMessage)
 	}
 }
 

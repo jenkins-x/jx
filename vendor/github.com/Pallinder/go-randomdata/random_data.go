@@ -56,8 +56,9 @@ type jsonContent struct {
 	Months              []string `json:"months"`
 	FemaleTitles        []string `json:"femaleTitles"`
 	MaleTitles          []string `json:"maleTitles"`
-	Timezones           []string `json:"timezones"`  // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-	UserAgents          []string `json:"userAgents"` // http://techpatterns.com/downloads/firefox/useragentswitcher.xml
+	Timezones           []string `json:"timezones"`           // https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+	UserAgents          []string `json:"userAgents"`          // http://techpatterns.com/downloads/firefox/useragentswitcher.xml
+	CountryCallingCodes []string `json:"countryCallingCodes"` // from https://github.com/datasets/country-codes/blob/master/data/country-codes.csv
 }
 
 var jsonData = jsonContent{}
@@ -373,4 +374,19 @@ func Timezone() string {
 
 func UserAgentString() string {
 	return randomFrom(jsonData.UserAgents)
+}
+
+func PhoneNumber() string {
+	str := randomFrom(jsonData.CountryCallingCodes) + " "
+
+	str += Digits(rand.Intn(3) + 1)
+
+	for {
+		// max 15 chars
+		remaining := 15 - (len(str) - strings.Count(str, " "))
+		if remaining < 2 {
+			return "+" + str
+		}
+		str += " " + Digits(rand.Intn(remaining-1)+1)
+	}
 }

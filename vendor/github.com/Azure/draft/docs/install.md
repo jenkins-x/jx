@@ -6,6 +6,8 @@ Get started with Draft in three easy steps:
 1. Boot Minikube and install Tiller
 1. Deploy your first application
 
+Note: This document uses a local image repository with minikube. To use Draft directly with a container registry service like https://hub.docker.com or another registry service, see the configuration steps in [Drafting in the Cloud](install-advanced.md#drafting-in-the-cloud). 
+
 ## Dependencies
 
 In order to get started, you will need to have the following:
