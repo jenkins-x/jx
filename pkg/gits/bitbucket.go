@@ -401,6 +401,23 @@ func (b *BitbucketProvider) ListCommitStatus(org string, repo string, sha string
 }
 
 func (b *BitbucketProvider) MergePullRequest(pr *GitPullRequest, message string) error {
+
+	options := map[string]interface{}{
+		"message": message,
+	}
+
+	_, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdMergePost(
+		b.Context,
+		b.Username,
+		strconv.FormatInt(int64(*pr.Number), 10),
+		pr.Repo,
+		options,
+	)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

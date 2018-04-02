@@ -57,6 +57,9 @@ var router = map[string]interface{}{
 	"/repositories/test-user/test-repo/commit/5c8afc5/statuses": map[string]interface{}{
 		"GET": "repos.test-repo.statuses.json",
 	},
+	"/repositories/test-user/test-repo/pullrequests/1/merge": map[string]interface{}{
+		"POST": "pullrequests.test-repo.merged.json",
+	},
 }
 
 // Are you a mod or a rocker? I'm a
@@ -107,6 +110,10 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 	)
 	suite.mux.HandleFunc(
 		"/repositories/test-user/test-repo/commit/5c8afc5/statuses",
+		getMockAPIResponseFromFile("test_data/bitbucket"),
+	)
+	suite.mux.HandleFunc(
+		"/repositories/test-user/test-repo/pullrequests/1/merge",
 		getMockAPIResponseFromFile("test_data/bitbucket"),
 	)
 
@@ -265,6 +272,18 @@ func (suite *BitbucketProviderTestSuite) TestListCommitStatus() {
 		suite.Require().NotEmpty(status.State)
 		suite.Require().NotEmpty(status.URL)
 	}
+}
+
+func (suite *BitbucketProviderTestSuite) TestMergePullRequest() {
+
+	id := 1
+	pr := &GitPullRequest{
+		Repo:   "test-repo",
+		Number: &id,
+	}
+	err := suite.provider.MergePullRequest(pr, "Merging from unit tests")
+
+	suite.Require().Nil(err)
 }
 
 func TestBitbucketProviderTestSuite(t *testing.T) {
