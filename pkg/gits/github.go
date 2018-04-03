@@ -37,8 +37,18 @@ func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvide
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
-	provider.Client = github.NewClient(tc)
-	return &provider, nil
+	var err error
+	u := server.URL
+	if u == "" || strings.HasPrefix(u, "https://github.com") || strings.HasPrefix(u, "github") {
+		provider.Client = github.NewClient(tc)
+	} else {
+		// lets ensure we use the API endpoint to login
+		if strings.Index(u, "/api/") < 0 {
+			u = util.UrlJoin(u, "/api/v3/")
+		}
+		provider.Client, err = github.NewEnterpriseClient(u, u, tc)
+	}
+	return &provider, err
 }
 
 func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
