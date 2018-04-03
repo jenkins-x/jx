@@ -112,16 +112,8 @@ func GenerateProfile(gender int) *Profile {
 	)
 
 	profile.Email = strings.ToLower(profile.Name.First) + "." + strings.ToLower(profile.Name.Last) + "@example.com"
-	profile.Cell = fmt.Sprintf("%d-%d-%d",
-		Number(201, 999),
-		Number(201, 999),
-		Number(1000, 9999),
-	)
-	profile.Phone = fmt.Sprintf("%d-%d-%d",
-		Number(201, 999),
-		Number(201, 999),
-		Number(1000, 9999),
-	)
+	profile.Cell = PhoneNumber()
+	profile.Phone = PhoneNumber()
 	profile.Dob = FullDate()
 	profile.Registered = FullDate()
 	profile.Nat = "US"

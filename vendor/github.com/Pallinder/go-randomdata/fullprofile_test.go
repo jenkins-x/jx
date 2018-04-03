@@ -23,12 +23,12 @@ func Test_FullProfileGenerator(t *testing.T) {
 		t.Fatal("Profile failed to generate")
 	}
 
-	if len(profile.Cell) != 12 {
-		t.Fatalf("Expected Cell# to be len %d but got %d\n", 12, len(profile.Cell))
+	if !CheckPhoneNumber(profile.Cell, t) {
+		t.Fatalf("Expected Cell# to be a valid phone number: %v", profile.Cell)
 	}
 
-	if len(profile.Phone) != 12 {
-		t.Fatalf("Expected Phone# to be len %d but got %d\n", 12, len(profile.Cell))
+	if !CheckPhoneNumber(profile.Phone, t) {
+		t.Fatalf("Expected Phone# to be a valid phone number: %v", profile.Phone)
 	}
 
 	if profile.Login.Username == "" {

@@ -23,7 +23,7 @@ import:
 - package: github.com/fatih/color
   version: v1.5.0
 - package: github.com/spf13/pflag
-  version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
+  version: 1cd4a0c365d95803411bec89fb7b76bade17053b
 - package: gopkg.in/src-d/go-git.v4
   version: v4.1.1
 - package: code.gitea.io/sdk/gitea

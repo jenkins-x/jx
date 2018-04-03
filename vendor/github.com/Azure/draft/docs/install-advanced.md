@@ -1,7 +1,8 @@
 # Advanced Install Guide
 
-In certain situations, users are given a Kubernetes cluster with tighter security constraints such as
+In certain situations, users are given a Kubernetes cluster with security constraints such as
 
+- needing to push and pull container images to and from a remote or otherwise secured container registry
 - only being able to deploy applications to a certain namespace
 - running applications in an RBAC-enabled cluster
 
@@ -9,7 +10,19 @@ This document explains some of these situations as well as how it can be handled
 
 ## Drafting in the Cloud
 
-When using Draft with cloud-provided Kubernetes solutions like [Azure Container Service](https://azure.microsoft.com/en-us/services/container-service/), we need a way to distribute the built image across the cluster. A container registry allows all nodes in the Kubernetes cluster to pull the images we build using Draft, and we have a way for our local Docker daemon to distribute the built image.
+When using Draft with cloud-provided Kubernetes solutions like [Azure Container Service (AKS)](https://azure.microsoft.com/services/container-service/), we need a way to distribute the built image across the cluster. A container registry allows all nodes in the Kubernetes cluster to pull the images we build using Draft, and we have a way for our local Docker daemon to distribute the built image.
+
+For local use with Minikube, only the `eval $(minikube docker-env)` command is required to inform Draft to use the local registry for deployment, which skips the step of pushing the container image and enables the deployment to Minikube to pull from the local registry. This makes the local inner-loop experience very fast. 
+
+For cloud registry services, like ACR or Docker Hub, two things are needed. 
+1. You need to tell draft where the registry resides using the `draft config set registry` command, passing the registry's server URL (without the protocol scheme). 
+2. Unless there is a trust relationship between the cluster provider and the registry -- as there is with Azure Kubernetes Service (AKS) and the Azure Container Registry (ACR) -- you'll need to [add a container registry secret to your chart](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry) to pull the private image.
+
+## Drafting with ACR and AKS
+
+Let's use Azure Container Registry (ACR) as an example registry, and use AKS as our Kubernetes service for this example. 
+
+REMEMBER: Kubernetes services like Azure Kubernetes Service (AKS) are automatically authorized to pull from container registries in the same resource group. If this is not the case, then please reread the [Drafting in the Cloud](#drafting-in-the-cloud) section. 
 
 For this example, we want to push images to our registry sitting at `myregistry.azurecr.io`, and pull those images down to the Kubernetes cluster from that same registry. To do that, we run
 
@@ -25,7 +38,7 @@ We'll also need to log into the cluster to push images from our local docker dae
 $ az acr login -n myregistry -g myresourcegroup
 ```
 
-NOTE: Kubernetes distributions like Azure Container Service are automatically authorized to pull from container registries in the same resource group. If this is not the case, then you'll need to [add a container registry secret to your chart](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry) to pull the private image.
+
 
 ## Running Tiller with RBAC enabled
 

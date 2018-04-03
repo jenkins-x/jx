@@ -23,99 +23,44 @@ type BitbucketProviderTestSuite struct {
 	provider *BitbucketProvider
 }
 
-func handleErr(request *http.Request, response http.ResponseWriter, err error) {
-	response.WriteHeader(http.StatusInternalServerError)
-	response.Write([]byte(err.Error()))
-}
-
-func handleOk(response http.ResponseWriter, body []byte) {
-	response.WriteHeader(http.StatusOK)
-	response.Write(body)
-}
-
-var router = map[string]interface{}{
-	"/repositories/test-user": map[string]interface{}{
+var router = util.Router{
+	"/repositories/test-user": util.MethodMap{
 		"GET": "repos.json",
 	},
-	"/repositories/test-user/test-repo": map[string]interface{}{
+	"/repositories/test-user/test-repo": util.MethodMap{
 		"GET":    "repos.test-repo.json",
 		"DELETE": "repos.test-repo.nil.json",
 		"PUT":    "repos.test-repo-renamed.json",
 	},
-	"/repositories/test-user/test-repo/forks": map[string]interface{}{
+	"/repositories/test-user/test-repo/forks": util.MethodMap{
 		"POST": "repos.test-fork.json",
 	},
-	"/repositories/test-user/test-repo/pullrequests": map[string]interface{}{
+	"/repositories/test-user/test-repo/pullrequests": util.MethodMap{
 		"POST": "pullrequests.test-repo.json",
 	},
-	"/repositories/test-user/test-repo/pullrequests/3/": map[string]interface{}{
+	"/repositories/test-user/test-repo/pullrequests/3/": util.MethodMap{
 		"GET": "pullrequests.test-repo-closed.json",
 	},
-	"/repositories/test-user/test-repo/pullrequests/3/commits": map[string]interface{}{
+	"/repositories/test-user/test-repo/pullrequests/3/commits": util.MethodMap{
 		"GET": "pullrequests.test-repo.commits.json",
 	},
-	"/repositories/test-user/test-repo/commit/5c8afc5/statuses": map[string]interface{}{
+	"/repositories/test-user/test-repo/commit/5c8afc5/statuses": util.MethodMap{
 		"GET": "repos.test-repo.statuses.json",
 	},
-	"/repositories/test-user/test-repo/pullrequests/1/merge": map[string]interface{}{
+	"/repositories/test-user/test-repo/pullrequests/1/merge": util.MethodMap{
 		"POST": "pullrequests.test-repo.merged.json",
 	},
-}
-
-// Are you a mod or a rocker? I'm a
-type mocker func(http.ResponseWriter, *http.Request)
-
-func getMockAPIResponseFromFile(dataDir string) mocker {
-
-	return func(response http.ResponseWriter, request *http.Request) {
-		route := router[request.URL.Path].(map[string]interface{})
-		fileName := route[request.Method].(string)
-
-		obj, err := util.LoadBytes(dataDir, fileName)
-
-		if err != nil {
-			handleErr(request, response, err)
-		}
-
-		handleOk(response, obj)
-	}
+	"/repositories/test-user/test-repo/hooks": util.MethodMap{
+		"POST": "webhooks.example.json",
+	},
 }
 
 func (suite *BitbucketProviderTestSuite) SetupSuite() {
 	suite.mux = http.NewServeMux()
 
-	suite.mux.HandleFunc(
-		"/repositories/test-user",
-		getMockAPIResponseFromFile("test_data/bitbucket"),
-	)
-	suite.mux.HandleFunc(
-		"/repositories/test-user/test-repo",
-		getMockAPIResponseFromFile("test_data/bitbucket"),
-	)
-	suite.mux.HandleFunc(
-		"/repositories/test-user/test-repo/forks",
-		getMockAPIResponseFromFile("test_data/bitbucket"),
-	)
-	suite.mux.HandleFunc(
-		"/repositories/test-user/test-repo/pullrequests",
-		getMockAPIResponseFromFile("test_data/bitbucket"),
-	)
-	suite.mux.HandleFunc(
-		"/repositories/test-user/test-repo/pullrequests/3/",
-		getMockAPIResponseFromFile("test_data/bitbucket"),
-	)
-	suite.mux.HandleFunc(
-		"/repositories/test-user/test-repo/pullrequests/3/commits",
-		getMockAPIResponseFromFile("test_data/bitbucket"),
-	)
-	suite.mux.HandleFunc(
-		"/repositories/test-user/test-repo/commit/5c8afc5/statuses",
-		getMockAPIResponseFromFile("test_data/bitbucket"),
-	)
-	suite.mux.HandleFunc(
-		"/repositories/test-user/test-repo/pullrequests/1/merge",
-		getMockAPIResponseFromFile("test_data/bitbucket"),
-	)
+	for path, methodMap := range router {
+		suite.mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/bitbucket", methodMap))
+	}
 
 	as := auth.AuthServer{
 		URL:         "https://auth.example.com",
@@ -282,6 +227,17 @@ func (suite *BitbucketProviderTestSuite) TestMergePullRequest() {
 		Number: &id,
 	}
 	err := suite.provider.MergePullRequest(pr, "Merging from unit tests")
+
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketProviderTestSuite) TestCreateWebHook() {
+
+	data := &GitWebHookArguments{
+		Repo: "test-repo",
+		URL:  "https://my-jenkins.example.com/bitbucket-webhook/",
+	}
+	err := suite.provider.CreateWebHook(data)
 
 	suite.Require().Nil(err)
 }

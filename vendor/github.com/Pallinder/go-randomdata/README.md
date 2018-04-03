@@ -25,6 +25,7 @@ randomdata is a tiny help suite for generating random data such as
 * random full date
 * random full profile
 * random date inside range
+* random phone number
 
 ## Installation
 
@@ -158,6 +159,9 @@ func main() {
 
     // Print full date >= Monday 01 Aug 2016 and <= Monday 22 Aug 2016
     fmt.Println(randomdata.FullDateInRange("2016-08-01", "2016-08-22"))
+
+    // Print phone number according to e.164
+    fmt.Println(randomdata.PhoneNumber())
 
     // Get a complete and randomised profile of data generally used for users
     // There are many fields in the profile to use check the Profile struct definition in fullprofile.go

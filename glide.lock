@@ -1,5 +1,5 @@
-hash: 33bcd0e6e6364aaa7dc46525f9f49ea0521041d13b9292340d167b0a6f176c5c
-updated: 2018-03-28T16:18:54.466007+02:00
+hash: d6bfbfb1d2334d3c1afad870943efbad984357a6b66751a40801e857cdfa371d
+updated: 2018-04-02T00:25:20.279524111-04:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,13 +7,13 @@ imports:
   - compute/metadata
   - internal
 - name: code.gitea.io/sdk
-  version: 92585b27a0893099fd988bf0796e3c8d3cbf59db
+  version: 417abc7c5dcf7d0967f41a2419f3a6445a069232
   subpackages:
   - gitea
 - name: github.com/andygrunwald/go-jira
   version: 73a371cdd95da260b5a70b19336ad03fd62a79e7
 - name: github.com/Azure/draft
-  version: 086e092ba82b8bc9aaebad9bf456c168a5c12c6f
+  version: 3b250cbdc4f3d1e61a88bafbee20c046e045c758
   subpackages:
   - pkg/draft/draftpath
   - pkg/draft/pack/repo
@@ -126,7 +126,7 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: 1ce85f4eb585f22e22dbd214dd4610aafa516c4c
+  version: 437797734d06eec5394734a84cb5b59c82a66ee6
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -187,7 +187,7 @@ imports:
 - name: github.com/knq/sysutil
   version: 0218e141a794643e8c0fa283b9cd076fc0df662d
 - name: github.com/mailru/easyjson
-  version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
+  version: 8b799c424f57fa123fc63a99d6383bc6e4c02578
   subpackages:
   - buffer
   - jlexer
@@ -207,7 +207,7 @@ imports:
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/Pallinder/go-randomdata
-  version: 0eb4fb8a64d92747aa9c557b4c3cafca945802cd
+  version: dab270d296c6c8fb98de3b4334bbd7d7b0ceca53
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pelletier/go-buffruneio
@@ -229,11 +229,11 @@ imports:
   repo: git@github.com:/sirupsen/logrus
   vcs: git
 - name: github.com/spf13/cobra
-  version: a1f051bc3eba734da4772d60e2d677f47cf93ef4
+  version: 4dab30cb33e6633c33c787106bafbfbfdde7842d
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
+  version: 1cd4a0c365d95803411bec89fb7b76bade17053b
 - name: github.com/src-d/gcfg
   version: f187355171c936ac84a82793659ebb4936bc1c23
   subpackages:
@@ -246,7 +246,7 @@ imports:
   - tcontainer
   - treflect
 - name: github.com/wbrefvem/go-bitbucket
-  version: 9f0898648d6ff69569623c39526ae13c314b974d
+  version: 216c362c7d544b1ec4f20069b3157e902d056992
 - name: github.com/xanzy/go-gitlab
   version: 3109bb13e379d3ada1ff1ca81557c6e7bce8e881
 - name: github.com/xanzy/ssh-agent
@@ -310,7 +310,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/appengine
-  version: 540132eeda33c2b26cca331a6adfd50519cd29f7
+  version: ad39d7fab7c60b2493fdc318c3d2cdb2128f92a4
   subpackages:
   - internal
   - internal/app_identity
@@ -319,8 +319,6 @@ imports:
   - internal/log
   - internal/modules
   - internal/remote_api
-  - internal/urlfetch
-  - urlfetch
 - name: gopkg.in/AlecAivazis/survey.v1
   version: 9d3458c219bae9653d267883634bdb5375281fd8
   subpackages:
@@ -380,7 +378,7 @@ imports:
 - name: gopkg.in/warnings.v0
   version: ec4a0fea49c7b46c2aeb0b51aac55779c607e52b
 - name: gopkg.in/yaml.v2
-  version: 670d4cfef0544295bc27a114dbac37980d83185a
+  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
 - name: k8s.io/api
   version: 73d903622b7391f3312dcbac6483fed484e185f8
   subpackages:
@@ -413,7 +411,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: ff57e07d715fea4c8b69d1e1356a306d3b582bd3
+  version: 76b8134f2082ae81f4989c709be17587745ef0c0
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -528,11 +526,11 @@ imports:
   - util/jsonpath
   - util/retry
 - name: k8s.io/code-generator
-  version: a9a9141027a9e4b47e915a91401df91ef7fa583b
+  version: 3541780c0c718ff0c54cadd8401bfd6402886100
 - name: k8s.io/gengo
   version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
 - name: k8s.io/helm
-  version: c574e03ed457ebb1bb1da8cde8db5c550f0c800f
+  version: 531deec220a2b7dc748e86f760a08248e6f39527
   subpackages:
   - pkg/chartutil
   - pkg/ignore

@@ -8,8 +8,7 @@ import (
 func CreateFrom(dest, src string) error {
 	pack, err := FromDir(src)
 	if err != nil {
-		return fmt.Errorf("could not load %s: %s", src, err)
+		return fmt.Errorf("could not load pack: %s\nTry running:\n\t$ draft pack-repo update", err)
 	}
-
 	return pack.SaveDir(dest)
 }

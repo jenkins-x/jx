@@ -45,6 +45,8 @@ type PullRequest struct {
 	Created *time.Time `json:"created_at"`
 	// swagger:strfmt date-time
 	Updated *time.Time `json:"updated_at"`
+	// swagger:strfmt date-time
+	Closed *time.Time `json:"closed_at"`
 }
 
 // PRBranchInfo information about a branch

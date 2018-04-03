@@ -422,6 +422,23 @@ func (b *BitbucketProvider) MergePullRequest(pr *GitPullRequest, message string)
 }
 
 func (b *BitbucketProvider) CreateWebHook(data *GitWebHookArguments) error {
+
+	options := map[string]interface{}{
+		"body": map[string]interface{}{
+			"url":    data.URL,
+			"active": true,
+		},
+	}
+	_, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugHooksPost(
+		b.Context,
+		b.Username,
+		data.Repo,
+		options,
+	)
+
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

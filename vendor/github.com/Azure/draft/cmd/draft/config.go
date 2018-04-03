@@ -32,14 +32,13 @@ func ReadConfig() (DraftConfig, error) {
 	if _, err := toml.DecodeReader(f, &data); err != nil {
 		return nil, fmt.Errorf("Could not decode config %s: %s", h.Config(), err)
 	}
-
 	return data, nil
 }
 
 // SaveConfig saves global configuration to $DRAFT_HOME/config.toml
 func SaveConfig(data DraftConfig) error {
 	h := draftpath.Home(draftHome)
-	f, err := os.OpenFile(h.Config(), os.O_WRONLY|os.O_CREATE, 0644)
+	f, err := os.OpenFile(h.Config(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("Could not open file %s: %s", h.Config(), err)
 	}

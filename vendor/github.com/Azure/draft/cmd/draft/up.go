@@ -23,13 +23,8 @@ import (
 )
 
 const upDesc = `
-This command archives the current directory into a tar archive and uploads it to
-the draft server.
-
-Adding the "watch" option to draft.toml makes draft automatically archive and
-upload whenever local files are saved. Draft delays a couple seconds to ensure
-that changes have stopped before uploading, but that can be altered by the
-"watch-delay" option.
+This command builds a container image using Docker, pushes it to a container registry
+and then instructs helm to install the chart, referencing the image just built.
 `
 
 const (
@@ -85,7 +80,7 @@ func newUpCmd(out io.Writer) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "up [path]",
-		Short: "upload the current directory to the draft server for deployment",
+		Short: "build and push Docker image, then install the Helm chart, referencing the image just built",
 		Long:  upDesc,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			rootCmd.PersistentPreRunE(c, args)

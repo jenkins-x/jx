@@ -12,11 +12,10 @@ import (
 const versionDesc = `
 Show the version for draft.
 
-This prints the client and server versions of draft. The output will look something like
+This prints the version of the draft client. The output will look something like
 this:
 
 Client: &version.Version{SemVer:"v0.1.0", GitCommit:"4f97233d2cc2c7017b07f94211e55bb2670f990d", GitTreeState:"clean"}
-Server: &version.Version{SemVer:"v0.1.0", GitCommit:"4f97233d2cc2c7017b07f94211e55bb2670f990d", GitTreeState:"clean"}
 `
 
 type versionCmd struct {
