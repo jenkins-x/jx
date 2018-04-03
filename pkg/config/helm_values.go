@@ -23,13 +23,19 @@ type JenkinsValuesConfig struct {
 }
 
 type JenkinsServersValuesConfig struct {
-	Gitea []JenkinsGiteaServersValuesConfig `yaml:"Gitea,omitempty"`
+	Gitea []JenkinsGiteaServersValuesConfig  `yaml:"Gitea,omitempty"`
+	GHE   []JenkinsGithubServersValuesConfig `yaml:"GHE,omitempty"`
 }
 
 type JenkinsGiteaServersValuesConfig struct {
 	Name       string `yaml:"Name,omitempty"`
 	Url        string `yaml:"Url,omitempty"`
 	Credential string `yaml:"Credential,omitempty"`
+}
+
+type JenkinsGithubServersValuesConfig struct {
+	Name string `yaml:"Name,omitempty"`
+	Url  string `yaml:"Url,omitempty"`
 }
 
 type HelmValuesConfig struct {

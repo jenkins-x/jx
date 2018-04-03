@@ -42,13 +42,13 @@ func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvide
 	if IsGitHubServerURL(u) {
 		provider.Client = github.NewClient(tc)
 	} else {
-		u = githubEnterpriseURL(u)
+		u = GitHubEnterpriseApiEndpointURL(u)
 		provider.Client, err = github.NewEnterpriseClient(u, u, tc)
 	}
 	return &provider, err
 }
 
-func githubEnterpriseURL(u string) string {
+func GitHubEnterpriseApiEndpointURL(u string) string {
 	// lets ensure we use the API endpoint to login
 	if strings.Index(u, "/api/") < 0 {
 		u = util.UrlJoin(u, "/api/v3/")
@@ -63,7 +63,7 @@ func (p *GitHubProvider) GetEnterpriseApiURL() string {
 	if IsGitHubServerURL(u) {
 		return ""
 	}
-	return githubEnterpriseURL(u)
+	return GitHubEnterpriseApiEndpointURL(u)
 }
 
 func IsGitHubServerURL(u string) bool {
