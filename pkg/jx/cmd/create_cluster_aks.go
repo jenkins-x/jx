@@ -13,6 +13,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"time"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -227,29 +228,17 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	}
 
 	/**
+	 * create a cluster admin role
+	 */
 
-	//create Container Registry on azure
-	registryName := resourceName + "Registry"+randomdata.StringNumber(2,"")
-
-	installContainerRegistry := []string{"acr","create","--resource-group",resourceName,"--name",registryName,"--sku Basic"}
-
-	err = o.runCommand("az",installContainerRegistry...)
-
+	err = o.retry(3, 10*time.Second, func() (err error) {
+		err = o.runCommand("kubectl", "create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
+		return
+	})
 	if err != nil {
 		return err
 	}
 
-	//login to the registry
-
-	loginRegistry := []string{"acr","login","--name",registryName}
-
-	err = o.runCommand("az",loginRegistry...)
-
-	if err != nil {
-		return err
-	}
-
-	**/
 
 	return o.initAndInstall(AKS)
 }
