@@ -11,8 +11,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
-// ImportProject imports a MultiBranchProject into Jeknins for the given git URL
-func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService, isEnvironment bool) error {
+// ImportProject imports a MultiBranchProject into Jenkins for the given git URL
+func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService, isEnvironment bool, batchMode bool) error {
 	if gitURL == "" {
 		return fmt.Errorf("No Git repository URL found!")
 	}
@@ -68,7 +68,7 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir st
 				u = gitInfo.Host
 			}
 		}
-		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", false)
+		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", batchMode)
 		if err != nil {
 			return err
 		}

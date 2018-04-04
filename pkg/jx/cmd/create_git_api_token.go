@@ -122,7 +122,7 @@ func (o *CreateGitTokenOptions) Run() error {
 		userAuth.ApiToken = o.ApiToken
 	}
 
-	tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL)
+	tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL, userAuth.Username)
 
 	if userAuth.IsInvalid() && o.Password != "" {
 		err := o.tryFindAPITokenFromBrowser(tokenUrl, userAuth)
@@ -132,11 +132,16 @@ func (o *CreateGitTokenOptions) Run() error {
 	}
 
 	if userAuth.IsInvalid() {
-		o.Printf("Please generate an API Token for server %s\n", server.Label())
-		o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
-		o.Printf("Then COPY the token and enter in into the form below:\n\n")
+		f := func(username string) error {
+			tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL, username)
 
-		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode)
+			o.Printf("Please generate an API Token for server %s\n", server.Label())
+			o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
+			o.Printf("Then COPY the token and enter in into the form below:\n\n")
+			return nil
+		}
+
+		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f)
 		if err != nil {
 			return err
 		}

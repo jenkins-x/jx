@@ -139,7 +139,7 @@ func (c *AuthConfig) GetOrCreateServerName(url string, name string, kind string)
 	return s
 }
 
-func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
+func (c *AuthConfig) PickServer(message string, batchMode bool) (*AuthServer, error) {
 	if c.Servers == nil || len(c.Servers) == 0 {
 		return nil, fmt.Errorf("No servers available!")
 	}
@@ -152,13 +152,17 @@ func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
 	}
 	url := ""
 	if len(urls) > 1 {
-		prompt := &survey.Select{
-			Message: message,
-			Options: urls,
-		}
-		err := survey.AskOne(prompt, &url, survey.Required)
-		if err != nil {
-			return nil, err
+		if batchMode {
+			url = c.CurrentServer
+		} else {
+			prompt := &survey.Select{
+				Message: message,
+				Options: urls,
+			}
+			err := survey.AskOne(prompt, &url, survey.Required)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	for _, s := range c.Servers {
@@ -224,8 +228,10 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 	return &UserAuth{}, nil
 }
 
+type PrintUserFn func(username string) error
+
 // EditUserAuth Lets the user input/edit the user auth
-func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser, batchMode bool) error {
+func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser, batchMode bool, fn PrintUserFn) error {
 	// default the user name if its empty
 	defaultUsername := config.DefaultUsername
 	if defaultUsername == "" {
@@ -244,26 +250,22 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 		}
 		return nil
 	}
-	var qs = []*survey.Question{}
+	var err error
 
 	if editUser || auth.Username == "" {
-		qs = append(qs, &survey.Question{
-			Name: "username",
-			Prompt: &survey.Input{
-				Message: serverLabel + " user name:",
-				Default: auth.Username,
-			},
-			Validate: survey.Required,
-		})
+		auth.Username, err = util.PickValue(serverLabel+" user name:", auth.Username, true)
+		if err != nil {
+			return err
+		}
 	}
-	qs = append(qs, &survey.Question{
-		Name: "apiToken",
-		Prompt: &survey.Password{
-			Message: "API Token:",
-		},
-		Validate: survey.Required,
-	})
-	return survey.Ask(qs, auth)
+	if fn != nil {
+		err := fn(auth.Username)
+		if err != nil {
+			return err
+		}
+	}
+	auth.ApiToken, err = util.PickPassword("API Token:")
+	return err
 }
 
 func (config *AuthConfig) GetServerNames() []string {

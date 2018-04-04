@@ -389,8 +389,8 @@ func GetCurrentGitTagSHA(dir string) (string, error) {
 	return util.GetCommandOutput(dir, "git", "rev-list", "--tags", "--max-count=1")
 }
 
-func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, o io.Writer) {
-	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL)
+func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
+	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL, username)
 
 	fmt.Fprintf(o, "To be able to create a repository on %s we need an API Token\n", server.Label())
 	fmt.Fprintf(o, "Please click this URL %s\n\n", util.ColorInfo(tokenUrl))

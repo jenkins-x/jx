@@ -51,6 +51,7 @@ type InstallFlags struct {
 	Timeout                  string
 	RegisterLocalHelmRepo    bool
 	CleanupTempFiles         bool
+	EnvironmentGitOwner      string
 }
 
 type Secrets struct {
@@ -183,6 +184,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
+	cmd.Flags().StringVarP(&flags.EnvironmentGitOwner, "environment-git-owner", "", "", "The git provider organisation to create the environment git repositories in")
 	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 
@@ -388,7 +390,11 @@ func (options *InstallOptions) Run() error {
 		options.CreateEnvOptions.Options.Name = "staging"
 		options.CreateEnvOptions.Options.Spec.Label = "Staging"
 		options.CreateEnvOptions.Options.Spec.Order = 100
+		options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
 		options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
+		if options.BatchMode {
+			options.CreateEnvOptions.BatchMode = options.BatchMode
+		}
 
 		err = options.CreateEnvOptions.Run()
 		if err != nil {
@@ -399,6 +405,10 @@ func (options *InstallOptions) Run() error {
 		options.CreateEnvOptions.Options.Spec.Order = 200
 		options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
 		options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
+		options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
+		if options.BatchMode {
+			options.CreateEnvOptions.BatchMode = options.BatchMode
+		}
 
 		err = options.CreateEnvOptions.Run()
 		if err != nil {
@@ -463,14 +473,18 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "repository already exists") {
-			confirm := &survey.Confirm{
-				Message: "A local Jenkins X cloud environments repository already exists, recreate with latest?",
-				Default: true,
-			}
 			flag := false
-			err := survey.AskOne(confirm, &flag, nil)
-			if err != nil {
-				return err
+			if o.BatchMode {
+				flag = true
+			} else {
+				confirm := &survey.Confirm{
+					Message: "A local Jenkins X cloud environments repository already exists, recreate with latest?",
+					Default: true,
+				}
+				err := survey.AskOne(confirm, &flag, nil)
+				if err != nil {
+					return err
+				}
 			}
 			if flag {
 				err := os.RemoveAll(wrkDir)
@@ -597,7 +611,7 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 	if gitProvider != "" {
 		server = config.GetOrCreateServer(gitProvider)
 	} else {
-		server, err = config.PickServer("Which git provider?")
+		server, err = config.PickServer("Which git provider?", o.BatchMode)
 		if err != nil {
 			return userAuth, err
 		}
@@ -612,11 +626,14 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 		return userAuth, err
 	}
 	if userAuth.IsInvalid() {
-		gits.PrintCreateRepositoryGenerateAccessToken(server, o.Out)
+		f := func(username string) error {
+			gits.PrintCreateRepositoryGenerateAccessToken(server, username, o.Out)
+			return nil
+		}
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false, o.BatchMode)
+		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false, o.BatchMode, f)
 		if err != nil {
 			return userAuth, err
 		}

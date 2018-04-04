@@ -141,10 +141,13 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	if userAuth.IsInvalid() {
-		jenkins.PrintGetTokenFromURL(o.Out, tokenUrl)
-		o.Printf("Then COPY the token and enter in into the form below:\n\n")
+		f := func(username string) error {
+			jenkins.PrintGetTokenFromURL(o.Out, tokenUrl)
+			o.Printf("Then COPY the token and enter in into the form below:\n\n")
+			return nil
+		}
 
-		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode)
+		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode, f)
 		if err != nil {
 			return err
 		}
