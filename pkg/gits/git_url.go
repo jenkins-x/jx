@@ -63,7 +63,8 @@ func (i *GitRepositoryInfo) HostURL() string {
 		if u != "" {
 			u2, err := url.Parse(u)
 			if err != nil {
-				fmt.Printf("WARNING: could not parse URL: %s due to %s\n", u, err)
+				// probably a git@ URL
+				return "https://" + answer
 			}
 			s := u2.Scheme
 			if s != "" {
