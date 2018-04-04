@@ -223,11 +223,11 @@ func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, 
 	}
 }
 
-func ProviderAccessTokenURL(kind string, url string) string {
+func ProviderAccessTokenURL(kind string, url string, username string) string {
 	switch kind {
 	case "bitbucket":
 		// TODO pass in the username
-		return BitbucketAccessTokenURL(url, "TODO")
+		return BitbucketAccessTokenURL(url, username)
 	case "gitea":
 		return GiteaAccessTokenURL(url)
 	default:
