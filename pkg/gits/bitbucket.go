@@ -70,7 +70,7 @@ func (b *BitbucketProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return teams, nil
 }
 
-func repoFromRepo(bRepo bitbucket.Repository) *GitRepository {
+func BitbucketRepositoryToGitRepository(bRepo bitbucket.Repository) *GitRepository {
 	var sshURL string
 	for _, link := range bRepo.Links.Clone {
 		if link.Name == "ssh" {
@@ -104,7 +104,7 @@ func (b *BitbucketProvider) ListRepositories(org string) ([]*GitRepository, erro
 		}
 
 		for _, repo := range results.Values {
-			repos = append(repos, repoFromRepo(repo))
+			repos = append(repos, BitbucketRepositoryToGitRepository(repo))
 		}
 
 		if results.Next == "" {
@@ -137,7 +137,7 @@ func (b *BitbucketProvider) CreateRepository(
 		return nil, err
 	}
 
-	return repoFromRepo(result), nil
+	return BitbucketRepositoryToGitRepository(result), nil
 }
 
 func (b *BitbucketProvider) GetRepository(
@@ -155,7 +155,7 @@ func (b *BitbucketProvider) GetRepository(
 		return nil, err
 	}
 
-	return repoFromRepo(repo), nil
+	return BitbucketRepositoryToGitRepository(repo), nil
 }
 
 func (b *BitbucketProvider) DeleteRepository(org string, name string) error {
@@ -191,7 +191,7 @@ func (b *BitbucketProvider) ForkRepository(
 		return nil, err
 	}
 
-	return repoFromRepo(repo), nil
+	return BitbucketRepositoryToGitRepository(repo), nil
 }
 
 func (b *BitbucketProvider) RenameRepository(
@@ -215,7 +215,7 @@ func (b *BitbucketProvider) RenameRepository(
 		return nil, err
 	}
 
-	return repoFromRepo(repo), nil
+	return BitbucketRepositoryToGitRepository(repo), nil
 }
 
 func (b *BitbucketProvider) ValidateRepositoryName(org string, name string) error {
