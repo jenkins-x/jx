@@ -149,7 +149,7 @@ func (suite *BitbucketProviderTestSuite) TestValidateRepositoryName() {
 
 	err = suite.provider.ValidateRepositoryName(suite.provider.Username, "foo-repo")
 
-	suite.Require().NotNil(err)
+	suite.Require().Nil(err)
 }
 
 func (suite *BitbucketProviderTestSuite) TestRenameRepository() {
