@@ -159,4 +159,17 @@ lint: vendor | $(PKGS) $(GOLINT) # ❷
 	    test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
 	done ; exit $$ret
 
+.PHONY: vet
+vet: tools.govet
+	@echo "--> checking code correctness with 'go vet' tool"
+	@go vet ./...
+
+
+tools.govet:
+	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
+		echo "--> installing govet"; \
+		go get golang.org/x/tools/cmd/vet; \
+	fi
+
+
 

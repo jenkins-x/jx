@@ -181,7 +181,6 @@ func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient *version
 
 	// Wait forever
 	select {}
-	return nil
 }
 
 func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlSpecMap map[string]string) {
