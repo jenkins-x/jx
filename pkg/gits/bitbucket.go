@@ -119,7 +119,7 @@ func (b *BitbucketProvider) CreateRepository(
 	private bool,
 ) (*GitRepository, error) {
 
-	var options map[string]interface{}
+	options := map[string]interface{}{}
 	options["body"] = bitbucket.Repository{
 		IsPrivate: private,
 	}
@@ -218,11 +218,15 @@ func (b *BitbucketProvider) RenameRepository(
 
 func (b *BitbucketProvider) ValidateRepositoryName(org string, name string) error {
 
-	_, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(
+	_, r, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(
 		b.Context,
 		b.Username,
 		name,
 	)
+
+	if r.StatusCode == 404 {
+		return nil
+	}
 
 	if err == nil {
 		return fmt.Errorf("repository %s/%s already exists", b.Username, name)
@@ -504,4 +508,12 @@ func (b *BitbucketProvider) Label() string {
 
 func (b *BitbucketProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
 	return nil
+}
+
+func BitbucketAccessTokenURL(url string, username string) string {
+	// TODO with github we can default the scopes/flags we need on a token via adding
+	// ?scopes=repo,read:user,user:email,write:repo_hook
+	//
+	// is there a way to do that for bitbucket?
+	return util.UrlJoin(url, "/account/user", username, "/app-passwords/new")
 }

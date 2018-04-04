@@ -24,7 +24,6 @@ func GetResourceGrouoLocation() []string {
 		"westindia",
 		"westus",
 		"westus2",
-
 	}
 }
 

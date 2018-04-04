@@ -1,7 +1,6 @@
 package kube
 
 import (
-
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"k8s.io/api/core/v1"
@@ -11,8 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 )
-
-
 
 type NodeStatus struct {
 	Name                      string
@@ -40,22 +37,21 @@ type ClusterStatus struct {
 	totalAllocatedCpu    resource.Quantity
 }
 
-
 func GetClusterStatus(client *kubernetes.Clientset, namespace string) (ClusterStatus, error) {
 
 	clusterStatus := ClusterStatus{
-		totalAllocatedCpu:resource.Quantity{},
-		totalAllocatedMemory:resource.Quantity{},
+		totalAllocatedCpu:    resource.Quantity{},
+		totalAllocatedMemory: resource.Quantity{},
 	}
 
 	config, _, err := LoadConfig()
 	if err != nil {
-		return clusterStatus,err
+		return clusterStatus, err
 	}
 
 	if config != nil {
 		context := CurrentContext(config)
-		if context != nil  {
+		if context != nil {
 			clusterStatus.Name = context.Cluster
 		}
 	}
@@ -128,7 +124,6 @@ func (clusterStatus *ClusterStatus) Info() string {
 		clusterStatus.totalAllocatedCpu.String())
 	return str
 }
-
 
 func Status(client *kubernetes.Clientset, namespace string, node v1.Node) (NodeStatus, error) {
 

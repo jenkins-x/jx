@@ -75,8 +75,8 @@ func NewCmdDeleteRepo(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 	cmd.Flags().StringArrayVarP(&options.Repositories, "name", "n", []string{}, "Specify the git repository names to delete")
 	cmd.Flags().StringVarP(&options.GitHost, "git-host", "g", "", "The Git server host if not using GitHub")
 	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wis to pick the repositories from GitHub to import")
-	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a git provider this defaults to selecting them all")
-	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a git provider this filters the list of repositories")
+	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "If selecting projects to import from a git provider this defaults to selecting them all")
+	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "If selecting projects to import from a git provider this filters the list of repositories")
 	return cmd
 }
 

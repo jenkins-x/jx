@@ -47,15 +47,16 @@ func EnsureGitServiceExistsForHost(jxClient *versioned.Clientset, devNs string, 
 		if err != nil {
 			return fmt.Errorf("No name supplied and could not parse URL %s due to %s", u, err)
 		}
-		name = ToValidNameWithDots(u.Host)
+		name = u.Host
 	}
 
 	// not found so lets create a new GitService
 	gitSvc := &v1.GitService{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name: ToValidNameWithDots(name),
 		},
 		Spec: v1.GitServiceSpec{
+			Name:    name,
 			URL:     gitUrl,
 			GitKind: kind,
 		},

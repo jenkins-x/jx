@@ -2,9 +2,9 @@ package gits
 
 import (
 	"context"
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/xanzy/go-gitlab"
-	"fmt"
 )
 
 type GitlabProvider struct {

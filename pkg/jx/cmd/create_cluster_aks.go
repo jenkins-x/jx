@@ -232,22 +232,21 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	err = o.createClusterAdmin()
 	if err != nil {
-		msg :=err.Error()
-		if strings.Contains(msg,"AlreadyExists"){
+		msg := err.Error()
+		if strings.Contains(msg, "AlreadyExists") {
 			log.Success("role cluster-admin already exists for the cluster")
 
-		}else {
+		} else {
 			return err
 		}
-	}else{
+	} else {
 		log.Success("created role cluster-admin")
 	}
-
 
 	return o.initAndInstall(AKS)
 }
 
-func (o *CreateClusterAKSOptions)createClusterAdmin() error {
+func (o *CreateClusterAKSOptions) createClusterAdmin() error {
 
 	content := []byte(
 		`apiVersion: rbac.authorization.k8s.io/v1
@@ -270,7 +269,7 @@ rules:
   - '*'`)
 
 	fileName := randomdata.SillyName() + ".yml"
-	fileName = filepath.Join(os.TempDir(),fileName)
+	fileName = filepath.Join(os.TempDir(), fileName)
 	tmpfile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
 		return err
@@ -286,11 +285,11 @@ rules:
 	}
 
 	err = o.runCommand("kubectl", "create", "clusterrolebinding", "kube-system-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
-	if err != nil{
+	if err != nil {
 		return err
 	}
-	err = o.runCommand("kubectl", "create","-f", tmpfile.Name())
-	if err != nil{
+	err = o.runCommand("kubectl", "create", "-f", tmpfile.Name())
+	if err != nil {
 		return err
 	}
 	return nil
