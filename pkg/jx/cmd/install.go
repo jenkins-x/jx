@@ -601,6 +601,7 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 		if err != nil {
 			return userAuth, err
 		}
+		o.GitRepositoryOptions.ServerURL = server.URL
 	}
 	url := server.URL
 	if message == "" {

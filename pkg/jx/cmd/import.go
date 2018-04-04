@@ -402,7 +402,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	dir := o.Dir
 	_, defaultRepoName := filepath.Split(dir)
 
-	details, err := gits.PickNewGitRepository(o.Out, o.BatchMode, authConfigSvc, defaultRepoName, o.GitRepositoryOptions, o.GitServer, o.GitUserAuth)
+	details, err := gits.PickNewGitRepository(o.Out, o.BatchMode, authConfigSvc, defaultRepoName, &o.GitRepositoryOptions, o.GitServer, o.GitUserAuth)
 	if err != nil {
 		return err
 	}
