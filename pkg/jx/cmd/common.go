@@ -197,6 +197,11 @@ func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, 
 		return "", err
 	}
 
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return "", err
+	}
+
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
 	if err != nil {
 		return "", err
@@ -206,7 +211,7 @@ func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, 
 		return "", err
 	}
 
-	return kube.GetGitServiceKind(jxClient, devNs, gitInfo.Host)
+	return kube.GetGitServiceKind(jxClient, kubeClient, devNs, gitInfo.HostURL())
 }
 
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
