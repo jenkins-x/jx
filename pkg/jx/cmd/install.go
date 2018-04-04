@@ -265,6 +265,17 @@ func (options *InstallOptions) Run() error {
 	if domain != "" && addon.IsAddonEnabled("gitea") {
 		helmConfig.Jenkins.Servers.GetOrCreateFirstGitea().Url = "http://gitea-gitea." + ns + "." + domain
 	}
+
+	// lets add any GitHub Enterprise servers
+	gitAuthCfg, err := options.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return err
+	}
+	err = options.addGitServersToJenkinsConfig(helmConfig, gitAuthCfg)
+	if err != nil {
+		return err
+	}
+
 	config, err := helmConfig.String()
 	if err != nil {
 		return err
@@ -590,6 +601,7 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 		if err != nil {
 			return userAuth, err
 		}
+		o.GitRepositoryOptions.ServerURL = server.URL
 	}
 	url := server.URL
 	if message == "" {
@@ -640,4 +652,21 @@ func (o *InstallOptions) installAddon(name string) error {
 		return giteaOptions.Run()
 	}
 	return options.CreateAddon(name)
+}
+
+func (o *InstallOptions) addGitServersToJenkinsConfig(helmConfig *config.HelmValuesConfig, gitAuthCfg auth.AuthConfigService) error {
+	cfg := gitAuthCfg.Config()
+	for _, server := range cfg.Servers {
+		if server.Kind == "github" {
+			u := server.URL
+			if !gits.IsGitHubServerURL(u) {
+				sc := config.JenkinsGithubServersValuesConfig{
+					Name: server.Name,
+					Url:  gits.GitHubEnterpriseApiEndpointURL(u),
+				}
+				helmConfig.Jenkins.Servers.GHE = append(helmConfig.Jenkins.Servers.GHE, sc)
+			}
+		}
+	}
+	return nil
 }

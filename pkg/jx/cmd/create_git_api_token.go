@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/url"
 	"strings"
-
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -314,12 +313,6 @@ func (o *CreateGitTokenOptions) ensureGitServiceCRD(server *auth.AuthServer) err
 	if kind == "" || kind == "github" || server.URL == "" {
 		return nil
 	}
-	u, err := url.Parse(server.URL)
-	if err != nil {
-		return fmt.Errorf("Could not parse server URL %s: %s", server.URL, err)
-	}
-
-	host := u.Host
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
 	if err != nil {
 		return err
@@ -333,5 +326,5 @@ func (o *CreateGitTokenOptions) ensureGitServiceCRD(server *auth.AuthServer) err
 	if err != nil {
 		return err
 	}
-	return kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, host, o.Out)
+	return kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, server.Name, server.URL, o.Out)
 }

@@ -19,11 +19,14 @@ const (
 	// ServiceKubernetesDashboard the kubernetes dashboard
 	ServiceKubernetesDashboard = "jenkins-x-kubernetes-dashboard"
 
-	// the git credentials secret
+	// SecretJenkinsGitCredentials the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
 
-	// the issue tracker credentials secret
+	// SecretJenkinsIssueCredentials the issue tracker credentials secret
 	SecretJenkinsIssueCredentials = "jenkins-issues-"
+
+	// ConfigMapJenkinsXGitKinds the name of the ConfigMap in the development namespace that maps kinds to URLs
+	ConfigMapJenkinsXGitKinds = "jenkins-x-git-kinds"
 
 	// LocalHelmRepoName is the default name of the local chart repository where CI / CD releases go to
 	LocalHelmRepoName = "releases"

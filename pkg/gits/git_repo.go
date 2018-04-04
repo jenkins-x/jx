@@ -35,7 +35,7 @@ func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 	return d.GitProvider.CreateRepository(d.Organisation, d.RepoName, d.PrivateRepo)
 }
 
-func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string, repoOptions GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth) (*CreateRepoData, error) {
+func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string, repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth) (*CreateRepoData, error) {
 	config := authConfigSvc.Config()
 
 	var err error
@@ -47,6 +47,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 			if err != nil {
 				return nil, err
 			}
+			repoOptions.ServerURL = server.URL
 		}
 	}
 	fmt.Fprintf(out, "Using git provider %s\n", util.ColorInfo(server.Description()))

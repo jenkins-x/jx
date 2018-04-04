@@ -390,7 +390,7 @@ type GitService struct {
 // GitServiceSpec is the specification of an GitService
 type GitServiceSpec struct {
 	GitKind string `json:"gitKind,omitempty" protobuf:"bytes,1,opt,name=gitKind"`
-	Host    string `json:"host,omitempty" protobuf:"bytes,2,opt,name=host"`
+	URL     string `json:"url,omitempty" protobuf:"bytes,2,opt,name=host"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

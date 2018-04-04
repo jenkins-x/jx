@@ -51,9 +51,18 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
 `
 	}
 	if gitProvider.IsGitHub() {
+		serverXml := ""
+		ghp, ok := gitProvider.(*gits.GitHubProvider)
+		if ok {
+			u := ghp.GetEnterpriseApiURL()
+			if u != "" {
+				serverXml = `		  <apiUri>` + u + `</apiUri>
+`
+			}
+		}
 		return `
 	    <source class="org.jenkinsci.plugins.github_branch_source.GitHubSCMSource" plugin="github-branch-source@2.3.1">
-		  <id>b50ee5d4-cb45-42de-9140-d79330bab9ac</id>` + credXml + `
+		  <id>b50ee5d4-cb45-42de-9140-d79330bab9ac</id>` + credXml + serverXml + `
 		  <repoOwner>` + info.Organisation + `</repoOwner>
 		  <repository>` + info.Name + `</repository>
 		  <traits>

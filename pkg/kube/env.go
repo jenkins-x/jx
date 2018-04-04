@@ -27,7 +27,7 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, kubeClient *kubernetes.Clientset, envDir string, gitRepoOptions gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (gits.GitProvider, error) {
+func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, kubeClient *kubernetes.Clientset, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	name := data.Name
 	createMode := name == ""
@@ -328,7 +328,7 @@ func getTeamExposecontrollerConfig(kubeClient *kubernetes.Clientset, ns string) 
 	return m, nil
 }
 
-func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string, gitRepoOptions gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (string, gits.GitProvider, error) {
+func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (string, gits.GitProvider, error) {
 
 	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
 	details, err := gits.PickNewGitRepository(out, batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil)

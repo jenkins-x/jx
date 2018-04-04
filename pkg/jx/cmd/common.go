@@ -62,7 +62,7 @@ func (f *ServerFlags) IsEmpty() bool {
 }
 
 func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitRepositoryOptions) {
-	cmd.Flags().StringVarP(&repositoryOptions.ServerURL, "git-provider-url", "", "https://github.com", "The git server URL to create new git repositories inside")
+	cmd.Flags().StringVarP(&repositoryOptions.ServerURL, "git-provider-url", "", "", "The git server URL to create new git repositories inside")
 	cmd.Flags().StringVarP(&repositoryOptions.Username, "git-username", "", "", "The git username to use for creating new git repositories")
 	cmd.Flags().StringVarP(&repositoryOptions.ApiToken, "git-api-token", "", "", "The git API token to use for creating new git repositories")
 }
@@ -197,6 +197,11 @@ func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, 
 		return "", err
 	}
 
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return "", err
+	}
+
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
 	if err != nil {
 		return "", err
@@ -206,7 +211,7 @@ func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, 
 		return "", err
 	}
 
-	return kube.GetGitServiceKind(jxClient, devNs, gitInfo.Host)
+	return kube.GetGitServiceKind(jxClient, kubeClient, devNs, gitInfo.HostURL())
 }
 
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
