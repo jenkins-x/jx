@@ -36,13 +36,29 @@ type ClusterStatus struct {
 	totalMemPercent      float64
 	totalUsedMemory      int
 	totalUsedCpu         int
-	totalAllocatedMemory int
-	totalAllocatedCpu    int
+	totalAllocatedMemory resource.Quantity
+	totalAllocatedCpu    resource.Quantity
 }
+
 
 func GetClusterStatus(client *kubernetes.Clientset, namespace string) (ClusterStatus, error) {
 
-	clusterStatus := ClusterStatus{}
+	clusterStatus := ClusterStatus{
+		totalAllocatedCpu:resource.Quantity{},
+		totalAllocatedMemory:resource.Quantity{},
+	}
+
+	config, _, err := LoadConfig()
+	if err != nil {
+		return clusterStatus,err
+	}
+
+	if config != nil {
+		context := CurrentContext(config)
+		if context != nil  {
+			clusterStatus.Name = context.Cluster
+		}
+	}
 
 	nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{})
 
@@ -63,13 +79,17 @@ func GetClusterStatus(client *kubernetes.Clientset, namespace string) (ClusterSt
 		}
 		clusterStatus.totalCpuPercent += float64(nodeStatus.percentCpuReq)
 		clusterStatus.totalMemPercent += float64(nodeStatus.percentMemReq)
-		clusterStatus.totalAllocatedMemory += nodeStatus.AllocatedMemory.Size()
-		clusterStatus.totalAllocatedCpu += nodeStatus.AllocatedCPU.Size()
+		clusterStatus.totalAllocatedMemory.Add(*nodeStatus.AllocatedMemory)
+		clusterStatus.totalAllocatedCpu.Add(*nodeStatus.AllocatedCPU)
 		clusterStatus.totalUsedCpu += nodeStatus.CpuReqs.Size()
 		clusterStatus.totalUsedMemory += nodeStatus.MemReqs.Size()
-	}
 
+	}
 	return clusterStatus, nil
+}
+
+func (clusterStatus *ClusterStatus) MinimumResourceLimit() int {
+	return 80
 }
 
 func (clusterStatus *ClusterStatus) AverageCpuPercent() int {
@@ -88,16 +108,27 @@ func (clusterStatus *ClusterStatus) AverageMemPercent() int {
 
 func (clusterStatus *ClusterStatus) CheckResource() bool {
 	passed := true
-	if clusterStatus.AverageMemPercent() >= 80 {
+	if clusterStatus.AverageMemPercent() >= clusterStatus.MinimumResourceLimit() {
 		log.Warnf("cluster is running at %d%% of memory - you need more resources\n", clusterStatus.AverageMemPercent())
 		passed = false
 	}
-	if clusterStatus.AverageCpuPercent() >= 80 {
+	if clusterStatus.AverageCpuPercent() >= clusterStatus.MinimumResourceLimit() {
 		log.Warnf("cluster is running at %d%% of cpu - you need more resources\n", clusterStatus.AverageMemPercent())
 		passed = false
 	}
 	return passed
 }
+
+func (clusterStatus *ClusterStatus) Info() string {
+	str := fmt.Sprintf("Cluster(%s): memory %d%% of %s, cpu %d%% of %s",
+		clusterStatus.Name,
+		clusterStatus.AverageMemPercent(),
+		clusterStatus.totalAllocatedMemory.String(),
+		clusterStatus.AverageCpuPercent(),
+		clusterStatus.totalAllocatedCpu.String())
+	return str
+}
+
 
 func Status(client *kubernetes.Clientset, namespace string, node v1.Node) (NodeStatus, error) {
 
