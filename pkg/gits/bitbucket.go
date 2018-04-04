@@ -509,3 +509,11 @@ func (b *BitbucketProvider) Label() string {
 func (b *BitbucketProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
 	return nil
 }
+
+func BitbucketAccessTokenURL(url string, username string) string {
+	// TODO with github we can default the scopes/flags we need on a token via adding
+	// ?scopes=repo,read:user,user:email,write:repo_hook
+	//
+	// is there a way to do that for bitbucket?
+	return util.UrlJoin(url, "/account/user", username, "/app-passwords/new")
+}
