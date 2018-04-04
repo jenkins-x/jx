@@ -131,7 +131,7 @@ func (o *EditConfigOptions) EditIssueTracker(pc *config.ProjectConfig) (bool, er
 
 	config := o.IssuesAuthConfigSvc.Config()
 	if len(config.Servers) == 0 {
-		return answer, fmt.Errorf("No issue tracker servers available. Please add one via: jx create tracker server", o.BatchMode)
+		return answer, fmt.Errorf("No issue tracker servers available. Please add one via: jx create tracker server")
 	}
 	server, err := config.PickServer("Issue tracker service", o.BatchMode)
 	if err != nil {
