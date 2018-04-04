@@ -119,7 +119,7 @@ func (b *BitbucketProvider) CreateRepository(
 	private bool,
 ) (*GitRepository, error) {
 
-	var options map[string]interface{}
+	options := map[string]interface{}{}
 	options["body"] = bitbucket.Repository{
 		IsPrivate: private,
 	}
@@ -218,11 +218,15 @@ func (b *BitbucketProvider) RenameRepository(
 
 func (b *BitbucketProvider) ValidateRepositoryName(org string, name string) error {
 
-	_, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(
+	_, r, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(
 		b.Context,
 		b.Username,
 		name,
 	)
+
+	if r.StatusCode == 404 {
+		return nil
+	}
 
 	if err == nil {
 		return fmt.Errorf("repository %s/%s already exists", b.Username, name)
