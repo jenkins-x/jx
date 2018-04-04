@@ -391,6 +391,7 @@ type GitService struct {
 type GitServiceSpec struct {
 	GitKind string `json:"gitKind,omitempty" protobuf:"bytes,1,opt,name=gitKind"`
 	URL     string `json:"url,omitempty" protobuf:"bytes,2,opt,name=host"`
+	Name    string `json:"name,omitempty" protobuf:"bytes,3,opt,name=host"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
