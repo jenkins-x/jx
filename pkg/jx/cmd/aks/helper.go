@@ -3,13 +3,28 @@ package aks
 func GetResourceGrouoLocation() []string {
 
 	return []string{
-		"eastus",
-		"centralus",
+		"australiaeast",
+		"australiasoutheast",
 		"canadacentral",
 		"canadaeast",
-		"southeastasia",
+		"centralindia",
+		"centralus",
+		"centraluseuap",
+		"eastasia",
+		"eastus",
+		"eastus2euap",
+		"japaneast",
+		"japanwest",
+		"koreasouth",
+		"northeurope",
+		"southcentralus",
+		"southindia",
+		"uksouth",
+		"westcentralus",
+		"westindia",
+		"westus",
 		"westus2",
-		"westeurope",
+
 	}
 }
 

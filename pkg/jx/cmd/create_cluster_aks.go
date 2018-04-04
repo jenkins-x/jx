@@ -3,7 +3,6 @@ package cmd
 import (
 	"io"
 	"os"
-
 	"strings"
 
 	"github.com/Pallinder/go-randomdata"
@@ -13,6 +12,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"path/filepath"
 )
 
 // CreateClusterOptions the flags for running crest cluster
@@ -85,7 +85,7 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "cluster-name", "c", "", "Name of the cluster")
 	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "", "location to run cluster in")
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "o", "", "node count")
-	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "1.8.2", "kubernetes version")
+	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "1.9.1", "kubernetes version")
 	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "path-To-public-rsa-key", "k", "", "pathToPublicRSAKey")
 	return cmd
 }
@@ -227,29 +227,71 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	}
 
 	/**
+	 * create a cluster admin role
+	 */
 
-	//create Container Registry on azure
-	registryName := resourceName + "Registry"+randomdata.StringNumber(2,"")
-
-	installContainerRegistry := []string{"acr","create","--resource-group",resourceName,"--name",registryName,"--sku Basic"}
-
-	err = o.runCommand("az",installContainerRegistry...)
-
+	err = o.createClusterAdmin()
 	if err != nil {
-		return err
+		msg :=err.Error()
+		if strings.Contains(msg,"AlreadyExists"){
+			log.Success("role cluster-admin already exists for the cluster")
+
+		}else {
+			return err
+		}
+	}else{
+		log.Success("created role cluster-admin")
 	}
 
-	//login to the registry
-
-	loginRegistry := []string{"acr","login","--name",registryName}
-
-	err = o.runCommand("az",loginRegistry...)
-
-	if err != nil {
-		return err
-	}
-
-	**/
 
 	return o.initAndInstall(AKS)
+}
+
+func (o *CreateClusterAKSOptions)createClusterAdmin() error {
+
+	content := []byte(
+		`apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: cluster-admin
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - '*'`)
+
+	fileName := randomdata.SillyName() + ".yml"
+	fileName = filepath.Join(os.TempDir(),fileName)
+	tmpfile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
+		return err
+	}
+
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	if _, err := tmpfile.Write(content); err != nil {
+		return err
+	}
+	if err := tmpfile.Close(); err != nil {
+		return err
+	}
+
+	err = o.runCommand("kubectl", "create", "clusterrolebinding", "kube-system-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
+	if err != nil{
+		return err
+	}
+	err = o.runCommand("kubectl", "create","-f", tmpfile.Name())
+	if err != nil{
+		return err
+	}
+	return nil
 }
