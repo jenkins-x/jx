@@ -228,8 +228,10 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 	return &UserAuth{}, nil
 }
 
+type PrintUserFn func(username string) error
+
 // EditUserAuth Lets the user input/edit the user auth
-func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser, batchMode bool) error {
+func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser, batchMode bool, fn PrintUserFn) error {
 	// default the user name if its empty
 	defaultUsername := config.DefaultUsername
 	if defaultUsername == "" {
@@ -259,6 +261,12 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 			},
 			Validate: survey.Required,
 		})
+	}
+	if fn != nil {
+		err := fn(auth.Username)
+		if err != nil {
+			return err
+		}
 	}
 	qs = append(qs, &survey.Question{
 		Name: "apiToken",

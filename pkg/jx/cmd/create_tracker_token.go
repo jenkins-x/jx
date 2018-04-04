@@ -104,13 +104,17 @@ func (o *CreateTrackerTokenOptions) Run() error {
 	tokenUrl := issues.ProviderAccessTokenURL(server.Kind, server.URL)
 
 	if userAuth.IsInvalid() {
-		o.Printf("Please generate an API Token for server %s\n", server.Label())
-		if tokenUrl != "" {
-			o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
-		}
-		o.Printf("Then COPY the token and enter in into the form below:\n\n")
 
-		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode)
+		f := func(username string) error {
+			o.Printf("Please generate an API Token for server %s\n", server.Label())
+			if tokenUrl != "" {
+				o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
+			}
+			o.Printf("Then COPY the token and enter in into the form below:\n\n")
+			return nil
+		}
+
+		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f)
 		if err != nil {
 			return err
 		}

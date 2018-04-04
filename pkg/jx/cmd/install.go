@@ -626,8 +626,9 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 		return userAuth, err
 	}
 	if userAuth.IsInvalid() {
-		f := func() {
-			gits.PrintCreateRepositoryGenerateAccessToken(server, userAuth.Username, o.Out)
+		f := func(username string) error {
+			gits.PrintCreateRepositoryGenerateAccessToken(server, username, o.Out)
+			return nil
 		}
 
 		// TODO could we guess this based on the users ~/.git for github?

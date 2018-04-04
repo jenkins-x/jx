@@ -99,13 +99,17 @@ func JenkinsTokenURL(url string) string {
 }
 
 func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool) (jenkauth.UserAuth, error) {
-	fmt.Printf("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
-	fmt.Printf("Please go to %s and click %s to get your API Token\n", util.ColorInfo(tokenUrl), util.ColorInfo("Show API Token"))
-	fmt.Printf("Then COPY the API token so that you can paste it into the form below:\n\n")
+
+	f := func(username string) error {
+		fmt.Printf("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
+		fmt.Printf("Please go to %s and click %s to get your API Token\n", util.ColorInfo(tokenUrl), util.ColorInfo("Show API Token"))
+		fmt.Printf("Then COPY the API token so that you can paste it into the form below:\n\n")
+		return nil
+	}
 
 	defaultUsername := "admin"
 
-	err := config.EditUserAuth("Jenkins", auth, defaultUsername, true, batchMode)
+	err := config.EditUserAuth("Jenkins", auth, defaultUsername, true, batchMode, f)
 	if err != nil {
 		return *auth, err
 	}

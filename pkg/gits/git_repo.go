@@ -81,11 +81,14 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 		userAuth.ApiToken = repoOptions.ApiToken
 	}
 	if userAuth.IsInvalid() {
-		PrintCreateRepositoryGenerateAccessToken(server, userAuth.Username, out)
+		f := func(username string) error {
+			PrintCreateRepositoryGenerateAccessToken(server, username, out)
+			return nil
+		}
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, true, batchMode)
+		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, true, batchMode, f)
 		if err != nil {
 			return nil, err
 		}
