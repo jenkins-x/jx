@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
-	"golang.org/x/oauth2"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/wbrefvem/go-bitbucket"
@@ -26,21 +25,20 @@ type BitbucketProvider struct {
 func NewBitbucketProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	ctx := context.Background()
 
+	basicAuth := bitbucket.BasicAuth{
+		UserName: user.Username,
+		Password: user.ApiToken,
+	}
+	basicAuthContext := context.WithValue(ctx, bitbucket.ContextBasicAuth, basicAuth)
+
 	provider := BitbucketProvider{
 		Server:   *server,
 		User:     *user,
 		Username: user.Username,
-		Context:  ctx,
+		Context:  basicAuthContext,
 	}
 
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: user.ApiToken},
-	)
-	tokenContext := oauth2.NewClient(ctx, tokenSource)
-
 	cfg := bitbucket.NewConfiguration()
-	cfg.HTTPClient = tokenContext
-
 	provider.Client = bitbucket.NewAPIClient(cfg)
 
 	return &provider, nil
@@ -70,7 +68,7 @@ func (b *BitbucketProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return teams, nil
 }
 
-func repoFromRepo(bRepo bitbucket.Repository) *GitRepository {
+func BitbucketRepositoryToGitRepository(bRepo bitbucket.Repository) *GitRepository {
 	var sshURL string
 	for _, link := range bRepo.Links.Clone {
 		if link.Name == "ssh" {
@@ -104,7 +102,7 @@ func (b *BitbucketProvider) ListRepositories(org string) ([]*GitRepository, erro
 		}
 
 		for _, repo := range results.Values {
-			repos = append(repos, repoFromRepo(repo))
+			repos = append(repos, BitbucketRepositoryToGitRepository(repo))
 		}
 
 		if results.Next == "" {
@@ -137,7 +135,7 @@ func (b *BitbucketProvider) CreateRepository(
 		return nil, err
 	}
 
-	return repoFromRepo(result), nil
+	return BitbucketRepositoryToGitRepository(result), nil
 }
 
 func (b *BitbucketProvider) GetRepository(
@@ -155,7 +153,7 @@ func (b *BitbucketProvider) GetRepository(
 		return nil, err
 	}
 
-	return repoFromRepo(repo), nil
+	return BitbucketRepositoryToGitRepository(repo), nil
 }
 
 func (b *BitbucketProvider) DeleteRepository(org string, name string) error {
@@ -191,7 +189,7 @@ func (b *BitbucketProvider) ForkRepository(
 		return nil, err
 	}
 
-	return repoFromRepo(repo), nil
+	return BitbucketRepositoryToGitRepository(repo), nil
 }
 
 func (b *BitbucketProvider) RenameRepository(
@@ -215,7 +213,7 @@ func (b *BitbucketProvider) RenameRepository(
 		return nil, err
 	}
 
-	return repoFromRepo(repo), nil
+	return BitbucketRepositoryToGitRepository(repo), nil
 }
 
 func (b *BitbucketProvider) ValidateRepositoryName(org string, name string) error {
