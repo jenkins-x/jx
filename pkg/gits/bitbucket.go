@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
-	"golang.org/x/oauth2"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/wbrefvem/go-bitbucket"
@@ -26,21 +25,20 @@ type BitbucketProvider struct {
 func NewBitbucketProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	ctx := context.Background()
 
+	basicAuth := bitbucket.BasicAuth{
+		UserName: user.Username,
+		Password: user.ApiToken,
+	}
+	basicAuthContext := context.WithValue(ctx, bitbucket.ContextBasicAuth, basicAuth)
+
 	provider := BitbucketProvider{
 		Server:   *server,
 		User:     *user,
 		Username: user.Username,
-		Context:  ctx,
+		Context:  basicAuthContext,
 	}
 
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: user.ApiToken},
-	)
-	tokenContext := oauth2.NewClient(ctx, tokenSource)
-
 	cfg := bitbucket.NewConfiguration()
-	cfg.HTTPClient = tokenContext
-
 	provider.Client = bitbucket.NewAPIClient(cfg)
 
 	return &provider, nil
