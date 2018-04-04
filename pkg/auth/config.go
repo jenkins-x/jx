@@ -139,7 +139,7 @@ func (c *AuthConfig) GetOrCreateServerName(url string, name string, kind string)
 	return s
 }
 
-func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
+func (c *AuthConfig) PickServer(message string, batchMode bool) (*AuthServer, error) {
 	if c.Servers == nil || len(c.Servers) == 0 {
 		return nil, fmt.Errorf("No servers available!")
 	}
@@ -152,13 +152,17 @@ func (c *AuthConfig) PickServer(message string) (*AuthServer, error) {
 	}
 	url := ""
 	if len(urls) > 1 {
-		prompt := &survey.Select{
-			Message: message,
-			Options: urls,
-		}
-		err := survey.AskOne(prompt, &url, survey.Required)
-		if err != nil {
-			return nil, err
+		if batchMode {
+			url = c.CurrentServer
+		} else {
+			prompt := &survey.Select{
+				Message: message,
+				Options: urls,
+			}
+			err := survey.AskOne(prompt, &url, survey.Required)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	for _, s := range c.Servers {

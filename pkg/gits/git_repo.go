@@ -23,6 +23,7 @@ type GitRepositoryOptions struct {
 	ServerURL string
 	Username  string
 	ApiToken  string
+	Owner     string
 }
 
 // GetRepository returns the repository if it already exists
@@ -43,7 +44,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 		if repoOptions.ServerURL != "" {
 			server = config.GetOrCreateServer(repoOptions.ServerURL)
 		} else {
-			server, err = config.PickServer("Which git service?")
+			server, err = config.PickServer("Which git service?", batchMode)
 			if err != nil {
 				return nil, err
 			}
@@ -80,7 +81,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 		userAuth.ApiToken = repoOptions.ApiToken
 	}
 	if userAuth.IsInvalid() {
-		PrintCreateRepositoryGenerateAccessToken(server, out)
+		PrintCreateRepositoryGenerateAccessToken(server, userAuth.Username, out)
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
@@ -107,13 +108,16 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 	if err != nil {
 		return nil, err
 	}
-	org, err := PickOrganisation(provider, gitUsername)
-	if err != nil {
-		return nil, err
-	}
-	owner := org
-	if org == "" {
-		owner = gitUsername
+	owner := repoOptions.Owner
+	if owner == "" {
+		org, err := PickOrganisation(provider, gitUsername)
+		if err != nil {
+			return nil, err
+		}
+		owner = org
+		if org == "" {
+			owner = gitUsername
+		}
 	}
 	repoName := ""
 	if batchMode {
@@ -144,12 +148,12 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 			return nil, fmt.Errorf("No repository name specified!")
 		}
 	}
-	fullName := GitRepoName(org, repoName)
+	fullName := GitRepoName(owner, repoName)
 	fmt.Fprintf(out, "\n\nCreating repository %s\n", util.ColorInfo(fullName))
 	privateRepo := false
 
 	return &CreateRepoData{
-		Organisation: org,
+		Organisation: owner,
 		RepoName:     repoName,
 		FullName:     fullName,
 		PrivateRepo:  privateRepo,

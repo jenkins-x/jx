@@ -94,7 +94,7 @@ func (o *DeleteRepoOptions) Run() error {
 		if o.GitHost != "" {
 			server = config.GetOrCreateServer(o.GitHost)
 		} else {
-			server, err = config.PickServer("Pick the git server to search for repositories")
+			server, err = config.PickServer("Pick the git server to search for repositories", o.BatchMode)
 			if err != nil {
 				return err
 			}
