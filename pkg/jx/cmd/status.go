@@ -68,7 +68,6 @@ func (o *StatusOptions) Run() error {
 		return err
 	}
 
-
 	/*
 	 * get status for all pods in all namespaces
 	 */
@@ -82,7 +81,7 @@ func (o *StatusOptions) Run() error {
 		return err
 	}
 	if deployList == nil || len(deployList.Items) == 0 {
-		log.Warn("Unable to find JX components in your cluster.")
+		log.Warnf("Unable to find JX components in %s",clusterStatus.Info())
 		log.Info("you could try: " + instalExample + "\n\n")
 		log.Info(instalLong)
 		return fmt.Errorf("no deployments found in namespace %s", namespace)
@@ -91,27 +90,19 @@ func (o *StatusOptions) Run() error {
 	for _, d := range deployList.Items {
 		err = kube.WaitForDeploymentToBeReady(client, d.Name, namespace, 10*time.Second)
 		if err != nil {
-			log.Warnf("jx deployment %s not ready in namespace %s", d.Name, namespace)
+			log.Warnf("%s: jx deployment %s not ready in namespace %s", clusterStatus.Info(),d.Name, namespace)
 		}
 	}
 	if clusterStatus.CheckResource() {
 		jenkinsURL, err := o.findServiceInNamespace("jenkins",namespace)
 		if err !=nil {
-			log.Warnf("cluster: %s has enough resource memory = %d%% cpu = %d%% but Jenkins not found\n",
-				clusterStatus.Name,
-				clusterStatus.AverageMemPercent(),
-				clusterStatus.AverageCpuPercent())
+			log.Warnf("%s has enough resource but Jenkins not found\n",clusterStatus.Info())
 			return err
 		}
 
-		log.Successf("Jenkins X checks passed for cluster:  memory = %d%% cpu = %d%% jenkins is running at %s\n",
-			clusterStatus.AverageMemPercent(),
-			clusterStatus.AverageCpuPercent(),
-				jenkinsURL)
+		log.Successf("Jenkins X checks passed for %s. Jenkins is running at %s\n", clusterStatus.Info(),jenkinsURL)
 	} else {
-		log.Warnf("Need more resources for a successful install of Jenkins X: resources usage:  memory = %d%% cpu = %d%%\n",
-				clusterStatus.AverageMemPercent(),
-					clusterStatus.AverageCpuPercent())
+		log.Warnf("More resources required for a successful install of Jenkins X: %s\n", clusterStatus.Info())
 	}
 	return nil
 }
