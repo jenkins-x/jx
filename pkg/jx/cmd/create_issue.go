@@ -98,6 +98,9 @@ func (o *CreateIssueOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	if createdIssue == nil {
+		return fmt.Errorf("Failed to create issue: %s", issue.Title)
+	}
 	o.Printf("Created issue %s at %s\n", util.ColorInfo(createdIssue.Name()), util.ColorInfo(createdIssue.URL))
 	return nil
 }
