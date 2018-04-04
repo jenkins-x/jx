@@ -184,7 +184,7 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 		config := authConfigSvc.Config()
-		server, err := config.PickOrCreateServer(gits.GitHubURL, "Which git service do you wish to use")
+		server, err := config.PickOrCreateServer(gits.GitHubURL, "Which git service do you wish to use", o.BatchMode)
 		if err != nil {
 			return err
 		}

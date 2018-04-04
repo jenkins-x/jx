@@ -293,7 +293,7 @@ func (config *AuthConfig) GetServerURLs() []string {
 }
 
 // PickOrCreateServer picks the server to use defaulting to the current server
-func (config *AuthConfig) PickOrCreateServer(defaultServerURL string, message string) (*AuthServer, error) {
+func (config *AuthConfig) PickOrCreateServer(defaultServerURL string, message string, batchMode bool) (*AuthServer, error) {
 	servers := config.Servers
 	if len(servers) == 1 {
 		return servers[0], nil
@@ -312,6 +312,12 @@ func (config *AuthConfig) PickOrCreateServer(defaultServerURL string, message st
 	defaultValue := config.CurrentServer
 	if defaultValue == "" {
 		defaultValue = names[0]
+	}
+	if batchMode {
+		if defaultValue == "" {
+			return nil, fmt.Errorf("No current server defined for git in batch mode")
+		}
+		return config.GetOrCreateServer(defaultValue), nil
 	}
 	name, err := util.PickRequiredNameWithDefault(names, message, defaultValue)
 	if err != nil {
