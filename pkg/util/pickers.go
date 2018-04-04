@@ -24,6 +24,19 @@ func PickValue(message string, defaultValue string, required bool) (string, erro
 	return answer, nil
 }
 
+func PickPassword(message string) (string, error) {
+	answer := ""
+	prompt := &survey.Password{
+		Message: message,
+	}
+	validator := survey.Required
+	err := survey.AskOne(prompt, &answer, validator)
+	if err != nil {
+		return "", err
+	}
+	return answer, nil
+}
+
 func PickNameWithDefault(names []string, message string, defaultValue string) (string, error) {
 	name := ""
 	if len(names) == 0 {

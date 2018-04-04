@@ -250,17 +250,13 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 		}
 		return nil
 	}
-	var qs = []*survey.Question{}
+	var err error
 
 	if editUser || auth.Username == "" {
-		qs = append(qs, &survey.Question{
-			Name: "username",
-			Prompt: &survey.Input{
-				Message: serverLabel + " user name:",
-				Default: auth.Username,
-			},
-			Validate: survey.Required,
-		})
+		auth.Username, err = util.PickValue(serverLabel+" user name:", auth.Username, true)
+		if err != nil {
+			return err
+		}
 	}
 	if fn != nil {
 		err := fn(auth.Username)
@@ -268,14 +264,8 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 			return err
 		}
 	}
-	qs = append(qs, &survey.Question{
-		Name: "apiToken",
-		Prompt: &survey.Password{
-			Message: "API Token:",
-		},
-		Validate: survey.Required,
-	})
-	return survey.Ask(qs, auth)
+	auth.ApiToken, err = util.PickPassword("API Token:")
+	return err
 }
 
 func (config *AuthConfig) GetServerNames() []string {
