@@ -4,6 +4,7 @@ const (
 	Bugzilla = "bugzilla"
 	Jira     = "jira"
 	Trello   = "trello"
+	Git      = "git"
 )
 
 var (
