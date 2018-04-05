@@ -4,3 +4,4 @@ github:
     repositories:
     - name: homebrew-jx
     - name: builder-base
+    - name: jx-docs
