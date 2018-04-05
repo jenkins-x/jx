@@ -16,11 +16,11 @@ const (
 	orgName  = "test-org"
 )
 
-type BitbucketProviderTestSuite struct {
+type BitbucketCloudProviderTestSuite struct {
 	suite.Suite
 	mux      *http.ServeMux
 	server   *httptest.Server
-	provider *BitbucketProvider
+	provider *BitbucketCloudProvider
 }
 
 var router = util.Router{
@@ -55,7 +55,7 @@ var router = util.Router{
 	},
 }
 
-func (suite *BitbucketProviderTestSuite) SetupSuite() {
+func (suite *BitbucketCloudProviderTestSuite) SetupSuite() {
 	suite.mux = http.NewServeMux()
 
 	for path, methodMap := range router {
@@ -73,13 +73,13 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 		ApiToken: "0123456789abdef",
 	}
 
-	bp, err := NewBitbucketProvider(&as, &ua)
+	bp, err := NewBitbucketCloudProvider(&as, &ua)
 
 	suite.Require().NotNil(bp)
 	suite.Require().Nil(err)
 
 	var ok bool
-	suite.provider, ok = bp.(*BitbucketProvider)
+	suite.provider, ok = bp.(*BitbucketCloudProvider)
 	suite.Require().True(ok)
 	suite.Require().NotNil(suite.provider)
 
@@ -92,7 +92,7 @@ func (suite *BitbucketProviderTestSuite) SetupSuite() {
 	suite.provider.Client = bitbucket.NewAPIClient(cfg)
 }
 
-func (suite *BitbucketProviderTestSuite) TestListRepositories() {
+func (suite *BitbucketCloudProviderTestSuite) TestListRepositories() {
 
 	repos, err := suite.provider.ListRepositories("test-user")
 
@@ -106,7 +106,7 @@ func (suite *BitbucketProviderTestSuite) TestListRepositories() {
 	}
 }
 
-func (suite *BitbucketProviderTestSuite) TestGetRepository() {
+func (suite *BitbucketCloudProviderTestSuite) TestGetRepository() {
 
 	repo, err := suite.provider.GetRepository(
 		suite.provider.Username,
@@ -119,7 +119,7 @@ func (suite *BitbucketProviderTestSuite) TestGetRepository() {
 	suite.Require().Equal(repo.Name, "test-repo")
 }
 
-func (suite *BitbucketProviderTestSuite) TestDeleteRepository() {
+func (suite *BitbucketCloudProviderTestSuite) TestDeleteRepository() {
 
 	err := suite.provider.DeleteRepository(
 		suite.provider.Username,
@@ -129,7 +129,7 @@ func (suite *BitbucketProviderTestSuite) TestDeleteRepository() {
 	suite.Require().Nil(err)
 }
 
-func (suite *BitbucketProviderTestSuite) TestForkRepository() {
+func (suite *BitbucketCloudProviderTestSuite) TestForkRepository() {
 
 	fork, err := suite.provider.ForkRepository(
 		suite.provider.Username,
@@ -141,7 +141,7 @@ func (suite *BitbucketProviderTestSuite) TestForkRepository() {
 	suite.Require().Nil(err)
 }
 
-func (suite *BitbucketProviderTestSuite) TestValidateRepositoryName() {
+func (suite *BitbucketCloudProviderTestSuite) TestValidateRepositoryName() {
 
 	err := suite.provider.ValidateRepositoryName(suite.provider.Username, "test-repo")
 
@@ -152,7 +152,7 @@ func (suite *BitbucketProviderTestSuite) TestValidateRepositoryName() {
 	suite.Require().Nil(err)
 }
 
-func (suite *BitbucketProviderTestSuite) TestRenameRepository() {
+func (suite *BitbucketCloudProviderTestSuite) TestRenameRepository() {
 
 	repo, err := suite.provider.RenameRepository(suite.provider.Username, "test-repo", "test-repo-renamed")
 
@@ -162,7 +162,7 @@ func (suite *BitbucketProviderTestSuite) TestRenameRepository() {
 	suite.Require().Equal(repo.Name, "test-repo-renamed")
 }
 
-func (suite *BitbucketProviderTestSuite) TestCreatePullRequest() {
+func (suite *BitbucketCloudProviderTestSuite) TestCreatePullRequest() {
 	args := GitPullRequestArguments{
 		Repo:  "test-repo",
 		Head:  "83777f6",
@@ -177,7 +177,7 @@ func (suite *BitbucketProviderTestSuite) TestCreatePullRequest() {
 	suite.Require().Equal(*pr.State, "OPEN")
 }
 
-func (suite *BitbucketProviderTestSuite) TestUpdatePullRequestStatus() {
+func (suite *BitbucketCloudProviderTestSuite) TestUpdatePullRequestStatus() {
 	number := 3
 	state := "OPEN"
 
@@ -192,7 +192,7 @@ func (suite *BitbucketProviderTestSuite) TestUpdatePullRequestStatus() {
 	suite.Require().Nil(err)
 }
 
-func (suite *BitbucketProviderTestSuite) TestPullRequestLastCommitStatus() {
+func (suite *BitbucketCloudProviderTestSuite) TestPullRequestLastCommitStatus() {
 
 	pr := &GitPullRequest{
 		Repo:          "test-repo",
@@ -205,7 +205,7 @@ func (suite *BitbucketProviderTestSuite) TestPullRequestLastCommitStatus() {
 	suite.Require().Equal(lastCommitStatus, "INPROGRESS")
 }
 
-func (suite *BitbucketProviderTestSuite) TestListCommitStatus() {
+func (suite *BitbucketCloudProviderTestSuite) TestListCommitStatus() {
 
 	statuses, err := suite.provider.ListCommitStatus("test-user", "test-repo", "5c8afc5")
 
@@ -219,7 +219,7 @@ func (suite *BitbucketProviderTestSuite) TestListCommitStatus() {
 	}
 }
 
-func (suite *BitbucketProviderTestSuite) TestMergePullRequest() {
+func (suite *BitbucketCloudProviderTestSuite) TestMergePullRequest() {
 
 	id := 1
 	pr := &GitPullRequest{
@@ -231,7 +231,7 @@ func (suite *BitbucketProviderTestSuite) TestMergePullRequest() {
 	suite.Require().Nil(err)
 }
 
-func (suite *BitbucketProviderTestSuite) TestCreateWebHook() {
+func (suite *BitbucketCloudProviderTestSuite) TestCreateWebHook() {
 
 	data := &GitWebHookArguments{
 		Repo: "test-repo",
@@ -242,10 +242,10 @@ func (suite *BitbucketProviderTestSuite) TestCreateWebHook() {
 	suite.Require().Nil(err)
 }
 
-func TestBitbucketProviderTestSuite(t *testing.T) {
-	suite.Run(t, new(BitbucketProviderTestSuite))
+func TestBitbucketCloudProviderTestSuite(t *testing.T) {
+	suite.Run(t, new(BitbucketCloudProviderTestSuite))
 }
 
-func (suite *BitbucketProviderTestSuite) TearDownSuite() {
+func (suite *BitbucketCloudProviderTestSuite) TearDownSuite() {
 	suite.server.Close()
 }
