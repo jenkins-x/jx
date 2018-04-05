@@ -151,6 +151,8 @@ func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			cmdutil.CheckErr(err)
 		},
 	}
+	options.addCommonFlags(cmd)
+
 	cmd.Flags().StringVarP(&options.PreviousRevision, "previous-rev", "p", "", "the previous tag revision")
 	cmd.Flags().StringVarP(&options.CurrentRevision, "rev", "r", "", "the current tag revision")
 	cmd.Flags().StringVarP(&options.TemplatesDir, "templates-dir", "t", "", "the directory containing the helm chart templates to generate the resources")
@@ -172,6 +174,12 @@ func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 }
 
 func (o *StepChangelogOptions) Run() error {
+	// lets enable batch mode if we detect we are inside a pipeline
+	if !o.BatchMode && os.Getenv("BUILD_NUMBER") != "" {
+		o.Printf("Using batch mode as inside a pipeline\n")
+		o.BatchMode = true
+	}
+
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
 	if err != nil {
 		return err
