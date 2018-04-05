@@ -138,6 +138,9 @@ FGT := $(GOPATH)/bin/fgt
 $(FGT):
 	go get github.com/GeertJohan/fgt
 
+
+LINTFLAGS:=-min_confidence 1.1
+
 GOLINT := $(GOPATH)/bin/golint
 $(GOLINT):
 	go get github.com/golang/lint/golint
@@ -147,7 +150,7 @@ $(GOLINT):
 
 $(PKGS): $(GOLINT) $(FGT)
 	@echo "LINTING"
-	@$(FGT) $(GOLINT) $(GOPATH)/src/$@/*.go
+	@$(FGT) $(GOLINT) $(LINTFLAGS) $(GOPATH)/src/$@/*.go
 	@echo "VETTING"
 	@go vet -v $@
 	@echo "TESTING"
@@ -158,5 +161,18 @@ lint: vendor | $(PKGS) $(GOLINT) # ❷
 	@cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
 	    test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
 	done ; exit $$ret
+
+.PHONY: vet
+vet: tools.govet
+	@echo "--> checking code correctness with 'go vet' tool"
+	@go vet ./...
+
+
+tools.govet:
+	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
+		echo "--> installing govet"; \
+		go get golang.org/x/tools/cmd/vet; \
+	fi
+
 
 

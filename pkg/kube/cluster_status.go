@@ -102,22 +102,26 @@ func (clusterStatus *ClusterStatus) AverageMemPercent() int {
 	return int(clusterStatus.totalMemPercent)
 }
 
-func (clusterStatus *ClusterStatus) CheckResource() bool {
-	passed := true
+func (clusterStatus *ClusterStatus) NodeCount() int {
+	return clusterStatus.nodeCount
+}
+
+
+
+func (clusterStatus *ClusterStatus) CheckResource()  string {
 	if clusterStatus.AverageMemPercent() >= clusterStatus.MinimumResourceLimit() {
-		log.Warnf("cluster is running at %d%% of memory - you need more resources\n", clusterStatus.AverageMemPercent())
-		passed = false
+		return  "needs more free memory"
 	}
 	if clusterStatus.AverageCpuPercent() >= clusterStatus.MinimumResourceLimit() {
-		log.Warnf("cluster is running at %d%% of cpu - you need more resources\n", clusterStatus.AverageMemPercent())
-		passed = false
+		return  "needs more free compute"
 	}
-	return passed
+	return ""
 }
 
 func (clusterStatus *ClusterStatus) Info() string {
-	str := fmt.Sprintf("Cluster(%s): memory %d%% of %s, cpu %d%% of %s",
+	str := fmt.Sprintf("Cluster(%s): %d nodes, memory %d%% of %s, cpu %d%% of %s",
 		clusterStatus.Name,
+		clusterStatus.NodeCount(),
 		clusterStatus.AverageMemPercent(),
 		clusterStatus.totalAllocatedMemory.String(),
 		clusterStatus.AverageCpuPercent(),
@@ -125,8 +129,8 @@ func (clusterStatus *ClusterStatus) Info() string {
 	return str
 }
 
-func Status(client *kubernetes.Clientset, namespace string, node v1.Node) (NodeStatus, error) {
 
+func Status(client *kubernetes.Clientset, namespace string, node v1.Node) (NodeStatus, error) {
 	nodeStatus := NodeStatus{}
 	fieldSelector, err := fields.ParseSelector("spec.nodeName=" + node.Name + ",status.phase!=" + string(v1.PodSucceeded) + ",status.phase!=" + string(v1.PodFailed))
 	if err != nil {

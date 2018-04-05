@@ -163,12 +163,12 @@ func (o *ImportOptions) Run() error {
 	f := o.Factory
 	f.SetBatch(o.BatchMode)
 
-	jenkins, err := f.CreateJenkinsClient()
+	jenkinsClient, err := f.CreateJenkinsClient()
 	if err != nil {
 		return err
 	}
 
-	o.Jenkins = jenkins
+	o.Jenkins = jenkinsClient
 
 	client, ns, err := o.Factory.CreateClient()
 	if err != nil {
@@ -700,7 +700,7 @@ func (o *ImportOptions) checkChartmuseumCredentialExists() error {
 	if err != nil {
 		secret, err := o.kubeClient.CoreV1().Secrets(o.currentNamespace).Get(name, meta_v1.GetOptions{})
 		if err != nil {
-			fmt.Errorf("error getting %s secret %v", name, err)
+			return fmt.Errorf("error getting %s secret %v", name, err)
 		}
 
 		data := secret.Data

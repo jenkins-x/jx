@@ -619,7 +619,7 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 	}
 	url := server.URL
 	if message == "" {
-		fmt.Sprintf("%s username for CI/CD pipelines:", server.Label())
+		message = fmt.Sprintf("%s username for CI/CD pipelines:", server.Label())
 	}
 	userAuth, err = config.PickServerUserAuth(server, message, o.BatchMode)
 	if err != nil {

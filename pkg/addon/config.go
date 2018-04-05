@@ -9,11 +9,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+
+//AddonConfig Addon Configration
 type AddonConfig struct {
 	Name    string
 	Enabled bool
 }
 
+//AddonsConfig Addons Configuration
 type AddonsConfig struct {
 	Addons []*AddonConfig
 }
