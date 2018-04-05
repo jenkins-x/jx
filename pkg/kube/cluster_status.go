@@ -108,17 +108,14 @@ func (clusterStatus *ClusterStatus) NodeCount() int {
 
 
 
-func (clusterStatus *ClusterStatus) CheckResource() bool {
-	passed := true
+func (clusterStatus *ClusterStatus) CheckResource()  string {
 	if clusterStatus.AverageMemPercent() >= clusterStatus.MinimumResourceLimit() {
-		log.Warnf("cluster is running at %d%% of memory - you need more resources\n", clusterStatus.AverageMemPercent())
-		passed = false
+		return  "needs more free memory"
 	}
 	if clusterStatus.AverageCpuPercent() >= clusterStatus.MinimumResourceLimit() {
-		log.Warnf("cluster is running at %d%% of cpu - you need more resources\n", clusterStatus.AverageMemPercent())
-		passed = false
+		return  "needs more free compute"
 	}
-	return passed
+	return ""
 }
 
 func (clusterStatus *ClusterStatus) Info() string {
