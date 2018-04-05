@@ -210,6 +210,12 @@ func (o *PromoteOptions) Run() error {
 	if o.AllAutomatic {
 		return o.PromoteAllAutomatic()
 	}
+	if env == nil {
+		if o.Environment == "" {
+			return util.MissingOption(optionEnvironment)
+		}
+		return fmt.Errorf("Could not find an Environment called %s", o.Environment)
+	}
 	releaseInfo, err := o.Promote(targetNS, env, true)
 	err = o.WaitForPromotion(targetNS, env, releaseInfo)
 	if err != nil {
@@ -868,7 +874,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	releaseName := o.ReleaseName
 	if o.releaseResource == nil && releaseName != "" {
 		jxClient, _, err := o.JXClient()
-		if err == nil {
+		if err == nil && jxClient != nil {
 			release, err := jxClient.JenkinsV1().Releases(env.Spec.Namespace).Get(releaseName, metav1.GetOptions{})
 			if err == nil && release != nil {
 				o.releaseResource = release

@@ -662,6 +662,10 @@ func (p *GitHubProvider) Label() string {
 	return p.Server.Label()
 }
 
+func (p *GitHubProvider) ServerURL() string {
+	return p.Server.URL
+}
+
 func asBool(b *bool) bool {
 	if b != nil {
 		return *b

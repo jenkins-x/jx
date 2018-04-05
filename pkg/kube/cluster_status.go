@@ -106,14 +106,12 @@ func (clusterStatus *ClusterStatus) NodeCount() int {
 	return clusterStatus.nodeCount
 }
 
-
-
-func (clusterStatus *ClusterStatus) CheckResource()  string {
+func (clusterStatus *ClusterStatus) CheckResource() string {
 	if clusterStatus.AverageMemPercent() >= clusterStatus.MinimumResourceLimit() {
-		return  "needs more free memory"
+		return "needs more free memory"
 	}
 	if clusterStatus.AverageCpuPercent() >= clusterStatus.MinimumResourceLimit() {
-		return  "needs more free compute"
+		return "needs more free compute"
 	}
 	return ""
 }
@@ -128,7 +126,6 @@ func (clusterStatus *ClusterStatus) Info() string {
 		clusterStatus.totalAllocatedCpu.String())
 	return str
 }
-
 
 func Status(client *kubernetes.Clientset, namespace string, node v1.Node) (NodeStatus, error) {
 	nodeStatus := NodeStatus{}

@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -54,6 +54,7 @@ type StepChangelogOptions struct {
 type StepChangelogState struct {
 	GitInfo         *gits.GitRepositoryInfo
 	GitProvider     gits.GitProvider
+	Tracker         issues.IssueProvider
 	FoundIssueNames map[string]bool
 }
 
@@ -124,6 +125,7 @@ e.g. define environment variables GIT_USERNAME and GIT_API_TOKEN
 `)
 
 	GitHubIssueRegex = regexp.MustCompile(`(\#\d+)`)
+	JIRAIssueRegex   = regexp.MustCompile(`[A-Z][A-Z]+-(\d+)`)
 )
 
 func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -243,6 +245,12 @@ func (o *StepChangelogOptions) Run() error {
 		return err
 	}
 	o.State.GitInfo = gitInfo
+
+	tracker, err := o.createIssueProvider(dir)
+	if err != nil {
+		return err
+	}
+	o.State.Tracker = tracker
 
 	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
 	if err != nil {
@@ -426,58 +434,54 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 }
 
 func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, commit *v1.CommitSummary) error {
-	// TODO for now assume github but allow a JIRA server & project name to be specified...
+	tracker := o.State.Tracker
 
 	gitProvider := o.State.GitProvider
 	if gitProvider == nil || !gitProvider.HasIssues() {
 		return nil
 	}
-	gitInfo := o.State.GitInfo
-	matches := GitHubIssueRegex.FindAllStringSubmatch(commit.Message, -1)
+	regex := GitHubIssueRegex
+	if issues.GetIssueProvider(tracker) == issues.Jira {
+		regex = JIRAIssueRegex
+	}
+	matches := regex.FindAllStringSubmatch(commit.Message, -1)
 	for _, match := range matches {
 		for _, result := range match {
-			numberText := strings.TrimPrefix(result, "#")
+			result = strings.TrimPrefix(result, "#")
 			if _, ok := o.State.FoundIssueNames[result]; !ok {
 				o.State.FoundIssueNames[result] = true
-				number, err := strconv.Atoi(numberText)
+				issue, err := tracker.GetIssue(result)
 				if err != nil {
-					o.warnf("Failed to convert issue reference %s into a number %s\n", numberText, err)
-					continue
-				}
-				owner := gitInfo.Organisation
-				repo := gitInfo.Name
-				issue, err := gitProvider.GetIssue(owner, repo, number)
-				if err != nil {
-					o.warnf("Failed to lookup issue %s in repository\n", result, err)
+					o.warnf("Failed to lookup issue %s in issue tracker %s due to %s\n", result, tracker.HomeURL(), err)
 					continue
 				}
 				if issue == nil {
-					o.warnf("Failed to find issue %d for repository %s/%s\n", number, owner, repo)
+					o.warnf("Failed to find issue %s for repository %s\n", result, tracker.HomeURL())
 				}
 
 				var user v1.UserDetails
 				if issue.User == nil {
-					o.warnf("Failed to find user for issue %d repository %s/%s\n", number, owner, repo)
+					o.warnf("Failed to find user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
 					user = *o.gitUserToUserDetails(issue.User)
 				}
 
 				var closedBy v1.UserDetails
 				if issue.ClosedBy == nil {
-					o.warnf("Failed to find closedBy user for issue %d repository %s/%s\n", number, owner, repo)
+					o.warnf("Failed to find closedBy user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
 					closedBy = *o.gitUserToUserDetails(issue.User)
 				}
 
 				var assignees []v1.UserDetails
 				if issue.Assignees == nil {
-					o.warnf("Failed to find assignees for issue %d repository %s/%s\n", number, owner, repo)
+					o.warnf("Failed to find assignees for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
 					assignees = o.gitUserToUserDetailSlice(issue.Assignees)
 				}
 
 				issueSummary := v1.IssueSummary{
-					ID:        numberText,
+					ID:        result,
 					URL:       issue.URL,
 					Title:     issue.Title,
 					Body:      issue.Body,

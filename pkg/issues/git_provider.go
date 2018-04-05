@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 type GitIssueProvider struct {
@@ -65,4 +66,8 @@ func (i *GitIssueProvider) CreateIssueComment(key string, comment string) error 
 		return err
 	}
 	return i.GitProvider.CreateIssueComment(i.Owner, i.Repository, n, comment)
+}
+
+func (i *GitIssueProvider) HomeURL() string {
+	return util.UrlJoin(i.GitProvider.ServerURL(), i.Owner, i.Repository)
 }

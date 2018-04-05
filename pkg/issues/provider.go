@@ -22,6 +22,9 @@ type IssueProvider interface {
 
 	// IssueURL returns the URL of the given issue for this project
 	IssueURL(key string) string
+
+	// HomeURL returns the home URL of the issue tracker
+	HomeURL() string
 }
 
 func CreateIssueProvider(kind string, server *auth.AuthServer, userAuth *auth.UserAuth, project string) (IssueProvider, error) {
@@ -41,4 +44,13 @@ func ProviderAccessTokenURL(kind string, url string) string {
 	default:
 		return ""
 	}
+}
+
+// GetIssueProvider returns the kind of issue provider
+func GetIssueProvider(tracker IssueProvider) string {
+	_, ok := tracker.(*JiraService)
+	if ok {
+		return Jira
+	}
+	return Git
 }

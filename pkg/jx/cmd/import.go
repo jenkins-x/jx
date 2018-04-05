@@ -200,10 +200,6 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 	}
-	if o.Organisation == "" {
-		o.Organisation = userAuth.Username
-	}
-
 	if o.GitHub {
 		return o.ImportProjectsFromGitHub()
 	}

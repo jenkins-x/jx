@@ -96,16 +96,16 @@ func (o *StatusOptions) Run() error {
 	resourceStr := clusterStatus.CheckResource()
 	jenkinsURL, err := o.findServiceInNamespace("jenkins", namespace)
 	if err != nil {
-		if resourceStr != ""{
-			log.Warnf("%s Jenkins not found and %s\n", clusterStatus.Info(),resourceStr)
-		}else{
+		if resourceStr != "" {
+			log.Warnf("%s Jenkins not found and %s\n", clusterStatus.Info(), resourceStr)
+		} else {
 			log.Warnf("%s Jenkins not found\n", clusterStatus.Info())
 		}
 		return err
 	}
 	if resourceStr != "" {
-		log.Warnf("Jenkins X installed for %s. Jenkins is running at %s. Need more %s\n", clusterStatus.Info(), jenkinsURL,resourceStr)
-	}else{
+		log.Warnf("Jenkins X installed for %s. Jenkins is running at %s. Need more %s\n", clusterStatus.Info(), jenkinsURL, resourceStr)
+	} else {
 		log.Successf("Jenkins X checks passed for %s. Jenkins is running at %s\n", clusterStatus.Info(), jenkinsURL)
 	}
 

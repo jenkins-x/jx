@@ -531,3 +531,7 @@ func GiteaAccessTokenURL(url string) string {
 func (p *GiteaProvider) Label() string {
 	return p.Server.Label()
 }
+
+func (p *GiteaProvider) ServerURL() string {
+	return p.Server.URL
+}

@@ -395,6 +395,10 @@ func (g *GitlabProvider) Label() string {
 	return g.Server.Label()
 }
 
+func (p *GitlabProvider) ServerURL() string {
+	return p.Server.URL
+}
+
 func (g *GitlabProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
 	return nil
 }

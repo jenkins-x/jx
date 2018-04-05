@@ -503,7 +503,11 @@ func (b *BitbucketProvider) JenkinsWebHookPath(gitURL string, secret string) str
 }
 
 func (b *BitbucketProvider) Label() string {
-	return ""
+	return b.Server.Label()
+}
+
+func (b *BitbucketProvider) ServerURL() string {
+	return b.Server.URL
 }
 
 func (b *BitbucketProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {

@@ -107,6 +107,40 @@ func (i *JiraService) jiraToGitIssue(issue *jira.Issue) *gits.GitIssue {
 		answer.Body = fields.Description
 		answer.Labels = gits.ToGitLabels(fields.Labels)
 		answer.ClosedAt = jiraTimeToTimeP(fields.Resolutiondate)
+		answer.User = jiraUserToGitUser(fields.Reporter)
+		assignee := jiraUserToGitUser(fields.Assignee)
+		if assignee != nil {
+			answer.Assignees = []gits.GitUser{*assignee}
+		}
+	}
+	return answer
+}
+
+func jiraUserToGitUser(user *jira.User) *gits.GitUser {
+	if user == nil {
+		return nil
+	}
+	return &gits.GitUser{
+		AvatarURL: jiraAvatarUrl(user),
+		Name:      user.Name,
+		Login:     user.Key,
+		Email:     user.EmailAddress,
+	}
+}
+func jiraAvatarUrl(user *jira.User) string {
+	answer := ""
+	if user != nil {
+		av := user.AvatarUrls
+		answer = av.Four8X48
+		if answer == "" {
+			answer = av.Three2X32
+		}
+		if answer == "" {
+			answer = av.Two4X24
+		}
+		if answer == "" {
+			answer = av.One6X16
+		}
 	}
 	return answer
 }
@@ -134,4 +168,8 @@ func (i *JiraService) gitToJiraIssue(issue *gits.GitIssue) *jira.Issue {
 
 func (i *JiraService) ServerName() string {
 	return i.Server.URL
+}
+
+func (i *JiraService) HomeURL() string {
+	return util.UrlJoin(i.Server.URL, "browse", i.Project)
 }

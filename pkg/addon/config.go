@@ -9,7 +9,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-
 //AddonConfig Addon Configration
 type AddonConfig struct {
 	Name    string

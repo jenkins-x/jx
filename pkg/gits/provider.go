@@ -88,7 +88,11 @@ type GitProvider interface {
 
 	JenkinsWebHookPath(gitURL string, secret string) string
 
+	// Label returns the git service label or name
 	Label() string
+
+	// ServerURL returns the git server URL
+	ServerURL() string
 }
 
 type GitOrganisation struct {
