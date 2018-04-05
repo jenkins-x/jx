@@ -246,7 +246,7 @@ func (o *StepChangelogOptions) Run() error {
 	}
 	o.State.GitInfo = gitInfo
 
-	tracker, err := o.createIssueProvider(o.Dir)
+	tracker, err := o.createIssueProvider(dir)
 	if err != nil {
 		return err
 	}
