@@ -20,6 +20,7 @@ type VersionOptions struct {
 
 	Container string
 	Namespace string
+	HelmTLS   bool
 }
 
 func NewCmdVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -46,6 +47,7 @@ func NewCmdVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 		cmd.Flags().BoolP("short", "", false, "Print just the version number.")
 	*/
 	cmd.Flags().MarkShorthandDeprecated("client", "please use --client instead.")
+	cmd.Flags().BoolVarP(&options.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	return cmd
 }
 
@@ -88,7 +90,11 @@ func (o *VersionOptions) Run() error {
 	}
 
 	// helm version
-	output, err = o.getCommandOutput("", "helm", "version", "--short")
+	args := []string{"version", "--short"}
+	if o.HelmTLS {
+		args = append(args, "--tls")
+	}
+	output, err = o.getCommandOutput("", "helm", args...)
 	if err != nil {
 		o.warnf("Failed to get helm version: %s\n", err)
 	} else {
