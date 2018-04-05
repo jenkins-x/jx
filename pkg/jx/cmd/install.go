@@ -375,6 +375,11 @@ func (options *InstallOptions) Run() error {
 		err = options.retry(3, 2*time.Second, func() (err error) {
 			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 			options.CreateJenkinsUserOptions.UseBrowser = true
+			if options.BatchMode {
+				options.CreateJenkinsUserOptions.BatchMode = true
+				options.CreateJenkinsUserOptions.Headless = true
+				options.Printf("Attempting to find the Jenkins API Token with the browser in headless mode...")
+			}
 			err = options.CreateJenkinsUserOptions.Run()
 			return
 		})
