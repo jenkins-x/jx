@@ -221,7 +221,7 @@ func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, 
 	case "gitea":
 		return NewGiteaProvider(server, user)
 	case "bitbucket":
-		return NewBitbucketProvider(server, user)
+		return NewBitbucketCloudProvider(server, user)
 	default:
 		return NewGitHubProvider(server, user)
 	}
