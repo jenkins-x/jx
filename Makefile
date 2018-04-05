@@ -138,6 +138,9 @@ FGT := $(GOPATH)/bin/fgt
 $(FGT):
 	go get github.com/GeertJohan/fgt
 
+
+LINTFLAGS:=-min_confidence 1.1
+
 GOLINT := $(GOPATH)/bin/golint
 $(GOLINT):
 	go get github.com/golang/lint/golint
@@ -147,7 +150,7 @@ $(GOLINT):
 
 $(PKGS): $(GOLINT) $(FGT)
 	@echo "LINTING"
-	@$(FGT) $(GOLINT) $(GOPATH)/src/$@/*.go
+	@$(FGT) $(GOLINT) $(LINTFLAGS) $(GOPATH)/src/$@/*.go
 	@echo "VETTING"
 	@go vet -v $@
 	@echo "TESTING"
