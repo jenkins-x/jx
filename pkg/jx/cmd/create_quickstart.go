@@ -28,6 +28,7 @@ var (
 		Create a new project from a sample/starter (found in https://github.com/jenkins-x-quickstarts)
 
 		This will create a new project for you from the selected template.
+		It will exclude any work-in-progress repos (containing the "WIP-" pattern)
 
 		For more documentation see: [http://jenkins-x.io/developing/create-quickstart/](http://jenkins-x.io/developing/create-quickstart/)
 
