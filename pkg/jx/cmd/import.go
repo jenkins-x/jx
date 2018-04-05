@@ -184,7 +184,7 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 		config := authConfigSvc.Config()
-		server, err := config.PickOrCreateServer(gits.GitHubURL, "Which git service do you wish to use")
+		server, err := config.PickOrCreateServer(gits.GitHubURL, "Which git service do you wish to use", o.BatchMode)
 		if err != nil {
 			return err
 		}
@@ -402,6 +402,9 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	dir := o.Dir
 	_, defaultRepoName := filepath.Split(dir)
 
+	if o.Organisation != "" {
+		o.GitRepositoryOptions.Owner = o.Organisation
+	}
 	details, err := gits.PickNewGitRepository(o.Out, o.BatchMode, authConfigSvc, defaultRepoName, &o.GitRepositoryOptions, o.GitServer, o.GitUserAuth)
 	if err != nil {
 		return err
