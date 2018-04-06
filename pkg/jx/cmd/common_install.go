@@ -275,6 +275,10 @@ func (o *CommonOptions) installHelm() error {
 	return os.Chmod(fullPath, 0755)
 }
 
+func (o *CommonOptions) getLatestJXVersion() (semver.Version, error) {
+	return util.GetLatestVersionFromGitHub("jenkins-x", "jx")
+}
+
 func (o *CommonOptions) installKops() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		return o.runCommand("brew", "install", "kops")
@@ -300,6 +304,51 @@ func (o *CommonOptions) installKops() error {
 		return err
 	}
 	err = util.RenameFile(tmpFile, fullPath)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
+
+func (o *CommonOptions) installJx(upgrade bool, version string) error {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		if upgrade {
+			return o.runCommand("brew", "upgrade", "jx")
+		} else {
+			return o.runCommand("brew", "install", "jx")
+		}
+	}
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	binary := "jx"
+	fileName := binary
+	if !upgrade {
+		f, flag, err := o.shouldInstallBinary(binDir, binary)
+		if err != nil || !flag {
+			return err
+		}
+		fileName = f
+	}
+	org := "jenkins-x"
+	repo := "jx"
+	latestVersion, err := util.GetLatestVersionFromGitHub(org, repo)
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://github.com/"+org+"/"+repo+"/releases/download/v%s/"+binary+"-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	tarFile := fullPath + ".tgz"
+	err = o.downloadFile(clientURL, tarFile)
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	if err != nil {
+		return err
+	}
+	err = os.Remove(tarFile)
 	if err != nil {
 		return err
 	}

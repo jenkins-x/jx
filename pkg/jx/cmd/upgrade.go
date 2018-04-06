@@ -19,6 +19,9 @@ var (
 `)
 
 	upgrade_example = templates.Examples(`
+		# upgrade the command line tools 
+		jx upgrade cli
+
 		# upgrade the platform 
 		jx upgrade platform
 	`)
@@ -48,6 +51,7 @@ func NewCmdUpgrade(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 		SuggestFor: []string{"remove", "rm"},
 	}
 
+	cmd.AddCommand(NewCmdUpgradeCLI(f, out, errOut))
 	cmd.AddCommand(NewCmdUpgradePlatform(f, out, errOut))
 	return cmd
 }

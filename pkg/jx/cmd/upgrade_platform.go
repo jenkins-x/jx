@@ -57,7 +57,7 @@ func NewCmdUpgradePlatform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to")
 	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", "jenkins-x", "The release name")
 	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade")
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to")
 	return cmd
 }
 
