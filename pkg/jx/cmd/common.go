@@ -3,15 +3,13 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
-	"os/exec"
-	"strings"
-
 	"os"
-
-	"time"
-
+	"os/exec"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -24,7 +22,6 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	"io/ioutil"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -43,6 +40,7 @@ type CommonOptions struct {
 	BatchMode bool
 	Verbose   bool
 	Headless  bool
+	NoBrew    bool
 
 	// common cached clients
 	kubeClient       *kubernetes.Clientset
@@ -137,6 +135,7 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "In batch mode the command never prompts for user input")
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
+	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install or upgrade command line dependencies")
 	options.Cmd = cmd
 }
 
