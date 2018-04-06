@@ -149,7 +149,7 @@ func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *
 		return err
 	}
 	options := metav1.GetOptions{}
-	name := kube.ToValidName(kube.SecretJenkinsIssueCredentials + server.Kind + "-" + server.Name)
+	name := kube.ToValidName(kube.SecretJenkinsPipelineIssueCredentials + server.Kind + "-" + server.Name)
 	secrets := client.CoreV1().Secrets(ns)
 	secret, err := secrets.Get(name, options)
 	create := false
@@ -161,7 +161,7 @@ func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *
 		kube.LabelServiceKind:     server.Kind,
 	}
 	annotations := map[string]string{
-		kube.AnnotationCredentialsDescription: fmt.Sprintf("API Token for acccessing %s Issue Tracker inside pipelines"),
+		kube.AnnotationCredentialsDescription: fmt.Sprintf("API Token for acccessing %s Issue Tracker inside pipelines", server.URL),
 		kube.AnnotationURL:                    server.URL,
 		kube.AnnotationName:                   server.Name,
 	}

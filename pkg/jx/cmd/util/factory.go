@@ -27,6 +27,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -154,33 +156,40 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 		if err != nil {
 			return authConfigSvc, err
 		}
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindIssue)
+	}
+	return authConfigSvc, err
+}
 
-		for _, secret := range secrets.Items {
-			labels := secret.Labels
-			annotations := secret.Annotations
-			data := secret.Data
-			if labels != nil && labels[kube.LabelKind] == kube.ValueKindIssue && annotations != nil {
-				u := annotations[kube.AnnotationURL]
-				name := annotations[kube.AnnotationName]
-				k := labels[kube.LabelServiceKind]
-				if u != "" {
-					server := config.GetOrCreateServer(u)
-					if server != nil {
-						if server.Kind == "" {
-							server.Kind = k
-						}
-						if server.Name == "" {
-							server.Name = name
-						}
-						if data != nil {
-							username := data[kube.SecretDataUsername]
-							pwd := data[kube.SecretDataPassword]
-							if len(username) > 0 && f.isInCDPIpeline() {
-								userAuth := config.GetOrCreateUserAuth(u, string(username))
-								if userAuth != nil {
-									if len(pwd) > 0 {
-										userAuth.ApiToken = string(pwd)
-									}
+func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string) {
+	if config == nil || secrets == nil {
+		return
+	}
+	for _, secret := range secrets.Items {
+		labels := secret.Labels
+		annotations := secret.Annotations
+		data := secret.Data
+		if labels != nil && labels[kube.LabelKind] == kind && annotations != nil {
+			u := annotations[kube.AnnotationURL]
+			name := annotations[kube.AnnotationName]
+			k := labels[kube.LabelServiceKind]
+			if u != "" {
+				server := config.GetOrCreateServer(u)
+				if server != nil {
+					if server.Kind == "" {
+						server.Kind = k
+					}
+					if server.Name == "" {
+						server.Name = name
+					}
+					if data != nil {
+						username := data[kube.SecretDataUsername]
+						pwd := data[kube.SecretDataPassword]
+						if len(username) > 0 && f.isInCDPIpeline() {
+							userAuth := config.GetOrCreateUserAuth(u, string(username))
+							if userAuth != nil {
+								if len(pwd) > 0 {
+									userAuth.ApiToken = string(pwd)
 								}
 							}
 						}
@@ -189,7 +198,6 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 			}
 		}
 	}
-	return authConfigSvc, err
 }
 
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
@@ -241,7 +249,30 @@ func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConf
 			},
 		}
 	}
+	secrets, err := f.loadPipelineSecrets(kube.ValueKindGit)
+	if err != nil {
+		fmt.Printf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", err)
+	} else if secrets != nil {
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit)
+	}
 	return authConfigSvc, nil
+}
+
+func (f *factory) loadPipelineSecrets(kind string) (*corev1.SecretList, error) {
+	kubeClient, curNs, err := f.CreateClient()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create a kuberntees client %s", err)
+	}
+	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get the development environment %s", err)
+	}
+	// TODO use kind as a label selector...
+	return kubeClient.CoreV1().Secrets(ns).List(metav1.ListOptions{})
+}
+
+func (f *factory) mergePipeineSecrets(config *auth.AuthConfig, secretList *corev1.SecretList) {
+
 }
 
 func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigService, error) {

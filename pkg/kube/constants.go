@@ -25,8 +25,11 @@ const (
 	// SecretJenkinsGitCredentials the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
 
-	// SecretJenkinsIssueCredentials the issue tracker credentials secret
-	SecretJenkinsIssueCredentials = "jenkins-issues-"
+	// SecretJenkinsPipelineIssueCredentials the issue tracker credentials secret
+	SecretJenkinsPipelineIssueCredentials = "jx-pipeline-issues-"
+
+	// SecretJenkinsPipelineGitCredentials the issue tracker credentials secret
+	SecretJenkinsPipelineGitCredentials = "jx-pipeline-git-"
 
 	// ConfigMapJenkinsXGitKinds the name of the ConfigMap in the development namespace that maps kinds to URLs
 	ConfigMapJenkinsXGitKinds = "jenkins-x-git-kinds"
