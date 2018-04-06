@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
+	"strconv"
 	"strings"
 )
 
@@ -181,7 +182,16 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 }
 
 func describeIssue(info *GitRepositoryInfo, issue *v1.IssueSummary) string {
-	return "[#" + issue.ID + "](" + issue.URL + ") " + issue.Title + describeUser(info, issue.User)
+	prefix := ""
+	id := issue.ID
+	if len(id) > 0 {
+		// lets only add the hash prefix for numeric ids
+		_, err := strconv.Atoi(id)
+		if err == nil {
+			prefix = "#"
+		}
+	}
+	return "[" + prefix + issue.ID + "](" + issue.URL + ") " + issue.Title + describeUser(info, issue.User)
 }
 
 func describeUser(info *GitRepositoryInfo, user *v1.UserDetails) string {

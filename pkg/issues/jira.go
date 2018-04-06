@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/andygrunwald/go-jira"
@@ -19,22 +20,32 @@ type JiraService struct {
 	Project    string
 }
 
-func CreateJiraIssueProvider(server *auth.AuthServer, userAuth *auth.UserAuth, project string) (IssueProvider, error) {
-	if server.URL == "" {
+func CreateJiraIssueProvider(server *auth.AuthServer, userAuth *auth.UserAuth, project string, batchMode bool) (IssueProvider, error) {
+	u := server.URL
+	if u == "" {
 		return nil, fmt.Errorf("No base URL for server!")
 	}
 	var httpClient *http.Client
 	if userAuth != nil && !userAuth.IsInvalid() {
-		user := userAuth.Username
+		username := userAuth.Username
 		tp := jira.BasicAuthTransport{
-			Username: user,
+			Username: username,
 			Password: userAuth.ApiToken,
 		}
-		/*
-		 */
 		httpClient = tp.Client()
+		if batchMode {
+			fmt.Printf("Using JIRA server %s user name %s and API token %s\n", u, username, strings.Repeat("*", len(userAuth.ApiToken)))
+		}
+	} else {
+		if batchMode {
+			if userAuth != nil && userAuth.Username != "" {
+				fmt.Printf("No API token found for JIRA server %s user %s so using anonymous access\n", u, userAuth.Username)
+			} else {
+				fmt.Printf("No authentication found for JIRA server %s so using anonymous access\n", u)
+			}
+		}
 	}
-	jiraClient, _ := jira.NewClient(httpClient, server.URL)
+	jiraClient, _ := jira.NewClient(httpClient, u)
 	return &JiraService{
 		JiraClient: jiraClient,
 		Server:     server,

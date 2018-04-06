@@ -38,6 +38,7 @@ type CreateTrackerTokenOptions struct {
 	Password    string
 	ApiToken    string
 	Timeout     string
+	Dir         string
 }
 
 // NewCmdCreateTrackerToken creates a command
@@ -82,7 +83,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.Factory.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService(o.Dir)
 	if err != nil {
 		return err
 	}
@@ -104,7 +105,6 @@ func (o *CreateTrackerTokenOptions) Run() error {
 	tokenUrl := issues.ProviderAccessTokenURL(server.Kind, server.URL)
 
 	if userAuth.IsInvalid() {
-
 		f := func(username string) error {
 			o.Printf("Please generate an API Token for server %s\n", server.Label())
 			if tokenUrl != "" {
@@ -148,29 +148,44 @@ func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *
 	if err != nil {
 		return err
 	}
-
 	options := metav1.GetOptions{}
-	name := kube.SecretJenkinsIssueCredentials + server.Kind
+	name := kube.ToValidName(kube.SecretJenkinsPipelineIssueCredentials + server.Kind + "-" + server.Name)
 	secrets := client.CoreV1().Secrets(ns)
 	secret, err := secrets.Get(name, options)
 	create := false
 	operation := "update"
+	labels := map[string]string{
+		kube.LabelCredentialsType: kube.ValueCredentialTypeUsernamePassword,
+		kube.LabelCreatedBy:       kube.ValueCreatedByJX,
+		kube.LabelKind:            kube.ValueKindIssue,
+		kube.LabelServiceKind:     server.Kind,
+	}
+	annotations := map[string]string{
+		kube.AnnotationCredentialsDescription: fmt.Sprintf("API Token for acccessing %s Issue Tracker inside pipelines", server.URL),
+		kube.AnnotationURL:                    server.URL,
+		kube.AnnotationName:                   server.Name,
+	}
 	if err != nil {
 		// lets create a new secret
 		create = true
 		operation = "create"
 		secret = &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
+				Name:        name,
+				Annotations: annotations,
+				Labels:      labels,
 			},
 			Data: map[string][]byte{},
 		}
+	} else {
+		secret.Annotations = kube.MergeMaps(secret.Annotations, annotations)
+		secret.Labels = kube.MergeMaps(secret.Labels, labels)
 	}
 	if userAuth.Username != "" {
 		secret.Data["username"] = []byte(userAuth.Username)
 	}
 	if userAuth.ApiToken != "" {
-		secret.Data["token"] = []byte(userAuth.ApiToken)
+		secret.Data["password"] = []byte(userAuth.ApiToken)
 	}
 	if create {
 		_, err = secrets.Create(secret)

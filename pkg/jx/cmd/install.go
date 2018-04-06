@@ -668,7 +668,7 @@ func (o *InstallOptions) installAddon(name string) error {
 		HelmUpdate: true,
 	}
 	if name == "gitea" {
-		options.ReleaseName = defaultOptionRelease
+		options.ReleaseName = defaultGiteaReleaseName
 		giteaOptions := &CreateAddonGiteaOptions{
 			CreateAddonOptions: *options,
 			Chart:              kube.ChartGitea,

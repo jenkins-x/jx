@@ -37,7 +37,7 @@ func NewCmdDeleteTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	}
 
 	cmd.AddCommand(NewCmdDeleteTrackerServer(f, out, errOut))
-	//cmd.AddCommand(NewCmdDeleteTrackerToken(f, out, errOut))
+	cmd.AddCommand(NewCmdDeleteTrackerToken(f, out, errOut))
 	return cmd
 }
 

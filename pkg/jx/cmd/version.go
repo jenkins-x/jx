@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"regexp"
 	"strings"
@@ -18,9 +19,10 @@ const (
 type VersionOptions struct {
 	CommonOptions
 
-	Container string
-	Namespace string
-	HelmTLS   bool
+	Container      string
+	Namespace      string
+	HelmTLS        bool
+	NoVersionCheck bool
 }
 
 func NewCmdVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -46,8 +48,11 @@ func NewCmdVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 		cmd.Flags().BoolP("client", "c", false, "Client version only (no server required).")
 		cmd.Flags().BoolP("short", "", false, "Print just the version number.")
 	*/
+	options.addCommonFlags(cmd)
+
 	cmd.Flags().MarkShorthandDeprecated("client", "please use --client instead.")
 	cmd.Flags().BoolVarP(&options.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
+	cmd.Flags().BoolVarP(&options.NoVersionCheck, "no-version-check", "n", false, "Disable checking of version upgrade checks")
 	return cmd
 }
 
@@ -69,7 +74,7 @@ func (o *VersionOptions) Run() error {
 					f = strings.TrimSpace(f)
 					if strings.HasPrefix(f, jxChartPrefix) {
 						chart := strings.TrimPrefix(f, jxChartPrefix)
-						table.AddRow("Jenkins X", info(chart))
+						table.AddRow("jenkins x platform", info(chart))
 					}
 				}
 			}
@@ -85,7 +90,28 @@ func (o *VersionOptions) Run() error {
 		if err != nil {
 			o.warnf("Failed to get kubernetes server version: %s\n", err)
 		} else if serverVersion != nil {
-			table.AddRow("Kubernetes", info(serverVersion.String()))
+			table.AddRow("kubernetes cluster", info(serverVersion.String()))
+		}
+	}
+
+	// kubectl version
+	output, err = o.getCommandOutput("", "kubectl", "version", "--short")
+	if err != nil {
+		o.warnf("Failed to get kubectl version: %s\n", err)
+	} else {
+		for i, line := range strings.Split(output, "\n") {
+			fields := strings.Fields(line)
+			if len(fields) > 1 {
+				v := fields[2]
+				if v != "" {
+					switch i {
+					case 0:
+						table.AddRow("kubectl", info(v))
+					case 1:
+						// Ignore K8S server details as we have these above
+					}
+				}
+			}
 		}
 	}
 
@@ -105,30 +131,9 @@ func (o *VersionOptions) Run() error {
 				if v != "" {
 					switch i {
 					case 0:
-						table.AddRow("Helm Client", info(v))
+						table.AddRow("helm client", info(v))
 					case 1:
-						table.AddRow("Helm Server", info(v))
-					}
-				}
-			}
-		}
-	}
-
-	// kubectl version
-	output, err = o.getCommandOutput("", "kubectl", "version", "--short")
-	if err != nil {
-		o.warnf("Failed to get kubectl version: %s\n", err)
-	} else {
-		for i, line := range strings.Split(output, "\n") {
-			fields := strings.Fields(line)
-			if len(fields) > 1 {
-				v := fields[2]
-				if v != "" {
-					switch i {
-					case 0:
-						table.AddRow("Kubectl Client", info(v))
-					case 1:
-						// Ignore K8S server details as we have these above
+						table.AddRow("helm server", info(v))
 					}
 				}
 			}
@@ -140,11 +145,51 @@ func (o *VersionOptions) Run() error {
 	if err != nil {
 		o.warnf("Failed to get git version: %s\n", err)
 	} else {
-		table.AddRow("Git", info(output))
+		table.AddRow("git", info(output))
 	}
 
 	table.Render()
+
+	if !o.NoVersionCheck {
+		return o.versionCheck()
+	}
 	return nil
+}
+
+func (o *VersionOptions) versionCheck() error {
+	newVersion, err := o.getLatestJXVersion()
+	if err != nil {
+		return err
+	}
+
+	currentVersion, err := version.GetSemverVersion()
+	if err != nil {
+		return err
+	}
+
+	if newVersion.GT(currentVersion) {
+		app := util.ColorInfo("jx")
+		o.Printf("\nA new %s version is available: %s\n", app, util.ColorInfo(newVersion.String()))
+
+		if o.BatchMode {
+			o.Printf("To upgrade to this new version use: %s\n", util.ColorInfo("jx upgrade cli"))
+		} else {
+			message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
+			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.") {
+				return o.upgradeCli()
+			}
+		}
+	}
+	return nil
+}
+
+func (o *VersionOptions) upgradeCli() error {
+	options := &UpgradeCLIOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: o.CommonOptions,
+		},
+	}
+	return options.Run()
 }
 
 func extractSemVer(text string) string {

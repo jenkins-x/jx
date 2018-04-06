@@ -163,7 +163,6 @@ func (o *CreateQuickstartOptions) Run() error {
 	o.Printf("Created project at %s\n\n", util.ColorInfo(genDir))
 
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
-	o.Organisation = userAuth.Username
 	return o.ImportCreatedProject(genDir)
 }
 

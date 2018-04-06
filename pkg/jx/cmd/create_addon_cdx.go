@@ -8,6 +8,10 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
+const (
+	defaultCdxReleaseName = "cdx"
+)
+
 var (
 	create_addon_cdx_long = templates.LongDesc(`
 		Creates the CDX addon
@@ -55,7 +59,7 @@ func NewCmdCreateAddonCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd)
+	options.addFlags(cmd, "", defaultCdxReleaseName)
 	return cmd
 }
 

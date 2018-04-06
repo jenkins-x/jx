@@ -56,6 +56,7 @@ type StepChangelogState struct {
 	GitProvider     gits.GitProvider
 	Tracker         issues.IssueProvider
 	FoundIssueNames map[string]bool
+	LoggedIssueKind bool
 }
 
 const (
@@ -449,7 +450,12 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		return nil
 	}
 	regex := GitHubIssueRegex
-	if issues.GetIssueProvider(tracker) == issues.Jira {
+	issueKind := issues.GetIssueProvider(tracker)
+	if !o.State.LoggedIssueKind {
+		o.State.LoggedIssueKind = true
+		o.Printf("Finding issues in commit messages using %s format\n", issueKind)
+	}
+	if issueKind == issues.Jira {
 		regex = JIRAIssueRegex
 	}
 	matches := regex.FindAllStringSubmatch(commit.Message, -1)

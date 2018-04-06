@@ -16,6 +16,7 @@ type GetTrackerOptions struct {
 	GetOptions
 
 	Kind string
+	Dir  string
 }
 
 var (
@@ -61,7 +62,7 @@ func NewCmdGetTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 
 // Run implements this command
 func (o *GetTrackerOptions) Run() error {
-	authConfigSvc, err := o.Factory.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService("")
 	if err != nil {
 		return err
 	}

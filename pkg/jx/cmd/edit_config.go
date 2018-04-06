@@ -80,16 +80,15 @@ func NewCmdEditConfig(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 
 // Run implements the command
 func (o *EditConfigOptions) Run() error {
-	authConfigSvc, err := o.Factory.CreateIssueTrackerAuthConfigService()
-	if err != nil {
-		return err
-	}
-	o.IssuesAuthConfigSvc = authConfigSvc
-
 	pc, fileName, err := config.LoadProjectConfig(o.Dir)
 	if err != nil {
 		return err
 	}
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigServiceFromConfig(pc)
+	if err != nil {
+		return err
+	}
+	o.IssuesAuthConfigSvc = authConfigSvc
 
 	kind := o.Kind
 	if kind == "" && !o.BatchMode {
