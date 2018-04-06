@@ -17,7 +17,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 	if err != nil {
 		return nil, err
 	}
-	if pc == nil {
+	if pc != nil && pc.IssueTracker == nil {
 		pc, _, err = config.LoadProjectConfig(gitDir)
 		if err != nil {
 			return nil, err
