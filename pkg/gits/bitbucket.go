@@ -177,12 +177,14 @@ func (b *BitbucketCloudProvider) ForkRepository(
 	name string,
 	destinationOrg string,
 ) (*GitRepository, error) {
-
+	options := map[string]interface{}{
+		"body": map[string]interface{}{},
+	}
 	repo, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugForksPost(
 		b.Context,
-		b.Username,
+		originalOrg,
 		name,
-		nil,
+		options,
 	)
 
 	if err != nil {

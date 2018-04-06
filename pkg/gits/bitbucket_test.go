@@ -139,6 +139,8 @@ func (suite *BitbucketCloudProviderTestSuite) TestForkRepository() {
 
 	suite.Require().NotNil(fork)
 	suite.Require().Nil(err)
+
+	suite.Require().Equal(fork.Name, "test-fork")
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestValidateRepositoryName() {
