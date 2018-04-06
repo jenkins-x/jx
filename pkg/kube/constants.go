@@ -1,11 +1,14 @@
 package kube
 
 const (
+	// ChartCDX the default name of the CDX chart
+	ChartCDX = "jenkins-x/cdx"
+
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
 
-	// ChartCDX the default name of the CDX chart
-	ChartCDX = "jenkins-x/cdx"
+	// ChartKubeless the default chart for kubeless
+	ChartKubeless = "incubator/kubeless"
 
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
@@ -36,8 +39,9 @@ const (
 
 var (
 	AddonCharts = map[string]string{
-		"gitea":      ChartGitea,
 		"cdx":        ChartCDX,
+		"gitea":      ChartGitea,
+		"kubeless":   ChartKubeless,
 		"prometheus": "stable/prometheus",
 		"grafana":    "stable/grafana",
 	}
