@@ -3,12 +3,12 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var (
@@ -27,6 +27,7 @@ type DeleteTrackerServerOptions struct {
 	CommonOptions
 
 	IgnoreMissingServer bool
+	Dir                 string
 }
 
 // NewCmdDeleteTrackerServer defines the command
@@ -61,7 +62,7 @@ func (o *DeleteTrackerServerOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing issue tracker server name argument")
 	}
-	authConfigSvc, err := o.Factory.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService(o.Dir)
 	if err != nil {
 		return err
 	}

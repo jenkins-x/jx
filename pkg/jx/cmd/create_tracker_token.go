@@ -38,6 +38,7 @@ type CreateTrackerTokenOptions struct {
 	Password    string
 	ApiToken    string
 	Timeout     string
+	Dir         string
 }
 
 // NewCmdCreateTrackerToken creates a command
@@ -82,7 +83,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.Factory.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService(o.Dir)
 	if err != nil {
 		return err
 	}

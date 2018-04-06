@@ -30,6 +30,7 @@ type CreateTrackerServerOptions struct {
 	CreateOptions
 
 	Name string
+	Dir  string
 }
 
 // NewCmdCreateTrackerServer creates a command object for the "create" command
@@ -91,7 +92,7 @@ func (o *CreateTrackerServerOptions) Run() error {
 	if gitUrl == "" {
 		return missingTrackerArguments()
 	}
-	authConfigSvc, err := o.Factory.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService(o.Dir)
 	if err != nil {
 		return err
 	}

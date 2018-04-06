@@ -2,11 +2,41 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 )
+
+func (o *CommonOptions) CreateIssueTrackerAuthConfigService(dir string) (auth.AuthConfigService, error) {
+	var err error
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			o.warnf("Could not find the current directory %s\n", err)
+			return o.Factory.CreateIssueTrackerAuthConfigService("")
+		}
+	}
+	pc, _, err := config.LoadProjectConfig(dir)
+	if err != nil {
+		o.warnf("Could not load the Project's Jenkins X configuration from dir %s due to %s\n", dir, err)
+		return o.Factory.CreateIssueTrackerAuthConfigService("")
+	}
+	return o.CreateIssueTrackerAuthConfigServiceFromConfig(pc)
+}
+
+func (o *CommonOptions) CreateIssueTrackerAuthConfigServiceFromConfig(pc *config.ProjectConfig) (auth.AuthConfigService, error) {
+	issueURL := ""
+	if pc != nil {
+		it := pc.IssueTracker
+		if it != nil {
+			issueURL = it.URL
+		}
+	}
+	return o.Factory.CreateIssueTrackerAuthConfigService(issueURL)
+}
 
 func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, error) {
 	gitDir, gitConfDir, err := gits.FindGitConfigDir(dir)
@@ -27,7 +57,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 		it := pc.IssueTracker
 		if it != nil {
 			if it.URL != "" && it.Kind != "" {
-				authConfigSvc, err := o.Factory.CreateIssueTrackerAuthConfigService()
+				authConfigSvc, err := o.Factory.CreateIssueTrackerAuthConfigService(it.URL)
 				if err != nil {
 					return nil, err
 				}

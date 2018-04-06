@@ -50,7 +50,7 @@ type Factory interface {
 
 	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
 
-	CreateIssueTrackerAuthConfigService() (auth.AuthConfigService, error)
+	CreateIssueTrackerAuthConfigService(defaultServerURL string) (auth.AuthConfigService, error)
 
 	CreateClient() (*kubernetes.Clientset, string, error)
 
@@ -143,7 +143,7 @@ func (f *factory) CreateChartmuseumAuthConfigService() (auth.AuthConfigService, 
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateIssueTrackerAuthConfigService() (auth.AuthConfigService, error) {
+func (f *factory) CreateIssueTrackerAuthConfigService(defaultServerURL string) (auth.AuthConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(IssuesAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
@@ -157,14 +157,11 @@ func (f *factory) CreateIssueTrackerAuthConfigService() (auth.AuthConfigService,
 	if len(config.Servers) == 0 {
 		// if in cluster then there's no user configfile, so check for env vars first
 		userAuth := auth.CreateAuthUserFromEnvironment("ISSUES")
-		// TODO discover via the Dev Environment?
-		// TODO discover the kind too
 		if userAuth.Username != "" || !userAuth.IsInvalid() {
-			defaultServer := ""
 			config.Servers = []*auth.AuthServer{
 				{
 					Name:  "Issues",
-					URL:   defaultServer,
+					URL:   defaultServerURL,
 					Users: []*auth.UserAuth{&userAuth},
 				},
 			}
