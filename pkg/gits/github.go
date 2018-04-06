@@ -142,6 +142,9 @@ func (p *GitHubProvider) CreateRepository(org string, name string, private bool)
 		Name:    github.String(name),
 		Private: github.Bool(private),
 	}
+	if org == p.Username {
+		org = ""
+	}
 	repo, _, err := p.Client.Repositories.Create(p.Context, org, repoConfig)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create repository %s/%s due to: %s", org, name, err)
