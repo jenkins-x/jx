@@ -37,7 +37,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 				if err != nil {
 					return nil, err
 				}
-				return issues.CreateIssueProvider(it.Kind, server, userAuth, it.Project)
+				return issues.CreateIssueProvider(it.Kind, server, userAuth, it.Project, o.BatchMode)
 			}
 		}
 	}
