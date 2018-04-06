@@ -30,9 +30,9 @@ func CreateJiraIssueProvider(server *auth.AuthServer, userAuth *auth.UserAuth, p
 			Username: user,
 			Password: userAuth.ApiToken,
 		}
-		/*
-		 */
 		httpClient = tp.Client()
+
+		fmt.Printf("Using JIRA user name %s and API token %s\n", user, userAuth.ApiToken)
 	}
 	jiraClient, _ := jira.NewClient(httpClient, server.URL)
 	return &JiraService{
