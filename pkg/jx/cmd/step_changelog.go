@@ -449,7 +449,9 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		return nil
 	}
 	regex := GitHubIssueRegex
-	if issues.GetIssueProvider(tracker) == issues.Jira {
+	issueKind := issues.GetIssueProvider(tracker)
+	o.Printf("Finding issues in commit messages using %s format\n", issueKind)
+	if issueKind == issues.Jira {
 		regex = JIRAIssueRegex
 	}
 	matches := regex.FindAllStringSubmatch(commit.Message, -1)
