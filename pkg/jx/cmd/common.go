@@ -496,6 +496,12 @@ func (o *CommonOptions) installChart(releaseName string, chart string, version s
 		args = append(args, "--version", version)
 	}
 	if ns != "" {
+		kubeClient, _, err := o.KubeClient()
+		if err != nil {
+			return err
+		}
+		annotations := map[string]string{"jenkins-x.io/created-by": "Jenkins X"}
+		kube.EnsureNamespaceCreated(kubeClient, ns, nil, annotations)
 		args = append(args, "--namespace", ns)
 	}
 	args = append(args, releaseName, chart)

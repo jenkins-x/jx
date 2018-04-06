@@ -14,6 +14,8 @@ import (
 const (
 	optionChart   = "chart"
 	optionRelease = "release"
+
+	defaultGiteaReleaseName = "gitea"
 )
 
 var (
@@ -69,7 +71,7 @@ func NewCmdCreateAddonGitea(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd)
+	options.addFlags(cmd, "", defaultGiteaReleaseName)
 
 	cmd.Flags().StringVarP(&options.Username, "username", "u", "", "The name for the user to create in gitea. Note that gitea tends to reject 'admin'")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The password for the user to create in gitea. Note that gitea tends to reject passwords less than 6 characters")
