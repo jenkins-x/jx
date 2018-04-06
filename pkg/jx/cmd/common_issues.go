@@ -24,7 +24,7 @@ func (o *CommonOptions) CreateIssueTrackerAuthConfigService(dir string) (auth.Au
 	}
 	secrets, err = kubeClient.CoreV1().Secrets(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return o.errorCreateIssueTrackerAuthConfigService(fmt.Errorf("Failed to query Secrets in the development namespace %s due to %s", ns, err))
+		o.warnf("The current user cannot query secrets in the namespace %s: %s", ns, err)
 	}
 	return o.Factory.CreateIssueTrackerAuthConfigService(secrets)
 }
