@@ -2,40 +2,43 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/kube"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (o *CommonOptions) CreateIssueTrackerAuthConfigService(dir string) (auth.AuthConfigService, error) {
-	var err error
-	if dir == "" {
-		dir, err = os.Getwd()
-		if err != nil {
-			o.warnf("Could not find the current directory %s\n", err)
-			return o.Factory.CreateIssueTrackerAuthConfigService("")
-		}
-	}
-	pc, _, err := config.LoadProjectConfig(dir)
+	var secrets *corev1.SecretList
+	kubeClient, curNs, err := o.KubeClient()
 	if err != nil {
-		o.warnf("Could not load the Project's Jenkins X configuration from dir %s due to %s\n", dir, err)
-		return o.Factory.CreateIssueTrackerAuthConfigService("")
+		return o.errorCreateIssueTrackerAuthConfigService(fmt.Errorf("Failed to create a kuberntees client %s", err))
 	}
-	return o.CreateIssueTrackerAuthConfigServiceFromConfig(pc)
+	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
+	if err != nil {
+		return o.errorCreateIssueTrackerAuthConfigService(fmt.Errorf("Failed to get the development environment %s", err))
+	}
+	secrets, err = kubeClient.CoreV1().Secrets(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return o.errorCreateIssueTrackerAuthConfigService(fmt.Errorf("Failed to query Secrets in the development namespace %s due to %s", ns, err))
+	}
+	return o.Factory.CreateIssueTrackerAuthConfigService(secrets)
+}
+
+func (o *CommonOptions) errorCreateIssueTrackerAuthConfigService(parentError error) (auth.AuthConfigService, error) {
+	answer, err := o.Factory.CreateIssueTrackerAuthConfigService(nil)
+	if err == nil {
+		return answer, parentError
+	}
+	return answer, err
 }
 
 func (o *CommonOptions) CreateIssueTrackerAuthConfigServiceFromConfig(pc *config.ProjectConfig) (auth.AuthConfigService, error) {
-	issueURL := ""
-	if pc != nil {
-		it := pc.IssueTracker
-		if it != nil {
-			issueURL = it.URL
-		}
-	}
-	return o.Factory.CreateIssueTrackerAuthConfigService(issueURL)
+	return o.CreateIssueTrackerAuthConfigService("")
 }
 
 func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, error) {
@@ -57,7 +60,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 		it := pc.IssueTracker
 		if it != nil {
 			if it.URL != "" && it.Kind != "" {
-				authConfigSvc, err := o.Factory.CreateIssueTrackerAuthConfigService(it.URL)
+				authConfigSvc, err := o.CreateIssueTrackerAuthConfigService("")
 				if err != nil {
 					return nil, err
 				}

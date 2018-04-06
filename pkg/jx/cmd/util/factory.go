@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/util"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -50,7 +51,7 @@ type Factory interface {
 
 	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
 
-	CreateIssueTrackerAuthConfigService(defaultServerURL string) (auth.AuthConfigService, error)
+	CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
 
 	CreateClient() (*kubernetes.Clientset, string, error)
 
@@ -143,27 +144,48 @@ func (f *factory) CreateChartmuseumAuthConfigService() (auth.AuthConfigService, 
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateIssueTrackerAuthConfigService(defaultServerURL string) (auth.AuthConfigService, error) {
+func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(IssuesAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
 	}
-	config, err := authConfigSvc.LoadConfig()
-	if err != nil {
-		return authConfigSvc, err
-	}
+	if secrets != nil {
+		config, err := authConfigSvc.LoadConfig()
+		if err != nil {
+			return authConfigSvc, err
+		}
 
-	// lets add a default if there's none defined yet
-	if len(config.Servers) == 0 {
-		// if in cluster then there's no user configfile, so check for env vars first
-		userAuth := auth.CreateAuthUserFromEnvironment("ISSUES")
-		if userAuth.Username != "" || !userAuth.IsInvalid() {
-			config.Servers = []*auth.AuthServer{
-				{
-					Name:  "Issues",
-					URL:   defaultServerURL,
-					Users: []*auth.UserAuth{&userAuth},
-				},
+		for _, secret := range secrets.Items {
+			labels := secret.Labels
+			annotations := secret.Annotations
+			data := secret.Data
+			if labels != nil && labels[kube.LabelKind] == kube.ValueKindIssue && annotations != nil {
+				u := annotations[kube.AnnotationURL]
+				name := annotations[kube.AnnotationName]
+				k := labels[kube.LabelServiceKind]
+				if u != "" {
+					server := config.GetOrCreateServer(u)
+					if server != nil {
+						if server.Kind == "" {
+							server.Kind = k
+						}
+						if server.Name == "" {
+							server.Name = name
+						}
+						if data != nil {
+							username := data[kube.SecretDataUsername]
+							pwd := data[kube.SecretDataPassword]
+							if len(username) > 0 && f.isInCDPIpeline() {
+								userAuth := config.GetOrCreateUserAuth(u, string(username))
+								if userAuth != nil {
+									if len(pwd) > 0 {
+										userAuth.ApiToken = string(pwd)
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -334,4 +356,12 @@ func (f *factory) createKubeConfig() (*rest.Config, error) {
 
 func (f *factory) CreateTable(out io.Writer) table.Table {
 	return table.CreateTable(os.Stdout)
+}
+
+// isInCDPIpeline we should only load the git / issue tracker API tokens if the current pod
+// is in a pipeline and running as the jenkins service account
+func (f *factory) isInCDPIpeline() bool {
+	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
+	// or we should test if we are in the cluster and get the current ServiceAccount name?
+	return os.Getenv("BUILD_NUMBER") != ""
 }

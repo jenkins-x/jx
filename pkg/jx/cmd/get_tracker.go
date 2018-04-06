@@ -62,7 +62,7 @@ func NewCmdGetTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 
 // Run implements this command
 func (o *GetTrackerOptions) Run() error {
-	authConfigSvc, err := o.Factory.CreateIssueTrackerAuthConfigService(o.Dir)
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService("")
 	if err != nil {
 		return err
 	}
