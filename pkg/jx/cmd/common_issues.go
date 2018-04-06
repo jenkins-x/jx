@@ -9,9 +9,19 @@ import (
 )
 
 func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, error) {
+	gitDir, gitConfDir, err := gits.FindGitConfigDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("No issue tracker configured for this project and cannot find the .git directory: %s", err)
+	}
 	pc, _, err := config.LoadProjectConfig(dir)
 	if err != nil {
 		return nil, err
+	}
+	if pc == nil {
+		pc, _, err = config.LoadProjectConfig(gitDir)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if pc != nil {
 		it := pc.IssueTracker
@@ -32,10 +42,6 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 		}
 	}
 
-	_, gitConfDir, err := gits.FindGitConfigDir(dir)
-	if err != nil {
-		return nil, fmt.Errorf("No issue tracker configured for this project and cannot find the .git directory: %s", err)
-	}
 	if gitConfDir == "" {
 		return nil, fmt.Errorf("No issue tracker configured and no git directory could be found from dir %s\n", dir)
 	}
