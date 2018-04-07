@@ -431,8 +431,13 @@ func (b *BitbucketCloudProvider) CreateWebHook(data *GitWebHookArguments) error 
 		"body": map[string]interface{}{
 			"url":    data.URL,
 			"active": true,
+			"events": []string{
+				"repo:push",
+			},
+			"description": "Jenkins X Web Hook",
 		},
 	}
+
 	_, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugHooksPost(
 		b.Context,
 		b.Username,
