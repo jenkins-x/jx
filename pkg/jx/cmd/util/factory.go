@@ -251,7 +251,18 @@ func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConf
 	}
 	secrets, err := f.loadPipelineSecrets(kube.ValueKindGit)
 	if err != nil {
-		fmt.Printf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", err)
+
+		kubeConfig, _, configLoadErr := kube.LoadConfig()
+		if err != nil {
+			fmt.Printf("WARNING: Could not load config: %s", configLoadErr)
+		}
+
+		ns := kube.CurrentNamespace(kubeConfig)
+		if ns == "" {
+			fmt.Printf("WARNING: Could not get the current namespace")
+		}
+
+		fmt.Printf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
 	} else if secrets != nil {
 		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit)
 	}
