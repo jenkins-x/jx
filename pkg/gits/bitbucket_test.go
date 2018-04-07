@@ -53,6 +53,13 @@ var router = util.Router{
 	"/repositories/test-user/test-repo/hooks": util.MethodMap{
 		"POST": "webhooks.example.json",
 	},
+	"/repositories/test-user/test-repo/issues": util.MethodMap{
+		"POST": "issues.test-repo.issue-1.json",
+		"GET":  "issues.test-repo.json",
+	},
+	"/repositories/test-user/test-repo/issues/1": util.MethodMap{
+		"GET": "issues.test-repo.issue-1.json",
+	},
 }
 
 func (suite *BitbucketCloudProviderTestSuite) SetupSuite() {
@@ -139,6 +146,8 @@ func (suite *BitbucketCloudProviderTestSuite) TestForkRepository() {
 
 	suite.Require().NotNil(fork)
 	suite.Require().Nil(err)
+
+	suite.Require().Equal(fork.Name, "test-fork")
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestValidateRepositoryName() {
@@ -240,6 +249,52 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreateWebHook() {
 	err := suite.provider.CreateWebHook(data)
 
 	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestSearchIssues() {
+	issues, err := suite.provider.SearchIssues("test-user", "test-repo", "")
+
+	suite.Require().Nil(err)
+	suite.Require().NotNil(issues)
+
+	for _, issue := range issues {
+		suite.Require().NotNil(issue)
+	}
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestGetIssue() {
+	issue, err := suite.provider.GetIssue("test-user", "test-repo", 1)
+
+	suite.Require().Nil(err)
+	suite.Require().NotNil(issue)
+	suite.Require().Equal(*issue.Number, 1)
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestCreateIssue() {
+
+	issueToCreate := &GitIssue{
+		Title: "This is a test issue",
+	}
+
+	issue, err := suite.provider.CreateIssue("test-user", "test-repo", issueToCreate)
+
+	suite.Require().Nil(err)
+	suite.Require().NotNil(issue)
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestAddPRComment() {
+	err := suite.provider.AddPRComment(nil, "")
+	suite.Require().Error(err)
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestCreateIssueComment() {
+	err := suite.provider.CreateIssueComment("", "", 0, "")
+	suite.Require().Error(err)
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestUpdateRelease() {
+	err := suite.provider.UpdateRelease("", "", "", nil)
+	suite.Require().Error(err)
 }
 
 func TestBitbucketCloudProviderTestSuite(t *testing.T) {
