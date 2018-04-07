@@ -554,11 +554,13 @@ func (b *BitbucketCloudProvider) CreateIssue(owner string, repo string, issue *G
 }
 
 func (b *BitbucketCloudProvider) AddPRComment(pr *GitPullRequest, comment string) error {
-	return fmt.Errorf("Bitbucket Cloud doesn't support adding PR comments via the REST API")
+	fmt.Println("WARNING: Bitbucket Cloud doesn't support adding PR comments via the REST API")
+	return nil
 }
 
 func (b *BitbucketCloudProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
-	return fmt.Errorf("Bitbucket Cloud doesn't support adding issue comments viea the REST API")
+	fmt.Println("WARNING: Bitbucket Cloud doesn't support adding issue comments viea the REST API")
+	return nil
 }
 
 func (b *BitbucketCloudProvider) HasIssues() bool {
@@ -595,7 +597,8 @@ func (b *BitbucketCloudProvider) ServerURL() string {
 }
 
 func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
-	return fmt.Errorf("Bitbucket Cloud doesn't support releases ")
+	fmt.Println("Bitbucket Cloud doesn't support releases")
+	return nil
 }
 
 func BitbucketAccessTokenURL(url string, username string) string {
