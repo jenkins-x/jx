@@ -11,8 +11,9 @@ import (
 type Option func(*options)
 
 type options struct {
-	stderr io.Writer
-	stdout io.Writer
+	stderr  io.Writer
+	stdout  io.Writer
+	buildID string
 }
 
 // DefaultOpts is a convenience wrapper that enumerates and configures the set of default
@@ -48,5 +49,12 @@ func WithStdout(w io.Writer) Option {
 func NoColor() Option {
 	return func(opts *options) {
 		color.NoColor = true
+	}
+}
+
+// WithBuildID returns an Option that set the build id to use.
+func WithBuildID(buildID string) Option {
+	return func(opts *options) {
+		opts.buildID = buildID
 	}
 }

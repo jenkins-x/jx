@@ -1,7 +1,6 @@
 Dockerfile
 draft.toml
-chart/
-NOTICE
+charts/
 resources/
 target/
 test/

@@ -412,6 +412,7 @@ const (
 	CommandPageScreencastFrameAck                          = page.CommandScreencastFrameAck
 	CommandPageSearchInResource                            = page.CommandSearchInResource
 	CommandPageSetAdBlockingEnabled                        = page.CommandSetAdBlockingEnabled
+	CommandPageSetBypassCSP                                = page.CommandSetBypassCSP
 	CommandPageSetDocumentContent                          = page.CommandSetDocumentContent
 	CommandPageSetDownloadBehavior                         = page.CommandSetDownloadBehavior
 	CommandPageSetLifecycleEventsEnabled                   = page.CommandSetLifecycleEventsEnabled
@@ -434,6 +435,7 @@ const (
 	EventPageJavascriptDialogOpening                       = "Page.javascriptDialogOpening"
 	EventPageLifecycleEvent                                = "Page.lifecycleEvent"
 	EventPageLoadEventFired                                = "Page.loadEventFired"
+	EventPageNavigatedWithinDocument                       = "Page.navigatedWithinDocument"
 	EventPageScreencastFrame                               = "Page.screencastFrame"
 	EventPageScreencastVisibilityChanged                   = "Page.screencastVisibilityChanged"
 	EventPageWindowOpen                                    = "Page.windowOpen"
@@ -1600,6 +1602,9 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 	case CommandPageSetAdBlockingEnabled:
 		return emptyVal, nil
 
+	case CommandPageSetBypassCSP:
+		return emptyVal, nil
+
 	case CommandPageSetDocumentContent:
 		return emptyVal, nil
 
@@ -1665,6 +1670,9 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 
 	case EventPageLoadEventFired:
 		v = new(page.EventLoadEventFired)
+
+	case EventPageNavigatedWithinDocument:
+		v = new(page.EventNavigatedWithinDocument)
 
 	case EventPageScreencastFrame:
 		v = new(page.EventScreencastFrame)

@@ -2,6 +2,7 @@ package pack
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,7 +21,9 @@ func TestSaveDir(t *testing.T) {
 				Name: "chart-for-nigel-thornberry",
 			},
 		},
-		Dockerfile: []byte(testDockerfile),
+		Files: map[string]io.ReadCloser{
+			dockerfileName: ioutil.NopCloser(bytes.NewBufferString(testDockerfile)),
+		},
 	}
 	dir, err := ioutil.TempDir("", "draft-pack-test")
 	if err != nil {
@@ -40,7 +43,9 @@ func TestSaveDirDockerfileExistsInAppDir(t *testing.T) {
 				Name: "chart-for-nigel-thornberry",
 			},
 		},
-		Dockerfile: []byte(testDockerfile),
+		Files: map[string]io.ReadCloser{
+			dockerfileName: ioutil.NopCloser(bytes.NewBufferString(testDockerfile)),
+		},
 	}
 	dir, err := ioutil.TempDir("", "draft-pack-test")
 	if err != nil {

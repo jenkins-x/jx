@@ -2,7 +2,6 @@ package cmdline
 
 import (
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -73,9 +72,13 @@ func (cli *cmdline) Stop() error {
 // draft state machine.
 func Display(ctx context.Context, app string, summaries <-chan *builder.Summary, opts ...Option) {
 	var cli cmdline
-	cli.Init(ctx, WithStdout(os.Stdout))
+	cli.Init(ctx, opts...)
 
-	fmt.Fprintf(cli.opts.stdout, "%s: '%s'\n", blue("Draft Up Started"), cyan(app))
+	fmt.Fprintf(cli.opts.stdout, "%s: '%s': %s\n",
+		blue("Draft Up Started"),
+		cyan(app),
+		yellow(cli.opts.buildID),
+	)
 	ongoing := make(map[string]chan builder.SummaryStatusCode)
 	var (
 		wg sync.WaitGroup
@@ -87,7 +90,6 @@ func Display(ctx context.Context, app string, summaries <-chan *builder.Summary,
 		}
 		cli.Stop()
 		wg.Wait()
-		fmt.Fprintf(cli.opts.stdout, "%s: %s: %s\n", cyan(app), blue("Build ID"), yellow(id))
 		fmt.Fprintf(cli.opts.stdout, "%s `%s`\n", blue("Inspect the logs with"), yellow("draft logs ", id))
 	}()
 	for {

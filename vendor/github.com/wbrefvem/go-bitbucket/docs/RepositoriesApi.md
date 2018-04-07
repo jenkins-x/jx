@@ -458,7 +458,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **RepositoriesUsernameRepoSlugHooksPost**
-> WebhookSubscription RepositoriesUsernameRepoSlugHooksPost(ctx, username, repoSlug)
+> WebhookSubscription RepositoriesUsernameRepoSlugHooksPost(ctx, username, repoSlug, options)
 
 
 Creates a new webhook on the specified repository.  Example:  ``` $ curl -X POST -u credentials -H 'Content-Type: application/json'           https://api.bitbucket.org/2.0/repositories/username/slug/hooks           -d '     {       \"description\": \"Webhook Description\",       \"url\": \"https://example.com/\",       \"active\": true,       \"events\": [         \"repo:push\",         \"issue:created\",         \"issue:updated\"       ]     }' ```  Note that this call requires the webhook scope, as well as any scope that applies to the events that the webhook subscribes to. In the example above that means: `webhook`, `repository` and `issue`.  Also note that the `url` must properly resolve and cannot be an internal, non-routed address.
@@ -470,6 +470,7 @@ Name | Type | Description  | Notes
  **ctx** | **context.Context** | context for logging, tracing, authentication, etc.
   **username** | **string**|  | 
   **repoSlug** | **string**|  | 
+  **options**  | **map[string]interface{}**| Set `options["body"]` to pass options as POST body |
 
 ### Return type
 

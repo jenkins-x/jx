@@ -473,6 +473,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoHeadlessexperimental6(in *jle
 				}
 				(*out.FrameTime).UnmarshalEasyJSON(in)
 			}
+		case "frameTimeTicks":
+			out.FrameTimeTicks = float64(in.Float64())
 		case "deadline":
 			if in.IsNull() {
 				in.Skip()
@@ -483,6 +485,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoHeadlessexperimental6(in *jle
 				}
 				(*out.Deadline).UnmarshalEasyJSON(in)
 			}
+		case "deadlineTicks":
+			out.DeadlineTicks = float64(in.Float64())
 		case "interval":
 			out.Interval = float64(in.Float64())
 		case "noDisplayUpdates":
@@ -521,6 +525,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoHeadlessexperimental6(out *jw
 		}
 		(*in.FrameTime).MarshalEasyJSON(out)
 	}
+	if in.FrameTimeTicks != 0 {
+		const prefix string = ",\"frameTimeTicks\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Float64(float64(in.FrameTimeTicks))
+	}
 	if in.Deadline != nil {
 		const prefix string = ",\"deadline\":"
 		if first {
@@ -530,6 +544,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoHeadlessexperimental6(out *jw
 			out.RawString(prefix)
 		}
 		(*in.Deadline).MarshalEasyJSON(out)
+	}
+	if in.DeadlineTicks != 0 {
+		const prefix string = ",\"deadlineTicks\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Float64(float64(in.DeadlineTicks))
 	}
 	if in.Interval != 0 {
 		const prefix string = ",\"interval\":"

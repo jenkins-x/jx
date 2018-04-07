@@ -1,6 +1,5 @@
 Dockerfile
 draft.toml
-chart/
-NOTICE
+charts/
 bin/
 obj/

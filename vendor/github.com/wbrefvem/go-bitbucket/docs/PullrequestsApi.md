@@ -405,7 +405,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet**
-> ModelError RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(ctx, username, pullRequestId, repoSlug)
+> map[string]interface{} RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(ctx, username, pullRequestId, repoSlug)
 
 
 Returns a paginated list of the pull request's commits.  These are the commits that are being merged into the destination branch when the pull requests gets accepted.
@@ -421,7 +421,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ModelError**](error.md)
+[**map[string]interface{}**](error.md)
 
 ### Authorization
 

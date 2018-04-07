@@ -1,4 +1,4 @@
-# Advanced Install Guide
+# Cloud installations and Advanced Configuration
 
 In certain situations, users are given a Kubernetes cluster with security constraints such as
 
@@ -10,13 +10,13 @@ This document explains some of these situations as well as how it can be handled
 
 ## Drafting in the Cloud
 
-When using Draft with cloud-provided Kubernetes solutions like [Azure Container Service (AKS)](https://azure.microsoft.com/services/container-service/), we need a way to distribute the built image across the cluster. A container registry allows all nodes in the Kubernetes cluster to pull the images we build using Draft, and we have a way for our local Docker daemon to distribute the built image.
+When using Draft with cloud-provided Kubernetes solutions like [Azure Container Service (AKS)](https://azure.microsoft.com/services/container-service/), [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/), or [Amazon EKS](https://aws.amazon.com/eks/), we need a way to distribute the built image across the cluster. A container registry allows all nodes in the Kubernetes cluster to pull the images we build using Draft, and we have a way for our local Docker daemon to distribute the built image.
 
-For local use with Minikube, only the `eval $(minikube docker-env)` command is required to inform Draft to use the local registry for deployment, which skips the step of pushing the container image and enables the deployment to Minikube to pull from the local registry. This makes the local inner-loop experience very fast. 
+For local use with Minikube, only the `eval $(minikube docker-env)` command is required to inform Draft to use the local registry.
 
-For cloud registry services, like ACR or Docker Hub, two things are needed. 
-1. You need to tell draft where the registry resides using the `draft config set registry` command, passing the registry's server URL (without the protocol scheme). 
-2. Unless there is a trust relationship between the cluster provider and the registry -- as there is with Azure Kubernetes Service (AKS) and the Azure Container Registry (ACR) -- you'll need to [add a container registry secret to your chart](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry) to pull the private image.
+For cloud registry services, like Azure Container Registry (ACR), Docker Hub, or other container registry services, two things are needed. 
+1. You need to tell Draft where the registry resides using the `draft config set registry` command, passing the registry's server URL (without the protocol scheme). 
+2. Unless there is a trust relationship between the cluster provider and the registry -- {as you can configure between the Azure Kubernetes Service (AKS) and the Azure Container Registry (ACR)](https://docs.microsoft.com/azure/container-registry/container-registry-auth-aks#grant-aks-access-to-acr) -- you'll need to either [add a container registry secret to your chart](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry) to pull the private image, or you can configure Draft to inject a secret for you for deployment using the login feature of your registry provider.
 
 ## Drafting with ACR and AKS
 
@@ -30,7 +30,7 @@ For this example, we want to push images to our registry sitting at `myregistry.
 $ draft config set registry myregistry.azurecr.io
 ```
 
-This command tells Draft to push images to this container registry as well as to tell Kubernetes to pull images from this container registry.
+This command tells Draft to push images to this container registry as well as to tell Kubernetes to pull images from this container registry. If you were using Docker Hub, for example, you would specify `docker.io/myregistry`. 
 
 We'll also need to log into the cluster to push images from our local docker daemon to the container registry:
 
@@ -38,7 +38,9 @@ We'll also need to log into the cluster to push images from our local docker dae
 $ az acr login -n myregistry -g myresourcegroup
 ```
 
+If you were using Docker Hub, for example, this command would be the `docker login` command.
 
+NOTE: Once configured, Draft will inject a registry auth secret into the destination namespace deploying the chart to the cluster so the image can be pulled from the registry. 
 
 ## Running Tiller with RBAC enabled
 

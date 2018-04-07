@@ -74,10 +74,11 @@ type EventJavascriptDialogClosed struct {
 // EventJavascriptDialogOpening fired when a JavaScript initiated dialog
 // (alert, confirm, prompt, or onbeforeunload) is about to open.
 type EventJavascriptDialogOpening struct {
-	URL           string     `json:"url"`                     // Frame url.
-	Message       string     `json:"message"`                 // Message that will be displayed by the dialog.
-	Type          DialogType `json:"type"`                    // Dialog type.
-	DefaultPrompt string     `json:"defaultPrompt,omitempty"` // Default dialog prompt.
+	URL               string     `json:"url"`                     // Frame url.
+	Message           string     `json:"message"`                 // Message that will be displayed by the dialog.
+	Type              DialogType `json:"type"`                    // Dialog type.
+	HasBrowserHandler bool       `json:"hasBrowserHandler"`       // True iff browser is capable showing or acting on the given dialog. When browser has no dialog handler for given target, calling alert while Page domain is engaged will stall the page execution. Execution can be resumed via calling Page.handleJavaScriptDialog.
+	DefaultPrompt     string     `json:"defaultPrompt,omitempty"` // Default dialog prompt.
 }
 
 // EventLifecycleEvent fired for top level page lifecycle events such as
@@ -92,6 +93,13 @@ type EventLifecycleEvent struct {
 // EventLoadEventFired [no description].
 type EventLoadEventFired struct {
 	Timestamp *cdp.MonotonicTime `json:"timestamp"`
+}
+
+// EventNavigatedWithinDocument fired when same-document navigation happens,
+// e.g. due to history API usage or anchor navigation.
+type EventNavigatedWithinDocument struct {
+	FrameID cdp.FrameID `json:"frameId"` // Id of the frame.
+	URL     string      `json:"url"`     // Frame's new url.
 }
 
 // EventScreencastFrame compressed image data requested by the

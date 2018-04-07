@@ -56,8 +56,16 @@
   name = "github.com/ghodss/yaml"
 
 [[constraint]]
+  name = "github.com/hpcloud/tail"
+
+[[constraint]]
   name = "k8s.io/helm"
   version = "~v2.7.0"
+
+[[override]]
+  name = "gopkg.in/fsnotify.v1"
+  source = "github.com/fsnotify/fsnotify"
+  version = "1.2.1"
 
 [[override]]
   name = "k8s.io/kubernetes"

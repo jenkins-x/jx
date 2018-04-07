@@ -443,6 +443,18 @@
   revision = "bf9dde6d0d2c004a008c27aaee91170c786f6db8"
 
 [[projects]]
+  name = "github.com/hpcloud/tail"
+  packages = [
+    ".",
+    "ratelimiter",
+    "util",
+    "watch",
+    "winfile"
+  ]
+  revision = "a30252cb686a21eb2d0b98132633053ec2f7f1e5"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/huandu/xstrings"
   packages = ["."]
   revision = "2bf18b218c51864a87384c06996e40ff9dcff8e1"
@@ -779,10 +791,23 @@
   version = "v1.2.1"
 
 [[projects]]
+  name = "gopkg.in/fsnotify.v1"
+  packages = ["."]
+  revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
+  source = "github.com/fsnotify/fsnotify"
+  version = "v1.4.7"
+
+[[projects]]
   name = "gopkg.in/inf.v0"
   packages = ["."]
   revision = "3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4"
   version = "v0.9.0"
+
+[[projects]]
+  branch = "v1"
+  name = "gopkg.in/tomb.v1"
+  packages = ["."]
+  revision = "dd632973f1e7218eb1089048e0798ec9ae7dceb8"
 
 [[projects]]
   branch = "v2"
@@ -1199,6 +1224,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d4a356e270ec480b87d32abd3109ed70e01431319a7e529a058031a22176ff5f"
+  inputs-digest = "5560acb16b794bbf14d57bc2d3febbddc69c1288cb495801806ebcf7944880bc"
   solver-name = "gps-cdcl"
   solver-version = 1

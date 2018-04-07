@@ -7,18 +7,20 @@ import (
 	"path/filepath"
 
 	"github.com/Azure/draft/pkg/draft/draftpath"
+	"github.com/hpcloud/tail"
 	"github.com/spf13/cobra"
 )
 
 const logsDesc = `This command outputs logs from the draft server to help debug builds.`
 
 type logsCmd struct {
-	out      io.Writer
-	appName  string
-	buildID  string
-	logLines int64
-	args     []string
-	home     draftpath.Home
+	out     io.Writer
+	appName string
+	buildID string
+	line    uint
+	tail    bool
+	args    []string
+	home    draftpath.Home
 }
 
 func newLogsCmd(out io.Writer) *cobra.Command {
@@ -47,8 +49,8 @@ func newLogsCmd(out io.Writer) *cobra.Command {
 	}
 
 	f := cmd.Flags()
-	f.Int64Var(&lc.logLines, "tail", 100, "lines of recent log lines to display")
-
+	f.BoolVar(&lc.tail, "tail", false, "tail the logs file as it's being written")
+	f.UintVar(&lc.line, "line", 20, "line location to tail from (offset from end of file)")
 	return cmd
 }
 
@@ -58,6 +60,13 @@ func (l *logsCmd) complete(_ *cobra.Command, args []string) error {
 }
 
 func (l *logsCmd) run(_ *cobra.Command, _ []string) error {
+	if l.tail {
+		return l.tailLogs(int64(l.line))
+	}
+	return l.dumpLogs()
+}
+
+func (l *logsCmd) dumpLogs() error {
 	f, err := os.Open(filepath.Join(l.home.Logs(), l.buildID))
 	if err != nil {
 		return fmt.Errorf("could not read logs for %s: %v", l.buildID, err)
@@ -65,4 +74,20 @@ func (l *logsCmd) run(_ *cobra.Command, _ []string) error {
 	defer f.Close()
 	io.Copy(l.out, f)
 	return nil
+}
+
+func (l *logsCmd) tailLogs(offset int64) error {
+	t, err := tail.TailFile(filepath.Join(l.home.Logs(), l.buildID), tail.Config{
+		Location: &tail.SeekInfo{Offset: -offset, Whence: os.SEEK_END},
+		Logger:   tail.DiscardingLogger,
+		Follow:   true,
+		ReOpen:   true,
+	})
+	if err != nil {
+		return err
+	}
+	for line := range t.Lines {
+		fmt.Fprintln(l.out, line.Text)
+	}
+	return t.Wait()
 }
