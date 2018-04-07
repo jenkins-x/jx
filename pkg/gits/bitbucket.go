@@ -446,12 +446,83 @@ func (b *BitbucketCloudProvider) CreateWebHook(data *GitWebHookArguments) error 
 	return nil
 }
 
+func BitbucketIssueToGitIssue(bIssue bitbucket.Issue) *GitIssue {
+	id := int(bIssue.Id)
+	ownerAndRepo := strings.Split(bIssue.Repository.FullName, "/")
+	owner := ownerAndRepo[0]
+
+	var assignee GitUser
+
+	if bIssue.Assignee != nil {
+		assignee = GitUser{
+			URL:   bIssue.Assignee.Links.Self.Href,
+			Login: bIssue.Assignee.Username,
+			Name:  bIssue.Assignee.DisplayName,
+		}
+	}
+	gitIssue := &GitIssue{
+		URL:      bIssue.Links.Self.Href,
+		Owner:    owner,
+		Repo:     bIssue.Repository.Name,
+		Number:   &id,
+		Title:    bIssue.Title,
+		Body:     bIssue.Content.Markup,
+		State:    &bIssue.State,
+		IssueURL: &bIssue.Links.Html.Href,
+		Assignees: []GitUser{
+			assignee,
+		},
+	}
+	return gitIssue
+}
+
+func (b *BitbucketCloudProvider) GitIssueToBitbucketIssue(gIssue GitIssue) bitbucket.Issue {
+
+	bitbucketIssue := bitbucket.Issue{
+		Title:      gIssue.Title,
+		Repository: &bitbucket.Repository{Name: gIssue.Repo},
+		Reporter:   &bitbucket.User{Username: b.Username},
+	}
+
+	return bitbucketIssue
+}
+
 func (b *BitbucketCloudProvider) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {
-	return nil, nil
+
+	gitIssues := []*GitIssue{}
+
+	for {
+		issues, _, err := b.Client.IssueTrackerApi.RepositoriesUsernameRepoSlugIssuesGet(b.Context, org, name)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, issue := range issues.Values {
+			gitIssues = append(gitIssues, BitbucketIssueToGitIssue(issue))
+		}
+
+		if issues.Next == "" {
+			break
+		}
+	}
+
+	return gitIssues, nil
 }
 
 func (b *BitbucketCloudProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
-	return nil, nil
+
+	issue, _, err := b.Client.IssueTrackerApi.RepositoriesUsernameRepoSlugIssuesIssueIdGet(
+		b.Context,
+		org,
+		strconv.FormatInt(int64(number), 10),
+		name,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	return BitbucketIssueToGitIssue(issue), nil
 }
 
 func (p *BitbucketCloudProvider) IssueURL(org string, name string, number int, isPull bool) string {
@@ -468,15 +539,26 @@ func (p *BitbucketCloudProvider) IssueURL(org string, name string, number int, i
 }
 
 func (b *BitbucketCloudProvider) CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error) {
-	return nil, nil
+
+	bIssue, _, err := b.Client.IssueTrackerApi.RepositoriesUsernameRepoSlugIssuesPost(
+		b.Context,
+		owner,
+		repo,
+		b.GitIssueToBitbucketIssue(*issue),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	return BitbucketIssueToGitIssue(bIssue), nil
 }
 
 func (b *BitbucketCloudProvider) AddPRComment(pr *GitPullRequest, comment string) error {
-	return nil
+	return fmt.Errorf("Bitbucket Cloud doesn't support adding PR comments via the REST API")
 }
 
 func (b *BitbucketCloudProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
-	return nil
+	return fmt.Errorf("Bitbucket Cloud doesn't support adding issue comments viea the REST API")
 }
 
 func (b *BitbucketCloudProvider) HasIssues() bool {
@@ -513,7 +595,7 @@ func (b *BitbucketCloudProvider) ServerURL() string {
 }
 
 func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
-	return nil
+	return fmt.Errorf("Bitbucket Cloud doesn't support releases ")
 }
 
 func BitbucketAccessTokenURL(url string, username string) string {

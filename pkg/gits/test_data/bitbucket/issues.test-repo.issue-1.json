@@ -1,0 +1,77 @@
+{
+    "priority": "major",
+    "kind": "bug",
+    "repository": {
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo"
+            },
+            "html": {
+                "href": "https://bitbucket.org/test-user/test-repo"
+            },
+            "avatar": {
+                "href": "https://bitbucket.org/test-user/test-repo/avatar/32/"
+            }
+        },
+        "type": "repository",
+        "name": "test-repo",
+        "full_name": "test-user/test-repo",
+        "uuid": "{2422942f-0f92-4c12-80b8-bc07b9bf3064}"
+    },
+    "links": {
+        "attachments": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/issues/1/attachments"
+        },
+        "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/issues/1"
+        },
+        "watch": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/issues/1/watch"
+        },
+        "comments": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/issues/1/comments"
+        },
+        "html": {
+            "href": "https://bitbucket.org/test-user/test-repo/issues/1/this-is-a-test-issue"
+        },
+        "vote": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/issues/1/vote"
+        }
+    },
+    "reporter": {
+        "username": "test-user",
+        "display_name": "Test User",
+        "type": "user",
+        "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/users/test-user"
+            },
+            "html": {
+                "href": "https://bitbucket.org/test-user/"
+            },
+            "avatar": {
+                "href": "https://bitbucket.org/account/test-user/avatar/32/"
+            }
+        }
+    },
+    "title": "This is a test issue",
+    "component": null,
+    "votes": 0,
+    "watches": 1,
+    "content": {
+        "raw": "",
+        "markup": "markdown",
+        "html": "",
+        "type": "rendered"
+    },
+    "assignee": null,
+    "state": "new",
+    "version": null,
+    "edited_on": null,
+    "created_on": "2018-04-07T01:54:34.607193+00:00",
+    "milestone": null,
+    "updated_on": "2018-04-07T01:54:34.607193+00:00",
+    "type": "issue",
+    "id": 1
+}
