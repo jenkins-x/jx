@@ -3,9 +3,11 @@ package builder
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,12 +29,22 @@ import (
 	"github.com/docker/docker/pkg/term"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
+	"k8s.io/api/core/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s "k8s.io/client-go/kubernetes"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/proto/hapi/release"
 	"k8s.io/helm/pkg/strvals"
+)
+
+const (
+	// name of the docker pull secret draft will create in the desired destination namespace
+	PullSecretName = "draft-pullsecret"
+	// name of the default service account draft will modify with the imagepullsecret
+	DefaultServiceAccountName = "default"
 )
 
 // Builder contains information about the build environment
@@ -42,6 +54,21 @@ type Builder struct {
 	Kube         k8s.Interface
 	Storage      storage.Store
 	LogsDir      string
+	id           string
+}
+
+// Logs returns the path to the build logs.
+//
+// Set after Up is called (otherwise "").
+func (b *Builder) Logs() string {
+	return filepath.Join(b.LogsDir, b.id)
+}
+
+// ID returns the build id.
+//
+// Set after Up is called (otherwise "").
+func (b *Builder) ID() string {
+	return b.id
 }
 
 // Context contains information about the application
@@ -63,13 +90,13 @@ type AppContext struct {
 	buf  *bytes.Buffer
 	tag  string
 	img  string
-	out  io.Writer
+	log  io.WriteCloser
 	id   string
 	vals chartutil.Values
 }
 
 // newAppContext prepares state carried across the various draft stage boundaries.
-func newAppContext(b *Builder, buildCtx *Context, out io.Writer) (*AppContext, error) {
+func newAppContext(b *Builder, buildCtx *Context) (*AppContext, error) {
 	raw := bytes.NewBuffer(buildCtx.Archive)
 	// write build context to a buffer so we can also write to the sha256 hash.
 	buf := new(bytes.Buffer)
@@ -86,12 +113,10 @@ func newAppContext(b *Builder, buildCtx *Context, out io.Writer) (*AppContext, e
 	imageRepository := strings.TrimLeft(fmt.Sprintf("%s/%s", buildCtx.Env.Registry, buildCtx.Env.Name), "/")
 	image := fmt.Sprintf("%s:%s", imageRepository, imgtag)
 
-	buildID := getulid()
-
 	// inject certain values into the chart such as the registry location,
 	// the application name, buildID and the application version.
 	tplstr := "image.repository=%s,image.tag=%s,%s=%s,%s=%s"
-	inject := fmt.Sprintf(tplstr, imageRepository, imgtag, local.DraftLabelKey, buildCtx.Env.Name, local.BuildIDKey, buildID)
+	inject := fmt.Sprintf(tplstr, imageRepository, imgtag, local.DraftLabelKey, buildCtx.Env.Name, local.BuildIDKey, b.ID())
 
 	vals, err := chartutil.ReadValues([]byte(buildCtx.Values.Raw))
 	if err != nil {
@@ -100,15 +125,24 @@ func newAppContext(b *Builder, buildCtx *Context, out io.Writer) (*AppContext, e
 	if err := strvals.ParseInto(inject, vals); err != nil {
 		return nil, err
 	}
+	logf, err := os.OpenFile(b.Logs(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return nil, err
+	}
+	state := &storage.Object{
+		BuildID:     b.ID(),
+		ContextID:   ctxtID,
+		LogsFileRef: b.Logs(),
+	}
 	return &AppContext{
-		obj:  &storage.Object{BuildID: buildID, ContextID: ctxtID},
-		id:   buildID,
+		obj:  state,
+		id:   b.ID(),
 		bldr: b,
 		ctx:  buildCtx,
 		buf:  buf,
 		tag:  imgtag,
 		img:  image,
-		out:  out,
+		log:  logf,
 		vals: vals,
 	}, nil
 }
@@ -272,35 +306,36 @@ func archiveSrc(ctx *Context) error {
 
 // Up handles incoming draft up requests and returns a stream of summaries or error.
 func (b *Builder) Up(ctx context.Context, bctx *Context) <-chan *Summary {
+	b.id = getulid()
 	ch := make(chan *Summary, 1)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		var (
-			buf = new(bytes.Buffer)
 			app *AppContext
 			err error
 		)
 		defer func() {
-			b.finish(app, buf)
+			b.saveState(app)
 			wg.Done()
 		}()
-		if app, err = newAppContext(b, bctx, buf); err != nil {
-			fmt.Printf("buildApp: error creating app context: %v\n", err)
+		if app, err = newAppContext(b, bctx); err != nil {
+			log.Printf("buildApp: error creating app context: %v\n", err)
 			return
 		}
+		log.SetOutput(app.log)
 		if err := b.buildImg(ctx, app, ch); err != nil {
-			fmt.Printf("buildApp: buildImg error: %v\n", err)
+			log.Printf("buildApp: buildImg error: %v\n", err)
 			return
 		}
 		if app.ctx.Env.Registry != "" {
 			if err := b.pushImg(ctx, app, ch); err != nil {
-				fmt.Printf("buildApp: pushImg error: %v\n", err)
+				log.Printf("buildApp: pushImg error: %v\n", err)
 				return
 			}
 		}
 		if err := b.release(ctx, app, ch); err != nil {
-			fmt.Printf("buildApp: release error: %v\n", err)
+			log.Printf("buildApp: release error: %v\n", err)
 			return
 		}
 	}()
@@ -311,22 +346,15 @@ func (b *Builder) Up(ctx context.Context, bctx *Context) <-chan *Summary {
 	return ch
 }
 
-// finish updates storage with the information collected during the stages of a draft build and
-// writes the aggregated logs to a tempoarary file.
-func (b *Builder) finish(app *AppContext, buf *bytes.Buffer) {
-	logsFile := filepath.Join(b.LogsDir, app.id)
-	app.obj.LogsFileRef = logsFile
+// saveState saves information collected from a draft build.
+func (b *Builder) saveState(app *AppContext) {
 	if err := b.Storage.UpdateBuild(context.Background(), app.ctx.Env.Name, app.obj); err != nil {
-		fmt.Printf("complete: failed to store build object for app %q: %v\n", app.ctx.Env.Name, err)
+		log.Printf("complete: failed to store build object for app %q: %v\n", app.ctx.Env.Name, err)
 		return
 	}
-
-	if err := ioutil.WriteFile(logsFile, buf.Bytes(), 0666); err != nil {
-		fmt.Printf("complete: failed to write logs to file for build %q: %v\n", app.id, err)
-		return
+	if app.log != nil {
+		app.log.Close()
 	}
-	// TODO: add a debug logger
-	// fmt.Printf("complete: wrote logs to %s\n", logsFile)
 }
 
 // buildImg builds the docker image.
@@ -353,8 +381,8 @@ func (b *Builder) buildImg(ctx context.Context, app *AppContext, out chan<- *Sum
 			close(msgc)
 			close(errc)
 		}()
-		outFd, isTerm := term.GetFdInfo(app.out)
-		if err := jsonmessage.DisplayJSONMessagesStream(resp.Body, app.out, outFd, isTerm, nil); err != nil {
+		outFd, isTerm := term.GetFdInfo(app.buf)
+		if err := jsonmessage.DisplayJSONMessagesStream(resp.Body, app.log, outFd, isTerm, nil); err != nil {
 			errc <- err
 			return
 		}
@@ -417,8 +445,8 @@ func (b *Builder) pushImg(ctx context.Context, app *AppContext, out chan<- *Summ
 			close(errc)
 			close(msgc)
 		}()
-		outFd, isTerm := term.GetFdInfo(app.out)
-		if err := jsonmessage.DisplayJSONMessagesStream(resp, app.out, outFd, isTerm, nil); err != nil {
+		outFd, isTerm := term.GetFdInfo(app.log)
+		if err := jsonmessage.DisplayJSONMessagesStream(resp, app.log, outFd, isTerm, nil); err != nil {
 			errc <- err
 			return
 		}
@@ -454,6 +482,13 @@ func (b *Builder) release(ctx context.Context, app *AppContext, out chan<- *Summ
 
 	// notify that particular stage has started.
 	summary("started", SummaryStarted)
+
+	// inject a registry secret only if a registry was configured
+	if app.ctx.Env.Registry != "" {
+		if err := b.prepareReleaseEnvironment(ctx, app); err != nil {
+			return err
+		}
+	}
 
 	// If a release does not exist, install it. If another error occurs during the check,
 	// ignore the error and continue with the upgrade.
@@ -503,6 +538,95 @@ func (b *Builder) release(ctx context.Context, app *AppContext, out chan<- *Summ
 		app.obj.Release = rls.Release.Name
 		formatReleaseStatus(app, rls.Release, summary)
 	}
+	return nil
+}
+
+func (b *Builder) prepareReleaseEnvironment(ctx context.Context, app *AppContext) error {
+	// determine if the destination namespace exists, create it if not.
+	if _, err := b.Kube.CoreV1().Namespaces().Get(app.ctx.Env.Namespace, metav1.GetOptions{}); err != nil {
+		if !apiErrors.IsNotFound(err) {
+			return err
+		}
+		_, err = b.Kube.CoreV1().Namespaces().Create(&v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{Name: app.ctx.Env.Namespace},
+		})
+		if err != nil {
+			return fmt.Errorf("could not create namespace %q: %v", app.ctx.Env.Namespace, err)
+		}
+	}
+
+	regAuthToken, err := command.RetrieveAuthTokenFromImage(ctx, b.DockerClient, app.img)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve auth token from image %s: %v", app.img, err)
+	}
+
+	// we need to translate the auth token Docker gives us into a Kubernetes registry auth secret token.
+	regAuth, err := FromAuthConfigToken(regAuthToken)
+	if err != nil {
+		return fmt.Errorf("failed to convert '%s' to a kubernetes registry auth secret token: %v", regAuthToken, err)
+	}
+
+	// create a new json string with the full dockerauth, including the registry URL.
+	js, err := json.Marshal(map[string]*DockerConfigEntryWithAuth{app.ctx.Env.Registry: regAuth})
+	if err != nil {
+		return fmt.Errorf("could not json encode docker authentication string: %v", err)
+	}
+
+	// determine if the registry pull secret exists in the desired namespace, create it if not.
+	var secret *v1.Secret
+	if secret, err = b.Kube.CoreV1().Secrets(app.ctx.Env.Namespace).Get(PullSecretName, metav1.GetOptions{}); err != nil {
+		if !apiErrors.IsNotFound(err) {
+			return err
+		}
+		_, err = b.Kube.CoreV1().Secrets(app.ctx.Env.Namespace).Create(
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      PullSecretName,
+					Namespace: app.ctx.Env.Namespace,
+				},
+				Type: v1.SecretTypeDockercfg,
+				StringData: map[string]string{
+					".dockercfg": string(js),
+				},
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("could not create registry pull secret: %v", err)
+		}
+	} else {
+		// the registry pull secret exists, check if it needs to be updated.
+		if data, ok := secret.StringData[".dockercfg"]; ok && data != string(js) {
+			secret.StringData[".dockercfg"] = string(js)
+			_, err = b.Kube.CoreV1().Secrets(app.ctx.Env.Namespace).Update(secret)
+			if err != nil {
+				return fmt.Errorf("could not update registry pull secret: %v", err)
+			}
+		}
+	}
+
+	// determine if the default service account in the desired namespace has the correct
+	// imagePullSecret. If not, add it.
+	svcAcct, err := b.Kube.CoreV1().ServiceAccounts(app.ctx.Env.Namespace).Get(DefaultServiceAccountName, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("could not load default service account: %v", err)
+	}
+	found := false
+	for _, ps := range svcAcct.ImagePullSecrets {
+		if ps.Name == PullSecretName {
+			found = true
+			break
+		}
+	}
+	if !found {
+		svcAcct.ImagePullSecrets = append(svcAcct.ImagePullSecrets, v1.LocalObjectReference{
+			Name: PullSecretName,
+		})
+		_, err := b.Kube.CoreV1().ServiceAccounts(app.ctx.Env.Namespace).Update(svcAcct)
+		if err != nil {
+			return fmt.Errorf("could not modify default service account with registry pull secret: %v", err)
+		}
+	}
+
 	return nil
 }
 

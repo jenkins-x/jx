@@ -280,6 +280,10 @@ func (r *Response) populatePageValues(v interface{}) {
 		r.StartAt = value.StartAt
 		r.MaxResults = value.MaxResults
 		r.Total = value.Total
+	case *groupMembersResult:
+		r.StartAt = value.StartAt
+		r.MaxResults = value.MaxResults
+		r.Total = value.Total
 	}
 	return
 }

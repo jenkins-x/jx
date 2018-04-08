@@ -32,6 +32,8 @@ set for convenience. For major/minor releases, use the following:
 
 ```
 export RELEASE_NAME=vX.Y.0
+export RELEASE_CANDIDATE_NAME="$RELEASE_NAME-rc1"
+export RELEASE_BRANCH_NAME=release-X.Y
 ```
 
 If you are creating a patch release, you may want to use the following instead:
@@ -39,6 +41,7 @@ If you are creating a patch release, you may want to use the following instead:
 ```
 export LATEST_PATCH_RELEASE=vX.Y.Z
 export RELEASE_NAME=vX.Y.Z+1
+export RELEASE_BRANCH_NAME=release-X.Y
 ```
 
 ## 1. Create the Release Branch
@@ -47,12 +50,12 @@ export RELEASE_NAME=vX.Y.Z+1
 
 Major releases are for new feature additions and behavioral changes *that break backwards compatibility*.
 Minor releases are for new feature additions that do not break backwards compatibility. To create a
-major or minor release, start by creating a `release-vX.Y.0` branch from master.
+major or minor release, start by creating a release branch from master.
 
 ```
 git fetch upstream
 git checkout upstream/master
-git checkout -b release-$RELEASE_NAME
+git checkout -b $RELEASE_BRANCH_NAME
 ```
 
 This new branch is going to be the base for the release, which we are going to iterate upon later.
@@ -60,12 +63,12 @@ This new branch is going to be the base for the release, which we are going to i
 ### Patch releases
 
 Patch releases are a few critical cherry-picked fixes to existing releases. Start by creating a
-`release-vX.Y.Z` branch from the latest patch release.
+release branch from the latest patch release.
 
 ```
 git fetch upstream --tags
 git checkout $LATEST_PATCH_RELEASE
-git checkout -b release-$RELEASE_NAME
+git checkout -b $RELEASE_BRANCH_NAME
 ```
 
 From here, we can cherry-pick the commits we want to bring into the patch release:
@@ -109,7 +112,7 @@ next step, so let's commit our changes now.
 
 ```
 git add .
-git commit -m "bump version to $RELEASE_NAME-rc1"
+git commit -m "bump version to $RELEASE_CANDIDATE_NAME"
 ```
 
 ## 3. Generate the CHANGELOG
@@ -164,7 +167,7 @@ In order for others to start testing, we can now push the release branch upstrea
 test process.
 
 ```
-git push upstream release-$RELEASE_NAME
+git push upstream $RELEASE_BRANCH_NAME
 ```
 
 If anyone is available, let others peer-review the branch before continuing to ensure that all the
@@ -176,8 +179,8 @@ Now that the release branch is out and ready, it is time to start creating and i
 candidates.
 
 ```
-git tag $RELEASE_NAME-rc1
-git push upstream $RELEASE_NAME-rc1
+git tag --sign --annotate "${RELEASE_CANDIDATE_NAME}" --message "Draft ${RELEASE_CANDIDATE_NAME}"
+git push upstream $RELEASE_CANDIDATE_NAME
 ```
 
 CircleCI will automatically create a tagged release image and client binary to test with.
@@ -187,19 +190,19 @@ the following steps to grab the client from Azure Blob Storage:
 
 linux/amd64, using /bin/bash:
 
-    $ wget https://azuredraft.blob.core.windows.net/draft/draft-$RELEASE_NAME-rc1-linux-amd64.tar.gz
+    $ wget https://azuredraft.blob.core.windows.net/draft/draft-$RELEASE_CANDIDATE_NAME-linux-amd64.tar.gz
 
 darwin/amd64, using Terminal.app:
 
-    $ wget https://azuredraft.blob.core.windows.net/draft/draft-$RELEASE_NAME-rc1-darwin-amd64.tar.gz
+    $ wget https://azuredraft.blob.core.windows.net/draft/draft-$RELEASE_CANDIDATE_NAME-darwin-amd64.tar.gz
 
 windows/amd64, using PowerShell:
 
     PS C:\> $ReleaseName = "v0.2.0"
-    PS C:\> Invoke-WebRequest -Uri "https://azuredraft.blob.core.windows.net/draft/draft-$RELEASE_NAME-rc1-windows-amd64.tar.gz" -OutFile "draft-$ReleaseName-rc1-windows-amd64.tar.gz"
+    PS C:\> Invoke-WebRequest -Uri "https://azuredraft.blob.core.windows.net/draft/draft-$ReleaseCandidateName-windows-amd64.tar.gz" -OutFile "draft-$ReleaseCandidateName-windows-amd64.tar.gz"
 
 Then, unpack and move the binary to somewhere on your $PATH, or move it somewhere and add it to
-your $PATH (e.g. /usr/local/bin/helm for linux/macOS, C:\Program Files\helm\helm.exe for Windows).
+your $PATH (e.g. /usr/local/bin/helm for linux/macOS, C:\helm.exe for Windows).
 
 ## 6. Iterate on Successive Release Candidates
 
@@ -209,8 +212,7 @@ finding ways in which the release might have caused various features or upgrade 
 have issues, not coding. During this time, the release is in code freeze, and any additional code
 changes will be pushed out to the next release.
 
-During this phase, the release-$RELEASE_NAME branch will keep evolving as you will produce new
-release candidates. The frequency of new candidates is up to the release manager: use your best
+The frequency of new candidates is up to the release manager: use your best
 judgement taking into account the severity of reported issues, testers' availability, and the
 release deadline date. Generally speaking, it is better to let a release roll over the deadline
 than to ship a broken release.
@@ -219,6 +221,7 @@ Each time you'll want to produce a new release candidate, you will start by addi
 branch by cherry-picking from master:
 
 ```
+export RELEASE_CANDIDATE_NAME=$RELEASE_NAME-rc2
 git cherry-pick -x <commit_id>
 ```
 
@@ -228,8 +231,8 @@ You will also want to update the release version number and the CHANGELOG as we 
 After that, tag it and notify users of the new release candidate:
 
 ```
-git tag $RELEASE_NAME-rc2
-git push upstream $RELEASE_NAME-rc2
+git tag --sign --annotate "${RELEASE_CANDIDATE_NAME}" --message "Draft ${RELEASE_CANDIDATE_NAME}"
+git push upstream $RELEASE_CANDIDATE_NAME
 ```
 
 From here on just repeat this process, continuously testing until you're happy with the release
@@ -246,10 +249,10 @@ git add .
 git commit -m "bump version to $RELEASE_NAME"
 ```
 
-Double-check one last time to make sure eveything is in order, then finally push the release tag.
+Double-check one last time to make sure everything is in order, then finally push the release tag.
 
 ```
-git tag $RELEASE_NAME
+git tag --sign --annotate "${RELEASE_NAME}" --message "Draft ${RELEASE_NAME}"
 git push upstream $RELEASE_NAME
 ```
 

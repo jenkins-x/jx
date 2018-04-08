@@ -539,7 +539,7 @@ type PrintToPDFParams struct {
 	MarginRight             float64 `json:"marginRight,omitempty"`             // Right margin in inches. Defaults to 1cm (~0.4 inches).
 	PageRanges              string  `json:"pageRanges,omitempty"`              // Paper ranges to print, e.g., '1-5, 8, 11-13'. Defaults to the empty string, which means print all pages.
 	IgnoreInvalidPageRanges bool    `json:"ignoreInvalidPageRanges,omitempty"` // Whether to silently ignore invalid but successfully parsed page ranges, such as '3-2'. Defaults to false.
-	HeaderTemplate          string  `json:"headerTemplate,omitempty"`          // HTML template for the print header. Should be valid HTML markup with following classes used to inject printing values into them: - date - formatted print date - title - document title - url - document location - pageNumber - current page number - totalPages - total pages in the document  For example, <span class=title></span> would generate span containing the title.
+	HeaderTemplate          string  `json:"headerTemplate,omitempty"`          // HTML template for the print header. Should be valid HTML markup with following classes used to inject printing values into them: - date: formatted print date - title: document title - url: document location - pageNumber: current page number - totalPages: total pages in the document  For example, <span class=title></span> would generate span containing the title.
 	FooterTemplate          string  `json:"footerTemplate,omitempty"`          // HTML template for the print footer. Should use the same format as the headerTemplate.
 	PreferCSSPageSize       bool    `json:"preferCSSPageSize,omitempty"`       // Whether or not to prefer page size as defined by css. Defaults to false, in which case the content will be scaled to fit the paper size.
 }
@@ -627,10 +627,10 @@ func (p PrintToPDFParams) WithIgnoreInvalidPageRanges(ignoreInvalidPageRanges bo
 
 // WithHeaderTemplate HTML template for the print header. Should be valid
 // HTML markup with following classes used to inject printing values into them:
-// - date - formatted print date - title - document title - url - document
-// location - pageNumber - current page number - totalPages - total pages in the
-// document For example, <span class=title></span> would generate span
-// containing the title.
+// - date: formatted print date - title: document title - url: document location
+// - pageNumber: current page number - totalPages: total pages in the document
+// For example, <span class=title></span> would generate span containing the
+// title.
 func (p PrintToPDFParams) WithHeaderTemplate(headerTemplate string) *PrintToPDFParams {
 	p.HeaderTemplate = headerTemplate
 	return &p
@@ -842,6 +842,26 @@ func (p *SetAdBlockingEnabledParams) Do(ctxt context.Context, h cdp.Executor) (e
 	return h.Execute(ctxt, CommandSetAdBlockingEnabled, p, nil)
 }
 
+// SetBypassCSPParams enable page Content Security Policy by-passing.
+type SetBypassCSPParams struct {
+	Enabled bool `json:"enabled"` // Whether to bypass page CSP.
+}
+
+// SetBypassCSP enable page Content Security Policy by-passing.
+//
+// parameters:
+//   enabled - Whether to bypass page CSP.
+func SetBypassCSP(enabled bool) *SetBypassCSPParams {
+	return &SetBypassCSPParams{
+		Enabled: enabled,
+	}
+}
+
+// Do executes Page.setBypassCSP against the provided context.
+func (p *SetBypassCSPParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandSetBypassCSP, p, nil)
+}
+
 // SetDocumentContentParams sets given markup as the document's HTML.
 type SetDocumentContentParams struct {
 	FrameID cdp.FrameID `json:"frameId"` // Frame id to set HTML for.
@@ -1032,6 +1052,7 @@ const (
 	CommandScreencastFrameAck                  = "Page.screencastFrameAck"
 	CommandSearchInResource                    = "Page.searchInResource"
 	CommandSetAdBlockingEnabled                = "Page.setAdBlockingEnabled"
+	CommandSetBypassCSP                        = "Page.setBypassCSP"
 	CommandSetDocumentContent                  = "Page.setDocumentContent"
 	CommandSetDownloadBehavior                 = "Page.setDownloadBehavior"
 	CommandSetLifecycleEventsEnabled           = "Page.setLifecycleEventsEnabled"

@@ -2,6 +2,7 @@ package jira
 
 import (
 	"fmt"
+	"net/url"
 )
 
 // GroupService handles Groups for the JIRA instance / API.
@@ -48,13 +49,21 @@ type GroupMember struct {
 	TimeZone     string `json:"timeZone,omitempty"`
 }
 
+type GroupSearchOptions struct {
+	StartAt              int
+	MaxResults           int
+	IncludeInactiveUsers bool
+}
+
 // Get returns a paginated list of users who are members of the specified group and its subgroups.
 // Users in the page are ordered by user names.
 // User of this resource is required to have sysadmin or admin permissions.
 //
 // JIRA API docs: https://docs.atlassian.com/jira/REST/server/#api/2/group-getUsersFromGroup
+//
+// WARNING: This API only returns the first page of group members
 func (s *GroupService) Get(name string) ([]GroupMember, *Response, error) {
-	apiEndpoint := fmt.Sprintf("/rest/api/2/group/member?groupname=%s", name)
+	apiEndpoint := fmt.Sprintf("/rest/api/2/group/member?groupname=%s", url.QueryEscape(name))
 	req, err := s.client.NewRequest("GET", apiEndpoint, nil)
 	if err != nil {
 		return nil, nil, err
@@ -66,6 +75,37 @@ func (s *GroupService) Get(name string) ([]GroupMember, *Response, error) {
 		return nil, resp, err
 	}
 
+	return group.Members, resp, nil
+}
+
+// Get returns a paginated list of members of the specified group and its subgroups.
+// Users in the page are ordered by user names.
+// User of this resource is required to have sysadmin or admin permissions.
+//
+// JIRA API docs: https://docs.atlassian.com/jira/REST/server/#api/2/group-getUsersFromGroup
+func (s *GroupService) GetWithOptions(name string, options *GroupSearchOptions) ([]GroupMember, *Response, error) {
+	var apiEndpoint string
+	if options == nil {
+		apiEndpoint = fmt.Sprintf("/rest/api/2/group/member?groupname=%s", url.QueryEscape(name))
+	} else {
+		apiEndpoint = fmt.Sprintf(
+			"/rest/api/2/group/member?groupname=%s&startAt=%d&maxResults=%d&includeInactiveUsers=%t",
+			url.QueryEscape(name),
+			options.StartAt,
+			options.MaxResults,
+			options.IncludeInactiveUsers,
+		)
+	}
+	req, err := s.client.NewRequest("GET", apiEndpoint, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	group := new(groupMembersResult)
+	resp, err := s.client.Do(req, group)
+	if err != nil {
+		return nil, resp, err
+	}
 	return group.Members, resp, nil
 }
 

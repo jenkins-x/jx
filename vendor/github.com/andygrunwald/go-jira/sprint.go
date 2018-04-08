@@ -2,6 +2,7 @@ package jira
 
 import (
 	"fmt"
+	"github.com/google/go-querystring/query"
 )
 
 // SprintService handles sprints in JIRA Agile API.
@@ -64,4 +65,42 @@ func (s *SprintService) GetIssuesForSprint(sprintID int) ([]Issue, *Response, er
 	}
 
 	return result.Issues, resp, err
+}
+
+// Get returns a full representation of the issue for the given issue key.
+// JIRA will attempt to identify the issue by the issueIdOrKey path parameter.
+// This can be an issue id, or an issue key.
+// If the issue cannot be found via an exact match, JIRA will also look for the issue in a case-insensitive way, or by looking to see if the issue was moved.
+//
+// The given options will be appended to the query string
+//
+// JIRA API docs: https://docs.atlassian.com/jira-software/REST/7.3.1/#agile/1.0/issue-getIssue
+//
+// TODO: create agile service for holding all agile apis' implementation
+func (s *SprintService) GetIssue(issueID string, options *GetQueryOptions) (*Issue, *Response, error) {
+	apiEndpoint := fmt.Sprintf("rest/agile/1.0/issue/%s", issueID)
+
+	req, err := s.client.NewRequest("GET", apiEndpoint, nil)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if options != nil {
+		q, err := query.Values(options)
+		if err != nil {
+			return nil, nil, err
+		}
+		req.URL.RawQuery = q.Encode()
+	}
+
+	issue := new(Issue)
+	resp, err := s.client.Do(req, issue)
+
+	if err != nil {
+		jerr := NewJiraError(resp, err)
+		return nil, resp, jerr
+	}
+
+	return issue, resp, nil
 }

@@ -49,6 +49,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoEmulation(in *jlexer.Lexer, o
 				}
 				(*out.VirtualTimeBase).UnmarshalEasyJSON(in)
 			}
+		case "virtualTimeTicksBase":
+			out.VirtualTimeTicksBase = float64(in.Float64())
 		default:
 			in.SkipRecursive()
 		}
@@ -72,6 +74,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoEmulation(out *jwriter.Writer
 			out.RawString(prefix)
 		}
 		(*in.VirtualTimeBase).MarshalEasyJSON(out)
+	}
+	if in.VirtualTimeTicksBase != 0 {
+		const prefix string = ",\"virtualTimeTicksBase\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Float64(float64(in.VirtualTimeTicksBase))
 	}
 	out.RawByte('}')
 }

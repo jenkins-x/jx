@@ -1,4 +1,4 @@
-# Install Guide
+# Install Guide for Minikube
 
 Get started with Draft in three easy steps:
 
@@ -24,11 +24,13 @@ All of the dependencies (except Docker) can be installed by the following:
 $ brew cask install minikube
 ```
 
-Docker can be installed following the [Docker for Mac guide](https://docs.docker.com/docker-for-mac/install/).
+Docker can be installed following the appropriate path in the [Install Docker](https://docs.docker.com/install/) guide.
+
+**NOTE for Linux**: Some distributions will require `sudo` for Docker usage. For this situation, you can either use `sudo`, or follow the instructions to [manage docker as a non-root user](https://docs.docker.com/install/linux/linux-postinstall/#manage-docker-as-a-non-root-user). The choice is yours.
 
 ## Install Draft
 
-Afterwards, fetch [the latest release of Draft](https://github.com/Azure/draft/releases).
+Afterwards, fetch [the latest release of Draft](https://github.com/Azure/draft/releases). 
 
 Installing Draft via Homebrew can be done using
 
@@ -46,13 +48,13 @@ Canary releases of the Draft client can be found at the following links:
 
 Unpack the Draft binary and add it to your PATH.
 
-Now that Draft has been installed, we can set up Draft by running this command:
+Now that Draft has been installed, set up Draft by running this command:
 
 ```shell
 $ draft init
 ```
 
-It will prepare DRAFT_HOME with a default set of packs, plugins and other directories required to get working with Draft.
+It will prepare $DRAFT_HOME with a default set of packs, plugins and other directories required to get working with Draft.
 
 ## Boot Minikube
 
@@ -75,35 +77,35 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 
 ## Install Helm
 
-Install Helm, the Kubernetes Package Manager, in your cluster. Helm manages the lifecycle of an application in Kubernetes, and it is also how Draft deploys an application to Kubernetes.
+Install Helm, the Kubernetes Package Manager, in your cluster. Helm manages the lifecycle of an application in Kubernetes, and it is also how Draft deploys an application to Kubernetes. For those who prefer to work in an enforced RBAC environment, be sure to follow the [Helm Secure Configuration](https://docs.helm.sh/using_helm/#securing-your-helm-installation) instructions.
 
-Installing Helm and setting it up is quite simple:
+The default installation of Helm is quite simple:
 
 ```shell
 $ helm init
 ```
 
-Wait for Helm to come up and be in a `Ready` state. You can use `kubectl -n kube-system get deploy tiller-deploy --watch` to wait for tiller to come up.
+Wait for Helm to come up and be in a `Ready` state. You can use `kubectl -n kube-system get deploy tiller-deploy --watch` to wait for tiller to come up (the server side of Helm).
 
 ## Configure Docker
 
-For minikube environments, it's best to get started by telling Draft to build images directly using Minikube's Docker daemon, making the build process quick and speedy. To do this, we run
+For Minikube environments, configure Draft to build images directly using Minikube's Docker daemon, making the build process quick and redeployments speedy. To do this, run
 
 ```shell
 $ eval $(minikube docker-env)
-$ draft config set disable-push-warning 1
 ```
 
-The second command disables a warning that `draft up` outputs when no registry has been configured to push images to. Since docker builds on Minikube are immediately picked up by the Kubelet, we don't require a container registry and thus can safely disable this warning.
+NOTE: You will be warned that no image registry has been set when you build and deploy your first application. Since docker builds on Minikube are immediately picked up by the Kubelet, you don't require a container registry and thus can safely disable this warning by following the instructions to do so.
 
 ## Take Draft for a Spin
 
 Once you've completed the above steps, you're ready to climb aboard and explore the [Getting Started Guide][Getting Started] - you'll soon be sailing!
 
-## Advanced Setup
+## Cloud Setup
 
-For more advanced users, [advanced setup documentation](install-advanced.md) is also provided for
+For more advanced users, [Cloud installation documentation](install-cloud.md) is also provided for
 
+- configuring for remote image registries and Cloud providers
 - running Tiller in a Kubernetes cluster with RBAC enabled
 - running Tiller in a namespace other than kube-system
 

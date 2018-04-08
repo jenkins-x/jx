@@ -311,18 +311,65 @@ type SignedCertificateTimestamp struct {
 
 // SecurityDetails security details about a request.
 type SecurityDetails struct {
-	Protocol                       string                        `json:"protocol"`                       // Protocol name (e.g. "TLS 1.2" or "QUIC").
-	KeyExchange                    string                        `json:"keyExchange"`                    // Key Exchange used by the connection, or the empty string if not applicable.
-	KeyExchangeGroup               string                        `json:"keyExchangeGroup,omitempty"`     // (EC)DH group used by the connection, if applicable.
-	Cipher                         string                        `json:"cipher"`                         // Cipher name.
-	Mac                            string                        `json:"mac,omitempty"`                  // TLS MAC. Note that AEAD ciphers do not have separate MACs.
-	CertificateID                  security.CertificateID        `json:"certificateId"`                  // Certificate ID value.
-	SubjectName                    string                        `json:"subjectName"`                    // Certificate subject name.
-	SanList                        []string                      `json:"sanList"`                        // Subject Alternative Name (SAN) DNS names and IP addresses.
-	Issuer                         string                        `json:"issuer"`                         // Name of the issuing CA.
-	ValidFrom                      *cdp.TimeSinceEpoch           `json:"validFrom"`                      // Certificate valid from date.
-	ValidTo                        *cdp.TimeSinceEpoch           `json:"validTo"`                        // Certificate valid to (expiration) date
-	SignedCertificateTimestampList []*SignedCertificateTimestamp `json:"signedCertificateTimestampList"` // List of signed certificate timestamps (SCTs).
+	Protocol                          string                            `json:"protocol"`                          // Protocol name (e.g. "TLS 1.2" or "QUIC").
+	KeyExchange                       string                            `json:"keyExchange"`                       // Key Exchange used by the connection, or the empty string if not applicable.
+	KeyExchangeGroup                  string                            `json:"keyExchangeGroup,omitempty"`        // (EC)DH group used by the connection, if applicable.
+	Cipher                            string                            `json:"cipher"`                            // Cipher name.
+	Mac                               string                            `json:"mac,omitempty"`                     // TLS MAC. Note that AEAD ciphers do not have separate MACs.
+	CertificateID                     security.CertificateID            `json:"certificateId"`                     // Certificate ID value.
+	SubjectName                       string                            `json:"subjectName"`                       // Certificate subject name.
+	SanList                           []string                          `json:"sanList"`                           // Subject Alternative Name (SAN) DNS names and IP addresses.
+	Issuer                            string                            `json:"issuer"`                            // Name of the issuing CA.
+	ValidFrom                         *cdp.TimeSinceEpoch               `json:"validFrom"`                         // Certificate valid from date.
+	ValidTo                           *cdp.TimeSinceEpoch               `json:"validTo"`                           // Certificate valid to (expiration) date
+	SignedCertificateTimestampList    []*SignedCertificateTimestamp     `json:"signedCertificateTimestampList"`    // List of signed certificate timestamps (SCTs).
+	CertificateTransparencyCompliance CertificateTransparencyCompliance `json:"certificateTransparencyCompliance"` // Whether the request complied with Certificate Transparency policy
+}
+
+// CertificateTransparencyCompliance whether the request complied with
+// Certificate Transparency policy.
+type CertificateTransparencyCompliance string
+
+// String returns the CertificateTransparencyCompliance as string value.
+func (t CertificateTransparencyCompliance) String() string {
+	return string(t)
+}
+
+// CertificateTransparencyCompliance values.
+const (
+	CertificateTransparencyComplianceUnknown      CertificateTransparencyCompliance = "unknown"
+	CertificateTransparencyComplianceNotCompliant CertificateTransparencyCompliance = "not-compliant"
+	CertificateTransparencyComplianceCompliant    CertificateTransparencyCompliance = "compliant"
+)
+
+// MarshalEasyJSON satisfies easyjson.Marshaler.
+func (t CertificateTransparencyCompliance) MarshalEasyJSON(out *jwriter.Writer) {
+	out.String(string(t))
+}
+
+// MarshalJSON satisfies json.Marshaler.
+func (t CertificateTransparencyCompliance) MarshalJSON() ([]byte, error) {
+	return easyjson.Marshal(t)
+}
+
+// UnmarshalEasyJSON satisfies easyjson.Unmarshaler.
+func (t *CertificateTransparencyCompliance) UnmarshalEasyJSON(in *jlexer.Lexer) {
+	switch CertificateTransparencyCompliance(in.String()) {
+	case CertificateTransparencyComplianceUnknown:
+		*t = CertificateTransparencyComplianceUnknown
+	case CertificateTransparencyComplianceNotCompliant:
+		*t = CertificateTransparencyComplianceNotCompliant
+	case CertificateTransparencyComplianceCompliant:
+		*t = CertificateTransparencyComplianceCompliant
+
+	default:
+		in.AddError(errors.New("unknown CertificateTransparencyCompliance value"))
+	}
+}
+
+// UnmarshalJSON satisfies json.Unmarshaler.
+func (t *CertificateTransparencyCompliance) UnmarshalJSON(buf []byte) error {
+	return easyjson.Unmarshal(buf, t)
 }
 
 // BlockedReason the reason why request was blocked.

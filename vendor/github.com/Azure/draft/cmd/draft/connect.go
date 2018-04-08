@@ -24,6 +24,8 @@ const (
 var (
 	targetContainer string
 	overridePorts   []string
+
+	dryRun bool
 )
 
 type connectCmd struct {
@@ -51,6 +53,7 @@ func newConnectCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&runningEnvironment, environmentFlagName, environmentFlagShorthand, defaultDraftEnvironment(), environmentFlagUsage)
 	f.StringVarP(&targetContainer, "container", "c", "", "name of the container to connect to")
 	f.StringSliceVarP(&overridePorts, "override-port", "p", []string{}, "specify a local port to connect to, in the form <local>:<remote>")
+	f.BoolVarP(&dryRun, "dry-run", "", false, "when this flag is used, draft connect will wait to find a ready pod then exit")
 
 	return cmd
 }
@@ -84,6 +87,10 @@ func (cn *connectCmd) run(runningEnvironment string) (err error) {
 	connection, err := deployedApp.Connect(client, config, targetContainer, ports, buildID)
 	if err != nil {
 		return err
+	}
+
+	if dryRun {
+		return
 	}
 
 	var connectionMessage = "Your connection is still active.\n"

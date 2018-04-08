@@ -9,6 +9,7 @@ import (
 
 const (
 	packName           = "foo"
+	dockerfileName     = "Dockerfile"
 	expectedDockerfile = `FROM python:onbuild
 
 CMD [ "python", "./hello.py" ]
@@ -26,8 +27,25 @@ func TestFromDir(t *testing.T) {
 		t.Errorf("expected chart to be non-nil")
 	}
 
-	if string(pack.Dockerfile) != expectedDockerfile {
-		t.Errorf("expected dockerfile == expected, got '%v'", pack.Dockerfile)
+	defer func() {
+		for _, f := range pack.Files {
+			f.Close()
+		}
+	}()
+
+	// check that the Dockerfile was loaded
+	dockerfile, ok := pack.Files[dockerfileName]
+	if !ok {
+		t.Error("expected Dockerfile to have been loaded")
+	}
+
+	dockerfileContents, err := ioutil.ReadAll(dockerfile)
+	if err != nil {
+		t.Errorf("expected Dockerfile to be readable, got %v", err)
+	}
+
+	if string(dockerfileContents) != expectedDockerfile {
+		t.Errorf("expected Dockerfile == expected file contents, got '%v'", dockerfileContents)
 	}
 
 	if _, err := FromDir("dir-does-not-exist"); err == nil {
@@ -52,12 +70,12 @@ func TestFromDir(t *testing.T) {
 		t.Skip("skipping file permission mode tests on CI servers")
 	}
 
-	if err := os.MkdirAll(filepath.Join(dir, packName, DockerfileName), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(dir, packName, dockerfileName), 0755); err != nil {
 		t.Fatal(err)
 	}
 
 	// load a pack with an un-readable Dockerfile (file perms 0000)
-	if err := os.Chmod(filepath.Join(dir, packName, DockerfileName), 0000); err != nil {
+	if err := os.Chmod(filepath.Join(dir, packName, dockerfileName), 0000); err != nil {
 		t.Fatalf("dir %s: %s", dir, err)
 	}
 	if _, err := FromDir(dir); err == nil {
@@ -65,7 +83,7 @@ func TestFromDir(t *testing.T) {
 	}
 
 	// revert file perms for the Dockerfile in prep for the detect script
-	if err := os.Chmod(filepath.Join(dir, packName, DockerfileName), 0644); err != nil {
+	if err := os.Chmod(filepath.Join(dir, packName, dockerfileName), 0644); err != nil {
 		t.Fatal(err)
 	}
 

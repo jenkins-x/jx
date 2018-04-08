@@ -1722,6 +1722,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoNetwork14(in *jlexer.Lexer, o
 				}
 				in.Delim(']')
 			}
+		case "certificateTransparencyCompliance":
+			(out.CertificateTransparencyCompliance).UnmarshalEasyJSON(in)
 		default:
 			in.SkipRecursive()
 		}
@@ -1889,6 +1891,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoNetwork14(out *jwriter.Writer
 			}
 			out.RawByte(']')
 		}
+	}
+	{
+		const prefix string = ",\"certificateTransparencyCompliance\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		(in.CertificateTransparencyCompliance).MarshalEasyJSON(out)
 	}
 	out.RawByte('}')
 }

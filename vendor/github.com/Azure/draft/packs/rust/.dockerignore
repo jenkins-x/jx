@@ -1,5 +1,4 @@
 Dockerfile
 draft.toml
-chart/
-NOTICE
+charts/
 target

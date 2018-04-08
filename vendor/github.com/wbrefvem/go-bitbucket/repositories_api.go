@@ -837,6 +837,9 @@ func (a *RepositoriesApiService) RepositoriesUsernameRepoSlugForksPost(ctx conte
 	if localVarTempParam, localVarOk := localVarOptionals["body"].(Repository); localVarOk {
 		localVarPostBody = &localVarTempParam
 	}
+	if localVarTempParam, localVarOk := localVarOptionals["body"]; localVarOk {
+		localVarPostBody = &localVarTempParam
+	}
 	if ctx != nil {
 		// API Key Authentication
 		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
@@ -1064,7 +1067,7 @@ func (a *RepositoriesApiService) RepositoriesUsernameRepoSlugHooksPost(ctx conte
 	}
 
 	// body params
-	if localVarTempParam, localVarOk := localVarOptionals["body"].(Repository); localVarOk {
+	if localVarTempParam, localVarOk := localVarOptionals["body"].(map[string]interface{}); localVarOk {
 		localVarPostBody = &localVarTempParam
 	}
 

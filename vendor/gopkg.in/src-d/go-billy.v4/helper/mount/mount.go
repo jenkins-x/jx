@@ -228,12 +228,12 @@ func copyPath(src, dst billy.Basic, srcPath, dstPath string) error {
 
 	srcFile, err := src.Open(srcPath)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	err = dstFile.Close()
