@@ -11,6 +11,7 @@ import (
 	"strings"
 )
 
+var COORDINATE_SYSTEM_BEGIN Short = 1
 // CursorUp moves the cursor n cells to up.
 func CursorUp(n int) {
 	fmt.Printf("\x1b[%dA", n)
@@ -61,6 +62,16 @@ func CursorMove(x int, y int) {
 	fmt.Printf("\x1b[%d;%df", x, y)
 }
 
+// CursorSave saves the current position
+func CursorSave() {
+	fmt.Print("\x1b7")
+}
+
+// CursorRestore restores the saved position of the cursor
+func CursorRestore() {
+	fmt.Print("\x1b8")
+}
+
 // CursorLocation returns the current location of the cursor in the terminal
 func CursorLocation() (*Coord, error) {
 	// print the escape sequence to receive the position in our stdin
@@ -103,17 +114,24 @@ func CursorLocation() (*Coord, error) {
 	return nil, fmt.Errorf("could not compute the cursor position using ascii escape sequences")
 }
 
+func (cur Coord) CursorIsAtLineEnd(size *Coord) bool {
+	return cur.X == size.X
+}
+
+func (cur Coord) CursorIsAtLineBegin() bool {
+	return cur.X == COORDINATE_SYSTEM_BEGIN
+}
+
 // Size returns the height and width of the terminal.
 func Size() (*Coord, error) {
 	// the general approach here is to move the cursor to the very bottom
 	// of the terminal, ask for the current location and then move the
 	// cursor back where we started
 
+	// hide the cursor (so it doesn't blink when getting the size of the terminal)
+	CursorHide()
 	// save the current location of the cursor
-	origin, err := CursorLocation()
-	if err != nil {
-		return nil, err
-	}
+	CursorSave()
 
 	// move the cursor to the very bottom of the terminal
 	CursorMove(999, 999)
@@ -125,9 +143,10 @@ func Size() (*Coord, error) {
 	}
 
 	// move back where we began
-	CursorUp(int(bottom.Y - origin.Y))
-	CursorHorizontalAbsolute(int(origin.X))
+	CursorRestore()
 
+	// show the cursor
+	CursorShow()
 	// sice the bottom was calcuated in the lower right corner, it
 	// is the dimensions we are looking for
 	return bottom, nil

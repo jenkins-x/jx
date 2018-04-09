@@ -14,6 +14,7 @@
 package version
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/blang/semver"
@@ -39,12 +40,38 @@ var Map = map[string]string{
 	"goVersion": GoVersion,
 }
 
-const VersionPrefix = ""
+const (
+	VersionPrefix = ""
+
+	// ExampleVersion shows an example version in the help
+	// if no version could be found (which should never really happen!)
+	ExampleVersion = "1.1.59"
+
+	// TestVersion used in test cases for the current version if no
+	// version can be found - such as if the version property is not properly
+	// included in the go test flags
+	TestVersion = "1.0.1"
+)
 
 func GetVersion() string {
-	return Map["version"]
+	v := Map["version"]
+	if v == "" {
+		v = TestVersion
+	}
+	return v
 }
 
 func GetSemverVersion() (semver.Version, error) {
 	return semver.Make(strings.TrimPrefix(GetVersion(), VersionPrefix))
+}
+
+// VersionStringDefault returns the current version string or returns a dummy
+// default value if there is an error
+func VersionStringDefault(defaultValue string) string {
+	v, err := GetSemverVersion()
+	if err == nil {
+		return v.String()
+	}
+	fmt.Printf("Warning failed to load version: %s\n", err)
+	return defaultValue
 }

@@ -19,7 +19,10 @@ import:
 - package: github.com/MakeNowJust/heredoc
 - package: github.com/blang/semver
 - package: gopkg.in/AlecAivazis/survey.v1
-  version: 9d3458c219bae9653d267883634bdb5375281fd8
+  subpackages:
+  - core
+  - terminal
+  version: v1.5.2
 - package: github.com/fatih/color
   version: v1.5.0
 - package: github.com/spf13/pflag

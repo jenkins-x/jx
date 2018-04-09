@@ -1,5 +1,5 @@
-hash: d6bfbfb1d2334d3c1afad870943efbad984357a6b66751a40801e857cdfa371d
-updated: 2018-04-07T17:57:56.874394127-04:00
+hash: 9d6102ea5409997838fedce513f4b4cc7c6b146c6f5c1bdfed53c0745f477f98
+updated: 2018-04-09T06:51:49.995314371+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -187,7 +187,7 @@ imports:
 - name: github.com/knq/sysutil
   version: 0218e141a794643e8c0fa283b9cd076fc0df662d
 - name: github.com/mailru/easyjson
-  version: 8b799c424f57fa123fc63a99d6383bc6e4c02578
+  version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
   subpackages:
   - buffer
   - jlexer
@@ -215,21 +215,21 @@ imports:
 - name: github.com/pkg/browser
   version: c90ca0c84f15f81c982e32665bffd8d7aac8f097
 - name: github.com/pkg/errors
-  version: 816c9085562cd7ee03e7f8188a1cfd942858cded
+  version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/russross/blackfriday
   version: 4048872b16cc0fc2c5fd9eacf0ed2c2fedaa0c8c
 - name: github.com/sergi/go-diff
   version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
   - diffmatchpatch
-- name: github.com/sirupsen/logrus
-  version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/Sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
   repo: git@github.com:/sirupsen/logrus
   vcs: git
+- name: github.com/sirupsen/logrus
+  version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/spf13/cobra
-  version: 4dab30cb33e6633c33c787106bafbfbfdde7842d
+  version: cd30c2a7e91a1d63fd9a0027accf18a681e9d50b
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -310,7 +310,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/appengine
-  version: 0a24098c0ec68416ec050f567f75df563d6b231e
+  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
   subpackages:
   - internal
   - internal/app_identity
@@ -319,8 +319,10 @@ imports:
   - internal/log
   - internal/modules
   - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
 - name: gopkg.in/AlecAivazis/survey.v1
-  version: 9d3458c219bae9653d267883634bdb5375281fd8
+  version: 64f26f793f7ee7c0de1a3bb814fcf0aad99e429e
   subpackages:
   - core
   - terminal
@@ -378,7 +380,7 @@ imports:
 - name: gopkg.in/warnings.v0
   version: ec4a0fea49c7b46c2aeb0b51aac55779c607e52b
 - name: gopkg.in/yaml.v2
-  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
+  version: 670d4cfef0544295bc27a114dbac37980d83185a
 - name: k8s.io/api
   version: 73d903622b7391f3312dcbac6483fed484e185f8
   subpackages:
@@ -411,7 +413,7 @@ imports:
   - storage/v1alpha1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 9be7a8f74b673a82f8218e6a5e1e48fe88d134d5
+  version: 63d2ac876c27ef8ae23cf03816279ab619a0159d
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -530,7 +532,7 @@ imports:
 - name: k8s.io/gengo
   version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
 - name: k8s.io/helm
-  version: ae7ce6cad4c33d708203e4e0361d1d8147d46bf7
+  version: 4694195de9d65e1a555a2619e293a85d2b793b03
   subpackages:
   - pkg/chartutil
   - pkg/ignore
@@ -539,7 +541,7 @@ imports:
   - pkg/sympath
   - pkg/version
 - name: k8s.io/metrics
-  version: c44007dd1cc8d33cb8214facdd7520c8d2e8c949
+  version: ce2480a71dc1efc665f45f498218d0cf7a133327
   subpackages:
   - pkg/apis/metrics
   - pkg/apis/metrics/v1alpha1

@@ -10,7 +10,6 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
-	"strings"
 )
 
 // GetAddonOptions the command line options
@@ -61,7 +60,6 @@ func NewCmdGetAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 // Run implements this command
 func (o *GetAddonOptions) Run() error {
-	statusMap := map[string]string{}
 
 	addonConfig, err := addon.LoadAddonsConfig()
 	if err != nil {
@@ -73,16 +71,9 @@ func (o *GetAddonOptions) Run() error {
 			addonEnabled[addon.Name] = true
 		}
 	}
-	output, err := o.getCommandOutput("", "helm", "list")
+	statusMap, err := addon.GetChartStatusMap()
 	if err != nil {
 		o.warnf("Failed to find helm installs: %s\n", err)
-	} else {
-		for _, line := range strings.Split(output, "\n") {
-			fields := strings.Split(line, "\t")
-			if len(fields) > 3 {
-				statusMap[strings.TrimSpace(fields[0])] = fields[3]
-			}
-		}
 	}
 
 	charts := kube.AddonCharts

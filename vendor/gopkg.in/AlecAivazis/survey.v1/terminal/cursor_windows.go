@@ -6,6 +6,10 @@ import (
 	"unsafe"
 )
 
+var COORDINATE_SYSTEM_BEGIN Short = 0
+// shared variable to save the cursor location from CursorSave()
+var cursorLoc Coord
+
 func CursorUp(n int) {
 	cursorMove(0, n)
 }
@@ -20,6 +24,25 @@ func CursorForward(n int) {
 
 func CursorBack(n int) {
 	cursorMove(-1*n, 0)
+}
+
+// save the cursor location
+func CursorSave() {
+	cursorLoc, _ = CursorLocation()
+}
+
+func CursorRestore() {
+	handle := syscall.Handle(os.Stdout.Fd())
+	// restore it to the original position
+	procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*(*int32)(unsafe.Pointer(&cursorLoc))))
+}
+
+func (cur Coord) CursorIsAtLineEnd(size *Coord) bool {
+	return cur.X == size.X
+}
+
+func (cur Coord) CursorIsAtLineBegin() bool {
+	return cur.X == 0
 }
 
 func cursorMove(x int, y int) {
@@ -91,11 +114,13 @@ func CursorLocation() (Coord, error) {
 	return csbi.cursorPosition, nil
 }
 
-func Size() (Coord, error) {
+func Size() (*Coord, error) {
 	handle := syscall.Handle(os.Stdout.Fd())
 
 	var csbi consoleScreenBufferInfo
 	procGetConsoleScreenBufferInfo.Call(uintptr(handle), uintptr(unsafe.Pointer(&csbi)))
-
-	return csbi.size, nil
+	// windows' coordinate system begins at (0, 0)
+	csbi.size.X--
+	csbi.size.Y--
+	return &csbi.size, nil
 }

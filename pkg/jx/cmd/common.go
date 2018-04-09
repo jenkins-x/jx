@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -65,70 +64,19 @@ func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitR
 	cmd.Flags().StringVarP(&repositoryOptions.ApiToken, "git-api-token", "", "", "The git API token to use for creating new git repositories")
 }
 
+func (c *CommonOptions) Stdout() io.Writer {
+	if c.Out != nil {
+		return c.Out
+	}
+	return os.Stdout
+}
+
 func (c *CommonOptions) CreateTable() table.Table {
-	return c.Factory.CreateTable(c.Out)
+	return c.Factory.CreateTable(c.Stdout())
 }
 
 func (c *CommonOptions) Printf(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(c.Out, format, a...)
-}
-
-func (o *CommonOptions) runCommandFromDir(dir, name string, args ...string) error {
-	e := exec.Command(name, args...)
-	if dir != "" {
-		e.Dir = dir
-	}
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	err := e.Run()
-	if err != nil {
-		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
-	}
-	return err
-}
-
-func (o *CommonOptions) runCommand(name string, args ...string) error {
-	e := exec.Command(name, args...)
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	err := e.Run()
-	if err != nil {
-		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
-	}
-	return err
-}
-
-func (o *CommonOptions) runCommandQuietly(name string, args ...string) error {
-	e := exec.Command(name, args...)
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	return e.Run()
-}
-
-func (o *CommonOptions) runCommandInteractive(interactive bool, name string, args ...string) error {
-	e := exec.Command(name, args...)
-	e.Stdout = o.Out
-	e.Stderr = o.Err
-	if interactive {
-		e.Stdin = os.Stdin
-	}
-	err := e.Run()
-	if err != nil {
-		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
-	}
-	return err
-}
-
-// getCommandOutput evaluates the given command and returns the trimmed output
-func (o *CommonOptions) getCommandOutput(dir string, name string, args ...string) (string, error) {
-	e := exec.Command(name, args...)
-	if dir != "" {
-		e.Dir = dir
-	}
-	data, err := e.CombinedOutput()
-	text := string(data)
-	text = strings.TrimSpace(text)
-	return text, err
+	return fmt.Fprintf(c.Stdout(), format, a...)
 }
 
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
