@@ -92,7 +92,7 @@ func (o *CreateAddonGiteaOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	err := o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true)
+	err := o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, nil)
 	if err != nil {
 		return err
 	}

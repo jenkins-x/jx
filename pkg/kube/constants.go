@@ -1,6 +1,9 @@
 package kube
 
 const (
+	// ChartAnchore the default chart for the Anchore plugin
+	ChartAnchore = "stable/anchore-engine"
+
 	// ChartCDX the default name of the CDX chart
 	ChartCDX = "jenkins-x/cdx"
 
@@ -80,6 +83,7 @@ const (
 
 var (
 	AddonCharts = map[string]string{
+		"anchore":    ChartAnchore,
 		"cdx":        ChartCDX,
 		"gitea":      ChartGitea,
 		"kubeless":   ChartKubeless,
