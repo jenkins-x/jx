@@ -66,6 +66,8 @@ type Factory interface {
 	CreateTable(out io.Writer) table.Table
 
 	SetBatch(batch bool)
+
+	LoadPipelineSecrets(kind string) (*corev1.SecretList, error)
 }
 
 type factory struct {
@@ -249,7 +251,7 @@ func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConf
 			},
 		}
 	}
-	secrets, err := f.loadPipelineSecrets(kube.ValueKindGit)
+	secrets, err := f.LoadPipelineSecrets(kube.ValueKindGit)
 	if err != nil {
 
 		kubeConfig, _, configLoadErr := kube.LoadConfig()
@@ -269,7 +271,7 @@ func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConf
 	return authConfigSvc, nil
 }
 
-func (f *factory) loadPipelineSecrets(kind string) (*corev1.SecretList, error) {
+func (f *factory) LoadPipelineSecrets(kind string) (*corev1.SecretList, error) {
 	kubeClient, curNs, err := f.CreateClient()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create a kuberntees client %s", err)
