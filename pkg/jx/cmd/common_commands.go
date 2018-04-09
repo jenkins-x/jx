@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -61,5 +62,8 @@ func (o *CommonOptions) getCommandOutput(dir string, name string, args ...string
 	data, err := e.CombinedOutput()
 	text := string(data)
 	text = strings.TrimSpace(text)
+	if err != nil {
+		return "", fmt.Errorf("Command failed '%s %s': %s %s\n", name, strings.Join(args, " "), text, err)
+	}
 	return text, err
 }
