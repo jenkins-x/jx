@@ -81,6 +81,18 @@ func (rr *RuneReader) ReadRune() (rune, int, error) {
 			return KeyArrowUp, 1, nil
 		case 'B':
 			return KeyArrowDown, 1, nil
+		case 'H': // Home button
+			return SpecialKeyHome, 1, nil
+		case 'F': // End button
+			return SpecialKeyEnd, 1, nil
+		case '3': // Delete Button
+			// discard the following '~' key from buffer
+			rr.state.buf.Discard(1)
+			return SpecialKeyDelete, 1, nil
+		default:
+			// discard the following '~' key from buffer
+			rr.state.buf.Discard(1)
+			return IgnoreKey, 1, nil
 		}
 		return r, size, fmt.Errorf("Unknown Escape Sequence: %q", []rune{'\033', '[', r})
 	}

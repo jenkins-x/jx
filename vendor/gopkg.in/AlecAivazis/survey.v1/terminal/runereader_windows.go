@@ -18,6 +18,9 @@ const (
 
 	// key codes for arrow keys
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+	VK_DELETE= 0x2E
+	VK_END   = 0x23
+	VK_HOME  = 0x24
 	VK_LEFT  = 0x25
 	VK_UP    = 0x26
 	VK_RIGHT = 0x27
@@ -105,7 +108,6 @@ func (rr *RuneReader) ReadRune() (rune, int, error) {
 		if key.wdControlKeyState&(LEFT_CTRL_PRESSED|RIGHT_CTRL_PRESSED) != 0 && key.unicodeChar == 'C' {
 			return KeyInterrupt, bytesRead, nil
 		}
-
 		// not a normal character so look up the input sequence from the
 		// virtual key code mappings (VK_*)
 		if key.unicodeChar == 0 {
@@ -118,6 +120,12 @@ func (rr *RuneReader) ReadRune() (rune, int, error) {
 				return KeyArrowRight, bytesRead, nil
 			case VK_UP:
 				return KeyArrowUp, bytesRead, nil
+			case VK_DELETE:
+				return SpecialKeyDelete, bytesRead, nil
+			case VK_HOME:
+				return SpecialKeyHome, bytesRead, nil
+			case VK_END:
+				return SpecialKeyEnd, bytesRead, nil
 			default:
 				// not a virtual key that we care about so just continue on to
 				// the next input key
