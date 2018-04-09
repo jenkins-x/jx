@@ -428,3 +428,72 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 	}
 	return p, nil
 }
+
+func (o *CommonOptions) getClusterDependencies(deps []string) []string {
+	d := binaryShouldBeInstalled("kubectl")
+	if d != "" {
+		deps = append(deps, d)
+	}
+
+	d = binaryShouldBeInstalled("helm")
+	if d != "" {
+		deps = append(deps, d)
+	}
+
+	// Platform specific deps
+	if runtime.GOOS == "darwin" {
+		if !o.NoBrew {
+			d = binaryShouldBeInstalled("brew")
+			if d != "" {
+				deps = append(deps, d)
+			}
+		}
+	}
+	return deps
+}
+
+func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string) error {
+	// get base list of required dependencies and add provider specific ones
+	deps := o.getClusterDependencies(providerSpecificDeps)
+
+	if len(deps) == 0 {
+		return nil
+	}
+
+	if o.BatchMode {
+		return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
+	}
+	install := []string{}
+	prompt := &survey.MultiSelect{
+		Message: "Missing required dependencies, deselect to avoid auto installing:",
+		Options: deps,
+		Default: deps,
+	}
+	survey.AskOne(prompt, &install, nil)
+
+	return o.doInstallMissingDependencies(install)
+}
+
+// installRequirements installs any requirements for the given provider kind
+func (o *CommonOptions) installRequirements(cloudProvider string) error {
+	var deps []string
+	switch cloudProvider {
+	case AWS:
+		deps = o.addRequiredBinary("kops", deps)
+	case AKS:
+		deps = o.addRequiredBinary("az", deps)
+	case GKE:
+		deps = o.addRequiredBinary("gcloud", deps)
+	case MINIKUBE:
+		deps = o.addRequiredBinary("minikube", deps)
+	}
+	return o.installMissingDependencies(deps)
+}
+
+func (o *CommonOptions) addRequiredBinary(binName string, deps []string) []string {
+	d := binaryShouldBeInstalled(binName)
+	if d != "" {
+		deps = append(deps, d)
+	}
+	return deps
+}

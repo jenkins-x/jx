@@ -108,15 +108,8 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 }
 
 func (o *CreateClusterGKEOptions) Run() error {
-
-	var deps []string
-	d := binaryShouldBeInstalled("gcloud")
-	if d != "" {
-		deps = append(deps, d)
-	}
-	err := o.installMissingDependencies(deps)
+	err := o.installRequirements(GKE)
 	if err != nil {
-		log.Errorf("error creating cluster on GKE, %v", err)
 		return err
 	}
 
@@ -130,7 +123,6 @@ func (o *CreateClusterGKEOptions) Run() error {
 }
 
 func (o *CreateClusterGKEOptions) createClusterGKE() error {
-
 	var err error
 	if !o.Flags.SkipLogin {
 		err := o.runCommand("gcloud", "auth", "login", "--brief")
