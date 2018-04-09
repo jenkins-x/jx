@@ -265,6 +265,6 @@ func RoleBindings(client *kubernetes.Clientset, namespace string) (string, error
 		result += fmt.Sprintf( "%s\t%s\t%s\n",s.Kind,s.Name,s.Namespace)
 	}
 
-		return result, nil
+	return result, nil
 }
 
