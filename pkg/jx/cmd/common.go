@@ -430,7 +430,7 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 }
 
 // installChart installs the given chart
-func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool) error {
+func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
 	if helmUpdate {
 		err := o.runCommand("helm", "repo", "update")
 		if err != nil {
@@ -450,6 +450,10 @@ func (o *CommonOptions) installChart(releaseName string, chart string, version s
 		annotations := map[string]string{"jenkins-x.io/created-by": "Jenkins X"}
 		kube.EnsureNamespaceCreated(kubeClient, ns, nil, annotations)
 		args = append(args, "--namespace", ns)
+	}
+	for _, value := range setValues {
+		args = append(args, "--set", value)
+		o.Printf("Set chart value: --set %s\n", util.ColorInfo(value))
 	}
 	args = append(args, releaseName, chart)
 	return o.runCommand("helm", args...)
