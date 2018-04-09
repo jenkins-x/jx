@@ -185,10 +185,11 @@ func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 			if u != "" {
 				server := config.GetOrCreateServer(u)
 				if server != nil {
-					if server.Kind == "" {
+					// lets use the latest values from the credential
+					if k != "" {
 						server.Kind = k
 					}
-					if server.Name == "" {
+					if name != "" {
 						server.Name = name
 					}
 					if data != nil {
