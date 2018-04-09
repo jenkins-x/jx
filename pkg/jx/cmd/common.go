@@ -64,12 +64,19 @@ func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitR
 	cmd.Flags().StringVarP(&repositoryOptions.ApiToken, "git-api-token", "", "", "The git API token to use for creating new git repositories")
 }
 
+func (c *CommonOptions) Stdout() io.Writer {
+	if c.Out != nil {
+		return c.Out
+	}
+	return os.Stdout
+}
+
 func (c *CommonOptions) CreateTable() table.Table {
-	return c.Factory.CreateTable(c.Out)
+	return c.Factory.CreateTable(c.Stdout())
 }
 
 func (c *CommonOptions) Printf(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(c.Out, format, a...)
+	return fmt.Fprintf(c.Stdout(), format, a...)
 }
 
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
