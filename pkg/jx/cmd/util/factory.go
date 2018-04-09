@@ -66,6 +66,8 @@ type Factory interface {
 	SetBatch(batch bool)
 
 	LoadPipelineSecrets(kind string) (*corev1.SecretList, error)
+
+	ImpersonateUser(user string) Factory
 }
 
 type factory struct {
