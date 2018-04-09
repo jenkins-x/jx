@@ -70,6 +70,8 @@ type Factory interface {
 
 type factory struct {
 	Batch bool
+
+	impersonateUser string
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -81,6 +83,13 @@ func NewFactory() Factory {
 
 func (f *factory) SetBatch(batch bool) {
 	f.Batch = batch
+}
+
+// ImpersonateUser returns a new factory impersonating the given user
+func (f *factory) ImpersonateUser(user string) Factory {
+	copy := *f
+	copy.impersonateUser = user
+	return &copy
 }
 
 // CreateJenkinsClient creates a new jenkins client
@@ -394,7 +403,20 @@ func (f *factory) createKubeConfig() (*rest.Config, error) {
 			return nil, err
 		}
 	}
+	user := f.getImpersonateUser()
+	if config != nil && user != "" && config.Impersonate.UserName == "" {
+		config.Impersonate.UserName = user
+	}
 	return config, nil
+}
+
+func (f *factory) getImpersonateUser() string {
+	user := f.impersonateUser
+	if user == "" {
+		// this is really only used for testing really
+		user = os.Getenv("JX_IMPERSONATE_USER")
+	}
+	return user
 }
 
 func (f *factory) CreateTable(out io.Writer) table.Table {
