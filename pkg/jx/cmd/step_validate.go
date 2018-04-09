@@ -3,13 +3,16 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx/pkg/addon"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/errors"
 
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
@@ -38,6 +41,7 @@ type StepValidateOptions struct {
 	StepOptions
 
 	MinimumJxVersion string
+	Dir              string
 }
 
 // NewCmdStepValidate Creates a new Command object
@@ -65,21 +69,21 @@ func NewCmdStepValidate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 		},
 	}
 	cmd.Flags().StringVarP(&options.MinimumJxVersion, optionMinJxVersion, "v", "", "The minimum version of the 'jx' command line tool required")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The project directory to look inside for the Project configuration for things like required addons")
 	return cmd
 }
 
 // Run implements this command
 func (o *StepValidateOptions) Run() error {
-	var err error
-	count := 0
+	errs := []error{}
 	if o.MinimumJxVersion != "" {
-		err = o.verifyJxVersion(o.MinimumJxVersion)
-		count++
+		err := o.verifyJxVersion(o.MinimumJxVersion)
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
-	if count == 0 {
-		return fmt.Errorf("No validation options supplied. Please use one of: --%s\n", strings.Join(stepValidationOptions, ", --"))
-	}
-	return err
+	errs = append(errs, o.verifyAddons()...)
+	return errors.NewAggregate(errs)
 }
 
 func (o *StepValidateOptions) verifyJxVersion(minJxVersion string) error {
@@ -104,4 +108,57 @@ func (o *StepValidateOptions) verifyJxVersion(minJxVersion string) error {
 		return fmt.Errorf("The current jx install is too old: %s. We require: %s or later", current.String(), require.String())
 	}
 	return nil
+}
+
+func (o *StepValidateOptions) verifyAddons() []error {
+	errs := []error{}
+	config, fileName, err := config.LoadProjectConfig(o.Dir)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("Failed to load project config: %s", err))
+		return errs
+	}
+	if len(config.Addons) == 0 {
+		return errs
+	}
+	statusMap, err := addon.GetChartStatusMap()
+	if err != nil {
+		errs = append(errs, fmt.Errorf("Failed to load addons statuses: %s", err))
+		return errs
+	}
+
+	for _, addonConfig := range config.Addons {
+		if addonConfig != nil {
+			err := o.verifyAddon(addonConfig, fileName, statusMap)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+	return errs
+}
+
+func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileName string, statusMap map[string]string) error {
+	name := addonConfig.Name
+	if name == "" {
+		o.warnf("Ignoring addon with no name inside the projects configuration file %s", fileName)
+		return nil
+	}
+	ch := kube.AddonCharts[name]
+	if ch == "" {
+		return fmt.Errorf("No such addon name %s in %s: %s", name, fileName, util.InvalidArg(name, util.SortedMapKeys(kube.AddonCharts)))
+	}
+	status := statusMap[ch]
+	if status == "DEPLOYED" {
+		return nil
+	}
+	info := util.ColorInfo
+
+	o.Printf(`
+The Project Configuration %s requires the %s addon to be installed. To fix this please type:
+
+    %s
+
+`, fileName, info(name), info(fmt.Sprintf("jx create addon %s", name)))
+
+	return fmt.Errorf("The addon %s is required. Please install with: jx create addon %s", name, name)
 }
