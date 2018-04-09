@@ -228,6 +228,11 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
+	err = options.installRequirements(options.Flags.Provider)
+	if err != nil {
+		return err
+	}
+
 	initOpts := &options.InitOptions
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
@@ -235,6 +240,13 @@ func (options *InstallOptions) Run() error {
 	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
 		initOpts.Flags.Domain = options.Flags.Domain
 	}
+
+	// lets default the helm domain
+	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
+	if exposeController != nil && exposeController.Config.Domain == "" && options.Flags.Domain != "" {
+		exposeController.Config.Domain = options.Flags.Domain
+	}
+
 	err = initOpts.Run()
 	if err != nil {
 		return err

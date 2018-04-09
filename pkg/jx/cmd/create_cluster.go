@@ -1,17 +1,14 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"runtime"
 	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 type KubernetesProvider string
@@ -146,17 +143,10 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 	// call jx install
 	installOpts := &o.InstallOptions
 
-	// lets default the helm domain
-	exposeController := o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController
-	if exposeController != nil && exposeController.Config.Domain == "" && installOpts.Flags.Domain != "" {
-		exposeController.Config.Domain = installOpts.Flags.Domain
-	}
-
 	err := installOpts.Run()
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -165,52 +155,5 @@ func (o *CreateClusterOptions) Run() error {
 }
 
 func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
-
 	o.InstallOptions.addInstallFlags(cmd, true)
-}
-
-func (o *CreateClusterOptions) getClusterDependencies(deps []string) []string {
-	d := binaryShouldBeInstalled("kubectl")
-	if d != "" {
-		deps = append(deps, d)
-	}
-
-	d = binaryShouldBeInstalled("helm")
-	if d != "" {
-		deps = append(deps, d)
-	}
-
-	// Platform specific deps
-	if runtime.GOOS == "darwin" {
-		if !o.NoBrew {
-			d = binaryShouldBeInstalled("brew")
-			if d != "" {
-				deps = append(deps, d)
-			}
-		}
-	}
-	return deps
-}
-
-func (o *CreateClusterOptions) installMissingDependencies(providerSpecificDeps []string) error {
-
-	// get base list of required dependencies and add provider specific ones
-	deps := o.getClusterDependencies(providerSpecificDeps)
-
-	if len(deps) == 0 {
-		return nil
-	}
-
-	if o.BatchMode {
-		return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
-	}
-	install := []string{}
-	prompt := &survey.MultiSelect{
-		Message: "Missing required dependencies, deselect to avoid auto installing:",
-		Options: deps,
-		Default: deps,
-	}
-	survey.AskOne(prompt, &install, nil)
-
-	return o.doInstallMissingDependencies(install)
 }
