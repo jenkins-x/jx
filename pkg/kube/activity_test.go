@@ -155,5 +155,5 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	assert.Equal(t, v1.ActivityStatusTypeSucceeded, updateStep.Status, "updateStep status")
 	assert.Equal(t, v1.ActivityStatusTypeSucceeded, promote.Status, "promote status")
 
-	//fmt.Printf("Has Promote %#v\n", promote)
+	//tests.Debugf("Has Promote %#v\n", promote)
 }

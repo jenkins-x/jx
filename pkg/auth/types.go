@@ -30,5 +30,5 @@ type AuthConfig struct {
 // AuthConfigService is a service for handing the config of auth tokens
 type AuthConfigService struct {
 	FileName string
-	config   AuthConfig
+	config   *AuthConfig
 }

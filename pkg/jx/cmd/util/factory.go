@@ -47,8 +47,6 @@ type Factory interface {
 
 	CreateGitAuthConfigService() (auth.AuthConfigService, error)
 
-	CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConfigService, error)
-
 	CreateJenkinsAuthConfigService() (auth.AuthConfigService, error)
 
 	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
@@ -66,10 +64,14 @@ type Factory interface {
 	CreateTable(out io.Writer) table.Table
 
 	SetBatch(batch bool)
+
+	LoadPipelineSecrets(kind string) (*corev1.SecretList, error)
 }
 
 type factory struct {
 	Batch bool
+
+	impersonateUser string
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -81,6 +83,13 @@ func NewFactory() Factory {
 
 func (f *factory) SetBatch(batch bool) {
 	f.Batch = batch
+}
+
+// ImpersonateUser returns a new factory impersonating the given user
+func (f *factory) ImpersonateUser(user string) Factory {
+	copy := *f
+	copy.impersonateUser = user
+	return &copy
 }
 
 // CreateJenkinsClient creates a new jenkins client
@@ -156,12 +165,12 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindIssue)
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.isInCDPIpeline())
 	}
 	return authConfigSvc, err
 }
 
-func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string) {
+func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) {
 	if config == nil || secrets == nil {
 		return
 	}
@@ -176,16 +185,17 @@ func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 			if u != "" {
 				server := config.GetOrCreateServer(u)
 				if server != nil {
-					if server.Kind == "" {
+					// lets use the latest values from the credential
+					if k != "" {
 						server.Kind = k
 					}
-					if server.Name == "" {
+					if name != "" {
 						server.Name = name
 					}
 					if data != nil {
 						username := data[kube.SecretDataUsername]
 						pwd := data[kube.SecretDataPassword]
-						if len(username) > 0 && f.isInCDPIpeline() {
+						if len(username) > 0 && isCDPipeline {
 							userAuth := config.GetOrCreateUserAuth(u, string(username))
 							if userAuth != nil {
 								if len(pwd) > 0 {
@@ -201,11 +211,28 @@ func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 }
 
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
-	return f.CreateGitAuthConfigServiceForURL("")
+	secrets, err := f.LoadPipelineSecrets(kube.ValueKindGit)
+	if err != nil {
+
+		kubeConfig, _, configLoadErr := kube.LoadConfig()
+		if err != nil {
+			fmt.Printf("WARNING: Could not load config: %s", configLoadErr)
+		}
+
+		ns := kube.CurrentNamespace(kubeConfig)
+		if ns == "" {
+			fmt.Printf("WARNING: Could not get the current namespace")
+		}
+
+		fmt.Printf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
+	}
+
+	fileName := GitAuthConfigFile
+	return f.createGitAuthConfigServiceFromSecrets(fileName, secrets, f.isInCDPIpeline())
 }
 
-func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
+func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.AuthConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(fileName)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -215,19 +242,20 @@ func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConf
 		return authConfigSvc, err
 	}
 
+	if secrets != nil {
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline)
+	}
+
 	// lets add a default if there's none defined yet
 	if len(config.Servers) == 0 {
 		// if in cluster then there's no user configfile, so check for env vars first
 		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
 		if !userAuth.IsInvalid() {
 			// if no config file is being used lets grab the git server from the current directory
-			server := gitURL
-			if server == "" {
-				server, err = gits.GetGitServer("")
-				if err != nil {
-					fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
-					server = "https://github.com"
-				}
+			server, err := gits.GetGitServer("")
+			if err != nil {
+				fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
+				server = "https://github.com"
 			}
 			config.Servers = []*auth.AuthServer{
 				{
@@ -244,32 +272,16 @@ func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConf
 			{
 				Name:  "GitHub",
 				URL:   "https://github.com",
-				Kind:  "GitHub",
+				Kind:  gits.KindGitHub,
 				Users: []*auth.UserAuth{},
 			},
 		}
 	}
-	secrets, err := f.loadPipelineSecrets(kube.ValueKindGit)
-	if err != nil {
 
-		kubeConfig, _, configLoadErr := kube.LoadConfig()
-		if err != nil {
-			fmt.Printf("WARNING: Could not load config: %s", configLoadErr)
-		}
-
-		ns := kube.CurrentNamespace(kubeConfig)
-		if ns == "" {
-			fmt.Printf("WARNING: Could not get the current namespace")
-		}
-
-		fmt.Printf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
-	} else if secrets != nil {
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit)
-	}
 	return authConfigSvc, nil
 }
 
-func (f *factory) loadPipelineSecrets(kind string) (*corev1.SecretList, error) {
+func (f *factory) LoadPipelineSecrets(kind string) (*corev1.SecretList, error) {
 	kubeClient, curNs, err := f.CreateClient()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create a kuberntees client %s", err)
@@ -393,7 +405,20 @@ func (f *factory) createKubeConfig() (*rest.Config, error) {
 			return nil, err
 		}
 	}
+	user := f.getImpersonateUser()
+	if config != nil && user != "" && config.Impersonate.UserName == "" {
+		config.Impersonate.UserName = user
+	}
 	return config, nil
+}
+
+func (f *factory) getImpersonateUser() string {
+	user := f.impersonateUser
+	if user == "" {
+		// this is really only used for testing really
+		user = os.Getenv("JX_IMPERSONATE_USER")
+	}
+	return user
 }
 
 func (f *factory) CreateTable(out io.Writer) table.Table {

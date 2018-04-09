@@ -9,16 +9,19 @@ import (
 )
 
 func (s *AuthConfigService) Config() *AuthConfig {
-	return &s.config
+	if s.config == nil {
+		s.config = &AuthConfig{}
+	}
+	return s.config
 }
 
-func (s *AuthConfigService) SetConfig(c AuthConfig) {
+func (s *AuthConfigService) SetConfig(c *AuthConfig) {
 	s.config = c
 }
 
 // LoadConfig loads the configuration from the users JX config directory
 func (s *AuthConfigService) LoadConfig() (*AuthConfig, error) {
-	config := &s.config
+	config := s.Config()
 	fileName := s.FileName
 	if fileName != "" {
 		exists, err := util.FileExists(fileName)
@@ -30,7 +33,7 @@ func (s *AuthConfigService) LoadConfig() (*AuthConfig, error) {
 			if err != nil {
 				return config, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
 			}
-			err = yaml.Unmarshal(data, &config)
+			err = yaml.Unmarshal(data, config)
 			if err != nil {
 				return config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 			}
@@ -67,7 +70,7 @@ func (s *AuthConfigService) SaveConfig() error {
 
 // SaveUserAuth saves the given user auth for the server url
 func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
-	config := &s.config
+	config := s.config
 	config.SetUserAuth(url, userAuth)
 	user := userAuth.Username
 	if user != "" {
