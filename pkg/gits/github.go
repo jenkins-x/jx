@@ -647,7 +647,7 @@ func (p *GitHubProvider) IsGitea() bool {
 }
 
 func (p *GitHubProvider) Kind() string {
-	return "github"
+	return KindGitHub
 }
 
 func (p *GitHubProvider) JenkinsWebHookPath(gitURL string, secret string) string {

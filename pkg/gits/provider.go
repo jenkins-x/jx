@@ -218,9 +218,9 @@ func (i *GitIssue) Name() string {
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	switch server.Kind {
-	case "gitea":
+	case KindGitea:
 		return NewGiteaProvider(server, user)
-	case "bitbucket":
+	case KindBitBucket:
 		return NewBitbucketCloudProvider(server, user)
 	default:
 		return NewGitHubProvider(server, user)
@@ -229,10 +229,10 @@ func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, 
 
 func ProviderAccessTokenURL(kind string, url string, username string) string {
 	switch kind {
-	case "bitbucket":
+	case KindBitBucket:
 		// TODO pass in the username
 		return BitbucketAccessTokenURL(url, username)
-	case "gitea":
+	case KindGitea:
 		return GiteaAccessTokenURL(url)
 	default:
 		return GitHubAccessTokenURL(url)

@@ -47,8 +47,6 @@ type Factory interface {
 
 	CreateGitAuthConfigService() (auth.AuthConfigService, error)
 
-	CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConfigService, error)
-
 	CreateJenkinsAuthConfigService() (auth.AuthConfigService, error)
 
 	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
@@ -158,12 +156,12 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindIssue)
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.isInCDPIpeline())
 	}
 	return authConfigSvc, err
 }
 
-func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string) {
+func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) {
 	if config == nil || secrets == nil {
 		return
 	}
@@ -187,7 +185,7 @@ func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 					if data != nil {
 						username := data[kube.SecretDataUsername]
 						pwd := data[kube.SecretDataPassword]
-						if len(username) > 0 && f.isInCDPIpeline() {
+						if len(username) > 0 && isCDPipeline {
 							userAuth := config.GetOrCreateUserAuth(u, string(username))
 							if userAuth != nil {
 								if len(pwd) > 0 {
@@ -203,11 +201,28 @@ func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 }
 
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
-	return f.CreateGitAuthConfigServiceForURL("")
+	secrets, err := f.LoadPipelineSecrets(kube.ValueKindGit)
+	if err != nil {
+
+		kubeConfig, _, configLoadErr := kube.LoadConfig()
+		if err != nil {
+			fmt.Printf("WARNING: Could not load config: %s", configLoadErr)
+		}
+
+		ns := kube.CurrentNamespace(kubeConfig)
+		if ns == "" {
+			fmt.Printf("WARNING: Could not get the current namespace")
+		}
+
+		fmt.Printf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
+	}
+
+	fileName := GitAuthConfigFile
+	return f.createGitAuthConfigServiceFromSecrets(fileName, secrets, f.isInCDPIpeline())
 }
 
-func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(GitAuthConfigFile)
+func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.AuthConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(fileName)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -223,13 +238,10 @@ func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConf
 		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
 		if !userAuth.IsInvalid() {
 			// if no config file is being used lets grab the git server from the current directory
-			server := gitURL
-			if server == "" {
-				server, err = gits.GetGitServer("")
-				if err != nil {
-					fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
-					server = "https://github.com"
-				}
+			server, err := gits.GetGitServer("")
+			if err != nil {
+				fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
+				server = "https://github.com"
 			}
 			config.Servers = []*auth.AuthServer{
 				{
@@ -246,27 +258,14 @@ func (f *factory) CreateGitAuthConfigServiceForURL(gitURL string) (auth.AuthConf
 			{
 				Name:  "GitHub",
 				URL:   "https://github.com",
-				Kind:  "GitHub",
+				Kind:  gits.KindGitHub,
 				Users: []*auth.UserAuth{},
 			},
 		}
 	}
-	secrets, err := f.LoadPipelineSecrets(kube.ValueKindGit)
-	if err != nil {
 
-		kubeConfig, _, configLoadErr := kube.LoadConfig()
-		if err != nil {
-			fmt.Printf("WARNING: Could not load config: %s", configLoadErr)
-		}
-
-		ns := kube.CurrentNamespace(kubeConfig)
-		if ns == "" {
-			fmt.Printf("WARNING: Could not get the current namespace")
-		}
-
-		fmt.Printf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
-	} else if secrets != nil {
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit)
+	if secrets != nil {
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline)
 	}
 	return authConfigSvc, nil
 }
