@@ -242,6 +242,10 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 		return authConfigSvc, err
 	}
 
+	if secrets != nil {
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline)
+	}
+
 	// lets add a default if there's none defined yet
 	if len(config.Servers) == 0 {
 		// if in cluster then there's no user configfile, so check for env vars first
@@ -274,9 +278,6 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 		}
 	}
 
-	if secrets != nil {
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline)
-	}
 	return authConfigSvc, nil
 }
 
