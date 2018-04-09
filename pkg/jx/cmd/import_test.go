@@ -1,14 +1,12 @@
 package cmd
 
 import (
+	"io/ioutil"
+	"os"
+	"path"
 	"testing"
 
-	"io/ioutil"
-
-	"path"
-
-	"os"
-
+	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,6 +23,7 @@ func TestReplacePlaceholders(t *testing.T) {
 
 	assert.NoError(t, err)
 	o := ImportOptions{}
+	o.Out = tests.Output()
 	o.Dir = f
 	o.AppName = "bar"
 	o.GitRepositoryOptions.ServerURL = "https://github.com"

@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -28,8 +28,8 @@ func TestStepGitCredentials(t *testing.T) {
 
 	secretList := &corev1.SecretList{
 		Items: []corev1.Secret{
-			tests.CreateTestPipelineGitSecret(kind1, "foo", scheme1+host1, user1, pwd1),
-			tests.CreateTestPipelineGitSecret(kind2, "bar", scheme2+host2, user2, pwd2),
+			testkube.CreateTestPipelineGitSecret(kind1, "foo", scheme1+host1, user1, pwd1),
+			testkube.CreateTestPipelineGitSecret(kind2, "bar", scheme2+host2, user2, pwd2),
 		},
 	}
 
@@ -40,7 +40,7 @@ func TestStepGitCredentials(t *testing.T) {
 
 	assert.Equal(t, expected, actual, "generated git credentials file")
 
-	fmt.Printf("Generated git credentials: %s\n", actual)
+	tests.Debugf("Generated git credentials: %s\n", actual)
 }
 
 func createGitCredentialLine(scheme string, host string, user string, pwd string) string {

@@ -68,6 +68,28 @@ Run `make` to build the `jx`  binaries:
 $ make build      # runs glide and builds `jx`  inside the build/
 ```
 
+## Testing
+
+There's a handy script to output nice syntax highlighted output of test results via:
+
+```shell 
+./test.sh
+```
+
+Or you can use `make`
+
+```shell 
+make test
+```
+
+### Debug logging
+
+Lots of the test have debug output to try figure out when things fail. You can enable verbose debug logging for tests via
+
+```shell 
+export JX_TEST_DEBUG=true
+```
+
 ## Debugging
 
 First you need to [install Delve](https://github.com/derekparker/delve/blob/master/Documentation/installation/README.md)

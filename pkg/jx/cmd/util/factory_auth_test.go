@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +29,7 @@ func TestAuthLoadFromPipelineGitCredentials(t *testing.T) {
 	}
 
 	for _, td := range testData {
-		secretList.Items = append(secretList.Items, tests.CreateTestPipelineGitSecret(td.Kind, td.Name, td.URL, td.User, td.Password))
+		secretList.Items = append(secretList.Items, testkube.CreateTestPipelineGitSecret(td.Kind, td.Name, td.URL, td.User, td.Password))
 	}
 
 	f := &factory{}

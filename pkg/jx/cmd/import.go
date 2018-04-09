@@ -620,10 +620,10 @@ func (o *ImportOptions) DoImport() error {
 }
 
 func (o *ImportOptions) replacePlaceholders() error {
-	log.Infof("replacing placeholders in directory %s\n", o.Dir)
+	o.Printf("replacing placeholders in directory %s\n", o.Dir)
 	gitServer := strings.TrimSuffix(strings.TrimPrefix(o.GitRepositoryOptions.ServerURL, "https://"), "/")
 
-	log.Infof("app name: %s, git server: %s, org: %s\n", o.AppName, gitServer, o.Organisation)
+	o.Printf("app name: %s, git server: %s, org: %s\n", o.AppName, gitServer, o.Organisation)
 
 	if err := filepath.Walk(o.Dir, func(f string, fi os.FileInfo, err error) error {
 		if fi.Name() == ".git" {

@@ -1,4 +1,4 @@
-package tests
+package testkube
 
 import (
 	"github.com/jenkins-x/jx/pkg/kube"
