@@ -59,6 +59,7 @@ type StepChangelogState struct {
 	Tracker         issues.IssueProvider
 	FoundIssueNames map[string]bool
 	LoggedIssueKind bool
+	Release         *v1.Release
 }
 
 const (
@@ -377,6 +378,7 @@ func (o *StepChangelogOptions) Run() error {
 		o.Printf("%s\n\n", markdown)
 	}
 
+	o.State.Release = release
 	// now lets marshal the release YAML
 	data, err := yaml.Marshal(release)
 	if err != nil {

@@ -1,13 +1,17 @@
 package cmd
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -45,9 +49,13 @@ type StepChartOptions struct {
 }
 
 type StepChartState struct {
-	GitInfo     *gits.GitRepositoryInfo
-	GitProvider gits.GitProvider
-	Tracker     issues.IssueProvider
+	GitInfo      *gits.GitRepositoryInfo
+	GitProvider  gits.GitProvider
+	Tracker      issues.IssueProvider
+	Release      *v1.Release
+	BlogFileName string
+	Buffer       *bytes.Buffer
+	Writer       *bufio.Writer
 }
 
 // NewCmdStepChart Creates a new Command object
@@ -112,7 +120,11 @@ func (o *StepChartOptions) Run() error {
 			Tracker:     tracker,
 		}
 	}
-	return o.downloadsReport(o.State.GitProvider, o.State.GitInfo.Organisation, o.State.GitInfo.Name)
+	err := o.downloadsReport(o.State.GitProvider, o.State.GitInfo.Organisation, o.State.GitInfo.Name)
+	if err != nil {
+		return err
+	}
+	return o.addReportsToBlog()
 }
 
 func (o *StepChartOptions) downloadsReport(provider gits.GitProvider, owner string, repo string) error {
@@ -127,8 +139,6 @@ func (o *StepChartOptions) downloadsReport(provider gits.GitProvider, owner stri
 	if o.CombineMinorReleases {
 		releases = o.combineMinorReleases(releases)
 	}
-	o.Printf("Found %d releases\n", len(releases))
-
 	report := o.createBarReport("downloads", "Version", "Downloads")
 
 	for _, release := range releases {
@@ -150,13 +160,20 @@ func (o *StepChartOptions) createBarReport(name string, legends ...string) repor
 
 		jsFileName := filepath.Join(outDir, "static", "news", blogName, name+".js")
 		jsLinkURI := filepath.Join("/news", blogName, name+".js")
-		/*		var buffer bytes.Buffer
-				writer := bufio.NewWriter(&buffer)
-				writer.WriteString("\n### " + name + "\n\n")
-				writer.Flush()
-				o.Printf(buffer.String())
-		*/
-		return reports.NewBlogBarReport(name, o.Out, jsFileName, jsLinkURI)
+		state := &o.State
+		if state.Buffer == nil {
+			var buffer bytes.Buffer
+			state.Buffer = &buffer
+		}
+		if state.Writer == nil {
+			state.Writer = bufio.NewWriter(state.Buffer)
+		}
+		state.Buffer.WriteString(`
+
+## ` + strings.Title(name) + `
+
+`)
+		return reports.NewBlogBarReport(name, state.Writer, jsFileName, jsLinkURI)
 	}
 	return reports.NewTableBarReport(o.CreateTable(), legends...)
 }
@@ -188,15 +205,20 @@ func (options *StepChartOptions) combineMinorReleases(releases []*gits.GitReleas
 func (o *StepChartOptions) generateChangelog() (StepChartState, error) {
 	blogFile := filepath.Join(o.BlogOutputDir, "content", "news", o.BlogName+".md")
 	previousDate := o.FromDate
+	now := time.Now()
 	if previousDate == "" {
 		// default to 4 weeks ago
-		t := time.Now().Add(-time.Hour * 24 * 7 * 4)
+		t := now.Add(-time.Hour * 24 * 7 * 4)
 		previousDate = gits.FormatDate(t)
+		o.FromDate = previousDate
+	}
+	if o.ToDate == "" {
+		o.ToDate = gits.FormatDate(now)
 	}
 	options := &StepChangelogOptions{
 		StepOptions: o.StepOptions,
 		Dir:         o.Dir,
-		Version:     "Changes",
+		Version:     "Changes since " + previousDate,
 		// TODO add time now and previous time
 		PreviousDate:       previousDate,
 		OutputMarkdownFile: blogFile,
@@ -210,5 +232,64 @@ func (o *StepChartOptions) generateChangelog() (StepChartState, error) {
 	answer.GitInfo = state.GitInfo
 	answer.GitProvider = state.GitProvider
 	answer.Tracker = state.Tracker
+	answer.Release = state.Release
+	answer.BlogFileName = blogFile
+
+	/*		var
+			writer :=
+			writer.WriteString("\n### " + name + "\n\n")
+			writer.Flush()
+			o.Printf(buffer.String())
+	*/
+
 	return answer, nil
+}
+
+func (o *StepChartOptions) addReportsToBlog() error {
+	state := &o.State
+	if state.BlogFileName != "" {
+		data, err := ioutil.ReadFile(state.BlogFileName)
+		if err != nil {
+			return err
+		}
+		toDate := o.ToDate
+		fromDate := o.FromDate
+		prefix := `---
+title: "Changes for ` + toDate + `"
+date: 2017-03-19T18:36:00+02:00
+description: "Change log for changes from ` + fromDate + ` to ` + toDate + `"
+categories: [blog]
+keywords: []
+slug: "changes-` + strings.Replace(toDate, " ", "-", -1) + `"
+aliases: []
+author: jenkins-x-bot
+---
+
+## Changes for ` + toDate + `
+
+This blog outlines the changes on the project from ` + fromDate + ` to ` + toDate + `.
+
+` + o.createMetricsSummary() + `[see metrics](#metrics)
+
+`
+		postfix := ""
+		if state.Writer != nil {
+			state.Writer.Flush()
+			postfix = `
+
+## Metrics
+
+` + state.Buffer.String()
+
+		}
+		changelog := strings.TrimSpace(string(data))
+		changelog = strings.TrimPrefix(changelog, "## Changes")
+		text := prefix + changelog + postfix
+		return ioutil.WriteFile(state.BlogFileName, []byte(text), DefaultWritePermissions)
+	}
+	return nil
+}
+
+func (o *StepChartOptions) createMetricsSummary() string {
+	return "MOAH metrics..."
 }
