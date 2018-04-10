@@ -88,8 +88,13 @@ func (i *GitRepositoryInfo) HostURLWithoutUser() string {
 			u2.Path = ""
 			return u2.String()
 		}
+
 	}
-	return i.HttpsURL()
+	host := i.Host
+	if !strings.Contains(host, ":/") {
+		host = "https://" + host
+	}
+	return host
 }
 
 // PipelinePath returns the pipeline path for the master branch which can be used to query
