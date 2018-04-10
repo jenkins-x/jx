@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +33,10 @@ var (
 		jx step chart
 
 			`)
+
+	ignoreNewUsers = map[string]bool{
+		"GitHub": true,
+	}
 )
 
 // StepChartOptions contains the command line flags
@@ -58,6 +63,7 @@ type StepChartState struct {
 	Writer         *bufio.Writer
 	HistoryService *reports.ProjectHistoryService
 	History        *reports.ProjectHistory
+	NewUsers       map[string]*v1.UserDetails
 }
 
 // NewCmdStepChart Creates a new Command object
@@ -246,6 +252,7 @@ func (o *StepChartOptions) generateChangelog() error {
 	state.GitInfo = output.GitInfo
 	state.GitProvider = output.GitProvider
 	state.Tracker = output.Tracker
+	state.Release = output.Release
 	state.BlogFileName = blogFile
 	return nil
 }
@@ -259,6 +266,8 @@ func (o *StepChartOptions) addReportsToBlog() error {
 		}
 		toDate := o.ToDate
 		fromDate := o.FromDate
+		committersText := o.createNewCommitters()
+
 		prefix := `---
 title: "Changes for ` + toDate + `"
 date: 2017-03-19T18:36:00+02:00
@@ -278,7 +287,8 @@ This blog outlines the changes on the project from ` + fromDate + ` to ` + toDat
 
 [see more metrics](#metrics)
 
-`
+` + committersText
+
 		postfix := ""
 		if state.Writer != nil {
 			state.Writer.Flush()
@@ -316,7 +326,88 @@ func (o *StepChartOptions) createMetricsSummary() string {
 		} else {
 			o.warnf("No report for date %s\n", toDate)
 		}
+		if o.State.NewUsers != nil {
+			fmt.Fprintf(out, " New Contributors: **%d**", len(o.State.NewUsers))
+		}
 	}
 	out.Flush()
 	return buffer.String()
+}
+
+func (o *StepChartOptions) createNewCommitters() string {
+	o.State.NewUsers = map[string]*v1.UserDetails{}
+	release := o.State.Release
+	if release != nil {
+		spec := &release.Spec
+		for _, commit := range spec.Commits {
+			o.addContributor(commit.Committer)
+		}
+		for _, pr := range spec.Issues {
+			o.addContributor(pr.User)
+		}
+		for _, issue := range spec.PullRequests {
+			o.addContributor(issue.User)
+		}
+	} else {
+		o.warnf("No Release!\n")
+	}
+	var buffer bytes.Buffer
+	out := bufio.NewWriter(&buffer)
+	newUsers := o.State.NewUsers
+	if len(newUsers) > 0 {
+		out.WriteString(`
+
+## New Contributors
+
+Welcome to our new contributors - many thanks!
+
+`)
+
+		keys := []string{}
+		for k, _ := range newUsers {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			user := newUsers[k]
+			if user != nil {
+				out.WriteString("* " + formatUser(user) + "\n")
+			}
+		}
+	}
+	out.Flush()
+	return buffer.String()
+}
+
+func (o *StepChartOptions) addContributor(user *v1.UserDetails) {
+	if user != nil {
+		key := user.Login
+		oldUser := o.State.NewUsers[key]
+		if key != "" && !ignoreNewUsers[key] && oldUser == nil || user.URL != "" {
+			o.State.NewUsers[key] = user
+
+			history := o.State.History
+			if history != nil {
+				history.Committers = append(history.Committers, key)
+			}
+		}
+	}
+}
+
+func formatUser(user *v1.UserDetails) string {
+	u := user.URL
+	name := user.Name
+	if name == "" {
+		name = user.Login
+	}
+	if name == "" {
+		name = u
+	}
+	if name == "" {
+		return ""
+	}
+	if u != "" {
+		return "[" + name + "](" + u + ")"
+	}
+	return name
 }

@@ -11,6 +11,7 @@ import (
 type ProjectHistory struct {
 	LastReportDate string           `json:"lastReportDate,omitempty"`
 	Reports        []*ProjectReport `json:"reports,omitempty"`
+	Committers     []string         `json:"committers,omitempty"`
 }
 
 func (h *ProjectHistory) GetOrCreateReport(reportDate string) *ProjectReport {
