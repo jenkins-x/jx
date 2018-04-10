@@ -453,9 +453,9 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 		Branch:    branch,
 		Committer: o.toUserDetails(commit.Committer),
 	}
-	spec.Commits = append(spec.Commits, commitSummary)
-
 	err := o.addIssuesAndPullRequests(spec, &commitSummary)
+
+	spec.Commits = append(spec.Commits, commitSummary)
 	if err != nil {
 		o.warnf("Failed to enrich commits with issues: %s\n", err)
 	}
@@ -513,6 +513,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 					assignees = o.gitUserToUserDetailSlice(issue.Assignees)
 				}
 
+				commit.IssueIDs = append(commit.IssueIDs, result)
 				issueSummary := v1.IssueSummary{
 					ID:        result,
 					URL:       issue.URL,

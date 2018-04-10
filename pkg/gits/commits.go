@@ -26,7 +26,7 @@ var (
 	// ConventionalCommitTitles textual descriptions for
 	// Conventional Commit types: https://conventionalcommits.org/
 	ConventionalCommitTitles = map[string]*CommitGroup{
-		"feat":     createCommitGroup("Features"),
+		"feat":     createCommitGroup("New Features"),
 		"fix":      createCommitGroup("Bug Fixes"),
 		"perf":     createCommitGroup("Performance Improvements"),
 		"refactor": createCommitGroup("Code Refactoring"),
@@ -109,12 +109,19 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 
 	groupAndCommits := map[int]*GroupAndCommitInfos{}
 
+	issues := releaseSpec.Issues
+	issueMap := map[string]*v1.IssueSummary{}
+	for _, issue := range issues {
+		copy := issue
+		issueMap[copy.ID] = &copy
+	}
+
 	for _, cs := range releaseSpec.Commits {
 		message := cs.Message
 		if message != "" {
 			ci := ParseCommit(message)
 
-			description := "* " + describeCommit(gitInfo, &cs, ci) + "\n"
+			description := "* " + describeCommit(gitInfo, &cs, ci, issueMap) + "\n"
 			group := ci.Group()
 			if group != nil {
 				gac := groupAndCommits[group.Order]
@@ -131,7 +138,6 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 		}
 	}
 
-	issues := releaseSpec.Issues
 	prs := releaseSpec.PullRequests
 
 	var buffer bytes.Buffer
@@ -140,31 +146,6 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 	}
 
 	buffer.WriteString("## Changes\n")
-
-	if len(issues) > 0 {
-		buffer.WriteString("\n### Issues\n\n")
-
-		previous := ""
-		for _, issue := range issues {
-			msg := describeIssue(gitInfo, &issue)
-			if msg != previous {
-				buffer.WriteString("* " + msg + "\n")
-				previous = msg
-			}
-		}
-	}
-	if len(prs) > 0 {
-		buffer.WriteString("\n### Pull Requests\n\n")
-
-		previous := ""
-		for _, pr := range prs {
-			msg := describeIssue(gitInfo, &pr)
-			if msg != previous {
-				buffer.WriteString("* " + msg + "\n")
-				previous = msg
-			}
-		}
-	}
 
 	hasTitle := false
 	for i := 0; i <= unknownKindOrder; i++ {
@@ -192,10 +173,39 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 			}
 		}
 	}
+
+	if len(issues) > 0 {
+		buffer.WriteString("\n### Issues\n\n")
+
+		previous := ""
+		for _, issue := range issues {
+			msg := describeIssue(gitInfo, &issue)
+			if msg != previous {
+				buffer.WriteString("* " + msg + "\n")
+				previous = msg
+			}
+		}
+	}
+	if len(prs) > 0 {
+		buffer.WriteString("\n### Pull Requests\n\n")
+
+		previous := ""
+		for _, pr := range prs {
+			msg := describeIssue(gitInfo, &pr)
+			if msg != previous {
+				buffer.WriteString("* " + msg + "\n")
+				previous = msg
+			}
+		}
+	}
 	return buffer.String(), nil
 }
 
 func describeIssue(info *GitRepositoryInfo, issue *v1.IssueSummary) string {
+	return describeIssueShort(info, issue) + issue.Title + describeUser(info, issue.User)
+}
+
+func describeIssueShort(info *GitRepositoryInfo, issue *v1.IssueSummary) string {
 	prefix := ""
 	id := issue.ID
 	if len(id) > 0 {
@@ -205,7 +215,7 @@ func describeIssue(info *GitRepositoryInfo, issue *v1.IssueSummary) string {
 			prefix = "#"
 		}
 	}
-	return "[" + prefix + issue.ID + "](" + issue.URL + ") " + issue.Title + describeUser(info, issue.User)
+	return "[" + prefix + issue.ID + "](" + issue.URL + ") "
 }
 
 func describeUser(info *GitRepositoryInfo, user *v1.UserDetails) string {
@@ -235,7 +245,7 @@ func describeUser(info *GitRepositoryInfo, user *v1.UserDetails) string {
 	return answer
 }
 
-func describeCommit(info *GitRepositoryInfo, cs *v1.CommitSummary, ci *CommitInfo) string {
+func describeCommit(info *GitRepositoryInfo, cs *v1.CommitSummary, ci *CommitInfo, issueMap map[string]*v1.IssueSummary) string {
 	prefix := ""
 	if ci.Feature != "" {
 		prefix = ci.Feature + ": "
@@ -248,5 +258,12 @@ func describeCommit(info *GitRepositoryInfo, cs *v1.CommitSummary, ci *CommitInf
 	if user == nil {
 		user = cs.Committer
 	}
-	return prefix + lines[0] + describeUser(info, user)
+	issueText := ""
+	for _, issueId := range cs.IssueIDs {
+		issue := issueMap[issueId]
+		if issue != nil {
+			issueText += " " + describeIssueShort(info, issue)
+		}
+	}
+	return prefix + lines[0] + describeUser(info, user) + issueText
 }
