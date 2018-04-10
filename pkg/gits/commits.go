@@ -144,15 +144,25 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 	if len(issues) > 0 {
 		buffer.WriteString("\n### Issues\n\n")
 
+		previous := ""
 		for _, issue := range issues {
-			buffer.WriteString("* " + describeIssue(gitInfo, &issue) + "\n")
+			msg := describeIssue(gitInfo, &issue)
+			if msg != previous {
+				buffer.WriteString("* " + msg + "\n")
+				previous = msg
+			}
 		}
 	}
 	if len(prs) > 0 {
 		buffer.WriteString("\n### Pull Requests\n\n")
 
+		previous := ""
 		for _, pr := range prs {
-			buffer.WriteString("* " + describeIssue(gitInfo, &pr) + "\n")
+			msg := describeIssue(gitInfo, &pr)
+			if msg != previous {
+				buffer.WriteString("* " + msg + "\n")
+				previous = msg
+			}
 		}
 	}
 
@@ -173,8 +183,12 @@ func GenerateMarkdown(releaseSpec *v1.ReleaseSpec, gitInfo *GitRepositoryInfo) (
 					buffer.WriteString("### " + group.Title + "\n\n" + legend)
 				}
 			}
+			previous := ""
 			for _, msg := range gac.commits {
-				buffer.WriteString(msg)
+				if msg != previous {
+					buffer.WriteString(msg)
+					previous = msg
+				}
 			}
 		}
 	}
