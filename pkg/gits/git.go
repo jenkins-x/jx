@@ -25,8 +25,8 @@ const (
 func FindGitConfigDir(dir string) (string, string, error) {
 	d := dir
 	var err error
-	if dir == "" {
-		dir, err = os.Getwd()
+	if d == "" {
+		d, err = os.Getwd()
 		if err != nil {
 			return "", "", err
 		}
@@ -50,7 +50,6 @@ func FindGitConfigDir(dir string) (string, string, error) {
 		}
 		d = p
 	}
-
 }
 
 // GitClone clones the given git URL into the given directory
