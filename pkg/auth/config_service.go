@@ -55,7 +55,7 @@ func (s *AuthConfigService) HasConfigFile() (bool, error) {
 	return false, nil
 }
 
-// SaveConfig loads the configuration from the users JX config directory
+// SaveConfig saves the configuration to disk
 func (s *AuthConfigService) SaveConfig() error {
 	fileName := s.FileName
 	if fileName == "" {

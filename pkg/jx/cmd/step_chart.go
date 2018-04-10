@@ -49,13 +49,15 @@ type StepChartOptions struct {
 }
 
 type StepChartState struct {
-	GitInfo      *gits.GitRepositoryInfo
-	GitProvider  gits.GitProvider
-	Tracker      issues.IssueProvider
-	Release      *v1.Release
-	BlogFileName string
-	Buffer       *bytes.Buffer
-	Writer       *bufio.Writer
+	GitInfo        *gits.GitRepositoryInfo
+	GitProvider    gits.GitProvider
+	Tracker        issues.IssueProvider
+	Release        *v1.Release
+	BlogFileName   string
+	Buffer         *bytes.Buffer
+	Writer         *bufio.Writer
+	HistoryService *reports.ProjectHistoryService
+	History        *reports.ProjectHistory
 }
 
 // NewCmdStepChart Creates a new Command object
@@ -95,17 +97,24 @@ func NewCmdStepChart(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 
 // Run implements this command
 func (o *StepChartOptions) Run() error {
+	o.State = StepChartState{}
+	var err error
 	outDir := o.BlogOutputDir
 	if outDir != "" {
 		if o.BlogName == "" {
 			t := time.Now()
 			o.BlogName = "changes-" + strconv.Itoa(t.Day()) + "-" + strings.ToLower(t.Month().String()) + "-" + strconv.Itoa(t.Year())
 		}
-		state, err := o.generateChangelog()
+		historyFile := filepath.Join(o.BlogOutputDir, "data", "projectHistory.json")
+		o.State.HistoryService, o.State.History, err = reports.NewProjectHistoryService(historyFile)
 		if err != nil {
 			return err
 		}
-		o.State = state
+
+		err = o.generateChangelog()
+		if err != nil {
+			return err
+		}
 	} else {
 		gitInfo, gitProvider, tracker, err := o.createGitProvider(o.Dir)
 		if err != nil {
@@ -114,13 +123,12 @@ func (o *StepChartOptions) Run() error {
 		if gitInfo == nil {
 			return fmt.Errorf("Could not find a .git folder in the current directory so could not determine the current project")
 		}
-		o.State = StepChartState{
-			GitInfo:     gitInfo,
-			GitProvider: gitProvider,
-			Tracker:     tracker,
-		}
+		o.State.GitInfo = gitInfo
+		o.State.GitProvider = gitProvider
+		o.State.Tracker = tracker
 	}
-	err := o.downloadsReport(o.State.GitProvider, o.State.GitInfo.Organisation, o.State.GitInfo.Name)
+
+	err = o.downloadsReport(o.State.GitProvider, o.State.GitInfo.Organisation, o.State.GitInfo.Name)
 	if err != nil {
 		return err
 	}
@@ -139,6 +147,12 @@ func (o *StepChartOptions) downloadsReport(provider gits.GitProvider, owner stri
 	if o.CombineMinorReleases {
 		releases = o.combineMinorReleases(releases)
 	}
+	history := o.State.History
+	if history != nil {
+		downloadCount := gits.ReleaseDownloadCount(releases)
+		history.UpdateDownloadCount(o.ToDate, downloadCount)
+	}
+
 	report := o.createBarReport("downloads", "Version", "Downloads")
 
 	for _, release := range releases {
@@ -202,7 +216,7 @@ func (options *StepChartOptions) combineMinorReleases(releases []*gits.GitReleas
 	return answer
 }
 
-func (o *StepChartOptions) generateChangelog() (StepChartState, error) {
+func (o *StepChartOptions) generateChangelog() error {
 	blogFile := filepath.Join(o.BlogOutputDir, "content", "news", o.BlogName+".md")
 	previousDate := o.FromDate
 	now := time.Now()
@@ -224,25 +238,16 @@ func (o *StepChartOptions) generateChangelog() (StepChartState, error) {
 		OutputMarkdownFile: blogFile,
 	}
 	err := options.Run()
-	answer := StepChartState{}
 	if err != nil {
-		return answer, err
+		return err
 	}
-	state := &options.State
-	answer.GitInfo = state.GitInfo
-	answer.GitProvider = state.GitProvider
-	answer.Tracker = state.Tracker
-	answer.Release = state.Release
-	answer.BlogFileName = blogFile
-
-	/*		var
-			writer :=
-			writer.WriteString("\n### " + name + "\n\n")
-			writer.Flush()
-			o.Printf(buffer.String())
-	*/
-
-	return answer, nil
+	state := &o.State
+	output := &options.State
+	state.GitInfo = output.GitInfo
+	state.GitProvider = output.GitProvider
+	state.Tracker = output.Tracker
+	state.BlogFileName = blogFile
+	return nil
 }
 
 func (o *StepChartOptions) addReportsToBlog() error {
@@ -269,7 +274,9 @@ author: jenkins-x-bot
 
 This blog outlines the changes on the project from ` + fromDate + ` to ` + toDate + `.
 
-` + o.createMetricsSummary() + `[see metrics](#metrics)
+` + o.createMetricsSummary() + `
+
+[see more metrics](#metrics)
 
 `
 		postfix := ""
@@ -285,11 +292,31 @@ This blog outlines the changes on the project from ` + fromDate + ` to ` + toDat
 		changelog := strings.TrimSpace(string(data))
 		changelog = strings.TrimPrefix(changelog, "## Changes")
 		text := prefix + changelog + postfix
-		return ioutil.WriteFile(state.BlogFileName, []byte(text), DefaultWritePermissions)
+		err = ioutil.WriteFile(state.BlogFileName, []byte(text), DefaultWritePermissions)
+		if err != nil {
+			return err
+		}
+	}
+	historyService := state.HistoryService
+	if historyService != nil {
+		return historyService.SaveHistory()
 	}
 	return nil
 }
 
 func (o *StepChartOptions) createMetricsSummary() string {
-	return "MOAH metrics..."
+	var buffer bytes.Buffer
+	out := bufio.NewWriter(&buffer)
+	history := o.State.History
+	if history != nil {
+		toDate := o.ToDate
+		report := history.FindReport(toDate)
+		if report != nil {
+			fmt.Fprintf(out, "Recent Downloads: **%d** Total Downloads: **%d**", report.DownloadCount, report.DownloadCount)
+		} else {
+			o.warnf("No report for date %s\n", toDate)
+		}
+	}
+	out.Flush()
+	return buffer.String()
 }
