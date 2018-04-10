@@ -16,6 +16,9 @@ func GetCommandOutput(dir string, name string, args ...string) (string, error) {
 	data, err := e.CombinedOutput()
 	text := string(data)
 	text = strings.TrimSpace(text)
+	if err != nil {
+		return text, fmt.Errorf("Error: Command failed  %s %s %s %s\n", name, strings.Join(args, " "), text, err)
+	}
 	return text, err
 }
 

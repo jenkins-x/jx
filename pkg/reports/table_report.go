@@ -8,10 +8,10 @@ type TableBarReport struct {
 	Table table.Table
 }
 
-func NewTableBarReport(table table.Table) TableBarReport {
-	table.AddRow("Name", "Value")
+func NewTableBarReport(table table.Table, legends ...string) *TableBarReport {
+	table.AddRow(legends...)
 
-	return TableBarReport{
+	return &TableBarReport{
 		Table: table,
 	}
 }
@@ -24,7 +24,7 @@ func (t *TableBarReport) AddNumber(name string, value int) {
 	ReportAddNumber(t, name, value)
 }
 
-func (t *TableBarReport) Render() {
+func (t *TableBarReport) Render() error {
 	t.Table.Render()
-
+	return nil
 }

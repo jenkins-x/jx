@@ -34,6 +34,7 @@ type StepChangelogOptions struct {
 	StepOptions
 
 	PreviousRevision    string
+	PreviousDate        string
 	CurrentRevision     string
 	TemplatesDir        string
 	ReleaseYamlFile     string
@@ -44,6 +45,7 @@ type StepChangelogOptions struct {
 	HeaderFile          string
 	Footer              string
 	FooterFile          string
+	OutputMarkdownFile  string
 	OverwriteCRD        bool
 	GenerateCRD         bool
 	GenerateReleaseYaml bool
@@ -155,12 +157,14 @@ func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.PreviousRevision, "previous-rev", "p", "", "the previous tag revision")
+	cmd.Flags().StringVarP(&options.PreviousDate, "previous-date", "", "", "the previous date to find a revision in format 'MonthName dayNumber year'")
 	cmd.Flags().StringVarP(&options.CurrentRevision, "rev", "r", "", "the current tag revision")
 	cmd.Flags().StringVarP(&options.TemplatesDir, "templates-dir", "t", "", "the directory containing the helm chart templates to generate the resources")
 	cmd.Flags().StringVarP(&options.ReleaseYamlFile, "release-yaml-file", "", "release.yaml", "the name of the file to generate the Release YAML")
 	cmd.Flags().StringVarP(&options.CrdYamlFile, "crd-yaml-file", "", "release-crd.yaml", "the name of the file to generate the Release CustomResourceDefinition YAML")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to release")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The directory of the git repository. Defaults to the current working directory")
+	cmd.Flags().StringVarP(&options.OutputMarkdownFile, "output-markdown", "", "", "The file to generate for the changelog output if not updating a git provider release")
 	cmd.Flags().BoolVarP(&options.OverwriteCRD, "overwrite", "o", false, "overwrites the Release CRD YAML file if it exists")
 	cmd.Flags().BoolVarP(&options.GenerateCRD, "crd", "c", false, "Generate the CRD in the chart")
 	cmd.Flags().BoolVarP(&options.GenerateReleaseYaml, "generate-yaml", "y", true, "Generate the Release YAML in the local helm chart")
@@ -206,6 +210,15 @@ func (o *StepChangelogOptions) Run() error {
 		}
 	}
 	previousRev := o.PreviousRevision
+	if previousRev == "" {
+		previousDate := o.PreviousDate
+		if previousDate != "" {
+			previousRev, err = gits.GetRevisionBeforeDateText(dir, previousDate)
+			if err != nil {
+				return fmt.Errorf("Failed to find commits before date %s: %s", previousDate, err)
+			}
+		}
+	}
 	if previousRev == "" {
 		previousRev, err = gits.GetPreviousGitTagSHA(dir)
 		if err != nil {
@@ -353,6 +366,12 @@ func (o *StepChangelogOptions) Run() error {
 			return nil
 		}
 		o.Printf("Updated the release information at %s\n", util.ColorInfo(url))
+	} else if o.OutputMarkdownFile != "" {
+		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), DefaultWritePermissions)
+		if err != nil {
+			return err
+		}
+		o.Printf("\nGenerated Changelog: %s\n", util.ColorInfo(o.OutputMarkdownFile))
 	} else {
 		o.Printf("\nGenerated Changelog:\n")
 		o.Printf("%s\n\n", markdown)

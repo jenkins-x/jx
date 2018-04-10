@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -382,6 +383,25 @@ func GetPreviousGitTagSHA(dir string) (string, error) {
 	// when in a release branch we need to skip 2 rather that 1 to find the revision of the previous tag
 	// no idea why! :)
 	return util.GetCommandOutput(dir, "git", "rev-list", "--tags", "--skip=2", "--max-count=1")
+}
+
+// GetRevisionBeforeDate returns the revision before the given date
+func GetRevisionBeforeDate(dir string, t time.Time) (string, error) {
+	dateText := FormatDate(t)
+	return GetRevisionBeforeDateText(dir, dateText)
+}
+
+// GetRevisionBeforeDateText returns the revision before the given date in format "MonthName dayNumber year"
+func GetRevisionBeforeDateText(dir string, dateText string) (string, error) {
+	branch, err := GitGetBranch(dir)
+	if err != nil {
+		return "", err
+	}
+	return util.GetCommandOutput(dir, "git", "rev-list", "-1", "--before=\""+dateText+"\"", "--max-count=1", branch)
+}
+
+func FormatDate(t time.Time) string {
+	return fmt.Sprintf("%s %d %d", t.Month().String(), t.Day(), t.Year())
 }
 
 func GetCurrentGitTagSHA(dir string) (string, error) {
