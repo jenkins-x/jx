@@ -66,6 +66,8 @@ type GitProvider interface {
 
 	UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error
 
+	ListReleases(org string, name string) ([]*GitRelease, error)
+
 	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
 	//
 
@@ -154,11 +156,12 @@ type GitUser struct {
 }
 
 type GitRelease struct {
-	Name    string
-	TagName string
-	Body    string
-	URL     string
-	HTMLURL string
+	Name          string
+	TagName       string
+	Body          string
+	URL           string
+	HTMLURL       string
+	DownloadCount int
 }
 
 type GitLabel struct {

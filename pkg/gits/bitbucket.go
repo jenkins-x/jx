@@ -606,6 +606,12 @@ func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag st
 	return nil
 }
 
+func (p *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
+	answer := []*GitRelease{}
+	fmt.Println("Bitbucket Cloud doesn't support releases")
+	return answer, nil
+}
+
 func BitbucketAccessTokenURL(url string, username string) string {
 	// TODO with github we can default the scopes/flags we need on a token via adding
 	// ?scopes=repo,read:user,user:email,write:repo_hook

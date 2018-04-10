@@ -45,6 +45,12 @@ func (g *GitlabProvider) ListRepositories(org string) ([]*GitRepository, error) 
 	return repos, nil
 }
 
+func (g *GitlabProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
+	answer := []*GitRelease{}
+	// TODO
+	return answer, nil
+}
+
 func getRepositories(g *gitlab.Client, username string, org string) ([]*gitlab.Project, *gitlab.Response, error) {
 	if org == "" {
 		return g.Projects.ListUserProjects(username, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})

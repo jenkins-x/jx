@@ -73,6 +73,37 @@ func (p *GiteaProvider) ListRepositories(org string) ([]*GitRepository, error) {
 	return answer, nil
 }
 
+func (p *GiteaProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
+	owner := org
+	if owner == "" {
+		owner = p.Username
+	}
+	answer := []*GitRelease{}
+	repos, err := p.Client.ListReleases(owner, name)
+	if err != nil {
+		return answer, err
+	}
+	for _, repo := range repos {
+		answer = append(answer, toGiteaRelease(org, name, repo))
+	}
+	return answer, nil
+}
+
+func toGiteaRelease(org string, name string, release *gitea.Release) *GitRelease {
+	totalDownloadCount := 0
+	for _, asset := range release.Attachments {
+		totalDownloadCount = totalDownloadCount + int(asset.DownloadCount)
+	}
+	return &GitRelease{
+		Name:          release.Title,
+		TagName:       release.TagName,
+		Body:          release.Note,
+		URL:           release.URL,
+		HTMLURL:       release.URL,
+		DownloadCount: totalDownloadCount,
+	}
+}
+
 func (p *GiteaProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
 	options := gitea.CreateRepoOption{
 		Name:    name,

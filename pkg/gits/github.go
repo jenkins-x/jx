@@ -13,6 +13,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const (
+	pageSize = 100
+)
+
 type GitHubProvider struct {
 	Username string
 	Client   *github.Client
@@ -106,7 +110,6 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 		owner = p.Username
 	}
 	answer := []*GitRepository{}
-	pageSize := 100
 	options := &github.RepositoryListOptions{
 		ListOptions: github.ListOptions{
 			Page:    0,
@@ -127,6 +130,50 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 		options.ListOptions.Page += 1
 	}
 	return answer, nil
+}
+
+func (p *GitHubProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
+	owner := org
+	if owner == "" {
+		owner = p.Username
+	}
+	answer := []*GitRelease{}
+	options := &github.ListOptions{
+		Page:    0,
+		PerPage: pageSize,
+	}
+	for {
+		repos, _, err := p.Client.Repositories.ListReleases(p.Context, owner, name, options)
+		if err != nil {
+			return answer, err
+		}
+		for _, repo := range repos {
+			answer = append(answer, toGitHubRelease(org, name, repo))
+		}
+		if len(repos) < pageSize || len(repos) == 0 {
+			break
+		}
+		options.Page += 1
+	}
+	return answer, nil
+}
+
+func toGitHubRelease(org string, name string, release *github.RepositoryRelease) *GitRelease {
+	totalDownloadCount := 0
+	for _, asset := range release.Assets {
+		p := asset.DownloadCount
+		if p != nil {
+			totalDownloadCount = totalDownloadCount + *p
+		}
+	}
+	return &GitRelease{
+		Name:          asText(release.Name),
+		TagName:       asText(release.TagName),
+		Body:          asText(release.Body),
+		URL:           asText(release.URL),
+		HTMLURL:       asText(release.HTMLURL),
+		DownloadCount: totalDownloadCount,
+	}
 }
 
 func (p *GitHubProvider) GetRepository(org string, name string) (*GitRepository, error) {
