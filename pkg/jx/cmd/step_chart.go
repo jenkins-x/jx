@@ -74,10 +74,12 @@ func NewCmdStepChart(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			cmdutil.CheckErr(err)
 		},
 	}
+	options.addCommonFlags(cmd)
+
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.FromDate, "from-date", "f", "", "The date to create the charts from. Defaults to a week before the to date")
 	cmd.Flags().StringVarP(&options.ToDate, "to-date", "t", "", "The date to query to")
-	cmd.Flags().StringVarP(&options.BlogOutputDir, "blog-dir", "b", "", "The Hugo-style blog source code to generate the charts into")
+	cmd.Flags().StringVarP(&options.BlogOutputDir, "blog-dir", "", "", "The Hugo-style blog source code to generate the charts into")
 	cmd.Flags().StringVarP(&options.BlogName, "blog-name", "n", "", "The blog name")
 	cmd.Flags().BoolVarP(&options.CombineMinorReleases, "combine-minor", "c", true, "If enabled lets combine minor releases together to simplify the charts")
 	return cmd
