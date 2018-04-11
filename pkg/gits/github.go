@@ -76,7 +76,6 @@ func IsGitHubServerURL(u string) bool {
 
 func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
 	answer := []GitOrganisation{}
-	pageSize := 100
 	options := github.ListOptions{
 		Page:    0,
 		PerPage: pageSize,
@@ -576,25 +575,48 @@ func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssu
 
 func (p *GitHubProvider) SearchIssues(org string, name string, filter string) ([]*GitIssue, error) {
 	opts := &github.IssueListByRepoOptions{}
-	answer := []*GitIssue{}
-	issues, r, err := p.Client.Issues.ListByRepo(p.Context, org, name, opts)
-	if r.StatusCode == 404 {
-		return answer, nil
-	}
-	if err != nil {
-		return answer, err
-	}
-	for _, issue := range issues {
-		if issue.Number != nil {
-			n := *issue.Number
-			i, err := p.fromGithubIssue(org, name, n, issue)
-			if err != nil {
-				return answer, err
-			}
+	return p.searchIssuesWithOptions(org, name, opts)
+}
 
-			// TODO apply the filter?
-			answer = append(answer, i)
+func (p *GitHubProvider) SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error) {
+	opts := &github.IssueListByRepoOptions{
+		State: "closed",
+	}
+	issues, err := p.searchIssuesWithOptions(org, name, opts)
+	if err != nil {
+		return issues, err
+	}
+	return FilterIssuesClosedSince(issues, t), nil
+}
+
+func (p *GitHubProvider) searchIssuesWithOptions(org string, name string, opts *github.IssueListByRepoOptions) ([]*GitIssue, error) {
+	opts.Page = 0
+	opts.PerPage = pageSize
+	answer := []*GitIssue{}
+	for {
+		issues, r, err := p.Client.Issues.ListByRepo(p.Context, org, name, opts)
+		if r.StatusCode == 404 {
+			return answer, nil
 		}
+		if err != nil {
+			return answer, err
+		}
+		for _, issue := range issues {
+			if issue.Number != nil {
+				n := *issue.Number
+				i, err := p.fromGithubIssue(org, name, n, issue)
+				if err != nil {
+					return answer, err
+				}
+
+				// TODO apply the filter?
+				answer = append(answer, i)
+			}
+		}
+		if len(issues) < pageSize || len(issues) == 0 {
+			break
+		}
+		opts.ListOptions.Page += 1
 	}
 	return answer, nil
 }
@@ -644,6 +666,7 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 		IsPullRequest: isPull,
 		Labels:        labels,
 		User:          toGitHubUser(i.User),
+		ClosedAt:      i.ClosedAt,
 		ClosedBy:      toGitHubUser(i.ClosedBy),
 		Assignees:     assignees,
 	}, nil

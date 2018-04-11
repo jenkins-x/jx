@@ -3,7 +3,6 @@ package gits
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -55,6 +54,8 @@ type GitProvider interface {
 	IssueURL(org string, name string, number int, isPull bool) string
 
 	SearchIssues(org string, name string, query string) ([]*GitIssue, error)
+
+	SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error)
 
 	CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error)
 
@@ -206,18 +207,6 @@ type GitWebHookArguments struct {
 // IsClosed returns true if the PullRequest has been closed
 func (pr *GitPullRequest) IsClosed() bool {
 	return pr.ClosedAt != nil
-}
-
-// Name returns the textual name of the issue
-func (i *GitIssue) Name() string {
-	if i.Key != "" {
-		return i.Key
-	}
-	n := i.Number
-	if n != nil {
-		return "#" + strconv.Itoa(*n)
-	}
-	return "N/A"
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {

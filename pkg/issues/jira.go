@@ -78,6 +78,11 @@ func (i *JiraService) SearchIssues(query string) ([]*gits.GitIssue, error) {
 	return answer, nil
 }
 
+func (i *JiraService) SearchIssuesClosedSince(t time.Time) ([]*gits.GitIssue, error) {
+	fmt.Printf("TODO SearchIssuesClosedSince() not yet implemented for JIRA")
+	return nil, nil
+}
+
 func (i *JiraService) CreateIssue(issue *gits.GitIssue) (*gits.GitIssue, error) {
 	project, _, err := i.JiraClient.Project.Get(i.Project)
 	if err != nil {

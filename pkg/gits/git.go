@@ -404,6 +404,10 @@ func FormatDate(t time.Time) string {
 	return fmt.Sprintf("%s %d %d", t.Month().String(), t.Day(), t.Year())
 }
 
+func ParseDate(dateText string) (time.Time, error) {
+	return time.Parse(DateFormat, dateText)
+}
+
 func GetCurrentGitTagSHA(dir string) (string, error) {
 	return util.GetCommandOutput(dir, "git", "rev-list", "--tags", "--max-count=1")
 }

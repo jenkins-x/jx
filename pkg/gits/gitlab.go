@@ -3,6 +3,8 @@ package gits
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/xanzy/go-gitlab"
 )
@@ -284,7 +286,20 @@ func (g *GitlabProvider) CreateWebHook(data *GitWebHookArguments) error {
 
 func (g *GitlabProvider) SearchIssues(org, repo, query string) ([]*GitIssue, error) {
 	opt := &gitlab.ListProjectIssuesOptions{Search: &query}
+	return g.searchIssuesWithOptions(org, repo, opt)
+}
 
+func (g *GitlabProvider) SearchIssuesClosedSince(org string, repo string, t time.Time) ([]*GitIssue, error) {
+	closed := "closed"
+	opt := &gitlab.ListProjectIssuesOptions{State: &closed}
+	issues, err := g.searchIssuesWithOptions(org, repo, opt)
+	if err != nil {
+		return issues, err
+	}
+	return FilterIssuesClosedSince(issues, t), nil
+}
+
+func (g *GitlabProvider) searchIssuesWithOptions(org string, repo string, opt *gitlab.ListProjectIssuesOptions) ([]*GitIssue, error) {
 	pid := projectId(org, g.Username, repo)
 	issues, _, err := g.Client.Issues.ListProjectIssues(pid, opt)
 	if err != nil {
@@ -344,13 +359,14 @@ func fromGitlabIssue(issue *gitlab.Issue, owner, repo string) *GitIssue {
 	}
 
 	return &GitIssue{
-		Number: &issue.IID,
-		URL:    issue.WebURL,
-		Owner:  owner,
-		Repo:   repo,
-		Title:  issue.Title,
-		Body:   issue.Description,
-		Labels: labels,
+		Number:   &issue.IID,
+		URL:      issue.WebURL,
+		Owner:    owner,
+		Repo:     repo,
+		Title:    issue.Title,
+		Body:     issue.Description,
+		Labels:   labels,
+		ClosedAt: issue.ClosedAt,
 	}
 }
 
