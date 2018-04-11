@@ -111,7 +111,7 @@ func (o *StepChartOptions) Run() error {
 			t := time.Now()
 			o.BlogName = "changes-" + strconv.Itoa(t.Day()) + "-" + strings.ToLower(t.Month().String()) + "-" + strconv.Itoa(t.Year())
 		}
-		historyFile := filepath.Join(o.BlogOutputDir, "data", "projectHistory.json")
+		historyFile := filepath.Join(o.BlogOutputDir, "data", "projectHistory.yml")
 		o.State.HistoryService, o.State.History, err = reports.NewProjectHistoryService(historyFile)
 		if err != nil {
 			return err
@@ -153,10 +153,16 @@ func (o *StepChartOptions) downloadsReport(provider gits.GitProvider, owner stri
 	if o.CombineMinorReleases {
 		releases = o.combineMinorReleases(releases)
 	}
+	release := o.State.Release
 	history := o.State.History
 	if history != nil {
-		downloadCount := gits.ReleaseDownloadCount(releases)
-		history.UpdateDownloadCount(o.ToDate, downloadCount)
+		history.DownloadMetrics(o.ToDate, gits.ReleaseDownloadCount(releases))
+		if release != nil {
+			spec := &release.Spec
+			history.IssueMetrics(o.ToDate, len(spec.Issues))
+			history.PullRequestMetrics(o.ToDate, len(spec.PullRequests))
+			history.CommitMetrics(o.ToDate, len(spec.Commits))
+		}
 	}
 
 	report := o.createBarReport("downloads", "Version", "Downloads")
@@ -270,8 +276,8 @@ func (o *StepChartOptions) addReportsToBlog() error {
 
 		prefix := `---
 title: "Changes for ` + toDate + `"
-date: 2017-03-19T18:36:00+02:00
-description: "Change log for changes from ` + fromDate + ` to ` + toDate + `"
+date: ` + time.Now().Format(time.RFC3339) + `T18:36:00+02:00
+description: "Change log and metrics for ` + toDate + `"
 categories: [blog]
 keywords: []
 slug: "changes-` + strings.Replace(toDate, " ", "-", -1) + `"
@@ -317,21 +323,39 @@ This blog outlines the changes on the project from ` + fromDate + ` to ` + toDat
 func (o *StepChartOptions) createMetricsSummary() string {
 	var buffer bytes.Buffer
 	out := bufio.NewWriter(&buffer)
+	_, report := o.report()
+	if report != nil {
+		fmt.Fprintf(out, "| Metric     | Recent | Total |\n")
+		fmt.Fprintf(out, "| ---------- | ------:| -----:|\n")
+		o.printMetrics(out, "Downloads", &report.DownloadMetrics)
+		o.printMetrics(out, "New Contributors", &report.NewContributorMetrics)
+		o.printMetrics(out, "Issues Closed", &report.IssueMetrics)
+		o.printMetrics(out, "Pull Requests Merged", &report.PullRequestMetrics)
+		o.printMetrics(out, "Commits", &report.CommitMetrics)
+	}
+	out.Flush()
+	return buffer.String()
+}
+
+func (o *StepChartOptions) report() (*reports.ProjectHistory, *reports.ProjectReport) {
 	history := o.State.History
 	if history != nil {
 		toDate := o.ToDate
 		report := history.FindReport(toDate)
-		if report != nil {
-			fmt.Fprintf(out, "Recent Downloads: **%d** Total Downloads: **%d**", report.DownloadCount, report.DownloadCount)
-		} else {
+		if report == nil {
 			o.warnf("No report for date %s\n", toDate)
 		}
-		if o.State.NewUsers != nil {
-			fmt.Fprintf(out, " New Contributors: **%d**", len(o.State.NewUsers))
-		}
+		return history, report
 	}
-	out.Flush()
-	return buffer.String()
+	return nil, nil
+}
+
+func (o *StepChartOptions) printMetrics(out io.Writer, name string, metrics *reports.CountMetrics) {
+	count := metrics.Count
+	total := metrics.Total
+	if count > 0 || total > 0 {
+		fmt.Fprintf(out, "| %s | **%d** | **%d** |\n", name, count, total)
+	}
 }
 
 func (o *StepChartOptions) createNewCommitters() string {
@@ -351,6 +375,16 @@ func (o *StepChartOptions) createNewCommitters() string {
 	} else {
 		o.warnf("No Release!\n")
 	}
+	history, _ := o.report()
+	if history != nil {
+		history.NewContributorMetrics(o.ToDate, len(o.State.NewUsers))
+
+		// now lets remove the current contributors
+		for _, user := range history.Committers {
+			delete(o.State.NewUsers, user)
+		}
+	}
+
 	var buffer bytes.Buffer
 	out := bufio.NewWriter(&buffer)
 	newUsers := o.State.NewUsers

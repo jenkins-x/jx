@@ -220,6 +220,7 @@ func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 		SSHURL:           asText(repo.SSHURL),
 		Fork:             asBool(repo.Fork),
 		Language:         asText(repo.Language),
+		Stars:            asInt(repo.StargazersCount),
 	}
 }
 
@@ -721,6 +722,13 @@ func asBool(b *bool) bool {
 		return *b
 	}
 	return false
+}
+
+func asInt(i *int) int {
+	if i != nil {
+		return *i
+	}
+	return 0
 }
 
 func asText(text *string) string {

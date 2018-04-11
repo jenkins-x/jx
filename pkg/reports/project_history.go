@@ -1,11 +1,11 @@
 package reports
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
 	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/yaml.v2"
 )
 
 type ProjectHistory struct {
@@ -36,7 +36,7 @@ func (h *ProjectHistory) FindReport(reportDate string) *ProjectReport {
 }
 func (h *ProjectHistory) FindPreviousReport(reportDate string) *ProjectReport {
 	// TODO we should really do a date comparison but for noe we do posts in order anyway
-	var previous *ProjectReport
+	var previous = &ProjectReport{}
 	for _, report := range h.Reports {
 		if report.ReportDate == reportDate {
 			return previous
@@ -47,31 +47,64 @@ func (h *ProjectHistory) FindPreviousReport(reportDate string) *ProjectReport {
 	return previous
 }
 
-func (h *ProjectHistory) UpdateDownloadCount(reportDate string, downloadCount int) *ProjectReport {
+func (h *ProjectHistory) DownloadMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
-	report.DownloadTotal += downloadCount
-
-	previousCount := 0
 	previous := h.FindPreviousReport(reportDate)
-	if previous != nil {
-		previousCount = previous.DownloadTotal
-	}
-	count := downloadCount - previousCount
-	if count < 0 {
-		count = 0
-	}
-	report.DownloadCount = count
+	updateMetrics(&report.DownloadMetrics, &previous.DownloadMetrics, total)
 	return report
 }
 
+func (h *ProjectHistory) IssueMetrics(reportDate string, total int) *ProjectReport {
+	report := h.GetOrCreateReport(reportDate)
+	previous := h.FindPreviousReport(reportDate)
+	updateMetrics(&report.IssueMetrics, &previous.IssueMetrics, total)
+	return report
+}
+
+func (h *ProjectHistory) PullRequestMetrics(reportDate string, total int) *ProjectReport {
+	report := h.GetOrCreateReport(reportDate)
+	previous := h.FindPreviousReport(reportDate)
+	updateMetrics(&report.PullRequestMetrics, &previous.PullRequestMetrics, total)
+	return report
+}
+
+func (h *ProjectHistory) CommitMetrics(reportDate string, total int) *ProjectReport {
+	report := h.GetOrCreateReport(reportDate)
+	previous := h.FindPreviousReport(reportDate)
+	updateMetrics(&report.CommitMetrics, &previous.CommitMetrics, total)
+	return report
+}
+
+func (h *ProjectHistory) NewContributorMetrics(reportDate string, total int) *ProjectReport {
+	report := h.GetOrCreateReport(reportDate)
+	previous := h.FindPreviousReport(reportDate)
+	updateMetrics(&report.NewContributorMetrics, &previous.NewContributorMetrics, total)
+	return report
+}
+
+func updateMetrics(current *CountMetrics, previous *CountMetrics, total int) {
+	current.Total += total
+	previousTotal := 0
+	if previous != nil {
+		previousTotal = previous.Total
+	}
+	count := total - previousTotal
+	current.Count = count
+}
+
+type CountMetrics struct {
+	Count int `json:"count,omitempty"`
+	Total int `json:"total,omitempty"`
+}
+
 type ProjectReport struct {
-	ReportDate        string `json:"reportDate,omitempty"`
-	DownloadCount     int    `json:"downloadCount,omitempty"`
-	DownloadTotal     int    `json:"downloadTotal,omitempty"`
-	IssueCount        int    `json:"issueCount,omitempty"`
-	PullRequestCount  int    `json:"pullRequestCount,omitempty"`
-	CommitCount       int    `json:"commitCount,omitempty"`
-	NewCommitterCount int    `json:"newCommitterCount,omitempty"`
+	ReportDate            string       `json:"reportDate,omitempty"`
+	StarsMetrics          CountMetrics `json:"st,omitempty"`
+	DownloadMetrics       CountMetrics `json:"downloads,omitempty"`
+	IssueMetrics          CountMetrics `json:"downloads,omitempty"`
+	PullRequestMetrics    CountMetrics `json:"downloads,omitempty"`
+	CommitMetrics         CountMetrics `json:"downloads,omitempty"`
+	NewContributorMetrics CountMetrics `json:"downloads,omitempty"`
 }
 
 type ProjectHistoryService struct {
@@ -101,7 +134,7 @@ func (s *ProjectHistoryService) LoadHistory() (*ProjectHistory, error) {
 			if err != nil {
 				return history, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
 			}
-			err = json.Unmarshal(data, history)
+			err = yaml.Unmarshal(data, history)
 			if err != nil {
 				return history, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 			}
@@ -123,7 +156,7 @@ func (s *ProjectHistoryService) SaveHistory() error {
 	if fileName == "" {
 		return fmt.Errorf("No filename defined!")
 	}
-	data, err := json.Marshal(s.history)
+	data, err := yaml.Marshal(s.history)
 	if err != nil {
 		return err
 	}

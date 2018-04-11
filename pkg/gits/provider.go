@@ -109,6 +109,7 @@ type GitRepository struct {
 	SSHURL           string
 	Language         string
 	Fork             bool
+	Stars            int
 }
 
 type GitPullRequest struct {
