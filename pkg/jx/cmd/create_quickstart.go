@@ -129,7 +129,7 @@ func (o *CreateQuickstartOptions) Run() error {
 	if server == nil {
 		return fmt.Errorf("no git server provided")
 	}
-
+	o.GitServer = server
 	o.GitProvider, err = gits.CreateProvider(server, userAuth)
 
 	if err != nil {
