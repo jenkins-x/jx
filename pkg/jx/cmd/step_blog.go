@@ -100,8 +100,8 @@ func NewCmdStepBlog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
-	cmd.Flags().StringVarP(&options.FromDate, "from-date", "f", "", "The date to create the charts from. Defaults to a week before the to date")
-	cmd.Flags().StringVarP(&options.ToDate, "to-date", "t", "", "The date to query to")
+	cmd.Flags().StringVarP(&options.FromDate, "from-date", "f", "", "The date to create the charts from. Defaults to a week before the to date. Should be a format: "+gits.DateFormat)
+	cmd.Flags().StringVarP(&options.ToDate, "to-date", "t", "", "The date to query up to. Defaults to now. Should be a format: "+gits.DateFormat)
 	cmd.Flags().StringVarP(&options.BlogOutputDir, "blog-dir", "", "", "The Hugo-style blog source code to generate the charts into")
 	cmd.Flags().StringVarP(&options.BlogName, "blog-name", "n", "", "The blog name")
 	cmd.Flags().BoolVarP(&options.CombineMinorReleases, "combine-minor", "c", true, "If enabled lets combine minor releases together to simplify the charts")
@@ -180,7 +180,15 @@ func (o *StepBlogOptions) downloadsReport(provider gits.GitProvider, owner strin
 		history.DownloadMetrics(o.ToDate, gits.ReleaseDownloadCount(releases))
 		if release != nil {
 			spec := &release.Spec
-			history.IssueMetrics(o.ToDate, len(spec.Issues))
+			issuesClosed := len(spec.Issues)
+			queryClosedIssueCount, err := o.queryClosedIssues()
+			if err != nil {
+				o.warnf("Failed to query closed issues: %s\n", err)
+			}
+			if queryClosedIssueCount > issuesClosed {
+				issuesClosed = queryClosedIssueCount
+			}
+			history.IssueMetrics(o.ToDate, issuesClosed)
 			history.PullRequestMetrics(o.ToDate, len(spec.PullRequests))
 			history.CommitMetrics(o.ToDate, len(spec.Commits))
 		}
@@ -596,4 +604,18 @@ func (o *StepBlogOptions) getChannelMetrics(chatConfig *config.ChatConfig, chann
 		return nil, err
 	}
 	return provider.GetChannelMetrics(channelName)
+}
+
+func (o *StepBlogOptions) queryClosedIssues() (int, error) {
+	fromDate := o.FromDate
+	if fromDate == "" {
+		return 0, fmt.Errorf("No from date specified!")
+	}
+	t, err := gits.ParseDate(fromDate)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to parse from date: %s: %s", fromDate, err)
+	}
+	issues, err := o.State.Tracker.SearchIssuesClosedSince(t)
+	count := len(issues)
+	return count, err
 }
