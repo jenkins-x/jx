@@ -26,11 +26,11 @@ import (
 )
 
 var (
-	stepChartLong = templates.LongDesc(`
+	stepBlogLong = templates.LongDesc(`
 		Generates charts for a project
 `)
 
-	stepChartExample = templates.Examples(`
+	stepBlogExample = templates.Examples(`
 		# create charts for the cuect
 		jx step chart
 
@@ -41,8 +41,8 @@ var (
 	}
 )
 
-// StepChartOptions contains the command line flags
-type StepChartOptions struct {
+// StepBlogOptions contains the command line flags
+type StepBlogOptions struct {
 	StepOptions
 
 	FromDate                    string
@@ -54,10 +54,10 @@ type StepChartOptions struct {
 	DeveloperChannelMemberCount int
 	UserChannelMemberCount      int
 
-	State StepChartState
+	State StepBlogState
 }
 
-type StepChartState struct {
+type StepBlogState struct {
 	GitInfo                  *gits.GitRepositoryInfo
 	GitProvider              gits.GitProvider
 	Tracker                  issues.IssueProvider
@@ -73,9 +73,9 @@ type StepChartState struct {
 	NewCommitters            map[string]*v1.UserDetails
 }
 
-// NewCmdStepChart Creates a new Command object
-func NewCmdStepChart(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &StepChartOptions{
+// NewCmdStepBlog Creates a new Command object
+func NewCmdStepBlog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &StepBlogOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -86,10 +86,10 @@ func NewCmdStepChart(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	}
 
 	cmd := &cobra.Command{
-		Use:     "chart",
-		Short:   "Creates charts for project metrics",
-		Long:    stepChartLong,
-		Example: stepChartExample,
+		Use:     "blog",
+		Short:   "Creates a blog post with changes, metrics and charts showing improvements",
+		Long:    stepBlogLong,
+		Example: stepBlogExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -111,8 +111,8 @@ func NewCmdStepChart(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 }
 
 // Run implements this command
-func (o *StepChartOptions) Run() error {
-	o.State = StepChartState{
+func (o *StepBlogOptions) Run() error {
+	o.State = StepBlogState{
 		NewContributors: map[string]*v1.UserDetails{},
 		NewCommitters:   map[string]*v1.UserDetails{},
 	}
@@ -162,7 +162,7 @@ func (o *StepChartOptions) Run() error {
 	return o.addReportsToBlog()
 }
 
-func (o *StepChartOptions) downloadsReport(provider gits.GitProvider, owner string, repo string) error {
+func (o *StepBlogOptions) downloadsReport(provider gits.GitProvider, owner string, repo string) error {
 	releases, err := provider.ListReleases(owner, repo)
 	if err != nil {
 		return err
@@ -202,7 +202,7 @@ func (o *StepChartOptions) downloadsReport(provider gits.GitProvider, owner stri
 }
 
 // createBarReport creates the new report instance
-func (o *StepChartOptions) createBarReport(name string, legends ...string) reports.BarReport {
+func (o *StepBlogOptions) createBarReport(name string, legends ...string) reports.BarReport {
 	outDir := o.BlogOutputDir
 	if outDir != "" {
 		blogName := o.BlogName
@@ -236,7 +236,7 @@ func (o *StepChartOptions) createBarReport(name string, legends ...string) repor
 	return reports.NewTableBarReport(o.CreateTable(), legends...)
 }
 
-func (options *StepChartOptions) combineMinorReleases(releases []*gits.GitRelease) []*gits.GitRelease {
+func (options *StepBlogOptions) combineMinorReleases(releases []*gits.GitRelease) []*gits.GitRelease {
 	answer := []*gits.GitRelease{}
 	m := map[string]*gits.GitRelease{}
 	for _, release := range releases {
@@ -260,7 +260,7 @@ func (options *StepChartOptions) combineMinorReleases(releases []*gits.GitReleas
 	return answer
 }
 
-func (o *StepChartOptions) generateChangelog() error {
+func (o *StepBlogOptions) generateChangelog() error {
 	blogFile := filepath.Join(o.BlogOutputDir, "content", "news", o.BlogName+".md")
 	previousDate := o.FromDate
 	now := time.Now()
@@ -295,7 +295,7 @@ func (o *StepChartOptions) generateChangelog() error {
 	return nil
 }
 
-func (o *StepChartOptions) addReportsToBlog() error {
+func (o *StepBlogOptions) addReportsToBlog() error {
 	state := &o.State
 	if state.BlogFileName != "" {
 		data, err := ioutil.ReadFile(state.BlogFileName)
@@ -355,7 +355,7 @@ This blog post was generated via the [jx step blog](http://jenkins-x.io/commands
 	return nil
 }
 
-func (o *StepChartOptions) createMetricsSummary() string {
+func (o *StepBlogOptions) createMetricsSummary() string {
 	var buffer bytes.Buffer
 	out := bufio.NewWriter(&buffer)
 	_, report := o.report()
@@ -385,7 +385,7 @@ func (o *StepChartOptions) createMetricsSummary() string {
 	return buffer.String()
 }
 
-func (o *StepChartOptions) report() (*reports.ProjectHistory, *reports.ProjectReport) {
+func (o *StepBlogOptions) report() (*reports.ProjectHistory, *reports.ProjectReport) {
 	history := o.State.History
 	if history != nil {
 		toDate := o.ToDate
@@ -398,7 +398,7 @@ func (o *StepChartOptions) report() (*reports.ProjectHistory, *reports.ProjectRe
 	return nil, nil
 }
 
-func (o *StepChartOptions) printMetrics(out io.Writer, name string, metrics *reports.CountMetrics) {
+func (o *StepBlogOptions) printMetrics(out io.Writer, name string, metrics *reports.CountMetrics) {
 	count := metrics.Count
 	total := metrics.Total
 	if count > 0 || total > 0 {
@@ -406,7 +406,7 @@ func (o *StepChartOptions) printMetrics(out io.Writer, name string, metrics *rep
 	}
 }
 
-func (o *StepChartOptions) createNewCommitters() string {
+func (o *StepBlogOptions) createNewCommitters() string {
 	release := o.State.Release
 	if release != nil {
 		spec := &release.Spec
@@ -459,7 +459,7 @@ func (o *StepChartOptions) createNewCommitters() string {
 	return buffer.String()
 }
 
-func (o *StepChartOptions) printUserMap(out *bufio.Writer, role string, newUsers map[string]*v1.UserDetails) {
+func (o *StepBlogOptions) printUserMap(out *bufio.Writer, role string, newUsers map[string]*v1.UserDetails) {
 	if len(newUsers) > 0 {
 		out.WriteString(`
 
@@ -483,28 +483,28 @@ Welcome to our new ` + role + `!
 	}
 }
 
-func (o *StepChartOptions) addCommitters(users []v1.UserDetails) {
+func (o *StepBlogOptions) addCommitters(users []v1.UserDetails) {
 	for _, u := range users {
 		o.addCommitter(&u)
 	}
 }
 
-func (o *StepChartOptions) addContributors(users []v1.UserDetails) {
+func (o *StepBlogOptions) addContributors(users []v1.UserDetails) {
 	for _, u := range users {
 		o.addContributor(&u)
 	}
 }
 
-func (o *StepChartOptions) addContributor(user *v1.UserDetails) {
+func (o *StepBlogOptions) addContributor(user *v1.UserDetails) {
 	o.addUser(user, &o.State.NewContributors)
 }
 
-func (o *StepChartOptions) addCommitter(user *v1.UserDetails) {
+func (o *StepBlogOptions) addCommitter(user *v1.UserDetails) {
 	o.addUser(user, &o.State.NewCommitters)
 	o.addContributor(user)
 }
 
-func (o *StepChartOptions) addUser(user *v1.UserDetails, newUsers *map[string]*v1.UserDetails) {
+func (o *StepBlogOptions) addUser(user *v1.UserDetails, newUsers *map[string]*v1.UserDetails) {
 	if user != nil {
 		key := user.Login
 		if key == "" {
@@ -517,7 +517,7 @@ func (o *StepChartOptions) addUser(user *v1.UserDetails, newUsers *map[string]*v
 	}
 }
 
-func (o *StepChartOptions) formatUser(user *v1.UserDetails) string {
+func (o *StepBlogOptions) formatUser(user *v1.UserDetails) string {
 	u := user.URL
 	login := user.Login
 	if u == "" {
@@ -545,7 +545,7 @@ func (o *StepChartOptions) formatUser(user *v1.UserDetails) string {
 	return label
 }
 
-func (o *StepChartOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
+func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
 	u := chatConfig.URL
 	if u == "" {
 		return nil
@@ -590,7 +590,7 @@ func (o *StepChartOptions) loadChatMetrics(chatConfig *config.ChatConfig) error 
 	return nil
 }
 
-func (o *StepChartOptions) getChannelMetrics(chatConfig *config.ChatConfig, channelName string) (*chats.ChannelMetrics, error) {
+func (o *StepBlogOptions) getChannelMetrics(chatConfig *config.ChatConfig, channelName string) (*chats.ChannelMetrics, error) {
 	provider, err := o.createChatProvider(chatConfig)
 	if err != nil {
 		return nil, err
