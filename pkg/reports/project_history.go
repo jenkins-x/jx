@@ -132,13 +132,12 @@ func (h *ProjectHistory) UserChatMetrics(reportDate string, total int) *ProjectR
 
 // addMetricCount adds a new metric value, such as number of commits in a release
 func addMetricCount(current *CountMetrics, previous *CountMetrics, total int) {
-	current.Total = total
+	current.Count = total
 	previousTotal := 0
 	if previous != nil {
 		previousTotal = previous.Total
 	}
-	count := total - previousTotal
-	current.Count = count
+	current.Total = total + previousTotal
 }
 
 // updateMetricTotal takes the current total value and works out the incremental change

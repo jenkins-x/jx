@@ -4,7 +4,7 @@ reports:
   starsMetrics:
     count: 10
     total: 20
-  downloadMetrics:
+  issueMetrics:
     count: 11
     total: 12
 committers:

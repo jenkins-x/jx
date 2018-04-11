@@ -27,4 +27,10 @@ func TestProjectHistory(t *testing.T) {
 	assert.Equal(t, 30, report.StarsMetrics.Count, "report.StarsMetrics.Count")
 	assert.Equal(t, 50, report.StarsMetrics.Total, "report.StarsMetrics.Total")
 
+	assert.Equal(t, 2, len(history.Reports), "len(history.Reports)")
+
+	report = history.IssueMetrics(reportDate, 20)
+	assert.Equal(t, 20, report.IssueMetrics.Count, "report.IssueMetrics.Count")
+	assert.Equal(t, 32, report.IssueMetrics.Total, "report.IssueMetrics.Total")
+
 }
