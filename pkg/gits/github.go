@@ -586,7 +586,8 @@ func (p *GitHubProvider) SearchIssuesClosedSince(org string, name string, t time
 	if err != nil {
 		return issues, err
 	}
-	return FilterIssuesClosedSince(issues, t), nil
+	issues = FilterIssuesClosedSince(issues, t)
+	return issues, nil
 }
 
 func (p *GitHubProvider) searchIssuesWithOptions(org string, name string, opts *github.IssueListByRepoOptions) ([]*GitIssue, error) {
@@ -602,7 +603,7 @@ func (p *GitHubProvider) searchIssuesWithOptions(org string, name string, opts *
 			return answer, err
 		}
 		for _, issue := range issues {
-			if issue.Number != nil {
+			if issue.Number != nil && !issue.IsPullRequest() {
 				n := *issue.Number
 				i, err := p.fromGithubIssue(org, name, n, issue)
 				if err != nil {
