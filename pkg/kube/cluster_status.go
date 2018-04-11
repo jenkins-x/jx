@@ -252,3 +252,19 @@ func PodRequestsAndLimits(pod *v1.Pod) (reqs map[v1.ResourceName]resource.Quanti
 	}
 	return
 }
+
+func RoleBindings(client *kubernetes.Clientset, namespace string) (string, error) {
+	binding, err := client.Rbac().RoleBindings(namespace).Get("", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	result := ""
+
+	for _, s:= range binding.Subjects {
+		result += fmt.Sprintf( "%s\t%s\t%s\n",s.Kind,s.Name,s.Namespace)
+	}
+
+	return result, nil
+}
+

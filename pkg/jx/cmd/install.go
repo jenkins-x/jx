@@ -237,6 +237,23 @@ func (options *InstallOptions) Run() error {
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
 	initOpts.BatchMode = options.BatchMode
+
+
+	currentContext, err := options.getCommandOutput("", "kubectl", "config", "current-context")
+	if err != nil {
+		return err
+	}
+	if currentContext == "minikube" {
+		if options.Flags.Provider == "" {
+			options.Flags.Provider = MINIKUBE
+		}
+		ip, err := options.getCommandOutput("", "minikube", "ip")
+		if err != nil {
+			return err
+		}
+		options.Flags.Domain = ip + ".nip.io"
+	}
+
 	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
 		initOpts.Flags.Domain = options.Flags.Domain
 	}
@@ -245,6 +262,9 @@ func (options *InstallOptions) Run() error {
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	if exposeController != nil && exposeController.Config.Domain == "" && options.Flags.Domain != "" {
 		exposeController.Config.Domain = options.Flags.Domain
+		log.Success("set exposeController Config Domain " + exposeController.Config.Domain + "\n")
+	}else{
+		log.Error("Did not set exposeController Config Domain\n")
 	}
 
 	err = initOpts.Run()
@@ -272,6 +292,7 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
 
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	if helmConfig.ExposeController.Config.Domain == "" {
