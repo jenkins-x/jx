@@ -14,9 +14,11 @@ type ChatProvider interface {
 
 // ChannelMetrics metrics for a channel
 type ChannelMetrics struct {
+	ID          string
 	Name        string
 	URL         string
 	MemberCount int
+	Members     []string
 }
 
 func (m *ChannelMetrics) ToMarkdown() string {

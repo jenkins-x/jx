@@ -9,10 +9,10 @@ import (
 )
 
 type ProjectHistory struct {
-	LastReportDate string           `json:"lastReportDate,omitempty"`
-	Reports        []*ProjectReport `json:"reports,omitempty"`
-	Contributors   []string         `json:"contributors,omitempty"`
-	Committers     []string         `json:"committers,omitempty"`
+	LastReportDate string           `yaml:"lastReportDate,omitempty"`
+	Reports        []*ProjectReport `yaml:"reports,omitempty"`
+	Contributors   []string         `yaml:"contributors,omitempty"`
+	Committers     []string         `yaml:"committers,omitempty"`
 }
 
 func (h *ProjectHistory) GetOrCreateReport(reportDate string) *ProjectReport {
@@ -97,6 +97,20 @@ func (h *ProjectHistory) StarsMetrics(reportDate string, total int) *ProjectRepo
 	return report
 }
 
+func (h *ProjectHistory) DeveloperChatMetrics(reportDate string, total int) *ProjectReport {
+	report := h.GetOrCreateReport(reportDate)
+	previous := h.FindPreviousReport(reportDate)
+	updateMetrics(&report.DeveloperChatMetrics, &previous.DeveloperChatMetrics, total)
+	return report
+}
+
+func (h *ProjectHistory) UserChatMetrics(reportDate string, total int) *ProjectReport {
+	report := h.GetOrCreateReport(reportDate)
+	previous := h.FindPreviousReport(reportDate)
+	updateMetrics(&report.UserChatMetrics, &previous.UserChatMetrics, total)
+	return report
+}
+
 func updateMetrics(current *CountMetrics, previous *CountMetrics, total int) {
 	current.Total += total
 	previousTotal := 0
@@ -108,19 +122,21 @@ func updateMetrics(current *CountMetrics, previous *CountMetrics, total int) {
 }
 
 type CountMetrics struct {
-	Count int `json:"count,omitempty"`
-	Total int `json:"total,omitempty"`
+	Count int `yaml:"count,omitempty"`
+	Total int `yaml:"total,omitempty"`
 }
 
 type ProjectReport struct {
-	ReportDate            string       `json:"reportDate,omitempty"`
-	StarsMetrics          CountMetrics `json:"starsMetrics,omitempty"`
-	DownloadMetrics       CountMetrics `json:"downloadMetrics,omitempty"`
-	IssueMetrics          CountMetrics `json:"issueMetrics,omitempty"`
-	PullRequestMetrics    CountMetrics `json:"pullRequestMetrics,omitempty"`
-	CommitMetrics         CountMetrics `json:"commitMetrics,omitempty"`
-	NewCommitterMetrics   CountMetrics `json:"newCommitterMetrics,omitempty"`
-	NewContributorMetrics CountMetrics `json:"newContributorMetrics,omitempty"`
+	ReportDate            string       `yaml:"reportDate,omitempty"`
+	StarsMetrics          CountMetrics `yaml:"starsMetrics,omitempty"`
+	DownloadMetrics       CountMetrics `yaml:"downloadMetrics,omitempty"`
+	IssueMetrics          CountMetrics `yaml:"issueMetrics,omitempty"`
+	PullRequestMetrics    CountMetrics `yaml:"pullRequestMetrics,omitempty"`
+	CommitMetrics         CountMetrics `yaml:"commitMetrics,omitempty"`
+	NewCommitterMetrics   CountMetrics `yaml:"newCommitterMetrics,omitempty"`
+	NewContributorMetrics CountMetrics `yaml:"newContributorMetrics,omitempty"`
+	DeveloperChatMetrics  CountMetrics `yaml:"developerChatMetrics,omitempty"`
+	UserChatMetrics       CountMetrics `yaml:"userChatMetrics,omitempty"`
 }
 
 type ProjectHistoryService struct {

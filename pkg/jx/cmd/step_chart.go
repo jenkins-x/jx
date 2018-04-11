@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/chats"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -43,28 +45,32 @@ var (
 type StepChartOptions struct {
 	StepOptions
 
-	FromDate             string
-	ToDate               string
-	Dir                  string
-	BlogOutputDir        string
-	BlogName             string
-	CombineMinorReleases bool
+	FromDate                    string
+	ToDate                      string
+	Dir                         string
+	BlogOutputDir               string
+	BlogName                    string
+	CombineMinorReleases        bool
+	DeveloperChannelMemberCount int
+	UserChannelMemberCount      int
 
 	State StepChartState
 }
 
 type StepChartState struct {
-	GitInfo         *gits.GitRepositoryInfo
-	GitProvider     gits.GitProvider
-	Tracker         issues.IssueProvider
-	Release         *v1.Release
-	BlogFileName    string
-	Buffer          *bytes.Buffer
-	Writer          *bufio.Writer
-	HistoryService  *reports.ProjectHistoryService
-	History         *reports.ProjectHistory
-	NewContributors map[string]*v1.UserDetails
-	NewCommitters   map[string]*v1.UserDetails
+	GitInfo                  *gits.GitRepositoryInfo
+	GitProvider              gits.GitProvider
+	Tracker                  issues.IssueProvider
+	Release                  *v1.Release
+	BlogFileName             string
+	DeveloperChatMetricsName string
+	UserChatMetricsName      string
+	Buffer                   *bytes.Buffer
+	Writer                   *bufio.Writer
+	HistoryService           *reports.ProjectHistoryService
+	History                  *reports.ProjectHistory
+	NewContributors          map[string]*v1.UserDetails
+	NewCommitters            map[string]*v1.UserDetails
 }
 
 // NewCmdStepChart Creates a new Command object
@@ -99,6 +105,8 @@ func NewCmdStepChart(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	cmd.Flags().StringVarP(&options.BlogOutputDir, "blog-dir", "", "", "The Hugo-style blog source code to generate the charts into")
 	cmd.Flags().StringVarP(&options.BlogName, "blog-name", "n", "", "The blog name")
 	cmd.Flags().BoolVarP(&options.CombineMinorReleases, "combine-minor", "c", true, "If enabled lets combine minor releases together to simplify the charts")
+	cmd.Flags().IntVarP(&options.DeveloperChannelMemberCount, "dev-channel-members", "", 0, "If no chat bots can connect to your chat server you can pass in the counts for the developer channel here")
+	cmd.Flags().IntVarP(&options.UserChannelMemberCount, "user-channel-members", "", 0, "If no chat bots can connect to your chat server you can pass in the counts for the user channel here")
 	return cmd
 }
 
@@ -108,7 +116,10 @@ func (o *StepChartOptions) Run() error {
 		NewContributors: map[string]*v1.UserDetails{},
 		NewCommitters:   map[string]*v1.UserDetails{},
 	}
-	var err error
+	pc, _, err := config.LoadProjectConfig(o.Dir)
+	if err != nil {
+		return err
+	}
 	outDir := o.BlogOutputDir
 	if outDir != "" {
 		if o.BlogName == "" {
@@ -141,6 +152,12 @@ func (o *StepChartOptions) Run() error {
 	err = o.downloadsReport(o.State.GitProvider, o.State.GitInfo.Organisation, o.State.GitInfo.Name)
 	if err != nil {
 		return err
+	}
+	if pc.Chat != nil {
+		err = o.loadChatMetrics(pc.Chat)
+		if err != nil {
+			return err
+		}
 	}
 	return o.addReportsToBlog()
 }
@@ -317,7 +334,10 @@ This blog outlines the changes on the project from ` + fromDate + ` to ` + toDat
 
 ## Charts
 
-` + state.Buffer.String()
+` + state.Buffer.String() + `
+
+This blog post was generated via the [jx step blog]() command.
+`
 
 		}
 		changelog := strings.TrimSpace(string(data))
@@ -340,12 +360,23 @@ func (o *StepChartOptions) createMetricsSummary() string {
 	out := bufio.NewWriter(&buffer)
 	_, report := o.report()
 	if report != nil {
+		developerChatMetricsName := o.State.DeveloperChatMetricsName
+		if developerChatMetricsName == "" {
+			developerChatMetricsName = "Developer Chat Members"
+		}
+		userChatMetricsName := o.State.UserChatMetricsName
+		if userChatMetricsName == "" {
+			userChatMetricsName = "User Chat Members"
+		}
+
 		fmt.Fprintf(out, "| Metric     | Recent | Total |\n")
 		fmt.Fprintf(out, "| :--------- | ------:| -----:|\n")
 		o.printMetrics(out, "Downloads", &report.DownloadMetrics)
+		o.printMetrics(out, "Stars", &report.StarsMetrics)
 		o.printMetrics(out, "New Committers", &report.NewCommitterMetrics)
 		o.printMetrics(out, "New Contributors", &report.NewContributorMetrics)
-		o.printMetrics(out, "Stars", &report.StarsMetrics)
+		o.printMetrics(out, developerChatMetricsName, &report.DeveloperChatMetrics)
+		o.printMetrics(out, userChatMetricsName, &report.UserChatMetrics)
 		o.printMetrics(out, "Issues Closed", &report.IssueMetrics)
 		o.printMetrics(out, "Pull Requests Merged", &report.PullRequestMetrics)
 		o.printMetrics(out, "Commits", &report.CommitMetrics)
@@ -512,4 +543,57 @@ func (o *StepChartOptions) formatUser(user *v1.UserDetails) string {
 		return "<a href='" + u + "' title='" + user.Name + "'>" + label + "</a>"
 	}
 	return label
+}
+
+func (o *StepChartOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
+	u := chatConfig.URL
+	if u == "" {
+		return nil
+	}
+	history, _ := o.report()
+	if history == nil {
+		return nil
+	}
+	const membersPostfix = " members"
+	devChannel := chatConfig.DeveloperChannel
+	if devChannel != "" {
+		count := o.DeveloperChannelMemberCount
+		if count > 0 {
+			o.State.DeveloperChatMetricsName = devChannel + membersPostfix
+		} else {
+			metrics, err := o.getChannelMetrics(chatConfig, devChannel)
+			if err != nil {
+				o.warnf("Failed to get chat metrics for channel %s: %s\n", devChannel, err)
+				return nil
+			}
+			count = metrics.MemberCount
+			o.State.DeveloperChatMetricsName = metrics.ToMarkdown() + membersPostfix
+		}
+		history.DeveloperChatMetrics(o.ToDate, count)
+	}
+	userChannel := chatConfig.UserChannel
+	if userChannel != "" {
+		count := o.UserChannelMemberCount
+		if count > 0 {
+			o.State.UserChatMetricsName = userChannel + membersPostfix
+		} else {
+			metrics, err := o.getChannelMetrics(chatConfig, userChannel)
+			if err != nil {
+				o.warnf("Failed to get chat metrics for channel %s: %s\n", userChannel, err)
+				return nil
+			}
+			count = metrics.MemberCount
+			o.State.UserChatMetricsName = metrics.ToMarkdown() + membersPostfix
+		}
+		history.UserChatMetrics(o.ToDate, count)
+	}
+	return nil
+}
+
+func (o *StepChartOptions) getChannelMetrics(chatConfig *config.ChatConfig, channelName string) (*chats.ChannelMetrics, error) {
+	provider, err := o.createChatProvider(chatConfig)
+	if err != nil {
+		return nil, err
+	}
+	return provider.GetChannelMetrics(channelName)
 }

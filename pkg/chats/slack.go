@@ -2,6 +2,7 @@ package chats
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -35,11 +36,28 @@ func (c *SlackChatProvider) GetChannelMetrics(name string) (*ChannelMetrics, err
 	metrics := &ChannelMetrics{
 		Name: name,
 	}
-	ch, err := c.SlackClient.GetChannelInfo(name)
+	name = strings.TrimPrefix(name, "#")
+	id := name
+
+	channels, err := c.SlackClient.GetChannels(true)
 	if err != nil {
 		return metrics, err
 	}
-	metrics.MemberCount = ch.NumMembers
-	metrics.URL = util.UrlJoin(c.Server.URL, "messages", ch.ID)
+	for _, ch := range channels {
+		fmt.Printf("Found channel %s with id %s\n", ch.Name, ch.ID)
+		if ch.Name == name {
+			id = ch.ID
+			break
+		}
+	}
+	info, err := c.SlackClient.GetChannelInfo(id)
+	if err != nil {
+		return metrics, err
+	}
+	metrics.MemberCount = info.NumMembers
+	metrics.ID = info.ID
+	metrics.Name = info.Name
+	metrics.Members = info.Members
+	metrics.URL = util.UrlJoin(c.Server.URL, "messages", info.ID)
 	return metrics, nil
 }
