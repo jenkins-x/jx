@@ -186,7 +186,11 @@ func (o *EditConfigOptions) EditChat(pc *config.ProjectConfig) (bool, error) {
 	}
 	answer = true
 
-	it.Room, err = util.PickValue("Chat room: ", it.Room, true)
+	it.DeveloperChannel, err = util.PickValue("Developer channel: ", it.DeveloperChannel, false)
+	if err != nil {
+		return answer, err
+	}
+	it.UserChannel, err = util.PickValue("User channel: ", it.UserChannel, false)
 	if err != nil {
 		return answer, err
 	}

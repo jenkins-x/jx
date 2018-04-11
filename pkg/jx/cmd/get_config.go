@@ -75,7 +75,7 @@ func (o *GetConfigOptions) Run() error {
 		return nil
 	}
 	table := o.CreateTable()
-	table.AddRow("Service", "Kind", "URL", "NAME")
+	table.AddRow("SERVICE", "KIND", "URL", "NAME")
 
 	t := pc.IssueTracker
 	if t != nil {
@@ -86,8 +86,13 @@ func (o *GetConfigOptions) Run() error {
 		table.AddRow("Wiki", w.Kind, w.URL, w.Space)
 	}
 	ch := pc.Chat
-	if w != nil {
-		table.AddRow("Chat", ch.Kind, ch.URL, ch.Room)
+	if ch != nil {
+		if ch.DeveloperChannel != "" {
+			table.AddRow("Developer Chat", ch.Kind, ch.URL, ch.DeveloperChannel)
+		}
+		if ch.UserChannel != "" {
+			table.AddRow("User Chat", ch.Kind, ch.URL, ch.UserChannel)
+		}
 	}
 	table.Render()
 	return nil
