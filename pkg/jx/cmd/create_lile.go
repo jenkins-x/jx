@@ -69,7 +69,7 @@ func NewCmdCreateLile(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 }
 
 // GenerateLile creates a fresh lile project by running lile on local shell
-func (o CreateLileOptions) GenerateLile(dir string) (bytes.Buffer, error) {
+func (o CreateLileOptions) GenerateLile(dir string) error {
 	var cmdOut bytes.Buffer
 	e := exec.Command("lile", "new", dir)
 	e.Env = os.Environ()
@@ -77,7 +77,7 @@ func (o CreateLileOptions) GenerateLile(dir string) (bytes.Buffer, error) {
 	e.Stdout = &cmdOut
 	e.Stderr = o.Err
 	err := e.Run()
-	return cmdOut, err
+	return err
 }
 
 // Run implements the command
@@ -89,7 +89,7 @@ func (o *CreateLileOptions) Run() error {
 	}
 
 	// generate lile project
-	cmdOut, err := o.GenerateLile(dir)
+	err := o.GenerateLile(dir)
 	if err != nil {
 		return err
 	}
