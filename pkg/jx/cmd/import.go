@@ -372,7 +372,7 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 
 	//walk through every file in the given dir and update the placeholders
-	err = o.replacePlaceholders()
+	err = o.replacePlaceholders(o.GitProvider.ServerURL(), o.GitServer.CurrentUser)
 	if err != nil {
 		return err
 	}
@@ -619,11 +619,9 @@ func (o *ImportOptions) DoImport() error {
 	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc, false, o.BatchMode)
 }
 
-func (o *ImportOptions) replacePlaceholders() error {
+func (o *ImportOptions) replacePlaceholders(gitServerName, gitOrg string) error {
 	o.Printf("replacing placeholders in directory %s\n", o.Dir)
-	gitServer := strings.TrimSuffix(strings.TrimPrefix(o.GitRepositoryOptions.ServerURL, "https://"), "/")
-
-	o.Printf("app name: %s, git server: %s, org: %s\n", o.AppName, gitServer, o.Organisation)
+	o.Printf("app name: %s, git server: %s, org: %s\n", o.AppName, gitServerName, gitOrg)
 
 	if err := filepath.Walk(o.Dir, func(f string, fi os.FileInfo, err error) error {
 		if fi.Name() == ".git" {
@@ -640,8 +638,8 @@ func (o *ImportOptions) replacePlaceholders() error {
 
 			for i, line := range lines {
 				line = strings.Replace(line, PlaceHolderAppName, o.AppName, -1)
-				line = strings.Replace(line, PlaceHolderGitProvider, gitServer, -1)
-				line = strings.Replace(line, PlaceHolderOrg, o.Organisation, -1)
+				line = strings.Replace(line, PlaceHolderGitProvider, gitServerName, -1)
+				line = strings.Replace(line, PlaceHolderOrg, gitOrg, -1)
 				lines[i] = line
 			}
 			output := strings.Join(lines, "\n")
