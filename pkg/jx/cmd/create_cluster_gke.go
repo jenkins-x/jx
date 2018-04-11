@@ -37,7 +37,8 @@ type CreateClusterGKEFlags struct {
 	DiskSize        string
 	ImageType       string
 	MachineType     string
-	NumOfNodes      string
+	MinNumOfNodes   string
+	MaxNumOfNodes   string
 	ProjectId       string
 	SkipLogin       bool
 	Zone            string
@@ -99,7 +100,8 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "d", "", "Size in GB for node VM boot disks. Defaults to 100GB")
 	cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, "enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
 	cmd.Flags().StringVarP(&options.Flags.MachineType, "machine-type", "m", "", "The type of machine to use for nodes")
-	cmd.Flags().StringVarP(&options.Flags.NumOfNodes, "num-nodes", "", "", "The number of nodes to be created in each of the cluster's zones")
+	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, "min-num-nodes", "", "", "The minimum number of nodes to be created in each of the cluster's zones")
+	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, "max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
@@ -180,19 +182,36 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	numOfNodes := o.Flags.NumOfNodes
-	if numOfNodes == "" {
+	minNumOfNodes := o.Flags.MinNumOfNodes
+	if minNumOfNodes == "" {
 		prompt := &survey.Input{
-			Message: "Number of Nodes",
+			Message: "Minimum number of Nodes",
 			Default: "3",
-			Help:    "We recommend a minimum of 3 for Jenkins X,  the number of nodes to be created in each of the cluster's zones",
+			Help:    "We recommend a minimum of 3 for Jenkins X,  the minimum number of nodes to be created in each of the cluster's zones",
 		}
 
-		survey.AskOne(prompt, &numOfNodes, nil)
+		survey.AskOne(prompt, &minNumOfNodes, nil)
+	}
+
+	maxNumOfNodes := o.Flags.MinNumOfNodes
+	if maxNumOfNodes == "" {
+		prompt := &survey.Input{
+			Message: "Maximum number of Nodes",
+			Default: "5",
+			Help:    "We recommend at least 5 for Jenkins X,  the maximum number of nodes to be created in each of the cluster's zones",
+		}
+
+		survey.AskOne(prompt, &maxNumOfNodes, nil)
 	}
 
 	// mandatory flags are machine type, num-nodes, zone,
-	args := []string{"container", "clusters", "create", o.Flags.ClusterName, "--zone", zone, "--num-nodes", numOfNodes, "--machine-type", machineType}
+	args := []string{"container", "clusters", "create",
+		o.Flags.ClusterName, "--zone", zone,
+		"--num-nodes",minNumOfNodes,
+		"--machine-type", machineType,
+		"--enable-autoscaling",
+		"--min-nodes",minNumOfNodes,
+	    "--max-nodes",maxNumOfNodes}
 
 	if o.Flags.DiskSize != "" {
 		args = append(args, "--disk-size", o.Flags.DiskSize)
