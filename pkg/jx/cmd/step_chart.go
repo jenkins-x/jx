@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -180,8 +181,7 @@ func (o *StepChartOptions) downloadsReport(provider gits.GitProvider, owner stri
 	for _, release := range releases {
 		report.AddNumber(release.Name, release.DownloadCount)
 	}
-	report.Render()
-	return nil
+	return report.Render()
 }
 
 // createBarReport creates the new report instance
@@ -194,7 +194,12 @@ func (o *StepChartOptions) createBarReport(name string, legends ...string) repor
 			blogName = fmt.Sprintf("changes-%d-%s-%d", t.Day(), t.Month().String(), t.Year())
 		}
 
-		jsFileName := filepath.Join(outDir, "static", "news", blogName, name+".js")
+		jsDir := filepath.Join(outDir, "static", "news", blogName)
+		err := os.MkdirAll(jsDir, DefaultWritePermissions)
+		if err != nil {
+			o.warnf("Could not create directory %s: %s", jsDir, err)
+		}
+		jsFileName := filepath.Join(jsDir, name+".js")
 		jsLinkURI := filepath.Join("/news", blogName, name+".js")
 		state := &o.State
 		if state.Buffer == nil {
@@ -286,8 +291,8 @@ func (o *StepChartOptions) addReportsToBlog() error {
 
 		prefix := `---
 title: "Changes for ` + toDate + `"
-date: ` + time.Now().Format(time.RFC3339) + `T18:36:00+02:00
-description: "Change log and metrics for ` + toDate + `"
+date: ` + time.Now().Format(time.RFC3339) + `
+description: "Whats new for ` + toDate + `"
 categories: [blog]
 keywords: []
 slug: "changes-` + strings.Replace(toDate, " ", "-", -1) + `"
@@ -301,7 +306,7 @@ This blog outlines the changes on the project from ` + fromDate + ` to ` + toDat
 
 ` + o.createMetricsSummary() + `
 
-[see more metrics](#metrics)
+[View Charts](#charts)
 
 ` + committersText
 
@@ -310,7 +315,7 @@ This blog outlines the changes on the project from ` + fromDate + ` to ` + toDat
 			state.Writer.Flush()
 			postfix = `
 
-## Metrics
+## Charts
 
 ` + state.Buffer.String()
 
@@ -336,7 +341,7 @@ func (o *StepChartOptions) createMetricsSummary() string {
 	_, report := o.report()
 	if report != nil {
 		fmt.Fprintf(out, "| Metric     | Recent | Total |\n")
-		fmt.Fprintf(out, "| ---------- | ------:| -----:|\n")
+		fmt.Fprintf(out, "| :--------- | ------:| -----:|\n")
 		o.printMetrics(out, "Downloads", &report.DownloadMetrics)
 		o.printMetrics(out, "New Committers", &report.NewCommitterMetrics)
 		o.printMetrics(out, "New Contributors", &report.NewContributorMetrics)
