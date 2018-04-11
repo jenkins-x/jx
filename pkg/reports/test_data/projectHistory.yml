@@ -1,0 +1,11 @@
+lastReportDate: Jan 2 2018
+reports:
+- reportDate: Jan 2 2018
+  starsMetrics:
+    count: 10
+    total: 20
+  downloadMetrics:
+    count: 11
+    total: 12
+committers:
+- jstrachan
