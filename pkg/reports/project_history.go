@@ -70,67 +70,80 @@ func (h *ProjectHistory) FindPreviousReport(reportDate string) *ProjectReport {
 func (h *ProjectHistory) DownloadMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.DownloadMetrics, &previous.DownloadMetrics, total)
+	updateMetricTotal(&report.DownloadMetrics, &previous.DownloadMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) IssueMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.IssueMetrics, &previous.IssueMetrics, total)
+	addMetricCount(&report.IssueMetrics, &previous.IssueMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) PullRequestMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.PullRequestMetrics, &previous.PullRequestMetrics, total)
+	addMetricCount(&report.PullRequestMetrics, &previous.PullRequestMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) CommitMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.CommitMetrics, &previous.CommitMetrics, total)
+	addMetricCount(&report.CommitMetrics, &previous.CommitMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) NewCommitterMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.NewCommitterMetrics, &previous.NewCommitterMetrics, total)
+	addMetricCount(&report.NewCommitterMetrics, &previous.NewCommitterMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) NewContributorMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.NewContributorMetrics, &previous.NewContributorMetrics, total)
+	addMetricCount(&report.NewContributorMetrics, &previous.NewContributorMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) StarsMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.StarsMetrics, &previous.StarsMetrics, total)
+	updateMetricTotal(&report.StarsMetrics, &previous.StarsMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) DeveloperChatMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.DeveloperChatMetrics, &previous.DeveloperChatMetrics, total)
+	updateMetricTotal(&report.DeveloperChatMetrics, &previous.DeveloperChatMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) UserChatMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.UserChatMetrics, &previous.UserChatMetrics, total)
+	updateMetricTotal(&report.UserChatMetrics, &previous.UserChatMetrics, total)
 	return report
 }
 
-func updateMetrics(current *CountMetrics, previous *CountMetrics, total int) {
+// addMetricCount adds a new metric value, such as number of commits in a release
+func addMetricCount(current *CountMetrics, previous *CountMetrics, total int) {
+	current.Total = total
+	previousTotal := 0
+	if previous != nil {
+		previousTotal = previous.Total
+	}
+	count := total - previousTotal
+	current.Count = count
+}
+
+// updateMetricTotal takes the current total value and works out the incremental change
+// since the last report. e.g. for updating the new number of stars or users in a chat room
+func updateMetricTotal(current *CountMetrics, previous *CountMetrics, total int) {
 	current.Total = total
 	previousTotal := 0
 	if previous != nil {
