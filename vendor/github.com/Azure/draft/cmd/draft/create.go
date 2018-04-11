@@ -93,11 +93,23 @@ func (c *createCmd) run() error {
 
 	if c.pack != "" {
 		// --pack was explicitly defined, so we can just lazily use that here. No detection required.
-		lpack := filepath.Join(c.home.Packs(), c.pack)
-		err = pack.CreateFrom(c.dest, lpack)
+		packsFound, err := pack.Find(c.home.Packs(), c.pack)
 		if err != nil {
 			return err
 		}
+		if len(packsFound) == 0 {
+			return fmt.Errorf("No packs found with name %s", c.pack)
+
+		} else if len(packsFound) == 1 {
+			packSrc := packsFound[0]
+			if err = pack.CreateFrom(c.dest, packSrc); err != nil {
+				return err
+			}
+
+		} else {
+			return fmt.Errorf("Multiple packs named %s found: %v", c.pack, packsFound)
+		}
+
 	} else {
 		// pack detection time
 		packPath, err := doPackDetection(c.home, c.out)

@@ -1,10 +1,15 @@
 package repo
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+// ErrPackNotFoundInRepo is the error returned when a pack is not found in a pack repo
+var ErrPackNotFoundInRepo = errors.New("pack not found in pack repo")
 
 // PackDirName is name for the packs directory
 const PackDirName = "packs"
@@ -39,4 +44,20 @@ func FindRepositories(path string) []Repository {
 		return nil
 	})
 	return repos
+}
+
+// Pack finds a packs with the given name in a repository and returns path
+func (r *Repository) Pack(name string) (string, error) {
+
+	//confirm repo exists
+	if _, err := os.Stat(r.Dir); os.IsNotExist(err) {
+		return "", fmt.Errorf("pack repo %s not found", r.Name)
+	}
+
+	targetDir := filepath.Join(r.Dir, "packs", name)
+	if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+		return "", ErrPackNotFoundInRepo
+	}
+
+	return targetDir, nil
 }

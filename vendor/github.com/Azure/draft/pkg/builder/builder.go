@@ -227,7 +227,7 @@ func loadArchive(ctx *Context) (err error) {
 func loadValues(ctx *Context) error {
 	var vals = make(chartutil.Values)
 	for _, val := range ctx.Env.Values {
-		if err := strvals.ParseInto(val, vals.AsMap()); err != nil {
+		if err := strvals.ParseInto(val, vals); err != nil {
 			return fmt.Errorf("failed to parse %q from draft.toml: %v", val, err)
 		}
 	}

@@ -130,7 +130,7 @@ $ curl localhost:8080
 Hello, Draft!
 ```
 
-[Installation Guide]: install.md
+[Installation Guide]: ../README.md#installation
 [Helm]: https://github.com/kubernetes/helm
 [Kubernetes]: https://kubernetes.io/
 [Python]: https://www.python.org/

@@ -40,7 +40,9 @@ func FromDir(dir string) (*Pack, error) {
 			if err != nil {
 				return nil, err
 			}
-			pack.Files[fInfo.Name()] = f
+			if fInfo.Name() != "README.md" {
+				pack.Files[fInfo.Name()] = f
+			}
 		}
 	}
 

@@ -33,6 +33,9 @@ func TestFromDir(t *testing.T) {
 		}
 	}()
 
+	if _, ok := pack.Files["README.md"]; ok {
+		t.Errorf("expected README.md to not have been loaded")
+	}
 	// check that the Dockerfile was loaded
 	dockerfile, ok := pack.Files[dockerfileName]
 	if !ok {

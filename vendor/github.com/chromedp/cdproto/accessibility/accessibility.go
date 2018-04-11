@@ -10,24 +10,45 @@ import (
 	"context"
 
 	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/runtime"
 )
 
 // GetPartialAXTreeParams fetches the accessibility node and partial
 // accessibility tree for this DOM node, if it exists.
 type GetPartialAXTreeParams struct {
-	NodeID         cdp.NodeID `json:"nodeId"`                   // ID of node to get the partial accessibility tree for.
-	FetchRelatives bool       `json:"fetchRelatives,omitempty"` // Whether to fetch this nodes ancestors, siblings and children. Defaults to true.
+	NodeID         cdp.NodeID             `json:"nodeId,omitempty"`         // Identifier of the node to get the partial accessibility tree for.
+	BackendNodeID  cdp.BackendNodeID      `json:"backendNodeId,omitempty"`  // Identifier of the backend node to get the partial accessibility tree for.
+	ObjectID       runtime.RemoteObjectID `json:"objectId,omitempty"`       // JavaScript object id of the node wrapper to get the partial accessibility tree for.
+	FetchRelatives bool                   `json:"fetchRelatives,omitempty"` // Whether to fetch this nodes ancestors, siblings and children. Defaults to true.
 }
 
 // GetPartialAXTree fetches the accessibility node and partial accessibility
 // tree for this DOM node, if it exists.
 //
 // parameters:
-//   nodeID - ID of node to get the partial accessibility tree for.
-func GetPartialAXTree(nodeID cdp.NodeID) *GetPartialAXTreeParams {
-	return &GetPartialAXTreeParams{
-		NodeID: nodeID,
-	}
+func GetPartialAXTree() *GetPartialAXTreeParams {
+	return &GetPartialAXTreeParams{}
+}
+
+// WithNodeID identifier of the node to get the partial accessibility tree
+// for.
+func (p GetPartialAXTreeParams) WithNodeID(nodeID cdp.NodeID) *GetPartialAXTreeParams {
+	p.NodeID = nodeID
+	return &p
+}
+
+// WithBackendNodeID identifier of the backend node to get the partial
+// accessibility tree for.
+func (p GetPartialAXTreeParams) WithBackendNodeID(backendNodeID cdp.BackendNodeID) *GetPartialAXTreeParams {
+	p.BackendNodeID = backendNodeID
+	return &p
+}
+
+// WithObjectID JavaScript object id of the node wrapper to get the partial
+// accessibility tree for.
+func (p GetPartialAXTreeParams) WithObjectID(objectID runtime.RemoteObjectID) *GetPartialAXTreeParams {
+	p.ObjectID = objectID
+	return &p
 }
 
 // WithFetchRelatives whether to fetch this nodes ancestors, siblings and
