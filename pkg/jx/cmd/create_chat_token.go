@@ -16,21 +16,21 @@ import (
 )
 
 var (
-	createTrackerTokenLong = templates.LongDesc(`
-		Creates a new User Token for an Issue Tracker
+	createChatTokenLong = templates.LongDesc(`
+		Creates a new User Token for a Chat service
 `)
 
-	createTrackerTokenExample = templates.Examples(`
-		# Add a new User Token for an Issue Tracker
-		jx create tracker token -n jira someUserName
+	createChatTokenExample = templates.Examples(`
+		# Add a new User Token for a Chat service
+		jx create chat token -n jira someUserName
 
 		# As above with the password being passed in
 		jx create git token -n jira -p somePassword someUserName	
 	`)
 )
 
-// CreateTrackerTokenOptions the command line options for the command
-type CreateTrackerTokenOptions struct {
+// CreateChatTokenOptions the command line options for the command
+type CreateChatTokenOptions struct {
 	CreateOptions
 
 	ServerFlags ServerFlags
@@ -40,9 +40,9 @@ type CreateTrackerTokenOptions struct {
 	Timeout     string
 }
 
-// NewCmdCreateTrackerToken creates a command
-func NewCmdCreateTrackerToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &CreateTrackerTokenOptions{
+// NewCmdCreateChatToken creates a command
+func NewCmdCreateChatToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &CreateChatTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -54,10 +54,10 @@ func NewCmdCreateTrackerToken(f cmdutil.Factory, out io.Writer, errOut io.Writer
 
 	cmd := &cobra.Command{
 		Use:     "token [username]",
-		Short:   "Adds a new token/login for a user on an issue tracker server",
+		Short:   "Adds a new token/login for a user on a Chat service server",
 		Aliases: []string{"login"},
-		Long:    createTrackerTokenLong,
-		Example: createTrackerTokenExample,
+		Long:    createChatTokenLong,
+		Example: createChatTokenExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -74,7 +74,7 @@ func NewCmdCreateTrackerToken(f cmdutil.Factory, out io.Writer, errOut io.Writer
 }
 
 // Run implements the command
-func (o *CreateTrackerTokenOptions) Run() error {
+func (o *CreateChatTokenOptions) Run() error {
 	args := o.Args
 	if len(args) > 0 {
 		o.Username = args[0]
@@ -82,13 +82,13 @@ func (o *CreateTrackerTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService()
 	if err != nil {
 		return err
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findIssueTrackerServer(config, &o.ServerFlags)
+	server, err := o.findChatServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}
@@ -128,17 +128,17 @@ func (o *CreateTrackerTokenOptions) Run() error {
 		return err
 	}
 
-	err = o.updateIssueTrackerCredentialsSecret(server, userAuth)
+	err = o.updateChatCredentialsSecret(server, userAuth)
 	if err != nil {
-		o.warnf("Failed to update pipeline issue tracker credentials secret: %v\n", err)
+		o.warnf("Failed to update chat credentials secret: %v\n", err)
 	}
 
-	o.Printf("Created user %s API Token for git server %s at %s\n",
+	o.Printf("Created user %s API Token for chat server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }
 
-func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
+func (o *CreateChatTokenOptions) updateChatCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
 	client, curNs, err := o.Factory.CreateClient()
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *
 		return err
 	}
 	options := metav1.GetOptions{}
-	name := kube.ToValidName(kube.SecretJenkinsPipelineIssueCredentials + server.Kind + "-" + server.Name)
+	name := kube.ToValidName(kube.SecretJenkinsPipelineChatCredentials + server.Kind + "-" + server.Name)
 	secrets := client.CoreV1().Secrets(ns)
 	secret, err := secrets.Get(name, options)
 	create := false
@@ -156,11 +156,11 @@ func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *
 	labels := map[string]string{
 		kube.LabelCredentialsType: kube.ValueCredentialTypeUsernamePassword,
 		kube.LabelCreatedBy:       kube.ValueCreatedByJX,
-		kube.LabelKind:            kube.ValueKindChat,
+		kube.LabelKind:            kube.ValueKindIssue,
 		kube.LabelServiceKind:     server.Kind,
 	}
 	annotations := map[string]string{
-		kube.AnnotationCredentialsDescription: fmt.Sprintf("API Token for acccessing %s Issue Tracker inside pipelines", server.URL),
+		kube.AnnotationCredentialsDescription: fmt.Sprintf("API Token for acccessing %s chat inside pipelines", server.URL),
 		kube.AnnotationURL:                    server.URL,
 		kube.AnnotationName:                   server.Name,
 	}

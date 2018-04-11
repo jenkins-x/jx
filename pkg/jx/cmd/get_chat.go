@@ -4,7 +4,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/chats"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
@@ -12,8 +12,8 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
-// GetTrackerOptions the command line options
-type GetTrackerOptions struct {
+// GetChatOptions the command line options
+type GetChatOptions struct {
 	GetOptions
 
 	Kind string
@@ -21,20 +21,20 @@ type GetTrackerOptions struct {
 }
 
 var (
-	getTrackerLong = templates.LongDesc(`
-		Display the issue tracker server URLs.
+	getChatLong = templates.LongDesc(`
+		Display the chat server URLs.
 
 `)
 
-	getTrackerExample = templates.Examples(`
-		# List all registered issue tracker server URLs
-		jx get tracker
+	getChatExample = templates.Examples(`
+		# List all registered chat server URLs
+		jx get chat
 	`)
 )
 
-// NewCmdGetTracker creates the command
-func NewCmdGetTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &GetTrackerOptions{
+// NewCmdGetChat creates the command
+func NewCmdGetChat(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &GetChatOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -45,11 +45,11 @@ func NewCmdGetTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 	}
 
 	cmd := &cobra.Command{
-		Use:     "tracker [flags]",
-		Short:   "Display the current registered issue tracker service URLs",
-		Long:    getTrackerLong,
-		Example: getTrackerExample,
-		Aliases: []string{"issue-tracker"},
+		Use:     "chat [flags]",
+		Short:   "Display the current registered chat service URLs",
+		Long:    getChatLong,
+		Example: getChatExample,
+		Aliases: []string{"slack"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -57,22 +57,22 @@ func NewCmdGetTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "", "Filters the issue trackers by the kinds: "+strings.Join(issues.IssueTrackerKinds, ", "))
+	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "", "Filters the chats by the kinds: "+strings.Join(chats.ChatKinds, ", "))
 	return cmd
 }
 
 // Run implements this command
-func (o *GetTrackerOptions) Run() error {
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+func (o *GetChatOptions) Run() error {
+	authConfigSvc, err := o.CreateChatAuthConfigService()
 	if err != nil {
 		return err
 	}
 	config := authConfigSvc.Config()
+
 	if len(config.Servers) == 0 {
-		o.Printf("No issue trackers registered. To register a new issue tracker use: %s\n", util.ColorInfo("jx create tracker server"))
+		o.Printf("No chat servers registered. To register a new chat servers use: %s\n", util.ColorInfo("jx create chat server"))
 		return nil
 	}
-
 	filterKind := o.Kind
 
 	table := o.CreateTable()

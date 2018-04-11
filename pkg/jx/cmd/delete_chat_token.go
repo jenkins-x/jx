@@ -12,26 +12,26 @@ import (
 )
 
 var (
-	deleteTrackerTokenLong = templates.LongDesc(`
-		Deletes one or more API tokens for your issue tracker from your local settings
+	deleteChatTokenLong = templates.LongDesc(`
+		Deletes one or more API tokens for your chat server from your local settings
 `)
 
-	deleteTrackerTokenExample = templates.Examples(`
-		# Deletes an issue tracker user token
-		jx delete tracker token -n jira myusername
+	deleteChatTokenExample = templates.Examples(`
+		# Deletes a chat user token
+		jx delete chat token -n slack myusername
 	`)
 )
 
-// DeleteTrackerTokenOptions the options for the create spring command
-type DeleteTrackerTokenOptions struct {
+// DeleteChatTokenOptions the options for the create spring command
+type DeleteChatTokenOptions struct {
 	CreateOptions
 
 	ServerFlags ServerFlags
 }
 
-// NewCmdDeleteTrackerToken defines the command
-func NewCmdDeleteTrackerToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &DeleteTrackerTokenOptions{
+// NewCmdDeleteChatToken defines the command
+func NewCmdDeleteChatToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &DeleteChatTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -43,10 +43,10 @@ func NewCmdDeleteTrackerToken(f cmdutil.Factory, out io.Writer, errOut io.Writer
 
 	cmd := &cobra.Command{
 		Use:     "token",
-		Short:   "Deletes one or more api tokens for a user on an inssue tracker server",
+		Short:   "Deletes one or more api tokens for a user on a chat server",
 		Aliases: []string{"api-token"},
-		Long:    deleteTrackerTokenLong,
-		Example: deleteTrackerTokenExample,
+		Long:    deleteChatTokenLong,
+		Example: deleteChatTokenExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -59,18 +59,18 @@ func NewCmdDeleteTrackerToken(f cmdutil.Factory, out io.Writer, errOut io.Writer
 }
 
 // Run implements the command
-func (o *DeleteTrackerTokenOptions) Run() error {
+func (o *DeleteChatTokenOptions) Run() error {
 	args := o.Args
 	if len(args) == 0 {
-		return fmt.Errorf("Missing issue tracker user name")
+		return fmt.Errorf("Missing chat server user name")
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService()
 	if err != nil {
 		return err
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findIssueTrackerServer(config, &o.ServerFlags)
+	server, err := o.findChatServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (o *DeleteTrackerTokenOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Deleted API tokens for users: %s for issue tracker server %s at %s from local settings\n",
+	o.Printf("Deleted API tokens for users: %s for chat server server %s at %s from local settings\n",
 		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

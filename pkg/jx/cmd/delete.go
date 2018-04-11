@@ -52,6 +52,7 @@ func NewCmdDelete(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	}
 
 	cmd.AddCommand(NewCmdDeleteAddon(f, out, errOut))
+	cmd.AddCommand(NewCmdDeleteChat(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteContext(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteGit(f, out, errOut))

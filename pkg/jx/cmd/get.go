@@ -67,6 +67,7 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.AddCommand(NewCmdGetApplications(f, out, errOut))
 	cmd.AddCommand(NewCmdGetAddon(f, out, errOut))
 	cmd.AddCommand(NewCmdGetBuild(f, out, errOut))
+	cmd.AddCommand(NewCmdGetChat(f, out, errOut))
 	cmd.AddCommand(NewCmdGetConfig(f, out, errOut))
 	cmd.AddCommand(NewCmdGetEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdGetGit(f, out, errOut))

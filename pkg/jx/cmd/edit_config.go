@@ -45,6 +45,7 @@ type EditConfigOptions struct {
 	Kind string
 
 	IssuesAuthConfigSvc auth.AuthConfigService
+	ChatAuthConfigSvc   auth.AuthConfigService
 }
 
 // NewCmdEditConfig creates a command object for the "create" command
@@ -84,11 +85,14 @@ func (o *EditConfigOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigServiceFromConfig(pc)
+	o.IssuesAuthConfigSvc, err = o.CreateIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}
-	o.IssuesAuthConfigSvc = authConfigSvc
+	o.ChatAuthConfigSvc, err = o.CreateChatAuthConfigService()
+	if err != nil {
+		return err
+	}
 
 	kind := o.Kind
 	if kind == "" && !o.BatchMode {
@@ -105,10 +109,15 @@ func (o *EditConfigOptions) Run() error {
 	}
 	modified := false
 	switch kind {
+	case chatKind:
+		modified, err = o.EditChat(pc)
 	case issueKind:
 		modified, err = o.EditIssueTracker(pc)
 	default:
 		return fmt.Errorf("Editing %s is not yet supported!", kind)
+	}
+	if err != nil {
+		return err
 	}
 	if modified {
 		err = pc.SaveConfig(fileName)
@@ -146,6 +155,38 @@ func (o *EditConfigOptions) EditIssueTracker(pc *config.ProjectConfig) (bool, er
 	answer = true
 
 	it.Project, err = util.PickValue("Issue tracker project name: ", it.Project, true)
+	if err != nil {
+		return answer, err
+	}
+	return answer, nil
+}
+
+func (o *EditConfigOptions) EditChat(pc *config.ProjectConfig) (bool, error) {
+	answer := false
+	if pc.Chat == nil {
+		pc.Chat = &config.ChatConfig{}
+		answer = true
+	}
+	it := pc.Chat
+
+	config := o.ChatAuthConfigSvc.Config()
+	if len(config.Servers) == 0 {
+		return answer, fmt.Errorf("No chat servers available. Please add one via: jx create chat server")
+	}
+	server, err := config.PickServer("Chat service", o.BatchMode)
+	if err != nil {
+		return answer, err
+	}
+	if server == nil || server.URL == "" {
+		return answer, fmt.Errorf("No chat server URL found!")
+	}
+	it.URL = server.URL
+	if server.Kind != "" {
+		it.Kind = server.Kind
+	}
+	answer = true
+
+	it.Room, err = util.PickValue("Chat room: ", it.Room, true)
 	if err != nil {
 		return answer, err
 	}
