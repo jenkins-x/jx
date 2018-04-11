@@ -11,6 +11,7 @@ import (
 type ProjectHistory struct {
 	LastReportDate string           `json:"lastReportDate,omitempty"`
 	Reports        []*ProjectReport `json:"reports,omitempty"`
+	Contributors   []string         `json:"contributors,omitempty"`
 	Committers     []string         `json:"committers,omitempty"`
 }
 
@@ -75,10 +76,24 @@ func (h *ProjectHistory) CommitMetrics(reportDate string, total int) *ProjectRep
 	return report
 }
 
+func (h *ProjectHistory) NewCommitterMetrics(reportDate string, total int) *ProjectReport {
+	report := h.GetOrCreateReport(reportDate)
+	previous := h.FindPreviousReport(reportDate)
+	updateMetrics(&report.NewCommitterMetrics, &previous.NewCommitterMetrics, total)
+	return report
+}
+
 func (h *ProjectHistory) NewContributorMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
 	updateMetrics(&report.NewContributorMetrics, &previous.NewContributorMetrics, total)
+	return report
+}
+
+func (h *ProjectHistory) StarsMetrics(reportDate string, total int) *ProjectReport {
+	report := h.GetOrCreateReport(reportDate)
+	previous := h.FindPreviousReport(reportDate)
+	updateMetrics(&report.StarsMetrics, &previous.StarsMetrics, total)
 	return report
 }
 
@@ -99,12 +114,13 @@ type CountMetrics struct {
 
 type ProjectReport struct {
 	ReportDate            string       `json:"reportDate,omitempty"`
-	StarsMetrics          CountMetrics `json:"st,omitempty"`
-	DownloadMetrics       CountMetrics `json:"downloads,omitempty"`
-	IssueMetrics          CountMetrics `json:"downloads,omitempty"`
-	PullRequestMetrics    CountMetrics `json:"downloads,omitempty"`
-	CommitMetrics         CountMetrics `json:"downloads,omitempty"`
-	NewContributorMetrics CountMetrics `json:"downloads,omitempty"`
+	StarsMetrics          CountMetrics `json:"starsMetrics,omitempty"`
+	DownloadMetrics       CountMetrics `json:"downloadMetrics,omitempty"`
+	IssueMetrics          CountMetrics `json:"issueMetrics,omitempty"`
+	PullRequestMetrics    CountMetrics `json:"pullRequestMetrics,omitempty"`
+	CommitMetrics         CountMetrics `json:"commitMetrics,omitempty"`
+	NewCommitterMetrics   CountMetrics `json:"newCommitterMetrics,omitempty"`
+	NewContributorMetrics CountMetrics `json:"newContributorMetrics,omitempty"`
 }
 
 type ProjectHistoryService struct {

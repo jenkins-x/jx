@@ -18,10 +18,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/reports"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
-
-const ()
 
 var (
 	stepChartLong = templates.LongDesc(`
@@ -54,16 +53,17 @@ type StepChartOptions struct {
 }
 
 type StepChartState struct {
-	GitInfo        *gits.GitRepositoryInfo
-	GitProvider    gits.GitProvider
-	Tracker        issues.IssueProvider
-	Release        *v1.Release
-	BlogFileName   string
-	Buffer         *bytes.Buffer
-	Writer         *bufio.Writer
-	HistoryService *reports.ProjectHistoryService
-	History        *reports.ProjectHistory
-	NewUsers       map[string]*v1.UserDetails
+	GitInfo         *gits.GitRepositoryInfo
+	GitProvider     gits.GitProvider
+	Tracker         issues.IssueProvider
+	Release         *v1.Release
+	BlogFileName    string
+	Buffer          *bytes.Buffer
+	Writer          *bufio.Writer
+	HistoryService  *reports.ProjectHistoryService
+	History         *reports.ProjectHistory
+	NewContributors map[string]*v1.UserDetails
+	NewCommitters   map[string]*v1.UserDetails
 }
 
 // NewCmdStepChart Creates a new Command object
@@ -103,7 +103,10 @@ func NewCmdStepChart(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 
 // Run implements this command
 func (o *StepChartOptions) Run() error {
-	o.State = StepChartState{}
+	o.State = StepChartState{
+		NewContributors: map[string]*v1.UserDetails{},
+		NewCommitters:   map[string]*v1.UserDetails{},
+	}
 	var err error
 	outDir := o.BlogOutputDir
 	if outDir != "" {
@@ -162,6 +165,13 @@ func (o *StepChartOptions) downloadsReport(provider gits.GitProvider, owner stri
 			history.IssueMetrics(o.ToDate, len(spec.Issues))
 			history.PullRequestMetrics(o.ToDate, len(spec.PullRequests))
 			history.CommitMetrics(o.ToDate, len(spec.Commits))
+		}
+
+		repo, err := provider.GetRepository(owner, repo)
+		if err != nil {
+			o.warnf("Failed to load the repository %s", err)
+		} else {
+			history.StarsMetrics(o.ToDate, repo.Stars)
 		}
 	}
 
@@ -328,7 +338,9 @@ func (o *StepChartOptions) createMetricsSummary() string {
 		fmt.Fprintf(out, "| Metric     | Recent | Total |\n")
 		fmt.Fprintf(out, "| ---------- | ------:| -----:|\n")
 		o.printMetrics(out, "Downloads", &report.DownloadMetrics)
+		o.printMetrics(out, "New Committers", &report.NewCommitterMetrics)
 		o.printMetrics(out, "New Contributors", &report.NewContributorMetrics)
+		o.printMetrics(out, "Stars", &report.StarsMetrics)
 		o.printMetrics(out, "Issues Closed", &report.IssueMetrics)
 		o.printMetrics(out, "Pull Requests Merged", &report.PullRequestMetrics)
 		o.printMetrics(out, "Commits", &report.CommitMetrics)
@@ -359,41 +371,65 @@ func (o *StepChartOptions) printMetrics(out io.Writer, name string, metrics *rep
 }
 
 func (o *StepChartOptions) createNewCommitters() string {
-	o.State.NewUsers = map[string]*v1.UserDetails{}
 	release := o.State.Release
 	if release != nil {
 		spec := &release.Spec
-		for _, commit := range spec.Commits {
-			o.addContributor(commit.Committer)
+		// TODO commits typically don't have a login so lets ignore for now
+		// and assume that they show up in the PRs
+		/*
+			for _, commit := range spec.Commits {
+				o.addCommitter(commit.Committer)
+				o.addCommitter(commit.Author)
+			}
+		*/
+		for _, pr := range spec.PullRequests {
+			o.addCommitter(pr.User)
+			o.addCommitters(pr.Assignees)
 		}
-		for _, pr := range spec.Issues {
-			o.addContributor(pr.User)
-		}
-		for _, issue := range spec.PullRequests {
+		for _, issue := range spec.Issues {
 			o.addContributor(issue.User)
+			o.addContributors(issue.Assignees)
 		}
 	} else {
 		o.warnf("No Release!\n")
 	}
 	history, _ := o.report()
 	if history != nil {
-		history.NewContributorMetrics(o.ToDate, len(o.State.NewUsers))
+		history.NewContributorMetrics(o.ToDate, len(o.State.NewContributors))
+		history.NewCommitterMetrics(o.ToDate, len(o.State.NewCommitters))
 
 		// now lets remove the current contributors
 		for _, user := range history.Committers {
-			delete(o.State.NewUsers, user)
+			delete(o.State.NewCommitters, user)
+		}
+		for _, user := range history.Contributors {
+			delete(o.State.NewContributors, user)
+		}
+
+		// now lets add the new users to the history for the next blog
+		for _, user := range o.State.NewCommitters {
+			history.Committers = append(history.Committers, user.Login)
+		}
+		for _, user := range o.State.NewContributors {
+			history.Contributors = append(history.Contributors, user.Login)
 		}
 	}
 
 	var buffer bytes.Buffer
 	out := bufio.NewWriter(&buffer)
-	newUsers := o.State.NewUsers
+	o.printUserMap(out, "committers", o.State.NewCommitters)
+	o.printUserMap(out, "contributors", o.State.NewContributors)
+	out.Flush()
+	return buffer.String()
+}
+
+func (o *StepChartOptions) printUserMap(out *bufio.Writer, role string, newUsers map[string]*v1.UserDetails) {
 	if len(newUsers) > 0 {
 		out.WriteString(`
 
-## New Contributors
+## New ` + strings.Title(role) + `
 
-Welcome to our new contributors - many thanks!
+Welcome to our new ` + role + `!
 
 `)
 
@@ -405,34 +441,55 @@ Welcome to our new contributors - many thanks!
 		for _, k := range keys {
 			user := newUsers[k]
 			if user != nil {
-				out.WriteString("* " + formatUser(user) + "\n")
+				out.WriteString("* " + o.formatUser(user) + "\n")
 			}
 		}
 	}
-	out.Flush()
-	return buffer.String()
+}
+
+func (o *StepChartOptions) addCommitters(users []v1.UserDetails) {
+	for _, u := range users {
+		o.addCommitter(&u)
+	}
+}
+
+func (o *StepChartOptions) addContributors(users []v1.UserDetails) {
+	for _, u := range users {
+		o.addContributor(&u)
+	}
 }
 
 func (o *StepChartOptions) addContributor(user *v1.UserDetails) {
+	o.addUser(user, &o.State.NewContributors)
+}
+
+func (o *StepChartOptions) addCommitter(user *v1.UserDetails) {
+	o.addUser(user, &o.State.NewCommitters)
+	o.addContributor(user)
+}
+
+func (o *StepChartOptions) addUser(user *v1.UserDetails, newUsers *map[string]*v1.UserDetails) {
 	if user != nil {
 		key := user.Login
-		oldUser := o.State.NewUsers[key]
+		if key == "" {
+			key = user.Name
+		}
+		oldUser := (*newUsers)[key]
 		if key != "" && !ignoreNewUsers[key] && oldUser == nil || user.URL != "" {
-			o.State.NewUsers[key] = user
-
-			history := o.State.History
-			if history != nil {
-				history.Committers = append(history.Committers, key)
-			}
+			(*newUsers)[key] = user
 		}
 	}
 }
 
-func formatUser(user *v1.UserDetails) string {
+func (o *StepChartOptions) formatUser(user *v1.UserDetails) string {
 	u := user.URL
+	login := user.Login
+	if u == "" {
+		u = util.UrlJoin(o.State.GitProvider.ServerURL(), login)
+	}
 	name := user.Name
 	if name == "" {
-		name = user.Login
+		name = login
 	}
 	if name == "" {
 		name = u
@@ -440,8 +497,14 @@ func formatUser(user *v1.UserDetails) string {
 	if name == "" {
 		return ""
 	}
-	if u != "" {
-		return "[" + name + "](" + u + ")"
+	prefix := ""
+	avatar := user.AvatarURL
+	if avatar != "" {
+		prefix = "<img class='avatar' src='" + avatar + "' height='32' width='32'> "
 	}
-	return name
+	label := prefix + name
+	if u != "" {
+		return "<a href='" + u + "' title='" + user.Name + "'>" + label + "</a>"
+	}
+	return label
 }
