@@ -1,0 +1,5 @@
+chat:
+  kind: slack
+  url: http://kubernetes.slack.com/
+  developerChannel: '#jenkins-x-dev'
+  userChannel: '#jenkins-x-user'

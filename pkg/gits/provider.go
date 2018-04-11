@@ -3,7 +3,6 @@ package gits
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -56,6 +55,8 @@ type GitProvider interface {
 
 	SearchIssues(org string, name string, query string) ([]*GitIssue, error)
 
+	SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error)
+
 	CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error)
 
 	HasIssues() bool
@@ -65,6 +66,8 @@ type GitProvider interface {
 	CreateIssueComment(owner string, repo string, number int, comment string) error
 
 	UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error
+
+	ListReleases(org string, name string) ([]*GitRelease, error)
 
 	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
 	//
@@ -107,6 +110,7 @@ type GitRepository struct {
 	SSHURL           string
 	Language         string
 	Fork             bool
+	Stars            int
 }
 
 type GitPullRequest struct {
@@ -154,11 +158,12 @@ type GitUser struct {
 }
 
 type GitRelease struct {
-	Name    string
-	TagName string
-	Body    string
-	URL     string
-	HTMLURL string
+	Name          string
+	TagName       string
+	Body          string
+	URL           string
+	HTMLURL       string
+	DownloadCount int
 }
 
 type GitLabel struct {
@@ -202,18 +207,6 @@ type GitWebHookArguments struct {
 // IsClosed returns true if the PullRequest has been closed
 func (pr *GitPullRequest) IsClosed() bool {
 	return pr.ClosedAt != nil
-}
-
-// Name returns the textual name of the issue
-func (i *GitIssue) Name() string {
-	if i.Key != "" {
-		return i.Key
-	}
-	n := i.Number
-	if n != nil {
-		return "#" + strconv.Itoa(*n)
-	}
-	return "N/A"
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {

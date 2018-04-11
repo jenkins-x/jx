@@ -1,8 +1,9 @@
 ![Draft Logo](./docs/img/draft-logo.png)
+[![Build Status](https://circleci.com/gh/Azure/draft.svg?style=svg)](https://circleci.com/gh/Azure/draft)
 
 # Draft: Streamlined Kubernetes Development
+Draft makes it easy to build applications that run on Kubernetes.  Draft targets the "inner loop" of a developer's workflow: as they hack on code, but before code is committed to version control.
 
-[![Build Status](https://circleci.com/gh/Azure/draft.svg?style=svg)](https://circleci.com/gh/Azure/draft)
 
 ## _NOTE: Draft is experimental and does not have a stable release yet._
 As an example, starting with the 0.12 release Draft moves the containment and deployment engine to your local machine. This changes quite a bit about how Draft works compared to prior releases; for details, see [the changelog](CHANGELOG.md).
@@ -12,8 +13,6 @@ For previous users, this change means that you now have more control over where 
 ## Overview
 
 [![asciicast](https://asciinema.org/a/WGVE7JNodpBEOautl105tdc97.png)](https://asciinema.org/a/WGVE7JNodpBEOautl105tdc97)
-
-Draft makes it easy to build applications that run on Kubernetes.  Draft targets the "inner loop" of a developer's workflow: as they hack on code, but before code is committed to version control.
 
 Using Draft is as simple as:
 

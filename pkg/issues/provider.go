@@ -2,6 +2,7 @@ package issues
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -13,6 +14,9 @@ type IssueProvider interface {
 
 	// SearchIssues searches for issues (open by default)
 	SearchIssues(query string) ([]*gits.GitIssue, error)
+
+	// SearchIssuesClosedSince searches the issues closed since the given da
+	SearchIssuesClosedSince(t time.Time) ([]*gits.GitIssue, error)
 
 	// Creates a new issue in the current project
 	CreateIssue(issue *gits.GitIssue) (*gits.GitIssue, error)

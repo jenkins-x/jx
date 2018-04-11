@@ -38,7 +38,6 @@ type CreateTrackerTokenOptions struct {
 	Password    string
 	ApiToken    string
 	Timeout     string
-	Dir         string
 }
 
 // NewCmdCreateTrackerToken creates a command
@@ -83,7 +82,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService(o.Dir)
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -106,7 +105,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
-			o.Printf("Please generate an API Token for server %s\n", server.Label())
+			o.Printf("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
 			if tokenUrl != "" {
 				o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
 			}
@@ -131,7 +130,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 
 	err = o.updateIssueTrackerCredentialsSecret(server, userAuth)
 	if err != nil {
-		o.warnf("Failed to update jenkins issue tracker credentials secret: %v\n", err)
+		o.warnf("Failed to update pipeline issue tracker credentials secret: %v\n", err)
 	}
 
 	o.Printf("Created user %s API Token for git server %s at %s\n",
@@ -157,7 +156,7 @@ func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *
 	labels := map[string]string{
 		kube.LabelCredentialsType: kube.ValueCredentialTypeUsernamePassword,
 		kube.LabelCreatedBy:       kube.ValueCreatedByJX,
-		kube.LabelKind:            kube.ValueKindIssue,
+		kube.LabelKind:            kube.ValueKindChat,
 		kube.LabelServiceKind:     server.Kind,
 	}
 	annotations := map[string]string{

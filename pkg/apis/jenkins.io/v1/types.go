@@ -339,6 +339,7 @@ type CommitSummary struct {
 	Author    *UserDetails `json:"author,omitempty"  protobuf:"bytes,4,opt,name=author"`
 	Committer *UserDetails `json:"committer,omitempty"  protobuf:"bytes,5,opt,name=committer"`
 	Branch    string       `json:"branch,omitempty"  protobuf:"bytes,6,opt,name=branch"`
+	IssueIDs  []string     `json:"issueIds,omitempty"  protobuf:"bytes,7,opt,name=issueIds"`
 }
 
 // UserDetails containers details of a user

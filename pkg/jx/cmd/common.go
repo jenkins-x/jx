@@ -212,9 +212,14 @@ func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *Serv
 	return o.findServer(config, serverFlags, "git server", "Try creating one via: jx create git server")
 }
 
-// findGitServer finds the issue tracker server from the given flags or returns an error
+// findIssueTrackerServer finds the issue tracker server from the given flags or returns an error
 func (o *CommonOptions) findIssueTrackerServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
 	return o.findServer(config, serverFlags, "issue tracker server", "Try creating one via: jx create tracker server")
+}
+
+// findChatServer finds the chat server from the given flags or returns an error
+func (o *CommonOptions) findChatServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
+	return o.findServer(config, serverFlags, "chat server", "Try creating one via: jx create chat server")
 }
 
 func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerFlags, kind string, missingServerDescription string) (*auth.AuthServer, error) {

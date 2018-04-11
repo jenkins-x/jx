@@ -41,9 +41,10 @@ type WikiConfig struct {
 }
 
 type ChatConfig struct {
-	Kind string `yaml:"kind,omitempty"`
-	URL  string `yaml:"url,omitempty"`
-	Room string `yaml:"room,omitempty"`
+	Kind             string `yaml:"kind,omitempty"`
+	URL              string `yaml:"url,omitempty"`
+	DeveloperChannel string `yaml:"developerChannel,omitempty"`
+	UserChannel      string `yaml:"userChannel,omitempty"`
 }
 
 type AddonConfig struct {

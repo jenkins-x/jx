@@ -73,6 +73,37 @@ func (p *GiteaProvider) ListRepositories(org string) ([]*GitRepository, error) {
 	return answer, nil
 }
 
+func (p *GiteaProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
+	owner := org
+	if owner == "" {
+		owner = p.Username
+	}
+	answer := []*GitRelease{}
+	repos, err := p.Client.ListReleases(owner, name)
+	if err != nil {
+		return answer, err
+	}
+	for _, repo := range repos {
+		answer = append(answer, toGiteaRelease(org, name, repo))
+	}
+	return answer, nil
+}
+
+func toGiteaRelease(org string, name string, release *gitea.Release) *GitRelease {
+	totalDownloadCount := 0
+	for _, asset := range release.Attachments {
+		totalDownloadCount = totalDownloadCount + int(asset.DownloadCount)
+	}
+	return &GitRelease{
+		Name:          release.Title,
+		TagName:       release.TagName,
+		Body:          release.Note,
+		URL:           release.URL,
+		HTMLURL:       release.URL,
+		DownloadCount: totalDownloadCount,
+	}
+}
+
 func (p *GiteaProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
 	options := gitea.CreateRepoOption{
 		Name:    name,
@@ -294,6 +325,21 @@ func (p *GiteaProvider) IssueURL(org string, name string, number int, isPull boo
 
 func (p *GiteaProvider) SearchIssues(org string, name string, filter string) ([]*GitIssue, error) {
 	opts := gitea.ListIssueOption{}
+	// TODO apply the filter?
+	return p.searchIssuesWithOptions(org, name, opts)
+}
+
+func (p *GiteaProvider) SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error) {
+	opts := gitea.ListIssueOption{}
+	issues, err := p.searchIssuesWithOptions(org, name, opts)
+	if err != nil {
+		return issues, err
+	}
+	return FilterIssuesClosedSince(issues, t), nil
+}
+
+func (p *GiteaProvider) searchIssuesWithOptions(org string, name string, opts gitea.ListIssueOption) ([]*GitIssue, error) {
+	opts.Page = 0
 	answer := []*GitIssue{}
 	issues, err := p.Client.ListRepoIssues(org, name, opts)
 	if err != nil {
@@ -307,8 +353,6 @@ func (p *GiteaProvider) SearchIssues(org string, name string, filter string) ([]
 		if err != nil {
 			return answer, err
 		}
-
-		// TODO apply the filter?
 		answer = append(answer, i)
 	}
 	return answer, nil
@@ -336,6 +380,7 @@ func (p *GiteaProvider) fromGiteaIssue(org string, name string, i *gitea.Issue) 
 		Labels:        labels,
 		User:          toGiteaUser(i.Poster),
 		Assignees:     assignees,
+		ClosedAt:      i.Closed,
 	}, nil
 }
 

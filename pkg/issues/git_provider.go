@@ -3,6 +3,7 @@ package issues
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -38,6 +39,10 @@ func (i *GitIssueProvider) GetIssue(key string) (*gits.GitIssue, error) {
 
 func (i *GitIssueProvider) SearchIssues(query string) ([]*gits.GitIssue, error) {
 	return i.GitProvider.SearchIssues(i.Owner, i.Repository, query)
+}
+
+func (i *GitIssueProvider) SearchIssuesClosedSince(t time.Time) ([]*gits.GitIssue, error) {
+	return i.GitProvider.SearchIssuesClosedSince(i.Owner, i.Repository, t)
 }
 
 func (i *GitIssueProvider) IssueURL(key string) string {

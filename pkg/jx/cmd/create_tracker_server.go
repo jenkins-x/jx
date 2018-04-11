@@ -16,8 +16,8 @@ var (
 `)
 
 	createTrackerServer_example = templates.Examples(`
-		# Add a new git server URL
-		jx create tracker server gitea
+		# Add a new issue tracker server URL
+		jx create tracker server jira myURL
 	`)
 
 	trackerKindToServiceName = map[string]string{
@@ -30,7 +30,6 @@ type CreateTrackerServerOptions struct {
 	CreateOptions
 
 	Name string
-	Dir  string
 }
 
 // NewCmdCreateTrackerServer creates a command object for the "create" command
@@ -92,7 +91,7 @@ func (o *CreateTrackerServerOptions) Run() error {
 	if gitUrl == "" {
 		return missingTrackerArguments()
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService(o.Dir)
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}

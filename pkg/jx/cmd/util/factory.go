@@ -34,6 +34,7 @@ import (
 const (
 	JenkinsAuthConfigFile     = "jenkinsAuth.yaml"
 	IssuesAuthConfigFile      = "issuesAuth.yaml"
+	ChatAuthConfigFile        = "chat.yaml"
 	GitAuthConfigFile         = "gitAuth.yaml"
 	ChartmuseumAuthConfigFile = "chartmuseumAuth.yaml"
 )
@@ -52,6 +53,8 @@ type Factory interface {
 	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
 
 	CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
+
+	CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
 
 	CreateClient() (*kubernetes.Clientset, string, error)
 
@@ -168,6 +171,21 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 			return authConfigSvc, err
 		}
 		f.authMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.isInCDPIpeline())
+	}
+	return authConfigSvc, err
+}
+
+func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(ChatAuthConfigFile)
+	if err != nil {
+		return authConfigSvc, err
+	}
+	if secrets != nil {
+		config, err := authConfigSvc.LoadConfig()
+		if err != nil {
+			return authConfigSvc, err
+		}
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.isInCDPIpeline())
 	}
 	return authConfigSvc, err
 }

@@ -63,6 +63,7 @@ import:
   repo: git@github.com:/sirupsen/logrus
   vcs: git
   version: v1.0.4
+- package: github.com/nlopes/slack
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

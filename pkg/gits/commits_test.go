@@ -122,7 +122,7 @@ func TestChangelogMarkdownWithConventionalCommits(t *testing.T) {
 
 	expectedMarkdown := `## Changes
 
-### Features
+### New Features
 
 * some commit 2 ([rawlingsj](https://github.com/rawlingsj))
 * has actual feature name: some commit 3 ([rawlingsj](https://github.com/rawlingsj))

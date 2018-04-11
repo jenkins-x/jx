@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -474,6 +475,7 @@ func BitbucketIssueToGitIssue(bIssue bitbucket.Issue) *GitIssue {
 		Body:     bIssue.Content.Markup,
 		State:    &bIssue.State,
 		IssueURL: &bIssue.Links.Html.Href,
+		ClosedAt: &bIssue.UpdatedOn,
 		Assignees: []GitUser{
 			assignee,
 		},
@@ -513,6 +515,14 @@ func (b *BitbucketCloudProvider) SearchIssues(org string, name string, query str
 	}
 
 	return gitIssues, nil
+}
+
+func (b *BitbucketCloudProvider) SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error) {
+	issues, err := b.SearchIssues(org, name, "")
+	if err != nil {
+		return issues, err
+	}
+	return FilterIssuesClosedSince(issues, t), nil
 }
 
 func (b *BitbucketCloudProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
@@ -604,6 +614,12 @@ func (b *BitbucketCloudProvider) ServerURL() string {
 func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
 	fmt.Println("Bitbucket Cloud doesn't support releases")
 	return nil
+}
+
+func (p *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
+	answer := []*GitRelease{}
+	fmt.Println("Bitbucket Cloud doesn't support releases")
+	return answer, nil
 }
 
 func BitbucketAccessTokenURL(url string, username string) string {

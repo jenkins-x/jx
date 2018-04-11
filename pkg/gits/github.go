@@ -13,6 +13,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const (
+	pageSize = 100
+)
+
 type GitHubProvider struct {
 	Username string
 	Client   *github.Client
@@ -72,7 +76,6 @@ func IsGitHubServerURL(u string) bool {
 
 func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
 	answer := []GitOrganisation{}
-	pageSize := 100
 	options := github.ListOptions{
 		Page:    0,
 		PerPage: pageSize,
@@ -106,7 +109,6 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 		owner = p.Username
 	}
 	answer := []*GitRepository{}
-	pageSize := 100
 	options := &github.RepositoryListOptions{
 		ListOptions: github.ListOptions{
 			Page:    0,
@@ -127,6 +129,50 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 		options.ListOptions.Page += 1
 	}
 	return answer, nil
+}
+
+func (p *GitHubProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
+	owner := org
+	if owner == "" {
+		owner = p.Username
+	}
+	answer := []*GitRelease{}
+	options := &github.ListOptions{
+		Page:    0,
+		PerPage: pageSize,
+	}
+	for {
+		repos, _, err := p.Client.Repositories.ListReleases(p.Context, owner, name, options)
+		if err != nil {
+			return answer, err
+		}
+		for _, repo := range repos {
+			answer = append(answer, toGitHubRelease(org, name, repo))
+		}
+		if len(repos) < pageSize || len(repos) == 0 {
+			break
+		}
+		options.Page += 1
+	}
+	return answer, nil
+}
+
+func toGitHubRelease(org string, name string, release *github.RepositoryRelease) *GitRelease {
+	totalDownloadCount := 0
+	for _, asset := range release.Assets {
+		p := asset.DownloadCount
+		if p != nil {
+			totalDownloadCount = totalDownloadCount + *p
+		}
+	}
+	return &GitRelease{
+		Name:          asText(release.Name),
+		TagName:       asText(release.TagName),
+		Body:          asText(release.Body),
+		URL:           asText(release.URL),
+		HTMLURL:       asText(release.HTMLURL),
+		DownloadCount: totalDownloadCount,
+	}
 }
 
 func (p *GitHubProvider) GetRepository(org string, name string) (*GitRepository, error) {
@@ -173,6 +219,7 @@ func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 		SSHURL:           asText(repo.SSHURL),
 		Fork:             asBool(repo.Fork),
 		Language:         asText(repo.Language),
+		Stars:            asInt(repo.StargazersCount),
 	}
 }
 
@@ -528,25 +575,48 @@ func (p *GitHubProvider) GetIssue(org string, name string, number int) (*GitIssu
 
 func (p *GitHubProvider) SearchIssues(org string, name string, filter string) ([]*GitIssue, error) {
 	opts := &github.IssueListByRepoOptions{}
-	answer := []*GitIssue{}
-	issues, r, err := p.Client.Issues.ListByRepo(p.Context, org, name, opts)
-	if r.StatusCode == 404 {
-		return answer, nil
-	}
-	if err != nil {
-		return answer, err
-	}
-	for _, issue := range issues {
-		if issue.Number != nil {
-			n := *issue.Number
-			i, err := p.fromGithubIssue(org, name, n, issue)
-			if err != nil {
-				return answer, err
-			}
+	return p.searchIssuesWithOptions(org, name, opts)
+}
 
-			// TODO apply the filter?
-			answer = append(answer, i)
+func (p *GitHubProvider) SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error) {
+	opts := &github.IssueListByRepoOptions{
+		State: "closed",
+	}
+	issues, err := p.searchIssuesWithOptions(org, name, opts)
+	if err != nil {
+		return issues, err
+	}
+	return FilterIssuesClosedSince(issues, t), nil
+}
+
+func (p *GitHubProvider) searchIssuesWithOptions(org string, name string, opts *github.IssueListByRepoOptions) ([]*GitIssue, error) {
+	opts.Page = 0
+	opts.PerPage = pageSize
+	answer := []*GitIssue{}
+	for {
+		issues, r, err := p.Client.Issues.ListByRepo(p.Context, org, name, opts)
+		if r.StatusCode == 404 {
+			return answer, nil
 		}
+		if err != nil {
+			return answer, err
+		}
+		for _, issue := range issues {
+			if issue.Number != nil {
+				n := *issue.Number
+				i, err := p.fromGithubIssue(org, name, n, issue)
+				if err != nil {
+					return answer, err
+				}
+
+				// TODO apply the filter?
+				answer = append(answer, i)
+			}
+		}
+		if len(issues) < pageSize || len(issues) == 0 {
+			break
+		}
+		opts.ListOptions.Page += 1
 	}
 	return answer, nil
 }
@@ -596,6 +666,7 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 		IsPullRequest: isPull,
 		Labels:        labels,
 		User:          toGitHubUser(i.User),
+		ClosedAt:      i.ClosedAt,
 		ClosedBy:      toGitHubUser(i.ClosedBy),
 		Assignees:     assignees,
 	}, nil
@@ -674,6 +745,13 @@ func asBool(b *bool) bool {
 		return *b
 	}
 	return false
+}
+
+func asInt(i *int) int {
+	if i != nil {
+		return *i
+	}
+	return 0
 }
 
 func asText(text *string) string {

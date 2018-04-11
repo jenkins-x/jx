@@ -4,6 +4,7 @@ package accessibility
 
 import (
 	json "encoding/json"
+	runtime "github.com/chromedp/cdproto/runtime"
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
@@ -151,6 +152,10 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoAccessibility1(in *jlexer.Lex
 		switch key {
 		case "nodeId":
 			(out.NodeID).UnmarshalEasyJSON(in)
+		case "backendNodeId":
+			(out.BackendNodeID).UnmarshalEasyJSON(in)
+		case "objectId":
+			out.ObjectID = runtime.RemoteObjectID(in.String())
 		case "fetchRelatives":
 			out.FetchRelatives = bool(in.Bool())
 		default:
@@ -167,7 +172,7 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoAccessibility1(out *jwriter.W
 	out.RawByte('{')
 	first := true
 	_ = first
-	{
+	if in.NodeID != 0 {
 		const prefix string = ",\"nodeId\":"
 		if first {
 			first = false
@@ -176,6 +181,26 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoAccessibility1(out *jwriter.W
 			out.RawString(prefix)
 		}
 		out.Int64(int64(in.NodeID))
+	}
+	if in.BackendNodeID != 0 {
+		const prefix string = ",\"backendNodeId\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int64(int64(in.BackendNodeID))
+	}
+	if in.ObjectID != "" {
+		const prefix string = ",\"objectId\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.ObjectID))
 	}
 	if in.FetchRelatives {
 		const prefix string = ",\"fetchRelatives\":"

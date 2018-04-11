@@ -27,7 +27,6 @@ type DeleteTrackerServerOptions struct {
 	CommonOptions
 
 	IgnoreMissingServer bool
-	Dir                 string
 }
 
 // NewCmdDeleteTrackerServer defines the command
@@ -62,7 +61,7 @@ func (o *DeleteTrackerServerOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing issue tracker server name argument")
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService(o.Dir)
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}

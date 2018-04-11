@@ -140,6 +140,7 @@ func TestLoadPlugins(t *testing.T) {
 
 func TestSetupEnv(t *testing.T) {
 	name := "pequod"
+	ver := "0.1.0"
 	ph := draftpath.Home("testdata/drafthome")
 	base := filepath.Join(ph.Plugins(), name)
 	plugdirs := ph.Plugins()
@@ -150,12 +151,13 @@ func TestSetupEnv(t *testing.T) {
 
 	resetEnvVars := unsetEnvVars()
 	defer resetEnvVars()
-	setupPluginEnv(name, base, plugdirs, ph)
+	setupPluginEnv(name, ver, base, plugdirs, ph)
 	for _, tt := range []struct {
 		name   string
 		expect string
 	}{
 		{"DRAFT_PLUGIN_NAME", name},
+		{"DRAFT_PLUGIN_VERSION", ver},
 		{"DRAFT_PLUGIN_DIR", base},
 		{"DRAFT_PLUGIN", ph.Plugins()},
 		{"DRAFT_DEBUG", "1"},

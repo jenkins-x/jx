@@ -31,6 +31,9 @@ const (
 	// SecretJenkinsPipelineIssueCredentials the issue tracker credentials secret
 	SecretJenkinsPipelineIssueCredentials = "jx-pipeline-issues-"
 
+	// SecretJenkinsPipelineChatCredentials the chat credentials secret
+	SecretJenkinsPipelineChatCredentials = "jx-pipeline-chat-"
+
 	// SecretJenkinsPipelineGitCredentials the issue tracker credentials secret
 	SecretJenkinsPipelineGitCredentials = "jx-pipeline-git-"
 
@@ -47,8 +50,12 @@ const (
 
 	// ValueKindGit a git auth secret/credentials
 	ValueKindGit = "git"
+
 	// ValueKindIssue an issue auth secret/credentials
 	ValueKindIssue = "issue"
+
+	// ValueKindChat a chat auth secret/credentials
+	ValueKindChat = "chat"
 
 	// LabelServiceKind the label to indicate the auto Server's Kind
 	LabelServiceKind = "jenkins.io/service-kind"
