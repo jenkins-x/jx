@@ -136,7 +136,7 @@ func (o *CreateGitTokenOptions) Run() error {
 		f := func(username string) error {
 			tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL, username)
 
-			o.Printf("Please generate an API Token for server %s\n", server.Label())
+			o.Printf("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
 			o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
 			o.Printf("Then COPY the token and enter in into the form below:\n\n")
 			return nil

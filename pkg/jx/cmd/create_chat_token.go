@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/chats"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -101,11 +101,11 @@ func (o *CreateChatTokenOptions) Run() error {
 		userAuth.ApiToken = o.ApiToken
 	}
 
-	tokenUrl := issues.ProviderAccessTokenURL(server.Kind, server.URL)
+	tokenUrl := chats.ProviderAccessTokenURL(server.Kind, server.URL)
 
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
-			o.Printf("Please generate an API Token for server %s\n", server.Label())
+			o.Printf("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
 			if tokenUrl != "" {
 				o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
 			}
