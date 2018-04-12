@@ -2,14 +2,17 @@ package gits
 
 import (
 	"strconv"
+	"strings"
 	"time"
 )
 
 // IsClosedSince returns true if the issue has been closed since the given da
 func (i *GitIssue) IsClosedSince(t time.Time) bool {
 	t2 := i.ClosedAt
-	if t2 != nil {
-		return t2.Equal(t) || t2.After(t)
+	state := i.State
+	if t2 != nil && state != nil {
+		lowerState := strings.ToLower(*state)
+		return (t2.Equal(t) || t2.After(t)) && strings.HasPrefix(lowerState, "clos")
 	}
 	return false
 }

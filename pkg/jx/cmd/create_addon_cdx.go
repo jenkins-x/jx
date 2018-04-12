@@ -16,7 +16,7 @@ var (
 	create_addon_cdx_long = templates.LongDesc(`
 		Creates the CDX addon
 
-		CDX provides unified Continuous Delivery Environment console to make it easier to do CI / CD and Environments across a number of microservices and teams
+		CDX provides unified Continuous Delivery Environment console to make it easier to do CI/CD and Environments across a number of microservices and teams
 `)
 
 	create_addon_cdx_example = templates.Examples(`
@@ -46,7 +46,7 @@ func NewCmdCreateAddonCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 
 	cmd := &cobra.Command{
 		Use:     "cdx",
-		Short:   "Create the CDX addon (a web console for working with CI / CD and Environments)",
+		Short:   "Create the CDX addon (a web console for working with CI/CD and Environments)",
 		Aliases: []string{"env"},
 		Long:    create_addon_cdx_long,
 		Example: create_addon_cdx_example,

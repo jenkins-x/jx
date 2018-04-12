@@ -76,6 +76,7 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.AddCommand(NewCmdCreateJenkins(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateQuickstart(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateSpring(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateToken(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateTracker(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateLile(f, out, errOut))
 	return cmd

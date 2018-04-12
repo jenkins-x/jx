@@ -377,8 +377,8 @@ func (o *StepBlogOptions) createMetricsSummary() string {
 			userChatMetricsName = "User Chat Members"
 		}
 
-		fmt.Fprintf(out, "| Metric     | Recent | Total |\n")
-		fmt.Fprintf(out, "| :--------- | ------:| -----:|\n")
+		fmt.Fprintf(out, "| Metrics     | Changes | Total |\n")
+		fmt.Fprintf(out, "| :---------- | -------:| -----:|\n")
 		o.printMetrics(out, "Downloads", &report.DownloadMetrics)
 		o.printMetrics(out, "Stars", &report.StarsMetrics)
 		o.printMetrics(out, "New Committers", &report.NewCommitterMetrics)

@@ -15,6 +15,24 @@ type ProjectHistory struct {
 	Committers     []string         `yaml:"committers,omitempty"`
 }
 
+type CountMetrics struct {
+	Count int `yaml:"count,omitempty"`
+	Total int `yaml:"total,omitempty"`
+}
+
+type ProjectReport struct {
+	ReportDate            string       `yaml:"reportDate,omitempty"`
+	StarsMetrics          CountMetrics `yaml:"starsMetrics,omitempty"`
+	DownloadMetrics       CountMetrics `yaml:"downloadMetrics,omitempty"`
+	IssueMetrics          CountMetrics `yaml:"issueMetrics,omitempty"`
+	PullRequestMetrics    CountMetrics `yaml:"pullRequestMetrics,omitempty"`
+	CommitMetrics         CountMetrics `yaml:"commitMetrics,omitempty"`
+	NewCommitterMetrics   CountMetrics `yaml:"newCommitterMetrics,omitempty"`
+	NewContributorMetrics CountMetrics `yaml:"newContributorMetrics,omitempty"`
+	DeveloperChatMetrics  CountMetrics `yaml:"developerChatMetrics,omitempty"`
+	UserChatMetrics       CountMetrics `yaml:"userChatMetrics,omitempty"`
+}
+
 func (h *ProjectHistory) GetOrCreateReport(reportDate string) *ProjectReport {
 	report := h.FindReport(reportDate)
 	if report == nil {
@@ -35,6 +53,7 @@ func (h *ProjectHistory) FindReport(reportDate string) *ProjectReport {
 	}
 	return nil
 }
+
 func (h *ProjectHistory) FindPreviousReport(reportDate string) *ProjectReport {
 	// TODO we should really do a date comparison but for noe we do posts in order anyway
 	var previous = &ProjectReport{}
@@ -51,92 +70,86 @@ func (h *ProjectHistory) FindPreviousReport(reportDate string) *ProjectReport {
 func (h *ProjectHistory) DownloadMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.DownloadMetrics, &previous.DownloadMetrics, total)
+	updateMetricTotal(&report.DownloadMetrics, &previous.DownloadMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) IssueMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.IssueMetrics, &previous.IssueMetrics, total)
+	addMetricCount(&report.IssueMetrics, &previous.IssueMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) PullRequestMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.PullRequestMetrics, &previous.PullRequestMetrics, total)
+	addMetricCount(&report.PullRequestMetrics, &previous.PullRequestMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) CommitMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.CommitMetrics, &previous.CommitMetrics, total)
+	addMetricCount(&report.CommitMetrics, &previous.CommitMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) NewCommitterMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.NewCommitterMetrics, &previous.NewCommitterMetrics, total)
+	addMetricCount(&report.NewCommitterMetrics, &previous.NewCommitterMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) NewContributorMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.NewContributorMetrics, &previous.NewContributorMetrics, total)
+	addMetricCount(&report.NewContributorMetrics, &previous.NewContributorMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) StarsMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.StarsMetrics, &previous.StarsMetrics, total)
+	updateMetricTotal(&report.StarsMetrics, &previous.StarsMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) DeveloperChatMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.DeveloperChatMetrics, &previous.DeveloperChatMetrics, total)
+	updateMetricTotal(&report.DeveloperChatMetrics, &previous.DeveloperChatMetrics, total)
 	return report
 }
 
 func (h *ProjectHistory) UserChatMetrics(reportDate string, total int) *ProjectReport {
 	report := h.GetOrCreateReport(reportDate)
 	previous := h.FindPreviousReport(reportDate)
-	updateMetrics(&report.UserChatMetrics, &previous.UserChatMetrics, total)
+	updateMetricTotal(&report.UserChatMetrics, &previous.UserChatMetrics, total)
 	return report
 }
 
-func updateMetrics(current *CountMetrics, previous *CountMetrics, total int) {
-	current.Total += total
+// addMetricCount adds a new metric value, such as number of commits in a release
+func addMetricCount(current *CountMetrics, previous *CountMetrics, total int) {
+	current.Count = total
+	previousTotal := 0
+	if previous != nil {
+		previousTotal = previous.Total
+	}
+	current.Total = total + previousTotal
+}
+
+// updateMetricTotal takes the current total value and works out the incremental change
+// since the last report. e.g. for updating the new number of stars or users in a chat room
+func updateMetricTotal(current *CountMetrics, previous *CountMetrics, total int) {
+	current.Total = total
 	previousTotal := 0
 	if previous != nil {
 		previousTotal = previous.Total
 	}
 	count := total - previousTotal
 	current.Count = count
-}
-
-type CountMetrics struct {
-	Count int `yaml:"count,omitempty"`
-	Total int `yaml:"total,omitempty"`
-}
-
-type ProjectReport struct {
-	ReportDate            string       `yaml:"reportDate,omitempty"`
-	StarsMetrics          CountMetrics `yaml:"starsMetrics,omitempty"`
-	DownloadMetrics       CountMetrics `yaml:"downloadMetrics,omitempty"`
-	IssueMetrics          CountMetrics `yaml:"issueMetrics,omitempty"`
-	PullRequestMetrics    CountMetrics `yaml:"pullRequestMetrics,omitempty"`
-	CommitMetrics         CountMetrics `yaml:"commitMetrics,omitempty"`
-	NewCommitterMetrics   CountMetrics `yaml:"newCommitterMetrics,omitempty"`
-	NewContributorMetrics CountMetrics `yaml:"newContributorMetrics,omitempty"`
-	DeveloperChatMetrics  CountMetrics `yaml:"developerChatMetrics,omitempty"`
-	UserChatMetrics       CountMetrics `yaml:"userChatMetrics,omitempty"`
 }
 
 type ProjectHistoryService struct {
@@ -147,6 +160,7 @@ type ProjectHistoryService struct {
 func NewProjectHistoryService(fileName string) (*ProjectHistoryService, *ProjectHistory, error) {
 	svc := &ProjectHistoryService{
 		FileName: fileName,
+		history:  &ProjectHistory{},
 	}
 	history, err := svc.LoadHistory()
 	return svc, history, err

@@ -72,7 +72,7 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	cmd := &cobra.Command{
 		Use:     "quickstart",
-		Short:   "Create a new app from a Quickstart and import the generated code into git and Jenkins for CI / CD",
+		Short:   "Create a new app from a Quickstart and import the generated code into git and Jenkins for CI/CD",
 		Long:    createQuickstartLong,
 		Example: createQuickstartExample,
 		Aliases: []string{"arch"},

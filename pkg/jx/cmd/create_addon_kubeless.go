@@ -80,7 +80,8 @@ func (o *CreateAddonKubelessOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	err := o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, nil)
+	values := []string{"rbac.create=true"}
+	err := o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return err
 	}

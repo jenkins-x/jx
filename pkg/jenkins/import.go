@@ -37,7 +37,7 @@ func ImportProject(out io.Writer, jenk *gojenkins.Jenkins, gitURL string, dir st
 			}
 			// TODO do we need to scape any wacky characters to make it a valid branch pattern?
 			branchPattern = branch
-			fmt.Fprintf(out, "No branch pattern specified and this repository appears to be a fork so defaulting the branch patterns to run CI / CD on to: %s\n", branchPattern)
+			fmt.Fprintf(out, "No branch pattern specified and this repository appears to be a fork so defaulting the branch patterns to run CI/CD on to: %s\n", branchPattern)
 		} else {
 			branchPattern = DefaultBranchPattern
 		}

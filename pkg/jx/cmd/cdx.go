@@ -26,7 +26,7 @@ var (
 	cdx_long = templates.LongDesc(`
 		Opens the CDX dashboard in a browser.
 
-		Which helps you visualise your CI / CD pipelines, apps, environments and teams.
+		Which helps you visualise your CI/CD pipelines, apps, environments and teams.
 `)
 	cdx_example = templates.Examples(`
 		# Open the CDX dashboard in a browser
@@ -46,7 +46,7 @@ func NewCmdCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	}
 	cmd := &cobra.Command{
 		Use:     "cdx",
-		Short:   "Opens the CDX dashboard for visualising CI / CD and your environments",
+		Short:   "Opens the CDX dashboard for visualising CI/CD and your environments",
 		Long:    cdx_long,
 		Example: cdx_example,
 		Aliases: []string{"dashboard"},

@@ -15,7 +15,7 @@ import (
 
 var (
 	createLileLong = templates.LongDesc(`
-		Creates a new lile application and then optionally setups CI / CD pipelines and GitOps promotion.
+		Creates a new lile application and then optionally setups CI/CD pipelines and GitOps promotion.
 
 		Lile is an application generator for gRPC services in Go with a set of tools/libraries.
 
@@ -53,7 +53,7 @@ func NewCmdCreateLile(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 
 	cmd := &cobra.Command{
 		Use:     "lile",
-		Short:   "Create a new lile based application and import the generated code into git and Jenkins for CI / CD",
+		Short:   "Create a new lile based application and import the generated code into git and Jenkins for CI/CD",
 		Long:    createLileLong,
 		Example: createLileExample,
 		Run: func(cmd *cobra.Command, args []string) {

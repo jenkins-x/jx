@@ -94,6 +94,7 @@ func urlsEqual(url1, url2 string) bool {
 	return url1 == url2 || strings.TrimSuffix(url1, "/") == strings.TrimSuffix(url2, "/")
 }
 
+// GetServerByName returns the server for the given URL or null if its not found
 func (c *AuthConfig) GetServer(url string) *AuthServer {
 	for _, s := range c.Servers {
 		if urlsEqual(s.URL, url) {
@@ -103,9 +104,20 @@ func (c *AuthConfig) GetServer(url string) *AuthServer {
 	return nil
 }
 
+// GetServerByName returns the server for the given name or null if its not found
 func (c *AuthConfig) GetServerByName(name string) *AuthServer {
 	for _, s := range c.Servers {
 		if s.Name == name {
+			return s
+		}
+	}
+	return nil
+}
+
+// GetServerByKind returns the server for the given kind or null if its not found
+func (c *AuthConfig) GetServerByKind(kind string) *AuthServer {
+	for _, s := range c.Servers {
+		if s.Kind == kind {
 			return s
 		}
 	}
