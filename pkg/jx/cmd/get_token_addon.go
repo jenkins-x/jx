@@ -12,10 +12,7 @@ import (
 
 // GetTokenAddonOptions the command line options
 type GetTokenAddonOptions struct {
-	GetOptions
-
-	Kind string
-	Name string
+	GetTokenOptions
 }
 
 var (
@@ -33,11 +30,13 @@ var (
 // NewCmdGetTokenAddon creates the command
 func NewCmdGetTokenAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetTokenAddonOptions{
-		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				Out:     out,
-				Err:     errOut,
+		GetTokenOptions{
+			GetOptions: GetOptions{
+				CommonOptions: CommonOptions{
+					Factory: f,
+					Out:     out,
+					Err:     errOut,
+				},
 			},
 		},
 	}
@@ -55,7 +54,7 @@ func NewCmdGetTokenAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "", "Filters the addonss by the kind")
+	options.addFlags(cmd)
 	return cmd
 }
 
@@ -70,33 +69,5 @@ func (o *GetTokenAddonOptions) Run() error {
 		o.Printf("No addon servers registered. To register a new token for an addon server use: %s\n", util.ColorInfo("jx create token addon"))
 		return nil
 	}
-
-	filterKind := o.Kind
-	filterName := o.Name
-
-	table := o.CreateTable()
-	table.AddRow("KIND", "NAME", "URL", "USERNAME", "TOKEN?")
-
-	for _, s := range config.Servers {
-		kind := s.Kind
-		name := s.Name
-		if (filterKind == "" || filterKind == kind) && (filterName == "" || filterName == name) {
-			user := ""
-			pwd := ""
-			if len(s.Users) == 0 {
-				table.AddRow(kind, name, kind, s.URL, user, pwd)
-			} else {
-				for _, u := range s.Users {
-					user = u.Username
-					pwd = ""
-					if u.ApiToken != "" {
-						pwd = "yes"
-					}
-				}
-				table.AddRow(kind, name, s.URL, user, pwd)
-			}
-		}
-	}
-	table.Render()
-	return nil
+	return o.displayUsersWithTokens(authConfigSvc)
 }
