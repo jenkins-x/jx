@@ -209,20 +209,26 @@ func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
 
 // findGitServer finds the git server from the given flags or returns an error
 func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
-	return o.findServer(config, serverFlags, "git server", "Try creating one via: jx create git server")
+	return o.findServer(config, serverFlags, "git", "Try creating one via: jx create git server", false)
 }
 
 // findIssueTrackerServer finds the issue tracker server from the given flags or returns an error
 func (o *CommonOptions) findIssueTrackerServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
-	return o.findServer(config, serverFlags, "issue tracker server", "Try creating one via: jx create tracker server")
+	return o.findServer(config, serverFlags, "issues", "Try creating one via: jx create tracker server", false)
 }
 
 // findChatServer finds the chat server from the given flags or returns an error
 func (o *CommonOptions) findChatServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
-	return o.findServer(config, serverFlags, "chat server", "Try creating one via: jx create chat server")
+	return o.findServer(config, serverFlags, "chat", "Try creating one via: jx create chat server", false)
 }
 
-func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerFlags, kind string, missingServerDescription string) (*auth.AuthServer, error) {
+// findAddonServer finds the addon server from the given flags or returns an error
+func (o *CommonOptions) findAddonServer(config *auth.AuthConfig, serverFlags *ServerFlags, kind string) (*auth.AuthServer, error) {
+	return o.findServer(config, serverFlags, kind, "Try creating one via: jx create addon", true)
+}
+
+func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerFlags, defaultKind string, missingServerDescription string, lazyCreate bool) (*auth.AuthServer, error) {
+	kind := defaultKind
 	var server *auth.AuthServer
 	if serverFlags.ServerURL != "" {
 		server = config.GetServer(serverFlags.ServerURL)
@@ -231,9 +237,14 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 		}
 	}
 	if server == nil && serverFlags.ServerName != "" {
-		server = config.GetServerByName(serverFlags.ServerName)
+		name := serverFlags.ServerName
+		if lazyCreate {
+			server = config.GetOrCreateServerName(serverFlags.ServerURL, name, kind)
+		} else {
+			server = config.GetServerByName(name)
+		}
 		if server == nil {
-			return nil, util.InvalidOption(optionServerName, serverFlags.ServerName, config.GetServerNames())
+			return nil, util.InvalidOption(optionServerName, name, config.GetServerNames())
 		}
 	}
 	if server == nil {

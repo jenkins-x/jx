@@ -28,14 +28,17 @@ const (
 	// SecretJenkinsGitCredentials the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
 
-	// SecretJenkinsPipelineIssueCredentials the issue tracker credentials secret
-	SecretJenkinsPipelineIssueCredentials = "jx-pipeline-issues-"
+	// SecretJenkinsPipelineAddonCredentials the chat credentials secret
+	SecretJenkinsPipelineAddonCredentials = "jx-pipeline-addon-"
 
 	// SecretJenkinsPipelineChatCredentials the chat credentials secret
 	SecretJenkinsPipelineChatCredentials = "jx-pipeline-chat-"
 
-	// SecretJenkinsPipelineGitCredentials the issue tracker credentials secret
+	// SecretJenkinsPipelineGitCredentials the git credentials secret
 	SecretJenkinsPipelineGitCredentials = "jx-pipeline-git-"
+
+	// SecretJenkinsPipelineIssueCredentials the issue tracker credentials secret
+	SecretJenkinsPipelineIssueCredentials = "jx-pipeline-issues-"
 
 	// ConfigMapJenkinsXGitKinds the name of the ConfigMap in the development namespace that maps kinds to URLs
 	ConfigMapJenkinsXGitKinds = "jenkins-x-git-kinds"
@@ -48,14 +51,17 @@ const (
 	// LabelKind to indicate the kind of auth, such as Git or Issue
 	LabelKind = "jenkins.io/kind"
 
+	// ValueKindAddon an addon auth secret/credentials
+	ValueKindAddon = "addon"
+
+	// ValueKindChat a chat auth secret/credentials
+	ValueKindChat = "chat"
+
 	// ValueKindGit a git auth secret/credentials
 	ValueKindGit = "git"
 
 	// ValueKindIssue an issue auth secret/credentials
 	ValueKindIssue = "issue"
-
-	// ValueKindChat a chat auth secret/credentials
-	ValueKindChat = "chat"
 
 	// LabelServiceKind the label to indicate the auto Server's Kind
 	LabelServiceKind = "jenkins.io/service-kind"

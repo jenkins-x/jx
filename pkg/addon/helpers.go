@@ -20,3 +20,10 @@ func GetChartStatusMap() (map[string]string, error) {
 	}
 	return statusMap, err
 }
+
+func ProviderAccessTokenURL(kind string, url string) string {
+	switch kind {
+	default:
+		return ""
+	}
+}

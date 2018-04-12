@@ -13,17 +13,9 @@ import (
 func (o *CommonOptions) CreateIssueTrackerAuthConfigService() (auth.AuthConfigService, error) {
 	secrets, err := o.Factory.LoadPipelineSecrets(kube.ValueKindIssue)
 	if err != nil {
-		o.warnf("The current user cannot query issue tracker secrets: %s", err)
+		o.warnf("The current user cannot query pipeline issue tracker secrets: %s", err)
 	}
 	return o.Factory.CreateIssueTrackerAuthConfigService(secrets)
-}
-
-func (o *CommonOptions) CreateChatAuthConfigService() (auth.AuthConfigService, error) {
-	secrets, err := o.Factory.LoadPipelineSecrets(kube.ValueKindIssue)
-	if err != nil {
-		o.warnf("The current user cannot query issue tracker secrets: %s", err)
-	}
-	return o.Factory.CreateChatAuthConfigService(secrets)
 }
 
 func (o *CommonOptions) errorCreateIssueTrackerAuthConfigService(parentError error) (auth.AuthConfigService, error) {

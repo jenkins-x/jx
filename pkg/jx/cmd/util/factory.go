@@ -32,9 +32,10 @@ import (
 )
 
 const (
+	AddonAuthConfigFile       = "addonAuth.yaml"
 	JenkinsAuthConfigFile     = "jenkinsAuth.yaml"
 	IssuesAuthConfigFile      = "issuesAuth.yaml"
-	ChatAuthConfigFile        = "chat.yaml"
+	ChatAuthConfigFile        = "chatAuth.yaml"
 	GitAuthConfigFile         = "gitAuth.yaml"
 	ChartmuseumAuthConfigFile = "chartmuseumAuth.yaml"
 )
@@ -55,6 +56,8 @@ type Factory interface {
 	CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
 
 	CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
+
+	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
 
 	CreateClient() (*kubernetes.Clientset, string, error)
 
@@ -190,6 +193,21 @@ func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.
 	return authConfigSvc, err
 }
 
+func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(AddonAuthConfigFile)
+	if err != nil {
+		return authConfigSvc, err
+	}
+	if secrets != nil {
+		config, err := authConfigSvc.LoadConfig()
+		if err != nil {
+			return authConfigSvc, err
+		}
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.isInCDPIpeline())
+	}
+	return authConfigSvc, err
+}
+
 func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) {
 	if config == nil || secrets == nil {
 		return
@@ -302,6 +320,7 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 }
 
 func (f *factory) LoadPipelineSecrets(kind string) (*corev1.SecretList, error) {
+	// TODO return empty list if not inside a pipeline?
 	kubeClient, curNs, err := f.CreateClient()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create a kuberntees client %s", err)

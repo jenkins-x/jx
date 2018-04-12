@@ -620,7 +620,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 		}
 		server = config.GetOrCreateServer(url)
 	} else {
-		server, err = options.findServer(config, &options.ServerFlags, "chartmuseum server", "Try installing one via: jx create team")
+		server, err = options.findServer(config, &options.ServerFlags, "chartmuseum server", "Try installing one via: jx create team", false)
 		if err != nil {
 			return err
 		}

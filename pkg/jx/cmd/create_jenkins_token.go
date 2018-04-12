@@ -109,7 +109,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		}
 		server = config.GetOrCreateServer(url)
 	} else {
-		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team")
+		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
 		if err != nil {
 			return err
 		}

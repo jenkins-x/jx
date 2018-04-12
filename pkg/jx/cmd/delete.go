@@ -58,6 +58,7 @@ func NewCmdDelete(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.AddCommand(NewCmdDeleteGit(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteJenkins(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteRepo(f, out, errOut))
+	cmd.AddCommand(NewCmdDeleteToken(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteTracker(f, out, errOut))
 	return cmd
 }
