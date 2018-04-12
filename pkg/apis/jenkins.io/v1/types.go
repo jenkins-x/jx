@@ -199,7 +199,7 @@ type PromoteActivityStep struct {
 	ApplicationURL string                  `json:"applicationURL,omitempty" protobuf:"bytes,4,opt,name=environment"`
 }
 
-// GitStatus the status of a git commit in terms of CI / CD
+// GitStatus the status of a git commit in terms of CI/CD
 type GitStatus struct {
 	URL    string `json:"url,omitempty" protobuf:"bytes,1,opt,name=url"`
 	Status string `json:"status,omitempty" protobuf:"bytes,2,opt,name=status"`

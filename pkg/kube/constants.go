@@ -40,7 +40,7 @@ const (
 	// ConfigMapJenkinsXGitKinds the name of the ConfigMap in the development namespace that maps kinds to URLs
 	ConfigMapJenkinsXGitKinds = "jenkins-x-git-kinds"
 
-	// LocalHelmRepoName is the default name of the local chart repository where CI / CD releases go to
+	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
 
 	DefaultEnvironmentGitRepoURL = "https://github.com/jenkins-x/default-environment-charts.git"

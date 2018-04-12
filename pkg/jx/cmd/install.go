@@ -238,7 +238,6 @@ func (options *InstallOptions) Run() error {
 	initOpts.Flags.Namespace = options.Flags.Namespace
 	initOpts.BatchMode = options.BatchMode
 
-
 	currentContext, err := options.getCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
@@ -263,7 +262,7 @@ func (options *InstallOptions) Run() error {
 	if exposeController != nil && exposeController.Config.Domain == "" && options.Flags.Domain != "" {
 		exposeController.Config.Domain = options.Flags.Domain
 		log.Success("set exposeController Config Domain " + exposeController.Config.Domain + "\n")
-	}else{
+	} else {
 		log.Error("Did not set exposeController Config Domain\n")
 	}
 
@@ -292,7 +291,6 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
 
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	if helmConfig.ExposeController.Config.Domain == "" {
@@ -584,7 +582,7 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 			return username, os.Getenv(JX_GIT_TOKEN), nil
 		}
 	}
-	o.Printf("Lets set up a git username and API token to be able to perform CI / CD\n\n")
+	o.Printf("Lets set up a git username and API token to be able to perform CI/CD\n\n")
 	userAuth, err := o.getGitUser("")
 	if err != nil {
 		return "", "", err
