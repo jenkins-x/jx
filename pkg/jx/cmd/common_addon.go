@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/kube"
 )
@@ -23,7 +25,7 @@ func (o *CommonOptions) getAddonAuth(serviceURL string) (*auth.AuthServer, *auth
 
 // getAddonAuth returns the server and user auth for the given addon service URL. Returns null values if there is no server
 func (o *CommonOptions) getAddonAuthByKind(kind string) (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.CreateAddonAuthConfigService()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -31,8 +33,9 @@ func (o *CommonOptions) getAddonAuthByKind(kind string) (*auth.AuthServer, *auth
 
 	server := config.GetServerByKind(kind)
 	if server == nil {
+
 		// TODO lets try find the service in the current namespace using a naming convention?
-		return nil, nil, nil
+		return nil, nil, fmt.Errorf("no server found for kind %s", kind)
 	}
 	message := "user to access the " + kind + " addon service at " + server.URL
 	userAuth, err := config.PickServerUserAuth(server, message, o.BatchMode)
