@@ -616,6 +616,11 @@ func (o *ImportOptions) DoImport() error {
 	if jenkinsfile == "" {
 		jenkinsfile = jenkins.DefaultJenkinsfile
 	}
+
+	if o.Credentials == "" {
+		// e.g. user-github or user-bitbucket
+		o.Credentials = authConfigSvc.Config().DefaultUsername + "-" + gitProvider.Label()
+	}
 	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc, false, o.BatchMode)
 }
 
