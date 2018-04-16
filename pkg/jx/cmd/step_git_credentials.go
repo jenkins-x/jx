@@ -83,6 +83,13 @@ func (o *StepGitCredentialsOptions) Run() error {
 	if outFile == "" {
 		return util.MissingOption(optionOutputFile)
 	}
+	dir, _ := filepath.Split(outFile)
+	if dir != "" {
+		err := os.MkdirAll(dir, DefaultWritePermissions)
+		if err != nil {
+			return err
+		}
+	}
 	secrets, err := o.Factory.LoadPipelineSecrets(kube.ValueKindGit)
 	if err != nil {
 		return err
