@@ -1,6 +1,9 @@
 package kube
 
 const (
+	// ChartAmbassador the default chart for ambassador
+	ChartAmbassador = "datawire/ambassador"
+
 	// ChartAnchore the default chart for the Anchore plugin
 	ChartAnchore = "stable/anchore-engine"
 
@@ -96,6 +99,7 @@ const (
 
 var (
 	AddonCharts = map[string]string{
+		"ambassador": ChartAmbassador,
 		"anchore":    ChartAnchore,
 		"cdx":        ChartCDX,
 		"gitea":      ChartGitea,
