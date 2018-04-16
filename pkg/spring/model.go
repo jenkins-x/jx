@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/version"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -99,6 +100,7 @@ func LoadSpringBoot(cacheDir string) (*SpringBootModel, error) {
 			return nil, err
 		}
 		req.Header.Set("Accept", "application/json")
+		addClientHeader(req)
 
 		res, err := client.Do(req)
 		if err != nil {
@@ -332,6 +334,7 @@ func (data *SpringBootForm) CreateProject(workDir string) (string, error) {
 	if err != nil {
 		return answer, err
 	}
+	addClientHeader(req)
 	res, err := client.Do(req)
 	if err != nil {
 		return answer, err
@@ -387,4 +390,9 @@ func AddFormValue(form *url.Values, key string, v string) {
 
 func emptyArray(values []string) bool {
 	return values == nil || len(values) == 0
+}
+
+func addClientHeader(req *http.Request) {
+	userAgent := "jx/" + version.GetVersion()
+	req.Header.Set("User-Agent", userAgent)
 }
