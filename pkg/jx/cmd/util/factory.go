@@ -109,7 +109,7 @@ func (f *factory) CreateJenkinsClient() (*gojenkins.Jenkins, error) {
 	}
 	url, err := f.GetJenkinsURL()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s. Try switching to the Development Tools environment via: jx env dev", err)
 	}
 	return jenkins.GetJenkinsClient(url, f.Batch, &svc)
 }
