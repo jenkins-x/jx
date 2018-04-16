@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 
@@ -127,16 +128,16 @@ func (c *AuthConfig) GetServerByKind(kind string) *AuthServer {
 func (c *AuthConfig) GetOrCreateServer(url string) *AuthServer {
 	name := ""
 	kind := ""
-	if url == "github.com" || strings.HasPrefix(url, "https://github.com") {
-		name = "GitHub"
-		kind = "github"
-	}
 	return c.GetOrCreateServerName(url, name, kind)
 }
 
 func (c *AuthConfig) GetOrCreateServerName(url string, name string, kind string) *AuthServer {
 	s := c.GetServer(url)
 	if s == nil {
+		if name == "" {
+			// lets default the name to the server URL
+			name = urlHostName(url)
+		}
 		if c.Servers == nil {
 			c.Servers = []*AuthServer{}
 		}
@@ -149,6 +150,18 @@ func (c *AuthConfig) GetOrCreateServerName(url string, name string, kind string)
 		c.Servers = append(c.Servers, s)
 	}
 	return s
+}
+
+func urlHostName(rawUrl string) string {
+	u, err := url.Parse(rawUrl)
+	if err == nil {
+		return u.Host
+	}
+	idx := strings.Index(rawUrl, "://")
+	if idx > 0 {
+		rawUrl = rawUrl[idx+3:]
+	}
+	return strings.TrimSuffix(rawUrl, "/")
 }
 
 func (c *AuthConfig) PickServer(message string, batchMode bool) (*AuthServer, error) {

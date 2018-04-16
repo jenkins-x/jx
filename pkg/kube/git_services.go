@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/kubernetes"
 
@@ -70,7 +71,10 @@ func EnsureGitServiceExistsForHost(jxClient *versioned.Clientset, devNs string, 
 
 // GetGitServiceKind returns the kind of the given host if one can be found or ""
 func GetGitServiceKind(jxClient *versioned.Clientset, kubeClient *kubernetes.Clientset, devNs string, gitServiceUrl string) (string, error) {
-	answer := ""
+	answer := gits.SaasGitKind(gitServiceUrl)
+	if answer != "" {
+		return answer, nil
+	}
 	cm, err := kubeClient.CoreV1().ConfigMaps(devNs).Get(ConfigMapJenkinsXGitKinds, metav1.GetOptions{})
 	if err == nil {
 		answer = GetGitServiceKindFromConfigMap(cm, gitServiceUrl)

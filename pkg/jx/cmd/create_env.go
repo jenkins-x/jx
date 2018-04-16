@@ -159,10 +159,6 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	gitURL := env.Spec.Source.URL
 	if gitURL != "" {
-		jenkinClient, err := f.CreateJenkinsClient()
-		if err != nil {
-			return err
-		}
 		if gitProvider == nil {
 			p, err := o.gitProviderForURL(gitURL, "user name to create the git repository")
 			if err != nil {
@@ -170,7 +166,7 @@ func (o *CreateEnvOptions) Run() error {
 			}
 			gitProvider = p
 		}
-		return jenkins.ImportProject(o.Out, jenkinClient, gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
+		return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 	}
 	return nil
 }

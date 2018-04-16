@@ -8,3 +8,7 @@ const (
 
 	DateFormat = "January 2 2006"
 )
+
+var (
+	KindGits = []string{KindBitBucket, KindGitea, KindGitHub, KindGitlab}
+)

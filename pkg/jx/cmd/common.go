@@ -75,8 +75,17 @@ func (c *CommonOptions) CreateTable() table.Table {
 	return c.Factory.CreateTable(c.Stdout())
 }
 
+// Printf outputs the given text to the console
 func (c *CommonOptions) Printf(format string, a ...interface{}) (n int, err error) {
 	return fmt.Fprintf(c.Stdout(), format, a...)
+}
+
+// Debugf outputs the given text to the console if verbose mode is enabled
+func (c *CommonOptions) Debugf(format string, a ...interface{}) (n int, err error) {
+	if c.Verbose {
+		return fmt.Fprintf(c.Stdout(), format, a...)
+	}
+	return 0, nil
 }
 
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
@@ -139,6 +148,10 @@ func (o *CommonOptions) JXClientAndDevNamespace() (*versioned.Clientset, string,
 }
 
 func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, error) {
+	return o.GitServerHostURLKind(gitInfo.HostURL())
+}
+
+func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return "", err
@@ -158,7 +171,23 @@ func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, 
 		return "", err
 	}
 
-	return kube.GetGitServiceKind(jxClient, kubeClient, devNs, gitInfo.HostURL())
+	kind, err := kube.GetGitServiceKind(jxClient, kubeClient, devNs, hostURL)
+	if err != nil {
+		return kind, err
+	}
+	if kind == "" {
+		if o.BatchMode {
+			return "", fmt.Errorf("No git server kind could be found for URL %s\nPlease try specify it via: jx create git server someKind %s", hostURL, hostURL)
+		}
+		kind, err = util.PickName(gits.KindGits, "Pick what kind of git server is")
+		if err != nil {
+			return "", err
+		}
+		if kind == "" {
+			return "", fmt.Errorf("No git kind chosen!")
+		}
+	}
+	return kind, nil
 }
 
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
