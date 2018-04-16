@@ -371,8 +371,13 @@ func (o *ImportOptions) DraftCreate() error {
 		return err
 	}
 
+	gitServerName, err := gits.GetHost(o.GitProvider)
+	if err != nil {
+		return err
+	}
+
 	//walk through every file in the given dir and update the placeholders
-	err = o.replacePlaceholders(o.GitProvider.ServerURL(), o.GitServer.CurrentUser)
+	err = o.replacePlaceholders(gitServerName, o.GitServer.CurrentUser)
 	if err != nil {
 		return err
 	}
