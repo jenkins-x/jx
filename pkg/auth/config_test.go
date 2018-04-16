@@ -128,3 +128,13 @@ func assertNoError(t *testing.T, err error) {
 		assert.Fail(t, "Should not have received an error but got: %s", err)
 	}
 }
+
+func TestAuthConfigGetsDefaultName(t *testing.T) {
+	c := &AuthConfig{}
+
+	expectedUrl := "https://foo.com"
+	server := c.GetOrCreateServer(expectedUrl)
+	assert.NotNil(t, server, "No server found!")
+	assert.True(t, server.Name != "", "Should have a server name!")
+	assert.Equal(t, expectedUrl, server.URL, "Server.URL")
+}

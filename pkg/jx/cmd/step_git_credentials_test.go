@@ -44,5 +44,12 @@ func TestStepGitCredentials(t *testing.T) {
 }
 
 func createGitCredentialLine(scheme string, host string, user string, pwd string) string {
-	return scheme + user + ":" + pwd + "@" + host + "\n"
+	answer := scheme + user + ":" + pwd + "@" + host + "\n"
+	if scheme == "https://" {
+		scheme = "http://"
+	} else {
+		scheme = "https://"
+	}
+	answer += scheme + user + ":" + pwd + "@" + host + "\n"
+	return answer
 }

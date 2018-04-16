@@ -119,6 +119,14 @@ func (o *StepGitCredentialsOptions) createGitCredentialsFromSecrets(secretList *
 						} else {
 							u2.User = url.UserPassword(string(username), string(pwd))
 							buffer.WriteString(u2.String() + "\n")
+
+							// lets write the other http protocol for completeness
+							if u2.Scheme == "https" {
+								u2.Scheme = "http"
+							} else {
+								u2.Scheme = "https"
+							}
+							buffer.WriteString(u2.String() + "\n")
 						}
 					}
 				}

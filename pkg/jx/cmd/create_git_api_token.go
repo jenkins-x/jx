@@ -18,7 +18,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
@@ -162,7 +161,7 @@ func (o *CreateGitTokenOptions) Run() error {
 		o.warnf("Failed to update jenkins git credentials secret: %v\n", err)
 	}
 
-	err = o.updatePipelineGitCredentialsSecret(server, userAuth)
+	_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
 	if err != nil {
 		o.warnf("Failed to update Jenkins X pipeline git credentials secret: %v\n", err)
 	}
@@ -317,84 +316,4 @@ func (o *CreateGitTokenOptions) updateGitCredentialsSecret(server *auth.AuthServ
 		}
 	}
 	return nil
-}
-
-func (o *CreateGitTokenOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
-	client, curNs, err := o.Factory.CreateClient()
-	if err != nil {
-		return err
-	}
-	ns, _, err := kube.GetDevNamespace(client, curNs)
-	if err != nil {
-		return err
-	}
-	options := metav1.GetOptions{}
-	name := kube.ToValidName(kube.SecretJenkinsPipelineGitCredentials + server.Kind + "-" + server.Name)
-	secrets := client.CoreV1().Secrets(ns)
-	secret, err := secrets.Get(name, options)
-	create := false
-	operation := "update"
-	labels := map[string]string{
-		kube.LabelCredentialsType: kube.ValueCredentialTypeUsernamePassword,
-		kube.LabelCreatedBy:       kube.ValueCreatedByJX,
-		kube.LabelKind:            kube.ValueKindGit,
-		kube.LabelServiceKind:     server.Kind,
-	}
-	annotations := map[string]string{
-		kube.AnnotationCredentialsDescription: fmt.Sprintf("API Token for acccessing %s git service inside pipelines", server.URL),
-		kube.AnnotationURL:                    server.URL,
-		kube.AnnotationName:                   server.Name,
-	}
-	if err != nil {
-		// lets create a new secret
-		create = true
-		operation = "create"
-		secret = &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        name,
-				Annotations: annotations,
-				Labels:      labels,
-			},
-			Data: map[string][]byte{},
-		}
-	} else {
-		secret.Annotations = kube.MergeMaps(secret.Annotations, annotations)
-		secret.Labels = kube.MergeMaps(secret.Labels, labels)
-	}
-	if userAuth.Username != "" {
-		secret.Data["username"] = []byte(userAuth.Username)
-	}
-	if userAuth.ApiToken != "" {
-		secret.Data["password"] = []byte(userAuth.ApiToken)
-	}
-	if create {
-		_, err = secrets.Create(secret)
-	} else {
-		_, err = secrets.Update(secret)
-	}
-	if err != nil {
-		return fmt.Errorf("Failed to %s secret %s due to %s", operation, secret.Name, err)
-	}
-	return nil
-}
-
-func (o *CreateGitTokenOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
-	kind := server.Kind
-	if kind == "" || kind == "github" || server.URL == "" {
-		return nil
-	}
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterGitServiceCRD(apisClient)
-	if err != nil {
-		return err
-	}
-
-	jxClient, devNs, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-	return kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, server.Name, server.URL, o.Out)
 }

@@ -184,13 +184,60 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 		config := authConfigSvc.Config()
-		server, err := config.PickOrCreateServer(gits.GitHubURL, "Which git service do you wish to use", o.BatchMode)
+		var server *auth.AuthServer
+		if o.RepoURL != "" {
+			gitInfo, err := gits.ParseGitURL(o.RepoURL)
+			if err != nil {
+				return err
+			}
+			serverUrl := gitInfo.HostURLWithoutUser()
+			server = config.GetOrCreateServer(serverUrl)
+		} else {
+			server, err = config.PickOrCreateServer(gits.GitHubURL, "Which git service do you wish to use", o.BatchMode)
+			if err != nil {
+				return err
+			}
+		}
+		o.Debugf("Found git server %s %s\n", server.URL, server.Kind)
+		userAuth, err = config.PickServerUserAuth(server, "git user name:", o.BatchMode)
 		if err != nil {
 			return err
 		}
-		userAuth, err = config.PickServerUserAuth(server, "git user name", o.BatchMode)
-		if err != nil {
-			return err
+		updated := false
+		if server.Kind == "" {
+			server.Kind, err = o.GitServerHostURLKind(server.URL)
+			if err != nil {
+				return err
+			}
+			updated = true
+		}
+		if userAuth.IsInvalid() {
+			f := func(username string) error {
+				gits.PrintCreateRepositoryGenerateAccessToken(server, username, o.Out)
+				return nil
+			}
+			err = config.EditUserAuth(server.Label(), userAuth, userAuth.Username, true, o.BatchMode, f)
+			if err != nil {
+				return err
+			}
+
+			o.Credentials, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
+			if err != nil {
+				return err
+			}
+
+			updated = true
+
+			// TODO lets verify the auth works?
+			if userAuth.IsInvalid() {
+				return fmt.Errorf("You did not properly define the user authentication!")
+			}
+		}
+		if updated {
+			err = authConfigSvc.SaveUserAuth(server.URL, userAuth)
+			if err != nil {
+				return fmt.Errorf("Failed to store git auth configuration %s", err)
+			}
 		}
 
 		o.GitServer = server
@@ -621,7 +668,7 @@ func (o *ImportOptions) DoImport() error {
 	if jenkinsfile == "" {
 		jenkinsfile = jenkins.DefaultJenkinsfile
 	}
-	return jenkins.ImportProject(o.Out, o.Jenkins, gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc, false, o.BatchMode)
+	return o.ImportProject(gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc, false, o.BatchMode)
 }
 
 func (o *ImportOptions) replacePlaceholders(gitServerName, gitOrg string) error {
@@ -695,7 +742,6 @@ func (o *ImportOptions) addAppNameToGeneratedFile(filename, field, value string)
 }
 
 func (o *ImportOptions) checkChartmuseumCredentialExists() error {
-
 	name := jenkins.DefaultJenkinsCredentialsPrefix + jenkins.Chartmuseum
 	_, err := o.Jenkins.GetCredential(name)
 
