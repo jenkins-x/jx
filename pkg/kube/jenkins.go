@@ -10,12 +10,19 @@ import (
 )
 
 const (
-	giteaConfigMapKey  = "org.jenkinsci.plugin.gitea.servers.GiteaServers.xml"
-	githubConfigMapKey = "org.jenkinsci.plugins.github_branch_source.GitHubConfiguration.xml"
+	bitbucketConfigMapKey = "com.cloudbees.jenkins.plugins.bitbucket.endpoints.BitbucketEndpointConfiguration.xml"
+	giteaConfigMapKey     = "org.jenkinsci.plugin.gitea.servers.GiteaServers.xml"
+	githubConfigMapKey    = "org.jenkinsci.plugins.github_branch_source.GitHubConfiguration.xml"
+
+	bitbucketCloudElementName  = "com.cloudbees.jenkins.plugins.bitbucket.endpoints.BitbucketCloudEndpoint"
+	bitbucketServerElementName = "com.cloudbees.jenkins.plugins.bitbucket.endpoints.BitbucketServerEndpoint"
+
+	defaultBitbucketXml = `<?xml version='1.1' encoding='UTF-8'?>
+    <com.cloudbees.jenkins.plugins.bitbucket.endpoints.BitbucketEndpointConfiguration plugin="cloudbees-bitbucket-branch-source@2.2.10"/>`
 )
 
 // UpdateJenkinsGitServers update the Jenkins ConfigMap with any missing git server configurations for the given server and token
-func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server *auth.AuthServer, userAuth *auth.UserAuth, credetials string) (bool, error) {
+func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server *auth.AuthServer, userAuth *auth.UserAuth, credentials string) (bool, error) {
 	u := server.URL
 	if u == "" || u == "https://github.com" {
 		return false, nil
@@ -24,14 +31,22 @@ func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server *auth.AuthServer, user
 	var err error
 
 	switch server.Kind {
+	case gits.KindBitBucket:
+		key = bitbucketConfigMapKey
+		v1 = cm.Data[key]
+		v2, err = createBitbucketCloudConfig(v1, server, userAuth, credentials)
+	case gits.KindBitBucketServer:
+		key = bitbucketConfigMapKey
+		v1 = cm.Data[key]
+		v2, err = createBitbucketServerConfig(v1, server, userAuth, credentials)
 	case gits.KindGitHub:
 		key = githubConfigMapKey
 		v1 = cm.Data[key]
-		v2, err = createGitHubConfig(v1, server, userAuth, credetials)
+		v2, err = createGitHubConfig(v1, server, userAuth, credentials)
 	case gits.KindGitea:
 		key = giteaConfigMapKey
 		v1 = cm.Data[key]
-		v2, err = createGiteaConfig(v1, server, userAuth, credetials)
+		v2, err = createGiteaConfig(v1, server, userAuth, credentials)
 	}
 	if err != nil {
 		return false, err
@@ -131,6 +146,98 @@ func createGiteaConfig(xml string, server *auth.AuthServer, userAuth *auth.UserA
 	if !found {
 		// lets add a new element
 		s := servers.CreateElement("org.jenkinsci.plugin.gitea.servers.GiteaServer")
+		servers.AddChild(s)
+		setChildText(s, "displayName", server.Name)
+		setChildText(s, "serverUrl", u)
+		setChildText(s, "credentialsId", credentials)
+		setChildText(s, "manageHooks", "true")
+		updated = true
+	}
+	if updated {
+		doc.Indent(2)
+		xml2, err := doc.WriteToString()
+		return prefix + xml2, err
+	}
+	return xml, nil
+}
+
+func createBitbucketCloudConfig(xml string, server *auth.AuthServer, userAuth *auth.UserAuth, credentials string) (string, error) {
+	elementName := bitbucketCloudElementName
+	if strings.TrimSpace(xml) == "" {
+		xml = defaultBitbucketXml
+	}
+	answer := xml
+	doc, prefix, err := parseXml(xml)
+	if err != nil {
+		return answer, err
+	}
+	root := doc.Root()
+	servers := getChild(root, "endpoints")
+	if servers == nil {
+		servers = root.CreateElement("endpoints")
+		root.AddChild(servers)
+	}
+
+	found := false
+	updated := false
+	for _, n := range servers.ChildElements() {
+		if setChildText(n, "credentialsId", credentials) {
+			updated = true
+		}
+		if setChildText(n, "manageHooks", "true") {
+			updated = true
+		}
+		found = true
+		break
+	}
+	if !found {
+		// lets add a new element
+		s := servers.CreateElement(elementName)
+		servers.AddChild(s)
+		setChildText(s, "credentialsId", credentials)
+		setChildText(s, "manageHooks", "true")
+		updated = true
+	}
+	if updated {
+		doc.Indent(2)
+		xml2, err := doc.WriteToString()
+		return prefix + xml2, err
+	}
+	return xml, nil
+}
+
+func createBitbucketServerConfig(xml string, server *auth.AuthServer, userAuth *auth.UserAuth, credentials string) (string, error) {
+	elementName := bitbucketServerElementName
+	u := server.URL
+	if strings.TrimSpace(xml) == "" {
+		xml = defaultBitbucketXml
+	}
+	answer := xml
+	doc, prefix, err := parseXml(xml)
+	if err != nil {
+		return answer, err
+	}
+	root := doc.Root()
+	servers := getChild(root, "endpoints")
+	if servers == nil {
+		servers = root.CreateElement("endpoints")
+		root.AddChild(servers)
+	}
+
+	found := false
+	updated := false
+	for _, n := range servers.ChildElements() {
+		if getChildText(n, "serverUrl") == u {
+			if setChildText(n, "credentialsId", credentials) {
+				updated = true
+			}
+			found = true
+			break
+		}
+	}
+	if !found {
+		// lets add a new element
+		s := servers.CreateElement(elementName)
 		servers.AddChild(s)
 		setChildText(s, "displayName", server.Name)
 		setChildText(s, "serverUrl", u)
