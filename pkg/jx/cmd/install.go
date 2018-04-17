@@ -687,8 +687,7 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 			return userAuth, fmt.Errorf("you did not properly define the user authentication")
 		}
 	}
-	_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
-	return userAuth, err
+	return userAuth, nil
 }
 
 func (o *InstallOptions) installAddon(name string) error {
