@@ -10,6 +10,7 @@ import:
 - package: k8s.io/helm
 - package: github.com/pborman/uuid
 - package: github.com/jenkins-x/golang-jenkins
+  version: 1d7048ab8ff40de7009fdcf46312a6467127bc0e
 - package: github.com/google/go-github
 - package: golang.org/x/oauth2
 - package: github.com/google/go-querystring

@@ -3,7 +3,7 @@ package osutil
 import (
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 	"testing"
 )
@@ -42,10 +42,10 @@ func TestSymlinkWithFallback(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	oldFileNamePath := path.Join(tmpDir, oldFileName)
-	newFileNamePath := path.Join(tmpDir, newFileName)
+	oldFileNamePath := filepath.Join(tmpDir, oldFileName)
+	newFileNamePath := filepath.Join(tmpDir, newFileName)
 
-	oldFile, err := os.Create(path.Join(tmpDir, oldFileName))
+	oldFile, err := os.Create(filepath.Join(tmpDir, oldFileName))
 	if err != nil {
 		t.Fatal(err)
 	}

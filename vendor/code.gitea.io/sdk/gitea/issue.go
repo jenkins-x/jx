@@ -52,6 +52,8 @@ type Issue struct {
 	Updated time.Time `json:"updated_at"`
 	// swagger:strfmt date-time
 	Closed *time.Time `json:"closed_at"`
+	// swagger:strfmt date-time
+	Deadline *time.Time `json:"due_date"`
 
 	PullRequest *PullRequestMeta `json:"pull_request"`
 }
@@ -94,6 +96,8 @@ type CreateIssueOption struct {
 	// username of assignee
 	Assignee  string   `json:"assignee"`
 	Assignees []string `json:"assignees"`
+	// swagger:strfmt date-time
+	Deadline *time.Time `json:"due_date"`
 	// milestone id
 	Milestone int64 `json:"milestone"`
 	// list of label ids
@@ -114,12 +118,14 @@ func (c *Client) CreateIssue(owner, repo string, opt CreateIssueOption) (*Issue,
 
 // EditIssueOption options for editing an issue
 type EditIssueOption struct {
-	Title     string   `json:"title"`
-	Body      *string  `json:"body"`
-	Assignee  *string  `json:"assignee"`
-	Assignees []string `json:"assignees"`
-	Milestone *int64   `json:"milestone"`
-	State     *string  `json:"state"`
+	Title     string     `json:"title"`
+	Body      *string    `json:"body"`
+	Assignee  *string    `json:"assignee"`
+	Assignees []string   `json:"assignees"`
+	Milestone *int64     `json:"milestone"`
+	State     *string    `json:"state"`
+	// swagger:strfmt date-time
+	Deadline  *time.Time `json:"due_date"`
 }
 
 // EditIssue modify an existing issue for a given repository

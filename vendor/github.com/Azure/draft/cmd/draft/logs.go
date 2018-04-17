@@ -7,11 +7,16 @@ import (
 	"path/filepath"
 
 	"github.com/Azure/draft/pkg/draft/draftpath"
+	"github.com/Azure/draft/pkg/draft/local"
 	"github.com/hpcloud/tail"
 	"github.com/spf13/cobra"
 )
 
 const logsDesc = `This command outputs logs from the draft server to help debug builds.`
+
+var (
+	runningEnvironment string
+)
 
 type logsCmd struct {
 	out     io.Writer
@@ -35,7 +40,12 @@ func newLogsCmd(out io.Writer) *cobra.Command {
 		Long:    logsDesc,
 		PreRunE: lc.complete,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			b, err := getLatestBuildID()
+			deployedApp, err := local.DeployedApplication(draftToml, runningEnvironment)
+			if err != nil {
+				return err
+			}
+			lc.appName = deployedApp.Name
+			b, err := getLatestBuildID(lc.appName)
 			if err != nil {
 				return fmt.Errorf("cannot get latest build: %v", err)
 			}
@@ -51,6 +61,7 @@ func newLogsCmd(out io.Writer) *cobra.Command {
 	f := cmd.Flags()
 	f.BoolVar(&lc.tail, "tail", false, "tail the logs file as it's being written")
 	f.UintVar(&lc.line, "line", 20, "line location to tail from (offset from end of file)")
+	f.StringVarP(&runningEnvironment, environmentFlagName, environmentFlagShorthand, defaultDraftEnvironment(), environmentFlagUsage)
 	return cmd
 }
 
@@ -67,7 +78,7 @@ func (l *logsCmd) run(_ *cobra.Command, _ []string) error {
 }
 
 func (l *logsCmd) dumpLogs() error {
-	f, err := os.Open(filepath.Join(l.home.Logs(), l.buildID))
+	f, err := os.Open(filepath.Join(l.home.Logs(), l.appName, l.buildID))
 	if err != nil {
 		return fmt.Errorf("could not read logs for %s: %v", l.buildID, err)
 	}
@@ -77,7 +88,7 @@ func (l *logsCmd) dumpLogs() error {
 }
 
 func (l *logsCmd) tailLogs(offset int64) error {
-	t, err := tail.TailFile(filepath.Join(l.home.Logs(), l.buildID), tail.Config{
+	t, err := tail.TailFile(filepath.Join(l.home.Logs(), l.appName, l.buildID), tail.Config{
 		Location: &tail.SeekInfo{Offset: -offset, Whence: os.SEEK_END},
 		Logger:   tail.DiscardingLogger,
 		Follow:   true,

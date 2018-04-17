@@ -20,7 +20,7 @@ func TestDelete(t *testing.T) {
 				appName: "",
 				out:     os.Stdout,
 			}
-			err := delete.run()
+			err := delete.run(defaultDraftEnvironment())
 
 			// Error checking
 			if err != nil != tc.wantErr {

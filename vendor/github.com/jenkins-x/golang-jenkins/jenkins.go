@@ -47,7 +47,6 @@ func (err APIError) Error() string {
 	return err.Status
 }
 
-
 func (jenkins *Jenkins) IsErrNotFound(err error) bool {
 	te, ok := err.(APIError)
 	return ok && te.StatusCode == 404
@@ -113,6 +112,41 @@ func (jenkins *Jenkins) buildUrlRaw(path string, params url.Values) (requestUrl 
 	return
 }
 
+// checkCrumb - checks if `useCrumb` is enabled and if so, retrieves crumb field and value and updates request header
+func (jenkins *Jenkins) checkCrumb(req *http.Request) (*http.Request, error) {
+
+	// api - store jenkins api useCrumbs response
+	api := struct {
+		UseCrumbs bool `json:"useCrumbs"`
+	}{}
+
+	err := jenkins.get("/api/json", url.Values{"tree": []string{"useCrumbs"}}, &api)
+	if err != nil {
+		return req, err
+	}
+
+	if !api.UseCrumbs {
+		// CSRF Protection is not enabled
+		return req, nil
+	}
+
+	// get crumb field and value
+	crumb := struct {
+		Crumb             string `json:"crumb"`
+		CrumbRequestField string `json:"crumbRequestField"`
+	}{}
+
+	err = jenkins.get("/crumbIssuer", nil, &crumb)
+	if err != nil {
+		return req, err
+	}
+
+	// update header
+	req.Header.Set(crumb.CrumbRequestField, crumb.Crumb)
+
+	return req, nil
+}
+
 func (jenkins *Jenkins) sendRequest(req *http.Request) (*http.Response, error) {
 	if jenkins.auth != nil {
 		if jenkins.auth.BearerToken != "" {
@@ -128,7 +162,7 @@ func (jenkins *Jenkins) parseXmlResponse(resp *http.Response, body interface{}) 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 302 && resp.StatusCode != 405 && resp.StatusCode > 201 {
-		return APIError{ resp.Status, resp.StatusCode }
+		return APIError{resp.Status, resp.StatusCode}
 	}
 
 	if body == nil {
@@ -147,7 +181,7 @@ func (jenkins *Jenkins) parseXmlResponseWithWrapperElement(resp *http.Response, 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 302 && resp.StatusCode != 405 && resp.StatusCode > 201 {
-		return APIError{ resp.Status, resp.StatusCode }
+		return APIError{resp.Status, resp.StatusCode}
 	}
 
 	if body == nil {
@@ -176,7 +210,7 @@ func (jenkins *Jenkins) parseResponse(resp *http.Response, body interface{}) (er
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 302 && resp.StatusCode != 405 && resp.StatusCode > 201 {
-		return APIError{ resp.Status, resp.StatusCode }
+		return APIError{resp.Status, resp.StatusCode}
 	}
 
 	if body == nil {
@@ -289,6 +323,11 @@ func (jenkins *Jenkins) post(path string, params url.Values, body interface{}) (
 	if err != nil {
 		return
 	}
+
+	if _, err := jenkins.checkCrumb(req); err != nil {
+		return err
+	}
+
 	resp, err := jenkins.sendRequest(req)
 	if err != nil {
 		return
@@ -303,6 +342,11 @@ func (jenkins *Jenkins) postUrl(path string, params url.Values, body interface{}
 	if err != nil {
 		return
 	}
+
+	if _, err := jenkins.checkCrumb(req); err != nil {
+		return err
+	}
+
 	resp, err := jenkins.sendRequest(req)
 	if err != nil {
 		return
@@ -324,6 +368,10 @@ func (jenkins *Jenkins) postXml(path string, params url.Values, xmlBody io.Reade
 		return
 	}
 
+	if _, err := jenkins.checkCrumb(req); err != nil {
+		return err
+	}
+
 	req.Header.Add("Content-Type", "application/xml")
 	resp, err := jenkins.sendRequest(req)
 	if err != nil {
@@ -338,6 +386,10 @@ func (jenkins *Jenkins) postJson(path string, data url.Values, body interface{})
 	req, err := http.NewRequest("POST", requestUrl, strings.NewReader(data.Encode()))
 	if err != nil {
 		return
+	}
+
+	if _, err := jenkins.checkCrumb(req); err != nil {
+		return err
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -370,7 +422,7 @@ func (jenkins *Jenkins) GetJobURLPath(name string) string {
 
 //GetJobConfig returns a maven job, has the one used to create Maven job
 func (jenkins *Jenkins) GetJobConfig(name string) (job JobItem, err error) {
-	err = jenkins.getConfigXml(FullPath(name) + "/config.xml", nil, &job)
+	err = jenkins.getConfigXml(FullPath(name)+"/config.xml", nil, &job)
 	return
 }
 
@@ -470,7 +522,7 @@ func (jenkins *Jenkins) CreateFolderJobWithXML(jobItemXml string, folder string,
 	reader := bytes.NewReader([]byte(jobItemXml))
 	params := url.Values{"name": []string{jobName}}
 
-	return jenkins.postXml("/job/" + folder + "/createItem", params, reader, nil)
+	return jenkins.postXml("/job/"+folder+"/createItem", params, reader, nil)
 }
 
 // Get a credentials

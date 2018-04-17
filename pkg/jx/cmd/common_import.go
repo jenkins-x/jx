@@ -56,7 +56,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		}
 	}
 
-	createCredential := false
+	createCredential := true
 	if credentials == "" {
 		// lets try find the credentials from the secrets
 		credentials = findGitCredentials(gitProvider, secrets)
@@ -92,6 +92,8 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 
 		if credentials == "" {
 			fmt.Errorf("Failed to find the created pipeline secret for the server %s", server.URL)
+		} else {
+			createCredential = false
 		}
 	}
 	if createCredential {

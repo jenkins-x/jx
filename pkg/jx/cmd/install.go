@@ -636,6 +636,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 	config.CurrentServer = server.URL
 	return authConfigSvc.SaveConfig()
 }
+
 func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 	var userAuth *auth.UserAuth
 	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()

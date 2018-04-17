@@ -22,6 +22,8 @@ type deleteCmd struct {
 }
 
 func newDeleteCmd(out io.Writer) *cobra.Command {
+	var runningEnvironment string
+
 	dc := &deleteCmd{
 		out: out,
 	}
@@ -34,21 +36,24 @@ func newDeleteCmd(out io.Writer) *cobra.Command {
 			if len(args) > 0 {
 				dc.appName = args[0]
 			}
-			return dc.run()
+			return dc.run(runningEnvironment)
 		},
 	}
+
+	f := cmd.Flags()
+	f.StringVarP(&runningEnvironment, environmentFlagName, environmentFlagShorthand, defaultDraftEnvironment(), environmentFlagUsage)
 
 	return cmd
 }
 
-func (d *deleteCmd) run() error {
+func (d *deleteCmd) run(runningEnvironment string) error {
 
 	var name string
 
 	if d.appName != "" {
 		name = d.appName
 	} else {
-		deployedApp, err := local.DeployedApplication(draftToml, defaultDraftEnvironment())
+		deployedApp, err := local.DeployedApplication(draftToml, runningEnvironment)
 		if err != nil {
 			return errors.New("Unable to detect app name\nPlease pass in the name of the application")
 
@@ -77,6 +82,12 @@ func Delete(app string) error {
 		return fmt.Errorf("Could not get a kube client: %s", err)
 	}
 
+	// delete Draft storage for app
+	store := configmap.NewConfigMaps(client.CoreV1().ConfigMaps(tillerNamespace))
+	if _, err := store.DeleteBuilds(context.Background(), app); err != nil {
+		return err
+	}
+
 	helmClient, err := setupHelm(client, config, tillerNamespace)
 	if err != nil {
 		return err
@@ -88,10 +99,5 @@ func Delete(app string) error {
 		return errors.New(grpc.ErrorDesc(err))
 	}
 
-	// delete Draft storage for app
-	store := configmap.NewConfigMaps(client.CoreV1().ConfigMaps(tillerNamespace))
-	if _, err := store.DeleteBuilds(context.Background(), app); err != nil {
-		return err
-	}
 	return nil
 }
