@@ -17,6 +17,7 @@ import (
 	"github.com/Azure/draft/pkg/draft/local"
 	"github.com/Azure/draft/pkg/draft/manifest"
 	"github.com/Azure/draft/pkg/draft/pack"
+	"github.com/Azure/draft/pkg/osutil"
 	"github.com/Azure/draft/pkg/storage"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/image/build"
@@ -41,9 +42,9 @@ import (
 )
 
 const (
-	// name of the docker pull secret draft will create in the desired destination namespace
+	// PullSecretName is the name of the docker pull secret draft will create in the desired destination namespace
 	PullSecretName = "draft-pullsecret"
-	// name of the default service account draft will modify with the imagepullsecret
+	// DefaultServiceAccountName is the name of the default service account draft will modify with the imagepullsecret
 	DefaultServiceAccountName = "default"
 )
 
@@ -60,8 +61,8 @@ type Builder struct {
 // Logs returns the path to the build logs.
 //
 // Set after Up is called (otherwise "").
-func (b *Builder) Logs() string {
-	return filepath.Join(b.LogsDir, b.id)
+func (b *Builder) Logs(appName string) string {
+	return filepath.Join(b.LogsDir, appName, b.id)
 }
 
 // ID returns the build id.
@@ -125,14 +126,20 @@ func newAppContext(b *Builder, buildCtx *Context) (*AppContext, error) {
 	if err := strvals.ParseInto(inject, vals); err != nil {
 		return nil, err
 	}
-	logf, err := os.OpenFile(b.Logs(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+
+	err = osutil.EnsureDirectory(filepath.Dir(b.Logs(buildCtx.Env.Name)))
+	if err != nil {
+		return nil, err
+	}
+
+	logf, err := os.OpenFile(b.Logs(buildCtx.Env.Name), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return nil, err
 	}
 	state := &storage.Object{
 		BuildID:     b.ID(),
 		ContextID:   ctxtID,
-		LogsFileRef: b.Logs(),
+		LogsFileRef: b.Logs(buildCtx.Env.Name),
 	}
 	return &AppContext{
 		obj:  state,

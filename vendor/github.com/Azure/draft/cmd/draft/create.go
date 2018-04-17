@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"unicode"
@@ -189,7 +188,7 @@ func doPackDetection(home draftpath.Home, out io.Writer) (string, error) {
 		detectedLang := linguist.Alias(lang)
 		fmt.Fprintf(out, "--> Draft detected %s (%f%%)\n", detectedLang.Language, detectedLang.Percent)
 		for _, repository := range repo.FindRepositories(home.Packs()) {
-			packDir := path.Join(repository.Dir, repo.PackDirName)
+			packDir := filepath.Join(repository.Dir, repo.PackDirName)
 			packs, err := ioutil.ReadDir(packDir)
 			if err != nil {
 				return "", fmt.Errorf("there was an error reading %s: %v", packDir, err)

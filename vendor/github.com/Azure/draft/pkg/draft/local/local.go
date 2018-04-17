@@ -31,6 +31,8 @@ const (
 //  Name is the name of the application
 //  Namespace is the Kubernetes namespace it is deployed in
 //  Container is the name the name of the application container to connect to
+//  OverridePorts contains mappings of which local port to map a remote port to
+//    and will be in the form local_port:remote_port i.e. 8080:8081
 type App struct {
 	Name          string
 	Namespace     string

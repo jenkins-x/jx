@@ -1,5 +1,5 @@
-hash: 72bdf62e22d198e887c83a29c3d8508d7e0bb68bdd822bde61d481f5e7ac522d
-updated: 2018-04-11T08:37:23.765856121+01:00
+hash: a9f24bfec71a3ebe9f43a34a31e8d21fed69a84d17263dcf66d07746c6541928
+updated: 2018-04-17T08:10:41.800885768+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,13 +7,13 @@ imports:
   - compute/metadata
   - internal
 - name: code.gitea.io/sdk
-  version: 790adaa56b736a820a0cb93e5535df8026ff82a5
+  version: 142acef5ce79f78585afcce31748af46c72a3dea
   subpackages:
   - gitea
 - name: github.com/andygrunwald/go-jira
   version: 7f227a275b41edf4802e14487c22f7d960a02488
 - name: github.com/Azure/draft
-  version: 35a8c5271997973c99c8aacdd19bd33db1ae2103
+  version: 5b1e4336977c69414de0ac8d11af469b920a9281
   subpackages:
   - pkg/draft/draftpath
   - pkg/draft/pack/repo
@@ -93,7 +93,7 @@ imports:
 - name: github.com/dgrijalva/jwt-go
   version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
 - name: github.com/disintegration/imaging
-  version: fd34ef7671b12cdf1b024d98c6b327b2770d32c4
+  version: 79acd08cea8365df9fc16cccaeb3509b4495e241
 - name: github.com/fatih/color
   version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
 - name: github.com/fatih/structs
@@ -126,7 +126,7 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/google/go-github
-  version: 89a446efe88e1636068183a91ca8845683683477
+  version: 64f8f21e24feb72595a384afcf66f9caa7106fbf
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -179,7 +179,7 @@ imports:
   subpackages:
   - pkg/draft/pack
 - name: github.com/jenkins-x/golang-jenkins
-  version: ec7a97e4a0d7bfebfacb5818e70b77744d9f4d6d
+  version: 1d7048ab8ff40de7009fdcf46312a6467127bc0e
 - name: github.com/json-iterator/go
   version: 13f86432b882000a51c6e610c620974462691a97
 - name: github.com/kevinburke/ssh_config
@@ -207,7 +207,7 @@ imports:
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/nlopes/slack
-  version: 921a31ba7374bbc3623a5327e1f965628d1d6108
+  version: 3472fa2dd0347a0d966feaf49d3e197d50e9576e
 - name: github.com/Pallinder/go-randomdata
   version: dab270d296c6c8fb98de3b4334bbd7d7b0ceca53
 - name: github.com/pborman/uuid
@@ -231,7 +231,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
 - name: github.com/spf13/cobra
-  version: cd30c2a7e91a1d63fd9a0027accf18a681e9d50b
+  version: 615425954c3b0d9485a7027d4d451fdcdfdee84e
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -530,11 +530,11 @@ imports:
   - util/jsonpath
   - util/retry
 - name: k8s.io/code-generator
-  version: 6328af583b15738c30d552c02484700b13863cb5
+  version: 692f126559b2e6f2033edd97ed24174439fb3de6
 - name: k8s.io/gengo
   version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
 - name: k8s.io/helm
-  version: 8981575082ea6fc2a670f81fb6ca5b560c4f36a7
+  version: 3eb1f59f71de9c934f01e1407f6385608163fa79
   subpackages:
   - pkg/chartutil
   - pkg/ignore

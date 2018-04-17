@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -79,7 +80,7 @@ func (cn *connectCmd) run(runningEnvironment string) (err error) {
 		ports = overridePorts
 	}
 
-	buildID, err := getLatestBuildID()
+	buildID, err := getLatestBuildID(deployedApp.Name)
 	if err != nil {
 		return err
 	}
@@ -143,9 +144,9 @@ func writeContainerLogs(out io.Writer, in io.ReadCloser, containerName string) e
 	}
 }
 
-func getLatestBuildID() (string, error) {
+func getLatestBuildID(appName string) (string, error) {
 	h := draftpath.Home(homePath())
-	files, err := ioutil.ReadDir(h.Logs())
+	files, err := ioutil.ReadDir(filepath.Join(h.Logs(), appName))
 	if err != nil {
 		return "", err
 	}

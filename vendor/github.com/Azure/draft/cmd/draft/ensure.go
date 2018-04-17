@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
+
+	"github.com/Azure/draft/pkg/osutil"
 
 	pluginbase "k8s.io/helm/pkg/plugin"
 
@@ -21,13 +22,9 @@ func (i *initCmd) ensureDirectories() error {
 		i.home.Logs(),
 	}
 	for _, p := range configDirectories {
-		if fi, err := os.Stat(p); err != nil {
-			fmt.Fprintf(i.out, "Creating %s \n", p)
-			if err := os.MkdirAll(p, 0755); err != nil {
-				return fmt.Errorf("Could not create %s: %s", p, err)
-			}
-		} else if !fi.IsDir() {
-			return fmt.Errorf("%s must be a directory", p)
+		err := osutil.EnsureDirectory(p)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -38,19 +35,7 @@ func (i *initCmd) ensureDirectories() error {
 //
 // If it does not exist, this function will create it.
 func (i *initCmd) ensureConfig() error {
-	fi, err := os.Stat(i.home.Config())
-	if err != nil {
-		fmt.Fprintf(i.out, "Creating %s \n", i.home.Config())
-		f, err := os.Create(i.home.Config())
-		if err != nil {
-			return fmt.Errorf("Could not create %s: %s", i.home.Config(), err)
-		}
-		defer f.Close()
-	} else if fi.IsDir() {
-		return fmt.Errorf("%s must not be a directory", i.home.Config())
-	}
-
-	return nil
+	return osutil.EnsureFile(i.home.Config())
 }
 
 // ensurePacks checks to see if the default packs exist.
