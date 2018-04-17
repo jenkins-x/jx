@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -123,6 +124,9 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 			return name, fmt.Errorf("Failed to update Jenkins ConfigMap: %s", err)
 		}
 		o.Printf("Updated the Jenkins ConfigMap %s\n", kube.ConfigMapJenkinsX)
+
+		// wait a little bit to give k8s chance to sync the ConfigMap to the file system
+		time.Sleep(time.Second * 2)
 
 		// lets ensure that the git server + credential is in the Jenkins server configuration
 		jenk, err := o.JenkinsClient()
