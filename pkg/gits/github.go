@@ -53,6 +53,9 @@ func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvide
 }
 
 func GitHubEnterpriseApiEndpointURL(u string) string {
+	if IsGitHubServerURL(u) {
+		return u
+	}
 	// lets ensure we use the API endpoint to login
 	if strings.Index(u, "/api/") < 0 {
 		u = util.UrlJoin(u, "/api/v3/")
@@ -71,7 +74,8 @@ func (p *GitHubProvider) GetEnterpriseApiURL() string {
 }
 
 func IsGitHubServerURL(u string) bool {
-	return u == "" || strings.HasPrefix(u, "https://github.com") || strings.HasPrefix(u, "github")
+	u = strings.TrimSuffix(u, "/")
+	return u == "" || u == "https://github.com" || u == "http://github.com"
 }
 
 func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {

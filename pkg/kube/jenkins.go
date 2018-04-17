@@ -23,8 +23,7 @@ const (
 
 // UpdateJenkinsGitServers update the Jenkins ConfigMap with any missing git server configurations for the given server and token
 func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server *auth.AuthServer, userAuth *auth.UserAuth, credentials string) (bool, error) {
-	u := server.URL
-	if u == "" || u == "https://github.com" {
+	if gits.IsGitHubServerURL(server.URL) {
 		return false, nil
 	}
 	var key, v1, v2 string
@@ -72,7 +71,7 @@ func parseXml(xml string) (*etree.Document, string, error) {
 }
 
 func createGitHubConfig(xml string, server *auth.AuthServer, userAuth *auth.UserAuth, credentials string) (string, error) {
-	u := server.URL
+	u := gits.GitHubEnterpriseApiEndpointURL(server.URL)
 	if strings.TrimSpace(xml) == "" {
 		xml = `<?xml version='1.1' encoding='UTF-8'?>
 		    <org.jenkinsci.plugins.github__branch__source.GitHubConfiguration plugin="github-branch-source@2.3.2"/>`

@@ -102,13 +102,14 @@ func TestAddGitHuvServers(t *testing.T) {
 		Data: map[string]string{},
 	}
 
-	expectedGitUrl := "https://github.bees.com"
+	expectedGitHostURL := "https://github.bees.com"
+	expectedGitUrl := expectedGitHostURL + "/api/v3/"
 	expectedGitName := "GHE"
 	expectedCredentials := "my-credential-name"
 	server := &auth.AuthServer{
 		Kind: kind,
 		Name: expectedGitName,
-		URL:  expectedGitUrl,
+		URL:  expectedGitHostURL,
 	}
 	userAuth := &auth.UserAuth{
 		Username: "dummy",
