@@ -8,6 +8,7 @@ import:
 - package: k8s.io/gengo
 - package: k8s.io/metrics
 - package: k8s.io/helm
+  repo: https://github.com/jenkins-x/helm.git
 - package: github.com/pborman/uuid
 - package: github.com/jenkins-x/golang-jenkins
   version: 1d7048ab8ff40de7009fdcf46312a6467127bc0e
