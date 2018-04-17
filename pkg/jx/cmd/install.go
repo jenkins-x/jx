@@ -636,6 +636,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 	config.CurrentServer = server.URL
 	return authConfigSvc.SaveConfig()
 }
+
 func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 	var userAuth *auth.UserAuth
 	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
@@ -686,7 +687,8 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 			return userAuth, fmt.Errorf("you did not properly define the user authentication")
 		}
 	}
-	return userAuth, nil
+	_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
+	return userAuth, err
 }
 
 func (o *InstallOptions) installAddon(name string) error {
