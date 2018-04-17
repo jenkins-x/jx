@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	giteaConfigMapKey = "org.jenkinsci.plugin.gitea.servers.GiteaServers.xml"
+	giteaConfigMapKey  = "org.jenkinsci.plugin.gitea.servers.GiteaServers.xml"
+	githubConfigMapKey = "org.jenkinsci.plugins.github_branch_source.GitHubConfiguration.xml"
 )
 
 // UpdateJenkinsGitServers update the Jenkins ConfigMap with any missing git server configurations for the given server and token
@@ -23,6 +24,10 @@ func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server *auth.AuthServer, user
 	var err error
 
 	switch server.Kind {
+	case gits.KindGitHub:
+		key = githubConfigMapKey
+		v1 = cm.Data[key]
+		v2, err = createGitHubConfig(v1, server, userAuth, credetials)
 	case gits.KindGitea:
 		key = giteaConfigMapKey
 		v1 = cm.Data[key]
@@ -49,6 +54,49 @@ func parseXml(xml string) (*etree.Document, string, error) {
 	}
 	err := doc.ReadFromString(parseXml)
 	return doc, prefix, err
+}
+
+func createGitHubConfig(xml string, server *auth.AuthServer, userAuth *auth.UserAuth, credentials string) (string, error) {
+	u := server.URL
+	if strings.TrimSpace(xml) == "" {
+		xml = `<?xml version='1.1' encoding='UTF-8'?>
+		    <org.jenkinsci.plugins.github__branch__source.GitHubConfiguration plugin="github-branch-source@2.3.2"/>`
+	}
+	answer := xml
+	doc, prefix, err := parseXml(xml)
+	if err != nil {
+		return answer, err
+	}
+	root := doc.Root()
+	servers := getChild(root, "endpoints")
+	if servers == nil {
+		servers = root.CreateElement("endpoints")
+		root.AddChild(servers)
+	}
+
+	found := false
+	updated := false
+	for _, n := range servers.ChildElements() {
+		if getChildText(n, "apiUri") == u {
+			found = true
+			break
+		}
+	}
+	if !found {
+		// lets add a new element
+		s := servers.CreateElement("org.jenkinsci.plugins.github__branch__source.Endpoint")
+		servers.AddChild(s)
+		setChildText(s, "name", server.Name)
+		setChildText(s, "apiUri", u)
+		updated = true
+	}
+	if updated {
+		doc.Indent(2)
+		xml2, err := doc.WriteToString()
+		return prefix + xml2, err
+	}
+	return xml, nil
+
 }
 
 func createGiteaConfig(xml string, server *auth.AuthServer, userAuth *auth.UserAuth, credentials string) (string, error) {

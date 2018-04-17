@@ -16,8 +16,8 @@ func TestAddGiteaServers(t *testing.T) {
 		Data: map[string]string{},
 	}
 
-	expectedGitUrl := "https://github.bees.com"
-	expectedGitName := "mygit"
+	expectedGitUrl := "https://my.gitea.com"
+	expectedGitName := "mygitea"
 	expectedCredentials := "my-credential-name"
 	server := &auth.AuthServer{
 		Kind: gits.KindGitea,
@@ -92,6 +92,47 @@ func TestAddGiteaServers(t *testing.T) {
 	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
 	assertElementValues(t, doc, "//serverUrl", expectedGitUrl)
 	assertElementValues(t, doc, "//credentialsId", expectedCredentials)
+}
+
+func TestAddGitHuvServers(t *testing.T) {
+	key := githubConfigMapKey
+	kind := gits.KindGitHub
+
+	cm := &corev1.ConfigMap{
+		Data: map[string]string{},
+	}
+
+	expectedGitUrl := "https://github.bees.com"
+	expectedGitName := "GHE"
+	expectedCredentials := "my-credential-name"
+	server := &auth.AuthServer{
+		Kind: kind,
+		Name: expectedGitName,
+		URL:  expectedGitUrl,
+	}
+	userAuth := &auth.UserAuth{
+		Username: "dummy",
+	}
+
+	updated, err := UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
+	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitUrl)
+
+	for k, v := range cm.Data {
+		tests.Debugf("Updated the ConfigMap: %s = %s\n", k, v)
+	}
+
+	doc, _, err := parseXml(cm.Data[key])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
+	assertElementValues(t, doc, "//apiUri", expectedGitUrl)
+
+	updated, err = UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
+	assert.False(t, updated, "Should not have updated the ConfigMap for server %s", expectedGitUrl)
+
+	doc, _, err = parseXml(cm.Data[key])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
+	assertElementValues(t, doc, "//apiUri", expectedGitUrl)
 }
 
 func assertElementValues(t *testing.T, doc *etree.Document, path string, expectedValues ...string) {
