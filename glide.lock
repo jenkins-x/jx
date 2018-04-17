@@ -1,5 +1,5 @@
-hash: a9f24bfec71a3ebe9f43a34a31e8d21fed69a84d17263dcf66d07746c6541928
-updated: 2018-04-17T08:10:41.800885768+01:00
+hash: 04126ec7f00ea6e8084d22d0d987761407acff3186b9c7db4a05505d7b3d85da
+updated: 2018-04-17T11:40:13.813170137+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -175,7 +175,7 @@ imports:
   subpackages:
   - chyle/git
 - name: github.com/jenkins-x/draft-repo
-  version: db61a304db2a3c57e8f09134b010a28aa39fff36
+  version: 2f66cc518135de45b732980fa90af2cd056bd975
   subpackages:
   - pkg/draft/pack
 - name: github.com/jenkins-x/golang-jenkins
@@ -534,7 +534,8 @@ imports:
 - name: k8s.io/gengo
   version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
 - name: k8s.io/helm
-  version: 3eb1f59f71de9c934f01e1407f6385608163fa79
+  version: 8e2f27e4e4b55f584a909d1720fd0385ed94d901
+  repo: https://github.com/jenkins-x/helm.git
   subpackages:
   - pkg/chartutil
   - pkg/ignore

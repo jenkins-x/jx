@@ -60,6 +60,7 @@ type ImportOptions struct {
 	SelectAll               bool
 	DisableDraft            bool
 	DisableJenkinsfileCheck bool
+	OverwriteJenkinsfile    bool
 	SelectFilter            string
 	Jenkinsfile             string
 	BranchPattern           string
@@ -152,7 +153,8 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Performs local changes to the repo but skips the import into Jenkins X")
 	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
 	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
-	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "The git commit message for the import")
+	cmd.Flags().BoolVarP(&options.OverwriteJenkinsfile, "overwrite-jenkinsfile", "w", false, "Disable defaulting a Jenkinsfile if its missing")
+	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "Should we override the Jenkinsfile in the project?")
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on. Defaults to '"+jenkins.DefaultBranchPattern+"'")
 
 	options.addCommonFlags(cmd)
@@ -296,6 +298,10 @@ func (o *ImportOptions) Run() error {
 		}
 
 	}
+	err = o.fixDockerIgnoreFile()
+	if err != nil {
+		return err
+	}
 
 	if o.RepoURL == "" {
 		err = o.CreateNewRemoteRepository()
@@ -375,18 +381,17 @@ func (o *ImportOptions) DraftCreate() error {
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
 	pomName := filepath.Join(dir, "pom.xml")
-	exists, err := util.FileExists(pomName)
-	if err != nil {
-		return err
-	}
+	gradleName := filepath.Join(dir, "build.gradle")
 	lpack := ""
-	if exists {
+	if exists, err := util.FileExists(pomName); err == nil && exists {
 		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/maven")
 
 		exists, _ = util.FileExists(lpack)
 		if !exists {
 			lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/java")
 		}
+	} else if exists, err := util.FileExists(gradleName); err == nil && exists {
+		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/gradle")
 	} else {
 		// pack detection time
 		lpack, err = jxdraft.DoPackDetection(draftHome, o.Out, dir)
@@ -396,10 +401,16 @@ func (o *ImportOptions) DraftCreate() error {
 		}
 	}
 	chartsDir := filepath.Join(dir, "charts")
-	exists, err = util.FileExists(chartsDir)
-	if exists {
-		log.Warn("existing charts folder found so skipping 'draft create' step\n")
-		return nil
+	exists, err := util.FileExists(chartsDir)
+	if exists && err == nil {
+		exists, err = util.FileExists(filepath.Join(dir, "Jenkinsfile"))
+		if exists && err == nil {
+			exists, err = util.FileExists(filepath.Join(dir, "Dockerfile"))
+			if exists && err == nil {
+				log.Warn("existing Dockerfile, Jenkinsfile and charts folder found so skipping 'draft create' step\n")
+				return nil
+			}
+		}
 	}
 
 	err = pack.CreateFrom(dir, lpack)
@@ -762,6 +773,7 @@ func (o *ImportOptions) checkChartmuseumCredentialExists() error {
 	}
 	return nil
 }
+
 func (o *ImportOptions) renameChartToMatchAppName() error {
 	var oldChartsDir string
 	dir := o.Dir
@@ -802,6 +814,30 @@ func (o *ImportOptions) renameChartToMatchAppName() error {
 		err = o.addAppNameToGeneratedFile("Chart.yaml", "name: ", o.AppName)
 		if err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func (o *ImportOptions) fixDockerIgnoreFile() error {
+	filename := filepath.Join(o.Dir, ".dockerignore")
+	exists, err := util.FileExists(filename)
+	if err == nil && exists {
+		data, err := ioutil.ReadFile(filename)
+		if err != nil {
+			return fmt.Errorf("Failed to load %s: %s", filename, err)
+		}
+		lines := strings.Split(string(data), "\n")
+		for i, line := range lines {
+			if strings.TrimSpace(line) == "Dockerfile" {
+				lines = append(lines[:i], lines[i+1:]...)
+				text := strings.Join(lines, "\n")
+				err = ioutil.WriteFile(filename, []byte(text), DefaultWritePermissions)
+				if err != nil {
+					return err
+				}
+				o.Printf("Removed old `Dockerfile` entry from %s\n", util.ColorInfo(filename))
+			}
 		}
 	}
 	return nil
