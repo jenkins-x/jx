@@ -1,5 +1,5 @@
-hash: 04126ec7f00ea6e8084d22d0d987761407acff3186b9c7db4a05505d7b3d85da
-updated: 2018-04-17T11:40:13.813170137+01:00
+hash: cbbfd5852c16bdf912fd44a6ca37388091e0603a545b677b7a3e0010aa473b38
+updated: 2018-04-17T15:49:14.787082585+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -12,6 +12,8 @@ imports:
   - gitea
 - name: github.com/andygrunwald/go-jira
   version: 7f227a275b41edf4802e14487c22f7d960a02488
+- name: github.com/antchfx/xpath
+  version: da6624a57bffc012f598c42f781bd5919fbfadb2
 - name: github.com/Azure/draft
   version: 5b1e4336977c69414de0ac8d11af469b920a9281
   subpackages:
@@ -31,6 +33,8 @@ imports:
   - autorest/adal
   - autorest/azure
   - autorest/date
+- name: github.com/beevik/etree
+  version: bef51f1103fddbb07ff517a3bd23b18417697fba
 - name: github.com/blang/semver
   version: c5e971dbed7850a93c23aa6ff69db5771d8e23b3
 - name: github.com/BurntSushi/toml
@@ -179,7 +183,7 @@ imports:
   subpackages:
   - pkg/draft/pack
 - name: github.com/jenkins-x/golang-jenkins
-  version: 1d7048ab8ff40de7009fdcf46312a6467127bc0e
+  version: e1e18d80e8dcee4270cffc00b58e441edadf9ba3
 - name: github.com/json-iterator/go
   version: 13f86432b882000a51c6e610c620974462691a97
 - name: github.com/kevinburke/ssh_config
@@ -242,6 +246,8 @@ imports:
   - scanner
   - token
   - types
+- name: github.com/subchen/go-xmldom
+  version: e1029cd9087cb9c9c8941b155414b8b8e7ce293a
 - name: github.com/trivago/tgo
   version: e4d1ddd28c17dd89ed26327cf69fded22060671b
   subpackages:

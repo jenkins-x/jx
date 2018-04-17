@@ -507,6 +507,13 @@ func (jenkins *Jenkins) CreateJob(jobItem JobItem, jobName string) error {
 	return jenkins.postXml("/createItem", params, reader, nil)
 }
 
+// Reload configuration from disk
+func (jenkins *Jenkins) Reload() error {
+	reader := bytes.NewReader([]byte{})
+	params := url.Values{}
+	return jenkins.postXml("/reload", params, reader, nil)
+}
+
 // Create a new job
 func (jenkins *Jenkins) CreateJobWithXML(jobItemXml string, jobName string) error {
 
