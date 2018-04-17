@@ -381,18 +381,17 @@ func (o *ImportOptions) DraftCreate() error {
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
 	pomName := filepath.Join(dir, "pom.xml")
-	exists, err := util.FileExists(pomName)
-	if err != nil {
-		return err
-	}
+	gradleName := filepath.Join(dir, "build.gradle")
 	lpack := ""
-	if exists {
+	if exists, err := util.FileExists(pomName); err == nil && exists {
 		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/maven")
 
 		exists, _ = util.FileExists(lpack)
 		if !exists {
 			lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/java")
 		}
+	} else if exists, err := util.FileExists(gradleName); err == nil && exists {
+		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/gradle")
 	} else {
 		// pack detection time
 		lpack, err = jxdraft.DoPackDetection(draftHome, o.Out, dir)
@@ -402,7 +401,7 @@ func (o *ImportOptions) DraftCreate() error {
 		}
 	}
 	chartsDir := filepath.Join(dir, "charts")
-	exists, err = util.FileExists(chartsDir)
+	exists, err := util.FileExists(chartsDir)
 	if exists && err == nil {
 		exists, err = util.FileExists(filepath.Join(dir, "Jenkinsfile"))
 		if exists && err == nil {
