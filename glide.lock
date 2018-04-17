@@ -1,5 +1,5 @@
 hash: a9f24bfec71a3ebe9f43a34a31e8d21fed69a84d17263dcf66d07746c6541928
-updated: 2018-04-17T08:10:41.800885768+01:00
+updated: 2018-04-17T11:04:16.281637158+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -175,7 +175,7 @@ imports:
   subpackages:
   - chyle/git
 - name: github.com/jenkins-x/draft-repo
-  version: db61a304db2a3c57e8f09134b010a28aa39fff36
+  version: 2f66cc518135de45b732980fa90af2cd056bd975
   subpackages:
   - pkg/draft/pack
 - name: github.com/jenkins-x/golang-jenkins
