@@ -1,5 +1,5 @@
-hash: cbbfd5852c16bdf912fd44a6ca37388091e0603a545b677b7a3e0010aa473b38
-updated: 2018-04-17T15:49:14.787082585+01:00
+hash: d2cb2b672df28d6374e03728b1cb87461b9a17ea276189282471d792ab902c59
+updated: 2018-04-17T18:22:40.529251827+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -12,8 +12,6 @@ imports:
   - gitea
 - name: github.com/andygrunwald/go-jira
   version: 7f227a275b41edf4802e14487c22f7d960a02488
-- name: github.com/antchfx/xpath
-  version: da6624a57bffc012f598c42f781bd5919fbfadb2
 - name: github.com/Azure/draft
   version: 5b1e4336977c69414de0ac8d11af469b920a9281
   subpackages:
@@ -183,7 +181,7 @@ imports:
   subpackages:
   - pkg/draft/pack
 - name: github.com/jenkins-x/golang-jenkins
-  version: e1e18d80e8dcee4270cffc00b58e441edadf9ba3
+  version: 39fed9b296c3d46901594ffc4afabb13adcd0411
 - name: github.com/json-iterator/go
   version: 13f86432b882000a51c6e610c620974462691a97
 - name: github.com/kevinburke/ssh_config
@@ -246,8 +244,6 @@ imports:
   - scanner
   - token
   - types
-- name: github.com/subchen/go-xmldom
-  version: e1029cd9087cb9c9c8941b155414b8b8e7ce293a
 - name: github.com/trivago/tgo
   version: e4d1ddd28c17dd89ed26327cf69fded22060671b
   subpackages:
@@ -536,7 +532,7 @@ imports:
   - util/jsonpath
   - util/retry
 - name: k8s.io/code-generator
-  version: 692f126559b2e6f2033edd97ed24174439fb3de6
+  version: c3013cad3acf45aae5adad77a4a1eefe2caf739f
 - name: k8s.io/gengo
   version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
 - name: k8s.io/helm

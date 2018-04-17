@@ -11,7 +11,7 @@ import:
   repo: https://github.com/jenkins-x/helm.git
 - package: github.com/pborman/uuid
 - package: github.com/jenkins-x/golang-jenkins
-  version: e1e18d80e8dcee4270cffc00b58e441edadf9ba3
+  version: 39fed9b296c3d46901594ffc4afabb13adcd0411
 - package: github.com/google/go-github
 - package: golang.org/x/oauth2
 - package: github.com/google/go-querystring
