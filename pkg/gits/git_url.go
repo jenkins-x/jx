@@ -164,7 +164,7 @@ func SaasGitKind(gitServiceUrl string) string {
 		return KindGitHub
 	case "http://bitbucket.org":
 		return KindBitBucket
-	case "https://bitbucket.org":
+	case BitbucketCloudURL:
 		return KindBitBucket
 	default:
 		return ""

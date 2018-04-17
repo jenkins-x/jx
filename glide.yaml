@@ -11,7 +11,7 @@ import:
   repo: https://github.com/jenkins-x/helm.git
 - package: github.com/pborman/uuid
 - package: github.com/jenkins-x/golang-jenkins
-  version: 1d7048ab8ff40de7009fdcf46312a6467127bc0e
+  version: 39fed9b296c3d46901594ffc4afabb13adcd0411
 - package: github.com/google/go-github
 - package: golang.org/x/oauth2
 - package: github.com/google/go-querystring
@@ -66,6 +66,7 @@ import:
   vcs: git
   version: v1.0.4
 - package: github.com/nlopes/slack
+- package: github.com/beevik/etree
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

@@ -1,5 +1,5 @@
-hash: 04126ec7f00ea6e8084d22d0d987761407acff3186b9c7db4a05505d7b3d85da
-updated: 2018-04-17T11:40:13.813170137+01:00
+hash: d2cb2b672df28d6374e03728b1cb87461b9a17ea276189282471d792ab902c59
+updated: 2018-04-17T18:22:40.529251827+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -31,6 +31,8 @@ imports:
   - autorest/adal
   - autorest/azure
   - autorest/date
+- name: github.com/beevik/etree
+  version: bef51f1103fddbb07ff517a3bd23b18417697fba
 - name: github.com/blang/semver
   version: c5e971dbed7850a93c23aa6ff69db5771d8e23b3
 - name: github.com/BurntSushi/toml
@@ -179,7 +181,7 @@ imports:
   subpackages:
   - pkg/draft/pack
 - name: github.com/jenkins-x/golang-jenkins
-  version: 1d7048ab8ff40de7009fdcf46312a6467127bc0e
+  version: 39fed9b296c3d46901594ffc4afabb13adcd0411
 - name: github.com/json-iterator/go
   version: 13f86432b882000a51c6e610c620974462691a97
 - name: github.com/kevinburke/ssh_config
@@ -530,7 +532,7 @@ imports:
   - util/jsonpath
   - util/retry
 - name: k8s.io/code-generator
-  version: 692f126559b2e6f2033edd97ed24174439fb3de6
+  version: c3013cad3acf45aae5adad77a4a1eefe2caf739f
 - name: k8s.io/gengo
   version: 01a732e01d00cb9a81bb0ca050d3e6d2b947927b
 - name: k8s.io/helm

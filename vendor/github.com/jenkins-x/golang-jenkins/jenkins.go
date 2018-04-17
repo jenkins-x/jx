@@ -507,6 +507,32 @@ func (jenkins *Jenkins) CreateJob(jobItem JobItem, jobName string) error {
 	return jenkins.postXml("/createItem", params, reader, nil)
 }
 
+// Reload will reload the configuration from disk
+func (jenkins *Jenkins) Reload() error {
+	return jenkins.postPath( "/reload")
+}
+
+// Restart
+func (jenkins *Jenkins) Restart() error {
+	return jenkins.postPath( "/restart")
+}
+
+// SafeRestart waits for the jenkins server to be quiet then restarts it
+func (jenkins *Jenkins) SafeRestart() error {
+	return jenkins.postPath( "/safeRestart")
+}
+
+// QuietDown
+func (jenkins *Jenkins) QuietDown() error {
+	return jenkins.postPath( "/quietDown")
+}
+
+func (jenkins *Jenkins) postPath(path string) error {
+	reader := bytes.NewReader([]byte{})
+	params := url.Values{}
+	return jenkins.postXml(path, params, reader, nil)
+}
+
 // Create a new job
 func (jenkins *Jenkins) CreateJobWithXML(jobItemXml string, jobName string) error {
 

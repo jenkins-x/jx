@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -107,6 +108,41 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 	if err != nil {
 		return name, fmt.Errorf("Failed to %s secret %s due to %s", operation, secret.Name, err)
 	}
+
+	cm, err := client.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsX, metav1.GetOptions{})
+	if err != nil {
+		return name, fmt.Errorf("Could not load Jenkins ConfigMap: %s", err)
+	}
+
+	updated, err := kube.UpdateJenkinsGitServers(cm, server, userAuth, name)
+	if err != nil {
+		return name, err
+	}
+	if updated {
+		_, err = client.CoreV1().ConfigMaps(ns).Update(cm)
+		if err != nil {
+			return name, fmt.Errorf("Failed to update Jenkins ConfigMap: %s", err)
+		}
+		o.Printf("Updated the Jenkins ConfigMap %s\n", kube.ConfigMapJenkinsX)
+
+		// wait a little bit to give k8s chance to sync the ConfigMap to the file system
+		time.Sleep(time.Second * 2)
+
+		// lets ensure that the git server + credential is in the Jenkins server configuration
+		jenk, err := o.JenkinsClient()
+		if err != nil {
+			return name, err
+		}
+		// TODO reload does not seem to reload the plugin content
+		//err = jenk.Reload()
+		err = jenk.SafeRestart()
+		if err != nil {
+			o.warnf("Failed to safe restart Jenkins after configuration change %s\n", err)
+		} else {
+			o.Printf("Safe Restarted Jenkins server\n")
+		}
+	}
+
 	return name, nil
 }
 
