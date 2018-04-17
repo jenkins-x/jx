@@ -107,6 +107,30 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 	if err != nil {
 		return name, fmt.Errorf("Failed to %s secret %s due to %s", operation, secret.Name, err)
 	}
+
+	cm, err := client.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsX, metav1.GetOptions{})
+	if err != nil {
+		return name, fmt.Errorf("Could not load Jenkins ConfigMap: %s", err)
+	}
+
+	updated, err := kube.UpdateJenkinsGitServers(cm, server, userAuth, name)
+	if err != nil {
+		return name, err
+	}
+	if updated {
+		// lets ensure that the git server + credential is in the Jenkins server configuration
+		jenk, err := o.JenkinsClient()
+		if err != nil {
+			return name, err
+		}
+		err = jenk.Reload()
+		if err != nil {
+			o.warnf("Failed to reload Jenkins after configuration change %s\n", err)
+		} else {
+			o.Printf("Reloaded Jenkins server\n")
+		}
+	}
+
 	return name, nil
 }
 
