@@ -261,10 +261,9 @@ func RoleBindings(client *kubernetes.Clientset, namespace string) (string, error
 
 	result := ""
 
-	for _, s:= range binding.Subjects {
-		result += fmt.Sprintf( "%s\t%s\t%s\n",s.Kind,s.Name,s.Namespace)
+	for _, s := range binding.Subjects {
+		result += fmt.Sprintf("%s\t%s\t%s\n", s.Kind, s.Name, s.Namespace)
 	}
 
 	return result, nil
 }
-
