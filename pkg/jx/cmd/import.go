@@ -467,12 +467,8 @@ func (o *ImportOptions) DraftCreate() error {
 
 	err = pack.CreateFrom(dir, lpack)
 	if err != nil {
-		return err
-	}
-	if err != nil {
 		// lets ignore draft errors as sometimes it can't find a pack - e.g. for environments
-		o.Printf(util.ColorWarning("WARNING: Failed to run draft create in %s due to %s"), dir, err)
-		//return fmt.Errorf("Failed to run draft create in %s due to %s", dir, err)
+		o.warnf("Failed to run draft create in %s due to %s", dir, err)
 	}
 
 	// lets rename the chart to be the same as our app name
