@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -12,6 +13,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
+)
+
+const (
+	optionOutputDir = "output-dir"
 )
 
 var (
@@ -25,9 +30,10 @@ var (
 	`)
 
 	createLileExample = templates.Examples(`
-		# Create a lile application in the current dir
+		# Create a lile application and be prompted for the folder name
 		jx create lile 
-		# Create a lile application under test1/
+
+		# Create a lile application under test1
 		jx create lile -o test1
 	`)
 )
@@ -64,7 +70,7 @@ func NewCmdCreateLile(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.OutDir, "output-dir", "o", "", "Relative directory to output the project to. Defaults to current directory")
+	cmd.Flags().StringVarP(&options.OutDir, optionOutputDir, "o", "", "Relative directory to output the project to. Defaults to current directory")
 
 	return cmd
 }
@@ -109,7 +115,6 @@ func (o CreateLileOptions) GenerateLile(dir string) error {
 
 // Run implements the command
 func (o *CreateLileOptions) Run() error {
-
 	err := o.checkLileInstalled()
 	if err != nil {
 		return err
@@ -117,7 +122,16 @@ func (o *CreateLileOptions) Run() error {
 
 	dir := o.OutDir
 	if dir == "" {
-		dir = "."
+		if o.BatchMode {
+			return util.MissingOption(optionOutputDir)
+		}
+		dir, err = util.PickValue("Pick a name for the new project:", "myapp", true)
+		if err != nil {
+			return err
+		}
+		if dir == "" || dir == "." {
+			return fmt.Errorf("Invalid project name: %s", dir)
+		}
 	}
 
 	// generate lile project
@@ -126,7 +140,7 @@ func (o *CreateLileOptions) Run() error {
 		return err
 	}
 
-	o.Printf("Created lile project at %s\n", util.ColorInfo(dir))
+	o.Printf("Created lile project at %s\n\n", util.ColorInfo(dir))
 
 	return o.ImportCreatedProject(dir)
 }
