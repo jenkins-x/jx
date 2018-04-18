@@ -7,5 +7,9 @@ const (
 
 	Chartmuseum = "chartmuseum"
 
-	DefaultBranchPattern = "master|PR-.*|feature.*"
+	// BranchPatternMasterPRsAndFeatures only match master, PRs and features
+	BranchPatternMasterPRsAndFeatures = "master|PR-.*|feature.*"
+
+	// BranchPatternMatchEverything matches everything
+	BranchPatternMatchEverything = ".*"
 )

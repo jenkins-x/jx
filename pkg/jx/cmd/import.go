@@ -155,7 +155,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().BoolVarP(&options.OverwriteJenkinsfile, "overwrite-jenkinsfile", "w", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "Should we override the Jenkinsfile in the project?")
-	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on. Defaults to '"+jenkins.DefaultBranchPattern+"'")
+	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on")
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
