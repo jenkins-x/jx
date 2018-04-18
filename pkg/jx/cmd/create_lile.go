@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/spf13/cobra"
 
@@ -13,20 +15,27 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
+const (
+	optionOutputDir = "output-dir"
+)
+
 var (
 	createLileLong = templates.LongDesc(`
 		Creates a new lile application and then optionally setups CI/CD pipelines and GitOps promotion.
 
 		Lile is an application generator for gRPC services in Go with a set of tools/libraries.
 
+		This command is expected to be run within your '$GOHOME' directory. e.g. at '$GOHOME/src/github.com/myOrgOrUser/'
+
 		For more documentation about lile see: [https://github.com/lileio/lile](https://github.com/lileio/lile)
 
 	`)
 
 	createLileExample = templates.Examples(`
-		# Create a lile application in the current dir
+		# Create a lile application and be prompted for the folder name
 		jx create lile 
-		# Create a lile application under test1/
+
+		# Create a lile application under test1
 		jx create lile -o test1
 	`)
 )
@@ -63,9 +72,35 @@ func NewCmdCreateLile(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.OutDir, "output-dir", "o", "", "Relative directory to output the project to. Defaults to current directory")
+	cmd.Flags().StringVarP(&options.OutDir, optionOutputDir, "o", "", "Relative directory to output the project to. Defaults to current directory")
 
 	return cmd
+}
+
+// checkLileInstalled lazily install lile if its not installed already
+func (o CreateLileOptions) checkLileInstalled() error {
+	_, err := o.getCommandOutput("", "lile", "help")
+	if err != nil {
+		o.Printf("Installing lile's dependencies...\n")
+		// lets install lile
+		err = o.installBrewIfRequired()
+		if err != nil {
+			return err
+		}
+		if runtime.GOOS == "darwin" && !o.NoBrew {
+			err = o.runCommand("brew", "install", "protobuf")
+			if err != nil {
+				return err
+			}
+		}
+
+		o.Printf("Downloading and building lile - this can take a while...\n")
+		err = o.runCommand("go", "get", "-u", "github.com/lileio/lile/...")
+		if err == nil {
+			o.Printf("Installed lile and its dependencies!\n")
+		}
+	}
+	return err
 }
 
 // GenerateLile creates a fresh lile project by running lile on local shell
@@ -82,19 +117,32 @@ func (o CreateLileOptions) GenerateLile(dir string) error {
 
 // Run implements the command
 func (o *CreateLileOptions) Run() error {
-
-	dir := o.OutDir
-	if dir == "" {
-		dir = "."
-	}
-
-	// generate lile project
-	err := o.GenerateLile(dir)
+	err := o.checkLileInstalled()
 	if err != nil {
 		return err
 	}
 
-	o.Printf("Created lile project at %s\n", util.ColorInfo(dir))
+	dir := o.OutDir
+	if dir == "" {
+		if o.BatchMode {
+			return util.MissingOption(optionOutputDir)
+		}
+		dir, err = util.PickValue("Pick a name for the new project:", "myapp", true)
+		if err != nil {
+			return err
+		}
+		if dir == "" || dir == "." {
+			return fmt.Errorf("Invalid project name: %s", dir)
+		}
+	}
+
+	// generate lile project
+	err = o.GenerateLile(dir)
+	if err != nil {
+		return err
+	}
+
+	o.Printf("Created lile project at %s\n\n", util.ColorInfo(dir))
 
 	return o.ImportCreatedProject(dir)
 }

@@ -52,7 +52,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			branchPattern = branch
 			o.Printf("No branch pattern specified and this repository appears to be a fork so defaulting the branch patterns to run CI/CD on to: %s\n", branchPattern)
 		} else {
-			branchPattern = jenkins.DefaultBranchPattern
+			branchPattern = jenkins.BranchPattern(gitProvider.Kind())
 		}
 	}
 

@@ -71,20 +71,29 @@ func (b *BitbucketCloudProvider) ListOrganisations() ([]GitOrganisation, error) 
 
 func BitbucketRepositoryToGitRepository(bRepo bitbucket.Repository) *GitRepository {
 	var sshURL string
+	var httpCloneURL string
 	for _, link := range bRepo.Links.Clone {
 		if link.Name == "ssh" {
 			sshURL = link.Href
 		}
 	}
-
 	isFork := false
 	if bRepo.Parent != nil {
 		isFork = true
 	}
+	if httpCloneURL == "" {
+		httpCloneURL = bRepo.Links.Html.Href
+		if !strings.HasSuffix(httpCloneURL, ".git") {
+			httpCloneURL += ".git"
+		}
+	}
+	if httpCloneURL == "" {
+		httpCloneURL = sshURL
+	}
 	return &GitRepository{
 		Name:     bRepo.Name,
 		HTMLURL:  bRepo.Links.Html.Href,
-		CloneURL: sshURL,
+		CloneURL: httpCloneURL,
 		SSHURL:   sshURL,
 		Language: bRepo.Language,
 		Fork:     isFork,
