@@ -25,6 +25,8 @@ var (
 
 		Lile is an application generator for gRPC services in Go with a set of tools/libraries.
 
+		This command is expected to be run within your '$GOHOME' directory. e.g. at '$GOHOME/src/github.com/myOrgOrUser/'
+
 		For more documentation about lile see: [https://github.com/lileio/lile](https://github.com/lileio/lile)
 
 	`)
