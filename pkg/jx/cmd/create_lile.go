@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/spf13/cobra"
 
@@ -68,6 +69,32 @@ func NewCmdCreateLile(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 	return cmd
 }
 
+// checkLileInstalled lazily install lile if its not installed already
+func (o CreateLileOptions) checkLileInstalled() error {
+	_, err := o.getCommandOutput("", "lile", "help")
+	if err != nil {
+		o.Printf("Installing lile's dependencies...\n")
+		// lets install lile
+		err = o.installBrewIfRequired()
+		if err != nil {
+			return err
+		}
+		if runtime.GOOS == "darwin" && !o.NoBrew {
+			err = o.runCommand("brew", "install", "protobuf")
+			if err != nil {
+				return err
+			}
+		}
+
+		o.Printf("Downloading and building lile - this can take a while...\n")
+		err = o.runCommand("go", "get", "-u", "github.com/lileio/lile/...")
+		if err == nil {
+			o.Printf("Installed lile and its dependencies!\n")
+		}
+	}
+	return err
+}
+
 // GenerateLile creates a fresh lile project by running lile on local shell
 func (o CreateLileOptions) GenerateLile(dir string) error {
 	var cmdOut bytes.Buffer
@@ -83,13 +110,18 @@ func (o CreateLileOptions) GenerateLile(dir string) error {
 // Run implements the command
 func (o *CreateLileOptions) Run() error {
 
+	err := o.checkLileInstalled()
+	if err != nil {
+		return err
+	}
+
 	dir := o.OutDir
 	if dir == "" {
 		dir = "."
 	}
 
 	// generate lile project
-	err := o.GenerateLile(dir)
+	err = o.GenerateLile(dir)
 	if err != nil {
 		return err
 	}

@@ -117,6 +117,22 @@ func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
 	return nil
 }
 
+func (o *CommonOptions) installBrewIfRequired() error {
+	if runtime.GOOS != "darwin" || o.NoBrew {
+		return nil
+	}
+
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	_, flag, err := o.shouldInstallBinary(binDir, "brew")
+	if err != nil || !flag {
+		return err
+	}
+	return o.installBrew()
+}
+
 func (o *CommonOptions) installKubectl() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		return o.runCommand("brew", "install", "kubectl")
