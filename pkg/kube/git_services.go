@@ -62,9 +62,22 @@ func EnsureGitServiceExistsForHost(jxClient *versioned.Clientset, devNs string, 
 			GitKind: kind,
 		},
 	}
-	_, err = gitServices.Create(gitSvc)
+	current, err := gitServices.Get(name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("Failed to create  GitService with name %s: %s", gitSvc.Name, err)
+		_, err = gitServices.Create(gitSvc)
+		if err != nil {
+			return fmt.Errorf("Failed to create GitService with name %s: %s", gitSvc.Name, err)
+		}
+	} else if current != nil {
+		if current.Spec.URL != gitSvc.Spec.URL || current.Spec.GitKind != gitSvc.Spec.GitKind {
+			current.Spec.URL = gitSvc.Spec.URL
+			current.Spec.GitKind = gitSvc.Spec.GitKind
+
+			_, err = gitServices.Update(current)
+			if err != nil {
+				return fmt.Errorf("Failed to update GitService with name %s: %s", gitSvc.Name, err)
+			}
+		}
 	}
 	return nil
 }
