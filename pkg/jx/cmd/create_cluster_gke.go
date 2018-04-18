@@ -193,7 +193,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		survey.AskOne(prompt, &minNumOfNodes, nil)
 	}
 
-	maxNumOfNodes := o.Flags.MinNumOfNodes
+	maxNumOfNodes := o.Flags.MaxNumOfNodes
 	if maxNumOfNodes == "" {
 		prompt := &survey.Input{
 			Message: "Maximum number of Nodes",
@@ -207,11 +207,11 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	// mandatory flags are machine type, num-nodes, zone,
 	args := []string{"container", "clusters", "create",
 		o.Flags.ClusterName, "--zone", zone,
-		"--num-nodes",minNumOfNodes,
+		"--num-nodes", minNumOfNodes,
 		"--machine-type", machineType,
 		"--enable-autoscaling",
-		"--min-nodes",minNumOfNodes,
-	    "--max-nodes",maxNumOfNodes}
+		"--min-nodes", minNumOfNodes,
+		"--max-nodes", maxNumOfNodes}
 
 	if o.Flags.DiskSize != "" {
 		args = append(args, "--disk-size", o.Flags.DiskSize)
