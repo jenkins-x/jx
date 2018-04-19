@@ -184,23 +184,24 @@ func (o *ImportOptions) Run() error {
 	f := o.Factory
 	f.SetBatch(o.BatchMode)
 
-	jenkinsClient, err := f.CreateJenkinsClient()
-	if err != nil {
-		return err
-	}
+	var err error
+	if !o.DryRun {
+		o.Jenkins, err = f.CreateJenkinsClient()
+		if err != nil {
+			return err
+		}
 
-	o.Jenkins = jenkinsClient
-
-	client, ns, err := o.Factory.CreateClient()
-	if err != nil {
-		return err
+		client, ns, err := o.Factory.CreateClient()
+		if err != nil {
+			return err
+		}
+		o.currentNamespace = ns
+		o.kubeClient = client
 	}
-	o.currentNamespace = ns
-	o.kubeClient = client
 
 	var userAuth *auth.UserAuth
 	if o.GitProvider == nil {
-		authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+		authConfigSvc, err := o.Factory.CreateGitAuthConfigServiceDryRun(o.DryRun)
 		if err != nil {
 			return err
 		}
@@ -338,14 +339,14 @@ func (o *ImportOptions) Run() error {
 		}
 	}
 
-	err = o.checkChartmuseumCredentialExists()
-	if err != nil {
-		return err
-	}
-
 	if o.DryRun {
 		o.Printf("dry-run so skipping import to Jenkins X\n")
 		return nil
+	}
+
+	err = o.checkChartmuseumCredentialExists()
+	if err != nil {
+		return err
 	}
 
 	return o.DoImport()
