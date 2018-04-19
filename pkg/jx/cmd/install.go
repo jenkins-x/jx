@@ -271,6 +271,13 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
+	if isOpenShiftProvider(options.Flags.Provider) {
+		err = options.enableOpenShiftSCC(ns)
+		if err != nil {
+			return err
+		}
+	}
+
 	// share the init domain option with the install options
 	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
 		options.Flags.Domain = initOpts.Flags.Domain
@@ -473,6 +480,11 @@ func (options *InstallOptions) Run() error {
 	options.Printf("\nTo import existing projects into Jenkins: %s\n", util.ColorInfo("jx import"))
 	options.Printf("To create a new Spring Boot microservice: %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	return nil
+}
+
+func (o *InstallOptions) enableOpenShiftSCC(ns string) error {
+	o.Printf("Enabling anyui for the Jenkins service account in namespace %s\n", ns)
+	return o.runCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":jenkins")
 }
 
 func (options *InstallOptions) logAdminPassword() {

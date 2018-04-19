@@ -424,6 +424,10 @@ func (o *InitOptions) initIngress() error {
 
 	}
 
+	if isOpenShiftProvider(o.Flags.Provider) {
+		o.Printf("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress\n")
+		return nil
+	}
 	podCount, err := kube.DeploymentPodCount(client, o.Flags.IngressDeployment, ingressNamespace)
 	if podCount == 0 {
 		installIngressController := false
