@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -46,18 +47,38 @@ func assertImport(t *testing.T, testDir string) error {
 	assert.NoError(t, err)
 	if err == nil {
 		_, dirName := filepath.Split(testDir)
-		assertFileExists(t, filepath.Join(testDir, "Jenkinsfile"))
+		jenkinsfile := filepath.Join(testDir, "Jenkinsfile")
+		assertFileExists(t, jenkinsfile)
 		assertFileExists(t, filepath.Join(testDir, "Dockerfile"))
 		assertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
+
+		if strings.HasPrefix(dirName, "maven") {
+			assertFileContains(t, jenkinsfile, "mvn")
+		}
+		if strings.HasPrefix(dirName, "gradle") {
+			assertFileContains(t, jenkinsfile, "gradle")
+		}
 	}
 	return err
 }
 
-func assertFileExists(t *testing.T, fileName string) {
+func assertFileContains(t *testing.T, fileName string, containsText string) {
+	if assertFileExists(t, fileName) {
+		data, err := ioutil.ReadFile(fileName)
+		assert.NoError(t, err, "Failed to read file %s", fileName)
+		if err == nil {
+			text := string(data)
+			assert.True(t, strings.Index(text, containsText) >= 0, "The file %s does not contain text: %s", fileName, containsText)
+		}
+	}
+}
+
+func assertFileExists(t *testing.T, fileName string) bool {
 	exists, err := util.FileExists(fileName)
 	assert.NoError(t, err, "Failed checking if file exists %s", fileName)
 	assert.True(t, exists, "File %s should exist", fileName)
 	if exists {
 		tests.Debugf("File %s exists\n", fileName)
 	}
+	return exists
 }
