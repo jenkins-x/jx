@@ -66,6 +66,8 @@ type ImportOptions struct {
 	BranchPattern           string
 	GitRepositoryOptions    gits.GitRepositoryOptions
 	ImportGitCommitMessage  string
+	ListDraftPacks          bool
+	DraftPack				string
 
 	DisableDotGitSearch bool
 	Jenkins             *gojenkins.Jenkins
@@ -156,12 +158,29 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.OverwriteJenkinsfile, "overwrite-jenkinsfile", "w", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "Should we override the Jenkinsfile in the project?")
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on")
+	cmd.Flags().BoolVarP(&options.ListDraftPacks, "list-packs", "", false, "list available draft packs")
+	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
 
 func (o *ImportOptions) Run() error {
+
+	if o.ListDraftPacks {
+		packs, err := allDraftPacks()
+		if err != nil {
+			log.Error(err.Error())
+			return err
+		}
+		o.Printf("Available draft packs:\n")
+		for  i :=0; i< len(packs);i++ {
+			o.Printf(packs[i]+"\n")
+		}
+		return nil
+	}
+
+
 	f := o.Factory
 	f.SetBatch(o.BatchMode)
 
@@ -380,26 +399,59 @@ func (o *ImportOptions) DraftCreate() error {
 	// TODO this is a workaround of this draft issue:
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
+
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
 	lpack := ""
-	if exists, err := util.FileExists(pomName); err == nil && exists {
-		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/maven")
-
-		exists, _ = util.FileExists(lpack)
-		if !exists {
-			lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/java")
-		}
-	} else if exists, err := util.FileExists(gradleName); err == nil && exists {
-		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/gradle")
-	} else {
-		// pack detection time
-		lpack, err = jxdraft.DoPackDetection(draftHome, o.Out, dir)
-
-		if err != nil {
+	if len(o.DraftPack) > 0 {
+		log.Info("trying to use draft pack: " + o.DraftPack +"\n");
+		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/"+o.DraftPack)
+		f,err :=util.FileExists(lpack)
+		if err != nil{
+			log.Error(err.Error())
 			return err
 		}
+		if f==false {
+			log.Error("Could not find pack: " + o.DraftPack + " going to try detect which pack to use")
+			lpack = ""
+		}
+
 	}
+
+	if len(lpack) == 0 {
+
+		if exists, err := util.FileExists(pomName); err == nil && exists {
+			pack, err := cmdutil.PomFlavour(pomName)
+			if err != nil {
+				return err
+			}
+			if len(pack) > 0 {
+				if pack == cmdutil.Liberty {
+					lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/liberty")
+				} else {
+					log.Warn("Do not know how to handle pack: " + pack)
+				}
+			} else {
+				lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/maven")
+			}
+
+			exists, _ = util.FileExists(lpack)
+			if !exists {
+				log.Warn("defaulting to maven pack")
+				lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/maven")
+			}
+		} else if exists, err := util.FileExists(gradleName); err == nil && exists {
+			lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/gradle")
+		} else {
+			// pack detection time
+			lpack, err = jxdraft.DoPackDetection(draftHome, o.Out, dir)
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+	log.Info("selected pack: " + lpack + "\n")
 	chartsDir := filepath.Join(dir, "charts")
 	exists, err := util.FileExists(chartsDir)
 	if exists && err == nil {
@@ -841,4 +893,39 @@ func (o *ImportOptions) fixDockerIgnoreFile() error {
 		}
 	}
 	return nil
+}
+
+
+func allDraftPacks() ([]string,error){
+	draftDir, err := util.DraftDir()
+	if err != nil {
+		return nil,err
+	}
+	draftHome := draftpath.Home(draftDir)
+
+	// lets make sure we have the latest draft packs
+	initOpts := InitOptions{
+		CommonOptions: CommonOptions{
+		},
+	}
+	log.Info("Getting latest packs ...\n")
+	err = initOpts.initDraft()
+	if err != nil {
+		return nil,err
+	}
+
+
+	dir := filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/")
+	files,err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil,err
+	}
+	result := make([]string,0)
+	for _,f := range files {
+		if f.IsDir() {
+			result = append(result,f.Name())
+		}
+	}
+	return result,err
+
 }
