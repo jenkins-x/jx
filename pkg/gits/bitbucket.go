@@ -201,6 +201,31 @@ func (b *BitbucketCloudProvider) ForkRepository(
 		return nil, err
 	}
 
+	_, _, err = b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugForksGet(
+		b.Context,
+		b.Username,
+		repo.Name,
+	)
+
+	// Fork isn't ready
+	if err != nil {
+
+		// Wait up to 30 seconds for the fork to be ready
+		for i := 0; i < 6; i++ {
+			_, _, err = b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugForksGet(
+				b.Context,
+				b.Username,
+				repo.Name,
+			)
+
+			if err == nil {
+				break
+			}
+
+			time.Sleep(5 * time.Second)
+		}
+	}
+
 	return BitbucketRepositoryToGitRepository(repo), nil
 }
 
@@ -283,6 +308,31 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 
 	if err != nil {
 		return nil, err
+	}
+
+	_, _, err = b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
+		b.Context,
+		b.Username,
+		data.Repo,
+		pr.Id,
+	)
+
+	if err != nil {
+		// Wait up to 30 seconds for the PR to be ready.
+		for i := 0; i < 6; i++ {
+			_, _, err = b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
+				b.Context,
+				b.Username,
+				data.Repo,
+				pr.Id,
+			)
+
+			if err == nil {
+				break
+			}
+
+			time.Sleep(5 * time.Second)
+		}
 	}
 
 	i := int(pr.Id)
