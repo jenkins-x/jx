@@ -1,0 +1,2447 @@
+{
+  "basePath": "/", 
+  "consumes": [
+    "application/json"
+  ], 
+  "definitions": {
+    "AnchoreImage": {
+      "description": "A unique image in the engine. May have multiple tags or references. Unique to an image content across registries or repositories.", 
+      "properties": {
+        "analysis_status": {
+          "description": "A state value for the current status of the analysis progress of the image", 
+          "enum": [
+            "not_analyzed", 
+            "analyzing", 
+            "analyzed"
+          ], 
+          "type": "string"
+        }, 
+        "created_at": {
+          "format": "date-time", 
+          "type": "string"
+        }, 
+        "imageDigest": {
+          "type": "string"
+        }, 
+        "image_content": {
+          "$ref": "#/definitions/ImageContent"
+        }, 
+        "image_detail": {
+          "description": "Details specific to an image reference and type such as tag and image source", 
+          "items": {
+            "$ref": "#/definitions/ImageDetail"
+          }, 
+          "type": "array"
+        }, 
+        "image_status": {
+          "description": "State of the image", 
+          "enum": [
+            "active", 
+            "inactive", 
+            "disabled"
+          ], 
+          "type": "string"
+        }, 
+        "last_updated": {
+          "format": "date-time", 
+          "type": "string"
+        }, 
+        "userId": {
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "AnchoreImageList": {
+      "description": "A list of Anchore Images", 
+      "items": {
+        "$ref": "#/definitions/AnchoreImage"
+      }, 
+      "type": "array"
+    }, 
+    "AnchoreImageTagSummary": {
+      "description": "A unique image in the engine.", 
+      "properties": {
+        "analysis_status": {
+          "type": "string"
+        }, 
+        "created_at": {
+          "type": "integer"
+        }, 
+        "fulltag": {
+          "type": "string"
+        }, 
+        "imageDigest": {
+          "type": "string"
+        }, 
+        "imageId": {
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "ApiErrorResponse": {
+      "description": "Generic HTTP API error response", 
+      "properties": {
+        "code": {
+          "format": "int32", 
+          "type": "integer"
+        }, 
+        "detail": {
+          "description": "Details structure for additional information about the error if available. Content and structure will be error specific.", 
+          "type": "object"
+        }, 
+        "error_type": {
+          "type": "string"
+        }, 
+        "message": {
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "ContentResponse": {
+      "description": "Generic wrapper for content listings from images", 
+      "properties": {
+        "content": {
+          "items": {
+            "type": "object"
+          }, 
+          "type": "array"
+        }, 
+        "content_type": {
+          "type": "string"
+        }, 
+        "imageDigest": {
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "GateSpec": {
+      "description": "A description of the set of gates available in this engine and the triggers and parameters supported", 
+      "properties": {
+        "description": {
+          "description": "Description of the gate", 
+          "type": "string"
+        }, 
+        "name": {
+          "description": "Gate name, as it would appear in a policy document", 
+          "type": "string"
+        }, 
+        "triggers": {
+          "description": "List of the triggers that can fire for this Gate", 
+          "items": {
+            "$ref": "#/definitions/TriggerSpec"
+          }, 
+          "type": "array"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "ImageAnalysisReport": {
+      "description": "Analysis report json to be imported", 
+      "type": "object"
+    }, 
+    "ImageAnalysisRequest": {
+      "description": "A request to add an image to be watched and analyzed by the engine. Optionally include the dockerfile content. Either digest or tag must be present", 
+      "properties": {
+        "annotations": {
+          "description": "Annotations to be associated with the added image in key/value form", 
+          "type": "object"
+        }, 
+        "digest": {
+          "description": "A full pullable digest reference for an image. e.g. docker.io/nginx@sha256:abc123", 
+          "type": "string"
+        }, 
+        "dockerfile": {
+          "description": "Content of the dockerfile for the image, if available", 
+          "type": "string"
+        }, 
+        "image_type": {
+          "description": "The type of image this is adding, defaults to \"docker\"", 
+          "type": "string"
+        }, 
+        "tag": {
+          "description": "Full pullable tag reference for image. e.g. docker.io/nginx:latest", 
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "ImageContent": {
+      "description": "A metadata content record for a specific image, containing different content type entries", 
+      "type": "object"
+    }, 
+    "ImageDetail": {
+      "description": "A metadata detail record for a specific image. Multiple detail records may map a single catalog image.", 
+      "properties": {
+        "created_at": {
+          "format": "date-time", 
+          "type": "string"
+        }, 
+        "dockerfile": {
+          "type": "string"
+        }, 
+        "fullDigest": {
+          "description": "Full docker-pullable digest string including the registry url and repository necessary get the image", 
+          "type": "string"
+        }, 
+        "fulltag": {
+          "description": "Full docker-pullalbe tag string referencing the image", 
+          "type": "string"
+        }, 
+        "imageDigest": {
+          "description": "The parent Anchore Image record to which this detail maps", 
+          "type": "string"
+        }, 
+        "imageId": {
+          "type": "string"
+        }, 
+        "last_updated": {
+          "format": "date-time", 
+          "type": "string"
+        }, 
+        "registry": {
+          "type": "string"
+        }, 
+        "repo": {
+          "type": "string"
+        }, 
+        "userId": {
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "ImageFilter": {
+      "description": "Filter for an image list by id, tag, or digest, but not both", 
+      "properties": {
+        "digest": {
+          "type": "string"
+        }, 
+        "tag": {
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "ImageRef": {
+      "description": "A reference to an image", 
+      "properties": {
+        "type": {
+          "enum": [
+            "tag", 
+            "digest", 
+            "id"
+          ]
+        }, 
+        "value": {
+          "type": "string"
+        }
+      }, 
+      "required": [
+        "type", 
+        "value"
+      ], 
+      "type": "object"
+    }, 
+    "ImageSelectionRule": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }, 
+        "image": {
+          "$ref": "#/definitions/ImageRef"
+        }, 
+        "name": {
+          "type": "string"
+        }, 
+        "registry": {
+          "type": "string"
+        }, 
+        "repository": {
+          "type": "string"
+        }
+      }, 
+      "required": [
+        "name", 
+        "registry", 
+        "repository", 
+        "image"
+      ], 
+      "type": "object"
+    }, 
+    "MappingRule": {
+      "properties": {
+        "id": {
+          "type": "string"
+        }, 
+        "image": {
+          "$ref": "#/definitions/ImageRef"
+        }, 
+        "name": {
+          "type": "string"
+        }, 
+        "policy_id": {
+          "type": "string"
+        }, 
+        "registry": {
+          "type": "string"
+        }, 
+        "repository": {
+          "type": "string"
+        }, 
+        "whitelist_ids": {
+          "items": {
+            "type": "string"
+          }, 
+          "type": "array"
+        }
+      }, 
+      "required": [
+        "name", 
+        "whitelist_ids", 
+        "policy_id", 
+        "registry", 
+        "repository", 
+        "image"
+      ], 
+      "type": "object"
+    }, 
+    "Policy": {
+      "properties": {
+        "comment": {
+          "type": "string"
+        }, 
+        "id": {
+          "type": "string"
+        }, 
+        "name": {
+          "type": "string"
+        }, 
+        "rules": {
+          "items": {
+            "$ref": "#/definitions/PolicyRule"
+          }, 
+          "type": "array"
+        }, 
+        "version": {
+          "type": "string"
+        }
+      }, 
+      "required": [
+        "id", 
+        "version"
+      ], 
+      "type": "object"
+    }, 
+    "PolicyBundle": {
+      "description": "A bundle containing a set of policies, whitelists, and rules for mapping them to specific images", 
+      "properties": {
+        "blacklisted_images": {
+          "description": "List of mapping rules that define which images should always result in a STOP/FAIL policy result regardless of policy content or presence in whitelisted_images", 
+          "items": {
+            "$ref": "#/definitions/ImageSelectionRule"
+          }, 
+          "type": "array"
+        }, 
+        "comment": {
+          "description": "Description of the bundle, human readable", 
+          "type": "string"
+        }, 
+        "id": {
+          "description": "Id of the bundle", 
+          "type": "string"
+        }, 
+        "mappings": {
+          "description": "Mapping rules for defining which policy and whitelist(s) to apply to an image based on a match of the image tag or id. Evaluated in order.", 
+          "items": {
+            "$ref": "#/definitions/MappingRule"
+          }, 
+          "type": "array"
+        }, 
+        "name": {
+          "description": "Human readable name for the bundle", 
+          "type": "string"
+        }, 
+        "policies": {
+          "description": "Policies which define the go/stop/warn status of an image using rule matches on image properties", 
+          "items": {
+            "$ref": "#/definitions/Policy"
+          }, 
+          "type": "array"
+        }, 
+        "version": {
+          "description": "Version id for this bundle format", 
+          "type": "string"
+        }, 
+        "whitelisted_images": {
+          "description": "List of mapping rules that define which images should always be passed (unless also on the blacklist), regardless of policy result.", 
+          "items": {
+            "$ref": "#/definitions/ImageSelectionRule"
+          }, 
+          "type": "array"
+        }, 
+        "whitelists": {
+          "description": "Whitelists which define which policy matches to disregard explicitly in the final policy decision", 
+          "items": {
+            "$ref": "#/definitions/Whitelist"
+          }, 
+          "type": "array"
+        }
+      }, 
+      "required": [
+        "id", 
+        "version", 
+        "policies", 
+        "mappings"
+      ], 
+      "type": "object"
+    }, 
+    "PolicyBundleList": {
+      "description": "List of PolicyBundleRecord objects", 
+      "items": {
+        "$ref": "#/definitions/PolicyBundleRecord"
+      }, 
+      "type": "array"
+    }, 
+    "PolicyBundleRecord": {
+      "description": "A policy bundle plus some metadata", 
+      "properties": {
+        "active": {
+          "description": "True if the bundle is currently defined to be used automatically", 
+          "type": "boolean"
+        }, 
+        "created_at": {
+          "format": "date-time", 
+          "type": "string"
+        }, 
+        "last_updated": {
+          "format": "date-time", 
+          "type": "string"
+        }, 
+        "policyId": {
+          "description": "The bundle's identifier", 
+          "type": "string"
+        }, 
+        "policy_source": {
+          "description": "Source location of where the policy bundle originated", 
+          "type": "string"
+        }, 
+        "policybundle": {
+          "$ref": "#/definitions/PolicyBundle"
+        }, 
+        "userId": {
+          "description": "UserId of the user that owns the bundle", 
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "PolicyEvaluation": {
+      "description": "Evaluation response object", 
+      "type": "object"
+    }, 
+    "PolicyRule": {
+      "description": "A rule that defines and decision value if the match is found true for a given image.", 
+      "properties": {
+        "action": {
+          "enum": [
+            "GO", 
+            "STOP", 
+            "WARN"
+          ]
+        }, 
+        "gate": {
+          "type": "string"
+        }, 
+        "id": {
+          "type": "string"
+        }, 
+        "params": {
+          "items": {
+            "properties": {
+              "name": {
+                "type": "string"
+              }, 
+              "value": {
+                "type": "string"
+              }
+            }, 
+            "required": [
+              "name", 
+              "value"
+            ], 
+            "type": "object"
+          }, 
+          "type": "array"
+        }, 
+        "trigger": {
+          "type": "string"
+        }
+      }, 
+      "required": [
+        "gate", 
+        "trigger", 
+        "action"
+      ], 
+      "type": "object"
+    }, 
+    "PruneCandidate": {
+      "description": "A resource that can be pruned", 
+      "type": "object"
+    }, 
+    "PruneCandidateList": {
+      "description": "A list of prune candidate resources", 
+      "items": {
+        "$ref": "#/definitions/PruneCandidate"
+      }, 
+      "type": "array"
+    }, 
+    "RegistryConfiguration": {
+      "description": "A registry entry describing the endpoint and credentials for a registry to pull images from", 
+      "properties": {
+        "created_at": {
+          "format": "date-time", 
+          "type": "string"
+        }, 
+        "last_upated": {
+          "format": "date-time", 
+          "type": "string"
+        }, 
+        "registry": {
+          "description": "hostname:port string for accessing the registry, as would be used in a docker pull operation", 
+          "type": "string"
+        }, 
+        "registry_type": {
+          "description": "Type of registry", 
+          "type": "string"
+        }, 
+        "registry_user": {
+          "description": "Username portion of credential to use for this registry", 
+          "type": "string"
+        }, 
+        "registry_verify": {
+          "description": "Use TLS/SSL verification for the registry URL", 
+          "type": "boolean"
+        }, 
+        "userId": {
+          "description": "Engine user that owns this registry entry", 
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "RegistryConfigurationList": {
+      "description": "List of registry configurations", 
+      "items": {
+        "$ref": "#/definitions/RegistryConfiguration"
+      }, 
+      "type": "array"
+    }, 
+    "RepositoryTagList": {
+      "description": "List of discovered tags in a repository", 
+      "items": {
+        "type": "string"
+      }, 
+      "type": "array"
+    }, 
+    "Service": {
+      "description": "A service status record", 
+      "properties": {
+        "base_url": {
+          "description": "The url to reach the service, including port as needed", 
+          "type": "string"
+        }, 
+        "host_id": {
+          "description": "The unique id of the host on which the service is executing", 
+          "type": "string"
+        }, 
+        "service_name": {
+          "description": "Registered service name", 
+          "type": "string"
+        }, 
+        "status_message": {
+          "description": "A state indicating the condition of the service. Normal operation is 'registered'", 
+          "type": "string"
+        }, 
+        "version": {
+          "description": "The version of the service as reported by the service implementation on registration", 
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "ServiceList": {
+      "description": "A list of service objects", 
+      "items": {
+        "$ref": "#/definitions/Service"
+      }, 
+      "type": "array"
+    }, 
+    "StatusResponse": {
+      "description": "System status response", 
+      "properties": {
+        "busy": {
+          "type": "boolean"
+        }, 
+        "message": {
+          "type": "string"
+        }, 
+        "up": {
+          "type": "boolean"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "Subscription": {
+      "description": "Subscription entry", 
+      "properties": {
+        "active": {
+          "description": "Is the subscription currently active", 
+          "type": "boolean"
+        }, 
+        "subscription_id": {
+          "description": "the unique id for this subscription record", 
+          "type": "string"
+        }, 
+        "subscription_key": {
+          "description": "The key value that the subscription references. E.g. a tag value or a repo name.", 
+          "type": "string"
+        }, 
+        "subscription_type": {
+          "description": "The type of the subscription", 
+          "enum": [
+            "policy_eval", 
+            "tag_update", 
+            "vuln_update", 
+            "repo_update"
+          ], 
+          "type": "string"
+        }, 
+        "subscription_value": {
+          "description": "The value of the subscription target", 
+          "type": "string"
+        }, 
+        "userId": {
+          "description": "The userId of the subscribed user", 
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "SubscriptionList": {
+      "description": "List of subscriptions", 
+      "items": {
+        "$ref": "#/definitions/Subscription"
+      }, 
+      "type": "array"
+    }, 
+    "SubscriptionRequest": {
+      "description": "A subscription entry to add to the system", 
+      "properties": {
+        "subscription_key": {
+          "type": "string"
+        }, 
+        "subscription_type": {
+          "enum": [
+            "policy_eval", 
+            "tag_update", 
+            "vuln_update", 
+            "repo_update"
+          ], 
+          "type": "string"
+        }, 
+        "subscription_value": {
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "SubscriptionUpdate": {
+      "description": "A modification to a subscription entry to change its status or value", 
+      "properties": {
+        "active": {
+          "description": "Toggle the subscription processing on or off", 
+          "type": "boolean"
+        }, 
+        "subscription_value": {
+          "description": "The new subscription value, e.g. the new tag to be subscribed to", 
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "SystemStatusResponse": {
+      "description": "System status response", 
+      "properties": {
+        "busy": {
+          "type": "boolean"
+        }, 
+        "detail": {
+          "type": "object"
+        }, 
+        "message": {
+          "type": "string"
+        }, 
+        "up": {
+          "type": "boolean"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "TriggerParamSpec": {
+      "properties": {
+        "description": {
+          "type": "string"
+        }, 
+        "name": {
+          "description": "Parameter name as it appears in policy document", 
+          "type": "string"
+        }, 
+        "required": {
+          "description": "Is this a required parameter or optional", 
+          "type": "boolean"
+        }, 
+        "validator": {
+          "description": "If present, a definition for validation of input. Typically a jsonschema object that can be used to validate an input against.", 
+          "type": "object"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "TriggerSpec": {
+      "description": "Definition of a trigger and its parameters", 
+      "properties": {
+        "description": {
+          "description": "Trigger description for what it tests and when it will fire during evaluation", 
+          "type": "string"
+        }, 
+        "name": {
+          "description": "Name of the trigger as it would appear in a policy document", 
+          "type": "string"
+        }, 
+        "parameters": {
+          "description": "The list of parameters that are valid for this trigger", 
+          "items": {
+            "$ref": "#/definitions/TriggerParamSpec"
+          }, 
+          "type": "array"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "Vulnerability": {
+      "properties": {
+        "fix": {
+          "description": "The package containing a fix, if available", 
+          "type": "string"
+        }, 
+        "package": {
+          "description": "The package name and version that are vulnerable in the image", 
+          "type": "string"
+        }, 
+        "severity": {
+          "description": "The severity of the vulnerability", 
+          "type": "string"
+        }, 
+        "url": {
+          "description": "The url for more information about the vulnerability", 
+          "type": "string"
+        }, 
+        "vuln": {
+          "description": "The vulnerability identifier, such as CVE-2017-100, or RHSA-2017123", 
+          "type": "string"
+        }
+      }, 
+      "type": "object"
+    }, 
+    "VulnerabilityList": {
+      "description": "List of Vulnerability objects", 
+      "items": {
+        "$ref": "#/definitions/Vulnerability"
+      }, 
+      "type": "array"
+    }, 
+    "Whitelist": {
+      "description": "A collection of whitelist items to match a policy evaluation against.", 
+      "properties": {
+        "comment": {
+          "type": "string"
+        }, 
+        "id": {
+          "type": "string"
+        }, 
+        "items": {
+          "items": {
+            "$ref": "#/definitions/WhitelistItem"
+          }, 
+          "type": "array"
+        }, 
+        "name": {
+          "type": "string"
+        }, 
+        "version": {
+          "type": "string"
+        }
+      }, 
+      "required": [
+        "id", 
+        "version"
+      ], 
+      "type": "object"
+    }, 
+    "WhitelistItem": {
+      "description": "Identifies a specific gate and trigger match from a policy against an image and indicates it should be ignored in final policy decisions", 
+      "properties": {
+        "gate": {
+          "type": "string"
+        }, 
+        "id": {
+          "type": "string"
+        }, 
+        "trigger_id": {
+          "type": "string"
+        }
+      }, 
+      "required": [
+        "gate", 
+        "trigger_id"
+      ], 
+      "type": "object"
+    }
+  }, 
+  "info": {
+    "contact": {
+      "email": "nurmi@anchore.com"
+    }, 
+    "description": "This is the Anchore Engine API. Provides the primary external API for users of the service.", 
+    "license": {
+      "name": "Apache 2.0", 
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }, 
+    "title": "Anchore Engine API Server", 
+    "version": "0.1.3"
+  }, 
+  "paths": {
+    "/": {
+      "get": {
+        "description": "Simple status check", 
+        "operationId": "ping", 
+        "responses": {
+          "200": {
+            "description": "Version check response"
+          }
+        }, 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }
+    }, 
+    "/imageimport": {
+      "post": {
+        "operationId": "import_image", 
+        "parameters": [
+          {
+            "in": "body", 
+            "name": "analysis_report", 
+            "required": true, 
+            "schema": {
+              "$ref": "#/definitions/ImageAnalysisReport"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Import task accepted", 
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/AnchoreImage"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Import and image analysis directly", 
+        "tags": [
+          "Images"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images": {
+      "get": {
+        "description": "List all images visible to the user", 
+        "operationId": "list_images", 
+        "parameters": [
+          {
+            "description": "Include image history in the response", 
+            "in": "query", 
+            "name": "history", 
+            "required": false, 
+            "type": "boolean"
+          }, 
+          {
+            "in": "body", 
+            "name": "image_to_get", 
+            "required": false, 
+            "schema": {
+              "$ref": "#/definitions/ImageFilter"
+            }, 
+            "x-nullable": true
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "successful operation", 
+            "schema": {
+              "description": "List of AnchoreImage objects", 
+              "items": {
+                "$ref": "#/definitions/AnchoreImage"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "List all visible images", 
+        "tags": [
+          "Images"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }, 
+      "post": {
+        "description": "Creates a new analysis task that is executed asynchronously", 
+        "operationId": "add_image", 
+        "parameters": [
+          {
+            "description": "Override any existing entry in the system", 
+            "in": "query", 
+            "name": "force", 
+            "required": false, 
+            "type": "boolean"
+          }, 
+          {
+            "description": "Instruct engine to automatically begin watching the added tag for updates from registry", 
+            "in": "query", 
+            "name": "autosubscribe", 
+            "required": false, 
+            "type": "boolean"
+          }, 
+          {
+            "in": "body", 
+            "name": "image", 
+            "required": true, 
+            "schema": {
+              "$ref": "#/definitions/ImageAnalysisRequest"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Successfully added image to analysis queue", 
+            "schema": {
+              "description": "List of AnchoreImage objects, should be of length 1", 
+              "items": {
+                "$ref": "#/definitions/AnchoreImage"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Submit a new image for analysis by the engine", 
+        "tags": [
+          "Images"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/by_id/{imageId}": {
+      "delete": {
+        "operationId": "delete_image_by_imageId", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageId", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "query", 
+            "name": "force", 
+            "required": false, 
+            "type": "boolean"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Image deletion success"
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Delete image by docker imageId", 
+        "tags": [
+          "Images"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }, 
+      "get": {
+        "operationId": "get_image_by_imageId", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageId", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Image lookup success", 
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/AnchoreImage"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Lookup image by docker imageId", 
+        "tags": [
+          "Images"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/by_id/{imageId}/check": {
+      "get": {
+        "description": "Get the policy evaluation for the given image", 
+        "operationId": "get_image_policy_check_by_imageId", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageId", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "query", 
+            "name": "policyId", 
+            "required": false, 
+            "type": "string"
+          }, 
+          {
+            "in": "query", 
+            "name": "tag", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "query", 
+            "name": "detail", 
+            "required": false, 
+            "type": "boolean"
+          }, 
+          {
+            "in": "query", 
+            "name": "history", 
+            "required": false, 
+            "type": "boolean"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Policy evaluation success", 
+            "schema": {
+              "$ref": "#/definitions/PolicyEvaluation"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Check policy evaluation status for image", 
+        "tags": [
+          "Images", 
+          "Policy Evaluation"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/by_id/{imageId}/content": {
+      "get": {
+        "operationId": "list_image_content_by_imageid", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageId", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Content of specified type from the image", 
+            "schema": {
+              "items": {
+                "type": "string"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "List image content types", 
+        "tags": [
+          "Images", 
+          "Image Content"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/by_id/{imageId}/content/{ctype}": {
+      "get": {
+        "operationId": "get_image_content_by_type_imageId", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageId", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "path", 
+            "name": "ctype", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Content of specified type from the image", 
+            "schema": {
+              "$ref": "#/definitions/ContentResponse"
+            }
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get the content of an image by type", 
+        "tags": [
+          "Images", 
+          "Image Content"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/by_id/{imageId}/vuln": {
+      "get": {
+        "operationId": "get_image_vulnerability_types_by_imageId", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageId", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Vulnerability listing for the image", 
+            "schema": {
+              "items": {
+                "type": "string"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get vulnerability types", 
+        "tags": [
+          "Images", 
+          "Vulnerabilities"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/by_id/{imageId}/vuln/{vtype}": {
+      "get": {
+        "operationId": "get_image_vulnerabilities_by_type_imageId", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageId", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "path", 
+            "name": "vtype", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Vulnerability listing for the image", 
+            "schema": {
+              "$ref": "#/definitions/VulnerabilityList"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get vulnerabilities by type", 
+        "tags": [
+          "Images", 
+          "Vulnerabilities"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/{imageDigest}": {
+      "delete": {
+        "operationId": "delete_image", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageDigest", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Image deletion success"
+          }
+        }, 
+        "summary": "Delete an image analysis", 
+        "tags": [
+          "Images"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }, 
+      "get": {
+        "operationId": "get_image", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageDigest", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Image lookup success", 
+            "schema": {
+              "description": "List of length 1 of AnchoreImage", 
+              "items": {
+                "$ref": "#/definitions/AnchoreImage"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get image metadata", 
+        "tags": [
+          "Images"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/{imageDigest}/check": {
+      "get": {
+        "description": "Get the policy evaluation for the given image", 
+        "operationId": "get_image_policy_check", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageDigest", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "query", 
+            "name": "policyId", 
+            "required": false, 
+            "type": "string"
+          }, 
+          {
+            "in": "query", 
+            "name": "tag", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "query", 
+            "name": "detail", 
+            "required": false, 
+            "type": "boolean"
+          }, 
+          {
+            "in": "query", 
+            "name": "history", 
+            "required": false, 
+            "type": "boolean"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Policy evaluation success", 
+            "schema": {
+              "$ref": "#/definitions/PolicyEvaluation"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Check policy evaluation status for image", 
+        "tags": [
+          "Images", 
+          "Policy Evaluation"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/{imageDigest}/content": {
+      "get": {
+        "operationId": "list_image_content", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageDigest", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Content listing for the image", 
+            "schema": {
+              "items": {
+                "type": "string"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "List image content types", 
+        "tags": [
+          "Images", 
+          "Image Content"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/{imageDigest}/content/{ctype}": {
+      "get": {
+        "operationId": "get_image_content_by_type", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageDigest", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "path", 
+            "name": "ctype", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Content of specified type from the image", 
+            "schema": {
+              "$ref": "#/definitions/ContentResponse"
+            }
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get the content of an image by type", 
+        "tags": [
+          "Images", 
+          "Image Content"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/{imageDigest}/vuln": {
+      "get": {
+        "operationId": "get_image_vulnerability_types", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageDigest", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Vulnerability listing for the image", 
+            "schema": {
+              "items": {
+                "type": "string"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get vulnerability types", 
+        "tags": [
+          "Images", 
+          "Vulnerabilities"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/images/{imageDigest}/vuln/{vtype}": {
+      "get": {
+        "operationId": "get_image_vulnerabilities_by_type", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "imageDigest", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "path", 
+            "name": "vtype", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Vulnerability listing for the image", 
+            "schema": {
+              "$ref": "#/definitions/VulnerabilityList"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get vulnerabilities by type", 
+        "tags": [
+          "Images", 
+          "Vulnerabilities"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/policies": {
+      "get": {
+        "description": "List all saved policy bundles", 
+        "operationId": "list_policies", 
+        "parameters": [
+          {
+            "description": "Include policy bundle detail in the form of the full bundle content for each entry", 
+            "in": "query", 
+            "name": "detail", 
+            "required": false, 
+            "type": "boolean"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Policy listing", 
+            "schema": {
+              "$ref": "#/definitions/PolicyBundleList"
+            }
+          }
+        }, 
+        "summary": "List policies", 
+        "tags": [
+          "Policies"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.policies"
+      }, 
+      "post": {
+        "description": "Adds a new policy bundle to the system", 
+        "operationId": "add_policy", 
+        "parameters": [
+          {
+            "in": "body", 
+            "name": "bundle", 
+            "required": true, 
+            "schema": {
+              "$ref": "#/definitions/PolicyBundle"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Saved bundle", 
+            "schema": {
+              "$ref": "#/definitions/PolicyBundleRecord"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Add a new policy", 
+        "tags": [
+          "Policies"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.policies"
+      }
+    }, 
+    "/policies/{policyId}": {
+      "delete": {
+        "description": "Delete the specified policy", 
+        "operationId": "delete_policy", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "policyId", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Delete success"
+          }, 
+          "404": {
+            "description": "Policy not found to delete", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Delete policy", 
+        "tags": [
+          "Policies"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.policies"
+      }, 
+      "get": {
+        "description": "Get the policy bundle content", 
+        "operationId": "get_policy", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "policyId", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "description": "Include policy bundle detail in the form of the full bundle content for each entry", 
+            "in": "query", 
+            "name": "detail", 
+            "required": false, 
+            "type": "boolean"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "A policy bundle", 
+            "schema": {
+              "$ref": "#/definitions/PolicyBundleRecord"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get specific policy", 
+        "tags": [
+          "Policies"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.policies"
+      }, 
+      "put": {
+        "description": "Update/replace and existing policy", 
+        "operationId": "update_policy", 
+        "parameters": [
+          {
+            "in": "body", 
+            "name": "bundle", 
+            "required": true, 
+            "schema": {
+              "$ref": "#/definitions/PolicyBundleRecord"
+            }
+          }, 
+          {
+            "in": "path", 
+            "name": "policyId", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "description": "Mark policy as active", 
+            "in": "query", 
+            "name": "active", 
+            "required": false, 
+            "type": "boolean"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "A policy bundle", 
+            "schema": {
+              "$ref": "#/definitions/PolicyBundleRecord"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Update policy", 
+        "tags": [
+          "Policies"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.policies"
+      }
+    }, 
+    "/registries": {
+      "get": {
+        "description": "List all configured registries the system can/will watch", 
+        "operationId": "list_registries", 
+        "responses": {
+          "200": {
+            "description": "Registry listing", 
+            "schema": {
+              "$ref": "#/definitions/RegistryConfigurationList"
+            }
+          }
+        }, 
+        "summary": "List configured registries", 
+        "tags": [
+          "Registries"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.registries"
+      }, 
+      "post": {
+        "description": "Adds a new registry to the system", 
+        "operationId": "create_registry", 
+        "parameters": [
+          {
+            "in": "body", 
+            "name": "registrydata", 
+            "required": true, 
+            "schema": {
+              "$ref": "#/definitions/RegistryConfiguration"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Saved registry configuration", 
+            "schema": {
+              "$ref": "#/definitions/RegistryConfiguration"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Add a new registry", 
+        "tags": [
+          "Registries"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.registries"
+      }
+    }, 
+    "/registries/{registry}": {
+      "delete": {
+        "description": "Delete a registry configuration record from the system. Does not remove any images.", 
+        "operationId": "delete_registry", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "registry", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Delete success"
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Delete a registry configuration", 
+        "tags": [
+          "Registries"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.registries"
+      }, 
+      "get": {
+        "description": "Get information on a specific registry", 
+        "operationId": "get_registry", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "registry", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Registry configuration", 
+            "schema": {
+              "$ref": "#/definitions/RegistryConfiguration"
+            }
+          }
+        }, 
+        "summary": "Get a specific registry configuration", 
+        "tags": [
+          "Registries"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.registries"
+      }, 
+      "put": {
+        "description": "Replaces an existing registry record with the given record", 
+        "operationId": "update_registry", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "registry", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "body", 
+            "name": "registrydata", 
+            "required": true, 
+            "schema": {
+              "$ref": "#/definitions/RegistryConfiguration"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Updated registry configuration", 
+            "schema": {
+              "$ref": "#/definitions/RegistryConfiguration"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Update/replace a registry configuration", 
+        "tags": [
+          "Registries"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.registries"
+      }
+    }, 
+    "/repositories": {
+      "post": {
+        "description": "", 
+        "operationId": "add_repository", 
+        "parameters": [
+          {
+            "description": "full repository to add e.g. docker.io/library/alpine", 
+            "in": "query", 
+            "name": "repository", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "description": "flag to enable/disable auto tag_update activation when new images from a repo are added", 
+            "in": "query", 
+            "name": "autosubscribe", 
+            "required": false, 
+            "type": "boolean"
+          }, 
+          {
+            "description": "use specified existing tag to perform repo scan (default is 'latest')", 
+            "in": "query", 
+            "name": "lookuptag", 
+            "required": false, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Repository and discovered tags added", 
+            "schema": {
+              "$ref": "#/definitions/RepositoryTagList"
+            }
+          }
+        }, 
+        "summary": "Add repository to watch", 
+        "tags": [
+          "catalog"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/status": {
+      "get": {
+        "description": "Get the API service status", 
+        "operationId": "get_status", 
+        "responses": {
+          "200": {
+            "description": "Status listing", 
+            "schema": {
+              "$ref": "#/definitions/StatusResponse"
+            }
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Service status", 
+        "tags": [
+          "System"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }
+    }, 
+    "/subscriptions": {
+      "get": {
+        "operationId": "list_subscriptions", 
+        "responses": {
+          "200": {
+            "description": "Subscription listing", 
+            "schema": {
+              "$ref": "#/definitions/SubscriptionList"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "List all subscriptions", 
+        "tags": [
+          "Subscriptions"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.subscriptions"
+      }, 
+      "post": {
+        "description": "Create a new subscription to watch a tag and get notifications of changes", 
+        "operationId": "add_subscription", 
+        "parameters": [
+          {
+            "in": "body", 
+            "name": "subscription", 
+            "required": true, 
+            "schema": {
+              "$ref": "#/definitions/SubscriptionRequest"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Subscription add success", 
+            "schema": {
+              "$ref": "#/definitions/Subscription"
+            }
+          }
+        }, 
+        "summary": "Add a subscription of a specific type", 
+        "tags": [
+          "Subscriptions"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.subscriptions"
+      }
+    }, 
+    "/subscriptions/{subscriptionId}": {
+      "delete": {
+        "operationId": "delete_subscription", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "subscriptionId", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Delete success"
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Delete subscriptions of a specific type", 
+        "tags": [
+          "Subscriptions"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.subscriptions"
+      }, 
+      "get": {
+        "operationId": "get_subscription", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "subscriptionId", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Filtered subscription list by type", 
+            "schema": {
+              "$ref": "#/definitions/SubscriptionList"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get a specific subscription set", 
+        "tags": [
+          "Subscriptions"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.subscriptions"
+      }, 
+      "put": {
+        "operationId": "update_subscription", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "subscriptionId", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "body", 
+            "name": "subscription", 
+            "required": true, 
+            "schema": {
+              "$ref": "#/definitions/SubscriptionUpdate"
+            }
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Subscription add success", 
+            "schema": {
+              "$ref": "#/definitions/Subscription"
+            }
+          }
+        }, 
+        "summary": "Update an existing and specific subscription", 
+        "tags": [
+          "Subscriptions"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.subscriptions"
+      }
+    }, 
+    "/summaries/imagetags": {
+      "get": {
+        "description": "List all image tags visible to the user", 
+        "operationId": "list_imagetags", 
+        "responses": {
+          "200": {
+            "description": "successful operation", 
+            "schema": {
+              "description": "List of AnchoreImageTagSummary objects", 
+              "items": {
+                "$ref": "#/definitions/AnchoreImageTagSummary"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "List all visible image digests and tags", 
+        "tags": [
+          "ImageTags"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.images"
+      }
+    }, 
+    "/system": {
+      "get": {
+        "description": "Get the system status including queue lengths", 
+        "operationId": "get_service_detail", 
+        "responses": {
+          "200": {
+            "description": "Status listing", 
+            "schema": {
+              "$ref": "#/definitions/SystemStatusResponse"
+            }
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "System status", 
+        "tags": [
+          "System"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }
+    }, 
+    "/system/policy_spec": {
+      "get": {
+        "description": "Get the policy language spec for this service", 
+        "operationId": "describe_policy", 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "Policy Language Description", 
+            "schema": {
+              "description": "List of Gate specifications", 
+              "items": {
+                "$ref": "#/definitions/GateSpec"
+              }, 
+              "type": "array"
+            }
+          }
+        }, 
+        "summary": "Describe the policy language spec implemented by this service.", 
+        "tags": [
+          "System", 
+          "Policy"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }
+    }, 
+    "/system/prune": {
+      "get": {
+        "description": "", 
+        "operationId": "get_system_prune_resourcetypes", 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "success", 
+            "schema": {
+              "items": {
+                "type": "string"
+              }, 
+              "type": "array"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get list of resources that can be pruned", 
+        "tags": [
+          "catalog"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }
+    }, 
+    "/system/prune/{resourcetype}": {
+      "get": {
+        "description": "", 
+        "operationId": "get_system_prune_candidates", 
+        "parameters": [
+          {
+            "description": "resource type", 
+            "in": "path", 
+            "name": "resourcetype", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "description": "filter only disconnected resources", 
+            "in": "query", 
+            "name": "dangling", 
+            "required": false, 
+            "type": "boolean"
+          }, 
+          {
+            "description": "filter only resources older than specified number of seconds", 
+            "in": "query", 
+            "name": "olderthan", 
+            "required": false, 
+            "type": "integer"
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "success", 
+            "schema": {
+              "$ref": "#/definitions/PruneCandidateList"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get list of candidates for pruning", 
+        "tags": [
+          "catalog"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }, 
+      "post": {
+        "description": "", 
+        "operationId": "post_system_prune_candidates", 
+        "parameters": [
+          {
+            "description": "resource type", 
+            "in": "path", 
+            "name": "resourcetype", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "description": "resource objects to prune", 
+            "in": "body", 
+            "name": "bodycontent", 
+            "required": true, 
+            "schema": {
+              "$ref": "#/definitions/PruneCandidate"
+            }
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "success", 
+            "schema": {
+              "$ref": "#/definitions/PruneCandidateList"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Perform pruning on input resource name", 
+        "tags": [
+          "catalog"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }
+    }, 
+    "/system/services": {
+      "get": {
+        "operationId": "list_services", 
+        "responses": {
+          "200": {
+            "description": "Service listing", 
+            "schema": {
+              "$ref": "#/definitions/ServiceList"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "List system services", 
+        "tags": [
+          "System", 
+          "Services"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }
+    }, 
+    "/system/services/{servicename}": {
+      "get": {
+        "operationId": "get_services_by_name", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "servicename", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Service Info", 
+            "schema": {
+              "$ref": "#/definitions/ServiceList"
+            }
+          }, 
+          "500": {
+            "description": "Internal Error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get a service configuration and state", 
+        "tags": [
+          "System", 
+          "Services"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }
+    }, 
+    "/system/services/{servicename}/{hostid}": {
+      "delete": {
+        "operationId": "delete_service", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "servicename", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "path", 
+            "name": "hostid", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Delete success"
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Delete the service config", 
+        "tags": [
+          "System", 
+          "Services"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }, 
+      "get": {
+        "operationId": "get_services_by_name_and_host", 
+        "parameters": [
+          {
+            "in": "path", 
+            "name": "servicename", 
+            "required": true, 
+            "type": "string"
+          }, 
+          {
+            "in": "path", 
+            "name": "hostid", 
+            "required": true, 
+            "type": "string"
+          }
+        ], 
+        "responses": {
+          "200": {
+            "description": "Listing of registered services", 
+            "schema": {
+              "$ref": "#/definitions/ServiceList"
+            }
+          }, 
+          "500": {
+            "description": "Internal error", 
+            "schema": {
+              "$ref": "#/definitions/ApiErrorResponse"
+            }
+          }
+        }, 
+        "summary": "Get service config for a specific host", 
+        "tags": [
+          "System", 
+          "Services"
+        ], 
+        "x-swagger-router-controller": "anchore_engine.services.apiext.api.controllers.system"
+      }
+    }
+  }, 
+  "produces": [
+    "application/json"
+  ], 
+  "schemes": [
+    "http", 
+    "https"
+  ], 
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ], 
+  "securityDefinitions": {
+    "basicAuth": {
+      "type": "basic"
+    }
+  }, 
+  "swagger": "2.0", 
+  "tags": [
+    {
+      "description": "Subscription Management", 
+      "name": "Subscriptions"
+    }, 
+    {
+      "description": "Policy Management", 
+      "name": "Policies"
+    }, 
+    {
+      "description": "Image Management", 
+      "name": "Images"
+    }, 
+    {
+      "description": "View Image Content", 
+      "name": "Image Content"
+    }, 
+    {
+      "description": "Vulnerability checks and reports", 
+      "name": "Vulnerabilities"
+    }, 
+    {
+      "description": "Evaluate images against policies", 
+      "name": "Policy Evaluation"
+    }, 
+    {
+      "description": "Registry Management", 
+      "name": "Registries"
+    }, 
+    {
+      "description": "System Management", 
+      "name": "System"
+    }, 
+    {
+      "description": "Service Management", 
+      "name": "Services"
+    }
+  ]
+}

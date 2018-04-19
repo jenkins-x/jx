@@ -10,12 +10,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/cve"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 // GetGitOptions the command line options
 type GetCVEOptions struct {
 	GetOptions
-	App               string
+	ImageName         string
+	ImageID           string
 	Version           string
 	Env               string
 	VulnerabilityType string
@@ -71,14 +73,26 @@ func NewCmdGetCVE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 }
 
 func (o *GetCVEOptions) addGetCVEFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.App, "app", "", "", "Application name")
-	cmd.Flags().StringVarP(&o.Version, "version", "", "", "Application version")
+	cmd.Flags().StringVarP(&o.ImageName, "image-name", "", "", "Full image name e.g. jenkinsxio/nexus ")
+	cmd.Flags().StringVarP(&o.ImageID, "image-id", "", "", "Image ID in CVE engine if already known")
+	cmd.Flags().StringVarP(&o.Version, "version", "", "", "Version or tag e.g. 0.0.1")
 	cmd.Flags().StringVarP(&o.Env, "environment", "e", "", "The Environment to find running applications")
-	cmd.Flags().StringVarP(&o.VulnerabilityType, "vulnerability-type", "t", "os", "Vulnerability Type")
+
 }
 
 // Run implements this command
 func (o *GetCVEOptions) Run() error {
+
+	_, _, err := o.KubeClient()
+	if err != nil {
+		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
+	}
+
+	err = o.ensureCVEProviderRunning()
+	if err != nil {
+		return fmt.Errorf("no CVE provider running, have you tried `jx create addon anchore` %v", err)
+	}
+
 	server, auth, err := o.CommonOptions.getAddonAuthByKind("anchore-anchore-engine-core")
 	if err != nil {
 		return fmt.Errorf("error getting anchore engine auth details, %v", err)
@@ -89,13 +103,34 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("error creating anchore provider, %v", err)
 	}
 	table := o.CreateTable()
-	image := "sha256:b9f03c3c4b196d46639bee0ec9cd0f6dbea8cc39d32767c8312f04317c3b18f4"
-	err = p.GetImageVulnerabilityTable(&table, image)
+	table.AddRow("Name", "Version", "Severity", "Vulnerability", "URL", "Package", "Fix")
+
+	query := cve.CVEQuery{
+		ImageID:     o.ImageID,
+		ImageName:   o.ImageName,
+		Environment: o.Env,
+		Vesion:      o.Version,
+	}
+
+	err = p.GetImageVulnerabilityTable(&table, query)
 	if err != nil {
-		return fmt.Errorf("error getting vilnerability table for image %s: %v", image, err)
+		return fmt.Errorf("error getting vulnerability table for image %s: %v", query.ImageID, err)
 	}
 
 	table.Render()
 	return nil
+}
 
+func (o *GetCVEOptions) ensureCVEProviderRunning() error {
+	isRunning, err := kube.IsDeploymentRunning(o.kubeClient, "anchore-anchore-engine-core", o.currentNamespace)
+	if err != nil {
+		return err
+	}
+	if isRunning {
+		return nil
+	}
+
+	// TODO ask if user wants to intall a CVE provider addon
+
+	return nil
 }

@@ -12,6 +12,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
+const (
+	getVulnerabilitiesByImageID     = "/images/by_id/%s/vuln/%s"
+	getVulnerabilitiesByImageDigest = "/images/%s"
+	vulnerabilityType               = "os"
+	getImages                       = "/images"
+)
+
 type result interface {
 }
 
@@ -26,6 +33,18 @@ type Vulnerability struct {
 	Severity string
 	URL      string
 	Vuln     string
+}
+
+type Image struct {
+	AnalysisStatus string        `json:"analysis_status,omitempty"`
+	ImageDetails   []ImageDetail `json:"image_detail,omitempty"`
+}
+
+type ImageDetail struct {
+	Registry string
+	Repo     string
+	Tag      string
+	ImageId  string
 }
 
 // AnchoreProvider implements CVEProvider interface for anchore.io
@@ -48,32 +67,71 @@ func NewAnchoreProvider(server *auth.AuthServer, user *auth.UserAuth) (CVEProvid
 	return &provider, nil
 }
 
-func (a AnchoreProvider) GetImageVulnerabilityTable(table *table.Table, imageID string) error {
-	subPath := fmt.Sprintf("/images/by_id/%s/vuln/%s", imageID, "os")
+func (a AnchoreProvider) GetImageVulnerabilityTable(table *table.Table, query CVEQuery) error {
 
-	var vList VulnerabilityList
+	var err error
 
-	err := a.anchoreGet(subPath, &vList)
-	if err != nil {
-		return fmt.Errorf("error getting vulnerabilities for image %s: %v", imageID, err)
+	if query.ImageID != "" {
+		var vList VulnerabilityList
+		subPath := fmt.Sprintf(getVulnerabilitiesByImageID, query.ImageID, vulnerabilityType)
+
+		err = a.anchoreGet(subPath, &vList)
+		if err != nil {
+			return fmt.Errorf("error getting vulnerabilities for image %s: %v", query.ImageID, err)
+		}
+
+		return a.addVulnerabilitiesTableRows(table, &vList)
 	}
 
-	table.AddRow("Name", "Version", "Severity", "Vulnerability", "URL", "Package", "Fix")
+	// see if we can match images using an image name and optional version
+	if query.ImageID == "" {
+		// if we have an image name then lets try and match image id(s)
+		if query.ImageName != "" {
+			var vList VulnerabilityList
+			var imageIDs []string
+			var images []Image
+			subPath := fmt.Sprintf(getImages)
 
-	for _, v := range vList.Vulnerabilities {
-		var sev string
-		switch v.Severity {
-		case "High":
-			sev = util.ColorError(v.Severity)
-		case "Medium":
-			sev = util.ColorWarning(v.Severity)
-		case "Low":
-			sev = util.ColorStatus(v.Severity)
+			err = a.anchoreGet(subPath, &images)
+			if err != nil {
+				return fmt.Errorf("error getting images %v", err)
+			}
+
+			for _, image := range images {
+				for _, d := range image.ImageDetails {
+					if d.Repo == query.ImageName {
+						// if user has provided a version and it doesn't match lets skip this image
+						if query.Vesion != "" && query.Vesion != d.Tag {
+							continue
+						}
+						imageIDs = append(imageIDs, d.ImageId)
+					}
+				}
+			}
+			if len(imageIDs) > 0 {
+				for _, imageID := range imageIDs {
+					subPath := fmt.Sprintf(getVulnerabilitiesByImageID, imageID, vulnerabilityType)
+
+					err = a.anchoreGet(subPath, &vList)
+					if err != nil {
+						return fmt.Errorf("error getting vulnerabilities for image %s: %v", query.ImageID, err)
+					}
+
+					err = a.addVulnerabilitiesTableRows(table, &vList)
+					if err != nil {
+						return fmt.Errorf("error building vulnerabilities table for image digest %s: %v", vList.ImageDigest, err)
+					}
+				}
+			} else {
+				return fmt.Errorf("no matching images found for ImageName %s and Vesion %s", query.ImageName, query.Vesion)
+			}
 		}
-		table.AddRow("foo", "0.0.1", sev, v.Vuln, v.URL, v.Package, v.Fix)
+	} else {
+		return fmt.Errorf("choose an image name, an optinal version or anchore image id to find vulnerabilities")
 	}
 
 	return nil
+
 }
 
 func (a AnchoreProvider) anchoreGet(subPath string, rs result) error {
@@ -95,6 +153,31 @@ func (a AnchoreProvider) anchoreGet(subPath string, rs result) error {
 	err = json.Unmarshal(data, &rs)
 	if err != nil {
 		return fmt.Errorf("error unmarshalling %v", err)
+	}
+	return nil
+}
+
+func (a AnchoreProvider) addVulnerabilitiesTableRows(table *table.Table, vList *VulnerabilityList) error {
+
+	var image []Image
+	subPath := fmt.Sprintf(getVulnerabilitiesByImageDigest, vList.ImageDigest)
+
+	err := a.anchoreGet(subPath, &image)
+	if err != nil {
+		return fmt.Errorf("error getting image for image digest %s: %v", vList.ImageDigest, err)
+	}
+
+	for _, v := range vList.Vulnerabilities {
+		var sev string
+		switch v.Severity {
+		case "High":
+			sev = util.ColorError(v.Severity)
+		case "Medium":
+			sev = util.ColorWarning(v.Severity)
+		case "Low":
+			sev = util.ColorStatus(v.Severity)
+		}
+		table.AddRow(image[0].ImageDetails[0].Repo, image[0].ImageDetails[0].Tag, sev, v.Vuln, v.URL, v.Package, v.Fix)
 	}
 	return nil
 }
