@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -11,36 +12,52 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReplacePlaceholders(t *testing.T) {
-	f, err := ioutil.TempDir("", "test-extract-domain")
+func TestImportProjects(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "test-import-projects")
 	assert.NoError(t, err)
 
-	testData := path.Join("test_data", "replace_placeholders")
+	testData := path.Join("test_data", "import_projects")
 	_, err = os.Stat(testData)
 	assert.NoError(t, err)
 
-	util.CopyDir(testData, f, true)
-
+	files, err := ioutil.ReadDir(testData)
 	assert.NoError(t, err)
-	o := ImportOptions{}
-	o.Out = tests.Output()
-	o.Dir = f
-	o.AppName = "bar"
 
-	o.replacePlaceholders("github.com", "foo")
+	for _, f := range files {
+		if f.IsDir() {
+			name := f.Name()
+			srcDir := filepath.Join(testData, name)
+			testDir := filepath.Join(tempDir, name)
+			util.CopyDir(srcDir, testDir, true)
 
-	// root file
-	testFile, err := util.LoadBytes(f, "file.txt")
-	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
+			err = assertImport(t, testDir)
+			assert.NoError(t, err, "Importing dir %s from source %s", testDir, srcDir)
+		}
+	}
+}
 
-	// dir1
-	testDir1 := path.Join(f, "dir1")
-	testFile, err = util.LoadBytes(testDir1, "file.txt")
-	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
+func assertImport(t *testing.T, testDir string) error {
+	o := &ImportOptions{}
+	configureOptions(&o.CommonOptions)
+	o.Dir = testDir
+	o.DryRun = true
+	//_, o.AppName = filepath.Split(testDir)
+	err := o.Run()
+	assert.NoError(t, err)
+	if err == nil {
+		_, dirName := filepath.Split(testDir)
+		assertFileExists(t, filepath.Join(testDir, "Jenkinsfile"))
+		assertFileExists(t, filepath.Join(testDir, "Dockerfile"))
+		assertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
+	}
+	return err
+}
 
-	// dir2
-	testDir2 := path.Join(f, "dir2")
-	testFile, err = util.LoadBytes(testDir2, "file.txt")
-	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
-
+func assertFileExists(t *testing.T, fileName string) {
+	exists, err := util.FileExists(fileName)
+	assert.NoError(t, err, "Failed checking if file exists %s", fileName)
+	assert.True(t, exists, "File %s should exist", fileName)
+	if exists {
+		tests.Debugf("File %s exists\n", fileName)
+	}
 }

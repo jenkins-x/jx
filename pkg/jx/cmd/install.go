@@ -265,6 +265,11 @@ func (options *InstallOptions) Run() error {
 	} else {
 		log.Error("Did not set exposeController Config Domain\n")
 	}
+	if exposeController != nil {
+		if isOpenShiftProvider(options.Flags.Provider) {
+			exposeController.Config.Exposer = "Route"
+		}
+	}
 
 	err = initOpts.Run()
 	if err != nil {
@@ -480,6 +485,15 @@ func (options *InstallOptions) Run() error {
 	options.Printf("\nTo import existing projects into Jenkins: %s\n", util.ColorInfo("jx import"))
 	options.Printf("To create a new Spring Boot microservice: %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	return nil
+}
+
+func isOpenShiftProvider(provider string) bool {
+	switch provider {
+	case OPENSHIFT, MINISHIFT:
+		return true
+	default:
+		return false
+	}
 }
 
 func (o *InstallOptions) enableOpenShiftSCC(ns string) error {

@@ -323,9 +323,11 @@ func (o *ImportOptions) Run() error {
 	}
 
 	if o.RepoURL == "" {
-		err = o.CreateNewRemoteRepository()
-		if err != nil {
-			return err
+		if !o.DryRun {
+			err = o.CreateNewRemoteRepository()
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		if shouldClone {
@@ -342,7 +344,7 @@ func (o *ImportOptions) Run() error {
 	}
 
 	if o.DryRun {
-		log.Infof("dry-run so skipping import to Jenkins X")
+		o.Printf("dry-run so skipping import to Jenkins X\n")
 		return nil
 	}
 
