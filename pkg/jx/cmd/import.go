@@ -33,6 +33,8 @@ const (
 
 	DefaultWritePermissions = 0760
 
+	jenkinsfileBackupSuffix = ".backup"
+
 	defaultGitIgnoreFile = `
 .project
 .classpath
@@ -60,16 +62,16 @@ type ImportOptions struct {
 	SelectAll               bool
 	DisableDraft            bool
 	DisableJenkinsfileCheck bool
-	OverwriteJenkinsfile    bool
 	SelectFilter            string
 	Jenkinsfile             string
 	BranchPattern           string
 	GitRepositoryOptions    gits.GitRepositoryOptions
 	ImportGitCommitMessage  string
 	ListDraftPacks          bool
-	DraftPack				string
+	DraftPack               string
 
 	DisableDotGitSearch bool
+	InitialisedGit      bool
 	Jenkins             *gojenkins.Jenkins
 	GitConfDir          string
 	GitServer           *auth.AuthServer
@@ -155,7 +157,6 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Performs local changes to the repo but skips the import into Jenkins X")
 	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
 	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
-	cmd.Flags().BoolVarP(&options.OverwriteJenkinsfile, "overwrite-jenkinsfile", "w", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "Should we override the Jenkinsfile in the project?")
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on")
 	cmd.Flags().BoolVarP(&options.ListDraftPacks, "list-packs", "", false, "list available draft packs")
@@ -174,33 +175,33 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 		o.Printf("Available draft packs:\n")
-		for  i :=0; i< len(packs);i++ {
-			o.Printf(packs[i]+"\n")
+		for i := 0; i < len(packs); i++ {
+			o.Printf(packs[i] + "\n")
 		}
 		return nil
 	}
 
-
 	f := o.Factory
 	f.SetBatch(o.BatchMode)
 
-	jenkinsClient, err := f.CreateJenkinsClient()
-	if err != nil {
-		return err
-	}
+	var err error
+	if !o.DryRun {
+		o.Jenkins, err = f.CreateJenkinsClient()
+		if err != nil {
+			return err
+		}
 
-	o.Jenkins = jenkinsClient
-
-	client, ns, err := o.Factory.CreateClient()
-	if err != nil {
-		return err
+		client, ns, err := o.Factory.CreateClient()
+		if err != nil {
+			return err
+		}
+		o.currentNamespace = ns
+		o.kubeClient = client
 	}
-	o.currentNamespace = ns
-	o.kubeClient = client
 
 	var userAuth *auth.UserAuth
 	if o.GitProvider == nil {
-		authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+		authConfigSvc, err := o.Factory.CreateGitAuthConfigServiceDryRun(o.DryRun)
 		if err != nil {
 			return err
 		}
@@ -323,9 +324,11 @@ func (o *ImportOptions) Run() error {
 	}
 
 	if o.RepoURL == "" {
-		err = o.CreateNewRemoteRepository()
-		if err != nil {
-			return err
+		if !o.DryRun {
+			err = o.CreateNewRemoteRepository()
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		if shouldClone {
@@ -336,14 +339,14 @@ func (o *ImportOptions) Run() error {
 		}
 	}
 
+	if o.DryRun {
+		o.Printf("dry-run so skipping import to Jenkins X\n")
+		return nil
+	}
+
 	err = o.checkChartmuseumCredentialExists()
 	if err != nil {
 		return err
-	}
-
-	if o.DryRun {
-		log.Infof("dry-run so skipping import to Jenkins X")
-		return nil
 	}
 
 	return o.DoImport()
@@ -378,7 +381,6 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 }
 
 func (o *ImportOptions) DraftCreate() error {
-
 	draftDir, err := util.DraftDir()
 	if err != nil {
 		return err
@@ -400,18 +402,19 @@ func (o *ImportOptions) DraftCreate() error {
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
 
+	jenkinsfile := filepath.Join(dir, "Jenkinsfile")
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
 	lpack := ""
 	if len(o.DraftPack) > 0 {
-		log.Info("trying to use draft pack: " + o.DraftPack +"\n");
+		log.Info("trying to use draft pack: " + o.DraftPack + "\n")
 		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/"+o.DraftPack)
-		f,err :=util.FileExists(lpack)
-		if err != nil{
+		f, err := util.FileExists(lpack)
+		if err != nil {
 			log.Error(err.Error())
 			return err
 		}
-		if f==false {
+		if f == false {
 			log.Error("Could not find pack: " + o.DraftPack + " going to try detect which pack to use")
 			lpack = ""
 		}
@@ -419,7 +422,6 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 
 	if len(lpack) == 0 {
-
 		if exists, err := util.FileExists(pomName); err == nil && exists {
 			pack, err := cmdutil.PomFlavour(pomName)
 			if err != nil {
@@ -453,26 +455,54 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 	log.Info("selected pack: " + lpack + "\n")
 	chartsDir := filepath.Join(dir, "charts")
+	jenkinsfileExists, err := util.FileExists(jenkinsfile)
 	exists, err := util.FileExists(chartsDir)
 	if exists && err == nil {
-		exists, err = util.FileExists(filepath.Join(dir, "Jenkinsfile"))
+		exists, err = util.FileExists(filepath.Join(dir, "Dockerfile"))
 		if exists && err == nil {
-			exists, err = util.FileExists(filepath.Join(dir, "Dockerfile"))
-			if exists && err == nil {
+			if jenkinsfileExists || o.DisableJenkinsfileCheck {
 				log.Warn("existing Dockerfile, Jenkinsfile and charts folder found so skipping 'draft create' step\n")
 				return nil
 			}
 		}
 	}
+	jenknisfileBackup := ""
+	if jenkinsfileExists && o.InitialisedGit && !o.DisableJenkinsfileCheck {
+		// lets copy the old Jenkinsfile in case we overwrite it
+		jenknisfileBackup = jenkinsfile + jenkinsfileBackupSuffix
+		err = util.RenameFile(jenkinsfile, jenknisfileBackup)
+		if err != nil {
+			return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
+		}
+	}
 
 	err = pack.CreateFrom(dir, lpack)
 	if err != nil {
-		return err
-	}
-	if err != nil {
 		// lets ignore draft errors as sometimes it can't find a pack - e.g. for environments
-		o.Printf(util.ColorWarning("WARNING: Failed to run draft create in %s due to %s"), dir, err)
-		//return fmt.Errorf("Failed to run draft create in %s due to %s", dir, err)
+		o.warnf("Failed to run draft create in %s due to %s", dir, err)
+	}
+
+	if jenknisfileBackup != "" {
+		// if there's no Jenkinsfile created then rename it back again!
+		jenkinsfileExists, err = util.FileExists(jenkinsfile)
+		if err != nil {
+			o.warnf("Failed to check for Jenkinsfile %s", err)
+		} else {
+			if jenkinsfileExists {
+				if !o.InitialisedGit {
+					err = os.Remove(jenknisfileBackup)
+					if err != nil {
+						o.warnf("Failed to remove Jenkinsfile backup %s", err)
+					}
+				}
+			} else {
+				// lets put the old one back again
+				err = util.RenameFile(jenknisfileBackup, jenkinsfile)
+				if err != nil {
+					return fmt.Errorf("Failed to rename Jenkinsfile backup file: %s", err)
+				}
+			}
+		}
 	}
 
 	// lets rename the chart to be the same as our app name
@@ -605,6 +635,7 @@ func (o *ImportOptions) DiscoverGit() error {
 			return fmt.Errorf("please initialise git yourself then try again")
 		}
 	}
+	o.InitialisedGit = true
 	err := gits.GitInit(dir)
 	if err != nil {
 		return err
@@ -895,37 +926,34 @@ func (o *ImportOptions) fixDockerIgnoreFile() error {
 	return nil
 }
 
-
-func allDraftPacks() ([]string,error){
+func allDraftPacks() ([]string, error) {
 	draftDir, err := util.DraftDir()
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	draftHome := draftpath.Home(draftDir)
 
 	// lets make sure we have the latest draft packs
 	initOpts := InitOptions{
-		CommonOptions: CommonOptions{
-		},
+		CommonOptions: CommonOptions{},
 	}
 	log.Info("Getting latest packs ...\n")
 	err = initOpts.initDraft()
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-
 
 	dir := filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/")
-	files,err := ioutil.ReadDir(dir)
+	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-	result := make([]string,0)
-	for _,f := range files {
+	result := make([]string, 0)
+	for _, f := range files {
 		if f.IsDir() {
-			result = append(result,f.Name())
+			result = append(result, f.Name())
 		}
 	}
-	return result,err
+	return result, err
 
 }

@@ -53,6 +53,7 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
 		  <credentialsId>` + credentials + `</credentialsId>
 `
 	}
+
 	switch gitProvider.Kind() {
 	case gits.KindGitHub:
 		serverXml := ""
@@ -152,6 +153,14 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
 }
 
 func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, gitProvider gits.GitProvider, credentials string, branches string, jenkinsfile string) string {
+	triggerXml := `
+	  <triggers>
+	    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger plugin="cloudbees-folder@6.3">
+	      <spec>H/12 * * * *</spec>
+	      <interval>300000</interval>
+	    </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
+	  </triggers>
+`
 	return `<?xml version='1.0' encoding='UTF-8'?>
 <org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch@2.16">
   <actions/>
@@ -178,7 +187,7 @@ func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, gitProvider gits.
 	<daysToKeep>-1</daysToKeep>
 	<numToKeep>-1</numToKeep>
   </orphanedItemStrategy>
-  <triggers/>
+` + triggerXml + `
   <disabled>false</disabled>
   <sources class="jenkins.branch.MultiBranchProject$BranchSourceList" plugin="branch-api@2.0.15">
 	<data>

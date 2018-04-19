@@ -49,6 +49,8 @@ type Factory interface {
 
 	CreateGitAuthConfigService() (auth.AuthConfigService, error)
 
+	CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfigService, error)
+
 	CreateJenkinsAuthConfigService() (auth.AuthConfigService, error)
 
 	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
@@ -246,6 +248,14 @@ func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 			}
 		}
 	}
+}
+
+func (f *factory) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfigService, error) {
+	if dryRun {
+		fileName := GitAuthConfigFile
+		return f.createGitAuthConfigServiceFromSecrets(fileName, nil, false)
+	}
+	return f.CreateGitAuthConfigService()
 }
 
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {

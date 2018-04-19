@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -11,36 +13,98 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReplacePlaceholders(t *testing.T) {
-	f, err := ioutil.TempDir("", "test-extract-domain")
+const (
+	mavenKeepOldJenkinsfile = "maven_keep_old_jenkinsfile"
+)
+
+func TestImportProjects(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "test-import-projects")
 	assert.NoError(t, err)
 
-	testData := path.Join("test_data", "replace_placeholders")
+	testData := path.Join("test_data", "import_projects")
 	_, err = os.Stat(testData)
 	assert.NoError(t, err)
 
-	util.CopyDir(testData, f, true)
-
+	files, err := ioutil.ReadDir(testData)
 	assert.NoError(t, err)
-	o := ImportOptions{}
-	o.Out = tests.Output()
-	o.Dir = f
-	o.AppName = "bar"
 
-	o.replacePlaceholders("github.com", "foo")
+	for _, f := range files {
+		if f.IsDir() {
+			name := f.Name()
+			srcDir := filepath.Join(testData, name)
+			testDir := filepath.Join(tempDir, name)
+			util.CopyDir(srcDir, testDir, true)
 
-	// root file
-	testFile, err := util.LoadBytes(f, "file.txt")
-	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
+			err = assertImport(t, testDir)
+			assert.NoError(t, err, "Importing dir %s from source %s", testDir, srcDir)
+		}
+	}
+}
 
-	// dir1
-	testDir1 := path.Join(f, "dir1")
-	testFile, err = util.LoadBytes(testDir1, "file.txt")
-	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
+func assertImport(t *testing.T, testDir string) error {
+	_, dirName := filepath.Split(testDir)
+	o := &ImportOptions{}
+	configureOptions(&o.CommonOptions)
+	o.Dir = testDir
+	o.DryRun = true
 
-	// dir2
-	testDir2 := path.Join(f, "dir2")
-	testFile, err = util.LoadBytes(testDir2, "file.txt")
-	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
+	if dirName == mavenKeepOldJenkinsfile {
+		o.DisableJenkinsfileCheck = true
+	}
 
+	err := o.Run()
+	assert.NoError(t, err)
+	if err == nil {
+		jenkinsfile := filepath.Join(testDir, "Jenkinsfile")
+		assertFileExists(t, jenkinsfile)
+		assertFileExists(t, filepath.Join(testDir, "Dockerfile"))
+		assertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
+
+		if dirName == mavenKeepOldJenkinsfile {
+			assertFileContains(t, jenkinsfile, "THIS IS OLD!")
+			assertFileDoesNotExist(t, jenkinsfile+jenkinsfileBackupSuffix)
+		} else {
+			if strings.HasPrefix(dirName, "maven") {
+				assertFileContains(t, jenkinsfile, "mvn")
+			}
+			if strings.HasPrefix(dirName, "gradle") {
+				assertFileContains(t, jenkinsfile, "gradle")
+			}
+		}
+		if dirName == "maven_old_jenkinsfile" {
+			assertFileExists(t, jenkinsfile+jenkinsfileBackupSuffix)
+		}
+	}
+	return err
+}
+
+func assertFileContains(t *testing.T, fileName string, containsText string) {
+	if assertFileExists(t, fileName) {
+		data, err := ioutil.ReadFile(fileName)
+		assert.NoError(t, err, "Failed to read file %s", fileName)
+		if err == nil {
+			text := string(data)
+			assert.True(t, strings.Index(text, containsText) >= 0, "The file %s does not contain text: %s", fileName, containsText)
+		}
+	}
+}
+
+func assertFileExists(t *testing.T, fileName string) bool {
+	exists, err := util.FileExists(fileName)
+	assert.NoError(t, err, "Failed checking if file exists %s", fileName)
+	assert.True(t, exists, "File %s should exist", fileName)
+	if exists {
+		tests.Debugf("File %s exists\n", fileName)
+	}
+	return exists
+}
+
+func assertFileDoesNotExist(t *testing.T, fileName string) bool {
+	exists, err := util.FileExists(fileName)
+	assert.NoError(t, err, "Failed checking if file exists %s", fileName)
+	assert.False(t, exists, "File %s should not exist", fileName)
+	if exists {
+		tests.Debugf("File %s does not exist\n", fileName)
+	}
+	return exists
 }
