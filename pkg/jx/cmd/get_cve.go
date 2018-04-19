@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // GetGitOptions the command line options
@@ -77,7 +78,6 @@ func (o *GetCVEOptions) addGetCVEFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.ImageID, "image-id", "", "", "Image ID in CVE engine if already known")
 	cmd.Flags().StringVarP(&o.Version, "version", "", "", "Version or tag e.g. 0.0.1")
 	cmd.Flags().StringVarP(&o.Env, "environment", "e", "", "The Environment to find running applications")
-
 }
 
 // Run implements this command
@@ -93,6 +93,11 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("no CVE provider running, have you tried `jx create addon anchore` %v", err)
 	}
 
+	// if no flags are set try and guess the image name from the current directory
+	if o.ImageID == "" && o.ImageName == "" && o.Env == "" {
+		return fmt.Errorf("no --image-name, --image-id or --env flags set\n", o.ImageName)
+	}
+
 	server, auth, err := o.CommonOptions.getAddonAuthByKind("anchore-anchore-engine-core")
 	if err != nil {
 		return fmt.Errorf("error getting anchore engine auth details, %v", err)
@@ -103,7 +108,7 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("error creating anchore provider, %v", err)
 	}
 	table := o.CreateTable()
-	table.AddRow("Name", "Version", "Severity", "Vulnerability", "URL", "Package", "Fix")
+	table.AddRow("Image", util.ColorInfo("Severity"), "Vulnerability", "URL", "Package", "Fix")
 
 	query := cve.CVEQuery{
 		ImageID:     o.ImageID,

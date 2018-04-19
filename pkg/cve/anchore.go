@@ -45,6 +45,7 @@ type ImageDetail struct {
 	Repo     string
 	Tag      string
 	ImageId  string
+	Fulltag  string
 }
 
 // AnchoreProvider implements CVEProvider interface for anchore.io
@@ -166,6 +167,7 @@ func (a AnchoreProvider) addVulnerabilitiesTableRows(table *table.Table, vList *
 	if err != nil {
 		return fmt.Errorf("error getting image for image digest %s: %v", vList.ImageDigest, err)
 	}
+	// TODO sort vList on severity and version?
 
 	for _, v := range vList.Vulnerabilities {
 		var sev string
@@ -177,7 +179,7 @@ func (a AnchoreProvider) addVulnerabilitiesTableRows(table *table.Table, vList *
 		case "Low":
 			sev = util.ColorStatus(v.Severity)
 		}
-		table.AddRow(image[0].ImageDetails[0].Repo, image[0].ImageDetails[0].Tag, sev, v.Vuln, v.URL, v.Package, v.Fix)
+		table.AddRow(image[0].ImageDetails[0].Fulltag, sev, v.Vuln, v.URL, v.Package, v.Fix)
 	}
 	return nil
 }
