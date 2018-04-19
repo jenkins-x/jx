@@ -197,10 +197,12 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		return err
 	}
 
-	err = o.doInstallMissingDependencies([]string{driver})
-	if err != nil {
-		log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
-		os.Exit(-1)
+	if driver != "none" {
+		err = o.doInstallMissingDependencies([]string{driver})
+		if err != nil {
+			log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
+			os.Exit(-1)
+		}
 	}
 
 	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver, "--extra-config", "apiserver.Authorization.Mode=RBAC"}
