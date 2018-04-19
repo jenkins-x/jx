@@ -33,6 +33,8 @@ const (
 
 	DefaultWritePermissions = 0760
 
+	jenkinsfileBackupSuffix = ".backup"
+
 	defaultGitIgnoreFile = `
 .project
 .classpath
@@ -60,7 +62,6 @@ type ImportOptions struct {
 	SelectAll               bool
 	DisableDraft            bool
 	DisableJenkinsfileCheck bool
-	OverwriteJenkinsfile    bool
 	SelectFilter            string
 	Jenkinsfile             string
 	BranchPattern           string
@@ -156,7 +157,6 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Performs local changes to the repo but skips the import into Jenkins X")
 	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
 	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
-	cmd.Flags().BoolVarP(&options.OverwriteJenkinsfile, "overwrite-jenkinsfile", "w", false, "Disable defaulting a Jenkinsfile if its missing")
 	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "Should we override the Jenkinsfile in the project?")
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on")
 	cmd.Flags().BoolVarP(&options.ListDraftPacks, "list-packs", "", false, "list available draft packs")
@@ -455,20 +455,20 @@ func (o *ImportOptions) DraftCreate() error {
 	log.Info("selected pack: " + lpack + "\n")
 	chartsDir := filepath.Join(dir, "charts")
 	jenkinsfileExists, err := util.FileExists(jenkinsfile)
-	if jenkinsfileExists && err == nil {
-		exists, err := util.FileExists(chartsDir)
+	exists, err := util.FileExists(chartsDir)
+	if exists && err == nil {
+		exists, err = util.FileExists(filepath.Join(dir, "Dockerfile"))
 		if exists && err == nil {
-			exists, err = util.FileExists(filepath.Join(dir, "Dockerfile"))
-			if exists && err == nil {
+			if jenkinsfileExists || o.DisableJenkinsfileCheck {
 				log.Warn("existing Dockerfile, Jenkinsfile and charts folder found so skipping 'draft create' step\n")
 				return nil
 			}
 		}
 	}
 	jenknisfileBackup := ""
-	if jenkinsfileExists && o.InitialisedGit {
+	if jenkinsfileExists && o.InitialisedGit && !o.DisableJenkinsfileCheck {
 		// lets copy the old Jenkinsfile in case we overwrite it
-		jenknisfileBackup = jenkinsfile + ".backup"
+		jenknisfileBackup = jenkinsfile + jenkinsfileBackupSuffix
 		err = util.RenameFile(jenkinsfile, jenknisfileBackup)
 		if err != nil {
 			return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
@@ -488,9 +488,11 @@ func (o *ImportOptions) DraftCreate() error {
 			o.warnf("Failed to check for Jenkinsfile %s", err)
 		} else {
 			if jenkinsfileExists {
-				err = os.Remove(jenknisfileBackup)
-				if err != nil {
-					o.warnf("Failed to remove Jenkinsfile backup %s", err)
+				if !o.InitialisedGit {
+					err = os.Remove(jenknisfileBackup)
+					if err != nil {
+						o.warnf("Failed to remove Jenkinsfile backup %s", err)
+					}
 				}
 			} else {
 				// lets put the old one back again

@@ -13,6 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	mavenKeepOldJenkinsfile = "maven_keep_old_jenkinsfile"
+)
+
 func TestImportProjects(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "test-import-projects")
 	assert.NoError(t, err)
@@ -38,25 +42,37 @@ func TestImportProjects(t *testing.T) {
 }
 
 func assertImport(t *testing.T, testDir string) error {
+	_, dirName := filepath.Split(testDir)
 	o := &ImportOptions{}
 	configureOptions(&o.CommonOptions)
 	o.Dir = testDir
 	o.DryRun = true
-	//_, o.AppName = filepath.Split(testDir)
+
+	if dirName == mavenKeepOldJenkinsfile {
+		o.DisableJenkinsfileCheck = true
+	}
+
 	err := o.Run()
 	assert.NoError(t, err)
 	if err == nil {
-		_, dirName := filepath.Split(testDir)
 		jenkinsfile := filepath.Join(testDir, "Jenkinsfile")
 		assertFileExists(t, jenkinsfile)
 		assertFileExists(t, filepath.Join(testDir, "Dockerfile"))
 		assertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
 
-		if strings.HasPrefix(dirName, "maven") {
-			assertFileContains(t, jenkinsfile, "mvn")
+		if dirName == mavenKeepOldJenkinsfile {
+			assertFileContains(t, jenkinsfile, "THIS IS OLD!")
+			assertFileDoesNotExist(t, jenkinsfile+jenkinsfileBackupSuffix)
+		} else {
+			if strings.HasPrefix(dirName, "maven") {
+				assertFileContains(t, jenkinsfile, "mvn")
+			}
+			if strings.HasPrefix(dirName, "gradle") {
+				assertFileContains(t, jenkinsfile, "gradle")
+			}
 		}
-		if strings.HasPrefix(dirName, "gradle") {
-			assertFileContains(t, jenkinsfile, "gradle")
+		if dirName == "maven_old_jenkinsfile" {
+			assertFileExists(t, jenkinsfile+jenkinsfileBackupSuffix)
 		}
 	}
 	return err
@@ -79,6 +95,16 @@ func assertFileExists(t *testing.T, fileName string) bool {
 	assert.True(t, exists, "File %s should exist", fileName)
 	if exists {
 		tests.Debugf("File %s exists\n", fileName)
+	}
+	return exists
+}
+
+func assertFileDoesNotExist(t *testing.T, fileName string) bool {
+	exists, err := util.FileExists(fileName)
+	assert.NoError(t, err, "Failed checking if file exists %s", fileName)
+	assert.False(t, exists, "File %s should not exist", fileName)
+	if exists {
+		tests.Debugf("File %s does not exist\n", fileName)
 	}
 	return exists
 }
