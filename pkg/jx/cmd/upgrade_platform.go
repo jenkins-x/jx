@@ -27,6 +27,7 @@ type UpgradePlatformOptions struct {
 	ReleaseName string
 	Chart       string
 	Namespace   string
+	Set         string
 }
 
 // NewCmdUpgradePlatform defines the command
@@ -58,6 +59,7 @@ func NewCmdUpgradePlatform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", "jenkins-x", "The release name")
 	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to")
+	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading")
 	return cmd
 }
 
@@ -75,6 +77,9 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 	if ns != "" {
 		args = append(args, "--namespace", ns)
+	}
+	if o.Set != "" {
+		args = append(args, "--set", o.Set)
 	}
 	args = append(args, o.ReleaseName, o.Chart)
 	return o.runCommand("helm", args...)

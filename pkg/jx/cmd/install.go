@@ -376,6 +376,8 @@ func (options *InstallOptions) Run() error {
 	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --values=%s --namespace=%s --timeout=%s", secretsFileName, adminSecretsFileName, configFileName, ns, timeout)
 
 	// run the helm install
+	options.Printf("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
+
 	err = options.runCommandFromDir(makefileDir, "make", arg, "install")
 	if err != nil {
 		return err
@@ -498,7 +500,20 @@ func isOpenShiftProvider(provider string) bool {
 
 func (o *InstallOptions) enableOpenShiftSCC(ns string) error {
 	o.Printf("Enabling anyui for the Jenkins service account in namespace %s\n", ns)
-	return o.runCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":jenkins")
+	err := o.runCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":jenkins")
+	if err != nil {
+		return err
+	}
+	err = o.runCommand("oc", "adm", "policy", "add-scc-to-user", "hostaccess", "system:serviceaccount:"+ns+":jenkins")
+	if err != nil {
+		return err
+	}
+	err = o.runCommand("oc", "adm", "policy", "add-scc-to-user", "privileged", "system:serviceaccount:"+ns+":jenkins")
+	if err != nil {
+		return err
+	}
+	// try fix monocular
+	return o.runCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":default")
 }
 
 func (options *InstallOptions) logAdminPassword() {
