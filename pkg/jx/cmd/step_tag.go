@@ -18,7 +18,7 @@ const (
 	VERSION = "version"
 )
 
-// CreateClusterOptions the flags for running crest cluster
+// CreateClusterOptions the flags for running create cluster
 type StepTagOptions struct {
 	StepOptions
 

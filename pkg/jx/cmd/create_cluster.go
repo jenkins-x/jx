@@ -13,7 +13,7 @@ import (
 
 type KubernetesProvider string
 
-// CreateClusterOptions the flags for running crest cluster
+// CreateClusterOptions the flags for running create cluster
 type CreateClusterOptions struct {
 	CreateOptions
 	InstallOptions InstallOptions
@@ -115,6 +115,7 @@ func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	cmd.AddCommand(NewCmdCreateClusterAWS(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterGKE(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterMinikube(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterMinishift(f, out, errOut))
 
 	return cmd
 }

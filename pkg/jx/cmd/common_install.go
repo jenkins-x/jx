@@ -193,7 +193,7 @@ func (o *CommonOptions) installHyperkit() error {
 		return nil
 	}
 	o.Printf("Result: %s and %v\n", info, err)
-	err = o.runCommand("curl", "-LO", "https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-hyperkit")
+/*	err = o.runCommand("curl", "-LO", "https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-hyperkit")
 	if err != nil {
 		return err
 	}
@@ -216,6 +216,8 @@ func (o *CommonOptions) installHyperkit() error {
 	}
 
 	return o.runCommand("sudo", "chmod", "u+s", "/usr/local/bin/docker-machine-driver-hyperkit")
+*/
+	return nil
 }
 
 func (o *CommonOptions) installVirtualBox() error {
@@ -372,6 +374,37 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 }
 
 func (o *CommonOptions) installMinikube() error {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.runCommand("brew", "cask", "install", "minikube")
+	}
+
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	fileName, flag, err := o.shouldInstallBinary(binDir, "minikube")
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "minikube")
+	if err != nil {
+		return err
+	}
+	clientURL := fmt.Sprintf("https://github.com/kubernetes/minikube/releases/download/v%s/minikube-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	tmpFile := fullPath + ".tmp"
+	err = o.downloadFile(clientURL, tmpFile)
+	if err != nil {
+		return err
+	}
+	err = util.RenameFile(tmpFile, fullPath)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
+
+func (o *CommonOptions) installMinishift() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		return o.runCommand("brew", "cask", "install", "minikube")
 	}

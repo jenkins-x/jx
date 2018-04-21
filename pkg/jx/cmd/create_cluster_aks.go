@@ -15,7 +15,7 @@ import (
 	"path/filepath"
 )
 
-// CreateClusterOptions the flags for running crest cluster
+// CreateClusterOptions the flags for running create cluster
 type CreateClusterAKSOptions struct {
 	CreateClusterOptions
 
