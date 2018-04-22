@@ -32,6 +32,7 @@ type CreateClusterMinikubeFlags struct {
 	Driver              string
 	HyperVVirtualSwitch string
 	Namespace           string
+	ClusterVersion      string
 }
 
 var (
@@ -77,6 +78,7 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [virtualbox xhyve vmwarefusion hyperkit]")
 	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with minikube")
+	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "", "", "kubernetes version")
 
 	return cmd
 }
@@ -209,6 +211,10 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	hyperVVirtualSwitch := o.Flags.HyperVVirtualSwitch
 	if hyperVVirtualSwitch != "" {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
+	}
+	kubernetesVersion := o.Flags.ClusterVersion
+	if kubernetesVersion != "" {
+		args = append(args, "--kubernetes-version", kubernetesVersion)
 	}
 	err = o.runCommand("minikube", args...)
 	if err != nil {
