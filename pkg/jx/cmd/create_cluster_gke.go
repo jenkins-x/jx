@@ -22,7 +22,7 @@ import (
 	"regexp"
 )
 
-// CreateClusterOptions the flags for running crest cluster
+// CreateClusterOptions the flags for running create cluster
 type CreateClusterGKEOptions struct {
 	CreateClusterOptions
 

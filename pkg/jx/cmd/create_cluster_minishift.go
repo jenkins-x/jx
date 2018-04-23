@@ -8,8 +8,6 @@ import (
 	"runtime"
 	"strings"
 
-	"time"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -18,51 +16,50 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
-// CreateClusterOptions the flags for running create cluster
-type CreateClusterMinikubeOptions struct {
+// CreateClusterMinishiftOptions the flags for running create cluster
+type CreateClusterMinishiftOptions struct {
 	CreateClusterOptions
 
-	Flags    CreateClusterMinikubeFlags
+	Flags    CreateClusterMinishiftFlags
 	Provider KubernetesProvider
 }
 
-type CreateClusterMinikubeFlags struct {
+type CreateClusterMinishiftFlags struct {
 	Memory              string
 	CPU                 string
 	Driver              string
 	HyperVVirtualSwitch string
 	Namespace           string
-	ClusterVersion      string
 }
 
 var (
-	createClusterMinikubeLong = templates.LongDesc(`
+	createClusterMinishiftLong = templates.LongDesc(`
 		This command creates a new kubernetes cluster, installing required local dependencies and provisions the
 		Jenkins X platform
 
-		Minikube is a tool that makes it easy to run Kubernetes locally. Minikube runs a single-node Kubernetes
+		Minishift is a tool that makes it easy to run OpenShift locally. Minishift runs a single-node OpenShift
 		cluster inside a VM on your laptop for users looking to try out Kubernetes or develop with it day-to-day.
 
 `)
 
-	createClusterMinikubeExample = templates.Examples(`
+	createClusterMinishiftExample = templates.Examples(`
 
-		jx create cluster minikube
+		jx create cluster minishift
 
 `)
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := CreateClusterMinikubeOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, MINIKUBE),
+func NewCmdCreateClusterMinishift(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := CreateClusterMinishiftOptions{
+		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, MINISHIFT),
 	}
 	cmd := &cobra.Command{
-		Use:     "minikube",
-		Short:   "Create a new kubernetes cluster with minikube: Runs locally",
-		Long:    createClusterMinikubeLong,
-		Example: createClusterMinikubeExample,
+		Use:     "minishift",
+		Short:   "Create a new OpenShift cluster with minishift: Runs locally",
+		Long:    createClusterMinishiftLong,
+		Example: createClusterMinishiftExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -74,18 +71,21 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minikube VM in MB")
-	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
+	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minishift VM in MB")
+	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minishift VM")
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [virtualbox xhyve vmwarefusion hyperkit]")
-	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with minikube")
-	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "", "", "kubernetes version")
+	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with minishift")
 
 	return cmd
 }
 
-func (o *CreateClusterMinikubeOptions) Run() error {
+func (o *CreateClusterMinishiftOptions) Run() error {
 	var deps []string
-	d := binaryShouldBeInstalled("minikube")
+	d := binaryShouldBeInstalled("minishift")
+	if d != "" {
+		deps = append(deps, d)
+	}
+	d = binaryShouldBeInstalled("oc")
 	if d != "" {
 		deps = append(deps, d)
 	}
@@ -96,12 +96,12 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 		os.Exit(-1)
 	}
 
-	if o.isExistingMinikubeRunning() {
-		log.Error("an existing minikube cluster is already running, perhaps use `jx install`.\nNote existing minikube musty have RBAC enabled, running `minikube delete` and `jx create cluster minikube` creates a new VM with RBAC enabled")
+	if o.isExistingMinishiftRunning() {
+		log.Error("an existing minishift cluster is already running, perhaps use `jx install`.\nNote existing minishift musty have RBAC enabled, running `minishift delete` and `jx create cluster minishift` creates a new VM with RBAC enabled")
 		os.Exit(-1)
 	}
 
-	err = o.createClusterMinikube()
+	err = o.createClusterMinishift()
 	if err != nil {
 		log.Errorf("error creating cluster %v", err)
 		os.Exit(-1)
@@ -110,20 +110,14 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 	return nil
 }
 
-func (o *CreateClusterMinikubeOptions) defaultMacVMDriver() string {
-	_, err := o.getCommandOutput("", "hyperkit", "-v")
-	if err != nil {
-		o.warnf("Could not find hyperkit on your PATH. If you install Docker for Mac then we could use hyperkit.\nSee: https://docs.docker.com/docker-for-mac/install/\n")
-		return "xhyve"
-	}
-	return "hyperkit"
+func (o *CreateClusterMinishiftOptions) defaultMacVMDriver() string {
+	return "xhyve"
 }
 
-func (o *CreateClusterMinikubeOptions) isExistingMinikubeRunning() bool {
-
+func (o *CreateClusterMinishiftOptions) isExistingMinishiftRunning() bool {
 	var cmd_out bytes.Buffer
 
-	e := exec.Command("minikube", "status")
+	e := exec.Command("minishift", "status")
 	e.Stdout = &cmd_out
 	e.Stderr = o.Err
 	err := e.Run()
@@ -139,13 +133,12 @@ func (o *CreateClusterMinikubeOptions) isExistingMinikubeRunning() bool {
 	return false
 }
 
-func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
-
+func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	mem := o.Flags.Memory
 	prompt := &survey.Input{
 		Message: "memory (MB)",
 		Default: mem,
-		Help:    "Amount of RAM allocated to the minikube VM in MB",
+		Help:    "Amount of RAM allocated to the minishift VM in MB",
 	}
 	survey.AskOne(prompt, &mem, nil)
 
@@ -153,7 +146,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	prompt = &survey.Input{
 		Message: "cpu (cores)",
 		Default: cpu,
-		Help:    "Number of CPUs allocated to the minikube VM",
+		Help:    "Number of CPUs allocated to the minishift VM",
 	}
 	survey.AskOne(prompt, &cpu, nil)
 
@@ -207,40 +200,23 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		}
 	}
 
-	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver, "--bootstrapper=kubeadm"}
+	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver}
 	hyperVVirtualSwitch := o.Flags.HyperVVirtualSwitch
 	if hyperVVirtualSwitch != "" {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
 	}
-	kubernetesVersion := o.Flags.ClusterVersion
-	if kubernetesVersion != "" {
-		args = append(args, "--kubernetes-version", kubernetesVersion)
-	}
-	err = o.runCommand("minikube", args...)
+	err = o.runCommand("minishift", args...)
 	if err != nil {
 		return err
 	}
 
-	err = o.retry(3, 10*time.Second, func() (err error) {
-		err = o.runCommand("kubectl", "create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
-		return
-	})
-	if err != nil {
-		return err
-	}
-
-	ip, err := o.getCommandOutput("", "minikube", "ip")
+	ip, err := o.getCommandOutput("", "minishift", "ip")
 	if err != nil {
 		return err
 	}
 	o.InstallOptions.Flags.Domain = ip + ".nip.io"
 
-	err = o.initAndInstall(MINIKUBE)
-	if err != nil {
-		return err
-	}
-
-	context, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	err = o.runCommand("oc", "login", "-u", "system:admin")
 	if err != nil {
 		return err
 	}
@@ -254,12 +230,12 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		}
 	}
 
-	err = o.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+	err = o.runCommand("oc", "project", ns)
 	if err != nil {
 		return err
 	}
 
-	err = o.runCommand("kubectl", "get", "ingress")
+	err = o.initAndInstall(MINISHIFT)
 	if err != nil {
 		return err
 	}

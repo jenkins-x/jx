@@ -63,6 +63,7 @@ func CreateUniqueDirectory(dir string, name string, maximumAttempts int) (string
 	}
 	return "", fmt.Errorf("Could not create a unique file in %s starting with %s after %d attempts", dir, name, maximumAttempts)
 }
+
 func RenameDir(src string, dst string, force bool) (err error) {
 	err = CopyDir(src, dst, force)
 	if err != nil {

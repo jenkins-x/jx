@@ -45,7 +45,7 @@ type InstallFlags struct {
 	CloudEnvRepository       string
 	LocalHelmRepoName        string
 	Namespace                string
-	DefaultEnvironments      bool
+	NoDefaultEnvironments    bool
 	HelmTLS                  bool
 	DefaultEnvironmentPrefix string
 	LocalCloudEnvironment    bool
@@ -180,7 +180,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	flags := &options.Flags
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
-	cmd.Flags().BoolVarP(&flags.DefaultEnvironments, "default-environments", "", true, "Creates default Staging and Production environments")
+	cmd.Flags().BoolVarP(&flags.NoDefaultEnvironments, "no-default-environments", "", false, "Disables the creation of the default Staging and Production environments")
 	cmd.Flags().StringVarP(&flags.DefaultEnvironmentPrefix, "default-environment-prefix", "", "", "Default environment repo prefix, your git repos will be of the form 'environment-$prefix-$envName'")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
@@ -417,7 +417,7 @@ func (options *InstallOptions) Run() error {
 
 	options.logAdminPassword()
 
-	if options.Flags.DefaultEnvironments {
+	if !options.Flags.NoDefaultEnvironments {
 		log.Info("Getting Jenkins API Token\n")
 		err = options.retry(3, 2*time.Second, func() (err error) {
 			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
