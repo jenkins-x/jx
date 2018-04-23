@@ -49,6 +49,8 @@ const (
     * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
     * kubernetes for custom installations of Kubernetes
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
+	* minishift (single-node OpenShift cluster inside a VM on your laptop)
+	* openshift for installing on 3.9.x or later clusters of OpenShift
     * coming soon:
         eks (Amazon Elastic Container Service - https://aws.amazon.com/eks)    `
 )
@@ -70,6 +72,7 @@ var (
 		- helm (package manager for kubernetes)
 		- draft (CLI that makes it easy to build applications that run on kubernetes)
 		- minikube (single-node Kubernetes cluster inside a VM on your laptop )
+		- minishift (single-node OpenShift cluster inside a VM on your laptop)
 		- virtualisation drivers (to run minikube in a VM)
 		- gcloud (Google Cloud CLI)
 		- az (Azure CLI)
