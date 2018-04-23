@@ -27,7 +27,7 @@ func GetServices(client *kubernetes.Clientset, ns string) (map[string]*v1.Servic
 	answer := map[string]*v1.Service{}
 	list, err := client.CoreV1().Services(ns).List(meta_v1.ListOptions{})
 	if err != nil {
-		return answer, fmt.Errorf("Failed to load Services %s", err)
+		return answer, fmt.Errorf("failed to load Services %s", err)
 	}
 	for _, r := range list.Items {
 		name := r.Name
@@ -41,7 +41,7 @@ func GetServiceNames(client *kubernetes.Clientset, ns string, filter string) ([]
 	names := []string{}
 	list, err := client.CoreV1().Services(ns).List(meta_v1.ListOptions{})
 	if err != nil {
-		return names, fmt.Errorf("Failed to load Services %s", err)
+		return names, fmt.Errorf("failed to load Services %s", err)
 	}
 	for _, r := range list.Items {
 		name := r.Name

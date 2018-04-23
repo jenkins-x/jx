@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
@@ -98,6 +99,7 @@ func urlsEqual(url1, url2 string) bool {
 // GetServerByName returns the server for the given URL or null if its not found
 func (c *AuthConfig) GetServer(url string) *AuthServer {
 	for _, s := range c.Servers {
+		log.Infof("y %s\n", s)
 		if urlsEqual(s.URL, url) {
 			return s
 		}

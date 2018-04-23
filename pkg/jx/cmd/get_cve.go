@@ -24,6 +24,10 @@ type GetCVEOptions struct {
 	VulnerabilityType string
 }
 
+const (
+	AnchoreDeploymentName = "anchore-anchore-engine-core"
+)
+
 var (
 	getCVELong = templates.LongDesc(`
 		Display Common Vulnerabilities and Exposures (CVEs)
@@ -90,7 +94,7 @@ func (o *GetCVEOptions) Run() error {
 
 	err = o.ensureCVEProviderRunning()
 	if err != nil {
-		return fmt.Errorf("no CVE provider running, have you tried `jx create addon anchore` %v", err)
+		return fmt.Errorf("no CVE provider running, have you tried running `jx create addon anchore`. error: %v", err)
 	}
 
 	// if no flags are set try and guess the image name from the current directory
@@ -98,7 +102,7 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("no --image-name, --image-id or --env flags set\n", o.ImageName)
 	}
 
-	server, auth, err := o.CommonOptions.getAddonAuthByKind("anchore-anchore-engine-core")
+	server, auth, err := o.CommonOptions.getAddonAuthByKind(AnchoreDeploymentName)
 	if err != nil {
 		return fmt.Errorf("error getting anchore engine auth details, %v", err)
 	}
@@ -127,7 +131,7 @@ func (o *GetCVEOptions) Run() error {
 }
 
 func (o *GetCVEOptions) ensureCVEProviderRunning() error {
-	isRunning, err := kube.IsDeploymentRunning(o.kubeClient, "anchore-anchore-engine-core", o.currentNamespace)
+	isRunning, err := kube.IsDeploymentRunning(o.kubeClient, AnchoreDeploymentName, o.currentNamespace)
 	if err != nil {
 		return err
 	}

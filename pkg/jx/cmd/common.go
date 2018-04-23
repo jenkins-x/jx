@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -193,6 +194,9 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 	if serverFlags.ServerURL != "" {
 		server = config.GetServer(serverFlags.ServerURL)
 		if server == nil {
+			if lazyCreate {
+				return config.GetOrCreateServerName(serverFlags.ServerURL, serverFlags.ServerName, kind), nil
+			}
 			return nil, util.InvalidOption(optionServerURL, serverFlags.ServerURL, config.GetServerURLs())
 		}
 	}

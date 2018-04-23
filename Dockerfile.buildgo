@@ -1,4 +1,4 @@
 # this is used for testing jx inside a cluster in development
-FROM jenkinsxio/builder-go:latest
+FROM jenkinsxio/builder-go:0.0.187
 
 COPY build/jx-linux-amd64 /usr/bin/jx
