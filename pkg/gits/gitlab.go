@@ -7,6 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -67,7 +68,7 @@ func fromGitlabProject(p *gitlab.Project) *GitRepository {
 		HTMLURL:  p.WebURL,
 		SSHURL:   p.SSHURLToRepo,
 		CloneURL: p.SSHURLToRepo,
-		Fork:     p.ForkedFromProject == nil,
+		Fork:     p.ForkedFromProject != nil,
 	}
 }
 
@@ -461,4 +462,9 @@ func (g *GitlabProvider) UpdateRelease(owner string, repo string, tag string, re
 
 func (p *GitlabProvider) IssueURL(org string, name string, number int, isPull bool) string {
 	return ""
+}
+
+// GitlabAccessTokenURL returns the URL to click on to generate a personal access token for the git provider
+func GitlabAccessTokenURL(url string) string {
+	return util.UrlJoin(url, "/profile/personal_access_tokens")
 }
