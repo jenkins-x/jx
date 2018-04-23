@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
@@ -35,6 +36,8 @@ type GitProvider interface {
 	CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error)
 
 	UpdatePullRequestStatus(pr *GitPullRequest) error
+
+	GetPullRequest(owner, repo string, number int) (*GitPullRequest, error)
 
 	PullRequestLastCommitStatus(pr *GitPullRequest) (string, error)
 
@@ -97,6 +100,12 @@ type GitProvider interface {
 
 	// ServerURL returns the git server URL
 	ServerURL() string
+
+	// Returns the current username
+	CurrentUsername() string
+
+	// Returns user info
+	UserInfo(username string) *v1.UserSpec
 }
 
 type GitOrganisation struct {
@@ -129,6 +138,8 @@ type GitPullRequest struct {
 	ClosedAt       *time.Time
 	MergedAt       *time.Time
 	LastCommitSha  string
+	Title          string
+	Body           string
 }
 
 type GitIssue struct {

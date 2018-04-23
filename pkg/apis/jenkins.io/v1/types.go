@@ -33,7 +33,7 @@ type EnvironmentSpec struct {
 	Kind              EnvironmentKindType   `json:"kind,omitempty" protobuf:"bytes,7,opt,name=kind"`
 	PullRequestURL    string                `json:"pullRequestURL,omitempty" protobuf:"bytes,8,opt,name=pullRequestURL"`
 	TeamSettings      TeamSettings          `json:"teamSettings,omitempty" protobuf:"bytes,9,opt,name=teamSettings"`
-	//PreviewGitSpec    PreviewGitSpec        `json:"previewGitSpec,omitempty" protobuf:"bytes,8,opt,name=previewGitSpec"`
+	PreviewGitSpec    PreviewGitSpec        `json:"previewGitInfo,omitempty" protobuf:"bytes,10,opt,name=previewGitInfo"`
 }
 
 // EnvironmentStatus is the status for an Environment resource
@@ -119,9 +119,14 @@ type TeamSettings struct {
 
 // PreviewGitSpec is the preview git branch/pull request details
 type PreviewGitSpec struct {
-	Name string   `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
-	URL  string   `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
-	User UserSpec `json:"user,omitempty" protobuf:"bytes,3,opt,name=user"`
+	Name            string   `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	URL             string   `json:"url,omitempty" protobuf:"bytes,2,opt,name=url"`
+	User            UserSpec `json:"user,omitempty" protobuf:"bytes,3,opt,name=user"`
+	Title           string   `json:"title,omitempty" protobuf:"bytes,4,opt,name=title"`
+	Description     string   `json:"description,omitempty" protobuf:"bytes,5,opt,name=description"`
+	BuildStatus     string   `json:"buildStatus,omitempty" protobuf:"bytes,6,opt,name=buildStatus"`
+	BuildStatusURL  string   `json:"buildStatusUrl,omitempty" protobuf:"bytes,7,opt,name=buildStatusUrl"`
+	ApplicationName string   `json:"appName,omitempty" protobuf:"bytes,8,opt,name=appName"`
 }
 
 // UserSpec is the user details

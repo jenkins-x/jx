@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"golang.org/x/oauth2"
 )
@@ -386,7 +388,23 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if result.DiffURL != nil {
 		pr.IssueURL = result.DiffURL
 	}
+	if result.Title != nil {
+		pr.Title = *result.Title
+	}
+	if result.Body != nil {
+		pr.Body = *result.Body
+	}
 	return nil
+}
+
+func (p *GitHubProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
+	pr := &GitPullRequest{
+		Owner:  owner,
+		Repo:   repo,
+		Number: &number,
+	}
+	err := p.UpdatePullRequestStatus(pr)
+	return pr, err
 }
 
 func (p *GitHubProvider) MergePullRequest(pr *GitPullRequest, message string) error {
@@ -743,6 +761,25 @@ func (p *GitHubProvider) Label() string {
 
 func (p *GitHubProvider) ServerURL() string {
 	return p.Server.URL
+}
+
+func (p *GitHubProvider) CurrentUsername() string {
+	return p.Username
+}
+
+func (p *GitHubProvider) UserInfo(username string) *v1.UserSpec {
+	user, _, err := p.Client.Users.Get(p.Context, username)
+	if err != nil {
+		log.Error("Unable to fetch user info for " + username)
+		return nil
+	}
+
+	return &v1.UserSpec{
+		Username: username,
+		Name:     *user.Name,
+		ImageURL: *user.AvatarURL,
+		LinkURL:  *user.URL,
+	}
 }
 
 func asBool(b *bool) bool {

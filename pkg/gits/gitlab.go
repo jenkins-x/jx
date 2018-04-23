@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/xanzy/go-gitlab"
 )
@@ -198,6 +199,8 @@ func fromMergeRequest(mr *gitlab.MergeRequest, owner, repo string) *GitPullReque
 		Repo:   repo,
 		Number: &mr.IID,
 		State:  &mr.State,
+		Title:  mr.Title,
+		Body:   mr.Description,
 	}
 }
 
@@ -213,6 +216,16 @@ func (g *GitlabProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 
 	*pr = *fromMergeRequest(mr, owner, repo)
 	return nil
+}
+
+func (p *GitlabProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
+	pr := &GitPullRequest{
+		Owner:  owner,
+		Repo:   repo,
+		Number: &number,
+	}
+	err := p.UpdatePullRequestStatus(pr)
+	return pr, err
 }
 
 func (g *GitlabProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
@@ -419,6 +432,27 @@ func (g *GitlabProvider) Label() string {
 
 func (p *GitlabProvider) ServerURL() string {
 	return p.Server.URL
+}
+
+func (p *GitlabProvider) CurrentUsername() string {
+	return p.Username
+}
+
+func (p *GitlabProvider) UserInfo(username string) *v1.UserSpec {
+	users, _, err := p.Client.Users.ListUsers(&gitlab.ListUsersOptions{Username: &username})
+
+	if err != nil || len(users) == 0 {
+		return nil
+	}
+
+	user := users[0]
+
+	return &v1.UserSpec{
+		Username: username,
+		LinkURL:  user.WebsiteURL,
+		ImageURL: user.AvatarURL,
+		Name:     user.Name,
+	}
 }
 
 func (g *GitlabProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {

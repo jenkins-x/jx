@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.gitea.io/sdk/gitea"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -280,6 +281,8 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	pr.Mergeable = &result.Mergeable
 	pr.MergedAt = result.Merged
 	pr.MergeCommitSHA = result.MergedCommitID
+	pr.Title = result.Title
+	pr.Body = result.Body
 	stateText := string(result.State)
 	pr.State = &stateText
 	head := result.Head
@@ -297,6 +300,16 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 		pr.DiffURL = result.DiffURL
 	*/
 	return nil
+}
+
+func (p *GiteaProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
+	pr := &GitPullRequest{
+		Owner:  owner,
+		Repo:   repo,
+		Number: &number,
+	}
+	err := p.UpdatePullRequestStatus(pr)
+	return pr, err
 }
 
 func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
@@ -579,4 +592,23 @@ func (p *GiteaProvider) Label() string {
 
 func (p *GiteaProvider) ServerURL() string {
 	return p.Server.URL
+}
+
+func (p *GiteaProvider) CurrentUsername() string {
+	return p.Username
+}
+
+func (p *GiteaProvider) UserInfo(username string) *v1.UserSpec {
+	user, err := p.Client.GetUserInfo(username)
+
+	if err != nil {
+		return nil
+	}
+
+	return &v1.UserSpec{
+		Username: username,
+		Name:     user.FullName,
+		ImageURL: user.AvatarURL,
+		// TODO figure the Gitea user url
+	}
 }

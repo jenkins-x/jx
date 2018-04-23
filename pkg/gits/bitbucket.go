@@ -9,7 +9,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/wbrefvem/go-bitbucket"
 )
 
@@ -364,6 +366,8 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	}
 
 	pr.State = &bitbucketPR.State
+	pr.Title = bitbucketPR.Title
+	pr.Body = bitbucketPR.Summary.Raw
 
 	if bitbucketPR.MergeCommit != nil {
 		pr.MergeCommitSHA = &bitbucketPR.MergeCommit.Hash
@@ -387,6 +391,16 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	pr.LastCommitSha = commit["hash"].(string)
 
 	return nil
+}
+
+func (p *BitbucketCloudProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
+	pr := &GitPullRequest{
+		Owner:  owner,
+		Repo:   repo,
+		Number: &number,
+	}
+	err := p.UpdatePullRequestStatus(pr)
+	return pr, err
 }
 
 func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
@@ -668,6 +682,25 @@ func (b *BitbucketCloudProvider) Label() string {
 
 func (b *BitbucketCloudProvider) ServerURL() string {
 	return b.Server.URL
+}
+
+func (p *BitbucketCloudProvider) CurrentUsername() string {
+	return p.Username
+}
+
+func (p *BitbucketCloudProvider) UserInfo(username string) *v1.UserSpec {
+	user, _, err := p.Client.UsersApi.UsersUsernameGet(p.Context, username)
+	if err != nil {
+		log.Error("Unable to fetch user info for " + username + "\n")
+		return nil
+	}
+
+	return &v1.UserSpec{
+		Username: username,
+		Name:     user.DisplayName,
+		ImageURL: user.Links.Avatar.Href,
+		LinkURL:  user.Links.Self.Href,
+	}
 }
 
 func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
