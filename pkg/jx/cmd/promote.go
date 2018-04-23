@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,7 +15,6 @@ import (
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -30,6 +30,7 @@ const (
 	optionApplication         = "app"
 	optionTimeout             = "timeout"
 	optionPullRequestPollTime = "pull-request-poll-time"
+	optionTriggerPipelineTime = "trigger-pipeline"
 
 	gitStatusSuccess = "success"
 )
@@ -54,14 +55,26 @@ type PromoteOptions struct {
 	NoMergePullRequest  bool
 	Timeout             string
 	PullRequestPollTime string
+	TriggerPipelineTime string
 
 	// calculated fields
-	TimeoutDuration         *time.Duration
-	PullRequestPollDuration *time.Duration
-	Activities              typev1.PipelineActivityInterface
-	GitInfo                 *gits.GitRepositoryInfo
-	jenkinsURL              string
-	releaseResource         *v1.Release
+	TimeoutDuration          *time.Duration
+	PullRequestPollDuration  *time.Duration
+	TriggerPipelineDuration  *time.Duration
+	Activities               typev1.PipelineActivityInterface
+	GitInfo                  *gits.GitRepositoryInfo
+	jenkinsURL               string
+	releaseResource          *v1.Release
+	PullRequestTriggerStatus triggerPipelineStatus
+	ReleaseTriggerStatus     triggerPipelineStatus
+}
+
+type triggerPipelineStatus struct {
+	Triggered                bool
+	StopChecking             bool
+	TimeGitUpdated           *time.Time
+	Pipeline                 string
+	LastBuildBeforeGitChange string
 }
 
 type ReleaseInfo struct {
@@ -138,6 +151,7 @@ func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.ReleaseName, "release", "", "", "The name of the helm release")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
+	cmd.Flags().StringVarP(&options.TriggerPipelineTime, optionTriggerPipelineTime, "", "10s", "The duration to wait time for webhooks to kick in and trigger pipelines before manually triggering them. In cases where webhooks are not possible (e.g. minikube) or not allowed (e.g. firewalls) this lets promotion work faster than the default 5 minute polling period.")
 	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
 	cmd.Flags().BoolVarP(&options.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
 }
@@ -159,12 +173,14 @@ func (o *PromoteOptions) Run() error {
 	}
 	o.Application = app
 
-	if o.PullRequestPollTime != "" {
-		duration, err := time.ParseDuration(o.PullRequestPollTime)
-		if err != nil {
-			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
-		}
-		o.PullRequestPollDuration = &duration
+	var err error
+	o.PullRequestPollDuration, err = util.ParseDuration(optionPullRequestPollTime, o.PullRequestPollTime)
+	if err != nil {
+		return err
+	}
+	o.TriggerPipelineDuration, err = util.ParseDuration(optionTriggerPipelineTime, o.TriggerPipelineTime)
+	if err != nil {
+		return err
 	}
 	if o.Timeout != "" {
 		duration, err := time.ParseDuration(o.Timeout)
@@ -546,10 +562,16 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		Head:  branchName,
 	}
 
+	o.beforeGitUpdate(&o.PullRequestTriggerStatus, false)
+
 	pr, err := provider.CreatePullRequest(gha)
 	if err != nil {
 		return err
 	}
+
+	o.ReleaseTriggerStatus.Pipeline = gitInfo.Organisation + "/" + gitInfo.Name + "/" + base
+	o.PullRequestTriggerStatus.Pipeline = gitInfo.Organisation + "/" + gitInfo.Name + "/" + "PR-" + pr.NumberString()
+
 	o.Printf("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
 	releaseInfo.PullRequestInfo = &ReleasePullRequestInfo{
 		GitProvider:          provider,
@@ -640,7 +662,8 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 		return nil
 	}
 	duration := *o.TimeoutDuration
-	end := time.Now().Add(duration)
+	now := time.Now()
+	end := now.Add(duration)
 
 	pullRequestInfo := releaseInfo.PullRequestInfo
 	if pullRequestInfo != nil {
@@ -676,6 +699,16 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 			}
 
 			if pr.Merged != nil && *pr.Merged {
+
+				// if we manually triggered the PR pipeline then lets manually trigger the release too
+				if o.PullRequestTriggerStatus.Triggered && !o.ReleaseTriggerStatus.Triggered {
+					o.Printf("Manually triggering the environment release pipeline %s\n", o.ReleaseTriggerStatus.Pipeline)
+					err = o.triggerPipeline(&o.ReleaseTriggerStatus)
+					if err != nil {
+						o.warnf("Failed to trigger the release pipeline: %s\n", err)
+					}
+				}
+
 				if pr.MergeCommitSHA == nil {
 					if !logNoMergeCommitSha {
 						logNoMergeCommitSha = true
@@ -792,6 +825,14 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 				}
 			}
 
+			now := time.Now()
+			if o.shouldTriggerPipeline(now, &o.PullRequestTriggerStatus) {
+				err = o.triggerPipeline(&o.PullRequestTriggerStatus)
+				if err != nil {
+					return err
+				}
+			}
+
 			if time.Now().After(end) {
 				return fmt.Errorf("Timed out waiting for pull request %s to merge. Waited %s", pr.URL, duration.String())
 			}
@@ -799,6 +840,108 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 		}
 	}
 	return nil
+}
+
+// triggerPipeline triggers the pipeline for the environment PR/release
+func (o *PromoteOptions) triggerPipeline(status *triggerPipelineStatus) error {
+	pipeline := status.Pipeline
+	jenkins, err := o.Factory.CreateJenkinsClient()
+	if err != nil {
+		return err
+	}
+	params := url.Values{}
+	paths := strings.Split(pipeline, "/")
+	job, err := jenkins.GetJobByPath(paths...)
+	if err != nil {
+		// lets try trigger a scan if we can't find it
+		parentPath := paths[0 : len(paths)-1]
+		job, err = jenkins.GetJobByPath(parentPath...)
+		parentPipeline := strings.Join(parentPath, "/")
+		if err != nil {
+			o.warnf("Failed to find parent job %s: %s\n", parentPipeline, err)
+			return nil
+		}
+		err = jenkins.Build(job, params)
+		if err != nil {
+			o.warnf("Failed to trigger parent job %s: %s\n", parentPipeline, err)
+		} else {
+			o.Printf("Manually triggered scan of %s\n", parentPipeline)
+			status.Triggered = true
+		}
+		return nil
+	}
+	err = jenkins.Build(job, params)
+	if err != nil {
+		o.warnf("Failed to trigger job %s: %s\n", pipeline, err)
+	} else {
+		status.Triggered = true
+	}
+	return nil
+}
+
+func (o *PromoteOptions) shouldTriggerPipeline(now time.Time, status *triggerPipelineStatus) bool {
+	if status.Triggered || status.StopChecking {
+		return false
+	}
+	pipeline := status.Pipeline
+	if status.TimeGitUpdated == nil {
+		o.warnf("No TimeGitUpdated specified when trying to check for pipeline triggers for %s\n", pipeline)
+		return false
+	}
+	duration := o.TriggerPipelineDuration
+	if duration == nil {
+		o.warnf("No TriggerPipelineDuration specified for pipeline triggers for %s\n", pipeline)
+		return false
+	}
+	end := status.TimeGitUpdated.Add(*duration)
+	if now.Before(end) {
+		return false
+	}
+
+	buildNumber, err := o.getLastBuildName(status)
+	if err != nil {
+		o.warnf("Failed to get the build status for pipeline %s: %s\n", status.Pipeline, err)
+	}
+
+	if buildNumber != status.LastBuildBeforeGitChange {
+		status.StopChecking = true
+		return false
+	}
+
+	o.warnf("Manually triggering pipeline %s as the webhook has not triggered the pipeline automatically after waiting %s. Are your webhooks setup correctly? Maybe a firewall issue?\n", pipeline, duration.String())
+
+	return true
+}
+
+// beforeGitUpdate records the time before we update git and the last build number of the pipeline
+// so that we can check if the pipeline is triggered via a webhook
+func (o *PromoteOptions) beforeGitUpdate(status *triggerPipelineStatus, updateLastBuild bool) {
+	// only do this if we have not yet initialised things
+	if status.TimeGitUpdated == nil {
+		t := time.Now()
+		status.Triggered = false
+		status.TimeGitUpdated = &t
+		if updateLastBuild {
+			buildNumber, err := o.getLastBuildName(status)
+			if err != nil {
+				o.warnf("Failed to get the build status for pipeline %s: %s\n", status.Pipeline, err)
+			}
+			status.LastBuildBeforeGitChange = buildNumber
+		}
+	}
+}
+
+// getLastBuildName returns the last build number text for the pipeline
+func (o *PromoteOptions) getLastBuildName(status *triggerPipelineStatus) (string, error) {
+	pipeline := status.Pipeline
+	if pipeline == "" {
+		return "", fmt.Errorf("No Pipeline name configured!\n")
+	}
+	_, build, err := o.getLatestPipelineBuild(pipeline)
+	if err != nil {
+		return "", err
+	}
+	return build, nil
 }
 
 func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
@@ -962,7 +1105,6 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 
 // getLatestPipelineBuild for the given pipeline name lets try find the Jenkins Pipeline and the latest build
 func (o *PromoteOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
-	log.Infof("pipeline %s\n", pipeline)
 	build := ""
 	jenkins, err := o.Factory.CreateJenkinsClient()
 	if err != nil {
@@ -986,7 +1128,7 @@ func (o *PromoteOptions) getJenkinsURL() string {
 	}
 	url, err := o.Factory.GetJenkinsURL()
 	if err != nil {
-		o.warnf("Could not find Jenkins URL %s", err)
+		o.warnf("Could not find Jenkins URL %s\n", err)
 	} else {
 		o.jenkinsURL = url
 	}
@@ -1100,7 +1242,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 						if number > 0 {
 							err = provider.CreateIssueComment(gitInfo.Organisation, gitInfo.Name, number, comment)
 							if err != nil {
-								o.warnf("Failed to add comment to issue %s: %s", issue.URL, err)
+								o.warnf("Failed to add comment to issue %s: %s\n", issue.URL, err)
 							}
 						}
 					}
