@@ -125,13 +125,10 @@ func (o *CreateGitTokenOptions) Run() error {
 	tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL, userAuth.Username)
 
 	if userAuth.IsInvalid() && o.Password != "" {
-		err := o.tryFindAPITokenFromBrowser(tokenUrl, userAuth)
-		if err != nil {
-			return err
-		}
+		err = o.tryFindAPITokenFromBrowser(tokenUrl, userAuth)
 	}
 
-	if userAuth.IsInvalid() {
+	if err != nil || userAuth.IsInvalid() {
 		f := func(username string) error {
 			tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL, username)
 
