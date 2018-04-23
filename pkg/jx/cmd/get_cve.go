@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cve"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -24,10 +25,6 @@ type GetCVEOptions struct {
 	VulnerabilityType string
 }
 
-const (
-	AnchoreDeploymentName = "anchore-anchore-engine-core"
-)
-
 var (
 	getCVELong = templates.LongDesc(`
 		Display Common Vulnerabilities and Exposures (CVEs)
@@ -41,7 +38,7 @@ var (
 		jx get cve --app foo
 		jx get cve --app foo --version 1.0.0
 		jx get cve --app foo --env staging
-		jx get cve --env staging
+		jx get cve --environment staging
 	`)
 )
 
@@ -92,17 +89,18 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
 	}
 
-	err = o.ensureCVEProviderRunning()
+	err = o.ensureCVEServiceAvailable()
 	if err != nil {
-		return fmt.Errorf("no CVE provider running, have you tried running `jx create addon anchore`. error: %v", err)
+		log.Warnf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.\n")
+		return fmt.Errorf("if no CVE provider running, try running `jx create addon anchore` in your teams dev environment: %v", err)
 	}
 
 	// if no flags are set try and guess the image name from the current directory
 	if o.ImageID == "" && o.ImageName == "" && o.Env == "" {
-		return fmt.Errorf("no --image-name, --image-id or --env flags set\n", o.ImageName)
+		return fmt.Errorf("no --image-name, --image-id or --env flags set\n")
 	}
 
-	server, auth, err := o.CommonOptions.getAddonAuthByKind(AnchoreDeploymentName)
+	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindCVE)
 	if err != nil {
 		return fmt.Errorf("error getting anchore engine auth details, %v", err)
 	}
@@ -130,16 +128,15 @@ func (o *GetCVEOptions) Run() error {
 	return nil
 }
 
-func (o *GetCVEOptions) ensureCVEProviderRunning() error {
-	isRunning, err := kube.IsDeploymentRunning(o.kubeClient, AnchoreDeploymentName, o.currentNamespace)
+func (o *GetCVEOptions) ensureCVEServiceAvailable() error {
+	present, err := kube.IsServicePresent(o.kubeClient, anchoreServiceName, o.currentNamespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.")
 	}
-	if isRunning {
+	if present {
 		return nil
 	}
 
-	// TODO ask if user wants to intall a CVE provider addon
-
+	// todo ask if user wants to intall a CVE provider addon?
 	return nil
 }

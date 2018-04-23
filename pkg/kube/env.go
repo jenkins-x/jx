@@ -624,8 +624,6 @@ func GetDevNamespace(kubeClient *kubernetes.Clientset, ns string) (string, strin
 			ns = answer
 		}
 		env = namespace.Labels[LabelEnvironment]
-	} else {
-		return "", "", fmt.Errorf("cannot work out dev team, perhapse you are in a namespace that jx is not aware of. try switching to an environment with `jx namespace` and try again\n")
 	}
 	return ns, env, nil
 }

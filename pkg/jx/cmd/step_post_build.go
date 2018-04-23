@@ -7,18 +7,30 @@ import (
 
 	"os"
 
+	"os/exec"
+	"strings"
+
+	"bufio"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
 
 // StepPostBuildOptions contains the command line flags
 type StepPostBuildOptions struct {
 	StepOptions
+	FullImageName string
+	OutputFile    string
+}
 
-	OutputFile string
+type anchoreDetails struct {
+	URL      string
+	Username string
+	Password string
 }
 
 var (
@@ -32,7 +44,7 @@ var (
 )
 
 func NewCmdStepPostBuild(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := StepGitCredentialsOptions{
+	options := StepPostBuildOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -54,11 +66,12 @@ func NewCmdStepPostBuild(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 		},
 	}
 
+	cmd.Flags().StringVarP(&options.FullImageName, "image", "", "", "The full image name to be analysed including teh registry prefix")
+
 	return cmd
 }
 
 func (o *StepPostBuildOptions) Run() error {
-
 	_, _, err := o.KubeClient()
 	if err != nil {
 		return fmt.Errorf("error connecting to kubernetes cluster: %v", err)
@@ -73,13 +86,16 @@ func (o *StepPostBuildOptions) Run() error {
 	return nil
 }
 func (o *StepPostBuildOptions) addImageCVEProvider() error {
+	if o.FullImageName == "" {
+		return util.MissingOption("image")
+	}
 
-	isRunning, err := kube.IsDeploymentRunning(o.kubeClient, AnchoreDeploymentName, o.currentNamespace)
+	present, err := kube.IsServicePresent(o.kubeClient, anchoreServiceName, o.currentNamespace)
 	if err != nil {
 		return err
 	}
 
-	if !isRunning {
+	if !present {
 		log.Infof("no CVE provider running in the current %s namespace so skip adding image to be analysed", o.currentNamespace)
 		return nil
 	}
@@ -88,33 +104,83 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 	if cveProviderHost == "" {
 		return fmt.Errorf("no JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST env var found")
 	}
+
 	cveProviderPort := os.Getenv("JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT")
 	if cveProviderPort == "" {
 		return fmt.Errorf("no JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT env var found")
 	}
 
-	appName := os.Getenv("APP_NAME")
-	if appName == "" {
-		return fmt.Errorf("no APP_NAME env var found")
-	}
+	log.Infof("adding image %s to CVE provider\n", o.FullImageName)
 
-	org := os.Getenv("ORG")
-	if org == "" {
-		return fmt.Errorf("no ORG env var found")
-	}
-
-	version := os.Getenv("VERSION")
-	if version == "" {
-		return fmt.Errorf("no ORG env var found")
-	}
-
-	fullImageName := fmt.Sprintf("%s:%s/%s/%s:%s", cveProviderHost, cveProviderPort, org, appName, version)
-	log.Infof("adding image %s to CVE provider\n", fullImageName)
-
-	err = o.runCommand("anchore-cli", "image", "add", fullImageName)
+	imageID, err := o.addImageToAnchore()
 	if err != nil {
-		return fmt.Errorf("failed to add image %s to anchore engine: %v\n", fullImageName, err)
+		return fmt.Errorf("failed to add image %s to anchore engine: %v\n", o.FullImageName, err)
 	}
-	// todo get response and use image id to annotate pods when doing a helm install / upgrade
+
+	// todo use image id to annotate pods during environments helm install / upgrade
+	// todo then we can use `jx get cve --env staging` and list all CVEs for an environment
+	log.Infof("anchore image is %s \n", imageID)
 	return nil
+}
+
+func (o *StepPostBuildOptions) addImageToAnchore() (string, error) {
+
+	a, err := o.getAnchoreDetails()
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command("anchore-cli", "image", "add", o.FullImageName)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "ANCHORE_CLI_USER="+a.Username)
+	cmd.Env = append(cmd.Env, "ANCHORE_CLI_PASS="+a.Password)
+	cmd.Env = append(cmd.Env, "ANCHORE_CLI_URL="+a.URL)
+	data, err := cmd.CombinedOutput()
+	text := string(data)
+
+	if err != nil {
+		return "", err
+	}
+	scanner := bufio.NewScanner(strings.NewReader(text))
+	var imageID string
+	for scanner.Scan() {
+		if strings.HasPrefix(scanner.Text(), "Image ID:") {
+			imageID = strings.Replace(scanner.Text(), "Image ID:", "", -1)
+			imageID = strings.TrimSpace(imageID)
+			break
+		}
+	}
+	if imageID == "" {
+		return "", fmt.Errorf("no Image ID returned from Anchore")
+	}
+	return imageID, nil
+}
+
+func (o *StepPostBuildOptions) getAnchoreDetails() (anchoreDetails, error) {
+	var a anchoreDetails
+	secretsList, err := o.Factory.LoadPipelineSecrets(kube.ValueKindAddon, kube.ValueKindCVE)
+	if err != nil {
+		return a, err
+	}
+
+	if secretsList == nil || len(secretsList.Items) == 0 {
+		return a, fmt.Errorf("no addon secrets found for kind cve")
+	}
+
+	if len(secretsList.Items) > 1 {
+		return a, fmt.Errorf("multiple addon secrets found for kind cve, please clean up and leave only one")
+	}
+
+	s := secretsList.Items[0]
+
+	a.URL = s.Annotations[kube.AnnotationURL]
+
+	if a.URL != "" && s.Data != nil {
+		a.Username = string(s.Data[kube.SecretDataUsername])
+		a.Password = string(s.Data[kube.SecretDataPassword])
+	} else {
+		return a, fmt.Errorf("secret %s is missing URL or data", s.Name)
+	}
+
+	return a, nil
 }

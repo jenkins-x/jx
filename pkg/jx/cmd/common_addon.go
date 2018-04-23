@@ -43,7 +43,7 @@ func (o *CommonOptions) getAddonAuthByKind(kind string) (*auth.AuthServer, *auth
 }
 
 func (o *CommonOptions) CreateAddonAuthConfigService() (auth.AuthConfigService, error) {
-	secrets, err := o.Factory.LoadPipelineSecrets(kube.ValueKindAddon)
+	secrets, err := o.Factory.LoadPipelineSecrets(kube.ValueKindAddon, "")
 	if err != nil {
 		o.warnf("The current user cannot query pipeline addon secrets: %s", err)
 	}

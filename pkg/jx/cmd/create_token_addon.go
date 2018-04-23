@@ -39,7 +39,6 @@ type CreateTokenAddonOptions struct {
 	ApiToken    string
 	Timeout     string
 	Kind        string
-	Namespace   string
 }
 
 // NewCmdCreateTokenAddon creates a command
@@ -155,16 +154,13 @@ func (o *CreateTokenAddonOptions) updateAddonCredentialsSecret(server *auth.Auth
 	if err != nil {
 		return err
 	}
-	if o.Namespace == "" {
-
-		o.Namespace, _, err = kube.GetDevNamespace(client, curNs)
-		if err != nil {
-			return err
-		}
+	ns, _, err := kube.GetDevNamespace(client, curNs)
+	if err != nil {
+		return err
 	}
 	options := metav1.GetOptions{}
 	name := kube.ToValidName(kube.SecretJenkinsPipelineAddonCredentials + server.Kind + "-" + server.Name)
-	secrets := client.CoreV1().Secrets(o.Namespace)
+	secrets := client.CoreV1().Secrets(ns)
 	secret, err := secrets.Get(name, options)
 	create := false
 	operation := "update"
