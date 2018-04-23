@@ -247,6 +247,8 @@ func ProviderAccessTokenURL(kind string, url string, username string) string {
 		return BitbucketAccessTokenURL(url, username)
 	case KindGitea:
 		return GiteaAccessTokenURL(url)
+	case KindGitlab:
+		return GitlabAccessTokenURL(url)
 	default:
 		return GitHubAccessTokenURL(url)
 	}
