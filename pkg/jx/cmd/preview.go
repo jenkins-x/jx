@@ -400,8 +400,11 @@ func (o *PreviewOptions) Run() error {
 			},
 		},
 	}
-	return stepPRCommentOptions.Run()
-
+	err = stepPRCommentOptions.Run()
+	if err != nil {
+		o.warnf("Failed to comment on the Pull Request: %s\n", err)
+	}
+	return nil
 }
 
 func getImageName() (string, error) {
