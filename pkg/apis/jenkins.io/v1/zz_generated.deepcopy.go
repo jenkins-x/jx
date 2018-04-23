@@ -29,6 +29,11 @@ func (in *CommitSummary) DeepCopyInto(out *CommitSummary) {
 			(*in).DeepCopyInto(*out)
 		}
 	}
+	if in.IssueIDs != nil {
+		in, out := &in.IssueIDs, &out.IssueIDs
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
@@ -156,6 +161,7 @@ func (in *EnvironmentSpec) DeepCopyInto(out *EnvironmentSpec) {
 	*out = *in
 	out.Source = in.Source
 	out.TeamSettings = in.TeamSettings
+	out.PreviewGitSpec = in.PreviewGitSpec
 	return
 }
 

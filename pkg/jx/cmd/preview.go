@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 )
 
 var (
@@ -44,7 +45,7 @@ const (
 	PREVIEW_VERSION                        = "PREVIEW_VERSION"
 )
 
-// PreviewOptions the options for the create spring command
+// PreviewOptions the options for viewing running PRs
 type PreviewOptions struct {
 	PromoteOptions
 
@@ -236,6 +237,41 @@ func (o *PreviewOptions) Run() error {
 		label = envName
 	}
 
+	// we need pull request info to include
+	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	if err != nil {
+		return err
+	}
+
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return err
+	}
+
+	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind)
+
+	user := gitProvider.UserInfo(gitProvider.CurrentUsername())
+	prNum, err := strconv.Atoi(prName)
+	if err != nil {
+		log.Warn("Unable to convert PR " + prName + " to a number" + "\n")
+	}
+
+	pullRequest, _ := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
+
+	statuses, err := gitProvider.ListCommitStatus(gitInfo.Organisation, gitInfo.Name, pullRequest.LastCommitSha)
+
+	if err != nil {
+		log.Warn("Unable to get statuses for PR " + prName + "\n")
+	}
+
+	buildStatus := ""
+	buildStatusUrl := ""
+	if len(statuses) > 0 {
+		status := statuses[len(statuses)-1]
+		buildStatus = status.State
+		buildStatusUrl = status.TargetURL
+	}
+
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(envName, metav1.GetOptions{})
 	if err == nil {
 		// lets check for updates...
@@ -272,6 +308,39 @@ func (o *PreviewOptions) Run() error {
 			update = true
 		}
 
+		gitSpec := spec.PreviewGitSpec
+		if gitSpec.BuildStatus != buildStatus {
+			gitSpec.BuildStatus = buildStatus
+			update = true
+		}
+		if gitSpec.BuildStatusURL != buildStatusUrl {
+			gitSpec.BuildStatusURL = buildStatusUrl
+			update = true
+		}
+		if gitSpec.ApplicationName != o.Application {
+			gitSpec.ApplicationName = o.Application
+			update = true
+		}
+		if gitSpec.Title != pullRequest.Title {
+			gitSpec.Title = pullRequest.Title
+			update = true
+		}
+		if gitSpec.Description != pullRequest.Body {
+			gitSpec.Description = pullRequest.Body
+			update = true
+		}
+		if gitSpec.URL != prURL {
+			gitSpec.URL = prURL
+			update = true
+		}
+		if gitSpec.User.Username != user.Username ||
+			gitSpec.User.ImageURL != user.ImageURL ||
+			gitSpec.User.Name != user.Name ||
+			gitSpec.User.LinkURL != user.LinkURL {
+			gitSpec.User = *user
+			update = true
+		}
+
 		if update {
 			_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
 			if err != nil {
@@ -296,6 +365,16 @@ func (o *PreviewOptions) Run() error {
 					Kind: v1.EnvironmentRepositoryTypeGit,
 					URL:  sourceURL,
 					Ref:  sourceRef,
+				},
+				PreviewGitSpec: v1.PreviewGitSpec{
+					ApplicationName: o.Application,
+					Name:            prName,
+					URL:             prURL,
+					Title:           pullRequest.Title,
+					Description:     pullRequest.Body,
+					BuildStatus:     buildStatus,
+					BuildStatusURL:  buildStatusUrl,
+					User:            *user,
 				},
 			},
 		}
