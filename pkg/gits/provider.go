@@ -231,10 +231,12 @@ func (pr *GitPullRequest) NumberString() string {
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	switch server.Kind {
-	case KindGitea:
-		return NewGiteaProvider(server, user)
 	case KindBitBucket:
 		return NewBitbucketCloudProvider(server, user)
+	case KindGitea:
+		return NewGiteaProvider(server, user)
+	case KindGitlab:
+		return NewGitlabProvider(server, user)
 	default:
 		return NewGitHubProvider(server, user)
 	}
