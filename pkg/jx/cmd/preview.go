@@ -250,13 +250,16 @@ func (o *PreviewOptions) Run() error {
 
 	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind)
 
-	user := gitProvider.UserInfo(gitProvider.CurrentUsername())
 	prNum, err := strconv.Atoi(prName)
 	if err != nil {
 		log.Warn("Unable to convert PR " + prName + " to a number" + "\n")
 	}
 
 	pullRequest, _ := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
+
+	log.Info("PR author: " + pullRequest.Author)
+
+	user := gitProvider.UserInfo(pullRequest.Author)
 
 	statuses, err := gitProvider.ListCommitStatus(gitInfo.Organisation, gitInfo.Name, pullRequest.LastCommitSha)
 

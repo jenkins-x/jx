@@ -363,6 +363,9 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	} else {
 		pr.LastCommitSha = ""
 	}
+	if pr.Author == "" && result.User != nil && result.User.Login != nil {
+		pr.Author = *result.User.Login
+	}
 	if result.Mergeable != nil {
 		pr.Mergeable = result.Mergeable
 	}
@@ -778,7 +781,7 @@ func (p *GitHubProvider) UserInfo(username string) *v1.UserSpec {
 		Username: username,
 		Name:     *user.Name,
 		ImageURL: *user.AvatarURL,
-		LinkURL:  *user.URL,
+		LinkURL:  *user.HTMLURL,
 	}
 }
 
