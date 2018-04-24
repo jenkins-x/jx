@@ -3,7 +3,6 @@ package gits
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -220,14 +219,6 @@ type GitWebHookArguments struct {
 // IsClosed returns true if the PullRequest has been closed
 func (pr *GitPullRequest) IsClosed() bool {
 	return pr.ClosedAt != nil
-}
-
-// NumberString returns the string representation of the PR number or empty string if its not yet defined
-func (pr *GitPullRequest) NumberString() string {
-	if pr.Number != nil {
-		return strconv.Itoa(*pr.Number)
-	}
-	return ""
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
