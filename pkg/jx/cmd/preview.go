@@ -257,9 +257,12 @@ func (o *PreviewOptions) Run() error {
 
 	pullRequest, _ := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
 
-	log.Info("PR author: " + pullRequest.Author)
+	username := gitProvider.CurrentUsername()
+	if pullRequest.Author != "" {
+		username = pullRequest.Author
+	}
 
-	user := gitProvider.UserInfo(pullRequest.Author)
+	user := gitProvider.UserInfo(username)
 
 	statuses, err := gitProvider.ListCommitStatus(gitInfo.Organisation, gitInfo.Name, pullRequest.LastCommitSha)
 
