@@ -276,6 +276,7 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if err != nil {
 		return fmt.Errorf("Could not find pull request for %s/%s #%d: %s", pr.Owner, pr.Repo, n, err)
 	}
+	pr.Author = result.Poster.UserName
 	merged := result.HasMerged
 	pr.Merged = &merged
 	pr.Mergeable = &result.Mergeable

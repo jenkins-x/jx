@@ -125,6 +125,7 @@ type GitRepository struct {
 
 type GitPullRequest struct {
 	URL            string
+	Author         string
 	Owner          string
 	Repo           string
 	Number         *int

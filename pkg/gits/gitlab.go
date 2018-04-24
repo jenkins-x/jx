@@ -195,6 +195,7 @@ func (g *GitlabProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 
 func fromMergeRequest(mr *gitlab.MergeRequest, owner, repo string) *GitPullRequest {
 	return &GitPullRequest{
+		Author: mr.Author.Username,
 		URL:    mr.WebURL,
 		Owner:  owner,
 		Repo:   repo,

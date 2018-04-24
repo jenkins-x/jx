@@ -368,6 +368,7 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	pr.State = &bitbucketPR.State
 	pr.Title = bitbucketPR.Title
 	pr.Body = bitbucketPR.Summary.Raw
+	pr.Author = bitbucketPR.Author.Username
 
 	if bitbucketPR.MergeCommit != nil {
 		pr.MergeCommitSHA = &bitbucketPR.MergeCommit.Hash
