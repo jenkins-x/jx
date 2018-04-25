@@ -19,7 +19,7 @@ race-test: lint
 	go test -timeout=500ms -race ./...
 
 $(BUMP_VERSION):
-	go get -u github.com/Shyp/bump_version
+	go get -u github.com/kevinburke/bump_version
 
 release: test | $(BUMP_VERSION)
 	$(BUMP_VERSION) minor config.go

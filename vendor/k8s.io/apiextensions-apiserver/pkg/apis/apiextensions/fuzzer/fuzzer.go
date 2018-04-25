@@ -58,7 +58,7 @@ func Funcs(codecs runtimeserializer.CodecFactory) []interface{} {
 					case reflect.Interface, reflect.Map, reflect.Slice, reflect.Ptr:
 						isValue = false
 					}
-					if isValue || c.Intn(5) == 0 {
+					if isValue || c.Intn(10) == 0 {
 						c.Fuzz(vobj.Field(i).Addr().Interface())
 					}
 				}
@@ -81,6 +81,7 @@ func Funcs(codecs runtimeserializer.CodecFactory) []interface{} {
 		},
 		func(obj *apiextensions.JSONSchemaPropsOrBool, c fuzz.Continue) {
 			if c.RandBool() {
+				obj.Allows = true
 				obj.Schema = &apiextensions.JSONSchemaProps{}
 				c.Fuzz(obj.Schema)
 			} else {

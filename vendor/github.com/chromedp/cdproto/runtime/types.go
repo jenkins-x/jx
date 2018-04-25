@@ -183,6 +183,14 @@ func (t *Timestamp) UnmarshalJSON(buf []byte) error {
 	return easyjson.Unmarshal(buf, t)
 }
 
+// TimeDelta number of milliseconds.
+type TimeDelta float64
+
+// Float64 returns the TimeDelta as float64 value.
+func (t TimeDelta) Float64() float64 {
+	return float64(t)
+}
+
 // CallFrame stack entry for runtime errors and assertions.
 type CallFrame struct {
 	FunctionName string   `json:"functionName"` // JavaScript function name.

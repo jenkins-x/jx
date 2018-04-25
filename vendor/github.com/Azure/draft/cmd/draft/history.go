@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/Azure/draft/pkg/draft/local"
+	"github.com/Azure/draft/pkg/local"
 	"github.com/Azure/draft/pkg/storage"
 	"github.com/Azure/draft/pkg/storage/kube/configmap"
 	"github.com/ghodss/yaml"

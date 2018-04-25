@@ -16,7 +16,7 @@ For local use with Minikube, only the `eval $(minikube docker-env)` command is r
 
 For cloud registry services, like Azure Container Registry (ACR), Docker Hub, or other container registry services, two things are needed. 
 1. You need to tell Draft where the registry resides using the `draft config set registry` command, passing the registry's server URL (without the protocol scheme). 
-2. Unless there is a trust relationship between the cluster provider and the registry -- {as you can configure between the Azure Kubernetes Service (AKS) and the Azure Container Registry (ACR)](https://docs.microsoft.com/azure/container-registry/container-registry-auth-aks#grant-aks-access-to-acr) -- you'll need to either [add a container registry secret to your chart](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry) to pull the private image, or you can configure Draft to inject a secret for you for deployment using the login feature of your registry provider.
+2. Unless there is a trust relationship between the cluster provider and the registry -- [as you can configure between the Azure Kubernetes Service (AKS) and the Azure Container Registry (ACR)](https://docs.microsoft.com/azure/container-registry/container-registry-auth-aks#grant-aks-access-to-acr) -- you'll need to either [add a container registry secret to your chart](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry) to pull the private image, or you can configure Draft to inject a secret for you for deployment using the login feature of your registry provider.
 
 ## Drafting with ACR and AKS
 
@@ -38,9 +38,24 @@ We'll also need to log into the cluster to push images from our local docker dae
 $ az acr login -n myregistry -g myresourcegroup
 ```
 
-If you were using Docker Hub, for example, this command would be the `docker login` command.
-
 NOTE: Once configured, Draft will inject a registry auth secret into the destination namespace deploying the chart to the cluster so the image can be pulled from the registry. 
+
+## Drafting with DockerHub
+
+To use [DockerHub](https://hub.docker.com) as your preferred registry, you must first have an account on DockerHub.
+
+Once you have an account there, there are two steps for preparing Draft to use DockerHub as a target for pushing images.
+
+1. Log in with `docker login` on the command line.
+2. Set your preferred Draft registry. To do this, you need to know your DockerHub user name.
+
+```console
+$ draft config set registry USERNAME
+```
+
+Unlike other registries, DockerHub does not need a registry URL. Just the user name will suffice.
+
+Note that for DockerHub, Draft will not create a registry auth secret.
 
 ## Running Tiller with RBAC enabled
 

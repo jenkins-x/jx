@@ -13,6 +13,7 @@ This DEP contains the index of all Draft Enhancement Proposals, known as DEPs. D
 | [5][]   | Draft Plugin Format          |
 | [6][]   | draft.toml Format            |
 | [7][]   | Draft Connect                |
+| [8][]   | Draft Tasks                  |
 
 [1]: dep-001.md
 [2]: dep-002.md
@@ -21,3 +22,4 @@ This DEP contains the index of all Draft Enhancement Proposals, known as DEPs. D
 [5]: dep-005.md
 [6]: dep-006.md
 [7]: dep-007.md
+[8]: dep-008.md
