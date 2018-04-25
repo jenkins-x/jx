@@ -34,6 +34,11 @@ const (
 	// ChartsDir is the directory name for the packaged chart.
 	// This also doubles as the directory name for chart dependencies.
 	ChartsDir = "charts"
+	//TasksFileName is the name of the tasks file in a draft pack
+	TasksFileName = "tasks.toml"
+	//TargetTasksFileName is the name of the file where the tasks file from the
+	//  draft pack will be copied to
+	TargetTasksFileName = ".draft-tasks.toml"
 )
 
 // Pack defines a Draft Starter Pack.
@@ -54,6 +59,30 @@ func (p *Pack) SaveDir(dest string) error {
 	if err := chartutil.SaveDir(p.Chart, chartPath); err != nil {
 		return err
 	}
+
+	tasksFilePath := filepath.Join(dest, TargetTasksFileName)
+	exists, err := osutil.Exists(tasksFilePath)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		f, ok := p.Files[TasksFileName]
+		if ok {
+			newfile, err := os.Create(tasksFilePath)
+			if err != nil {
+				return err
+			}
+			defer newfile.Close()
+			defer f.Close()
+			io.Copy(newfile, f)
+		} else {
+			if _, err := os.Create(tasksFilePath); err != nil {
+				return err
+			}
+		}
+	}
+
+	delete(p.Files, TasksFileName)
 
 	// save the rest of the files
 	for relPath, f := range p.Files {

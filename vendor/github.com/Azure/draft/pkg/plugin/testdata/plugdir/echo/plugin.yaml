@@ -5,4 +5,5 @@ description: |-
   This is a testing fixture. Thank you Helm.
 command: "echo Hello"
 hooks:
-  install: "echo Installing"
+  bash:
+    install: "echo Installing"

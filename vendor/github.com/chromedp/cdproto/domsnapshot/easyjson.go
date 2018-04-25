@@ -661,6 +661,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoDomsnapshot4(in *jlexer.Lexer
 			out.IncludeEventListeners = bool(in.Bool())
 		case "includePaintOrder":
 			out.IncludePaintOrder = bool(in.Bool())
+		case "includeUserAgentShadowTree":
+			out.IncludeUserAgentShadowTree = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -715,6 +717,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoDomsnapshot4(out *jwriter.Wri
 			out.RawString(prefix)
 		}
 		out.Bool(bool(in.IncludePaintOrder))
+	}
+	if in.IncludeUserAgentShadowTree {
+		const prefix string = ",\"includeUserAgentShadowTree\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.IncludeUserAgentShadowTree))
 	}
 	out.RawByte('}')
 }

@@ -423,14 +423,13 @@ func (p *GetPlatformFontsForNodeParams) Do(ctxt context.Context, h cdp.Executor)
 	return res.Fonts, nil
 }
 
-// GetStyleSheetTextParams returns the current textual content and the URL
-// for a stylesheet.
+// GetStyleSheetTextParams returns the current textual content for a
+// stylesheet.
 type GetStyleSheetTextParams struct {
 	StyleSheetID StyleSheetID `json:"styleSheetId"`
 }
 
-// GetStyleSheetText returns the current textual content and the URL for a
-// stylesheet.
+// GetStyleSheetText returns the current textual content for a stylesheet.
 //
 // parameters:
 //   styleSheetID

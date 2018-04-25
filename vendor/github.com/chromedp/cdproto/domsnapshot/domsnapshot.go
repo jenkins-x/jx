@@ -21,9 +21,10 @@ import (
 // style information for the nodes. Shadow DOM in the returned DOM tree is
 // flattened.
 type GetSnapshotParams struct {
-	ComputedStyleWhitelist []string `json:"computedStyleWhitelist"`          // Whitelist of computed styles to return.
-	IncludeEventListeners  bool     `json:"includeEventListeners,omitempty"` // Whether or not to retrieve details of DOM listeners (default false).
-	IncludePaintOrder      bool     `json:"includePaintOrder,omitempty"`     // Whether to determine and include the paint order index of LayoutTreeNodes (default false).
+	ComputedStyleWhitelist     []string `json:"computedStyleWhitelist"`               // Whitelist of computed styles to return.
+	IncludeEventListeners      bool     `json:"includeEventListeners,omitempty"`      // Whether or not to retrieve details of DOM listeners (default false).
+	IncludePaintOrder          bool     `json:"includePaintOrder,omitempty"`          // Whether to determine and include the paint order index of LayoutTreeNodes (default false).
+	IncludeUserAgentShadowTree bool     `json:"includeUserAgentShadowTree,omitempty"` // Whether to include UA shadow tree in the snapshot (default false).
 }
 
 // GetSnapshot returns a document snapshot, including the full DOM tree of
@@ -50,6 +51,13 @@ func (p GetSnapshotParams) WithIncludeEventListeners(includeEventListeners bool)
 // index of LayoutTreeNodes (default false).
 func (p GetSnapshotParams) WithIncludePaintOrder(includePaintOrder bool) *GetSnapshotParams {
 	p.IncludePaintOrder = includePaintOrder
+	return &p
+}
+
+// WithIncludeUserAgentShadowTree whether to include UA shadow tree in the
+// snapshot (default false).
+func (p GetSnapshotParams) WithIncludeUserAgentShadowTree(includeUserAgentShadowTree bool) *GetSnapshotParams {
+	p.IncludeUserAgentShadowTree = includeUserAgentShadowTree
 	return &p
 }
 

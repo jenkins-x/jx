@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -20,6 +21,9 @@ import (
 	"github.com/spf13/pflag"
 	"golang.org/x/net/context"
 	"k8s.io/client-go/rest"
+
+	"github.com/Azure/draft/pkg/local"
+	"github.com/Azure/draft/pkg/tasks"
 )
 
 const upDesc = `
@@ -31,6 +35,7 @@ const (
 	ignoreFileName        = ".draftignore"
 	dockerTLSEnvVar       = "DOCKER_TLS"
 	dockerTLSVerifyEnvVar = "DOCKER_TLS_VERIFY"
+	tasksTOMLFile         = ".draft-tasks.toml"
 )
 
 var (
@@ -170,14 +175,62 @@ func (u *upCmd) run(environment string) (err error) {
 		return fmt.Errorf("Could not get a helm client: %s", err)
 	}
 
+	taskList, err := tasks.Load(tasksTOMLFile)
+	if err != nil {
+		if err == tasks.ErrNoTaskFile {
+			debug(err.Error())
+		} else {
+			return err
+		}
+	} else {
+		if _, err = taskList.Run(tasks.PreUp, ""); err != nil {
+			return err
+		}
+	}
+
 	// setup the storage engine
 	bldr.Storage = configmap.NewConfigMaps(bldr.Kube.CoreV1().ConfigMaps(tillerNamespace))
 	progressC := bldr.Up(ctx, buildctx)
-	cmdline.Display(ctx, buildctx.Env.Name, progressC, cmdline.WithBuildID(bldr.ID()))
-
+	buildID := bldr.ID()
+	cmdline.Display(ctx, buildctx.Env.Name, progressC, cmdline.WithBuildID(buildID))
 	if buildctx.Env.AutoConnect || autoConnect {
 		c := newConnectCmd(u.out)
 		return c.RunE(c, []string{})
+	}
+
+	if err := runPostDeployTasks(taskList, buildID); err != nil {
+		debug(err.Error())
+		return nil
+	}
+
+	return nil
+}
+
+func runPostDeployTasks(taskList *tasks.Tasks, buildID string) error {
+	if taskList == nil || len(taskList.PostDeploy) == 0 {
+		return errors.New("No post deploy tasks to run")
+	}
+
+	app, err := local.DeployedApplication(draftToml, runningEnvironment)
+	if err != nil {
+		return err
+	}
+
+	client, _, err := getKubeClient(kubeContext)
+	if err != nil {
+		return err
+	}
+
+	names, err := app.GetPodNames(buildID, client)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range names {
+		_, err := taskList.Run(tasks.PostDeploy, name)
+		if err != nil {
+			debug("error running task: %v", err)
+		}
 	}
 
 	return nil
