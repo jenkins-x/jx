@@ -263,7 +263,7 @@ func (b *BitbucketCloudProvider) ValidateRepositoryName(org string, name string)
 		name,
 	)
 
-	if r.StatusCode == 404 {
+	if r != nil && r.StatusCode == 404 {
 		return nil
 	}
 
@@ -357,7 +357,7 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	bitbucketPR, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 		b.Context,
 		b.Username,
-		strings.TrimPrefix(pr.Repo, b.Username + "/"),
+		strings.TrimPrefix(pr.Repo, b.Username+"/"),
 		prID,
 	)
 
@@ -379,7 +379,7 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 		b.Context,
 		b.Username,
 		strconv.FormatInt(int64(prID), 10),
-		strings.TrimPrefix(pr.Repo, b.Username + "/"),
+		strings.TrimPrefix(pr.Repo, b.Username+"/"),
 	)
 
 	if err != nil {
@@ -412,7 +412,7 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
 			b.Context,
 			b.Username,
-			strings.TrimPrefix(pr.Repo, b.Username + "/"),
+			strings.TrimPrefix(pr.Repo, b.Username+"/"),
 			pr.LastCommitSha,
 		)
 
@@ -489,7 +489,7 @@ func (b *BitbucketCloudProvider) MergePullRequest(pr *GitPullRequest, message st
 		b.Context,
 		b.Username,
 		strconv.FormatInt(int64(*pr.Number), 10),
-		strings.TrimPrefix(pr.Repo, b.Username + "/"),
+		strings.TrimPrefix(pr.Repo, b.Username+"/"),
 		options,
 	)
 
