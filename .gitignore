@@ -14,7 +14,8 @@
 .glide/
 
 .idea/
+*.iml
 
 build/
-
+release/
 .updatebot-repos/
