@@ -107,14 +107,13 @@ func (o *CreateClusterAWSOptions) Run() error {
 
 	flags := &o.Flags
 
-	nodeCount := flags.NodeCount
-	if nodeCount == "" {
+	if flags.NodeCount == "" {
 		prompt := &survey.Input{
 			Message: "nodes",
 			Default: "3",
 			Help:    "number of nodes",
 		}
-		survey.AskOne(prompt, &nodeCount, nil)
+		survey.AskOne(prompt, &flags.NodeCount, nil)
 	}
 
 	/*
