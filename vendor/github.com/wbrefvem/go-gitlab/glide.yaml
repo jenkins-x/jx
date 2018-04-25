@@ -1,0 +1,5 @@
+package: github.com/xanzy/go-gitlab
+import:
+- package: github.com/google/go-querystring
+  subpackages:
+  - query

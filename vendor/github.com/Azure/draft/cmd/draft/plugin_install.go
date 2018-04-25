@@ -5,9 +5,9 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
-	"k8s.io/helm/pkg/plugin"
 
 	"github.com/Azure/draft/pkg/draft/draftpath"
+	"github.com/Azure/draft/pkg/plugin"
 	"github.com/Azure/draft/pkg/plugin/installer"
 )
 

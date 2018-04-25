@@ -10,9 +10,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/helm/pkg/plugin"
 
 	"github.com/Azure/draft/pkg/draft/draftpath"
+	"github.com/Azure/draft/pkg/plugin"
 )
 
 const (
@@ -174,30 +174,6 @@ func manuallyProcessArgs(args []string) ([]string, []string) {
 		}
 	}
 	return known, unknown
-}
-
-// runHook will execute a plugin hook.
-func runHook(p *plugin.Plugin, event string) error {
-	hook := p.Metadata.Hooks.Get(event)
-	if hook == "" {
-		return nil
-	}
-
-	prog := exec.Command("sh", "-c", hook)
-
-	debug("running %s hook: %s %v", event, prog.Path, prog.Args)
-
-	home := draftpath.Home(homePath())
-	setupPluginEnv(p.Metadata.Name, p.Metadata.Version, p.Dir, home.Plugins(), home)
-	prog.Stdout, prog.Stderr = os.Stdout, os.Stderr
-	if err := prog.Run(); err != nil {
-		if eerr, ok := err.(*exec.ExitError); ok {
-			os.Stderr.Write(eerr.Stderr)
-			return fmt.Errorf("plugin %s hook for %q exited with error", event, p.Metadata.Name)
-		}
-		return err
-	}
-	return nil
 }
 
 // setupPluginEnv prepares os.Env for plugins. It operates on os.Env because

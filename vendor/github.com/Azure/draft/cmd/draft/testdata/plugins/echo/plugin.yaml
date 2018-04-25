@@ -4,4 +4,7 @@ description: "This echos stuff"
 command: "echo hello"
 version: "1.0.0"
 hooks:
+  bash:
     install: "echo installing"
+  powershell:
+    install: "Write-Output installing"

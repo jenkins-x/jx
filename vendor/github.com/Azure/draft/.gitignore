@@ -9,6 +9,8 @@ examples/**/Dockerfile
 examples/**/charts/
 examples/**/draft.toml
 examples/**/.draftignore
+examples/**/.dockerignore
+examples/**/.draft-tasks.toml
 examples/**/target
 pkg/linguist/data/classifier
 pkg/linguist/data/linguist

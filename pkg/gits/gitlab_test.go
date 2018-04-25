@@ -7,16 +7,24 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/suite"
-	"github.com/xanzy/go-gitlab"
+	gitlab "github.com/wbrefvem/go-gitlab"
 )
 
 const (
 	gitlabUserName = "testperson"
 	gitlabOrgName  = "testorg"
 )
+
+var gitlabRouter = util.Router{
+	"/projects/testperson%2Ftest-project": util.MethodMap{
+		"GET": "project.json",
+	},
+}
 
 type GitlabProviderSuite struct {
 	suite.Suite
@@ -82,6 +90,14 @@ func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
 		suite.Require().Nil(err)
 		w.Write(src)
 	})
+
+	for path, methodMap := range gitlabRouter {
+		mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/gitlab", methodMap))
+	}
+
+	suite.T().Logf("Escape encoded: %v", url.QueryEscape("testperson%2Ftest-project"))
+	suite.T().Logf("Escape unencoded: %v", url.QueryEscape("testperson/test-project"))
+
 }
 
 func (suite *GitlabProviderSuite) TestListOrganizations() {
@@ -114,6 +130,15 @@ func (suite *GitlabProviderSuite) TestListRepositories() {
 		require.Equal(s.expectedSshUrl, repositories[0].CloneURL)
 		require.Equal(s.expectedHtmlUrl, repositories[0].HTMLURL)
 	}
+}
+
+func (suite *GitlabProviderSuite) TestGetRepository() {
+	repo, err := suite.provider.GetRepository("testperson", "test-project")
+
+	suite.Require().Nil(err)
+	suite.Require().NotNil(repo)
+
+	suite.Require().Equal(repo.Name, "test-project")
 }
 
 // In order for 'go test' to run this suite, we need to create

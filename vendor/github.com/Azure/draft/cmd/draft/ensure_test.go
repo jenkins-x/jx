@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 
-	pluginbase "k8s.io/helm/pkg/plugin"
-
 	"github.com/Azure/draft/pkg/draft/draftpath"
 	"github.com/Azure/draft/pkg/plugin"
 )
@@ -76,7 +74,7 @@ func TestEnsurePlugin(t *testing.T) {
 	}
 
 	builtinPlugin := &plugin.Builtin{Name: "echo", Version: "1.0.0", URL: "testdata/plugins/echo"}
-	empty := []*pluginbase.Plugin{}
+	empty := []*plugin.Plugin{}
 
 	if err := cmd.ensurePlugin(builtinPlugin, empty); err != nil {
 		t.Fatal(err)
@@ -105,8 +103,8 @@ func TestEnsurePluginExisting(t *testing.T) {
 	}
 
 	builtinPlugin := &plugin.Builtin{Name: "something", Version: "1.0.0"}
-	existingPlugins := []*pluginbase.Plugin{
-		{Metadata: &pluginbase.Metadata{
+	existingPlugins := []*plugin.Plugin{
+		{Metadata: &plugin.Metadata{
 			Name: "something", Version: "1.0.0"},
 		},
 	}

@@ -291,6 +291,7 @@ type EvaluateParams struct {
 	UserGesture           bool               `json:"userGesture,omitempty"`           // Whether execution should be treated as initiated by user in the UI.
 	AwaitPromise          bool               `json:"awaitPromise,omitempty"`          // Whether execution should await for resulting value and return once awaited promise is resolved.
 	ThrowOnSideEffect     bool               `json:"throwOnSideEffect,omitempty"`     // Whether to throw an exception if side effect cannot be ruled out during evaluation.
+	Timeout               TimeDelta          `json:"timeout,omitempty"`               // Terminate execution after timing out (number of milliseconds).
 }
 
 // Evaluate evaluates expression on global object.
@@ -363,6 +364,12 @@ func (p EvaluateParams) WithAwaitPromise(awaitPromise bool) *EvaluateParams {
 // be ruled out during evaluation.
 func (p EvaluateParams) WithThrowOnSideEffect(throwOnSideEffect bool) *EvaluateParams {
 	p.ThrowOnSideEffect = throwOnSideEffect
+	return &p
+}
+
+// WithTimeout terminate execution after timing out (number of milliseconds).
+func (p EvaluateParams) WithTimeout(timeout TimeDelta) *EvaluateParams {
+	p.Timeout = timeout
 	return &p
 }
 

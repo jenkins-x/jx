@@ -2,11 +2,16 @@ package builder
 
 import (
 	"testing"
+
+	"github.com/Azure/draft/pkg/draft/manifest"
 )
 
 func TestArchiveSrc(t *testing.T) {
 	ctx := &Context{
 		AppDir: "testdata/simple",
+		Env: &manifest.Environment{
+			Dockerfile: "",
+		},
 	}
 
 	if err := archiveSrc(ctx); err != nil {

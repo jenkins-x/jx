@@ -10,12 +10,9 @@ import (
 )
 
 func checkEq(t *testing.T, got, want string) {
-	if got == want {
-		return
+	if got != want {
+		t.Errorf("etree: unexpected result.\nGot:\n%s\nWanted:\n%s\n", got, want)
 	}
-	t.Errorf(
-		"etree: unexpected result.\nGot:\n%s\nWanted:\n%s\n",
-		got, want)
 }
 
 func TestDocument(t *testing.T) {
@@ -257,26 +254,70 @@ func TestCopy(t *testing.T) {
 	if s1 == s2 {
 		t.Error("etree: incorrect result after RemoveElement")
 	}
+}
 
-	pa1 := e1.GetPath()
-	checkEq(t, pa1, "/title")
+func TestGetPath(t *testing.T) {
+	testdoc := `<a>
+ <b1>
+  <c1>
+   <d1/>
+   <d1a/>
+  </c1>
+ </b1>
+ <b2>
+  <c2>
+   <d2/>
+  </c2>
+ </b2>
+</a>`
 
-	pa2 := e2.GetPath()
-	checkEq(t, pa2, "/store/book/title")
+	doc := NewDocument()
+	err := doc.ReadFromString(testdoc)
+	if err != nil {
+		t.Fatalf("etree ReadFromString: %v\n", err)
+	}
 
-	p1 := e1.GetRelativePath(nil)
-	checkEq(t, p1, "./title")
+	cases := []struct {
+		from    string
+		to      string
+		relpath string
+		topath  string
+	}{
+		{"a", ".", "..", "/"},
+		{".", "a", "./a", "/a"},
+		{"a/b1/c1/d1", ".", "../../../..", "/"},
+		{".", "a/b1/c1/d1", "./a/b1/c1/d1", "/a/b1/c1/d1"},
+		{"a", "a", ".", "/a"},
+		{"a/b1", "a/b1/c1", "./c1", "/a/b1/c1"},
+		{"a/b1/c1", "a/b1", "..", "/a/b1"},
+		{"a/b1/c1", "a/b1/c1", ".", "/a/b1/c1"},
+		{"a", "a/b1", "./b1", "/a/b1"},
+		{"a/b1", "a", "..", "/a"},
+		{"a", "a/b1/c1", "./b1/c1", "/a/b1/c1"},
+		{"a/b1/c1", "a", "../..", "/a"},
+		{"a/b1/c1/d1", "a", "../../..", "/a"},
+		{"a", "a/b1/c1/d1", "./b1/c1/d1", "/a/b1/c1/d1"},
+		{"a/b1", "a/b2", "../b2", "/a/b2"},
+		{"a/b2", "a/b1", "../b1", "/a/b1"},
+		{"a/b1/c1/d1", "a/b2/c2/d2", "../../../b2/c2/d2", "/a/b2/c2/d2"},
+		{"a/b2/c2/d2", "a/b1/c1/d1", "../../../b1/c1/d1", "/a/b1/c1/d1"},
+		{"a/b1/c1/d1", "a/b1/c1/d1a", "../d1a", "/a/b1/c1/d1a"},
+	}
 
-	p2 := e1.GetRelativePath(e1)
-	checkEq(t, p2, "./")
+	for _, c := range cases {
+		fe := doc.FindElement(c.from)
+		te := doc.FindElement(c.to)
 
-	e3 := doc.FindElement("./store")
-	e4 := e3.FindElement("./book/author")
-	p3 := e4.GetRelativePath(e3)
-	checkEq(t, p3, "./book/author")
+		rp := te.GetRelativePath(fe)
+		if rp != c.relpath {
+			t.Errorf("GetRelativePath from '%s' to '%s'. Expected '%s', got '%s'.\n", c.from, c.to, c.relpath, rp)
+		}
 
-	p4 := e4.GetRelativePath(nil)
-	checkEq(t, p4, "./store/book/author")
+		p := te.GetPath()
+		if p != c.topath {
+			t.Errorf("GetPath for '%s'. Expected '%s', got '%s'.\n", c.to, c.topath, p)
+		}
+	}
 }
 
 func TestInsertChild(t *testing.T) {

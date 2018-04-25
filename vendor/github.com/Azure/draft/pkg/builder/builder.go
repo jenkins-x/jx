@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Azure/draft/pkg/draft/local"
 	"github.com/Azure/draft/pkg/draft/manifest"
 	"github.com/Azure/draft/pkg/draft/pack"
+	"github.com/Azure/draft/pkg/local"
 	"github.com/Azure/draft/pkg/osutil"
 	"github.com/Azure/draft/pkg/storage"
 	"github.com/docker/cli/cli/command"
@@ -89,7 +89,7 @@ type AppContext struct {
 	bldr *Builder
 	ctx  *Context
 	buf  *bytes.Buffer
-	tag  string
+	tags []string
 	img  string
 	log  io.WriteCloser
 	id   string
@@ -113,6 +113,11 @@ func newAppContext(b *Builder, buildCtx *Context) (*AppContext, error) {
 	// if registry == "", then we just assume the image name is the app name and strip out the leading /
 	imageRepository := strings.TrimLeft(fmt.Sprintf("%s/%s", buildCtx.Env.Registry, buildCtx.Env.Name), "/")
 	image := fmt.Sprintf("%s:%s", imageRepository, imgtag)
+
+	t := []string{image}
+	for _, tag := range buildCtx.Env.CustomTags {
+		t = append(t, fmt.Sprintf("%s:%s", imageRepository, tag))
+	}
 
 	// inject certain values into the chart such as the registry location,
 	// the application name, buildID and the application version.
@@ -147,7 +152,7 @@ func newAppContext(b *Builder, buildCtx *Context) (*AppContext, error) {
 		bldr: b,
 		ctx:  buildCtx,
 		buf:  buf,
-		tag:  imgtag,
+		tags: t,
 		img:  image,
 		log:  logf,
 		vals: vals,
@@ -210,24 +215,35 @@ func loadArchive(ctx *Context) (err error) {
 	if err = archiveSrc(ctx); err != nil {
 		return err
 	}
-	// find the first directory in chart/ and assume that is the chart we want to deploy.
-	chartDir := filepath.Join(ctx.AppDir, pack.ChartsDir)
-	files, err := ioutil.ReadDir(chartDir)
-	if err != nil {
-		return err
-	}
-	var found bool
-	for _, file := range files {
-		if file.IsDir() {
-			found = true
-			if ctx.Chart, err = chartutil.Load(filepath.Join(chartDir, file.Name())); err != nil {
-				return err
+
+	// if a chart was specified in manifest, use it
+	if ctx.Env.Chart != "" {
+		ctx.Chart, err = chartutil.Load(filepath.Join(ctx.AppDir, pack.ChartsDir, ctx.Env.Chart))
+		if err != nil {
+			return err
+		}
+	} else {
+		// otherwise, find the first directory in chart/ and assume that is the chart we want to deploy.
+		chartDir := filepath.Join(ctx.AppDir, pack.ChartsDir)
+		files, err := ioutil.ReadDir(chartDir)
+		if err != nil {
+			return err
+		}
+		var found bool
+		for _, file := range files {
+			if file.IsDir() {
+				found = true
+				if ctx.Chart, err = chartutil.Load(filepath.Join(chartDir, file.Name())); err != nil {
+					return err
+				}
+				break
 			}
 		}
+		if !found {
+			return ErrChartNotExist
+		}
 	}
-	if !found {
-		return ErrChartNotExist
-	}
+
 	return nil
 }
 
@@ -247,7 +263,7 @@ func loadValues(ctx *Context) error {
 }
 
 func archiveSrc(ctx *Context) error {
-	contextDir, relDockerfile, err := build.GetContextFromLocalDir(ctx.AppDir, "")
+	contextDir, relDockerfile, err := build.GetContextFromLocalDir(ctx.AppDir, ctx.Env.Dockerfile)
 	if err != nil {
 		return fmt.Errorf("unable to prepare docker context: %s", err)
 	}
@@ -377,7 +393,11 @@ func (b *Builder) buildImg(ctx context.Context, app *AppContext, out chan<- *Sum
 	msgc := make(chan string)
 	errc := make(chan error)
 	go func() {
-		buildopts := types.ImageBuildOptions{Tags: []string{app.img}}
+		buildopts := types.ImageBuildOptions{
+			Tags:       app.tags,
+			Dockerfile: app.ctx.Env.Dockerfile,
+		}
+
 		resp, err := b.DockerClient.Client().ImageBuild(ctx, app.buf, buildopts)
 		if err != nil {
 			errc <- err
@@ -436,27 +456,42 @@ func (b *Builder) pushImg(ctx context.Context, app *AppContext, out chan<- *Summ
 
 	msgc := make(chan string, 1)
 	errc := make(chan error, 1)
+
+	var wg sync.WaitGroup
+	wg.Add(len(app.tags))
+
 	go func() {
 		registryAuth, err := command.RetrieveAuthTokenFromImage(ctx, b.DockerClient, app.img)
 		if err != nil {
 			errc <- err
 			return
 		}
-		resp, err := b.DockerClient.Client().ImagePush(ctx, app.img, types.ImagePushOptions{RegistryAuth: registryAuth})
-		if err != nil {
-			errc <- err
-			return
+
+		for _, img := range app.tags {
+
+			go func(img string) {
+				defer wg.Done()
+
+				resp, err := b.DockerClient.Client().ImagePush(ctx, img, types.ImagePushOptions{RegistryAuth: registryAuth})
+				if err != nil {
+					errc <- err
+					return
+				}
+
+				defer resp.Close()
+				outFd, isTerm := term.GetFdInfo(app.log)
+				if err := jsonmessage.DisplayJSONMessagesStream(resp, app.log, outFd, isTerm, nil); err != nil {
+					errc <- err
+					return
+				}
+			}(img)
 		}
+
 		defer func() {
-			resp.Close()
 			close(errc)
 			close(msgc)
 		}()
-		outFd, isTerm := term.GetFdInfo(app.log)
-		if err := jsonmessage.DisplayJSONMessagesStream(resp, app.log, outFd, isTerm, nil); err != nil {
-			errc <- err
-			return
-		}
+
 	}()
 	for msgc != nil || errc != nil {
 		select {
@@ -477,6 +512,7 @@ func (b *Builder) pushImg(ctx context.Context, app *AppContext, out chan<- *Summ
 			time.Sleep(time.Second)
 		}
 	}
+	wg.Wait()
 	return nil
 }
 

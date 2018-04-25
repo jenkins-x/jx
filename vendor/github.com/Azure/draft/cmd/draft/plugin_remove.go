@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/Azure/draft/pkg/draft/draftpath"
-	"k8s.io/helm/pkg/plugin"
+	"github.com/Azure/draft/pkg/plugin"
 
 	"github.com/spf13/cobra"
 )

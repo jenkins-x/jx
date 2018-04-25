@@ -3,6 +3,7 @@ package repo
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -60,4 +61,31 @@ func (r *Repository) Pack(name string) (string, error) {
 	}
 
 	return targetDir, nil
+}
+
+// List returns a slice of pack names in the repository or error.
+//
+// The returned pack names are prefixed by the repository name, e.g. "draft/go"
+func (r *Repository) List() ([]string, error) {
+	packsDir := filepath.Join(r.Dir, PackDirName)
+	switch fi, err := os.Stat(packsDir); {
+	case err != nil:
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("pack repo %s packs directory not found", r.Name)
+		}
+	case !fi.IsDir():
+		return nil, fmt.Errorf("%s is not a directory", packsDir)
+	}
+	var packs []string
+	files, err := ioutil.ReadDir(packsDir)
+	if err != nil {
+		return nil, err
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			repoPack := filepath.Join(r.Name, file.Name())
+			packs = append(packs, repoPack)
+		}
+	}
+	return packs, nil
 }

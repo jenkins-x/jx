@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	klabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 )
@@ -77,4 +79,65 @@ func GetPod(namespace string, draftLabelKey, name, annotationKey, buildID string
 	case <-time.After(5 * time.Minute):
 		return nil, fmt.Errorf("cannot get pod with buildID %v: timed out", buildID)
 	}
+}
+
+// ListPods returns pods in the given namespace that match the labels and
+//    annotations given
+func ListPods(namespace string, labels, annotations map[string]string, clientset kubernetes.Interface) ([]v1.Pod, error) {
+	pods := []v1.Pod{}
+
+	labelSet := klabels.Set{}
+	for k, v := range labels {
+		labelSet[k] = v
+	}
+
+	podList, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: labelSet.AsSelector().String()})
+	if err != nil {
+		return nil, err
+	}
+
+	// return pod names that match annotations
+	for _, pod := range podList.Items {
+		annosFound := make([]bool, len(annotations))
+		count := 0
+		for k, v := range annotations {
+			if pod.Annotations[k] == v {
+				annosFound[count] = true
+			} else {
+				annosFound[count] = false
+			}
+			count = count + 1
+		}
+		if allAnnotationsFound(annosFound) {
+			pods = append(pods, pod)
+		}
+	}
+
+	return pods, nil
+}
+
+// ListPodNames returns pod names from given namespace that match labels and
+//   annotations given
+func ListPodNames(namespace string, labels, annotations map[string]string, clientset kubernetes.Interface) ([]string, error) {
+	names := []string{}
+
+	pods, err := ListPods(namespace, labels, annotations, clientset)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pod := range pods {
+		names = append(names, pod.Name)
+	}
+
+	return names, nil
+}
+
+func allAnnotationsFound(results []bool) bool {
+	for _, k := range results {
+		if k == false {
+			return false
+		}
+	}
+	return true
 }
