@@ -772,7 +772,7 @@ func (p *GitHubProvider) CurrentUsername() string {
 
 func (p *GitHubProvider) UserInfo(username string) *v1.UserSpec {
 	user, _, err := p.Client.Users.Get(p.Context, username)
-	if err != nil {
+	if user == nil || err != nil {
 		log.Error("Unable to fetch user info for " + username)
 		return nil
 	}
