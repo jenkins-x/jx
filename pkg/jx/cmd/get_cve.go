@@ -89,6 +89,11 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
 	}
 
+	jxClient, _, err := o.Factory.CreateJXClient()
+	if err != nil {
+		return fmt.Errorf("cannot create jx client: %v", err)
+	}
+
 	err = o.ensureCVEServiceAvailable()
 	if err != nil {
 		log.Warnf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.\n")
@@ -119,7 +124,15 @@ func (o *GetCVEOptions) Run() error {
 		Vesion:      o.Version,
 	}
 
-	err = p.GetImageVulnerabilityTable(&table, query)
+	if o.Env != "" {
+		targetNamespace, err := kube.GetEnvironmentNamespace(jxClient, o.currentNamespace, o.Env)
+		if err != nil {
+			return err
+		}
+		query.TargetNamespace = targetNamespace
+	}
+
+	err = p.GetImageVulnerabilityTable(jxClient, o.kubeClient, &table, query)
 	if err != nil {
 		return fmt.Errorf("error getting vulnerability table for image %s: %v", query.ImageID, err)
 	}
