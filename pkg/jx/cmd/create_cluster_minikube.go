@@ -175,6 +175,9 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	// only add drivers that are appropriate for this OS
 	var driver string
 	drivers := []string{vmDriverValue}
+	if vmDriverValue == "kvm" {
+		drivers = append(drivers, "kvm2")
+	}
 	if vmDriverValue != "virtualbox" {
 		drivers = append(drivers, "virtualbox")
 	}
