@@ -28,6 +28,14 @@ func IsPodReadyConditionTrue(status v1.PodStatus) bool {
 	return condition != nil && condition.Status == v1.ConditionTrue
 }
 
+func PodStatus(pod *v1.Pod) string {
+	if IsPodReady(pod) {
+		return "Ready"
+	}
+	phase := pod.Status.Phase
+	return string(phase)
+}
+
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
 // Extracts the pod ready condition from the given status and returns that.
 // Returns nil if the condition is not present.
@@ -120,18 +128,21 @@ func GetPodNames(client *kubernetes.Clientset, ns string, filter string) ([]stri
 }
 
 // GetDevPodNames returns the users dev pod names
-func GetDevPodNames(client *kubernetes.Clientset, ns string, username string) ([]string, error) {
+func GetDevPodNames(client *kubernetes.Clientset, ns string, username string) ([]string, map[string]*v1.Pod, error) {
 	names := []string{}
+	m := map[string]*v1.Pod{}
 	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{
-		LabelSelector: "jenkins.io/devpod_user=" + username,
+		LabelSelector: LabelDevPodUsername + "=" + username,
 	})
 	if err != nil {
-		return names, fmt.Errorf("Failed to load Pods %s", err)
+		return names, m, fmt.Errorf("Failed to load Pods %s", err)
 	}
 	for _, d := range list.Items {
+		c := d
 		name := d.Name
+		m[name] = &c
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	return names, nil
+	return names, m, nil
 }

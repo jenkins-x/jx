@@ -97,7 +97,7 @@ func (o *RshOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		names, err = kube.GetDevPodNames(client, ns, u.Username)
+		names, _, err = kube.GetDevPodNames(client, ns, u.Username)
 		if err != nil {
 			return err
 		}

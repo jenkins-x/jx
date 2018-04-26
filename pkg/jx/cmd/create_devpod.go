@@ -112,9 +112,9 @@ func (o *CreateDevPodOptions) Run() error {
 	userName := u.Username
 	name := kube.ToValidName(userName + "-" + label)
 	pod.Name = name
-	pod.Labels["jenkins.io/pod_template"] = label
-	pod.Labels["jenkins.io/devpod"] = name
-	pod.Labels["jenkins.io/devpod_user"] = userName
+	pod.Labels[kube.LabelPodTemplate] = label
+	pod.Labels[kube.LabelDevPodName] = name
+	pod.Labels[kube.LabelDevPodUsername] = userName
 
 	_, err = client.CoreV1().Pods(ns).Create(pod)
 	if err != nil {
