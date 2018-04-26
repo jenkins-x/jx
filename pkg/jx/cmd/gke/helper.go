@@ -55,7 +55,7 @@ func GetGoogleZones() []string {
 func GetGoogleMachineTypes() []string {
 
 	return []string{
-        "g1-small",
+		"g1-small",
 		"n1-standard-1",
 		"n1-standard-2",
 		"n1-standard-4",
