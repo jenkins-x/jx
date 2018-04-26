@@ -42,6 +42,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installHyperkit()
 		case "kops":
 			err = o.installKops()
+		case "kvm":
+			err = o.installKvm()
 		case "minikube":
 			err = o.installMinikube()
 		case "minishift":
@@ -304,6 +306,11 @@ func (o *CommonOptions) installHyperkit() error {
 
 		return o.runCommand("sudo", "chmod", "u+s", "/usr/local/bin/docker-machine-driver-hyperkit")
 	*/
+	return nil
+}
+
+func (o *CommonOptions) installKvm() error {
+	o.warnf("We cannot yet automate the installation of KVM - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads\n")
 	return nil
 }
 
