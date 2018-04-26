@@ -128,5 +128,6 @@ func Confirm(message string, defaultValue bool, help string) bool {
 		Help:    help,
 	}
 	survey.AskOne(prompt, &answer, nil)
+	fmt.Printf("\n")
 	return answer
 }

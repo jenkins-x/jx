@@ -49,6 +49,9 @@ const (
 	// ConfigMapJenkinsX the name of the ConfigMap with the Jenkins configuration
 	ConfigMapJenkinsX = "jenkins"
 
+	// ConfigMapJenkinsPodTemplates is the ConfigMap containing all the Pod Templates available
+	ConfigMapJenkinsPodTemplates = "jenkins-x-pod-templates"
+
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
 
@@ -77,6 +80,15 @@ const (
 
 	// LabelCreatedBy indicates the service that created this resource
 	LabelCreatedBy = "jenkins.io/created-by"
+
+	// LabelPodTemplate the name of the pod template for a DevPod
+	LabelPodTemplate = "jenkins.io/pod_template"
+
+	// LabelDevPodName the name of a dev pod
+	LabelDevPodName = "jenkins.io/devpod"
+
+	// LabelDevPodUsername the user name owner of the DeVPod
+	LabelDevPodUsername = "jenkins.io/devpod_user"
 
 	// ValueCreatedByJX for resources created by the Jenkins X CLI
 	ValueCreatedByJX = "jx"
