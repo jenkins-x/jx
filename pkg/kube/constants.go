@@ -49,6 +49,9 @@ const (
 	// ConfigMapJenkinsX the name of the ConfigMap with the Jenkins configuration
 	ConfigMapJenkinsX = "jenkins"
 
+	// ConfigMapJenkinsPodTemplates is the ConfigMap containing all the Pod Templates available
+	ConfigMapJenkinsPodTemplates = "jenkins-x-pod-templates"
+
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
 

@@ -21,6 +21,7 @@ type RshOptions struct {
 
 	Container  string
 	Namespace  string
+	Pod        string
 	Executable string
 
 	stopCh chan struct{}
@@ -64,6 +65,7 @@ func NewCmdRsh(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	}
 	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
+	cmd.Flags().StringVarP(&options.Namespace, "pod", "p", "", "the pod name to use")
 	cmd.Flags().StringVarP(&options.Executable, "shell", "s", DefaultShell, "Path to the shell command")
 	return cmd
 }
@@ -93,13 +95,15 @@ func (o *RshOptions) Run() error {
 			return fmt.Errorf("There are no Pods matching filter: " + filter)
 		}
 	}
-	name := ""
+	name := o.Pod
 	if len(args) == 0 {
-		n, err := util.PickName(names, "Pick Pod:")
-		if err != nil {
-			return err
+		if util.StringArrayIndex(names, name) < 0 {
+			n, err := util.PickName(names, "Pick Pod:")
+			if err != nil {
+				return err
+			}
+			name = n
 		}
-		name = n
 	} else {
 		name = args[0]
 		if util.StringArrayIndex(names, name) < 0 {

@@ -2,16 +2,17 @@ package kube
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	"sort"
-	"strings"
 )
 
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
@@ -52,9 +53,11 @@ func GetPodCondition(status *v1.PodStatus, conditionType v1.PodConditionType) (i
 
 // waits for the pod to become ready using label selector to match the pod
 func WaitForPodToBeReady(client *kubernetes.Clientset, selector labels.Selector, namespace string, timeout time.Duration) error {
-
 	options := meta_v1.ListOptions{LabelSelector: selector.String()}
+	return waitForPodSelectorToBeReady(client, namespace, options, timeout)
+}
 
+func waitForPodSelectorToBeReady(client *kubernetes.Clientset, namespace string, options meta_v1.ListOptions, timeout time.Duration) error {
 	w, err := client.CoreV1().Pods(namespace).Watch(options)
 	if err != nil {
 		return err
@@ -69,9 +72,19 @@ func WaitForPodToBeReady(client *kubernetes.Clientset, selector labels.Selector,
 
 	_, err = watch.Until(timeout, w, condition)
 	if err == wait.ErrWaitTimeout {
-		return fmt.Errorf("pod %s never became ready", selector)
+		return fmt.Errorf("pod %s never became ready", options.String())
 	}
 	return nil
+}
+
+// waits for the pod to become ready using the pod name
+func WaitForPodNameToBeReady(client *kubernetes.Clientset, namespace string, name string, timeout time.Duration) error {
+	options := meta_v1.ListOptions{
+		// TODO
+		//FieldSelector: fields.OneTermEqualSelector(api.ObjectNameField, name).String(),
+		FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
+	}
+	return waitForPodSelectorToBeReady(client, namespace, options, timeout)
 }
 
 func GetReadyPodNames(client *kubernetes.Clientset, ns string, filter string) ([]string, error) {
