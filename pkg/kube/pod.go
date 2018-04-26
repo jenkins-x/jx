@@ -118,3 +118,20 @@ func GetPodNames(client *kubernetes.Clientset, ns string, filter string) ([]stri
 	sort.Strings(names)
 	return names, nil
 }
+
+// GetDevPodNames returns the users dev pod names
+func GetDevPodNames(client *kubernetes.Clientset, ns string, username string) ([]string, error) {
+	names := []string{}
+	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{
+		LabelSelector: "jenkins.io/devpod_user=" + username,
+	})
+	if err != nil {
+		return names, fmt.Errorf("Failed to load Pods %s", err)
+	}
+	for _, d := range list.Items {
+		name := d.Name
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names, nil
+}

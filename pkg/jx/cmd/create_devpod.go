@@ -52,11 +52,12 @@ func NewCmdCreateDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 	}
 
 	options.addFlags(cmd, "", "")
+	options.addCommonFlags(cmd)
 	return cmd
 }
 
 func (options *CreateDevPodOptions) addFlags(cmd *cobra.Command, defaultNamespace string, defaultOptionRelease string) {
-	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template touse")
+	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template to use")
 }
 
 // Run implements this command
@@ -111,12 +112,17 @@ func (o *CreateDevPodOptions) Run() error {
 	userName := u.Username
 	name := kube.ToValidName(userName + "-" + label)
 	pod.Name = name
-	pod.Labels["label"] = label
-	pod.Labels["username"] = userName
+	pod.Labels["jenkins.io/pod_template"] = label
+	pod.Labels["jenkins.io/devpod"] = name
+	pod.Labels["jenkins.io/devpod_user"] = userName
 
 	_, err = client.CoreV1().Pods(ns).Create(pod)
 	if err != nil {
-		return fmt.Errorf("Failed to create pod %s\nYAML: %s", err, yml)
+		if o.Verbose {
+			return fmt.Errorf("Failed to create pod %s\nYAML: %s", err, yml)
+		} else {
+			return fmt.Errorf("Failed to create pod %s", err)
+		}
 	}
 
 	o.Printf("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))

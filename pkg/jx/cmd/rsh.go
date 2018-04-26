@@ -2,14 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"io"
+	"os/user"
+	"strings"
+
+	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
-	"strings"
 )
 
 const (
@@ -23,6 +25,7 @@ type RshOptions struct {
 	Namespace  string
 	Pod        string
 	Executable string
+	DevPod     bool
 
 	stopCh chan struct{}
 }
@@ -39,6 +42,9 @@ var (
 
 		# Opens a terminal in the cheese container in the latest pod in the foo deployment
 		jx rsh -c cheese foo
+
+		# To connect to one of your DevPods use:
+		jx rsh -d
 `)
 )
 
@@ -67,6 +73,7 @@ func NewCmdRsh(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
 	cmd.Flags().StringVarP(&options.Namespace, "pod", "p", "", "the pod name to use")
 	cmd.Flags().StringVarP(&options.Executable, "shell", "s", DefaultShell, "Path to the shell command")
+	cmd.Flags().BoolVarP(&options.DevPod, "devpod", "d", false, "Connect to a DevPod")
 	return cmd
 }
 
@@ -84,9 +91,21 @@ func (o *RshOptions) Run() error {
 	}
 
 	filter := ""
-	names, err := kube.GetPodNames(client, ns, "")
-	if err != nil {
-		return err
+	names := []string{}
+	if o.DevPod {
+		u, err := user.Current()
+		if err != nil {
+			return err
+		}
+		names, err = kube.GetDevPodNames(client, ns, u.Username)
+		if err != nil {
+			return err
+		}
+	} else {
+		names, err = kube.GetPodNames(client, ns, "")
+		if err != nil {
+			return err
+		}
 	}
 	if len(names) == 0 {
 		if filter == "" {
