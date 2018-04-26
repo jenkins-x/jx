@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"strings"
+	"github.com/jenkins-x/jx/pkg/version"
 )
 
 const (
@@ -134,6 +135,8 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	groups.Add(cmds)
 
 	cmds.AddCommand(NewCmdVersion(f, out, err))
+	cmds.Version = version.GetVersion()
+	cmds.SetVersionTemplate("{{printf .Version}}\n")
 
 	filters := []string{"options"}
 

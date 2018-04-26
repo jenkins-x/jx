@@ -244,11 +244,15 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 			Message: message,
 			Options: usernames,
 		}
-		err := survey.AskOne(prompt, &username, nil)
+		err := survey.AskOne(prompt, &username, survey.Required)
 		if err != nil {
 			return &UserAuth{}, err
 		}
-		return m[username], nil
+		answer := m[username]
+		if answer == nil {
+			return nil, fmt.Errorf("No username chosen!")
+		}
+		return answer, nil
 	}
 	return &UserAuth{}, nil
 }

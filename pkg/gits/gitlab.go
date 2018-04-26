@@ -163,7 +163,7 @@ func (g *GitlabProvider) ValidateRepositoryName(org, name string) error {
 	if err == nil {
 		return fmt.Errorf("repository %s already exists", pid)
 	}
-	if r.StatusCode == 404 {
+	if r != nil && r.StatusCode == 404 {
 		return nil
 	}
 	return err
