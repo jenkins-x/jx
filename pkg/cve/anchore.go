@@ -8,8 +8,11 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/util"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -68,9 +71,11 @@ func NewAnchoreProvider(server *auth.AuthServer, user *auth.UserAuth) (CVEProvid
 	return &provider, nil
 }
 
-func (a AnchoreProvider) GetImageVulnerabilityTable(table *table.Table, query CVEQuery) error {
+func (a AnchoreProvider) GetImageVulnerabilityTable(jxClient *versioned.Clientset, client *kubernetes.Clientset, table *table.Table, query CVEQuery) error {
 
 	var err error
+	var vList VulnerabilityList
+	var imageIDs []string
 
 	if query.ImageID != "" {
 		var vList VulnerabilityList
@@ -84,12 +89,32 @@ func (a AnchoreProvider) GetImageVulnerabilityTable(table *table.Table, query CV
 		return a.addVulnerabilitiesTableRows(table, &vList)
 	}
 
+	if query.Environment != "" {
+
+		var vList VulnerabilityList
+		// list pods in the namespace
+		podList, err := client.CoreV1().Pods(query.TargetNamespace).List(meta_v1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		// if they have the annotation add the value to a list
+		for _, p := range podList.Items {
+			if p.Annotations[AnnotationCVEImageId] != "" {
+				imageIDs = append(imageIDs, p.Annotations[AnnotationCVEImageId])
+			}
+		}
+		// loop over the list and get the CVEs for each, adding the rows
+		err = a.getCVEsFromImageList(table, &vList, imageIDs)
+		if err != nil {
+			return err
+		}
+	}
+
 	// see if we can match images using an image name and optional version
 	if query.ImageID == "" {
 		// if we have an image name then lets try and match image id(s)
 		if query.ImageName != "" {
-			var vList VulnerabilityList
-			var imageIDs []string
+
 			var images []Image
 			subPath := fmt.Sprintf(getImages)
 
@@ -110,18 +135,9 @@ func (a AnchoreProvider) GetImageVulnerabilityTable(table *table.Table, query CV
 				}
 			}
 			if len(imageIDs) > 0 {
-				for _, imageID := range imageIDs {
-					subPath := fmt.Sprintf(getVulnerabilitiesByImageID, imageID, vulnerabilityType)
-
-					err = a.anchoreGet(subPath, &vList)
-					if err != nil {
-						return fmt.Errorf("error getting vulnerabilities for image %s: %v", query.ImageID, err)
-					}
-
-					err = a.addVulnerabilitiesTableRows(table, &vList)
-					if err != nil {
-						return fmt.Errorf("error building vulnerabilities table for image digest %s: %v", vList.ImageDigest, err)
-					}
+				err = a.getCVEsFromImageList(table, &vList, imageIDs)
+				if err != nil {
+					return err
 				}
 			} else {
 				return fmt.Errorf("no matching images found for ImageName %s and Vesion %s", query.ImageName, query.Vesion)
@@ -180,6 +196,23 @@ func (a AnchoreProvider) addVulnerabilitiesTableRows(table *table.Table, vList *
 			sev = util.ColorStatus(v.Severity)
 		}
 		table.AddRow(image[0].ImageDetails[0].Fulltag, sev, v.Vuln, v.URL, v.Package, v.Fix)
+	}
+	return nil
+}
+
+func (a AnchoreProvider) getCVEsFromImageList(table *table.Table, vList *VulnerabilityList, ids []string) error {
+	for _, imageID := range ids {
+		subPath := fmt.Sprintf(getVulnerabilitiesByImageID, imageID, vulnerabilityType)
+
+		err := a.anchoreGet(subPath, &vList)
+		if err != nil {
+			return fmt.Errorf("error getting vulnerabilities for image %s: %v", imageID, err)
+		}
+
+		err = a.addVulnerabilitiesTableRows(table, vList)
+		if err != nil {
+			return fmt.Errorf("error building vulnerabilities table for image digest %s: %v", vList.ImageDigest, err)
+		}
 	}
 	return nil
 }

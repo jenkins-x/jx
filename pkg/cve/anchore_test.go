@@ -104,7 +104,7 @@ func (suite *AnchoreProviderTestSuite) TestGetImageVulnerabilityTable() {
 		ImageID: "07b67913cd8c1ffc961c402b58c4e539ee6aaeae0b08969fc653267f4b975503",
 	}
 
-	err := suite.provider.GetImageVulnerabilityTable(&vTable, query)
+	err := suite.provider.GetImageVulnerabilityTable(nil, nil, &vTable, query)
 	suite.Require().NoError(err)
 
 	vTable.Render()
