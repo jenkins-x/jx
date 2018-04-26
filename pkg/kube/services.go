@@ -27,7 +27,7 @@ func GetServices(client *kubernetes.Clientset, ns string) (map[string]*v1.Servic
 	answer := map[string]*v1.Service{}
 	list, err := client.CoreV1().Services(ns).List(meta_v1.ListOptions{})
 	if err != nil {
-		return answer, fmt.Errorf("Failed to load Services %s", err)
+		return answer, fmt.Errorf("failed to load Services %s", err)
 	}
 	for _, r := range list.Items {
 		name := r.Name
@@ -41,7 +41,7 @@ func GetServiceNames(client *kubernetes.Clientset, ns string, filter string) ([]
 	names := []string{}
 	list, err := client.CoreV1().Services(ns).List(meta_v1.ListOptions{})
 	if err != nil {
-		return names, fmt.Errorf("Failed to load Services %s", err)
+		return names, fmt.Errorf("failed to load Services %s", err)
 	}
 	for _, r := range list.Items {
 		name := r.Name
@@ -96,6 +96,14 @@ func GetServiceURL(svc *v1.Service) string {
 	return url
 }
 
+func GetServiceURLFromName(c *kubernetes.Clientset, name, ns string) (string, error) {
+	svc, err := c.CoreV1().Services(ns).Get(name, meta_v1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return GetServiceURL(svc), nil
+}
+
 func FindServiceURLs(client *kubernetes.Clientset, namespace string) ([]ServiceURL, error) {
 	options := meta_v1.ListOptions{}
 	urls := []ServiceURL{}
@@ -148,4 +156,31 @@ func HasExternalAddress(svc *v1.Service) bool {
 		}
 	}
 	return false
+}
+
+func CreateServiceLink(client *kubernetes.Clientset, currentNamespace, targetNamespace, serviceName string) error {
+	svc := v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      serviceName,
+			Namespace: currentNamespace,
+		},
+		Spec: v1.ServiceSpec{
+			Type:         v1.ServiceTypeExternalName,
+			ExternalName: fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, targetNamespace),
+		},
+	}
+	_, err := client.CoreV1().Services(currentNamespace).Create(&svc)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func IsServicePresent(c *kubernetes.Clientset, name, ns string) (bool, error) {
+
+	svc, err := c.CoreV1().Services(ns).Get(name, meta_v1.GetOptions{})
+	if err != nil || svc == nil {
+		return false, err
+	}
+	return true, nil
 }

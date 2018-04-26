@@ -118,7 +118,7 @@ func (c *AuthConfig) GetServerByName(name string) *AuthServer {
 // GetServerByKind returns the server for the given kind or null if its not found
 func (c *AuthConfig) GetServerByKind(kind string) *AuthServer {
 	for _, s := range c.Servers {
-		if s.Kind == kind {
+		if s.Kind == kind && s.URL == c.CurrentServer {
 			return s
 		}
 	}

@@ -1,9 +1,16 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"io"
 
+	"github.com/spf13/cobra"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"fmt"
+
+	"time"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -16,6 +23,8 @@ const (
 	defaultAnchoreVersion     = "0.1.4"
 	defaultAnchorePassword    = "anchore"
 	defaultAnchoreConfigDir   = "/anchore_service_dir"
+	anchoreServiceName        = "anchore-anchore-engine"
+	anchoreDeploymentName     = "anchore-anchore-engine-core"
 )
 
 var (
@@ -81,16 +90,89 @@ func NewCmdCreateAddonAnchore(f cmdutil.Factory, out io.Writer, errOut io.Writer
 
 // Run implements the command
 func (o *CreateAddonAnchoreOptions) Run() error {
+
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
 	}
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
-	err := o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
+	_, _, err := o.KubeClient()
 	if err != nil {
 		return err
+	}
+
+	devNamespace, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
+	if err != nil {
+		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
+	}
+
+	log.Infof("found dev namespace %s\n", devNamespace)
+
+	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
+	if err != nil {
+		return fmt.Errorf("anchore deployment failed: %v", err)
+	}
+
+	log.Info("waiting for anchore deployment to be ready, this can take a few minutes\n")
+
+	err = kube.WaitForDeploymentToBeReady(o.kubeClient, anchoreDeploymentName, o.Namespace, 10*time.Minute)
+	if err != nil {
+		return err
+	}
+
+	// create a service link
+	err = kube.CreateServiceLink(o.kubeClient, o.currentNamespace, o.Namespace, anchoreServiceName)
+	if err != nil {
+		return fmt.Errorf("failed creating a service link for %s in target namespace %s", anchoreServiceName, o.Namespace)
+	}
+
+	// annotate the anchore engine service so exposecontroller can create an ingress rule
+	svc, err := o.kubeClient.CoreV1().Services(o.Namespace).Get(anchoreServiceName, meta_v1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get Service %s: %v", anchoreServiceName, err)
+	}
+	if svc.Annotations == nil {
+		svc.Annotations = map[string]string{}
+	}
+
+	if svc.Annotations[kube.AnnotationExpose] == "" {
+		svc.Annotations[kube.AnnotationExpose] = "true"
+		svc, err = o.kubeClient.CoreV1().Services(o.Namespace).Update(svc)
+		if err != nil {
+			return fmt.Errorf("failed to update service %s/%s", o.Namespace, anchoreServiceName)
+		}
+	}
+
+	// create the ingress rule
+	err = o.expose(devNamespace, o.Namespace)
+	if err != nil {
+		return err
+	}
+
+	// get the external anchore service URL
+	ing, err := kube.GetServiceURLFromName(o.kubeClient, anchoreServiceName, o.Namespace)
+	if err != nil {
+		return fmt.Errorf("failed to get external URL for service %s: %v", anchoreServiceName, err)
+	}
+
+	// create the local addonAuth.yaml file so `jx get cve` commands work
+	tokenOptions := CreateTokenAddonOptions{
+		Password: o.Password,
+		Username: "admin",
+		ServerFlags: ServerFlags{
+			ServerURL:  ing,
+			ServerName: anchoreDeploymentName,
+		},
+		Kind: kube.ValueKindCVE,
+		CreateOptions: CreateOptions{
+			CommonOptions: o.CommonOptions,
+		},
+	}
+	err = tokenOptions.Run()
+	if err != nil {
+		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
 	}
 	return nil
 }

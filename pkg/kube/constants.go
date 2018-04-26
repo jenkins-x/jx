@@ -69,6 +69,9 @@ const (
 	// ValueKindIssue an issue auth secret/credentials
 	ValueKindIssue = "issue"
 
+	// ValueKindCVE an addon auth secret/credentials
+	ValueKindCVE = "cve"
+
 	// LabelServiceKind the label to indicate the auto Server's Kind
 	LabelServiceKind = "jenkins.io/service-kind"
 
@@ -86,6 +89,9 @@ const (
 
 	// AnnotationURL indicates a service/server's URL
 	AnnotationURL = "jenkins.io/url"
+
+	// AnnotationExpose used to expose service using exposecontroller
+	AnnotationExpose = "fabric8.io/expose"
 
 	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike kubernetes resources)
 	AnnotationName = "jenkins.io/name"
