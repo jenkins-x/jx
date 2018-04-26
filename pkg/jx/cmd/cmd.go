@@ -6,9 +6,9 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
 	"strings"
-	"github.com/jenkins-x/jx/pkg/version"
 )
 
 const (
@@ -108,6 +108,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 				NewCmdLogs(f, out, err),
 				NewCmdOpen(f, out, err),
 				NewCmdRsh(f, out, err),
+				NewCmdSync(f, out, err),
 			},
 		},
 		{
