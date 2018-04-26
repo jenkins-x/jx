@@ -257,11 +257,7 @@ func (o *PreviewOptions) Run() error {
 
 	pullRequest, _ := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
 
-	username := gitProvider.CurrentUsername()
-	if pullRequest.Author != "" {
-		username = pullRequest.Author
-	}
-
+	username := pullRequest.Author
 	user := gitProvider.UserInfo(username)
 
 	statuses, err := gitProvider.ListCommitStatus(gitInfo.Organisation, gitInfo.Name, pullRequest.LastCommitSha)
@@ -339,12 +335,14 @@ func (o *PreviewOptions) Run() error {
 			gitSpec.URL = prURL
 			update = true
 		}
-		if gitSpec.User.Username != user.Username ||
-			gitSpec.User.ImageURL != user.ImageURL ||
-			gitSpec.User.Name != user.Name ||
-			gitSpec.User.LinkURL != user.LinkURL {
-			gitSpec.User = *user
-			update = true
+		if user != nil {
+			if gitSpec.User.Username != user.Username ||
+				gitSpec.User.ImageURL != user.ImageURL ||
+				gitSpec.User.Name != user.Name ||
+				gitSpec.User.LinkURL != user.LinkURL {
+				gitSpec.User = *user
+				update = true
+			}
 		}
 
 		if update {
