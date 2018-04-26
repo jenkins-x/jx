@@ -44,6 +44,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installKops()
 		case "kvm":
 			err = o.installKvm()
+		case "kvm2":
+			err = o.installKvm2()
 		case "ksync":
 			_, err = o.installKSync()
 		case "minikube":
@@ -313,6 +315,12 @@ func (o *CommonOptions) installHyperkit() error {
 
 func (o *CommonOptions) installKvm() error {
 	o.warnf("We cannot yet automate the installation of KVM - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads\n")
+	return nil
+}
+
+func (o *CommonOptions) installKvm2() error {
+	o.warnf("We cannot yet automate the installation of KVM with KVM2 driver - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads " +
+		"and https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#kvm2-driver\n")
 	return nil
 }
 
