@@ -1,0 +1,69 @@
+{
+  "imageDigest": "sha256:b9f03c3c4b196d46639bee0ec9cd0f6dbea8cc39d32767c8312f04317c3b18f4",
+  "vulnerabilities": [
+    {
+      "fix": "32:9.9.4-51.el7_4.2",
+      "package": "bind-license-9.9.4-51.el7_4.1",
+      "severity": "High",
+      "url": "https://access.redhat.com/errata/RHSA-2018:0102",
+      "vuln": "RHSA-2018:0102"
+    },
+    {
+      "fix": "0:2.17-222.el7",
+      "package": "glibc-2.17-196.el7_4.2",
+      "severity": "Medium",
+      "url": "https://access.redhat.com/errata/RHSA-2018:0805",
+      "vuln": "RHSA-2018:0805"
+    },
+    {
+      "fix": "0:2.17-222.el7",
+      "package": "glibc-common-2.17-196.el7_4.2",
+      "severity": "Medium",
+      "url": "https://access.redhat.com/errata/RHSA-2018:0805",
+      "vuln": "RHSA-2018:0805"
+    },
+    {
+      "fix": "0:1.15.1-18.el7",
+      "package": "krb5-libs-1.15.1-8.el7",
+      "severity": "Medium",
+      "url": "https://access.redhat.com/errata/RHSA-2018:0666",
+      "vuln": "RHSA-2018:0666"
+    },
+    {
+      "fix": "0:4.8.5-28.el7",
+      "package": "libgcc-4.8.5-16.el7_4.1",
+      "severity": "Low",
+      "url": "https://access.redhat.com/errata/RHSA-2018:0849",
+      "vuln": "RHSA-2018:0849"
+    },
+    {
+      "fix": "0:4.8.5-28.el7",
+      "package": "libstdc++-4.8.5-16.el7_4.1",
+      "severity": "Low",
+      "url": "https://access.redhat.com/errata/RHSA-2018:0849",
+      "vuln": "RHSA-2018:0849"
+    },
+    {
+      "fix": "1:1.0.2k-12.el7",
+      "package": "openssl-libs-1.0.2k-8.el7",
+      "severity": "Medium",
+      "url": "https://access.redhat.com/errata/RHSA-2018:0998",
+      "vuln": "RHSA-2018:0998"
+    },
+    {
+      "fix": "0:219-42.el7_4.7",
+      "package": "systemd-219-42.el7_4.4",
+      "severity": "Medium",
+      "url": "https://access.redhat.com/errata/RHSA-2018:0260",
+      "vuln": "RHSA-2018:0260"
+    },
+    {
+      "fix": "0:219-42.el7_4.7",
+      "package": "systemd-libs-219-42.el7_4.4",
+      "severity": "Medium",
+      "url": "https://access.redhat.com/errata/RHSA-2018:0260",
+      "vuln": "RHSA-2018:0260"
+    }
+  ],
+  "vulnerability_type": "os"
+}

@@ -49,6 +49,9 @@ const (
 	// ConfigMapJenkinsX the name of the ConfigMap with the Jenkins configuration
 	ConfigMapJenkinsX = "jenkins"
 
+	// ConfigMapJenkinsPodTemplates is the ConfigMap containing all the Pod Templates available
+	ConfigMapJenkinsPodTemplates = "jenkins-x-pod-templates"
+
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
 
@@ -69,11 +72,23 @@ const (
 	// ValueKindIssue an issue auth secret/credentials
 	ValueKindIssue = "issue"
 
+	// ValueKindCVE an addon auth secret/credentials
+	ValueKindCVE = "cve"
+
 	// LabelServiceKind the label to indicate the auto Server's Kind
 	LabelServiceKind = "jenkins.io/service-kind"
 
 	// LabelCreatedBy indicates the service that created this resource
 	LabelCreatedBy = "jenkins.io/created-by"
+
+	// LabelPodTemplate the name of the pod template for a DevPod
+	LabelPodTemplate = "jenkins.io/pod_template"
+
+	// LabelDevPodName the name of a dev pod
+	LabelDevPodName = "jenkins.io/devpod"
+
+	// LabelDevPodUsername the user name owner of the DeVPod
+	LabelDevPodUsername = "jenkins.io/devpod_user"
 
 	// ValueCreatedByJX for resources created by the Jenkins X CLI
 	ValueCreatedByJX = "jx"
@@ -86,6 +101,9 @@ const (
 
 	// AnnotationURL indicates a service/server's URL
 	AnnotationURL = "jenkins.io/url"
+
+	// AnnotationExpose used to expose service using exposecontroller
+	AnnotationExpose = "fabric8.io/expose"
 
 	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike kubernetes resources)
 	AnnotationName = "jenkins.io/name"

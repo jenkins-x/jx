@@ -230,11 +230,20 @@ func GetGitServer(dir string) (string, error) {
 }
 
 func GetGitInfo(dir string) (*GitRepositoryInfo, error) {
-	e := exec.Command("git", "config", "--get", "remote.origin.url")
+	e := exec.Command("git", "status")
 	if dir != "" {
 		e.Dir = dir
 	}
 	data, err := e.CombinedOutput()
+	if err != nil && strings.Contains(string(data), "Not a git repository") {
+		return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
+	}
+
+	e = exec.Command("git", "config", "--get", "remote.origin.url")
+	if dir != "" {
+		e.Dir = dir
+	}
+	data, err = e.CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("failed to run git commit in %s due to %s", dir, err)
 	}

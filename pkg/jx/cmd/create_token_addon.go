@@ -68,6 +68,7 @@ func NewCmdCreateTokenAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	}
 	options.addCommonFlags(cmd)
 	options.ServerFlags.addGitServerFlags(cmd)
+	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The password for the user")
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "", "The kind of addon. Defaults to the addon name if not specified")
@@ -89,7 +90,6 @@ func (o *CreateTokenAddonOptions) Run() error {
 		return err
 	}
 	config := authConfigSvc.Config()
-
 	kind := o.Kind
 	if kind == "" {
 		kind = o.ServerFlags.ServerName
@@ -97,37 +97,41 @@ func (o *CreateTokenAddonOptions) Run() error {
 	if kind == "" {
 		kind = "addon"
 	}
-	server, err := o.findAddonServer(config, &o.ServerFlags, kind)
+
+	var server *auth.AuthServer
+	server, err = o.findAddonServer(config, &o.ServerFlags, kind)
 	if err != nil {
 		return err
 	}
 	if o.Username == "" {
 		return fmt.Errorf("No Username specified")
 	}
-
 	userAuth := config.GetOrCreateUserAuth(server.URL, o.Username)
 	if o.ApiToken != "" {
 		userAuth.ApiToken = o.ApiToken
 	}
 
-	tokenUrl := addon.ProviderAccessTokenURL(server.Kind, server.URL)
-
-	if userAuth.IsInvalid() {
-		f := func(username string) error {
-			o.Printf("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
-			if tokenUrl != "" {
-				o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
-			}
-			o.Printf("Then COPY the token and enter in into the form below:\n\n")
-			return nil
-		}
-
-		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f)
-		if err != nil {
-			return err
-		}
+	if o.Password != "" {
+		userAuth.Password = o.Password
+	} else {
+		tokenUrl := addon.ProviderAccessTokenURL(server.Kind, server.URL)
 		if userAuth.IsInvalid() {
-			return fmt.Errorf("You did not properly define the user authentication!")
+			f := func(username string) error {
+				o.Printf("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
+				if tokenUrl != "" {
+					o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
+				}
+				o.Printf("Then COPY the token and enter in into the form below:\n\n")
+				return nil
+			}
+
+			err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f)
+			if err != nil {
+				return err
+			}
+			if userAuth.IsInvalid() {
+				return fmt.Errorf("You did not properly define the user authentication!")
+			}
 		}
 	}
 
@@ -136,12 +140,10 @@ func (o *CreateTokenAddonOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
 	err = o.updateAddonCredentialsSecret(server, userAuth)
 	if err != nil {
 		o.warnf("Failed to update addon credentials secret: %v\n", err)
 	}
-
 	o.Printf("Created user %s API Token for addon server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
@@ -191,6 +193,9 @@ func (o *CreateTokenAddonOptions) updateAddonCredentialsSecret(server *auth.Auth
 	}
 	if userAuth.Username != "" {
 		secret.Data["username"] = []byte(userAuth.Username)
+	}
+	if userAuth.Password != "" {
+		secret.Data["password"] = []byte(userAuth.Password)
 	}
 	if userAuth.ApiToken != "" {
 		secret.Data["password"] = []byte(userAuth.ApiToken)

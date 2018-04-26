@@ -44,6 +44,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installKops()
 		case "kvm":
 			err = o.installKvm()
+		case "ksync":
+			_, err = o.installKSync()
 		case "minikube":
 			err = o.installMinikube()
 		case "minishift":
@@ -420,6 +422,37 @@ func (o *CommonOptions) installKops() error {
 		return err
 	}
 	return os.Chmod(fullPath, 0755)
+}
+
+func (o *CommonOptions) installKSync() (bool, error) {
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return false, err
+	}
+	binary := "ksync"
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return false, err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("vapor-ware", "ksync")
+	if err != nil {
+		return false, err
+	}
+	clientURL := fmt.Sprintf("https://github.com/vapor-ware/ksync/releases/download/%s/ksync_%s_%s", latestVersion, runtime.GOOS, runtime.GOARCH)
+	if runtime.GOOS == "windows" {
+		clientURL += ".exe"
+	}
+	fullPath := filepath.Join(binDir, fileName)
+	tmpFile := fullPath + ".tmp"
+	err = o.downloadFile(clientURL, tmpFile)
+	if err != nil {
+		return false, err
+	}
+	err = util.RenameFile(tmpFile, fullPath)
+	if err != nil {
+		return false, err
+	}
+	return true, os.Chmod(fullPath, 0755)
 }
 
 func (o *CommonOptions) installJx(upgrade bool, version string) error {

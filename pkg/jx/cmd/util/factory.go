@@ -73,7 +73,7 @@ type Factory interface {
 
 	SetBatch(batch bool)
 
-	LoadPipelineSecrets(kind string) (*corev1.SecretList, error)
+	LoadPipelineSecrets(kind string, serviceKind string) (*corev1.SecretList, error)
 
 	ImpersonateUser(user string) Factory
 }
@@ -259,7 +259,7 @@ func (f *factory) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfig
 }
 
 func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
-	secrets, err := f.LoadPipelineSecrets(kube.ValueKindGit)
+	secrets, err := f.LoadPipelineSecrets(kube.ValueKindGit, "")
 	if err != nil {
 
 		kubeConfig, _, configLoadErr := kube.LoadConfig()
@@ -329,7 +329,7 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	return authConfigSvc, nil
 }
 
-func (f *factory) LoadPipelineSecrets(kind string) (*corev1.SecretList, error) {
+func (f *factory) LoadPipelineSecrets(kind, serviceKind string) (*corev1.SecretList, error) {
 	// TODO return empty list if not inside a pipeline?
 	kubeClient, curNs, err := f.CreateClient()
 	if err != nil {
@@ -339,8 +339,19 @@ func (f *factory) LoadPipelineSecrets(kind string) (*corev1.SecretList, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get the development environment %s", err)
 	}
-	// TODO use kind as a label selector...
-	return kubeClient.CoreV1().Secrets(ns).List(metav1.ListOptions{})
+
+	var selector string
+	if kind != "" {
+		selector = kube.LabelKind + "=" + kind
+	}
+	if serviceKind != "" {
+		selector = kube.LabelServiceKind + "=" + serviceKind
+	}
+
+	opts := metav1.ListOptions{
+		LabelSelector: selector,
+	}
+	return kubeClient.CoreV1().Secrets(ns).List(opts)
 }
 
 func (f *factory) mergePipeineSecrets(config *auth.AuthConfig, secretList *corev1.SecretList) {

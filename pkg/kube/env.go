@@ -128,7 +128,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 
 	if helmValues.ExposeController.Config.Domain == "" {
 
-		expose, err := getTeamExposecontrollerConfig(kubeClient, ns)
+		expose, err := GetTeamExposecontrollerConfig(kubeClient, ns)
 		if err != nil {
 			return nil, err
 		}
@@ -309,7 +309,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 	return gitProvider, nil
 }
 
-func getTeamExposecontrollerConfig(kubeClient *kubernetes.Clientset, ns string) (map[string]string, error) {
+func GetTeamExposecontrollerConfig(kubeClient *kubernetes.Clientset, ns string) (map[string]string, error) {
 	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get("exposecontroller", metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to find team environment exposecontroller config %v", err)
