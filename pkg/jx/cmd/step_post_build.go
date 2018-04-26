@@ -12,6 +12,8 @@ import (
 
 	"bufio"
 
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -42,6 +44,11 @@ var (
 		jx step post build
 `)
 )
+
+const podAnnotations = `
+podAnnotations:
+  jenkins-x.io/cve-image-id: %s
+`
 
 func NewCmdStepPostBuild(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepPostBuildOptions{
@@ -117,6 +124,11 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 		return fmt.Errorf("failed to add image %s to anchore engine: %v\n", o.FullImageName, err)
 	}
 
+	err = o.addImageIDtoHelmValues(imageID)
+	if err != nil {
+		return fmt.Errorf("failed to add image id %s to helm values: %v\n", imageID, err)
+	}
+
 	// todo use image id to annotate pods during environments helm install / upgrade
 	// todo then we can use `jx get cve --env staging` and list all CVEs for an environment
 	log.Infof("anchore image is %s \n", imageID)
@@ -183,4 +195,52 @@ func (o *StepPostBuildOptions) getAnchoreDetails() (anchoreDetails, error) {
 	}
 
 	return a, nil
+}
+
+func (o *StepPostBuildOptions) addImageIDtoHelmValues(imageID string) error {
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	charts := filepath.Join(pwd, "charts")
+	exists, err := util.FileExists(charts)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return fmt.Errorf("no charts folder found are you in the root folder of your project?")
+	}
+
+	// loop through all directories and if there's a values.yaml add image id to the end
+	err = filepath.Walk(charts, func(path string, f os.FileInfo, err error) error {
+
+		if f.IsDir() {
+			values := filepath.Join(path, "values.yaml")
+			valuesExist, err := util.FileExists(values)
+			if err != nil {
+				return err
+			}
+			if valuesExist {
+				f, err := os.OpenFile(values, os.O_APPEND|os.O_WRONLY, 0600)
+				if err != nil {
+					return err
+				}
+
+				defer f.Close()
+
+				if _, err = f.WriteString(fmt.Sprintf(podAnnotations, imageID)); err != nil {
+					return err
+				}
+			}
+
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
