@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os/user"
+	"strconv"
 	"time"
 
 	"github.com/ghodss/yaml"
@@ -24,7 +25,8 @@ const (
 type CreateDevPodOptions struct {
 	CreateOptions
 
-	Label string
+	Label  string
+	Suffix string
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -51,13 +53,10 @@ func NewCmdCreateDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 		},
 	}
 
-	options.addFlags(cmd, "", "")
+	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template to use")
+	cmd.Flags().StringVarP(&options.Suffix, "suffix", "s", "", "The suffix to append the pod name")
 	options.addCommonFlags(cmd)
 	return cmd
-}
-
-func (options *CreateDevPodOptions) addFlags(cmd *cobra.Command, defaultNamespace string, defaultOptionRelease string) {
-	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template to use")
 }
 
 // Run implements this command
@@ -111,6 +110,16 @@ func (o *CreateDevPodOptions) Run() error {
 
 	userName := u.Username
 	name := kube.ToValidName(userName + "-" + label)
+	if o.Suffix != "" {
+		name += "-" + o.Suffix
+	}
+	names, err := kube.GetPodNames(client, ns, "")
+	if err != nil {
+		return err
+	}
+
+	name = uniquePodName(names, name)
+
 	pod.Name = name
 	pod.Labels[kube.LabelPodTemplate] = label
 	pod.Labels[kube.LabelDevPodName] = name
@@ -142,4 +151,18 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 	options.Args = []string{}
 	return options.Run()
+}
+
+func uniquePodName(names []string, prefix string) string {
+	count := 1
+	for {
+		name := prefix
+		if count > 1 {
+			name += strconv.Itoa(count)
+		}
+		if util.StringArrayIndex(names, name) < 0 {
+			return name
+		}
+		count++
+	}
 }
