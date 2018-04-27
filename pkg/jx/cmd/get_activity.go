@@ -243,6 +243,10 @@ func addPromoteRow(table *tbl.Table, parent *v1.PromoteActivityStep, indent stri
 	if update != nil {
 		addStepRowItem(table, &update.CoreActivityStep, indent, "Update", describePromoteUpdate(update))
 	}
+	appURL := parent.ApplicationURL
+	if appURL != "" {
+		addStepRowItem(table, &update.CoreActivityStep, indent, "Promoted", " Application is at: "+util.ColorInfo(appURL))
+	}
 }
 
 func addStepRowItem(table *tbl.Table, step *v1.CoreActivityStep, indent string, name string, description string) {
