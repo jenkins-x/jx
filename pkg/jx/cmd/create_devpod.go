@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -19,6 +20,23 @@ import (
 
 const (
 	optionLabel = "label"
+)
+
+var (
+	createDevPodLong = templates.LongDesc(`
+		Creates a new DevPod
+
+		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
+
+`)
+
+	createDevPodExample = templates.Examples(`
+		# creates a new DevPod asking the user for the label to use
+		jx create devpod
+
+		# creates a new Maven DevPod 
+		jx create devpod -l maven
+	`)
 )
 
 // CreateDevPodOptions the options for the create spring command
@@ -45,6 +63,8 @@ func NewCmdCreateDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 		Use:     "devpod",
 		Short:   "Creates a Developer Pod for running builds and tests inside the cluster",
 		Aliases: []string{"dpod", "buildpod"},
+		Long:    createDevPodLong,
+		Example: createDevPodExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

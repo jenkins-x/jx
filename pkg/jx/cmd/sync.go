@@ -34,13 +34,15 @@ type SyncOptions struct {
 
 var (
 	sync_long = templates.LongDesc(`
-		Synchronises your local files to a devpod so you an build and test your code easily on the cloud
+		Synchronises your local files to a DevPod so you an build and test your code easily on the cloud
+
+		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
 
 `)
 
 	sync_example = templates.Examples(`
-		# Open a terminal in the first container of the foo deployment's latest pod
-		jx sync foo
+		# Starts synchonizing the current directory files to the users DevPod
+		jx sync 
 `)
 
 	defaultStignoreFile = `.git

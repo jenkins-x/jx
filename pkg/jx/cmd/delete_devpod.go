@@ -6,12 +6,30 @@ import (
 	"os/user"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var (
+	deleteDevPodLong = templates.LongDesc(`
+		Deletes one or more DevPods
+
+		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
+
+`)
+
+	deleteDevPodExample = templates.Examples(`
+		# deletes a DevPod by picking one from the list and confirming to it
+		jx delete devpod
+
+		# delete a specific DevPod
+		jx delete devpod myuser-maven2
+	`)
 )
 
 // DeleteDevPodOptions are the flags for delete commands
@@ -33,6 +51,8 @@ func NewCmdDeleteDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 	cmd := &cobra.Command{
 		Use:     "devpod",
 		Short:   "Deletes one or many DevPods",
+		Long:    deleteDevPodLong,
+		Example: deleteDevPodExample,
 		Aliases: []string{"buildpod", "buildpods", "devpods"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
