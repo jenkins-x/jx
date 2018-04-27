@@ -455,7 +455,7 @@ func (o *ImportOptions) DraftCreate() error {
 			}
 		}
 	}
-	log.Info("selected pack: " + lpack + "\n")
+	log.Success("selected pack: " + lpack + "\n")
 	chartsDir := filepath.Join(dir, "charts")
 	jenkinsfileExists, err := util.FileExists(jenkinsfile)
 	exists, err := util.FileExists(chartsDir)
