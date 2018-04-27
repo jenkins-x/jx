@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	Liberty = "liberty"
+	APPSERVER = "appserver"
+	LIBERTY = "liberty"
 )
 
 func PomFlavour(path string) (string, error) {
@@ -19,7 +20,10 @@ func PomFlavour(path string) (string, error) {
 	s := string(b)
 	if strings.Contains(s, "<packaging>war</packaging>") &&
 		strings.Contains(s, "org.eclipse.microprofile") {
-		return Liberty, nil
+		return LIBERTY, nil
+	}
+	if strings.Contains(s,"<groupId>org.apache.tomcat") {
+		return APPSERVER,nil
 	}
 
 	return "", nil

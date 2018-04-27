@@ -428,8 +428,10 @@ func (o *ImportOptions) DraftCreate() error {
 				return err
 			}
 			if len(pack) > 0 {
-				if pack == cmdutil.Liberty {
+				if pack == cmdutil.LIBERTY {
 					lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/liberty")
+				} else if pack == cmdutil.APPSERVER {
+					lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/appserver")
 				} else {
 					log.Warn("Do not know how to handle pack: " + pack)
 				}
