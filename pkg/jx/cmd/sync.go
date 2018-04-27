@@ -3,9 +3,11 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -32,14 +34,19 @@ type SyncOptions struct {
 
 var (
 	sync_long = templates.LongDesc(`
-		Synchronises your local files to a devpod so you an build and test your code easily on the cloud
+		Synchronises your local files to a DevPod so you an build and test your code easily on the cloud
+
+		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
 
 `)
 
 	sync_example = templates.Examples(`
-		# Open a terminal in the first container of the foo deployment's latest pod
-		jx sync foo
+		# Starts synchonizing the current directory files to the users DevPod
+		jx sync 
 `)
+
+	defaultStignoreFile = `.git
+`
 )
 
 func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -133,6 +140,17 @@ func (o *SyncOptions) Run() error {
 	}
 	o.Printf("synchronizing directory %s to DevPod %s\n", info(dir), info(name))
 
+	ignoreFile := filepath.Join(dir, ".stignore")
+	exists, err := util.FileExists(ignoreFile)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		err = ioutil.WriteFile(ignoreFile, []byte(defaultStignoreFile), DefaultWritePermissions)
+		if err != nil {
+			return err
+		}
+	}
 	cmd := exec.Command("ksync", "watch")
 	cmd.Stdout = o.Out
 	err = cmd.Start()
@@ -140,16 +158,26 @@ func (o *SyncOptions) Run() error {
 		return err
 	}
 
-	time.Sleep(time.Second)
+	time.Sleep(2 * time.Second)
 
 	reload := "--reload=false"
 	if o.Reload {
 		reload = "--reload=true"
 	}
-	err = o.runCommand("ksync", "create", "--force", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, o.RemoteDir)
+
+	// ignore results as we may not have a spec yet for this name
+	o.runCommand("ksync", "delete", name)
+
+	err = o.runCommand("ksync", "create", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, o.RemoteDir)
 	if err != nil {
-		// TODO kill the command??
+		o.killWatchProcess(cmd)
 		return err
 	}
 	return cmd.Wait()
+}
+
+func (o *SyncOptions) killWatchProcess(cmd *exec.Cmd) {
+	if err := cmd.Process.Kill(); err != nil {
+		o.warnf("failed to kill 'ksync watch' process: %s\n", err)
+	}
 }

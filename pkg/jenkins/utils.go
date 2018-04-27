@@ -117,3 +117,52 @@ func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config 
 	err = configService.SaveUserAuth(url, auth)
 	return *auth, err
 }
+
+// IsMultiBranchProject returns true if this job is a multi branch project
+func IsMultiBranchProject(job *gojenkins.Job) bool {
+	return job != nil && job.Class == "org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject"
+}
+
+// LoadAllJenkinsJobs Loads all the jobs in full from the Jenkins client
+func LoadAllJenkinsJobs(jenkinsClient *gojenkins.Jenkins) ([]*gojenkins.Job, error) {
+	answer := []*gojenkins.Job{}
+	jobs, err := jenkinsClient.GetJobs()
+	if err != nil {
+		return answer, err
+	}
+
+	for _, j := range jobs {
+		/*		job, err := jenkinsClient.GetJob(j.Name)
+				if err != nil {
+					return answer, err
+				}
+		*/
+		childJobs, err := loadChildJobs(jenkinsClient, j.Name)
+		if err != nil {
+			return answer, err
+		}
+		answer = append(answer, childJobs...)
+	}
+	return answer, nil
+}
+
+func loadChildJobs(jenkinsClient *gojenkins.Jenkins, name string) ([]*gojenkins.Job, error) {
+	fmt.Printf("Loading child jobs of %s\n", name)
+	answer := []*gojenkins.Job{}
+	job, err := jenkinsClient.GetJob(name)
+	if err != nil {
+		return answer, err
+	}
+	answer = append(answer, &job)
+
+	if job.Jobs != nil {
+		for _, child := range job.Jobs {
+			childJobs, err := loadChildJobs(jenkinsClient, job.FullName+"/"+child.Name)
+			if err != nil {
+				return answer, err
+			}
+			answer = append(answer, childJobs...)
+		}
+	}
+	return answer, nil
+}

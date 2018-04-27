@@ -18,13 +18,15 @@ type GetDevPodOptions struct {
 }
 
 var (
-	get_devPod_long = templates.LongDesc(`
-		Display the available devPods
+	getDevPodLong = templates.LongDesc(`
+		Display the available DevPods
+
+		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
 
 `)
 
-	get_devPod_example = templates.Examples(`
-		# List all the possible devPods
+	getDevPodExample = templates.Examples(`
+		# List all the possible DevPods
 		jx get devPod
 	`)
 )
@@ -44,8 +46,8 @@ func NewCmdGetDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	cmd := &cobra.Command{
 		Use:     "devpod [flags]",
 		Short:   "Lists the DevPods",
-		Long:    get_devPod_long,
-		Example: get_devPod_example,
+		Long:    getDevPodLong,
+		Example: getDevPodExample,
 		Aliases: []string{"buildpod", "buildpods", "devpods"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd

@@ -92,10 +92,15 @@ func (o *RshOptions) Run() error {
 
 	filter := ""
 	names := []string{}
+	podsName := "Pods"
 	if o.DevPod {
+		podsName = "DevPods"
 		u, err := user.Current()
 		if err != nil {
 			return err
+		}
+		if o.Executable == "" {
+			o.Executable = "bash"
 		}
 		names, _, err = kube.GetDevPodNames(client, ns, u.Username)
 		if err != nil {
@@ -109,9 +114,9 @@ func (o *RshOptions) Run() error {
 	}
 	if len(names) == 0 {
 		if filter == "" {
-			return fmt.Errorf("There are no Pods")
+			return fmt.Errorf("There are no %s", podsName)
 		} else {
-			return fmt.Errorf("There are no Pods matching filter: " + filter)
+			return fmt.Errorf("There are no %s matching filter: %s", podsName, filter)
 		}
 	}
 	name := o.Pod
