@@ -98,11 +98,7 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 	}
 
 	present, err := kube.IsServicePresent(o.kubeClient, anchoreServiceName, o.currentNamespace)
-	if err != nil {
-		return err
-	}
-
-	if !present {
+	if err != nil || !present {
 		log.Infof("no CVE provider running in the current %s namespace so skip adding image to be analysed", o.currentNamespace)
 		return nil
 	}
