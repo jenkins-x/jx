@@ -779,9 +779,9 @@ func (p *GitHubProvider) UserInfo(username string) *v1.UserSpec {
 
 	return &v1.UserSpec{
 		Username: username,
-		Name:     *user.Name,
-		ImageURL: *user.AvatarURL,
-		LinkURL:  *user.HTMLURL,
+		Name:     asText(user.Name),
+		ImageURL: asText(user.AvatarURL),
+		LinkURL:  asText(user.HTMLURL),
 	}
 }
 
