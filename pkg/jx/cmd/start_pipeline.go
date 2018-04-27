@@ -22,7 +22,7 @@ type StartPipelineOptions struct {
 	Tail   bool
 	Filter string
 
-	Jobs map[string]*gojenkins.Job
+	Jobs map[string]gojenkins.Job
 }
 
 var (
@@ -113,26 +113,23 @@ func (o *StartPipelineOptions) Run() error {
 
 func (o *StartPipelineOptions) startJob(name string, allNames []string) error {
 	job := o.Jobs[name]
-	if job == nil {
-		return util.InvalidArg(name, allNames)
-	}
 	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return err
 	}
 
 	// ignore errors as it could be there's no last build yet
-	previous, _ := jenkins.GetLastBuild(*job)
+	previous, _ := jenkins.GetLastBuild(job)
 
 	params := url.Values{}
-	err = jenkins.Build(*job, params)
+	err = jenkins.Build(job, params)
 	if err != nil {
 		return err
 	}
 
 	i := 0
 	for {
-		last, err := jenkins.GetLastBuild(*job)
+		last, err := jenkins.GetLastBuild(job)
 
 		// lets ignore the first query in case there's no build yet
 		if i > 0 && err != nil {

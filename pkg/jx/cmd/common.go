@@ -408,8 +408,8 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
 
-func (o *CommonOptions) getJobMap(filter string) (map[string]*gojenkins.Job, error) {
-	jobMap := map[string]*gojenkins.Job{}
+func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, error) {
+	jobMap := map[string]gojenkins.Job{}
 	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return jobMap, err
@@ -422,17 +422,18 @@ func (o *CommonOptions) getJobMap(filter string) (map[string]*gojenkins.Job, err
 	return jobMap, nil
 }
 
-func (o *CommonOptions) addJobs(jobMap *map[string]*gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
+func (o *CommonOptions) addJobs(jobMap *map[string]gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
 	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return
 	}
+
 	for _, j := range jobs {
 		name := jobName(prefix, &j)
-
 		if IsPipeline(&j) {
 			if filter == "" || strings.Contains(name, filter) {
-				(*jobMap)[name] = &j
+				(*jobMap)[name] = j
+				continue
 			}
 		}
 		if j.Jobs != nil {
