@@ -146,10 +146,20 @@ func (o *SyncOptions) Run() error {
 	if o.Reload {
 		reload = "--reload=true"
 	}
-	err = o.runCommand("ksync", "create", "--force", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, o.RemoteDir)
+
+	// ignore results as we may not have a spec yet for this name
+	o.runCommand("ksync", "delete", name)
+
+	err = o.runCommand("ksync", "create", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, o.RemoteDir)
 	if err != nil {
-		// TODO kill the command??
+		o.killWatchProcess(cmd)
 		return err
 	}
 	return cmd.Wait()
+}
+
+func (o *SyncOptions) killWatchProcess(cmd *exec.Cmd) {
+	if err := cmd.Process.Kill(); err != nil {
+		o.warnf("failed to kill 'ksync watch' process: %s\n", err)
+	}
 }
