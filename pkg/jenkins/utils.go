@@ -4,9 +4,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"net/http"
-
 	"io"
+	"net/http"
 	"os"
 
 	"github.com/jenkins-x/golang-jenkins"
@@ -132,11 +131,6 @@ func LoadAllJenkinsJobs(jenkinsClient *gojenkins.Jenkins) ([]*gojenkins.Job, err
 	}
 
 	for _, j := range jobs {
-		/*		job, err := jenkinsClient.GetJob(j.Name)
-				if err != nil {
-					return answer, err
-				}
-		*/
 		childJobs, err := loadChildJobs(jenkinsClient, j.Name)
 		if err != nil {
 			return answer, err
@@ -147,7 +141,6 @@ func LoadAllJenkinsJobs(jenkinsClient *gojenkins.Jenkins) ([]*gojenkins.Job, err
 }
 
 func loadChildJobs(jenkinsClient *gojenkins.Jenkins, name string) ([]*gojenkins.Job, error) {
-	fmt.Printf("Loading child jobs of %s\n", name)
 	answer := []*gojenkins.Job{}
 	job, err := jenkinsClient.GetJob(name)
 	if err != nil {

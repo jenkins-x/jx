@@ -36,6 +36,9 @@ var (
 // DeleteAppOptions are the flags for this delete commands
 type DeleteAppOptions struct {
 	CommonOptions
+
+	SelectAll    bool
+	SelectFilter string
 }
 
 // NewCmdDeleteApp creates a command object for this command
@@ -61,6 +64,8 @@ func NewCmdDeleteApp(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			cmdutil.CheckErr(err)
 		},
 	}
+	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Selects all the matched apps")
+	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filter the list of apps to those containing this text")
 
 	return cmd
 }
@@ -95,7 +100,7 @@ func (o *DeleteAppOptions) Run() error {
 	}
 
 	if len(args) == 0 {
-		args, err = util.PickNames(names, "Pick Applications to remove from Jenkins:")
+		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter)
 		if err != nil {
 			return err
 		}
