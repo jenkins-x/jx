@@ -18,6 +18,10 @@ import (
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
 // IsPodReady returns true if a pod is ready; false otherwise.
 func IsPodReady(pod *v1.Pod) bool {
+	phase := pod.Status.Phase
+	if phase != v1.PodRunning || pod.DeletionTimestamp != nil {
+		return false
+	}
 	return IsPodReadyConditionTrue(pod.Status)
 }
 
@@ -29,10 +33,13 @@ func IsPodReadyConditionTrue(status v1.PodStatus) bool {
 }
 
 func PodStatus(pod *v1.Pod) string {
+	if pod.DeletionTimestamp != nil {
+		return "Terminating"
+	}
+	phase := pod.Status.Phase
 	if IsPodReady(pod) {
 		return "Ready"
 	}
-	phase := pod.Status.Phase
 	return string(phase)
 }
 
