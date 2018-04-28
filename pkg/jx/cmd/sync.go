@@ -100,7 +100,7 @@ func (o *SyncOptions) Run() error {
 
 	if justInstalled {
 		o.Printf("Initialising ksync\n")
-		err = o.runCommandInteractive(true, "ksync", "init")
+		err = o.runCommandInteractive(true, "ksync", "init", "--upgrade")
 		if err != nil {
 			return err
 		}
