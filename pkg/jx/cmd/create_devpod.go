@@ -43,8 +43,9 @@ var (
 type CreateDevPodOptions struct {
 	CreateOptions
 
-	Label  string
-	Suffix string
+	Label      string
+	Suffix     string
+	WorkingDir string
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -75,6 +76,7 @@ func NewCmdCreateDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 
 	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template to use")
 	cmd.Flags().StringVarP(&options.Suffix, "suffix", "s", "", "The suffix to append the pod name")
+	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the dev pod")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -144,6 +146,17 @@ func (o *CreateDevPodOptions) Run() error {
 	pod.Labels[kube.LabelPodTemplate] = label
 	pod.Labels[kube.LabelDevPodName] = name
 	pod.Labels[kube.LabelDevPodUsername] = userName
+
+	container1 := &pod.Spec.Containers[0]
+	workingDir := o.WorkingDir
+	if workingDir == "" {
+		workingDir = "/code"
+		if label == "go" {
+			// TODO add org + repo name
+			workingDir = " /home/jenkins/go/src/github.com"
+		}
+	}
+	container1.WorkingDir = workingDir
 
 	_, err = client.CoreV1().Pods(ns).Create(pod)
 	if err != nil {
