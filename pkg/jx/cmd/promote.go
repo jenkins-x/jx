@@ -22,7 +22,6 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 const (
@@ -377,186 +376,32 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 }
 
 func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo *ReleaseInfo) error {
-	source := &env.Spec.Source
-	gitURL := source.URL
-	if gitURL == "" {
-		return fmt.Errorf("No source git URL")
-	}
-	gitInfo, err := gits.ParseGitURL(gitURL)
-	if err != nil {
-		return err
-	}
-
-	environmentsDir, err := util.EnvironmentsDir()
-	if err != nil {
-		return err
-	}
-	dir := filepath.Join(environmentsDir, gitInfo.Organisation, gitInfo.Name)
-
-	// now lets clone the fork and push it...
-	exists, err := util.FileExists(dir)
-	if err != nil {
-		return err
-	}
-	app := o.Application
 	version := o.Version
 	versionName := version
 	if versionName == "" {
 		versionName = "latest"
 	}
+	app := o.Application
 
-	branchName := gits.ConvertToValidBranchName("promote-" + app + "-" + versionName)
-	base := source.Ref
-	if base == "" {
-		base = "master"
-	}
+	branchNameText := "promote-" + app + "-" + versionName
 
-	if exists {
-		// lets check the git remote URL is setup correctly
-		err = gits.SetRemoteURL(dir, "origin", gitURL)
-		if err != nil {
-			return err
-		}
-		err = gits.GitCmd(dir, "stash")
-		if err != nil {
-			return err
-		}
-		err = gits.GitCmd(dir, "checkout", base)
-		if err != nil {
-			return err
-		}
-		err = gits.GitCmd(dir, "pull")
-		if err != nil {
-			return err
-		}
-	} else {
-		err := os.MkdirAll(dir, DefaultWritePermissions)
-		if err != nil {
-			return fmt.Errorf("Failed to create directory %s due to %s", dir, err)
-		}
-		err = gits.GitClone(gitURL, dir)
-		if err != nil {
-			return err
-		}
-		if base != "master" {
-			err = gits.GitCmd(dir, "checkout", base)
+	title := app + " to " + versionName
+	message := fmt.Sprintf("Promote %s to version %s", app, versionName)
+
+	modifyRequirementsFn := func(requirements *helm.Requirements) error {
+		var err error
+		if version == "" {
+			version, err = o.findLatestVersion(app)
 			if err != nil {
 				return err
 			}
 		}
-
-		// TODO lets fork if required???
-		/*
-			pushGitURL, err := gits.GitCreatePushURL(gitURL, details.User)
-			if err != nil {
-				return err
-			}
-			err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
-			if err != nil {
-				return err
-			}
-			err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
-			if err != nil {
-				return err
-			}
-			err = gits.GitCmd(dir, "push", "-u", "origin", "master")
-			if err != nil {
-				return err
-			}
-		*/
-	}
-	branchNames, err := gits.GitGetRemoteBranchNames(dir, "remotes/origin/")
-	if err != nil {
-		return fmt.Errorf("Failed to load remote branch names: %s", err)
-	}
-	o.Printf("Found remote branch names %s\n", strings.Join(branchNames, ", "))
-	if util.StringArrayIndex(branchNames, branchName) >= 0 {
-		// lets append a UUID as the branch name already exists
-		branchName += "-" + string(uuid.NewUUID())
-	}
-	err = gits.GitCmd(dir, "branch", branchName)
-	if err != nil {
-		return err
-	}
-	err = gits.GitCmd(dir, "checkout", branchName)
-	if err != nil {
-		return err
-	}
-
-	requirementsFile, err := helm.FindRequirementsFileName(dir)
-	if err != nil {
-		return err
-	}
-	requirements, err := helm.LoadRequirementsFile(requirementsFile)
-	if err != nil {
-		return err
-	}
-	if version == "" {
-		version, err = o.findLatestVersion(app)
-		if err != nil {
-			return err
-		}
-	}
-	requirements.SetAppVersion(app, version, o.HelmRepositoryURL)
-	err = helm.SaveRequirementsFile(requirementsFile, requirements)
-
-	err = gits.GitCmd(dir, "add", "*", "*/*")
-	if err != nil {
-		return err
-	}
-	changed, err := gits.HasChanges(dir)
-	if err != nil {
-		return err
-	}
-	if !changed {
-		o.Printf("%s\n", util.ColorWarning("No changes made to the GitOps Environment source code. Must be already on version!"))
+		requirements.SetAppVersion(app, version, o.HelmRepositoryURL)
 		return nil
 	}
-	message := fmt.Sprintf("Promote %s to version %s", app, versionName)
-	err = gits.GitCommit(dir, message)
-	if err != nil {
-		return err
-	}
-	err = gits.GitPush(dir)
-	if err != nil {
-		return err
-	}
-
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
-	if err != nil {
-		return err
-	}
-
-	gitKind, err := o.GitServerKind(gitInfo)
-	if err != nil {
-		return err
-	}
-
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode, gitKind)
-	if err != nil {
-		return err
-	}
-
-	gha := &gits.GitPullRequestArguments{
-		Owner: gitInfo.Organisation,
-		Repo:  gitInfo.Name,
-		Title: app + " to " + versionName,
-		Body:  message,
-		Base:  base,
-		Head:  branchName,
-	}
-
-	pr, err := provider.CreatePullRequest(gha)
-	if err != nil {
-		return err
-	}
-	o.Printf("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
-	releaseInfo.PullRequestInfo = &ReleasePullRequestInfo{
-		GitProvider:          provider,
-		PullRequest:          pr,
-		PullRequestArguments: gha,
-	}
-	return nil
+	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message)
+	releaseInfo.PullRequestInfo = info
+	return err
 }
 
 func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.Environment, error) {
