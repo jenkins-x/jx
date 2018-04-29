@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -43,8 +44,9 @@ var (
 type CreateDevPodOptions struct {
 	CreateOptions
 
-	Label  string
-	Suffix string
+	Label      string
+	Suffix     string
+	WorkingDir string
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -75,6 +77,7 @@ func NewCmdCreateDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 
 	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template to use")
 	cmd.Flags().StringVarP(&options.Suffix, "suffix", "s", "", "The suffix to append the pod name")
+	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the dev pod")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -117,6 +120,11 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 	o.Printf("Creating a dev pod of label: %s\n", label)
 
+	editEnv, err := o.getOrCreateEditEnvironment()
+	if err != nil {
+		return err
+	}
+
 	pod := &corev1.Pod{}
 	err = yaml.Unmarshal([]byte(yml), &pod)
 	if err != nil {
@@ -145,6 +153,23 @@ func (o *CreateDevPodOptions) Run() error {
 	pod.Labels[kube.LabelDevPodName] = name
 	pod.Labels[kube.LabelDevPodUsername] = userName
 
+	container1 := &pod.Spec.Containers[0]
+	workingDir := o.WorkingDir
+	if workingDir == "" {
+		workingDir = "/code"
+		if label == "go" {
+			// TODO add org + repo name
+			workingDir = " /home/jenkins/go/src/github.com"
+		}
+	}
+	container1.WorkingDir = workingDir
+	if editEnv != nil {
+		container1.Env = append(container1.Env, corev1.EnvVar{
+			Name:  "SKAFFOLD_DEPLOY_NAMESPACE",
+			Value: editEnv.Spec.Namespace,
+		})
+	}
+
 	_, err = client.CoreV1().Pods(ns).Create(pod)
 	if err != nil {
 		if o.Verbose {
@@ -171,6 +196,46 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 	options.Args = []string{}
 	return options.Run()
+}
+
+func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, error) {
+	var env *v1.Environment
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+		return env, err
+	}
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	if err != nil {
+		return env, err
+	}
+
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return env, err
+	}
+
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return env, err
+	}
+	u, err := user.Current()
+	if err != nil {
+		return env, err
+	}
+	env, err = kube.EnsureEditEnvironmentSetup(kubeClient, jxClient, ns, u.Username)
+	if err != nil {
+		return env, err
+	}
+	// lets ensure that we've installed the exposecontroller service in the namespace
+	var flag bool
+	editNs := env.Spec.Namespace
+	flag, err = kube.IsDeploymentRunning(kubeClient, editNs, kube.DeploymentExposecontrollerService)
+	if !flag || err != nil {
+		o.Printf("Installing the ExposecontrollerService in the edit namespace %s\n", editNs)
+		releaseName := editNs + "-es"
+		err = o.installChart(releaseName, kube.ChartExposecontrollerService, "", editNs, true, nil)
+	}
+	return env, err
 }
 
 func uniquePodName(names []string, prefix string) string {
