@@ -222,7 +222,20 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if err != nil {
 		return env, err
 	}
-	return kube.EnsureEditEnvironmentSetup(kubeClient, jxClient, ns, u.Username)
+	env, err = kube.EnsureEditEnvironmentSetup(kubeClient, jxClient, ns, u.Username)
+	if err != nil {
+		return env, err
+	}
+	// lets ensure that we've installed the exposecontroller service in the namespace
+	var flag bool
+	editNs := env.Spec.Namespace
+	flag, err = kube.IsDeploymentRunning(kubeClient, editNs, kube.DeploymentExposecontrollerService)
+	if !flag || err != nil {
+		o.Printf("Installing the ExposecontrollerService in the edit namespace %s\n", editNs)
+		releaseName := editNs + "-es"
+		err = o.installChart(releaseName, kube.ChartExposecontrollerService, "", editNs, true, nil)
+	}
+	return env, err
 }
 
 func uniquePodName(names []string, prefix string) string {

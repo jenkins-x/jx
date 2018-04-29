@@ -10,8 +10,8 @@ const (
 	// ChartCDX the default name of the CDX chart
 	ChartCDX = "jenkins-x/cdx"
 
-	// ChartExposecontroller the default name of the Exposecontroller chart
-	ChartExposecontroller = "jenkins-x/exposecontroller"
+	// ChartExposecontrollerService the default name of the Exposecontroller Service chart for Edit environments
+	ChartExposecontrollerService = "jenkins-x/exposecontroller-service"
 
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
@@ -60,6 +60,9 @@ const (
 
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
+
+	// DeploymentExposecontrollerService the name of the Deployment for the Exposecontroller Service
+	DeploymentExposecontrollerService = "exposecontroller-service"
 
 	DefaultEnvironmentGitRepoURL = "https://github.com/jenkins-x/default-environment-charts.git"
 
