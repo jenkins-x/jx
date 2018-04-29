@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -119,6 +120,11 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 	o.Printf("Creating a dev pod of label: %s\n", label)
 
+	editEnv, err := o.getOrCreateEditEnvironment()
+	if err != nil {
+		return err
+	}
+
 	pod := &corev1.Pod{}
 	err = yaml.Unmarshal([]byte(yml), &pod)
 	if err != nil {
@@ -157,6 +163,12 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 	container1.WorkingDir = workingDir
+	if editEnv != nil {
+		container1.Env = append(container1.Env, corev1.EnvVar{
+			Name:  "SKAFFOLD_DEPLOY_NAMESPACE",
+			Value: editEnv.Spec.Namespace,
+		})
+	}
 
 	_, err = client.CoreV1().Pods(ns).Create(pod)
 	if err != nil {
@@ -184,6 +196,33 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 	options.Args = []string{}
 	return options.Run()
+}
+
+func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, error) {
+	var env *v1.Environment
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+		return env, err
+	}
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	if err != nil {
+		return env, err
+	}
+
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return env, err
+	}
+
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return env, err
+	}
+	u, err := user.Current()
+	if err != nil {
+		return env, err
+	}
+	return kube.EnsureEditEnvironmentSetup(kubeClient, jxClient, ns, u.Username)
 }
 
 func uniquePodName(names []string, prefix string) string {

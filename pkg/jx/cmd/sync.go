@@ -21,13 +21,13 @@ import (
 type SyncOptions struct {
 	CommonOptions
 
-	Container  string
-	Namespace  string
-	Pod        string
-	Executable string
-	Dir        string
-	RemoteDir  string
-	Reload     bool
+	Container   string
+	Namespace   string
+	Pod         string
+	Dir         string
+	RemoteDir   string
+	Reload      bool
+	NoKsyncInit bool
 
 	stopCh chan struct{}
 }
@@ -72,11 +72,11 @@ func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	}
 	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
-	cmd.Flags().StringVarP(&options.Namespace, "pod", "p", "", "the pod name to use")
-	cmd.Flags().StringVarP(&options.Executable, "shell", "s", DefaultShell, "Path to the shell command")
+	cmd.Flags().StringVarP(&options.Pod, "pod", "p", "", "the pod name to use")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to watch. Defaults to the current directory")
 	cmd.Flags().StringVarP(&options.RemoteDir, "remote-dir", "r", "/code", "The remote directory in the DevPod to sync")
 	cmd.Flags().BoolVarP(&options.Reload, "reload", "", false, "Should we reload the remote container on file changes?")
+	cmd.Flags().BoolVarP(&options.NoKsyncInit, "no-init", "", false, "Disables the use of 'ksync init' to ensure we have initialised ksync")
 	return cmd
 }
 
@@ -93,12 +93,12 @@ func (o *SyncOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	justInstalled, err := o.installKSync()
+	_, err = o.installKSync()
 	if err != nil {
 		return err
 	}
 
-	if justInstalled {
+	if !o.NoKsyncInit {
 		o.Printf("Initialising ksync\n")
 		err = o.runCommandInteractive(true, "ksync", "init", "--upgrade")
 		if err != nil {

@@ -10,6 +10,9 @@ const (
 	// ChartCDX the default name of the CDX chart
 	ChartCDX = "jenkins-x/cdx"
 
+	// ChartExposecontroller the default name of the Exposecontroller chart
+	ChartExposecontroller = "jenkins-x/exposecontroller"
+
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
 
@@ -43,6 +46,9 @@ const (
 	// SecretJenkinsPipelineIssueCredentials the issue tracker credentials secret
 	SecretJenkinsPipelineIssueCredentials = "jx-pipeline-issues-"
 
+	// ConfigMapExposecontroller the name of the ConfigMap with the Exposecontroller configuration
+	ConfigMapExposecontroller = "exposecontroller"
+
 	// ConfigMapJenkinsXGitKinds the name of the ConfigMap in the development namespace that maps kinds to URLs
 	ConfigMapJenkinsXGitKinds = "jenkins-x-git-kinds"
 
@@ -75,6 +81,9 @@ const (
 	// ValueKindCVE an addon auth secret/credentials
 	ValueKindCVE = "cve"
 
+	// ValueKindEditNamespace for edit namespace
+	ValueKindEditNamespace = "editspace"
+
 	// LabelServiceKind the label to indicate the auto Server's Kind
 	LabelServiceKind = "jenkins.io/service-kind"
 
@@ -89,6 +98,9 @@ const (
 
 	// LabelDevPodUsername the user name owner of the DeVPod
 	LabelDevPodUsername = "jenkins.io/devpod_user"
+
+	// LabelUsername the user name owner of a namespace or resource
+	LabelUsername = "jenkins.io/user"
 
 	// ValueCreatedByJX for resources created by the Jenkins X CLI
 	ValueCreatedByJX = "jx"
