@@ -165,7 +165,7 @@ func (o *RshOptions) Run() error {
 				workingDir = pod.Annotations[kube.AnnotationWorkingDir]
 			}
 			if workingDir != "" {
-				commandArguments = []string{"--", "/bin/sh", "-c", "mkdir -p " + workingDir + "\ncd " + workingDir + "\nbash\""}
+				commandArguments = []string{"--", "/bin/sh", "-c", "mkdir -p " + workingDir + "\ncd " + workingDir + "\nbash"}
 			} else {
 				commandArguments = []string{"--", "/bin/sh", "-c", "bash"}
 			}
