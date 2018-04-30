@@ -99,10 +99,13 @@ func (o *SyncOptions) Run() error {
 	}
 
 	if !o.NoKsyncInit {
-		o.Printf("Initialising ksync\n")
-		err = o.runCommandInteractive(true, "ksync", "init", "--upgrade")
-		if err != nil {
-			return err
+		flag, err := kube.IsDaemonSetExists(client, "ksync", "kube-system")
+		if !flag || err != nil {
+			o.Printf("Initialising ksync\n")
+			err = o.runCommandInteractive(true, "ksync", "init", "--upgrade")
+			if err != nil {
+				return err
+			}
 		}
 	}
 
