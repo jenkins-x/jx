@@ -123,8 +123,11 @@ const (
 	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike kubernetes resources)
 	AnnotationName = "jenkins.io/name"
 
-	// AnnotationCredentialsDescription the description text for a Credentian on a Secret
+	// AnnotationCredentialsDescription the description text for a Credential on a Secret
 	AnnotationCredentialsDescription = "jenkins.io/credentials-description"
+
+	// AnnotationWorkingDir the working directory, such as for a DevPod
+	AnnotationWorkingDir = "jenkins.io/working-dir"
 
 	// SecretDataUsername the username in a Secret/Credentials
 	SecretDataUsername = "username"
