@@ -8,7 +8,7 @@ const (
 	ChartAnchore = "stable/anchore-engine"
 
 	// ChartCDX the default name of the CDX chart
-	ChartCDX = "jenkins-x/cdx"
+	ChartCDX = "cb/cdx"
 
 	// ChartExposecontrollerService the default name of the Exposecontroller Service chart for Edit environments
 	ChartExposecontrollerService = "jenkins-x/exposecontroller-service"

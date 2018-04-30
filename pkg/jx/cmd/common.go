@@ -491,21 +491,25 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 
 // todo switch to using exposecontroller as a jx plugin
 // get existing config from the devNamespace and run exposecontroller in the target environment
-func (o *CommonOptions) expose(devNamespace, targetNamespace string) error {
+func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName string) error {
 
 	exposecontrollerConfig, err := kube.GetTeamExposecontrollerConfig(o.kubeClient, devNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
-	// run exposecontroller using existing team config
-	exValues := []string{
-		"config.exposer=" + exposecontrollerConfig["exposer"],
-		"config.domain=" + exposecontrollerConfig["domain"],
-		"config.http=" + exposecontrollerConfig["http"],
-		"config.tls-acme=" + exposecontrollerConfig["tls-acme"],
+
+	var exValues []string
+	if targetNamespace != devNamespace {
+		// run exposecontroller using existing team config
+		exValues = []string{
+			"config.exposer=" + exposecontrollerConfig["exposer"],
+			"config.domain=" + exposecontrollerConfig["domain"],
+			"config.http=" + exposecontrollerConfig["http"],
+			"config.tls-acme=" + exposecontrollerConfig["tls-acme"],
+		}
 	}
 
-	err = o.installChart("expose", exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
+	err = o.installChart("expose"+releaseName, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}
