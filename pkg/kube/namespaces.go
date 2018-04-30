@@ -135,7 +135,7 @@ func EnsureEditEnvironmentSetup(kubeClient *kubernetes.Clientset, jxClient *vers
 					Username: username,
 				},
 			},
-			Order: 1000,
+			Order: 1,
 		},
 	}
 	_, err = jxClient.JenkinsV1().Environments(ns).Create(env)

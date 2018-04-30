@@ -3,7 +3,9 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"os"
 	"os/user"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -20,7 +22,8 @@ import (
 )
 
 const (
-	optionLabel = "label"
+	optionLabel  = "label"
+	devPodGoPath = "/home/jenkins/go"
 )
 
 var (
@@ -92,6 +95,14 @@ func (o *CreateDevPodOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	u, err := user.Current()
+	if err != nil {
+		return err
+	}
+	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
 
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsPodTemplates, metav1.GetOptions{})
 	if err != nil {
@@ -101,23 +112,20 @@ func (o *CreateDevPodOptions) Run() error {
 	labels := util.SortedMapKeys(podTemplates)
 
 	label := o.Label
-	yml := ""
-	if label != "" {
-		yml = podTemplates[label]
-		if yml == "" {
-			return util.InvalidOption(optionLabel, label, labels)
-		}
+	if label == "" {
+		label = o.guessDevPodLabel(dir)
 	}
 	if label == "" {
 		label, err = util.PickName(labels, "Pick which kind of dev pod you wish to create: ")
 		if err != nil {
 			return err
 		}
-		yml = podTemplates[label]
-		if yml == "" {
-			return fmt.Errorf("Could not find YAML for pod template label %s", label)
-		}
 	}
+	yml := podTemplates[label]
+	if yml == "" {
+		return util.InvalidOption(optionLabel, label, labels)
+	}
+
 	o.Printf("Creating a dev pod of label: %s\n", label)
 
 	editEnv, err := o.getOrCreateEditEnvironment()
@@ -126,14 +134,32 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	pod := &corev1.Pod{}
-	err = yaml.Unmarshal([]byte(yml), &pod)
+	err = yaml.Unmarshal([]byte(yml), pod)
 	if err != nil {
 		return fmt.Errorf("Failed to parse Pod Template YAML: %s\n%s", err, yml)
 	}
+	if pod.Labels == nil {
+		pod.Labels = map[string]string{}
+	}
+	if pod.Annotations == nil {
+		pod.Annotations = map[string]string{}
+	}
 
-	u, err := user.Current()
-	if err != nil {
-		return err
+	// lets remove the workspace volume as that breaks kync
+	workspaceVolume := "workspace-volume"
+	for i, v := range pod.Spec.Volumes {
+		if v.Name == workspaceVolume {
+			pod.Spec.Volumes = append(pod.Spec.Volumes[:i], pod.Spec.Volumes[i+1:]...)
+			break
+		}
+	}
+	for ci, c := range pod.Spec.Containers {
+		for i, v := range c.VolumeMounts {
+			if v.Name == workspaceVolume {
+				pod.Spec.Containers[ci].VolumeMounts = append(c.VolumeMounts[:i], c.VolumeMounts[i+1:]...)
+				break
+			}
+		}
 	}
 
 	userName := u.Username
@@ -153,16 +179,30 @@ func (o *CreateDevPodOptions) Run() error {
 	pod.Labels[kube.LabelDevPodName] = name
 	pod.Labels[kube.LabelDevPodUsername] = userName
 
+	if len(pod.Spec.Containers) == 0 {
+		return fmt.Errorf("No containers specified for label %s with YAML: %s", label, yml)
+	}
 	container1 := &pod.Spec.Containers[0]
 	workingDir := o.WorkingDir
 	if workingDir == "" {
 		workingDir = "/code"
-		if label == "go" {
-			// TODO add org + repo name
-			workingDir = " /home/jenkins/go/src/github.com"
+
+		// lets check for gopath stuff
+		gopath := os.Getenv("GOPATH")
+		if gopath != "" {
+			rel, err := filepath.Rel(gopath, dir)
+			if err == nil && rel != "" {
+				workingDir = filepath.Join(devPodGoPath, rel)
+			}
 		}
 	}
-	container1.WorkingDir = workingDir
+	pod.Annotations[kube.AnnotationWorkingDir] = workingDir
+	container1.Env = append(container1.Env, corev1.EnvVar{
+		Name:  "WORK_DIR",
+		Value: workingDir,
+	})
+	container1.Stdin = true
+
 	if editEnv != nil {
 		container1.Env = append(container1.Env, corev1.EnvVar{
 			Name:  "SKAFFOLD_DEPLOY_NAMESPACE",
@@ -191,8 +231,8 @@ func (o *CreateDevPodOptions) Run() error {
 	options := &RshOptions{
 		CommonOptions: o.CommonOptions,
 		Namespace:     ns,
-		Executable:    "bash",
 		Pod:           name,
+		DevPod:        true,
 	}
 	options.Args = []string{}
 	return options.Run()
@@ -229,13 +269,30 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	// lets ensure that we've installed the exposecontroller service in the namespace
 	var flag bool
 	editNs := env.Spec.Namespace
-	flag, err = kube.IsDeploymentRunning(kubeClient, editNs, kube.DeploymentExposecontrollerService)
+	flag, err = kube.IsDeploymentRunning(kubeClient, kube.DeploymentExposecontrollerService, editNs)
 	if !flag || err != nil {
-		o.Printf("Installing the ExposecontrollerService in the edit namespace %s\n", editNs)
+		t := "false"
+		if flag {
+			t = "true"
+		}
+
+		o.Printf("Got flag %s error: %s\n", t, err)
+		o.Printf("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
 		err = o.installChart(releaseName, kube.ChartExposecontrollerService, "", editNs, true, nil)
 	}
 	return env, err
+}
+
+func (o *CreateDevPodOptions) guessDevPodLabel(dir string) string {
+	gopath := os.Getenv("GOPATH")
+	if gopath != "" {
+		rel, err := filepath.Rel(gopath, dir)
+		if err == nil && rel != "" {
+			return "go"
+		}
+	}
+	return ""
 }
 
 func uniquePodName(names []string, prefix string) string {

@@ -12,6 +12,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -72,7 +73,7 @@ func NewCmdRsh(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
 	cmd.Flags().StringVarP(&options.Namespace, "pod", "p", "", "the pod name to use")
-	cmd.Flags().StringVarP(&options.Executable, "shell", "s", DefaultShell, "Path to the shell command")
+	cmd.Flags().StringVarP(&options.Executable, "shell", "s", "", "Path to the shell command")
 	cmd.Flags().BoolVarP(&options.DevPod, "devpod", "d", false, "Connect to a DevPod")
 	return cmd
 }
@@ -93,20 +94,21 @@ func (o *RshOptions) Run() error {
 	filter := ""
 	names := []string{}
 	podsName := "Pods"
+	pods := map[string]*corev1.Pod{}
 	if o.DevPod {
 		podsName = "DevPods"
 		u, err := user.Current()
 		if err != nil {
 			return err
 		}
-		if o.Executable == "" {
-			o.Executable = "bash"
-		}
-		names, _, err = kube.GetDevPodNames(client, ns, u.Username)
+		names, pods, err = kube.GetDevPodNames(client, ns, u.Username)
 		if err != nil {
 			return err
 		}
 	} else {
+		if o.Executable == "" {
+			o.Executable = DefaultShell
+		}
 		names, err = kube.GetPodNames(client, ns, "")
 		if err != nil {
 			return err
@@ -150,6 +152,26 @@ func (o *RshOptions) Run() error {
 		return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
 	}
 
+	commandArguments := []string{}
+	if o.Executable != "" {
+		commandArguments = []string{o.Executable}
+	}
+
+	if o.DevPod {
+		if o.Executable == "" {
+			workingDir := ""
+			pod := pods[name]
+			if pod != nil && pod.Annotations != nil {
+				workingDir = pod.Annotations[kube.AnnotationWorkingDir]
+			}
+			if workingDir != "" {
+				commandArguments = []string{"--", "/bin/sh", "-c", "mkdir -p " + workingDir + "\ncd " + workingDir + "\nbash"}
+			} else {
+				commandArguments = []string{"--", "/bin/sh", "-c", "bash"}
+			}
+		}
+	}
+
 	a := []string{"exec", "-it", "-n", ns}
 	if o.Container != "" {
 		a = append(a, "-c", o.Container)
@@ -157,8 +179,8 @@ func (o *RshOptions) Run() error {
 	a = append(a, name)
 	if len(args) > 1 {
 		a = append(a, args[1:]...)
-	} else {
-		a = append(a, o.Executable)
+	} else if len(commandArguments) > 0 {
+		a = append(a, commandArguments...)
 	}
 	return o.runCommandInteractive(true, "kubectl", a...)
 }
