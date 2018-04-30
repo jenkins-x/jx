@@ -139,3 +139,15 @@ func GetCommitURL(r *metav1.ObjectMeta) string {
 	}
 	return ""
 }
+
+func GetEditAppName(name string) string {
+	// we often have the app name repeated twice!
+	l := len(name) / 2
+	if name[l] == '-' {
+		first := name[0:l]
+		if name[l+1:] == first {
+			return first
+		}
+	}
+	return name
+}

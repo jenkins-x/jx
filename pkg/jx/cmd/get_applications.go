@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"os/user"
 	"sort"
 	"strings"
 
@@ -97,6 +98,10 @@ func (o *GetApplicationsOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	u, err := user.Current()
+	if err != nil {
+		return err
+	}
 	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
 		return err
@@ -128,6 +133,12 @@ func (o *GetApplicationsOptions) Run() error {
 					envApps = append(envApps, envApp)
 					for k, d := range m {
 						appName := kube.GetAppName(k, ens)
+						if env.Spec.Kind == v1.EnvironmentKindTypeEdit {
+							if appName == kube.DeploymentExposecontrollerService || env.Spec.PreviewGitSpec.User.Username != u.Username {
+								continue
+							}
+							appName = kube.GetEditAppName(appName)
+						}
 						envApp.Apps[appName] = d
 						if util.StringArrayIndex(apps, appName) < 0 {
 							apps = append(apps, appName)
@@ -147,7 +158,11 @@ func (o *GetApplicationsOptions) Run() error {
 	table := o.CreateTable()
 	titles := []string{"APPLICATION"}
 	for _, ea := range envApps {
-		titles = append(titles, strings.ToUpper(ea.Environment.Name))
+		envName := ea.Environment.Name
+		if ea.Environment.Spec.Kind == v1.EnvironmentKindTypeEdit {
+			envName = "Edit"
+		}
+		titles = append(titles, strings.ToUpper(envName))
 		if !o.HidePod {
 			titles = append(titles, "PODS")
 		}
