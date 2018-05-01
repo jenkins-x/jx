@@ -284,11 +284,6 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	editNs := env.Spec.Namespace
 	flag, err = kube.IsDeploymentRunning(kubeClient, kube.DeploymentExposecontrollerService, editNs)
 	if !flag || err != nil {
-		t := "false"
-		if flag {
-			t = "true"
-		}
-
 		o.Printf("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
 		err = o.installChart(releaseName, kube.ChartExposecontrollerService, "", editNs, true, nil)
