@@ -20,9 +20,11 @@ import (
 type LogsOptions struct {
 	CommonOptions
 
-	Container string
-	Namespace string
-	Filter    string
+	Container       string
+	Namespace       string
+	Environment     string
+	Filter          string
+	EditEnvironment bool
 }
 
 var (
@@ -63,19 +65,40 @@ func NewCmdLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	}
 	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
+	cmd.Flags().StringVarP(&options.Environment, "env", "e", "", "the Environment to look for the Deployment. Defaults to the current environment")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters the available deployments if no deployment argument is provided")
+	cmd.Flags().BoolVarP(&options.EditEnvironment, "edit", "d", false, "Use my Edit Environment to look for the Deployment pods")
 	return cmd
 }
 
 func (o *LogsOptions) Run() error {
 	args := o.Args
 
-	client, curNs, err := o.Factory.CreateClient()
+	client, curNs, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
 
 	ns := o.Namespace
+	if ns == "" {
+		env := o.Environment
+		if env != "" {
+			ns, err = kube.GetEnvironmentNamespace(jxClient, devNs, env)
+			if err != nil {
+				return err
+			}
+		}
+		if ns == "" && o.EditEnvironment {
+			ns, err = kube.GetEditEnvironmentNamespace(jxClient, devNs)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	if ns == "" {
 		ns = curNs
 	}

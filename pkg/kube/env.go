@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
-
-	"os"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -641,6 +641,24 @@ func GetEnvironmentNamespace(jxClient *versioned.Clientset, ns, environment stri
 		return "", fmt.Errorf("no environment found called %s, try running `jx get env`", environment)
 	}
 	return env.Spec.Namespace, nil
+}
+
+// GetEditEnvironmentNamespace returns the namespace of the current users edit environment
+func GetEditEnvironmentNamespace(jxClient *versioned.Clientset, ns string) (string, error) {
+	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	u, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	for _, env := range envs.Items {
+		if env.Spec.Kind == v1.EnvironmentKindTypeEdit && env.Spec.PreviewGitSpec.User.Username == u.Username {
+			return env.Spec.Namespace, nil
+		}
+	}
+	return "", fmt.Errorf("The user %s does not have an Edit environment in home namespace %s", u.Username, ns)
 }
 
 // GetDevNamespace returns the developer environment namespace
