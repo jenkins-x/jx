@@ -289,7 +289,6 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 			t = "true"
 		}
 
-		o.Printf("Got flag %s error: %s\n", t, err)
 		o.Printf("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
 		err = o.installChart(releaseName, kube.ChartExposecontrollerService, "", editNs, true, nil)
