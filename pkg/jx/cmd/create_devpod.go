@@ -16,14 +16,16 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	optionLabel  = "label"
-	devPodGoPath = "/home/jenkins/go"
+	optionLabel      = "label"
+	optionRequestCpu = "request-cpu"
+	devPodGoPath     = "/home/jenkins/go"
 )
 
 var (
@@ -50,6 +52,7 @@ type CreateDevPodOptions struct {
 	Label      string
 	Suffix     string
 	WorkingDir string
+	RequestCpu string
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -81,6 +84,7 @@ func NewCmdCreateDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template to use")
 	cmd.Flags().StringVarP(&options.Suffix, "suffix", "s", "", "The suffix to append the pod name")
 	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the dev pod")
+	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1.4", "The request CPU of the dev pod")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -183,6 +187,15 @@ func (o *CreateDevPodOptions) Run() error {
 		return fmt.Errorf("No containers specified for label %s with YAML: %s", label, yml)
 	}
 	container1 := &pod.Spec.Containers[0]
+
+	if o.RequestCpu != "" {
+		q, err := resource.ParseQuantity(o.RequestCpu)
+		if err != nil {
+			return util.InvalidOptionError(optionRequestCpu, o.RequestCpu, err)
+		}
+		container1.Resources.Requests[corev1.ResourceCPU] = q
+	}
+
 	workingDir := o.WorkingDir
 	if workingDir == "" {
 		workingDir = "/code"
