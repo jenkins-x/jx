@@ -8,7 +8,10 @@ const (
 	ChartAnchore = "stable/anchore-engine"
 
 	// ChartCDX the default name of the CDX chart
-	ChartCDX = "jenkins-x/cdx"
+	ChartCDX = "cb/cdx"
+
+	// ChartExposecontrollerService the default name of the Exposecontroller Service chart for Edit environments
+	ChartExposecontrollerService = "jenkins-x/exposecontroller-service"
 
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
@@ -43,6 +46,9 @@ const (
 	// SecretJenkinsPipelineIssueCredentials the issue tracker credentials secret
 	SecretJenkinsPipelineIssueCredentials = "jx-pipeline-issues-"
 
+	// ConfigMapExposecontroller the name of the ConfigMap with the Exposecontroller configuration
+	ConfigMapExposecontroller = "exposecontroller"
+
 	// ConfigMapJenkinsXGitKinds the name of the ConfigMap in the development namespace that maps kinds to URLs
 	ConfigMapJenkinsXGitKinds = "jenkins-x-git-kinds"
 
@@ -54,6 +60,9 @@ const (
 
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
+
+	// DeploymentExposecontrollerService the name of the Deployment for the Exposecontroller Service
+	DeploymentExposecontrollerService = "exposecontroller-service"
 
 	DefaultEnvironmentGitRepoURL = "https://github.com/jenkins-x/default-environment-charts.git"
 
@@ -75,6 +84,9 @@ const (
 	// ValueKindCVE an addon auth secret/credentials
 	ValueKindCVE = "cve"
 
+	// ValueKindEditNamespace for edit namespace
+	ValueKindEditNamespace = "editspace"
+
 	// LabelServiceKind the label to indicate the auto Server's Kind
 	LabelServiceKind = "jenkins.io/service-kind"
 
@@ -89,6 +101,9 @@ const (
 
 	// LabelDevPodUsername the user name owner of the DeVPod
 	LabelDevPodUsername = "jenkins.io/devpod_user"
+
+	// LabelUsername the user name owner of a namespace or resource
+	LabelUsername = "jenkins.io/user"
 
 	// ValueCreatedByJX for resources created by the Jenkins X CLI
 	ValueCreatedByJX = "jx"
@@ -108,8 +123,11 @@ const (
 	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike kubernetes resources)
 	AnnotationName = "jenkins.io/name"
 
-	// AnnotationCredentialsDescription the description text for a Credentian on a Secret
+	// AnnotationCredentialsDescription the description text for a Credential on a Secret
 	AnnotationCredentialsDescription = "jenkins.io/credentials-description"
+
+	// AnnotationWorkingDir the working directory, such as for a DevPod
+	AnnotationWorkingDir = "jenkins.io/working-dir"
 
 	// SecretDataUsername the username in a Secret/Credentials
 	SecretDataUsername = "username"

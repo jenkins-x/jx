@@ -6,11 +6,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
-	"sort"
-	"strings"
 )
 
 // GetBuildLogsOptions the command line options
@@ -104,10 +105,7 @@ func (o *GetBuildLogsOptions) Run() error {
 	}
 	name := args[0]
 	job := jobMap[name]
-	if job == nil {
-		return util.InvalidArg(name, names)
-	}
-	last, err := jenkinsClient.GetLastBuild(*job)
+	last, err := jenkinsClient.GetLastBuild(job)
 	if err != nil {
 		return err
 	}

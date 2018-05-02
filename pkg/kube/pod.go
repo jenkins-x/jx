@@ -18,6 +18,10 @@ import (
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
 // IsPodReady returns true if a pod is ready; false otherwise.
 func IsPodReady(pod *v1.Pod) bool {
+	phase := pod.Status.Phase
+	if phase != v1.PodRunning || pod.DeletionTimestamp != nil {
+		return false
+	}
 	return IsPodReadyConditionTrue(pod.Status)
 }
 
@@ -29,10 +33,13 @@ func IsPodReadyConditionTrue(status v1.PodStatus) bool {
 }
 
 func PodStatus(pod *v1.Pod) string {
+	if pod.DeletionTimestamp != nil {
+		return "Terminating"
+	}
+	phase := pod.Status.Phase
 	if IsPodReady(pod) {
 		return "Ready"
 	}
-	phase := pod.Status.Phase
 	return string(phase)
 }
 
@@ -125,6 +132,25 @@ func GetPodNames(client *kubernetes.Clientset, ns string, filter string) ([]stri
 	}
 	sort.Strings(names)
 	return names, nil
+}
+
+func GetPods(client *kubernetes.Clientset, ns string, filter string) ([]string, map[string]*v1.Pod, error) {
+	names := []string{}
+	m := map[string]*v1.Pod{}
+	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{})
+	if err != nil {
+		return names, m, fmt.Errorf("Failed to load Pods %s", err)
+	}
+	for _, d := range list.Items {
+		c := d
+		name := d.Name
+		m[name] = &c
+		if filter == "" || strings.Contains(name, filter) {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names, m, nil
 }
 
 // GetDevPodNames returns the users dev pod names

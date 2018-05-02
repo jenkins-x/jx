@@ -408,8 +408,8 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
 
-func (o *CommonOptions) getJobMap(filter string) (map[string]*gojenkins.Job, error) {
-	jobMap := map[string]*gojenkins.Job{}
+func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, error) {
+	jobMap := map[string]gojenkins.Job{}
 	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return jobMap, err
@@ -422,17 +422,18 @@ func (o *CommonOptions) getJobMap(filter string) (map[string]*gojenkins.Job, err
 	return jobMap, nil
 }
 
-func (o *CommonOptions) addJobs(jobMap *map[string]*gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
+func (o *CommonOptions) addJobs(jobMap *map[string]gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
 	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return
 	}
+
 	for _, j := range jobs {
 		name := jobName(prefix, &j)
-
 		if IsPipeline(&j) {
 			if filter == "" || strings.Contains(name, filter) {
-				(*jobMap)[name] = &j
+				(*jobMap)[name] = j
+				continue
 			}
 		}
 		if j.Jobs != nil {
@@ -490,21 +491,25 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 
 // todo switch to using exposecontroller as a jx plugin
 // get existing config from the devNamespace and run exposecontroller in the target environment
-func (o *CommonOptions) expose(devNamespace, targetNamespace string) error {
+func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName string) error {
 
 	exposecontrollerConfig, err := kube.GetTeamExposecontrollerConfig(o.kubeClient, devNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
-	// run exposecontroller using existing team config
-	exValues := []string{
-		"config.exposer=" + exposecontrollerConfig["exposer"],
-		"config.domain=" + exposecontrollerConfig["domain"],
-		"config.http=" + exposecontrollerConfig["http"],
-		"config.tls-acme=" + exposecontrollerConfig["tls-acme"],
+
+	var exValues []string
+	if targetNamespace != devNamespace {
+		// run exposecontroller using existing team config
+		exValues = []string{
+			"config.exposer=" + exposecontrollerConfig["exposer"],
+			"config.domain=" + exposecontrollerConfig["domain"],
+			"config.http=" + exposecontrollerConfig["http"],
+			"config.tls-acme=" + exposecontrollerConfig["tls-acme"],
+		}
 	}
 
-	err = o.installChart("expose", exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
+	err = o.installChart("expose"+releaseName, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}

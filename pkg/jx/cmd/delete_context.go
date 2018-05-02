@@ -34,7 +34,8 @@ var (
 type DeleteContextOptions struct {
 	CreateOptions
 
-	SelectAll bool
+	SelectAll    bool
+	SelectFilter string
 }
 
 // NewCmdDeleteContext creates a command object for the "delete repo" command
@@ -65,6 +66,7 @@ func NewCmdDeleteContext(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	//addDeleteFlags(cmd, &options.CreateOptions)
 
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Selects all the matched contexts")
+	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filter the list of contexts to those containing this text")
 	return cmd
 }
 
@@ -98,7 +100,7 @@ func (o *DeleteContextOptions) Run() error {
 		return util.InvalidArg(args[1], allNames)
 	}
 
-	selected, err := util.SelectNames(names, "Select the Kubernetes Contexts to delete", o.SelectAll)
+	selected, err := util.SelectNamesWithFilter(names, "Select the Kubernetes Contexts to delete: ", o.SelectAll, o.SelectFilter)
 	if err != nil {
 		return err
 	}

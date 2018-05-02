@@ -62,17 +62,19 @@ func NewCmdCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 }
 
 func (o *CDXOptions) Run() error {
-	url, err := o.findService(kube.ServiceCDX)
+	f := o.Factory
+	client, ns, err := f.CreateClient()
 	if err != nil {
-		o.warnf("It looks like you are not running the CDX addon.\nDid you try running this command: 'jx create addon cdx'\n")
 		return err
 	}
+
+	url, err := kube.GetServiceURLFromName(client, kube.ServiceCDX, defaultCdxNamespace)
+	if err != nil {
+		return err
+	}
+
 	if appendTeam {
-		f := o.Factory
-		client, ns, err := f.CreateClient()
-		if err != nil {
-			return err
-		}
+
 		devNs, _, err := kube.GetDevNamespace(client, ns)
 		if err != nil {
 			return err

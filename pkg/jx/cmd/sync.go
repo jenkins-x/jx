@@ -3,9 +3,11 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -19,27 +21,34 @@ import (
 type SyncOptions struct {
 	CommonOptions
 
-	Container  string
-	Namespace  string
-	Pod        string
-	Executable string
-	Dir        string
-	RemoteDir  string
-	Reload     bool
+	Container   string
+	Namespace   string
+	Pod         string
+	Dir         string
+	RemoteDir   string
+	Reload      bool
+	NoKsyncInit bool
 
 	stopCh chan struct{}
 }
 
 var (
 	sync_long = templates.LongDesc(`
-		Synchronises your local files to a devpod so you an build and test your code easily on the cloud
+		Synchronises your local files to a DevPod so you an build and test your code easily on the cloud
+
+		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
 
 `)
 
 	sync_example = templates.Examples(`
-		# Open a terminal in the first container of the foo deployment's latest pod
-		jx sync foo
+		# Starts synchonizing the current directory files to the users DevPod
+		jx sync 
 `)
+
+	defaultStignoreFile = `.git
+bin
+build
+`
 )
 
 func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -65,11 +74,11 @@ func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	}
 	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
-	cmd.Flags().StringVarP(&options.Namespace, "pod", "p", "", "the pod name to use")
-	cmd.Flags().StringVarP(&options.Executable, "shell", "s", DefaultShell, "Path to the shell command")
+	cmd.Flags().StringVarP(&options.Pod, "pod", "p", "", "the pod name to use")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to watch. Defaults to the current directory")
-	cmd.Flags().StringVarP(&options.RemoteDir, "remote-dir", "r", "/code", "The remote directory in the DevPod to sync")
+	cmd.Flags().StringVarP(&options.RemoteDir, "remote-dir", "r", "", "The remote directory in the DevPod to sync")
 	cmd.Flags().BoolVarP(&options.Reload, "reload", "", false, "Should we reload the remote container on file changes?")
+	cmd.Flags().BoolVarP(&options.NoKsyncInit, "no-init", "", false, "Disables the use of 'ksync init' to ensure we have initialised ksync")
 	return cmd
 }
 
@@ -86,22 +95,25 @@ func (o *SyncOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	justInstalled, err := o.installKSync()
+	_, err = o.installKSync()
 	if err != nil {
 		return err
 	}
 
-	if justInstalled {
-		o.Printf("Initialising ksync\n")
-		err = o.runCommandInteractive(true, "ksync", "init")
-		if err != nil {
-			return err
+	if !o.NoKsyncInit {
+		flag, err := kube.IsDaemonSetExists(client, "ksync", "kube-system")
+		if !flag || err != nil {
+			o.Printf("Initialising ksync\n")
+			err = o.runCommandInteractive(true, "ksync", "init", "--upgrade")
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	name := o.Pod
 	username := u.Username
-	names, err := kube.GetPodNames(client, ns, username)
+	names, pods, err := kube.GetPods(client, ns, username)
 	if err != nil {
 		return err
 	}
@@ -131,8 +143,36 @@ func (o *SyncOptions) Run() error {
 			return err
 		}
 	}
-	o.Printf("synchronizing directory %s to DevPod %s\n", info(dir), info(name))
 
+	remoteDir := o.RemoteDir
+	if remoteDir == "" {
+		pod := pods[name]
+		if pod == nil {
+			return fmt.Errorf("Pod %s does not exist!", name)
+		}
+		ann := pod.Annotations
+		if ann != nil {
+			remoteDir = ann[kube.AnnotationWorkingDir]
+		}
+		if remoteDir == "" {
+			o.warnf("Missing annotation %s on pod %s", kube.AnnotationWorkingDir, name)
+			remoteDir = "/code"
+		}
+	}
+
+	o.Printf("synchronizing directory %s to DevPod %s path %s\n", info(dir), info(name), info(remoteDir))
+
+	ignoreFile := filepath.Join(dir, ".stignore")
+	exists, err := util.FileExists(ignoreFile)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		err = ioutil.WriteFile(ignoreFile, []byte(defaultStignoreFile), DefaultWritePermissions)
+		if err != nil {
+			return err
+		}
+	}
 	cmd := exec.Command("ksync", "watch")
 	cmd.Stdout = o.Out
 	err = cmd.Start()
@@ -140,16 +180,26 @@ func (o *SyncOptions) Run() error {
 		return err
 	}
 
-	time.Sleep(time.Second)
+	time.Sleep(2 * time.Second)
 
 	reload := "--reload=false"
 	if o.Reload {
 		reload = "--reload=true"
 	}
-	err = o.runCommand("ksync", "create", "--force", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, o.RemoteDir)
+
+	// ignore results as we may not have a spec yet for this name
+	o.runCommand("ksync", "delete", name)
+
+	err = o.runCommand("ksync", "create", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, remoteDir)
 	if err != nil {
-		// TODO kill the command??
+		o.killWatchProcess(cmd)
 		return err
 	}
 	return cmd.Wait()
+}
+
+func (o *SyncOptions) killWatchProcess(cmd *exec.Cmd) {
+	if err := cmd.Process.Kill(); err != nil {
+		o.warnf("failed to kill 'ksync watch' process: %s\n", err)
+	}
 }

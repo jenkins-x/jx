@@ -81,6 +81,17 @@ func (r *Requirements) SetAppVersion(app string, version string, repository stri
 	})
 }
 
+// RemoveApp removes the given app name. Returns true if a dependency was removed
+func (r *Requirements) RemoveApp(app string) bool {
+	for i, dep := range r.Dependencies {
+		if dep != nil && dep.Name == app {
+			r.Dependencies = append(r.Dependencies[:i], r.Dependencies[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
 // FindRequirementsFileName returns the default requirements.yaml file name
 func FindRequirementsFileName(dir string) (string, error) {
 	names := []string{

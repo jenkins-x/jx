@@ -84,5 +84,4 @@ func (o *UpgradeCLIOptions) Run() error {
 	} else {
 		return o.installJx(true, newVersion.String())
 	}
-	return nil
 }

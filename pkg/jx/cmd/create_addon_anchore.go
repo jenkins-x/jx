@@ -146,7 +146,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	}
 
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace)
+	err = o.expose(devNamespace, o.Namespace, defaultAnchoreReleaseName)
 	if err != nil {
 		return err
 	}

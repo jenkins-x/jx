@@ -88,10 +88,11 @@ func (o *StatusOptions) Run() error {
 	}
 
 	for _, d := range deployList.Items {
-		err = kube.WaitForDeploymentToBeReady(client, d.Name, namespace, 10*time.Second)
+		err = kube.WaitForDeploymentToBeReady(client, d.Name, namespace, 5*time.Second)
 		if err != nil {
 			log.Warnf("%s: jx deployment %s not ready in namespace %s", clusterStatus.Info(), d.Name, namespace)
 		}
+		return err
 	}
 	resourceStr := clusterStatus.CheckResource()
 	jenkinsURL, err := o.findServiceInNamespace("jenkins", namespace)
