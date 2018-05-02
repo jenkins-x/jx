@@ -1,4 +1,8 @@
 [[constraint]]
+  name = "github.com/Azure/azure-storage-blob-go"
+  branch = "master"
+
+[[constraint]]
   name = "github.com/Masterminds/vcs"
   version = "1.11.1"
 

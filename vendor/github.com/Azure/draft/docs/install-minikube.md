@@ -45,6 +45,7 @@ Canary releases of the Draft client can be found at the following links:
 - [macOS amd64](https://azuredraft.blob.core.windows.net/draft/draft-canary-darwin-amd64.tar.gz)
 - [Linux ARM](https://azuredraft.blob.core.windows.net/draft/draft-canary-linux-arm.tar.gz)
 - [Linux x86](https://azuredraft.blob.core.windows.net/draft/draft-canary-linux-386.tar.gz)
+- [Windows amd64](https://azuredraft.blob.core.windows.net/draft/draft-canary-windows-amd64.zip)
 
 Unpack the Draft binary and add it to your PATH.
 

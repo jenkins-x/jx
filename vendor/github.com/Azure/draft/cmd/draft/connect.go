@@ -6,8 +6,10 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -25,8 +27,9 @@ const (
 var (
 	targetContainer string
 	overridePorts   []string
-
-	dryRun bool
+	dryRun          bool
+	detach          bool
+	export          bool
 )
 
 type connectCmd struct {
@@ -45,6 +48,9 @@ func newConnectCmd(out io.Writer) *cobra.Command {
 		Short: "connect to your application locally",
 		Long:  connectDesc,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if detach {
+				return cc.detach()
+			}
 			return cc.run(runningEnvironment)
 		},
 	}
@@ -55,6 +61,9 @@ func newConnectCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&targetContainer, "container", "c", "", "name of the container to connect to")
 	f.StringSliceVarP(&overridePorts, "override-port", "p", []string{}, "specify a local port to connect to, in the form <local>:<remote>")
 	f.BoolVarP(&dryRun, "dry-run", "", false, "when this flag is used, draft connect will wait to find a ready pod then exit")
+	f.BoolVarP(&detach, "detach", "", false, "detach from the connection while preserving the tunnel")
+	f.BoolVarP(&export, "export", "", false, "export connection environment in detached state (hidden)")
+	f.MarkHidden("export")
 
 	return cmd
 }
@@ -96,41 +105,89 @@ func (cn *connectCmd) run(runningEnvironment string) (err error) {
 
 	var connectionMessage = "Your connection is still active.\n"
 
+	exportEnv := make(map[string]string)
+
 	// output all local ports first - easier to spot
 	for _, cc := range connection.ContainerConnections {
 		for _, t := range cc.Tunnels {
-			err = t.ForwardPort()
-			if err != nil {
+			if err = t.ForwardPort(); err != nil {
 				return err
 			}
-			m := fmt.Sprintf("Connect to %v:%v on localhost:%#v\n", cc.ContainerName, t.Remote, t.Local)
-
-			connectionMessage += m
-			fmt.Fprintf(cn.out, m)
+			if export {
+				var (
+					application = sanitize(deployedApp.Name)
+					container   = sanitize(cc.ContainerName)
+					prefix      = fmt.Sprintf("%s_%s", application, container)
+				)
+				exportEnv[prefix+"_SERVICE_HOST"] = fmt.Sprintf("localhost")
+				exportEnv[prefix+"_SERVICE_PORT"] = fmt.Sprintf("%#v", t.Local)
+			} else {
+				m := fmt.Sprintf("Connect to %v:%v on localhost:%#v\n", cc.ContainerName, t.Remote, t.Local)
+				connectionMessage += m
+				fmt.Fprintf(cn.out, m)
+			}
 		}
 	}
 
-	for _, cc := range connection.ContainerConnections {
-		readCloser, err := connection.RequestLogStream(deployedApp.Namespace, cc.ContainerName, cn.logLines)
-		if err != nil {
-			return err
-		}
-
-		defer readCloser.Close()
-		go writeContainerLogs(cn.out, readCloser, cc.ContainerName)
-	}
-
-	stop := make(chan os.Signal, 2)
+	stop := make(chan os.Signal, 1)
+	done := make(chan struct{})
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-stop
-		os.Exit(0)
+		close(done)
 	}()
 
-	for {
-		time.Sleep(5 * time.Minute)
-		fmt.Fprintf(cn.out, connectionMessage)
+	if export {
+		exportConnectEnv(exportEnv)
+		os.Stdout.Close()
+		<-done
+		return nil
+	} else {
+		for _, cc := range connection.ContainerConnections {
+			readCloser, err := connection.RequestLogStream(deployedApp.Namespace, cc.ContainerName, cn.logLines)
+			if err != nil {
+				return err
+			}
+			defer readCloser.Close()
+			go writeContainerLogs(cn.out, readCloser, cc.ContainerName)
+		}
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				fmt.Fprintf(cn.out, connectionMessage)
+			case <-done:
+				return nil
+			}
+		}
 	}
+}
+
+func (cn *connectCmd) detach() error {
+	args := []string{"connect", "--export"}
+	for _, port := range overridePorts {
+		args = append(args, "-p", port)
+	}
+	if targetContainer != "" {
+		args = append(args, "-c", targetContainer)
+	}
+	cmd := exec.Command(os.Args[0], args...)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	cmd.Env = os.Environ()
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	b, err := ioutil.ReadAll(stdout)
+	if err != nil {
+		return err
+	}
+	cmd.Process.Release()
+	fmt.Fprint(cn.out, string(b))
+	return nil
 }
 
 func writeContainerLogs(out io.Writer, in io.ReadCloser, containerName string) error {
@@ -156,3 +213,5 @@ func getLatestBuildID(appName string) (string, error) {
 	}
 	return files[n-1].Name(), nil
 }
+
+func sanitize(name string) string { return strings.Replace(strings.ToUpper(name), "-", "_", -1) }

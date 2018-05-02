@@ -114,7 +114,7 @@ func (m MergeRequest) String() string {
 // MergeRequestApprovals represents GitLab merge request approvals.
 //
 // GitLab API docs:
-// https://docs.gitlab.com/ee/api/merge_requests.html#merge-request-approvals
+// https://docs.gitlab.com/ee/api/merge_request_approvals.html#merge-request-level-mr-approvals
 type MergeRequestApprovals struct {
 	ID                int        `json:"id"`
 	ProjectID         int        `json:"project_id"`
@@ -125,7 +125,7 @@ type MergeRequestApprovals struct {
 	UpdatedAt         *time.Time `json:"updated_at"`
 	MergeStatus       string     `json:"merge_status"`
 	ApprovalsRequired int        `json:"approvals_required"`
-	ApprovalsMissing  int        `json:"approvals_missing"`
+	ApprovalsLeft     int        `json:"approvals_left"`
 	ApprovedBy        []struct {
 		User struct {
 			Name      string `json:"name"`
@@ -284,7 +284,7 @@ func (s *MergeRequestsService) GetMergeRequest(pid interface{}, mergeRequest int
 // GetMergeRequestApprovals gets information about a merge requests approvals
 //
 // GitLab API docs:
-// https://docs.gitlab.com/ee/api/merge_requests.html#merge-request-approvals
+// https://docs.gitlab.com/ee/api/merge_request_approvals.html#merge-request-level-mr-approvals
 func (s *MergeRequestsService) GetMergeRequestApprovals(pid interface{}, mergeRequest int, options ...OptionFunc) (*MergeRequestApprovals, *Response, error) {
 	project, err := parseID(pid)
 	if err != nil {

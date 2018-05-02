@@ -323,3 +323,36 @@ func TestListProjectForks(t *testing.T) {
 		t.Errorf("Projects.ListProjects returned %+v, want %+v", projects, want)
 	}
 }
+
+func TestShareProjectWithGroup(t *testing.T) {
+	mux, server, client := setup()
+	defer teardown(server)
+
+	mux.HandleFunc("/projects/1/share", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "POST")
+	})
+
+	opt := &ShareWithGroupOptions{
+		GroupID:     Int(1),
+		GroupAccess: AccessLevel(AccessLevelValue(50)),
+	}
+
+	_, err := client.Projects.ShareProjectWithGroup(1, opt)
+	if err != nil {
+		t.Errorf("Projects.ShareProjectWithGroup returned error: %v", err)
+	}
+}
+
+func TestDeleteSharedProjectFromGroup(t *testing.T) {
+	mux, server, client := setup()
+	defer teardown(server)
+
+	mux.HandleFunc("/projects/1/share/2", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "DELETE")
+	})
+
+	_, err := client.Projects.DeleteSharedProjectFromGroup(1, 2)
+	if err != nil {
+		t.Errorf("Projects.DeleteSharedProjectFromGroup returned error: %v", err)
+	}
+}
