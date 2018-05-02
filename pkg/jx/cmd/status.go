@@ -68,18 +68,23 @@ func (o *StatusOptions) Run() error {
 		return err
 	}
 
+
 	/*
 	 * get status for all pods in all namespaces
 	 */
 	clusterStatus, err := kube.GetClusterStatus(client, "")
 	if err != nil {
+		log.Error("Failed to get cluster status " + err.Error() + " \n")
 		return err
 	}
 
+
 	deployList, err := client.ExtensionsV1beta1().Deployments(namespace).List(metav1.ListOptions{})
 	if err != nil {
+		log.Error("Failed to get deployed  status " + err.Error() + " \n")
 		return err
 	}
+
 	if deployList == nil || len(deployList.Items) == 0 {
 		log.Warnf("Unable to find JX components in %s", clusterStatus.Info())
 		log.Info("you could try: " + instalExample + "\n\n")
@@ -87,14 +92,16 @@ func (o *StatusOptions) Run() error {
 		return fmt.Errorf("no deployments found in namespace %s", namespace)
 	}
 
+
 	for _, d := range deployList.Items {
 		err = kube.WaitForDeploymentToBeReady(client, d.Name, namespace, 5*time.Second)
 		if err != nil {
 			log.Warnf("%s: jx deployment %s not ready in namespace %s", clusterStatus.Info(), d.Name, namespace)
+			return err
 		}
-		return err
 	}
 	resourceStr := clusterStatus.CheckResource()
+
 	jenkinsURL, err := o.findServiceInNamespace("jenkins", namespace)
 	if err != nil {
 		if resourceStr != "" {
