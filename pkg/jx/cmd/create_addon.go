@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 // CreateAddonOptions the options for the create spring command
@@ -79,9 +80,20 @@ func (o *CreateAddonOptions) Run() error {
 func (o *CreateAddonOptions) CreateAddon(arg string) error {
 	charts := kube.AddonCharts
 	chart := charts[arg]
-	if chart == "" {
-		return util.InvalidArg(arg, util.SortedMapKeys(charts))
+	if chart == ""  {
+		if strings.HasPrefix(arg, "helm:") {
+			helmAddon := strings.TrimPrefix(arg, "helm:")
+			helmAddonParts := strings.Split(helmAddon, "/")
+			if len(helmAddonParts) != 2 {
+				return util.InvalidArgf(arg,"Invalid Helm identifier. Should be helm:branch/chart - for example helm:stable/kibana.")
+			}
+			arg = helmAddonParts[1]
+			chart = helmAddon
+		} else {
+			return util.InvalidArg(arg, util.SortedMapKeys(charts))
+		}
 	}
+
 	err := o.installChart(arg, chart, o.Version, o.Namespace, o.HelmUpdate, nil)
 	if err != nil {
 		return fmt.Errorf("Failed to install chart %s: %s", chart, err)
