@@ -46,6 +46,8 @@ var (
 `)
 
 	defaultStignoreFile = `.git
+bin
+build
 `
 )
 

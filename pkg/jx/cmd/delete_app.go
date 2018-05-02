@@ -136,6 +136,12 @@ func (o *DeleteAppOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	} else {
+		for _, arg := range args {
+			if util.StringArrayIndex(names, arg) < 0 {
+				return util.InvalidArg(arg, names)
+			}
+		}
 	}
 	if len(args) == 0 {
 		return fmt.Errorf("There are no Apps in Jenkins")
