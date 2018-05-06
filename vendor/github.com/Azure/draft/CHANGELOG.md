@@ -1,5 +1,47 @@
 # Changelog
 
+## v0.14.0
+
+### Features
+
+* introduced `draft connect --detach` (see DEP 007)
+* implemented Draft tasks (see DEP 008)
+* introduced ACR Build support, with support for writing alternative container builders (see DEP 009)
+* introduced Windows support
+* introduced Powershell support for plugin install hooks
+* introduced `draft pack list`
+* introduced support for custom image tags on `draft up`
+* introduced `draft init --config` to specify a default set of plugins and pack repositories to bootstrap Draft
+
+### Bugs
+
+* fixed an issue where `draft create --pack` required the full path to the pack, rather than just `--pack=python`
+* fixed an issue where `set` fields in draft.toml were not being respected
+* fixed an issue where `draft init` would always install the canary release of `draft pack-repo`
+
+### Housekeeping
+
+* switched the default number of replicas spawned from the default Draft packs from 2 to 1
+* switched the default value of `wait` in draft.toml to `true`
+
+## v0.13.0
+
+### Features
+
+* introduced `draft logs --tail`
+* introduced `draft connect --dry-run`
+* `draft up` now writes logs directly to the file as it happens
+  * this allows users to run `draft logs` in another terminal as soon as they call `draft up`
+* added a more helpful error to run `draft pack-repo update` when a Draft Pack cannot be loaded
+* all files within the root directory of a Draft Pack is now loaded into the application's directory on `draft create`
+* an image pull secret is injected into the namespace on `draft up` when pushing an image to a container registry
+
+### Bugs
+
+* fixed up an issue where output from a `docker push` and `helm install` wasn't available in `draft logs`
+* fixed an issue where `draft pack-repo list` wouldn't work on Windows
+* fixed an issue where `draft config unset` wasn't truncating config.toml
+
 ## v0.12.0
 
 ### Features

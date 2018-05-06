@@ -9,7 +9,7 @@ type Builtin struct {
 
 // Builtins fetches all built-in plugins.
 func Builtins() []*Builtin {
-	packRepoVersion := "0.4.1" // Can set this to canary to test latest version of plugin
+	packRepoVersion := "0.4.2" // Can set this to canary to test latest version of plugin
 
 	return []*Builtin{
 		{

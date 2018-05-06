@@ -4,16 +4,17 @@ This DEP contains the index of all Draft Enhancement Proposals, known as DEPs. D
 
 # Numerical Index
 
-| DEP     | Title                        |
-|---------|------------------------------|
-| [1][]   | DEP Purpose and Guidelines   |
-| [2][]   | Draft Design                 |
-| [3][]   | Draft Pack Format            |
-| [4][]   | Draft Pack Repository Format |
-| [5][]   | Draft Plugin Format          |
-| [6][]   | draft.toml Format            |
-| [7][]   | Draft Connect                |
-| [8][]   | Draft Tasks                  |
+| DEP     | Title                                |
+|---------|--------------------------------------|
+| [1][]   | DEP Purpose and Guidelines           |
+| [2][]   | Draft Design                         |
+| [3][]   | Draft Pack Format                    |
+| [4][]   | Draft Pack Repository Format         |
+| [5][]   | Draft Plugin Format                  |
+| [6][]   | draft.toml Format                    |
+| [7][]   | Draft Connect                        |
+| [8][]   | Draft Tasks                          |
+| [9][]   | Alternative Container Image Builders |
 
 [1]: dep-001.md
 [2]: dep-002.md
@@ -23,3 +24,4 @@ This DEP contains the index of all Draft Enhancement Proposals, known as DEPs. D
 [6]: dep-006.md
 [7]: dep-007.md
 [8]: dep-008.md
+[9]: dep-009.md

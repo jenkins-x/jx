@@ -135,94 +135,6 @@ func NewDocument() *Document {
 	}
 }
 
-// GetPath returns the absolute path of the element.
-func (e *Element) GetPath() string {
-	path := []string{}
-	for seg := e; seg != nil; seg = seg.Parent() {
-		if seg.Tag != "" {
-			path = append(path, seg.Tag)
-		}
-	}
-
-	// Reverse the path.
-	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
-		path[i], path[j] = path[j], path[i]
-	}
-
-	return "/" + strings.Join(path, "/")
-}
-
-// GetRelativePath returns the path of the element relative to the source
-// element. If the two elements are not part of the same element tree, then
-// GetRelativePath returns the empty string.
-func (e *Element) GetRelativePath(source *Element) string {
-	var path []*Element
-
-	if source == nil {
-		return ""
-	}
-
-	// Build a reverse path from the element toward the root. Stop if the
-	// source element is encountered.
-	var seg *Element
-	for seg = e; seg != nil && seg != source; seg = seg.Parent() {
-		path = append(path, seg)
-	}
-
-	// If we found the source element, reverse the path and compose the
-	// string.
-	if seg == source {
-		if len(path) == 0 {
-			return "."
-		}
-		parts := []string{}
-		for i := len(path) - 1; i >= 0; i-- {
-			parts = append(parts, path[i].Tag)
-		}
-		return "./" + strings.Join(parts, "/")
-	}
-
-	// The source wasn't encountered, so climb from the source element toward
-	// the root of the tree until an element in the reversed path is
-	// encountered.
-
-	findPathIndex := func(e *Element, path []*Element) int {
-		for i, ee := range path {
-			if e == ee {
-				return i
-			}
-		}
-		return -1
-	}
-
-	climb := 0
-	for seg = source; seg != nil; seg = seg.Parent() {
-		i := findPathIndex(seg, path)
-		if i >= 0 {
-			path = path[:i] // truncate at found segment
-			break
-		}
-		climb++
-	}
-
-	// No element in the reversed path was encountered, so the two elements
-	// must not be part of the same tree.
-	if seg == nil {
-		return ""
-	}
-
-	// Reverse the (possibly truncated) path and prepend ".." segments to
-	// climb.
-	parts := []string{}
-	for i := 0; i < climb; i++ {
-		parts = append(parts, "..")
-	}
-	for i := len(path) - 1; i >= 0; i-- {
-		parts = append(parts, path[i].Tag)
-	}
-	return strings.Join(parts, "/")
-}
-
 // Copy returns a recursive, deep copy of the document.
 func (d *Document) Copy() *Document {
 	return &Document{*(d.dup(nil).(*Element)), d.ReadSettings, d.WriteSettings}
@@ -604,6 +516,94 @@ func (e *Element) FindElements(path string) []*Element {
 func (e *Element) FindElementsPath(path Path) []*Element {
 	p := newPather()
 	return p.traverse(e, path)
+}
+
+// GetPath returns the absolute path of the element.
+func (e *Element) GetPath() string {
+	path := []string{}
+	for seg := e; seg != nil; seg = seg.Parent() {
+		if seg.Tag != "" {
+			path = append(path, seg.Tag)
+		}
+	}
+
+	// Reverse the path.
+	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+		path[i], path[j] = path[j], path[i]
+	}
+
+	return "/" + strings.Join(path, "/")
+}
+
+// GetRelativePath returns the path of the element relative to the source
+// element. If the two elements are not part of the same element tree, then
+// GetRelativePath returns the empty string.
+func (e *Element) GetRelativePath(source *Element) string {
+	var path []*Element
+
+	if source == nil {
+		return ""
+	}
+
+	// Build a reverse path from the element toward the root. Stop if the
+	// source element is encountered.
+	var seg *Element
+	for seg = e; seg != nil && seg != source; seg = seg.Parent() {
+		path = append(path, seg)
+	}
+
+	// If we found the source element, reverse the path and compose the
+	// string.
+	if seg == source {
+		if len(path) == 0 {
+			return "."
+		}
+		parts := []string{}
+		for i := len(path) - 1; i >= 0; i-- {
+			parts = append(parts, path[i].Tag)
+		}
+		return "./" + strings.Join(parts, "/")
+	}
+
+	// The source wasn't encountered, so climb from the source element toward
+	// the root of the tree until an element in the reversed path is
+	// encountered.
+
+	findPathIndex := func(e *Element, path []*Element) int {
+		for i, ee := range path {
+			if e == ee {
+				return i
+			}
+		}
+		return -1
+	}
+
+	climb := 0
+	for seg = source; seg != nil; seg = seg.Parent() {
+		i := findPathIndex(seg, path)
+		if i >= 0 {
+			path = path[:i] // truncate at found segment
+			break
+		}
+		climb++
+	}
+
+	// No element in the reversed path was encountered, so the two elements
+	// must not be part of the same tree.
+	if seg == nil {
+		return ""
+	}
+
+	// Reverse the (possibly truncated) path and prepend ".." segments to
+	// climb.
+	parts := []string{}
+	for i := 0; i < climb; i++ {
+		parts = append(parts, "..")
+	}
+	for i := len(path) - 1; i >= 0; i-- {
+		parts = append(parts, path[i].Tag)
+	}
+	return strings.Join(parts, "/")
 }
 
 // indent recursively inserts proper indentation between an

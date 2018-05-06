@@ -24,7 +24,7 @@ func ReadConfig() (DraftConfig, error) {
 	f, err := os.Open(h.Config())
 	if err != nil {
 		if os.IsNotExist(err) {
-			return make(map[string]string), nil
+			return nil, nil
 		}
 		return nil, fmt.Errorf("Could not open file %s: %s", h.Config(), err)
 	}

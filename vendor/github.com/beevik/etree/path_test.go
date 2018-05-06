@@ -112,8 +112,19 @@ var tests = []test{
 	// parent queries
 	{"./bookstore/book[@category='COOKING']/title/../../book[4]/title", "Learning XML"},
 
+	// root queries
+	{"/bookstore/book[1]/title", "Everyday Italian"},
+	{"/bookstore/book[4]/title", "Learning XML"},
+	{"/bookstore/book[5]/title", nil},
+	{"/bookstore/book[3]/author[0]", "James McGovern"},
+	{"/bookstore/book[3]/author[1]", "James McGovern"},
+	{"/bookstore/book[3]/author[3]/./.", "Kurt Cagle"},
+	{"/bookstore/book[3]/author[6]", nil},
+	{"/bookstore/book[-1]/title", "Learning XML"},
+	{"/bookstore/book[-4]/title", "Everyday Italian"},
+	{"/bookstore/book[-5]/title", nil},
+
 	// bad paths
-	{"/bookstore", errorResult("etree: paths cannot be absolute.")},
 	{"./bookstore/book[]", errorResult("etree: path contains an empty filter expression.")},
 	{"./bookstore/book[@category='WEB'", errorResult("etree: path has invalid filter [brackets].")},
 	{"./bookstore/book[@category='WEB]", errorResult("etree: path has mismatched filter quotes.")},
@@ -170,4 +181,25 @@ func TestPath(t *testing.T) {
 
 func fail(t *testing.T, test test) {
 	t.Errorf("etree: failed test '%s'\n", test.path)
+}
+
+func TestAbsolutePath(t *testing.T) {
+	doc := NewDocument()
+	err := doc.ReadFromString(testXML)
+	if err != nil {
+		t.Error(err)
+	}
+
+	elements := doc.FindElements("//book/author")
+	for _, e := range elements {
+		title := e.FindElement("/bookstore/book[1]/title")
+		if title == nil || title.Text() != "Everyday Italian" {
+			t.Errorf("etree: absolute path test failed")
+		}
+
+		title = e.FindElement("//book[p:price='29.99']/title")
+		if title == nil || title.Text() != "Harry Potter" {
+			t.Errorf("etree: absolute path test failed")
+		}
+	}
 }
