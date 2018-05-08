@@ -17,7 +17,12 @@ type ConsoleOptions struct {
 	GetURLOptions
 
 	OnlyViewURL bool
+	ClassicMode bool
 }
+
+const (
+	BlueOceanPath = "/blue"
+)
 
 var (
 	console_long = templates.LongDesc(`
@@ -27,7 +32,10 @@ var (
 		jx console
 
 		# Print the Jenkins X console URL but do not open a browser
-		jx console -u`)
+		jx console -u
+		
+		# Open the Jenkins X console in a browser using the classic skin
+		jx console --classic`)
 )
 
 func NewCmdConsole(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -60,6 +68,7 @@ func NewCmdConsole(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 func (o *ConsoleOptions) addConsoleFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
+	cmd.Flags().BoolVarP(&o.ClassicMode, "classic", "", false, "Use the classic Jenkins skin instead of Blue Ocean")
 
 	o.addGetUrlFlags(cmd)
 }
@@ -89,9 +98,18 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
+	fullUrl := o.urlForMode(url)
+	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(fullUrl))
 	if !o.OnlyViewURL {
-		browser.OpenURL(url)
+		browser.OpenURL(fullUrl)
 	}
 	return nil
+}
+
+func (o *ConsoleOptions) urlForMode(url string) string {
+	if o.ClassicMode {
+		return url
+	} else {
+		return util.UrlJoin(url, BlueOceanPath)
+	}
 }
