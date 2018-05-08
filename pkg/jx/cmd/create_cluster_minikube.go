@@ -219,9 +219,12 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	if kubernetesVersion != "" {
 		args = append(args, "--kubernetes-version", kubernetesVersion)
 	}
+	o.Out.Write([]byte("Creating Minikube cluster...\n"))
 	err = o.runCommand("minikube", args...)
 	if err != nil {
 		return err
+	} else {
+		o.Out.Write([]byte("Minikube cluster created.\n"))
 	}
 
 	err = o.retry(3, 10*time.Second, func() (err error) {
