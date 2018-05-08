@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"path/filepath"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/aks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -12,7 +14,6 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"path/filepath"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -211,6 +212,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		createCluster = append(createCluster, "--generate-ssh-keys")
 	}
 
+	log.Info("Creating cluster...\n")
 	err = o.runCommand("az", createCluster...)
 	if err != nil {
 		return err
@@ -243,6 +245,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		log.Success("created role cluster-admin")
 	}
 
+	log.Info("Initialising cluster ...\n")
 	return o.initAndInstall(AKS)
 }
 

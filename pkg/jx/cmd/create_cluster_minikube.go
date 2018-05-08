@@ -239,6 +239,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	}
 	o.InstallOptions.Flags.Domain = ip + ".nip.io"
 
+	log.Info("Initialising cluster ...\n")
 	err = o.initAndInstall(MINIKUBE)
 	if err != nil {
 		return err
