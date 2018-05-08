@@ -17,7 +17,12 @@ type ConsoleOptions struct {
 	GetURLOptions
 
 	OnlyViewURL bool
+	ClassicMode bool
 }
+
+const (
+	BlueOceanPath = "/blue"
+)
 
 var (
 	console_long = templates.LongDesc(`
@@ -89,9 +94,18 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
+	fullUrl := o.urlForMode(url)
+	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(fullUrl))
 	if !o.OnlyViewURL {
-		browser.OpenURL(url)
+		browser.OpenURL(fullUrl)
 	}
 	return nil
+}
+
+func (o *ConsoleOptions) urlForMode(url string) string {
+	if o.ClassicMode {
+		return url
+	} else {
+		return util.UrlJoin(url, BlueOceanPath)
+	}
 }
