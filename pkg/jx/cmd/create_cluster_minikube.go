@@ -224,7 +224,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		args = append(args, "--kubernetes-version", kubernetesVersion)
 	}
 	o.Out.Write([]byte("Creating Minikube cluster...\n"))
-	err = o.runCommand("minikube", args...)
+	err := o.runCommand("minikube", args...)
 	if err != nil {
 		return err
 	} else {
