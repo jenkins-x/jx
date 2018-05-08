@@ -197,13 +197,17 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		Help:    "VM driver, defaults to recommended native virtualisation",
 	}
 
-	err := survey.AskOne(prompts, &driver, nil)
-	if err != nil {
-		return err
+	if o.Flags.Driver == "" {
+		err := survey.AskOne(prompts, &driver, nil)
+		if err != nil {
+			return err
+		}
+	} else {
+		driver = o.Flags.Driver
 	}
 
 	if driver != "none" {
-		err = o.doInstallMissingDependencies([]string{driver})
+		err := o.doInstallMissingDependencies([]string{driver})
 		if err != nil {
 			log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 			os.Exit(-1)
@@ -220,7 +224,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		args = append(args, "--kubernetes-version", kubernetesVersion)
 	}
 	o.Out.Write([]byte("Creating Minikube cluster...\n"))
-	err = o.runCommand("minikube", args...)
+	err := o.runCommand("minikube", args...)
 	if err != nil {
 		return err
 	} else {
