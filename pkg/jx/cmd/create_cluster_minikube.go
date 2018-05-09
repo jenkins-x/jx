@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"fmt"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -74,8 +75,8 @@ func NewCmdCreateClusterMinikube(f cmdutil.Factory, out io.Writer, errOut io.Wri
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minikube VM in MB")
-	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minikube VM")
+	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "", fmt.Sprintf("Amount of RAM allocated to the minikube VM in MB. Defaults to %s MB.", MinikubeDefaultMemory))
+	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "", fmt.Sprintf("Number of CPUs allocated to the minikube VM. Defaults to %s.", MinikubeDefaultCpu))
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [hyperkit hyperv kvm kvm2 virtualbox vmwarefusion xhyve]")
 	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with minikube")
 	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "", "", "kubernetes version")
@@ -144,41 +145,41 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	mem := o.Flags.Memory
 	prompt := &survey.Input{
 		Message: "memory (MB)",
-		Default: mem,
+		Default: MinikubeDefaultMemory,
 		Help:    "Amount of RAM allocated to the minikube VM in MB",
 	}
-	survey.AskOne(prompt, &mem, nil)
+	showPromptIfOptionNotSet(&mem, prompt)
 
 	cpu := o.Flags.CPU
 	prompt = &survey.Input{
 		Message: "cpu (cores)",
-		Default: cpu,
+		Default: MinikubeDefaultCpu,
 		Help:    "Number of CPUs allocated to the minikube VM",
 	}
-	survey.AskOne(prompt, &cpu, nil)
+	showPromptIfOptionNotSet(&cpu, prompt)
 
 	vmDriverValue := o.Flags.Driver
 
+	defaultDriver := ""
 	if len(vmDriverValue) == 0 {
 		switch runtime.GOOS {
 		case "darwin":
-			vmDriverValue = o.defaultMacVMDriver()
+			defaultDriver = o.defaultMacVMDriver()
 		case "windows":
-			vmDriverValue = "hyperv"
+			defaultDriver = "hyperv"
 		case "linux":
-			vmDriverValue = "kvm"
+			defaultDriver = "kvm"
 		default:
-			vmDriverValue = "virtualbox"
+			defaultDriver = "virtualbox"
 		}
 	}
 
 	// only add drivers that are appropriate for this OS
-	var driver string
-	drivers := []string{vmDriverValue}
-	if vmDriverValue == "kvm" {
+	drivers := []string{defaultDriver}
+	if defaultDriver == "kvm" {
 		drivers = append(drivers, "kvm2")
 	}
-	if vmDriverValue != "virtualbox" {
+	if defaultDriver != "virtualbox" {
 		drivers = append(drivers, "virtualbox")
 	}
 	if runtime.GOOS == "darwin" {
@@ -193,28 +194,21 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	prompts := &survey.Select{
 		Message: "Select driver:",
 		Options: drivers,
-		Default: vmDriverValue,
+		Default: defaultDriver,
 		Help:    "VM driver, defaults to recommended native virtualisation",
 	}
 
-	if o.Flags.Driver == "" {
-		err := survey.AskOne(prompts, &driver, nil)
-		if err != nil {
-			return err
-		}
-	} else {
-		driver = o.Flags.Driver
-	}
+	showPromptIfOptionNotSet(&vmDriverValue, prompts)
 
-	if driver != "none" {
-		err := o.doInstallMissingDependencies([]string{driver})
+	if vmDriverValue != "none" {
+		err := o.doInstallMissingDependencies([]string{vmDriverValue})
 		if err != nil {
 			log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 			os.Exit(-1)
 		}
 	}
 
-	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver, "--bootstrapper=kubeadm"}
+	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", vmDriverValue, "--bootstrapper=kubeadm"}
 	hyperVVirtualSwitch := o.Flags.HyperVVirtualSwitch
 	if hyperVVirtualSwitch != "" {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
@@ -274,5 +268,15 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		return err
 	}
 
+	return nil
+}
+
+func showPromptIfOptionNotSet(option *string, p survey.Prompt)(error)  {
+	if *option == "" {
+		err := survey.AskOne(p, option, nil)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
