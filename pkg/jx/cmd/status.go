@@ -68,7 +68,6 @@ func (o *StatusOptions) Run() error {
 		return err
 	}
 
-
 	/*
 	 * get status for all pods in all namespaces
 	 */
@@ -77,7 +76,6 @@ func (o *StatusOptions) Run() error {
 		log.Error("Failed to get cluster status " + err.Error() + " \n")
 		return err
 	}
-
 
 	deployList, err := client.ExtensionsV1beta1().Deployments(namespace).List(metav1.ListOptions{})
 	if err != nil {
@@ -91,7 +89,6 @@ func (o *StatusOptions) Run() error {
 		log.Info(instalLong)
 		return fmt.Errorf("no deployments found in namespace %s", namespace)
 	}
-
 
 	for _, d := range deployList.Items {
 		err = kube.WaitForDeploymentToBeReady(client, d.Name, namespace, 5*time.Second)

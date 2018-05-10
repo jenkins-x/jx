@@ -3,14 +3,18 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -53,6 +57,7 @@ type CreateDevPodOptions struct {
 	Suffix     string
 	WorkingDir string
 	RequestCpu string
+	Dir        string
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -117,7 +122,7 @@ func (o *CreateDevPodOptions) Run() error {
 
 	label := o.Label
 	if label == "" {
-		label = o.guessDevPodLabel(dir)
+		label = o.guessDevPodLabel(dir, labels)
 	}
 	if label == "" {
 		label, err = util.PickName(labels, "Pick which kind of dev pod you wish to create: ")
@@ -291,15 +296,68 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	return env, err
 }
 
-func (o *CreateDevPodOptions) guessDevPodLabel(dir string) string {
+func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) string {
 	gopath := os.Getenv("GOPATH")
 	if gopath != "" {
 		rel, err := filepath.Rel(gopath, dir)
-		if err == nil && rel != "" {
+		if err == nil && rel != "" && !strings.HasPrefix(rel, "../") {
 			return "go"
 		}
 	}
-	return ""
+	root, _, err := gits.FindGitConfigDir(o.Dir)
+	if err != nil {
+		o.warnf("Could not find a .git directory: %s\n", err)
+	}
+	answer := ""
+	if root != "" {
+		jenkinsfile := filepath.Join(root, "Jenkinsfile")
+		exists, err := util.FileExists(jenkinsfile)
+		if err != nil {
+			o.warnf("Could not find a Jenkinsfile at %s: %s\n", jenkinsfile, err)
+		} else if exists {
+			answer, err = findDevPodLabelFromJenkinsfile(jenkinsfile, labels)
+			if err != nil {
+				o.warnf("Could not extract the pod template label from Jenkinsfile at %s: %s\n", jenkinsfile, err)
+			}
+
+		}
+	}
+	return answer
+}
+
+func findDevPodLabelFromJenkinsfile(filename string, labels []string) (string, error) {
+	answer := ""
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return answer, err
+	}
+	r, err := regexp.Compile(`label\s+\"(.+)\"`)
+	if err != nil {
+		return answer, err
+	}
+
+	jenkinsXLabelPrefix := "jenkins-"
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		text := strings.TrimSpace(line)
+		arr := r.FindStringSubmatch(text)
+		if len(arr) > 1 {
+			a := arr[1]
+			if a != "" {
+				if util.StringArrayIndex(labels, a) >= 0 {
+					return a, nil
+				}
+				if strings.HasPrefix(a, jenkinsXLabelPrefix) {
+					a = strings.TrimPrefix(a, jenkinsXLabelPrefix)
+					if util.StringArrayIndex(labels, a) >= 0 {
+						return a, nil
+					}
+				}
+				return answer, fmt.Errorf("Cannot find pipeline agent %s in the list of available DevPods: %s", a, strings.Join(labels, ", "))
+			}
+		}
+	}
+	return answer, nil
 }
 
 func uniquePodName(names []string, prefix string) string {

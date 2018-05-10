@@ -23,8 +23,10 @@ func (o *CommonOptions) runCommandFromDir(dir, name string, args ...string) erro
 
 func (o *CommonOptions) runCommand(name string, args ...string) error {
 	e := exec.Command(name, args...)
-	e.Stdout = o.Out
-	e.Stderr = o.Err
+	if o.Verbose {
+		e.Stdout = o.Out
+		e.Stderr = o.Err
+	}
 	err := e.Run()
 	if err != nil {
 		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
