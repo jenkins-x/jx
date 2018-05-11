@@ -81,6 +81,7 @@ func NewCmdCreateClusterAWS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	}
 
 	options.addCreateClusterFlags(cmd)
+	options.addCommonFlags(cmd)
 
 	cmd.Flags().BoolVarP(&options.Flags.UseRBAC, "rbac", "r", true, "whether to enable RBAC on the Kubernetes cluster")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "aws1", "The name of this cluster.")
