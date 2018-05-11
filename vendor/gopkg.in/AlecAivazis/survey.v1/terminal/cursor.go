@@ -72,6 +72,15 @@ func CursorRestore() {
 	fmt.Print("\x1b8")
 }
 
+// for comparability purposes between windows
+// in unix we need to print out a new line on some terminals
+func CursorMoveNextLine(cur *Coord, terminalSize *Coord) {
+	if cur.Y == terminalSize.Y {
+		Println()
+	}
+	CursorNextLine(1)
+}
+
 // CursorLocation returns the current location of the cursor in the terminal
 func CursorLocation() (*Coord, error) {
 	// print the escape sequence to receive the position in our stdin

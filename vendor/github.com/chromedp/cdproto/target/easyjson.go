@@ -483,6 +483,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoTarget5(in *jlexer.Lexer, out
 			out.Attached = bool(in.Bool())
 		case "openerId":
 			out.OpenerID = ID(in.String())
+		case "browserContextId":
+			out.BrowserContextID = BrowserContextID(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -556,6 +558,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoTarget5(out *jwriter.Writer, 
 			out.RawString(prefix)
 		}
 		out.String(string(in.OpenerID))
+	}
+	if in.BrowserContextID != "" {
+		const prefix string = ",\"browserContextId\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.BrowserContextID))
 	}
 	out.RawByte('}')
 }

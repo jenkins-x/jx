@@ -16,6 +16,7 @@ import (
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/debugger"
+	"github.com/chromedp/cdproto/io"
 )
 
 // ClearBrowserCacheParams clears browser cache.
@@ -511,6 +512,49 @@ func (p *GetResponseBodyForInterceptionParams) Do(ctxt context.Context, h cdp.Ex
 	return dec, nil
 }
 
+// TakeResponseBodyForInterceptionAsStreamParams returns a handle to the
+// stream representing the response body. Note that after this command, the
+// intercepted request can't be continued as is -- you either need to cancel it
+// or to provide the response body. The stream only supports sequential read,
+// IO.read will fail if the position is specified.
+type TakeResponseBodyForInterceptionAsStreamParams struct {
+	InterceptionID InterceptionID `json:"interceptionId"`
+}
+
+// TakeResponseBodyForInterceptionAsStream returns a handle to the stream
+// representing the response body. Note that after this command, the intercepted
+// request can't be continued as is -- you either need to cancel it or to
+// provide the response body. The stream only supports sequential read, IO.read
+// will fail if the position is specified.
+//
+// parameters:
+//   interceptionID
+func TakeResponseBodyForInterceptionAsStream(interceptionID InterceptionID) *TakeResponseBodyForInterceptionAsStreamParams {
+	return &TakeResponseBodyForInterceptionAsStreamParams{
+		InterceptionID: interceptionID,
+	}
+}
+
+// TakeResponseBodyForInterceptionAsStreamReturns return values.
+type TakeResponseBodyForInterceptionAsStreamReturns struct {
+	Stream io.StreamHandle `json:"stream,omitempty"`
+}
+
+// Do executes Network.takeResponseBodyForInterceptionAsStream against the provided context.
+//
+// returns:
+//   stream
+func (p *TakeResponseBodyForInterceptionAsStreamParams) Do(ctxt context.Context, h cdp.Executor) (stream io.StreamHandle, err error) {
+	// execute
+	var res TakeResponseBodyForInterceptionAsStreamReturns
+	err = h.Execute(ctxt, CommandTakeResponseBodyForInterceptionAsStream, p, &res)
+	if err != nil {
+		return "", err
+	}
+
+	return res.Stream, nil
+}
+
 // ReplayXHRParams this method sends a new XMLHttpRequest which is identical
 // to the original one. The following parameters should be identical: method,
 // url, async, request body, extra headers, withCredentials attribute, user,
@@ -853,28 +897,29 @@ func (p *SetUserAgentOverrideParams) Do(ctxt context.Context, h cdp.Executor) (e
 
 // Command names.
 const (
-	CommandClearBrowserCache              = "Network.clearBrowserCache"
-	CommandClearBrowserCookies            = "Network.clearBrowserCookies"
-	CommandContinueInterceptedRequest     = "Network.continueInterceptedRequest"
-	CommandDeleteCookies                  = "Network.deleteCookies"
-	CommandDisable                        = "Network.disable"
-	CommandEmulateNetworkConditions       = "Network.emulateNetworkConditions"
-	CommandEnable                         = "Network.enable"
-	CommandGetAllCookies                  = "Network.getAllCookies"
-	CommandGetCertificate                 = "Network.getCertificate"
-	CommandGetCookies                     = "Network.getCookies"
-	CommandGetResponseBody                = "Network.getResponseBody"
-	CommandGetRequestPostData             = "Network.getRequestPostData"
-	CommandGetResponseBodyForInterception = "Network.getResponseBodyForInterception"
-	CommandReplayXHR                      = "Network.replayXHR"
-	CommandSearchInResponseBody           = "Network.searchInResponseBody"
-	CommandSetBlockedURLS                 = "Network.setBlockedURLs"
-	CommandSetBypassServiceWorker         = "Network.setBypassServiceWorker"
-	CommandSetCacheDisabled               = "Network.setCacheDisabled"
-	CommandSetCookie                      = "Network.setCookie"
-	CommandSetCookies                     = "Network.setCookies"
-	CommandSetDataSizeLimitsForTest       = "Network.setDataSizeLimitsForTest"
-	CommandSetExtraHTTPHeaders            = "Network.setExtraHTTPHeaders"
-	CommandSetRequestInterception         = "Network.setRequestInterception"
-	CommandSetUserAgentOverride           = "Network.setUserAgentOverride"
+	CommandClearBrowserCache                       = "Network.clearBrowserCache"
+	CommandClearBrowserCookies                     = "Network.clearBrowserCookies"
+	CommandContinueInterceptedRequest              = "Network.continueInterceptedRequest"
+	CommandDeleteCookies                           = "Network.deleteCookies"
+	CommandDisable                                 = "Network.disable"
+	CommandEmulateNetworkConditions                = "Network.emulateNetworkConditions"
+	CommandEnable                                  = "Network.enable"
+	CommandGetAllCookies                           = "Network.getAllCookies"
+	CommandGetCertificate                          = "Network.getCertificate"
+	CommandGetCookies                              = "Network.getCookies"
+	CommandGetResponseBody                         = "Network.getResponseBody"
+	CommandGetRequestPostData                      = "Network.getRequestPostData"
+	CommandGetResponseBodyForInterception          = "Network.getResponseBodyForInterception"
+	CommandTakeResponseBodyForInterceptionAsStream = "Network.takeResponseBodyForInterceptionAsStream"
+	CommandReplayXHR                               = "Network.replayXHR"
+	CommandSearchInResponseBody                    = "Network.searchInResponseBody"
+	CommandSetBlockedURLS                          = "Network.setBlockedURLs"
+	CommandSetBypassServiceWorker                  = "Network.setBypassServiceWorker"
+	CommandSetCacheDisabled                        = "Network.setCacheDisabled"
+	CommandSetCookie                               = "Network.setCookie"
+	CommandSetCookies                              = "Network.setCookies"
+	CommandSetDataSizeLimitsForTest                = "Network.setDataSizeLimitsForTest"
+	CommandSetExtraHTTPHeaders                     = "Network.setExtraHTTPHeaders"
+	CommandSetRequestInterception                  = "Network.setRequestInterception"
+	CommandSetUserAgentOverride                    = "Network.setUserAgentOverride"
 )

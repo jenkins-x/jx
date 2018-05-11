@@ -138,6 +138,16 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoEmulation1(in *jlexer.Lexer, 
 			out.MaxVirtualTimeTaskStarvationCount = int64(in.Int64())
 		case "waitForNavigation":
 			out.WaitForNavigation = bool(in.Bool())
+		case "initialVirtualTime":
+			if in.IsNull() {
+				in.Skip()
+				out.InitialVirtualTime = nil
+			} else {
+				if out.InitialVirtualTime == nil {
+					out.InitialVirtualTime = new(cdp.TimeSinceEpoch)
+				}
+				(*out.InitialVirtualTime).UnmarshalEasyJSON(in)
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -191,6 +201,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoEmulation1(out *jwriter.Write
 			out.RawString(prefix)
 		}
 		out.Bool(bool(in.WaitForNavigation))
+	}
+	if in.InitialVirtualTime != nil {
+		const prefix string = ",\"initialVirtualTime\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		(*in.InitialVirtualTime).MarshalEasyJSON(out)
 	}
 	out.RawByte('}')
 }

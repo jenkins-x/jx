@@ -307,12 +307,27 @@ func (o *ResetOptions) Validate(r *Repository) error {
 	return nil
 }
 
+type LogOrder int8
+
+const (
+	LogOrderDefault LogOrder = iota
+	LogOrderDFS
+	LogOrderDFSPost
+	LogOrderBSF
+	LogOrderCommitterTime
+)
+
 // LogOptions describes how a log action should be performed.
 type LogOptions struct {
 	// When the From option is set the log will only contain commits
 	// reachable from it. If this option is not set, HEAD will be used as
 	// the default From.
 	From plumbing.Hash
+
+	// The default traversal algorithm is Depth-first search
+	// set Order=LogOrderCommitterTime for ordering by committer time (more compatible with `git log`)
+	// set Order=LogOrderBSF for Breadth-first search
+	Order LogOrder
 }
 
 var (
@@ -405,3 +420,14 @@ func (o *GrepOptions) Validate(w *Worktree) error {
 
 	return nil
 }
+
+// PlainOpenOptions describes how opening a plain repository should be
+// performed.
+type PlainOpenOptions struct {
+	// DetectDotGit defines whether parent directories should be
+	// walked until a .git directory or file is found.
+	DetectDotGit bool
+}
+
+// Validate validates the fields and sets the default values.
+func (o *PlainOpenOptions) Validate() error { return nil }

@@ -345,6 +345,7 @@ const (
 	CommandNetworkGetResponseBody                          = network.CommandGetResponseBody
 	CommandNetworkGetRequestPostData                       = network.CommandGetRequestPostData
 	CommandNetworkGetResponseBodyForInterception           = network.CommandGetResponseBodyForInterception
+	CommandNetworkTakeResponseBodyForInterceptionAsStream  = network.CommandTakeResponseBodyForInterceptionAsStream
 	CommandNetworkReplayXHR                                = network.CommandReplayXHR
 	CommandNetworkSearchInResponseBody                     = network.CommandSearchInResponseBody
 	CommandNetworkSetBlockedURLS                           = network.CommandSetBlockedURLS
@@ -420,6 +421,8 @@ const (
 	CommandPageStartScreencast                             = page.CommandStartScreencast
 	CommandPageStopLoading                                 = page.CommandStopLoading
 	CommandPageCrash                                       = page.CommandCrash
+	CommandPageClose                                       = page.CommandClose
+	CommandPageSetWebLifecycleState                        = page.CommandSetWebLifecycleState
 	CommandPageStopScreencast                              = page.CommandStopScreencast
 	EventPageDomContentEventFired                          = "Page.domContentEventFired"
 	EventPageFrameAttached                                 = "Page.frameAttached"
@@ -1402,6 +1405,9 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 	case CommandNetworkGetResponseBodyForInterception:
 		v = new(network.GetResponseBodyForInterceptionReturns)
 
+	case CommandNetworkTakeResponseBodyForInterceptionAsStream:
+		v = new(network.TakeResponseBodyForInterceptionAsStreamReturns)
+
 	case CommandNetworkReplayXHR:
 		return emptyVal, nil
 
@@ -1625,6 +1631,12 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 		return emptyVal, nil
 
 	case CommandPageCrash:
+		return emptyVal, nil
+
+	case CommandPageClose:
+		return emptyVal, nil
+
+	case CommandPageSetWebLifecycleState:
 		return emptyVal, nil
 
 	case CommandPageStopScreencast:

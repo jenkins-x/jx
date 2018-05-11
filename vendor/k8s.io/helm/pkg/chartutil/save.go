@@ -36,10 +36,8 @@ var headerBytes = []byte("+aHR0cHM6Ly95b3V0dS5iZS96OVV6MWljandyTQo=")
 func SaveDir(c *chart.Chart, dest string) error {
 	// Create the chart directory
 	outdir := filepath.Join(dest, c.Metadata.Name)
-	if _, err := os.Stat(outdir); err != nil && os.IsNotExist(err) {
-		if err := os.Mkdir(outdir, 0755); err != nil {
-			return err
-		}
+	if err := os.Mkdir(outdir, 0755); err != nil {
+		return err
 	}
 
 	// Save the chart file.

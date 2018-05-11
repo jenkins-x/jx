@@ -18,6 +18,17 @@ func NewRuneReader(input *os.File) *RuneReader {
 	}
 }
 
+func printChar(char rune, mask rune) {
+	// if we don't need to mask the input
+	if mask == 0 {
+		// just print the character the user pressed
+		Printf("%c", char)
+	} else {
+		// otherwise print the mask we were given
+		Printf("%c", mask)
+	}
+}
+
 func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 	line := []rune{}
 	// we only care about horizontal displacements from the origin so start counting at 0
@@ -51,7 +62,8 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 				index--
 			}
 			// move the cursor the a new line
-			CursorNextLine(1)
+			CursorMoveNextLine(cursorCurrent, terminalSize)
+
 			// we're done processing the input
 			return line, nil
 		}
@@ -101,7 +113,7 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 						//Erase symbols which are left over from older print
 						EraseLine(ERASE_LINE_END)
 						// print characters to the new line appropriately
-						Printf("%c", char)
+						printChar(char, mask)
 
 					}
 					// erase what's left over from last print
@@ -219,7 +231,8 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 				// print the updated line
 				for _, char := range line[index:] {
 					EraseLine(ERASE_LINE_END)
-					Printf("%c", char)
+					// print out the character
+					printChar(char, mask)
 				}
 				// erase what's left on last line
 				if cursorCurrent.Y < terminalSize.Y {
@@ -249,14 +262,8 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 			line = append(line, r)
 			// save the location of the cursor
 			index++
-			// if we don't need to mask the input
-			if mask == 0 {
-				// just print the character the user pressed
-				Printf("%c", r)
-			} else {
-				// otherwise print the mask we were given
-				Printf("%c", mask)
-			}
+			// print out the character
+			printChar(r, mask)
 		} else {
 			// we are in the middle of the word so we need to insert the character the user pressed
 			line = append(line[:index], append([]rune{r}, line[index:]...)...)
@@ -269,11 +276,8 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 			// print the updated line
 			for _, char := range line[index:] {
 				EraseLine(ERASE_LINE_END)
-				if mask == 0 {
-					Printf("%c", char)
-				} else {
-					Printf("%c", mask)
-				}
+				// print out the character
+				printChar(char, mask)
 				cursorCurrent.X++
 			}
 			// if we are at the last line, we want to visually insert a new line and append to it.

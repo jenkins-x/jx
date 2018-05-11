@@ -11,406 +11,406 @@ import (
 	"github.com/mailru/easyjson/jwriter"
 )
 
-// AXNodeID unique accessibility node identifier.
-type AXNodeID string
+// NodeID unique accessibility node identifier.
+type NodeID string
 
-// String returns the AXNodeID as string value.
-func (t AXNodeID) String() string {
+// String returns the NodeID as string value.
+func (t NodeID) String() string {
 	return string(t)
 }
 
-// AXValueType enum of possible property types.
-type AXValueType string
+// ValueType enum of possible property types.
+type ValueType string
 
-// String returns the AXValueType as string value.
-func (t AXValueType) String() string {
+// String returns the ValueType as string value.
+func (t ValueType) String() string {
 	return string(t)
 }
 
-// AXValueType values.
+// ValueType values.
 const (
-	AXValueTypeBoolean            AXValueType = "boolean"
-	AXValueTypeTristate           AXValueType = "tristate"
-	AXValueTypeBooleanOrUndefined AXValueType = "booleanOrUndefined"
-	AXValueTypeIdref              AXValueType = "idref"
-	AXValueTypeIdrefList          AXValueType = "idrefList"
-	AXValueTypeInteger            AXValueType = "integer"
-	AXValueTypeNode               AXValueType = "node"
-	AXValueTypeNodeList           AXValueType = "nodeList"
-	AXValueTypeNumber             AXValueType = "number"
-	AXValueTypeString             AXValueType = "string"
-	AXValueTypeComputedString     AXValueType = "computedString"
-	AXValueTypeToken              AXValueType = "token"
-	AXValueTypeTokenList          AXValueType = "tokenList"
-	AXValueTypeDomRelation        AXValueType = "domRelation"
-	AXValueTypeRole               AXValueType = "role"
-	AXValueTypeInternalRole       AXValueType = "internalRole"
-	AXValueTypeValueUndefined     AXValueType = "valueUndefined"
+	ValueTypeBoolean            ValueType = "boolean"
+	ValueTypeTristate           ValueType = "tristate"
+	ValueTypeBooleanOrUndefined ValueType = "booleanOrUndefined"
+	ValueTypeIdref              ValueType = "idref"
+	ValueTypeIdrefList          ValueType = "idrefList"
+	ValueTypeInteger            ValueType = "integer"
+	ValueTypeNode               ValueType = "node"
+	ValueTypeNodeList           ValueType = "nodeList"
+	ValueTypeNumber             ValueType = "number"
+	ValueTypeString             ValueType = "string"
+	ValueTypeComputedString     ValueType = "computedString"
+	ValueTypeToken              ValueType = "token"
+	ValueTypeTokenList          ValueType = "tokenList"
+	ValueTypeDomRelation        ValueType = "domRelation"
+	ValueTypeRole               ValueType = "role"
+	ValueTypeInternalRole       ValueType = "internalRole"
+	ValueTypeValueUndefined     ValueType = "valueUndefined"
 )
 
 // MarshalEasyJSON satisfies easyjson.Marshaler.
-func (t AXValueType) MarshalEasyJSON(out *jwriter.Writer) {
+func (t ValueType) MarshalEasyJSON(out *jwriter.Writer) {
 	out.String(string(t))
 }
 
 // MarshalJSON satisfies json.Marshaler.
-func (t AXValueType) MarshalJSON() ([]byte, error) {
+func (t ValueType) MarshalJSON() ([]byte, error) {
 	return easyjson.Marshal(t)
 }
 
 // UnmarshalEasyJSON satisfies easyjson.Unmarshaler.
-func (t *AXValueType) UnmarshalEasyJSON(in *jlexer.Lexer) {
-	switch AXValueType(in.String()) {
-	case AXValueTypeBoolean:
-		*t = AXValueTypeBoolean
-	case AXValueTypeTristate:
-		*t = AXValueTypeTristate
-	case AXValueTypeBooleanOrUndefined:
-		*t = AXValueTypeBooleanOrUndefined
-	case AXValueTypeIdref:
-		*t = AXValueTypeIdref
-	case AXValueTypeIdrefList:
-		*t = AXValueTypeIdrefList
-	case AXValueTypeInteger:
-		*t = AXValueTypeInteger
-	case AXValueTypeNode:
-		*t = AXValueTypeNode
-	case AXValueTypeNodeList:
-		*t = AXValueTypeNodeList
-	case AXValueTypeNumber:
-		*t = AXValueTypeNumber
-	case AXValueTypeString:
-		*t = AXValueTypeString
-	case AXValueTypeComputedString:
-		*t = AXValueTypeComputedString
-	case AXValueTypeToken:
-		*t = AXValueTypeToken
-	case AXValueTypeTokenList:
-		*t = AXValueTypeTokenList
-	case AXValueTypeDomRelation:
-		*t = AXValueTypeDomRelation
-	case AXValueTypeRole:
-		*t = AXValueTypeRole
-	case AXValueTypeInternalRole:
-		*t = AXValueTypeInternalRole
-	case AXValueTypeValueUndefined:
-		*t = AXValueTypeValueUndefined
+func (t *ValueType) UnmarshalEasyJSON(in *jlexer.Lexer) {
+	switch ValueType(in.String()) {
+	case ValueTypeBoolean:
+		*t = ValueTypeBoolean
+	case ValueTypeTristate:
+		*t = ValueTypeTristate
+	case ValueTypeBooleanOrUndefined:
+		*t = ValueTypeBooleanOrUndefined
+	case ValueTypeIdref:
+		*t = ValueTypeIdref
+	case ValueTypeIdrefList:
+		*t = ValueTypeIdrefList
+	case ValueTypeInteger:
+		*t = ValueTypeInteger
+	case ValueTypeNode:
+		*t = ValueTypeNode
+	case ValueTypeNodeList:
+		*t = ValueTypeNodeList
+	case ValueTypeNumber:
+		*t = ValueTypeNumber
+	case ValueTypeString:
+		*t = ValueTypeString
+	case ValueTypeComputedString:
+		*t = ValueTypeComputedString
+	case ValueTypeToken:
+		*t = ValueTypeToken
+	case ValueTypeTokenList:
+		*t = ValueTypeTokenList
+	case ValueTypeDomRelation:
+		*t = ValueTypeDomRelation
+	case ValueTypeRole:
+		*t = ValueTypeRole
+	case ValueTypeInternalRole:
+		*t = ValueTypeInternalRole
+	case ValueTypeValueUndefined:
+		*t = ValueTypeValueUndefined
 
 	default:
-		in.AddError(errors.New("unknown AXValueType value"))
+		in.AddError(errors.New("unknown ValueType value"))
 	}
 }
 
 // UnmarshalJSON satisfies json.Unmarshaler.
-func (t *AXValueType) UnmarshalJSON(buf []byte) error {
+func (t *ValueType) UnmarshalJSON(buf []byte) error {
 	return easyjson.Unmarshal(buf, t)
 }
 
-// AXValueSourceType enum of possible property sources.
-type AXValueSourceType string
+// ValueSourceType enum of possible property sources.
+type ValueSourceType string
 
-// String returns the AXValueSourceType as string value.
-func (t AXValueSourceType) String() string {
+// String returns the ValueSourceType as string value.
+func (t ValueSourceType) String() string {
 	return string(t)
 }
 
-// AXValueSourceType values.
+// ValueSourceType values.
 const (
-	AXValueSourceTypeAttribute      AXValueSourceType = "attribute"
-	AXValueSourceTypeImplicit       AXValueSourceType = "implicit"
-	AXValueSourceTypeStyle          AXValueSourceType = "style"
-	AXValueSourceTypeContents       AXValueSourceType = "contents"
-	AXValueSourceTypePlaceholder    AXValueSourceType = "placeholder"
-	AXValueSourceTypeRelatedElement AXValueSourceType = "relatedElement"
+	ValueSourceTypeAttribute      ValueSourceType = "attribute"
+	ValueSourceTypeImplicit       ValueSourceType = "implicit"
+	ValueSourceTypeStyle          ValueSourceType = "style"
+	ValueSourceTypeContents       ValueSourceType = "contents"
+	ValueSourceTypePlaceholder    ValueSourceType = "placeholder"
+	ValueSourceTypeRelatedElement ValueSourceType = "relatedElement"
 )
 
 // MarshalEasyJSON satisfies easyjson.Marshaler.
-func (t AXValueSourceType) MarshalEasyJSON(out *jwriter.Writer) {
+func (t ValueSourceType) MarshalEasyJSON(out *jwriter.Writer) {
 	out.String(string(t))
 }
 
 // MarshalJSON satisfies json.Marshaler.
-func (t AXValueSourceType) MarshalJSON() ([]byte, error) {
+func (t ValueSourceType) MarshalJSON() ([]byte, error) {
 	return easyjson.Marshal(t)
 }
 
 // UnmarshalEasyJSON satisfies easyjson.Unmarshaler.
-func (t *AXValueSourceType) UnmarshalEasyJSON(in *jlexer.Lexer) {
-	switch AXValueSourceType(in.String()) {
-	case AXValueSourceTypeAttribute:
-		*t = AXValueSourceTypeAttribute
-	case AXValueSourceTypeImplicit:
-		*t = AXValueSourceTypeImplicit
-	case AXValueSourceTypeStyle:
-		*t = AXValueSourceTypeStyle
-	case AXValueSourceTypeContents:
-		*t = AXValueSourceTypeContents
-	case AXValueSourceTypePlaceholder:
-		*t = AXValueSourceTypePlaceholder
-	case AXValueSourceTypeRelatedElement:
-		*t = AXValueSourceTypeRelatedElement
+func (t *ValueSourceType) UnmarshalEasyJSON(in *jlexer.Lexer) {
+	switch ValueSourceType(in.String()) {
+	case ValueSourceTypeAttribute:
+		*t = ValueSourceTypeAttribute
+	case ValueSourceTypeImplicit:
+		*t = ValueSourceTypeImplicit
+	case ValueSourceTypeStyle:
+		*t = ValueSourceTypeStyle
+	case ValueSourceTypeContents:
+		*t = ValueSourceTypeContents
+	case ValueSourceTypePlaceholder:
+		*t = ValueSourceTypePlaceholder
+	case ValueSourceTypeRelatedElement:
+		*t = ValueSourceTypeRelatedElement
 
 	default:
-		in.AddError(errors.New("unknown AXValueSourceType value"))
+		in.AddError(errors.New("unknown ValueSourceType value"))
 	}
 }
 
 // UnmarshalJSON satisfies json.Unmarshaler.
-func (t *AXValueSourceType) UnmarshalJSON(buf []byte) error {
+func (t *ValueSourceType) UnmarshalJSON(buf []byte) error {
 	return easyjson.Unmarshal(buf, t)
 }
 
-// AXValueNativeSourceType enum of possible native property sources (as a
+// ValueNativeSourceType enum of possible native property sources (as a
 // subtype of a particular AXValueSourceType).
-type AXValueNativeSourceType string
+type ValueNativeSourceType string
 
-// String returns the AXValueNativeSourceType as string value.
-func (t AXValueNativeSourceType) String() string {
+// String returns the ValueNativeSourceType as string value.
+func (t ValueNativeSourceType) String() string {
 	return string(t)
 }
 
-// AXValueNativeSourceType values.
+// ValueNativeSourceType values.
 const (
-	AXValueNativeSourceTypeFigcaption   AXValueNativeSourceType = "figcaption"
-	AXValueNativeSourceTypeLabel        AXValueNativeSourceType = "label"
-	AXValueNativeSourceTypeLabelfor     AXValueNativeSourceType = "labelfor"
-	AXValueNativeSourceTypeLabelwrapped AXValueNativeSourceType = "labelwrapped"
-	AXValueNativeSourceTypeLegend       AXValueNativeSourceType = "legend"
-	AXValueNativeSourceTypeTablecaption AXValueNativeSourceType = "tablecaption"
-	AXValueNativeSourceTypeTitle        AXValueNativeSourceType = "title"
-	AXValueNativeSourceTypeOther        AXValueNativeSourceType = "other"
+	ValueNativeSourceTypeFigcaption   ValueNativeSourceType = "figcaption"
+	ValueNativeSourceTypeLabel        ValueNativeSourceType = "label"
+	ValueNativeSourceTypeLabelfor     ValueNativeSourceType = "labelfor"
+	ValueNativeSourceTypeLabelwrapped ValueNativeSourceType = "labelwrapped"
+	ValueNativeSourceTypeLegend       ValueNativeSourceType = "legend"
+	ValueNativeSourceTypeTablecaption ValueNativeSourceType = "tablecaption"
+	ValueNativeSourceTypeTitle        ValueNativeSourceType = "title"
+	ValueNativeSourceTypeOther        ValueNativeSourceType = "other"
 )
 
 // MarshalEasyJSON satisfies easyjson.Marshaler.
-func (t AXValueNativeSourceType) MarshalEasyJSON(out *jwriter.Writer) {
+func (t ValueNativeSourceType) MarshalEasyJSON(out *jwriter.Writer) {
 	out.String(string(t))
 }
 
 // MarshalJSON satisfies json.Marshaler.
-func (t AXValueNativeSourceType) MarshalJSON() ([]byte, error) {
+func (t ValueNativeSourceType) MarshalJSON() ([]byte, error) {
 	return easyjson.Marshal(t)
 }
 
 // UnmarshalEasyJSON satisfies easyjson.Unmarshaler.
-func (t *AXValueNativeSourceType) UnmarshalEasyJSON(in *jlexer.Lexer) {
-	switch AXValueNativeSourceType(in.String()) {
-	case AXValueNativeSourceTypeFigcaption:
-		*t = AXValueNativeSourceTypeFigcaption
-	case AXValueNativeSourceTypeLabel:
-		*t = AXValueNativeSourceTypeLabel
-	case AXValueNativeSourceTypeLabelfor:
-		*t = AXValueNativeSourceTypeLabelfor
-	case AXValueNativeSourceTypeLabelwrapped:
-		*t = AXValueNativeSourceTypeLabelwrapped
-	case AXValueNativeSourceTypeLegend:
-		*t = AXValueNativeSourceTypeLegend
-	case AXValueNativeSourceTypeTablecaption:
-		*t = AXValueNativeSourceTypeTablecaption
-	case AXValueNativeSourceTypeTitle:
-		*t = AXValueNativeSourceTypeTitle
-	case AXValueNativeSourceTypeOther:
-		*t = AXValueNativeSourceTypeOther
+func (t *ValueNativeSourceType) UnmarshalEasyJSON(in *jlexer.Lexer) {
+	switch ValueNativeSourceType(in.String()) {
+	case ValueNativeSourceTypeFigcaption:
+		*t = ValueNativeSourceTypeFigcaption
+	case ValueNativeSourceTypeLabel:
+		*t = ValueNativeSourceTypeLabel
+	case ValueNativeSourceTypeLabelfor:
+		*t = ValueNativeSourceTypeLabelfor
+	case ValueNativeSourceTypeLabelwrapped:
+		*t = ValueNativeSourceTypeLabelwrapped
+	case ValueNativeSourceTypeLegend:
+		*t = ValueNativeSourceTypeLegend
+	case ValueNativeSourceTypeTablecaption:
+		*t = ValueNativeSourceTypeTablecaption
+	case ValueNativeSourceTypeTitle:
+		*t = ValueNativeSourceTypeTitle
+	case ValueNativeSourceTypeOther:
+		*t = ValueNativeSourceTypeOther
 
 	default:
-		in.AddError(errors.New("unknown AXValueNativeSourceType value"))
+		in.AddError(errors.New("unknown ValueNativeSourceType value"))
 	}
 }
 
 // UnmarshalJSON satisfies json.Unmarshaler.
-func (t *AXValueNativeSourceType) UnmarshalJSON(buf []byte) error {
+func (t *ValueNativeSourceType) UnmarshalJSON(buf []byte) error {
 	return easyjson.Unmarshal(buf, t)
 }
 
-// AXValueSource a single source for a computed AX property.
-type AXValueSource struct {
-	Type              AXValueSourceType       `json:"type"`                        // What type of source this is.
-	Value             *AXValue                `json:"value,omitempty"`             // The value of this property source.
-	Attribute         string                  `json:"attribute,omitempty"`         // The name of the relevant attribute, if any.
-	AttributeValue    *AXValue                `json:"attributeValue,omitempty"`    // The value of the relevant attribute, if any.
-	Superseded        bool                    `json:"superseded,omitempty"`        // Whether this source is superseded by a higher priority source.
-	NativeSource      AXValueNativeSourceType `json:"nativeSource,omitempty"`      // The native markup source for this value, e.g. a <label> element.
-	NativeSourceValue *AXValue                `json:"nativeSourceValue,omitempty"` // The value, such as a node or node list, of the native source.
-	Invalid           bool                    `json:"invalid,omitempty"`           // Whether the value for this property is invalid.
-	InvalidReason     string                  `json:"invalidReason,omitempty"`     // Reason for the value being invalid, if it is.
+// ValueSource a single source for a computed AX property.
+type ValueSource struct {
+	Type              ValueSourceType       `json:"type"`                        // What type of source this is.
+	Value             *Value                `json:"value,omitempty"`             // The value of this property source.
+	Attribute         string                `json:"attribute,omitempty"`         // The name of the relevant attribute, if any.
+	AttributeValue    *Value                `json:"attributeValue,omitempty"`    // The value of the relevant attribute, if any.
+	Superseded        bool                  `json:"superseded,omitempty"`        // Whether this source is superseded by a higher priority source.
+	NativeSource      ValueNativeSourceType `json:"nativeSource,omitempty"`      // The native markup source for this value, e.g. a <label> element.
+	NativeSourceValue *Value                `json:"nativeSourceValue,omitempty"` // The value, such as a node or node list, of the native source.
+	Invalid           bool                  `json:"invalid,omitempty"`           // Whether the value for this property is invalid.
+	InvalidReason     string                `json:"invalidReason,omitempty"`     // Reason for the value being invalid, if it is.
 }
 
-// AXRelatedNode [no description].
-type AXRelatedNode struct {
+// RelatedNode [no description].
+type RelatedNode struct {
 	BackendDOMNodeID cdp.BackendNodeID `json:"backendDOMNodeId"` // The BackendNodeId of the related DOM node.
 	Idref            string            `json:"idref,omitempty"`  // The IDRef value provided, if any.
 	Text             string            `json:"text,omitempty"`   // The text alternative of this node in the current context.
 }
 
-// AXProperty [no description].
-type AXProperty struct {
-	Name  AXPropertyName `json:"name"`  // The name of this property.
-	Value *AXValue       `json:"value"` // The value of this property.
+// Property [no description].
+type Property struct {
+	Name  PropertyName `json:"name"`  // The name of this property.
+	Value *Value       `json:"value"` // The value of this property.
 }
 
-// AXValue a single computed AX property.
-type AXValue struct {
-	Type         AXValueType         `json:"type"`                   // The type of this value.
+// Value a single computed AX property.
+type Value struct {
+	Type         ValueType           `json:"type"`                   // The type of this value.
 	Value        easyjson.RawMessage `json:"value,omitempty"`        // The computed value of this property.
-	RelatedNodes []*AXRelatedNode    `json:"relatedNodes,omitempty"` // One or more related nodes, if applicable.
-	Sources      []*AXValueSource    `json:"sources,omitempty"`      // The sources which contributed to the computation of this property.
+	RelatedNodes []*RelatedNode      `json:"relatedNodes,omitempty"` // One or more related nodes, if applicable.
+	Sources      []*ValueSource      `json:"sources,omitempty"`      // The sources which contributed to the computation of this property.
 }
 
-// AXPropertyName values of AXProperty name: from 'busy' to 'roledescription'
-// - states which apply to every AX node, from 'live' to 'root' - attributes
-// which apply to nodes in live regions, from 'autocomplete' to 'valuetext' -
+// PropertyName values of AXProperty name: from 'busy' to 'roledescription' -
+// states which apply to every AX node, from 'live' to 'root' - attributes which
+// apply to nodes in live regions, from 'autocomplete' to 'valuetext' -
 // attributes which apply to widgets, from 'checked' to 'selected' - states
 // which apply to widgets, from 'activedescendant' to 'owns' - relationships
 // between elements other than parent/child/sibling.
-type AXPropertyName string
+type PropertyName string
 
-// String returns the AXPropertyName as string value.
-func (t AXPropertyName) String() string {
+// String returns the PropertyName as string value.
+func (t PropertyName) String() string {
 	return string(t)
 }
 
-// AXPropertyName values.
+// PropertyName values.
 const (
-	AXPropertyNameBusy             AXPropertyName = "busy"
-	AXPropertyNameDisabled         AXPropertyName = "disabled"
-	AXPropertyNameHidden           AXPropertyName = "hidden"
-	AXPropertyNameHiddenRoot       AXPropertyName = "hiddenRoot"
-	AXPropertyNameInvalid          AXPropertyName = "invalid"
-	AXPropertyNameKeyshortcuts     AXPropertyName = "keyshortcuts"
-	AXPropertyNameRoledescription  AXPropertyName = "roledescription"
-	AXPropertyNameLive             AXPropertyName = "live"
-	AXPropertyNameAtomic           AXPropertyName = "atomic"
-	AXPropertyNameRelevant         AXPropertyName = "relevant"
-	AXPropertyNameRoot             AXPropertyName = "root"
-	AXPropertyNameAutocomplete     AXPropertyName = "autocomplete"
-	AXPropertyNameHaspopup         AXPropertyName = "haspopup"
-	AXPropertyNameLevel            AXPropertyName = "level"
-	AXPropertyNameMultiselectable  AXPropertyName = "multiselectable"
-	AXPropertyNameOrientation      AXPropertyName = "orientation"
-	AXPropertyNameMultiline        AXPropertyName = "multiline"
-	AXPropertyNameReadonly         AXPropertyName = "readonly"
-	AXPropertyNameRequired         AXPropertyName = "required"
-	AXPropertyNameValuemin         AXPropertyName = "valuemin"
-	AXPropertyNameValuemax         AXPropertyName = "valuemax"
-	AXPropertyNameValuetext        AXPropertyName = "valuetext"
-	AXPropertyNameChecked          AXPropertyName = "checked"
-	AXPropertyNameExpanded         AXPropertyName = "expanded"
-	AXPropertyNameModal            AXPropertyName = "modal"
-	AXPropertyNamePressed          AXPropertyName = "pressed"
-	AXPropertyNameSelected         AXPropertyName = "selected"
-	AXPropertyNameActivedescendant AXPropertyName = "activedescendant"
-	AXPropertyNameControls         AXPropertyName = "controls"
-	AXPropertyNameDescribedby      AXPropertyName = "describedby"
-	AXPropertyNameDetails          AXPropertyName = "details"
-	AXPropertyNameErrormessage     AXPropertyName = "errormessage"
-	AXPropertyNameFlowto           AXPropertyName = "flowto"
-	AXPropertyNameLabelledby       AXPropertyName = "labelledby"
-	AXPropertyNameOwns             AXPropertyName = "owns"
+	PropertyNameBusy             PropertyName = "busy"
+	PropertyNameDisabled         PropertyName = "disabled"
+	PropertyNameHidden           PropertyName = "hidden"
+	PropertyNameHiddenRoot       PropertyName = "hiddenRoot"
+	PropertyNameInvalid          PropertyName = "invalid"
+	PropertyNameKeyshortcuts     PropertyName = "keyshortcuts"
+	PropertyNameRoledescription  PropertyName = "roledescription"
+	PropertyNameLive             PropertyName = "live"
+	PropertyNameAtomic           PropertyName = "atomic"
+	PropertyNameRelevant         PropertyName = "relevant"
+	PropertyNameRoot             PropertyName = "root"
+	PropertyNameAutocomplete     PropertyName = "autocomplete"
+	PropertyNameHasPopup         PropertyName = "hasPopup"
+	PropertyNameLevel            PropertyName = "level"
+	PropertyNameMultiselectable  PropertyName = "multiselectable"
+	PropertyNameOrientation      PropertyName = "orientation"
+	PropertyNameMultiline        PropertyName = "multiline"
+	PropertyNameReadonly         PropertyName = "readonly"
+	PropertyNameRequired         PropertyName = "required"
+	PropertyNameValuemin         PropertyName = "valuemin"
+	PropertyNameValuemax         PropertyName = "valuemax"
+	PropertyNameValuetext        PropertyName = "valuetext"
+	PropertyNameChecked          PropertyName = "checked"
+	PropertyNameExpanded         PropertyName = "expanded"
+	PropertyNameModal            PropertyName = "modal"
+	PropertyNamePressed          PropertyName = "pressed"
+	PropertyNameSelected         PropertyName = "selected"
+	PropertyNameActivedescendant PropertyName = "activedescendant"
+	PropertyNameControls         PropertyName = "controls"
+	PropertyNameDescribedby      PropertyName = "describedby"
+	PropertyNameDetails          PropertyName = "details"
+	PropertyNameErrormessage     PropertyName = "errormessage"
+	PropertyNameFlowto           PropertyName = "flowto"
+	PropertyNameLabelledby       PropertyName = "labelledby"
+	PropertyNameOwns             PropertyName = "owns"
 )
 
 // MarshalEasyJSON satisfies easyjson.Marshaler.
-func (t AXPropertyName) MarshalEasyJSON(out *jwriter.Writer) {
+func (t PropertyName) MarshalEasyJSON(out *jwriter.Writer) {
 	out.String(string(t))
 }
 
 // MarshalJSON satisfies json.Marshaler.
-func (t AXPropertyName) MarshalJSON() ([]byte, error) {
+func (t PropertyName) MarshalJSON() ([]byte, error) {
 	return easyjson.Marshal(t)
 }
 
 // UnmarshalEasyJSON satisfies easyjson.Unmarshaler.
-func (t *AXPropertyName) UnmarshalEasyJSON(in *jlexer.Lexer) {
-	switch AXPropertyName(in.String()) {
-	case AXPropertyNameBusy:
-		*t = AXPropertyNameBusy
-	case AXPropertyNameDisabled:
-		*t = AXPropertyNameDisabled
-	case AXPropertyNameHidden:
-		*t = AXPropertyNameHidden
-	case AXPropertyNameHiddenRoot:
-		*t = AXPropertyNameHiddenRoot
-	case AXPropertyNameInvalid:
-		*t = AXPropertyNameInvalid
-	case AXPropertyNameKeyshortcuts:
-		*t = AXPropertyNameKeyshortcuts
-	case AXPropertyNameRoledescription:
-		*t = AXPropertyNameRoledescription
-	case AXPropertyNameLive:
-		*t = AXPropertyNameLive
-	case AXPropertyNameAtomic:
-		*t = AXPropertyNameAtomic
-	case AXPropertyNameRelevant:
-		*t = AXPropertyNameRelevant
-	case AXPropertyNameRoot:
-		*t = AXPropertyNameRoot
-	case AXPropertyNameAutocomplete:
-		*t = AXPropertyNameAutocomplete
-	case AXPropertyNameHaspopup:
-		*t = AXPropertyNameHaspopup
-	case AXPropertyNameLevel:
-		*t = AXPropertyNameLevel
-	case AXPropertyNameMultiselectable:
-		*t = AXPropertyNameMultiselectable
-	case AXPropertyNameOrientation:
-		*t = AXPropertyNameOrientation
-	case AXPropertyNameMultiline:
-		*t = AXPropertyNameMultiline
-	case AXPropertyNameReadonly:
-		*t = AXPropertyNameReadonly
-	case AXPropertyNameRequired:
-		*t = AXPropertyNameRequired
-	case AXPropertyNameValuemin:
-		*t = AXPropertyNameValuemin
-	case AXPropertyNameValuemax:
-		*t = AXPropertyNameValuemax
-	case AXPropertyNameValuetext:
-		*t = AXPropertyNameValuetext
-	case AXPropertyNameChecked:
-		*t = AXPropertyNameChecked
-	case AXPropertyNameExpanded:
-		*t = AXPropertyNameExpanded
-	case AXPropertyNameModal:
-		*t = AXPropertyNameModal
-	case AXPropertyNamePressed:
-		*t = AXPropertyNamePressed
-	case AXPropertyNameSelected:
-		*t = AXPropertyNameSelected
-	case AXPropertyNameActivedescendant:
-		*t = AXPropertyNameActivedescendant
-	case AXPropertyNameControls:
-		*t = AXPropertyNameControls
-	case AXPropertyNameDescribedby:
-		*t = AXPropertyNameDescribedby
-	case AXPropertyNameDetails:
-		*t = AXPropertyNameDetails
-	case AXPropertyNameErrormessage:
-		*t = AXPropertyNameErrormessage
-	case AXPropertyNameFlowto:
-		*t = AXPropertyNameFlowto
-	case AXPropertyNameLabelledby:
-		*t = AXPropertyNameLabelledby
-	case AXPropertyNameOwns:
-		*t = AXPropertyNameOwns
+func (t *PropertyName) UnmarshalEasyJSON(in *jlexer.Lexer) {
+	switch PropertyName(in.String()) {
+	case PropertyNameBusy:
+		*t = PropertyNameBusy
+	case PropertyNameDisabled:
+		*t = PropertyNameDisabled
+	case PropertyNameHidden:
+		*t = PropertyNameHidden
+	case PropertyNameHiddenRoot:
+		*t = PropertyNameHiddenRoot
+	case PropertyNameInvalid:
+		*t = PropertyNameInvalid
+	case PropertyNameKeyshortcuts:
+		*t = PropertyNameKeyshortcuts
+	case PropertyNameRoledescription:
+		*t = PropertyNameRoledescription
+	case PropertyNameLive:
+		*t = PropertyNameLive
+	case PropertyNameAtomic:
+		*t = PropertyNameAtomic
+	case PropertyNameRelevant:
+		*t = PropertyNameRelevant
+	case PropertyNameRoot:
+		*t = PropertyNameRoot
+	case PropertyNameAutocomplete:
+		*t = PropertyNameAutocomplete
+	case PropertyNameHasPopup:
+		*t = PropertyNameHasPopup
+	case PropertyNameLevel:
+		*t = PropertyNameLevel
+	case PropertyNameMultiselectable:
+		*t = PropertyNameMultiselectable
+	case PropertyNameOrientation:
+		*t = PropertyNameOrientation
+	case PropertyNameMultiline:
+		*t = PropertyNameMultiline
+	case PropertyNameReadonly:
+		*t = PropertyNameReadonly
+	case PropertyNameRequired:
+		*t = PropertyNameRequired
+	case PropertyNameValuemin:
+		*t = PropertyNameValuemin
+	case PropertyNameValuemax:
+		*t = PropertyNameValuemax
+	case PropertyNameValuetext:
+		*t = PropertyNameValuetext
+	case PropertyNameChecked:
+		*t = PropertyNameChecked
+	case PropertyNameExpanded:
+		*t = PropertyNameExpanded
+	case PropertyNameModal:
+		*t = PropertyNameModal
+	case PropertyNamePressed:
+		*t = PropertyNamePressed
+	case PropertyNameSelected:
+		*t = PropertyNameSelected
+	case PropertyNameActivedescendant:
+		*t = PropertyNameActivedescendant
+	case PropertyNameControls:
+		*t = PropertyNameControls
+	case PropertyNameDescribedby:
+		*t = PropertyNameDescribedby
+	case PropertyNameDetails:
+		*t = PropertyNameDetails
+	case PropertyNameErrormessage:
+		*t = PropertyNameErrormessage
+	case PropertyNameFlowto:
+		*t = PropertyNameFlowto
+	case PropertyNameLabelledby:
+		*t = PropertyNameLabelledby
+	case PropertyNameOwns:
+		*t = PropertyNameOwns
 
 	default:
-		in.AddError(errors.New("unknown AXPropertyName value"))
+		in.AddError(errors.New("unknown PropertyName value"))
 	}
 }
 
 // UnmarshalJSON satisfies json.Unmarshaler.
-func (t *AXPropertyName) UnmarshalJSON(buf []byte) error {
+func (t *PropertyName) UnmarshalJSON(buf []byte) error {
 	return easyjson.Unmarshal(buf, t)
 }
 
-// AXNode a node in the accessibility tree.
-type AXNode struct {
-	NodeID           AXNodeID          `json:"nodeId"`                     // Unique identifier for this node.
+// Node a node in the accessibility tree.
+type Node struct {
+	NodeID           NodeID            `json:"nodeId"`                     // Unique identifier for this node.
 	Ignored          bool              `json:"ignored"`                    // Whether this node is ignored for accessibility
-	IgnoredReasons   []*AXProperty     `json:"ignoredReasons,omitempty"`   // Collection of reasons why this node is hidden.
-	Role             *AXValue          `json:"role,omitempty"`             // This Node's role, whether explicit or implicit.
-	Name             *AXValue          `json:"name,omitempty"`             // The accessible name for this Node.
-	Description      *AXValue          `json:"description,omitempty"`      // The accessible description for this Node.
-	Value            *AXValue          `json:"value,omitempty"`            // The value for this Node.
-	Properties       []*AXProperty     `json:"properties,omitempty"`       // All other properties
-	ChildIds         []AXNodeID        `json:"childIds,omitempty"`         // IDs for each of this node's child nodes.
+	IgnoredReasons   []*Property       `json:"ignoredReasons,omitempty"`   // Collection of reasons why this node is hidden.
+	Role             *Value            `json:"role,omitempty"`             // This Node's role, whether explicit or implicit.
+	Name             *Value            `json:"name,omitempty"`             // The accessible name for this Node.
+	Description      *Value            `json:"description,omitempty"`      // The accessible description for this Node.
+	Value            *Value            `json:"value,omitempty"`            // The value for this Node.
+	Properties       []*Property       `json:"properties,omitempty"`       // All other properties
+	ChildIds         []NodeID          `json:"childIds,omitempty"`         // IDs for each of this node's child nodes.
 	BackendDOMNodeID cdp.BackendNodeID `json:"backendDOMNodeId,omitempty"` // The backend ID for the associated DOM node, if any.
 }
