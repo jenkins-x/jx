@@ -140,6 +140,7 @@ func (o *LogsOptions) Run() error {
 			args = append(args, "-c", o.Container)
 		}
 		args = append(args, pod)
+		o.Verbose = true
 		err = o.runCommand("kubectl", args...)
 		if err != nil {
 			return nil
