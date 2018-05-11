@@ -75,7 +75,12 @@ func (o *CommonOptions) addHelmRepoIfMissing(helmUrl string, repoName string) er
 		return err
 	}
 	if missing {
-		return o.runCommand("helm", "repo", "add", repoName, helmUrl)
+		fmt.Fprintf(o.Out, "Helm repository %s (%s) not found. Adding...\n", repoName, helmUrl)
+		err = o.runCommand("helm", "repo", "add", repoName, helmUrl)
+		if err == nil {
+			fmt.Fprintf(o.Out, "Succesfully added Helm repository %s.\n", repoName)
+		}
+		return err
 	}
 	return nil
 }
