@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	DefaultDependencyKinds = []string{"Core", "Web", "Template Engines", "SQL", "I/O", "Ops"}
+	DefaultDependencyKinds = []string{"Core", "Web", "Template Engines", "SQL", "I/O", "Ops", "Spring Cloud GCP", "Azure", "Cloud Contract", "Cloud AWS", "Cloud Messaging", "Cloud Tracing"}
 )
 
 type SpringValue struct {

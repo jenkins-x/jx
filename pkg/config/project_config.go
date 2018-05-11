@@ -21,6 +21,7 @@ type ProjectConfig struct {
 	Chat                *ChatConfig               `yaml:"chat,omitempty"`
 	Wiki                *WikiConfig               `yaml:"wiki,omitempty"`
 	Addons              []*AddonConfig            `yaml:"addons,omitempty"`
+	BuildPack           string                    `yaml:"buildPack,omitempty"`
 }
 
 type PreviewEnvironmentConfig struct {
