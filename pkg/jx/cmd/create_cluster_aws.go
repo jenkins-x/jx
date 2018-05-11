@@ -212,7 +212,12 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 
 	o.Printf("\n")
-	o.runCommand("kops", "validate", "cluster")
+	o.Printf("Validating kops cluster state...\n")
+	err = o.runCommand("kops", "validate", "cluster")
+	if err != nil {
+		return fmt.Errorf("Failed to successfully validate kops cluster state: %s\n", err)
+	}
+	o.Printf("State of kops cluster: OK\n")
 	o.Printf("\n")
 
 	return o.initAndInstall(AWS)
