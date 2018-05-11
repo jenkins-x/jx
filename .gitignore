@@ -21,3 +21,5 @@
 build/
 release/
 .updatebot-repos/
+vendor/
+.vscode/
