@@ -201,6 +201,18 @@ func (suite *BitbucketCloudProviderTestSuite) TestUpdatePullRequestStatus() {
 	suite.Require().Nil(err)
 }
 
+func (suite *BitbucketCloudProviderTestSuite) TestGetPullRequest() {
+
+	pr, err := suite.provider.GetPullRequest(
+		"test-user",
+		"test-repo",
+		3,
+	)
+
+	suite.Require().Nil(err)
+	suite.Require().Equal(*pr.Number, 3)
+}
+
 func (suite *BitbucketCloudProviderTestSuite) TestPullRequestLastCommitStatus() {
 
 	pr := &GitPullRequest{

@@ -395,13 +395,24 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 }
 
 func (p *BitbucketCloudProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
-	pr := &GitPullRequest{
-		Owner:  owner,
-		Repo:   repo,
-		Number: &number,
+	pr, _, err := p.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
+		p.Context,
+		owner,
+		repo,
+		int32(number),
+	)
+
+	if err != nil {
+		return nil, err
 	}
-	err := p.UpdatePullRequestStatus(pr)
-	return pr, err
+
+	return &GitPullRequest{
+		URL:    pr.Links.Html.Href,
+		Owner:  pr.Author.Username,
+		Repo:   pr.Destination.Repository.FullName,
+		Number: &number,
+		State:  &pr.State,
+	}, nil
 }
 
 func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
