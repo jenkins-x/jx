@@ -68,6 +68,12 @@ func CursorPreviousLine(n int) {
 	CursorHorizontalAbsolute(0)
 }
 
+// for comparability purposes between windows
+// in windows we don't have to print out a new line
+func CursorMoveNextLine(cur Coord, terminalSize *Coord) {
+	CursorNextLine(1)
+}
+
 func CursorHorizontalAbsolute(x int) {
 	handle := syscall.Handle(os.Stdout.Fd())
 

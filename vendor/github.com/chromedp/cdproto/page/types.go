@@ -481,3 +481,45 @@ func (t *ScreencastFormat) UnmarshalEasyJSON(in *jlexer.Lexer) {
 func (t *ScreencastFormat) UnmarshalJSON(buf []byte) error {
 	return easyjson.Unmarshal(buf, t)
 }
+
+// SetWebLifecycleStateState target lifecycle state.
+type SetWebLifecycleStateState string
+
+// String returns the SetWebLifecycleStateState as string value.
+func (t SetWebLifecycleStateState) String() string {
+	return string(t)
+}
+
+// SetWebLifecycleStateState values.
+const (
+	SetWebLifecycleStateStateFrozen SetWebLifecycleStateState = "frozen"
+	SetWebLifecycleStateStateActive SetWebLifecycleStateState = "active"
+)
+
+// MarshalEasyJSON satisfies easyjson.Marshaler.
+func (t SetWebLifecycleStateState) MarshalEasyJSON(out *jwriter.Writer) {
+	out.String(string(t))
+}
+
+// MarshalJSON satisfies json.Marshaler.
+func (t SetWebLifecycleStateState) MarshalJSON() ([]byte, error) {
+	return easyjson.Marshal(t)
+}
+
+// UnmarshalEasyJSON satisfies easyjson.Unmarshaler.
+func (t *SetWebLifecycleStateState) UnmarshalEasyJSON(in *jlexer.Lexer) {
+	switch SetWebLifecycleStateState(in.String()) {
+	case SetWebLifecycleStateStateFrozen:
+		*t = SetWebLifecycleStateStateFrozen
+	case SetWebLifecycleStateStateActive:
+		*t = SetWebLifecycleStateStateActive
+
+	default:
+		in.AddError(errors.New("unknown SetWebLifecycleStateState value"))
+	}
+}
+
+// UnmarshalJSON satisfies json.Unmarshaler.
+func (t *SetWebLifecycleStateState) UnmarshalJSON(buf []byte) error {
+	return easyjson.Unmarshal(buf, t)
+}

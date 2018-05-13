@@ -1,3 +1,0 @@
-# ignore everything that isn't under the rootfs/ directory.
-*
-!rootfs/**/*

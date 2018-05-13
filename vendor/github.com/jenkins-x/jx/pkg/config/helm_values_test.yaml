@@ -1,0 +1,9 @@
+expose:
+  config:
+    domain: jenkinsx.io
+    exposer: Ingress
+    http: "false"
+    tlsacme: "false"
+  Annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded

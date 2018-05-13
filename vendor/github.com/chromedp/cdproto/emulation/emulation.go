@@ -415,10 +415,11 @@ func (p *SetTouchEmulationEnabledParams) Do(ctxt context.Context, h cdp.Executor
 // real-time with a synthetic time source) and sets the current virtual time
 // policy. Note this supersedes any previous time budget.
 type SetVirtualTimePolicyParams struct {
-	Policy                            VirtualTimePolicy `json:"policy"`
-	Budget                            float64           `json:"budget,omitempty"`                            // If set, after this many virtual milliseconds have elapsed virtual time will be paused and a virtualTimeBudgetExpired event is sent.
-	MaxVirtualTimeTaskStarvationCount int64             `json:"maxVirtualTimeTaskStarvationCount,omitempty"` // If set this specifies the maximum number of tasks that can be run before virtual is forced forwards to prevent deadlock.
-	WaitForNavigation                 bool              `json:"waitForNavigation,omitempty"`                 // If set the virtual time policy change should be deferred until any frame starts navigating. Note any previous deferred policy change is superseded.
+	Policy                            VirtualTimePolicy   `json:"policy"`
+	Budget                            float64             `json:"budget,omitempty"`                            // If set, after this many virtual milliseconds have elapsed virtual time will be paused and a virtualTimeBudgetExpired event is sent.
+	MaxVirtualTimeTaskStarvationCount int64               `json:"maxVirtualTimeTaskStarvationCount,omitempty"` // If set this specifies the maximum number of tasks that can be run before virtual is forced forwards to prevent deadlock.
+	WaitForNavigation                 bool                `json:"waitForNavigation,omitempty"`                 // If set the virtual time policy change should be deferred until any frame starts navigating. Note any previous deferred policy change is superseded.
+	InitialVirtualTime                *cdp.TimeSinceEpoch `json:"initialVirtualTime,omitempty"`                // If set, base::Time::Now will be overridden to initially return this value.
 }
 
 // SetVirtualTimePolicy turns on virtual time for all frames (replacing
@@ -453,6 +454,13 @@ func (p SetVirtualTimePolicyParams) WithMaxVirtualTimeTaskStarvationCount(maxVir
 // change is superseded.
 func (p SetVirtualTimePolicyParams) WithWaitForNavigation(waitForNavigation bool) *SetVirtualTimePolicyParams {
 	p.WaitForNavigation = waitForNavigation
+	return &p
+}
+
+// WithInitialVirtualTime if set, base::Time::Now will be overridden to
+// initially return this value.
+func (p SetVirtualTimePolicyParams) WithInitialVirtualTime(initialVirtualTime *cdp.TimeSinceEpoch) *SetVirtualTimePolicyParams {
+	p.InitialVirtualTime = initialVirtualTime
 	return &p
 }
 

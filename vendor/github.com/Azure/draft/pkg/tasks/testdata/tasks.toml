@@ -1,8 +1,0 @@
-[pre-up]
-prep = "echo hello"
-
-[post-deploy]
-"setting up your app" = "echo setup"
-
-[cleanup]
-"cleaning up stuff" = "echo cleaning up"

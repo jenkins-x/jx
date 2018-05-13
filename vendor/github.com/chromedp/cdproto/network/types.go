@@ -387,6 +387,7 @@ const (
 	BlockedReasonOrigin            BlockedReason = "origin"
 	BlockedReasonInspector         BlockedReason = "inspector"
 	BlockedReasonSubresourceFilter BlockedReason = "subresource-filter"
+	BlockedReasonContentType       BlockedReason = "content-type"
 	BlockedReasonOther             BlockedReason = "other"
 )
 
@@ -413,6 +414,8 @@ func (t *BlockedReason) UnmarshalEasyJSON(in *jlexer.Lexer) {
 		*t = BlockedReasonInspector
 	case BlockedReasonSubresourceFilter:
 		*t = BlockedReasonSubresourceFilter
+	case BlockedReasonContentType:
+		*t = BlockedReasonContentType
 	case BlockedReasonOther:
 		*t = BlockedReasonOther
 

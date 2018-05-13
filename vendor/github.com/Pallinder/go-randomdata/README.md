@@ -103,19 +103,19 @@ func main() {
     // Print an american sounding address
     fmt.Println(randomdata.Address())
 
-    // Print a random number >= 10 and <= 20
+    // Print a random number >= 10 and < 20
     fmt.Println(randomdata.Number(10, 20))
 
-    // Print a number >= 0 and <= 20
+    // Print a number >= 0 and < 20
     fmt.Println(randomdata.Number(20))
 
-    // Print a random float >= 0 and <= 20 with decimal point 3
+    // Print a random float >= 0 and < 20 with decimal point 3
     fmt.Println(randomdata.Decimal(0, 20, 3))
 
-    // Print a random float >= 10 and <= 20
+    // Print a random float >= 10 and < 20
     fmt.Println(randomdata.Decimal(10, 20))
 
-    // Print a random float >= 0 and <= 20
+    // Print a random float >= 0 and < 20
     fmt.Println(randomdata.Decimal(20))
 
     // Print a bool

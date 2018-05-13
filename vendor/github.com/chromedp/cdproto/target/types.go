@@ -28,12 +28,13 @@ func (t BrowserContextID) String() string {
 
 // Info [no description].
 type Info struct {
-	TargetID ID     `json:"targetId"`
-	Type     string `json:"type"`
-	Title    string `json:"title"`
-	URL      string `json:"url"`
-	Attached bool   `json:"attached"`           // Whether the target has an attached client.
-	OpenerID ID     `json:"openerId,omitempty"` // Opener target Id
+	TargetID         ID               `json:"targetId"`
+	Type             string           `json:"type"`
+	Title            string           `json:"title"`
+	URL              string           `json:"url"`
+	Attached         bool             `json:"attached"`           // Whether the target has an attached client.
+	OpenerID         ID               `json:"openerId,omitempty"` // Opener target Id
+	BrowserContextID BrowserContextID `json:"browserContextId,omitempty"`
 }
 
 // RemoteLocation [no description].
