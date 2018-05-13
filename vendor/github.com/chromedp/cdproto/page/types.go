@@ -21,19 +21,20 @@ func (t ResourceType) String() string {
 
 // ResourceType values.
 const (
-	ResourceTypeDocument    ResourceType = "Document"
-	ResourceTypeStylesheet  ResourceType = "Stylesheet"
-	ResourceTypeImage       ResourceType = "Image"
-	ResourceTypeMedia       ResourceType = "Media"
-	ResourceTypeFont        ResourceType = "Font"
-	ResourceTypeScript      ResourceType = "Script"
-	ResourceTypeTextTrack   ResourceType = "TextTrack"
-	ResourceTypeXHR         ResourceType = "XHR"
-	ResourceTypeFetch       ResourceType = "Fetch"
-	ResourceTypeEventSource ResourceType = "EventSource"
-	ResourceTypeWebSocket   ResourceType = "WebSocket"
-	ResourceTypeManifest    ResourceType = "Manifest"
-	ResourceTypeOther       ResourceType = "Other"
+	ResourceTypeDocument       ResourceType = "Document"
+	ResourceTypeStylesheet     ResourceType = "Stylesheet"
+	ResourceTypeImage          ResourceType = "Image"
+	ResourceTypeMedia          ResourceType = "Media"
+	ResourceTypeFont           ResourceType = "Font"
+	ResourceTypeScript         ResourceType = "Script"
+	ResourceTypeTextTrack      ResourceType = "TextTrack"
+	ResourceTypeXHR            ResourceType = "XHR"
+	ResourceTypeFetch          ResourceType = "Fetch"
+	ResourceTypeEventSource    ResourceType = "EventSource"
+	ResourceTypeWebSocket      ResourceType = "WebSocket"
+	ResourceTypeManifest       ResourceType = "Manifest"
+	ResourceTypeSignedExchange ResourceType = "SignedExchange"
+	ResourceTypeOther          ResourceType = "Other"
 )
 
 // MarshalEasyJSON satisfies easyjson.Marshaler.
@@ -73,6 +74,8 @@ func (t *ResourceType) UnmarshalEasyJSON(in *jlexer.Lexer) {
 		*t = ResourceTypeWebSocket
 	case ResourceTypeManifest:
 		*t = ResourceTypeManifest
+	case ResourceTypeSignedExchange:
+		*t = ResourceTypeSignedExchange
 	case ResourceTypeOther:
 		*t = ResourceTypeOther
 
@@ -479,5 +482,47 @@ func (t *ScreencastFormat) UnmarshalEasyJSON(in *jlexer.Lexer) {
 
 // UnmarshalJSON satisfies json.Unmarshaler.
 func (t *ScreencastFormat) UnmarshalJSON(buf []byte) error {
+	return easyjson.Unmarshal(buf, t)
+}
+
+// SetWebLifecycleStateState target lifecycle state.
+type SetWebLifecycleStateState string
+
+// String returns the SetWebLifecycleStateState as string value.
+func (t SetWebLifecycleStateState) String() string {
+	return string(t)
+}
+
+// SetWebLifecycleStateState values.
+const (
+	SetWebLifecycleStateStateFrozen SetWebLifecycleStateState = "frozen"
+	SetWebLifecycleStateStateActive SetWebLifecycleStateState = "active"
+)
+
+// MarshalEasyJSON satisfies easyjson.Marshaler.
+func (t SetWebLifecycleStateState) MarshalEasyJSON(out *jwriter.Writer) {
+	out.String(string(t))
+}
+
+// MarshalJSON satisfies json.Marshaler.
+func (t SetWebLifecycleStateState) MarshalJSON() ([]byte, error) {
+	return easyjson.Marshal(t)
+}
+
+// UnmarshalEasyJSON satisfies easyjson.Unmarshaler.
+func (t *SetWebLifecycleStateState) UnmarshalEasyJSON(in *jlexer.Lexer) {
+	switch SetWebLifecycleStateState(in.String()) {
+	case SetWebLifecycleStateStateFrozen:
+		*t = SetWebLifecycleStateStateFrozen
+	case SetWebLifecycleStateStateActive:
+		*t = SetWebLifecycleStateStateActive
+
+	default:
+		in.AddError(errors.New("unknown SetWebLifecycleStateState value"))
+	}
+}
+
+// UnmarshalJSON satisfies json.Unmarshaler.
+func (t *SetWebLifecycleStateState) UnmarshalJSON(buf []byte) error {
 	return easyjson.Unmarshal(buf, t)
 }

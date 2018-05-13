@@ -2,6 +2,7 @@ package cmdline
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 
@@ -34,6 +35,9 @@ func (cli *cmdline) Init(rootctx context.Context, opts ...Option) {
 	DefaultOpts()(&cli.opts)
 	for _, opt := range opts {
 		opt(&cli.opts)
+	}
+	if !consoleSupportsColor() {
+		NoColor()(&cli.opts)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -160,4 +164,11 @@ func passStr(msg string) string {
 func failStr(msg string) string {
 	const fail = "FAIL " + "❌"
 	return fmt.Sprintf("%s: %s", red(msg), fail)
+}
+
+func consoleSupportsColor() bool {
+	// We could try to detect the shell in use (and the mode for the Windows
+	// console), and see if it accepts VT100 escape sequences, but this is
+	// a good enough heuristic to start with!
+	return runtime.GOOS != "windows"
 }

@@ -4525,6 +4525,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoDebugger44(in *jlexer.Lexer, 
 			out.GeneratePreview = bool(in.Bool())
 		case "throwOnSideEffect":
 			out.ThrowOnSideEffect = bool(in.Bool())
+		case "timeout":
+			out.Timeout = runtime.TimeDelta(in.Float64())
 		default:
 			in.SkipRecursive()
 		}
@@ -4618,6 +4620,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoDebugger44(out *jwriter.Write
 			out.RawString(prefix)
 		}
 		out.Bool(bool(in.ThrowOnSideEffect))
+	}
+	if in.Timeout != 0 {
+		const prefix string = ",\"timeout\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Float64(float64(in.Timeout))
 	}
 	out.RawByte('}')
 }

@@ -1,0 +1,55 @@
+{
+  "name": "vscode-jx-tools",
+  "displayName": "jx-tools",
+  "description": "Jenkins X extension for Visual Studio Code",
+  "version": "1.2.3",
+  "license": "Apache-2.0",
+  "publisher": "jenkinsxio",
+  "preview": true,
+  "engines": {
+    "vscode": "^1.23.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.watchActivity"
+  ],
+  "main": "./out/extension",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.watchActivity",
+        "title": "jx watch activities"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+  },
+  "devDependencies": {
+    "typescript": "^2.6.1",
+    "vscode": "^1.1.6",
+    "tslint": "^5.8.0",
+    "@types/node": "^7.0.43",
+    "@types/mocha": "^2.2.42"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "^0.3.0",
+    "vsce": "^1.40.0"
+  },
+  "keywords": [
+    "kubernetes",
+    "k8s",
+    "jenkins-x",
+    "cicd"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jenkins-x/vscode-jx-tools.git"
+  }
+}

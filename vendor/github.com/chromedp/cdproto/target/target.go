@@ -136,12 +136,42 @@ func (p *CreateBrowserContextParams) Do(ctxt context.Context, h cdp.Executor) (b
 	return res.BrowserContextID, nil
 }
 
+// GetBrowserContextsParams returns all browser contexts created with
+// Target.createBrowserContext method.
+type GetBrowserContextsParams struct{}
+
+// GetBrowserContexts returns all browser contexts created with
+// Target.createBrowserContext method.
+func GetBrowserContexts() *GetBrowserContextsParams {
+	return &GetBrowserContextsParams{}
+}
+
+// GetBrowserContextsReturns return values.
+type GetBrowserContextsReturns struct {
+	BrowserContextIds []BrowserContextID `json:"browserContextIds,omitempty"` // An array of browser context ids.
+}
+
+// Do executes Target.getBrowserContexts against the provided context.
+//
+// returns:
+//   browserContextIds - An array of browser context ids.
+func (p *GetBrowserContextsParams) Do(ctxt context.Context, h cdp.Executor) (browserContextIds []BrowserContextID, err error) {
+	// execute
+	var res GetBrowserContextsReturns
+	err = h.Execute(ctxt, CommandGetBrowserContexts, nil, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.BrowserContextIds, nil
+}
+
 // CreateTargetParams creates a new page.
 type CreateTargetParams struct {
 	URL                     string           `json:"url"`                               // The initial URL the page will be navigated to.
 	Width                   int64            `json:"width,omitempty"`                   // Frame width in DIP (headless chrome only).
 	Height                  int64            `json:"height,omitempty"`                  // Frame height in DIP (headless chrome only).
-	BrowserContextID        BrowserContextID `json:"browserContextId,omitempty"`        // The browser context to create the page in (headless chrome only).
+	BrowserContextID        BrowserContextID `json:"browserContextId,omitempty"`        // The browser context to create the page in.
 	EnableBeginFrameControl bool             `json:"enableBeginFrameControl,omitempty"` // Whether BeginFrames for this target will be controlled via DevTools (headless chrome only, not supported on MacOS yet, false by default).
 }
 
@@ -167,8 +197,7 @@ func (p CreateTargetParams) WithHeight(height int64) *CreateTargetParams {
 	return &p
 }
 
-// WithBrowserContextID the browser context to create the page in (headless
-// chrome only).
+// WithBrowserContextID the browser context to create the page in.
 func (p CreateTargetParams) WithBrowserContextID(browserContextID BrowserContextID) *CreateTargetParams {
 	p.BrowserContextID = browserContextID
 	return &p
@@ -225,14 +254,14 @@ func (p *DetachFromTargetParams) Do(ctxt context.Context, h cdp.Executor) (err e
 	return h.Execute(ctxt, CommandDetachFromTarget, p, nil)
 }
 
-// DisposeBrowserContextParams deletes a BrowserContext, will fail of any
-// open page uses it.
+// DisposeBrowserContextParams deletes a BrowserContext. All the belonging
+// pages will be closed without calling their beforeunload hooks.
 type DisposeBrowserContextParams struct {
 	BrowserContextID BrowserContextID `json:"browserContextId"`
 }
 
-// DisposeBrowserContext deletes a BrowserContext, will fail of any open page
-// uses it.
+// DisposeBrowserContext deletes a BrowserContext. All the belonging pages
+// will be closed without calling their beforeunload hooks.
 //
 // parameters:
 //   browserContextID
@@ -242,24 +271,9 @@ func DisposeBrowserContext(browserContextID BrowserContextID) *DisposeBrowserCon
 	}
 }
 
-// DisposeBrowserContextReturns return values.
-type DisposeBrowserContextReturns struct {
-	Success bool `json:"success,omitempty"`
-}
-
 // Do executes Target.disposeBrowserContext against the provided context.
-//
-// returns:
-//   success
-func (p *DisposeBrowserContextParams) Do(ctxt context.Context, h cdp.Executor) (success bool, err error) {
-	// execute
-	var res DisposeBrowserContextReturns
-	err = h.Execute(ctxt, CommandDisposeBrowserContext, p, &res)
-	if err != nil {
-		return false, err
-	}
-
-	return res.Success, nil
+func (p *DisposeBrowserContextParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandDisposeBrowserContext, p, nil)
 }
 
 // GetTargetInfoParams returns information about a target.
@@ -432,6 +446,7 @@ const (
 	CommandAttachToTarget        = "Target.attachToTarget"
 	CommandCloseTarget           = "Target.closeTarget"
 	CommandCreateBrowserContext  = "Target.createBrowserContext"
+	CommandGetBrowserContexts    = "Target.getBrowserContexts"
 	CommandCreateTarget          = "Target.createTarget"
 	CommandDetachFromTarget      = "Target.detachFromTarget"
 	CommandDisposeBrowserContext = "Target.disposeBrowserContext"

@@ -91,14 +91,15 @@ func (p *EnableParams) Do(ctxt context.Context, h cdp.Executor) (debuggerID runt
 
 // EvaluateOnCallFrameParams evaluates expression on a given call frame.
 type EvaluateOnCallFrameParams struct {
-	CallFrameID           CallFrameID `json:"callFrameId"`                     // Call frame identifier to evaluate on.
-	Expression            string      `json:"expression"`                      // Expression to evaluate.
-	ObjectGroup           string      `json:"objectGroup,omitempty"`           // String object group name to put result into (allows rapid releasing resulting object handles using releaseObjectGroup).
-	IncludeCommandLineAPI bool        `json:"includeCommandLineAPI,omitempty"` // Specifies whether command line API should be available to the evaluated expression, defaults to false.
-	Silent                bool        `json:"silent,omitempty"`                // In silent mode exceptions thrown during evaluation are not reported and do not pause execution. Overrides setPauseOnException state.
-	ReturnByValue         bool        `json:"returnByValue,omitempty"`         // Whether the result is expected to be a JSON object that should be sent by value.
-	GeneratePreview       bool        `json:"generatePreview,omitempty"`       // Whether preview should be generated for the result.
-	ThrowOnSideEffect     bool        `json:"throwOnSideEffect,omitempty"`     // Whether to throw an exception if side effect cannot be ruled out during evaluation.
+	CallFrameID           CallFrameID       `json:"callFrameId"`                     // Call frame identifier to evaluate on.
+	Expression            string            `json:"expression"`                      // Expression to evaluate.
+	ObjectGroup           string            `json:"objectGroup,omitempty"`           // String object group name to put result into (allows rapid releasing resulting object handles using releaseObjectGroup).
+	IncludeCommandLineAPI bool              `json:"includeCommandLineAPI,omitempty"` // Specifies whether command line API should be available to the evaluated expression, defaults to false.
+	Silent                bool              `json:"silent,omitempty"`                // In silent mode exceptions thrown during evaluation are not reported and do not pause execution. Overrides setPauseOnException state.
+	ReturnByValue         bool              `json:"returnByValue,omitempty"`         // Whether the result is expected to be a JSON object that should be sent by value.
+	GeneratePreview       bool              `json:"generatePreview,omitempty"`       // Whether preview should be generated for the result.
+	ThrowOnSideEffect     bool              `json:"throwOnSideEffect,omitempty"`     // Whether to throw an exception if side effect cannot be ruled out during evaluation.
+	Timeout               runtime.TimeDelta `json:"timeout,omitempty"`               // Terminate execution after timing out (number of milliseconds).
 }
 
 // EvaluateOnCallFrame evaluates expression on a given call frame.
@@ -151,6 +152,12 @@ func (p EvaluateOnCallFrameParams) WithGeneratePreview(generatePreview bool) *Ev
 // be ruled out during evaluation.
 func (p EvaluateOnCallFrameParams) WithThrowOnSideEffect(throwOnSideEffect bool) *EvaluateOnCallFrameParams {
 	p.ThrowOnSideEffect = throwOnSideEffect
+	return &p
+}
+
+// WithTimeout terminate execution after timing out (number of milliseconds).
+func (p EvaluateOnCallFrameParams) WithTimeout(timeout runtime.TimeDelta) *EvaluateOnCallFrameParams {
+	p.Timeout = timeout
 	return &p
 }
 

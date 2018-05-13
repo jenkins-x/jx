@@ -60,14 +60,14 @@ func (p GetPartialAXTreeParams) WithFetchRelatives(fetchRelatives bool) *GetPart
 
 // GetPartialAXTreeReturns return values.
 type GetPartialAXTreeReturns struct {
-	Nodes []*AXNode `json:"nodes,omitempty"` // The Accessibility.AXNode for this DOM node, if it exists, plus its ancestors, siblings and children, if requested.
+	Nodes []*Node `json:"nodes,omitempty"` // The Accessibility.AXNode for this DOM node, if it exists, plus its ancestors, siblings and children, if requested.
 }
 
 // Do executes Accessibility.getPartialAXTree against the provided context.
 //
 // returns:
 //   nodes - The Accessibility.AXNode for this DOM node, if it exists, plus its ancestors, siblings and children, if requested.
-func (p *GetPartialAXTreeParams) Do(ctxt context.Context, h cdp.Executor) (nodes []*AXNode, err error) {
+func (p *GetPartialAXTreeParams) Do(ctxt context.Context, h cdp.Executor) (nodes []*Node, err error) {
 	// execute
 	var res GetPartialAXTreeReturns
 	err = h.Execute(ctxt, CommandGetPartialAXTree, p, &res)

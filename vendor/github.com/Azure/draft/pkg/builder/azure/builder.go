@@ -213,7 +213,7 @@ func (b *Builder) AuthToken(ctx context.Context, app *builder.AppContext) (strin
 }
 
 func getRegistryName(registry string) string {
-	return strings.Trim(registry, ".azurecr.io")
+	return strings.Replace(registry, ".azurecr.io", "", 1)
 }
 
 func blobComplete(metadata azblob.Metadata) bool {

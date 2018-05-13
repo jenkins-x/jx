@@ -1,0 +1,7 @@
+name: test
+home: https://github.com/rawlingsj/test
+version: 1.2.3
+description: test
+maintainers:
+  - name: fabric8 Team
+    email: fabric8@googlegroups.com

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,15 +19,17 @@ import (
 	"time"
 )
 
-type WebResponse struct {
-	Ok    bool      `json:"ok"`
-	Error *WebError `json:"error"`
+type SlackResponse struct {
+	Ok    bool   `json:"ok"`
+	Error string `json:"error"`
 }
 
-type WebError string
+func (t SlackResponse) Err() error {
+	if t.Ok {
+		return nil
+	}
 
-func (s WebError) Error() string {
-	return string(s)
+	return errors.New(t.Error)
 }
 
 type RateLimitedError struct {
