@@ -194,8 +194,8 @@ func Paragraph() string {
 	return randomFrom(jsonData.Paragraphs)
 }
 
-// Number returns a random number, if only one integer is supplied it is treated as the max value to return
-// if a second argument is supplied it returns a number between (and including) the two numbers
+// Number returns a random number, if only one integer (n1) is supplied it returns a number in [0,n1)
+// if a second argument is supplied it returns a number in [n1,n2)
 func Number(numberRange ...int) int {
 	nr := 0
 	rand.Seed(time.Now().UnixNano())

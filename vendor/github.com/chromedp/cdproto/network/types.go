@@ -382,12 +382,13 @@ func (t BlockedReason) String() string {
 
 // BlockedReason values.
 const (
+	BlockedReasonOther             BlockedReason = "other"
 	BlockedReasonCsp               BlockedReason = "csp"
 	BlockedReasonMixedContent      BlockedReason = "mixed-content"
 	BlockedReasonOrigin            BlockedReason = "origin"
 	BlockedReasonInspector         BlockedReason = "inspector"
 	BlockedReasonSubresourceFilter BlockedReason = "subresource-filter"
-	BlockedReasonOther             BlockedReason = "other"
+	BlockedReasonContentType       BlockedReason = "content-type"
 )
 
 // MarshalEasyJSON satisfies easyjson.Marshaler.
@@ -403,6 +404,8 @@ func (t BlockedReason) MarshalJSON() ([]byte, error) {
 // UnmarshalEasyJSON satisfies easyjson.Unmarshaler.
 func (t *BlockedReason) UnmarshalEasyJSON(in *jlexer.Lexer) {
 	switch BlockedReason(in.String()) {
+	case BlockedReasonOther:
+		*t = BlockedReasonOther
 	case BlockedReasonCsp:
 		*t = BlockedReasonCsp
 	case BlockedReasonMixedContent:
@@ -413,8 +416,8 @@ func (t *BlockedReason) UnmarshalEasyJSON(in *jlexer.Lexer) {
 		*t = BlockedReasonInspector
 	case BlockedReasonSubresourceFilter:
 		*t = BlockedReasonSubresourceFilter
-	case BlockedReasonOther:
-		*t = BlockedReasonOther
+	case BlockedReasonContentType:
+		*t = BlockedReasonContentType
 
 	default:
 		in.AddError(errors.New("unknown BlockedReason value"))
@@ -578,6 +581,11 @@ type RequestPattern struct {
 	URLPattern        string            `json:"urlPattern,omitempty"`        // Wildcards ('*' -> zero or more, '?' -> exactly one) are allowed. Escape character is backslash. Omitting is equivalent to "*".
 	ResourceType      page.ResourceType `json:"resourceType,omitempty"`      // If set, only requests for matching resource types will be intercepted.
 	InterceptionStage InterceptionStage `json:"interceptionStage,omitempty"` // Stage at which to begin intercepting requests. Default is Request.
+}
+
+// SignedExchangeInfo information about a signed exchange response.
+type SignedExchangeInfo struct {
+	OuterResponse *Response `json:"outerResponse"` // The outer response of signed HTTP exchange which was received from network.
 }
 
 // ReferrerPolicy the referrer policy of the request, as defined in

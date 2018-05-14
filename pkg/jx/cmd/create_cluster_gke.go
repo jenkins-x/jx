@@ -11,6 +11,8 @@ import (
 
 	os_user "os/user"
 
+	"regexp"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -19,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"regexp"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -249,11 +250,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		args = append(args, "--labels="+strings.ToLower(labels))
 	}
 
+	log.Info("Creating cluster...\n")
 	err = o.runCommand("gcloud", args...)
 	if err != nil {
 		return err
 	}
 
+	log.Info("Initialising cluster ...\n")
 	o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	err = o.initAndInstall(GKE)
 	if err != nil {

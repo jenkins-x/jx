@@ -1015,6 +1015,43 @@ func (p *CrashParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
 	return h.Execute(ctxt, CommandCrash, nil, nil)
 }
 
+// CloseParams tries to close page, running its beforeunload hooks, if any.
+type CloseParams struct{}
+
+// Close tries to close page, running its beforeunload hooks, if any.
+func Close() *CloseParams {
+	return &CloseParams{}
+}
+
+// Do executes Page.close against the provided context.
+func (p *CloseParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandClose, nil, nil)
+}
+
+// SetWebLifecycleStateParams tries to update the web lifecycle state of the
+// page. It will transition the page to the given state according to:
+// https://github.com/WICG/web-lifecycle/.
+type SetWebLifecycleStateParams struct {
+	State SetWebLifecycleStateState `json:"state"` // Target lifecycle state
+}
+
+// SetWebLifecycleState tries to update the web lifecycle state of the page.
+// It will transition the page to the given state according to:
+// https://github.com/WICG/web-lifecycle/.
+//
+// parameters:
+//   state - Target lifecycle state
+func SetWebLifecycleState(state SetWebLifecycleStateState) *SetWebLifecycleStateParams {
+	return &SetWebLifecycleStateParams{
+		State: state,
+	}
+}
+
+// Do executes Page.setWebLifecycleState against the provided context.
+func (p *SetWebLifecycleStateParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandSetWebLifecycleState, p, nil)
+}
+
 // StopScreencastParams stops sending each frame in the screencastFrame.
 type StopScreencastParams struct{}
 
@@ -1059,5 +1096,7 @@ const (
 	CommandStartScreencast                     = "Page.startScreencast"
 	CommandStopLoading                         = "Page.stopLoading"
 	CommandCrash                               = "Page.crash"
+	CommandClose                               = "Page.close"
+	CommandSetWebLifecycleState                = "Page.setWebLifecycleState"
 	CommandStopScreencast                      = "Page.stopScreencast"
 )

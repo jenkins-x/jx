@@ -67,6 +67,7 @@ import:
   version: v1.0.4
 - package: github.com/nlopes/slack
 - package: github.com/beevik/etree
+- package: github.com/hashicorp/go-version
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

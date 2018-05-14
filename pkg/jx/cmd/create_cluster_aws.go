@@ -177,7 +177,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 
 	// TODO allow add custom args?
-
+	log.Info("Creating cluster...\n")
 	o.Printf("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
 	err = o.runCommand("kops", args...)
 	if err != nil {
@@ -220,6 +220,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	o.Printf("State of kops cluster: OK\n")
 	o.Printf("\n")
 
+	log.Info("Initialising cluster ...\n")
 	return o.initAndInstall(AWS)
 }
 

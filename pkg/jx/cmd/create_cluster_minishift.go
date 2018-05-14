@@ -205,6 +205,8 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	if hyperVVirtualSwitch != "" {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
 	}
+
+	log.Info("Creating cluster...\n")
 	err = o.runCommand("minishift", args...)
 	if err != nil {
 		return err
@@ -235,6 +237,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		return err
 	}
 
+	log.Info("Initialising cluster ...\n")
 	err = o.initAndInstall(MINISHIFT)
 	if err != nil {
 		return err

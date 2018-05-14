@@ -157,7 +157,7 @@ func (api *Client) SendMessageContext(ctx context.Context, channelID string, opt
 		return "", "", "", err
 	}
 
-	return response.Channel, response.Timestamp, response.Text, nil
+	return response.Channel, response.Timestamp, response.Text, response.Err()
 }
 
 // ApplyMsgOptions utility function for debugging/testing chat requests.
@@ -335,7 +335,7 @@ func MsgOptionDisableMarkdown() MsgOption {
 func MsgOptionPostMessageParameters(params PostMessageParameters) MsgOption {
 	return func(config *sendConfig) error {
 		if params.Username != DEFAULT_MESSAGE_USERNAME {
-			config.values.Set("username", string(params.Username))
+			config.values.Set("username", params.Username)
 		}
 
 		// chat.postEphemeral support
@@ -347,7 +347,7 @@ func MsgOptionPostMessageParameters(params PostMessageParameters) MsgOption {
 		MsgOptionAsUser(params.AsUser)(config)
 
 		if params.Parse != DEFAULT_MESSAGE_PARSE {
-			config.values.Set("parse", string(params.Parse))
+			config.values.Set("parse", params.Parse)
 		}
 		if params.LinkNames != DEFAULT_MESSAGE_LINK_NAMES {
 			config.values.Set("link_names", "1")
