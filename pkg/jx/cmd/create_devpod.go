@@ -89,7 +89,7 @@ func NewCmdCreateDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template to use")
 	cmd.Flags().StringVarP(&options.Suffix, "suffix", "s", "", "The suffix to append the pod name")
 	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the dev pod")
-	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1.4", "The request CPU of the dev pod")
+	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1", "The request CPU of the dev pod")
 	options.addCommonFlags(cmd)
 	return cmd
 }
