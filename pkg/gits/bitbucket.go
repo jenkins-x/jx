@@ -685,7 +685,7 @@ func (b *BitbucketCloudProvider) Kind() string {
 
 // Exposed by Jenkins plugin; this one is for https://wiki.jenkins.io/display/JENKINS/BitBucket+Plugin
 func (b *BitbucketCloudProvider) JenkinsWebHookPath(gitURL string, secret string) string {
-	return "/bitbucket-hook/"
+	return "/bitbucket-scmsource-hook/notify"
 }
 
 func (b *BitbucketCloudProvider) Label() string {
