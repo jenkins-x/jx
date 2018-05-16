@@ -412,7 +412,11 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner, repo string, number int) 
 		// associate a username to an email through the api or vice versa
 		// so our best attempt is to try to figure out the author email
 		// from the commits
-		commits, _ := p.GetPullRequestCommits(owner, repo, number)
+		commits, err := p.GetPullRequestCommits(owner, repo, number)
+
+		if err != nil {
+			log.Warn("Unable to get commits for PR: " + owner + "/" + repo + "/" + strconv.Itoa(number) + " -- " + err.Error())
+		}
 
 		// we get correct login and email per commit, find the matching author
 		for _, commit := range commits {
@@ -434,29 +438,53 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner, repo string, number int) 
 }
 
 func (b *BitbucketCloudProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+	answer := []*GitCommit{}
+
 	// for some reason the 2nd parameter is the PR id, seems like an inconsistency/bug in the api
 	// also this is the worst interface ever
 	commits, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(b.Context, owner, strconv.Itoa(number), repo)
 
 	if err != nil {
-		return nil, err
+		return answer, err
 	}
 
-	commitValues := commits["values"].([]interface{})
+	commitVals, ok := commits["values"]
+	if !ok {
+		return answer, fmt.Errorf("No value key for %s/%s/%d", owner, repo, number)
+	}
 
-	answer := []*GitCommit{}
+	commitValues, ok := commitVals.([]interface{})
+	if !ok {
+		return answer, fmt.Errorf("No commitValues for %s/%s/%d", owner, repo, number)
+	}
 
 	rawEmailMatcher, _ := regexp.Compile("[^<]*<([^>]+)>")
 
 	for _, data := range commitValues {
-		comm := data.(map[string]interface{})
+		if data == nil {
+			continue;
+		}
 
-		sha := comm["hash"].(string)
+		comm, ok := data.(map[string]interface{})
+		if !ok {
+			continue;
+		}
+
+		shaVal, ok := comm["hash"]
+		if !ok {
+			continue;
+		}
+
+		sha, ok := shaVal.(string)
+		if !ok {
+			log.Warn(fmt.Sprintf("Invalid data structure for GetPullRequestCommits hash from PR %s/%s/%d", owner, repo, number))
+			continue;
+		}
 
 		commit, _, err := b.Client.CommitsApi.RepositoriesUsernameRepoSlugCommitRevisionGet(b.Context, owner, repo, sha)
 
 		if err != nil {
-			return nil, err
+			return answer, err
 		}
 
 		url := ""
@@ -468,9 +496,11 @@ func (b *BitbucketCloudProvider) GetPullRequestCommits(owner, repo string, numbe
 		login := ""
 		email := ""
 		if commit.Author != nil {
+			// Bitbucket Author is the actual Bitbucket user
 			if commit.Author.User != nil {
 				login = commit.Author.User.Username
 			}
+			// Author.Raw contains the Git commit author in the form: User <email@example.com>
 			email = rawEmailMatcher.ReplaceAllString(commit.Author.Raw, "$1")
 		}
 
