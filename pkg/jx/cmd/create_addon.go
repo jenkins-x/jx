@@ -46,7 +46,7 @@ func NewCmdCreateAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 
 	cmd.AddCommand(NewCmdCreateAddonAmbassador(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonAnchore(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonCDX(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonCloudBees(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonGitea(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonKubeless(f, out, errOut))
 

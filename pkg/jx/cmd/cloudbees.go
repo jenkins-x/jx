@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/browser"
 )
 
-type CDXOptions struct {
+type CloudBeesOptions struct {
 	CommonOptions
 
 	OnlyViewURL bool
@@ -24,20 +24,20 @@ var (
 	appendTeam = false
 
 	cdx_long = templates.LongDesc(`
-		Opens the CDX dashboard in a browser.
+		Opens the CloudBees app for Kubernetes in a browser.
 
 		Which helps you visualise your CI/CD pipelines, apps, environments and teams.
 `)
 	cdx_example = templates.Examples(`
 		# Open the CDX dashboard in a browser
-		jx cdx
+		jx cloudbees
 
 		# Print the Jenkins X console URL but do not open a browser
 		jx console -u`)
 )
 
-func NewCmdCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &CDXOptions{
+func NewCmdCloudBees(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &CloudBeesOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
 			Out:     out,
@@ -45,11 +45,11 @@ func NewCmdCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 		},
 	}
 	cmd := &cobra.Command{
-		Use:     "cdx",
-		Short:   "Opens the CDX dashboard for visualising CI/CD and your environments",
+		Use:     "cloudbees",
+		Short:   "Opens the CloudBees app for Kubernetes for visualising CI/CD and your environments",
 		Long:    cdx_long,
 		Example: cdx_example,
-		Aliases: []string{"dashboard"},
+		Aliases: []string{"cloudbee", "cb", "cdx"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -61,20 +61,19 @@ func NewCmdCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	return cmd
 }
 
-func (o *CDXOptions) Run() error {
+func (o *CloudBeesOptions) Run() error {
 	f := o.Factory
 	client, ns, err := f.CreateClient()
 	if err != nil {
 		return err
 	}
 
-	url, err := kube.GetServiceURLFromName(client, kube.ServiceCDX, defaultCdxNamespace)
+	url, err := kube.GetServiceURLFromName(client, kube.ServiceCloudBees, defaultCloudBeesNamespace)
 	if err != nil {
 		return err
 	}
 
 	if appendTeam {
-
 		devNs, _, err := kube.GetDevNamespace(client, ns)
 		if err != nil {
 			return err
@@ -83,10 +82,10 @@ func (o *CDXOptions) Run() error {
 			url = util.UrlJoin(url, "teams", devNs)
 		}
 	}
-	return o.OpenURL(url, "CDX")
+	return o.OpenURL(url, "CloudBees")
 }
 
-func (o *CDXOptions) Open(name string, label string) error {
+func (o *CloudBeesOptions) Open(name string, label string) error {
 	url, err := o.findService(name)
 	if err != nil {
 		return err
@@ -94,7 +93,7 @@ func (o *CDXOptions) Open(name string, label string) error {
 	return o.OpenURL(url, label)
 }
 
-func (o *CDXOptions) OpenURL(url string, label string) error {
+func (o *CloudBeesOptions) OpenURL(url string, label string) error {
 	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(url))
 	if !o.OnlyViewURL {
 		browser.OpenURL(url)

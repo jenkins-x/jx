@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -16,34 +17,34 @@ import (
 )
 
 const (
-	defaultCdxReleaseName       = "cdx"
-	defaultCdxNamespace         = "jx"
+	defaultCloudBeesReleaseName = "cb"
+	defaultCloudBeesNamespace   = "jx"
 	cdxRepoName                 = "cb"
 	cdxRepoUrl                  = "https://%s:%s@chartmuseum.jx.charts-demo.cloudbees.com"
 	serviceaccountsClusterAdmin = "serviceaccounts-cluster-admin"
 )
 
 var (
-	create_addon_cdx_long = templates.LongDesc(`
-		Creates the CDX addon
+	CreateAddonCloudBeesLong = templates.LongDesc(`
+		Creates the CloudBees app for Kubernetes addon
 
-		CDX provides unified Continuous Delivery Environment console to make it easier to do CI/CD and Environments across a number of microservices and teams
+		CloudBees app for Kubernetes provides unified Continuous Delivery Environment console to make it easier to do CI/CD and Environments across a number of microservices and teams
 `)
 
-	create_addon_cdx_example = templates.Examples(`
-		# Create the cdx addon 
-		jx create addon cdx
+	CreateAddonCloudBeesExample = templates.Examples(`
+		# Create the cloudbees addon 
+		jx create addon cloudbees
 	`)
 )
 
-// CreateAddonCDXOptions the options for the create spring command
-type CreateAddonCDXOptions struct {
+// CreateAddonCloudBeesOptions the options for the create spring command
+type CreateAddonCloudBeesOptions struct {
 	CreateAddonOptions
 }
 
-// NewCmdCreateAddonCDX creates a command object for the "create" command
-func NewCmdCreateAddonCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &CreateAddonCDXOptions{
+// NewCmdCreateAddonCloudBees creates a command object for the "create" command
+func NewCmdCreateAddonCloudBees(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &CreateAddonCloudBeesOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
@@ -56,11 +57,11 @@ func NewCmdCreateAddonCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 	}
 
 	cmd := &cobra.Command{
-		Use:     "cdx",
-		Short:   "Create the CDX addon (a web console for working with CI/CD and Environments)",
-		Aliases: []string{"env"},
-		Long:    create_addon_cdx_long,
-		Example: create_addon_cdx_example,
+		Use:     "cloudbees",
+		Short:   "Create the CloudBees app for Kubernetes (a web console for working with CI/CD, Environments and GitOps)",
+		Aliases: []string{"cloudbee", "cb", "cdx"},
+		Long:    CreateAddonCloudBeesLong,
+		Example: CreateAddonCloudBeesExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -70,12 +71,12 @@ func NewCmdCreateAddonCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultCdxNamespace, defaultCdxReleaseName)
+	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName)
 	return cmd
 }
 
 // Run implements the command
-func (o *CreateAddonCDXOptions) Run() error {
+func (o *CreateAddonCloudBeesOptions) Run() error {
 	c, _, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -86,7 +87,7 @@ func (o *CreateAddonCDXOptions) Run() error {
 	if err != nil {
 
 		ok := false
-		log.Warn("CDX is in preview and for now requires cluster admin to be granted to ALL service accounts in your cluster.  Check CLI help for more info.\n")
+		log.Warn("CloudBees app for Kubernetes is in preview and for now requires cluster admin to be granted to ALL service accounts in your cluster.  Check CLI help for more info.\n")
 		prompt := &survey.Confirm{
 			Message: "create cluster admin rolebinding?",
 			Default: false,
@@ -130,17 +131,23 @@ func (o *CreateAddonCDXOptions) Run() error {
 	}
 
 	if missing {
+		o.Printf(`
+You will need your username and password to install this addon while it is in preview.
+To register to get your username/password to to: %s
+
+`, util.ColorInfo("https://pages.cloudbees.com/K8s"))
+
 		username := ""
 		prompt := &survey.Input{
-			Message: "CDX Preview username",
-			Help:    "CDX is in private preview which requires a username / password for installation",
+			Message: "CloudBees Preview username",
+			Help:    "CloudBees is in private preview which requires a username / password for installation",
 		}
 		survey.AskOne(prompt, &username, nil)
 
 		password := ""
 		passPrompt := &survey.Password{
-			Message: "CDX Preview password",
-			Help:    "CDX is in private preview which requires a username / password for installation",
+			Message: "CloudBees Preview password",
+			Help:    "CloudBees is in private preview which requires a username / password for installation",
 		}
 		survey.AskOne(passPrompt, &password, nil)
 
@@ -150,7 +157,7 @@ func (o *CreateAddonCDXOptions) Run() error {
 		}
 	}
 
-	err = o.CreateAddon("cdx")
+	err = o.CreateAddon("cb")
 	if err != nil {
 		return err
 	}
@@ -169,7 +176,7 @@ func (o *CreateAddonCDXOptions) Run() error {
 	log.Infof("target namespace %s\n", o.Namespace)
 
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, defaultCdxReleaseName)
+	err = o.expose(devNamespace, o.Namespace, defaultCloudBeesReleaseName)
 	if err != nil {
 		return err
 	}

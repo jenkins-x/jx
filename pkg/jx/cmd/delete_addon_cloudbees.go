@@ -10,13 +10,13 @@ import (
 )
 
 var (
-	delete_addon_cdx_long = templates.LongDesc(`
-		Deletes the cdx addon
+	deleteAddonCloudBeesLong = templates.LongDesc(`
+		Deletes the CloudBees addon
 `)
 
-	delete_addon_cdx_example = templates.Examples(`
-		# Deletes the gitea addon
-		jx delete addon cdx
+	deleteAddonCloudBeesExample = templates.Examples(`
+		# Deletes the CloudBees addon
+		jx delete addon cloudbees
 	`)
 )
 
@@ -27,8 +27,8 @@ type DeleteAddonCDXOptions struct {
 	ReleaseName string
 }
 
-// NewCmdDeleteAddonGitea defines the command
-func NewCmdDeleteAddonCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+// NewCmdDeleteAddonCloudBees defines the command
+func NewCmdDeleteAddonCloudBees(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteAddonGiteaOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
 			CommonOptions: CommonOptions{
@@ -40,10 +40,11 @@ func NewCmdDeleteAddonCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 	}
 
 	cmd := &cobra.Command{
-		Use:     "cdx",
-		Short:   "Deletes the cdx addon",
-		Long:    delete_addon_cdx_long,
-		Example: delete_addon_cdx_example,
+		Use:     "cloudbees",
+		Short:   "Deletes the CloudBees app for Kubernetes addon",
+		Aliases: []string{"cloudbee", "cb", "cdx"},
+		Long:    deleteAddonCloudBeesLong,
+		Example: deleteAddonCloudBeesExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -51,7 +52,7 @@ func NewCmdDeleteAddonCDX(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", "cdx", "The chart release name")
+	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultCloudBeesReleaseName, "The chart release name")
 	options.addFlags(cmd)
 	return cmd
 }

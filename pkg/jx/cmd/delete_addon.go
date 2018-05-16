@@ -41,6 +41,7 @@ func NewCmdDeleteAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 		SuggestFor: []string{"remove", "rm"},
 	}
 
+	cmd.AddCommand(NewCmdDeleteAddonCloudBees(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteAddonGitea(f, out, errOut))
 	options.addFlags(cmd)
 	return cmd
