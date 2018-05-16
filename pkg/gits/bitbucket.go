@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/wbrefvem/go-bitbucket"
 	"regexp"
 )
@@ -367,7 +368,9 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	pr.State = &bitbucketPR.State
 	pr.Title = bitbucketPR.Title
 	pr.Body = bitbucketPR.Summary.Raw
-	pr.Author = b.UserInfo(bitbucketPR.Author.Username)
+	pr.Author = &GitUser{
+		Login: bitbucketPR.Author.Username,
+	}
 
 	if bitbucketPR.MergeCommit != nil {
 		pr.MergeCommitSHA = &bitbucketPR.MergeCommit.Hash
@@ -441,9 +444,7 @@ func (b *BitbucketCloudProvider) GetPullRequestCommits(owner, repo string, numbe
 	answer := []*GitCommit{}
 
 	// for some reason the 2nd parameter is the PR id, seems like an inconsistency/bug in the api
-	// also this is the worst interface ever
 	commits, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(b.Context, owner, strconv.Itoa(number), repo)
-
 	if err != nil {
 		return answer, err
 	}
@@ -462,27 +463,27 @@ func (b *BitbucketCloudProvider) GetPullRequestCommits(owner, repo string, numbe
 
 	for _, data := range commitValues {
 		if data == nil {
-			continue;
+			continue
 		}
 
 		comm, ok := data.(map[string]interface{})
 		if !ok {
-			continue;
+			log.Warn(fmt.Sprintf("Unexpected data structure for GetPullRequestCommits values from PR %s/%s/%d", owner, repo, number))
+			continue
 		}
 
 		shaVal, ok := comm["hash"]
 		if !ok {
-			continue;
+			continue
 		}
 
 		sha, ok := shaVal.(string)
 		if !ok {
-			log.Warn(fmt.Sprintf("Invalid data structure for GetPullRequestCommits hash from PR %s/%s/%d", owner, repo, number))
-			continue;
+			log.Warn(fmt.Sprintf("Unexpected data structure for GetPullRequestCommits hash from PR %s/%s/%d", owner, repo, number))
+			continue
 		}
 
 		commit, _, err := b.Client.CommitsApi.RepositoriesUsernameRepoSlugCommitRevisionGet(b.Context, owner, repo, sha)
-
 		if err != nil {
 			return answer, err
 		}

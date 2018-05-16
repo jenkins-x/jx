@@ -568,12 +568,12 @@ func (o *StepChangelogOptions) gitUserToUserDetails(user *gits.GitUser) *v1.User
 }
 
 func (o *StepChangelogOptions) toUserDetails(signature object.Signature) *v1.UserDetails {
-	id := strings.Replace(signature.Email, "@", ".", -1)
+	userDetailService := cmdutil.NewUserDetailService(o.jxClient, o.devNamespace)
 
-	user, _ := o.jxClient.JenkinsV1().Users(o.devNamespace).Get(id, metav1.GetOptions{})
+	user := userDetailService.FindByEmail(signature.Email)
 
-	if user != nil && user.User.Login != "" {
-		return &user.User
+	if user != nil && user.Login != "" {
+		return user
 	}
 
 	login := ""

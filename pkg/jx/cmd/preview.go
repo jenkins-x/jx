@@ -280,7 +280,8 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	if author.Email != "" {
-		err := o.CreateOrUpdateUser(&v1.UserDetails{
+		userDetailService := cmdutil.NewUserDetailService(jxClient, o.devNamespace)
+		err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
 			Login:     author.Login,
 			Email:     author.Email,
 			Name:      author.Name,
@@ -526,79 +527,6 @@ func (o *PreviewOptions) Run() error {
 	if err != nil {
 		o.warnf("Failed to comment on the Pull Request: %s\n", err)
 	}
-	return nil
-}
-
-func (o *PreviewOptions) CreateOrUpdateUser(u *v1.UserDetails) error {
-	if u == nil || u.Email == "" {
-		return fmt.Errorf("unable to get or create user, nil or missing email")
-	}
-
-	log.Error("CreateOrUpdateUser: " + u.Login + " <" + u.Email + ">\n")
-
-	id := strings.Replace(u.Email, "@", ".", -1)
-
-	// check for an existing user by email
-	user, err := o.jxClient.JenkinsV1().Users(o.devNamespace).Get(id, metav1.GetOptions{})
-	if err != nil {
-		// we get an error when not found
-		log.Info("Unable to find user: " + id + " -- " + err.Error() + "\n")
-	}
-
-	if user != nil && err == nil {
-		changed := false
-
-		existing := &user.User
-
-		if existing.Email != u.Email {
-			existing.Email = u.Email
-			changed = true
-		}
-
-		if existing.AvatarURL != u.AvatarURL {
-			existing.AvatarURL = u.AvatarURL
-			changed = true
-		}
-
-		if existing.URL != u.URL {
-			existing.URL = u.URL
-			changed = true
-		}
-
-		if existing.Name != u.Name {
-			existing.Name = u.Name
-			changed = true
-		}
-
-		if existing.Login != u.Login {
-			existing.Login = u.Login
-			changed = true
-		}
-
-		if changed {
-			log.Info("Updating modified user: " + existing.Email + "\n")
-			_, err = o.jxClient.JenkinsV1().Users(o.devNamespace).Update(user)
-			if err != nil {
-				return err
-			}
-		} else {
-			log.Info("Existing user found: " + existing.Email + "\n")
-		}
-	} else {
-		user = &v1.User{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: id,
-			},
-			User: *u,
-		}
-
-		log.Info("Adding missing user: " + id + "\n")
-		_, err = o.jxClient.JenkinsV1().Users(o.devNamespace).Create(user)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
