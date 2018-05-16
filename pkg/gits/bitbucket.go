@@ -497,7 +497,7 @@ func (b *BitbucketCloudProvider) GetPullRequestCommits(owner, repo string, numbe
 		login := ""
 		email := ""
 		if commit.Author != nil {
-			// Bitbucket Author is the actual Bitbucket user
+			// commit.Author is the actual Bitbucket user
 			if commit.Author.User != nil {
 				login = commit.Author.User.Username
 			}

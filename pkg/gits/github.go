@@ -3,6 +3,7 @@ package gits
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"golang.org/x/oauth2"
-	"os"
 )
 
 const (
