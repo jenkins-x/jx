@@ -35,7 +35,7 @@ func TestStepSplitMonorepo(t *testing.T) {
 
 	assertFilesExist(t, true,
 		filepath.Join(tempDir, "bar", "charts", "bar", "Chart.yaml"),
-		filepath.Join(tempDir, "bar", "charts", "bar", "templates", "bar.yaml"))
+		filepath.Join(tempDir, "bar", "charts", "bar", "templates", "bar-deployment.yaml"))
 }
 
 func assertFilesExist(t *testing.T, expected bool, paths ...string) {
