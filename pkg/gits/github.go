@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"golang.org/x/oauth2"
+	"os"
 )
 
 const (
@@ -363,8 +363,10 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	} else {
 		pr.LastCommitSha = ""
 	}
-	if pr.Author == "" && result.User != nil && result.User.Login != nil {
-		pr.Author = *result.User.Login
+	if pr.Author == nil && result.User != nil && result.User.Login != nil {
+		pr.Author = &GitUser{
+			Login: *result.User.Login,
+		}
 	}
 	if result.Mergeable != nil {
 		pr.Mergeable = result.Mergeable
@@ -407,7 +409,82 @@ func (p *GitHubProvider) GetPullRequest(owner, repo string, number int) (*GitPul
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
+
+	if pr.Author != nil {
+		log.Info("Got pr Author: " + pr.Author.Login + " <" + pr.Author.Email + ">\n")
+
+		if pr.Author.Email == "" {
+			existing := p.UserInfo(pr.Author.Login)
+
+			if existing != nil {
+				log.Info("Got existing User: " + existing.Login + " <" + existing.Email + ">\n")
+				if existing.Email != "" {
+					pr.Author = existing
+				}
+			}
+		}
+	}
+
 	return pr, err
+}
+
+func (p *GitHubProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+	commits, _, err := p.Client.PullRequests.ListCommits(p.Context, owner, repo, number, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	answer := []*GitCommit{}
+
+	for _, commit := range commits {
+		message := ""
+		if commit.Commit != nil {
+			message = commit.Commit.GetMessage()
+			if commit.Author != nil {
+				author := commit.Author
+
+				summary := &GitCommit{
+					Message: message,
+					URL:     commit.GetURL(),
+					SHA:     commit.GetSHA(),
+					Author: &GitUser{
+						Login:     author.GetLogin(),
+						Email:     author.GetEmail(),
+						Name:      author.GetName(),
+						URL:       author.GetURL(),
+						AvatarURL: author.GetAvatarURL(),
+					},
+				}
+
+				if summary.Author.Email == "" {
+					log.Info("Commit author email is empty for: " + commit.GetSHA() + "\n")
+					dir, err := os.Getwd()
+					if err != nil {
+						return answer, err
+					}
+					gitDir, _, err := FindGitConfigDir(dir)
+					if err != nil {
+						return answer, err
+					}
+					log.Info("Looking for commits in: " + gitDir + "\n")
+					email, err := GetAuthorEmailForCommit(gitDir, commit.GetSHA())
+					if err != nil {
+						log.Warn("Commit not found: " + commit.GetSHA() + "\n")
+						continue
+					}
+					summary.Author.Email = email
+				}
+
+				answer = append(answer, summary)
+			} else {
+				log.Warn("No author for commit: " + commit.GetSHA() + "\n")
+			}
+		} else {
+			log.Warn("No Commit object for for commit: " + commit.GetSHA() + "\n")
+		}
+	}
+	return answer, nil
 }
 
 func (p *GitHubProvider) MergePullRequest(pr *GitPullRequest, message string) error {
@@ -774,18 +851,19 @@ func (p *GitHubProvider) UserAuth() auth.UserAuth {
 	return p.User
 }
 
-func (p *GitHubProvider) UserInfo(username string) *v1.UserSpec {
+func (p *GitHubProvider) UserInfo(username string) *GitUser {
 	user, _, err := p.Client.Users.Get(p.Context, username)
 	if user == nil || err != nil {
-		log.Error("Unable to fetch user info for " + username)
+		log.Error("Unable to fetch user info for " + username + "\n")
 		return nil
 	}
 
-	return &v1.UserSpec{
-		Username: username,
-		Name:     asText(user.Name),
-		ImageURL: asText(user.AvatarURL),
-		LinkURL:  asText(user.HTMLURL),
+	return &GitUser{
+		Login:     username,
+		Name:      user.GetName(),
+		AvatarURL: user.GetAvatarURL(),
+		URL:       user.GetHTMLURL(),
+		Email:     user.GetEmail(),
 	}
 }
 

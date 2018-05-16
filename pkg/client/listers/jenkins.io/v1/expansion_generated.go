@@ -33,3 +33,11 @@ type ReleaseListerExpansion interface{}
 // ReleaseNamespaceListerExpansion allows custom methods to be added to
 // ReleaseNamespaceLister.
 type ReleaseNamespaceListerExpansion interface{}
+
+// UserListerExpansion allows custom methods to be added to
+// UserLister.
+type UserListerExpansion interface{}
+
+// UserNamespaceListerExpansion allows custom methods to be added to
+// UserNamespaceLister.
+type UserNamespaceListerExpansion interface{}

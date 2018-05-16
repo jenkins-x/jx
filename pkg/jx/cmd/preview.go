@@ -111,6 +111,7 @@ func NewCmdPreview(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 // Run implements the command
 func (o *PreviewOptions) Run() error {
+	log.Info("Executing preview w/log.Info...\n")
 	/*
 		args := o.Args
 		if len(args) > 0 && o.Name == "" {
@@ -135,6 +136,10 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 	err = kube.RegisterGitServiceCRD(apisClient)
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterUserCRD(apisClient)
 	if err != nil {
 		return err
 	}
@@ -256,9 +261,43 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	pullRequest, _ := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
+	commits, err := gitProvider.GetPullRequestCommits(gitInfo.Organisation, gitInfo.Name, prNum)
+	if err != nil {
+		log.Warn("Unable to get commits: " + err.Error() + "\n")
+	}
 
-	username := pullRequest.Author
-	user := gitProvider.UserInfo(username)
+	author := pullRequest.Author
+
+	if author.Email == "" {
+		log.Info("PullRequest author email is empty\n")
+		for _, commit := range commits {
+			if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
+				log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
+				author.Email = commit.Author.Email
+				break
+			}
+		}
+	}
+
+	if author.Email != "" {
+		err := o.CreateOrUpdateUser(&v1.UserDetails{
+			Login:     author.Login,
+			Email:     author.Email,
+			Name:      author.Name,
+			URL:       author.URL,
+			AvatarURL: author.AvatarURL,
+		})
+		if err != nil {
+			log.Warn("An error happened attempting to CreateOrUpdateUser: " + err.Error() + "\n")
+		}
+	}
+
+	user := &v1.UserSpec{
+		Username: author.Login,
+		Name:     author.Name,
+		ImageURL: author.AvatarURL,
+		LinkURL:  author.URL,
+	}
 
 	statuses, err := gitProvider.ListCommitStatus(gitInfo.Organisation, gitInfo.Name, pullRequest.LastCommitSha)
 
@@ -487,6 +526,79 @@ func (o *PreviewOptions) Run() error {
 	if err != nil {
 		o.warnf("Failed to comment on the Pull Request: %s\n", err)
 	}
+	return nil
+}
+
+func (o *PreviewOptions) CreateOrUpdateUser(u *v1.UserDetails) error {
+	if u == nil || u.Email == "" {
+		return fmt.Errorf("unable to get or create user, nil or missing email")
+	}
+
+	log.Error("CreateOrUpdateUser: " + u.Login + " <" + u.Email + ">\n")
+
+	id := strings.Replace(u.Email, "@", ".", -1)
+
+	// check for an existing user by email
+	user, err := o.jxClient.JenkinsV1().Users(o.devNamespace).Get(id, metav1.GetOptions{})
+	if err != nil {
+		// we get an error when not found
+		log.Info("Unable to find user: " + id + " -- " + err.Error() + "\n")
+	}
+
+	if user != nil && err == nil {
+		changed := false
+
+		existing := &user.User
+
+		if existing.Email != u.Email {
+			existing.Email = u.Email
+			changed = true
+		}
+
+		if existing.AvatarURL != u.AvatarURL {
+			existing.AvatarURL = u.AvatarURL
+			changed = true
+		}
+
+		if existing.URL != u.URL {
+			existing.URL = u.URL
+			changed = true
+		}
+
+		if existing.Name != u.Name {
+			existing.Name = u.Name
+			changed = true
+		}
+
+		if existing.Login != u.Login {
+			existing.Login = u.Login
+			changed = true
+		}
+
+		if changed {
+			log.Info("Updating modified user: " + existing.Email + "\n")
+			_, err = o.jxClient.JenkinsV1().Users(o.devNamespace).Update(user)
+			if err != nil {
+				return err
+			}
+		} else {
+			log.Info("Existing user found: " + existing.Email + "\n")
+		}
+	} else {
+		user = &v1.User{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: id,
+			},
+			User: *u,
+		}
+
+		log.Info("Adding missing user: " + id + "\n")
+		_, err = o.jxClient.JenkinsV1().Users(o.devNamespace).Create(user)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

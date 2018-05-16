@@ -202,6 +202,10 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	err = kube.RegisterUserCRD(apisClient)
+	if err != nil {
+		return err
+	}
 
 	dir := o.Dir
 	if dir == "" {
@@ -564,7 +568,14 @@ func (o *StepChangelogOptions) gitUserToUserDetails(user *gits.GitUser) *v1.User
 }
 
 func (o *StepChangelogOptions) toUserDetails(signature object.Signature) *v1.UserDetails {
-	// TODO
+	id := strings.Replace(signature.Email, "@", ".", -1)
+
+	user, _ := o.jxClient.JenkinsV1().Users(o.devNamespace).Get(id, metav1.GetOptions{})
+
+	if user != nil && user.User.Login != "" {
+		return &user.User
+	}
+
 	login := ""
 	return &v1.UserDetails{
 		Login: login,

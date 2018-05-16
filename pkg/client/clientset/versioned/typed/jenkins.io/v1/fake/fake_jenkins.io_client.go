@@ -28,6 +28,10 @@ func (c *FakeJenkinsV1) Releases(namespace string) v1.ReleaseInterface {
 	return &FakeReleases{c, namespace}
 }
 
+func (c *FakeJenkinsV1) Users(namespace string) v1.UserInterface {
+	return &FakeUsers{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeJenkinsV1) RESTClient() rest.Interface {

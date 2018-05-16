@@ -513,7 +513,7 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 		return err
 	}
 	if changes {
-		return gits.GitCommit(dir, "Use correct namespace for environment")
+		return gits.GitCommitDir(dir, "Use correct namespace for environment")
 	}
 	return nil
 }
@@ -554,7 +554,7 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig) error 
 		return err
 	}
 	if changes {
-		return gits.GitCommit(dir, "Add environment configuration")
+		return gits.GitCommitDir(dir, "Add environment configuration")
 	}
 	return nil
 }

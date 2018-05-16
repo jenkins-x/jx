@@ -9,3 +9,5 @@ type GitServiceExpansion interface{}
 type PipelineActivityExpansion interface{}
 
 type ReleaseExpansion interface{}
+
+type UserExpansion interface{}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 	gitlab "github.com/wbrefvem/go-gitlab"
@@ -195,7 +194,9 @@ func (g *GitlabProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 
 func fromMergeRequest(mr *gitlab.MergeRequest, owner, repo string) *GitPullRequest {
 	return &GitPullRequest{
-		Author: mr.Author.Username,
+		Author: &GitUser{
+			Login: mr.Author.Username,
+		},
 		URL:    mr.WebURL,
 		Owner:  owner,
 		Repo:   repo,
@@ -227,7 +228,40 @@ func (p *GitlabProvider) GetPullRequest(owner, repo string, number int) (*GitPul
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
+
+	existing := p.UserInfo(pr.Author.Login)
+	if existing != nil && existing.Email != "" {
+		pr.Author = existing
+	}
+
 	return pr, err
+}
+
+func (p *GitlabProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+	pid := projectId(owner, p.Username, repo)
+	commits, _, err := p.Client.MergeRequests.GetMergeRequestCommits(pid, number, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	answer := []*GitCommit{}
+
+	for _, commit := range commits {
+		if commit == nil {
+			continue
+		}
+		summary := &GitCommit{
+			Message: commit.Message,
+			SHA:     commit.ID,
+			Author: &GitUser{
+				Email: commit.AuthorEmail,
+			},
+		}
+		answer = append(answer, summary)
+	}
+
+	return answer, nil
 }
 
 func (g *GitlabProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
@@ -444,7 +478,7 @@ func (p *GitlabProvider) UserAuth() auth.UserAuth {
 	return p.User
 }
 
-func (p *GitlabProvider) UserInfo(username string) *v1.UserSpec {
+func (p *GitlabProvider) UserInfo(username string) *GitUser {
 	users, _, err := p.Client.Users.ListUsers(&gitlab.ListUsersOptions{Username: &username})
 
 	if err != nil || len(users) == 0 {
@@ -453,11 +487,12 @@ func (p *GitlabProvider) UserInfo(username string) *v1.UserSpec {
 
 	user := users[0]
 
-	return &v1.UserSpec{
-		Username: username,
-		LinkURL:  user.WebsiteURL,
-		ImageURL: user.AvatarURL,
-		Name:     user.Name,
+	return &GitUser{
+		Login:     username,
+		URL:       user.WebsiteURL,
+		AvatarURL: user.AvatarURL,
+		Name:      user.Name,
+		Email:     user.Email,
 	}
 }
 
