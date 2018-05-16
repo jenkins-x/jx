@@ -770,6 +770,10 @@ func (p *GitHubProvider) CurrentUsername() string {
 	return p.Username
 }
 
+func (p *GitHubProvider) UserAuth() auth.UserAuth {
+	return p.User
+}
+
 func (p *GitHubProvider) UserInfo(username string) *v1.UserSpec {
 	user, _, err := p.Client.Users.Get(p.Context, username)
 	if user == nil || err != nil {

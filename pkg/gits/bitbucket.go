@@ -700,6 +700,10 @@ func (p *BitbucketCloudProvider) CurrentUsername() string {
 	return p.Username
 }
 
+func (p *BitbucketCloudProvider) UserAuth() auth.UserAuth {
+	return p.User
+}
+
 func (p *BitbucketCloudProvider) UserInfo(username string) *v1.UserSpec {
 	user, _, err := p.Client.UsersApi.UsersUsernameGet(p.Context, username)
 	if err != nil {

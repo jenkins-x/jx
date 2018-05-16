@@ -103,6 +103,9 @@ type GitProvider interface {
 	// Returns the current username
 	CurrentUsername() string
 
+	// Returns the current user auth
+	UserAuth() auth.UserAuth
+
 	// Returns user info
 	UserInfo(username string) *v1.UserSpec
 }
@@ -374,8 +377,13 @@ func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user 
 }
 
 func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService, gitKind string) (GitProvider, error) {
-	config := authConfigSvc.Config()
 	hostUrl := i.HostURLWithoutUser()
+	return CreateProviderForURL(authConfigSvc, gitKind, hostUrl)
+}
+
+// CreateProviderForURL creates the git provider for the given git kind and host URL
+func CreateProviderForURL(authConfigSvc auth.AuthConfigService, gitKind string, hostUrl string) (GitProvider, error) {
+	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(hostUrl)
 	url := server.URL
 	if gitKind != "" {
