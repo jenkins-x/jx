@@ -48,6 +48,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&Release{},
 		&ReleaseList{},
 		&User{},
+		&UserList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
