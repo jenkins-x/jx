@@ -7,8 +7,8 @@ const (
 	// ChartAnchore the default chart for the Anchore plugin
 	ChartAnchore = "stable/anchore-engine"
 
-	// ChartCDX the default name of the CDX chart
-	ChartCDX = "cb/cdx"
+	// ChartCloudBees the default name of the CloudBees addon chart
+	ChartCloudBees = "cb/cdx"
 
 	// ChartExposecontrollerService the default name of the Exposecontroller Service chart for Edit environments
 	ChartExposecontrollerService = "jenkins-x/exposecontroller-service"
@@ -22,8 +22,8 @@ const (
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
-	// SeriviceCDX the service name of the Helm Chart Museum service
-	ServiceCDX = "cdx-cdx"
+	// ServiceCloudBees the service name of the CloudBees app for Kubernetes
+	ServiceCloudBees = "cb-cdx"
 
 	// ServiceChartMuseum the service name of the Helm Chart Museum service
 	ServiceChartMuseum = "jenkins-x-chartmuseum"
@@ -140,7 +140,7 @@ var (
 	AddonCharts = map[string]string{
 		"ambassador": ChartAmbassador,
 		"anchore":    ChartAnchore,
-		"cdx":        ChartCDX,
+		"cb":         ChartCloudBees,
 		"gitea":      ChartGitea,
 		"kubeless":   ChartKubeless,
 		"prometheus": "stable/prometheus",

@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: bar
+  name: bar
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: bar
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bar
+  name: bar
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bar
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/actuator/prometheus'
+        prometheus.io/port: '8080'
+      labels:
+        app: bar
+        visualize: 'true'
+    spec:
+      containers:
+      - name: bar
+        image: saturnism/gcp-spring-petclinic-bar:latest
+        readinessProbe:
+          exec:
+            command:
+            - curl
+            - http://localhost:8080/actuator/info
+        livenessProbe:
+          exec:
+            command:
+            - curl
+            - http://localhost:8080/actuator/health
+          initialDelaySeconds: 20
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 200m
+          limits:
+            memory: 512Mi
+            cpu: 2000m
+        ports:
+        - name: http
+          containerPort: 8080

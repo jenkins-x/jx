@@ -440,6 +440,10 @@ func (p *GitlabProvider) CurrentUsername() string {
 	return p.Username
 }
 
+func (p *GitlabProvider) UserAuth() auth.UserAuth {
+	return p.User
+}
+
 func (p *GitlabProvider) UserInfo(username string) *v1.UserSpec {
 	users, _, err := p.Client.Users.ListUsers(&gitlab.ListUsersOptions{Username: &username})
 

@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"bytes"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"bytes"
 )
 
 func TestExecuteCommand(t *testing.T) {

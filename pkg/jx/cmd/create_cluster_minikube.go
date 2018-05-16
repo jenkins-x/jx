@@ -10,13 +10,13 @@ import (
 
 	"time"
 
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"fmt"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -272,7 +272,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	return nil
 }
 
-func showPromptIfOptionNotSet(option *string, p survey.Prompt)(error)  {
+func showPromptIfOptionNotSet(option *string, p survey.Prompt) error {
 	if *option == "" {
 		err := survey.AskOne(p, option, nil)
 		if err != nil {

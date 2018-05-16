@@ -53,6 +53,9 @@ test:
 
 #	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jx/cmds
 
+test1:
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v -run $(TEST)
+
 full: $(PKGS)
 
 install: $(GO_DEPENDENCIES)

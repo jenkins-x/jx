@@ -595,6 +595,10 @@ func (p *GiteaProvider) ServerURL() string {
 	return p.Server.URL
 }
 
+func (p *GiteaProvider) UserAuth() auth.UserAuth {
+	return p.User
+}
+
 func (p *GiteaProvider) CurrentUsername() string {
 	return p.Username
 }

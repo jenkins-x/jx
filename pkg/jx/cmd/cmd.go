@@ -104,7 +104,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 			Message: "Working with Applications:",
 			Commands: []*cobra.Command{
 				NewCmdConsole(f, out, err),
-				NewCmdCDX(f, out, err),
+				NewCmdCloudBees(f, out, err),
 				NewCmdLogs(f, out, err),
 				NewCmdOpen(f, out, err),
 				NewCmdRsh(f, out, err),
