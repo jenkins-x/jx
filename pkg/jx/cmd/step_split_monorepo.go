@@ -298,7 +298,7 @@ version: 0.0.1-SNAPSHOT
 					if err != nil {
 						return err
 					}
-					err = generateFileIfMissing(filepath.Join(templatesDir, name), string(yaml))
+					err = generateFileIfMissing(filepath.Join(templatesDir, "deployment.yaml"), string(yaml))
 					if err != nil {
 						return err
 					}
