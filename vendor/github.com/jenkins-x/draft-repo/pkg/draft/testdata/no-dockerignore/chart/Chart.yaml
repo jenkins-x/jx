@@ -1,7 +1,0 @@
-name: example-dockerfile-http
-home: https://github.com/deis/example-dockerfile-http
-version: 1.0.0
-description: A trivial HTTP application.
-maintainers:
-  - name: Deis Team
-    email: engineering@deis.com

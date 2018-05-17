@@ -1,7 +1,0 @@
-name: "pack-repo"
-version: "0.4.0"
-usage: "The Draft pack repository plugin"
-description: "The Draft pack repository plugin"
-command: "$DRAFT_PLUGIN_DIR/bin/pack-repo"
-hooks:
-  install: "$DRAFT_PLUGIN_DIR/scripts/get.sh"
