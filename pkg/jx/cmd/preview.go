@@ -111,6 +111,7 @@ func NewCmdPreview(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 // Run implements the command
 func (o *PreviewOptions) Run() error {
+	log.Info("Executing preview w/log.Info...\n")
 	/*
 		args := o.Args
 		if len(args) > 0 && o.Name == "" {
@@ -135,6 +136,10 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 	err = kube.RegisterGitServiceCRD(apisClient)
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterUserCRD(apisClient)
 	if err != nil {
 		return err
 	}
@@ -256,9 +261,44 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	pullRequest, _ := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
+	commits, err := gitProvider.GetPullRequestCommits(gitInfo.Organisation, gitInfo.Name, prNum)
+	if err != nil {
+		log.Warn("Unable to get commits: " + err.Error() + "\n")
+	}
 
-	username := pullRequest.Author
-	user := gitProvider.UserInfo(username)
+	author := pullRequest.Author
+
+	if author.Email == "" {
+		log.Info("PullRequest author email is empty\n")
+		for _, commit := range commits {
+			if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
+				log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
+				author.Email = commit.Author.Email
+				break
+			}
+		}
+	}
+
+	if author.Email != "" {
+		userDetailService := cmdutil.NewUserDetailService(jxClient, o.devNamespace)
+		err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
+			Login:     author.Login,
+			Email:     author.Email,
+			Name:      author.Name,
+			URL:       author.URL,
+			AvatarURL: author.AvatarURL,
+		})
+		if err != nil {
+			log.Warn("An error happened attempting to CreateOrUpdateUser: " + err.Error() + "\n")
+		}
+	}
+
+	user := &v1.UserSpec{
+		Username: author.Login,
+		Name:     author.Name,
+		ImageURL: author.AvatarURL,
+		LinkURL:  author.URL,
+	}
 
 	statuses, err := gitProvider.ListCommitStatus(gitInfo.Organisation, gitInfo.Name, pullRequest.LastCommitSha)
 

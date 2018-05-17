@@ -1,0 +1,87 @@
+{
+  "hash": "7793466f879b83f1bdd8f3fc3f761bc3cb61bc41",
+  "repository": {
+    "links": {
+      "self": {
+        "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo"
+      },
+      "html": {
+        "href": "https://bitbucket.org/test-user/test-repo"
+      },
+      "avatar": {
+        "href": "https://bitbucket.org/test-user/test-repo/avatar/32/"
+      }
+    },
+    "type": "repository",
+    "name": "test-repo",
+    "full_name": "test-user/test-repo",
+    "uuid": "{a67fe96d-b108-431a-8977-a322f7247584}"
+  },
+  "links": {
+    "self": {
+      "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/7793466f879b83f1bdd8f3fc3f761bc3cb61bc41"
+    },
+    "comments": {
+      "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/7793466f879b83f1bdd8f3fc3f761bc3cb61bc41/comments"
+    },
+    "patch": {
+      "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/patch/7793466f879b83f1bdd8f3fc3f761bc3cb61bc41"
+    },
+    "html": {
+      "href": "https://bitbucket.org/test-user/test-repo/commits/7793466f879b83f1bdd8f3fc3f761bc3cb61bc41"
+    },
+    "diff": {
+      "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/diff/7793466f879b83f1bdd8f3fc3f761bc3cb61bc41"
+    },
+    "approve": {
+      "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/7793466f879b83f1bdd8f3fc3f761bc3cb61bc41/approve"
+    },
+    "statuses": {
+      "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/7793466f879b83f1bdd8f3fc3f761bc3cb61bc41/statuses"
+    }
+  },
+  "author": {
+    "raw": "Test User <test-user@gmail.com>",
+    "user": {
+      "username": "test-user",
+      "display_name": "Test User",
+      "type": "user",
+      "uuid": "{ba182ef6-722c-4636-a861-f55dd300c7b8}",
+      "links": {
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/users/test-user"
+        },
+        "html": {
+          "href": "https://bitbucket.org/test-user/"
+        },
+        "avatar": {
+          "href": "https://bitbucket.org/account/test-user/avatar/32/"
+        }
+      }
+    }
+  },
+  "summary": {
+    "raw": "Jenkinsfile edited online with Bitbucket",
+    "markup": "markdown",
+    "html": "<p>Jenkinsfile edited online with Bitbucket</p>",
+    "type": "rendered"
+  },
+  "participants": [],
+  "parents": [
+    {
+      "hash": "d5b6a81a4872d5989cc6c4a80b0b05cd628f1440",
+      "type": "commit",
+      "links": {
+        "self": {
+          "href": "https://api.bitbucket.org/2.0/repositories/test-user/test-repo/commit/d5b6a81a4872d5989cc6c4a80b0b05cd628f1440"
+        },
+        "html": {
+          "href": "https://bitbucket.org/test-user/test-repo/commits/d5b6a81a4872d5989cc6c4a80b0b05cd628f1440"
+        }
+      }
+    }
+  ],
+  "date": "2018-05-16T00:59:41+00:00",
+  "message": "Jenkinsfile edited online with Bitbucket",
+  "type": "commit"
+}

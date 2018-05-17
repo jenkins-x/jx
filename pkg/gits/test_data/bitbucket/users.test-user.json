@@ -1,0 +1,36 @@
+{
+  "username": "test-user",
+  "website": null,
+  "display_name": "Test User",
+  "uuid": "{ba1sfef6-722c-4636-a861-f55ee300cwq8}",
+  "links": {
+    "hooks": {
+      "href": "https://api.bitbucket.org/2.0/users/test-user/hooks"
+    },
+    "self": {
+      "href": "https://api.bitbucket.org/2.0/users/test-user"
+    },
+    "repositories": {
+      "href": "https://api.bitbucket.org/2.0/repositories/test-user"
+    },
+    "html": {
+      "href": "https://bitbucket.org/test-user/"
+    },
+    "followers": {
+      "href": "https://api.bitbucket.org/2.0/users/test-user/followers"
+    },
+    "avatar": {
+      "href": "https://bitbucket.org/account/test-user/avatar/32/"
+    },
+    "following": {
+      "href": "https://api.bitbucket.org/2.0/users/test-user/following"
+    },
+    "snippets": {
+      "href": "https://api.bitbucket.org/2.0/snippets/test-user"
+    }
+  },
+  "created_on": "2016-09-15T20:50:32.307941+00:00",
+  "is_staff": false,
+  "location": null,
+  "type": "user"
+}

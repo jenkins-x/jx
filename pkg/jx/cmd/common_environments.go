@@ -143,7 +143,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		o.Printf("%s\n", util.ColorWarning("No changes made to the GitOps Environment source code. Code must be up to date!"))
 		return answer, nil
 	}
-	err = gits.GitCommit(dir, message)
+	err = gits.GitCommitDir(dir, message)
 	if err != nil {
 		return answer, err
 	}

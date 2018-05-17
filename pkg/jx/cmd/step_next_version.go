@@ -383,7 +383,7 @@ func (o *StepNextVersionOptions) setVersion() error {
 		return err
 	}
 
-	err = gits.GitCommit(o.Dir, fmt.Sprintf("Release %s", o.NewVersion))
+	err = gits.GitCommitDir(o.Dir, fmt.Sprintf("Release %s", o.NewVersion))
 	if err != nil {
 		return err
 	}

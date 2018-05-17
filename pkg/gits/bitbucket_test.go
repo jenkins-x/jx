@@ -41,11 +41,20 @@ var bitbucketRouter = util.Router{
 	"/repositories/test-user/test-repo/pullrequests/3/": util.MethodMap{
 		"GET": "pullrequests.test-repo-closed.json",
 	},
+	"/repositories/test-user/test-repo/pullrequests/1/commits": util.MethodMap{
+		"GET": "pullrequests.test-user.test-repo.1.json",
+	},
 	"/repositories/test-user/test-repo/pullrequests/3/commits": util.MethodMap{
 		"GET": "pullrequests.test-repo.commits.json",
 	},
 	"/repositories/test-user/test-repo/commit/5c8afc5/statuses": util.MethodMap{
 		"GET": "repos.test-repo.statuses.json",
+	},
+	"/repositories/test-user/test-repo/commit/7793466f879b83f1bdd8f3fc3f761bc3cb61bc41": util.MethodMap{
+		"GET": "repos.test-user.test-repo.commits.7793466f879b83f1bdd8f3fc3f761bc3cb61bc41.json",
+	},
+	"/repositories/test-user/test-repo/commit/bbc7b863a56144647a806646b73e3b43749decad": util.MethodMap{
+		"GET": "repos.test-user.test-repo.commits.bbc7b863a56144647a806646b73e3b43749decad.json",
 	},
 	"/repositories/test-user/test-repo/pullrequests/1/merge": util.MethodMap{
 		"POST": "pullrequests.test-repo.merged.json",
@@ -59,6 +68,9 @@ var bitbucketRouter = util.Router{
 	},
 	"/repositories/test-user/test-repo/issues/1": util.MethodMap{
 		"GET": "issues.test-repo.issue-1.json",
+	},
+	"/users/test-user": util.MethodMap{
+		"GET": "users.test-user.json",
 	},
 }
 
@@ -213,6 +225,14 @@ func (suite *BitbucketCloudProviderTestSuite) TestGetPullRequest() {
 	suite.Require().Equal(*pr.Number, 3)
 }
 
+func (suite *BitbucketCloudProviderTestSuite) TestPullRequestCommits() {
+	commits, err := suite.provider.GetPullRequestCommits("test-user", "test-repo", 1)
+
+	suite.Require().Nil(err)
+	suite.Require().Equal(len(commits), 2)
+	suite.Require().Equal(commits[0].Author.Email, "test-user@gmail.com")
+}
+
 func (suite *BitbucketCloudProviderTestSuite) TestPullRequestLastCommitStatus() {
 
 	pr := &GitPullRequest{
@@ -307,6 +327,12 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreateIssueComment() {
 func (suite *BitbucketCloudProviderTestSuite) TestUpdateRelease() {
 	err := suite.provider.UpdateRelease("", "", "", nil)
 	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestUserInfo() {
+	user := suite.provider.UserInfo("test-user")
+	suite.Require().NotNil(user)
+	suite.Require().Equal("test-user", user.Login)
 }
 
 func TestBitbucketCloudProviderTestSuite(t *testing.T) {

@@ -63,6 +63,20 @@ func RegisterReleaseCRD(apiClient *apiextensionsclientset.Clientset) error {
 	return registerCRD(apiClient, name, names)
 }
 
+// RegisterUserCRD ensures that the CRD is registered for User
+func RegisterUserCRD(apiClient *apiextensionsclientset.Clientset) error {
+	name := "users." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "User",
+		ListKind:   "UserList",
+		Plural:     "users",
+		Singular:   "user",
+		ShortNames: []string{"usr"},
+	}
+
+	return registerCRD(apiClient, name, names)
+}
+
 func registerCRD(apiClient *apiextensionsclientset.Clientset, name string, names *v1beta1.CustomResourceDefinitionNames) error {
 	_, err := apiClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(name, metav1.GetOptions{})
 	if err == nil {

@@ -9,10 +9,10 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/wbrefvem/go-bitbucket"
+	"regexp"
 )
 
 // BitbucketCloudProvider implements GitProvider interface for bitbucket.org
@@ -368,7 +368,9 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	pr.State = &bitbucketPR.State
 	pr.Title = bitbucketPR.Title
 	pr.Body = bitbucketPR.Summary.Raw
-	pr.Author = bitbucketPR.Author.Username
+	pr.Author = &GitUser{
+		Login: bitbucketPR.Author.Username,
+	}
 
 	if bitbucketPR.MergeCommit != nil {
 		pr.MergeCommitSHA = &bitbucketPR.MergeCommit.Hash
@@ -406,13 +408,116 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner, repo string, number int) 
 		return nil, err
 	}
 
+	author := p.UserInfo(pr.Author.Username)
+
+	if author.Email == "" {
+		// bitbucket makes this part difficult, there is no way to directly
+		// associate a username to an email through the api or vice versa
+		// so our best attempt is to try to figure out the author email
+		// from the commits
+		commits, err := p.GetPullRequestCommits(owner, repo, number)
+
+		if err != nil {
+			log.Warn("Unable to get commits for PR: " + owner + "/" + repo + "/" + strconv.Itoa(number) + " -- " + err.Error())
+		}
+
+		// we get correct login and email per commit, find the matching author
+		for _, commit := range commits {
+			if commit.Author.Login == author.Login {
+				author.Email = commit.Author.Email
+				break
+			}
+		}
+	}
+
 	return &GitPullRequest{
 		URL:    pr.Links.Html.Href,
 		Owner:  pr.Author.Username,
 		Repo:   pr.Destination.Repository.FullName,
 		Number: &number,
 		State:  &pr.State,
+		Author: author,
 	}, nil
+}
+
+func (b *BitbucketCloudProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+	answer := []*GitCommit{}
+
+	// for some reason the 2nd parameter is the PR id, seems like an inconsistency/bug in the api
+	commits, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(b.Context, owner, strconv.Itoa(number), repo)
+	if err != nil {
+		return answer, err
+	}
+
+	commitVals, ok := commits["values"]
+	if !ok {
+		return answer, fmt.Errorf("No value key for %s/%s/%d", owner, repo, number)
+	}
+
+	commitValues, ok := commitVals.([]interface{})
+	if !ok {
+		return answer, fmt.Errorf("No commitValues for %s/%s/%d", owner, repo, number)
+	}
+
+	rawEmailMatcher, _ := regexp.Compile("[^<]*<([^>]+)>")
+
+	for _, data := range commitValues {
+		if data == nil {
+			continue
+		}
+
+		comm, ok := data.(map[string]interface{})
+		if !ok {
+			log.Warn(fmt.Sprintf("Unexpected data structure for GetPullRequestCommits values from PR %s/%s/%d", owner, repo, number))
+			continue
+		}
+
+		shaVal, ok := comm["hash"]
+		if !ok {
+			continue
+		}
+
+		sha, ok := shaVal.(string)
+		if !ok {
+			log.Warn(fmt.Sprintf("Unexpected data structure for GetPullRequestCommits hash from PR %s/%s/%d", owner, repo, number))
+			continue
+		}
+
+		commit, _, err := b.Client.CommitsApi.RepositoriesUsernameRepoSlugCommitRevisionGet(b.Context, owner, repo, sha)
+		if err != nil {
+			return answer, err
+		}
+
+		url := ""
+		if commit.Links != nil && commit.Links.Self != nil {
+			url = commit.Links.Self.Href
+		}
+
+		// update the login and email
+		login := ""
+		email := ""
+		if commit.Author != nil {
+			// commit.Author is the actual Bitbucket user
+			if commit.Author.User != nil {
+				login = commit.Author.User.Username
+			}
+			// Author.Raw contains the Git commit author in the form: User <email@example.com>
+			email = rawEmailMatcher.ReplaceAllString(commit.Author.Raw, "$1")
+		}
+
+		summary := &GitCommit{
+			Message: commit.Message,
+			URL:     url,
+			SHA:     commit.Hash,
+			Author: &GitUser{
+				Login: login,
+				Email: email,
+			},
+		}
+
+		answer = append(answer, summary)
+	}
+	return answer, nil
 }
 
 func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
@@ -712,18 +817,18 @@ func (p *BitbucketCloudProvider) UserAuth() auth.UserAuth {
 	return p.User
 }
 
-func (p *BitbucketCloudProvider) UserInfo(username string) *v1.UserSpec {
+func (p *BitbucketCloudProvider) UserInfo(username string) *GitUser {
 	user, _, err := p.Client.UsersApi.UsersUsernameGet(p.Context, username)
 	if err != nil {
-		log.Error("Unable to fetch user info for " + username + "\n")
+		log.Error("Unable to fetch user info for " + username + " due to " + err.Error() + "\n")
 		return nil
 	}
 
-	return &v1.UserSpec{
-		Username: username,
-		Name:     user.DisplayName,
-		ImageURL: user.Links.Avatar.Href,
-		LinkURL:  user.Links.Self.Href,
+	return &GitUser{
+		Login:     username,
+		Name:      user.DisplayName,
+		AvatarURL: user.Links.Avatar.Href,
+		URL:       user.Links.Self.Href,
 	}
 }
 
