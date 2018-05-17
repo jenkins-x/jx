@@ -173,10 +173,10 @@ func GitCommitIfChanges(dir string, message string) error {
 	if !changed {
 		return nil
 	}
-	return GitCommit(dir, message)
+	return GitCommitDir(dir, message)
 }
 
-func GitCommit(dir string, message string) error {
+func GitCommitDir(dir string, message string) error {
 	e := exec.Command("git", "commit", "-m", message)
 	e.Dir = dir
 	e.Stdout = os.Stdout
@@ -292,6 +292,17 @@ func ConvertToValidBranchName(name string) string {
 		last = ch
 	}
 	return buffer.String()
+}
+
+func GetAuthorEmailForCommit(dir string, sha string) (string, error) {
+	e := exec.Command("git", "show", "-s", "--format=%aE", sha)
+	e.Dir = dir
+	out, err := e.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to invoke git %s in %s due to %s", "show "+sha, dir, err)
+	}
+
+	return strings.TrimSpace(string(out)), nil
 }
 
 func SetRemoteURL(dir string, name string, gitURL string) error {

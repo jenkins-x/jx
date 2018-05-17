@@ -193,6 +193,10 @@ func (o *PromoteOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	err = kube.RegisterUserCRD(apisClient)
+	if err != nil {
+		return err
+	}
 
 	jxClient, ns, err := o.JXClient()
 	if err != nil {

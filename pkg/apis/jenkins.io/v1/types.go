@@ -347,6 +347,32 @@ type CommitSummary struct {
 	IssueIDs  []string     `json:"issueIds,omitempty"  protobuf:"bytes,7,opt,name=issueIds"`
 }
 
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+// User represents a git user so we have a cache to find by email address
+type User struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	User UserDetails `json:"user,omitempty" protobuf:"bytes,2,opt,name=user"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// UserList is a list of User resources
+type UserList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []User `json:"items"`
+}
+
 // UserDetails containers details of a user
 type UserDetails struct {
 	Login             string       `json:"login,omitempty"  protobuf:"bytes,1,opt,name=login"`

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"code.gitea.io/sdk/gitea"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -276,7 +275,9 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if err != nil {
 		return fmt.Errorf("Could not find pull request for %s/%s #%d: %s", pr.Owner, pr.Repo, n, err)
 	}
-	pr.Author = result.Poster.UserName
+	pr.Author = &GitUser{
+		Login: result.Poster.UserName,
+	}
 	merged := result.HasMerged
 	pr.Merged = &merged
 	pr.Mergeable = &result.Mergeable
@@ -310,7 +311,24 @@ func (p *GiteaProvider) GetPullRequest(owner, repo string, number int) (*GitPull
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
+
+	existing := p.UserInfo(pr.Author.Login)
+	if existing != nil && existing.Email != "" {
+		pr.Author = existing
+	}
+
 	return pr, err
+}
+
+func (p *GiteaProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+	answer := []*GitCommit{}
+
+	// TODO there does not seem to be any way to get a diff of commits
+	// unless maybe checking out the repo (do we have access to a local copy?)
+	// there is a pr.Base and pr.Head that might be able to compare to get
+	// commits somehow, but does not look like anything through the api
+
+	return answer, nil
 }
 
 func (p *GiteaProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
@@ -603,17 +621,19 @@ func (p *GiteaProvider) CurrentUsername() string {
 	return p.Username
 }
 
-func (p *GiteaProvider) UserInfo(username string) *v1.UserSpec {
+func (p *GiteaProvider) UserInfo(username string) *GitUser {
 	user, err := p.Client.GetUserInfo(username)
 
 	if err != nil {
 		return nil
 	}
 
-	return &v1.UserSpec{
-		Username: username,
-		Name:     user.FullName,
-		ImageURL: user.AvatarURL,
+	return &GitUser{
+		Login:     username,
+		Name:      user.FullName,
+		AvatarURL: user.AvatarURL,
+		Email:     user.Email,
 		// TODO figure the Gitea user url
+		URL: p.Server.URL + "/" + username,
 	}
 }
