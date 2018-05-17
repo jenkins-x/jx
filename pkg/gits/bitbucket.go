@@ -431,8 +431,9 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 			return "", err
 		}
 
+		// Our first time building, so return "success"
 		if result.Size == 0 {
-			return "", fmt.Errorf("this commit doesn't have any statuses")
+			return "success", nil
 		}
 
 		for _, status := range result.Values {
@@ -446,7 +447,14 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 		}
 	}
 
-	return latestCommitStatus.State, nil
+	var statusMap = map[string]string{
+		"SUCCESSFUL": "success",
+		"FAILED":     "failure",
+		"INPROGRESS": "in-progress",
+		"STOPPED":    "stopped",
+	}
+
+	return statusMap[latestCommitStatus.State], nil
 }
 
 func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
