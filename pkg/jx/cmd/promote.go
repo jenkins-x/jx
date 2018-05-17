@@ -624,6 +624,8 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 				if err != nil {
 					o.warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
 					//return fmt.Errorf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
+				} else if status == "in-progress" {
+					o.Printf("The build for the Pull Request last commit is currently in progress.\n")
 				} else {
 					if status == "success" {
 						if !o.NoMergePullRequest {
