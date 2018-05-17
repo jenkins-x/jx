@@ -27,7 +27,7 @@ const (
 	optionServerURL         = "url"
 	exposecontrollerVersion = "2.3.56"
 	exposecontroller        = "exposecontroller"
-	exposecontrollerChart   = "chartmuseum/exposecontroller"
+	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
 
 // CommonOptions contains common options and helper methods
