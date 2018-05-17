@@ -1,3 +1,0 @@
-replicaCount: 1
-image:
-  pullPolicy: IfNotPresent
