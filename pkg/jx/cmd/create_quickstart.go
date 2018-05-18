@@ -11,7 +11,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
-	"github.com/openshift/origin/Godeps/_workspace/src/github.com/google/cadvisor/utils"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -169,9 +168,11 @@ func (o *CreateQuickstartOptions) Run() error {
 	}
 	if folder != "" {
 		chartsDir := filepath.Join(genDir, "charts", folder)
-		if utils.FileExists(chartsDir) {
-			fmt.Printf("### Found charts folder %s\n", chartsDir)
-
+		exists, err := util.FileExists(chartsDir)
+		if err != nil {
+			return err
+		}
+		if exists {
 			o.PostDraftPackCallback = func() error {
 				_, appName := filepath.Split(genDir)
 				appChartDir := filepath.Join(genDir, "charts", appName)
