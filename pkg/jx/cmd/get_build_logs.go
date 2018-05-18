@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/spf13/cobra"
 
 	"fmt"
@@ -20,6 +21,7 @@ type GetBuildLogsOptions struct {
 
 	Tail   bool
 	Filter string
+	Build  int
 }
 
 var (
@@ -61,6 +63,7 @@ func NewCmdGetBuildLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", true, "Tails the build log to the current terminal")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
+	cmd.Flags().IntVarP(&options.Build, "build", "b", 0, "The build number to view")
 
 	return cmd
 }
@@ -105,7 +108,12 @@ func (o *GetBuildLogsOptions) Run() error {
 	}
 	name := args[0]
 	job := jobMap[name]
-	last, err := jenkinsClient.GetLastBuild(job)
+	var last gojenkins.Build
+	if o.Build > 0 {
+		last, err = jenkinsClient.GetBuild(job, o.Build)
+	} else {
+		last, err = jenkinsClient.GetLastBuild(job)
+	}
 	if err != nil {
 		return err
 	}
