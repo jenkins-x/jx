@@ -35,15 +35,15 @@ type EventsService struct {
 // GitLab API docs:
 // https://docs.gitlab.com/ce/api/events.html#get-user-contribution-events
 type ContributionEvent struct {
-	Title       string    `json:"title"`
-	ProjectID   int       `json:"project_id"`
-	ActionName  string    `json:"action_name"`
-	TargetID    int       `json:"target_id"`
-	TargetIID   int       `json:"target_iid"`
-	TargetType  string    `json:"target_type"`
-	AuthorID    int       `json:"author_id"`
-	TargetTitle string    `json:"target_title"`
-	CreatedAt   time.Time `json:"created_at"`
+	Title       string     `json:"title"`
+	ProjectID   int        `json:"project_id"`
+	ActionName  string     `json:"action_name"`
+	TargetID    int        `json:"target_id"`
+	TargetIID   int        `json:"target_iid"`
+	TargetType  string     `json:"target_type"`
+	AuthorID    int        `json:"author_id"`
+	TargetTitle string     `json:"target_title"`
+	CreatedAt   *time.Time `json:"created_at"`
 	PushData    struct {
 		CommitCount int    `json:"commit_count"`
 		Action      string `json:"action"`

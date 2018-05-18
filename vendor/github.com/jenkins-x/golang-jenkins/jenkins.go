@@ -212,7 +212,6 @@ func (jenkins *Jenkins) parseResponse(resp *http.Response, body interface{}) (er
 	if resp.StatusCode != 302 && resp.StatusCode != 405 && resp.StatusCode > 201 {
 		return APIError{resp.Status, resp.StatusCode}
 	}
-
 	if body == nil {
 		return
 	}
@@ -221,7 +220,6 @@ func (jenkins *Jenkins) parseResponse(resp *http.Response, body interface{}) (er
 	if err != nil {
 		return
 	}
-
 	return json.Unmarshal(data, body)
 }
 
@@ -438,6 +436,11 @@ func (jenkins *Jenkins) GetLastBuild(job Job) (build Build, err error) {
 	return
 }
 
+// Stops the given build.
+func (jenkins *Jenkins) StopBuild(job Job, number int) error {
+	return jenkins.postUrl(fmt.Sprintf("%s%d/stop", job.Url, number), nil, nil)
+}
+
 func (jenkins *Jenkins) GetMultiBranchJob(organisationJobName, multibranchJobName, branch string) (job Job, err error) {
 	err = jenkins.get(fmt.Sprintf("/job/%s/job/%s/job/%s", organisationJobName, multibranchJobName, branch), nil, &job)
 	return
@@ -509,22 +512,22 @@ func (jenkins *Jenkins) CreateJob(jobItem JobItem, jobName string) error {
 
 // Reload will reload the configuration from disk
 func (jenkins *Jenkins) Reload() error {
-	return jenkins.postPath( "/reload")
+	return jenkins.postPath("/reload")
 }
 
 // Restart
 func (jenkins *Jenkins) Restart() error {
-	return jenkins.postPath( "/restart")
+	return jenkins.postPath("/restart")
 }
 
 // SafeRestart waits for the jenkins server to be quiet then restarts it
 func (jenkins *Jenkins) SafeRestart() error {
-	return jenkins.postPath( "/safeRestart")
+	return jenkins.postPath("/safeRestart")
 }
 
 // QuietDown
 func (jenkins *Jenkins) QuietDown() error {
-	return jenkins.postPath( "/quietDown")
+	return jenkins.postPath("/quietDown")
 }
 
 func (jenkins *Jenkins) postPath(path string) error {
