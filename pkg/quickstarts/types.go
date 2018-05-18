@@ -15,11 +15,12 @@ type QuickstartModel struct {
 }
 
 type QuickstartFilter struct {
-	Language  string
-	Framework string
-	Owner     string
-	Text      string
-	Tags      []string
+	Language    string
+	Framework   string
+	Owner       string
+	Text        string
+	ProjectName string
+	Tags        []string
 }
 
 type QuickstartForm struct {

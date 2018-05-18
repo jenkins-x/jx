@@ -111,37 +111,6 @@ func (m MergeRequest) String() string {
 	return Stringify(m)
 }
 
-// MergeRequestApprovals represents GitLab merge request approvals.
-//
-// GitLab API docs:
-// https://docs.gitlab.com/ee/api/merge_request_approvals.html#merge-request-level-mr-approvals
-type MergeRequestApprovals struct {
-	ID                int        `json:"id"`
-	ProjectID         int        `json:"project_id"`
-	Title             string     `json:"title"`
-	Description       string     `json:"description"`
-	State             string     `json:"state"`
-	CreatedAt         *time.Time `json:"created_at"`
-	UpdatedAt         *time.Time `json:"updated_at"`
-	MergeStatus       string     `json:"merge_status"`
-	ApprovalsRequired int        `json:"approvals_required"`
-	ApprovalsLeft     int        `json:"approvals_left"`
-	ApprovedBy        []struct {
-		User struct {
-			Name      string `json:"name"`
-			Username  string `json:"username"`
-			ID        int    `json:"id"`
-			State     string `json:"state"`
-			AvatarURL string `json:"avatar_url"`
-			WebURL    string `json:"web_url"`
-		} `json:"user"`
-	} `json:"approved_by"`
-}
-
-func (m MergeRequestApprovals) String() string {
-	return Stringify(m)
-}
-
 // MergeRequestDiffVersion represents Gitlab merge request version.
 //
 // Gitlab API docs:

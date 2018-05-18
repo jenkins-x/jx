@@ -325,7 +325,7 @@
   branch = "master"
   name = "github.com/jenkins-x/golang-jenkins"
   packages = ["."]
-  revision = "39fed9b296c3d46901594ffc4afabb13adcd0411"
+  revision = "0bc3c6465b1cbac88473244061521e75c5394d1e"
 
 [[projects]]
   name = "github.com/json-iterator/go"
@@ -487,7 +487,7 @@
   branch = "master"
   name = "github.com/wbrefvem/go-gitlab"
   packages = ["."]
-  revision = "efcfde92fb209d7bcb4d7497ab500d334483085e"
+  revision = "39a39290fa635907b2b2a54b4dd48966bfe4ee54"
 
 [[projects]]
   branch = "master"

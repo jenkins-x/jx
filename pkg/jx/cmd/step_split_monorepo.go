@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -156,7 +155,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 					}
 				}
 
-				err = o.copyDirOverwrite(path, outPath)
+				err = util.CopyDirOverwrite(path, outPath)
 				if err != nil {
 					return err
 				}
@@ -299,7 +298,7 @@ version: 0.0.1-SNAPSHOT
 					if err != nil {
 						return err
 					}
-					err = generateFileIfMissing(filepath.Join(templatesDir, name), string(yaml))
+					err = generateFileIfMissing(filepath.Join(templatesDir, "deployment.yaml"), string(yaml))
 					if err != nil {
 						return err
 					}
@@ -309,58 +308,6 @@ version: 0.0.1-SNAPSHOT
 		}
 	}
 	return nil
-}
-
-func (o *StepSplitMonorepoOptions) copyDirOverwrite(src string, dst string) (err error) {
-	src = filepath.Clean(src)
-	dst = filepath.Clean(dst)
-
-	si, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-	if !si.IsDir() {
-		return fmt.Errorf("source is not a directory")
-	}
-
-	_, err = os.Stat(dst)
-	if err != nil && !os.IsNotExist(err) {
-		return
-	}
-
-	err = os.MkdirAll(dst, si.Mode())
-	if err != nil {
-		return
-	}
-
-	entries, err := ioutil.ReadDir(src)
-	if err != nil {
-		return
-	}
-
-	for _, entry := range entries {
-		srcPath := filepath.Join(src, entry.Name())
-		dstPath := filepath.Join(dst, entry.Name())
-
-		if entry.IsDir() {
-			err = o.copyDirOverwrite(srcPath, dstPath)
-			if err != nil {
-				return
-			}
-		} else {
-			// Skip symlinks.
-			if entry.Mode()&os.ModeSymlink != 0 {
-				continue
-			}
-
-			err = util.CopyFile(srcPath, dstPath)
-			if err != nil {
-				return
-			}
-		}
-	}
-
-	return
 }
 
 func (o *CommonOptions) createGitProviderForURL(gitKind string, gitUrl string) (gits.GitProvider, error) {

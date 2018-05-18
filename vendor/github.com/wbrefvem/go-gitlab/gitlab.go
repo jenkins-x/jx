@@ -32,25 +32,26 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
+	"golang.org/x/oauth2"
 )
 
 const (
-	libraryVersion = "0.2.0"
 	defaultBaseURL = "https://gitlab.com/api/v4/"
-	userAgent      = "go-gitlab/" + libraryVersion
+	userAgent      = "go-gitlab"
 )
 
-// tokenType represents a token type within GitLab.
+// authType represents an authentication type within GitLab.
 //
 // GitLab API docs: https://docs.gitlab.com/ce/api/
-type tokenType int
+type authType int
 
-// List of available token type
+// List of available authentication types.
 //
 // GitLab API docs: https://docs.gitlab.com/ce/api/
 const (
-	privateToken tokenType = iota
+	basicAuth authType = iota
 	oAuthToken
+	privateToken
 )
 
 // AccessLevelValue represents a permission level within GitLab.
@@ -257,64 +258,68 @@ type Client struct {
 	// should always be specified with a trailing slash.
 	baseURL *url.URL
 
-	// token type used to make authenticated API calls.
-	tokenType tokenType
+	// Token type used to make authenticated API calls.
+	authType authType
 
-	// token used to make authenticated API calls.
+	// Username and password used for basix authentication.
+	username, password string
+
+	// Token used to make authenticated API calls.
 	token string
 
 	// User agent used when communicating with the GitLab API.
 	UserAgent string
 
 	// Services used for talking to different parts of the GitLab API.
-	AwardEmoji           *AwardEmojiService
-	Branches             *BranchesService
-	BuildVariables       *BuildVariablesService
-	BroadcastMessage     *BroadcastMessagesService
-	Commits              *CommitsService
-	DeployKeys           *DeployKeysService
-	Deployments          *DeploymentsService
-	Environments         *EnvironmentsService
-	Events               *EventsService
-	Features             *FeaturesService
-	GitIgnoreTemplates   *GitIgnoreTemplatesService
-	Groups               *GroupsService
-	GroupMembers         *GroupMembersService
-	GroupMilestones      *GroupMilestonesService
-	Issues               *IssuesService
-	IssueLinks           *IssueLinksService
-	Jobs                 *JobsService
-	Boards               *IssueBoardsService
-	Labels               *LabelsService
-	MergeRequests        *MergeRequestsService
-	Milestones           *MilestonesService
-	Namespaces           *NamespacesService
-	Notes                *NotesService
-	NotificationSettings *NotificationSettingsService
-	PagesDomains         *PagesDomainsService
-	Pipelines            *PipelinesService
-	PipelineSchedules    *PipelineSchedulesService
-	PipelineTriggers     *PipelineTriggersService
-	Projects             *ProjectsService
-	ProjectMembers       *ProjectMembersService
-	ProjectSnippets      *ProjectSnippetsService
-	ProtectedBranches    *ProtectedBranchesService
-	Repositories         *RepositoriesService
-	RepositoryFiles      *RepositoryFilesService
-	Runners              *RunnersService
-	Search               *SearchService
-	Services             *ServicesService
-	Session              *SessionService
-	Settings             *SettingsService
-	Sidekiq              *SidekiqService
-	Snippets             *SnippetsService
-	SystemHooks          *SystemHooksService
-	Tags                 *TagsService
-	Todos                *TodosService
-	Users                *UsersService
-	Validate             *ValidateService
-	Version              *VersionService
-	Wikis                *WikisService
+	AwardEmoji            *AwardEmojiService
+	Branches              *BranchesService
+	BuildVariables        *BuildVariablesService
+	BroadcastMessage      *BroadcastMessagesService
+	Commits               *CommitsService
+	DeployKeys            *DeployKeysService
+	Deployments           *DeploymentsService
+	Environments          *EnvironmentsService
+	Events                *EventsService
+	Features              *FeaturesService
+	GitIgnoreTemplates    *GitIgnoreTemplatesService
+	Groups                *GroupsService
+	GroupMembers          *GroupMembersService
+	GroupMilestones       *GroupMilestonesService
+	Issues                *IssuesService
+	IssueLinks            *IssueLinksService
+	Jobs                  *JobsService
+	Boards                *IssueBoardsService
+	Labels                *LabelsService
+	MergeRequests         *MergeRequestsService
+	MergeRequestApprovals *MergeRequestApprovalsService
+	Milestones            *MilestonesService
+	Namespaces            *NamespacesService
+	Notes                 *NotesService
+	NotificationSettings  *NotificationSettingsService
+	PagesDomains          *PagesDomainsService
+	Pipelines             *PipelinesService
+	PipelineSchedules     *PipelineSchedulesService
+	PipelineTriggers      *PipelineTriggersService
+	Projects              *ProjectsService
+	ProjectMembers        *ProjectMembersService
+	ProjectSnippets       *ProjectSnippetsService
+	ProtectedBranches     *ProtectedBranchesService
+	Repositories          *RepositoriesService
+	RepositoryFiles       *RepositoryFilesService
+	Runners               *RunnersService
+	Search                *SearchService
+	Services              *ServicesService
+	Session               *SessionService
+	Settings              *SettingsService
+	Sidekiq               *SidekiqService
+	Snippets              *SnippetsService
+	SystemHooks           *SystemHooksService
+	Tags                  *TagsService
+	Todos                 *TodosService
+	Users                 *UsersService
+	Validate              *ValidateService
+	Version               *VersionService
+	Wikis                 *WikisService
 }
 
 // ListOptions specifies the optional parameters to various List methods that
@@ -329,24 +334,64 @@ type ListOptions struct {
 
 // NewClient returns a new GitLab API client. If a nil httpClient is
 // provided, http.DefaultClient will be used. To use API methods which require
-// authentication, provide a valid private token.
+// authentication, provide a valid private or personal token.
 func NewClient(httpClient *http.Client, token string) *Client {
-	return newClient(httpClient, privateToken, token)
+	client := newClient(httpClient)
+	client.authType = privateToken
+	client.token = token
+	return client
+}
+
+// NewBasicAuthClient returns a new GitLab API client. If a nil httpClient is
+// provided, http.DefaultClient will be used. To use API methods which require
+// authentication, provide a valid username and password.
+func NewBasicAuthClient(httpClient *http.Client, endpoint, username, password string) (*Client, error) {
+	client := newClient(httpClient)
+	client.authType = basicAuth
+	client.username = username
+	client.password = password
+	client.SetBaseURL(endpoint + "/api/v4")
+
+	err := client.requestOAuthToken(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (c *Client) requestOAuthToken(ctx context.Context) error {
+	config := &oauth2.Config{
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  fmt.Sprintf("%s://%s/oauth/authorize", c.BaseURL().Scheme, c.BaseURL().Host),
+			TokenURL: fmt.Sprintf("%s://%s/oauth/token", c.BaseURL().Scheme, c.BaseURL().Host),
+		},
+	}
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.client)
+	t, err := config.PasswordCredentialsToken(ctx, c.username, c.password)
+	if err != nil {
+		return err
+	}
+	c.token = t.AccessToken
+	return nil
 }
 
 // NewOAuthClient returns a new GitLab API client. If a nil httpClient is
 // provided, http.DefaultClient will be used. To use API methods which require
 // authentication, provide a valid oauth token.
 func NewOAuthClient(httpClient *http.Client, token string) *Client {
-	return newClient(httpClient, oAuthToken, token)
+	client := newClient(httpClient)
+	client.authType = oAuthToken
+	client.token = token
+	return client
 }
 
-func newClient(httpClient *http.Client, tokenType tokenType, token string) *Client {
+func newClient(httpClient *http.Client) *Client {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
 
-	c := &Client{client: httpClient, tokenType: tokenType, token: token, UserAgent: userAgent}
+	c := &Client{client: httpClient, UserAgent: userAgent}
 	if err := c.SetBaseURL(defaultBaseURL); err != nil {
 		// Should never happen since defaultBaseURL is our constant.
 		panic(err)
@@ -376,6 +421,7 @@ func newClient(httpClient *http.Client, tokenType tokenType, token string) *Clie
 	c.Boards = &IssueBoardsService{client: c}
 	c.Labels = &LabelsService{client: c}
 	c.MergeRequests = &MergeRequestsService{client: c, timeStats: timeStats}
+	c.MergeRequestApprovals = &MergeRequestApprovalsService{client: c}
 	c.Milestones = &MilestonesService{client: c}
 	c.Namespaces = &NamespacesService{client: c}
 	c.Notes = &NotesService{client: c}
@@ -480,11 +526,11 @@ func (c *Client) NewRequest(method, path string, opt interface{}, options []Opti
 
 	req.Header.Set("Accept", "application/json")
 
-	switch c.tokenType {
+	switch c.authType {
+	case basicAuth, oAuthToken:
+		req.Header.Set("Authorization", "Bearer "+c.token)
 	case privateToken:
 		req.Header.Set("PRIVATE-TOKEN", c.token)
-	case oAuthToken:
-		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 
 	if c.UserAgent != "" {
@@ -562,6 +608,14 @@ func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized && c.authType == basicAuth {
+		err = c.requestOAuthToken(req.Context())
+		if err != nil {
+			return nil, err
+		}
+		return c.Do(req, v)
+	}
 
 	response := newResponse(resp)
 

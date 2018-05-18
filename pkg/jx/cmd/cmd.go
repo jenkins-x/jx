@@ -123,6 +123,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 				createCommands,
 				deleteCommands,
 				NewCmdStart(f, out, err),
+				NewCmdStop(f, out, err),
 			},
 		},
 		{

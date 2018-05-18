@@ -98,10 +98,7 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 // Run implements the generic Create command
 func (o *CreateQuickstartOptions) Run() error {
 	installOpts := InstallOptions{
-		CommonOptions: CommonOptions{
-			Factory: o.Factory,
-			Out:     o.Out,
-		},
+		CommonOptions: o.CommonOptions,
 	}
 	userAuth, err := installOpts.getGitUser("git username to create the quickstart")
 	if err != nil {
@@ -140,7 +137,7 @@ func (o *CreateQuickstartOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
-	q, err := model.CreateSurvey(&o.Filter)
+	q, err := model.CreateSurvey(&o.Filter, o.BatchMode)
 	if err != nil {
 		return err
 	}
@@ -160,6 +157,41 @@ func (o *CreateQuickstartOptions) Run() error {
 		return err
 	}
 
+	// if there is a charts folder named after the app name, lets rename it to the generated app name
+	folder := ""
+	if q.Quickstart != nil {
+		folder = q.Quickstart.Name
+	}
+	idx := strings.LastIndex(folder, "/")
+	if idx > 0 {
+		folder = folder[idx+1:]
+	}
+	if folder != "" {
+		chartsDir := filepath.Join(genDir, "charts", folder)
+		exists, err := util.FileExists(chartsDir)
+		if err != nil {
+			return err
+		}
+		if exists {
+			o.PostDraftPackCallback = func() error {
+				_, appName := filepath.Split(genDir)
+				appChartDir := filepath.Join(genDir, "charts", appName)
+
+				fmt.Printf("### PostDraftPack callback copying from %s to %s!!!s\n", chartsDir, appChartDir)
+				err := util.CopyDirOverwrite(chartsDir, appChartDir)
+				if err != nil {
+					return err
+				}
+				err = os.RemoveAll(chartsDir)
+				if err != nil {
+					return err
+				}
+				return gits.GitRemove(genDir, filepath.Join("charts", folder))
+			}
+		} else {
+			fmt.Printf("### NO charts folder %s\n", chartsDir)
+		}
+	}
 	o.Printf("Created project at %s\n\n", util.ColorInfo(genDir))
 
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider

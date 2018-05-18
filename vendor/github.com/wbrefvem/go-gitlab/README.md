@@ -47,7 +47,7 @@ to add new and/or missing endpoints. Currently the following services are suppor
 - [x] Labels
 - [ ] License
 - [x] Merge Requests
-- [ ] Merge Request Approvals
+- [x] Merge Request Approvals
 - [x] Project Milestones
 - [ ] Group Milestones
 - [x] Namespaces

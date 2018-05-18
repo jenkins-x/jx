@@ -48,6 +48,8 @@ work
 `
 )
 
+type CallbackFn func() error
+
 type ImportOptions struct {
 	CommonOptions
 
@@ -71,13 +73,14 @@ type ImportOptions struct {
 	ListDraftPacks          bool
 	DraftPack               string
 
-	DisableDotGitSearch bool
-	InitialisedGit      bool
-	Jenkins             *gojenkins.Jenkins
-	GitConfDir          string
-	GitServer           *auth.AuthServer
-	GitUserAuth         *auth.UserAuth
-	GitProvider         gits.GitProvider
+	DisableDotGitSearch   bool
+	InitialisedGit        bool
+	Jenkins               *gojenkins.Jenkins
+	GitConfDir            string
+	GitServer             *auth.AuthServer
+	GitUserAuth           *auth.UserAuth
+	GitProvider           gits.GitProvider
+	PostDraftPackCallback CallbackFn
 }
 
 var (
@@ -521,6 +524,13 @@ func (o *ImportOptions) DraftCreate() error {
 	err = o.renameChartToMatchAppName()
 	if err != nil {
 		return err
+	}
+
+	if o.PostDraftPackCallback != nil {
+		err = o.PostDraftPackCallback()
+		if err != nil {
+			return err
+		}
 	}
 
 	gitServerName, err := gits.GetHost(o.GitProvider)

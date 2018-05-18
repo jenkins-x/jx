@@ -79,6 +79,7 @@ type Project struct {
 	OnlyAllowMergeIfAllDiscussionsAreResolved bool              `json:"only_allow_merge_if_all_discussions_are_resolved"`
 	LFSEnabled                                bool              `json:"lfs_enabled"`
 	RequestAccessEnabled                      bool              `json:"request_access_enabled"`
+	MergeMethod                               string            `json:"merge_method"`
 	ForkedFromProject                         *ForkParent       `json:"forked_from_project"`
 	SharedWithGroups                          []struct {
 		GroupID          int    `json:"group_id"`
@@ -390,6 +391,7 @@ type CreateProjectOptions struct {
 	PublicJobs                                *bool            `url:"public_jobs,omitempty" json:"public_jobs,omitempty"`
 	OnlyAllowMergeIfPipelineSucceeds          *bool            `url:"only_allow_merge_if_pipeline_succeeds,omitempty" json:"only_allow_merge_if_pipeline_succeeds,omitempty"`
 	OnlyAllowMergeIfAllDiscussionsAreResolved *bool            `url:"only_allow_merge_if_all_discussions_are_resolved,omitempty" json:"only_allow_merge_if_all_discussions_are_resolved,omitempty"`
+	MergeMethod                               *string          `url:"merge_method,omitempty" json:"merge_method,omitempty"`
 	LFSEnabled                                *bool            `url:"lfs_enabled,omitempty" json:"lfs_enabled,omitempty"`
 	RequestAccessEnabled                      *bool            `url:"request_access_enabled,omitempty" json:"request_access_enabled,omitempty"`
 	TagList                                   *[]string        `url:"tag_list,omitempty" json:"tag_list,omitempty"`

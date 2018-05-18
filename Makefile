@@ -74,8 +74,8 @@ win:
 bootstrap: vendoring
 
 vendoring:
-	$(GO) get -u github.com/Masterminds/glide
-	GO15VENDOREXPERIMENT=1 glide update --strip-vendor
+	$(GO) get -u github.com/golang/dep/cmd/dep
+	GO15VENDOREXPERIMENT=1 dep ensure
 
 release: check
 	rm -rf build release && mkdir build release
