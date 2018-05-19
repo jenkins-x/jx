@@ -378,6 +378,11 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	}
 	pr.DiffURL = &bitbucketPR.Links.Diff.Href
 
+	if bitbucketPR.State == "MERGED" {
+		merged := true
+		pr.Merged = &merged
+	}
+
 	commits, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(
 		b.Context,
 		b.Username,
