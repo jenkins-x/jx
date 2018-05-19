@@ -9,10 +9,11 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 
+	"regexp"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/wbrefvem/go-bitbucket"
-	"regexp"
 )
 
 // BitbucketCloudProvider implements GitProvider interface for bitbucket.org
@@ -606,7 +607,11 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 func (b *BitbucketCloudProvider) MergePullRequest(pr *GitPullRequest, message string) error {
 
 	options := map[string]interface{}{
-		"message": message,
+		"body": map[string]interface{}{
+			"pullrequest_merge_parameters": map[string]interface{}{
+				"message": message,
+			},
+		},
 	}
 
 	_, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdMergePost(
