@@ -1331,9 +1331,7 @@ func (a *PullrequestsApiService) RepositoriesUsernameRepoSlugPullrequestsPullReq
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
 	// body params
-	if localVarTempParam, localVarOk := localVarOptionals["body"].(PullrequestMergeParameters); localVarOk {
-		localVarPostBody = &localVarTempParam
-	}
+	localVarPostBody = localVarOptionals["body"]
 	if ctx != nil {
 		// API Key Authentication
 		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
