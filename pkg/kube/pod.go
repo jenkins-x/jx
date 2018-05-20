@@ -145,7 +145,7 @@ func GetPods(client *kubernetes.Clientset, ns string, filter string) ([]string, 
 		c := d
 		name := d.Name
 		m[name] = &c
-		if filter == "" || strings.Contains(name, filter) {
+		if filter == "" || strings.Contains(name, filter) && d.DeletionTimestamp == nil {
 			names = append(names, name)
 		}
 	}
