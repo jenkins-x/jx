@@ -289,7 +289,7 @@ func (o *CreateDevPodOptions) Run() error {
 			Daemon:        true,
 			Dir:           dir,
 		}
-		err = syncOptions.CreateKsync(name, dir, workingDir, ns)
+		err = syncOptions.CreateKsync(client, ns, name, dir, workingDir, userName)
 		if err != nil {
 			return err
 		}

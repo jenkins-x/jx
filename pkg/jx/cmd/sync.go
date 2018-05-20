@@ -12,11 +12,13 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type SyncOptions struct {
@@ -185,7 +187,7 @@ func (o *SyncOptions) Run() error {
 			}
 		}
 
-		err = o.CreateKsync(name, dir, remoteDir, ns)
+		err = o.CreateKsync(client, ns, name, dir, remoteDir, username)
 		if err != nil {
 			o.killWatchProcess(cmd)
 			return err
@@ -196,7 +198,7 @@ func (o *SyncOptions) Run() error {
 }
 
 // CreateKsync removes the exiting ksync if it already exists then create a new ksync of the given name
-func (o *SyncOptions) CreateKsync(name string, dir string, remoteDir string, ns string) error {
+func (o *SyncOptions) CreateKsync(client *kubernetes.Clientset, ns string, name string, dir string, remoteDir string, username string) error {
 	info := util.ColorInfo
 	o.Printf("synchronizing directory %s to DevPod %s path %s\n", info(dir), info(name), info(remoteDir))
 
@@ -211,18 +213,34 @@ func (o *SyncOptions) CreateKsync(name string, dir string, remoteDir string, ns 
 			return err
 		}
 	}
+	matchLabels := map[string]string{
+		kube.LabelPodTemplate:    name,
+		kube.LabelDevPodUsername: username,
+	}
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: matchLabels})
+	if err != nil {
+		return err
+	}
 
-	deleteSync := false
+	_, pods, err := kube.GetPodsWithLabels(client, ns, selector.String())
+	if err != nil {
+		return err
+	}
+
+	deleteNames := []string{}
 	err = o.retry(5, time.Second, func() error {
 		text, err := o.getCommandOutput(dir, "ksync", "get")
 		if err == nil {
-			for _, line := range strings.Split(text, "\n") {
-				cols := strings.Split(strings.TrimSpace(line), " ")
-				if len(cols) > 0 {
-					n := strings.TrimSpace(cols[0])
-					if n == name {
-						o.Printf("Found existing ksync %s so lets remove it\n", name)
-						deleteSync = true
+			for i, line := range strings.Split(text, "\n") {
+				if i > 1 {
+					cols := strings.Split(strings.TrimSpace(line), " ")
+					if len(cols) > 0 {
+						n := strings.TrimSpace(cols[0])
+						if n == name || pods[n] == nil {
+							if util.StringArrayIndex(deleteNames, n) < 0 && n != "starting" {
+								deleteNames = append(deleteNames, n)
+							}
+						}
 					}
 				}
 			}
@@ -238,11 +256,11 @@ func (o *SyncOptions) CreateKsync(name string, dir string, remoteDir string, ns 
 		reload = "--reload=true"
 	}
 
-	if deleteSync {
+	for _, n := range deleteNames {
 		// ignore results as we may not have a spec yet for this name
-		o.Printf("Removing old ksync %s\n", name)
+		o.Printf("Removing old ksync %s\n", n)
 
-		o.runCommand("ksync", "delete", name)
+		o.runCommand("ksync", "delete", n)
 	}
 
 	time.Sleep(1 * time.Second)

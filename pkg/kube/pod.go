@@ -153,6 +153,27 @@ func GetPods(client *kubernetes.Clientset, ns string, filter string) ([]string, 
 	return names, m, nil
 }
 
+func GetPodsWithLabels(client *kubernetes.Clientset, ns string, selector string) ([]string, map[string]*v1.Pod, error) {
+	names := []string{}
+	m := map[string]*v1.Pod{}
+	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return names, m, fmt.Errorf("Failed to load Pods %s", err)
+	}
+	for _, d := range list.Items {
+		c := d
+		name := d.Name
+		m[name] = &c
+		if d.DeletionTimestamp == nil {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names, m, nil
+}
+
 // GetDevPodNames returns the users dev pod names
 func GetDevPodNames(client *kubernetes.Clientset, ns string, username string) ([]string, map[string]*v1.Pod, error) {
 	names := []string{}
