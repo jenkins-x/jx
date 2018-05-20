@@ -58,6 +58,8 @@ type CreateDevPodOptions struct {
 	WorkingDir string
 	RequestCpu string
 	Dir        string
+	Reuse      bool
+	Sync       bool
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -90,6 +92,8 @@ func NewCmdCreateDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 	cmd.Flags().StringVarP(&options.Suffix, "suffix", "s", "", "The suffix to append the pod name")
 	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the dev pod")
 	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1", "The request CPU of the dev pod")
+	cmd.Flags().BoolVarP(&options.Reuse, "reuse", "", false, "Reuse and existing DevPod for this folder and label if one exists")
+	cmd.Flags().BoolVarP(&options.Sync, "sync", "", false, "Also synchronise the local file system into the DevPod")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -134,8 +138,6 @@ func (o *CreateDevPodOptions) Run() error {
 	if yml == "" {
 		return util.InvalidOption(optionLabel, label, labels)
 	}
-
-	o.Printf("Creating a dev pod of label: %s\n", label)
 
 	editEnv, err := o.getOrCreateEditEnvironment()
 	if err != nil {
@@ -215,6 +217,7 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 	pod.Annotations[kube.AnnotationWorkingDir] = workingDir
+	pod.Annotations[kube.AnnotationLocalDir] = dir
 	container1.Env = append(container1.Env, corev1.EnvVar{
 		Name:  "WORK_DIR",
 		Value: workingDir,
@@ -227,17 +230,49 @@ func (o *CreateDevPodOptions) Run() error {
 			Value: editEnv.Spec.Namespace,
 		})
 	}
+	podResources := client.CoreV1().Pods(ns)
 
-	_, err = client.CoreV1().Pods(ns).Create(pod)
-	if err != nil {
-		if o.Verbose {
-			return fmt.Errorf("Failed to create pod %s\nYAML: %s", err, yml)
-		} else {
-			return fmt.Errorf("Failed to create pod %s", err)
+	create := true
+	if o.Reuse {
+		matchLabels := map[string]string{
+			kube.LabelPodTemplate:    label,
+			kube.LabelDevPodUsername: userName,
+		}
+		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: matchLabels})
+		if err != nil {
+			return err
+		}
+		options := metav1.ListOptions{
+			LabelSelector: selector.String(),
+		}
+		podsList, err := podResources.List(options)
+		if err != nil {
+			return err
+		}
+		for _, p := range podsList.Items {
+			ann := p.Annotations
+			if ann != nil && ann[kube.AnnotationLocalDir] == dir && p.DeletionTimestamp == nil {
+				create = false
+				name = p.Name
+				o.Printf("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
+				break
+			}
 		}
 	}
 
-	o.Printf("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
+	if create {
+		o.Printf("Creating a dev pod of label: %s\n", util.ColorInfo(label))
+		_, err = podResources.Create(pod)
+		if err != nil {
+			if o.Verbose {
+				return fmt.Errorf("Failed to create pod %s\nYAML: %s", err, yml)
+			} else {
+				return fmt.Errorf("Failed to create pod %s", err)
+			}
+		}
+		o.Printf("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
+	}
+
 	err = kube.WaitForPodNameToBeReady(client, ns, name, time.Hour)
 	if err != nil {
 		return err
@@ -246,6 +281,19 @@ func (o *CreateDevPodOptions) Run() error {
 	o.Printf("Pod %s is now ready!\n", util.ColorInfo(name))
 	o.Printf("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx rsh -d"))
 
+	if o.Sync {
+		syncOptions := &SyncOptions{
+			CommonOptions: o.CommonOptions,
+			Namespace:     ns,
+			Pod:           name,
+			Daemon:        true,
+			Dir:           dir,
+		}
+		err = syncOptions.CreateKsync(name, dir, workingDir, ns)
+		if err != nil {
+			return err
+		}
+	}
 	options := &RshOptions{
 		CommonOptions: o.CommonOptions,
 		Namespace:     ns,

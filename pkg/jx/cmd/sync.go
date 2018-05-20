@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -26,8 +27,10 @@ type SyncOptions struct {
 	Pod         string
 	Dir         string
 	RemoteDir   string
+	Daemon      bool
 	Reload      bool
 	NoKsyncInit bool
+	WatchOnly   bool
 
 	stopCh chan struct{}
 }
@@ -77,7 +80,9 @@ func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	cmd.Flags().StringVarP(&options.Pod, "pod", "p", "", "the pod name to use")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to watch. Defaults to the current directory")
 	cmd.Flags().StringVarP(&options.RemoteDir, "remote-dir", "r", "", "The remote directory in the DevPod to sync")
+	cmd.Flags().BoolVarP(&options.Daemon, "daemon", "", false, "Runs ksync in a background daemon")
 	cmd.Flags().BoolVarP(&options.Reload, "reload", "", false, "Should we reload the remote container on file changes?")
+	cmd.Flags().BoolVarP(&options.WatchOnly, "watch-only", "", false, "Should we just run the `ksync watch` command only")
 	cmd.Flags().BoolVarP(&options.NoKsyncInit, "no-init", "", false, "Disables the use of 'ksync init' to ensure we have initialised ksync")
 	return cmd
 }
@@ -111,55 +116,88 @@ func (o *SyncOptions) Run() error {
 		}
 	}
 
-	name := o.Pod
-	username := u.Username
-	names, pods, err := kube.GetPods(client, ns, username)
+	args := []string{"watch"}
+	if o.Daemon {
+		args = append(args, "--daemon")
+	}
+	cmd := exec.Command("ksync", args...)
+	cmd.Stdout = o.Out
+	cmd.Stderr = o.Out
+	err = cmd.Start()
 	if err != nil {
 		return err
 	}
-	info := util.ColorInfo
-	if len(names) == 0 {
-		return fmt.Errorf("There are no DevPods for user %s in namespace %s. You can create one via: %s\n", info(username), info(ns), info("jx create devpod"))
+
+	o.Printf("Started the ksync watch\n")
+	time.Sleep(1 * time.Second)
+
+	state := cmd.ProcessState
+	if state != nil && state.Exited() {
+		return fmt.Errorf("ksync watch terminated")
 	}
 
-	if name == "" {
-		n, err := util.PickName(names, "Pick Pod:")
+	if !o.WatchOnly {
+		name := o.Pod
+		username := u.Username
+		names, pods, err := kube.GetPods(client, ns, username)
 		if err != nil {
 			return err
 		}
-		name = n
-	} else if util.StringArrayIndex(names, name) < 0 {
-		return util.InvalidOption(optionLabel, name, names)
-	}
+		info := util.ColorInfo
+		if len(names) == 0 {
+			return fmt.Errorf("There are no DevPods for user %s in namespace %s. You can create one via: %s\n", info(username), info(ns), info("jx create devpod"))
+		}
 
-	if name == "" {
-		return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
-	}
-	// TODO do we need to sleep?
-	dir := o.Dir
-	if dir == "" {
-		dir, err = os.Getwd()
-		if err != nil {
-			return err
+		if name == "" {
+			n, err := util.PickName(names, "Pick Pod:")
+			if err != nil {
+				return err
+			}
+			name = n
+		} else if util.StringArrayIndex(names, name) < 0 {
+			return util.InvalidOption(optionLabel, name, names)
 		}
-	}
 
-	remoteDir := o.RemoteDir
-	if remoteDir == "" {
-		pod := pods[name]
-		if pod == nil {
-			return fmt.Errorf("Pod %s does not exist!", name)
+		if name == "" {
+			return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
 		}
-		ann := pod.Annotations
-		if ann != nil {
-			remoteDir = ann[kube.AnnotationWorkingDir]
+
+		dir := o.Dir
+		if dir == "" {
+			dir, err = os.Getwd()
+			if err != nil {
+				return err
+			}
 		}
+		remoteDir := o.RemoteDir
 		if remoteDir == "" {
-			o.warnf("Missing annotation %s on pod %s", kube.AnnotationWorkingDir, name)
-			remoteDir = "/code"
+			pod := pods[name]
+			if pod == nil {
+				return fmt.Errorf("Pod %s does not exist!", name)
+			}
+			ann := pod.Annotations
+			if ann != nil {
+				remoteDir = ann[kube.AnnotationWorkingDir]
+			}
+			if remoteDir == "" {
+				o.warnf("Missing annotation %s on pod %s", kube.AnnotationWorkingDir, name)
+				remoteDir = "/code"
+			}
+		}
+
+		err = o.CreateKsync(name, dir, remoteDir, ns)
+		if err != nil {
+			o.killWatchProcess(cmd)
+			return err
 		}
 	}
 
+	return cmd.Wait()
+}
+
+// CreateKsync removes the exiting ksync if it already exists then create a new ksync of the given name
+func (o *SyncOptions) CreateKsync(name string, dir string, remoteDir string, ns string) error {
+	info := util.ColorInfo
 	o.Printf("synchronizing directory %s to DevPod %s path %s\n", info(dir), info(name), info(remoteDir))
 
 	ignoreFile := filepath.Join(dir, ".stignore")
@@ -173,29 +211,43 @@ func (o *SyncOptions) Run() error {
 			return err
 		}
 	}
-	cmd := exec.Command("ksync", "watch")
-	cmd.Stdout = o.Out
-	err = cmd.Start()
-	if err != nil {
-		return err
-	}
 
-	time.Sleep(2 * time.Second)
+	deleteSync := false
+	err = o.retry(5, time.Second, func() error {
+		text, err := o.getCommandOutput(dir, "ksync", "get")
+		if err == nil {
+			for _, line := range strings.Split(text, "\n") {
+				cols := strings.Split(strings.TrimSpace(line), " ")
+				if len(cols) > 0 {
+					n := strings.TrimSpace(cols[0])
+					if n == name {
+						o.Printf("Found existing ksync %s so lets remove it\n", name)
+						deleteSync = true
+					}
+				}
+			}
+		}
+		return err
+	})
+	if err != nil {
+		o.warnf("Failed to get from ksync daemon: %s\n", err)
+	}
 
 	reload := "--reload=false"
 	if o.Reload {
 		reload = "--reload=true"
 	}
 
-	// ignore results as we may not have a spec yet for this name
-	o.runCommand("ksync", "delete", name)
+	if deleteSync {
+		// ignore results as we may not have a spec yet for this name
+		o.Printf("Removing old ksync %s\n", name)
 
-	err = o.runCommand("ksync", "create", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, remoteDir)
-	if err != nil {
-		o.killWatchProcess(cmd)
-		return err
+		o.runCommand("ksync", "delete", name)
 	}
-	return cmd.Wait()
+
+	time.Sleep(1 * time.Second)
+
+	return o.runCommand("ksync", "create", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, remoteDir)
 }
 
 func (o *SyncOptions) killWatchProcess(cmd *exec.Cmd) {
