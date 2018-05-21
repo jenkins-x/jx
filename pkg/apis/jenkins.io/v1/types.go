@@ -259,6 +259,8 @@ const (
 	ActivityStepKindTypeNone ActivityStepKindType = ""
 	// ActivityStepKindTypeStage a group of low level steps
 	ActivityStepKindTypeStage ActivityStepKindType = "Stage"
+	// ActivityStepKindTypePreview a promote activity
+	ActivityStepKindTypePreview ActivityStepKindType = "Preview"
 	// ActivityStepKindTypePromote a promote activity
 	ActivityStepKindTypePromote ActivityStepKindType = "Promote"
 )
