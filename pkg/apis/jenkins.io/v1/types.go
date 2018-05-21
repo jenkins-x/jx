@@ -176,6 +176,7 @@ type PipelineActivityStep struct {
 	Kind    ActivityStepKindType `json:"kind,omitempty" protobuf:"bytes,1,opt,name=kind"`
 	Stage   *StageActivityStep   `json:"stage,omitempty" protobuf:"bytes,2,opt,name=stage"`
 	Promote *PromoteActivityStep `json:"promote,omitempty" protobuf:"bytes,3,opt,name=promote"`
+	Preview *PreviewActivityStep `json:"preview,omitempty" protobuf:"bytes,4,opt,name=promote"`
 }
 
 // CoreActivityStep is a base step included in Stages of a pipeline or other kinds of step
@@ -192,6 +193,15 @@ type StageActivityStep struct {
 	CoreActivityStep
 
 	Steps []CoreActivityStep `json:"steps,omitempty" protobuf:"bytes,1,opt,name=steps"`
+}
+
+// PreviewActivityStep is the step of creating a preview environment as part of a Pull Request pipeine
+type PreviewActivityStep struct {
+	CoreActivityStep
+
+	Environment    string `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
+	PullRequestURL string `json:"pullRequestURL,omitempty" protobuf:"bytes,2,opt,name=pullRequestURL"`
+	ApplicationURL string `json:"applicationURL,omitempty" protobuf:"bytes,3,opt,name=environment"`
 }
 
 // PromoteActivityStep is the step of promoting a version of an application to an environment
