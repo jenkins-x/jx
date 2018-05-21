@@ -1,6 +1,0 @@
-package: github.com/wbrefvem/go-bitbucket
-import:
-- package: golang.org/x/net
-  subpackages:
-  - context
-- package: golang.org/x/oauth2

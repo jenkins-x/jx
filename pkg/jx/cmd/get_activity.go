@@ -208,9 +208,12 @@ func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlS
 
 func (o *CommonOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivityStep, indent string) {
 	stage := parent.Stage
+	preview := parent.Preview
 	promote := parent.Promote
 	if stage != nil {
 		addStageRow(table, stage, indent)
+	} else if preview != nil {
+		addPreviewRow(table, preview, indent)
 	} else if promote != nil {
 		addPromoteRow(table, promote, indent)
 	} else {
@@ -228,6 +231,20 @@ func addStageRow(table *tbl.Table, stage *v1.StageActivityStep, indent string) {
 	indent += indentation
 	for _, step := range stage.Steps {
 		addStepRowItem(table, &step, indent, "", "")
+	}
+}
+
+func addPreviewRow(table *tbl.Table, parent *v1.PreviewActivityStep, indent string) {
+	pullRequestURL := parent.PullRequestURL
+	if pullRequestURL == "" {
+		pullRequestURL = parent.Environment
+	}
+	addStepRowItem(table, &parent.CoreActivityStep, indent, "Preview: "+pullRequestURL, "")
+	indent += indentation
+
+	appURL := parent.ApplicationURL
+	if appURL != "" {
+		addStepRowItem(table, &parent.CoreActivityStep, indent, "Preview", " Application is at: "+util.ColorInfo(appURL))
 	}
 }
 
