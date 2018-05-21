@@ -132,7 +132,7 @@ func (k *PromoteStepActivityKey) GetOrCreatePreview(activities typev1.PipelineAc
 		Environment: k.Environment,
 	}
 	step := v1.PipelineActivityStep{
-		Kind:    v1.ActivityStepKindTypePromote,
+		Kind:    v1.ActivityStepKindTypePreview,
 		Preview: preview,
 	}
 	spec.Steps = append(spec.Steps, step)
