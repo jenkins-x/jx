@@ -576,7 +576,7 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
 			b.Context,
 			org,
-			repo,
+			strings.TrimPrefix(repo, b.Username+"/"),
 			sha,
 		)
 
@@ -586,14 +586,7 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 
 		for _, status := range result.Values {
 
-			id, err := strconv.ParseInt(status.Key, 10, 64)
-
-			if err != nil {
-				return nil, err
-			}
-
 			newStatus := &GitRepoStatus{
-				ID:          id,
 				URL:         status.Links.Commit.Href,
 				State:       status.State,
 				TargetURL:   status.Links.Self.Href,
