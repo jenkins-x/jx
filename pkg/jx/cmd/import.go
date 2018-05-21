@@ -72,6 +72,7 @@ type ImportOptions struct {
 	ImportGitCommitMessage  string
 	ListDraftPacks          bool
 	DraftPack               string
+	DefaultOwner            string
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
@@ -165,6 +166,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on")
 	cmd.Flags().BoolVarP(&options.ListDraftPacks, "list-packs", "", false, "list available draft packs")
 	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
+	cmd.Flags().StringVarP(&options.DefaultOwner, "default-owner", "", "someone", "The default user/organisation used if no user is found for the current git repository being imported")
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -539,7 +541,20 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 
 	//walk through every file in the given dir and update the placeholders
-	err = o.replacePlaceholders(gitServerName, o.GitServer.CurrentUser)
+	currentUser := o.GitServer.CurrentUser
+	if currentUser == "" {
+		if o.GitProvider != nil {
+			currentUser = o.GitProvider.CurrentUsername()
+		}
+	}
+	if currentUser == "" {
+		currentUser = o.Organisation
+	}
+	if currentUser == "" {
+		o.warnf("No username defined for the current git server!")
+		currentUser = o.DefaultOwner
+	}
+	err = o.replacePlaceholders(gitServerName, currentUser)
 	if err != nil {
 		return err
 	}

@@ -89,6 +89,56 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 	}
 }
 
+// GetOrCreatePreview gets or creates the Preview step for the key
+func (k *PromoteStepActivityKey) GetOrCreatePreview(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PreviewActivityStep, bool, error) {
+	a, err := k.GetOrCreate(activities)
+	if err != nil {
+		return nil, nil, nil, false, err
+	}
+	spec := &a.Spec
+	for _, step := range spec.Steps {
+		if k.matchesPreview(&step) {
+			return a, &step, step.Preview, false, nil
+		}
+	}
+	// if there is no initial release Stage lets add one
+	if len(spec.Steps) == 0 {
+		endTime := time.Now()
+		startTime := endTime.Add(-1 * time.Minute)
+
+		spec.Steps = append(spec.Steps, v1.PipelineActivityStep{
+			Kind: v1.ActivityStepKindTypeStage,
+			Stage: &v1.StageActivityStep{
+				CoreActivityStep: v1.CoreActivityStep{
+					StartedTimestamp: &metav1.Time{
+						Time: startTime,
+					},
+					CompletedTimestamp: &metav1.Time{
+						Time: endTime,
+					},
+					Status: v1.ActivityStatusTypeSucceeded,
+					Name:   "Release",
+				},
+			},
+		})
+	}
+	// lets add a new step
+	preview := &v1.PreviewActivityStep{
+		CoreActivityStep: v1.CoreActivityStep{
+			StartedTimestamp: &metav1.Time{
+				Time: time.Now(),
+			},
+		},
+		Environment: k.Environment,
+	}
+	step := v1.PipelineActivityStep{
+		Kind:    v1.ActivityStepKindTypePreview,
+		Preview: preview,
+	}
+	spec.Steps = append(spec.Steps, step)
+	return a, &spec.Steps[len(spec.Steps)-1], preview, true, nil
+}
+
 // GetOrCreatePromote gets or creates the Promote step for the key
 func (k *PromoteStepActivityKey) GetOrCreatePromote(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, bool, error) {
 	a, err := k.GetOrCreate(activities)
@@ -238,6 +288,11 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActiv
 		_, err = activities.Update(a)
 	}
 	return err
+}
+
+func (k *PromoteStepActivityKey) matchesPreview(step *v1.PipelineActivityStep) bool {
+	s := step.Preview
+	return s != nil && s.Environment == k.Environment
 }
 
 func (k *PromoteStepActivityKey) matchesPromote(step *v1.PipelineActivityStep) bool {

@@ -5,10 +5,9 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-
-	"strings"
-
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -20,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
 )
 
 var (
@@ -505,6 +503,45 @@ func (o *PreviewOptions) Run() error {
 	comment := fmt.Sprintf(":star: PR built and available in a preview environment **%s**", envName)
 	if url != "" {
 		comment += fmt.Sprintf(" [here](%s) ", url)
+	}
+
+	if url != "" || prURL != "" {
+		pipeline := os.Getenv("JOB_NAME")
+		build := os.Getenv("BUILD_NUMBER")
+		if pipeline != "" && build != "" {
+			name := kube.ToValidName(pipeline + "-" + build)
+			// lets see if we can update the pipeline
+			activities := jxClient.JenkinsV1().PipelineActivities(ns)
+			key := &kube.PromoteStepActivityKey{
+				PipelineActivityKey: kube.PipelineActivityKey{
+					Name:     name,
+					Pipeline: pipeline,
+					Build:    build,
+				},
+			}
+			a, _, p, _, err := key.GetOrCreatePreview(activities)
+			if err == nil && a != nil && p != nil {
+				updated := false
+				if p.ApplicationURL == "" {
+					p.ApplicationURL = url
+					updated = true
+				}
+				if p.PullRequestURL == "" && prURL != "" {
+					p.PullRequestURL = prURL
+					updated = true
+				}
+				if updated {
+					_, err = activities.Update(a)
+					if err != nil {
+						o.warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+					} else {
+						o.Printf("Updating PipelineActivities %s which has status %s\n", name, string(a.Spec.Status))
+					}
+				}
+			}
+		} else {
+			o.warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs\n")
+		}
 	}
 
 	stepPRCommentOptions := StepPRCommentOptions{

@@ -577,6 +577,16 @@
   revision = "f51c12702a4d776e4c1fa9b0fabab841babae631"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/ast/astutil",
+    "imports",
+    "internal/fastwalk"
+  ]
+  revision = "28aef64757f4d432485ab970b094e1af8b301e84"
+
+[[projects]]
   name = "google.golang.org/appengine"
   packages = [
     ".",
@@ -837,8 +847,36 @@
     "util/jsonpath",
     "util/retry"
   ]
-  revision = "b702fddfb9a57326c8ebdc89e4d517b3fa1f2b52"
-  version = "kubernetes-1.10.0-beta.4"
+  revision = "23781f4d6632d88e869066eaebb743857aa1ef9b"
+  version = "v7.0.0"
+
+[[projects]]
+  name = "k8s.io/code-generator"
+  packages = [
+    "cmd/client-gen",
+    "cmd/client-gen/args",
+    "cmd/client-gen/generators",
+    "cmd/client-gen/generators/fake",
+    "cmd/client-gen/generators/scheme",
+    "cmd/client-gen/generators/util",
+    "cmd/client-gen/path",
+    "cmd/client-gen/types",
+    "pkg/util"
+  ]
+  revision = "7ead8f38b01cf8653249f5af80ce7b2c8aba12e2"
+  version = "kubernetes-1.10.0"
+
+[[projects]]
+  branch = "master"
+  name = "k8s.io/gengo"
+  packages = [
+    "args",
+    "generator",
+    "namer",
+    "parser",
+    "types"
+  ]
+  revision = "01a732e01d00cb9a81bb0ca050d3e6d2b947927b"
 
 [[projects]]
   name = "k8s.io/helm"
@@ -869,6 +907,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3109a60e91770cd94070421a1cf1f7d68c1ddf3efb9e3606aa7b418ce14c5f91"
+  inputs-digest = "840d3ffce30fdaca0cbada77e6d5400c9338fe4996ba8321c71be598d3720f3f"
   solver-name = "gps-cdcl"
   solver-version = 1
