@@ -25,6 +25,7 @@ type GetApplicationsOptions struct {
 	Environment string
 	HideUrl     bool
 	HidePod     bool
+	Previews    bool
 }
 
 var (
@@ -77,6 +78,7 @@ func NewCmdGetApplications(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 	}
 	cmd.Flags().BoolVarP(&options.HideUrl, "url", "u", false, "Hide the URLs")
 	cmd.Flags().BoolVarP(&options.HidePod, "pod", "p", false, "Hide the pod counts")
+	cmd.Flags().BoolVarP(&options.Previews, "preview", "w", false, "Show preview environments only")
 	cmd.Flags().StringVarP(&options.Environment, "env", "e", "", "Filter applications in the given environment")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Filter applications in the given namespace")
 	return cmd
@@ -117,7 +119,12 @@ func (o *GetApplicationsOptions) Run() error {
 	envNames := []string{}
 	apps := []string{}
 	for _, env := range envList.Items {
-		if env.Spec.Kind != v1.EnvironmentKindTypePreview &&
+		isPreview := env.Spec.Kind == v1.EnvironmentKindTypePreview
+		shouldShow := isPreview
+		if !o.Previews {
+			shouldShow = !shouldShow
+		}
+		if shouldShow &&
 			(o.Environment == "" || o.Environment == env.Name) &&
 			(o.Namespace == "" || o.Namespace == env.Spec.Namespace) {
 			ens := env.Spec.Namespace
@@ -138,6 +145,8 @@ func (o *GetApplicationsOptions) Run() error {
 								continue
 							}
 							appName = kube.GetEditAppName(appName)
+						} else if env.Spec.Kind == v1.EnvironmentKindTypePreview {
+							appName = env.Spec.PullRequestURL
 						}
 						envApp.Apps[appName] = d
 						if util.StringArrayIndex(apps, appName) < 0 {
@@ -156,13 +165,19 @@ func (o *GetApplicationsOptions) Run() error {
 	sort.Strings(apps)
 
 	table := o.CreateTable()
-	titles := []string{"APPLICATION"}
+	title := "APPLICATION"
+	if o.Previews {
+		title = "PULL REQUESTS"
+	}
+	titles := []string{title}
 	for _, ea := range envApps {
 		envName := ea.Environment.Name
 		if ea.Environment.Spec.Kind == v1.EnvironmentKindTypeEdit {
 			envName = "Edit"
 		}
-		titles = append(titles, strings.ToUpper(envName))
+		if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
+			titles = append(titles, strings.ToUpper(envName))
+		}
 		if !o.HidePod {
 			titles = append(titles, "PODS")
 		}
@@ -178,8 +193,9 @@ func (o *GetApplicationsOptions) Run() error {
 			version := ""
 			d := ea.Apps[appName]
 			version = kube.GetVersion(&d.ObjectMeta)
-			row = append(row, version)
-
+			if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
+				row = append(row, version)
+			}
 			if !o.HidePod {
 				pods := ""
 				replicas := ""
