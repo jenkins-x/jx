@@ -239,12 +239,12 @@ func addPreviewRow(table *tbl.Table, parent *v1.PreviewActivityStep, indent stri
 	if pullRequestURL == "" {
 		pullRequestURL = parent.Environment
 	}
-	addStepRowItem(table, &parent.CoreActivityStep, indent, "Preview: "+pullRequestURL, "")
+	addStepRowItem(table, &parent.CoreActivityStep, indent, "Preview", util.ColorInfo(pullRequestURL))
 	indent += indentation
 
 	appURL := parent.ApplicationURL
 	if appURL != "" {
-		addStepRowItem(table, &parent.CoreActivityStep, indent, "Preview", " Application is at: "+util.ColorInfo(appURL))
+		addStepRowItem(table, &parent.CoreActivityStep, indent, "Preview Application", util.ColorInfo(appURL))
 	}
 }
 
