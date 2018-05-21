@@ -91,17 +91,12 @@ func (o *CreateGitUserOptions) Run() error {
 		return err
 	}
 
-	kind := server.Kind
-	if kind != "gitea" {
-		return fmt.Errorf("Only git servers of kind %s are supported right now", "gitea")
-	}
-
 	// TODO add the API thingy...
 	if o.Username == "" {
 		return fmt.Errorf("No Username specified")
 	}
-	if o.Password == "" {
-		return fmt.Errorf("No password specified")
+	if o.Password == "" && o.ApiToken == "" {
+		return fmt.Errorf("No password or ApiToken specified")
 	}
 
 	client, ns, err := o.Factory.CreateClient()

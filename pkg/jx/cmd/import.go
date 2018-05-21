@@ -215,7 +215,7 @@ func (o *ImportOptions) Run() error {
 		config := authConfigSvc.Config()
 		var server *auth.AuthServer
 		if o.RepoURL != "" {
-			gitInfo, err := gits.ParseGitURL(o.RepoURL)
+			gitInfo, err := gits.ParseGitURL(o.RepoURL, o.GitProvider.Kind() == "bitbucketserver")
 			if err != nil {
 				return err
 			}
@@ -617,7 +617,7 @@ func (o *ImportOptions) CloneRepository() error {
 	if url == "" {
 		return fmt.Errorf("no git repository URL defined!")
 	}
-	gitInfo, err := gits.ParseGitURL(url)
+	gitInfo, err := gits.ParseGitURL(url, o.GitProvider.Kind() == "bitbucketserver")
 	if err != nil {
 		return fmt.Errorf("failed to parse git URL %s due to: %s", url, err)
 	}

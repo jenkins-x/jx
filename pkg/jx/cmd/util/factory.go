@@ -415,7 +415,7 @@ func (f *factory) LoadPipelineSecrets(kind, serviceKind string) (*corev1.SecretL
 	// TODO return empty list if not inside a pipeline?
 	kubeClient, curNs, err := f.CreateClient()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create a kuberntees client %s", err)
+		return nil, fmt.Errorf("Failed to create a kubernetes client %s", err)
 	}
 	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
 	if err != nil {

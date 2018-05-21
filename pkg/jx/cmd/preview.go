@@ -184,12 +184,13 @@ func (o *PreviewOptions) Run() error {
 	buildStatusUrl := ""
 
 	var pullRequest *gits.GitPullRequest
+
 	if prNum > 0 {
-		pullRequest, err := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
+		pullRequest, err := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
 		if err != nil {
 			log.Warnf("issue getting pull request %s, %s, %v: %v\n", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
 		}
-		commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
+		commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo, prNum)
 		if err != nil {
 			log.Warn("Unable to get commits: " + err.Error() + "\n")
 		}
@@ -571,7 +572,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	o.PullRequestName = strings.TrimPrefix(o.PullRequest, "PR-")
 
 	if o.SourceURL != "" {
-		o.GitInfo, err = gits.ParseGitURL(o.SourceURL)
+		o.GitInfo, err = gits.ParseGitURL(o.SourceURL, o.GitProvider.Kind() == "bitbucketserver")
 		if err != nil {
 			o.warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
 		} else {
