@@ -534,6 +534,8 @@ func (o *PreviewOptions) Run() error {
 					_, err = activities.Update(a)
 					if err != nil {
 						o.warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+					} else {
+						o.Printf("Updating PipelineActivities %s which has status %s\n", name, string(a.Spec.Status))
 					}
 				}
 			}
