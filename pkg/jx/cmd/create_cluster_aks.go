@@ -24,14 +24,20 @@ type CreateClusterAKSOptions struct {
 }
 
 type CreateClusterAKSFlags struct {
-	UserName        string
-	Password        string
-	ClusterName     string
-	ResourceName    string
-	Location        string
-	NodeCount       string
-	KubeVersion     string
-	PathToPublicKey string
+	UserName                  string
+	Password                  string
+	ClusterName               string
+	ResourceName              string
+	Location                  string
+	NodeVMSize                string
+	NodeOSDiskSize            string
+	NodeCount                 string
+	KubeVersion               string
+	PathToPublicKey           string
+	SkipLogin                 bool
+	SkipProviderRegistration  bool
+	SkipResourceGroupCreation bool
+	Tags                      string
 }
 
 var (
@@ -85,9 +91,15 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.ResourceName, "resource-group-name", "n", "", "Name of the resource group")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "cluster-name", "c", "", "Name of the cluster")
 	cmd.Flags().StringVarP(&options.Flags.Location, "location", "l", "", "location to run cluster in")
+	cmd.Flags().StringVarP(&options.Flags.NodeVMSize, "node-vm-size", "s", "", "Size of Virtual Machines to create as Kubernetes nodes")
+	cmd.Flags().StringVarP(&options.Flags.NodeOSDiskSize, "disk-size", "", "", "Size in GB of the OS disk for each node in the node pool.")
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, "nodes", "o", "", "node count")
-	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "1.9.1", "kubernetes version")
+	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "", "Version of Kubernetes to use for creating the cluster, such as '1.8.11' or '1.9.6'.  Values from: `az aks get-versions`.")
 	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "path-To-public-rsa-key", "k", "", "pathToPublicRSAKey")
+	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip login if already logged in using `az login`")
+	cmd.Flags().BoolVarP(&options.Flags.SkipProviderRegistration, "skip-provider-registration", "", false, "Skip provider registration")
+	cmd.Flags().BoolVarP(&options.Flags.SkipResourceGroupCreation, "skip-resource-group-creation", "", false, "Skip resource group creation")
+	cmd.Flags().StringVarP(&options.Flags.Tags, "tags", "", "", "Space-separated tags in 'key[=value]' format. Use '' to clear existing tags.")
 	return cmd
 }
 
@@ -123,15 +135,15 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	clusterName := o.Flags.ClusterName
 	if clusterName == "" {
-		clusterName = resourceName + "-cluster"
+		clusterName = strings.ToLower(randomdata.SillyName())
 		log.Infof("No cluster name provided so using a generated one: %s", clusterName)
 	}
 
 	location := o.Flags.Location
 	if location == "" {
 		prompt := &survey.Select{
-			Message:  "location",
-			Options:  aks.GetResourceGrouoLocation(),
+			Message:  "Location",
+			Options:  aks.GetResourceGroupLocation(),
 			Default:  "eastus",
 			PageSize: 10,
 			Help:     "location to run cluster",
@@ -142,24 +154,30 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		}
 	}
 
+	nodeVMSize := o.Flags.NodeVMSize
+	if nodeVMSize == "" {
+		prompts := &survey.Select{
+			Message:  "Virtual Machine Size:",
+			Options:  aks.GetSizes(),
+			Help:     "We recommend a minimum of Standard_D2s_v3 for Jenkins X.\nA table of machine descriptions can be found here https://azure.microsoft.com/en-us/pricing/details/virtual-machines/linux/",
+			PageSize: 10,
+			Default:  "Standard_D2s_v3",
+		}
+
+		err := survey.AskOne(prompts, &nodeVMSize, nil)
+		if err != nil {
+			return err
+		}
+	}
+
 	nodeCount := o.Flags.NodeCount
 	if nodeCount == "" {
 		prompt := &survey.Input{
-			Message: "nodes",
+			Message: "Number of Nodes",
 			Default: "3",
-			Help:    "number of nodes",
+			Help:    "We recommend a minimum of 3 nodes for Jenkins X",
 		}
 		survey.AskOne(prompt, &nodeCount, nil)
-	}
-
-	kubeVersion := o.Flags.KubeVersion
-	if kubeVersion == "" {
-		prompt := &survey.Input{
-			Message: "k8version",
-			Default: kubeVersion,
-			Help:    "k8 version",
-		}
-		survey.AskOne(prompt, &kubeVersion, nil)
 	}
 
 	pathToPublicKey := o.Flags.PathToPublicKey
@@ -167,44 +185,68 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	userName := o.Flags.UserName
 	password := o.Flags.Password
 
-	//First login
-
 	var err error
-	if userName != "" && password != "" {
-		err = o.runCommand("az", "login", "-u", userName, "-p", password)
+	if !o.Flags.SkipLogin {
+		//First login
+
+		if userName != "" && password != "" {
+			log.Info("Logging in to Azure using provider username and password...\n")
+			err = o.runCommand("az", "login", "-u", userName, "-p", password)
+			if err != nil {
+				return err
+			}
+		} else {
+			log.Info("Logging in to Azure interactively...\n")
+			err = o.runCommandVerbose("az", "login")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if !o.Flags.SkipProviderRegistration {
+		//register for Microsoft Compute and Containers
+
+		err = o.runCommand("az", "provider", "register", "-n", "Microsoft.Compute")
 		if err != nil {
 			return err
 		}
-	} else {
-		err = o.runCommand("az", "login")
+
+		err = o.runCommand("az", "provider", "register", "-n", "Microsoft.ContainerService")
 		if err != nil {
 			return err
 		}
 	}
 
-	//register for Microsoft Compute and Containers
+	if !o.Flags.SkipResourceGroupCreation {
+		//create a resource group
 
-	err = o.runCommand("az", "provider", "register", "-n", "Microsoft.Compute")
-	if err != nil {
-		return err
+		createGroup := []string{"group", "create", "-l", location, "-n", resourceName}
+
+		err = o.runCommand("az", createGroup...)
+
+		if err != nil {
+			return err
+		}
 	}
 
-	err = o.runCommand("az", "provider", "register", "-n", "Microsoft.ContainerService")
-	if err != nil {
-		return err
+	createCluster := []string{"aks", "create", "-g", resourceName, "-n", clusterName}
+
+	if o.Flags.KubeVersion != "" {
+		createCluster = append(createCluster, "--kubernetes-version", o.Flags.KubeVersion)
 	}
 
-	//create a resource group
-
-	createGroup := []string{"group", "create", "-l", location, "-n", resourceName}
-
-	err = o.runCommand("az", createGroup...)
-
-	if err != nil {
-		return err
+	if nodeVMSize != "" {
+		createCluster = append(createCluster, "--node-vm-size", nodeVMSize)
 	}
 
-	createCluster := []string{"aks", "create", "-g", resourceName, "-n", clusterName, "-k", kubeVersion, "--node-count", nodeCount}
+	if o.Flags.NodeOSDiskSize != "" {
+		createCluster = append(createCluster, "--node-osdisk-size", o.Flags.NodeOSDiskSize)
+	}
+
+	if nodeCount != "" {
+		createCluster = append(createCluster, "--node-count", nodeCount)
+	}
 
 	if pathToPublicKey != "" {
 		createCluster = append(createCluster, "--ssh-key-value", pathToPublicKey)
@@ -212,7 +254,11 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		createCluster = append(createCluster, "--generate-ssh-keys")
 	}
 
-	log.Info("Creating cluster...\n")
+	if o.Flags.Tags != "" {
+		createCluster = append(createCluster, "--tags", o.Flags.Tags)
+	}
+
+	log.Infof("Creating cluster named %s in resource group %s...\n", clusterName, resourceName)
 	err = o.runCommand("az", createCluster...)
 	if err != nil {
 		return err
