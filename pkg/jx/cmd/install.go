@@ -262,8 +262,6 @@ func (options *InstallOptions) Run() error {
 	if exposeController != nil && exposeController.Config.Domain == "" && options.Flags.Domain != "" {
 		exposeController.Config.Domain = options.Flags.Domain
 		log.Success("set exposeController Config Domain " + exposeController.Config.Domain + "\n")
-	} else {
-		log.Error("Did not set exposeController Config Domain\n")
 	}
 	if exposeController != nil {
 		if isOpenShiftProvider(options.Flags.Provider) {
@@ -378,6 +376,7 @@ func (options *InstallOptions) Run() error {
 	// run the helm install
 	options.Printf("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
 
+	options.Verbose = true
 	err = options.runCommandFromDir(makefileDir, "make", arg, "install")
 	if err != nil {
 		return err
