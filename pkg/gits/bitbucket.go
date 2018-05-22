@@ -586,7 +586,14 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 
 		for _, status := range result.Values {
 
-			id, err := strconv.ParseInt(status.Key, 10, 64)
+			key := ""
+			if len(status.Key) > 8 {
+				key = status.Key[:8]
+			} else {
+				key = status.Key
+			}
+
+			id, err := strconv.ParseInt(key, 10, 64)
 
 			if err != nil {
 				return nil, err
