@@ -112,7 +112,7 @@ func (o *CommonOptions) installChart(releaseName string, chart string, version s
 		o.Printf("Set chart value: --set %s\n", util.ColorInfo(value))
 	}
 	args = append(args, releaseName, chart)
-	return o.runCommand("helm", args...)
+	return o.runCommandVerbose("helm", args...)
 }
 
 // deleteChart deletes the given chart
@@ -122,7 +122,7 @@ func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {
 		args = append(args, "--purge")
 	}
 	args = append(args, releaseName)
-	return o.runCommand("helm", args...)
+	return o.runCommandVerbose("helm", args...)
 }
 
 func (*CommonOptions) FindHelmChart() (string, error) {

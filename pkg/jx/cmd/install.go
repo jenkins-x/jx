@@ -378,6 +378,7 @@ func (options *InstallOptions) Run() error {
 	// run the helm install
 	options.Printf("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
 
+	options.Verbose = true
 	err = options.runCommandFromDir(makefileDir, "make", arg, "install")
 	if err != nil {
 		return err
