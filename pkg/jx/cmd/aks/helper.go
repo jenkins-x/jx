@@ -1,6 +1,6 @@
 package aks
 
-func GetResourceGrouoLocation() []string {
+func GetResourceGroupLocation() []string {
 
 	return []string{
 		"australiaeast",
@@ -27,30 +27,28 @@ func GetResourceGrouoLocation() []string {
 	}
 }
 
-func GetGoogleMachineTypes() []string {
+func GetSizes() []string {
 
 	return []string{
-		"n1-standard-1",
-		"n1-standard-2",
-		"n1-standard-4",
-		"n1-standard-8",
-		"n1-standard-16",
-		"n1-standard-32",
-		"n1-standard-64",
-		"n1-standard-96",
-		"n1-highmem-2",
-		"n1-highmem-4",
-		"n1-highmem-8",
-		"n1-highmem-16",
-		"n1-highmem-32",
-		"n1-highmem-64",
-		"n1-highmem-96",
-		"n1-highcpu-2",
-		"n1-highcpu-4",
-		"n1-highcpu-8",
-		"n1-highcpu-16",
-		"n1-highcpu-32",
-		"n1-highcpu-64",
-		"n1-highcpu-96",
+		"Standard_D2s_v3",
+		"Standard_D4s_v3",
+		"Standard_D8s_v3",
+		"Standard_D16s_v3",
+		"Standard_D32s_v3",
+		"Standard_D64s_v3",
+		"Standard_F2s_v2",
+		"Standard_F4s_v2",
+		"Standard_F8s_v2",
+		"Standard_F16s_v2",
+		"Standard_F32s_v2",
+		"Standard_F64s_v2",
+		"Standard_F72s_v2",
+		"Standard_E2s_v3",
+		"Standard_E4s_v3",
+		"Standard_E8s_v3",
+		"Standard_E16s_v3",
+		"Standard_E32s_v3",
+		"Standard_E64is_v3",
+		"Standard_E64s_v3",
 	}
 }
