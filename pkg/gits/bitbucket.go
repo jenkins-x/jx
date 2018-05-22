@@ -26,6 +26,13 @@ type BitbucketCloudProvider struct {
 	User   auth.UserAuth
 }
 
+var stateMap = map[string]string{
+	"SUCCESSFUL": "success",
+	"FAILED":     "failure",
+	"INPROGRESS": "in-progress",
+	"STOPPED":    "stopped",
+}
+
 func NewBitbucketCloudProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	ctx := context.Background()
 
@@ -558,14 +565,7 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 		}
 	}
 
-	var statusMap = map[string]string{
-		"SUCCESSFUL": "success",
-		"FAILED":     "failure",
-		"INPROGRESS": "in-progress",
-		"STOPPED":    "stopped",
-	}
-
-	return statusMap[latestCommitStatus.State], nil
+	return stateMap[latestCommitStatus.State], nil
 }
 
 func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
@@ -586,9 +586,16 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 
 		for _, status := range result.Values {
 
+			id, err := strconv.ParseInt(status.Key, 10, 64)
+
+			if err != nil {
+				return nil, err
+			}
+
 			newStatus := &GitRepoStatus{
+				ID:          id,
 				URL:         status.Links.Commit.Href,
-				State:       status.State,
+				State:       stateMap[status.State],
 				TargetURL:   status.Links.Self.Href,
 				Description: status.Description,
 			}
