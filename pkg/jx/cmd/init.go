@@ -383,6 +383,12 @@ func (o *InitOptions) initIngress() error {
 	}
 
 	ingressNamespace := o.Flags.IngressNamespace
+
+	err = kube.EnsureNamespaceCreated(client, ingressNamespace, map[string]string{"jenkins.io/kind": "ingress"}, nil)
+	if err != nil {
+		return fmt.Errorf("Failed to ensure the ingress namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ingressNamespace, err)
+	}
+
 	/*
 		ingressServiceAccount := "ingress"
 		err = o.ensureServiceAccount(ingressNamespace, ingressServiceAccount)
