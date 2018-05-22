@@ -122,10 +122,14 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return err
 	}
 
-	// create a service link
-	err = kube.CreateServiceLink(o.kubeClient, o.currentNamespace, o.Namespace, anchoreServiceName)
+	_, err = o.kubeClient.CoreV1().Services(o.Namespace).Get(anchoreServiceName, meta_v1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed creating a service link for %s in target namespace %s", anchoreServiceName, o.Namespace)
+		// create a service link
+		err = kube.CreateServiceLink(o.kubeClient, o.currentNamespace, o.Namespace, anchoreServiceName)
+		if err != nil {
+			return fmt.Errorf("failed creating a service link for %s in target namespace %s", anchoreServiceName, o.Namespace)
+		}
+
 	}
 
 	// annotate the anchore engine service so exposecontroller can create an ingress rule

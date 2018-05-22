@@ -176,6 +176,24 @@ func CreateServiceLink(client *kubernetes.Clientset, currentNamespace, targetNam
 	return nil
 }
 
+func GetService(client *kubernetes.Clientset, currentNamespace, targetNamespace, serviceName string) error {
+	svc := v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      serviceName,
+			Namespace: currentNamespace,
+		},
+		Spec: v1.ServiceSpec{
+			Type:         v1.ServiceTypeExternalName,
+			ExternalName: fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, targetNamespace),
+		},
+	}
+	_, err := client.CoreV1().Services(currentNamespace).Create(&svc)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func IsServicePresent(c *kubernetes.Clientset, name, ns string) (bool, error) {
 
 	svc, err := c.CoreV1().Services(ns).Get(name, meta_v1.GetOptions{})
