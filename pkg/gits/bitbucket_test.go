@@ -246,18 +246,28 @@ func (suite *BitbucketCloudProviderTestSuite) TestPullRequestLastCommitStatus() 
 	suite.Require().Equal(lastCommitStatus, "in-progress")
 }
 
-func (suite *BitbucketCloudProviderTestSuite) TestListCommitStatus() {
-
-	statuses, err := suite.provider.ListCommitStatus("test-user", "test-repo", "5c8afc5")
-
+func (suite *BitbucketCloudProviderTestSuite) testStatuses(statuses []*GitRepoStatus, err error) {
 	suite.Require().Nil(err)
 	suite.Require().NotNil(statuses)
 	suite.Require().Equal(len(statuses), 2)
 
 	for _, status := range statuses {
+		if status.ID == -1081267614 {
+			suite.Require().Equal(status.State, "success")
+		} else if status.ID == 1651225011 {
+			suite.Require().Equal(status.State, "in-progress")
+		}
 		suite.Require().NotEmpty(status.State)
 		suite.Require().NotEmpty(status.URL)
 	}
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestListCommitStatus() {
+	statuses, err := suite.provider.ListCommitStatus("test-user", "test-repo", "5c8afc5")
+	suite.testStatuses(statuses, err)
+
+	statuses, err = suite.provider.ListCommitStatus("test-user", "test-user/test-repo", "5c8afc5")
+	suite.testStatuses(statuses, err)
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestMergePullRequest() {

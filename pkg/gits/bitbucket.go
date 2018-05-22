@@ -26,6 +26,13 @@ type BitbucketCloudProvider struct {
 	User   auth.UserAuth
 }
 
+var stateMap = map[string]string{
+	"SUCCESSFUL": "success",
+	"FAILED":     "failure",
+	"INPROGRESS": "in-progress",
+	"STOPPED":    "stopped",
+}
+
 func NewBitbucketCloudProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	ctx := context.Background()
 
@@ -358,7 +365,7 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	bitbucketPR, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 		b.Context,
 		b.Username,
-		strings.TrimPrefix(pr.Repo, b.Username+"/"),
+		strings.TrimPrefix(pr.Repo, pr.Owner+"/"),
 		prID,
 	)
 
@@ -387,7 +394,7 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 		b.Context,
 		b.Username,
 		strconv.FormatInt(int64(prID), 10),
-		strings.TrimPrefix(pr.Repo, b.Username+"/"),
+		strings.TrimPrefix(pr.Repo, pr.Owner+"/"),
 	)
 
 	if err != nil {
@@ -534,7 +541,7 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
 			b.Context,
 			b.Username,
-			strings.TrimPrefix(pr.Repo, b.Username+"/"),
+			strings.TrimPrefix(pr.Repo, pr.Owner+"/"),
 			pr.LastCommitSha,
 		)
 
@@ -558,14 +565,7 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 		}
 	}
 
-	var statusMap = map[string]string{
-		"SUCCESSFUL": "success",
-		"FAILED":     "failure",
-		"INPROGRESS": "in-progress",
-		"STOPPED":    "stopped",
-	}
-
-	return statusMap[latestCommitStatus.State], nil
+	return stateMap[latestCommitStatus.State], nil
 }
 
 func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
@@ -576,7 +576,7 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
 			b.Context,
 			org,
-			repo,
+			strings.TrimPrefix(repo, org+"/"),
 			sha,
 		)
 
@@ -586,7 +586,14 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 
 		for _, status := range result.Values {
 
-			id, err := strconv.ParseInt(status.Key, 10, 64)
+			key := ""
+			if len(status.Key) > 8 {
+				key = status.Key[:8]
+			} else {
+				key = status.Key
+			}
+
+			id, err := strconv.ParseInt(key, 10, 64)
 
 			if err != nil {
 				return nil, err
@@ -595,7 +602,7 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 			newStatus := &GitRepoStatus{
 				ID:          id,
 				URL:         status.Links.Commit.Href,
-				State:       status.State,
+				State:       stateMap[status.State],
 				TargetURL:   status.Links.Self.Href,
 				Description: status.Description,
 			}
@@ -623,7 +630,7 @@ func (b *BitbucketCloudProvider) MergePullRequest(pr *GitPullRequest, message st
 		b.Context,
 		b.Username,
 		strconv.FormatInt(int64(*pr.Number), 10),
-		strings.TrimPrefix(pr.Repo, b.Username+"/"),
+		strings.TrimPrefix(pr.Repo, pr.Owner+"/"),
 		options,
 	)
 
