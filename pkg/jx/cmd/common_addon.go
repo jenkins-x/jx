@@ -24,16 +24,20 @@ func (o *CommonOptions) getAddonAuth(serviceURL string) (*auth.AuthServer, *auth
 }
 
 // getAddonAuth returns the server and user auth for the given addon service URL. Returns null values if there is no server
-func (o *CommonOptions) getAddonAuthByKind(kind string) (*auth.AuthServer, *auth.UserAuth, error) {
+func (o *CommonOptions) getAddonAuthByKind(kind, serverURL string) (*auth.AuthServer, *auth.UserAuth, error) {
 	authConfigSvc, err := o.CreateAddonAuthConfigService()
 	if err != nil {
 		return nil, nil, err
 	}
 	config := authConfigSvc.Config()
 
-	server := config.GetServerByKind(kind)
+	var server *auth.AuthServer
+	for _, s := range config.Servers {
+		if s.Kind == kind && s.URL == serverURL {
+			server = s
+		}
+	}
 	if server == nil {
-
 		// TODO lets try find the service in the current namespace using a naming convention?
 		return nil, nil, fmt.Errorf("no server found for kind %s", kind)
 	}

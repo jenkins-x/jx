@@ -121,15 +121,6 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return err
 	}
 
-	_, err = o.kubeClient.CoreV1().Services(o.Namespace).Get(esServiceName, meta_v1.GetOptions{})
-	if err != nil {
-		// create a service link
-		err = kube.CreateServiceLink(o.kubeClient, o.currentNamespace, o.Namespace, esServiceName)
-		if err != nil {
-			return fmt.Errorf("failed creating a service link for %s in target namespace %s", esServiceName, o.Namespace)
-		}
-	}
-
 	// annotate the kibana and elasticsearch services so exposecontroller can create an ingress rule
 	err = o.addExposecontrollerAnnotations(kibanaServiceName)
 	if err != nil {
@@ -181,6 +172,15 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	err = tokenOptions.Run()
 	if err != nil {
 		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
+	}
+
+	_, err = o.kubeClient.CoreV1().Services(o.Namespace).Get(esServiceName, meta_v1.GetOptions{})
+	if err != nil {
+		// create a service link
+		err = kube.CreateServiceLink(o.kubeClient, o.currentNamespace, o.Namespace, esServiceName, esIng)
+		if err != nil {
+			return fmt.Errorf("failed creating a service link for %s in target namespace %s", esServiceName, o.Namespace)
+		}
 	}
 
 	log.Successf("kibana is available and running %s\n", kIng)

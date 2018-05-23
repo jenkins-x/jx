@@ -94,7 +94,7 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("cannot create jx client: %v", err)
 	}
 
-	err = o.ensureCVEServiceAvailable()
+	externalURL, err := o.ensureCVEServiceAvailable()
 	if err != nil {
 		log.Warnf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.\n")
 		return fmt.Errorf("if no CVE provider running, try running `jx create addon anchore` in your teams dev environment: %v", err)
@@ -105,7 +105,7 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("no --image-name, --image-id or --env flags set\n")
 	}
 
-	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindCVE)
+	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindCVE, externalURL)
 	if err != nil {
 		return fmt.Errorf("error getting anchore engine auth details, %v", err)
 	}
@@ -141,15 +141,19 @@ func (o *GetCVEOptions) Run() error {
 	return nil
 }
 
-func (o *GetCVEOptions) ensureCVEServiceAvailable() error {
+func (o *GetCVEOptions) ensureCVEServiceAvailable() (string, error) {
 	present, err := kube.IsServicePresent(o.kubeClient, anchoreServiceName, o.currentNamespace)
 	if err != nil {
-		return fmt.Errorf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.")
+		return "", fmt.Errorf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.")
 	}
 	if present {
-		return nil
+		url, err := kube.GetServiceURLFromName(o.kubeClient, anchoreServiceName, o.currentNamespace)
+		if err != nil {
+			return "", fmt.Errorf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.")
+		}
+		return url, nil
 	}
 
 	// todo ask if user wants to intall a CVE provider addon?
-	return nil
+	return "", nil
 }

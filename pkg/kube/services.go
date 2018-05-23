@@ -158,11 +158,15 @@ func HasExternalAddress(svc *v1.Service) bool {
 	return false
 }
 
-func CreateServiceLink(client *kubernetes.Clientset, currentNamespace, targetNamespace, serviceName string) error {
+func CreateServiceLink(client *kubernetes.Clientset, currentNamespace, targetNamespace, serviceName, externalURL string) error {
+	annotations := make(map[string]string)
+	annotations[ExposeURLAnnotation] = externalURL
+
 	svc := v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      serviceName,
-			Namespace: currentNamespace,
+			Name:        serviceName,
+			Namespace:   currentNamespace,
+			Annotations: annotations,
 		},
 		Spec: v1.ServiceSpec{
 			Type:         v1.ServiceTypeExternalName,
