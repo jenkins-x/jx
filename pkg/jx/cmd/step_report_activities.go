@@ -124,7 +124,7 @@ func (o *StepReportActivitiesOptions) watchPipelineActivities(jxClient *versione
 	_, controller := cache.NewInformer(
 		listWatch,
 		activity,
-		time.Minute*10,
+		time.Hour*24,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				// send to registered backends
