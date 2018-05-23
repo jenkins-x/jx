@@ -300,7 +300,7 @@ func (o *PreviewOptions) Run() error {
 		}
 
 		if update {
-			_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+			env, err = jxClient.JenkinsV1().Environments(ns).Update(env)
 			if err != nil {
 				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}
@@ -459,11 +459,17 @@ func (o *PreviewOptions) Run() error {
 			o.warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs\n")
 		}
 	}
-	if url != "" && env != nil && env.Spec.PreviewGitSpec.ApplicationURL == "" {
-		env.Spec.PreviewGitSpec.ApplicationURL = url
-		_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+	if url != "" {
+		env, err = jxClient.JenkinsV1().Environments(ns).Get(o.Name, metav1.GetOptions{})
 		if err != nil {
-			return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
+			return err
+		}
+		if err != nil && env.Spec.PreviewGitSpec.ApplicationURL == "" {
+			env.Spec.PreviewGitSpec.ApplicationURL = url
+			_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+			if err != nil {
+				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
+			}
 		}
 	}
 
