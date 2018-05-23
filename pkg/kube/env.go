@@ -589,6 +589,28 @@ func GetEnvironmentNames(jxClient *versioned.Clientset, ns string) ([]string, er
 	return envNames, nil
 }
 
+func IsPreviewEnvironment(env *v1.Environment) bool {
+	return env != nil && env.Spec.Kind == v1.EnvironmentKindTypePreview
+}
+
+// GetFilteredEnvironmentNames returns the sorted list of environment names
+func GetFilteredEnvironmentNames(jxClient *versioned.Clientset, ns string, fn func(environment *v1.Environment) bool) ([]string, error) {
+	envNames := []string{}
+	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return envNames, err
+	}
+	SortEnvironments(envs.Items)
+	for _, env := range envs.Items {
+		n := env.Name
+		if n != "" && fn(&env) {
+			envNames = append(envNames, n)
+		}
+	}
+	sort.Strings(envNames)
+	return envNames, nil
+}
+
 // GetOrderedEnvironments returns a map of the environments along with the correctly ordered  names
 func GetOrderedEnvironments(jxClient *versioned.Clientset, ns string) (map[string]*v1.Environment, []string, error) {
 	m := map[string]*v1.Environment{}

@@ -22,14 +22,14 @@ import (
 )
 
 var (
-	preview_long = templates.LongDesc(`
+	previewLong = templates.LongDesc(`
 		Creates or updates a Preview Environment for the given Pull Request or Branch.
 
 		For more documentation on Preview Environments see: [http://jenkins-x.io/about/features/#preview-environments](http://jenkins-x.io/about/features/#preview-environments)
 
 `)
 
-	preview_example = templates.Examples(`
+	previewExample = templates.Examples(`
 		# Create or updates the Preview Environment for the Pull Request
 		jx preview
 	`)
@@ -56,8 +56,11 @@ type PreviewOptions struct {
 	SourceURL      string
 	SourceRef      string
 	Dir            string
-	GitConfDir     string
-	GitProvider    gits.GitProvider
+
+	PullRequestName string
+	GitConfDir      string
+	GitProvider     gits.GitProvider
+	GitInfo         *gits.GitRepositoryInfo
 
 	HelmValuesConfig config.HelmValuesConfig
 }
@@ -80,8 +83,8 @@ func NewCmdPreview(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd := &cobra.Command{
 		Use:     "preview",
 		Short:   "Creates or updates a Preview Environment for the current version of an application",
-		Long:    preview_long,
-		Example: preview_example,
+		Long:    previewLong,
+		Example: previewExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -91,6 +94,15 @@ func NewCmdPreview(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 	//addCreateAppFlags(cmd, &options.CreateOptions)
 
+	options.addPreviewOptions(cmd)
+
+	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
+	options.PromoteOptions.addPromoteOptions(cmd)
+
+	return cmd
+}
+
+func (options *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the kubernetes name conventions like Services, Namespaces")
 	cmd.Flags().StringVarP(&options.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
 	cmd.Flags().StringVarP(&options.Namespace, kube.OptionNamespace, "", "", "The Kubernetes namespace for the Environment")
@@ -100,11 +112,6 @@ func NewCmdPreview(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.PullRequestURL, "pr-url", "", "", "The Pull Request URL")
 	cmd.Flags().StringVarP(&options.SourceURL, "source-url", "s", "", "The source code git URL")
 	cmd.Flags().StringVarP(&options.SourceRef, "source-ref", "", "", "The source code git ref (branch/sha)")
-
-	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
-	options.PromoteOptions.addPromoteOptions(cmd)
-
-	return cmd
 }
 
 // Run implements the command
@@ -147,98 +154,7 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	app := o.Application
-	if app == "" {
-		app, err = o.DiscoverAppName()
-		if err != nil {
-			return err
-		}
-	}
-	o.Application = app
-
-	// TODO fill in default values!
-	envName := o.Name
-	ens := o.Namespace
-	label := o.Label
-	prURL := o.PullRequestURL
-	sourceRef := o.SourceRef
-	sourceURL := o.SourceURL
-
-	if sourceURL == "" {
-		// lets discover the git dir
-		if o.Dir == "" {
-			dir, err := os.Getwd()
-			if err != nil {
-				return err
-			}
-			o.Dir = dir
-		}
-		root, gitConf, err := gits.FindGitConfigDir(o.Dir)
-		if err != nil {
-			o.warnf("Could not find a .git directory: %s\n", err)
-		} else {
-			if root != "" {
-				o.Dir = root
-				sourceURL, err = o.discoverGitURL(gitConf)
-				if err != nil {
-					o.warnf("Could not find the remote git source URL:  %s\n", err)
-				} else {
-					if sourceRef == "" {
-						sourceRef, err = gits.GitGetBranch(root)
-						if err != nil {
-							o.warnf("Could not find the remote git source ref:  %s\n", err)
-						}
-
-					}
-				}
-			}
-		}
-
-	}
-
-	if sourceURL == "" {
-		return fmt.Errorf("No sourceURL could be defaulted for the Preview Environment. Use --dir flag to detect the git source URL")
-	}
-
-	if o.PullRequest == "" {
-		o.PullRequest = os.Getenv("BRANCH_NAME")
-	}
-	prName := strings.TrimPrefix(o.PullRequest, "PR-")
-
-	var gitInfo *gits.GitRepositoryInfo
-	if sourceURL != "" {
-		gitInfo, err = gits.ParseGitURL(sourceURL)
-		if err != nil {
-			o.warnf("Could not parse the git URL %s due to %s\n", sourceURL, err)
-		} else {
-			sourceURL = gitInfo.HttpCloneURL()
-			if prURL == "" {
-				if o.PullRequest == "" {
-					o.warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
-				} else {
-					prURL = gitInfo.PullRequestURL(prName)
-				}
-			}
-			if envName == "" && prName != "" {
-				envName = gitInfo.Organisation + "-" + gitInfo.Name + "-pr-" + prName
-			}
-			if label == "" {
-				label = gitInfo.Organisation + "/" + gitInfo.Name + " PR-" + prName
-			}
-		}
-	}
-	envName = kube.ToValidName(envName)
-	if envName == "" {
-		return fmt.Errorf("No name could be defaulted for the Preview Environment. Please supply one!")
-	}
-	if ens == "" {
-		ens = ns + "-" + envName
-	}
-	ens = kube.ToValidName(ens)
-
-	if label == "" {
-		label = envName
-	}
+	err = o.defaultValues(ns, true)
 
 	// we need pull request info to include
 	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
@@ -246,20 +162,20 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	gitKind, err := o.GitServerKind(gitInfo)
+	gitKind, err := o.GitServerKind(o.GitInfo)
 	if err != nil {
 		return err
 	}
 
-	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind)
+	gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind)
 
-	prNum, err := strconv.Atoi(prName)
+	prNum, err := strconv.Atoi(o.PullRequestName)
 	if err != nil {
-		log.Warn("Unable to convert PR " + prName + " to a number" + "\n")
+		log.Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "\n")
 	}
 
-	pullRequest, _ := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
-	commits, err := gitProvider.GetPullRequestCommits(gitInfo.Organisation, gitInfo.Name, prNum)
+	pullRequest, _ := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
+	commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
 	if err != nil {
 		log.Warn("Unable to get commits: " + err.Error() + "\n")
 	}
@@ -298,10 +214,10 @@ func (o *PreviewOptions) Run() error {
 		LinkURL:  author.URL,
 	}
 
-	statuses, err := gitProvider.ListCommitStatus(gitInfo.Organisation, gitInfo.Name, pullRequest.LastCommitSha)
+	statuses, err := gitProvider.ListCommitStatus(o.GitInfo.Organisation, o.GitInfo.Name, pullRequest.LastCommitSha)
 
 	if err != nil {
-		log.Warn("Unable to get statuses for PR " + prName + "\n")
+		log.Warn("Unable to get statuses for PR " + o.PullRequestName + "\n")
 	}
 
 	buildStatus := ""
@@ -312,23 +228,24 @@ func (o *PreviewOptions) Run() error {
 		buildStatusUrl = status.TargetURL
 	}
 
-	env, err := jxClient.JenkinsV1().Environments(ns).Get(envName, metav1.GetOptions{})
+	environmentsResource := jxClient.JenkinsV1().Environments(ns)
+	env, err := environmentsResource.Get(o.Name, metav1.GetOptions{})
 	if err == nil {
 		// lets check for updates...
 		update := false
 
 		spec := &env.Spec
 		source := &spec.Source
-		if spec.Label != label {
-			spec.Label = label
+		if spec.Label != o.Label {
+			spec.Label = o.Label
 			update = true
 		}
-		if spec.Namespace != ens {
-			spec.Namespace = ens
+		if spec.Namespace != o.Namespace {
+			spec.Namespace = o.Namespace
 			update = true
 		}
-		if spec.Namespace != ens {
-			spec.Namespace = ens
+		if spec.Namespace != o.Namespace {
+			spec.Namespace = o.Namespace
 			update = true
 		}
 		if spec.Kind != v1.EnvironmentKindTypePreview {
@@ -339,12 +256,12 @@ func (o *PreviewOptions) Run() error {
 			source.Kind = v1.EnvironmentRepositoryTypeGit
 			update = true
 		}
-		if source.URL != sourceURL {
-			source.URL = sourceURL
+		if source.URL != o.SourceURL {
+			source.URL = o.SourceURL
 			update = true
 		}
-		if source.Ref != sourceRef {
-			source.Ref = sourceRef
+		if source.Ref != o.SourceRef {
+			source.Ref = o.SourceRef
 			update = true
 		}
 
@@ -369,8 +286,8 @@ func (o *PreviewOptions) Run() error {
 			gitSpec.Description = pullRequest.Body
 			update = true
 		}
-		if gitSpec.URL != prURL {
-			gitSpec.URL = prURL
+		if gitSpec.URL != o.PullRequestURL {
+			gitSpec.URL = o.PullRequestURL
 			update = true
 		}
 		if user != nil {
@@ -384,9 +301,9 @@ func (o *PreviewOptions) Run() error {
 		}
 
 		if update {
-			_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+			env, err = environmentsResource.Update(env)
 			if err != nil {
-				return fmt.Errorf("Failed to update Environment %s due to %s", envName, err)
+				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}
 		}
 	}
@@ -394,24 +311,24 @@ func (o *PreviewOptions) Run() error {
 		// lets create a new preview environment
 		env = &v1.Environment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: envName,
+				Name: o.Name,
 			},
 			Spec: v1.EnvironmentSpec{
-				Namespace:         ens,
-				Label:             label,
+				Namespace:         o.Namespace,
+				Label:             o.Label,
 				Kind:              v1.EnvironmentKindTypePreview,
 				PromotionStrategy: v1.PromotionStrategyTypeAutomatic,
-				PullRequestURL:    prURL,
+				PullRequestURL:    o.PullRequestURL,
 				Order:             999,
 				Source: v1.EnvironmentRepository{
 					Kind: v1.EnvironmentRepositoryTypeGit,
-					URL:  sourceURL,
-					Ref:  sourceRef,
+					URL:  o.SourceURL,
+					Ref:  o.SourceRef,
 				},
 				PreviewGitSpec: v1.PreviewGitSpec{
 					ApplicationName: o.Application,
-					Name:            prName,
-					URL:             prURL,
+					Name:            o.PullRequestName,
+					URL:             o.PullRequestURL,
 					Title:           pullRequest.Title,
 					Description:     pullRequest.Body,
 					BuildStatus:     buildStatus,
@@ -420,7 +337,7 @@ func (o *PreviewOptions) Run() error {
 				},
 			},
 		}
-		_, err = jxClient.JenkinsV1().Environments(ns).Create(env)
+		_, err = environmentsResource.Create(env)
 		if err != nil {
 			return err
 		}
@@ -433,7 +350,7 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	if o.ReleaseName == "" {
-		o.ReleaseName = ens
+		o.ReleaseName = o.Namespace
 	}
 
 	domain, err := kube.GetCurrentDomain(kubeClient, ns)
@@ -482,30 +399,30 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	err = o.runCommand("helm", "upgrade", o.ReleaseName, ".", "--force", "--install", "--wait", "--namespace", ens, fmt.Sprintf("--values=%s", configFileName))
+	err = o.runCommand("helm", "upgrade", o.ReleaseName, ".", "--force", "--install", "--wait", "--namespace", o.Namespace, fmt.Sprintf("--values=%s", configFileName))
 	if err != nil {
 		return err
 	}
 
 	url := ""
-	appNames := []string{app, o.ReleaseName, ens + "-preview", o.ReleaseName + "-" + app}
+	appNames := []string{o.Application, o.ReleaseName, o.Namespace + "-preview", o.ReleaseName + "-" + o.Application}
 	for _, n := range appNames {
-		url, err = kube.FindServiceURL(kubeClient, ens, n)
+		url, err = kube.FindServiceURL(kubeClient, o.Namespace, n)
 		if url != "" {
 			break
 		}
 	}
 
 	if url == "" {
-		o.warnf("Could not find the service URL in namespace %s for names %s\n", ens, strings.Join(appNames, ", "))
+		o.warnf("Could not find the service URL in namespace %s for names %s\n", o.Namespace, strings.Join(appNames, ", "))
 	}
 
-	comment := fmt.Sprintf(":star: PR built and available in a preview environment **%s**", envName)
+	comment := fmt.Sprintf(":star: PR built and available in a preview environment **%s**", o.Name)
 	if url != "" {
 		comment += fmt.Sprintf(" [here](%s) ", url)
 	}
 
-	if url != "" || prURL != "" {
+	if url != "" || o.PullRequestURL != "" {
 		pipeline := os.Getenv("JOB_NAME")
 		build := os.Getenv("BUILD_NUMBER")
 		if pipeline != "" && build != "" {
@@ -526,8 +443,8 @@ func (o *PreviewOptions) Run() error {
 					p.ApplicationURL = url
 					updated = true
 				}
-				if p.PullRequestURL == "" && prURL != "" {
-					p.PullRequestURL = prURL
+				if p.PullRequestURL == "" && o.PullRequestURL != "" {
+					p.PullRequestURL = o.PullRequestURL
 					updated = true
 				}
 				if updated {
@@ -543,13 +460,26 @@ func (o *PreviewOptions) Run() error {
 			o.warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs\n")
 		}
 	}
+	if url != "" {
+		env, err = environmentsResource.Get(o.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if env != nil && env.Spec.PreviewGitSpec.ApplicationURL == "" {
+			env.Spec.PreviewGitSpec.ApplicationURL = url
+			_, err = environmentsResource.Update(env)
+			if err != nil {
+				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
+			}
+		}
+	}
 
 	stepPRCommentOptions := StepPRCommentOptions{
 		Flags: StepPRCommentFlags{
-			Owner:      gitInfo.Organisation,
-			Repository: gitInfo.Name,
+			Owner:      o.GitInfo.Organisation,
+			Repository: o.GitInfo.Name,
 			Comment:    comment,
-			PR:         prName,
+			PR:         o.PullRequestName,
 		},
 		StepPROptions: StepPROptions{
 			StepOptions: StepOptions{
@@ -563,6 +493,94 @@ func (o *PreviewOptions) Run() error {
 	err = stepPRCommentOptions.Run()
 	if err != nil {
 		o.warnf("Failed to comment on the Pull Request: %s\n", err)
+	}
+	return nil
+}
+
+func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
+	var err error
+	if o.Application == "" {
+		o.Application, err = o.DiscoverAppName()
+		if err != nil {
+			return err
+		}
+	}
+
+	// fill in default values
+	if o.SourceURL == "" {
+		// lets discover the git dir
+		if o.Dir == "" {
+			dir, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			o.Dir = dir
+		}
+		root, gitConf, err := gits.FindGitConfigDir(o.Dir)
+		if err != nil {
+			o.warnf("Could not find a .git directory: %s\n", err)
+		} else {
+			if root != "" {
+				o.Dir = root
+				o.SourceURL, err = o.discoverGitURL(gitConf)
+				if err != nil {
+					o.warnf("Could not find the remote git source URL:  %s\n", err)
+				} else {
+					if o.SourceRef == "" {
+						o.SourceRef, err = gits.GitGetBranch(root)
+						if err != nil {
+							o.warnf("Could not find the remote git source ref:  %s\n", err)
+						}
+
+					}
+				}
+			}
+		}
+
+	}
+
+	if o.SourceURL == "" {
+		return fmt.Errorf("No sourceURL could be defaulted for the Preview Environment. Use --dir flag to detect the git source URL")
+	}
+
+	if o.PullRequest == "" {
+		o.PullRequest = os.Getenv("BRANCH_NAME")
+	}
+	o.PullRequestName = strings.TrimPrefix(o.PullRequest, "PR-")
+
+	if o.SourceURL != "" {
+		o.GitInfo, err = gits.ParseGitURL(o.SourceURL)
+		if err != nil {
+			o.warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
+		} else {
+			o.SourceURL = o.GitInfo.HttpCloneURL()
+			if o.PullRequestURL == "" {
+				if o.PullRequest == "" {
+					if warnMissingName {
+						o.warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
+					}
+				} else {
+					o.PullRequestURL = o.GitInfo.PullRequestURL(o.PullRequestName)
+				}
+			}
+			if o.Name == "" && o.PullRequestName != "" {
+				o.Name = o.GitInfo.Organisation + "-" + o.GitInfo.Name + "-pr-" + o.PullRequestName
+			}
+			if o.Label == "" {
+				o.Label = o.GitInfo.Organisation + "/" + o.GitInfo.Name + " PR-" + o.PullRequestName
+			}
+		}
+	}
+	o.Name = kube.ToValidName(o.Name)
+	if o.Name == "" {
+		return fmt.Errorf("No name could be defaulted for the Preview Environment. Please supply one!")
+	}
+	if o.Namespace == "" {
+		o.Namespace = ns + "-" + o.Name
+	}
+	o.Namespace = kube.ToValidName(o.Namespace)
+	if o.Label == "" {
+		o.Label = o.Name
 	}
 	return nil
 }
