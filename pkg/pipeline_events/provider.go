@@ -5,5 +5,5 @@ import (
 )
 
 type PipelineEventsProvider interface {
-	PostActivity(a *v1.PipelineActivity) error
+	SendActivity(a *v1.PipelineActivity) error
 }
