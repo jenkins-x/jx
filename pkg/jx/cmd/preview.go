@@ -228,7 +228,8 @@ func (o *PreviewOptions) Run() error {
 		buildStatusUrl = status.TargetURL
 	}
 
-	env, err := jxClient.JenkinsV1().Environments(ns).Get(o.Name, metav1.GetOptions{})
+	environmentsResource := jxClient.JenkinsV1().Environments(ns)
+	env, err := environmentsResource.Get(o.Name, metav1.GetOptions{})
 	if err == nil {
 		// lets check for updates...
 		update := false
@@ -300,7 +301,7 @@ func (o *PreviewOptions) Run() error {
 		}
 
 		if update {
-			env, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+			env, err = environmentsResource.Update(env)
 			if err != nil {
 				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}
@@ -336,7 +337,7 @@ func (o *PreviewOptions) Run() error {
 				},
 			},
 		}
-		_, err = jxClient.JenkinsV1().Environments(ns).Create(env)
+		_, err = environmentsResource.Create(env)
 		if err != nil {
 			return err
 		}
@@ -460,13 +461,13 @@ func (o *PreviewOptions) Run() error {
 		}
 	}
 	if url != "" {
-		env, err = jxClient.JenkinsV1().Environments(ns).Get(o.Name, metav1.GetOptions{})
+		env, err = environmentsResource.Get(o.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		if err != nil && env.Spec.PreviewGitSpec.ApplicationURL == "" {
+		if env != nil && env.Spec.PreviewGitSpec.ApplicationURL == "" {
 			env.Spec.PreviewGitSpec.ApplicationURL = url
-			_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+			_, err = environmentsResource.Update(env)
 			if err != nil {
 				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}
