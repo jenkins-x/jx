@@ -88,10 +88,12 @@ func (o *CommonOptions) addHelmRepoIfMissing(helmUrl string, repoName string) er
 // installChart installs the given chart
 func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
 	if helmUpdate {
+		fmt.Fprintf(o.Out, "Updating Helm repository...\n")
 		err := o.runCommand("helm", "repo", "update")
 		if err != nil {
 			return err
 		}
+		fmt.Fprintf(o.Out, "Helm repository update done.\n")
 	}
 	timeout := fmt.Sprintf("--timeout=%s", defaultInstallTimeout)
 	args := []string{"upgrade", "--install", timeout}
