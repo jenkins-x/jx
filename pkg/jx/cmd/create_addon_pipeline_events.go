@@ -2,13 +2,12 @@ package cmd
 
 import (
 	"io"
+	"time"
 
 	"github.com/spf13/cobra"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"fmt"
-
-	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -174,7 +173,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
 	}
 
-	_, err = o.kubeClient.CoreV1().Services(o.Namespace).Get(esServiceName, meta_v1.GetOptions{})
+	_, err = o.kubeClient.CoreV1().Services(o.currentNamespace).Get(esServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		// create a service link
 		err = kube.CreateServiceLink(o.kubeClient, o.currentNamespace, o.Namespace, esServiceName, esIng)

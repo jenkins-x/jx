@@ -5,14 +5,16 @@ import (
 
 	"time"
 
+	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	pe "github.com/jenkins-x/jx/pkg/pipeline_events"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
 )
@@ -21,6 +23,7 @@ import (
 type StepReportActivitiesOptions struct {
 	StepReportOptions
 	Watch bool
+	pe.PipelineEventsProvider
 }
 
 var (
@@ -59,6 +62,7 @@ func NewCmdStepReportActivities(f cmdutil.Factory, out io.Writer, errOut io.Writ
 	}
 
 	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "Whether to watch activities")
+	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -68,23 +72,16 @@ func (o *StepReportActivitiesOptions) Run() error {
 
 	// watch activities and send an event for each backend i.e elasticsearch
 	f := o.Factory
-	client, currentNs, err := f.CreateJXClient()
+
+	_, _, err := o.KubeClient()
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
 	}
-	kubeClient, _, err := o.Factory.CreateClient()
+
+	jxClient, _, err := o.Factory.CreateJXClient()
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot create jx client: %v", err)
 	}
-	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
-	if err != nil {
-		return err
-	}
-	envList, err := client.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	kube.SortEnvironments(envList.Items)
 
 	apisClient, err := f.CreateApiExtensionsClient()
 	if err != nil {
@@ -95,7 +92,23 @@ func (o *StepReportActivitiesOptions) Run() error {
 		return err
 	}
 
-	err = o.watchPipelineActivities(client, o.currentNamespace)
+	externalURL, err := o.ensureAddonServiceAvailable(esServiceName)
+	if err != nil {
+		log.Warnf("no %s service found, are you in your teams dev environment?  Type `jx env` to switch.\n", esServiceName)
+		return fmt.Errorf("try running `jx create addon anchore` in your teams dev environment: %v", err)
+	}
+
+	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindPipelineEvent, externalURL)
+	if err != nil {
+		return fmt.Errorf("error getting %s auth details, %v", kube.ValueKindPipelineEvent, err)
+	}
+
+	o.PipelineEventsProvider, err = pe.NewElasticsearchProvider(server, auth)
+	if err != nil {
+		return fmt.Errorf("error creating anchore provider, %v", err)
+	}
+
+	err = o.watchPipelineActivities(jxClient, o.currentNamespace)
 	if err != nil {
 		return err
 	}
@@ -121,6 +134,11 @@ func (o *StepReportActivitiesOptions) watchPipelineActivities(jxClient *versione
 					return
 				}
 				log.Infof("New activity added %s\n", activity.ObjectMeta.Name)
+				err := o.PipelineEventsProvider.PostActivity(activity)
+				if err != nil {
+					log.Errorf("%v", err)
+					return
+				}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				activity, ok := newObj.(*v1.PipelineActivity)
@@ -129,6 +147,11 @@ func (o *StepReportActivitiesOptions) watchPipelineActivities(jxClient *versione
 					return
 				}
 				log.Infof("Updated activity added %s\n", activity.ObjectMeta.Name)
+				err := o.PipelineEventsProvider.PostActivity(activity)
+				if err != nil {
+					log.Errorf("%v", err)
+					return
+				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				// no need to send event

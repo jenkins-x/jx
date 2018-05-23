@@ -173,10 +173,12 @@ func CreateServiceLink(client *kubernetes.Clientset, currentNamespace, targetNam
 			ExternalName: fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, targetNamespace),
 		},
 	}
+
 	_, err := client.CoreV1().Services(currentNamespace).Create(&svc)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 

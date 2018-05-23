@@ -563,3 +563,20 @@ func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, er
 	}
 	return adminConfig.Jenkins.JenkinsSecret.Password, nil
 }
+
+func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string, error) {
+	present, err := kube.IsServicePresent(o.kubeClient, serviceName, o.currentNamespace)
+	if err != nil {
+		return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
+	}
+	if present {
+		url, err := kube.GetServiceURLFromName(o.kubeClient, serviceName, o.currentNamespace)
+		if err != nil {
+			return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
+		}
+		return url, nil
+	}
+
+	// todo ask if user wants to install addon?
+	return "", nil
+}
