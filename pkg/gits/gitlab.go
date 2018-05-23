@@ -305,7 +305,7 @@ func (g *GitlabProvider) ListCommitStatus(org string, repo string, sha string) (
 
 func fromCommitStatus(status *gitlab.CommitStatus) *GitRepoStatus {
 	return &GitRepoStatus{
-		ID:          int64(status.ID),
+		ID:          string(status.ID),
 		URL:         status.TargetURL,
 		State:       status.Status,
 		Description: status.Description,
