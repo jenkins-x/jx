@@ -87,6 +87,9 @@ const (
 	// ValueKindCVE an addon auth secret/credentials
 	ValueKindCVE = "cve"
 
+	// ValueKindCVE an addon auth PipelineEvent
+	ValueKindPipelineEvent = "PipelineEvent"
+
 	// ValueKindEditNamespace for edit namespace
 	ValueKindEditNamespace = "editspace"
 
@@ -145,6 +148,10 @@ const (
 
 	// SecretBasicAuth the name for the Jenkins X basic auth secret
 	SecretBasicAuth = "jx-basic-auth"
+
+	JXBasicAuth = "JXBasicAuth"
+
+	AUTH = "auth"
 )
 
 var (

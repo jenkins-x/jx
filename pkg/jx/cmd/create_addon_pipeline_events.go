@@ -44,6 +44,7 @@ var (
 // CreateAddonPipelineEventsOptions the options for the create spring command
 type CreateAddonPipelineEventsOptions struct {
 	CreateAddonOptions
+	Password string
 }
 
 // NewCmdCreateAddonPipelineEvents creates a command object for the "create" command
@@ -78,6 +79,7 @@ func NewCmdCreateAddonPipelineEvents(f cmdutil.Factory, out io.Writer, errOut io
 	options.addFlags(cmd, defaultPENamespace, defaultPEReleaseName)
 
 	cmd.Flags().StringVarP(&options.Version, "version", "v", defaultPEVersion, "The version of the pipeline events chart to use")
+	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access pipeline-events services such as Kibana and Elasticsearch.  Defaults to default Jenkins X admin password.")
 	return cmd
 }
 
@@ -101,10 +103,10 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	log.Infof("found dev namespace %s\n", devNamespace)
 
 	//values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
-	//err = o.installChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, []string{})
-	//if err != nil {
-	//	return fmt.Errorf("elasticsearch deployment failed: %v", err)
-	//}
+	err = o.installChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, []string{})
+	if err != nil {
+		return fmt.Errorf("elasticsearch deployment failed: %v", err)
+	}
 
 	log.Info("waiting for elasticsearch deployment to be ready, this can take a few minutes\n")
 
@@ -139,19 +141,49 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return err
 	}
 
+	if o.Password == "" {
+		o.Password, err = o.getDefaultAdminPassword(devNamespace)
+		if err != nil {
+			return err
+		}
+	}
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, defaultPEReleaseName)
+	err = o.expose(devNamespace, o.Namespace, defaultPEReleaseName, o.Password)
 	if err != nil {
 		return err
 	}
 
 	// get the external service URL
-	ing, err := kube.GetServiceURLFromName(o.kubeClient, kibanaServiceName, o.Namespace)
+	kIng, err := kube.GetServiceURLFromName(o.kubeClient, kibanaServiceName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get external URL for service %s: %v", kibanaServiceName, err)
 	}
 
-	log.Successf("kibana is available and running %s\n", ing)
+	// get the external service URL
+	esIng, err := kube.GetServiceURLFromName(o.kubeClient, esServiceName, o.Namespace)
+	if err != nil {
+		return fmt.Errorf("failed to get external URL for service %s: %v", kibanaServiceName, err)
+	}
+
+	// create the local addonAuth.yaml file so `jx get cve` commands work
+	tokenOptions := CreateTokenAddonOptions{
+		Password: o.Password,
+		Username: "admin",
+		ServerFlags: ServerFlags{
+			ServerURL:  esIng,
+			ServerName: esDeploymentName,
+		},
+		Kind: kube.ValueKindPipelineEvent,
+		CreateOptions: CreateOptions{
+			CommonOptions: o.CommonOptions,
+		},
+	}
+	err = tokenOptions.Run()
+	if err != nil {
+		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
+	}
+
+	log.Successf("kibana is available and running %s\n", kIng)
 	return nil
 }
 func (o *CreateAddonPipelineEventsOptions) addExposecontrollerAnnotations(serviceName string) error {
