@@ -56,6 +56,12 @@ build
 `
 )
 
+func PathWithBinary() string {
+	path := os.Getenv("PATH")
+	binDir, _ := util.BinaryLocation()
+	return path + string(os.PathListSeparator) + binDir
+}
+
 func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &SyncOptions{
 		CommonOptions: CommonOptions{
@@ -90,6 +96,10 @@ func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 }
 
 func (o *SyncOptions) Run() error {
+
+	// ksync is installed to the jx/bin dir, so we can add it for the user
+	os.Setenv("PATH", PathWithBinary())
+
 	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return err
