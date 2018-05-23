@@ -130,31 +130,33 @@ func (o *StepReportActivitiesOptions) watchPipelineActivities(jxClient *versione
 				// send to registered backends
 				activity, ok := obj.(*v1.PipelineActivity)
 				if !ok {
-					o.Printf("Object is not a PipelineActivity %#v\n", obj)
+					log.Errorf("Object is not a PipelineActivity %#v\n", obj)
 					return
 				}
 				log.Infof("New activity added %s\n", activity.ObjectMeta.Name)
-				err := o.PipelineEventsProvider.PostActivity(activity)
+				err := o.PipelineEventsProvider.SendActivity(activity)
 				if err != nil {
-					log.Errorf("%v", err)
+					log.Errorf("%v\n", err)
 					return
 				}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				activity, ok := newObj.(*v1.PipelineActivity)
 				if !ok {
-					o.Printf("Object is not a PipelineActivity %#v\n", newObj)
+					log.Errorf("Object is not a PipelineActivity %#v\n", newObj)
 					return
 				}
 				log.Infof("Updated activity added %s\n", activity.ObjectMeta.Name)
-				err := o.PipelineEventsProvider.PostActivity(activity)
+
+				err := o.PipelineEventsProvider.SendActivity(activity)
 				if err != nil {
-					log.Errorf("%v", err)
+					log.Errorf("%v\n", err)
 					return
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				// no need to send event
+
 			},
 		},
 	)

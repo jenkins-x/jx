@@ -11,7 +11,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -43,27 +42,28 @@ func NewElasticsearchProvider(server *auth.AuthServer, user *auth.UserAuth) (Pip
 	return &provider, nil
 }
 
-func (e ElasticsearchProvider) PostActivity(a *v1.PipelineActivity) error {
+func (e ElasticsearchProvider) SendActivity(a *v1.PipelineActivity) error {
 	data, err := json.Marshal(a)
 	if err != nil {
 		return err
 	}
 	var index *Index
 
-	err = e.post("activities", data, &index)
+	err = e.post("activities", string(a.UID), data, &index)
 	if err != nil {
 		return err
 	}
 
-	if !index.Created {
-		log.Infof("activity %s not created found %s\n", a.Name, index.Id)
+	if index.Id == "" {
+		return fmt.Errorf("activity %s not created, no elasticsearch id returned from POST\n", a.Name)
 	}
 	return nil
 }
 
-func (e ElasticsearchProvider) post(index string, body []byte, rs result) error {
+func (e ElasticsearchProvider) post(index, indexID string, body []byte, rs result) error {
 
-	url := fmt.Sprintf("%s/%s/event", e.BaseURL, index)
+	url := fmt.Sprintf("%s/%s/event/%s", e.BaseURL, index, indexID)
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	req.Header.Add("Authorization", "Basic "+e.BasicAuth)
 	req.Header.Set("Content-Type", "application/json")
@@ -73,7 +73,7 @@ func (e ElasticsearchProvider) post(index string, body []byte, rs result) error 
 		return fmt.Errorf("error POSTing to elasticsearch %v", err)
 	}
 
-	if resp.StatusCode != 201 {
+	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		return fmt.Errorf("error response POSTing to elasticsearch: %s", resp.Status)
 	}
 
