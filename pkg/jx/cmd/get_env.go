@@ -19,14 +19,15 @@ type GetEnvOptions struct {
 	GetOptions
 
 	PromotionStrategy string
+	PreviewOnly       bool
 }
 
 var (
-	get_env_long = templates.LongDesc(`
+	getEnvLong = templates.LongDesc(`
 		Display one or many environments.
 `)
 
-	get_env_example = templates.Examples(`
+	getEnvExample = templates.Examples(`
 		# List all environments
 		jx get environments
 
@@ -50,8 +51,8 @@ func NewCmdGetEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 		Use:     "environments",
 		Short:   "Display one or many Environments",
 		Aliases: []string{"envs", "environment", "env"},
-		Long:    get_env_long,
-		Example: get_env_example,
+		Long:    getEnvLong,
+		Example: getEnvExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -148,11 +149,19 @@ func (o *GetEnvOptions) Run() error {
 			return o.renderResult(envs, o.Output)
 		}
 		table := o.CreateTable()
-		table.AddRow("NAME", "LABEL", "KIND", "PROMOTE", "NAMESPACE", "ORDER", "CLUSTER", "SOURCE", "REF", "PR")
+		if o.PreviewOnly {
+			table.AddRow("PULL REQUEST", "NAMESPACE", "APPLICATION")
+		} else {
+			table.AddRow("NAME", "LABEL", "KIND", "PROMOTE", "NAMESPACE", "ORDER", "CLUSTER", "SOURCE", "REF", "PR")
+		}
 
 		for _, env := range environments {
 			spec := &env.Spec
-			table.AddRow(env.Name, spec.Label, kindString(spec), string(spec.PromotionStrategy), spec.Namespace, util.Int32ToA(spec.Order), spec.Cluster, spec.Source.URL, spec.Source.Ref, spec.PullRequestURL)
+			if o.PreviewOnly {
+				table.AddRow(spec.PullRequestURL, spec.Namespace, util.ColorInfo(spec.PreviewGitSpec.ApplicationURL))
+			} else {
+				table.AddRow(env.Name, spec.Label, kindString(spec), string(spec.PromotionStrategy), spec.Namespace, util.Int32ToA(spec.Order), spec.Cluster, spec.Source.URL, spec.Source.Ref, spec.PullRequestURL)
+			}
 		}
 		table.Render()
 	}
@@ -170,7 +179,8 @@ func kindString(spec *v1.EnvironmentSpec) string {
 func (o *GetEnvOptions) filterEnvironments(envs []v1.Environment) []v1.Environment {
 	answer := []v1.Environment{}
 	for _, e := range envs {
-		if o.matchesFilter(&e) {
+		preview := e.Spec.Kind == v1.EnvironmentKindTypePreview
+		if o.matchesFilter(&e) && preview == o.PreviewOnly {
 			answer = append(answer, e)
 		}
 	}

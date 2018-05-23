@@ -75,6 +75,7 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.AddCommand(NewCmdGetGit(f, out, errOut))
 	cmd.AddCommand(NewCmdGetIssues(f, out, errOut))
 	cmd.AddCommand(NewCmdGetPipeline(f, out, errOut))
+	cmd.AddCommand(NewCmdGetPreview(f, out, errOut))
 	cmd.AddCommand(NewCmdGetToken(f, out, errOut))
 	cmd.AddCommand(NewCmdGetTracker(f, out, errOut))
 	cmd.AddCommand(NewCmdGetURL(f, out, errOut))

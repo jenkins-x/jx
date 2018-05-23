@@ -27,7 +27,7 @@ var (
 
 // DeleteEnvOptions the options for the create spring command
 type DeleteEnvOptions struct {
-	CreateOptions
+	CommonOptions
 
 	DeleteNamespace bool
 }
@@ -35,12 +35,10 @@ type DeleteEnvOptions struct {
 // NewCmdDeleteEnv creates a command object for the "delete repo" command
 func NewCmdDeleteEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteEnvOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				Out:     out,
-				Err:     errOut,
-			},
+		CommonOptions: CommonOptions{
+			Factory: f,
+			Out:     out,
+			Err:     errOut,
 		},
 	}
 
