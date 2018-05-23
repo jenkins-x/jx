@@ -52,6 +52,7 @@ func NewCmdUpgrade(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 
 	cmd.AddCommand(NewCmdUpgradeCLI(f, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeCluster(f, out, errOut))
 	cmd.AddCommand(NewCmdUpgradePlatform(f, out, errOut))
 	return cmd
 }
