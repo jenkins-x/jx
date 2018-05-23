@@ -154,7 +154,7 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	err = o.defaultValues(ns)
+	err = o.defaultValues(ns, true)
 
 	// we need pull request info to include
 	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
@@ -459,6 +459,13 @@ func (o *PreviewOptions) Run() error {
 			o.warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs\n")
 		}
 	}
+	if url != "" && env != nil && env.Spec.PreviewGitSpec.ApplicationURL == "" {
+		env.Spec.PreviewGitSpec.ApplicationURL = url
+		_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+		if err != nil {
+			return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
+		}
+	}
 
 	stepPRCommentOptions := StepPRCommentOptions{
 		Flags: StepPRCommentFlags{
@@ -483,7 +490,7 @@ func (o *PreviewOptions) Run() error {
 	return nil
 }
 
-func (o *PreviewOptions) defaultValues(ns string) error {
+func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	var err error
 	if o.Application == "" {
 		o.Application, err = o.DiscoverAppName()
@@ -542,7 +549,9 @@ func (o *PreviewOptions) defaultValues(ns string) error {
 			o.SourceURL = o.GitInfo.HttpCloneURL()
 			if o.PullRequestURL == "" {
 				if o.PullRequest == "" {
-					o.warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
+					if warnMissingName {
+						o.warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
+					}
 				} else {
 					o.PullRequestURL = o.GitInfo.PullRequestURL(o.PullRequestName)
 				}

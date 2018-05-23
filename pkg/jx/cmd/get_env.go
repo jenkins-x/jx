@@ -150,7 +150,7 @@ func (o *GetEnvOptions) Run() error {
 		}
 		table := o.CreateTable()
 		if o.PreviewOnly {
-			table.AddRow("PULL REQUEST", "NAMESPACE")
+			table.AddRow("PULL REQUEST", "NAMESPACE", "APPLICATION")
 		} else {
 			table.AddRow("NAME", "LABEL", "KIND", "PROMOTE", "NAMESPACE", "ORDER", "CLUSTER", "SOURCE", "REF", "PR")
 		}
@@ -158,7 +158,7 @@ func (o *GetEnvOptions) Run() error {
 		for _, env := range environments {
 			spec := &env.Spec
 			if o.PreviewOnly {
-				table.AddRow(spec.PullRequestURL, spec.Namespace)
+				table.AddRow(spec.PullRequestURL, spec.Namespace, util.ColorInfo(spec.PreviewGitSpec.ApplicationURL))
 			} else {
 				table.AddRow(env.Name, spec.Label, kindString(spec), string(spec.PromotionStrategy), spec.Namespace, util.Int32ToA(spec.Order), spec.Cluster, spec.Source.URL, spec.Source.Ref, spec.PullRequestURL)
 			}
