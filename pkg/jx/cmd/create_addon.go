@@ -49,6 +49,7 @@ func NewCmdCreateAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 	cmd.AddCommand(NewCmdCreateAddonCloudBees(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonGitea(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonKubeless(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(f, out, errOut))
 
 	options.addFlags(cmd, "", "")
 	return cmd

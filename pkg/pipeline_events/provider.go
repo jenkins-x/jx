@@ -1,0 +1,9 @@
+package pipline_events
+
+import (
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+)
+
+type PipelineEventsProvider interface {
+	PostActivity(a *v1.PipelineActivity) error
+}
