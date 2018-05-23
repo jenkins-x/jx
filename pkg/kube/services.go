@@ -158,7 +158,31 @@ func HasExternalAddress(svc *v1.Service) bool {
 	return false
 }
 
-func CreateServiceLink(client *kubernetes.Clientset, currentNamespace, targetNamespace, serviceName string) error {
+func CreateServiceLink(client *kubernetes.Clientset, currentNamespace, targetNamespace, serviceName, externalURL string) error {
+	annotations := make(map[string]string)
+	annotations[ExposeURLAnnotation] = externalURL
+
+	svc := v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:        serviceName,
+			Namespace:   currentNamespace,
+			Annotations: annotations,
+		},
+		Spec: v1.ServiceSpec{
+			Type:         v1.ServiceTypeExternalName,
+			ExternalName: fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, targetNamespace),
+		},
+	}
+
+	_, err := client.CoreV1().Services(currentNamespace).Create(&svc)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetService(client *kubernetes.Clientset, currentNamespace, targetNamespace, serviceName string) error {
 	svc := v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      serviceName,
