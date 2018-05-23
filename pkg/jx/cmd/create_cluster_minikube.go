@@ -98,7 +98,7 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 	}
 
 	if o.isExistingMinikubeRunning() {
-		log.Error("an existing minikube cluster is already running, perhaps use `jx install`.\nNote existing minikube musty have RBAC enabled, running `minikube delete` and `jx create cluster minikube` creates a new VM with RBAC enabled")
+		log.Error("an existing minikube cluster is already running, perhaps use `jx install`.\nNote existing minikube must have RBAC enabled, running `minikube delete` and `jx create cluster minikube` creates a new VM with RBAC enabled")
 		os.Exit(-1)
 	}
 
