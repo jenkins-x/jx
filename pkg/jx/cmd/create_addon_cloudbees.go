@@ -176,7 +176,7 @@ To register to get your username/password to to: %s
 	log.Infof("target namespace %s\n", o.Namespace)
 
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, defaultCloudBeesReleaseName)
+	err = o.expose(devNamespace, o.Namespace, defaultCloudBeesReleaseName, "")
 	if err != nil {
 		return err
 	}

@@ -147,15 +147,15 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	s.Secrets.Grafana.GrafanaSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Nexus.DefaultAdminPassword = s.Flags.DefaultAdminPassword
 	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword)
-	hash := hashSha(s.Flags.DefaultAdminPassword)
+	hash := HashSha(s.Flags.DefaultAdminPassword)
 
 	s.Secrets.IngressBasicAuth = fmt.Sprintf("admin:{SHA}%s", hash)
 	return nil
 }
 
-func hashSha(password string) string {
+func HashSha(password string) string {
 	s := sha1.New()
 	s.Write([]byte(password))
-	passwordSum := []byte(s.Sum(nil))
+	passwordSum := s.Sum(nil)
 	return base64.StdEncoding.EncodeToString(passwordSum)
 }

@@ -13,6 +13,9 @@ const (
 	// ChartExposecontrollerService the default name of the Exposecontroller Service chart for Edit environments
 	ChartExposecontrollerService = "jenkins-x/exposecontroller-service"
 
+	// ChartAnchore the default chart for the Anchore plugin
+	ChartPipelineEvent = "jenkins-x/pipeline-events-addon"
+
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
 
@@ -84,6 +87,9 @@ const (
 	// ValueKindCVE an addon auth secret/credentials
 	ValueKindCVE = "cve"
 
+	// ValueKindCVE an addon auth PipelineEvent
+	ValueKindPipelineEvent = "PipelineEvent"
+
 	// ValueKindEditNamespace for edit namespace
 	ValueKindEditNamespace = "editspace"
 
@@ -120,6 +126,9 @@ const (
 	// AnnotationExpose used to expose service using exposecontroller
 	AnnotationExpose = "fabric8.io/expose"
 
+	// AnnotationIngress tells exposecontroller to annotate generated ingress rule with values
+	AnnotationIngress = "fabric8.io/ingress.annotations"
+
 	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike kubernetes resources)
 	AnnotationName = "jenkins.io/name"
 
@@ -136,6 +145,13 @@ const (
 
 	// SecretDataPassword the password in a Secret/Credentials
 	SecretDataPassword = "password"
+
+	// SecretBasicAuth the name for the Jenkins X basic auth secret
+	SecretBasicAuth = "jx-basic-auth"
+
+	JXBasicAuth = "JXBasicAuth"
+
+	AUTH = "auth"
 )
 
 var (
