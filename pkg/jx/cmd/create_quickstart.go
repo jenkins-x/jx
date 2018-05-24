@@ -56,6 +56,7 @@ type CreateQuickstartOptions struct {
 	Filter              quickstarts.QuickstartFilter
 	GitProvider         gits.GitProvider
 	GitHost             string
+	IgnoreTeam          bool
 }
 
 // NewCmdCreateQuickstart creates a command object for the "create" command
@@ -105,18 +106,21 @@ func (o *CreateQuickstartOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-	err = o.registerEnvironmentCRD()
-	if err != nil {
-		return err
-	}
+	var locations []v1.QuickStartLocation
+	if !o.IgnoreTeam {
+		jxClient, ns, err := o.JXClientAndDevNamespace()
+		if err != nil {
+			return err
+		}
+		err = o.registerEnvironmentCRD()
+		if err != nil {
+			return err
+		}
 
-	locations, err := kube.GetQuickstartLocations(jxClient, ns)
-	if err != nil {
-		return err
+		locations, err = kube.GetQuickstartLocations(jxClient, ns)
+		if err != nil {
+			return err
+		}
 	}
 
 	// lets add any extra github organisations if they are not already configured
