@@ -132,11 +132,12 @@ func (f *factory) GetJenkinsURL() (string, error) {
 		if realNS != ns {
 			url, err = kube.FindServiceURL(client, realNS, kube.ServiceJenkins)
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf("%s in namespaces %s and %s", err, realNS, ns)
 			}
-		} else {
-			return "", err
 		}
+	}
+	if err != nil {
+		return "", fmt.Errorf("%s in namespace %s", err, ns)
 	}
 	return url, err
 }
