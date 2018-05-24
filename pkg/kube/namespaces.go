@@ -65,8 +65,9 @@ func EnsureDevEnvironmentSetup(jxClient *versioned.Clientset, ns string) (*v1.En
 				PromotionStrategy: v1.PromotionStrategyTypeNever,
 				Kind:              v1.EnvironmentKindTypeDevelopment,
 				TeamSettings: v1.TeamSettings{
-					UseGitOPs:   true,
-					AskOnCreate: false,
+					UseGitOPs:           true,
+					AskOnCreate:         false,
+					QuickstartLocations: DefaultQuickstartLocations,
 				},
 			},
 		}

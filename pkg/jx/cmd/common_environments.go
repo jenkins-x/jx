@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
@@ -186,4 +188,34 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		PullRequest:          pr,
 		PullRequestArguments: gha,
 	}, nil
+}
+
+func (o *CommonOptions) registerEnvironmentCRD() error {
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	return err
+}
+
+// modifyDevEnvironment performs some mutation on the Development environemnt to modify team settings
+func (o *CommonOptions) modifyDevEnvironment(jxClient *versioned.Clientset, ns string, fn func(env *v1.Environment) error) error {
+	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
+	if err != nil {
+		return err
+	}
+	if env == nil {
+		return fmt.Errorf("No Development environment found in namespace %s", ns)
+	}
+	err = fn(env)
+	if err != nil {
+		return err
+	}
+	_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+	if err != nil {
+		return fmt.Errorf("Failed to update Development environment in namespace %s: %s", ns, err)
+	}
+	o.Printf("Updated the team settings in namespace %s\n", ns)
+	return nil
 }

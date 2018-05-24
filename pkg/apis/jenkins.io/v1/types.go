@@ -113,8 +113,17 @@ type EnvironmentRepository struct {
 
 // TeamSettings the default settings for a team
 type TeamSettings struct {
-	UseGitOPs   bool `json:"useGitOps,omitempty" protobuf:"bytes,1,opt,name=useGitOps"`
-	AskOnCreate bool `json:"askOnCreate,omitempty" protobuf:"bytes,1,opt,name=askOnCreate"`
+	UseGitOPs           bool                 `json:"useGitOps,omitempty" protobuf:"bytes,1,opt,name=useGitOps"`
+	AskOnCreate         bool                 `json:"askOnCreate,omitempty" protobuf:"bytes,2,opt,name=askOnCreate"`
+	QuickstartLocations []QuickStartLocation `json:"quickstartLocations,omitempty" protobuf:"bytes,3,opt,name=quickstartLocations"`
+}
+
+// QuickStartLocation
+type QuickStartLocation struct {
+	GitURL   string   `json:"gitUrl,omitempty" protobuf:"bytes,1,opt,name=gitUrl"`
+	Owner    string   `json:"owner,omitempty" protobuf:"bytes,2,opt,name=owner"`
+	Includes []string `json:"includes,omitempty" protobuf:"bytes,3,opt,name=includes"`
+	Excludes []string `json:"excludes,omitempty" protobuf:"bytes,4,opt,name=excludes"`
 }
 
 // PreviewGitSpec is the preview git branch/pull request details
