@@ -558,7 +558,7 @@ func (p *GitHubProvider) ListCommitStatus(org string, repo string, sha string) (
 	}
 	for _, result := range results {
 		status := &GitRepoStatus{
-			ID:          notNullInt64(result.ID),
+			ID:          string(*result.ID),
 			Context:     notNullString(result.Context),
 			URL:         notNullString(result.URL),
 			TargetURL:   notNullString(result.TargetURL),

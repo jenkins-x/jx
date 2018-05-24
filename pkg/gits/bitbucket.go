@@ -586,21 +586,12 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 
 		for _, status := range result.Values {
 
-			key := ""
-			if len(status.Key) > 8 {
-				key = status.Key[:8]
-			} else {
-				key = status.Key
-			}
-
-			id, err := strconv.ParseInt(key, 10, 64)
-
 			if err != nil {
 				return nil, err
 			}
 
 			newStatus := &GitRepoStatus{
-				ID:          id,
+				ID:          status.Key,
 				URL:         status.Links.Commit.Href,
 				State:       stateMap[status.State],
 				TargetURL:   status.Links.Self.Href,
