@@ -66,6 +66,23 @@ func (o *CommonOptions) runCommandInteractive(interactive bool, name string, arg
 	return err
 }
 
+func (o *CommonOptions) runCommandInteractiveInDir(interactive bool, dir string, name string, args ...string) error {
+	e := exec.Command(name, args...)
+	e.Stdout = o.Out
+	e.Stderr = o.Err
+	if interactive {
+		e.Stdin = os.Stdin
+	}
+	if dir != "" {
+		e.Dir = dir
+	}
+	err := e.Run()
+	if err != nil {
+		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+	}
+	return err
+}
+
 // getCommandOutput evaluates the given command and returns the trimmed output
 func (o *CommonOptions) getCommandOutput(dir string, name string, args ...string) (string, error) {
 	e := exec.Command(name, args...)

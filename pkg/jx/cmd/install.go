@@ -220,6 +220,11 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	err = kube.EnsureNamespaceCreated(client, ns, map[string]string{kube.LabelTeam: ns}, nil)
+	if err != nil {
+		return fmt.Errorf("Failed to ensure the namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ns, err)
+	}
+
 	err = options.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
 	if err != nil {
 		return err
