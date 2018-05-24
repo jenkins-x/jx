@@ -411,13 +411,10 @@ func (p *GitHubProvider) GetPullRequest(owner, repo string, number int) (*GitPul
 	err := p.UpdatePullRequestStatus(pr)
 
 	if pr.Author != nil {
-		log.Info("Got pr Author: " + pr.Author.Login + " <" + pr.Author.Email + ">\n")
-
 		if pr.Author.Email == "" {
 			existing := p.UserInfo(pr.Author.Login)
 
 			if existing != nil {
-				log.Info("Got existing User: " + existing.Login + " <" + existing.Email + ">\n")
 				if existing.Email != "" {
 					pr.Author = existing
 				}
