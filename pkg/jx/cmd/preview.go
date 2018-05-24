@@ -174,58 +174,65 @@ func (o *PreviewOptions) Run() error {
 		log.Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "\n")
 	}
 
-	pullRequest, _ := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
-	commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
-	if err != nil {
-		log.Warn("Unable to get commits: " + err.Error() + "\n")
-	}
-
-	author := pullRequest.Author
-
-	if author.Email == "" {
-		log.Info("PullRequest author email is empty\n")
-		for _, commit := range commits {
-			if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
-				log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
-				author.Email = commit.Author.Email
-				break
-			}
-		}
-	}
-
-	if author.Email != "" {
-		userDetailService := cmdutil.NewUserDetailService(jxClient, o.devNamespace)
-		err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
-			Login:     author.Login,
-			Email:     author.Email,
-			Name:      author.Name,
-			URL:       author.URL,
-			AvatarURL: author.AvatarURL,
-		})
-		if err != nil {
-			log.Warn("An error happened attempting to CreateOrUpdateUser: " + err.Error() + "\n")
-		}
-	}
-
-	user := &v1.UserSpec{
-		Username: author.Login,
-		Name:     author.Name,
-		ImageURL: author.AvatarURL,
-		LinkURL:  author.URL,
-	}
-
-	statuses, err := gitProvider.ListCommitStatus(o.GitInfo.Organisation, o.GitInfo.Name, pullRequest.LastCommitSha)
-
-	if err != nil {
-		log.Warn("Unable to get statuses for PR " + o.PullRequestName + "\n")
-	}
-
+	var user *v1.UserSpec
 	buildStatus := ""
 	buildStatusUrl := ""
-	if len(statuses) > 0 {
-		status := statuses[len(statuses)-1]
-		buildStatus = status.State
-		buildStatusUrl = status.TargetURL
+
+	var pullRequest *gits.GitPullRequest
+	if prNum > 0 {
+		pullRequest, _ := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
+		commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
+		if err != nil {
+			log.Warn("Unable to get commits: " + err.Error() + "\n")
+		}
+		if pullRequest != nil {
+			author := pullRequest.Author
+			if author != nil {
+				if author.Email == "" {
+					log.Info("PullRequest author email is empty\n")
+					for _, commit := range commits {
+						if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
+							log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
+							author.Email = commit.Author.Email
+							break
+						}
+					}
+				}
+
+				if author.Email != "" {
+					userDetailService := cmdutil.NewUserDetailService(jxClient, o.devNamespace)
+					err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
+						Login:     author.Login,
+						Email:     author.Email,
+						Name:      author.Name,
+						URL:       author.URL,
+						AvatarURL: author.AvatarURL,
+					})
+					if err != nil {
+						log.Warn("An error happened attempting to CreateOrUpdateUser: " + err.Error() + "\n")
+					}
+				}
+
+				user = &v1.UserSpec{
+					Username: author.Login,
+					Name:     author.Name,
+					ImageURL: author.AvatarURL,
+					LinkURL:  author.URL,
+				}
+			}
+		}
+
+		statuses, err := gitProvider.ListCommitStatus(o.GitInfo.Organisation, o.GitInfo.Name, pullRequest.LastCommitSha)
+
+		if err != nil {
+			log.Warn("Unable to get statuses for PR " + o.PullRequestName + "\n")
+		}
+
+		if len(statuses) > 0 {
+			status := statuses[len(statuses)-1]
+			buildStatus = status.State
+			buildStatusUrl = status.TargetURL
+		}
 	}
 
 	environmentsResource := jxClient.JenkinsV1().Environments(ns)
@@ -309,6 +316,20 @@ func (o *PreviewOptions) Run() error {
 	}
 	if err != nil {
 		// lets create a new preview environment
+		previewGitSpec := v1.PreviewGitSpec{
+			ApplicationName: o.Application,
+			Name:            o.PullRequestName,
+			URL:             o.PullRequestURL,
+			BuildStatus:     buildStatus,
+			BuildStatusURL:  buildStatusUrl,
+		}
+		if pullRequest != nil {
+			previewGitSpec.Title = pullRequest.Title
+			previewGitSpec.Description = pullRequest.Body
+		}
+		if user != nil {
+			previewGitSpec.User = *user
+		}
 		env = &v1.Environment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: o.Name,
@@ -325,16 +346,7 @@ func (o *PreviewOptions) Run() error {
 					URL:  o.SourceURL,
 					Ref:  o.SourceRef,
 				},
-				PreviewGitSpec: v1.PreviewGitSpec{
-					ApplicationName: o.Application,
-					Name:            o.PullRequestName,
-					URL:             o.PullRequestURL,
-					Title:           pullRequest.Title,
-					Description:     pullRequest.Body,
-					BuildStatus:     buildStatus,
-					BuildStatusURL:  buildStatusUrl,
-					User:            *user,
-				},
+				PreviewGitSpec: previewGitSpec,
 			},
 		}
 		_, err = environmentsResource.Create(env)
