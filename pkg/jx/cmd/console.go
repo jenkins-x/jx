@@ -99,7 +99,7 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 		return err
 	}
 	fullURL := url
-	if name != "jenkins" {
+	if name == "jenkins" {
 		fullURL = o.urlForMode(url)
 	}
 	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(fullURL))
