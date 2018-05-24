@@ -198,7 +198,7 @@ type GitLabel struct {
 }
 
 type GitRepoStatus struct {
-	ID      int64
+	ID      string
 	Context string
 	URL     string
 

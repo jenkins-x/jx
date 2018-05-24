@@ -502,7 +502,7 @@ func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([
 	}
 	for _, result := range results {
 		status := &GitRepoStatus{
-			ID:          result.ID,
+			ID:          string(result.ID),
 			Context:     result.Context,
 			URL:         result.URL,
 			TargetURL:   result.TargetURL,
