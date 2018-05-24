@@ -63,6 +63,24 @@ func NewCmdUpgradeCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 
 // Run implements the command
 func (o *UpgradeClusterOptions) Run() error {
+	confirm := false
+	prompt := &survey.Confirm{
+		Message: "Upgrading a GKE cluster is an experimental feature in jx.  Would you like to continue?",
+	}
+	survey.AskOne(prompt, &confirm, nil)
+
+	if !confirm {
+		// exit at this point
+		return nil
+	}
+
+	// check to see if gcloud is available
+
+	err := o.validateGCloudIsAvailable()
+	if err != nil {
+		return errors.New("Unable to locate gcloud command")
+	}
+
 	// if no cluster name is set, prompt.
 	selectedClusterName, err := o.getClusterName()
 	if err != nil {
@@ -75,16 +93,16 @@ func (o *UpgradeClusterOptions) Run() error {
 		return err
 	}
 
-	o.Printf("Upgrading %s master to %s\n", selectedClusterName, selectedVersion)
+	o.Printf("Upgrading %s master to %s (this may take a few minutes)\n", selectedClusterName, selectedVersion)
 
-	err = o.runCommand("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--cluster-version", selectedVersion, "--master", "--quiet")
+	err = o.runCommandVerbose("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--cluster-version", selectedVersion, "--master", "--quiet")
 	if err != nil {
 		return err
 	}
 
-	o.Printf("Upgrading %s nodes\n", selectedClusterName)
+	o.Printf("Upgrading %s nodes (this may take a few minutes)\n", selectedClusterName)
 
-	return o.runCommand("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--quiet")
+	return o.runCommandVerbose("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--quiet")
 }
 
 func (o *UpgradeClusterOptions) getClusterName() (string, error) {
@@ -167,6 +185,14 @@ func (o *UpgradeClusterOptions) getVersion() (string, error) {
 	}
 
 	return selectedVersion, nil
+}
+
+func (o *UpgradeClusterOptions) validateGCloudIsAvailable() error {
+	_, err := o.getCommandOutput("", "gcloud", "version")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // internal type to help unmarshal kubernetes upgrade versions
