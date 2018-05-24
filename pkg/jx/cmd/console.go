@@ -98,10 +98,13 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 	if err != nil {
 		return err
 	}
-	fullUrl := o.urlForMode(url)
-	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(fullUrl))
+	fullURL := url
+	if name != "jenkins" {
+		fullURL = o.urlForMode(url)
+	}
+	fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(fullURL))
 	if !o.OnlyViewURL {
-		browser.OpenURL(fullUrl)
+		browser.OpenURL(fullURL)
 	}
 	return nil
 }
