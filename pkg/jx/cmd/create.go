@@ -66,6 +66,7 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 
 	cmd.AddCommand(NewCmdCreateAddon(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateArchetype(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateBranchPattern(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateChat(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateCluster(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateDevPod(f, out, errOut))

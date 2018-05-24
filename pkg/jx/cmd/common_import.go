@@ -34,6 +34,13 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 	}
 
 	if branchPattern == "" {
+		patterns, err := o.TeamBranchPatterns()
+		if err != nil {
+			return err
+		}
+		branchPattern = patterns.DefaultBranchPattern
+	}
+	if branchPattern == "" {
 		o.Printf("Querying if the repo is a fork at %s with kind %s\n", gitProvider.ServerURL(), gitProvider.Kind())
 		fork, err := gits.GitIsFork(gitProvider, gitInfo, dir)
 		if err != nil {

@@ -25,17 +25,8 @@ var (
 `)
 
 	createQuickstartLocationExample = templates.Examples(`
-		# Create a location for 
-		jx create issue -t "something we should do"
-
-
-		# Create an issue with a title and a body
-		jx create issue -t "something we should do" --body "	
-		some more
-		text
-		goes
-		here
-		""
+		# Create a quickstart location for your git repo and organisation 
+		jx create quickstartlocation --url https://mygit.server.com --owner my-quickstarts
 "
 	`)
 )
@@ -142,7 +133,7 @@ func (o *CreateQuickstartLocationOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.QuickstartLocations = locations
-		o.Printf("Adding thequickstart git owner %s\n", util.ColorInfo(util.UrlJoin(o.GitUrl, o.Owner)))
+		o.Printf("Adding the quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(o.GitUrl, o.Owner)))
 		return nil
 	}
 	return o.modifyDevEnvironment(jxClient, ns, callback)
