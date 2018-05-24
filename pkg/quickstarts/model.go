@@ -14,10 +14,9 @@ const (
 	JenkinsXQuickstartsOwner = "jenkins-x-quickstarts"
 )
 
-// GitHubQuickstart returns a github based quickstart
-func GitHubQuickstart(owner string, repo string, language string, framework string, tags ...string) *Quickstart {
-	u := "https://github.com/" + owner + "/" + repo + "/archive/master.zip"
-
+// GitQuickstart returns a github based quickstart
+func GitQuickstart(provider gits.GitProvider, owner string, repo string, language string, framework string, tags ...string) *Quickstart {
+	u := util.UrlJoin(provider.ServerURL(), owner, repo+"/archive/master.zip")
 	return &Quickstart{
 		ID:             owner + "/" + repo,
 		Owner:          owner,
@@ -26,25 +25,27 @@ func GitHubQuickstart(owner string, repo string, language string, framework stri
 		Framework:      framework,
 		Tags:           tags,
 		DownloadZipURL: u,
+		GitProvider:    provider,
 	}
 }
 
-func toGitHubQuickstart(owner string, repo *gits.GitRepository) *Quickstart {
+func toGitHubQuickstart(provider gits.GitProvider, owner string, repo *gits.GitRepository) *Quickstart {
 	language := repo.Language
 	// TODO find this from GitHub???
 	framework := ""
 	tags := []string{}
-	return GitHubQuickstart(owner, repo.Name, language, framework, tags...)
+	return GitQuickstart(provider, owner, repo.Name, language, framework, tags...)
 }
 
-func (m *QuickstartModel) LoadGithubQuickstarts(provider gits.GitProvider, owners []string) error {
-	for _, owner := range owners {
-		repos, err := provider.ListRepositories(owner)
-		if err != nil {
-			return err
-		}
-		for _, repo := range repos {
-			m.Add(toGitHubQuickstart(owner, repo))
+func (m *QuickstartModel) LoadGithubQuickstarts(provider gits.GitProvider, owner string, includes []string, excludes []string) error {
+	repos, err := provider.ListRepositories(owner)
+	if err != nil {
+		return err
+	}
+	for _, repo := range repos {
+		name := repo.Name
+		if util.StringMatchesAny(name, includes, excludes) {
+			m.Add(toGitHubQuickstart(provider, owner, repo))
 		}
 	}
 	return nil

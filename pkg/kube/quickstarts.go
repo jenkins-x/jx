@@ -12,6 +12,7 @@ var (
 	DefaultQuickstartLocations = []v1.QuickStartLocation{
 		{
 			GitURL:   gits.GitHubURL,
+			GitKind:  gits.KindGitHub,
 			Owner:    "jenkins-x-quickstarts",
 			Includes: []string{"*"},
 			Excludes: []string{"WIP-*"},

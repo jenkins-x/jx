@@ -121,9 +121,10 @@ type TeamSettings struct {
 // QuickStartLocation
 type QuickStartLocation struct {
 	GitURL   string   `json:"gitUrl,omitempty" protobuf:"bytes,1,opt,name=gitUrl"`
-	Owner    string   `json:"owner,omitempty" protobuf:"bytes,2,opt,name=owner"`
-	Includes []string `json:"includes,omitempty" protobuf:"bytes,3,opt,name=includes"`
-	Excludes []string `json:"excludes,omitempty" protobuf:"bytes,4,opt,name=excludes"`
+	GitKind  string   `json:"gitKind,omitempty" protobuf:"bytes,2,opt,name=gitKind"`
+	Owner    string   `json:"owner,omitempty" protobuf:"bytes,3,opt,name=owner"`
+	Includes []string `json:"includes,omitempty" protobuf:"bytes,4,opt,name=includes"`
+	Excludes []string `json:"excludes,omitempty" protobuf:"bytes,5,opt,name=excludes"`
 }
 
 // PreviewGitSpec is the preview git branch/pull request details

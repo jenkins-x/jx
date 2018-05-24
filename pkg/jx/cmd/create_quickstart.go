@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/spf13/cobra"
 
@@ -97,43 +99,57 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 // Run implements the generic Create command
 func (o *CreateQuickstartOptions) Run() error {
-	installOpts := InstallOptions{
-		CommonOptions: o.CommonOptions,
-	}
-	userAuth, err := installOpts.getGitUser("git username to create the quickstart")
-	if err != nil {
-		return err
-	}
-
 	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
-	var server *auth.AuthServer
 	config := authConfigSvc.Config()
-	if o.GitHub {
-		server = config.GetOrCreateServer(gits.GitHubURL)
-	} else {
-		if o.GitHost != "" {
-			server = config.GetOrCreateServer(o.GitHost)
-		} else {
-			server, err = config.PickServer("Pick the git server to search for repositories", o.BatchMode)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	if server == nil {
-		return fmt.Errorf("no git server provided")
-	}
-	o.GitServer = server
-	o.GitProvider, err = gits.CreateProvider(server, userAuth)
 
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	err = o.registerEnvironmentCRD()
 	if err != nil {
 		return err
 	}
 
-	model, err := o.LoadQuickstarts()
+	locations, err := kube.GetQuickstartLocations(jxClient, ns)
+	if err != nil {
+		return err
+	}
+
+	// lets add any extra github organisations if they are not already configured
+	for _, org := range o.GitHubOrganisations {
+		found := false
+		for _, loc := range locations {
+			if loc.GitURL == gits.GitHubURL && loc.Owner == org {
+				found = true
+				break
+			}
+		}
+		if !found {
+			locations = append(locations, v1.QuickStartLocation{
+				GitURL:   gits.GitHubURL,
+				GitKind:  gits.KindGitHub,
+				Owner:    org,
+				Includes: []string{"*"},
+				Excludes: []string{"WIP-*"},
+			})
+		}
+	}
+
+	gitMap := map[string]map[string]v1.QuickStartLocation{}
+	for _, loc := range locations {
+		m := gitMap[loc.GitURL]
+		if m == nil {
+			m = map[string]v1.QuickStartLocation{}
+			gitMap[loc.GitURL] = m
+		}
+		m[loc.Owner] = loc
+	}
+
+	model, err := o.LoadQuickstartsFromMap(config, gitMap)
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
@@ -212,6 +228,13 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	if err != nil {
 		return answer, err
 	}
+	userAuth := q.GitProvider.UserAuth()
+	token := userAuth.ApiToken
+	username := userAuth.Username
+	if token != "" && username != "" {
+		o.Debugf("Downloading Quickstart source zip from %s with basic auth for user: %s\n", u, username)
+		req.SetBasicAuth(username, token)
+	}
 	res, err := client.Do(req)
 	if err != nil {
 		return answer, err
@@ -263,14 +286,22 @@ func findFirstDirectory(dir string) (string, error) {
 	return "", fmt.Errorf("no child directory found in %s", dir)
 }
 
-func (o *CreateQuickstartOptions) LoadQuickstarts() (*quickstarts.QuickstartModel, error) {
+func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig, gitMap map[string]map[string]v1.QuickStartLocation) (*quickstarts.QuickstartModel, error) {
 	model := quickstarts.NewQuickstartModel()
 
-	groups := o.GitHubOrganisations
-	if util.StringArrayIndex(groups, JenkinsXQuickstartsOrganisation) < 0 {
-		groups = append(groups, JenkinsXQuickstartsOrganisation)
+	for gitUrl, m := range gitMap {
+		for _, location := range m {
+			kind := location.GitKind
+			if kind == "" {
+				kind = gits.KindGitHub
+			}
+			gitProvider, err := o.gitProviderForGitServerURL(gitUrl, kind)
+			if err != nil {
+				return model, err
+			}
+			o.Debugf("Searching for repositories in git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
+			model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
+		}
 	}
-
-	model.LoadGithubQuickstarts(o.GitProvider, groups)
 	return model, nil
 }

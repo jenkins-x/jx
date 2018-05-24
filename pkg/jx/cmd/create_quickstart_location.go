@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	optionOwner  = "owner"
-	optionGitUrl = "url"
+	optionOwner   = "owner"
+	optionGitUrl  = "url"
+	optionGitKind = "kind"
 )
 
 var (
@@ -44,6 +45,7 @@ type CreateQuickstartLocationOptions struct {
 	CreateOptions
 
 	GitUrl   string
+	GitKind  string
 	Owner    string
 	Includes []string
 	Excludes []string
@@ -76,6 +78,7 @@ func NewCmdCreateQuickstartLocation(f cmdutil.Factory, out io.Writer, errOut io.
 	}
 
 	cmd.Flags().StringVarP(&options.GitUrl, optionGitUrl, "u", gits.GitHubURL, "The URL of the git service")
+	cmd.Flags().StringVarP(&options.GitKind, optionGitKind, "k", "", "The kind of git service at the URL")
 	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The owner is the user or organisation of the git provider used to find repositories")
 	cmd.Flags().StringArrayVarP(&options.Includes, "includes", "i", []string{"*"}, "The patterns to include repositories")
 	cmd.Flags().StringArrayVarP(&options.Excludes, "excludes", "x", []string{"WIP-*"}, "The patterns to exclude repositories")
@@ -102,6 +105,19 @@ func (o *CreateQuickstartLocationOptions) Run() error {
 		return util.MissingOption(optionOwner)
 	}
 
+	if o.GitKind == "" {
+		authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+		if err != nil {
+			return err
+		}
+		server := authConfigSvc.Config().GetServer(o.GitUrl)
+		if server != nil {
+			o.GitKind = server.Kind
+		}
+	}
+	if o.GitKind == "" {
+		return util.MissingOption(optionGitKind)
+	}
 	locations, err := kube.GetQuickstartLocations(jxClient, ns)
 	if err != nil {
 		return err
@@ -115,8 +131,9 @@ func (o *CreateQuickstartLocationOptions) Run() error {
 	}
 	if location == nil {
 		locations = append(locations, v1.QuickStartLocation{
-			GitURL: o.GitUrl,
-			Owner:  o.Owner,
+			GitURL:  o.GitUrl,
+			GitKind: o.GitKind,
+			Owner:   o.Owner,
 		})
 	}
 	location = &locations[len(locations)-1]

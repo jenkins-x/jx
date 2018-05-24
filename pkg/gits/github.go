@@ -111,18 +111,15 @@ func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
 
 func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) {
 	owner := org
-	if owner == "" {
-		owner = p.Username
-	}
 	answer := []*GitRepository{}
-	options := &github.RepositoryListOptions{
+	options := &github.RepositoryListByOrgOptions{
 		ListOptions: github.ListOptions{
 			Page:    0,
 			PerPage: pageSize,
 		},
 	}
 	for {
-		repos, _, err := p.Client.Repositories.List(p.Context, owner, options)
+		repos, _, err := p.Client.Repositories.ListByOrg(p.Context, owner, options)
 		if err != nil {
 			return answer, err
 		}

@@ -4,6 +4,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -22,7 +23,7 @@ const (
 
 var (
 	quickstartLocationsAliases = []string{
-		quickstartLocation, "quickstartloc",
+		quickstartLocation, "quickstartloc", "qsloc",
 	}
 
 	getQuickstartLocationLong = templates.LongDesc(`
@@ -81,10 +82,14 @@ func (o *GetQuickstartLocationOptions) Run() error {
 	}
 
 	table := o.CreateTable()
-	table.AddRow("GIT SERVER", "OWNER", "INCLUDES", "EXCLUDES")
+	table.AddRow("GIT SERVER", "KIND", "OWNER", "INCLUDES", "EXCLUDES")
 
 	for _, location := range locations {
-		table.AddRow(location.GitURL, location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "))
+		kind := location.GitKind
+		if kind == "" {
+			kind = gits.KindGitHub
+		}
+		table.AddRow(location.GitURL, kind, location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "))
 	}
 	table.Render()
 	return nil
