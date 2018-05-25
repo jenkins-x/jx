@@ -15,13 +15,17 @@ import (
 
 var (
 	createBranchPatternLong = templates.LongDesc(`
-		Create a git branch pattern for your team. The pattern should match all the branches you wish to automate CI/CD on when creating or importing projects
+		Create a git branch pattern for your team. 
+
+		The pattern should match all the branches you wish to automate CI/CD on when creating or importing projects.
+
+		For more documentation see: [https://jenkins-x.io/developing/import/#branch-patterns](https://jenkins-x.io/developing/import/#branch-patterns)
 `)
 
 	createBranchPatternExample = templates.Examples(`
-		# Create a branch for your team 
+		# Create a branch pattern for your team 
 		jx create branch pattern "master|develop|PR-.*"
-"
+
 	`)
 )
 

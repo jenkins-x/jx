@@ -17,7 +17,7 @@ var (
 	deleteQuickstartLocationLong = templates.LongDesc(`
 		Deletes one or more quickstart locations for your team
 
-		For more documentation see: [https://jenkins-x.io//developing/create-quickstart/#customising-your-teams-quickstarts](https://jenkins-x.io//developing/create-quickstart/#customising-your-teams-quickstarts)
+		For more documentation see: [https://jenkins-x.io/developing/create-quickstart/#customising-your-teams-quickstarts](https://jenkins-x.io/developing/create-quickstart/#customising-your-teams-quickstarts)
 
 `)
 

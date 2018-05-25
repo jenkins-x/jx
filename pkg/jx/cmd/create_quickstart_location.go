@@ -23,7 +23,7 @@ var (
 	createQuickstartLocationLong = templates.LongDesc(`
 		Create a location of quickstarts for your team
 
-		For more documentation see: [https://jenkins-x.io//developing/create-quickstart/#customising-your-teams-quickstarts](https://jenkins-x.io//developing/create-quickstart/#customising-your-teams-quickstarts)
+		For more documentation see: [https://jenkins-x.io/developing/create-quickstart/#customising-your-teams-quickstarts](https://jenkins-x.io/developing/create-quickstart/#customising-your-teams-quickstarts)
 
 `)
 
