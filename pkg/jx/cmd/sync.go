@@ -195,7 +195,6 @@ func (o *SyncOptions) CreateKsync(client *kubernetes.Clientset, ns string, name 
 		}
 	}
 	matchLabels := map[string]string{
-		kube.LabelPodTemplate:    name,
 		kube.LabelDevPodUsername: username,
 	}
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: matchLabels})
@@ -208,6 +207,9 @@ func (o *SyncOptions) CreateKsync(client *kubernetes.Clientset, ns string, name 
 		return err
 	}
 
+	// ignore the bad lines that come
+	ignoreNames := []string{"starting", "watching"}
+
 	deleteNames := []string{}
 	err = o.retry(5, time.Second, func() error {
 		text, err := o.getCommandOutput(dir, "ksync", "get")
@@ -215,10 +217,10 @@ func (o *SyncOptions) CreateKsync(client *kubernetes.Clientset, ns string, name 
 			for i, line := range strings.Split(text, "\n") {
 				if i > 1 {
 					cols := strings.Split(strings.TrimSpace(line), " ")
-					if len(cols) > 0 {
+					if len(cols) > 2 {
 						n := strings.TrimSpace(cols[0])
 						if n == name || pods[n] == nil {
-							if util.StringArrayIndex(deleteNames, n) < 0 && n != "starting" {
+							if util.StringArrayIndex(deleteNames, n) < 0 && util.StringArrayIndex(ignoreNames, n) < 0 {
 								deleteNames = append(deleteNames, n)
 							}
 						}
