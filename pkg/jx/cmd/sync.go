@@ -52,8 +52,13 @@ var (
 `)
 
 	defaultStignoreFile = `.git
+.idea
+.settings
+.vscode
 bin
 build
+target
+node_modules
 `
 )
 
