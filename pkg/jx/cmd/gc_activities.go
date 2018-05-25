@@ -31,7 +31,7 @@ type GCActivitiesOptions struct {
 
 var (
 	GCActivitiesLong = templates.LongDesc(`
-		Gargabe collect the Jenkins X Activity Custom Resource Definitions
+		Garbage collect the Jenkins X Activity Custom Resource Definitions
 
 `)
 
