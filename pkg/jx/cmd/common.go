@@ -497,28 +497,31 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 // get existing config from the devNamespace and run exposecontroller in the target environment
 func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName, password string) error {
 
-	data := make(map[string][]byte)
-
-	if password != "" {
-		hash := config.HashSha(password)
-		data[kube.AUTH] = []byte(fmt.Sprintf("admin:{SHA}%s", hash))
-	} else {
-		basicAuth, err := o.kubeClient.CoreV1().Secrets(devNamespace).Get(kube.SecretBasicAuth, v1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("cannot find secret %s in namespace %s: %v", kube.SecretBasicAuth, devNamespace, err)
-		}
-		data = basicAuth.Data
-	}
-
-	sec := &core_v1.Secret{
-		Data: data,
-		ObjectMeta: v1.ObjectMeta{
-			Name: kube.SecretBasicAuth,
-		},
-	}
-	_, err := o.kubeClient.CoreV1().Secrets(targetNamespace).Create(sec)
+	_, err := o.kubeClient.CoreV1().Secrets(targetNamespace).Get(kube.SecretBasicAuth, v1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("cannot create secret %s in target namespace %s: %v", kube.SecretBasicAuth, targetNamespace, err)
+		data := make(map[string][]byte)
+
+		if password != "" {
+			hash := config.HashSha(password)
+			data[kube.AUTH] = []byte(fmt.Sprintf("admin:{SHA}%s", hash))
+		} else {
+			basicAuth, err := o.kubeClient.CoreV1().Secrets(devNamespace).Get(kube.SecretBasicAuth, v1.GetOptions{})
+			if err != nil {
+				return fmt.Errorf("cannot find secret %s in namespace %s: %v", kube.SecretBasicAuth, devNamespace, err)
+			}
+			data = basicAuth.Data
+		}
+
+		sec := &core_v1.Secret{
+			Data: data,
+			ObjectMeta: v1.ObjectMeta{
+				Name: kube.SecretBasicAuth,
+			},
+		}
+		_, err := o.kubeClient.CoreV1().Secrets(targetNamespace).Create(sec)
+		if err != nil {
+			return fmt.Errorf("cannot create secret %s in target namespace %s: %v", kube.SecretBasicAuth, targetNamespace, err)
+		}
 	}
 
 	exposecontrollerConfig, err := kube.GetTeamExposecontrollerConfig(o.kubeClient, devNamespace)
