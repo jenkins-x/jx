@@ -29,7 +29,7 @@ type GCPreviewsOptions struct {
 
 var (
 	GCPreviewsLong = templates.LongDesc(`
-		Gargabe collect Jenkins X preview environments.  If a pull request is merged or closed the associated preview
+		Garbage collect Jenkins X preview environments.  If a pull request is merged or closed the associated preview
 		environment will be deleted.
 
 `)
