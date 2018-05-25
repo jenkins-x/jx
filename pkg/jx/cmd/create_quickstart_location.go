@@ -22,12 +22,21 @@ const (
 var (
 	createQuickstartLocationLong = templates.LongDesc(`
 		Create a location of quickstarts for your team
+
+		For more documentation see: [https://jenkins-x.io/developing/create-quickstart/#customising-your-teams-quickstarts](https://jenkins-x.io/developing/create-quickstart/#customising-your-teams-quickstarts)
+
 `)
 
 	createQuickstartLocationExample = templates.Examples(`
+		# Create a quickstart location using a github repository organisation 
+		jx create quickstartlocation --owner my-quickstarts
+
+		# Create a quickstart location using a github repository organisation via an abbreviation
+		jx create qsloc --owner my-quickstarts
+
 		# Create a quickstart location for your git repo and organisation 
 		jx create quickstartlocation --url https://mygit.server.com --owner my-quickstarts
-"
+
 	`)
 )
 

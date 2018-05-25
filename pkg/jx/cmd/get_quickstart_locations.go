@@ -28,11 +28,18 @@ var (
 
 	getQuickstartLocationLong = templates.LongDesc(`
 		Display one or many Quickstart Locations for the current Team.
+
+		For more documentation see: [https://jenkins-x.io/developing/create-quickstart/#customising-your-teams-quickstarts](https://jenkins-x.io/developing/create-quickstart/#customising-your-teams-quickstarts)
+
 `)
 
 	getQuickstartLocationExample = templates.Examples(`
 		# List all the quickstart locations
-		jx get quicksatrt locations
+		jx get quickstartlocations
+
+		# List all the quickstart locations via an alias
+		jx get qsloc
+
 	`)
 )
 

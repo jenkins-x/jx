@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -24,15 +23,17 @@ import (
 type SyncOptions struct {
 	CommonOptions
 
-	Container   string
-	Namespace   string
-	Pod         string
-	Dir         string
-	RemoteDir   string
 	Daemon      bool
-	Reload      bool
 	NoKsyncInit bool
-	WatchOnly   bool
+	SingleMode  bool
+
+	Container string
+	Namespace string
+	Pod       string
+	Dir       string
+	RemoteDir string
+	Reload    bool
+	WatchOnly bool
 
 	stopCh chan struct{}
 }
@@ -51,8 +52,13 @@ var (
 `)
 
 	defaultStignoreFile = `.git
+.idea
+.settings
+.vscode
 bin
 build
+target
+node_modules
 `
 )
 
@@ -83,15 +89,19 @@ func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
-	cmd.Flags().StringVarP(&options.Pod, "pod", "p", "", "the pod name to use")
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to watch. Defaults to the current directory")
-	cmd.Flags().StringVarP(&options.RemoteDir, "remote-dir", "r", "", "The remote directory in the DevPod to sync")
+	/*	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
+		cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
+		cmd.Flags().StringVarP(&options.Pod, "pod", "p", "", "the pod name to use")
+		cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to watch. Defaults to the current directory")
+		cmd.Flags().StringVarP(&options.RemoteDir, "remote-dir", "r", "", "The remote directory in the DevPod to sync")
+		cmd.Flags().BoolVarP(&options.Reload, "reload", "", false, "Should we reload the remote container on file changes?")
+	*/
 	cmd.Flags().BoolVarP(&options.Daemon, "daemon", "", false, "Runs ksync in a background daemon")
-	cmd.Flags().BoolVarP(&options.Reload, "reload", "", false, "Should we reload the remote container on file changes?")
-	cmd.Flags().BoolVarP(&options.WatchOnly, "watch-only", "", false, "Should we just run the `ksync watch` command only")
 	cmd.Flags().BoolVarP(&options.NoKsyncInit, "no-init", "", false, "Disables the use of 'ksync init' to ensure we have initialised ksync")
+	cmd.Flags().BoolVarP(&options.SingleMode, "single-mode", "", false, "Terminates eagerly if `ksync watch` fails")
+
+	// deprecated
+	cmd.Flags().BoolVarP(&options.WatchOnly, "watch-only", "", false, "Deprecated this flag is now ignored!")
 	return cmd
 }
 
@@ -100,15 +110,7 @@ func (o *SyncOptions) Run() error {
 	// ksync is installed to the jx/bin dir, so we can add it for the user
 	os.Setenv("PATH", PathWithBinary())
 
-	client, curNs, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	ns, _, err := kube.GetDevNamespace(client, curNs)
-	if err != nil {
-		return err
-	}
-	u, err := user.Current()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -128,6 +130,37 @@ func (o *SyncOptions) Run() error {
 		}
 	}
 
+	if o.SingleMode {
+		return o.KsyncWatch()
+	}
+	for {
+		err = o.KsyncWatch()
+		if err != nil {
+			o.warnf("Failed on ksync watch: %s\n", err)
+		}
+	}
+}
+
+func (o *SyncOptions) waitForKsyncWatchToFail() {
+	logged := false
+	for {
+		_, err := o.getCommandOutput("", "ksync", "get")
+		if err != nil {
+			// lets assume watch is no longer running
+			o.Printf("Looks like 'ksync watch' is not running: %s\n", err)
+			return
+		}
+		if !logged {
+			logged = true
+			o.Printf("It looks like 'ksync watch' is already running so we don't need to run it yet...\n")
+		}
+		time.Sleep(time.Second * 5)
+	}
+}
+
+func (o *SyncOptions) KsyncWatch() error {
+	o.waitForKsyncWatchToFail()
+
 	args := []string{"watch"}
 	if o.Daemon {
 		args = append(args, "--daemon")
@@ -135,7 +168,7 @@ func (o *SyncOptions) Run() error {
 	cmd := exec.Command("ksync", args...)
 	cmd.Stdout = o.Out
 	cmd.Stderr = o.Out
-	err = cmd.Start()
+	err := cmd.Start()
 	if err != nil {
 		return err
 	}
@@ -147,63 +180,6 @@ func (o *SyncOptions) Run() error {
 	if state != nil && state.Exited() {
 		return fmt.Errorf("ksync watch terminated")
 	}
-
-	if !o.WatchOnly {
-		name := o.Pod
-		username := u.Username
-		names, pods, err := kube.GetPods(client, ns, username)
-		if err != nil {
-			return err
-		}
-		info := util.ColorInfo
-		if len(names) == 0 {
-			return fmt.Errorf("There are no DevPods for user %s in namespace %s. You can create one via: %s\n", info(username), info(ns), info("jx create devpod"))
-		}
-
-		if name == "" {
-			n, err := util.PickName(names, "Pick Pod:")
-			if err != nil {
-				return err
-			}
-			name = n
-		} else if util.StringArrayIndex(names, name) < 0 {
-			return util.InvalidOption(optionLabel, name, names)
-		}
-
-		if name == "" {
-			return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
-		}
-
-		dir := o.Dir
-		if dir == "" {
-			dir, err = os.Getwd()
-			if err != nil {
-				return err
-			}
-		}
-		remoteDir := o.RemoteDir
-		if remoteDir == "" {
-			pod := pods[name]
-			if pod == nil {
-				return fmt.Errorf("Pod %s does not exist!", name)
-			}
-			ann := pod.Annotations
-			if ann != nil {
-				remoteDir = ann[kube.AnnotationWorkingDir]
-			}
-			if remoteDir == "" {
-				o.warnf("Missing annotation %s on pod %s", kube.AnnotationWorkingDir, name)
-				remoteDir = "/code"
-			}
-		}
-
-		err = o.CreateKsync(client, ns, name, dir, remoteDir, username)
-		if err != nil {
-			o.killWatchProcess(cmd)
-			return err
-		}
-	}
-
 	return cmd.Wait()
 }
 
@@ -224,7 +200,6 @@ func (o *SyncOptions) CreateKsync(client *kubernetes.Clientset, ns string, name 
 		}
 	}
 	matchLabels := map[string]string{
-		kube.LabelPodTemplate:    name,
 		kube.LabelDevPodUsername: username,
 	}
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: matchLabels})
@@ -237,6 +212,9 @@ func (o *SyncOptions) CreateKsync(client *kubernetes.Clientset, ns string, name 
 		return err
 	}
 
+	// ignore the bad lines that come
+	ignoreNames := []string{"starting", "watching"}
+
 	deleteNames := []string{}
 	err = o.retry(5, time.Second, func() error {
 		text, err := o.getCommandOutput(dir, "ksync", "get")
@@ -244,10 +222,10 @@ func (o *SyncOptions) CreateKsync(client *kubernetes.Clientset, ns string, name 
 			for i, line := range strings.Split(text, "\n") {
 				if i > 1 {
 					cols := strings.Split(strings.TrimSpace(line), " ")
-					if len(cols) > 0 {
+					if len(cols) > 2 {
 						n := strings.TrimSpace(cols[0])
 						if n == name || pods[n] == nil {
-							if util.StringArrayIndex(deleteNames, n) < 0 && n != "starting" {
+							if util.StringArrayIndex(deleteNames, n) < 0 && util.StringArrayIndex(ignoreNames, n) < 0 {
 								deleteNames = append(deleteNames, n)
 							}
 						}
