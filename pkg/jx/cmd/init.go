@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -434,6 +435,7 @@ func (o *InitOptions) initIngress() error {
 		o.Printf("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress\n")
 		return nil
 	}
+
 	podCount, err := kube.DeploymentPodCount(client, o.Flags.IngressDeployment, ingressNamespace)
 	if podCount == 0 {
 		installIngressController := false
@@ -450,6 +452,51 @@ func (o *InitOptions) initIngress() error {
 
 		if !installIngressController {
 			return nil
+		}
+
+		if isInhouseProvider(o.Flags.Provider) {
+			// get ips from your local interface
+			ips := util.GetMyIPs()
+			// Start guessing free ips from the network
+			var ipRange []string
+			for _, ip := range ips {
+				ipRange = append(ipRange, util.FindFreeIPRange(ip, 3))
+			}
+			ipRange = append(ipRange, "other")
+			// prompt user to select ip range
+			var p string
+			prompt := &survey.Select{
+				Message: "Available IP range to use",
+				Options: ipRange,
+				Default: "other",
+				Help:    "Cloud service providing the kubernetes cluster, local VM (minikube), Google (GKE), Azure (AKS)",
+			}
+			survey.AskOne(prompt, &p, nil)
+			// user to select one
+			if p == "other" {
+				promptIpRange := &survey.Input{
+					Message: "Please provide ip range (3 ips): (format: 192.168.10.36-192.168.10.38)",
+				}
+				var ipRangeUser string
+				err = survey.AskOne(promptIpRange, &ipRangeUser, nil)
+				if err != nil {
+					return err
+				}
+				//validate the value given by the user
+				if !util.ValidateIPRange(ipRangeUser) {
+					return errors.New("Invalid ip range provided")
+				}
+			}
+
+			// replace the ip range to the metallb yaml
+			// {{.Values.ip.range}}
+
+			// install metalLB
+			err = o.runCommandVerbose("helm", "install", "--name", "metallb", "jenkins-x/metallb", "--namespace", "kube-system", "--set", "rbac.create=true")
+			if err != nil {
+				return err
+			}
+
 		}
 
 		i := 0
