@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DefaultShell = "/bin/sh"
+	DefaultShell = "/bin/bash"
 )
 
 type RshOptions struct {
