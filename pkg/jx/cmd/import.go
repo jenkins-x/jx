@@ -807,7 +807,7 @@ func (o *ImportOptions) replacePlaceholders(gitServerName, gitOrg string) error 
 	o.Printf("app name: %s, git server: %s, org: %s\n", o.AppName, gitServerName, gitOrg)
 
 	if err := filepath.Walk(o.Dir, func(f string, fi os.FileInfo, err error) error {
-		if fi.Name() == ".git" {
+		if fi.IsDir() && (fi.Name() == ".git" || fi.Name() == "node_modules" || fi.Name() == "vendor" || fi.Name() == "target") {
 			return filepath.SkipDir
 		}
 		if !fi.IsDir() {
