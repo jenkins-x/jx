@@ -180,7 +180,10 @@ func (o *PreviewOptions) Run() error {
 
 	var pullRequest *gits.GitPullRequest
 	if prNum > 0 {
-		pullRequest, _ := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
+		pullRequest, err := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
+		if err != nil {
+			log.Warnf("issue getting pull request %s, %s, %v: %v\n", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
+		}
 		commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
 		if err != nil {
 			log.Warn("Unable to get commits: " + err.Error() + "\n")
@@ -285,13 +288,15 @@ func (o *PreviewOptions) Run() error {
 			gitSpec.ApplicationName = o.Application
 			update = true
 		}
-		if gitSpec.Title != pullRequest.Title {
-			gitSpec.Title = pullRequest.Title
-			update = true
-		}
-		if gitSpec.Description != pullRequest.Body {
-			gitSpec.Description = pullRequest.Body
-			update = true
+		if pullRequest != nil {
+			if gitSpec.Title != pullRequest.Title {
+				gitSpec.Title = pullRequest.Title
+				update = true
+			}
+			if gitSpec.Description != pullRequest.Body {
+				gitSpec.Description = pullRequest.Body
+				update = true
+			}
 		}
 		if gitSpec.URL != o.PullRequestURL {
 			gitSpec.URL = o.PullRequestURL
