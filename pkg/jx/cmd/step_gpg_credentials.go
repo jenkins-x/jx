@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -73,9 +74,19 @@ func (o *StepGpgCredentialsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	secret, err := kubeClient.CoreV1().Secrets(ns).Get(kube.SecretJenkinsReleaseGPG, metav1.GetOptions{})
+	name := kube.SecretJenkinsReleaseGPG
+	secret, err := kubeClient.CoreV1().Secrets(ns).Get(name, metav1.GetOptions{})
 	if err != nil {
-		return err
+		if curNs != ns {
+			secret2, err2 := kubeClient.CoreV1().Secrets(curNs).Get(name, metav1.GetOptions{})
+			if err2 == nil {
+				secret = secret2
+				err = nil
+			}
+		}
+	}
+	if err != nil {
+		return fmt.Errorf("Failed to find secret %s in namespace %s due to: %s", name, ns, err)
 	}
 	return o.GenerateGpgFiles(secret)
 }
