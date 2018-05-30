@@ -82,6 +82,8 @@ func (o *StepGpgCredentialsOptions) Run() error {
 			if err2 == nil {
 				secret = secret2
 				err = nil
+			} else {
+				o.warnf("Failed to find secret %s in namespace %s due to: %s", name, curNs, err2)
 			}
 		}
 	}
