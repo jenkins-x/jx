@@ -1,18 +1,16 @@
 package gke
 
 import (
-	"fmt"
 	"os/exec"
 	"sort"
 	"strings"
 )
 
-func GetGoogleZones() []string {
+func GetGoogleZones() ([]string, error) {
 	var zones []string
 	out, err := exec.Command("gcloud", "compute", "zones", "list").Output()
 	if err != nil {
-        fmt.Println("error occured")
-        fmt.Printf("%s", err)
+        return nil, err
 	}
 
 	for _, item := range strings.Split(string(out), "\n") {
@@ -22,7 +20,7 @@ func GetGoogleZones() []string {
 		}
 		sort.Strings(zones)
 	}
-	return zones
+	return zones, nil
 }
 
 func GetGoogleMachineTypes() []string {
