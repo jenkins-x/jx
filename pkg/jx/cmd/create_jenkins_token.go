@@ -19,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -94,6 +95,11 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
+	_, _, err := o.KubeClient()
+	if err != nil {
+		return fmt.Errorf("error connecting to kubernetes cluster: %v", err)
+	}
+
 	authConfigSvc, err := o.Factory.CreateJenkinsAuthConfigService()
 	if err != nil {
 		return err
@@ -161,6 +167,19 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	// now lets create a secret for it so we can perform incluster interactions with Jenkins
+	s, err := o.kubeClient.CoreV1().Secrets(o.currentNamespace).Get("jenkins", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	s.Data[kube.JenkinsAdminApiToken] = []byte(userAuth.ApiToken)
+
+	_, err = o.kubeClient.CoreV1().Secrets(o.currentNamespace).Update(s)
+	if err != nil {
+		return err
+	}
+
 	o.Printf("Created user %s API Token for Jenkins server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil

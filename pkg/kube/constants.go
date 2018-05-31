@@ -152,7 +152,7 @@ const (
 	// SecretBasicAuth the name for the Jenkins X basic auth secret
 	SecretBasicAuth = "jx-basic-auth"
 
-	JXBasicAuth = "JXBasicAuth"
+	JenkinsAdminApiToken = "jenkins-admin-api-token"
 
 	AUTH = "auth"
 )
