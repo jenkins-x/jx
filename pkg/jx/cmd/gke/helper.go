@@ -1,55 +1,28 @@
 package gke
 
+import (
+	"fmt"
+	"os/exec"
+	"sort"
+	"strings"
+)
+
 func GetGoogleZones() []string {
-
-	return []string{
-		"asia-northeast1-a",
-		"asia-northeast1-b",
-		"asia-northeast1-c",
-		"asia-southeast1-a",
-		"asia-southeast1-b",
-		"asia-east1-a",
-		"asia-east1-b",
-		"asia-east1-c",
-
-		"australia-southeast1-a",
-		"australia-southeast1-b",
-		"australia-southeast1-c",
-
-		"europe-west1-b",
-		"europe-west1-c",
-		"europe-west1-d",
-		"europe-west2-a",
-		"europe-west2-b",
-		"europe-west2-c",
-		"europe-west3-a",
-		"europe-west3-b",
-		"europe-west3-c",
-		"europe-west4-b",
-		"europe-west4-c",
-
-		"northamerica-northeast1-a",
-		"northamerica-northeast1-b",
-		"northamerica-northeast1-c",
-
-		"southamerica-east1-a",
-		"southamerica-east1-a",
-		"southamerica-east1-a",
-
-		"us-west1-a",
-		"us-west1-b",
-		"us-west1-c",
-		"us-east1-b",
-		"us-east1-c",
-		"us-east1-d",
-		"us-central1-a",
-		"us-central1-b",
-		"us-central1-c",
-		"us-central1-f",
-		"us-east4-a",
-		"us-east4-b",
-		"us-east4-c",
+	var zones []string
+	out, err := exec.Command("gcloud", "compute", "zones", "list").Output()
+	if err != nil {
+        fmt.Println("error occured")
+        fmt.Printf("%s", err)
 	}
+
+	for _, item := range strings.Split(string(out), "\n") {
+		zone := strings.Split(item, " ")[0]
+		if strings.Contains(zone, "-") {
+			zones = append(zones, zone)
+		}
+		sort.Strings(zones)
+	}
+	return zones
 }
 
 func GetGoogleMachineTypes() []string {
