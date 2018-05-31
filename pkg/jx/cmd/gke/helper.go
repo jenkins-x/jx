@@ -10,7 +10,7 @@ func GetGoogleZones() ([]string, error) {
 	var zones []string
 	out, err := exec.Command("gcloud", "compute", "zones", "list").Output()
 	if err != nil {
-        return nil, err
+		return nil, err
 	}
 
 	for _, item := range strings.Split(string(out), "\n") {
