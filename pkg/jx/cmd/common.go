@@ -412,6 +412,42 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
 
+func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep time.Duration, call func() error) (err error) {
+	timeoutTime := time.Now().Add(timeout)
+
+	lastMessage := ""
+	dot := false
+
+	for i := 0; ; i++ {
+		err = call()
+		if err == nil {
+			if dot {
+				o.Printf("\n")
+			}
+			return
+		}
+
+		if time.Now().After(timeoutTime) {
+			return fmt.Errorf("Timed out after %s, last error: %s", timeout.String(), err)
+		}
+
+		time.Sleep(sleep)
+
+		message := fmt.Sprintf("retrying after error: %s", err)
+		if lastMessage == message {
+			o.Printf(".")
+			dot = true
+		} else {
+			lastMessage = message
+			if dot {
+				dot = false
+				o.Printf("\n")
+			}
+			o.Printf("%s\n", lastMessage)
+		}
+	}
+}
+
 func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, error) {
 	jobMap := map[string]gojenkins.Job{}
 	jenkins, err := o.JenkinsClient()

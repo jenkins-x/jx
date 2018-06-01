@@ -18,7 +18,7 @@ import (
 // callback for modifying requirements
 type ModifyRequirementsFn func(requirements *helm.Requirements) error
 
-func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string) (*ReleasePullRequestInfo, error) {
+func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
 	var answer *ReleasePullRequestInfo
 	source := &env.Spec.Source
 	gitURL := source.URL
@@ -149,6 +149,13 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	if err != nil {
 		return answer, err
 	}
+	// lets rebase an existing PR
+	if pullRequestInfo != nil {
+		remoteBranch := pullRequestInfo.PullRequestArguments.Head
+		err = gits.GitForcePushBranch(dir, branchName, remoteBranch)
+		return pullRequestInfo, err
+	}
+
 	err = gits.GitPush(dir)
 	if err != nil {
 		return answer, err
