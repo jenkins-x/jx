@@ -381,6 +381,9 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if result.State != nil {
 		pr.State = result.State
 	}
+	if result.Head != nil {
+		pr.HeadRef = result.Head.Ref
+	}
 	if result.StatusesURL != nil {
 		pr.StatusesURL = result.StatusesURL
 	}

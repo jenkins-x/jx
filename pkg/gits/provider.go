@@ -134,6 +134,7 @@ type GitPullRequest struct {
 	Number         *int
 	Mergeable      *bool
 	Merged         *bool
+	HeadRef        *string
 	State          *string
 	StatusesURL    *string
 	IssueURL       *string
