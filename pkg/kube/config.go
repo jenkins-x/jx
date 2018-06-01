@@ -2,6 +2,7 @@ package kube
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -9,6 +10,8 @@ import (
 
 const (
 	DefaultNamespace = "jx"
+
+	PodNamespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
 // LoadConfig loads the kubernetes configuration
@@ -29,11 +32,17 @@ func CurrentNamespace(config *api.Config) string {
 	ctx := CurrentContext(config)
 	if ctx != nil {
 		n := ctx.Namespace
-		if n == "" {
-			// lets use the `default` namespace if there is no namespace in the context yet
-			return DefaultNamespace
+		if n != "" {
+			return n
 		}
-		return n
+	}
+	// if we are in a pod lets try load the pod namespace file
+	data, err := ioutil.ReadFile(PodNamespaceFile)
+	if err == nil {
+		n := string(data)
+		if n != "" {
+			return n
+		}
 	}
 	return DefaultNamespace
 }
