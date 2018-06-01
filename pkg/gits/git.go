@@ -152,6 +152,18 @@ func GitPush(dir string) error {
 	return nil
 }
 
+func GitForcePushBranch(dir string, localBranch string, remoteBranch string) error {
+	e := exec.Command("git", "push", "-f", "origin", localBranch+":"+remoteBranch)
+	e.Dir = dir
+	e.Stdout = os.Stdout
+	e.Stderr = os.Stderr
+	err := e.Run()
+	if err != nil {
+		return fmt.Errorf("failed to invoke git push in %s from local branch %s to remote branch %s %s due to %s", dir, localBranch, remoteBranch, err)
+	}
+	return nil
+}
+
 func GitAdd(dir string, args ...string) error {
 	a := append([]string{"add"}, args...)
 	e := exec.Command("git", a...)
