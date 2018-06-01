@@ -37,6 +37,9 @@ const (
 	// SecretJenkinsGitCredentials the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
 
+	// SecretJenkinsReleaseGPG the GPG secrets for doing releases
+	SecretJenkinsReleaseGPG = "jenkins-release-gpg"
+
 	// SecretJenkinsPipelineAddonCredentials the chat credentials secret
 	SecretJenkinsPipelineAddonCredentials = "jx-pipeline-addon-"
 
