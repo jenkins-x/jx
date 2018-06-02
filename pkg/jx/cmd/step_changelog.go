@@ -459,7 +459,7 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 		Branch:    branch,
 		Committer: o.toUserDetails(commit.Committer),
 	}
-	err := o.addIssuesAndPullRequests(spec, &commitSummary)
+	err := o.addIssuesAndPullRequests(spec, &commitSummary, commit)
 
 	spec.Commits = append(spec.Commits, commitSummary)
 	if err != nil {
@@ -467,7 +467,7 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 	}
 }
 
-func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, commit *v1.CommitSummary) error {
+func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, commit *v1.CommitSummary, rawCommit *object.Commit) error {
 	tracker := o.State.Tracker
 
 	gitProvider := o.State.GitProvider
@@ -483,7 +483,8 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 	if issueKind == issues.Jira {
 		regex = JIRAIssueRegex
 	}
-	matches := regex.FindAllStringSubmatch(commit.Message, -1)
+	message := fullCommitMessageText(rawCommit)
+	matches := regex.FindAllStringSubmatch(message, -1)
 	for _, match := range matches {
 		for _, result := range match {
 			result = strings.TrimPrefix(result, "#")
@@ -542,6 +543,26 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		}
 	}
 	return nil
+}
+
+// fullCommitMessageText returns the commit message plus any extra omitted commit message
+// lines from parent commits as a result of a PR
+func fullCommitMessageText(commit *object.Commit) string {
+	answer := commit.Message
+	fn := func(parent *object.Commit) error {
+		text := parent.Message
+		if text != "" {
+			sep := "\n"
+			if strings.HasSuffix(answer, "\n") {
+				sep = ""
+			}
+			answer += sep + text
+		}
+		return nil
+	}
+	commit.Parents().ForEach(fn)
+	return answer
+
 }
 
 func (o *StepChangelogOptions) gitUserToUserDetailSlice(users []gits.GitUser) []v1.UserDetails {
