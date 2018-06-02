@@ -159,7 +159,7 @@ func GitForcePushBranch(dir string, localBranch string, remoteBranch string) err
 	e.Stderr = os.Stderr
 	err := e.Run()
 	if err != nil {
-		return fmt.Errorf("failed to invoke git push in %s from local branch %s to remote branch %s %s due to %s", dir, localBranch, remoteBranch, err)
+		return fmt.Errorf("failed to invoke git push in %s from local branch %s to remote branch %s due to %s", dir, localBranch, remoteBranch, err)
 	}
 	return nil
 }
