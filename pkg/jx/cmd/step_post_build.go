@@ -73,7 +73,7 @@ func NewCmdStepPostBuild(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.FullImageName, "image", "", "", "The full image name to be analysed including teh registry prefix")
+	cmd.Flags().StringVarP(&options.FullImageName, "image", "", "", "The full image name to be analysed including the registry prefix")
 
 	return cmd
 }
