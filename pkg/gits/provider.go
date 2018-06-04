@@ -168,6 +168,8 @@ type GitIssue struct {
 	Labels        []GitLabel
 	StatusesURL   *string
 	IssueURL      *string
+	CreatedAt     *time.Time
+	UpdatedAt     *time.Time
 	ClosedAt      *time.Time
 	IsPullRequest bool
 	User          *GitUser

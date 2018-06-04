@@ -412,6 +412,8 @@ func (p *GiteaProvider) fromGiteaIssue(org string, name string, i *gitea.Issue) 
 		Labels:        labels,
 		User:          toGiteaUser(i.Poster),
 		Assignees:     assignees,
+		CreatedAt:     &i.Created,
+		UpdatedAt:     &i.Updated,
 		ClosedAt:      i.Closed,
 	}, nil
 }

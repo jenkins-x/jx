@@ -522,13 +522,14 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 
 				commit.IssueIDs = append(commit.IssueIDs, result)
 				issueSummary := v1.IssueSummary{
-					ID:        result,
-					URL:       issue.URL,
-					Title:     issue.Title,
-					Body:      issue.Body,
-					User:      &user,
-					ClosedBy:  &closedBy,
-					Assignees: assignees,
+					ID:                result,
+					URL:               issue.URL,
+					Title:             issue.Title,
+					Body:              issue.Body,
+					User:              &user,
+					CreationTimestamp: kube.ToMetaTime(issue.CreatedAt),
+					ClosedBy:          &closedBy,
+					Assignees:         assignees,
 				}
 				state := issue.State
 				if state != nil {

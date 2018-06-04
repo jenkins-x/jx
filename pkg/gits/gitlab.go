@@ -7,7 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
-	gitlab "github.com/wbrefvem/go-gitlab"
+	"github.com/wbrefvem/go-gitlab"
 )
 
 type GitlabProvider struct {
@@ -408,14 +408,16 @@ func fromGitlabIssue(issue *gitlab.Issue, owner, repo string) *GitIssue {
 	}
 
 	return &GitIssue{
-		Number:   &issue.IID,
-		URL:      issue.WebURL,
-		Owner:    owner,
-		Repo:     repo,
-		Title:    issue.Title,
-		Body:     issue.Description,
-		Labels:   labels,
-		ClosedAt: issue.ClosedAt,
+		Number:    &issue.IID,
+		URL:       issue.WebURL,
+		Owner:     owner,
+		Repo:      repo,
+		Title:     issue.Title,
+		Body:      issue.Description,
+		Labels:    labels,
+		CreatedAt: issue.CreatedAt,
+		UpdatedAt: issue.UpdatedAt,
+		ClosedAt:  issue.ClosedAt,
 	}
 }
 

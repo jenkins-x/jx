@@ -766,6 +766,8 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 		IsPullRequest: isPull,
 		Labels:        labels,
 		User:          toGitHubUser(i.User),
+		CreatedAt:     i.CreatedAt,
+		UpdatedAt:     i.UpdatedAt,
 		ClosedAt:      i.ClosedAt,
 		ClosedBy:      toGitHubUser(i.ClosedBy),
 		Assignees:     assignees,
