@@ -520,6 +520,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 					assignees = o.gitUserToUserDetailSlice(issue.Assignees)
 				}
 
+				labels := toV1Labels(issue.Labels)
 				commit.IssueIDs = append(commit.IssueIDs, result)
 				issueSummary := v1.IssueSummary{
 					ID:                result,
@@ -530,6 +531,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 					CreationTimestamp: kube.ToMetaTime(issue.CreatedAt),
 					ClosedBy:          &closedBy,
 					Assignees:         assignees,
+					Labels:            labels,
 				}
 				state := issue.State
 				if state != nil {
@@ -544,6 +546,19 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		}
 	}
 	return nil
+}
+
+// toV1Labels converts git labels to IssueLabel
+func toV1Labels(labels []gits.GitLabel) []v1.IssueLabel {
+	answer := []v1.IssueLabel{}
+	for _, label := range labels {
+		answer = append(answer, v1.IssueLabel{
+			URL:   label.URL,
+			Name:  label.Name,
+			Color: label.Color,
+		})
+	}
+	return answer
 }
 
 // fullCommitMessageText returns the commit message plus any extra omitted commit message
