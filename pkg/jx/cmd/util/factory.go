@@ -143,8 +143,6 @@ func (f *factory) GetJenkinsURL() (string, error) {
 }
 
 func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, error) {
-	// if incluster let's check for the jenkins creds secret and get the API token from it
-
 	authConfigSvc, err := f.CreateAuthConfigService(JenkinsAuthConfigFile)
 
 	if err != nil {

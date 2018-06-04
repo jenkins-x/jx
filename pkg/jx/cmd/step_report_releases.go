@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	pe "github.com/jenkins-x/jx/pkg/pipeline_events"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
 )
@@ -108,7 +109,14 @@ func (o *StepReportReleasesOptions) Run() error {
 		return fmt.Errorf("error creating elasticsearch provider, %v", err)
 	}
 
-	err = o.watchPipelineReleases(jxClient, o.currentNamespace)
+	if o.Watch {
+		err = o.watchPipelineReleases(jxClient, o.currentNamespace)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = o.getPipelineReleases(jxClient, o.currentNamespace)
 	if err != nil {
 		return err
 	}
@@ -116,10 +124,25 @@ func (o *StepReportReleasesOptions) Run() error {
 	return nil
 }
 
+func (o *StepReportReleasesOptions) getPipelineReleases(jxClient *versioned.Clientset, ns string) error {
+	releases, err := jxClient.JenkinsV1().Releases(metav1.NamespaceAll).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, r := range releases.Items {
+		err := o.PipelineEventsProvider.SendRelease(&r)
+		if err != nil {
+			log.Errorf("%v\n", err)
+			return err
+		}
+	}
+	return nil
+}
+
 func (o *StepReportReleasesOptions) watchPipelineReleases(jxClient *versioned.Clientset, ns string) error {
 
 	activity := &v1.PipelineActivity{}
-	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "release", ns, fields.Everything())
+	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "release", metav1.NamespaceAll, fields.Everything())
 	kube.SortListWatchByName(listWatch)
 	_, controller := cache.NewInformer(
 		listWatch,

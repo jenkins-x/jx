@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	pe "github.com/jenkins-x/jx/pkg/pipeline_events"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
 )
@@ -108,11 +109,33 @@ func (o *StepReportActivitiesOptions) Run() error {
 		return fmt.Errorf("error creating elasticsearch provider, %v", err)
 	}
 
-	err = o.watchPipelineActivities(jxClient, o.currentNamespace)
+	if o.Watch {
+		err = o.watchPipelineActivities(jxClient, o.currentNamespace)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = o.getPipelineActivities(jxClient, o.currentNamespace)
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (o *StepReportActivitiesOptions) getPipelineActivities(jxClient *versioned.Clientset, ns string) error {
+	activities, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, a := range activities.Items {
+		err := o.PipelineEventsProvider.SendActivity(&a)
+		if err != nil {
+			log.Errorf("%v\n", err)
+			return err
+		}
+	}
 	return nil
 }
 
