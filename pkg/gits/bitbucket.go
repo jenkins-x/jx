@@ -3,13 +3,12 @@ package gits
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/util"
-
-	"regexp"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -673,15 +672,17 @@ func BitbucketIssueToGitIssue(bIssue bitbucket.Issue) *GitIssue {
 		}
 	}
 	gitIssue := &GitIssue{
-		URL:      bIssue.Links.Self.Href,
-		Owner:    owner,
-		Repo:     bIssue.Repository.Name,
-		Number:   &id,
-		Title:    bIssue.Title,
-		Body:     bIssue.Content.Markup,
-		State:    &bIssue.State,
-		IssueURL: &bIssue.Links.Html.Href,
-		ClosedAt: &bIssue.UpdatedOn,
+		URL:       bIssue.Links.Self.Href,
+		Owner:     owner,
+		Repo:      bIssue.Repository.Name,
+		Number:    &id,
+		Title:     bIssue.Title,
+		Body:      bIssue.Content.Markup,
+		State:     &bIssue.State,
+		IssueURL:  &bIssue.Links.Html.Href,
+		CreatedAt: &bIssue.CreatedOn,
+		UpdatedAt: &bIssue.UpdatedOn,
+		ClosedAt:  &bIssue.UpdatedOn,
 		Assignees: []GitUser{
 			assignee,
 		},
