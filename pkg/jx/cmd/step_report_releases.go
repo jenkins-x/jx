@@ -99,9 +99,9 @@ func (o *StepReportReleasesOptions) Run() error {
 		return fmt.Errorf("try running `jx create addon pipeline-events` in your teams dev environment: %v", err)
 	}
 
-	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindRelease, externalURL)
+	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindPipelineEvent, externalURL)
 	if err != nil {
-		return fmt.Errorf("error getting %s auth details, %v", kube.ValueKindRelease, err)
+		return fmt.Errorf("error getting %s auth details, %v", kube.ValueKindPipelineEvent, err)
 	}
 
 	o.PipelineEventsProvider, err = pe.NewElasticsearchProvider(server, auth)
@@ -141,12 +141,12 @@ func (o *StepReportReleasesOptions) getPipelineReleases(jxClient *versioned.Clie
 
 func (o *StepReportReleasesOptions) watchPipelineReleases(jxClient *versioned.Clientset, ns string) error {
 
-	activity := &v1.PipelineActivity{}
-	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "release", metav1.NamespaceAll, fields.Everything())
+	release := &v1.Release{}
+	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "releases", metav1.NamespaceAll, fields.Everything())
 	kube.SortListWatchByName(listWatch)
 	_, controller := cache.NewInformer(
 		listWatch,
-		activity,
+		release,
 		time.Hour*24,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
@@ -156,7 +156,7 @@ func (o *StepReportReleasesOptions) watchPipelineReleases(jxClient *versioned.Cl
 					log.Errorf("Object is not a Release %#v\n", obj)
 					return
 				}
-				log.Infof("New activity added %s\n", release.ObjectMeta.Name)
+				log.Infof("New release added %s\n", release.ObjectMeta.Name)
 				err := o.PipelineEventsProvider.SendRelease(release)
 				if err != nil {
 					log.Errorf("%v\n", err)
@@ -166,10 +166,10 @@ func (o *StepReportReleasesOptions) watchPipelineReleases(jxClient *versioned.Cl
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				release, ok := newObj.(*v1.Release)
 				if !ok {
-					log.Errorf("Object is not a PipelineActivity %#v\n", newObj)
+					log.Errorf("Object is not a Release %#v\n", newObj)
 					return
 				}
-				log.Infof("Updated activity added %s\n", activity.ObjectMeta.Name)
+				log.Infof("Updated release added %s\n", release.ObjectMeta.Name)
 
 				err := o.PipelineEventsProvider.SendRelease(release)
 				if err != nil {
