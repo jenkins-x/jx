@@ -25,6 +25,9 @@ const (
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
+	// SecretJenkins is the name of the Jenkins secret
+	SecretJenkins = "jenkins"
+
 	// ServiceCloudBees the service name of the CloudBees app for Kubernetes
 	ServiceCloudBees = "cb-cdx"
 
@@ -92,6 +95,9 @@ const (
 
 	// ValueKindCVE an addon auth PipelineEvent
 	ValueKindPipelineEvent = "PipelineEvent"
+
+	// ValueKindCVE an addon auth PipelineEvent
+	ValueKindRelease = "Release"
 
 	// ValueKindEditNamespace for edit namespace
 	ValueKindEditNamespace = "editspace"

@@ -60,6 +60,24 @@ func (e ElasticsearchProvider) SendActivity(a *v1.PipelineActivity) error {
 	return nil
 }
 
+func (e ElasticsearchProvider) SendRelease(r *v1.Release) error {
+	data, err := json.Marshal(r)
+	if err != nil {
+		return err
+	}
+	var index *Index
+
+	err = e.post("releases", string(r.UID), data, &index)
+	if err != nil {
+		return err
+	}
+
+	if index.Id == "" {
+		return fmt.Errorf("release %s not created, no elasticsearch id returned from POST\n", r.Name)
+	}
+	return nil
+}
+
 func (e ElasticsearchProvider) post(index, indexID string, body []byte, rs result) error {
 
 	url := fmt.Sprintf("%s/%s/event/%s", e.BaseURL, index, indexID)

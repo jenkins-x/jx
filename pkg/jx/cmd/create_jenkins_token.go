@@ -169,7 +169,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	// now lets create a secret for it so we can perform incluster interactions with Jenkins
-	s, err := o.kubeClient.CoreV1().Secrets(o.currentNamespace).Get("jenkins", metav1.GetOptions{})
+	s, err := o.kubeClient.CoreV1().Secrets(o.currentNamespace).Get(kube.SecretJenkins, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
