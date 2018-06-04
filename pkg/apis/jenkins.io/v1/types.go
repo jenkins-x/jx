@@ -360,6 +360,13 @@ type IssueSummary struct {
 	Assignees         []UserDetails `json:"assignees,omitempty"  protobuf:"bytes,8,opt,name=assignees"`
 	ClosedBy          *UserDetails  `json:"closedBy,omitempty"  protobuf:"bytes,9,opt,name=closedBy"`
 	CreationTimestamp *metav1.Time  `json:"creationTimestamp,omitempty" protobuf:"bytes,10,opt,name=creationTimestamp"`
+	Labels            []IssueLabel  `json:"labels,omitempty" protobuf:"bytes,11,opt,name=labels"`
+}
+
+type IssueLabel struct {
+	URL   string `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
+	Name  string `json:"url,omitempty"  protobuf:"bytes,2,opt,name=url"`
+	Color string `json:"color,omitempty"  protobuf:"bytes,3,opt,name=color"`
 }
 
 // CommitSummary is the summary of a commit
