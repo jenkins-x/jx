@@ -476,7 +476,7 @@ func (o *InitOptions) initIngress() error {
 		log.Info("existing ingress controller found, no need to install a new one\n")
 	}
 
-	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == AWS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES || o.Flags.Provider == OPENSHIFT {
+	if o.Flags.Provider != MINIKUBE && o.Flags.Provider != MINISHIFT && o.Flags.Provider != OPENSHIFT {
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
 
 		if o.Flags.Provider == GKE {
