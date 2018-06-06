@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -47,8 +48,8 @@ func (o *CommonOptions) runCommandVerbose(name string, args ...string) error {
 
 func (o *CommonOptions) runCommandQuietly(name string, args ...string) error {
 	e := exec.Command(name, args...)
-	e.Stdout = o.Out
-	e.Stderr = o.Err
+	e.Stdout = ioutil.Discard
+	e.Stderr = ioutil.Discard
 	return e.Run()
 }
 
