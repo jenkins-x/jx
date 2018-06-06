@@ -74,11 +74,35 @@ func (o *UninstallOptions) Run() error {
 	if !flag {
 		return nil
 	}
+	envNames, err := kube.GetEnvironmentNames(jxClient, namespace)
+	if err != nil {
+		return err
+	}
+	for _, env := range envNames {
+		release := "jx-" + env
+		err := o.runCommandQuietly("helm", "status", release)
+		if err != nil {
+			continue
+		}
+		err = o.runCommand("helm", "delete", "--purge", release)
+		if err != nil {
+			return err
+		}
+	}
 	err = o.runCommand("helm", "delete", "--purge", "jenkins-x")
 	if err != nil {
 		return err
 	}
 	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection(&meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	client, _, err := o.Factory.CreateClient()
+	if err != nil {
+		return err
+	}
+	err = client.CoreV1().Namespaces().Delete(namespace, &meta_v1.DeleteOptions{})
 	if err != nil {
 		return err
 	}
