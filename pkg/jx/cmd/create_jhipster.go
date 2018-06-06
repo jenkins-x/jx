@@ -20,7 +20,7 @@ var (
 
 		This command is expected to be run within your '$GOHOME' directory. e.g. at '$GOHOME/src/github.com/myOrgOrUser/'
 
-		For more documentation about jhipster see: [https://github.com/jhipsterio/jhipster](https://github.com/jhipsterio/jhipster)
+		For more documentation about JHipster see: [https://www.jhipster.tech/](https://www.jhipster.tech/)
 
 	`)
 
