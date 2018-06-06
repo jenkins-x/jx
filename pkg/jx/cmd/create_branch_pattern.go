@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -72,32 +71,11 @@ func (o *CreateBranchPatternOptions) Run() error {
 		return fmt.Errorf("Missing argument for the branch pattern")
 	}
 	arg := o.Args[0]
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-	err = o.registerEnvironmentCRD()
-	if err != nil {
-		return err
-	}
 
-	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
-	if err != nil {
-		return err
-	}
-	if env == nil {
-		return fmt.Errorf("No Development environment found for namespace %s", ns)
-	}
-
-	branchPatterns := env.Spec.TeamSettings.BranchPatterns
-	if branchPatterns != env.Spec.TeamSettings.BranchPatterns {
-		env.Spec.TeamSettings.BranchPatterns = branchPatterns
-
-	}
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.BranchPatterns = arg
 		o.Printf("Setting the team branch pattern to: %s\n", util.ColorInfo(arg))
 		return nil
 	}
-	return o.modifyDevEnvironment(jxClient, ns, callback)
+	return o.ModifyDevEnvironment(callback)
 }

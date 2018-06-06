@@ -118,6 +118,8 @@ type TeamSettings struct {
 	BranchPatterns      string               `json:"branchPatterns,omitempty" protobuf:"bytes,3,opt,name=branchPatterns"`
 	ForkBranchPatterns  string               `json:"forkBranchPatterns,omitempty" protobuf:"bytes,4,opt,name=forkBranchPatterns"`
 	QuickstartLocations []QuickStartLocation `json:"quickstartLocations,omitempty" protobuf:"bytes,5,opt,name=quickstartLocations"`
+	BuildPackURL        string               `json:"buildPackUrl,omitempty" protobuf:"bytes,6,opt,name=buildPackUrl"`
+	BuildPackRef        string               `json:"buildPackRef,omitempty" protobuf:"bytes,7,opt,name=buildPackRef"`
 }
 
 // QuickStartLocation
