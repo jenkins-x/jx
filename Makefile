@@ -185,6 +185,7 @@ $(GAS):
 .PHONY: sec
 sec: $(GAS)
 	@echo "SECURITY"
-	$(GAS) ./...
+	@mkdir -p scanning
+	$(GAS) -fmt=yaml -out=scanning/results.yaml ./...
 
 
