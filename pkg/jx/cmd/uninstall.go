@@ -85,7 +85,7 @@ func (o *UninstallOptions) Run() error {
 		return err
 	}
 	for _, env := range envNames {
-		release := "jx-" + env
+		release := namespace + "-" + env
 		err := o.runCommandQuietly("helm", "status", release)
 		if err != nil {
 			continue
@@ -111,6 +111,17 @@ func (o *UninstallOptions) Run() error {
 	err = client.CoreV1().Namespaces().Delete(namespace, &meta_v1.DeleteOptions{})
 	if err != nil {
 		return err
+	}
+	for _, env := range envNames {
+		envNamespace := namespace + "-" + env
+		_, err := client.CoreV1().Namespaces().Get(envNamespace, meta_v1.GetOptions{})
+		if err != nil {
+			continue
+		}
+		err = client.CoreV1().Namespaces().Delete(envNamespace, &meta_v1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
 	}
 	log.Success("Jenkins X has been successfully uninstalled ")
 	return nil
