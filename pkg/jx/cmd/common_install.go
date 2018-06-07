@@ -58,6 +58,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installVirtualBox()
 		case "xhyve":
 			err = o.installXhyve()
+		case "hyperv":
+			err = o.installhyperv()
 		default:
 			return fmt.Errorf("unknown dependency to install %s\n", i)
 		}
@@ -357,6 +359,40 @@ func (o *CommonOptions) installXhyve() error {
 	} else {
 		pgmPath, _ := exec.LookPath("docker-machine-driver-xhyve")
 		o.Printf("xhyve driver is already available on your PATH at %s\n", pgmPath)
+	}
+	return nil
+}
+
+func (o *CommonOptions) installhyperv() error {
+	info, err := o.getCommandOutput("", "powershell", "Get-WindowsOptionalFeature", "-FeatureName", "Microsoft-Hyper-V-All", "-Online")
+
+	if err != nil {
+		return err
+	}
+	if strings.Contains(info, "Disabled") {
+
+		o.Printf("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted commmand.")
+
+		message := fmt.Sprintf("Would you like to restart your computer?")
+
+		if util.Confirm(message, true, "Please indicate if you would like to restart your computer.") {
+
+			err = o.runCommand("powershell", "Enable-WindowsOptionalFeature", "-Online", "-FeatureName", "Microsoft-Hyper-V", "-All", "-NoRestart")
+			if err != nil {
+				return err
+			}
+			err = o.runCommand("powershell", "Restart-Computer")
+			if err != nil {
+				return err
+			}
+
+		} else {
+			err = errors.New("hyperv was not Disabled")
+			return err
+		}
+
+	} else {
+		o.Printf("hyperv is already Enabled\n")
 	}
 	return nil
 }
