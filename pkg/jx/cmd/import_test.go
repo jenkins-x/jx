@@ -8,13 +8,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	mavenKeepOldJenkinsfile = "maven_keep_old_jenkinsfile"
+	mavenKeepOldJenkinsfile = "maven-keep-old-jenkinsfile"
 )
 
 func TestImportProjects(t *testing.T) {
@@ -43,6 +44,7 @@ func TestImportProjects(t *testing.T) {
 
 func assertImport(t *testing.T, testDir string) error {
 	_, dirName := filepath.Split(testDir)
+	dirName = kube.ToValidName(dirName)
 	o := &ImportOptions{}
 	configureOptions(&o.CommonOptions)
 	o.Dir = testDir
@@ -71,7 +73,7 @@ func assertImport(t *testing.T, testDir string) error {
 				assertFileContains(t, jenkinsfile, "gradle")
 			}
 		}
-		if dirName == "maven_old_jenkinsfile" {
+		if dirName == "maven-old-jenkinsfile" {
 			assertFileExists(t, jenkinsfile+jenkinsfileBackupSuffix)
 		}
 	}

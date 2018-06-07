@@ -9,7 +9,7 @@ To compile and test jx binaries you will need:
 
  - [git][]
  - [Go][] 1.9 or later, with support for compiling to `linux/amd64`
- - [glide][]
+ - [dep](https://github.com/golang/dep)
  
 
 In most cases, install the prerequisite according to its instructions. See the next section

@@ -111,18 +111,15 @@ func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
 
 func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) {
 	owner := org
-	if owner == "" {
-		owner = p.Username
-	}
 	answer := []*GitRepository{}
-	options := &github.RepositoryListOptions{
+	options := &github.RepositoryListByOrgOptions{
 		ListOptions: github.ListOptions{
 			Page:    0,
 			PerPage: pageSize,
 		},
 	}
 	for {
-		repos, _, err := p.Client.Repositories.List(p.Context, owner, options)
+		repos, _, err := p.Client.Repositories.ListByOrg(p.Context, owner, options)
 		if err != nil {
 			return answer, err
 		}
@@ -384,6 +381,9 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if result.State != nil {
 		pr.State = result.State
 	}
+	if result.Head != nil {
+		pr.HeadRef = result.Head.Ref
+	}
 	if result.StatusesURL != nil {
 		pr.StatusesURL = result.StatusesURL
 	}
@@ -411,13 +411,10 @@ func (p *GitHubProvider) GetPullRequest(owner, repo string, number int) (*GitPul
 	err := p.UpdatePullRequestStatus(pr)
 
 	if pr.Author != nil {
-		log.Info("Got pr Author: " + pr.Author.Login + " <" + pr.Author.Email + ">\n")
-
 		if pr.Author.Email == "" {
 			existing := p.UserInfo(pr.Author.Login)
 
 			if existing != nil {
-				log.Info("Got existing User: " + existing.Login + " <" + existing.Email + ">\n")
 				if existing.Email != "" {
 					pr.Author = existing
 				}
@@ -558,7 +555,7 @@ func (p *GitHubProvider) ListCommitStatus(org string, repo string, sha string) (
 	}
 	for _, result := range results {
 		status := &GitRepoStatus{
-			ID:          notNullInt64(result.ID),
+			ID:          string(*result.ID),
 			Context:     notNullString(result.Context),
 			URL:         notNullString(result.URL),
 			TargetURL:   notNullString(result.TargetURL),
@@ -769,6 +766,8 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 		IsPullRequest: isPull,
 		Labels:        labels,
 		User:          toGitHubUser(i.User),
+		CreatedAt:     i.CreatedAt,
+		UpdatedAt:     i.UpdatedAt,
 		ClosedAt:      i.ClosedAt,
 		ClosedBy:      toGitHubUser(i.ClosedBy),
 		Assignees:     assignees,

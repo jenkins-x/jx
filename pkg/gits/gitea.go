@@ -412,6 +412,8 @@ func (p *GiteaProvider) fromGiteaIssue(org string, name string, i *gitea.Issue) 
 		Labels:        labels,
 		User:          toGiteaUser(i.Poster),
 		Assignees:     assignees,
+		CreatedAt:     &i.Created,
+		UpdatedAt:     &i.Updated,
 		ClosedAt:      i.Closed,
 	}, nil
 }
@@ -502,7 +504,7 @@ func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([
 	}
 	for _, result := range results {
 		status := &GitRepoStatus{
-			ID:          result.ID,
+			ID:          string(result.ID),
 			Context:     result.Context,
 			URL:         result.URL,
 			TargetURL:   result.TargetURL,

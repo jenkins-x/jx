@@ -252,9 +252,9 @@ func (suite *BitbucketCloudProviderTestSuite) testStatuses(statuses []*GitRepoSt
 	suite.Require().Equal(len(statuses), 2)
 
 	for _, status := range statuses {
-		if status.ID == -1081267614 {
+		if status.ID == "ffffffffbf8d2a62" {
 			suite.Require().Equal(status.State, "success")
-		} else if status.ID == 1651225011 {
+		} else if status.ID == "626bb1b3" {
 			suite.Require().Equal(status.State, "in-progress")
 		}
 		suite.Require().NotEmpty(status.State)

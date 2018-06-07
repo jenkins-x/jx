@@ -134,6 +134,7 @@ type GitPullRequest struct {
 	Number         *int
 	Mergeable      *bool
 	Merged         *bool
+	HeadRef        *string
 	State          *string
 	StatusesURL    *string
 	IssueURL       *string
@@ -167,6 +168,8 @@ type GitIssue struct {
 	Labels        []GitLabel
 	StatusesURL   *string
 	IssueURL      *string
+	CreatedAt     *time.Time
+	UpdatedAt     *time.Time
 	ClosedAt      *time.Time
 	IsPullRequest bool
 	User          *GitUser
@@ -198,7 +201,7 @@ type GitLabel struct {
 }
 
 type GitRepoStatus struct {
-	ID      int64
+	ID      string
 	Context string
 	URL     string
 

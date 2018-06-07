@@ -26,10 +26,13 @@ const (
 	EKS        = "eks"
 	AKS        = "aks"
 	AWS        = "aws"
+	PKS        = "pks"
 	MINIKUBE   = "minikube"
 	MINISHIFT  = "minishift"
 	KUBERNETES = "kubernetes"
 	OPENSHIFT  = "openshift"
+	ORACLE     = "oracle"
+	IBM        = "ibm"
 	JX_INFRA   = "jx-infra"
 
 	optionKubernetesVersion = "kubernetes-version"
@@ -37,7 +40,7 @@ const (
 	optionClusterName       = "cluster-name"
 )
 
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS, AWS, EKS, KUBERNETES, OPENSHIFT, MINISHIFT, JX_INFRA}
+var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS, AWS, EKS, KUBERNETES, IBM, OPENSHIFT, ORACLE, MINISHIFT, JX_INFRA, PKS}
 
 const (
 	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"

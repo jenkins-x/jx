@@ -138,3 +138,32 @@ func TestAuthConfigGetsDefaultName(t *testing.T) {
 	assert.True(t, server.Name != "", "Should have a server name!")
 	assert.Equal(t, expectedUrl, server.URL, "Server.URL")
 }
+
+func TestDeleteServer(t *testing.T) {
+	c := &AuthConfig{}
+	url := "https://foo.com"
+	server := c.GetOrCreateServer(url)
+	assert.NotNil(t, server, "Failed to add the server to the configuration")
+	assert.Equal(t, 1, len(c.Servers), "No server found in the configuration")
+
+	c.DeleteServer(url)
+	assert.Equal(t, 0, len(c.Servers), "Failed to remove the server from configuration")
+	assert.Equal(t, "", c.CurrentServer, "Should be no current server")
+}
+
+func TestDeleteServer2(t *testing.T) {
+	c := &AuthConfig{}
+	url1 := "https://foo1.com"
+	server1 := c.GetOrCreateServer(url1)
+	assert.NotNil(t, server1, "Failed to add the server to the configuration")
+	url2 := "https://foo2.com"
+	server2 := c.GetOrCreateServer(url2)
+	assert.NotNil(t, server2, "Failed to the server to the configuration!")
+	assert.Equal(t, 2, len(c.Servers), "Must have 2 servers in the configuration")
+	c.CurrentServer = url2
+
+	c.DeleteServer(url2)
+	assert.Equal(t, 1, len(c.Servers), "Failed to remove one server from configuration")
+	assert.Equal(t, url1, c.Servers[0].URL, "Failed to remove the right server from the configuration")
+	assert.Equal(t, url1, c.CurrentServer, "Server 1 should be current server")
+}

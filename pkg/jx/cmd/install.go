@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
+	core_v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -68,6 +69,7 @@ const (
 	GitSecretsFile        = "gitSecrets.yaml"
 	AdminSecretsFile      = "adminSecrets.yaml"
 	ExtraValuesFile       = "extraValues.yaml"
+	JXInstallConfig       = "jx-install-config"
 	defaultInstallTimeout = "6000"
 )
 
@@ -218,6 +220,11 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	err = kube.EnsureNamespaceCreated(client, ns, map[string]string{kube.LabelTeam: ns}, nil)
+	if err != nil {
+		return fmt.Errorf("Failed to ensure the namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ns, err)
+	}
+
 	err = options.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
 	if err != nil {
 		return err
@@ -365,6 +372,23 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	data := make(map[string][]byte)
+	data[ExtraValuesFile] = []byte(config)
+	data[AdminSecretsFile] = []byte(adminSecrets)
+	data[GitSecretsFile] = []byte(secrets)
+
+	jxSecrets := &core_v1.Secret{
+		Data: data,
+		ObjectMeta: metav1.ObjectMeta{
+			Name: JXInstallConfig,
+		},
+	}
+	_, err = options.kubeClient.CoreV1().Secrets(ns).Create(jxSecrets)
+	if err != nil {
+		return err
+	}
+
 	options.Printf("Generated helm values %s\n", util.ColorInfo(configFileName))
 
 	timeout := options.Flags.Timeout

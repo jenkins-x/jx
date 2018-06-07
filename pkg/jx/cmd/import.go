@@ -19,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -291,6 +292,7 @@ func (o *ImportOptions) Run() error {
 		}
 	}
 	_, o.AppName = filepath.Split(o.Dir)
+	o.AppName = kube.ToValidName(strings.ToLower(o.AppName))
 
 	checkForJenkinsfile := o.Jenkinsfile == "" && !o.DisableJenkinsfileCheck
 	shouldClone := checkForJenkinsfile || !o.DisableDraft
@@ -803,11 +805,12 @@ func (o *ImportOptions) DoImport() error {
 }
 
 func (o *ImportOptions) replacePlaceholders(gitServerName, gitOrg string) error {
+	gitOrg = kube.ToValidName(strings.ToLower(gitOrg))
 	o.Printf("replacing placeholders in directory %s\n", o.Dir)
 	o.Printf("app name: %s, git server: %s, org: %s\n", o.AppName, gitServerName, gitOrg)
 
 	if err := filepath.Walk(o.Dir, func(f string, fi os.FileInfo, err error) error {
-		if fi.Name() == ".git" {
+		if fi.IsDir() && (fi.Name() == ".git" || fi.Name() == "node_modules" || fi.Name() == "vendor" || fi.Name() == "target") {
 			return filepath.SkipDir
 		}
 		if !fi.IsDir() {

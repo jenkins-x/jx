@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -74,6 +75,26 @@ func (o *UninstallOptions) Run() error {
 	if !flag {
 		return nil
 	}
+
+	err = o.cleanupConfig()
+	if err != nil {
+		return err
+	}
+	envNames, err := kube.GetEnvironmentNames(jxClient, namespace)
+	if err != nil {
+		return err
+	}
+	for _, env := range envNames {
+		release := namespace + "-" + env
+		err := o.runCommandQuietly("helm", "status", release)
+		if err != nil {
+			continue
+		}
+		err = o.runCommand("helm", "delete", "--purge", release)
+		if err != nil {
+			return err
+		}
+	}
 	err = o.runCommand("helm", "delete", "--purge", "jenkins-x")
 	if err != nil {
 		return err
@@ -82,6 +103,45 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	client, _, err := o.Factory.CreateClient()
+	if err != nil {
+		return err
+	}
+	err = client.CoreV1().Namespaces().Delete(namespace, &meta_v1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	for _, env := range envNames {
+		envNamespace := namespace + "-" + env
+		_, err := client.CoreV1().Namespaces().Get(envNamespace, meta_v1.GetOptions{})
+		if err != nil {
+			continue
+		}
+		err = client.CoreV1().Namespaces().Delete(envNamespace, &meta_v1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
 	log.Success("Jenkins X has been successfully uninstalled ")
 	return nil
+}
+
+func (o *UninstallOptions) cleanupConfig() error {
+	authConfigSvc, err := o.Factory.CreateAuthConfigService(util.JenkinsAuthConfigFile)
+	if err != nil {
+		return nil
+	}
+	server := authConfigSvc.Config().CurrentServer
+	err = authConfigSvc.DeleteServer(server)
+	if err != nil {
+		return err
+	}
+
+	chartConfigSvc, err := o.Factory.CreateChartmuseumAuthConfigService()
+	if err != nil {
+		return err
+	}
+	server = chartConfigSvc.Config().CurrentServer
+	return chartConfigSvc.DeleteServer(server)
 }

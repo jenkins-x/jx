@@ -27,6 +27,7 @@ func TestCreateQuckstartProjects(t *testing.T) {
 	o.OutDir = testDir
 	o.DryRun = true
 	o.Verbose = true
+	o.IgnoreTeam = true
 	o.Repository = appName
 
 	err = o.Run()

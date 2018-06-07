@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -47,8 +48,8 @@ func (o *CommonOptions) runCommandVerbose(name string, args ...string) error {
 
 func (o *CommonOptions) runCommandQuietly(name string, args ...string) error {
 	e := exec.Command(name, args...)
-	e.Stdout = o.Out
-	e.Stderr = o.Err
+	e.Stdout = ioutil.Discard
+	e.Stderr = ioutil.Discard
 	return e.Run()
 }
 
@@ -58,6 +59,23 @@ func (o *CommonOptions) runCommandInteractive(interactive bool, name string, arg
 	e.Stderr = o.Err
 	if interactive {
 		e.Stdin = os.Stdin
+	}
+	err := e.Run()
+	if err != nil {
+		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+	}
+	return err
+}
+
+func (o *CommonOptions) runCommandInteractiveInDir(interactive bool, dir string, name string, args ...string) error {
+	e := exec.Command(name, args...)
+	e.Stdout = o.Out
+	e.Stderr = o.Err
+	if interactive {
+		e.Stdin = os.Stdin
+	}
+	if dir != "" {
+		e.Dir = dir
 	}
 	err := e.Run()
 	if err != nil {

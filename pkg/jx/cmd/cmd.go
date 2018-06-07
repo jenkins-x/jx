@@ -5,10 +5,11 @@ import (
 
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 const (
@@ -94,6 +95,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 				NewCmdCompletion(f, out),
 				NewCmdContext(f, out, err),
 				NewCmdEnvironment(f, out, err),
+				NewCmdGC(f, out, err),
 				NewCmdNamespace(f, out, err),
 				NewCmdPrompt(f, out, err),
 				NewCmdShell(f, out, err),

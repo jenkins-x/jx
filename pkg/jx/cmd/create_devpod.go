@@ -279,7 +279,7 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	o.Printf("Pod %s is now ready!\n", util.ColorInfo(name))
-	o.Printf("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx rsh -d"))
+	o.Printf("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod --reuse"))
 
 	if o.Sync {
 		syncOptions := &SyncOptions{

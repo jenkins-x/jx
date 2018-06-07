@@ -3,13 +3,12 @@ package gits
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/util"
-
-	"regexp"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -586,21 +585,12 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 
 		for _, status := range result.Values {
 
-			key := ""
-			if len(status.Key) > 8 {
-				key = status.Key[:8]
-			} else {
-				key = status.Key
-			}
-
-			id, err := strconv.ParseInt(key, 10, 64)
-
 			if err != nil {
 				return nil, err
 			}
 
 			newStatus := &GitRepoStatus{
-				ID:          id,
+				ID:          status.Key,
 				URL:         status.Links.Commit.Href,
 				State:       stateMap[status.State],
 				TargetURL:   status.Links.Self.Href,
@@ -682,15 +672,17 @@ func BitbucketIssueToGitIssue(bIssue bitbucket.Issue) *GitIssue {
 		}
 	}
 	gitIssue := &GitIssue{
-		URL:      bIssue.Links.Self.Href,
-		Owner:    owner,
-		Repo:     bIssue.Repository.Name,
-		Number:   &id,
-		Title:    bIssue.Title,
-		Body:     bIssue.Content.Markup,
-		State:    &bIssue.State,
-		IssueURL: &bIssue.Links.Html.Href,
-		ClosedAt: &bIssue.UpdatedOn,
+		URL:       bIssue.Links.Self.Href,
+		Owner:     owner,
+		Repo:      bIssue.Repository.Name,
+		Number:    &id,
+		Title:     bIssue.Title,
+		Body:      bIssue.Content.Markup,
+		State:     &bIssue.State,
+		IssueURL:  &bIssue.Links.Html.Href,
+		CreatedAt: &bIssue.CreatedOn,
+		UpdatedAt: &bIssue.UpdatedOn,
+		ClosedAt:  &bIssue.UpdatedOn,
 		Assignees: []GitUser{
 			assignee,
 		},

@@ -43,7 +43,7 @@ func NewCmdUpgradeCLI(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 
 	cmd := &cobra.Command{
 		Use:     "cli",
-		Short:   "Upgrades the command li applications - if there are new versions available",
+		Short:   "Upgrades the command line applications - if there are new versions available",
 		Aliases: []string{"client", "clients"},
 		Long:    upgradeCLILong,
 		Example: upgradeCLIExample,
