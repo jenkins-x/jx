@@ -80,3 +80,9 @@ func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
 	config.CurrentServer = url
 	return s.SaveConfig()
 }
+
+// DeleteServer removes the given server from the configuration
+func (s *AuthConfigService) DeleteServer(url string) error {
+	s.config.DeleteServer(url)
+	return s.SaveConfig()
+}

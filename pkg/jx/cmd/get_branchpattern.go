@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 )
 
@@ -80,43 +78,4 @@ func (o *GetBranchPatternOptions) Run() error {
 	table.AddRow(patterns.DefaultBranchPattern)
 	table.Render()
 	return nil
-}
-
-func (o *CommonOptions) TeamBranchPatterns() (*BranchPatterns, error) {
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return nil, err
-	}
-	err = o.registerEnvironmentCRD()
-	if err != nil {
-		return nil, err
-	}
-
-	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
-	if err != nil {
-		return nil, err
-	}
-	if env == nil {
-		return nil, fmt.Errorf("No Development environment found for namespace %s", ns)
-	}
-
-	branchPatterns := env.Spec.TeamSettings.BranchPatterns
-	if branchPatterns == "" {
-		branchPatterns = defaultBranchPatterns
-	}
-
-	forkBranchPatterns := env.Spec.TeamSettings.ForkBranchPatterns
-	if forkBranchPatterns == "" {
-		forkBranchPatterns = defaultForkBranchPatterns
-	}
-
-	return &BranchPatterns{
-		DefaultBranchPattern: branchPatterns,
-		ForkBranchPattern:    forkBranchPatterns,
-	}, nil
-}
-
-type BranchPatterns struct {
-	DefaultBranchPattern string
-	ForkBranchPattern    string
 }

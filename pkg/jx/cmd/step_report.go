@@ -40,6 +40,7 @@ func NewCmdStepReport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 	}
 
 	cmd.AddCommand(NewCmdStepReportActivities(f, out, errOut))
+	cmd.AddCommand(NewCmdStepReportReleases(f, out, errOut))
 
 	return cmd
 }
