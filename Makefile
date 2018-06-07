@@ -119,8 +119,9 @@ clean:
 linux:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-linux-amd64 cmd/jx/jx.go
 
-docker: linux Dockerfile.buildgo
-	docker build --no-cache -t rawlingsj/jx:dev -f Dockerfile .
+docker: linux
+	docker build --no-cache -t jenkinsxio/jx:dev .
+	docker push jenkinsxio/jx:dev
 
 docker-go: linux Dockerfile.buildgo
 	docker build --no-cache -t builder-go -f Dockerfile.buildgo .

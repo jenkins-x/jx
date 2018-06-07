@@ -28,6 +28,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"net/url"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -76,6 +78,8 @@ type Factory interface {
 	LoadPipelineSecrets(kind string, serviceKind string) (*corev1.SecretList, error)
 
 	ImpersonateUser(user string) Factory
+
+	IsInCluster() bool
 }
 
 type factory struct {
@@ -104,7 +108,6 @@ func (f *factory) ImpersonateUser(user string) Factory {
 
 // CreateJenkinsClient creates a new jenkins client
 func (f *factory) CreateJenkinsClient() (*gojenkins.Jenkins, error) {
-
 	svc, err := f.CreateJenkinsAuthConfigService()
 	if err != nil {
 		return nil, err
@@ -148,9 +151,48 @@ func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, erro
 	if err != nil {
 		return authConfigSvc, err
 	}
-	_, err = authConfigSvc.LoadConfig()
+	config, err := authConfigSvc.LoadConfig()
 	if err != nil {
 		return authConfigSvc, err
+	}
+
+	if len(config.Servers) == 0 {
+		c, ns, err := f.CreateClient()
+		if err != nil {
+			return authConfigSvc, err
+		}
+
+		s, err := c.CoreV1().Secrets(ns).Get(kube.SecretJenkins, metav1.GetOptions{})
+		if err != nil {
+			return authConfigSvc, err
+		}
+
+		userAuth := auth.UserAuth{
+			Username: "admin",
+			ApiToken: string(s.Data[kube.JenkinsAdminApiToken]),
+		}
+		svc, err := c.CoreV1().Services(ns).Get(kube.ServiceJenkins, metav1.GetOptions{})
+		if err != nil {
+			return authConfigSvc, err
+		}
+		svcURL := kube.GetServiceURL(svc)
+		if svcURL == "" {
+			return authConfigSvc, fmt.Errorf("unable to find external URL annotation on service %s", svc.Name)
+		}
+
+		u, err := url.Parse(svcURL)
+		if err != nil {
+			return authConfigSvc, err
+		}
+		if !userAuth.IsInvalid() {
+			config.Servers = []*auth.AuthServer{
+				{
+					Name:  u.Host,
+					URL:   svcURL,
+					Users: []*auth.UserAuth{&userAuth},
+				},
+			}
+		}
 	}
 	return authConfigSvc, err
 }
@@ -255,7 +297,7 @@ func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 func (f *factory) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfigService, error) {
 	if dryRun {
 		fileName := GitAuthConfigFile
-		return f.createGitAuthConfigServiceFromSecrets(fileName, nil, false)
+		return f.createGitAuthConfigServiceFromSecrets(fileName, nil, f.IsInCluster())
 	}
 	return f.CreateGitAuthConfigService()
 }
@@ -278,10 +320,10 @@ func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
 	}
 
 	fileName := GitAuthConfigFile
-	return f.createGitAuthConfigServiceFromSecrets(fileName, secrets, f.isInCDPIpeline())
+	return f.createGitAuthConfigServiceFromSecrets(fileName, secrets, f.IsInCluster())
 }
 
-func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.AuthConfigService, error) {
+func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isIncluster bool) (auth.AuthConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(fileName)
 	if err != nil {
 		return authConfigSvc, err
@@ -293,26 +335,43 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	}
 
 	if secrets != nil {
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline)
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isIncluster)
 	}
 
 	// lets add a default if there's none defined yet
 	if len(config.Servers) == 0 {
 		// if in cluster then there's no user configfile, so check for env vars first
-		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
-		if !userAuth.IsInvalid() {
-			// if no config file is being used lets grab the git server from the current directory
-			server, err := gits.GetGitServer("")
-			if err != nil {
-				fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
-				server = "https://github.com"
-			}
-			config.Servers = []*auth.AuthServer{
-				{
-					Name:  "Git",
-					URL:   server,
-					Users: []*auth.UserAuth{&userAuth},
-				},
+		secretList, err := f.LoadPipelineSecrets(kube.ValueKindGit, "")
+		if err != nil {
+			return authConfigSvc, err
+		}
+
+		var data map[string][]byte
+
+		if secretList != nil {
+			for _, secret := range secretList.Items {
+				labels := secret.Labels
+				annotations := secret.Annotations
+				data = secret.Data
+				if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit && annotations != nil {
+					u := annotations[kube.AnnotationURL]
+					if u != "" && data != nil {
+						userAuth := auth.UserAuth{
+							Username: string(data[kube.SecretDataUsername]),
+							ApiToken: string(data[kube.SecretDataPassword]),
+						}
+						if !userAuth.IsInvalid() {
+							config.Servers = []*auth.AuthServer{
+								{
+									Name:  string(data[kube.AnnotationName]),
+									URL:   u,
+									Users: []*auth.UserAuth{&userAuth},
+								},
+							}
+							break
+						}
+					}
+				}
 			}
 		}
 	}
@@ -493,4 +552,13 @@ func (f *factory) isInCDPIpeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
 	return os.Getenv("BUILD_NUMBER") != ""
+}
+
+// function to tell if we are running incluster
+func (f *factory) IsInCluster() bool {
+	_, err := rest.InClusterConfig()
+	if err != nil {
+		return false
+	}
+	return true
 }

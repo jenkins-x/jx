@@ -93,17 +93,16 @@ func (o *GCPreviewsOptions) Run() error {
 			if err != nil {
 				return err
 			}
+
 			// we need pull request info to include
 			authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
 			if err != nil {
 				return err
 			}
-
 			gitKind, err := o.GitServerKind(gitInfo)
 			if err != nil {
 				return err
 			}
-
 			gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind)
 			if err != nil {
 				return err
@@ -112,8 +111,10 @@ func (o *GCPreviewsOptions) Run() error {
 			if err != nil {
 				log.Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "\n")
 			}
-
-			pullRequest, _ := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
+			pullRequest, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
+			if err != nil {
+				return err
+			}
 			lowerState := strings.ToLower(*pullRequest.State)
 
 			if strings.HasPrefix(lowerState, "clos") {
@@ -122,6 +123,7 @@ func (o *GCPreviewsOptions) Run() error {
 					DeleteNamespace: true,
 					CommonOptions:   o.CommonOptions,
 				}
+				log.Info("6\n")
 				deleteOpts.CommonOptions.Args = []string{e.Name}
 				err = deleteOpts.Run()
 				if err != nil {

@@ -157,22 +157,21 @@ func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 	return o.jenkinsClient, nil
 }
 
-func (o *CommonOptions) inclusterSetup() error {
-	// TODO find a better way to figure out of we are incluster
+func (o *CommonOptions) inclusterJenkinsAuthSetup() error {
 	c, ns, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
 	s, err := c.CoreV1().Secrets(ns).Get(kube.SecretJenkins, v1.GetOptions{})
 	if err != nil {
-		// not running incluster so fallback to getting auth file from local machine
-		return nil
+		return err
 	}
 	apiToken := s.Data[kube.JenkinsAdminApiToken]
 	j := CreateJenkinsUserOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: *o,
 		},
+		Username: "admin",
 		ApiToken: string(apiToken),
 	}
 
