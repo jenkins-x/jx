@@ -144,6 +144,7 @@ func (f *factory) GetJenkinsURL() (string, error) {
 
 func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(JenkinsAuthConfigFile)
+
 	if err != nil {
 		return authConfigSvc, err
 	}

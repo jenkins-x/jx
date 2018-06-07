@@ -20,25 +20,25 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-// StepReportActivitiesOptions contains the command line flags
-type StepReportActivitiesOptions struct {
+// StepReportReleasesOptions contains the command line flags
+type StepReportReleasesOptions struct {
 	StepReportOptions
 	Watch bool
 	pe.PipelineEventsProvider
 }
 
 var (
-	StepReportActivitiesLong = templates.LongDesc(`
-		This pipeline step reports activities to pluggable backends like ElasticSearch
+	StepReportReleasesLong = templates.LongDesc(`
+		This pipeline step reports releases to pluggable backends like ElasticSearch
 `)
 
-	StepReportActivitiesExample = templates.Examples(`
-		jx step report activities
+	StepReportReleasesExample = templates.Examples(`
+		jx step report Releases
 `)
 )
 
-func NewCmdStepReportActivities(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := StepReportActivitiesOptions{
+func NewCmdStepReportReleases(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := StepReportReleasesOptions{
 		StepReportOptions: StepReportOptions{
 			StepOptions: StepOptions{
 				CommonOptions: CommonOptions{
@@ -50,10 +50,10 @@ func NewCmdStepReportActivities(f cmdutil.Factory, out io.Writer, errOut io.Writ
 		},
 	}
 	cmd := &cobra.Command{
-		Use:     "activities",
-		Short:   "Reports activities",
-		Long:    StepReportActivitiesLong,
-		Example: StepReportActivitiesExample,
+		Use:     "releases",
+		Short:   "Reports Releases",
+		Long:    StepReportReleasesLong,
+		Example: StepReportReleasesExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -62,16 +62,16 @@ func NewCmdStepReportActivities(f cmdutil.Factory, out io.Writer, errOut io.Writ
 		},
 	}
 
-	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "Whether to watch activities")
+	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "Whether to watch Releases")
 	options.addCommonFlags(cmd)
 	return cmd
 }
 
-func (o *StepReportActivitiesOptions) Run() error {
+func (o *StepReportReleasesOptions) Run() error {
 
 	// look up services that we want to send events to using a label?
 
-	// watch activities and send an event for each backend i.e elasticsearch
+	// watch Releases and send an event for each backend i.e elasticsearch
 	f := o.Factory
 
 	_, _, err := o.KubeClient()
@@ -88,7 +88,7 @@ func (o *StepReportActivitiesOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
+	err = kube.RegisterReleaseCRD(apisClient)
 	if err != nil {
 		return err
 	}
@@ -110,13 +110,13 @@ func (o *StepReportActivitiesOptions) Run() error {
 	}
 
 	if o.Watch {
-		err = o.watchPipelineActivities(jxClient, o.currentNamespace)
+		err = o.watchPipelineReleases(jxClient, o.currentNamespace)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = o.getPipelineActivities(jxClient, o.currentNamespace)
+	err = o.getPipelineReleases(jxClient, o.currentNamespace)
 	if err != nil {
 		return err
 	}
@@ -124,13 +124,13 @@ func (o *StepReportActivitiesOptions) Run() error {
 	return nil
 }
 
-func (o *StepReportActivitiesOptions) getPipelineActivities(jxClient *versioned.Clientset, ns string) error {
-	activities, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
+func (o *StepReportReleasesOptions) getPipelineReleases(jxClient *versioned.Clientset, ns string) error {
+	releases, err := jxClient.JenkinsV1().Releases(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	for _, a := range activities.Items {
-		err := o.PipelineEventsProvider.SendActivity(&a)
+	for _, r := range releases.Items {
+		err := o.PipelineEventsProvider.SendRelease(&r)
 		if err != nil {
 			log.Errorf("%v\n", err)
 			return err
@@ -139,39 +139,39 @@ func (o *StepReportActivitiesOptions) getPipelineActivities(jxClient *versioned.
 	return nil
 }
 
-func (o *StepReportActivitiesOptions) watchPipelineActivities(jxClient *versioned.Clientset, ns string) error {
+func (o *StepReportReleasesOptions) watchPipelineReleases(jxClient *versioned.Clientset, ns string) error {
 
-	activity := &v1.PipelineActivity{}
-	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "pipelineactivities", ns, fields.Everything())
+	release := &v1.Release{}
+	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "releases", metav1.NamespaceAll, fields.Everything())
 	kube.SortListWatchByName(listWatch)
 	_, controller := cache.NewInformer(
 		listWatch,
-		activity,
+		release,
 		time.Hour*24,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				// send to registered backends
-				activity, ok := obj.(*v1.PipelineActivity)
+				release, ok := obj.(*v1.Release)
 				if !ok {
-					log.Errorf("Object is not a PipelineActivity %#v\n", obj)
+					log.Errorf("Object is not a Release %#v\n", obj)
 					return
 				}
-				log.Infof("New activity added %s\n", activity.ObjectMeta.Name)
-				err := o.PipelineEventsProvider.SendActivity(activity)
+				log.Infof("New release added %s\n", release.ObjectMeta.Name)
+				err := o.PipelineEventsProvider.SendRelease(release)
 				if err != nil {
 					log.Errorf("%v\n", err)
 					return
 				}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				activity, ok := newObj.(*v1.PipelineActivity)
+				release, ok := newObj.(*v1.Release)
 				if !ok {
-					log.Errorf("Object is not a PipelineActivity %#v\n", newObj)
+					log.Errorf("Object is not a Release %#v\n", newObj)
 					return
 				}
-				log.Infof("Updated activity added %s\n", activity.ObjectMeta.Name)
+				log.Infof("Updated release added %s\n", release.ObjectMeta.Name)
 
-				err := o.PipelineEventsProvider.SendActivity(activity)
+				err := o.PipelineEventsProvider.SendRelease(release)
 				if err != nil {
 					log.Errorf("%v\n", err)
 					return
