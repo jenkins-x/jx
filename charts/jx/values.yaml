@@ -1,6 +1,6 @@
 image:
   repository: rawlingsj/jx
-  tag: dev
+  tag: dev10
   pullPolicy: IfNotPresent
 
 replicaCount: 1
