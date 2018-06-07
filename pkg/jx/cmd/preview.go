@@ -50,6 +50,7 @@ type PreviewOptions struct {
 	Name           string
 	Label          string
 	Namespace      string
+	DevNamespace   string
 	Cluster        string
 	PullRequestURL string
 	PullRequest    string
@@ -106,6 +107,7 @@ func (options *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the kubernetes name conventions like Services, Namespaces")
 	cmd.Flags().StringVarP(&options.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
 	cmd.Flags().StringVarP(&options.Namespace, kube.OptionNamespace, "", "", "The Kubernetes namespace for the Environment")
+	cmd.Flags().StringVarP(&options.DevNamespace, "dev-namespace", "", "", "The Developer namespace where the preview command should run")
 	cmd.Flags().StringVarP(&options.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory used to detect the git source URL and reference")
 	cmd.Flags().StringVarP(&options.PullRequest, "pr", "", "", "The Pull Request Name (e.g. 'PR-23' or just '23'")
@@ -116,7 +118,7 @@ func (options *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
 
 // Run implements the command
 func (o *PreviewOptions) Run() error {
-	log.Info("Executing preview w/log.Info...\n")
+	o.Printf("Creating a preview\n")
 	/*
 		args := o.Args
 		if len(args) > 0 && o.Name == "" {
@@ -149,9 +151,12 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
-	if err != nil {
-		return err
+	ns := o.DevNamespace
+	if ns == "" {
+		ns, _, err = kube.GetDevNamespace(kubeClient, currentNs)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = o.defaultValues(ns, true)
@@ -203,7 +208,7 @@ func (o *PreviewOptions) Run() error {
 				}
 
 				if author.Email != "" {
-					userDetailService := cmdutil.NewUserDetailService(jxClient, o.devNamespace)
+					userDetailService := cmdutil.NewUserDetailService(jxClient, ns)
 					err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
 						Login:     author.Login,
 						Email:     author.Email,
@@ -212,7 +217,7 @@ func (o *PreviewOptions) Run() error {
 						AvatarURL: author.AvatarURL,
 					})
 					if err != nil {
-						log.Warn("An error happened attempting to CreateOrUpdateUser: " + err.Error() + "\n")
+						o.warnf("An error happened attempting to CreateOrUpdateUser in namespace %s: %s\n", ns, err)
 					}
 				}
 
@@ -356,7 +361,7 @@ func (o *PreviewOptions) Run() error {
 		}
 		_, err = environmentsResource.Create(env)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to create environment in namespace %s due to: %s", ns, err)
 		}
 		o.Printf("Created environment %s\n", util.ColorInfo(env.Name))
 	}
