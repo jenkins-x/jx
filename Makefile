@@ -77,7 +77,7 @@ vendoring:
 	$(GO) get -u github.com/golang/dep/cmd/dep
 	GO15VENDOREXPERIMENT=1 dep ensure
 
-release: check
+release:
 	rm -rf build release && mkdir build release
 	#for os in linux darwin ; do \
 	#	CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
