@@ -47,8 +47,6 @@ pipeline {
                     container('go') {
                         sh "echo \$(jx-release-version) > pkg/version/VERSION"
                         sh "make release"
-                        sh "docker build -t docker.io/$ORG/$APP_NAME:\$(cat pkg/version/VERSION) ."
-                        sh "docker push docker.io/$ORG/$APP_NAME:\$(cat pkg/version/VERSION)"
                     }
                 }
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx/charts/jx') {

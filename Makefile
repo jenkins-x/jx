@@ -85,6 +85,10 @@ release: check linux
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
+
+	docker build -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
+	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
+
 	chmod +x build/darwin/$(NAME)
 	chmod +x build/linux/$(NAME)
 	chmod +x build/arm/$(NAME)
