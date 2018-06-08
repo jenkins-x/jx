@@ -1,7 +1,7 @@
 CHART_REPO := http://jenkins-x-chartmuseum:8080
 NAME := jx
 OS := $(shell uname)
-RELEASE_VERSION := $(shell jx-release-version)
+RELEASE_VERSION := $(cat ../../pkg/version/VERSION)
 
 setup:
 	helm repo add jenkins-x https://chartmuseum.build.cd.jenkins-x.io
@@ -28,17 +28,15 @@ release: setup clean build
 
 ifeq ($(OS),Darwin)
 	sed -i "" -e "s/version:.*/version: $(RELEASE_VERSION)/" Chart.yaml
+	sed -i "" -e "s/tag:.*/tag: $(RELEASE_VERSION)/" values.yaml
+
 else ifeq ($(OS),Linux)
 	sed -i -e "s/version:.*/version: $(RELEASE_VERSION)/" Chart.yaml
+	sed -i -e "s/tag:.*/tag: $(RELEASE_VERSION)/" values.yaml
 else
-	exit -1
-endif
-	git add Chart.yaml
-	git commit -a -m "release $(RELEASE_VERSION)" --allow-empty
-	git tag -fa v$(RELEASE_VERSION) -m "Release version $(RELEASE_VERSION)"
-	git push origin v$(RELEASE_VERSION)
+
 	helm package .
-	curl --fail -u $(CHARTMUSEUM_CREDS_USR):$(CHARTMUSEUM_CREDS_PSW) --data-binary "@$(NAME)-platform-$(RELEASE_VERSION).tgz" $(CHART_REPO)/api/charts
+	curl --fail -u $(CHARTMUSEUM_CREDS_USR):$(CHARTMUSEUM_CREDS_PSW) --data-binary "@$(NAME)-$(RELEASE_VERSION).tgz" $(CHART_REPO)/api/charts
 	rm -rf ${NAME}*.tgz
 	updatebot push-version --kind make CHART_VERSION $(RELEASE_VERSION)
 
