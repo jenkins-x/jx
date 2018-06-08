@@ -11,8 +11,6 @@ import (
 
 	os_user "os/user"
 
-	"regexp"
-
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -24,13 +22,13 @@ import (
 )
 
 // CreateClusterOptions the flags for running create cluster
-type CreateClusterGKEOptions struct {
+type CreateClusterGKETerraformOptions struct {
 	CreateClusterOptions
 
-	Flags CreateClusterGKEFlags
+	Flags CreateClusterGKETerraformFlags
 }
 
-type CreateClusterGKEFlags struct {
+type CreateClusterGKETerraformFlags struct {
 	AutoUpgrade     bool
 	ClusterName     string
 	ClusterIpv4Cidr string
@@ -47,10 +45,8 @@ type CreateClusterGKEFlags struct {
 	Labels          string
 }
 
-const CLUSTER_LIST_HEADER = "PROJECT_ID"
-
 var (
-	createClusterGKELong = templates.LongDesc(`
+	createClusterGKETerraformLong = templates.LongDesc(`
 		This command creates a new kubernetes cluster on GKE, installing required local dependencies and provisions the
 		Jenkins X platform
 
@@ -65,25 +61,26 @@ var (
 
 `)
 
-	createClusterGKEExample = templates.Examples(`
+	createClusterGKETerraformExample = templates.Examples(`
 
-		jx create cluster gke
+		jx create cluster gke terraform
 
 `)
-	disallowedLabelCharacters = regexp.MustCompile("[^a-z0-9-]")
+
+	requiredServiceAccountRoles = []string{"roles/compute.instanceAdmin.v1", "roles/iam.serviceAccountActor", "roles/container.clusterAdmin"}
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := CreateClusterGKEOptions{
+func NewCmdCreateClusterGKETerraform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := CreateClusterGKETerraformOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, GKE),
 	}
 	cmd := &cobra.Command{
-		Use:     "gke",
-		Short:   "Create a new kubernetes cluster on GKE: Runs on Google Cloud",
-		Long:    createClusterGKELong,
-		Example: createClusterGKEExample,
+		Use:     "terraform",
+		Short:   "Create a new kubernetes cluster on GKE using Terraform: Runs on Google Cloud",
+		Long:    createClusterGKETerraformLong,
+		Example: createClusterGKETerraformExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -107,19 +104,16 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
-
-	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, out, errOut))
-
 	return cmd
 }
 
-func (o *CreateClusterGKEOptions) Run() error {
+func (o *CreateClusterGKETerraformOptions) Run() error {
 	err := o.installRequirements(GKE)
 	if err != nil {
 		return err
 	}
 
-	err = o.createClusterGKE()
+	err = o.createClusterGKETerraform()
 	if err != nil {
 		log.Errorf("error creating cluster %v", err)
 		return err
@@ -128,7 +122,18 @@ func (o *CreateClusterGKEOptions) Run() error {
 	return nil
 }
 
-func (o *CreateClusterGKEOptions) createClusterGKE() error {
+func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
+	confirm := false
+	prompt := &survey.Confirm{
+		Message: "Creating a GKE cluster with terraform is an experimental feature in jx.  Would you like to continue?",
+	}
+	survey.AskOne(prompt, &confirm, nil)
+
+	if !confirm {
+		// exit at this point
+		return nil
+	}
+
 	var err error
 	if !o.Flags.SkipLogin {
 		err := o.runCommand("gcloud", "auth", "login", "--brief")
@@ -212,34 +217,84 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		survey.AskOne(prompt, &maxNumOfNodes, nil)
 	}
 
-	// mandatory flags are machine type, num-nodes, zone,
-	args := []string{"container", "clusters", "create",
-		o.Flags.ClusterName, "--zone", zone,
-		"--num-nodes", minNumOfNodes,
-		"--machine-type", machineType,
-		"--enable-autoscaling",
-		"--min-nodes", minNumOfNodes,
-		"--max-nodes", maxNumOfNodes}
+	// suggested home directory structure
+	// .jx/clusters/<name>
+	//                    /jx-<name>.key.json
+	//                    /<name>.tfstate
+	//                    /<name>.tfstate.backup
+	//                    /terraform
+	//                              /main.tf
+	//                              /variables.tf
+	//                              /output.tf
+	//                              /terraform.tfvars
 
-	if o.Flags.DiskSize != "" {
-		args = append(args, "--disk-size", o.Flags.DiskSize)
+	// check to see if a service account exists
+	serviceAccount := fmt.Sprintf("jx-%s", o.Flags.ClusterName)
+	log.Infof("Checking for service account %s\n", serviceAccount)
+
+	args := []string{"iam", "service-accounts", "list", "--filter", serviceAccount}
+	output, err := o.getCommandOutput("", "gcloud", args...)
+	if err != nil {
+		return err
 	}
 
-	if o.Flags.ClusterIpv4Cidr != "" {
-		args = append(args, "--cluster-ipv4-cidr", o.Flags.ClusterIpv4Cidr)
+	if output == "Listed 0 items." {
+		log.Infof("Unable to find service account %s, checking if we have enough permission to create\n", serviceAccount)
+
+		// if it doesn't check to see if we have permissions to create (assign roles) to a service account
+		args = []string{"iam", "list-testable-permissions", fmt.Sprintf("//cloudresourcemanager.googleapis.com/projects/%s", projectId), "--filter", "resourcemanager.projects.setIamPolicy"}
+		output, err = o.getCommandOutput("", "gcloud", args...)
+		if err != nil {
+			return err
+		}
+
+		if strings.Contains(output, "resourcemanager.projects.setIamPolicy") {
+			// create service
+			log.Infof("Creating service account %s\n", serviceAccount)
+			args = []string{"iam", "service-accounts", "create", serviceAccount}
+			err = o.runCommand("gcloud", args...)
+			if err != nil {
+				return err
+			}
+
+			// assign roles to service account
+			for _, role := range requiredServiceAccountRoles {
+				log.Infof("Assigning role %s\n", role)
+				args = []string{"projects", "add-iam-policy-binding", projectId, "--member", fmt.Sprintf("serviceAccount:%s@%s.iam.gserviceaccount.com", serviceAccount, projectId), "--role", role}
+				err = o.runCommand("gcloud", args...)
+				if err != nil {
+					return err
+				}
+			}
+
+		} else {
+			return errors.New("User does not have the required role 'resourcemanager.projects.setIamPolicy' to configure a service account")
+		}
+
+	} else {
+		log.Info("Service Account exists\n")
 	}
 
-	if o.Flags.ClusterVersion != "" {
-		args = append(args, "--cluster-version", o.Flags.ClusterVersion)
-	}
+	// download the key if it doesn't exist locally, maybe prompt about overwriting
+	// gcloud iam service-accounts keys create ${KEY_DIR}/${SERVICE_ACCOUNT}.key.json --iam-account ${SERVICE_ACCOUNT}@${GCP_PROJECT}.iam.gserviceaccount.com
 
-	if o.Flags.AutoUpgrade {
-		args = append(args, "--enable-autoupgrade", "true")
-	}
+	// create terraform template in .jx folder
 
-	if o.Flags.ImageType != "" {
-		args = append(args, "--image-type", o.Flags.ImageType)
-	}
+	// create .tfvars file in .jx folder
+
+	// terraform init
+
+	// terraform plan
+
+	// terraform apply
+
+	// ensure state is also stored within the .jx folder
+
+	// need to capture the output to ensure that ~/.kube/config contains the required values for performing the install.
+
+	// possible feature enhancements
+	// 1) add created-by label
+	// 2) add created timestamp label
 
 	labels := o.Flags.Labels
 	user, err := os_user.Current()
@@ -257,57 +312,52 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		args = append(args, "--labels="+strings.ToLower(labels))
 	}
 
-	log.Info("Creating cluster...\n")
-	err = o.runCommand("gcloud", args...)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Initialising cluster ...\n")
-	o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
-	err = o.initAndInstall(GKE)
-	if err != nil {
-		return err
-	}
-
-	err = o.runCommand("gcloud", "container", "clusters", "get-credentials", o.Flags.ClusterName, "--zone", zone, "--project", projectId)
-	if err != nil {
-		return err
-	}
-
-	context, err := o.getCommandOutput("", "kubectl", "config", "current-context")
-	if err != nil {
-		return err
-	}
-
-	ns := o.InstallOptions.Flags.Namespace
-	if ns == "" {
-		f := o.Factory
-		_, ns, _ = f.CreateClient()
-		if err != nil {
-			return err
-		}
-	}
-
-	err = o.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
-	if err != nil {
-		return err
-	}
-
-	err = o.runCommand("kubectl", "get", "ingress")
-	if err != nil {
-		return err
-	}
+	//log.Info("Creating cluster...\n")
+	//err = o.runCommand("gcloud", args...)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//log.Info("Initialising cluster ...\n")
+	//o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
+	//err = o.initAndInstall(GKE)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//err = o.runCommand("gcloud", "container", "clusters", "get-credentials", o.Flags.ClusterName, "--zone", zone, "--project", projectId)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//context, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//ns := o.InstallOptions.Flags.Namespace
+	//if ns == "" {
+	//	f := o.Factory
+	//	_, ns, _ = f.CreateClient()
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
+	//
+	//err = o.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//err = o.runCommand("kubectl", "get", "ingress")
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
-func sanitizeLabel(username string) string {
-	sanitized := strings.ToLower(username)
-	return disallowedLabelCharacters.ReplaceAllString(sanitized, "-")
-}
-
 // asks to chose from existing projects or optionally creates one if none exist
-func (o *CreateClusterGKEOptions) getGoogleProjectId() (string, error) {
+func (o *CreateClusterGKETerraformOptions) getGoogleProjectId() (string, error) {
 	out, err := o.getCommandOutput("", "gcloud", "projects", "list")
 	if err != nil {
 		return "", err
