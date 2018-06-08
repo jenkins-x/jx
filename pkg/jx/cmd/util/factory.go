@@ -297,7 +297,7 @@ func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 func (f *factory) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfigService, error) {
 	if dryRun {
 		fileName := GitAuthConfigFile
-		return f.createGitAuthConfigServiceFromSecrets(fileName, nil, f.IsInCluster())
+		return f.createGitAuthConfigServiceFromSecrets(fileName, nil, f.isInCDPIpeline())
 	}
 	return f.CreateGitAuthConfigService()
 }
@@ -323,7 +323,7 @@ func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
 	return f.createGitAuthConfigServiceFromSecrets(fileName, secrets, f.IsInCluster())
 }
 
-func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isIncluster bool) (auth.AuthConfigService, error) {
+func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.AuthConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(fileName)
 	if err != nil {
 		return authConfigSvc, err
@@ -335,7 +335,7 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	}
 
 	if secrets != nil {
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isIncluster)
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline)
 	}
 
 	// lets add a default if there's none defined yet

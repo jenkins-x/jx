@@ -5,3 +5,4 @@ github:
     - name: homebrew-jx
     - name: builder-base
     - name: jx-docs
+    - name: jenkins-x-platform
