@@ -77,10 +77,12 @@ func (o *DeleteEnvOptions) Run() error {
 		return err
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
+
 	ns, currentEnv, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
 		return err
 	}
+
 	envMap, envNames, err := kube.GetEnvironments(jxClient, ns)
 	if err != nil {
 		return err

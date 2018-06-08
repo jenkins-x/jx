@@ -157,28 +157,6 @@ func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 	return o.jenkinsClient, nil
 }
 
-func (o *CommonOptions) inclusterJenkinsAuthSetup() error {
-	c, ns, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	s, err := c.CoreV1().Secrets(ns).Get(kube.SecretJenkins, v1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	apiToken := s.Data[kube.JenkinsAdminApiToken]
-	j := CreateJenkinsUserOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: *o,
-		},
-		Username: "admin",
-		ApiToken: string(apiToken),
-	}
-
-	return j.Run()
-
-}
-
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 	kubeClient, currentNs, err := o.KubeClient()
 	if err != nil {

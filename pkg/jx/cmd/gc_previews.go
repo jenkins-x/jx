@@ -93,16 +93,17 @@ func (o *GCPreviewsOptions) Run() error {
 			if err != nil {
 				return err
 			}
-
 			// we need pull request info to include
 			authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
 			if err != nil {
 				return err
 			}
+
 			gitKind, err := o.GitServerKind(gitInfo)
 			if err != nil {
 				return err
 			}
+
 			gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind)
 			if err != nil {
 				return err
@@ -123,7 +124,6 @@ func (o *GCPreviewsOptions) Run() error {
 					DeleteNamespace: true,
 					CommonOptions:   o.CommonOptions,
 				}
-				log.Info("6\n")
 				deleteOpts.CommonOptions.Args = []string{e.Name}
 				err = deleteOpts.Run()
 				if err != nil {

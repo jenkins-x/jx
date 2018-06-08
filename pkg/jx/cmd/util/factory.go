@@ -108,6 +108,7 @@ func (f *factory) ImpersonateUser(user string) Factory {
 
 // CreateJenkinsClient creates a new jenkins client
 func (f *factory) CreateJenkinsClient() (*gojenkins.Jenkins, error) {
+
 	svc, err := f.CreateJenkinsAuthConfigService()
 	if err != nil {
 		return nil, err
@@ -297,7 +298,7 @@ func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 func (f *factory) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfigService, error) {
 	if dryRun {
 		fileName := GitAuthConfigFile
-		return f.createGitAuthConfigServiceFromSecrets(fileName, nil, f.isInCDPIpeline())
+		return f.createGitAuthConfigServiceFromSecrets(fileName, nil, false)
 	}
 	return f.CreateGitAuthConfigService()
 }
@@ -320,7 +321,7 @@ func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
 	}
 
 	fileName := GitAuthConfigFile
-	return f.createGitAuthConfigServiceFromSecrets(fileName, secrets, f.IsInCluster())
+	return f.createGitAuthConfigServiceFromSecrets(fileName, secrets, f.isInCDPIpeline())
 }
 
 func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.AuthConfigService, error) {
@@ -339,6 +340,26 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	}
 
 	// lets add a default if there's none defined yet
+	if len(config.Servers) == 0 {
+		// if in cluster then there's no user configfile, so check for env vars first
+		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
+		if !userAuth.IsInvalid() {
+			// if no config file is being used lets grab the git server from the current directory
+			server, err := gits.GetGitServer("")
+			if err != nil {
+				fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
+				server = "https://github.com"
+			}
+			config.Servers = []*auth.AuthServer{
+				{
+					Name:  "Git",
+					URL:   server,
+					Users: []*auth.UserAuth{&userAuth},
+				},
+			}
+		}
+	}
+
 	if len(config.Servers) == 0 {
 		// if in cluster then there's no user configfile, so check for env vars first
 		secretList, err := f.LoadPipelineSecrets(kube.ValueKindGit, "")

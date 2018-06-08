@@ -77,7 +77,7 @@ vendoring:
 	$(GO) get -u github.com/golang/dep/cmd/dep
 	GO15VENDOREXPERIMENT=1 dep ensure
 
-release: check
+release: check linux
 	rm -rf build release && mkdir build release
 	for os in linux darwin ; do \
 		CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
@@ -117,7 +117,7 @@ clean:
 	rm -rf build release
 
 linux:
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-linux-amd64 cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx-linux-amd64 cmd/jx/jx.go
 
 docker: linux
 	docker build --no-cache -t jenkinsxio/jx:dev .
