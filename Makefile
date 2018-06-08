@@ -181,5 +181,14 @@ tools.govet:
 		go get golang.org/x/tools/cmd/vet; \
 	fi
 
+GAS := $(GOPATH)/bin/gas
+$(GAS):
+	go get github.com/GoASTScanner/gas/cmd/gas/...
+
+.PHONY: sec
+sec: $(GAS)
+	@echo "SECURITY"
+	@mkdir -p scanning
+	$(GAS) -fmt=yaml -out=scanning/results.yaml ./...
 
 
