@@ -112,8 +112,10 @@ func (o *GCPreviewsOptions) Run() error {
 			if err != nil {
 				log.Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "\n")
 			}
-
-			pullRequest, _ := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
+			pullRequest, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
+			if err != nil {
+				return err
+			}
 			lowerState := strings.ToLower(*pullRequest.State)
 
 			if strings.HasPrefix(lowerState, "clos") {
