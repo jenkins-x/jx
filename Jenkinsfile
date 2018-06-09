@@ -4,6 +4,7 @@ pipeline {
     }
     environment {
         GH_CREDS            = credentials('jenkins-x-github')
+        CHARTMUSEUM_CREDS   = credentials('jenkins-x-chartmuseum')
         BUILD_NUMBER        = "$BUILD_NUMBER"
         GIT_USERNAME        = "$GH_CREDS_USR"
         GIT_API_TOKEN       = "$GH_CREDS_PSW"
@@ -26,7 +27,7 @@ pipeline {
                     container('go') {
                         sh "make linux"
                         sh "make test"
-                        sh "./build/linux/jx-linux-amd64 --help"
+                        sh "./build/linux/jx --help"
 
                         sh "docker build -t docker.io/$ORG/$APP_NAME:$PREVIEW_VERSION ."
 
@@ -36,7 +37,7 @@ pipeline {
                 }
             }
         }
-    
+
         stage('Build and Release') {
             when {
                 branch 'master'
@@ -52,7 +53,6 @@ pipeline {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx/charts/jx') {
                     container('go') {
                         sh "helm init --client-only"
-                        input 'ok'
                         sh "make release"
                     }
                 }
