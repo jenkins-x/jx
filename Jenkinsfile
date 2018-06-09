@@ -52,6 +52,7 @@ pipeline {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx/charts/jx') {
                     container('go') {
                         sh "helm init --client-only"
+                        input 'ok'
                         sh "make release"
                     }
                 }
