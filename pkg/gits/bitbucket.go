@@ -60,7 +60,7 @@ func (b *BitbucketCloudProvider) ListOrganisations() ([]GitOrganisation, error) 
 
 	// Pagination is gross.
 	for {
-		results, _, err := b.Client.TeamsApi.TeamsGet(b.Context, nil)
+		results, _, err := b.Client.TeamsApi.TeamsGet(b.Context, map[string]interface{}{"role": "member"})
 
 		if err != nil {
 			return nil, err
