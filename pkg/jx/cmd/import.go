@@ -976,14 +976,26 @@ func (o *ImportOptions) fixDockerIgnoreFile() error {
 }
 
 func (o *ImportOptions) fixMaven() error {
-	pomName := filepath.Join(o.Dir, "pom.xml")
+	dir := o.Dir
+	pomName := filepath.Join(dir, "pom.xml")
 	exists, err := util.FileExists(pomName)
 	if err != nil {
 		return err
 	}
 	if exists {
 		// lets ensure the mvn plugins are ok
-		return o.runCommandVerboseAt(o.Dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
+		err = o.runCommandVerboseAt(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
+		if err != nil {
+			return err
+		}
+		err = gits.GitAdd(dir, "pom.xml")
+		if err != nil {
+			return err
+		}
+		err = gits.GitCommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
