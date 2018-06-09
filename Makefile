@@ -77,27 +77,25 @@ vendoring:
 	$(GO) get -u github.com/golang/dep/cmd/dep
 	GO15VENDOREXPERIMENT=1 dep ensure
 
-release:
+release: check
 	rm -rf build release && mkdir build release
-	#for os in linux darwin ; do \
-	#	CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
-	#done
-	#CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
-	#zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
-	# CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/$(NAME) cmd/jx/jx.go
-	ls -al ./build
+	for os in linux darwin ; do \
+		CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
+	done
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
+	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
 
 	docker build -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
 	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
 
-	#chmod +x build/darwin/$(NAME)
+	chmod +x build/darwin/$(NAME)
 	chmod +x build/linux/$(NAME)
-	#chmod +x build/arm/$(NAME)
+	chmod +x build/arm/$(NAME)
 
-	#cd ./build/darwin; tar -zcvf ../../release/jx-darwin-amd64.tar.gz jx
+	cd ./build/darwin; tar -zcvf ../../release/jx-darwin-amd64.tar.gz jx
 	cd ./build/linux; tar -zcvf ../../release/jx-linux-amd64.tar.gz jx
-	#cd ./build/arm; tar -zcvf ../../release/jx-linux-arm.tar.gz jx
+	cd ./build/arm; tar -zcvf ../../release/jx-linux-arm.tar.gz jx
 
 	go get -u github.com/progrium/gh-release
 	gh-release checksums sha256
@@ -105,25 +103,25 @@ release:
 
 	jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
 
-	#updatebot push-version --kind brew jx $(VERSION)
-	#updatebot push-version --kind docker JX_VERSION $(VERSION)
-	#updatebot push-regex -r "\s*release = \"(.*)\"" -v $(VERSION) config.toml
-	#updatebot update-loop
+	updatebot push-version --kind brew jx $(VERSION)
+	updatebot push-version --kind docker JX_VERSION $(VERSION)
+	updatebot push-regex -r "\s*release = \"(.*)\"" -v $(VERSION) config.toml
+	updatebot update-loop
 
-	#echo "Updating the JX CLI reference docs"
-	#git clone https://github.com/jenkins-x/jx-docs.git
-	#cd jx-docs/content/commands; \
-	#	../../../build/linux/jx create docs; \
-	#	git config credential.helper store; \
-	#	git add *; \
-	#	git commit --allow-empty -a -m "updated jx commands from $(VERSION)"; \
-	#	git push origin
+	echo "Updating the JX CLI reference docs"
+	git clone https://github.com/jenkins-x/jx-docs.git
+	cd jx-docs/content/commands; \
+		../../../build/linux/jx create docs; \
+		git config credential.helper store; \
+		git add *; \
+		git commit --allow-empty -a -m "updated jx commands from $(VERSION)"; \
+		git push origin
 
 clean:
 	rm -rf build release
 
 linux:
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx-linux-amd64 cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
 docker: linux
 	docker build --no-cache -t jenkinsxio/jx:dev .
