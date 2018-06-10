@@ -24,6 +24,9 @@ cronjob:
   successfulJobsHistoryLimit: 3
   concurrencyPolicy: Forbid
 
+serviceaccount:
+  enabled: false
+
 activeDeadlineSeconds: 300
 backoffLimit: 5
 
