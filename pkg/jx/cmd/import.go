@@ -85,6 +85,7 @@ type ImportOptions struct {
 	GitUserAuth           *auth.UserAuth
 	GitProvider           gits.GitProvider
 	PostDraftPackCallback CallbackFn
+	DisableMaven          bool
 }
 
 var (
@@ -976,6 +977,9 @@ func (o *ImportOptions) fixDockerIgnoreFile() error {
 }
 
 func (o *ImportOptions) fixMaven() error {
+	if o.DisableMaven {
+		return nil
+	}
 	dir := o.Dir
 	pomName := filepath.Join(dir, "pom.xml")
 	exists, err := util.FileExists(pomName)
