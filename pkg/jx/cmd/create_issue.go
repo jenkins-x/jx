@@ -1,10 +1,12 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"io"
 
+	"github.com/spf13/cobra"
+
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -117,7 +119,7 @@ func (o *CreateIssueOptions) FindGitInfo(dir string) (*gits.GitRepositoryInfo, e
 		if err != nil {
 			return nil, fmt.Errorf("Could not find the remote git source URL:  %s", err)
 		}
-		return gits.ParseGitURL(gitURL)
+		return gits.ParseGitURL(gitURL, false)
 	}
 }
 

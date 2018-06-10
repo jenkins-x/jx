@@ -1,0 +1,12 @@
+{
+    "id": 14,
+    "name": "Rest Webhook",
+    "createdDate": 1528486458830,
+    "updatedDate": 1528486458830,
+    "events": [
+        "repo:refs_changed"
+    ],
+    "configuration": {},
+    "url": "https://docs.atlassian.com/jira/REST/schema/rest-webhook#",
+    "active": true
+}

@@ -1,7 +1,7 @@
 package gits
 
 const (
-	KindBitBucket       = "bitbucket"
+	KindBitBucketCloud  = "bitbucketcloud"
 	KindBitBucketServer = "bitbucketserver"
 	KindGitea           = "gitea"
 	KindGitlab          = "gitlab"
@@ -13,5 +13,5 @@ const (
 )
 
 var (
-	KindGits = []string{KindBitBucket, KindGitea, KindGitHub, KindGitlab}
+	KindGits = []string{KindBitBucketCloud, KindBitBucketServer, KindGitea, KindGitHub, KindGitlab}
 )

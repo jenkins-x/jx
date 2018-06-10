@@ -1,0 +1,164 @@
+{
+    "id": 7,
+    "version": 2,
+    "title": "test build commit",
+    "state": "MERGED",
+    "open": false,
+    "closed": true,
+    "createdDate": 1528221928000,
+    "updatedDate": 1528226793000,
+    "closedDate": 1528226793000,
+    "fromRef": {
+        "id": "refs/heads/test/build",
+        "displayId": "test/build",
+        "latestCommit": "16f08661bf80de8ffe3dc2c79b5164ba4de32872",
+        "repository": {
+            "slug": "test-repo",
+            "id": 264,
+            "name": "test-repo",
+            "scmId": "git",
+            "state": "AVAILABLE",
+            "statusMessage": "Available",
+            "forkable": true,
+            "project": {
+                "key": "TEST-ORG",
+                "id": 282,
+                "name": "test-org",
+                "description": "Test Org",
+                "public": false,
+                "type": "NORMAL",
+                "links": {
+                    "self": [
+                        {
+                            "href": "http://auth.example.com/projects/TEST-ORG"
+                        }
+                    ]
+                }
+            },
+            "public": false,
+            "links": {
+                "clone": [
+                    {
+                        "href": "http://test-user@auth.example.com/scm/test-org/test-repo.git",
+                        "name": "http"
+                    },
+                    {
+                        "href": "ssh://git@auth.example.com:7999/test-org/test-repo.git",
+                        "name": "ssh"
+                    }
+                ],
+                "self": [
+                    {
+                        "href": "http://auth.example.com/projects/TEST-ORG/repos/test-repo/browse"
+                    }
+                ]
+            }
+        }
+    },
+    "toRef": {
+        "id": "refs/heads/master",
+        "displayId": "master",
+        "latestCommit": "7bf35d80676d9ed5eafcd4c56b4127df8b5283aa",
+        "repository": {
+            "slug": "test-repo",
+            "id": 264,
+            "name": "test-repo",
+            "scmId": "git",
+            "state": "AVAILABLE",
+            "statusMessage": "Available",
+            "forkable": true,
+            "project": {
+                "key": "TEST-ORG",
+                "id": 282,
+                "name": "test-org",
+                "description": "Test Org",
+                "public": false,
+                "type": "NORMAL",
+                "links": {
+                    "self": [
+                        {
+                            "href": "http://auth.example.com/projects/TEST-ORG"
+                        }
+                    ]
+                }
+            },
+            "public": false,
+            "links": {
+                "clone": [
+                    {
+                        "href": "http://test-user@auth.example.com/scm/test-org/test-repo.git",
+                        "name": "http"
+                    },
+                    {
+                        "href": "ssh://git@auth.example.com:7999/test-org/test-repo.git",
+                        "name": "ssh"
+                    }
+                ],
+                "self": [
+                    {
+                        "href": "http://auth.example.com/projects/TEST-ORG/repos/test-repo/browse"
+                    }
+                ]
+            }
+        }
+    },
+    "locked": false,
+    "author": {
+        "user": {
+            "name": "test-user",
+            "emailAddress": "test-user@example.com",
+            "id": 402,
+            "displayName": "Test User",
+            "active": true,
+            "slug": "test-user",
+            "type": "NORMAL",
+            "links": {
+                "self": [
+                    {
+                        "href": "http://auth.example.com/users/test-user"
+                    }
+                ]
+            }
+        },
+        "role": "AUTHOR",
+        "approved": false,
+        "status": "UNAPPROVED"
+    },
+    "reviewers": [],
+    "participants": [
+        {
+            "user": {
+                "name": "test-user",
+                "emailAddress": "test-user@example.com",
+                "id": 502,
+                "displayName": "Test User",
+                "active": true,
+                "slug": "test-user",
+                "type": "NORMAL",
+                "links": {
+                    "self": [
+                        {
+                            "href": "http://auth.example.com/users/test-user"
+                        }
+                    ]
+                }
+            },
+            "role": "PARTICIPANT",
+            "approved": false,
+            "status": "UNAPPROVED"
+        }
+    ],
+    "properties": {
+        "mergeCommit": {
+            "displayId": "1bcfc8687a2",
+            "id": "1bcfc8687a29d26593b77d8016973791df1c3b91"
+        }
+    },
+    "links": {
+        "self": [
+            {
+                "href": "http://auth.example.com/projects/TEST-ORG/repos/test-repo/pull-requests/7"
+            }
+        ]
+    }
+}

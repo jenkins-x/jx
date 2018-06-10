@@ -4,7 +4,7 @@ import "github.com/jenkins-x/jx/pkg/gits"
 
 func BranchPattern(gitKind string) string {
 	switch gitKind {
-	case gits.KindBitBucket, gits.KindBitBucketServer:
+	case gits.KindBitBucketCloud, gits.KindBitBucketServer:
 		return BranchPatternMatchEverything
 	default:
 		return BranchPatternMasterPRsAndFeatures

@@ -30,7 +30,7 @@ func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server *auth.AuthServer, user
 	var err error
 
 	switch server.Kind {
-	case gits.KindBitBucket:
+	case gits.KindBitBucketCloud:
 		key = bitbucketConfigMapKey
 		v1 = cm.Data[key]
 		v2, err = createBitbucketCloudConfig(v1, server, userAuth, credentials)

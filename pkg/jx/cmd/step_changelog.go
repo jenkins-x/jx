@@ -267,7 +267,7 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	gitInfo, err := gits.ParseGitURL(gitUrl)
+	gitInfo, err := gits.ParseGitURL(gitUrl, false)
 	if err != nil {
 		return err
 	}

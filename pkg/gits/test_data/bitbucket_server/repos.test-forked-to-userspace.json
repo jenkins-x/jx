@@ -1,0 +1,98 @@
+{
+    "slug": "test-repo",
+    "id": 272,
+    "name": "test-repo",
+    "scmId": "git",
+    "state": "AVAILABLE",
+    "statusMessage": "Available",
+    "forkable": true,
+    "origin": {
+      "slug": "test-repo",
+      "id": 264,
+      "name": "test-repo",
+      "scmId": "git",
+      "state": "AVAILABLE",
+      "statusMessage": "Available",
+      "forkable": true,
+      "project": {
+        "key": "TEST-ORG",
+        "id": 282,
+        "name": "test-org",
+        "description": "Test Org",
+        "public": false,
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "http://auth.example.com/projects/TEST-ORG"
+            }
+          ]
+        }
+      },
+      "public": false,
+      "links": {
+        "clone": [
+          {
+            "href": "http://test-user@auth.example.com/scm/test-org/test-repo.git",
+            "name": "http"
+          },
+          {
+            "href": "ssh://git@auth.example.com:7999/test-org/test-repo.git",
+            "name": "ssh"
+          }
+        ],
+        "self": [
+          {
+            "href": "http://auth.example.com/projects/TEST-ORG/repos/test-repo/browse"
+          }
+        ]
+      }
+    },
+    "project": {
+      "key": "~TEST-USER",
+      "id": 284,
+      "name": "Test User",
+      "type": "PERSONAL",
+      "owner": {
+        "name": "test-user",
+        "emailAddress": "test-user@example.com",
+        "id": 502,
+        "displayName": "Test User",
+        "active": true,
+        "slug": "test-user",
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "http://auth.example.com/users/test-user"
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": [
+          {
+            "href": "http://auth.example.com/users/test-user"
+          }
+        ]
+      }
+    },
+    "public": false,
+    "links": {
+      "clone": [
+        {
+          "href": "http://test-user@auth.example.com/scm/~test-user/test-repo.git",
+          "name": "http"
+        },
+        {
+          "href": "ssh://git@auth.example.com:7999/~test-user/test-repo.git",
+          "name": "ssh"
+        }
+      ],
+      "self": [
+        {
+          "href": "http://auth.example.com/users/test-user/repos/test-repo/browse"
+        }
+      ]
+    }
+  }
