@@ -26,6 +26,7 @@ func TestCreateQuckstartProjects(t *testing.T) {
 	o.Dir = testDir
 	o.OutDir = testDir
 	o.DryRun = true
+	o.DisableMaven = true
 	o.Verbose = true
 	o.IgnoreTeam = true
 	o.Repository = appName
