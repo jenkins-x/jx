@@ -37,6 +37,8 @@ const (
 
 	jenkinsfileBackupSuffix = ".backup"
 
+	minimumMavenDeployVersion = "2.8.2"
+
 	defaultGitIgnoreFile = `
 .project
 .classpath
@@ -83,6 +85,7 @@ type ImportOptions struct {
 	GitUserAuth           *auth.UserAuth
 	GitProvider           gits.GitProvider
 	PostDraftPackCallback CallbackFn
+	DisableMaven          bool
 }
 
 var (
@@ -331,6 +334,11 @@ func (o *ImportOptions) Run() error {
 		return err
 	}
 
+	err = o.fixMaven()
+	if err != nil {
+		return err
+	}
+
 	if o.RepoURL == "" {
 		if !o.DryRun {
 			err = o.CreateNewRemoteRepository()
@@ -423,9 +431,11 @@ func (o *ImportOptions) DraftCreate() error {
 		customDraftPack = projectConfig.BuildPack
 	}
 
+	packRepoPath := "github.com/jenkins-x/draft-packs/packs"
+
 	if len(customDraftPack) > 0 {
 		log.Info("trying to use draft pack: " + customDraftPack + "\n")
-		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/"+customDraftPack)
+		lpack = filepath.Join(draftHome.Packs(), packRepoPath, customDraftPack)
 		f, err := util.FileExists(lpack)
 		if err != nil {
 			log.Error(err.Error())
@@ -446,20 +456,20 @@ func (o *ImportOptions) DraftCreate() error {
 			}
 			if len(pack) > 0 {
 				if pack == cmdutil.LIBERTY {
-					lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/liberty")
+					lpack = filepath.Join(draftHome.Packs(), packRepoPath, "liberty")
 				} else if pack == cmdutil.APPSERVER {
-					lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/appserver")
+					lpack = filepath.Join(draftHome.Packs(), packRepoPath, "appserver")
 				} else {
 					log.Warn("Do not know how to handle pack: " + pack)
 				}
 			} else {
-				lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/maven")
+				lpack = filepath.Join(draftHome.Packs(), packRepoPath, "maven")
 			}
 
 			exists, _ = util.FileExists(lpack)
 			if !exists {
 				log.Warn("defaulting to maven pack")
-				lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/maven")
+				lpack = filepath.Join(draftHome.Packs(), packRepoPath, "maven")
 			}
 		} else if exists, err := util.FileExists(gradleName); err == nil && exists {
 			lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/gradle")
@@ -961,6 +971,34 @@ func (o *ImportOptions) fixDockerIgnoreFile() error {
 				}
 				o.Printf("Removed old `Dockerfile` entry from %s\n", util.ColorInfo(filename))
 			}
+		}
+	}
+	return nil
+}
+
+func (o *ImportOptions) fixMaven() error {
+	if o.DisableMaven {
+		return nil
+	}
+	dir := o.Dir
+	pomName := filepath.Join(dir, "pom.xml")
+	exists, err := util.FileExists(pomName)
+	if err != nil {
+		return err
+	}
+	if exists {
+		// lets ensure the mvn plugins are ok
+		err = o.runCommandVerboseAt(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
+		if err != nil {
+			return err
+		}
+		err = gits.GitAdd(dir, "pom.xml")
+		if err != nil {
+			return err
+		}
+		err = gits.GitCommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
+		if err != nil {
+			return err
 		}
 	}
 	return nil

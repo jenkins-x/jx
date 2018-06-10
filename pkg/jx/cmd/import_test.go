@@ -49,6 +49,7 @@ func assertImport(t *testing.T, testDir string) error {
 	configureOptions(&o.CommonOptions)
 	o.Dir = testDir
 	o.DryRun = true
+	o.DisableMaven = true
 
 	if dirName == mavenKeepOldJenkinsfile {
 		o.DisableJenkinsfileCheck = true
