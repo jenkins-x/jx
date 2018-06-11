@@ -24,7 +24,7 @@ type ComplianceOptions struct {
 }
 
 // NewCompliance creates a command object for the generic "compliance" action, which
-// executes the compliance tests against a Kubeernetes cluster
+// executes the compliance tests against a Kubernetes cluster
 func NewCompliance(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ComplianceOptions{
 		CommonOptions: CommonOptions{
@@ -36,7 +36,7 @@ func NewCompliance(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	cmd := &cobra.Command{
 		Use:   "compliance ACTION [flags]",
-		Short: "Run compliance E2E tests against Kbuernetes cluster",
+		Short: "Run compliance tests against Kubernetes cluster",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -48,6 +48,7 @@ func NewCompliance(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.AddCommand(NewCmdComplianceStatus(f, out, errOut))
 	cmd.AddCommand(NewCmdComplianceResults(f, out, errOut))
 	cmd.AddCommand(NewCmdComplianceRun(f, out, errOut))
+	cmd.AddCommand(NewCmdComplianceDelete(f, out, errOut))
 
 	return cmd
 }

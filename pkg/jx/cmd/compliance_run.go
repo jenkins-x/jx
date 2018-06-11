@@ -14,7 +14,7 @@ import (
 
 var (
 	complianceRuntLong = templates.LongDesc(`
-		Run the compliance E2E tests
+		Run the compliance tests
 	`)
 
 	complianceRunExample = templates.Examples(`
@@ -41,7 +41,7 @@ func NewCmdComplianceRun(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 
 	cmd := &cobra.Command{
 		Use:     "run",
-		Short:   "Runs the compliance E2E tests",
+		Short:   "Runs the compliance tests",
 		Long:    complianceRuntLong,
 		Example: complianceRunExample,
 		Run: func(cmd *cobra.Command, args []string) {

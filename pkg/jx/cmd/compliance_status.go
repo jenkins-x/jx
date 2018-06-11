@@ -13,7 +13,7 @@ import (
 
 var (
 	complianceStatusLong = templates.LongDesc(`
-		Retrieves the current status of the compliance E2E tests
+		Retrieves the current status of the compliance tests
 	`)
 
 	complianceStatusExample = templates.Examples(`
@@ -40,7 +40,7 @@ func NewCmdComplianceStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	cmd := &cobra.Command{
 		Use:     "status",
-		Short:   "Retrieve the status of compliance E2E tests",
+		Short:   "Retrieve the status of compliance tests",
 		Long:    complianceStatusLong,
 		Example: complianceStatusExample,
 		Run: func(cmd *cobra.Command, args []string) {
