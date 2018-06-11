@@ -19,6 +19,9 @@ const (
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
 
+	// ChartIstio the default chart for the Istio chart
+	ChartIstio = "install/kubernetes/helm/istio"
+
 	// ChartKubeless the default chart for kubeless
 	ChartKubeless = "incubator/kubeless"
 
@@ -169,6 +172,7 @@ var (
 		"anchore":    ChartAnchore,
 		"cb":         ChartCloudBees,
 		"gitea":      ChartGitea,
+		"istio":      ChartIstio,
 		"kubeless":   ChartKubeless,
 		"prometheus": "stable/prometheus",
 		"grafana":    "stable/grafana",

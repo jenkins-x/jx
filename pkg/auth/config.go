@@ -371,5 +371,4 @@ func (config *AuthConfig) PickOrCreateServer(defaultServerURL string, message st
 		return nil, fmt.Errorf("No server URL chosen!")
 	}
 	return config.GetOrCreateServer(name), nil
-
 }

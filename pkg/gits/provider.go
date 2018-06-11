@@ -35,9 +35,9 @@ type GitProvider interface {
 
 	UpdatePullRequestStatus(pr *GitPullRequest) error
 
-	GetPullRequest(owner, repo string, number int) (*GitPullRequest, error)
+	GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error)
 
-	GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error)
+	GetPullRequestCommits(owner string, repo *GitRepositoryInfo, number int) ([]*GitCommit, error)
 
 	PullRequestLastCommitStatus(pr *GitPullRequest) (string, error)
 
@@ -50,6 +50,10 @@ type GitProvider interface {
 	IsGitHub() bool
 
 	IsGitea() bool
+
+	IsBitbucketCloud() bool
+
+	IsBitbucketServer() bool
 
 	Kind() string
 
@@ -217,17 +221,16 @@ type GitRepoStatus struct {
 }
 
 type GitPullRequestArguments struct {
-	Owner string
-	Repo  string
-	Title string
-	Body  string
-	Head  string
-	Base  string
+	Title             string
+	Body              string
+	Head              string
+	Base              string
+	GitRepositoryInfo *GitRepositoryInfo
 }
 
 type GitWebHookArguments struct {
 	Owner  string
-	Repo   string
+	Repo   *GitRepositoryInfo
 	URL    string
 	Secret string
 }
@@ -239,8 +242,10 @@ func (pr *GitPullRequest) IsClosed() bool {
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
 	switch server.Kind {
-	case KindBitBucket:
+	case KindBitBucketCloud:
 		return NewBitbucketCloudProvider(server, user)
+	case KindBitBucketServer:
+		return NewBitbucketServerProvider(server, user)
 	case KindGitea:
 		return NewGiteaProvider(server, user)
 	case KindGitlab:
@@ -252,9 +257,11 @@ func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, 
 
 func ProviderAccessTokenURL(kind string, url string, username string) string {
 	switch kind {
-	case KindBitBucket:
+	case KindBitBucketCloud:
 		// TODO pass in the username
-		return BitbucketAccessTokenURL(url, username)
+		return BitBucketCloudAccessTokenURL(url, username)
+	case KindBitBucketServer:
+		return BitBucketServerAccessTokenURL(url)
 	case KindGitea:
 		return GiteaAccessTokenURL(url)
 	case KindGitlab:

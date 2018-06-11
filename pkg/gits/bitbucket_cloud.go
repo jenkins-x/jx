@@ -60,7 +60,7 @@ func (b *BitbucketCloudProvider) ListOrganisations() ([]GitOrganisation, error) 
 
 	// Pagination is gross.
 	for {
-		results, _, err := b.Client.TeamsApi.TeamsGet(b.Context, nil)
+		results, _, err := b.Client.TeamsApi.TeamsGet(b.Context, map[string]interface{}{"role": "member"})
 
 		if err != nil {
 			return nil, err
@@ -286,7 +286,7 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 ) (*GitPullRequest, error) {
 
 	head := bitbucket.PullrequestEndpointBranch{Name: data.Head}
-	sourceFullName := fmt.Sprintf("%s/%s", b.Username, data.Repo)
+	sourceFullName := fmt.Sprintf("%s/%s", b.Username, data.GitRepositoryInfo.Name)
 	sourceRepo := bitbucket.Repository{FullName: sourceFullName}
 	source := bitbucket.PullrequestEndpoint{
 		Repository: &sourceRepo,
@@ -311,7 +311,7 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 	pr, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPost(
 		b.Context,
 		b.Username,
-		data.Repo,
+		data.GitRepositoryInfo.Name,
 		options,
 	)
 
@@ -322,7 +322,7 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 	_, _, err = b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 		b.Context,
 		b.Username,
-		data.Repo,
+		data.GitRepositoryInfo.Name,
 		pr.Id,
 	)
 
@@ -332,7 +332,7 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 			_, _, err = b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 				b.Context,
 				b.Username,
-				data.Repo,
+				data.GitRepositoryInfo.Name,
 				pr.Id,
 			)
 
@@ -408,7 +408,8 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	return nil
 }
 
-func (p *BitbucketCloudProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
+func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
+	repo := repoInfo.Name
 	pr, _, err := p.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 		p.Context,
 		owner,
@@ -427,7 +428,7 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner, repo string, number int) 
 		// associate a username to an email through the api or vice versa
 		// so our best attempt is to try to figure out the author email
 		// from the commits
-		commits, err := p.GetPullRequestCommits(owner, repo, number)
+		commits, err := p.GetPullRequestCommits(owner, repoInfo, number)
 
 		if err != nil {
 			log.Warn("Unable to get commits for PR: " + owner + "/" + repo + "/" + strconv.Itoa(number) + " -- " + err.Error())
@@ -452,7 +453,8 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner, repo string, number int) 
 	}, nil
 }
 
-func (b *BitbucketCloudProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+func (b *BitbucketCloudProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+	repo := repository.Name
 	answer := []*GitCommit{}
 
 	// for some reason the 2nd parameter is the PR id, seems like an inconsistency/bug in the api
@@ -647,7 +649,7 @@ func (b *BitbucketCloudProvider) CreateWebHook(data *GitWebHookArguments) error 
 	_, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugHooksPost(
 		b.Context,
 		b.Username,
-		data.Repo,
+		data.Repo.Name,
 		options,
 	)
 
@@ -797,12 +799,16 @@ func (b *BitbucketCloudProvider) IsGitea() bool {
 	return false
 }
 
-func (b *BitbucketCloudProvider) IsBitbucket() bool {
+func (b *BitbucketCloudProvider) IsBitbucketCloud() bool {
 	return true
 }
 
+func (b *BitbucketCloudProvider) IsBitbucketServer() bool {
+	return false
+}
+
 func (b *BitbucketCloudProvider) Kind() string {
-	return "bitbucket"
+	return "bitbucketcloud"
 }
 
 // Exposed by Jenkins plugin; this one is for https://wiki.jenkins.io/display/JENKINS/BitBucket+Plugin
@@ -852,7 +858,7 @@ func (p *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRe
 	return answer, nil
 }
 
-func BitbucketAccessTokenURL(url string, username string) string {
+func BitBucketCloudAccessTokenURL(url string, username string) string {
 	// TODO with github we can default the scopes/flags we need on a token via adding
 	// ?scopes=repo,read:user,user:email,write:repo_hook
 	//

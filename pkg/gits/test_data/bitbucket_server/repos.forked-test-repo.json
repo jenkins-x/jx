@@ -1,0 +1,83 @@
+{
+    "slug": "test-repo",
+    "id": 271,
+    "name": "test-repo",
+    "scmId": "git",
+    "state": "AVAILABLE",
+    "statusMessage": "Available",
+    "forkable": true,
+    "origin": {
+      "slug": "test-repo",
+      "id": 264,
+      "name": "test-repo",
+      "scmId": "git",
+      "state": "AVAILABLE",
+      "statusMessage": "Available",
+      "forkable": true,
+      "project": {
+        "key": "TEST-ORG",
+        "id": 282,
+        "name": "test-org",
+        "description": "Test Org",
+        "public": false,
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "http://auth.example.com/projects/TEST-ORG"
+            }
+          ]
+        }
+      },
+      "public": false,
+      "links": {
+        "clone": [
+          {
+            "href": "http://test-user@auth.example.com/scm/test-org/test-repo.git",
+            "name": "http"
+          },
+          {
+            "href": "ssh://git@auth.example.com:7999/test-org/test-repo.git",
+            "name": "ssh"
+          }
+        ],
+        "self": [
+          {
+            "href": "http://auth.example.com/projects/TEST-ORG/repos/test-repo/browse"
+          }
+        ]
+      }
+    },
+    "project": {
+      "key": "TEST-ORG2",
+      "id": 283,
+      "name": "TEST-ORG2",
+      "public": false,
+      "type": "NORMAL",
+      "links": {
+        "self": [
+          {
+            "href": "http://auth.example.com/projects/TEST-ORG2"
+          }
+        ]
+      }
+    },
+    "public": false,
+    "links": {
+      "clone": [
+        {
+          "href": "ssh://git@auth.example.com:7999/test-org2/test-repo.git",
+          "name": "ssh"
+        },
+        {
+          "href": "http://test-user@auth.example.com/scm/test-org2/test-repo.git",
+          "name": "http"
+        }
+      ],
+      "self": [
+        {
+          "href": "http://auth.example.com/projects/TEST-ORG2/repos/test-repo/browse"
+        }
+      ]
+    }
+  }

@@ -82,7 +82,7 @@ func (o *CreateGitServerOptions) Run() error {
 		if serviceName != "" {
 			url, err := o.findService(serviceName)
 			if err != nil {
-				return fmt.Errorf("Failed to find %s git serivce %s: %s", kind, serviceName, err)
+				return fmt.Errorf("Failed to find %s git service %s: %s", kind, serviceName, err)
 			}
 			gitUrl = url
 		}
