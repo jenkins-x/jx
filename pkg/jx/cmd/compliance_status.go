@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 
+	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +30,7 @@ type ComplianceStatusOptions struct {
 // NewCmdComplianceStatus creates a command object for the "compliance status" action, which
 // retrieve the status of E2E compliance tests
 func NewCmdComplianceStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &ComplianceStartOptions{
+	options := &ComplianceStatusOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
 			Out:     out,
@@ -53,5 +56,27 @@ func NewCmdComplianceStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 // Run implements the "compliance status" command
 func (o *ComplianceStatusOptions) Run() error {
-	return o.Cmd.Help()
+	cc, err := o.Factory.CreateComplianceClient()
+	if err != nil {
+		return errors.Wrap(err, "could not create the compliance client")
+	}
+	status, err := cc.GetStatus(complianceNamespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve the status")
+	}
+	fmt.Println(hummanReadableStatus(status.Status))
+	return nil
+}
+
+func hummanReadableStatus(status string) string {
+	switch status {
+	case aggregation.RunningStatus:
+		return "Compliance tests are still running, it can take up to 60 minutes."
+	case aggregation.FailedStatus:
+		return "Compliance tests have failed. You can check what happened with `jx compliance results`."
+	case aggregation.CompleteStatus:
+		return "Compliance tests completed. Use `jx compliance results` to display the results."
+	default:
+		return fmt.Sprintf("Compliance tests are in unknown state %q.", status)
+	}
 }

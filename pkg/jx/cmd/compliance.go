@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const complianceNamespace = "jx-compliance"
+
 // ComplianceOptions options for compliance command
 type ComplianceOptions struct {
 	CommonOptions
@@ -17,9 +19,9 @@ type ComplianceOptions struct {
 func NewCompliance(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ComplianceOptions{
 		CommonOptions: CommonOptions{
-			Factory: nil,
-			Out:     nil,
-			Err:     nil,
+			Factory: f,
+			Out:     out,
+			Err:     errOut,
 		},
 	}
 
