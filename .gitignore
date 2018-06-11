@@ -21,3 +21,4 @@
 build/
 release/
 .updatebot-repos/
+.terraform/
