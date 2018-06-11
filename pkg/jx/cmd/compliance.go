@@ -8,7 +8,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const complianceNamespace = "jx-compliance"
+// TODO change the name of the namespace to something more jx specific (e.g. jx-compliance), but
+// at this time the Sonobuoy does not run properly into a custom namespace.
+const complianceNamespace = "heptio-sonobuoy"
 
 // kubeConformanceImage is the URL of the docker image to run for the kube conformance tests
 const kubeConformanceImage = "gcr.io/heptio-images/kube-conformance:latest"
