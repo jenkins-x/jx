@@ -988,17 +988,35 @@ func (o *ImportOptions) fixMaven() error {
 	}
 	if exists {
 		// lets ensure the mvn plugins are ok
-		err = o.runCommandVerboseAt(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
+		out, err := o.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to update maven plugin: %s output: %s", err, out)
 		}
-		err = gits.GitAdd(dir, "pom.xml")
-		if err != nil {
-			return err
+		if !o.DryRun {
+			err = gits.GitAdd(dir, "pom.xml")
+			if err != nil {
+				return err
+			}
+			err = gits.GitCommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
+			if err != nil {
+				return err
+			}
 		}
-		err = gits.GitCommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
+
+		// lets ensure the probe paths are ok
+		out, err = o.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:chart")
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to update chart: %s output: %s", err, out)
+		}
+		if !o.DryRun {
+			err = gits.GitAdd(dir, "charts")
+			if err != nil {
+				return err
+			}
+			err = gits.GitCommitIfChanges(dir, "fix:(chart) fix up the probe path")
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
