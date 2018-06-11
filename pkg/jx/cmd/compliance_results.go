@@ -37,7 +37,7 @@ func NewCmdComplianceResults(f cmdutil.Factory, out io.Writer, errOut io.Writer)
 
 	cmd := &cobra.Command{
 		Use:     "results",
-		Short:   "Show the results of compliance tests",
+		Short:   "Shows the results of compliance tests",
 		Long:    complianceResultsLong,
 		Example: complianceResultsExample,
 		Run: func(cmd *cobra.Command, args []string) {

@@ -14,7 +14,7 @@ import (
 
 var (
 	complianceRuntLong = templates.LongDesc(`
-		Run the compliance tests
+		Runs the compliance tests
 	`)
 
 	complianceRunExample = templates.Examples(`

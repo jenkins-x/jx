@@ -49,6 +49,7 @@ func NewCompliance(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.AddCommand(NewCmdComplianceResults(f, out, errOut))
 	cmd.AddCommand(NewCmdComplianceRun(f, out, errOut))
 	cmd.AddCommand(NewCmdComplianceDelete(f, out, errOut))
+	cmd.AddCommand(NewCmdComplianceLogs(f, out, errOut))
 
 	return cmd
 }

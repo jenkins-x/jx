@@ -40,7 +40,7 @@ func NewCmdComplianceStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	cmd := &cobra.Command{
 		Use:     "status",
-		Short:   "Retrieve the status of compliance tests",
+		Short:   "Retrieves the status of compliance tests",
 		Long:    complianceStatusLong,
 		Example: complianceStatusExample,
 		Run: func(cmd *cobra.Command, args []string) {

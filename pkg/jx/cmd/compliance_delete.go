@@ -12,7 +12,7 @@ import (
 
 var (
 	complianceDeleteLong = templates.LongDesc(`
-		Remove the Kubernetes resources allocated by the compliance tests
+		Deletes the Kubernetes resources allocated by the compliance tests
 	`)
 
 	complianceDeleteExample = templates.Examples(`
@@ -39,7 +39,7 @@ func NewCmdComplianceDelete(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 	cmd := &cobra.Command{
 		Use:     "delete",
-		Short:   "Delete the Kubernetes resources allocated by the compliance tests",
+		Short:   "Deletes the Kubernetes resources allocated by the compliance tests",
 		Long:    complianceDeleteLong,
 		Example: complianceDeleteExample,
 		Run: func(cmd *cobra.Command, args []string) {
