@@ -3,11 +3,18 @@ package cmd
 import (
 	"io"
 
+	"github.com/heptio/sonobuoy/pkg/buildinfo"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
 const complianceNamespace = "jx-compliance"
+
+// kubeConformanceImage is the URL of the docker image to run for the kube conformance tests
+const kubeConformanceImage = "gcr.io/heptio-images/kube-conformance:latest"
+
+// compliance is the URL of the docker image to run for the Sonobuoy aggregator and workers
+var complianceImage = "gcr.io/heptio-images/sonobuoy:" + buildinfo.Version
 
 // ComplianceOptions options for compliance command
 type ComplianceOptions struct {
@@ -36,9 +43,9 @@ func NewCompliance(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 		},
 	}
 
-	cmd.AddCommand(NewCmdComplianceStart(f, out, errOut))
 	cmd.AddCommand(NewCmdComplianceStatus(f, out, errOut))
 	cmd.AddCommand(NewCmdComplianceResults(f, out, errOut))
+	cmd.AddCommand(NewCmdComplianceRun(f, out, errOut))
 
 	return cmd
 }
