@@ -572,25 +572,27 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	o.PullRequestName = strings.TrimPrefix(o.PullRequest, "PR-")
 
 	if o.SourceURL != "" {
-		o.GitInfo, err = gits.ParseGitURL(o.SourceURL, o.GitProvider.Kind() == "bitbucketserver")
-		if err != nil {
-			o.warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
-		} else {
-			o.SourceURL = o.GitInfo.HttpCloneURL()
-			if o.PullRequestURL == "" {
-				if o.PullRequest == "" {
-					if warnMissingName {
-						o.warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
+		if o.GitProvider != nil {
+			o.GitInfo, err = gits.ParseGitURL(o.SourceURL, o.GitProvider.Kind() == "bitbucketserver")
+			if err != nil {
+				o.warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
+			} else {
+				o.SourceURL = o.GitInfo.HttpCloneURL()
+				if o.PullRequestURL == "" {
+					if o.PullRequest == "" {
+						if warnMissingName {
+							o.warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
+						}
+					} else {
+						o.PullRequestURL = o.GitInfo.PullRequestURL(o.PullRequestName)
 					}
-				} else {
-					o.PullRequestURL = o.GitInfo.PullRequestURL(o.PullRequestName)
 				}
-			}
-			if o.Name == "" && o.PullRequestName != "" {
-				o.Name = o.GitInfo.Organisation + "-" + o.GitInfo.Name + "-pr-" + o.PullRequestName
-			}
-			if o.Label == "" {
-				o.Label = o.GitInfo.Organisation + "/" + o.GitInfo.Name + " PR-" + o.PullRequestName
+				if o.Name == "" && o.PullRequestName != "" {
+					o.Name = o.GitInfo.Organisation + "-" + o.GitInfo.Name + "-pr-" + o.PullRequestName
+				}
+				if o.Label == "" {
+					o.Label = o.GitInfo.Organisation + "/" + o.GitInfo.Name + " PR-" + o.PullRequestName
+				}
 			}
 		}
 	}
