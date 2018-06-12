@@ -164,6 +164,17 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		return err
 	}
 
+	confirm = false
+	prompt = &survey.Confirm{
+		Message: "Would you like to apply this plan",
+	}
+	survey.AskOne(prompt, &confirm, nil)
+
+	if !confirm {
+		// exit at this point
+		return nil
+	}
+
 	log.Info("Applying plan...\n")
 
 	args = []string{"apply",
