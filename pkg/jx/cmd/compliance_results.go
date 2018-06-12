@@ -3,17 +3,15 @@ package cmd
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
-	"os"
 	"sort"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/client/results"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -97,7 +95,8 @@ func (o *ComplianceResultsOptions) Run() error {
 			return !results.Skipped(tc)
 		}, testResults)
 	sort.Sort(StatusSortedTestCases(testResults))
-	return o.printResults(testResults)
+	o.printResults(testResults)
+	return nil
 }
 
 // StatusSotedTestCase implements Sort by status of a list of test case
@@ -118,14 +117,15 @@ func (s StatusSortedTestCases) Less(i, j int) bool {
 }
 func (s StatusSortedTestCases) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
-func (o *ComplianceResultsOptions) printResults(junitResults []reporters.JUnitTestCase) error {
-	writer := &tabwriter.Writer{}
-	writer.Init(os.Stdout, 0, 0, 0, ' ', 0)
-	fmt.Fprintln(writer, "STATUS \tTEST\t")
+func (o *ComplianceResultsOptions) printResults(junitResults []reporters.JUnitTestCase) {
+	table := o.CreateTable()
+	table.SetColumnAlign(1, util.ALIGN_LEFT)
+	table.SetColumnAlign(2, util.ALIGN_LEFT)
+	table.AddRow("STATUS", "TEST")
 	for _, t := range junitResults {
-		fmt.Fprintf(writer, "%s \t%s\t\n", status(t), t.Name)
+		table.AddRow(status(t), t.Name)
 	}
-	return writer.Flush()
+	table.Render()
 }
 
 func status(junitResult reporters.JUnitTestCase) string {
