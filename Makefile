@@ -85,6 +85,10 @@ release: check
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
+
+	docker build -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
+	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
+
 	chmod +x build/darwin/$(NAME)
 	chmod +x build/linux/$(NAME)
 	chmod +x build/arm/$(NAME)
@@ -117,7 +121,11 @@ clean:
 	rm -rf build release
 
 linux:
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-linux-amd64 cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
+
+docker: linux
+	docker build --no-cache -t jenkinsxio/jx:dev .
+	docker push jenkinsxio/jx:dev
 
 docker-go: linux Dockerfile.buildgo
 	docker build --no-cache -t builder-go -f Dockerfile.buildgo .
@@ -178,5 +186,14 @@ tools.govet:
 		go get golang.org/x/tools/cmd/vet; \
 	fi
 
+GAS := $(GOPATH)/bin/gas
+$(GAS):
+	go get github.com/GoASTScanner/gas/cmd/gas/...
+
+.PHONY: sec
+sec: $(GAS)
+	@echo "SECURITY"
+	@mkdir -p scanning
+	$(GAS) -fmt=yaml -out=scanning/results.yaml ./...
 
 

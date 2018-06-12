@@ -1,0 +1,23 @@
+{
+    "size": 1,
+    "limit": 25,
+    "isLastPage": true,
+    "values": [
+      {
+        "key": "TEST-ORG",
+        "id": 282,
+        "name": "test-org",
+        "description": "Test Org",
+        "public": false,
+        "type": "NORMAL",
+        "links": {
+          "self": [
+            {
+              "href": "http://auth.example.com/projects/TEST-ORG"
+            }
+          ]
+        }
+      }
+    ],
+    "start": 0
+  }

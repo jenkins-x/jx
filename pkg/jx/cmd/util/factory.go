@@ -28,6 +28,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"net/url"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -76,6 +78,8 @@ type Factory interface {
 	LoadPipelineSecrets(kind string, serviceKind string) (*corev1.SecretList, error)
 
 	ImpersonateUser(user string) Factory
+
+	IsInCluster() bool
 }
 
 type factory struct {
@@ -144,12 +148,52 @@ func (f *factory) GetJenkinsURL() (string, error) {
 
 func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(JenkinsAuthConfigFile)
+
 	if err != nil {
 		return authConfigSvc, err
 	}
-	_, err = authConfigSvc.LoadConfig()
+	config, err := authConfigSvc.LoadConfig()
 	if err != nil {
 		return authConfigSvc, err
+	}
+
+	if len(config.Servers) == 0 {
+		c, ns, err := f.CreateClient()
+		if err != nil {
+			return authConfigSvc, err
+		}
+
+		s, err := c.CoreV1().Secrets(ns).Get(kube.SecretJenkins, metav1.GetOptions{})
+		if err != nil {
+			return authConfigSvc, err
+		}
+
+		userAuth := auth.UserAuth{
+			Username: "admin",
+			ApiToken: string(s.Data[kube.JenkinsAdminApiToken]),
+		}
+		svc, err := c.CoreV1().Services(ns).Get(kube.ServiceJenkins, metav1.GetOptions{})
+		if err != nil {
+			return authConfigSvc, err
+		}
+		svcURL := kube.GetServiceURL(svc)
+		if svcURL == "" {
+			return authConfigSvc, fmt.Errorf("unable to find external URL annotation on service %s", svc.Name)
+		}
+
+		u, err := url.Parse(svcURL)
+		if err != nil {
+			return authConfigSvc, err
+		}
+		if !userAuth.IsInvalid() {
+			config.Servers = []*auth.AuthServer{
+				{
+					Name:  u.Host,
+					URL:   svcURL,
+					Users: []*auth.UserAuth{&userAuth},
+				},
+			}
+		}
 	}
 	return authConfigSvc, err
 }
@@ -317,6 +361,43 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	}
 
 	if len(config.Servers) == 0 {
+		// if in cluster then there's no user configfile, so check for env vars first
+		secretList, err := f.LoadPipelineSecrets(kube.ValueKindGit, "")
+		if err != nil {
+			return authConfigSvc, err
+		}
+
+		var data map[string][]byte
+
+		if secretList != nil {
+			for _, secret := range secretList.Items {
+				labels := secret.Labels
+				annotations := secret.Annotations
+				data = secret.Data
+				if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit && annotations != nil {
+					u := annotations[kube.AnnotationURL]
+					if u != "" && data != nil {
+						userAuth := auth.UserAuth{
+							Username: string(data[kube.SecretDataUsername]),
+							ApiToken: string(data[kube.SecretDataPassword]),
+						}
+						if !userAuth.IsInvalid() {
+							config.Servers = []*auth.AuthServer{
+								{
+									Name:  string(data[kube.AnnotationName]),
+									URL:   u,
+									Users: []*auth.UserAuth{&userAuth},
+								},
+							}
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if len(config.Servers) == 0 {
 		config.Servers = []*auth.AuthServer{
 			{
 				Name:  "GitHub",
@@ -334,7 +415,7 @@ func (f *factory) LoadPipelineSecrets(kind, serviceKind string) (*corev1.SecretL
 	// TODO return empty list if not inside a pipeline?
 	kubeClient, curNs, err := f.CreateClient()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create a kuberntees client %s", err)
+		return nil, fmt.Errorf("Failed to create a kubernetes client %s", err)
 	}
 	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
 	if err != nil {
@@ -492,4 +573,13 @@ func (f *factory) isInCDPIpeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
 	return os.Getenv("BUILD_NUMBER") != ""
+}
+
+// function to tell if we are running incluster
+func (f *factory) IsInCluster() bool {
+	_, err := rest.InClusterConfig()
+	if err != nil {
+		return false
+	}
+	return true
 }

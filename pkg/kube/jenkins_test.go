@@ -178,7 +178,7 @@ func TestAddBitBucketServerServers(t *testing.T) {
 }
 
 func TestAddBitBucketCloudServers(t *testing.T) {
-	kind := gits.KindBitBucket
+	kind := gits.KindBitBucketCloud
 	key := bitbucketConfigMapKey
 
 	cm := &corev1.ConfigMap{

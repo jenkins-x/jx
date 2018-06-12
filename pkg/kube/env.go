@@ -329,7 +329,6 @@ func GetTeamExposecontrollerConfig(kubeClient *kubernetes.Clientset, ns string) 
 }
 
 func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (string, gits.GitProvider, error) {
-
 	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
 	details, err := gits.PickNewGitRepository(out, batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil)
 	if err != nil {
@@ -376,7 +375,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 		fmt.Fprintf(out, "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		if forkEnvGitURL != "" {
-			gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
+			gitInfo, err := gits.ParseGitURL(forkEnvGitURL, provider.Kind() == "bitbucketserver")
 			if err != nil {
 				return "", nil, err
 			}

@@ -37,6 +37,8 @@ const (
 
 	jenkinsfileBackupSuffix = ".backup"
 
+	minimumMavenDeployVersion = "2.8.2"
+
 	defaultGitIgnoreFile = `
 .project
 .classpath
@@ -83,6 +85,7 @@ type ImportOptions struct {
 	GitUserAuth           *auth.UserAuth
 	GitProvider           gits.GitProvider
 	PostDraftPackCallback CallbackFn
+	DisableMaven          bool
 }
 
 var (
@@ -215,7 +218,7 @@ func (o *ImportOptions) Run() error {
 		config := authConfigSvc.Config()
 		var server *auth.AuthServer
 		if o.RepoURL != "" {
-			gitInfo, err := gits.ParseGitURL(o.RepoURL)
+			gitInfo, err := gits.ParseGitURL(o.RepoURL, o.GitProvider.Kind() == "bitbucketserver")
 			if err != nil {
 				return err
 			}
@@ -331,6 +334,11 @@ func (o *ImportOptions) Run() error {
 		return err
 	}
 
+	err = o.fixMaven()
+	if err != nil {
+		return err
+	}
+
 	if o.RepoURL == "" {
 		if !o.DryRun {
 			err = o.CreateNewRemoteRepository()
@@ -423,9 +431,11 @@ func (o *ImportOptions) DraftCreate() error {
 		customDraftPack = projectConfig.BuildPack
 	}
 
+	packRepoPath := "github.com/jenkins-x/draft-packs/packs"
+
 	if len(customDraftPack) > 0 {
 		log.Info("trying to use draft pack: " + customDraftPack + "\n")
-		lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/"+customDraftPack)
+		lpack = filepath.Join(draftHome.Packs(), packRepoPath, customDraftPack)
 		f, err := util.FileExists(lpack)
 		if err != nil {
 			log.Error(err.Error())
@@ -446,20 +456,20 @@ func (o *ImportOptions) DraftCreate() error {
 			}
 			if len(pack) > 0 {
 				if pack == cmdutil.LIBERTY {
-					lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/liberty")
+					lpack = filepath.Join(draftHome.Packs(), packRepoPath, "liberty")
 				} else if pack == cmdutil.APPSERVER {
-					lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/appserver")
+					lpack = filepath.Join(draftHome.Packs(), packRepoPath, "appserver")
 				} else {
 					log.Warn("Do not know how to handle pack: " + pack)
 				}
 			} else {
-				lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/maven")
+				lpack = filepath.Join(draftHome.Packs(), packRepoPath, "maven")
 			}
 
 			exists, _ = util.FileExists(lpack)
 			if !exists {
 				log.Warn("defaulting to maven pack")
-				lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/maven")
+				lpack = filepath.Join(draftHome.Packs(), packRepoPath, "maven")
 			}
 		} else if exists, err := util.FileExists(gradleName); err == nil && exists {
 			lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/gradle")
@@ -617,7 +627,7 @@ func (o *ImportOptions) CloneRepository() error {
 	if url == "" {
 		return fmt.Errorf("no git repository URL defined!")
 	}
-	gitInfo, err := gits.ParseGitURL(url)
+	gitInfo, err := gits.ParseGitURL(url, o.GitProvider.Kind() == "bitbucketserver")
 	if err != nil {
 		return fmt.Errorf("failed to parse git URL %s due to: %s", url, err)
 	}
@@ -960,6 +970,52 @@ func (o *ImportOptions) fixDockerIgnoreFile() error {
 					return err
 				}
 				o.Printf("Removed old `Dockerfile` entry from %s\n", util.ColorInfo(filename))
+			}
+		}
+	}
+	return nil
+}
+
+func (o *ImportOptions) fixMaven() error {
+	if o.DisableMaven {
+		return nil
+	}
+	dir := o.Dir
+	pomName := filepath.Join(dir, "pom.xml")
+	exists, err := util.FileExists(pomName)
+	if err != nil {
+		return err
+	}
+	if exists {
+		// lets ensure the mvn plugins are ok
+		out, err := o.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
+		if err != nil {
+			return fmt.Errorf("Failed to update maven plugin: %s output: %s", err, out)
+		}
+		if !o.DryRun {
+			err = gits.GitAdd(dir, "pom.xml")
+			if err != nil {
+				return err
+			}
+			err = gits.GitCommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
+			if err != nil {
+				return err
+			}
+		}
+
+		// lets ensure the probe paths are ok
+		out, err = o.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:chart")
+		if err != nil {
+			return fmt.Errorf("Failed to update chart: %s output: %s", err, out)
+		}
+		if !o.DryRun {
+			err = gits.GitAdd(dir, "charts")
+			if err != nil {
+				return err
+			}
+			err = gits.GitCommitIfChanges(dir, "fix:(chart) fix up the probe path")
+			if err != nil {
+				return err
 			}
 		}
 	}

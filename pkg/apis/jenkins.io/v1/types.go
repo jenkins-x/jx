@@ -118,6 +118,8 @@ type TeamSettings struct {
 	BranchPatterns      string               `json:"branchPatterns,omitempty" protobuf:"bytes,3,opt,name=branchPatterns"`
 	ForkBranchPatterns  string               `json:"forkBranchPatterns,omitempty" protobuf:"bytes,4,opt,name=forkBranchPatterns"`
 	QuickstartLocations []QuickStartLocation `json:"quickstartLocations,omitempty" protobuf:"bytes,5,opt,name=quickstartLocations"`
+	BuildPackURL        string               `json:"buildPackUrl,omitempty" protobuf:"bytes,6,opt,name=buildPackUrl"`
+	BuildPackRef        string               `json:"buildPackRef,omitempty" protobuf:"bytes,7,opt,name=buildPackRef"`
 }
 
 // QuickStartLocation
@@ -350,15 +352,23 @@ type ReleaseStatus struct {
 
 // IssueSummary is the summary of an issue
 type IssueSummary struct {
-	ID        string        `json:"id,omitempty"  protobuf:"bytes,1,opt,name=id"`
-	URL       string        `json:"url,omitempty"  protobuf:"bytes,2,opt,name=url"`
-	Title     string        `json:"title,omitempty"  protobuf:"bytes,3,opt,name=title"`
-	Body      string        `json:"body,omitempty"  protobuf:"bytes,4,opt,name=body"`
-	State     string        `json:"state,omitempty"  protobuf:"bytes,5,opt,name=state"`
-	Message   string        `json:"message,omitempty"  protobuf:"bytes,6,opt,name=message"`
-	User      *UserDetails  `json:"user,omitempty"  protobuf:"bytes,7,opt,name=user"`
-	Assignees []UserDetails `json:"assignees,omitempty"  protobuf:"bytes,8,opt,name=assignees"`
-	ClosedBy  *UserDetails  `json:"closedBy,omitempty"  protobuf:"bytes,9,opt,name=closedBy"`
+	ID                string        `json:"id,omitempty"  protobuf:"bytes,1,opt,name=id"`
+	URL               string        `json:"url,omitempty"  protobuf:"bytes,2,opt,name=url"`
+	Title             string        `json:"title,omitempty"  protobuf:"bytes,3,opt,name=title"`
+	Body              string        `json:"body,omitempty"  protobuf:"bytes,4,opt,name=body"`
+	State             string        `json:"state,omitempty"  protobuf:"bytes,5,opt,name=state"`
+	Message           string        `json:"message,omitempty"  protobuf:"bytes,6,opt,name=message"`
+	User              *UserDetails  `json:"user,omitempty"  protobuf:"bytes,7,opt,name=user"`
+	Assignees         []UserDetails `json:"assignees,omitempty"  protobuf:"bytes,8,opt,name=assignees"`
+	ClosedBy          *UserDetails  `json:"closedBy,omitempty"  protobuf:"bytes,9,opt,name=closedBy"`
+	CreationTimestamp *metav1.Time  `json:"creationTimestamp,omitempty" protobuf:"bytes,10,opt,name=creationTimestamp"`
+	Labels            []IssueLabel  `json:"labels,omitempty" protobuf:"bytes,11,opt,name=labels"`
+}
+
+type IssueLabel struct {
+	URL   string `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
+	Name  string `json:"url,omitempty"  protobuf:"bytes,2,opt,name=url"`
+	Color string `json:"color,omitempty"  protobuf:"bytes,3,opt,name=color"`
 }
 
 // CommitSummary is the summary of a commit

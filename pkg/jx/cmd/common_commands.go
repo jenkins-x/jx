@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -45,10 +46,24 @@ func (o *CommonOptions) runCommandVerbose(name string, args ...string) error {
 	return err
 }
 
-func (o *CommonOptions) runCommandQuietly(name string, args ...string) error {
+func (o *CommonOptions) runCommandVerboseAt(dir string, name string, args ...string) error {
 	e := exec.Command(name, args...)
+	if dir != "" {
+		e.Dir = dir
+	}
 	e.Stdout = o.Out
 	e.Stderr = o.Err
+	err := e.Run()
+	if err != nil {
+		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+	}
+	return err
+}
+
+func (o *CommonOptions) runCommandQuietly(name string, args ...string) error {
+	e := exec.Command(name, args...)
+	e.Stdout = ioutil.Discard
+	e.Stderr = ioutil.Discard
 	return e.Run()
 }
 

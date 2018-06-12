@@ -14,7 +14,6 @@ import (
 
 // ImportProject imports a MultiBranchProject into Jenkins for the given git URL
 func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService, isEnvironment bool, batchMode bool) error {
-
 	jenk, err := o.JenkinsClient()
 	if err != nil {
 		return err
@@ -28,7 +27,8 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 	if gitURL == "" {
 		return fmt.Errorf("No Git repository URL found!")
 	}
-	gitInfo, err := gits.ParseGitURL(gitURL)
+
+	gitInfo, err := gits.ParseGitURL(gitURL, gitProvider.Kind() == "bitbucketserver")
 	if err != nil {
 		return fmt.Errorf("Failed to parse git URL %s due to: %s", gitURL, err)
 	}
@@ -196,7 +196,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 	webhookUrl := util.UrlJoin(jenk.BaseURL(), suffix)
 	webhook := &gits.GitWebHookArguments{
 		Owner: gitInfo.Organisation,
-		Repo:  gitInfo.Name,
+		Repo:  gitInfo,
 		URL:   webhookUrl,
 	}
 	return gitProvider.CreateWebHook(webhook)

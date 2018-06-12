@@ -267,7 +267,7 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	gitInfo, err := gits.ParseGitURL(gitUrl)
+	gitInfo, err := gits.ParseGitURL(gitUrl, false)
 	if err != nil {
 		return err
 	}
@@ -459,7 +459,7 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 		Branch:    branch,
 		Committer: o.toUserDetails(commit.Committer),
 	}
-	err := o.addIssuesAndPullRequests(spec, &commitSummary)
+	err := o.addIssuesAndPullRequests(spec, &commitSummary, commit)
 
 	spec.Commits = append(spec.Commits, commitSummary)
 	if err != nil {
@@ -467,7 +467,7 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 	}
 }
 
-func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, commit *v1.CommitSummary) error {
+func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, commit *v1.CommitSummary, rawCommit *object.Commit) error {
 	tracker := o.State.Tracker
 
 	gitProvider := o.State.GitProvider
@@ -483,7 +483,8 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 	if issueKind == issues.Jira {
 		regex = JIRAIssueRegex
 	}
-	matches := regex.FindAllStringSubmatch(commit.Message, -1)
+	message := fullCommitMessageText(rawCommit)
+	matches := regex.FindAllStringSubmatch(message, -1)
 	for _, match := range matches {
 		for _, result := range match {
 			result = strings.TrimPrefix(result, "#")
@@ -519,15 +520,18 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 					assignees = o.gitUserToUserDetailSlice(issue.Assignees)
 				}
 
+				labels := toV1Labels(issue.Labels)
 				commit.IssueIDs = append(commit.IssueIDs, result)
 				issueSummary := v1.IssueSummary{
-					ID:        result,
-					URL:       issue.URL,
-					Title:     issue.Title,
-					Body:      issue.Body,
-					User:      &user,
-					ClosedBy:  &closedBy,
-					Assignees: assignees,
+					ID:                result,
+					URL:               issue.URL,
+					Title:             issue.Title,
+					Body:              issue.Body,
+					User:              &user,
+					CreationTimestamp: kube.ToMetaTime(issue.CreatedAt),
+					ClosedBy:          &closedBy,
+					Assignees:         assignees,
+					Labels:            labels,
 				}
 				state := issue.State
 				if state != nil {
@@ -542,6 +546,39 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 		}
 	}
 	return nil
+}
+
+// toV1Labels converts git labels to IssueLabel
+func toV1Labels(labels []gits.GitLabel) []v1.IssueLabel {
+	answer := []v1.IssueLabel{}
+	for _, label := range labels {
+		answer = append(answer, v1.IssueLabel{
+			URL:   label.URL,
+			Name:  label.Name,
+			Color: label.Color,
+		})
+	}
+	return answer
+}
+
+// fullCommitMessageText returns the commit message plus any extra omitted commit message
+// lines from parent commits as a result of a PR
+func fullCommitMessageText(commit *object.Commit) string {
+	answer := commit.Message
+	fn := func(parent *object.Commit) error {
+		text := parent.Message
+		if text != "" {
+			sep := "\n"
+			if strings.HasSuffix(answer, "\n") {
+				sep = ""
+			}
+			answer += sep + text
+		}
+		return nil
+	}
+	commit.Parents().ForEach(fn)
+	return answer
+
 }
 
 func (o *StepChangelogOptions) gitUserToUserDetailSlice(users []gits.GitUser) []v1.UserDetails {

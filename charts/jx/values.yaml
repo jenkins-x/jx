@@ -1,0 +1,67 @@
+image:
+  repository: jenkinsxio/jx
+  tag: dev
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+deployment:
+  enabled: false
+
+service:
+  enabled: false
+
+daemonset:
+  enabled: false
+
+job:
+  enabled: false
+
+cronjob:
+  enabled: false
+  schedule: "* * * * *"
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+
+activeDeadlineSeconds: 300
+backoffLimit: 5
+
+# default is Always but for Jobs use Never or OnFailure
+restartPolicy: Never
+
+command: ["jx"]
+args:
+  - "gc"
+  - "activities"
+
+env:
+  foo: bar
+  cheese: wine
+
+internalPort: 80
+
+probe:
+  path: /
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

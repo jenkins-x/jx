@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	pe "github.com/jenkins-x/jx/pkg/pipeline_events"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
 )
@@ -95,7 +96,7 @@ func (o *StepReportActivitiesOptions) Run() error {
 	externalURL, err := o.ensureAddonServiceAvailable(esServiceName)
 	if err != nil {
 		log.Warnf("no %s service found, are you in your teams dev environment?  Type `jx env` to switch.\n", esServiceName)
-		return fmt.Errorf("try running `jx create addon anchore` in your teams dev environment: %v", err)
+		return fmt.Errorf("try running `jx create addon pipeline-events` in your teams dev environment: %v", err)
 	}
 
 	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindPipelineEvent, externalURL)
@@ -105,14 +106,36 @@ func (o *StepReportActivitiesOptions) Run() error {
 
 	o.PipelineEventsProvider, err = pe.NewElasticsearchProvider(server, auth)
 	if err != nil {
-		return fmt.Errorf("error creating anchore provider, %v", err)
+		return fmt.Errorf("error creating elasticsearch provider, %v", err)
 	}
 
-	err = o.watchPipelineActivities(jxClient, o.currentNamespace)
+	if o.Watch {
+		err = o.watchPipelineActivities(jxClient, o.currentNamespace)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = o.getPipelineActivities(jxClient, o.currentNamespace)
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (o *StepReportActivitiesOptions) getPipelineActivities(jxClient *versioned.Clientset, ns string) error {
+	activities, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, a := range activities.Items {
+		err := o.PipelineEventsProvider.SendActivity(&a)
+		if err != nil {
+			log.Errorf("%v\n", err)
+			return err
+		}
+	}
 	return nil
 }
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
-	gitlab "github.com/wbrefvem/go-gitlab"
+	"github.com/wbrefvem/go-gitlab"
 )
 
 type GitlabProvider struct {
@@ -169,8 +169,8 @@ func (g *GitlabProvider) ValidateRepositoryName(org, name string) error {
 }
 
 func (g *GitlabProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
-	owner := data.Owner
-	repo := data.Repo
+	owner := data.GitRepositoryInfo.Organisation
+	repo := data.GitRepositoryInfo.Name
 	title := data.Title
 	body := data.Body
 	head := data.Head
@@ -221,10 +221,10 @@ func (g *GitlabProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
-func (p *GitlabProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
+func (p *GitlabProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
 	pr := &GitPullRequest{
 		Owner:  owner,
-		Repo:   repo,
+		Repo:   repo.Name,
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
@@ -237,7 +237,8 @@ func (p *GitlabProvider) GetPullRequest(owner, repo string, number int) (*GitPul
 	return pr, err
 }
 
-func (p *GitlabProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+func (p *GitlabProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+	repo := repository.Name
 	pid := projectId(owner, p.Username, repo)
 	commits, _, err := p.Client.MergeRequests.GetMergeRequestCommits(pid, number, nil)
 
@@ -322,7 +323,7 @@ func (g *GitlabProvider) MergePullRequest(pr *GitPullRequest, message string) er
 }
 
 func (g *GitlabProvider) CreateWebHook(data *GitWebHookArguments) error {
-	pid := projectId(data.Owner, g.Username, data.Repo)
+	pid := projectId(data.Owner, g.Username, data.Repo.Name)
 
 	opt := &gitlab.AddProjectHookOptions{
 		URL:   &data.URL,
@@ -408,14 +409,16 @@ func fromGitlabIssue(issue *gitlab.Issue, owner, repo string) *GitIssue {
 	}
 
 	return &GitIssue{
-		Number:   &issue.IID,
-		URL:      issue.WebURL,
-		Owner:    owner,
-		Repo:     repo,
-		Title:    issue.Title,
-		Body:     issue.Description,
-		Labels:   labels,
-		ClosedAt: issue.ClosedAt,
+		Number:    &issue.IID,
+		URL:       issue.WebURL,
+		Owner:     owner,
+		Repo:      repo,
+		Title:     issue.Title,
+		Body:      issue.Description,
+		Labels:    labels,
+		CreatedAt: issue.CreatedAt,
+		UpdatedAt: issue.UpdatedAt,
+		ClosedAt:  issue.ClosedAt,
 	}
 }
 
@@ -450,7 +453,11 @@ func (g *GitlabProvider) IsGitea() bool {
 	return false
 }
 
-func (g *GitlabProvider) IsBitbucket() bool {
+func (g *GitlabProvider) IsBitbucketCloud() bool {
+	return false
+}
+
+func (g *GitlabProvider) IsBitbucketServer() bool {
 	return false
 }
 

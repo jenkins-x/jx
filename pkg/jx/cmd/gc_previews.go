@@ -89,7 +89,7 @@ func (o *GCPreviewsOptions) Run() error {
 
 	for _, e := range envs.Items {
 		if e.Spec.Kind == v1.EnvironmentKindTypePreview {
-			gitInfo, err := gits.ParseGitURL(e.Spec.Source.URL)
+			gitInfo, err := gits.ParseGitURL(e.Spec.Source.URL, false)
 			if err != nil {
 				return err
 			}
@@ -112,8 +112,11 @@ func (o *GCPreviewsOptions) Run() error {
 			if err != nil {
 				log.Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "\n")
 			}
+			pullRequest, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNum)
+			if err != nil {
+				return err
+			}
 
-			pullRequest, _ := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo.Name, prNum)
 			lowerState := strings.ToLower(*pullRequest.State)
 
 			if strings.HasPrefix(lowerState, "clos") {

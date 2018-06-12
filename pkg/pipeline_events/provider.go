@@ -6,4 +6,5 @@ import (
 
 type PipelineEventsProvider interface {
 	SendActivity(a *v1.PipelineActivity) error
+	SendRelease(a *v1.Release) error
 }

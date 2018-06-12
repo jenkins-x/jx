@@ -301,7 +301,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 
 	if warnIfAuto && env != nil && env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic {
-		o.Printf("%s", util.ColorWarning("WARNING: The Environment %s is setup to promote automatically as part of the CI/CD Pipelines.\n\n", env.Name))
+		o.Printf("%s", util.ColorWarning(fmt.Sprintf("WARNING: The Environment %s is setup to promote automatically as part of the CI/CD Pipelines.\n\n", env.Name)))
 
 		confirm := &survey.Confirm{
 			Message: "Do you wish to promote anyway? :",
@@ -403,7 +403,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		requirements.SetAppVersion(app, version, o.HelmRepositoryURL)
 		return nil
 	}
-	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message)
+	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
 	releaseInfo.PullRequestInfo = info
 	return err
 }
@@ -641,6 +641,12 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 						return fmt.Errorf("Pull request %s last commit has status %s for ref %s", pr.URL, status, pr.LastCommitSha)
 					}
 				}
+			}
+			if pr.Mergeable != nil && !*pr.Mergeable {
+				o.Printf("Rebasing PullRequest due to conflict\n")
+
+				err = o.PromoteViaPullRequest(env, releaseInfo)
+				pullRequestInfo = releaseInfo.PullRequestInfo
 			}
 
 			if time.Now().After(end) {

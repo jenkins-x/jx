@@ -19,11 +19,17 @@ const (
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
 
+	// ChartIstio the default chart for the Istio chart
+	ChartIstio = "install/kubernetes/helm/istio"
+
 	// ChartKubeless the default chart for kubeless
 	ChartKubeless = "incubator/kubeless"
 
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
+
+	// SecretJenkins is the name of the Jenkins secret
+	SecretJenkins = "jenkins"
 
 	// ServiceCloudBees the service name of the CloudBees app for Kubernetes
 	ServiceCloudBees = "cb-cdx"
@@ -93,6 +99,9 @@ const (
 	// ValueKindCVE an addon auth PipelineEvent
 	ValueKindPipelineEvent = "PipelineEvent"
 
+	// ValueKindCVE an addon auth PipelineEvent
+	ValueKindRelease = "Release"
+
 	// ValueKindEditNamespace for edit namespace
 	ValueKindEditNamespace = "editspace"
 
@@ -152,7 +161,7 @@ const (
 	// SecretBasicAuth the name for the Jenkins X basic auth secret
 	SecretBasicAuth = "jx-basic-auth"
 
-	JXBasicAuth = "JXBasicAuth"
+	JenkinsAdminApiToken = "jenkins-admin-api-token"
 
 	AUTH = "auth"
 )
@@ -163,6 +172,7 @@ var (
 		"anchore":    ChartAnchore,
 		"cb":         ChartCloudBees,
 		"gitea":      ChartGitea,
+		"istio":      ChartIstio,
 		"kubeless":   ChartKubeless,
 		"prometheus": "stable/prometheus",
 		"grafana":    "stable/grafana",

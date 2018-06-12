@@ -140,6 +140,7 @@ func (o *GCActivitiesOptions) Run() error {
 		for i < len(builds)-o.RevisionHistoryLimit {
 			activityName := fmt.Sprintf("%s-%v", pipeline, builds[i])
 			activityName = strings.Replace(activityName, "/", "-", -1)
+			activityName = strings.ToLower(activityName)
 
 			err = client.JenkinsV1().PipelineActivities(currentNs).Delete(activityName, metav1.NewDeleteOptions(0))
 			if err != nil {
