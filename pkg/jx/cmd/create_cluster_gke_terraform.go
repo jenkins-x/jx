@@ -44,7 +44,7 @@ type CreateClusterGKETerraformFlags struct {
 	ProjectId       string
 	SkipLogin       bool
 	Zone            string
-	//Labels          string
+	Labels          string
 }
 
 var (
@@ -109,7 +109,7 @@ func NewCmdCreateClusterGKETerraform(f cmdutil.Factory, out io.Writer, errOut io
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
-	//cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
+	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 	return cmd
 }
 
@@ -373,6 +373,37 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		terraformDir}
 
 	err = o.runCommandVerbose("terraform", args...)
+	if err != nil {
+		return err
+	}
+
+	// should we setup the labels at this point?
+	//gcloud container clusters update ninjacandy --update-labels ''
+	args = []string{"container",
+		"clusters",
+		"update",
+		o.Flags.ClusterName}
+
+	labels := o.Flags.Labels
+	if err == nil && user != nil {
+		username := sanitizeLabel(user.Username)
+		if username != "" {
+			sep := ""
+			if labels != "" {
+				sep = ","
+			}
+			labels += sep + "created-by=" + username
+		}
+	}
+
+	sep := ""
+	if labels != "" {
+		sep = ","
+	}
+	labels += sep + fmt.Sprintf("created-with=terraform,created-on=%s", time.Now().Format("20060102150405"))
+	args = append(args, "--update-labels="+strings.ToLower(labels))
+
+	err = o.runCommand("gcloud", args...)
 	if err != nil {
 		return err
 	}
