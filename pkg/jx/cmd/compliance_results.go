@@ -88,12 +88,16 @@ func (o *ComplianceResultsOptions) Run() error {
 		return errors.Wrap(err, "could not create a gzip reader for compliance results ")
 	}
 
-	results, err := cc.GetTests(gzr, "all")
+	testResults, err := cc.GetTests(gzr, "all")
 	if err != nil {
 		return errors.Wrap(err, "could not get the results of the compliance tests from the archive")
 	}
-	sort.Sort(StatusSortedTestCases(results))
-	return o.printResults(results)
+	testResults = filterTests(
+		func(tc reporters.JUnitTestCase) bool {
+			return !results.Skipped(tc)
+		}, testResults)
+	sort.Sort(StatusSortedTestCases(testResults))
+	return o.printResults(testResults)
 }
 
 // StatusSotedTestCase implements Sort by status of a list of test case
@@ -157,4 +161,14 @@ func untarResults(src io.Reader) (io.Reader, error) {
 		}
 	}
 	return nil, errors.New("no compliance results archive found")
+}
+
+func filterTests(predicate func(testCase reporters.JUnitTestCase) bool, testCases []reporters.JUnitTestCase) []reporters.JUnitTestCase {
+	out := make([]reporters.JUnitTestCase, 0)
+	for _, tc := range testCases {
+		if predicate(tc) {
+			out = append(out, tc)
+		}
+	}
+	return out
 }
