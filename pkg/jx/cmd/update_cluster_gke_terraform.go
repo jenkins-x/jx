@@ -3,13 +3,10 @@ package cmd
 import (
 	"io"
 
-	"strings"
-
 	"fmt"
 
 	os_user "os/user"
 
-	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -32,7 +29,8 @@ type UpdateClusterGKETerraformFlags struct {
 
 var (
 	updateClusterGKETerraformLong = templates.LongDesc(`
-		
+
+		Command re-applies the terraform plan in ~/.jx/clusters/<cluster>/terraform against the specified cluster
 
 `)
 
@@ -114,9 +112,8 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 
 
 	if o.Flags.ClusterName == "" {
-		o.Flags.ClusterName = strings.ToLower(randomdata.SillyName())
-		// TODO exit here
-		log.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
+		log.Info("No cluster name provided\n")
+		return nil
 	}
 
 	serviceAccount := fmt.Sprintf("jx-%s", o.Flags.ClusterName)
@@ -135,12 +132,14 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 	keyPath := filepath.Join(clusterHome, fmt.Sprintf("%s.key.json", serviceAccount))
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		// TODO exit here
+		log.Infof("Unable to find service account key %s\n", keyPath)
+		return nil
 	}
 
 	terraformDir := filepath.Join(clusterHome, "terraform")
 	if _, err := os.Stat(terraformDir); os.IsNotExist(err) {
-		// TODO exit here
+		log.Infof("Unable to find terraform plan dir %s\n", terraformDir)
+		return nil
 	}
 
 	// create .tfvars file in .jx folder
@@ -187,7 +186,6 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 	if err != nil {
 		return err
 	}
-
 
 	return nil
 }
