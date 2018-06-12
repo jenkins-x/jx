@@ -1,6 +1,6 @@
 image:
-  repository: jenkinsxio/jx
-  tag: dev
+  repository: rawlingsj/jx
+  tag: dev33
   pullPolicy: IfNotPresent
 
 replicaCount: 1
@@ -24,6 +24,66 @@ cronjob:
   successfulJobsHistoryLimit: 3
   concurrencyPolicy: Forbid
 
+serviceaccount:
+  enabled: false
+
+role:
+  enabled: false
+# example:
+#  rules:
+#  - apiGroups:
+#    - jenkins.io
+#    resources:
+#    - pipelineactivities
+#    verbs:
+#    - list
+#    - delete
+#  - apiGroups:
+#    - ""
+#    resources:
+#    - secrets
+#    - services
+#    verbs:
+#    - get
+  rules:
+  - apiGroups:
+    - jenkins.io
+    resources:
+    - environments
+    verbs:
+    - list
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - secrets
+    verbs:
+    - get
+    - list
+  - apiGroups:
+    - apiextensions.k8s.io
+    resources:
+    - customresourcedefinitions
+    verbs:
+    - create
+
+clusterrole:
+  enabled: false
+  rules:
+  - apiGroups:
+    - apiextensions.k8s.io
+    resources:
+    - customresourcedefinitions
+    verbs:
+    - get
+  - apiGroups:
+    - ""
+    resources:
+    - namespace
+    verbs:
+    - get
+    - delete
+
 activeDeadlineSeconds: 300
 backoffLimit: 5
 
@@ -33,7 +93,7 @@ restartPolicy: Never
 command: ["jx"]
 args:
   - "gc"
-  - "activities"
+  - "previews"
 
 env:
   foo: bar
