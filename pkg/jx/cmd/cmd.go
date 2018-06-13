@@ -40,6 +40,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	deleteCommands := NewCmdDelete(f, out, err)
 	getCommands := NewCmdGet(f, out, err)
 	editCommands := NewCmdEdit(f, out, err)
+	updateCommands := NewCmdUpdate(f, out, err)
 
 	installCommands := []*cobra.Command{
 		NewCmdInstall(f, out, err),
@@ -47,6 +48,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 		NewCmdUpgrade(f, out, err),
 	}
 	installCommands = append(installCommands, findCommands("cluster", createCommands, deleteCommands)...)
+	installCommands = append(installCommands, findCommands("cluster", updateCommands)...)
 	installCommands = append(installCommands, findCommands("jenkins token", createCommands, deleteCommands)...)
 	installCommands = append(installCommands, NewCmdInit(f, out, err))
 
@@ -124,6 +126,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 				getCommands,
 				editCommands,
 				createCommands,
+				updateCommands,
 				deleteCommands,
 				NewCmdStart(f, out, err),
 				NewCmdStop(f, out, err),

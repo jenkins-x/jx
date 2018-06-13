@@ -340,7 +340,7 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	}
 
 	if secrets != nil {
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline)
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, f.IsInCluster())
 	}
 
 	// lets add a default if there's none defined yet
@@ -365,43 +365,6 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	}
 
 	if len(config.Servers) == 0 {
-		// if in cluster then there's no user configfile, so check for env vars first
-		secretList, err := f.LoadPipelineSecrets(kube.ValueKindGit, "")
-		if err != nil {
-			return authConfigSvc, err
-		}
-
-		var data map[string][]byte
-
-		if secretList != nil {
-			for _, secret := range secretList.Items {
-				labels := secret.Labels
-				annotations := secret.Annotations
-				data = secret.Data
-				if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit && annotations != nil {
-					u := annotations[kube.AnnotationURL]
-					if u != "" && data != nil {
-						userAuth := auth.UserAuth{
-							Username: string(data[kube.SecretDataUsername]),
-							ApiToken: string(data[kube.SecretDataPassword]),
-						}
-						if !userAuth.IsInvalid() {
-							config.Servers = []*auth.AuthServer{
-								{
-									Name:  string(data[kube.AnnotationName]),
-									URL:   u,
-									Users: []*auth.UserAuth{&userAuth},
-								},
-							}
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if len(config.Servers) == 0 {
 		config.Servers = []*auth.AuthServer{
 			{
 				Name:  "GitHub",
@@ -419,7 +382,7 @@ func (f *factory) LoadPipelineSecrets(kind, serviceKind string) (*corev1.SecretL
 	// TODO return empty list if not inside a pipeline?
 	kubeClient, curNs, err := f.CreateClient()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create a kubernetes client %s", err)
+		return nil, fmt.Errorf("Failed to create a kuberntees client %s", err)
 	}
 	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
 	if err != nil {
