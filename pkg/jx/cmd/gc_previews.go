@@ -89,7 +89,7 @@ func (o *GCPreviewsOptions) Run() error {
 
 	for _, e := range envs.Items {
 		if e.Spec.Kind == v1.EnvironmentKindTypePreview {
-			gitInfo, err := gits.ParseGitURL(e.Spec.Source.URL, false)
+			gitInfo, err := gits.ParseGitURL(e.Spec.Source.URL)
 			if err != nil {
 				return err
 			}

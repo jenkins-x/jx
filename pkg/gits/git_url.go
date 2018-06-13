@@ -105,16 +105,9 @@ func (i *GitRepositoryInfo) PipelinePath() string {
 	return i.Organisation + "/" + i.Name + "/master"
 }
 
-func HasScm(gitProvider GitProvider) bool {
-	if gitProvider != nil {
-		return gitProvider.Kind() == "bitbucketserver"
-	}
-	return false
-}
-
 // ParseGitURL attempts to parse the given text as a URL or git URL-like string to determine
 // the protocol, host, organisation and name
-func ParseGitURL(text string, hasSCM bool) (*GitRepositoryInfo, error) {
+func ParseGitURL(text string) (*GitRepositoryInfo, error) {
 	answer := GitRepositoryInfo{
 		URL: text,
 	}
@@ -130,7 +123,7 @@ func ParseGitURL(text string, hasSCM bool) (*GitRepositoryInfo, error) {
 			answer.Scheme = "https"
 		}
 		answer.Scheme = u.Scheme
-		return parsePath(u.Path, hasSCM, &answer)
+		return parsePath(u.Path, &answer)
 	}
 
 	// handle git@ kinds of URIs
@@ -153,22 +146,20 @@ func ParseGitURL(text string, hasSCM bool) (*GitRepositoryInfo, error) {
 	return nil, fmt.Errorf("Could not parse git url %s", text)
 }
 
-func parsePath(path string, hasSCM bool, info *GitRepositoryInfo) (*GitRepositoryInfo, error) {
-	arr := strings.Split(strings.TrimPrefix(path, "/"), "/")
-	if len(arr) >= 2 {
-		if hasSCM {
-			info.Organisation = arr[1]
-			info.Project = arr[1]
-			info.Name = strings.TrimSuffix(arr[2], ".git")
-		} else {
-			info.Organisation = arr[0]
-			info.Name = strings.TrimSuffix(arr[1], ".git")
-		}
+func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error) {
+	trimPath := strings.TrimSuffix(path, "/")
+	trimPath = strings.TrimSuffix(trimPath, ".git")
+	arr := strings.Split(trimPath, "/")
+	arrayLength := len(arr)
+	if arrayLength >= 2 {
+		info.Organisation = arr[arrayLength-2]
+		info.Project = arr[arrayLength-2]
+		info.Name = arr[arrayLength-1]
 
 		return info, nil
-	} else {
-		return info, fmt.Errorf("Invalid path %s could not determine organisation and repository name", path)
 	}
+
+	return info, fmt.Errorf("Invalid path %s could not determine organisation and repository name", path)
 }
 
 // SaasGitKind returns the kind for SaaS git providers or "" if the URL could not be deduced

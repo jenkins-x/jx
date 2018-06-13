@@ -574,7 +574,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	o.PullRequestName = strings.TrimPrefix(o.PullRequest, "PR-")
 
 	if o.SourceURL != "" {
-		o.GitInfo, err = gits.ParseGitURL(o.SourceURL, gits.HasScm(o.GitProvider))
+		o.GitInfo, err = gits.ParseGitURL(o.SourceURL)
 		if err != nil {
 			o.warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
 		} else {
