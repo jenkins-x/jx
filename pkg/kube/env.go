@@ -375,7 +375,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 		fmt.Fprintf(out, "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		if forkEnvGitURL != "" {
-			gitInfo, err := gits.ParseGitURL(forkEnvGitURL, provider.Kind() == "bitbucketserver")
+			gitInfo, err := gits.ParseGitURL(forkEnvGitURL, false)
 			if err != nil {
 				return "", nil, err
 			}
