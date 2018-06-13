@@ -345,7 +345,11 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	o.appendFile(terraformVars, fmt.Sprintf("node_machine_type = \"%s\"\n", machineType))
 	o.appendFile(terraformVars, "node_preemptible = \"false\"\n")
 	o.appendFile(terraformVars, "node_disk_size = \"100\"\n")
-
+	o.appendFile(terraformVars, "auto_repair = \"false\"\n")
+	o.appendFile(terraformVars, "auto_upgrade = \"false\"\n")
+	o.appendFile(terraformVars, "enable_kubernetes_alpha = \"false\"\n")
+	o.appendFile(terraformVars, "enable_legacy_abac = \"true\"\n")
+	
 	args = []string{"init", terraformDir}
 	err = o.runCommand("terraform", args...)
 	if err != nil {
