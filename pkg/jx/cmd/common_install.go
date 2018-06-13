@@ -581,25 +581,26 @@ func (o *CommonOptions) installMinishift() error {
 	}
 
 	binDir, err := util.BinaryLocation()
+	binary := "minishift"
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, "minishift")
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
 	if err != nil || !flag {
 		return err
 	}
-	latestVersion, err := util.GetLatestVersionFromGitHub("minishift", "minishift")
+	latestVersion, err := util.GetLatestVersionFromGitHub(binary, binary)
 	if err != nil {
 		return err
 	}
-	clientURL := fmt.Sprintf("https://github.com/minishift/minishift/releases/download/v%s/minikube-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
+	clientURL := fmt.Sprintf("https://github.com/minishift/minishift/releases/download/v%s/minishift-%s-%s-%s.tgz", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
-	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	tarFile := fullPath + ".tgz"
+	err = o.downloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
-	err = util.RenameFile(tmpFile, fullPath)
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
 	if err != nil {
 		return err
 	}
