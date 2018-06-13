@@ -167,13 +167,6 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	gitKind, err := o.GitServerKind(o.GitInfo)
-	if err != nil {
-		return err
-	}
-
-	gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind)
-
 	prNum, err := strconv.Atoi(o.PullRequestName)
 	if err != nil {
 		log.Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "\n")
@@ -185,62 +178,71 @@ func (o *PreviewOptions) Run() error {
 
 	var pullRequest *gits.GitPullRequest
 
-	if prNum > 0 {
-		pullRequest, err := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
+	if o.GitInfo != nil {
+		gitKind, err := o.GitServerKind(o.GitInfo)
 		if err != nil {
-			log.Warnf("issue getting pull request %s, %s, %v: %v\n", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
+			return err
 		}
-		commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo, prNum)
-		if err != nil {
-			log.Warn("Unable to get commits: " + err.Error() + "\n")
-		}
-		if pullRequest != nil {
-			author := pullRequest.Author
-			if author != nil {
-				if author.Email == "" {
-					log.Info("PullRequest author email is empty\n")
-					for _, commit := range commits {
-						if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
-							log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
-							author.Email = commit.Author.Email
-							break
+
+		gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind)
+
+		if prNum > 0 {
+			pullRequest, err := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
+			if err != nil {
+				log.Warnf("issue getting pull request %s, %s, %v: %v\n", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
+			}
+			commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo, prNum)
+			if err != nil {
+				log.Warn("Unable to get commits: " + err.Error() + "\n")
+			}
+			if pullRequest != nil {
+				author := pullRequest.Author
+				if author != nil {
+					if author.Email == "" {
+						log.Info("PullRequest author email is empty\n")
+						for _, commit := range commits {
+							if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
+								log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
+								author.Email = commit.Author.Email
+								break
+							}
 						}
 					}
-				}
 
-				if author.Email != "" {
-					userDetailService := cmdutil.NewUserDetailService(jxClient, ns)
-					err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
-						Login:     author.Login,
-						Email:     author.Email,
-						Name:      author.Name,
-						URL:       author.URL,
-						AvatarURL: author.AvatarURL,
-					})
-					if err != nil {
-						o.warnf("An error happened attempting to CreateOrUpdateUser in namespace %s: %s\n", ns, err)
+					if author.Email != "" {
+						userDetailService := cmdutil.NewUserDetailService(jxClient, ns)
+						err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
+							Login:     author.Login,
+							Email:     author.Email,
+							Name:      author.Name,
+							URL:       author.URL,
+							AvatarURL: author.AvatarURL,
+						})
+						if err != nil {
+							o.warnf("An error happened attempting to CreateOrUpdateUser in namespace %s: %s\n", ns, err)
+						}
+					}
+
+					user = &v1.UserSpec{
+						Username: author.Login,
+						Name:     author.Name,
+						ImageURL: author.AvatarURL,
+						LinkURL:  author.URL,
 					}
 				}
-
-				user = &v1.UserSpec{
-					Username: author.Login,
-					Name:     author.Name,
-					ImageURL: author.AvatarURL,
-					LinkURL:  author.URL,
-				}
 			}
-		}
 
-		statuses, err := gitProvider.ListCommitStatus(o.GitInfo.Organisation, o.GitInfo.Name, pullRequest.LastCommitSha)
+			statuses, err := gitProvider.ListCommitStatus(o.GitInfo.Organisation, o.GitInfo.Name, pullRequest.LastCommitSha)
 
-		if err != nil {
-			log.Warn("Unable to get statuses for PR " + o.PullRequestName + "\n")
-		}
+			if err != nil {
+				log.Warn("Unable to get statuses for PR " + o.PullRequestName + "\n")
+			}
 
-		if len(statuses) > 0 {
-			status := statuses[len(statuses)-1]
-			buildStatus = status.State
-			buildStatusUrl = status.TargetURL
+			if len(statuses) > 0 {
+				status := statuses[len(statuses)-1]
+				buildStatus = status.State
+				buildStatusUrl = status.TargetURL
+			}
 		}
 	}
 
@@ -606,6 +608,9 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	o.Namespace = kube.ToValidName(o.Namespace)
 	if o.Label == "" {
 		o.Label = o.Name
+	}
+	if o.GitInfo == nil {
+		o.warnf("No GitInfo could be found!")
 	}
 	return nil
 }
