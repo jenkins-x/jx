@@ -218,7 +218,7 @@ func (o *ImportOptions) Run() error {
 		config := authConfigSvc.Config()
 		var server *auth.AuthServer
 		if o.RepoURL != "" {
-			gitInfo, err := gits.ParseGitURL(o.RepoURL, o.GitProvider.Kind() == "bitbucketserver")
+			gitInfo, err := gits.ParseGitURL(o.RepoURL, false)
 			if err != nil {
 				return err
 			}
