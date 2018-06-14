@@ -24,6 +24,7 @@ func configureTestOptions(o *CommonOptions) {
 			},
 		},
 	})
+	o.currentNamespace = "jx"
 
 	// TODO
 	//o.apiExtensionsClient = apifake.NewSimpleClientset()
