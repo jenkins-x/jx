@@ -186,7 +186,7 @@ func (o *StepChangelogOptions) Run() error {
 		o.BatchMode = true
 	}
 
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}

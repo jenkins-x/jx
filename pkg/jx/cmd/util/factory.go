@@ -69,7 +69,7 @@ type Factory interface {
 
 	CreateJXClient() (*versioned.Clientset, string, error)
 
-	CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error)
+	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
 
 	CreateMetricsClient() (*metricsclient.Clientset, error)
 
@@ -435,7 +435,7 @@ func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
 
 }
 
-func (f *factory) CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error) {
+func (f *factory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
 	config, err := f.createKubeConfig()
 	if err != nil {
 		return nil, err

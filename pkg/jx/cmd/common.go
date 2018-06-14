@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	core_v1 "k8s.io/api/core/v1"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
@@ -47,11 +48,12 @@ type CommonOptions struct {
 	NoBrew    bool
 
 	// common cached clients
-	kubeClient       kubernetes.Interface
-	currentNamespace string
-	devNamespace     string
-	jxClient         *versioned.Clientset
-	jenkinsClient    *gojenkins.Jenkins
+	kubeClient          kubernetes.Interface
+	apiExtensionsClient apiextensionsclientset.Interface
+	currentNamespace    string
+	devNamespace        string
+	jxClient            *versioned.Clientset
+	jenkinsClient       *gojenkins.Jenkins
 }
 
 type ServerFlags struct {
@@ -93,6 +95,17 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
 	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install or upgrade command line dependencies")
 	options.Cmd = cmd
+}
+
+func (o *CommonOptions) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
+	var err error
+	if o.apiExtensionsClient == nil {
+		o.apiExtensionsClient, err = o.Factory.CreateApiExtensionsClient()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return o.apiExtensionsClient, nil
 }
 
 func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {

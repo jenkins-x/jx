@@ -690,6 +690,9 @@ func GetDevNamespace(kubeClient kubernetes.Interface, ns string) (string, string
 	if err != err {
 		return ns, env, err
 	}
+	if namespace == nil {
+		return ns, env, fmt.Errorf("No namespace found for %s", ns)
+	}
 	if namespace.Labels != nil {
 		answer := namespace.Labels[LabelTeam]
 		if answer != "" {
