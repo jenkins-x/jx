@@ -17,13 +17,13 @@ import (
 )
 
 const (
+	defaultPEName        = "pipeline-events"
 	defaultPENamespace   = "pipeline-events"
 	defaultPEReleaseName = "jx-pipeline-events"
 	defaultPEVersion     = "0.0.11"
 	kibanaServiceName    = "jx-pipeline-events-kibana"
 	kibanaDeploymentName = "jx-pipeline-events-kibana"
 	esDeploymentName     = "jx-pipeline-events-elasticsearch-client"
-	esServiceName        = "jx-pipeline-events-elasticsearch-client"
 )
 
 var (
@@ -126,6 +126,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return err
 	}
 
+	esServiceName := kube.AddonServices[defaultPEName]
 	err = o.addExposecontrollerAnnotations(esServiceName)
 	if err != nil {
 		return err

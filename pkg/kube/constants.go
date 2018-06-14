@@ -180,4 +180,9 @@ var (
 		"prometheus": "stable/prometheus",
 		"grafana":    "stable/grafana",
 	}
+
+	AddonServices = map[string]string{
+		"anchore":         "anchore-anchore-engine",
+		"pipeline-events": "jx-pipeline-events-elasticsearch-client",
+	}
 )
