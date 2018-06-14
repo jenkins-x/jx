@@ -31,8 +31,8 @@ pipeline {
 
                         sh "docker build -t docker.io/$ORG/$APP_NAME:$PREVIEW_VERSION ."
 
-                        // temporarily disable whilke testing release pipelines
-                        //sh "make preview"
+                        // temporarily disable while testing release pipelines
+                        sh "make preview"
                     }
                 }
             }
