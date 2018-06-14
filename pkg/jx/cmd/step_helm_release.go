@@ -191,7 +191,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	statusCode := res.StatusCode
 	o.Printf("Received %d response: %s\n", statusCode, responseMessage)
 	if statusCode >= 300 {
-		return fmt.Errorf("Failed to post chart to %s due to response %s: %s", u, statusCode, responseMessage)
+		return fmt.Errorf("Failed to post chart to %s due to response %d: %s", u, statusCode, responseMessage)
 	}
 	return nil
 }
