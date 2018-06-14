@@ -45,6 +45,7 @@ func NewCmdStep(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	cmd.AddCommand(NewCmdStepChangelog(f, out, errOut))
 	cmd.AddCommand(NewCmdStepGit(f, out, errOut))
 	cmd.AddCommand(NewCmdStepGpgCredentials(f, out, errOut))
+	cmd.AddCommand(NewCmdStepHelm(f, out, errOut))
 	cmd.AddCommand(NewCmdStepNexus(f, out, errOut))
 	cmd.AddCommand(NewCmdStepNextVersion(f, out, errOut))
 	cmd.AddCommand(NewCmdStepPR(f, out, errOut))

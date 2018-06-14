@@ -64,6 +64,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	gitCommands := []*cobra.Command{}
 	gitCommands = append(gitCommands, findCommands("git server", createCommands, deleteCommands)...)
 	gitCommands = append(gitCommands, findCommands("git token", createCommands, deleteCommands)...)
+	gitCommands = append(gitCommands, NewCmdRepo(f, out, err))
 
 	addonCommands := []*cobra.Command{}
 	addonCommands = append(addonCommands, findCommands("addon", createCommands, deleteCommands)...)
