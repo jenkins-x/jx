@@ -200,6 +200,18 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		}
 	}
 
+	log.Info("Installing default addons ...\n")
+	err = o.runCommand("minishift", "addons", "install", "--defaults")
+	if err != nil {
+		return err
+	}
+
+	log.Info("Enabling admin user...\n")
+	err = o.runCommand("minishift", "addons", "enable", "admin-user")
+	if err != nil {
+		return err
+	}
+
 	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver}
 	hyperVVirtualSwitch := o.Flags.HyperVVirtualSwitch
 	if hyperVVirtualSwitch != "" {
@@ -218,7 +230,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	}
 	o.InstallOptions.Flags.Domain = ip + ".nip.io"
 
-	err = o.runCommand("oc", "login", "-u", "system", "-p", "admin")
+	err = o.runCommand("oc", "login", "-u", "admin", "-p", "admin", "--insecure-skip-tls-verify=true")
 	if err != nil {
 		return err
 	}
@@ -230,11 +242,6 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		if err != nil {
 			return err
 		}
-	}
-
-	err = o.runCommand("oc", "project", ns)
-	if err != nil {
-		return err
 	}
 
 	log.Info("Initialising cluster ...\n")
