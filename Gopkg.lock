@@ -192,16 +192,16 @@
   version = "v1.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/gfleury/go-bitbucket-v1"
-  packages = ["."]
-  revision = "66450bf1565578f9c872f4c009848d6c8d6b6228"
-
-[[projects]]
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
   version = "v1.4.7"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gfleury/go-bitbucket-v1"
+  packages = ["."]
+  revision = "66450bf1565578f9c872f4c009848d6c8d6b6228"
 
 [[projects]]
   name = "github.com/ghodss/yaml"
@@ -1074,6 +1074,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c2092e04d8064892d8ff7ef36521b0a398f46683b59c628784432adbcef9daad"
+  inputs-digest = "983b3612b53040d2280501dc7f0ec3602d7421ed8e5e0644c278ba4b35675392"
   solver-name = "gps-cdcl"
   solver-version = 1
