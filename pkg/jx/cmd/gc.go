@@ -22,6 +22,7 @@ const (
 
     * previews
     * activities
+		* helm
     `
 )
 
@@ -36,6 +37,7 @@ var (
 	gc_example = templates.Examples(`
 		jx gc previews
 		jx gc activities
+		jx gc helm
 
 	`)
 )
@@ -66,6 +68,7 @@ func NewCmdGC(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 	cmd.AddCommand(NewCmdGCActivities(f, out, errOut))
 	cmd.AddCommand(NewCmdGCPreviews(f, out, errOut))
+	cmd.AddCommand(NewCmdGCHelm(f, out, errOut))
 
 	return cmd
 }
