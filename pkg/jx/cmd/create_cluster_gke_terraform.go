@@ -33,11 +33,11 @@ type CreateClusterGKETerraformOptions struct {
 }
 
 type CreateClusterGKETerraformFlags struct {
-	//AutoUpgrade     bool
+	AutoUpgrade     bool
 	ClusterName     string
 	//ClusterIpv4Cidr string
 	//ClusterVersion  string
-	//DiskSize        string
+	DiskSize        string
 	MachineType     string
 	MinNumOfNodes   string
 	MaxNumOfNodes   string
@@ -101,8 +101,8 @@ func NewCmdCreateClusterGKETerraform(f cmdutil.Factory, out io.Writer, errOut io
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	//cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
 	//cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "v", "", "The Kubernetes version to use for the master and nodes. Defaults to server-specified")
-	//cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "d", "", "Size in GB for node VM boot disks. Defaults to 100GB")
-	//cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, "enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
+	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "d", "100", "Size in GB for node VM boot disks. Defaults to 100GB")
+	cmd.Flags().BoolVarP(&options.Flags.AutoUpgrade, "enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
 	cmd.Flags().StringVarP(&options.Flags.MachineType, "machine-type", "m", "", "The type of machine to use for nodes")
 	cmd.Flags().StringVarP(&options.Flags.MinNumOfNodes, "min-num-nodes", "", "", "The minimum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, "max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
@@ -344,9 +344,9 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	o.appendFile(terraformVars, fmt.Sprintf("max_node_count = \"%s\"\n", maxNumOfNodes))
 	o.appendFile(terraformVars, fmt.Sprintf("node_machine_type = \"%s\"\n", machineType))
 	o.appendFile(terraformVars, "node_preemptible = \"false\"\n")
-	o.appendFile(terraformVars, "node_disk_size = \"100\"\n")
+	o.appendFile(terraformVars, fmt.Sprintf("node_disk_size = \"%s\"\n", o.Flags.DiskSize))
 	o.appendFile(terraformVars, "auto_repair = \"false\"\n")
-	o.appendFile(terraformVars, "auto_upgrade = \"false\"\n")
+	o.appendFile(terraformVars, fmt.Sprintf("auto_upgrade = \"%t\"\n", o.Flags.AutoUpgrade))
 	o.appendFile(terraformVars, "enable_kubernetes_alpha = \"false\"\n")
 	o.appendFile(terraformVars, "enable_legacy_abac = \"true\"\n")
 	
