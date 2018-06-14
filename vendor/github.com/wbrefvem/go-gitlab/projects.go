@@ -373,30 +373,30 @@ func (s *ProjectsService) GetProjectEvents(pid interface{}, opt *GetProjectEvent
 //
 // GitLab API docs: https://docs.gitlab.com/ce/api/projects.html#create-project
 type CreateProjectOptions struct {
-	Name                                      *string          `url:"name,omitempty" json:"name,omitempty"`
-	Path                                      *string          `url:"path,omitempty" json:"path,omitempty"`
-	DefaultBranch                             *string          `url:"default_branch,omitempty" json:"default_branch,omitempty"`
-	NamespaceID                               *int             `url:"namespace_id,omitempty" json:"namespace_id,omitempty"`
-	Description                               *string          `url:"description,omitempty" json:"description,omitempty"`
-	IssuesEnabled                             *bool            `url:"issues_enabled,omitempty" json:"issues_enabled,omitempty"`
-	MergeRequestsEnabled                      *bool            `url:"merge_requests_enabled,omitempty" json:"merge_requests_enabled,omitempty"`
-	JobsEnabled                               *bool            `url:"jobs_enabled,omitempty" json:"jobs_enabled,omitempty"`
-	WikiEnabled                               *bool            `url:"wiki_enabled,omitempty" json:"wiki_enabled,omitempty"`
-	SnippetsEnabled                           *bool            `url:"snippets_enabled,omitempty" json:"snippets_enabled,omitempty"`
-	ResolveOutdatedDiffDiscussions            *bool            `url:"resolve_outdated_diff_discussions,omitempty" json:"resolve_outdated_diff_discussions,omitempty"`
-	ContainerRegistryEnabled                  *bool            `url:"container_registry_enabled,omitempty" json:"container_registry_enabled,omitempty"`
-	SharedRunnersEnabled                      *bool            `url:"shared_runners_enabled,omitempty" json:"shared_runners_enabled,omitempty"`
-	Visibility                                *VisibilityValue `url:"visibility,omitempty" json:"visibility,omitempty"`
-	ImportURL                                 *string          `url:"import_url,omitempty" json:"import_url,omitempty"`
-	PublicJobs                                *bool            `url:"public_jobs,omitempty" json:"public_jobs,omitempty"`
-	OnlyAllowMergeIfPipelineSucceeds          *bool            `url:"only_allow_merge_if_pipeline_succeeds,omitempty" json:"only_allow_merge_if_pipeline_succeeds,omitempty"`
-	OnlyAllowMergeIfAllDiscussionsAreResolved *bool            `url:"only_allow_merge_if_all_discussions_are_resolved,omitempty" json:"only_allow_merge_if_all_discussions_are_resolved,omitempty"`
-	MergeMethod                               *string          `url:"merge_method,omitempty" json:"merge_method,omitempty"`
-	LFSEnabled                                *bool            `url:"lfs_enabled,omitempty" json:"lfs_enabled,omitempty"`
-	RequestAccessEnabled                      *bool            `url:"request_access_enabled,omitempty" json:"request_access_enabled,omitempty"`
-	TagList                                   *[]string        `url:"tag_list,omitempty" json:"tag_list,omitempty"`
-	PrintingMergeRequestLinkEnabled           *bool            `url:"printing_merge_request_link_enabled,omitempty" json:"printing_merge_request_link_enabled,omitempty"`
-	CIConfigPath                              *string          `url:"ci_config_path,omitempty" json:"ci_config_path,omitempty"`
+	Name                                      *string           `url:"name,omitempty" json:"name,omitempty"`
+	Path                                      *string           `url:"path,omitempty" json:"path,omitempty"`
+	DefaultBranch                             *string           `url:"default_branch,omitempty" json:"default_branch,omitempty"`
+	NamespaceID                               *int              `url:"namespace_id,omitempty" json:"namespace_id,omitempty"`
+	Description                               *string           `url:"description,omitempty" json:"description,omitempty"`
+	IssuesEnabled                             *bool             `url:"issues_enabled,omitempty" json:"issues_enabled,omitempty"`
+	MergeRequestsEnabled                      *bool             `url:"merge_requests_enabled,omitempty" json:"merge_requests_enabled,omitempty"`
+	JobsEnabled                               *bool             `url:"jobs_enabled,omitempty" json:"jobs_enabled,omitempty"`
+	WikiEnabled                               *bool             `url:"wiki_enabled,omitempty" json:"wiki_enabled,omitempty"`
+	SnippetsEnabled                           *bool             `url:"snippets_enabled,omitempty" json:"snippets_enabled,omitempty"`
+	ResolveOutdatedDiffDiscussions            *bool             `url:"resolve_outdated_diff_discussions,omitempty" json:"resolve_outdated_diff_discussions,omitempty"`
+	ContainerRegistryEnabled                  *bool             `url:"container_registry_enabled,omitempty" json:"container_registry_enabled,omitempty"`
+	SharedRunnersEnabled                      *bool             `url:"shared_runners_enabled,omitempty" json:"shared_runners_enabled,omitempty"`
+	Visibility                                *VisibilityValue  `url:"visibility,omitempty" json:"visibility,omitempty"`
+	ImportURL                                 *string           `url:"import_url,omitempty" json:"import_url,omitempty"`
+	PublicJobs                                *bool             `url:"public_jobs,omitempty" json:"public_jobs,omitempty"`
+	OnlyAllowMergeIfPipelineSucceeds          *bool             `url:"only_allow_merge_if_pipeline_succeeds,omitempty" json:"only_allow_merge_if_pipeline_succeeds,omitempty"`
+	OnlyAllowMergeIfAllDiscussionsAreResolved *bool             `url:"only_allow_merge_if_all_discussions_are_resolved,omitempty" json:"only_allow_merge_if_all_discussions_are_resolved,omitempty"`
+	MergeMethod                               *MergeMethodValue `url:"merge_method,omitempty" json:"merge_method,omitempty"`
+	LFSEnabled                                *bool             `url:"lfs_enabled,omitempty" json:"lfs_enabled,omitempty"`
+	RequestAccessEnabled                      *bool             `url:"request_access_enabled,omitempty" json:"request_access_enabled,omitempty"`
+	TagList                                   *[]string         `url:"tag_list,omitempty" json:"tag_list,omitempty"`
+	PrintingMergeRequestLinkEnabled           *bool             `url:"printing_merge_request_link_enabled,omitempty" json:"printing_merge_request_link_enabled,omitempty"`
+	CIConfigPath                              *string           `url:"ci_config_path,omitempty" json:"ci_config_path,omitempty"`
 }
 
 // CreateProject creates a new project owned by the authenticated user.

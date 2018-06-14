@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -86,6 +87,21 @@ func FindServiceURL(client kubernetes.Interface, namespace string, name string) 
 		}
 	}
 	return "", nil
+}
+
+// FindService looks up a service by name across all namespaces
+func FindService(client kubernetes.Interface, name string) (*v1.Service, error) {
+	nsl, err := client.CoreV1().Namespaces().List(meta_v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, ns := range nsl.Items {
+		svc, err := client.CoreV1().Services(ns.GetName()).Get(name, meta_v1.GetOptions{})
+		if err == nil {
+			return svc, nil
+		}
+	}
+	return nil, errors.New("Service not found!")
 }
 
 func GetServiceURL(svc *v1.Service) string {
@@ -182,6 +198,10 @@ func CreateServiceLink(client kubernetes.Interface, currentNamespace, targetName
 	return nil
 }
 
+func DeleteService(client *kubernetes.Clientset, namespace string, serviceName string) error {
+	return client.CoreV1().Services(namespace).Delete(serviceName, &meta_v1.DeleteOptions{})
+}
+
 func GetService(client kubernetes.Interface, currentNamespace, targetNamespace, serviceName string) error {
 	svc := v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -201,7 +221,6 @@ func GetService(client kubernetes.Interface, currentNamespace, targetNamespace, 
 }
 
 func IsServicePresent(c kubernetes.Interface, name, ns string) (bool, error) {
-
 	svc, err := c.CoreV1().Services(ns).Get(name, meta_v1.GetOptions{})
 	if err != nil || svc == nil {
 		return false, err
