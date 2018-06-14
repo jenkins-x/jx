@@ -115,11 +115,11 @@ func (o *DeleteEnvOptions) Run() error {
 }
 
 func (o *DeleteEnvOptions) deleteEnviroment(jxClient *versioned.Clientset, ns string, name string, envMap map[string]*v1.Environment) error {
-	err := jxClient.JenkinsV1().Environments(ns).Delete(name, &metav1.DeleteOptions{})
-	if err != nil {
-		return err
-	}
-	o.Printf("Deleted environment %s\n", util.ColorInfo(name))
+	//err := jxClient.JenkinsV1().Environments(ns).Delete(name, &metav1.DeleteOptions{})
+	//if err != nil {
+	//	return err
+	//}
+	//o.Printf("Deleted environment %s\n", util.ColorInfo(name))
 
 	env := envMap[name]
 	envNs := env.Spec.Namespace
@@ -128,7 +128,7 @@ func (o *DeleteEnvOptions) deleteEnviroment(jxClient *versioned.Clientset, ns st
 	}
 	kind := env.Spec.Kind
 	if o.DeleteNamespace || !kind.IsPermanent() {
-		return o.runCommand("kubectl", "delete", "namespace", envNs)
+		return o.kubeClient.CoreV1().Namespaces().Delete(name, &metav1.DeleteOptions{})
 	}
 	o.Printf("To delete the associated namespace %s for environment %s then please run this command\n", name, envNs)
 	o.Printf(util.ColorInfo("  kubectl delete namespace %s\n"), envNs)

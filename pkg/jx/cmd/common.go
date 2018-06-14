@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	core_v1 "k8s.io/api/core/v1"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
@@ -47,11 +48,12 @@ type CommonOptions struct {
 	NoBrew    bool
 
 	// common cached clients
-	kubeClient       *kubernetes.Clientset
-	currentNamespace string
-	devNamespace     string
-	jxClient         *versioned.Clientset
-	jenkinsClient    *gojenkins.Jenkins
+	kubeClient          kubernetes.Interface
+	apiExtensionsClient apiextensionsclientset.Interface
+	currentNamespace    string
+	devNamespace        string
+	jxClient            *versioned.Clientset
+	jenkinsClient       *gojenkins.Jenkins
 }
 
 type ServerFlags struct {
@@ -95,7 +97,18 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	options.Cmd = cmd
 }
 
-func (o *CommonOptions) KubeClient() (*kubernetes.Clientset, string, error) {
+func (o *CommonOptions) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
+	var err error
+	if o.apiExtensionsClient == nil {
+		o.apiExtensionsClient, err = o.Factory.CreateApiExtensionsClient()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return o.apiExtensionsClient, nil
+}
+
+func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 	if o.kubeClient == nil {
 		kubeClient, currentNs, err := o.Factory.CreateClient()
 		if err != nil {
@@ -155,29 +168,6 @@ func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 		o.jenkinsClient = jenkins
 	}
 	return o.jenkinsClient, nil
-}
-
-func (o *CommonOptions) inclusterSetup() error {
-	// TODO find a better way to figure out of we are incluster
-	c, ns, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	s, err := c.CoreV1().Secrets(ns).Get(kube.SecretJenkins, v1.GetOptions{})
-	if err != nil {
-		// not running incluster so fallback to getting auth file from local machine
-		return nil
-	}
-	apiToken := s.Data[kube.JenkinsAdminApiToken]
-	j := CreateJenkinsUserOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: *o,
-		},
-		ApiToken: string(apiToken),
-	}
-
-	return j.Run()
-
 }
 
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {

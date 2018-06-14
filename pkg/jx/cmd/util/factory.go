@@ -7,9 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -27,6 +29,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
+	"net/url"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -61,13 +65,15 @@ type Factory interface {
 
 	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
 
-	CreateClient() (*kubernetes.Clientset, string, error)
+	CreateClient() (kubernetes.Interface, string, error)
 
 	CreateJXClient() (*versioned.Clientset, string, error)
 
-	CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error)
+	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
 
 	CreateMetricsClient() (*metricsclient.Clientset, error)
+
+	CreateComplianceClient() (*client.SonobuoyClient, error)
 
 	CreateTable(out io.Writer) table.Table
 
@@ -76,6 +82,8 @@ type Factory interface {
 	LoadPipelineSecrets(kind string, serviceKind string) (*corev1.SecretList, error)
 
 	ImpersonateUser(user string) Factory
+
+	IsInCluster() bool
 }
 
 type factory struct {
@@ -148,9 +156,48 @@ func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, erro
 	if err != nil {
 		return authConfigSvc, err
 	}
-	_, err = authConfigSvc.LoadConfig()
+	config, err := authConfigSvc.LoadConfig()
 	if err != nil {
 		return authConfigSvc, err
+	}
+
+	if len(config.Servers) == 0 {
+		c, ns, err := f.CreateClient()
+		if err != nil {
+			return authConfigSvc, err
+		}
+
+		s, err := c.CoreV1().Secrets(ns).Get(kube.SecretJenkins, metav1.GetOptions{})
+		if err != nil {
+			return authConfigSvc, err
+		}
+
+		userAuth := auth.UserAuth{
+			Username: "admin",
+			ApiToken: string(s.Data[kube.JenkinsAdminApiToken]),
+		}
+		svc, err := c.CoreV1().Services(ns).Get(kube.ServiceJenkins, metav1.GetOptions{})
+		if err != nil {
+			return authConfigSvc, err
+		}
+		svcURL := kube.GetServiceURL(svc)
+		if svcURL == "" {
+			return authConfigSvc, fmt.Errorf("unable to find external URL annotation on service %s", svc.Name)
+		}
+
+		u, err := url.Parse(svcURL)
+		if err != nil {
+			return authConfigSvc, err
+		}
+		if !userAuth.IsInvalid() {
+			config.Servers = []*auth.AuthServer{
+				{
+					Name:  u.Host,
+					URL:   svcURL,
+					Users: []*auth.UserAuth{&userAuth},
+				},
+			}
+		}
 	}
 	return authConfigSvc, err
 }
@@ -293,7 +340,7 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	}
 
 	if secrets != nil {
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline)
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline || f.IsInCluster())
 	}
 
 	// lets add a default if there's none defined yet
@@ -388,7 +435,7 @@ func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
 
 }
 
-func (f *factory) CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error) {
+func (f *factory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
 	config, err := f.createKubeConfig()
 	if err != nil {
 		return nil, err
@@ -404,7 +451,7 @@ func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
 	return metricsclient.NewForConfig(config)
 }
 
-func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
+func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
 	cfg, err := f.createKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -493,4 +540,22 @@ func (f *factory) isInCDPIpeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
 	return os.Getenv("BUILD_NUMBER") != ""
+}
+
+// function to tell if we are running incluster
+func (f *factory) IsInCluster() bool {
+	_, err := rest.InClusterConfig()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// CreateComplianceClient creates a new Sonobuoy compliance client
+func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
+	config, err := f.createKubeConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "compliance client failed to load the Kubernetes configuration")
+	}
+	return client.NewSonobuoyClient(config)
 }

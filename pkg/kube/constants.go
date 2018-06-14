@@ -19,6 +19,9 @@ const (
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
 
+	// ChartIstio the default chart for the Istio chart
+	ChartIstio = "install/kubernetes/helm/istio"
+
 	// ChartKubeless the default chart for kubeless
 	ChartKubeless = "incubator/kubeless"
 
@@ -39,6 +42,9 @@ const (
 
 	// SecretJenkinsGitCredentials the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
+
+	// SecretJenkinsChartMuseum the chart museum secret
+	SecretJenkinsChartMuseum = "jenkins-x-chartmuseum"
 
 	// SecretJenkinsReleaseGPG the GPG secrets for doing releases
 	SecretJenkinsReleaseGPG = "jenkins-release-gpg"
@@ -169,6 +175,7 @@ var (
 		"anchore":    ChartAnchore,
 		"cb":         ChartCloudBees,
 		"gitea":      ChartGitea,
+		"istio":      ChartIstio,
 		"kubeless":   ChartKubeless,
 		"prometheus": "stable/prometheus",
 		"grafana":    "stable/grafana",

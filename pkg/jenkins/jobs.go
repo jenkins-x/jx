@@ -111,7 +111,7 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
 		  </traits>
 		</source>
 `
-	case gits.KindBitBucket, gits.KindBitBucketServer:
+	case gits.KindBitBucketCloud, gits.KindBitBucketServer:
 		return `
 	 	<source class="com.cloudbees.jenkins.plugins.bitbucket.BitbucketSCMSource" plugin="cloudbees-bitbucket-branch-source@2.2.10">
 	 	  ` + idXml + credXml + `

@@ -1,0 +1,16 @@
+{
+    "name": "test-user",
+    "emailAddress": "test-user@example.com",
+    "id": 502,
+    "displayName": "Test User",
+    "active": true,
+    "slug": "test-user",
+    "type": "NORMAL",
+    "links": {
+        "self": [
+            {
+                "href": "http://auth.example.com/users/test-user"
+            }
+        ]
+    }
+}

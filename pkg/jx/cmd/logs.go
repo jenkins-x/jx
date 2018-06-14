@@ -149,7 +149,7 @@ func (o *LogsOptions) Run() error {
 }
 
 // waitForReadyPodForDeployment waits for a ready pod in a Deployment in the given namespace with the given name
-func waitForReadyPodForDeployment(c *kubernetes.Clientset, ns string, name string, names []string, readyOnly bool) (string, error) {
+func waitForReadyPodForDeployment(c kubernetes.Interface, ns string, name string, names []string, readyOnly bool) (string, error) {
 	deployment, err := c.AppsV1beta1().Deployments(ns).Get(name, metav1.GetOptions{})
 	if err != nil || deployment == nil {
 		return "", util.InvalidArg(name, names)
@@ -165,7 +165,7 @@ func waitForReadyPodForDeployment(c *kubernetes.Clientset, ns string, name strin
 	return waitForReadyPodForSelector(c, ns, labels, readyOnly)
 }
 
-func waitForReadyPodForSelector(c *kubernetes.Clientset, ns string, labels map[string]string, readyOnly bool) (string, error) {
+func waitForReadyPodForSelector(c kubernetes.Interface, ns string, labels map[string]string, readyOnly bool) (string, error) {
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return "", err

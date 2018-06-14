@@ -25,7 +25,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	if gitURL == "" {
 		return answer, fmt.Errorf("No source git URL")
 	}
-	gitInfo, err := gits.ParseGitURL(gitURL)
+	gitInfo, err := gits.ParseGitURL(gitURL, false)
 	if err != nil {
 		return answer, err
 	}
@@ -177,12 +177,11 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	}
 
 	gha := &gits.GitPullRequestArguments{
-		Owner: gitInfo.Organisation,
-		Repo:  gitInfo.Name,
-		Title: title,
-		Body:  message,
-		Base:  base,
-		Head:  branchName,
+		GitRepositoryInfo: gitInfo,
+		Title:             title,
+		Body:              message,
+		Base:              base,
+		Head:              branchName,
 	}
 
 	pr, err := provider.CreatePullRequest(gha)

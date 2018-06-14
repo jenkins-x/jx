@@ -1,0 +1,24 @@
+{
+    "size": 2,
+    "limit": 100,
+    "isLastPage": true,
+    "values": [
+      {
+        "state": "INPROGRESS",
+        "key": "REPO-MASTER",
+        "name": "REPO-MASTER-42",
+        "url": "https://bamboo.example.com/browse/REPO-MASTER-42",
+        "description": "Changes by John Doe",
+        "dateAdded": 1528223125000
+      },
+      {
+        "state": "SUCCESSFUL",
+        "key": "Test-Master",
+        "name": "Test-build-PR",
+        "url": "http://auth.example.com/projects/TEST-ORG/repos/test-repo",
+        "description": "Changes by Test User",
+        "dateAdded": 1528222003000
+      }
+    ],
+    "start": 0
+  }

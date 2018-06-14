@@ -16,6 +16,9 @@ import (
 
 const (
 	mavenKeepOldJenkinsfile = "maven-keep-old-jenkinsfile"
+	mavenCamel              = "maven-camel"
+	mavenSpringBoot         = "maven-springboot"
+	probePrefix             = "probePath:"
 )
 
 func TestImportProjects(t *testing.T) {
@@ -46,16 +49,20 @@ func assertImport(t *testing.T, testDir string) error {
 	_, dirName := filepath.Split(testDir)
 	dirName = kube.ToValidName(dirName)
 	o := &ImportOptions{}
-	configureOptions(&o.CommonOptions)
+	configureTestOptions(&o.CommonOptions)
 	o.Dir = testDir
 	o.DryRun = true
+	o.DisableMaven = true
 
 	if dirName == mavenKeepOldJenkinsfile {
 		o.DisableJenkinsfileCheck = true
 	}
+	if dirName == mavenCamel || dirName == mavenSpringBoot {
+		o.DisableMaven = tests.TestShouldDisableMaven()
+	}
 
 	err := o.Run()
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Failed with %s", err)
 	if err == nil {
 		jenkinsfile := filepath.Join(testDir, "Jenkinsfile")
 		assertFileExists(t, jenkinsfile)
@@ -72,12 +79,46 @@ func assertImport(t *testing.T, testDir string) error {
 			if strings.HasPrefix(dirName, "gradle") {
 				assertFileContains(t, jenkinsfile, "gradle")
 			}
+
+			if !o.DisableMaven {
+				if dirName == mavenCamel {
+					// should have modified it
+					assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/health")
+				}
+				if dirName == mavenSpringBoot {
+					// should have left it
+					assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/actuator/health")
+				}
+			}
 		}
 		if dirName == "maven-old-jenkinsfile" {
 			assertFileExists(t, jenkinsfile+jenkinsfileBackupSuffix)
 		}
 	}
 	return err
+}
+
+func assertProbePathEquals(t *testing.T, fileName string, expectedProbe string) {
+	if assertFileExists(t, fileName) {
+		data, err := ioutil.ReadFile(fileName)
+		assert.NoError(t, err, "Failed to read file %s", fileName)
+		if err == nil {
+			text := string(data)
+			found := false
+			lines := strings.Split(text, "\n")
+
+			for _, line := range lines {
+				if strings.HasPrefix(line, probePrefix) {
+					found = true
+					value := strings.TrimSpace(strings.TrimPrefix(line, probePrefix))
+					assert.Equal(t, expectedProbe, value, "file %s probe with key: %s", fileName, probePrefix)
+					break
+				}
+
+			}
+			assert.True(t, found, "No probe found in file %s with key: %s", fileName, probePrefix)
+		}
+	}
 }
 
 func assertFileContains(t *testing.T, fileName string, containsText string) {

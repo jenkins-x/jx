@@ -1,6 +1,5 @@
-FROM scratch
+FROM centos:7
 
-ENTRYPOINT ["/jx", "version"]
+ENTRYPOINT ["jx", "version"]
 
-COPY build/jx-linux-amd64 /jx
-
+COPY ./build/linux/jx /usr/bin/jx

@@ -7,7 +7,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func GetIngress(client *kubernetes.Clientset, ns, name string) (string, error) {
+func GetIngress(client kubernetes.Interface, ns, name string) (string, error) {
 
 	ing, err := client.ExtensionsV1beta1().Ingresses(ns).Get(name, meta_v1.GetOptions{})
 	if err != nil {

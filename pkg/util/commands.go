@@ -7,8 +7,15 @@ import (
 	"strings"
 )
 
+func PathWithBinary() string {
+	path := os.Getenv("PATH")
+	binDir, _ := BinaryLocation()
+	return path + string(os.PathListSeparator) + binDir
+}
+
 // GetCommandOutput evaluates the given command and returns the trimmed output
 func GetCommandOutput(dir string, name string, args ...string) (string, error) {
+	os.Setenv("PATH", PathWithBinary())
 	e := exec.Command(name, args...)
 	if dir != "" {
 		e.Dir = dir

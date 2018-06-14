@@ -40,6 +40,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	deleteCommands := NewCmdDelete(f, out, err)
 	getCommands := NewCmdGet(f, out, err)
 	editCommands := NewCmdEdit(f, out, err)
+	updateCommands := NewCmdUpdate(f, out, err)
 
 	installCommands := []*cobra.Command{
 		NewCmdInstall(f, out, err),
@@ -47,6 +48,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 		NewCmdUpgrade(f, out, err),
 	}
 	installCommands = append(installCommands, findCommands("cluster", createCommands, deleteCommands)...)
+	installCommands = append(installCommands, findCommands("cluster", updateCommands)...)
 	installCommands = append(installCommands, findCommands("jenkins token", createCommands, deleteCommands)...)
 	installCommands = append(installCommands, NewCmdInit(f, out, err))
 
@@ -62,6 +64,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	gitCommands := []*cobra.Command{}
 	gitCommands = append(gitCommands, findCommands("git server", createCommands, deleteCommands)...)
 	gitCommands = append(gitCommands, findCommands("git token", createCommands, deleteCommands)...)
+	gitCommands = append(gitCommands, NewCmdRepo(f, out, err))
 
 	addonCommands := []*cobra.Command{}
 	addonCommands = append(addonCommands, findCommands("addon", createCommands, deleteCommands)...)
@@ -92,6 +95,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 		{
 			Message: "Working with Kubernetes:",
 			Commands: []*cobra.Command{
+				NewCompliance(f, out, err),
 				NewCmdCompletion(f, out),
 				NewCmdContext(f, out, err),
 				NewCmdEnvironment(f, out, err),
@@ -123,6 +127,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 				getCommands,
 				editCommands,
 				createCommands,
+				updateCommands,
 				deleteCommands,
 				NewCmdStart(f, out, err),
 				NewCmdStop(f, out, err),

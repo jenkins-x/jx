@@ -130,6 +130,11 @@ func (o *InitOptions) Run() error {
 		return err
 	}
 
+	err = o.validateGit()
+	if err != nil {
+		return err
+	}
+
 	err = o.enableClusterAdminRole()
 	if err != nil {
 		return err
@@ -508,7 +513,48 @@ func (o *InitOptions) ingressNamespace() string {
 	return ingressNamespace
 }
 
-func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, provider string, ingressNamespace string, ingressService string) (string, error) {
+// validateGit validates that git is configured correctly
+func (o *InitOptions) validateGit() error {
+	// lets ignore errors which indicate no value set
+	userName, _ := o.getCommandOutput("", "git", "config", "--global", "--get", "user.name")
+	userEmail, _ := o.getCommandOutput("", "git", "config", "--global", "--get", "user.email")
+	var err error
+
+	if userName == "" {
+		if !o.BatchMode {
+			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true)
+			if err != nil {
+				return err
+			}
+		}
+		if userName == "" {
+			return fmt.Errorf("No git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
+		}
+		err = o.runCommandFromDir("", "git", "config", "--global", "--add", "user.name", userName)
+		if err != nil {
+			return err
+		}
+	}
+	if userEmail == "" {
+		if !o.BatchMode {
+			userEmail, err = util.PickValue("Please enter the name you wish to use with git: ", "", true)
+			if err != nil {
+				return err
+			}
+		}
+		if userEmail == "" {
+			return fmt.Errorf("No git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
+		}
+		err = o.runCommandFromDir("", "git", "config", "--global", "--add", "user.email", userEmail)
+		if err != nil {
+			return err
+		}
+	}
+	o.Printf("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
+	return nil
+}
+
+func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, provider string, ingressNamespace string, ingressService string) (string, error) {
 	var address string
 	if provider == MINIKUBE {
 		ip, err := o.getCommandOutput("", "minikube", "ip")

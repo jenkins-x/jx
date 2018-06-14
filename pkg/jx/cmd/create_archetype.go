@@ -26,7 +26,7 @@ var (
 		jx create archetype
 
 		# Creates a Camel Archetype, filtering on the archetypes containing the text 'spring'
-		jx create archetype -g  org.apache.camel.archetypes -a spring
+		jx create archetype --filter-group  org.apache.camel.archetypes --filter-artifact spring
 	`)
 )
 
@@ -71,21 +71,25 @@ func NewCmdCreateArchetype(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 		},
 	}
 	options.addCreateAppFlags(cmd)
+	options.addGeneratedMvnCoordinateFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.ArchetypeCatalogURL, "catalog", "c", "http://central.maven.org/maven2/archetype-catalog.xml", "The Maven Archetype Catalog to use")
 
-	cmd.Flags().StringArrayVarP(&options.Filter.GroupIds, "group", "g", []string{}, "The Group ID of the Archetypes")
-	cmd.Flags().StringVarP(&options.Filter.GroupIdFilter, "group-filter", "f", "", "Filter the Group IDs to choose from for he Archetypes")
-	cmd.Flags().StringVarP(&options.Filter.ArtifactIdFilter, "artifact", "a", "", "Either the Artifact ID or a text filter of the artifact IDs to pick from")
-	cmd.Flags().StringVarP(&options.Filter.Version, "version", "v", "", "The Version of the Archetype to use")
+	cmd.Flags().StringArrayVarP(&options.Filter.GroupIds, "group-ids", "", []string{}, "The Group ID of the Archetypes to pick")
+	cmd.Flags().StringVarP(&options.Filter.GroupIdFilter, "filter-group", "f", "", "Filter the Group IDs to choose from for he Archetypes")
+	cmd.Flags().StringVarP(&options.Filter.ArtifactIdFilter, "filter-artifact", "", "", "Either the Artifact ID or a text filter of the artifact IDs to pick from")
+	cmd.Flags().StringVarP(&options.Filter.Version, "filter-version", "", "", "The Version of the Archetype to use")
 
 	cmd.Flags().BoolVarP(&options.PickVersion, "pick", "p", false, "Provide a list of versions to choose from")
-	cmd.Flags().BoolVarP(&options.Interactive, "interactive", "i", false, "Allow interactive input into the maven archetype:generate command")
 
-	cmd.Flags().StringVarP(&options.Form.GroupId, "create-group", "", "", "The group ID for the new application")
-	cmd.Flags().StringVarP(&options.Form.ArtifactId, "create-artifact", "n", "", "The artifact ID for the new application")
-	cmd.Flags().StringVarP(&options.Form.Version, "create-version", "", "", "The version for the new application")
 	return cmd
+}
+
+func (options *CreateArchetypeOptions) addGeneratedMvnCoordinateFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(&options.Interactive, "interactive", "i", false, "Allow interactive input into the maven archetype:generate command")
+	cmd.Flags().StringVarP(&options.Form.GroupId, "group", "g", "com.example", "The group ID for the new application")
+	cmd.Flags().StringVarP(&options.Form.ArtifactId, "artifact", "a", "", "The artifact ID for the new application")
+	cmd.Flags().StringVarP(&options.Form.Version, "version", "v", "1.0-SNAPSHOT", "The version for the new application")
 }
 
 // Run implements the generic Create command
@@ -106,6 +110,12 @@ func (o *CreateArchetypeOptions) Run() error {
 
 	o.Printf("Invoking: jx create archetype -g %s -a %s -v %s\n\n", form.ArchetypeGroupId, form.ArchetypeArtifactId, form.ArchetypeVersion)
 
+	return o.CreateArchetype()
+}
+
+func (o *CreateArchetypeOptions) CreateArchetype() error {
+	form := &o.Form
+	var err error
 	dir := o.OutDir
 	if dir == "" {
 		dir, err = os.Getwd()
@@ -113,7 +123,7 @@ func (o *CreateArchetypeOptions) Run() error {
 			return err
 		}
 	}
-	o.Printf("basedir is: %s\n", dir)
+	o.Debugf("basedir is: %s\n", dir)
 
 	args := []string{}
 	if !o.Interactive {
@@ -125,6 +135,34 @@ func (o *CreateArchetypeOptions) Run() error {
 		"-DarchetypeVersion="+form.ArchetypeVersion,
 		"-Dbasedir="+dir)
 
+	// lets do our own input as it looks nicer than mvn ;)
+	if !o.BatchMode {
+		newline := false
+		if form.GroupId == "" {
+			newline = true
+			form.GroupId, err = util.PickValue("Group ID of the new application: ", "org.acme.demo", true)
+			if err != nil {
+				return err
+			}
+		}
+		if form.ArtifactId == "" {
+			newline = true
+			form.ArtifactId, err = util.PickValue("Artifact ID of the new application: ", "mydemo", true)
+			if err != nil {
+				return err
+			}
+		}
+		if form.Version == "" {
+			newline = true
+			form.Version, err = util.PickValue("Snapshot Version of the new application: ", "1.0-SNAPSHOT", true)
+			if err != nil {
+				return err
+			}
+		}
+		if newline {
+			o.Printf("\n")
+		}
+	}
 	if form.GroupId != "" {
 		args = append(args, "-DgroupId="+form.GroupId)
 	}
@@ -140,6 +178,7 @@ func (o *CreateArchetypeOptions) Run() error {
 		return err
 	}
 	outDir := filepath.Join(dir, form.ArtifactId)
+	o.Dir = outDir
 	o.Printf("Created project at %s\n\n", util.ColorInfo(outDir))
 
 	return o.ImportCreatedProject(outDir)
