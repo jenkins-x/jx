@@ -4,10 +4,9 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/tests"
 	corev1 "k8s.io/api/core/v1"
+	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/internalclientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-	// TODO
-	// apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/versioned/fake"
 )
 
 func configureTestOptions(o *CommonOptions) {
@@ -26,6 +25,5 @@ func configureTestOptions(o *CommonOptions) {
 	})
 	o.currentNamespace = "jx"
 
-	// TODO
-	//o.apiExtensionsClient = apifake.NewSimpleClientset()
+	o.apiExtensionsClient = apifake.NewSimpleClientset()
 }
