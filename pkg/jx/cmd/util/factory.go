@@ -7,9 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -70,6 +72,8 @@ type Factory interface {
 	CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error)
 
 	CreateMetricsClient() (*metricsclient.Clientset, error)
+
+	CreateComplianceClient() (*client.SonobuoyClient, error)
 
 	CreateTable(out io.Writer) table.Table
 
@@ -545,4 +549,13 @@ func (f *factory) IsInCluster() bool {
 		return false
 	}
 	return true
+}
+
+// CreateComplianceClient creates a new Sonobuoy compliance client
+func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
+	config, err := f.createKubeConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "compliance client failed to load the Kubernetes configuration")
+	}
+	return client.NewSonobuoyClient(config)
 }

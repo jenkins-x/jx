@@ -94,6 +94,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 		{
 			Message: "Working with Kubernetes:",
 			Commands: []*cobra.Command{
+				NewCompliance(f, out, err),
 				NewCmdCompletion(f, out),
 				NewCmdContext(f, out, err),
 				NewCmdEnvironment(f, out, err),
