@@ -28,7 +28,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		return fmt.Errorf("No Git repository URL found!")
 	}
 
-	gitInfo, err := gits.ParseGitURL(gitURL, gitProvider.Kind() == "bitbucketserver")
+	gitInfo, err := gits.ParseGitURL(gitURL, gits.HasScm(gitProvider))
 	if err != nil {
 		return fmt.Errorf("Failed to parse git URL %s due to: %s", gitURL, err)
 	}

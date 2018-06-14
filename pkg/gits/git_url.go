@@ -105,6 +105,13 @@ func (i *GitRepositoryInfo) PipelinePath() string {
 	return i.Organisation + "/" + i.Name + "/master"
 }
 
+func HasScm(gitProvider GitProvider) bool {
+	if gitProvider != nil {
+		return gitProvider.Kind() == "bitbucketserver"
+	}
+	return false
+}
+
 // ParseGitURL attempts to parse the given text as a URL or git URL-like string to determine
 // the protocol, host, organisation and name
 func ParseGitURL(text string, hasSCM bool) (*GitRepositoryInfo, error) {
