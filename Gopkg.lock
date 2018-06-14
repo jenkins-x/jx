@@ -645,7 +645,7 @@
   branch = "master"
   name = "github.com/wbrefvem/go-gitlab"
   packages = ["."]
-  revision = "39a39290fa635907b2b2a54b4dd48966bfe4ee54"
+  revision = "83c9148e1da614c7092e1db7bb9de1bdba436081"
 
 [[projects]]
   branch = "master"

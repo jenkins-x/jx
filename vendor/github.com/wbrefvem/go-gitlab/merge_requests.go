@@ -105,6 +105,12 @@ type MergeRequest struct {
 	} `json:"changes"`
 	TimeStats *TimeStats `json:"time_stats"`
 	Squash    bool       `json:"squash"`
+	Pipeline  struct {
+		ID     int    `json:"id"`
+		Ref    string `json:"ref"`
+		SHA    string `json:"sha"`
+		Status string `json:"status"`
+	} `json:"pipeline"`
 }
 
 func (m MergeRequest) String() string {
@@ -342,7 +348,7 @@ func (s *MergeRequestsService) ListMergeRequestPipelines(pid interface{}, mergeR
 	if err != nil {
 		return nil, nil, err
 	}
-	u := fmt.Sprintf("projects/%s/merge_requests/%v/pipelines", url.QueryEscape(project), mergeRequest)
+	u := fmt.Sprintf("projects/%s/merge_requests/%d/pipelines", url.QueryEscape(project), mergeRequest)
 
 	req, err := s.client.NewRequest("GET", u, nil, options)
 	if err != nil {
@@ -375,7 +381,7 @@ func (s *MergeRequestsService) GetIssuesClosedOnMerge(pid interface{}, mergeRequ
 	if err != nil {
 		return nil, nil, err
 	}
-	u := fmt.Sprintf("/projects/%s/merge_requests/%v/closes_issues", url.QueryEscape(project), mergeRequest)
+	u := fmt.Sprintf("/projects/%s/merge_requests/%d/closes_issues", url.QueryEscape(project), mergeRequest)
 
 	req, err := s.client.NewRequest("GET", u, opt, options)
 	if err != nil {
