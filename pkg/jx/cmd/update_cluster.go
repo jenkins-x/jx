@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
+	"io"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -67,7 +67,7 @@ func createUpdateClusterOptions(f cmdutil.Factory, out io.Writer, errOut io.Writ
 		UpdateOptions: UpdateOptions{
 			CommonOptions: commonOptions,
 		},
-		Provider:       cloudProvider,
+		Provider: cloudProvider,
 	}
 	return options
 }

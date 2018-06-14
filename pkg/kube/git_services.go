@@ -83,7 +83,7 @@ func EnsureGitServiceExistsForHost(jxClient *versioned.Clientset, devNs string, 
 }
 
 // GetGitServiceKind returns the kind of the given host if one can be found or ""
-func GetGitServiceKind(jxClient *versioned.Clientset, kubeClient *kubernetes.Clientset, devNs string, gitServiceUrl string) (string, error) {
+func GetGitServiceKind(jxClient *versioned.Clientset, kubeClient kubernetes.Interface, devNs string, gitServiceUrl string) (string, error) {
 	answer := gits.SaasGitKind(gitServiceUrl)
 	if answer != "" {
 		return answer, nil

@@ -148,7 +148,7 @@ func (o *EnvironmentOptions) Run() error {
 	return nil
 }
 
-func (o *EnvironmentOptions) PickNamespace(client *kubernetes.Clientset, defaultNamespace string) (string, error) {
+func (o *EnvironmentOptions) PickNamespace(client kubernetes.Interface, defaultNamespace string) (string, error) {
 	list, err := client.CoreV1().Namespaces().List(meta_v1.ListOptions{})
 	if err != nil {
 		return "", fmt.Errorf("Failed to load current namespaces %s", err)
