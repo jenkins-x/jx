@@ -554,7 +554,7 @@ func (o *InitOptions) validateGit() error {
 	return nil
 }
 
-func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, provider string, ingressNamespace string, ingressService string) (string, error) {
+func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, provider string, ingressNamespace string, ingressService string) (string, error) {
 	var address string
 	if provider == MINIKUBE {
 		ip, err := o.getCommandOutput("", "minikube", "ip")

@@ -24,7 +24,7 @@ type UpdateClusterGKETerraformOptions struct {
 }
 
 type UpdateClusterGKETerraformFlags struct {
-	ClusterName     string
+	ClusterName string
 }
 
 var (
@@ -75,7 +75,7 @@ func createUpdateClusterGKETerraformOptions(f cmdutil.Factory, out io.Writer, er
 			UpdateOptions: UpdateOptions{
 				CommonOptions: commonOptions,
 			},
-			Provider:       cloudProvider,
+			Provider: cloudProvider,
 		},
 	}
 	return options
@@ -110,14 +110,12 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 
 	var err error
 
-
 	if o.Flags.ClusterName == "" {
 		log.Info("No cluster name provided\n")
 		return nil
 	}
 
 	serviceAccount := fmt.Sprintf("jx-%s", o.Flags.ClusterName)
-
 
 	user, err := os_user.Current()
 	if err != nil {

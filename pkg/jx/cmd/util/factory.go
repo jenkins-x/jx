@@ -65,7 +65,7 @@ type Factory interface {
 
 	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
 
-	CreateClient() (*kubernetes.Clientset, string, error)
+	CreateClient() (kubernetes.Interface, string, error)
 
 	CreateJXClient() (*versioned.Clientset, string, error)
 
@@ -451,7 +451,7 @@ func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
 	return metricsclient.NewForConfig(config)
 }
 
-func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
+func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
 	cfg, err := f.createKubeConfig()
 	if err != nil {
 		return nil, "", err

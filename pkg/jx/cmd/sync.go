@@ -178,7 +178,7 @@ func (o *SyncOptions) KsyncWatch() error {
 }
 
 // CreateKsync removes the exiting ksync if it already exists then create a new ksync of the given name
-func (o *SyncOptions) CreateKsync(client *kubernetes.Clientset, ns string, name string, dir string, remoteDir string, username string) error {
+func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name string, dir string, remoteDir string, username string) error {
 
 	// ksync is installed to the jx/bin dir, so we can add it for the user
 	os.Setenv("PATH", util.PathWithBinary())

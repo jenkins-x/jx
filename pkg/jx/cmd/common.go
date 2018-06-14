@@ -47,7 +47,7 @@ type CommonOptions struct {
 	NoBrew    bool
 
 	// common cached clients
-	kubeClient       *kubernetes.Clientset
+	kubeClient       kubernetes.Interface
 	currentNamespace string
 	devNamespace     string
 	jxClient         *versioned.Clientset
@@ -95,7 +95,7 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	options.Cmd = cmd
 }
 
-func (o *CommonOptions) KubeClient() (*kubernetes.Clientset, string, error) {
+func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 	if o.kubeClient == nil {
 		kubeClient, currentNs, err := o.Factory.CreateClient()
 		if err != nil {

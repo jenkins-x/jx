@@ -67,12 +67,12 @@ func GetPodCondition(status *v1.PodStatus, conditionType v1.PodConditionType) (i
 }
 
 // waits for the pod to become ready using label selector to match the pod
-func WaitForPodToBeReady(client *kubernetes.Clientset, selector labels.Selector, namespace string, timeout time.Duration) error {
+func WaitForPodToBeReady(client kubernetes.Interface, selector labels.Selector, namespace string, timeout time.Duration) error {
 	options := meta_v1.ListOptions{LabelSelector: selector.String()}
 	return waitForPodSelectorToBeReady(client, namespace, options, timeout)
 }
 
-func waitForPodSelectorToBeReady(client *kubernetes.Clientset, namespace string, options meta_v1.ListOptions, timeout time.Duration) error {
+func waitForPodSelectorToBeReady(client kubernetes.Interface, namespace string, options meta_v1.ListOptions, timeout time.Duration) error {
 	w, err := client.CoreV1().Pods(namespace).Watch(options)
 	if err != nil {
 		return err
@@ -93,7 +93,7 @@ func waitForPodSelectorToBeReady(client *kubernetes.Clientset, namespace string,
 }
 
 // waits for the pod to become ready using the pod name
-func WaitForPodNameToBeReady(client *kubernetes.Clientset, namespace string, name string, timeout time.Duration) error {
+func WaitForPodNameToBeReady(client kubernetes.Interface, namespace string, name string, timeout time.Duration) error {
 	options := meta_v1.ListOptions{
 		// TODO
 		//FieldSelector: fields.OneTermEqualSelector(api.ObjectNameField, name).String(),
@@ -102,7 +102,7 @@ func WaitForPodNameToBeReady(client *kubernetes.Clientset, namespace string, nam
 	return waitForPodSelectorToBeReady(client, namespace, options, timeout)
 }
 
-func GetReadyPodNames(client *kubernetes.Clientset, ns string, filter string) ([]string, error) {
+func GetReadyPodNames(client kubernetes.Interface, ns string, filter string) ([]string, error) {
 	names := []string{}
 	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{})
 	if err != nil {
@@ -118,7 +118,7 @@ func GetReadyPodNames(client *kubernetes.Clientset, ns string, filter string) ([
 	return names, nil
 }
 
-func GetPodNames(client *kubernetes.Clientset, ns string, filter string) ([]string, error) {
+func GetPodNames(client kubernetes.Interface, ns string, filter string) ([]string, error) {
 	names := []string{}
 	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{})
 	if err != nil {
@@ -134,7 +134,7 @@ func GetPodNames(client *kubernetes.Clientset, ns string, filter string) ([]stri
 	return names, nil
 }
 
-func GetPods(client *kubernetes.Clientset, ns string, filter string) ([]string, map[string]*v1.Pod, error) {
+func GetPods(client kubernetes.Interface, ns string, filter string) ([]string, map[string]*v1.Pod, error) {
 	names := []string{}
 	m := map[string]*v1.Pod{}
 	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{})
@@ -153,7 +153,7 @@ func GetPods(client *kubernetes.Clientset, ns string, filter string) ([]string, 
 	return names, m, nil
 }
 
-func GetPodsWithLabels(client *kubernetes.Clientset, ns string, selector string) ([]string, map[string]*v1.Pod, error) {
+func GetPodsWithLabels(client kubernetes.Interface, ns string, selector string) ([]string, map[string]*v1.Pod, error) {
 	names := []string{}
 	m := map[string]*v1.Pod{}
 	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{
@@ -175,7 +175,7 @@ func GetPodsWithLabels(client *kubernetes.Clientset, ns string, selector string)
 }
 
 // GetDevPodNames returns the users dev pod names
-func GetDevPodNames(client *kubernetes.Clientset, ns string, username string) ([]string, map[string]*v1.Pod, error) {
+func GetDevPodNames(client kubernetes.Interface, ns string, username string) ([]string, map[string]*v1.Pod, error) {
 	names := []string{}
 	m := map[string]*v1.Pod{}
 	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{

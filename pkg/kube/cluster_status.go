@@ -37,7 +37,7 @@ type ClusterStatus struct {
 	totalAllocatedCpu    resource.Quantity
 }
 
-func GetClusterStatus(client *kubernetes.Clientset, namespace string) (ClusterStatus, error) {
+func GetClusterStatus(client kubernetes.Interface, namespace string) (ClusterStatus, error) {
 
 	clusterStatus := ClusterStatus{
 		totalAllocatedCpu:    resource.Quantity{},
@@ -127,7 +127,7 @@ func (clusterStatus *ClusterStatus) Info() string {
 	return str
 }
 
-func Status(client *kubernetes.Clientset, namespace string, node v1.Node) (NodeStatus, error) {
+func Status(client kubernetes.Interface, namespace string, node v1.Node) (NodeStatus, error) {
 	nodeStatus := NodeStatus{}
 	fieldSelector, err := fields.ParseSelector("spec.nodeName=" + node.Name + ",status.phase!=" + string(v1.PodSucceeded) + ",status.phase!=" + string(v1.PodFailed))
 	if err != nil {
@@ -253,7 +253,7 @@ func PodRequestsAndLimits(pod *v1.Pod) (reqs map[v1.ResourceName]resource.Quanti
 	return
 }
 
-func RoleBindings(client *kubernetes.Clientset, namespace string) (string, error) {
+func RoleBindings(client kubernetes.Interface, namespace string) (string, error) {
 	binding, err := client.Rbac().RoleBindings(namespace).Get("", metav1.GetOptions{})
 	if err != nil {
 		return "", err

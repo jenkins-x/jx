@@ -33,18 +33,18 @@ type CreateClusterGKETerraformOptions struct {
 }
 
 type CreateClusterGKETerraformFlags struct {
-	AutoUpgrade     bool
-	ClusterName     string
+	AutoUpgrade bool
+	ClusterName string
 	//ClusterIpv4Cidr string
 	//ClusterVersion  string
-	DiskSize        string
-	MachineType     string
-	MinNumOfNodes   string
-	MaxNumOfNodes   string
-	ProjectId       string
-	SkipLogin       bool
-	Zone            string
-	Labels          string
+	DiskSize      string
+	MachineType   string
+	MinNumOfNodes string
+	MaxNumOfNodes string
+	ProjectId     string
+	SkipLogin     bool
+	Zone          string
+	Labels        string
 }
 
 var (
@@ -349,7 +349,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	o.appendFile(terraformVars, fmt.Sprintf("auto_upgrade = \"%t\"\n", o.Flags.AutoUpgrade))
 	o.appendFile(terraformVars, "enable_kubernetes_alpha = \"false\"\n")
 	o.appendFile(terraformVars, "enable_legacy_abac = \"true\"\n")
-	
+
 	args = []string{"init", terraformDir}
 	err = o.runCommand("terraform", args...)
 	if err != nil {

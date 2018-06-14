@@ -11,7 +11,7 @@ import (
 )
 
 type HeapterConfig struct {
-	KubeClient        *kubernetes.Clientset
+	KubeClient        kubernetes.Interface
 	HeapsterNamespace string
 	HeapsterScheme    string
 	HeapsterPort      string

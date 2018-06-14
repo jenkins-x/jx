@@ -59,14 +59,12 @@ func createUpdateClusterGKEOptions(f cmdutil.Factory, out io.Writer, errOut io.W
 			UpdateOptions: UpdateOptions{
 				CommonOptions: commonOptions,
 			},
-			Provider:       cloudProvider,
+			Provider: cloudProvider,
 		},
 	}
 	return options
 }
 
-
 func (o *UpdateClusterGKEOptions) Run() error {
 	return o.Cmd.Help()
 }
-
