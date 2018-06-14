@@ -157,8 +157,11 @@ func (*CommonOptions) FindHelmChart() (string, error) {
 				return "", err
 			}
 			if len(files) > 0 {
-				chartFile = files[0]
-				return chartFile, nil
+				for _, file := range files {
+					if !strings.HasSuffix(file, "/preview/Chart.yaml") {
+						return file, nil
+					}
+				}
 			}
 		}
 	}
