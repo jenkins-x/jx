@@ -36,7 +36,8 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://gitlab.com/api/v4/"
+	defaultBaseURL = "https://gitlab.com/"
+	apiVersionPath = "api/v4/"
 	userAgent      = "go-gitlab"
 )
 
@@ -212,6 +213,20 @@ const (
 	PublicVisibility   VisibilityValue = "public"
 )
 
+// MergeMethodValue represents a project merge type within GitLab.
+//
+// GitLab API docs: https://docs.gitlab.com/ce/api/projects.html#project-merge-method
+type MergeMethodValue string
+
+// List of available merge type
+//
+// GitLab API docs: https://docs.gitlab.com/ce/api/projects.html#project-merge-method
+const (
+	NoFastForwardMerge MergeMethodValue = "merge"
+	FastForwardMerge   MergeMethodValue = "ff"
+	RebaseMerge        MergeMethodValue = "rebase_merge"
+)
+
 // EventTypeValue represents actions type for contribution events
 type EventTypeValue string
 
@@ -350,7 +365,7 @@ func NewBasicAuthClient(httpClient *http.Client, endpoint, username, password st
 	client.authType = basicAuth
 	client.username = username
 	client.password = password
-	client.SetBaseURL(endpoint + "/api/v4")
+	client.SetBaseURL(endpoint)
 
 	err := client.requestOAuthToken(context.TODO())
 	if err != nil {
@@ -468,9 +483,19 @@ func (c *Client) SetBaseURL(urlStr string) error {
 		urlStr += "/"
 	}
 
-	var err error
-	c.baseURL, err = url.Parse(urlStr)
-	return err
+	baseURL, err := url.Parse(urlStr)
+	if err != nil {
+		return err
+	}
+
+	if !strings.HasSuffix(baseURL.Path, apiVersionPath) {
+		baseURL.Path += apiVersionPath
+	}
+
+	// Update the base URL of the client.
+	c.baseURL = baseURL
+
+	return nil
 }
 
 // NewRequest creates an API request. A relative URL path can be provided in
@@ -655,6 +680,7 @@ func parseID(id interface{}) (string, error) {
 // GitLab API docs:
 // https://docs.gitlab.com/ce/api/README.html#data-validation-and-error-reporting
 type ErrorResponse struct {
+	Body     []byte
 	Response *http.Response
 	Message  string
 }
@@ -675,12 +701,14 @@ func CheckResponse(r *http.Response) error {
 	errorResponse := &ErrorResponse{Response: r}
 	data, err := ioutil.ReadAll(r.Body)
 	if err == nil && data != nil {
+		errorResponse.Body = data
+
 		var raw interface{}
 		if err := json.Unmarshal(data, &raw); err != nil {
 			errorResponse.Message = "failed to parse unknown error format"
+		} else {
+			errorResponse.Message = parseError(raw)
 		}
-
-		errorResponse.Message = parseError(raw)
 	}
 
 	return errorResponse
@@ -816,6 +844,14 @@ func OrderBy(v OrderByValue) *OrderByValue {
 // to store v and returns a pointer to it.
 func Visibility(v VisibilityValue) *VisibilityValue {
 	p := new(VisibilityValue)
+	*p = v
+	return p
+}
+
+// MergeMethod is a helper routine that allocates a new MergeMethod
+// to sotre v and returns a pointer to it.
+func MergeMethod(v MergeMethodValue) *MergeMethodValue {
+	p := new(MergeMethodValue)
 	*p = v
 	return p
 }
