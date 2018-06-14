@@ -218,7 +218,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	}
 	o.InstallOptions.Flags.Domain = ip + ".nip.io"
 
-	err = o.runCommand("oc", "login", "-u", "system:admin")
+	err = o.runCommand("oc", "login", "-u", "system", "-p", "admin")
 	if err != nil {
 		return err
 	}
