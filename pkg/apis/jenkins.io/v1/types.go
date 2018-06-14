@@ -120,6 +120,7 @@ type TeamSettings struct {
 	QuickstartLocations []QuickStartLocation `json:"quickstartLocations,omitempty" protobuf:"bytes,5,opt,name=quickstartLocations"`
 	BuildPackURL        string               `json:"buildPackUrl,omitempty" protobuf:"bytes,6,opt,name=buildPackUrl"`
 	BuildPackRef        string               `json:"buildPackRef,omitempty" protobuf:"bytes,7,opt,name=buildPackRef"`
+	HelmBinary          string               `json:"helmBinary,omitempty" protobuf:"bytes,8,opt,name=helmBinary"`
 }
 
 // QuickStartLocation

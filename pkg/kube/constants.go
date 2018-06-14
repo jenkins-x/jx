@@ -43,6 +43,9 @@ const (
 	// SecretJenkinsGitCredentials the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
 
+	// SecretJenkinsChartMuseum the chart museum secret
+	SecretJenkinsChartMuseum = "jenkins-x-chartmuseum"
+
 	// SecretJenkinsReleaseGPG the GPG secrets for doing releases
 	SecretJenkinsReleaseGPG = "jenkins-release-gpg"
 

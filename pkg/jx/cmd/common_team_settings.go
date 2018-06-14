@@ -15,6 +15,7 @@ type BranchPatterns struct {
 const (
 	defaultBuildPackURL = "https://jenkins-x/draft-packs.git"
 	defaultBuildPackRef = "master"
+	defaultHelmBin      = "helm"
 )
 
 // TeamSettings returns the team settings
@@ -67,6 +68,21 @@ func (o *CommonOptions) TeamBranchPatterns() (*BranchPatterns, error) {
 		DefaultBranchPattern: branchPatterns,
 		ForkBranchPattern:    forkBranchPatterns,
 	}, nil
+}
+
+// TeamHelmBin returns the helm binary used for a team
+func (o *CommonOptions) TeamHelmBin() (string, error) {
+	helmBin := defaultHelmBin
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return helmBin, err
+	}
+
+	helmBin = teamSettings.HelmBinary
+	if helmBin == "" {
+		helmBin = defaultHelmBin
+	}
+	return helmBin, nil
 }
 
 // ModifyDevEnvironment modifies the development environment settings

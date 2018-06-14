@@ -180,3 +180,11 @@ func LoadChartName(chartFile string) (string, error) {
 	}
 	return chart.Name, nil
 }
+
+func LoadChartNameAndVersion(chartFile string) (string, string, error) {
+	chart, err := chartutil.LoadChartfile(chartFile)
+	if err != nil {
+		return "", "", err
+	}
+	return chart.Name, chart.Version, nil
+}
