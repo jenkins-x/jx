@@ -540,21 +540,13 @@ func (o *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	//walk through every file in the given dir and update the placeholders
-	currentUser := o.GitServer.CurrentUser
-	if currentUser == "" {
-		if o.GitProvider != nil {
-			currentUser = o.GitProvider.CurrentUsername()
-		}
+	currentUser := o.getCurrentUser()
+	org := o.getOrganisation()
+	if org == "" {
+		org = currentUser
 	}
-	if currentUser == "" {
-		currentUser = o.Organisation
-	}
-	if currentUser == "" {
-		o.warnf("No username defined for the current git server!")
-		currentUser = o.DefaultOwner
-	}
-	err = o.replacePlaceholders(gitServerName, currentUser)
+
+	err = o.replacePlaceholders(gitServerName, org)
 	if err != nil {
 		return err
 	}
@@ -568,6 +560,35 @@ func (o *ImportOptions) DraftCreate() error {
 		return err
 	}
 	return nil
+}
+
+func (o *ImportOptions) getCurrentUser() string {
+	//walk through every file in the given dir and update the placeholders
+        currentUser := o.GitServer.CurrentUser
+        if currentUser == "" {
+                if o.GitProvider != nil {
+                        currentUser = o.GitProvider.CurrentUsername()
+                }
+        }
+        if currentUser == "" {
+                currentUser = o.Organisation
+        }
+        if currentUser == "" {
+                o.warnf("No username defined for the current git server!")
+                currentUser = o.DefaultOwner
+        }
+	return currentUser
+}
+
+func (o *ImportOptions) getOrganisation() string {
+	org := ""
+        gitInfo, err := gits.ParseGitURL(o.RepoURL)
+        if err == nil && gitInfo.Organisation != "" {
+                org = gitInfo.Organisation
+        } else {
+                org = o.Organisation
+        }
+	return org
 }
 
 func (o *ImportOptions) CreateNewRemoteRepository() error {
