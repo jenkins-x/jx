@@ -61,8 +61,8 @@ func NewCmdStepHelmApply(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	}
 	options.addStepHelmFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The kubernetes namespace to apply the helm chart to")
-	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", "", "The name of the release")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The kubernetes namespace to apply the helm chart to")
+	cmd.Flags().StringVarP(&options.ReleaseName, "name", "", "", "The name of the release")
 	return cmd
 }
 
