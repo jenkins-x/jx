@@ -888,8 +888,10 @@
     "pkg/apis/apiextensions",
     "pkg/apis/apiextensions/v1beta1",
     "pkg/client/clientset/clientset",
+    "pkg/client/clientset/clientset/fake",
     "pkg/client/clientset/clientset/scheme",
-    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1/fake"
   ]
   revision = "750feebe2038bad00fdf68ba37c31f62c4f1f891"
   version = "kubernetes-1.10.0"
@@ -1103,6 +1105,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "075c4f26fb323f3afe7a9bbf718ab7dad473623d1c7bca0e423b91ccbd698740"
+  inputs-digest = "a9a2e983bbe925d1e473e9feeb69aff550f563d3f7e1f49a426d214fabdced3f"
   solver-name = "gps-cdcl"
   solver-version = 1

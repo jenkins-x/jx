@@ -26,14 +26,12 @@ var (
 		You can use the '--url' argument to just display the URL without opening it`)
 
 	repoExample = templates.Examples(`
-		# Repo the Nexus console in a browser
-		jx repo jenkins-x-sonatype-nexus
+		# Open the git repository in a browser
+		jx repo 
 
-		# Print the Nexus console URL but do not repo a browser
-		jx repo jenkins-x-sonatype-nexus -u
-
-		# List all the service URLs
-		jx repo`)
+		# Print the URL of the git repository
+		jx repo -u
+`)
 )
 
 func NewCmdRepo(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
