@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/internalclientset"
-	apiextensionsinternalversion "k8s.io/apiextensions-apiserver/pkg/client/clientset/internalclientset/typed/apiextensions/internalversion"
-	fakeapiextensionsinternalversion "k8s.io/apiextensions-apiserver/pkg/client/clientset/internalclientset/typed/apiextensions/internalversion/fake"
+	clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	fakeapiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -70,7 +70,12 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-// Apiextensions retrieves the ApiextensionsClient
-func (c *Clientset) Apiextensions() apiextensionsinternalversion.ApiextensionsInterface {
-	return &fakeapiextensionsinternalversion.FakeApiextensions{Fake: &c.Fake}
+// ApiextensionsV1beta1 retrieves the ApiextensionsV1beta1Client
+func (c *Clientset) ApiextensionsV1beta1() apiextensionsv1beta1.ApiextensionsV1beta1Interface {
+	return &fakeapiextensionsv1beta1.FakeApiextensionsV1beta1{Fake: &c.Fake}
+}
+
+// Apiextensions retrieves the ApiextensionsV1beta1Client
+func (c *Clientset) Apiextensions() apiextensionsv1beta1.ApiextensionsV1beta1Interface {
+	return &fakeapiextensionsv1beta1.FakeApiextensionsV1beta1{Fake: &c.Fake}
 }

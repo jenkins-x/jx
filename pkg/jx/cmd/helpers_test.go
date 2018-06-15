@@ -4,7 +4,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/tests"
 	corev1 "k8s.io/api/core/v1"
-	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/internalclientset/fake"
+	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
