@@ -85,6 +85,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	o.Printf("Using the helm binary: %s for generating the chart release\n", util.ColorInfo(helmBinary))
 
 	err = o.runCommandVerboseAt(dir, helmBinary, "dependency", "build")
 	if err != nil {
