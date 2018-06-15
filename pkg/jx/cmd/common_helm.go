@@ -321,7 +321,7 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 func (o *CommonOptions) defaultReleaseCharts() map[string]string {
 	return map[string]string{
 		"releases":  o.releaseChartMuseumUrl(),
-		"jenkins-x": "http://chartmuseum.build.cd.jenkins-x.io",
+		"jenkins-x": "https://chartmuseum.build.cd.jenkins-x.io",
 	}
 }
 
