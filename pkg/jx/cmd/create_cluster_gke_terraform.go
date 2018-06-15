@@ -129,15 +129,17 @@ func (o *CreateClusterGKETerraformOptions) Run() error {
 }
 
 func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
-	confirm := false
-	prompt := &survey.Confirm{
-		Message: "Creating a GKE cluster with terraform is an experimental feature in jx.  Would you like to continue?",
-	}
-	survey.AskOne(prompt, &confirm, nil)
+	if !o.BatchMode {
+		confirm := false
+		prompt := &survey.Confirm{
+			Message: "Creating a GKE cluster with terraform is an experimental feature in jx.  Would you like to continue?",
+		}
+		survey.AskOne(prompt, &confirm, nil)
 
-	if !confirm {
-		// exit at this point
-		return nil
+		if !confirm {
+			// exit at this point
+			return nil
+		}
 	}
 
 	var err error

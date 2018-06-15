@@ -97,15 +97,17 @@ func (o *UpdateClusterGKETerraformOptions) Run() error {
 }
 
 func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
-	confirm := false
-	prompt := &survey.Confirm{
-		Message: "Updating a GKE cluster with terraform is an experimental feature in jx.  Would you like to continue?",
-	}
-	survey.AskOne(prompt, &confirm, nil)
+	if !o.BatchMode {
+		confirm := false
+		prompt := &survey.Confirm{
+			Message: "Updating a GKE cluster with terraform is an experimental feature in jx.  Would you like to continue?",
+		}
+		survey.AskOne(prompt, &confirm, nil)
 
-	if !confirm {
-		// exit at this point
-		return nil
+		if !confirm {
+			// exit at this point
+			return nil
+		}
 	}
 
 	var err error
@@ -161,15 +163,17 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		return err
 	}
 
-	confirm = false
-	prompt = &survey.Confirm{
-		Message: "Would you like to apply this plan",
-	}
-	survey.AskOne(prompt, &confirm, nil)
+	if !o.BatchMode {
+		confirm := false
+		prompt := &survey.Confirm{
+			Message: "Would you like to apply this plan",
+		}
+		survey.AskOne(prompt, &confirm, nil)
 
-	if !confirm {
-		// exit at this point
-		return nil
+		if !confirm {
+			// exit at this point
+			return nil
+		}
 	}
 
 	log.Info("Applying plan...\n")
