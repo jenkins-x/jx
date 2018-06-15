@@ -59,6 +59,8 @@ func NewCmdUpdateClusterGKETerraform(f cmdutil.Factory, out io.Writer, errOut io
 		},
 	}
 
+	options.addCommonFlags(cmd)
+
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster")
 
 	return cmd
