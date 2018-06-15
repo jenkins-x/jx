@@ -502,10 +502,9 @@ func (o *InitOptions) initIngress() error {
 			if host == "" {
 				o.warnf("No API server host is defined in the local kube config!\n")
 			} else {
-				idx := strings.LastIndex(host, ":")
-				externalIP = host
-				if idx > 0 {
-					externalIP = host[0:idx]
+				externalIP, err = util.UrlHostNameWithoutPort(host)
+				if err != nil {
+					return fmt.Errorf("Could not parse kubernetes master URI: %s as got: %s\nTry specifying the external IP address directly via: --external-ip", host, err)
 				}
 			}
 		}
