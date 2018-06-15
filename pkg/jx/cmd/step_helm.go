@@ -18,6 +18,8 @@ const ()
 // StepHelmOptions contains the command line flags
 type StepHelmOptions struct {
 	StepOptions
+
+	Dir string
 }
 
 // NewCmdStepHelm Steps a command object for the "step" command
@@ -42,6 +44,8 @@ func NewCmdStepHelm(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 			cmdutil.CheckErr(err)
 		},
 	}
+	cmd.AddCommand(NewCmdStepHelmApply(f, out, errOut))
+	cmd.AddCommand(NewCmdStepHelmBuild(f, out, errOut))
 	cmd.AddCommand(NewCmdStepHelmRelease(f, out, errOut))
 	return cmd
 }
@@ -49,6 +53,10 @@ func NewCmdStepHelm(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 // Run implements this command
 func (o *StepHelmOptions) Run() error {
 	return o.Cmd.Help()
+}
+
+func (o *StepHelmOptions) addStepHelmFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.Dir, "dir", "d", ".", "The directory containing the helm chart to apply")
 }
 
 func (o *StepHelmOptions) findStagingRepoIds() ([]string, error) {
