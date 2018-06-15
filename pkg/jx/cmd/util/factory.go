@@ -65,11 +65,11 @@ type Factory interface {
 
 	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
 
-	CreateClient() (*kubernetes.Clientset, string, error)
+	CreateClient() (kubernetes.Interface, string, error)
 
 	CreateJXClient() (*versioned.Clientset, string, error)
 
-	CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error)
+	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
 
 	CreateMetricsClient() (*metricsclient.Clientset, error)
 
@@ -340,7 +340,7 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	}
 
 	if secrets != nil {
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, f.IsInCluster())
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline || f.IsInCluster())
 	}
 
 	// lets add a default if there's none defined yet
@@ -435,7 +435,7 @@ func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
 
 }
 
-func (f *factory) CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error) {
+func (f *factory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
 	config, err := f.createKubeConfig()
 	if err != nil {
 		return nil, err
@@ -451,7 +451,7 @@ func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
 	return metricsclient.NewForConfig(config)
 }
 
-func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
+func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
 	cfg, err := f.createKubeConfig()
 	if err != nil {
 		return nil, "", err

@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -23,7 +24,7 @@ type ServiceURL struct {
 	URL  string
 }
 
-func GetServices(client *kubernetes.Clientset, ns string) (map[string]*v1.Service, error) {
+func GetServices(client kubernetes.Interface, ns string) (map[string]*v1.Service, error) {
 	answer := map[string]*v1.Service{}
 	list, err := client.CoreV1().Services(ns).List(meta_v1.ListOptions{})
 	if err != nil {
@@ -37,7 +38,7 @@ func GetServices(client *kubernetes.Clientset, ns string) (map[string]*v1.Servic
 	return answer, nil
 }
 
-func GetServiceNames(client *kubernetes.Clientset, ns string, filter string) ([]string, error) {
+func GetServiceNames(client kubernetes.Interface, ns string, filter string) ([]string, error) {
 	names := []string{}
 	list, err := client.CoreV1().Services(ns).List(meta_v1.ListOptions{})
 	if err != nil {
@@ -57,7 +58,7 @@ func GetServiceURLFromMap(services map[string]*v1.Service, name string) string {
 	return GetServiceURL(services[name])
 }
 
-func FindServiceURL(client *kubernetes.Clientset, namespace string, name string) (string, error) {
+func FindServiceURL(client kubernetes.Interface, namespace string, name string) (string, error) {
 	svc, err := client.CoreV1().Services(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -88,6 +89,21 @@ func FindServiceURL(client *kubernetes.Clientset, namespace string, name string)
 	return "", nil
 }
 
+// FindService looks up a service by name across all namespaces
+func FindService(client kubernetes.Interface, name string) (*v1.Service, error) {
+	nsl, err := client.CoreV1().Namespaces().List(meta_v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, ns := range nsl.Items {
+		svc, err := client.CoreV1().Services(ns.GetName()).Get(name, meta_v1.GetOptions{})
+		if err == nil {
+			return svc, nil
+		}
+	}
+	return nil, errors.New("Service not found!")
+}
+
 func GetServiceURL(svc *v1.Service) string {
 	url := ""
 	if svc != nil && svc.Annotations != nil {
@@ -96,7 +112,7 @@ func GetServiceURL(svc *v1.Service) string {
 	return url
 }
 
-func GetServiceURLFromName(c *kubernetes.Clientset, name, ns string) (string, error) {
+func GetServiceURLFromName(c kubernetes.Interface, name, ns string) (string, error) {
 	svc, err := c.CoreV1().Services(ns).Get(name, meta_v1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -104,7 +120,7 @@ func GetServiceURLFromName(c *kubernetes.Clientset, name, ns string) (string, er
 	return GetServiceURL(svc), nil
 }
 
-func FindServiceURLs(client *kubernetes.Clientset, namespace string) ([]ServiceURL, error) {
+func FindServiceURLs(client kubernetes.Interface, namespace string) ([]ServiceURL, error) {
 	options := meta_v1.ListOptions{}
 	urls := []ServiceURL{}
 	svcs, err := client.CoreV1().Services(namespace).List(options)
@@ -124,7 +140,7 @@ func FindServiceURLs(client *kubernetes.Clientset, namespace string) ([]ServiceU
 }
 
 // waits for the pods of a deployment to become ready
-func WaitForExternalIP(client *kubernetes.Clientset, name, namespace string, timeout time.Duration) error {
+func WaitForExternalIP(client kubernetes.Interface, name, namespace string, timeout time.Duration) error {
 
 	options := meta_v1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
@@ -158,7 +174,7 @@ func HasExternalAddress(svc *v1.Service) bool {
 	return false
 }
 
-func CreateServiceLink(client *kubernetes.Clientset, currentNamespace, targetNamespace, serviceName, externalURL string) error {
+func CreateServiceLink(client kubernetes.Interface, currentNamespace, targetNamespace, serviceName, externalURL string) error {
 	annotations := make(map[string]string)
 	annotations[ExposeURLAnnotation] = externalURL
 
@@ -182,7 +198,11 @@ func CreateServiceLink(client *kubernetes.Clientset, currentNamespace, targetNam
 	return nil
 }
 
-func GetService(client *kubernetes.Clientset, currentNamespace, targetNamespace, serviceName string) error {
+func DeleteService(client *kubernetes.Clientset, namespace string, serviceName string) error {
+	return client.CoreV1().Services(namespace).Delete(serviceName, &meta_v1.DeleteOptions{})
+}
+
+func GetService(client kubernetes.Interface, currentNamespace, targetNamespace, serviceName string) error {
 	svc := v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      serviceName,
@@ -200,8 +220,7 @@ func GetService(client *kubernetes.Clientset, currentNamespace, targetNamespace,
 	return nil
 }
 
-func IsServicePresent(c *kubernetes.Clientset, name, ns string) (bool, error) {
-
+func IsServicePresent(c kubernetes.Interface, name, ns string) (bool, error) {
 	svc, err := c.CoreV1().Services(ns).Get(name, meta_v1.GetOptions{})
 	if err != nil || svc == nil {
 		return false, err

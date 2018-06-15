@@ -18,12 +18,12 @@ import (
 )
 
 const (
+	defaultAnchoreName        = "anchore"
 	defaultAnchoreNamespace   = "anchore"
 	defaultAnchoreReleaseName = "anchore"
 	defaultAnchoreVersion     = "0.1.4"
 	defaultAnchorePassword    = "anchore"
 	defaultAnchoreConfigDir   = "/anchore_service_dir"
-	anchoreServiceName        = "anchore-anchore-engine"
 	anchoreDeploymentName     = "anchore-anchore-engine-core"
 )
 
@@ -122,6 +122,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return err
 	}
 
+	anchoreServiceName := kube.AddonServices[defaultAnchoreName]
 	// annotate the anchore engine service so exposecontroller can create an ingress rule
 	svc, err := o.kubeClient.CoreV1().Services(o.Namespace).Get(anchoreServiceName, meta_v1.GetOptions{})
 	if err != nil {

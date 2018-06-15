@@ -93,6 +93,7 @@ func (o *StepReportActivitiesOptions) Run() error {
 		return err
 	}
 
+	esServiceName := kube.AddonServices[defaultPEName]
 	externalURL, err := o.ensureAddonServiceAvailable(esServiceName)
 	if err != nil {
 		log.Warnf("no %s service found, are you in your teams dev environment?  Type `jx env` to switch.\n", esServiceName)

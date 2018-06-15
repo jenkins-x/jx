@@ -5,7 +5,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func IsDaemonSetExists(client *kubernetes.Clientset, name, namespace string) (bool, error) {
+func IsDaemonSetExists(client kubernetes.Interface, name, namespace string) (bool, error) {
 	options := metav1.GetOptions{}
 
 	_, err := client.ExtensionsV1beta1().DaemonSets(namespace).Get(name, options)

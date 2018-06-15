@@ -40,6 +40,16 @@ type MergeRequestApprovals struct {
 			WebURL    string `json:"web_url"`
 		} `json:"user"`
 	} `json:"approved_by"`
+	Approvers []struct {
+		User struct {
+			ID        int    `json:"id"`
+			Name      string `json:"name"`
+			Username  string `json:"username"`
+			State     string `json:"state"`
+			AvatarURL string `json:"avatar_url"`
+			WebURL    string `json:"web_url"`
+		} `json:"user"`
+	} `json:"approvers"`
 	ApproverGroups []struct {
 		Group struct {
 			ID                   int    `json:"id"`
