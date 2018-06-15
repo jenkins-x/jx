@@ -502,10 +502,9 @@ func (o *InitOptions) initIngress() error {
 			if host == "" {
 				o.warnf("No API server host is defined in the local kube config!\n")
 			} else {
-				idx := strings.LastIndex(host, ":")
-				externalIP = host
-				if idx > 0 {
-					externalIP = host[0:idx]
+				externalIP, err = util.UrlHostNameWithoutPort(host)
+				if err != nil {
+					return fmt.Errorf("Could not parse kubernetes master URI: %s as got: %s\nTry specifying the external IP address directly via: --external-ip", host, err)
 				}
 			}
 		}
@@ -563,7 +562,7 @@ func (o *InitOptions) validateGit() error {
 	}
 	if userEmail == "" {
 		if !o.BatchMode {
-			userEmail, err = util.PickValue("Please enter the name you wish to use with git: ", "", true)
+			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true)
 			if err != nil {
 				return err
 			}
@@ -596,6 +595,11 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			}
 			address = ip
 		} else {
+			info := util.ColorInfo
+			o.Printf("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s\n", info(ingressNamespace), info(ingressService))
+			if provider == KUBERNETES {
+				o.Printf("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s\n", info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
+			}
 			svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, meta_v1.GetOptions{})
 			if err != nil {
 				return "", err
