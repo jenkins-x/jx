@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/Pallinder/go-randomdata"
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -435,8 +436,6 @@ func (o *CommonOptions) installHelm() error {
 	return os.Chmod(fullPath, 0755)
 }
 
-
-
 func (o *CommonOptions) installTerraform() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		return o.runCommand("brew", "install", "terraform")
@@ -455,8 +454,6 @@ func (o *CommonOptions) installTerraform() error {
 	if err != nil {
 		return err
 	}
-
-
 
 	clientURL := fmt.Sprintf("https://releases.hashicorp.com/terraform/%s/terraform_%s_%s_%s.zip", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
@@ -765,4 +762,53 @@ func (o *CommonOptions) addRequiredBinary(binName string, deps []string) []strin
 		deps = append(deps, d)
 	}
 	return deps
+}
+
+func (o *CommonOptions) createClusterAdmin() error {
+
+	content := []byte(
+		`apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: cluster-admin
+  annotations:
+    rbac.authorization.kubernetes.io/autoupdate: "true"
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - '*'`)
+
+	fileName := randomdata.SillyName() + ".yml"
+	fileName = filepath.Join(os.TempDir(), fileName)
+	tmpfile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
+		return err
+	}
+
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	if _, err := tmpfile.Write(content); err != nil {
+		return err
+	}
+	if err := tmpfile.Close(); err != nil {
+		return err
+	}
+
+	err = o.runCommand("kubectl", "create", "clusterrolebinding", "kube-system-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
+	if err != nil {
+		return err
+	}
+	err = o.runCommand("kubectl", "create", "-f", tmpfile.Name())
+	if err != nil {
+		return err
+	}
+	return nil
 }
