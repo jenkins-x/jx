@@ -11,8 +11,6 @@ import (
 // StepHelmBuildOptions contains the command line flags
 type StepHelmBuildOptions struct {
 	StepHelmOptions
-
-	Dir string
 }
 
 var (

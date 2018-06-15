@@ -25,8 +25,6 @@ const (
 // StepHelmReleaseOptions contains the command line flags
 type StepHelmReleaseOptions struct {
 	StepHelmOptions
-
-	DropOnFailure bool
 }
 
 var (

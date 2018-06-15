@@ -15,7 +15,6 @@ import (
 type StepHelmApplyOptions struct {
 	StepHelmOptions
 
-	Dir         string
 	Namespace   string
 	ReleaseName string
 }
