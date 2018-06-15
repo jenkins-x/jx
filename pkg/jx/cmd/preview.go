@@ -50,6 +50,7 @@ type PreviewOptions struct {
 	Name           string
 	Label          string
 	Namespace      string
+	DevNamespace   string
 	Cluster        string
 	PullRequestURL string
 	PullRequest    string
@@ -106,6 +107,7 @@ func (options *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the kubernetes name conventions like Services, Namespaces")
 	cmd.Flags().StringVarP(&options.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
 	cmd.Flags().StringVarP(&options.Namespace, kube.OptionNamespace, "", "", "The Kubernetes namespace for the Environment")
+	cmd.Flags().StringVarP(&options.DevNamespace, "dev-namespace", "", "", "The Developer namespace where the preview command should run")
 	cmd.Flags().StringVarP(&options.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory used to detect the git source URL and reference")
 	cmd.Flags().StringVarP(&options.PullRequest, "pr", "", "", "The Pull Request Name (e.g. 'PR-23' or just '23'")
@@ -116,7 +118,7 @@ func (options *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
 
 // Run implements the command
 func (o *PreviewOptions) Run() error {
-	log.Info("Executing preview w/log.Info...\n")
+	o.Printf("Creating a preview\n")
 	/*
 		args := o.Args
 		if len(args) > 0 && o.Name == "" {
@@ -149,9 +151,12 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
-	if err != nil {
-		return err
+	ns := o.DevNamespace
+	if ns == "" {
+		ns, _, err = kube.GetDevNamespace(kubeClient, currentNs)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = o.defaultValues(ns, true)
@@ -162,70 +167,83 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	gitKind, err := o.GitServerKind(o.GitInfo)
-	if err != nil {
-		return err
-	}
-
-	gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind)
-
 	prNum, err := strconv.Atoi(o.PullRequestName)
 	if err != nil {
 		log.Warn("Unable to convert PR " + o.PullRequestName + " to a number" + "\n")
 	}
 
-	pullRequest, _ := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
-	commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo.Name, prNum)
-	if err != nil {
-		log.Warn("Unable to get commits: " + err.Error() + "\n")
-	}
-
-	author := pullRequest.Author
-
-	if author.Email == "" {
-		log.Info("PullRequest author email is empty\n")
-		for _, commit := range commits {
-			if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
-				log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
-				author.Email = commit.Author.Email
-				break
-			}
-		}
-	}
-
-	if author.Email != "" {
-		userDetailService := cmdutil.NewUserDetailService(jxClient, o.devNamespace)
-		err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
-			Login:     author.Login,
-			Email:     author.Email,
-			Name:      author.Name,
-			URL:       author.URL,
-			AvatarURL: author.AvatarURL,
-		})
-		if err != nil {
-			log.Warn("An error happened attempting to CreateOrUpdateUser: " + err.Error() + "\n")
-		}
-	}
-
-	user := &v1.UserSpec{
-		Username: author.Login,
-		Name:     author.Name,
-		ImageURL: author.AvatarURL,
-		LinkURL:  author.URL,
-	}
-
-	statuses, err := gitProvider.ListCommitStatus(o.GitInfo.Organisation, o.GitInfo.Name, pullRequest.LastCommitSha)
-
-	if err != nil {
-		log.Warn("Unable to get statuses for PR " + o.PullRequestName + "\n")
-	}
-
+	var user *v1.UserSpec
 	buildStatus := ""
 	buildStatusUrl := ""
-	if len(statuses) > 0 {
-		status := statuses[len(statuses)-1]
-		buildStatus = status.State
-		buildStatusUrl = status.TargetURL
+
+	var pullRequest *gits.GitPullRequest
+
+	if o.GitInfo != nil {
+		gitKind, err := o.GitServerKind(o.GitInfo)
+		if err != nil {
+			return err
+		}
+
+		gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind)
+
+		if prNum > 0 {
+			pullRequest, err := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
+			if err != nil {
+				log.Warnf("issue getting pull request %s, %s, %v: %v\n", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
+			}
+			commits, err := gitProvider.GetPullRequestCommits(o.GitInfo.Organisation, o.GitInfo, prNum)
+			if err != nil {
+				log.Warn("Unable to get commits: " + err.Error() + "\n")
+			}
+			if pullRequest != nil {
+				author := pullRequest.Author
+				if author != nil {
+					if author.Email == "" {
+						log.Info("PullRequest author email is empty\n")
+						for _, commit := range commits {
+							if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
+								log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
+								author.Email = commit.Author.Email
+								break
+							}
+						}
+					}
+
+					if author.Email != "" {
+						userDetailService := cmdutil.NewUserDetailService(jxClient, ns)
+						err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
+							Login:     author.Login,
+							Email:     author.Email,
+							Name:      author.Name,
+							URL:       author.URL,
+							AvatarURL: author.AvatarURL,
+						})
+						if err != nil {
+							o.warnf("An error happened attempting to CreateOrUpdateUser in namespace %s: %s\n", ns, err)
+						}
+					}
+
+					user = &v1.UserSpec{
+						Username: author.Login,
+						Name:     author.Name,
+						ImageURL: author.AvatarURL,
+						LinkURL:  author.URL,
+					}
+				}
+			}
+
+			statuses, err := gitProvider.ListCommitStatus(o.GitInfo.Organisation, o.GitInfo.Name, pullRequest.LastCommitSha)
+
+			if err != nil {
+				log.Warn("Unable to get statuses for PR " + o.PullRequestName + "\n")
+			}
+
+			if len(statuses) > 0 {
+				status := statuses[len(statuses)-1]
+				buildStatus = status.State
+				buildStatusUrl = status.TargetURL
+			}
+		}
 	}
 
 	environmentsResource := jxClient.JenkinsV1().Environments(ns)
@@ -278,13 +296,15 @@ func (o *PreviewOptions) Run() error {
 			gitSpec.ApplicationName = o.Application
 			update = true
 		}
-		if gitSpec.Title != pullRequest.Title {
-			gitSpec.Title = pullRequest.Title
-			update = true
-		}
-		if gitSpec.Description != pullRequest.Body {
-			gitSpec.Description = pullRequest.Body
-			update = true
+		if pullRequest != nil {
+			if gitSpec.Title != pullRequest.Title {
+				gitSpec.Title = pullRequest.Title
+				update = true
+			}
+			if gitSpec.Description != pullRequest.Body {
+				gitSpec.Description = pullRequest.Body
+				update = true
+			}
 		}
 		if gitSpec.URL != o.PullRequestURL {
 			gitSpec.URL = o.PullRequestURL
@@ -309,6 +329,20 @@ func (o *PreviewOptions) Run() error {
 	}
 	if err != nil {
 		// lets create a new preview environment
+		previewGitSpec := v1.PreviewGitSpec{
+			ApplicationName: o.Application,
+			Name:            o.PullRequestName,
+			URL:             o.PullRequestURL,
+			BuildStatus:     buildStatus,
+			BuildStatusURL:  buildStatusUrl,
+		}
+		if pullRequest != nil {
+			previewGitSpec.Title = pullRequest.Title
+			previewGitSpec.Description = pullRequest.Body
+		}
+		if user != nil {
+			previewGitSpec.User = *user
+		}
 		env = &v1.Environment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: o.Name,
@@ -325,21 +359,12 @@ func (o *PreviewOptions) Run() error {
 					URL:  o.SourceURL,
 					Ref:  o.SourceRef,
 				},
-				PreviewGitSpec: v1.PreviewGitSpec{
-					ApplicationName: o.Application,
-					Name:            o.PullRequestName,
-					URL:             o.PullRequestURL,
-					Title:           pullRequest.Title,
-					Description:     pullRequest.Body,
-					BuildStatus:     buildStatus,
-					BuildStatusURL:  buildStatusUrl,
-					User:            *user,
-				},
+				PreviewGitSpec: previewGitSpec,
 			},
 		}
 		_, err = environmentsResource.Create(env)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to create environment in namespace %s due to: %s", ns, err)
 		}
 		o.Printf("Created environment %s\n", util.ColorInfo(env.Name))
 	}
@@ -549,7 +574,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	o.PullRequestName = strings.TrimPrefix(o.PullRequest, "PR-")
 
 	if o.SourceURL != "" {
-		o.GitInfo, err = gits.ParseGitURL(o.SourceURL)
+		o.GitInfo, err = gits.ParseGitURL(o.SourceURL, gits.HasScm(o.GitProvider))
 		if err != nil {
 			o.warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
 		} else {
@@ -581,6 +606,9 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	o.Namespace = kube.ToValidName(o.Namespace)
 	if o.Label == "" {
 		o.Label = o.Name
+	}
+	if o.GitInfo == nil {
+		o.warnf("No GitInfo could be found!")
 	}
 	return nil
 }

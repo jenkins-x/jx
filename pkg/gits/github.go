@@ -111,18 +111,15 @@ func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
 
 func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) {
 	owner := org
-	if owner == "" {
-		owner = p.Username
-	}
 	answer := []*GitRepository{}
-	options := &github.RepositoryListOptions{
+	options := &github.RepositoryListByOrgOptions{
 		ListOptions: github.ListOptions{
 			Page:    0,
 			PerPage: pageSize,
 		},
 	}
 	for {
-		repos, _, err := p.Client.Repositories.List(p.Context, owner, options)
+		repos, _, err := p.Client.Repositories.ListByOrg(p.Context, owner, options)
 		if err != nil {
 			return answer, err
 		}
@@ -279,7 +276,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	if owner == "" {
 		owner = p.Username
 	}
-	repo := data.Repo
+	repo := data.Repo.Name
 	if repo == "" {
 		return fmt.Errorf("Missing property Repo")
 	}
@@ -317,8 +314,8 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 }
 
 func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
-	owner := data.Owner
-	repo := data.Repo
+	owner := data.GitRepositoryInfo.Organisation
+	repo := data.GitRepositoryInfo.Name
 	title := data.Title
 	body := data.Body
 	head := data.Head
@@ -384,6 +381,9 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if result.State != nil {
 		pr.State = result.State
 	}
+	if result.Head != nil {
+		pr.HeadRef = result.Head.Ref
+	}
 	if result.StatusesURL != nil {
 		pr.StatusesURL = result.StatusesURL
 	}
@@ -402,22 +402,19 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
-func (p *GitHubProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
+func (p *GitHubProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
 	pr := &GitPullRequest{
 		Owner:  owner,
-		Repo:   repo,
+		Repo:   repo.Name,
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
 
 	if pr.Author != nil {
-		log.Info("Got pr Author: " + pr.Author.Login + " <" + pr.Author.Email + ">\n")
-
 		if pr.Author.Email == "" {
 			existing := p.UserInfo(pr.Author.Login)
 
 			if existing != nil {
-				log.Info("Got existing User: " + existing.Login + " <" + existing.Email + ">\n")
 				if existing.Email != "" {
 					pr.Author = existing
 				}
@@ -428,7 +425,8 @@ func (p *GitHubProvider) GetPullRequest(owner, repo string, number int) (*GitPul
 	return pr, err
 }
 
-func (p *GitHubProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+	repo := repository.Name
 	commits, _, err := p.Client.PullRequests.ListCommits(p.Context, owner, repo, number, nil)
 
 	if err != nil {
@@ -558,7 +556,7 @@ func (p *GitHubProvider) ListCommitStatus(org string, repo string, sha string) (
 	}
 	for _, result := range results {
 		status := &GitRepoStatus{
-			ID:          notNullInt64(result.ID),
+			ID:          string(*result.ID),
 			Context:     notNullString(result.Context),
 			URL:         notNullString(result.URL),
 			TargetURL:   notNullString(result.TargetURL),
@@ -769,6 +767,8 @@ func (p *GitHubProvider) fromGithubIssue(org string, name string, number int, i 
 		IsPullRequest: isPull,
 		Labels:        labels,
 		User:          toGitHubUser(i.User),
+		CreatedAt:     i.CreatedAt,
+		UpdatedAt:     i.UpdatedAt,
 		ClosedAt:      i.ClosedAt,
 		ClosedBy:      toGitHubUser(i.ClosedBy),
 		Assignees:     assignees,
@@ -817,6 +817,14 @@ func (p *GitHubProvider) IsGitHub() bool {
 }
 
 func (p *GitHubProvider) IsGitea() bool {
+	return false
+}
+
+func (p *GitHubProvider) IsBitbucketCloud() bool {
+	return false
+}
+
+func (p *GitHubProvider) IsBitbucketServer() bool {
 	return false
 }
 

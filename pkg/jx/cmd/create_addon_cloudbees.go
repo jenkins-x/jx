@@ -59,7 +59,7 @@ func NewCmdCreateAddonCloudBees(f cmdutil.Factory, out io.Writer, errOut io.Writ
 	cmd := &cobra.Command{
 		Use:     "cloudbees",
 		Short:   "Create the CloudBees app for Kubernetes (a web console for working with CI/CD, Environments and GitOps)",
-		Aliases: []string{"cloudbee", "cb", "cdx"},
+		Aliases: []string{"cloudbee", "cb", "cdx", "kubecd"},
 		Long:    CreateAddonCloudBeesLong,
 		Example: CreateAddonCloudBeesExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -176,7 +176,7 @@ To register to get your username/password to to: %s
 	log.Infof("target namespace %s\n", o.Namespace)
 
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, defaultCloudBeesReleaseName)
+	err = o.expose(devNamespace, o.Namespace, defaultCloudBeesReleaseName, "")
 	if err != nil {
 		return err
 	}

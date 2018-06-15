@@ -58,6 +58,10 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installVirtualBox()
 		case "xhyve":
 			err = o.installXhyve()
+		case "hyperv":
+			err = o.installhyperv()
+		case "terraform":
+			err = o.installTerraform()
 		default:
 			return fmt.Errorf("unknown dependency to install %s\n", i)
 		}
@@ -361,6 +365,40 @@ func (o *CommonOptions) installXhyve() error {
 	return nil
 }
 
+func (o *CommonOptions) installhyperv() error {
+	info, err := o.getCommandOutput("", "powershell", "Get-WindowsOptionalFeature", "-FeatureName", "Microsoft-Hyper-V-All", "-Online")
+
+	if err != nil {
+		return err
+	}
+	if strings.Contains(info, "Disabled") {
+
+		o.Printf("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted commmand.")
+
+		message := fmt.Sprintf("Would you like to restart your computer?")
+
+		if util.Confirm(message, true, "Please indicate if you would like to restart your computer.") {
+
+			err = o.runCommand("powershell", "Enable-WindowsOptionalFeature", "-Online", "-FeatureName", "Microsoft-Hyper-V", "-All", "-NoRestart")
+			if err != nil {
+				return err
+			}
+			err = o.runCommand("powershell", "Restart-Computer")
+			if err != nil {
+				return err
+			}
+
+		} else {
+			err = errors.New("hyperv was not Disabled")
+			return err
+		}
+
+	} else {
+		o.Printf("hyperv is already Enabled\n")
+	}
+	return nil
+}
+
 func (o *CommonOptions) installHelm() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		return o.runCommand("brew", "install", "kubernetes-helm")
@@ -391,6 +429,47 @@ func (o *CommonOptions) installHelm() error {
 		return err
 	}
 	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
+
+
+
+func (o *CommonOptions) installTerraform() error {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.runCommand("brew", "install", "terraform")
+	}
+
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	binary := "terraform"
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("hashicorp", "terraform")
+	if err != nil {
+		return err
+	}
+
+
+
+	clientURL := fmt.Sprintf("https://releases.hashicorp.com/terraform/%s/terraform_%s_%s_%s.zip", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	zipFile := fullPath + ".zip"
+	err = o.downloadFile(clientURL, zipFile)
+	if err != nil {
+		return err
+	}
+	err = util.Unzip(zipFile, binDir)
+	if err != nil {
+		return err
+	}
+	err = os.Remove(zipFile)
 	if err != nil {
 		return err
 	}
@@ -545,25 +624,26 @@ func (o *CommonOptions) installMinishift() error {
 	}
 
 	binDir, err := util.BinaryLocation()
+	binary := "minishift"
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, "minishift")
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
 	if err != nil || !flag {
 		return err
 	}
-	latestVersion, err := util.GetLatestVersionFromGitHub("minishift", "minishift")
+	latestVersion, err := util.GetLatestVersionFromGitHub(binary, binary)
 	if err != nil {
 		return err
 	}
-	clientURL := fmt.Sprintf("https://github.com/minishift/minishift/releases/download/v%s/minikube-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
+	clientURL := fmt.Sprintf("https://github.com/minishift/minishift/releases/download/v%s/minishift-%s-%s-%s.tgz", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
-	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	tarFile := fullPath + ".tgz"
+	err = o.downloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
-	err = util.RenameFile(tmpFile, fullPath)
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
 	if err != nil {
 		return err
 	}
@@ -659,7 +739,7 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 }
 
 // installRequirements installs any requirements for the given provider kind
-func (o *CommonOptions) installRequirements(cloudProvider string) error {
+func (o *CommonOptions) installRequirements(cloudProvider string, extraDependencies ...string) error {
 	var deps []string
 	switch cloudProvider {
 	case AWS:
@@ -671,6 +751,11 @@ func (o *CommonOptions) installRequirements(cloudProvider string) error {
 	case MINIKUBE:
 		deps = o.addRequiredBinary("minikube", deps)
 	}
+
+	for _, dep := range extraDependencies {
+		deps = o.addRequiredBinary(dep, deps)
+	}
+
 	return o.installMissingDependencies(deps)
 }
 

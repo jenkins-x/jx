@@ -13,14 +13,23 @@ const (
 	// ChartExposecontrollerService the default name of the Exposecontroller Service chart for Edit environments
 	ChartExposecontrollerService = "jenkins-x/exposecontroller-service"
 
+	// ChartAnchore the default chart for the Anchore plugin
+	ChartPipelineEvent = "jenkins-x/pipeline-events-addon"
+
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
+
+	// ChartIstio the default chart for the Istio chart
+	ChartIstio = "install/kubernetes/helm/istio"
 
 	// ChartKubeless the default chart for kubeless
 	ChartKubeless = "incubator/kubeless"
 
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
+
+	// SecretJenkins is the name of the Jenkins secret
+	SecretJenkins = "jenkins"
 
 	// ServiceCloudBees the service name of the CloudBees app for Kubernetes
 	ServiceCloudBees = "cb-cdx"
@@ -33,6 +42,12 @@ const (
 
 	// SecretJenkinsGitCredentials the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
+
+	// SecretJenkinsChartMuseum the chart museum secret
+	SecretJenkinsChartMuseum = "jenkins-x-chartmuseum"
+
+	// SecretJenkinsReleaseGPG the GPG secrets for doing releases
+	SecretJenkinsReleaseGPG = "jenkins-release-gpg"
 
 	// SecretJenkinsPipelineAddonCredentials the chat credentials secret
 	SecretJenkinsPipelineAddonCredentials = "jx-pipeline-addon-"
@@ -84,6 +99,12 @@ const (
 	// ValueKindCVE an addon auth secret/credentials
 	ValueKindCVE = "cve"
 
+	// ValueKindCVE an addon auth PipelineEvent
+	ValueKindPipelineEvent = "PipelineEvent"
+
+	// ValueKindCVE an addon auth PipelineEvent
+	ValueKindRelease = "Release"
+
 	// ValueKindEditNamespace for edit namespace
 	ValueKindEditNamespace = "editspace"
 
@@ -120,6 +141,9 @@ const (
 	// AnnotationExpose used to expose service using exposecontroller
 	AnnotationExpose = "fabric8.io/expose"
 
+	// AnnotationIngress tells exposecontroller to annotate generated ingress rule with values
+	AnnotationIngress = "fabric8.io/ingress.annotations"
+
 	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike kubernetes resources)
 	AnnotationName = "jenkins.io/name"
 
@@ -136,6 +160,13 @@ const (
 
 	// SecretDataPassword the password in a Secret/Credentials
 	SecretDataPassword = "password"
+
+	// SecretBasicAuth the name for the Jenkins X basic auth secret
+	SecretBasicAuth = "jx-basic-auth"
+
+	JenkinsAdminApiToken = "jenkins-admin-api-token"
+
+	AUTH = "auth"
 )
 
 var (
@@ -144,8 +175,14 @@ var (
 		"anchore":    ChartAnchore,
 		"cb":         ChartCloudBees,
 		"gitea":      ChartGitea,
+		"istio":      ChartIstio,
 		"kubeless":   ChartKubeless,
 		"prometheus": "stable/prometheus",
 		"grafana":    "stable/grafana",
+	}
+
+	AddonServices = map[string]string{
+		"anchore":         "anchore-anchore-engine",
+		"pipeline-events": "jx-pipeline-events-elasticsearch-client",
 	}
 )

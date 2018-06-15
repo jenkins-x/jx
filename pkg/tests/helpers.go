@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 func IsDebugLog() bool {
@@ -24,4 +26,9 @@ func Output() io.Writer {
 		return os.Stdout
 	}
 	return ioutil.Discard
+}
+
+func TestShouldDisableMaven() bool {
+	_, err := util.GetCommandOutput("", "mvn", "-v")
+	return err != nil
 }

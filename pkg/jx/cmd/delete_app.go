@@ -222,7 +222,7 @@ func (o *DeleteAppOptions) deleteAppFromEnvironment(env *v1.Environment, appName
 		requirements.RemoveApp(appName)
 		return nil
 	}
-	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchName, title, message)
+	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchName, title, message, nil)
 	if err != nil {
 		return err
 	}

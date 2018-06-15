@@ -17,7 +17,7 @@ const (
 	LabelEnvironment = "env"
 )
 
-func EnsureEnvironmentNamespaceSetup(kubeClient *kubernetes.Clientset, jxClient *versioned.Clientset, env *v1.Environment, ns string) error {
+func EnsureEnvironmentNamespaceSetup(kubeClient kubernetes.Interface, jxClient *versioned.Clientset, env *v1.Environment, ns string) error {
 	// lets create the namespace if we are on the same cluster
 	spec := &env.Spec
 	if spec.Cluster == "" && spec.Namespace != "" {
@@ -65,8 +65,9 @@ func EnsureDevEnvironmentSetup(jxClient *versioned.Clientset, ns string) (*v1.En
 				PromotionStrategy: v1.PromotionStrategyTypeNever,
 				Kind:              v1.EnvironmentKindTypeDevelopment,
 				TeamSettings: v1.TeamSettings{
-					UseGitOPs:   true,
-					AskOnCreate: false,
+					UseGitOPs:           true,
+					AskOnCreate:         false,
+					QuickstartLocations: DefaultQuickstartLocations,
 				},
 			},
 		}
@@ -79,7 +80,7 @@ func EnsureDevEnvironmentSetup(jxClient *versioned.Clientset, ns string) (*v1.En
 }
 
 // EnsureEditEnvironmentSetup ensures that the Environment is created in the given namespace
-func EnsureEditEnvironmentSetup(kubeClient *kubernetes.Clientset, jxClient *versioned.Clientset, ns string, username string) (*v1.Environment, error) {
+func EnsureEditEnvironmentSetup(kubeClient kubernetes.Interface, jxClient *versioned.Clientset, ns string, username string) (*v1.Environment, error) {
 	// lets ensure there is a dev Environment setup so that we can easily switch between all the environments
 	envList, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -146,7 +147,7 @@ func EnsureEditEnvironmentSetup(kubeClient *kubernetes.Clientset, jxClient *vers
 }
 
 // Ensure that the namespace exists for the given name
-func EnsureNamespaceCreated(kubeClient *kubernetes.Clientset, name string, labels map[string]string, annotations map[string]string) error {
+func EnsureNamespaceCreated(kubeClient kubernetes.Interface, name string, labels map[string]string, annotations map[string]string) error {
 	n, err := kubeClient.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
 	if err == nil {
 		// lets check if we have the labels setup

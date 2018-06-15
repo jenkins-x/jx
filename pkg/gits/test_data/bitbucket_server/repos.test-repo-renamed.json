@@ -1,0 +1,42 @@
+{
+    "slug": "test-repo-renamed",
+    "id": 264,
+    "name": "test-repo-renamed",
+    "scmId": "git",
+    "state": "AVAILABLE",
+    "statusMessage": "Available",
+    "forkable": true,
+    "project": {
+      "key": "TEST-ORG",
+      "id": 282,
+      "name": "test-org",
+      "description": "Test Org",
+      "public": false,
+      "type": "NORMAL",
+      "links": {
+        "self": [
+          {
+            "href": "http://auth.example.com/projects/TEST-ORG"
+          }
+        ]
+      }
+    },
+    "public": false,
+    "links": {
+      "clone": [
+        {
+          "href": "http://test-user@auth.example.com/scm/test-org/test-repo-renamed.git",
+          "name": "http"
+        },
+        {
+          "href": "ssh://git@auth.example.com:7999/test-org/test-repo-renamed.git",
+          "name": "ssh"
+        }
+      ],
+      "self": [
+        {
+          "href": "http://auth.example.com/projects/TEST-ORG/repos/test-repo-renamed/browse"
+        }
+      ]
+    }
+  }

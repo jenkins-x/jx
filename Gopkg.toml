@@ -140,6 +140,11 @@ required = [
   name = "k8s.io/helm"
   source = "https://github.com/jenkins-x/helm.git"
 
+[[constraint]]
+  name = "github.com/heptio/sonobuoy"
+  source = "https://github.com/ccojocar/sonobuoy"
+  branch = "update_dep_kubernetes_1_10"
+
 [prune]
   non-go = true
   go-tests = true

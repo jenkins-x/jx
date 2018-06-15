@@ -1,0 +1,81 @@
+package cmd
+
+import (
+	"fmt"
+	"io"
+
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/spf13/cobra"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/util"
+)
+
+var (
+	createBranchPatternLong = templates.LongDesc(`
+		Create a git branch pattern for your team. 
+
+		The pattern should match all the branches you wish to automate CI/CD on when creating or importing projects.
+
+		For more documentation see: [https://jenkins-x.io/developing/import/#branch-patterns](https://jenkins-x.io/developing/import/#branch-patterns)
+`)
+
+	createBranchPatternExample = templates.Examples(`
+		# Create a branch pattern for your team 
+		jx create branch pattern "master|develop|PR-.*"
+
+	`)
+)
+
+// CreateBranchPatternOptions the options for the create spring command
+type CreateBranchPatternOptions struct {
+	CreateOptions
+
+	BranchPattern string
+}
+
+// NewCmdCreateBranchPattern creates a command object for the "create" command
+func NewCmdCreateBranchPattern(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &CreateBranchPatternOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: CommonOptions{
+				Factory: f,
+				Out:     out,
+				Err:     errOut,
+			},
+		},
+	}
+
+	cmd := &cobra.Command{
+		Use:     branchPattern,
+		Short:   "Create a git branch pattern for your team",
+		Aliases: branchPatternsAliases,
+		Long:    createBranchPatternLong,
+		Example: createBranchPatternExample,
+		Run: func(cmd *cobra.Command, args []string) {
+			options.Cmd = cmd
+			options.Args = args
+			err := options.Run()
+			cmdutil.CheckErr(err)
+		},
+	}
+
+	options.addCommonFlags(cmd)
+	return cmd
+}
+
+// Run implements the command
+func (o *CreateBranchPatternOptions) Run() error {
+	if len(o.Args) == 0 {
+		return fmt.Errorf("Missing argument for the branch pattern")
+	}
+	arg := o.Args[0]
+
+	callback := func(env *v1.Environment) error {
+		env.Spec.TeamSettings.BranchPatterns = arg
+		o.Printf("Setting the team branch pattern to: %s\n", util.ColorInfo(arg))
+		return nil
+	}
+	return o.ModifyDevEnvironment(callback)
+}

@@ -107,6 +107,9 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
+
+	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, out, errOut))
+
 	return cmd
 }
 
@@ -154,14 +157,18 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	zone := o.Flags.Zone
 	if zone == "" {
+		availableZones, err := gke.GetGoogleZones()
+		if err != nil {
+			return err
+		}
 		prompts := &survey.Select{
 			Message:  "Google Cloud Zone:",
-			Options:  gke.GetGoogleZones(),
+			Options:  availableZones,
 			PageSize: 10,
 			Help:     "The compute zone (e.g. us-central1-a) for the cluster",
 		}
 
-		err := survey.AskOne(prompts, &zone, nil)
+		err = survey.AskOne(prompts, &zone, nil)
 		if err != nil {
 			return err
 		}

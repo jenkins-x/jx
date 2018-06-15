@@ -189,7 +189,7 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 	if owner == "" {
 		owner = p.Username
 	}
-	repo := data.Repo
+	repo := data.Repo.Name
 	if repo == "" {
 		return fmt.Errorf("Missing property Repo")
 	}
@@ -230,8 +230,8 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 }
 
 func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
-	owner := data.Owner
-	repo := data.Repo
+	owner := data.GitRepositoryInfo.Organisation
+	repo := data.GitRepositoryInfo.Name
 	title := data.Title
 	body := data.Body
 	head := data.Head
@@ -257,8 +257,8 @@ func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPu
 	answer := &GitPullRequest{
 		URL:    pr.HTMLURL,
 		Number: &id,
-		Owner:  data.Owner,
-		Repo:   data.Repo,
+		Owner:  data.GitRepositoryInfo.Organisation,
+		Repo:   data.GitRepositoryInfo.Name,
 	}
 	if pr.Head != nil {
 		answer.LastCommitSha = pr.Head.Sha
@@ -304,10 +304,10 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
-func (p *GiteaProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
+func (p *GiteaProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
 	pr := &GitPullRequest{
 		Owner:  owner,
-		Repo:   repo,
+		Repo:   repo.Name,
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
@@ -320,7 +320,7 @@ func (p *GiteaProvider) GetPullRequest(owner, repo string, number int) (*GitPull
 	return pr, err
 }
 
-func (p *GiteaProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+func (p *GiteaProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
 	answer := []*GitCommit{}
 
 	// TODO there does not seem to be any way to get a diff of commits
@@ -412,6 +412,8 @@ func (p *GiteaProvider) fromGiteaIssue(org string, name string, i *gitea.Issue) 
 		Labels:        labels,
 		User:          toGiteaUser(i.Poster),
 		Assignees:     assignees,
+		CreatedAt:     &i.Created,
+		UpdatedAt:     &i.Updated,
 		ClosedAt:      i.Closed,
 	}, nil
 }
@@ -502,7 +504,7 @@ func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([
 	}
 	for _, result := range results {
 		status := &GitRepoStatus{
-			ID:          result.ID,
+			ID:          string(result.ID),
 			Context:     result.Context,
 			URL:         result.URL,
 			TargetURL:   result.TargetURL,
@@ -591,6 +593,14 @@ func (p *GiteaProvider) IsGitHub() bool {
 
 func (p *GiteaProvider) IsGitea() bool {
 	return true
+}
+
+func (p *GiteaProvider) IsBitbucketCloud() bool {
+	return false
+}
+
+func (p *GiteaProvider) IsBitbucketServer() bool {
+	return false
 }
 
 func (p *GiteaProvider) Kind() string {

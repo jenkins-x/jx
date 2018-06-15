@@ -179,7 +179,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	// TODO allow add custom args?
 	log.Info("Creating cluster...\n")
 	o.Printf("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
-	err = o.runCommand("kops", args...)
+	err = o.runCommandVerbose("kops", args...)
 	if err != nil {
 		return err
 	}

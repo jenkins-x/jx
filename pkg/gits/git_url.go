@@ -2,9 +2,10 @@ package gits
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/util"
 	"net/url"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
@@ -20,6 +21,7 @@ type GitRepositoryInfo struct {
 	Host         string
 	Organisation string
 	Name         string
+	Project      string
 }
 
 func (i *GitRepositoryInfo) IsGitHub() bool {
@@ -103,9 +105,16 @@ func (i *GitRepositoryInfo) PipelinePath() string {
 	return i.Organisation + "/" + i.Name + "/master"
 }
 
+func HasScm(gitProvider GitProvider) bool {
+	if gitProvider != nil {
+		return gitProvider.Kind() == "bitbucketserver"
+	}
+	return false
+}
+
 // ParseGitURL attempts to parse the given text as a URL or git URL-like string to determine
 // the protocol, host, organisation and name
-func ParseGitURL(text string) (*GitRepositoryInfo, error) {
+func ParseGitURL(text string, hasSCM bool) (*GitRepositoryInfo, error) {
 	answer := GitRepositoryInfo{
 		URL: text,
 	}
@@ -121,7 +130,7 @@ func ParseGitURL(text string) (*GitRepositoryInfo, error) {
 			answer.Scheme = "https"
 		}
 		answer.Scheme = u.Scheme
-		return parsePath(u.Path, &answer)
+		return parsePath(u.Path, hasSCM, &answer)
 	}
 
 	// handle git@ kinds of URIs
@@ -144,11 +153,18 @@ func ParseGitURL(text string) (*GitRepositoryInfo, error) {
 	return nil, fmt.Errorf("Could not parse git url %s", text)
 }
 
-func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error) {
+func parsePath(path string, hasSCM bool, info *GitRepositoryInfo) (*GitRepositoryInfo, error) {
 	arr := strings.Split(strings.TrimPrefix(path, "/"), "/")
 	if len(arr) >= 2 {
-		info.Organisation = arr[0]
-		info.Name = strings.TrimSuffix(arr[1], ".git")
+		if hasSCM {
+			info.Organisation = arr[1]
+			info.Project = arr[1]
+			info.Name = strings.TrimSuffix(arr[2], ".git")
+		} else {
+			info.Organisation = arr[0]
+			info.Name = strings.TrimSuffix(arr[1], ".git")
+		}
+
 		return info, nil
 	} else {
 		return info, fmt.Errorf("Invalid path %s could not determine organisation and repository name", path)
@@ -163,9 +179,9 @@ func SaasGitKind(gitServiceUrl string) string {
 	case "https://github.com":
 		return KindGitHub
 	case "http://bitbucket.org":
-		return KindBitBucket
+		return KindBitBucketCloud
 	case BitbucketCloudURL:
-		return KindBitBucket
+		return KindBitBucketCloud
 	default:
 		return ""
 	}

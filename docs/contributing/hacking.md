@@ -9,7 +9,7 @@ To compile and test jx binaries you will need:
 
  - [git][]
  - [Go][] 1.9 or later, with support for compiling to `linux/amd64`
- - [glide][]
+ - [dep](https://github.com/golang/dep)
  
 
 In most cases, install the prerequisite according to its instructions. See the next section
@@ -65,7 +65,7 @@ Run `make` to build the `jx`  binaries:
 
 ```shell
 
-$ make build      # runs glide and builds `jx`  inside the build/
+$ make build      # runs dep and builds `jx`  inside the build/
 ```
 
 ## Testing
@@ -129,7 +129,7 @@ dlv --listen=:2345 --headless=true --api-version=2 exec `which jx` -- $*
 Then you can change your `jx someArgs` CLI to `jxDebug someArgs` then debug it!
 
 [git]: https://git-scm.com/
-[glide]: https://github.com/Masterminds/glide
+[dep]: https://github.com/golang/dep 
 [go]: https://golang.org/
 [Homebrew]: https://brew.sh/
 [Kubernetes]: https://github.com/kubernetes/kubernetes

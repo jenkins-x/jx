@@ -87,11 +87,18 @@ func (o *CommonOptions) addHelmRepoIfMissing(helmUrl string, repoName string) er
 
 // installChart installs the given chart
 func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
+	return o.installChartAt("", releaseName, chart, version, ns, helmUpdate, setValues)
+}
+
+// installChartAt installs the given chart
+func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
 	if helmUpdate {
+		fmt.Fprintf(o.Out, "Updating Helm repository...\n")
 		err := o.runCommand("helm", "repo", "update")
 		if err != nil {
 			return err
 		}
+		fmt.Fprintf(o.Out, "Helm repository update done.\n")
 	}
 	timeout := fmt.Sprintf("--timeout=%s", defaultInstallTimeout)
 	args := []string{"upgrade", "--install", timeout}
@@ -112,7 +119,7 @@ func (o *CommonOptions) installChart(releaseName string, chart string, version s
 		o.Printf("Set chart value: --set %s\n", util.ColorInfo(value))
 	}
 	args = append(args, releaseName, chart)
-	return o.runCommandVerbose("helm", args...)
+	return o.runCommandVerboseAt(dir, "helm", args...)
 }
 
 // deleteChart deletes the given chart
@@ -150,8 +157,11 @@ func (*CommonOptions) FindHelmChart() (string, error) {
 				return "", err
 			}
 			if len(files) > 0 {
-				chartFile = files[0]
-				return chartFile, nil
+				for _, file := range files {
+					if !strings.HasSuffix(file, "/preview/Chart.yaml") {
+						return file, nil
+					}
+				}
 			}
 		}
 	}

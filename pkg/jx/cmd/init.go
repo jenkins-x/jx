@@ -43,12 +43,14 @@ type InitFlags struct {
 	IngressNamespace           string
 	IngressService             string
 	IngressDeployment          string
+	ExternalIP                 string
 	DraftClient                bool
 	HelmClient                 bool
 	RecreateExistingDraftRepos bool
 	GlobalTiller               bool
 	SkipIngress                bool
 	SkipTiller                 bool
+	OnPremise                  bool
 }
 
 const (
@@ -114,18 +116,25 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.IngressNamespace, "ingress-namespace", "", "kube-system", "The namespace for the Ingress controller")
 	cmd.Flags().StringVarP(&options.Flags.IngressService, "ingress-service", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Service")
 	cmd.Flags().StringVarP(&options.Flags.IngressDeployment, "ingress-deployment", "", INGRESS_SERVICE_NAME, "The namespace for the Ingress controller Deployment")
+	cmd.Flags().StringVarP(&options.Flags.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the kubernetes cluster. For bare metal on premise clusters this is often the IP of the kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
 	cmd.Flags().BoolVarP(&options.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
 	cmd.Flags().BoolVarP(&options.Flags.HelmClient, "helm-client-only", "", false, "Only install helm client")
 	cmd.Flags().BoolVarP(&options.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
 	cmd.Flags().BoolVarP(&options.Flags.GlobalTiller, "global-tiller", "", true, "Whether or not to use a cluster global tiller")
 	cmd.Flags().BoolVarP(&options.Flags.SkipIngress, "skip-ingress", "", false, "Dont install an ingress controller")
 	cmd.Flags().BoolVarP(&options.Flags.SkipTiller, "skip-tiller", "", false, "Dont install a Helms Tiller service")
+	cmd.Flags().BoolVarP(&options.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the kubernetes master IP address")
 }
 
 func (o *InitOptions) Run() error {
 
 	var err error
 	o.Flags.Provider, err = o.GetCloudProvider(o.Flags.Provider)
+	if err != nil {
+		return err
+	}
+
+	err = o.validateGit()
 	if err != nil {
 		return err
 	}
@@ -476,20 +485,41 @@ func (o *InitOptions) initIngress() error {
 		log.Info("existing ingress controller found, no need to install a new one\n")
 	}
 
-	if o.Flags.Provider == GKE || o.Flags.Provider == AKS || o.Flags.Provider == AWS || o.Flags.Provider == EKS || o.Flags.Provider == KUBERNETES || o.Flags.Provider == OPENSHIFT {
+	if o.Flags.Provider != MINIKUBE && o.Flags.Provider != MINISHIFT && o.Flags.Provider != OPENSHIFT {
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
 
 		if o.Flags.Provider == GKE {
 			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s\n", util.ColorInfo("gcloud compute project-info describe"))
 		}
-		err = kube.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
-		if err != nil {
-			return err
+		externalIP := o.Flags.ExternalIP
+		if externalIP == "" && o.Flags.OnPremise {
+			// lets find the kubernetes master IP
+			config, err := f.CreateKubeConfig()
+			if err != nil {
+				return err
+			}
+			host := config.Host
+			if host == "" {
+				o.warnf("No API server host is defined in the local kube config!\n")
+			} else {
+				externalIP, err = util.UrlHostNameWithoutPort(host)
+				if err != nil {
+					return fmt.Errorf("Could not parse kubernetes master URI: %s as got: %s\nTry specifying the external IP address directly via: --external-ip", host, err)
+				}
+			}
 		}
 
-		log.Infof("External loadbalancer created\n")
+		if externalIP == "" {
+			err = kube.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
+			if err != nil {
+				return err
+			}
+			log.Infof("External loadbalancer created\n")
+		} else {
+			o.Printf("Using external IP: %s\n", util.ColorInfo(externalIP))
+		}
 
-		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain, ingressNamespace, o.Flags.IngressService)
+		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain, ingressNamespace, o.Flags.IngressService, externalIP)
 		if err != nil {
 			return err
 		}
@@ -508,31 +538,79 @@ func (o *InitOptions) ingressNamespace() string {
 	return ingressNamespace
 }
 
-func (o *CommonOptions) GetDomain(client *kubernetes.Clientset, domain string, provider string, ingressNamespace string, ingressService string) (string, error) {
-	var address string
-	if provider == MINIKUBE {
-		ip, err := o.getCommandOutput("", "minikube", "ip")
-		if err != nil {
-			return "", err
+// validateGit validates that git is configured correctly
+func (o *InitOptions) validateGit() error {
+	// lets ignore errors which indicate no value set
+	userName, _ := o.getCommandOutput("", "git", "config", "--global", "--get", "user.name")
+	userEmail, _ := o.getCommandOutput("", "git", "config", "--global", "--get", "user.email")
+	var err error
+
+	if userName == "" {
+		if !o.BatchMode {
+			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true)
+			if err != nil {
+				return err
+			}
 		}
-		address = ip
-	} else if provider == MINISHIFT {
-		ip, err := o.getCommandOutput("", "minishift", "ip")
-		if err != nil {
-			return "", err
+		if userName == "" {
+			return fmt.Errorf("No git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
 		}
-		address = ip
-	} else {
-		svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, meta_v1.GetOptions{})
+		err = o.runCommandFromDir("", "git", "config", "--global", "--add", "user.name", userName)
 		if err != nil {
-			return "", err
+			return err
 		}
-		if svc != nil {
-			for _, v := range svc.Status.LoadBalancer.Ingress {
-				if v.IP != "" {
-					address = v.IP
-				} else if v.Hostname != "" {
-					address = v.Hostname
+	}
+	if userEmail == "" {
+		if !o.BatchMode {
+			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true)
+			if err != nil {
+				return err
+			}
+		}
+		if userEmail == "" {
+			return fmt.Errorf("No git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
+		}
+		err = o.runCommandFromDir("", "git", "config", "--global", "--add", "user.email", userEmail)
+		if err != nil {
+			return err
+		}
+	}
+	o.Printf("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
+	return nil
+}
+
+func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, provider string, ingressNamespace string, ingressService string, externalIP string) (string, error) {
+	address := externalIP
+	if address == "" {
+		if provider == MINIKUBE {
+			ip, err := o.getCommandOutput("", "minikube", "ip")
+			if err != nil {
+				return "", err
+			}
+			address = ip
+		} else if provider == MINISHIFT {
+			ip, err := o.getCommandOutput("", "minishift", "ip")
+			if err != nil {
+				return "", err
+			}
+			address = ip
+		} else {
+			info := util.ColorInfo
+			o.Printf("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s\n", info(ingressNamespace), info(ingressService))
+			if provider == KUBERNETES {
+				o.Printf("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s\n", info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
+			}
+			svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, meta_v1.GetOptions{})
+			if err != nil {
+				return "", err
+			}
+			if svc != nil {
+				for _, v := range svc.Status.LoadBalancer.Ingress {
+					if v.IP != "" {
+						address = v.IP
+					} else if v.Hostname != "" {
+						address = v.Hostname
+					}
 				}
 			}
 		}

@@ -10,7 +10,7 @@ import (
 )
 
 func (o *CommonOptions) ensureServiceAccount(ns string, serviceAccountName string) error {
-	client, _, err := o.Factory.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (o *CommonOptions) ensureServiceAccount(ns string, serviceAccountName strin
 }
 
 func (o *CommonOptions) ensureClusterRoleBinding(clusterRoleBindingName string, role string, serviceAccountNamespace string, serviceAccountName string) error {
-	client, _, err := o.Factory.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

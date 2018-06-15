@@ -11,7 +11,10 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	core_v1 "k8s.io/api/core/v1"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -19,6 +22,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
+	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -43,11 +48,12 @@ type CommonOptions struct {
 	NoBrew    bool
 
 	// common cached clients
-	kubeClient       *kubernetes.Clientset
-	currentNamespace string
-	devNamespace     string
-	jxClient         *versioned.Clientset
-	jenkinsClient    *gojenkins.Jenkins
+	kubeClient          kubernetes.Interface
+	apiExtensionsClient apiextensionsclientset.Interface
+	currentNamespace    string
+	devNamespace        string
+	jxClient            *versioned.Clientset
+	jenkinsClient       *gojenkins.Jenkins
 }
 
 type ServerFlags struct {
@@ -91,7 +97,18 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	options.Cmd = cmd
 }
 
-func (o *CommonOptions) KubeClient() (*kubernetes.Clientset, string, error) {
+func (o *CommonOptions) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
+	var err error
+	if o.apiExtensionsClient == nil {
+		o.apiExtensionsClient, err = o.Factory.CreateApiExtensionsClient()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return o.apiExtensionsClient, nil
+}
+
+func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 	if o.kubeClient == nil {
 		kubeClient, currentNs, err := o.Factory.CreateClient()
 		if err != nil {
@@ -408,6 +425,42 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
 
+func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep time.Duration, call func() error) (err error) {
+	timeoutTime := time.Now().Add(timeout)
+
+	lastMessage := ""
+	dot := false
+
+	for i := 0; ; i++ {
+		err = call()
+		if err == nil {
+			if dot {
+				o.Printf("\n")
+			}
+			return
+		}
+
+		if time.Now().After(timeoutTime) {
+			return fmt.Errorf("Timed out after %s, last error: %s", timeout.String(), err)
+		}
+
+		time.Sleep(sleep)
+
+		message := fmt.Sprintf("retrying after error: %s", err)
+		if lastMessage == message {
+			o.Printf(".")
+			dot = true
+		} else {
+			lastMessage = message
+			if dot {
+				dot = false
+				o.Printf("\n")
+			}
+			o.Printf("%s\n", lastMessage)
+		}
+	}
+}
+
 func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, error) {
 	jobMap := map[string]gojenkins.Job{}
 	jenkins, err := o.JenkinsClient()
@@ -491,7 +544,34 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 
 // todo switch to using exposecontroller as a jx plugin
 // get existing config from the devNamespace and run exposecontroller in the target environment
-func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName string) error {
+func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName, password string) error {
+
+	_, err := o.kubeClient.CoreV1().Secrets(targetNamespace).Get(kube.SecretBasicAuth, v1.GetOptions{})
+	if err != nil {
+		data := make(map[string][]byte)
+
+		if password != "" {
+			hash := config.HashSha(password)
+			data[kube.AUTH] = []byte(fmt.Sprintf("admin:{SHA}%s", hash))
+		} else {
+			basicAuth, err := o.kubeClient.CoreV1().Secrets(devNamespace).Get(kube.SecretBasicAuth, v1.GetOptions{})
+			if err != nil {
+				return fmt.Errorf("cannot find secret %s in namespace %s: %v", kube.SecretBasicAuth, devNamespace, err)
+			}
+			data = basicAuth.Data
+		}
+
+		sec := &core_v1.Secret{
+			Data: data,
+			ObjectMeta: v1.ObjectMeta{
+				Name: kube.SecretBasicAuth,
+			},
+		}
+		_, err := o.kubeClient.CoreV1().Secrets(targetNamespace).Create(sec)
+		if err != nil {
+			return fmt.Errorf("cannot create secret %s in target namespace %s: %v", kube.SecretBasicAuth, targetNamespace, err)
+		}
+	}
 
 	exposecontrollerConfig, err := kube.GetTeamExposecontrollerConfig(o.kubeClient, devNamespace)
 	if err != nil {
@@ -519,4 +599,36 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName string
 	}
 	return kube.DeleteJob(o.kubeClient, targetNamespace, exposecontroller)
 
+}
+
+func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, error) {
+	basicAuth, err := o.kubeClient.CoreV1().Secrets(devNamespace).Get(JXInstallConfig, v1.GetOptions{})
+	if err != nil {
+		return "", fmt.Errorf("cannot find secret %s in namespace %s: %v", kube.SecretBasicAuth, devNamespace, err)
+	}
+	adminSecrets := basicAuth.Data[AdminSecretsFile]
+	adminConfig := config.AdminSecretsConfig{}
+
+	err = yaml.Unmarshal(adminSecrets, &adminConfig)
+	if err != nil {
+		return "", err
+	}
+	return adminConfig.Jenkins.JenkinsSecret.Password, nil
+}
+
+func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string, error) {
+	present, err := kube.IsServicePresent(o.kubeClient, serviceName, o.currentNamespace)
+	if err != nil {
+		return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
+	}
+	if present {
+		url, err := kube.GetServiceURLFromName(o.kubeClient, serviceName, o.currentNamespace)
+		if err != nil {
+			return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
+		}
+		return url, nil
+	}
+
+	// todo ask if user wants to install addon?
+	return "", nil
 }
