@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"bytes"
-	//"fmt"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sort"
-	"strings"
 	"testing"
 	"text/template"
 
@@ -87,7 +85,7 @@ func TestGCHelmSortVersionMissing(t *testing.T) {
 
 func TestGCHelmExtract(t *testing.T) {
 
-	var b strings.Builder
+	var b bytes.Buffer
 	b.WriteString(createConfigMaps(t, "jx-staging", v_jx_staging))
 	b.WriteString(",")
 	b.WriteString(createConfigMaps(t, "jenkins-x", v_jenkins_x))
@@ -95,17 +93,13 @@ func TestGCHelmExtract(t *testing.T) {
 	b.WriteString(createConfigMaps(t, "jx-production", v_jx_production))
 	configmaplist := createConfigMapList(t, b.String())
 
-	//	fmt.Printf("%#v\n", configmaplist)
-
 	releases := extractReleases(configmaplist)
-	//	fmt.Printf("%#v\n", releases)
 
 	assert.Contains(t, releases, "jx-staging")
 	assert.Contains(t, releases, "jx-production")
 	assert.Contains(t, releases, "jenkins-x")
 
 	versions := extractVersions(configmaplist, "jx-production")
-	//	fmt.Printf("%#v\n", versions)
 	expected_versions := []string{"jx-production.v1", "jx-production.v2", "jx-production.v3"}
 	assert.Equal(t, expected_versions, versions)
 
@@ -113,7 +107,6 @@ func TestGCHelmExtract(t *testing.T) {
 	assert.Empty(t, to_delete)
 
 	versions = extractVersions(configmaplist, "jx-staging")
-	//	fmt.Printf("%#v\n", versions)
 	expected_versions = []string{"jx-staging.v1", "jx-staging.v2", "jx-staging.v3", "jx-staging.v4", "jx-staging.v5", "jx-staging.v6", "jx-staging.v7", "jx-staging.v8", "jx-staging.v9", "jx-staging.v10", "jx-staging.v11", "jx-staging.v12", "jx-staging.v13", "jx-staging.v14", "jx-staging.v15", "jx-staging.v16", "jx-staging.v17", "jx-staging.v18", "jx-staging.v19", "jx-staging.v20", "jx-staging.v21", "jx-staging.v22", "jx-staging.v23", "jx-staging.v24", "jx-staging.v25", "jx-staging.v26", "jx-staging.v27"}
 	assert.Equal(t, expected_versions, versions)
 
@@ -122,7 +115,6 @@ func TestGCHelmExtract(t *testing.T) {
 	assert.Equal(t, expected_to_delete, to_delete)
 
 	versions = extractVersions(configmaplist, "jenkins-x")
-	//	fmt.Printf("%#v\n", versions)
 	expected_versions = []string{"jenkins-x.v1", "jenkins-x.v2", "jenkins-x.v3", "jenkins-x.v4", "jenkins-x.v5", "jenkins-x.v6", "jenkins-x.v7", "jenkins-x.v8", "jenkins-x.v9", "jenkins-x.v10", "jenkins-x.v11", "jenkins-x.v12", "jenkins-x.v13", "jenkins-x.v14", "jenkins-x.v15", "jenkins-x.v16", "jenkins-x.v17", "jenkins-x.v18", "jenkins-x.v19", "jenkins-x.v20"}
 	assert.Equal(t, expected_versions, versions)
 
