@@ -96,7 +96,11 @@ func (o *StepHelmReleaseOptions) Run() error {
 		return err
 	}
 
-	err = o.runCommandVerboseAt(dir, helmBinary, "init", "--client-only")
+	if helmBinary == "helm" {
+		err = o.runCommandVerboseAt(dir, helmBinary, "init", "--client-only")
+	} else {
+		err = o.runCommandVerboseAt(dir, helmBinary, "init")
+	}
 	if err != nil {
 		return err
 	}
