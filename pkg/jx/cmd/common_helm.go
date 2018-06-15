@@ -81,7 +81,7 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmBinary string, helmUrl st
 		return err
 	}
 	if missing {
-		o.Printf("Adding hmissing elm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
+		o.Printf("Adding missing helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
 		err = o.runCommandVerbose(helmBinary, "repo", "add", repoName, helmUrl)
 		if err == nil {
 			o.Printf("Succesfully added Helm repository %s.\n", repoName)
@@ -233,7 +233,7 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 		if requirements != nil {
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
-				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) {
+				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo {
 					repoCounter++
 					// TODO we could provide some mechanism to customise the names of repos somehow?
 					err = o.addHelmBinaryRepoIfMissing(helmBinary, repo, "repo"+strconv.Itoa(repoCounter))
