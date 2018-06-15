@@ -67,6 +67,8 @@ type Factory interface {
 
 	CreateClient() (kubernetes.Interface, string, error)
 
+	CreateKubeConfig() (*rest.Config, error)
+
 	CreateJXClient() (*versioned.Clientset, string, error)
 
 	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
@@ -418,7 +420,7 @@ func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigServi
 }
 
 func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
-	config, err := f.createKubeConfig()
+	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
 	}
@@ -436,7 +438,7 @@ func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
 }
 
 func (f *factory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
-	config, err := f.createKubeConfig()
+	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -444,7 +446,7 @@ func (f *factory) CreateApiExtensionsClient() (apiextensionsclientset.Interface,
 }
 
 func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
-	config, err := f.createKubeConfig()
+	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -452,7 +454,7 @@ func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
 }
 
 func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
-	cfg, err := f.createKubeConfig()
+	cfg, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
 	}
@@ -494,7 +496,7 @@ func createKubeConfig() *string {
 	return kubeconfig
 }
 
-func (f *factory) createKubeConfig() (*rest.Config, error) {
+func (f *factory) CreateKubeConfig() (*rest.Config, error) {
 	kubeconfig := createKubeConfig()
 	var config *rest.Config
 	var err error
@@ -553,7 +555,7 @@ func (f *factory) IsInCluster() bool {
 
 // CreateComplianceClient creates a new Sonobuoy compliance client
 func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
-	config, err := f.createKubeConfig()
+	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "compliance client failed to load the Kubernetes configuration")
 	}
