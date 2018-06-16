@@ -306,7 +306,11 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 		return helmBinary, err
 	}
 
-	err = o.runCommandVerboseAt(dir, helmBinary, "dependency", "build", dir)
+	// TODO due to this issue: https://github.com/kubernetes/helm/issues/4230
+	// lets stick with helm2 for this step
+	//
+	//err = o.runCommandVerboseAt(dir, helmBinary, "dependency", "build", dir)
+	err = o.runCommandVerboseAt(dir, "helm", "dependency", "build", dir)
 	if err != nil {
 		return helmBinary, err
 	}
