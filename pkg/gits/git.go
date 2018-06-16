@@ -274,9 +274,8 @@ func GetGitInfo(dir string) (*GitRepositoryInfo, error) {
 
 	rUrl := string(data)
 	rUrl = strings.TrimSpace(rUrl)
-	hasSCM := strings.Index(rUrl, "/scm/") != -1
 
-	repo, err := ParseGitURL(rUrl, hasSCM)
+	repo, err := ParseGitURL(rUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse git URL %s due to %s", rUrl, err)
 	}

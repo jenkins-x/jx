@@ -25,7 +25,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	if gitURL == "" {
 		return answer, fmt.Errorf("No source git URL")
 	}
-	gitInfo, err := gits.ParseGitURL(gitURL, false)
+	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return answer, err
 	}

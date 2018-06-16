@@ -218,7 +218,7 @@ func (o *ImportOptions) Run() error {
 		config := authConfigSvc.Config()
 		var server *auth.AuthServer
 		if o.RepoURL != "" {
-			gitInfo, err := gits.ParseGitURL(o.RepoURL, gits.HasScm(o.GitProvider))
+			gitInfo, err := gits.ParseGitURL(o.RepoURL)
 			if err != nil {
 				return err
 			}
@@ -627,7 +627,7 @@ func (o *ImportOptions) CloneRepository() error {
 	if url == "" {
 		return fmt.Errorf("no git repository URL defined!")
 	}
-	gitInfo, err := gits.ParseGitURL(url, gits.HasScm(o.GitProvider))
+	gitInfo, err := gits.ParseGitURL(url)
 	if err != nil {
 		return fmt.Errorf("failed to parse git URL %s due to: %s", url, err)
 	}

@@ -67,7 +67,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 	if err != nil {
 		return nil, fmt.Errorf("No issue tracker configured and could not find the upstream git URL for dir %s, due to: %s\n", dir, err)
 	}
-	gitInfo, err := gits.ParseGitURL(gitUrl, false)
+	gitInfo, err := gits.ParseGitURL(gitUrl)
 	if err != nil {
 		return nil, err
 	}
