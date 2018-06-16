@@ -31,7 +31,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	gitInfo, err := gits.ParseGitURL(gitUrl, false)
+	gitInfo, err := gits.ParseGitURL(gitUrl)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -262,7 +262,7 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 
 // gitProviderForURL returns a GitProvider for the given git URL
 func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.GitProvider, error) {
-	gitInfo, err := gits.ParseGitURL(gitURL, false)
+	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
 	}
