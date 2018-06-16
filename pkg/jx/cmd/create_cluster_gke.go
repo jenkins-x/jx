@@ -131,7 +131,7 @@ func (o *CreateClusterGKEOptions) Run() error {
 func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	var err error
 	if !o.Flags.SkipLogin {
-		err := o.runCommand("gcloud", "auth", "login", "--brief")
+		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
 			return err
 		}
@@ -145,7 +145,16 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	err = o.runCommand("gcloud", "config", "set", "project", projectId)
+	err = o.runCommandVerbose("gcloud", "config", "set", "project", projectId)
+	if err != nil {
+		return err
+	}
+
+	// lets ensure we've got container and compute enabled
+	glcoudArgs := []string{"services", "enable", "container", "compute"}
+	o.Printf("Lets ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(glcoudArgs, " ")))
+
+	err = o.runCommandVerbose("gcloud", glcoudArgs...)
 	if err != nil {
 		return err
 	}

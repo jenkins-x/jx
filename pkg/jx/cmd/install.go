@@ -240,6 +240,24 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
+	if options.Flags.Provider == AKS {
+		/**
+		 * create a cluster admin role
+		 */
+		err = options.createClusterAdmin()
+		if err != nil {
+			msg := err.Error()
+			if strings.Contains(msg, "AlreadyExists") {
+				log.Success("role cluster-admin already exists for the cluster")
+
+			} else {
+				return err
+			}
+		} else {
+			log.Success("created role cluster-admin")
+		}
+	}
+
 	initOpts := &options.InitOptions
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
