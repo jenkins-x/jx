@@ -507,8 +507,9 @@ func (options *InstallOptions) Run() error {
 
 	options.logAdminPassword()
 
-	options.Printf("\nTo import existing projects into Jenkins: %s\n", util.ColorInfo("jx import"))
-	options.Printf("To create a new Spring Boot microservice: %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
+	options.Printf("\nTo import existing projects into Jenkins:     %s\n", util.ColorInfo("jx import"))
+	options.Printf("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
+	options.Printf("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
 	return nil
 }
 

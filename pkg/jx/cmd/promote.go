@@ -457,6 +457,14 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 
 func (o *PromoteOptions) DiscoverAppName() (string, error) {
 	answer := ""
+	chartFile, err := o.FindHelmChart()
+	if err != nil {
+		return answer, err
+	}
+	if chartFile != "" {
+		return helm.LoadChartName(chartFile)
+	}
+
 	gitInfo, err := gits.GetGitInfo("")
 	if err != nil {
 		return answer, err
@@ -468,13 +476,6 @@ func (o *PromoteOptions) DiscoverAppName() (string, error) {
 	answer = gitInfo.Name
 
 	if answer == "" {
-		chartFile, err := o.FindHelmChart()
-		if err != nil {
-			return answer, err
-		}
-		if chartFile != "" {
-			return helm.LoadChartName(chartFile)
-		}
 	}
 	return answer, nil
 }

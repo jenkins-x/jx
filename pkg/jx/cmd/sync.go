@@ -62,12 +62,6 @@ node_modules
 `
 )
 
-func PathWithBinary() string {
-	path := os.Getenv("PATH")
-	binDir, _ := util.BinaryLocation()
-	return path + string(os.PathListSeparator) + binDir
-}
-
 func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &SyncOptions{
 		CommonOptions: CommonOptions{
@@ -108,7 +102,7 @@ func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 func (o *SyncOptions) Run() error {
 
 	// ksync is installed to the jx/bin dir, so we can add it for the user
-	os.Setenv("PATH", PathWithBinary())
+	os.Setenv("PATH", util.PathWithBinary())
 
 	client, _, err := o.KubeClient()
 	if err != nil {
@@ -184,10 +178,10 @@ func (o *SyncOptions) KsyncWatch() error {
 }
 
 // CreateKsync removes the exiting ksync if it already exists then create a new ksync of the given name
-func (o *SyncOptions) CreateKsync(client *kubernetes.Clientset, ns string, name string, dir string, remoteDir string, username string) error {
+func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name string, dir string, remoteDir string, username string) error {
 
 	// ksync is installed to the jx/bin dir, so we can add it for the user
-	os.Setenv("PATH", PathWithBinary())
+	os.Setenv("PATH", util.PathWithBinary())
 
 	info := util.ColorInfo
 	o.Printf("synchronizing directory %s to DevPod %s path %s\n", info(dir), info(name), info(remoteDir))

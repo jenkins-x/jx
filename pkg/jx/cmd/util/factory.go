@@ -7,9 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -63,13 +65,17 @@ type Factory interface {
 
 	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
 
-	CreateClient() (*kubernetes.Clientset, string, error)
+	CreateClient() (kubernetes.Interface, string, error)
+
+	CreateKubeConfig() (*rest.Config, error)
 
 	CreateJXClient() (*versioned.Clientset, string, error)
 
-	CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error)
+	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
 
 	CreateMetricsClient() (*metricsclient.Clientset, error)
+
+	CreateComplianceClient() (*client.SonobuoyClient, error)
 
 	CreateTable(out io.Writer) table.Table
 
@@ -336,7 +342,7 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	}
 
 	if secrets != nil {
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline)
+		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline || f.IsInCluster())
 	}
 
 	// lets add a default if there's none defined yet
@@ -361,43 +367,6 @@ func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets
 	}
 
 	if len(config.Servers) == 0 {
-		// if in cluster then there's no user configfile, so check for env vars first
-		secretList, err := f.LoadPipelineSecrets(kube.ValueKindGit, "")
-		if err != nil {
-			return authConfigSvc, err
-		}
-
-		var data map[string][]byte
-
-		if secretList != nil {
-			for _, secret := range secretList.Items {
-				labels := secret.Labels
-				annotations := secret.Annotations
-				data = secret.Data
-				if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit && annotations != nil {
-					u := annotations[kube.AnnotationURL]
-					if u != "" && data != nil {
-						userAuth := auth.UserAuth{
-							Username: string(data[kube.SecretDataUsername]),
-							ApiToken: string(data[kube.SecretDataPassword]),
-						}
-						if !userAuth.IsInvalid() {
-							config.Servers = []*auth.AuthServer{
-								{
-									Name:  string(data[kube.AnnotationName]),
-									URL:   u,
-									Users: []*auth.UserAuth{&userAuth},
-								},
-							}
-							break
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if len(config.Servers) == 0 {
 		config.Servers = []*auth.AuthServer{
 			{
 				Name:  "GitHub",
@@ -415,7 +384,7 @@ func (f *factory) LoadPipelineSecrets(kind, serviceKind string) (*corev1.SecretL
 	// TODO return empty list if not inside a pipeline?
 	kubeClient, curNs, err := f.CreateClient()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create a kubernetes client %s", err)
+		return nil, fmt.Errorf("Failed to create a kuberntees client %s", err)
 	}
 	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
 	if err != nil {
@@ -451,7 +420,7 @@ func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigServi
 }
 
 func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
-	config, err := f.createKubeConfig()
+	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
 	}
@@ -468,8 +437,8 @@ func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
 
 }
 
-func (f *factory) CreateApiExtensionsClient() (*apiextensionsclientset.Clientset, error) {
-	config, err := f.createKubeConfig()
+func (f *factory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
+	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -477,15 +446,15 @@ func (f *factory) CreateApiExtensionsClient() (*apiextensionsclientset.Clientset
 }
 
 func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
-	config, err := f.createKubeConfig()
+	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err
 	}
 	return metricsclient.NewForConfig(config)
 }
 
-func (f *factory) CreateClient() (*kubernetes.Clientset, string, error) {
-	cfg, err := f.createKubeConfig()
+func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
+	cfg, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
 	}
@@ -527,7 +496,7 @@ func createKubeConfig() *string {
 	return kubeconfig
 }
 
-func (f *factory) createKubeConfig() (*rest.Config, error) {
+func (f *factory) CreateKubeConfig() (*rest.Config, error) {
 	kubeconfig := createKubeConfig()
 	var config *rest.Config
 	var err error
@@ -582,4 +551,13 @@ func (f *factory) IsInCluster() bool {
 		return false
 	}
 	return true
+}
+
+// CreateComplianceClient creates a new Sonobuoy compliance client
+func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "compliance client failed to load the Kubernetes configuration")
+	}
+	return client.NewSonobuoyClient(config)
 }

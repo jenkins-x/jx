@@ -27,7 +27,7 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, kubeClient *kubernetes.Clientset, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (gits.GitProvider, error) {
+func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, kubeClient kubernetes.Interface, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	name := data.Name
 	createMode := name == ""
@@ -309,7 +309,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 	return gitProvider, nil
 }
 
-func GetTeamExposecontrollerConfig(kubeClient *kubernetes.Clientset, ns string) (map[string]string, error) {
+func GetTeamExposecontrollerConfig(kubeClient kubernetes.Interface, ns string) (map[string]string, error) {
 	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get("exposecontroller", metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to find team environment exposecontroller config %v", err)
@@ -375,7 +375,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 		fmt.Fprintf(out, "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		if forkEnvGitURL != "" {
-			gitInfo, err := gits.ParseGitURL(forkEnvGitURL, provider.Kind() == "bitbucketserver")
+			gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
 			if err != nil {
 				return "", nil, err
 			}
@@ -684,11 +684,14 @@ func GetEditEnvironmentNamespace(jxClient *versioned.Clientset, ns string) (stri
 
 // GetDevNamespace returns the developer environment namespace
 // which is the namespace that contains the Environments and the developer tools like Jenkins
-func GetDevNamespace(kubeClient *kubernetes.Clientset, ns string) (string, string, error) {
+func GetDevNamespace(kubeClient kubernetes.Interface, ns string) (string, string, error) {
 	env := ""
 	namespace, err := kubeClient.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 	if err != err {
 		return ns, env, err
+	}
+	if namespace == nil {
+		return ns, env, fmt.Errorf("No namespace found for %s", ns)
 	}
 	if namespace.Labels != nil {
 		answer := namespace.Labels[LabelTeam]

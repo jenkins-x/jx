@@ -2,6 +2,7 @@ package util
 
 import (
 	"bytes"
+	"net/url"
 	"strings"
 )
 
@@ -21,4 +22,26 @@ func UrlJoin(paths ...string) string {
 		buffer.WriteString(p)
 	}
 	return buffer.String()
+}
+
+// UrlHostNameWithoutPort returns the host name without any port of the given URL like string
+func UrlHostNameWithoutPort(rawUri string) (string, error) {
+	if strings.Index(rawUri, ":/") > 0 {
+		u, err := url.Parse(rawUri)
+		if err != nil {
+			return "", err
+		}
+		rawUri = u.Host
+	}
+
+	// must be a crazy kind of string so lets do our best
+	slice := strings.Split(rawUri, ":")
+	idx := 0
+	if len(slice) > 1 {
+		if len(slice) > 2 {
+			idx = 1
+		}
+		return strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(slice[idx], "/"), "/"), "/"), nil
+	}
+	return rawUri, nil
 }

@@ -4,8 +4,10 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"fmt"
+
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -68,6 +70,30 @@ func (o *DeleteAddonOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to delete chart %s: %s", chart, err)
 		}
+		err = o.cleanupServiceLink(arg)
+		if err != nil {
+			return fmt.Errorf("Failed to delete the service link for addon %s", arg)
+		}
 	}
+
 	return nil
+}
+
+func (o *DeleteAddonOptions) cleanupServiceLink(addonName string) error {
+	serviceName, ok := kube.AddonServices[addonName]
+	if !ok {
+		// No cleanup is required if no service link is associated with the Addon
+		return nil
+	}
+	client, _, err := o.Factory.CreateClient()
+	if err != nil {
+		return err
+	}
+
+	svc, err := kube.FindService(client, serviceName)
+	if err != nil {
+		return err
+	}
+
+	return client.CoreV1().Services(svc.GetNamespace()).Delete(svc.GetName(), &meta_v1.DeleteOptions{})
 }

@@ -55,9 +55,11 @@ func TestAuthLoadFromPipelineGitCredentials(t *testing.T) {
 		assert.Equal(t, url, server.URL)
 
 		userAuth := config.FindUserAuth(url, user)
+		tests.Debugf("Server %s has %d users\n", url, len(server.Users))
 		for _, u := range server.Users {
 			tests.Debugf("Git URL %s has user %s/%s\n", url, u.Username, u.ApiToken)
 		}
+
 		assert.NotNil(t, userAuth, "No UserAuth found for url %s user %s", url, user)
 		if userAuth != nil {
 			assert.Equal(t, user, userAuth.Username)

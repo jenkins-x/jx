@@ -43,6 +43,9 @@ const (
 	// SecretJenkinsGitCredentials the git credentials secret
 	SecretJenkinsGitCredentials = "jenkins-git-credentials"
 
+	// SecretJenkinsChartMuseum the chart museum secret
+	SecretJenkinsChartMuseum = "jenkins-x-chartmuseum"
+
 	// SecretJenkinsReleaseGPG the GPG secrets for doing releases
 	SecretJenkinsReleaseGPG = "jenkins-release-gpg"
 
@@ -176,5 +179,10 @@ var (
 		"kubeless":   ChartKubeless,
 		"prometheus": "stable/prometheus",
 		"grafana":    "stable/grafana",
+	}
+
+	AddonServices = map[string]string{
+		"anchore":         "anchore-anchore-engine",
+		"pipeline-events": "jx-pipeline-events-elasticsearch-client",
 	}
 )

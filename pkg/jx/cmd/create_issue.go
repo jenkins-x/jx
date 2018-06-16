@@ -119,7 +119,7 @@ func (o *CreateIssueOptions) FindGitInfo(dir string) (*gits.GitRepositoryInfo, e
 		if err != nil {
 			return nil, fmt.Errorf("Could not find the remote git source URL:  %s", err)
 		}
-		return gits.ParseGitURL(gitURL, false)
+		return gits.ParseGitURL(gitURL)
 	}
 }
 

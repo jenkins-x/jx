@@ -126,7 +126,7 @@ func (o *NamespaceOptions) Run() error {
 }
 
 // GetNamespaceNames returns the sorted list of environment names
-func GetNamespaceNames(client *kubernetes.Clientset) ([]string, error) {
+func GetNamespaceNames(client kubernetes.Interface) ([]string, error) {
 	names := []string{}
 	list, err := client.CoreV1().Namespaces().List(meta_v1.ListOptions{})
 	if err != nil {
