@@ -121,7 +121,7 @@ func EnableApis(apis ...string) error {
 func Login(serviceAccountKeyPath string, skipLogin bool) error {
 	if serviceAccountKeyPath != "" {
 		if _, err := os.Stat(serviceAccountKeyPath); os.IsNotExist(err) {
-			return errors.New("Unable to locate service account " +serviceAccountKeyPath)
+			return errors.New("Unable to locate service account " + serviceAccountKeyPath)
 		}
 
 		err := util.RunCommand("", "gcloud", "auth", "activate-service-account", "--key-file", serviceAccountKeyPath)
@@ -129,7 +129,7 @@ func Login(serviceAccountKeyPath string, skipLogin bool) error {
 			return err
 		}
 	} else if !skipLogin {
-		err := util.RunCommand("","gcloud", "auth", "login", "--brief")
+		err := util.RunCommand("", "gcloud", "auth", "login", "--brief")
 		if err != nil {
 			return err
 		}
