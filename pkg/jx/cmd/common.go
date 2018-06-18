@@ -136,7 +136,7 @@ func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
 
 func (o *CommonOptions) JXClientAndDevNamespace() (*versioned.Clientset, string, error) {
 	if o.jxClient == nil {
-		jxClient, ns, err := o.Factory.CreateJXClient()
+		jxClient, ns, err := o.JXClient()
 		if err != nil {
 			return nil, ns, err
 		}

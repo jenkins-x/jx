@@ -405,11 +405,9 @@ func (o *ImportOptions) DraftCreate() error {
 
 	// lets make sure we have the latest draft packs
 	initOpts := InitOptions{
-		CommonOptions: CommonOptions{
-			Out: o.Out,
-		},
+		CommonOptions: o.CommonOptions,
 	}
-	err = initOpts.initDraft()
+	packsDir, err := initOpts.initBuildPacks()
 	if err != nil {
 		return err
 	}
@@ -431,11 +429,9 @@ func (o *ImportOptions) DraftCreate() error {
 		customDraftPack = projectConfig.BuildPack
 	}
 
-	packRepoPath := "github.com/jenkins-x/draft-packs/packs"
-
 	if len(customDraftPack) > 0 {
 		log.Info("trying to use draft pack: " + customDraftPack + "\n")
-		lpack = filepath.Join(draftHome.Packs(), packRepoPath, customDraftPack)
+		lpack = filepath.Join(packsDir, customDraftPack)
 		f, err := util.FileExists(lpack)
 		if err != nil {
 			log.Error(err.Error())
@@ -456,23 +452,23 @@ func (o *ImportOptions) DraftCreate() error {
 			}
 			if len(pack) > 0 {
 				if pack == cmdutil.LIBERTY {
-					lpack = filepath.Join(draftHome.Packs(), packRepoPath, "liberty")
+					lpack = filepath.Join(packsDir, "liberty")
 				} else if pack == cmdutil.APPSERVER {
-					lpack = filepath.Join(draftHome.Packs(), packRepoPath, "appserver")
+					lpack = filepath.Join(packsDir, "appserver")
 				} else {
 					log.Warn("Do not know how to handle pack: " + pack)
 				}
 			} else {
-				lpack = filepath.Join(draftHome.Packs(), packRepoPath, "maven")
+				lpack = filepath.Join(packsDir, "maven")
 			}
 
 			exists, _ = util.FileExists(lpack)
 			if !exists {
 				log.Warn("defaulting to maven pack")
-				lpack = filepath.Join(draftHome.Packs(), packRepoPath, "maven")
+				lpack = filepath.Join(packsDir, "maven")
 			}
 		} else if exists, err := util.FileExists(gradleName); err == nil && exists {
-			lpack = filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/gradle")
+			lpack = filepath.Join(packsDir, "gradle")
 		} else {
 			// pack detection time
 			lpack, err = jxdraft.DoPackDetection(draftHome, o.Out, dir)
@@ -576,30 +572,30 @@ func (o *ImportOptions) DraftCreate() error {
 
 func (o *ImportOptions) getCurrentUser() string {
 	//walk through every file in the given dir and update the placeholders
-        currentUser := o.GitServer.CurrentUser
-        if currentUser == "" {
-                if o.GitProvider != nil {
-                        currentUser = o.GitProvider.CurrentUsername()
-                }
-        }
-        if currentUser == "" {
-                currentUser = o.Organisation
-        }
-        if currentUser == "" {
-                o.warnf("No username defined for the current git server!")
-                currentUser = o.DefaultOwner
-        }
+	currentUser := o.GitServer.CurrentUser
+	if currentUser == "" {
+		if o.GitProvider != nil {
+			currentUser = o.GitProvider.CurrentUsername()
+		}
+	}
+	if currentUser == "" {
+		currentUser = o.Organisation
+	}
+	if currentUser == "" {
+		o.warnf("No username defined for the current git server!")
+		currentUser = o.DefaultOwner
+	}
 	return currentUser
 }
 
 func (o *ImportOptions) getOrganisation() string {
 	org := ""
-        gitInfo, err := gits.ParseGitURL(o.RepoURL)
-        if err == nil && gitInfo.Organisation != "" {
-                org = gitInfo.Organisation
-        } else {
-                org = o.Organisation
-        }
+	gitInfo, err := gits.ParseGitURL(o.RepoURL)
+	if err == nil && gitInfo.Organisation != "" {
+		org = gitInfo.Organisation
+	} else {
+		org = o.Organisation
+	}
 	return org
 }
 
@@ -1044,23 +1040,16 @@ func (o *ImportOptions) fixMaven() error {
 }
 
 func allDraftPacks() ([]string, error) {
-	draftDir, err := util.DraftDir()
-	if err != nil {
-		return nil, err
-	}
-	draftHome := draftpath.Home(draftDir)
-
 	// lets make sure we have the latest draft packs
 	initOpts := InitOptions{
 		CommonOptions: CommonOptions{},
 	}
 	log.Info("Getting latest packs ...\n")
-	err = initOpts.initDraft()
+	dir, err := initOpts.initBuildPacks()
 	if err != nil {
 		return nil, err
 	}
 
-	dir := filepath.Join(draftHome.Packs(), "github.com/jenkins-x/draft-packs/packs/")
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err

@@ -13,8 +13,7 @@ type BranchPatterns struct {
 }
 
 const (
-	defaultBuildPackURL = "https://jenkins-x/draft-packs.git"
-	defaultBuildPackRef = "master"
+	defaultBuildPackRef = "2.0"
 	defaultHelmBin      = "helm"
 )
 
@@ -39,7 +38,7 @@ func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
 
 	teamSettings := &env.Spec.TeamSettings
 	if teamSettings.BuildPackURL == "" {
-		teamSettings.BuildPackURL = defaultBuildPackURL
+		teamSettings.BuildPackURL = JenkinsBuildPackURL
 	}
 	if teamSettings.BuildPackRef == "" {
 		teamSettings.BuildPackRef = defaultBuildPackRef

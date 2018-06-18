@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,7 +59,7 @@ const (
 	optionNamespace       = "namespace"
 	optionTillerNamespace = "tiller-namespace"
 
-	jenkinsPackURL = "https://github.com/jenkins-x/draft-packs"
+	JenkinsBuildPackURL = "https://github.com/jenkins-x/draft-packs.git"
 
 	INGRESS_SERVICE_NAME    = "jxing-nginx-ingress-controller"
 	DEFAULT_CHARTMUSEUM_URL = "http://chartmuseum.build.cd.jenkins-x.io"
@@ -156,9 +157,9 @@ func (o *InitOptions) Run() error {
 	}
 
 	// draft init
-	err = o.initDraft()
+	_, err = o.initBuildPacks()
 	if err != nil {
-		log.Fatalf("draft init failed: %v", err)
+		log.Fatalf("initialise build packs failed: %v", err)
 		return err
 	}
 
@@ -368,20 +369,39 @@ func (o *InitOptions) initHelm() error {
 	return nil
 }
 
-func (o *InitOptions) initDraft() error {
+// initBuildPacks initalise the build packs
+func (o *InitOptions) initBuildPacks() (string, error) {
+	settings, err := o.TeamSettings()
+
+	if err != nil {
+		return "", err
+	}
+
+	packUrl := settings.BuildPackURL
+	packRef := settings.BuildPackRef
+
+	u, err := url.Parse(strings.TrimSuffix(packUrl, ".git"))
+	if err != nil {
+		return "", fmt.Errorf("Failed to parse build pack URL: %s: %s", packUrl, err)
+	}
 
 	draftDir, err := util.DraftDir()
 	if err != nil {
-		return err
+		return "", err
 	}
-	dir := filepath.Join(draftDir, "packs", "github.com", "jenkins-x", "draft-packs")
-
+	dir := filepath.Join(draftDir, "packs", u.Host, u.Path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("Could not create %s: %s", dir, err)
+		return "", fmt.Errorf("Could not create %s: %s", dir, err)
 	}
 
-	return gits.GitCloneOrPull(jenkinsPackURL, dir)
-
+	err = gits.GitCloneOrPull(packUrl, dir)
+	if err != nil {
+		return "", err
+	}
+	if packRef != "master" {
+		err = gits.CheckoutRemoteBranch(dir, packRef)
+	}
+	return filepath.Join(dir, "packs"), err
 }
 
 func (o *InitOptions) initIngress() error {
