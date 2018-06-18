@@ -260,7 +260,7 @@ func (o *CommonOptions) getInstalledChartRepos(helmBinary string) (map[string]st
 			if len(cols) > 1 {
 				name := strings.TrimSpace(cols[0])
 				url := strings.TrimSpace(cols[1])
-				if name != "" && url != "" {
+				if name != "" && url != "" && !strings.HasPrefix(url, "file:") {
 					installedChartRepos[name] = url
 				}
 			}
