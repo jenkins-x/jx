@@ -70,7 +70,7 @@ func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 func (o *MetricsOptions) Run() error {
 	args := o.Args
 
-	client, curNs, err := o.Factory.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

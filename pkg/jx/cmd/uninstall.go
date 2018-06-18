@@ -57,7 +57,7 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	jxClient, _, err := o.Factory.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (o *UninstallOptions) Run() error {
 		return err
 	}
 
-	client, _, err := o.Factory.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

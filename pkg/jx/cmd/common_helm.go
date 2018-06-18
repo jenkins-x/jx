@@ -23,7 +23,7 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	password := "admin"
 
 	// lets check if we have a local helm repository
-	client, _, err := o.Factory.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

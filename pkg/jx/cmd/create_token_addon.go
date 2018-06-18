@@ -150,7 +150,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 }
 
 func (o *CreateTokenAddonOptions) updateAddonCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
-	client, curNs, err := o.Factory.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

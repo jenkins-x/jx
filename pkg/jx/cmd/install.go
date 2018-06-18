@@ -200,7 +200,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
-	client, _, err := options.Factory.CreateClient()
+	client, _, err := options.KubeClient()
 	if err != nil {
 		return err
 	}

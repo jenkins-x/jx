@@ -79,7 +79,7 @@ func (o *StepReportReleasesOptions) Run() error {
 		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
 	}
 
-	jxClient, _, err := o.Factory.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return fmt.Errorf("cannot create jx client: %v", err)
 	}

@@ -88,7 +88,7 @@ func (o *GCActivitiesOptions) Run() error {
 		return nil
 	}
 
-	o.jclient, err = o.Factory.CreateJenkinsClient()
+	o.jclient, err = o.JenkinsClient()
 	if err != nil {
 		return err
 	}

@@ -191,17 +191,16 @@ func (o *ImportOptions) Run() error {
 		return nil
 	}
 
-	f := o.Factory
-	f.SetBatch(o.BatchMode)
+	o.Factory.SetBatch(o.BatchMode)
 
 	var err error
 	if !o.DryRun {
-		o.Jenkins, err = f.CreateJenkinsClient()
+		o.Jenkins, err = o.JenkinsClient()
 		if err != nil {
 			return err
 		}
 
-		client, ns, err := o.Factory.CreateClient()
+		client, ns, err := o.KubeClient()
 		if err != nil {
 			return err
 		}
@@ -804,7 +803,7 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 
 func (o *ImportOptions) DoImport() error {
 	if o.Jenkins == nil {
-		jclient, err := o.Factory.CreateJenkinsClient()
+		jclient, err := o.JenkinsClient()
 		if err != nil {
 			return err
 		}

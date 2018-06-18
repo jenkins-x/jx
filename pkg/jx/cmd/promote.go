@@ -822,7 +822,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 func (o *PromoteOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
 	log.Infof("pipeline %s\n", pipeline)
 	build := ""
-	jenkins, err := o.Factory.CreateJenkinsClient()
+	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return pipeline, build, err
 	}

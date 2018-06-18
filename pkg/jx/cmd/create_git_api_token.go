@@ -265,7 +265,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 }
 
 func (o *CreateGitTokenOptions) updateGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
-	client, ns, err := o.Factory.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

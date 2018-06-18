@@ -75,7 +75,7 @@ func (o *NamespaceOptions) Run() error {
 	if len(args) > 0 {
 		ns = args[0]
 	}
-	client, _, err := o.Factory.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

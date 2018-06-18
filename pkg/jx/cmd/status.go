@@ -58,7 +58,7 @@ func NewCmdStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 
 func (o *StatusOptions) Run() error {
 
-	client, namespace, err := o.Factory.CreateClient()
+	client, namespace, err := o.KubeClient()
 	if err != nil {
 
 		log.Warn("Unable to connect to Kubernetes cluster -  is one running ?")
