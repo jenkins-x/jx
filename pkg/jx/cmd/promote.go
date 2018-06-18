@@ -874,7 +874,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		o.warnf("No GitInfo discovered so cannot comment on issues that they are now in %s\n", envName)
 		return nil
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}

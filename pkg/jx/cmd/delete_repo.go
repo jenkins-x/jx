@@ -82,7 +82,7 @@ func NewCmdDeleteRepo(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 
 // Run implements the command
 func (o *DeleteRepoOptions) Run() error {
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}

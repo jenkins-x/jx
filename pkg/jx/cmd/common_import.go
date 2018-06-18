@@ -19,7 +19,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		return err
 	}
 
-	secrets, err := o.Factory.LoadPipelineSecrets(kube.ValueKindGit, "")
+	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
 	if err != nil {
 		return err
 	}

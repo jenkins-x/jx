@@ -200,17 +200,15 @@ func (o *ImportOptions) Run() error {
 			return err
 		}
 
-		client, ns, err := o.KubeClient()
+		_, _, err = o.KubeClient()
 		if err != nil {
 			return err
 		}
-		o.currentNamespace = ns
-		o.kubeClient = client
 	}
 
 	var userAuth *auth.UserAuth
 	if o.GitProvider == nil {
-		authConfigSvc, err := o.Factory.CreateGitAuthConfigServiceDryRun(o.DryRun)
+		authConfigSvc, err := o.CreateGitAuthConfigServiceDryRun(o.DryRun)
 		if err != nil {
 			return err
 		}
@@ -599,8 +597,7 @@ func (o *ImportOptions) getOrganisation() string {
 }
 
 func (o *ImportOptions) CreateNewRemoteRepository() error {
-	f := o.Factory
-	authConfigSvc, err := f.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -819,7 +816,7 @@ func (o *ImportOptions) DoImport() error {
 		gitProvider = p
 	}
 
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}

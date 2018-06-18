@@ -100,7 +100,7 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 
 // Run implements the generic Create command
 func (o *CreateQuickstartOptions) Run() error {
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}

@@ -162,7 +162,7 @@ func (o *PreviewOptions) Run() error {
 	err = o.defaultValues(ns, true)
 
 	// we need pull request info to include
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}

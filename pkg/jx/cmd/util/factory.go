@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -27,10 +28,7 @@ import (
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	"net/url"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -50,10 +48,6 @@ type Factory interface {
 	GetJenkinsURL() (string, error)
 
 	CreateAuthConfigService(fileName string) (auth.AuthConfigService, error)
-
-	CreateGitAuthConfigService() (auth.AuthConfigService, error)
-
-	CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfigService, error)
 
 	CreateJenkinsAuthConfigService() (auth.AuthConfigService, error)
 
@@ -81,11 +75,13 @@ type Factory interface {
 
 	SetBatch(batch bool)
 
-	LoadPipelineSecrets(kind string, serviceKind string) (*corev1.SecretList, error)
-
 	ImpersonateUser(user string) Factory
 
 	IsInCluster() bool
+
+	IsInCDPIpeline() bool
+
+	AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error
 }
 
 type factory struct {
@@ -226,7 +222,7 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.isInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.IsInCDPIpeline())
 	}
 	return authConfigSvc, err
 }
@@ -241,7 +237,7 @@ func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.isInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.IsInCDPIpeline())
 	}
 	return authConfigSvc, err
 }
@@ -256,14 +252,14 @@ func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.isInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.IsInCDPIpeline())
 	}
 	return authConfigSvc, err
 }
 
-func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) {
+func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error {
 	if config == nil || secrets == nil {
-		return
+		return nil
 	}
 	for _, secret := range secrets.Items {
 		labels := secret.Labels
@@ -299,114 +295,7 @@ func (f *factory) authMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 			}
 		}
 	}
-}
-
-func (f *factory) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfigService, error) {
-	if dryRun {
-		fileName := GitAuthConfigFile
-		return f.createGitAuthConfigServiceFromSecrets(fileName, nil, false)
-	}
-	return f.CreateGitAuthConfigService()
-}
-
-func (f *factory) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
-	secrets, err := f.LoadPipelineSecrets(kube.ValueKindGit, "")
-	if err != nil {
-
-		kubeConfig, _, configLoadErr := kube.LoadConfig()
-		if err != nil {
-			fmt.Printf("WARNING: Could not load config: %s", configLoadErr)
-		}
-
-		ns := kube.CurrentNamespace(kubeConfig)
-		if ns == "" {
-			fmt.Printf("WARNING: Could not get the current namespace")
-		}
-
-		fmt.Printf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
-	}
-
-	fileName := GitAuthConfigFile
-	return f.createGitAuthConfigServiceFromSecrets(fileName, secrets, f.isInCDPIpeline())
-}
-
-func (f *factory) createGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.AuthConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(fileName)
-	if err != nil {
-		return authConfigSvc, err
-	}
-
-	config, err := authConfigSvc.LoadConfig()
-	if err != nil {
-		return authConfigSvc, err
-	}
-
-	if secrets != nil {
-		f.authMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline || f.IsInCluster())
-	}
-
-	// lets add a default if there's none defined yet
-	if len(config.Servers) == 0 {
-		// if in cluster then there's no user configfile, so check for env vars first
-		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
-		if !userAuth.IsInvalid() {
-			// if no config file is being used lets grab the git server from the current directory
-			server, err := gits.GetGitServer("")
-			if err != nil {
-				fmt.Printf("WARNING: unable to get remote git repo server, %v\n", err)
-				server = "https://github.com"
-			}
-			config.Servers = []*auth.AuthServer{
-				{
-					Name:  "Git",
-					URL:   server,
-					Users: []*auth.UserAuth{&userAuth},
-				},
-			}
-		}
-	}
-
-	if len(config.Servers) == 0 {
-		config.Servers = []*auth.AuthServer{
-			{
-				Name:  "GitHub",
-				URL:   "https://github.com",
-				Kind:  gits.KindGitHub,
-				Users: []*auth.UserAuth{},
-			},
-		}
-	}
-
-	return authConfigSvc, nil
-}
-
-func (f *factory) LoadPipelineSecrets(kind, serviceKind string) (*corev1.SecretList, error) {
-	// TODO return empty list if not inside a pipeline?
-	kubeClient, curNs, err := f.CreateClient()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to create a kuberntees client %s", err)
-	}
-	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get the development environment %s", err)
-	}
-
-	var selector string
-	if kind != "" {
-		selector = kube.LabelKind + "=" + kind
-	}
-	if serviceKind != "" {
-		selector = kube.LabelServiceKind + "=" + serviceKind
-	}
-
-	opts := metav1.ListOptions{
-		LabelSelector: selector,
-	}
-	return kubeClient.CoreV1().Secrets(ns).List(opts)
-}
-
-func (f *factory) mergePipeineSecrets(config *auth.AuthConfig, secretList *corev1.SecretList) {
-
+	return nil
 }
 
 func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigService, error) {
@@ -536,9 +425,9 @@ func (f *factory) CreateTable(out io.Writer) table.Table {
 	return table.CreateTable(os.Stdout)
 }
 
-// isInCDPIpeline we should only load the git / issue tracker API tokens if the current pod
+// IsInCDPIpeline we should only load the git / issue tracker API tokens if the current pod
 // is in a pipeline and running as the jenkins service account
-func (f *factory) isInCDPIpeline() bool {
+func (f *factory) IsInCDPIpeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
 	return os.Getenv("BUILD_NUMBER") != ""

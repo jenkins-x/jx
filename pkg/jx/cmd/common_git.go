@@ -35,7 +35,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return gitInfo, nil, nil, err
 	}
@@ -266,7 +266,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +279,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 
 // gitProviderForURL returns a GitProvider for the given git server URL
 func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}

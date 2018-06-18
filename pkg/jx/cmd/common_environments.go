@@ -161,7 +161,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return answer, err
 	}

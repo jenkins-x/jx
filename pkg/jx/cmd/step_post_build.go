@@ -166,7 +166,7 @@ func (o *StepPostBuildOptions) addImageToAnchore() (string, error) {
 
 func (o *StepPostBuildOptions) getAnchoreDetails() (anchoreDetails, error) {
 	var a anchoreDetails
-	secretsList, err := o.Factory.LoadPipelineSecrets(kube.ValueKindAddon, kube.ValueKindCVE)
+	secretsList, err := o.LoadPipelineSecrets(kube.ValueKindAddon, kube.ValueKindCVE)
 	if err != nil {
 		return a, err
 	}

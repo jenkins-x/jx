@@ -337,7 +337,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// lets add any GitHub Enterprise servers
-	gitAuthCfg, err := options.Factory.CreateGitAuthConfigService()
+	gitAuthCfg, err := options.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -722,7 +722,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 
 func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 	var userAuth *auth.UserAuth
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return userAuth, err
 	}

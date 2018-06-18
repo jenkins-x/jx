@@ -61,7 +61,7 @@ func (o *DeleteGitServerOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing git server name argument")
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}

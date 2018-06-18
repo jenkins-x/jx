@@ -99,20 +99,19 @@ func NewCmdEditEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 // Run implements the command
 func (o *EditEnvOptions) Run() error {
-	f := o.Factory
-	jxClient, currentNs, err := f.CreateJXClient()
+	jxClient, currentNs, err := o.JXClient()
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := f.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	apisClient, err := f.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := f.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}

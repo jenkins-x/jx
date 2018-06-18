@@ -110,16 +110,15 @@ func (o *CreateEnvOptions) Run() error {
 	if len(args) > 0 && o.Options.Name == "" {
 		o.Options.Name = args[0]
 	}
-	f := o.Factory
-	jxClient, currentNs, err := f.CreateJXClient()
+	jxClient, currentNs, err := o.JXClient()
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := f.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	apisClient, err := f.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -133,7 +132,7 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := f.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
