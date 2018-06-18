@@ -233,7 +233,7 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 		if requirements != nil {
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
-				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo {
+				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo && !strings.HasPrefix(repo, "file:") {
 					repoCounter++
 					// TODO we could provide some mechanism to customise the names of repos somehow?
 					err = o.addHelmBinaryRepoIfMissing(helmBinary, repo, "repo"+strconv.Itoa(repoCounter))
@@ -260,7 +260,7 @@ func (o *CommonOptions) getInstalledChartRepos(helmBinary string) (map[string]st
 			if len(cols) > 1 {
 				name := strings.TrimSpace(cols[0])
 				url := strings.TrimSpace(cols[1])
-				if name != "" && url != "" && !strings.HasPrefix(url, "file:") {
+				if name != "" && url != "" {
 					installedChartRepos[name] = url
 				}
 			}
