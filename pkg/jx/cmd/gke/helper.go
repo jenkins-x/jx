@@ -1,10 +1,13 @@
 package gke
 
 import (
+	"github.com/jenkins-x/jx/pkg/util"
 	"os/exec"
 	"sort"
 	"strings"
 )
+
+var PROJECT_LIST_HEADER = "PROJECT_ID"
 
 func GetGoogleZones() ([]string, error) {
 	var zones []string
@@ -21,6 +24,24 @@ func GetGoogleZones() ([]string, error) {
 		sort.Strings(zones)
 	}
 	return zones, nil
+}
+
+func GetGoogleProjects() ([]string, error) {
+	out, err := util.GetCommandOutput("", "gcloud", "projects", "list")
+	if err != nil {
+		return nil, err
+	}
+
+	lines := strings.Split(string(out), "\n")
+	var existingProjects []string
+	for _, l := range lines {
+		if strings.Contains(l, PROJECT_LIST_HEADER) {
+			continue
+		}
+		fields := strings.Fields(l)
+		existingProjects = append(existingProjects, fields[0])
+	}
+	return existingProjects, nil
 }
 
 func GetGoogleMachineTypes() []string {

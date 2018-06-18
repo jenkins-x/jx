@@ -31,6 +31,7 @@ func GetCommandOutput(dir string, name string, args ...string) (string, error) {
 
 // RunCommand evaluates the given command and returns the trimmed output
 func RunCommand(dir string, name string, args ...string) error {
+	os.Setenv("PATH", PathWithBinary())
 	e := exec.Command(name, args...)
 	if dir != "" {
 		e.Dir = dir

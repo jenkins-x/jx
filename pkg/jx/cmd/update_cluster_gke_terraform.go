@@ -14,6 +14,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"os"
 	"path/filepath"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -24,7 +25,9 @@ type UpdateClusterGKETerraformOptions struct {
 }
 
 type UpdateClusterGKETerraformFlags struct {
-	ClusterName string
+	ClusterName    string
+	SkipLogin      bool
+	ServiceAccount string
 }
 
 var (
@@ -62,6 +65,8 @@ func NewCmdUpdateClusterGKETerraform(f cmdutil.Factory, out io.Writer, errOut io
 	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster")
+	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "", "Use a service account to login to GCE")
 
 	return cmd
 }
@@ -112,7 +117,10 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		}
 	}
 
-	var err error
+	err := gke.Login(o.ServiceAccount, o.Flags.SkipLogin)
+	if err != nil {
+		return err
+	}
 
 	if o.Flags.ClusterName == "" {
 		log.Info("No cluster name provided\n")
@@ -131,7 +139,12 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 	clusterHome := filepath.Join(clustersHome, o.Flags.ClusterName)
 	os.MkdirAll(clusterHome, os.ModePerm)
 
-	keyPath := filepath.Join(clusterHome, fmt.Sprintf("%s.key.json", serviceAccount))
+	var keyPath string
+	if o.ServiceAccount == "" {
+		keyPath = filepath.Join(clusterHome, fmt.Sprintf("%s.key.json", serviceAccount))
+	} else {
+		keyPath = o.ServiceAccount
+	}
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
 		log.Infof("Unable to find service account key %s\n", keyPath)
