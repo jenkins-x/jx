@@ -37,15 +37,16 @@ const (
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory   cmdutil.Factory
-	Out       io.Writer
-	Err       io.Writer
-	Cmd       *cobra.Command
-	Args      []string
-	BatchMode bool
-	Verbose   bool
-	Headless  bool
-	NoBrew    bool
+	Factory        cmdutil.Factory
+	Out            io.Writer
+	Err            io.Writer
+	Cmd            *cobra.Command
+	Args           []string
+	BatchMode      bool
+	Verbose        bool
+	Headless       bool
+	NoBrew         bool
+	ServiceAccount string
 
 	// common cached clients
 	kubeClient          kubernetes.Interface
