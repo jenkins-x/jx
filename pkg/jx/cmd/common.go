@@ -110,7 +110,7 @@ func (o *CommonOptions) CreateApiExtensionsClient() (apiextensionsclientset.Inte
 
 func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 	if o.kubeClient == nil {
-		kubeClient, currentNs, err := o.KubeClient()
+		kubeClient, currentNs, err := o.Factory.CreateClient()
 		if err != nil {
 			return nil, "", err
 		}
@@ -122,7 +122,7 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 
 func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
 	if o.jxClient == nil {
-		jxClient, ns, err := o.JXClient()
+		jxClient, ns, err := o.Factory.CreateJXClient()
 		if err != nil {
 			return nil, ns, err
 		}
