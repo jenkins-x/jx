@@ -133,25 +133,6 @@ func (o *CreateClusterGKETerraformOptions) Run() error {
 	return nil
 }
 
-func (o *CreateClusterGKETerraformOptions) login() error {
-	if o.ServiceAccount != "" {
-		if _, err := os.Stat(o.ServiceAccount); os.IsNotExist(err) {
-			return errors.New("Unable to locate service account " + o.ServiceAccount)
-		}
-
-		err := o.runCommand("gcloud", "auth", "activate-service-account", "--key-file", o.ServiceAccount)
-		if err != nil {
-			return err
-		}
-	} else if !o.Flags.SkipLogin {
-		err := o.runCommand("gcloud", "auth", "login", "--brief")
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	if !o.BatchMode {
 		confirm := false
@@ -269,7 +250,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		}
 
 		keyPath = filepath.Join(clusterHome, fmt.Sprintf("%s.key.json", serviceAccount))
-		err = o.runCommand( "gcloud", "auth", "activate-service-account", "--key-file", keyPath)
+		err = o.runCommand("gcloud", "auth", "activate-service-account", "--key-file", keyPath)
 		if err != nil {
 			return err
 		}
