@@ -434,6 +434,7 @@ func (o *PreviewOptions) Run() error {
 	for _, n := range appNames {
 		url, err = kube.FindServiceURL(kubeClient, o.Namespace, n)
 		if url != "" {
+			writePreviewURL(o, url)
 			break
 		}
 	}
@@ -611,6 +612,14 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 		o.warnf("No GitInfo could be found!")
 	}
 	return nil
+}
+
+func writePreviewURL(o *PreviewOptions, url string) {
+	previewFileName := filepath.Join(o.Dir, ".previewUrl")
+	err := ioutil.WriteFile(previewFileName, []byte(url), 0644)
+	if err != nil {
+		log.Warn("Unable to write preview file")
+	}
 }
 
 func getImageName() (string, error) {
