@@ -3,10 +3,14 @@ package cmd
 import (
 	"io"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 // GetIssueOptions contains the command line options
@@ -14,7 +18,7 @@ type GetIssueOptions struct {
 	GetOptions
 
 	Dir string
-	Id  int32
+	Id  string
 }
 
 var (
@@ -53,7 +57,7 @@ func NewCmdGetIssue(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 			cmdutil.CheckErr(err)
 		},
 	}
-	cmd.Flags().Int32VarP(&options.Id, "id", "i", 0, "The issue ID")
+	cmd.Flags().StringVarP(&options.Id, "id", "i", "", "The issue ID")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The root project directory")
 
 	options.addGetFlags(cmd)
@@ -62,5 +66,76 @@ func NewCmdGetIssue(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 // Run implements this command
 func (o *GetIssueOptions) Run() error {
+	tracker, err := o.createIssueProvider(o.Dir)
+	if err != nil {
+		return errors.Wrap(err, "failed to create the issue tracker")
+	}
+
+	issue, err := tracker.GetIssue(o.Id)
+	if err != nil {
+		return errors.Wrap(err, "issue not found")
+	}
+
+	table := o.CreateTable()
+	table.AddRow("ISSUE", "STATUS", "ENVIRONMENT")
+	if !issue.IsPullRequest {
+		table.AddRow(issue.URL, *issue.State, "")
+		table.Render()
+		return nil
+	}
+
+	f := o.Factory
+	client, ns, err := f.CreateJXClient()
+	if err != nil {
+		return errors.Wrap(err, "cannot create the JX client")
+	}
+
+	apisClient, err := f.CreateApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the Kube API extensions client")
+	}
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Environment API")
+	}
+
+	envList, err := client.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return errors.Wrap(err, "cannot list the environments")
+	}
+
+	found := false
+	for _, env := range envList.Items {
+		envNs, err := kube.GetEnvironmentNamespace(client, ns, env.Name)
+		if err != nil {
+			continue
+		}
+		releaseList, err := client.JenkinsV1().Releases(envNs).List(metav1.ListOptions{})
+		if err != nil {
+			return errors.Wrap(err, "cannot list the releases")
+		}
+		rel := o.findRelease(issue.URL, releaseList.Items)
+		if rel == nil {
+			continue
+		}
+		table.AddRow(issue.URL, *issue.State, env.Name)
+		found = true
+	}
+	if !found {
+		table.AddRow(issue.URL, *issue.State, "")
+	}
+	table.Render()
+	return nil
+}
+
+func (o *GetIssueOptions) findRelease(prURL string, releases []v1.Release) *v1.Release {
+	for _, rel := range releases {
+		prs := rel.Spec.PullRequests
+		for _, pr := range prs {
+			if pr.URL == prURL {
+				return &rel
+			}
+		}
+	}
 	return nil
 }
