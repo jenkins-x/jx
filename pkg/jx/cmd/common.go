@@ -161,13 +161,26 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 	if o.jenkinsClient == nil {
-		jenkins, err := o.JenkinsClient()
+		kubeClient, ns, err := o.KubeClient()
+		if err != nil {
+			return nil, err
+		}
+
+		jenkins, err := o.Factory.CreateJenkinsClient(kubeClient, ns)
 		if err != nil {
 			return nil, err
 		}
 		o.jenkinsClient = jenkins
 	}
 	return o.jenkinsClient, nil
+}
+func (o *CommonOptions) GetJenkinsURL() (string, error) {
+	kubeClient, ns, err := o.KubeClient()
+	if err != nil {
+		return "", err
+	}
+
+	return o.Factory.GetJenkinsURL(kubeClient, ns)
 }
 
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {

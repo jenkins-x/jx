@@ -851,7 +851,7 @@ func (o *PromoteOptions) getJenkinsURL() string {
 	if o.jenkinsURL == "" {
 		o.jenkinsURL = os.Getenv("JENKINS_URL")
 	}
-	url, err := o.Factory.GetJenkinsURL()
+	url, err := o.GetJenkinsURL()
 	if err != nil {
 		o.warnf("Could not find Jenkins URL %s", err)
 	} else {
