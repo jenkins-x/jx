@@ -47,7 +47,7 @@ func NewCmdGetIssues(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 		Short:   "Display one or many issues",
 		Long:    GetIssuesLong,
 		Example: GetIssuesExample,
-		Aliases: []string{"issue", "jira"},
+		Aliases: []string{"jira"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
