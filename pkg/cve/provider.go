@@ -18,5 +18,5 @@ type CVEQuery struct {
 	TargetNamespace string
 }
 type CVEProvider interface {
-	GetImageVulnerabilityTable(jxClient *versioned.Clientset, client kubernetes.Interface, table *table.Table, query CVEQuery) error
+	GetImageVulnerabilityTable(jxClient versioned.Interface, client kubernetes.Interface, table *table.Table, query CVEQuery) error
 }

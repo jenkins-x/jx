@@ -56,6 +56,12 @@ test:
 test1:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v -run $(TEST)
 
+testbin:
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-test
+
+debugtest1: testbin
+	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-test -- -test.run $(TEST)
+
 full: $(PKGS)
 
 install: $(GO_DEPENDENCIES)

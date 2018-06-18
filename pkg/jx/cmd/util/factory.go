@@ -63,7 +63,7 @@ type Factory interface {
 
 	CreateKubeConfig() (*rest.Config, error)
 
-	CreateJXClient() (*versioned.Clientset, string, error)
+	CreateJXClient() (versioned.Interface, string, error)
 
 	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
 
@@ -308,7 +308,7 @@ func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigServi
 	return svc, nil
 }
 
-func (f *factory) CreateJXClient() (*versioned.Clientset, string, error) {
+func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err

@@ -52,7 +52,7 @@ type CommonOptions struct {
 	apiExtensionsClient apiextensionsclientset.Interface
 	currentNamespace    string
 	devNamespace        string
-	jxClient            *versioned.Clientset
+	jxClient            versioned.Interface
 	jenkinsClient       *gojenkins.Jenkins
 }
 
@@ -120,7 +120,7 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 	return o.kubeClient, o.currentNamespace, nil
 }
 
-func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
+func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	if o.jxClient == nil {
 		jxClient, ns, err := o.Factory.CreateJXClient()
 		if err != nil {
@@ -134,7 +134,7 @@ func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
 	return o.jxClient, o.currentNamespace, nil
 }
 
-func (o *CommonOptions) JXClientAndDevNamespace() (*versioned.Clientset, string, error) {
+func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, error) {
 	if o.jxClient == nil {
 		jxClient, ns, err := o.JXClient()
 		if err != nil {

@@ -113,7 +113,7 @@ func (o *DeleteEnvOptions) Run() error {
 	return nil
 }
 
-func (o *DeleteEnvOptions) deleteEnviroment(jxClient *versioned.Clientset, ns string, name string, envMap map[string]*v1.Environment) error {
+func (o *DeleteEnvOptions) deleteEnviroment(jxClient versioned.Interface, ns string, name string, envMap map[string]*v1.Environment) error {
 	//err := jxClient.JenkinsV1().Environments(ns).Delete(name, &metav1.DeleteOptions{})
 	//if err != nil {
 	//	return err

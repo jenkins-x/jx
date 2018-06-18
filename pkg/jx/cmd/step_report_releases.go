@@ -125,7 +125,7 @@ func (o *StepReportReleasesOptions) Run() error {
 	return nil
 }
 
-func (o *StepReportReleasesOptions) getPipelineReleases(jxClient *versioned.Clientset, ns string) error {
+func (o *StepReportReleasesOptions) getPipelineReleases(jxClient versioned.Interface, ns string) error {
 	releases, err := jxClient.JenkinsV1().Releases(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -140,7 +140,7 @@ func (o *StepReportReleasesOptions) getPipelineReleases(jxClient *versioned.Clie
 	return nil
 }
 
-func (o *StepReportReleasesOptions) watchPipelineReleases(jxClient *versioned.Clientset, ns string) error {
+func (o *StepReportReleasesOptions) watchPipelineReleases(jxClient versioned.Interface, ns string) error {
 
 	release := &v1.Release{}
 	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "releases", metav1.NamespaceAll, fields.Everything())
