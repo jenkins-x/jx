@@ -25,8 +25,6 @@ const (
 // StepHelmReleaseOptions contains the command line flags
 type StepHelmReleaseOptions struct {
 	StepHelmOptions
-
-	DropOnFailure bool
 }
 
 var (
@@ -65,42 +63,13 @@ func NewCmdStepHelmRelease(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			cmdutil.CheckErr(err)
 		},
 	}
+	options.addStepHelmFlags(cmd)
 	return cmd
 }
 
 func (o *StepHelmReleaseOptions) Run() error {
-	dir := ""
-	path := filepath.Join(dir, "requirements.lock")
-	exists, err := util.FileExists(path)
-	if err != nil {
-		return err
-	}
-	if exists {
-		err = os.Remove(path)
-		if err != nil {
-			return err
-		}
-	}
-	helmBinary, err := o.TeamHelmBin()
-	if err != nil {
-		return err
-	}
-
-	err = o.runCommandVerboseAt(dir, helmBinary, "dependency", "build")
-	if err != nil {
-		return err
-	}
-
-	err = o.runCommandVerboseAt(dir, helmBinary, "lint")
-	if err != nil {
-		return err
-	}
-
-	if helmBinary == "helm" {
-		err = o.runCommandVerboseAt(dir, helmBinary, "init", "--client-only")
-	} else {
-		err = o.runCommandVerboseAt(dir, helmBinary, "init")
-	}
+	dir := o.Dir
+	helmBinary, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
 	if err != nil {
 		return err
 	}
@@ -123,7 +92,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 		return fmt.Errorf("Could not find version in chart %s", chartFile)
 	}
 	tarball := fmt.Sprintf("%s-%s.tgz", name, version)
-	exists, err = util.FileExists(tarball)
+	exists, err := util.FileExists(tarball)
 	if err != nil {
 		return err
 	}
@@ -132,11 +101,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	}
 	defer os.Remove(tarball)
 
-	chartRepo := os.Getenv("CHART_REPOSITORY")
-	if chartRepo == "" {
-		chartRepo = defaultChartRepo
-		o.warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
-	}
+	chartRepo := o.releaseChartMuseumUrl()
 
 	userName := os.Getenv("CHARTMUSEUM_CREDS_USR")
 	password := os.Getenv("CHARTMUSEUM_CREDS_PSW")

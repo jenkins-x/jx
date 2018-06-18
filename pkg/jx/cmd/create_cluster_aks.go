@@ -5,8 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"path/filepath"
-
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/aks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
@@ -269,77 +267,10 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	getCredentials := []string{"aks", "get-credentials", "--resource-group", resourceName, "--name", clusterName}
 
 	err = o.runCommand("az", getCredentials...)
-
 	if err != nil {
 		return err
-	}
-
-	/**
-	 * create a cluster admin role
-	 */
-
-	err = o.createClusterAdmin()
-	if err != nil {
-		msg := err.Error()
-		if strings.Contains(msg, "AlreadyExists") {
-			log.Success("role cluster-admin already exists for the cluster")
-
-		} else {
-			return err
-		}
-	} else {
-		log.Success("created role cluster-admin")
 	}
 
 	log.Info("Initialising cluster ...\n")
 	return o.initAndInstall(AKS)
-}
-
-func (o *CreateClusterAKSOptions) createClusterAdmin() error {
-
-	content := []byte(
-		`apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  creationTimestamp: null
-  name: cluster-admin
-  annotations:
-    rbac.authorization.kubernetes.io/autoupdate: "true"
-rules:
-- apiGroups:
-  - '*'
-  resources:
-  - '*'
-  verbs:
-  - '*'
-- nonResourceURLs:
-  - '*'
-  verbs:
-  - '*'`)
-
-	fileName := randomdata.SillyName() + ".yml"
-	fileName = filepath.Join(os.TempDir(), fileName)
-	tmpfile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		return err
-	}
-
-	defer os.Remove(tmpfile.Name()) // clean up
-
-	if _, err := tmpfile.Write(content); err != nil {
-		return err
-	}
-	if err := tmpfile.Close(); err != nil {
-		return err
-	}
-
-	err = o.runCommand("kubectl", "create", "clusterrolebinding", "kube-system-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
-	if err != nil {
-		return err
-	}
-	err = o.runCommand("kubectl", "create", "-f", tmpfile.Name())
-	if err != nil {
-		return err
-	}
-	return nil
 }
