@@ -232,7 +232,7 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		return "", err
 	}
 
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return "", err
 	}

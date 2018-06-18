@@ -177,7 +177,6 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 }
 
 func (o *ImportOptions) Run() error {
-
 	if o.ListDraftPacks {
 		packs, err := allDraftPacks()
 		if err != nil {

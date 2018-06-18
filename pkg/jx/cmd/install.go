@@ -213,8 +213,7 @@ func (options *InstallOptions) Run() error {
 
 	ns := options.Flags.Namespace
 	if ns == "" {
-		f := options.Factory
-		_, ns, _ = f.CreateClient()
+		_, ns, err = options.KubeClient()
 		if err != nil {
 			return err
 		}
@@ -674,8 +673,7 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 }
 
 func (o *InstallOptions) waitForInstallToBeReady(ns string) error {
-	f := o.Factory
-	client, _, err := f.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

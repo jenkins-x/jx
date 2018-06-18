@@ -270,8 +270,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 }
 
 func (o *CommonOptions) findService(name string) (string, error) {
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
@@ -308,12 +307,11 @@ func (o *CommonOptions) findService(name string) (string, error) {
 }
 
 func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error) {
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
-	jxClient, _, err := f.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return "", err
 	}
@@ -339,8 +337,7 @@ func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error)
 }
 
 func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, error) {
-	f := o.Factory
-	client, curNs, err := f.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}

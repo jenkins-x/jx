@@ -177,8 +177,7 @@ func (o *InitOptions) Run() error {
 }
 
 func (o *InitOptions) enableClusterAdminRole() error {
-	f := o.Factory
-	client, _, err := f.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -232,8 +231,7 @@ func (o *InitOptions) initHelm() error {
 
 	if !o.Flags.SkipTiller {
 
-		f := o.Factory
-		client, curNs, err := f.CreateClient()
+		client, curNs, err := o.KubeClient()
 		if err != nil {
 			return err
 		}
@@ -405,8 +403,7 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 }
 
 func (o *InitOptions) initIngress() error {
-	f := o.Factory
-	client, _, err := f.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -514,7 +511,7 @@ func (o *InitOptions) initIngress() error {
 		externalIP := o.Flags.ExternalIP
 		if externalIP == "" && o.Flags.OnPremise {
 			// lets find the kubernetes master IP
-			config, err := f.CreateKubeConfig()
+			config, err := o.Factory.CreateKubeConfig()
 			if err != nil {
 				return err
 			}

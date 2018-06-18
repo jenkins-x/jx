@@ -66,8 +66,7 @@ func (o *GetURLOptions) addGetUrlFlags(cmd *cobra.Command) {
 
 // Run implements this command
 func (o *GetURLOptions) Run() error {
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
