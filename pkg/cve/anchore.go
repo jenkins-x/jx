@@ -71,7 +71,7 @@ func NewAnchoreProvider(server *auth.AuthServer, user *auth.UserAuth) (CVEProvid
 	return &provider, nil
 }
 
-func (a AnchoreProvider) GetImageVulnerabilityTable(jxClient *versioned.Clientset, client kubernetes.Interface, table *table.Table, query CVEQuery) error {
+func (a AnchoreProvider) GetImageVulnerabilityTable(jxClient versioned.Interface, client kubernetes.Interface, table *table.Table, query CVEQuery) error {
 
 	var err error
 	var vList VulnerabilityList

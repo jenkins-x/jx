@@ -116,6 +116,24 @@ If you want to debug using `jx` with `stdin` to test out terminal interaction, y
 dlv --listen=:2345 --headless=true --api-version=2 attach SomePID
 ```
 
+### Debugging a unit test
+
+You can run a single unit test via
+
+```shell
+export TEST="TestSomething"
+make test1
+```
+
+You can then start a Delve debug session on a unit test via:
+
+```shell
+export TEST="TestSomething"
+make debugtest1
+```
+
+Then set breakpoints and debug in your IDE like in the above debugging.
+
 ### Using a helper script
 
 If you create a bash file called `jxDebug` as the following (replacing `SomePid` with the actual `pid`):

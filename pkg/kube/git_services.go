@@ -17,7 +17,7 @@ import (
 )
 
 // EnsureGitServiceExistsForHost ensures that there is a GitService CRD for the given host and kind
-func EnsureGitServiceExistsForHost(jxClient *versioned.Clientset, devNs string, kind string, name string, gitUrl string, out io.Writer) error {
+func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, kind string, name string, gitUrl string, out io.Writer) error {
 	if kind == "" || kind == "github" || gitUrl == "" {
 		return nil
 	}
@@ -83,7 +83,7 @@ func EnsureGitServiceExistsForHost(jxClient *versioned.Clientset, devNs string, 
 }
 
 // GetGitServiceKind returns the kind of the given host if one can be found or ""
-func GetGitServiceKind(jxClient *versioned.Clientset, kubeClient kubernetes.Interface, devNs string, gitServiceUrl string) (string, error) {
+func GetGitServiceKind(jxClient versioned.Interface, kubeClient kubernetes.Interface, devNs string, gitServiceUrl string) (string, error) {
 	answer := gits.SaasGitKind(gitServiceUrl)
 	if answer != "" {
 		return answer, nil

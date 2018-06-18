@@ -12,11 +12,11 @@ import (
 )
 
 type UserDetailService struct {
-	jxClient  *versioned.Clientset
+	jxClient  versioned.Interface
 	namespace string
 }
 
-func NewUserDetailService(jxClient *versioned.Clientset, namespace string) UserDetailService {
+func NewUserDetailService(jxClient versioned.Interface, namespace string) UserDetailService {
 	return UserDetailService{
 		jxClient:  jxClient,
 		namespace: namespace,

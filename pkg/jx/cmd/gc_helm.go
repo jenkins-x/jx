@@ -75,8 +75,7 @@ func NewCmdGCHelm(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 }
 
 func (o *GCHelmOptions) Run() error {
-	f := o.Factory
-	kubeClient, _, err := f.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

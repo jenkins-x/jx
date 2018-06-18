@@ -62,8 +62,7 @@ func NewCmdCloudBees(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 }
 
 func (o *CloudBeesOptions) Run() error {
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

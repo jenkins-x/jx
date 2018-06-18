@@ -106,7 +106,7 @@ func (o *CreateQuickstartLocationOptions) Run() error {
 	}
 
 	if o.GitKind == "" {
-		authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+		authConfigSvc, err := o.CreateGitAuthConfigService()
 		if err != nil {
 			return err
 		}

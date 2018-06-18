@@ -17,7 +17,7 @@ const (
 	LabelEnvironment = "env"
 )
 
-func EnsureEnvironmentNamespaceSetup(kubeClient kubernetes.Interface, jxClient *versioned.Clientset, env *v1.Environment, ns string) error {
+func EnsureEnvironmentNamespaceSetup(kubeClient kubernetes.Interface, jxClient versioned.Interface, env *v1.Environment, ns string) error {
 	// lets create the namespace if we are on the same cluster
 	spec := &env.Spec
 	if spec.Cluster == "" && spec.Namespace != "" {
@@ -50,7 +50,7 @@ func EnsureEnvironmentNamespaceSetup(kubeClient kubernetes.Interface, jxClient *
 }
 
 // EnsureDevEnvironmentSetup ensures that the Environment is created in the given namespace
-func EnsureDevEnvironmentSetup(jxClient *versioned.Clientset, ns string) (*v1.Environment, error) {
+func EnsureDevEnvironmentSetup(jxClient versioned.Interface, ns string) (*v1.Environment, error) {
 	// lets ensure there is a dev Environment setup so that we can easily switch between all the environments
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(LabelValueDevEnvironment, metav1.GetOptions{})
 	if err != nil {
@@ -80,7 +80,7 @@ func EnsureDevEnvironmentSetup(jxClient *versioned.Clientset, ns string) (*v1.En
 }
 
 // EnsureEditEnvironmentSetup ensures that the Environment is created in the given namespace
-func EnsureEditEnvironmentSetup(kubeClient kubernetes.Interface, jxClient *versioned.Clientset, ns string, username string) (*v1.Environment, error) {
+func EnsureEditEnvironmentSetup(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string, username string) (*v1.Environment, error) {
 	// lets ensure there is a dev Environment setup so that we can easily switch between all the environments
 	envList, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {

@@ -344,10 +344,16 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	if err != nil {
 		return releaseInfo, err
 	}
+	settings, err := o.TeamSettings()
+	if err != nil {
+		return releaseInfo, err
+	}
+	helmBin := settings.HelmBinary
+
 	// lets do a helm update to ensure we can find the latest version
 	if !o.NoHelmUpdate {
 		o.Printf("Updating the helm repositories to ensure we can find the latest versions...")
-		err = o.runCommand("helm", "repo", "update")
+		err = o.runCommand(helmBin, "repo", "update")
 		if err != nil {
 			return releaseInfo, err
 		}
@@ -363,9 +369,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	promoteKey.OnPromoteUpdate(o.Activities, startPromote)
 
 	if version != "" {
-		err = o.runCommand("helm", "upgrade", "--install", "--wait", "--namespace", targetNS, "--version", version, releaseName, fullAppName)
+		err = o.runCommand(helmBin, "upgrade", "--install", "--wait", "--namespace", targetNS, "--version", version, releaseName, fullAppName)
 	} else {
-		err = o.runCommand("helm", "upgrade", "--install", "--wait", "--namespace", targetNS, releaseName, fullAppName)
+		err = o.runCommand(helmBin, "upgrade", "--install", "--wait", "--namespace", targetNS, releaseName, fullAppName)
 	}
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
@@ -660,7 +666,11 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 }
 
 func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
-	output, err := o.getCommandOutput("", "helm", "search", app, "--versions")
+	helmBin, err := o.TeamHelmBin()
+	if err != nil {
+		return "", err
+	}
+	output, err := o.getCommandOutput("", helmBin, "search", app, "--versions")
 	if err != nil {
 		return "", err
 	}
@@ -706,14 +716,13 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 	if !exists {
 		o.Printf("No helm home dir at %s so lets initialise helm client\n", helmHomeDir)
 
-		err = o.runCommand("helm", "init", "--client-only")
+		_, err = o.helmInit("")
 		if err != nil {
 			return err
 		}
 	}
 
-	f := o.Factory
-	_, ns, _ := f.CreateClient()
+	_, ns, _ := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -822,7 +831,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 func (o *PromoteOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
 	log.Infof("pipeline %s\n", pipeline)
 	build := ""
-	jenkins, err := o.Factory.CreateJenkinsClient()
+	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return pipeline, build, err
 	}
@@ -874,7 +883,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		o.warnf("No GitInfo discovered so cannot comment on issues that they are now in %s\n", envName)
 		return nil
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}

@@ -73,7 +73,6 @@ func GitClone(url string, directory string) error {
 
 // GitCloneOrPull will clone the given git URL or pull if it alreasy exists
 func GitCloneOrPull(url string, directory string) error {
-
 	empty, err := util.IsEmpty(directory)
 	if err != nil {
 		return err
@@ -98,6 +97,51 @@ func GitCloneOrPull(url string, directory string) error {
 		return fmt.Errorf("failed to git clone to %s due to %s", directory, err)
 	}
 	return nil
+}
+
+// CheckoutRemoteBranch checks out the given remote tracking branch
+func CheckoutRemoteBranch(dir string, branch string) error {
+	remoteBranch := "origin/" + branch
+	remoteBranches, err := GitGetRemoteBranches(dir)
+	if err != nil {
+		return err
+	}
+	if util.StringArrayIndex(remoteBranches, remoteBranch) < 0 {
+		return util.RunCommand(dir, "git", "checkout", "-t", remoteBranch)
+	}
+	cur, err := GitGetBranch(dir)
+	if err != nil {
+		return err
+	}
+	if cur == branch {
+		return nil
+	}
+	return GitCheckout(dir, branch)
+}
+
+// GitGetRemoteBranches returns the remote branches
+func GitGetRemoteBranches(dir string) ([]string, error) {
+	answer := []string{}
+	text, err := util.GetCommandOutput(dir, "git", "branch", "-r")
+	if err != nil {
+		return answer, err
+	}
+	lines := strings.Split(text, "\n")
+	for _, line := range lines {
+		columns := strings.Split(line, " ")
+		for _, col := range columns {
+			if col != "" {
+				answer = append(answer, col)
+				break
+			}
+		}
+	}
+	return answer, nil
+}
+
+// GitCheckout checks out the given branch
+func GitCheckout(dir string, branch string) error {
+	return util.RunCommand(dir, "git", "checkout", branch)
 }
 
 func GitInit(dir string) error {

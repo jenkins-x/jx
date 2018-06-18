@@ -27,7 +27,7 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, kubeClient kubernetes.Interface, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (gits.GitProvider, error) {
+func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	name := data.Name
 	createMode := name == ""
@@ -571,7 +571,7 @@ func replaceMakeVariable(lines []string, name string, value string) error {
 }
 
 // GetEnvironmentNames returns the sorted list of environment names
-func GetEnvironmentNames(jxClient *versioned.Clientset, ns string) ([]string, error) {
+func GetEnvironmentNames(jxClient versioned.Interface, ns string) ([]string, error) {
 	envNames := []string{}
 	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -593,7 +593,7 @@ func IsPreviewEnvironment(env *v1.Environment) bool {
 }
 
 // GetFilteredEnvironmentNames returns the sorted list of environment names
-func GetFilteredEnvironmentNames(jxClient *versioned.Clientset, ns string, fn func(environment *v1.Environment) bool) ([]string, error) {
+func GetFilteredEnvironmentNames(jxClient versioned.Interface, ns string, fn func(environment *v1.Environment) bool) ([]string, error) {
 	envNames := []string{}
 	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -611,7 +611,7 @@ func GetFilteredEnvironmentNames(jxClient *versioned.Clientset, ns string, fn fu
 }
 
 // GetOrderedEnvironments returns a map of the environments along with the correctly ordered  names
-func GetOrderedEnvironments(jxClient *versioned.Clientset, ns string) (map[string]*v1.Environment, []string, error) {
+func GetOrderedEnvironments(jxClient versioned.Interface, ns string) (map[string]*v1.Environment, []string, error) {
 	m := map[string]*v1.Environment{}
 
 	envNames := []string{}
@@ -632,7 +632,7 @@ func GetOrderedEnvironments(jxClient *versioned.Clientset, ns string) (map[strin
 }
 
 // GetEnvironments returns a map of the environments along with a sorted list of names
-func GetEnvironments(jxClient *versioned.Clientset, ns string) (map[string]*v1.Environment, []string, error) {
+func GetEnvironments(jxClient versioned.Interface, ns string) (map[string]*v1.Environment, []string, error) {
 	m := map[string]*v1.Environment{}
 
 	envNames := []string{}
@@ -653,7 +653,7 @@ func GetEnvironments(jxClient *versioned.Clientset, ns string) (map[string]*v1.E
 }
 
 // GetEnvironments returns the namespace name for a given environment
-func GetEnvironmentNamespace(jxClient *versioned.Clientset, ns, environment string) (string, error) {
+func GetEnvironmentNamespace(jxClient versioned.Interface, ns, environment string) (string, error) {
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(environment, metav1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -665,7 +665,7 @@ func GetEnvironmentNamespace(jxClient *versioned.Clientset, ns, environment stri
 }
 
 // GetEditEnvironmentNamespace returns the namespace of the current users edit environment
-func GetEditEnvironmentNamespace(jxClient *versioned.Clientset, ns string) (string, error) {
+func GetEditEnvironmentNamespace(jxClient versioned.Interface, ns string) (string, error) {
 	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return "", err

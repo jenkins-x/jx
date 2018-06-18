@@ -237,8 +237,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 
 	ns := o.Flags.Namespace
 	if ns == "" {
-		f := o.Factory
-		_, ns, _ = f.CreateClient()
+		_, ns, _ = o.KubeClient()
 		if err != nil {
 			return err
 		}

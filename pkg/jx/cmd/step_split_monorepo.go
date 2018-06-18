@@ -311,7 +311,7 @@ version: 0.0.1-SNAPSHOT
 }
 
 func (o *CommonOptions) createGitProviderForURL(gitKind string, gitUrl string) (gits.GitProvider, error) {
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}

@@ -91,7 +91,7 @@ func (o *CreateGitServerOptions) Run() error {
 	if gitUrl == "" {
 		return missingGitServerArguments()
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}

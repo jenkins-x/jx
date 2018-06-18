@@ -68,17 +68,16 @@ func NewCmdEnvironment(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 }
 
 func (o *EnvironmentOptions) Run() error {
-	f := o.Factory
-	kubeClient, currentNs, err := f.CreateClient()
+	kubeClient, currentNs, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	jxClient, _, err := f.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return err
 	}
 
-	apisClient, err := f.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}

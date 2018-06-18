@@ -75,7 +75,7 @@ func (o *GetEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.Factory.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

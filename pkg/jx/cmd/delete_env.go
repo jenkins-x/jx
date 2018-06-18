@@ -63,16 +63,15 @@ func NewCmdDeleteEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 
 // Run implements the command
 func (o *DeleteEnvOptions) Run() error {
-	f := o.Factory
-	jxClient, currentNs, err := f.CreateJXClient()
+	jxClient, currentNs, err := o.JXClient()
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := f.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	apisClient, err := f.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -114,7 +113,7 @@ func (o *DeleteEnvOptions) Run() error {
 	return nil
 }
 
-func (o *DeleteEnvOptions) deleteEnviroment(jxClient *versioned.Clientset, ns string, name string, envMap map[string]*v1.Environment) error {
+func (o *DeleteEnvOptions) deleteEnviroment(jxClient versioned.Interface, ns string, name string, envMap map[string]*v1.Environment) error {
 	//err := jxClient.JenkinsV1().Environments(ns).Delete(name, &metav1.DeleteOptions{})
 	//if err != nil {
 	//	return err

@@ -291,8 +291,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	ns := o.InstallOptions.Flags.Namespace
 	if ns == "" {
-		f := o.Factory
-		_, ns, _ = f.CreateClient()
+		_, ns, _ = o.KubeClient()
 		if err != nil {
 			return err
 		}

@@ -81,7 +81,7 @@ func NewCmdRsh(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 func (o *RshOptions) Run() error {
 	args := o.Args
 
-	client, curNs, err := o.Factory.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

@@ -35,7 +35,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return gitInfo, nil, nil, err
 	}
@@ -52,7 +52,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 }
 
 func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) (string, error) {
-	client, curNs, err := o.Factory.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
@@ -232,7 +232,7 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		return "", err
 	}
 
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return "", err
 	}
@@ -266,7 +266,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +279,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 
 // gitProviderForURL returns a GitProvider for the given git server URL
 func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}

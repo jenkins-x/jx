@@ -85,8 +85,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 	if o.IP == "" {
 		return fmt.Errorf("Could not discover a node IP address")
 	}
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

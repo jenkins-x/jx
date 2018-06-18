@@ -85,7 +85,7 @@ func (o *DeleteAddonOptions) cleanupServiceLink(addonName string) error {
 		// No cleanup is required if no service link is associated with the Addon
 		return nil
 	}
-	client, _, err := o.Factory.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

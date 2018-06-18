@@ -84,7 +84,7 @@ func (o *GetActivityOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.Factory.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (o *GetActivityOptions) addTableRow(table *tbl.Table, activity *v1.Pipeline
 	return false
 }
 
-func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient *versioned.Clientset, ns string) error {
+func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient versioned.Interface, ns string) error {
 	yamlSpecMap := map[string]string{}
 	activity := &v1.PipelineActivity{}
 	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "pipelineactivities", ns, fields.Everything())

@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/tests"
 	corev1 "k8s.io/api/core/v1"
@@ -24,6 +26,15 @@ func configureTestOptions(o *CommonOptions) {
 		},
 	})
 	o.currentNamespace = "jx"
+
+	o.jxClient = v1fake.NewSimpleClientset(&v1.Environment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "dev",
+			Labels: map[string]string{
+				"tag": "",
+			},
+		},
+	})
 
 	o.apiExtensionsClient = apifake.NewSimpleClientset()
 }

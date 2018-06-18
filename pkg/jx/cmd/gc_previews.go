@@ -94,7 +94,7 @@ func (o *GCPreviewsOptions) Run() error {
 				return err
 			}
 			// we need pull request info to include
-			authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+			authConfigSvc, err := o.CreateGitAuthConfigService()
 			if err != nil {
 				return err
 			}

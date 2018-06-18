@@ -23,7 +23,7 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	password := "admin"
 
 	// lets check if we have a local helm repository
-	client, _, err := o.Factory.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -233,7 +233,7 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 		if requirements != nil {
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
-				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo {
+				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo && !strings.HasPrefix(repo, "file:") {
 					repoCounter++
 					// TODO we could provide some mechanism to customise the names of repos somehow?
 					err = o.addHelmBinaryRepoIfMissing(helmBinary, repo, "repo"+strconv.Itoa(repoCounter))
@@ -267,6 +267,26 @@ func (o *CommonOptions) getInstalledChartRepos(helmBinary string) (map[string]st
 		}
 	}
 	return installedChartRepos, nil
+}
+
+func (o *CommonOptions) helmInit(dir string) (string, error) {
+	helmBinary, err := o.TeamHelmBin()
+	if err != nil {
+		return helmBinary, err
+	}
+	o.Printf("Using the helm binary: %s for generating the chart release\n", util.ColorInfo(helmBinary))
+
+	err = o.runCommandVerboseAt(dir, helmBinary, "version")
+	if err != nil {
+		return helmBinary, err
+	}
+
+	if helmBinary == "helm" {
+		err = o.runCommandVerboseAt(dir, helmBinary, "init", "--client-only")
+	} else {
+		err = o.runCommandVerboseAt(dir, helmBinary, "init")
+	}
+	return helmBinary, err
 }
 
 func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[string]string) (string, error) {

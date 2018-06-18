@@ -1,4 +1,4 @@
-package util
+package cmd
 
 import (
 	"testing"
@@ -32,11 +32,12 @@ func TestAuthLoadFromPipelineGitCredentials(t *testing.T) {
 		secretList.Items = append(secretList.Items, testkube.CreateTestPipelineGitSecret(td.Kind, td.Name, td.URL, td.User, td.Password))
 	}
 
-	f := &factory{}
+	o := &CommonOptions{}
+	configureTestOptions(o)
 
 	fileName := "doesNotExist.yaml"
 
-	authConfSvc, err := f.createGitAuthConfigServiceFromSecrets(fileName, secretList, true)
+	authConfSvc, err := o.createGitAuthConfigServiceFromSecrets(fileName, secretList, true)
 	assert.Nil(t, err, "Could not load Git Auth Config Service: %s", err)
 
 	config := authConfSvc.Config()

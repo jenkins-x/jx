@@ -139,7 +139,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 }
 
 func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
-	client, curNs, err := o.Factory.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

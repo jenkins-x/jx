@@ -62,8 +62,13 @@ func (o *VersionOptions) Run() error {
 	table.AddRow("NAME", "VERSION")
 	table.AddRow("jx", info(version.GetVersion()))
 
+	helmBin, err := o.TeamHelmBin()
+	if err != nil {
+		return err
+	}
+
 	// Jenkins X version
-	output, err := o.getCommandOutput("", "helm", "list")
+	output, err := o.getCommandOutput("", helmBin, "list")
 	if err != nil {
 		o.warnf("Failed to find helm installs: %s\n", err)
 	} else {

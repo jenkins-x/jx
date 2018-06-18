@@ -200,7 +200,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
-	client, _, err := options.Factory.CreateClient()
+	client, _, err := options.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -213,8 +213,7 @@ func (options *InstallOptions) Run() error {
 
 	ns := options.Flags.Namespace
 	if ns == "" {
-		f := options.Factory
-		_, ns, _ = f.CreateClient()
+		_, ns, err = options.KubeClient()
 		if err != nil {
 			return err
 		}
@@ -337,7 +336,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// lets add any GitHub Enterprise servers
-	gitAuthCfg, err := options.Factory.CreateGitAuthConfigService()
+	gitAuthCfg, err := options.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -674,8 +673,7 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 }
 
 func (o *InstallOptions) waitForInstallToBeReady(ns string) error {
-	f := o.Factory
-	client, _, err := f.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -722,7 +720,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 
 func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 	var userAuth *auth.UserAuth
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return userAuth, err
 	}

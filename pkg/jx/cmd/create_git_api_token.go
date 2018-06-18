@@ -97,7 +97,7 @@ func (o *CreateGitTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 }
 
 func (o *CreateGitTokenOptions) updateGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
-	client, ns, err := o.Factory.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

@@ -52,7 +52,7 @@ type CommonOptions struct {
 	apiExtensionsClient apiextensionsclientset.Interface
 	currentNamespace    string
 	devNamespace        string
-	jxClient            *versioned.Clientset
+	jxClient            versioned.Interface
 	jenkinsClient       *gojenkins.Jenkins
 }
 
@@ -120,7 +120,7 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 	return o.kubeClient, o.currentNamespace, nil
 }
 
-func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
+func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	if o.jxClient == nil {
 		jxClient, ns, err := o.Factory.CreateJXClient()
 		if err != nil {
@@ -134,9 +134,9 @@ func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
 	return o.jxClient, o.currentNamespace, nil
 }
 
-func (o *CommonOptions) JXClientAndDevNamespace() (*versioned.Clientset, string, error) {
+func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, error) {
 	if o.jxClient == nil {
-		jxClient, ns, err := o.Factory.CreateJXClient()
+		jxClient, ns, err := o.JXClient()
 		if err != nil {
 			return nil, ns, err
 		}
@@ -161,7 +161,7 @@ func (o *CommonOptions) JXClientAndDevNamespace() (*versioned.Clientset, string,
 
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 	if o.jenkinsClient == nil {
-		jenkins, err := o.Factory.CreateJenkinsClient()
+		jenkins, err := o.JenkinsClient()
 		if err != nil {
 			return nil, err
 		}
@@ -270,8 +270,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 }
 
 func (o *CommonOptions) findService(name string) (string, error) {
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
@@ -308,12 +307,11 @@ func (o *CommonOptions) findService(name string) (string, error) {
 }
 
 func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error) {
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
-	jxClient, _, err := f.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return "", err
 	}
@@ -339,8 +337,7 @@ func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error)
 }
 
 func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, error) {
-	f := o.Factory
-	client, curNs, err := f.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
