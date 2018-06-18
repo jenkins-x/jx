@@ -269,6 +269,26 @@ func (o *CommonOptions) getInstalledChartRepos(helmBinary string) (map[string]st
 	return installedChartRepos, nil
 }
 
+func (o *CommonOptions) helmInit(dir string) (string, error) {
+	helmBinary, err := o.TeamHelmBin()
+	if err != nil {
+		return helmBinary, err
+	}
+	o.Printf("Using the helm binary: %s for generating the chart release\n", util.ColorInfo(helmBinary))
+
+	err = o.runCommandVerboseAt(dir, helmBinary, "version")
+	if err != nil {
+		return helmBinary, err
+	}
+
+	if helmBinary == "helm" {
+		err = o.runCommandVerboseAt(dir, helmBinary, "init", "--client-only")
+	} else {
+		err = o.runCommandVerboseAt(dir, helmBinary, "init")
+	}
+	return helmBinary, err
+}
+
 func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[string]string) (string, error) {
 	helmBinary := ""
 	path := filepath.Join(dir, "requirements.lock")
