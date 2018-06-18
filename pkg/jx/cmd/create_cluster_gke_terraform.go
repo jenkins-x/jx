@@ -166,7 +166,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		}
 	}
 
-	err := o.login()
+	err := gke.Login(o.ServiceAccount, o.Flags.SkipLogin)
 	if err != nil {
 		return err
 	}
@@ -250,6 +250,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	if err != nil {
 		return err
 	}
+
 	jxHome := filepath.Join(user.HomeDir, ".jx")
 	clustersHome := filepath.Join(jxHome, "clusters")
 	clusterHome := filepath.Join(clustersHome, o.Flags.ClusterName)
@@ -262,89 +263,13 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		serviceAccount := fmt.Sprintf("jx-%s", o.Flags.ClusterName)
 		log.Infof("Checking for service account %s\n", serviceAccount)
 
-		args := []string{"iam",
-			"service-accounts",
-			"list",
-			"--filter",
-			serviceAccount}
-
-		output, err := o.getCommandOutput("", "gcloud", args...)
+		keyPath, err = gke.GetOrCreateServiceAccount(serviceAccount, projectId, clusterHome)
 		if err != nil {
 			return err
 		}
 
-		if output == "Listed 0 items." {
-			log.Infof("Unable to find service account %s, checking if we have enough permission to create\n", serviceAccount)
-
-			// if it doesn't check to see if we have permissions to create (assign roles) to a service account
-			args = []string{"iam",
-				"list-testable-permissions",
-				fmt.Sprintf("//cloudresourcemanager.googleapis.com/projects/%s", projectId),
-				"--filter",
-				"resourcemanager.projects.setIamPolicy"}
-
-			output, err = o.getCommandOutput("", "gcloud", args...)
-			if err != nil {
-				return err
-			}
-
-			if strings.Contains(output, "resourcemanager.projects.setIamPolicy") {
-				// create service
-				log.Infof("Creating service account %s\n", serviceAccount)
-				args = []string{"iam",
-					"service-accounts",
-					"create",
-					serviceAccount}
-
-				err = o.runCommand("gcloud", args...)
-				if err != nil {
-					return err
-				}
-
-				// assign roles to service account
-				for _, role := range requiredServiceAccountRoles {
-					log.Infof("Assigning role %s\n", role)
-					args = []string{"projects",
-						"add-iam-policy-binding",
-						projectId,
-						"--member",
-						fmt.Sprintf("serviceAccount:%s@%s.iam.gserviceaccount.com", serviceAccount, projectId),
-						"--role",
-						role}
-
-					err = o.runCommand("gcloud", args...)
-					if err != nil {
-						return err
-					}
-				}
-
-			} else {
-				return errors.New("User does not have the required role 'resourcemanager.projects.setIamPolicy' to configure a service account")
-			}
-
-		} else {
-			log.Info("Service Account exists\n")
-		}
-
 		keyPath = filepath.Join(clusterHome, fmt.Sprintf("%s.key.json", serviceAccount))
-
-		if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-			log.Info("Downloading service account key\n")
-			args = []string{"iam",
-				"service-accounts",
-				"keys",
-				"create",
-				keyPath,
-				"--iam-account",
-				fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccount, projectId)}
-
-			err = o.runCommand("gcloud", args...)
-			if err != nil {
-				return err
-			}
-		}
-
-		output, err = o.getCommandOutput("", "gcloud", "auth", "activate-service-account", "--key-file", keyPath)
+		err = o.runCommand( "gcloud", "auth", "activate-service-account", "--key-file", keyPath)
 		if err != nil {
 			return err
 		}
@@ -487,19 +412,9 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 
 // asks to chose from existing projects or optionally creates one if none exist
 func (o *CreateClusterGKETerraformOptions) getGoogleProjectId() (string, error) {
-	out, err := o.getCommandOutput("", "gcloud", "projects", "list")
+	existingProjects, err := gke.GetGoogleProjects()
 	if err != nil {
 		return "", err
-	}
-
-	lines := strings.Split(string(out), "\n")
-	var existingProjects []string
-	for _, l := range lines {
-		if strings.Contains(l, CLUSTER_LIST_HEADER) {
-			continue
-		}
-		fields := strings.Fields(l)
-		existingProjects = append(existingProjects, fields[0])
 	}
 
 	var projectId string
