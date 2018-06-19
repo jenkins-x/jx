@@ -344,7 +344,7 @@ This blog outlines the changes on the project from ` + fromDate + ` to ` + toDat
 
 ` + state.Buffer.String() + `
 
-This blog post was generated via the [jx step blog](http://jenkins-x.io/commands/jx_step_blog/) command from [Jenkins X](http://jenkins-x.io/).
+This blog post was generated via the [jx step blog](https://jenkins-x.io/commands/jx_step_blog/) command from [Jenkins X](https://jenkins-x.io/).
 `
 
 		}

@@ -25,7 +25,7 @@ var (
 	previewLong = templates.LongDesc(`
 		Creates or updates a Preview Environment for the given Pull Request or Branch.
 
-		For more documentation on Preview Environments see: [http://jenkins-x.io/about/features/#preview-environments](http://jenkins-x.io/about/features/#preview-environments)
+		For more documentation on Preview Environments see: [https://jenkins-x.io/about/features/#preview-environments](https://jenkins-x.io/about/features/#preview-environments)
 
 `)
 

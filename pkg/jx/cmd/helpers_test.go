@@ -11,7 +11,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func configureTestOptions(o *CommonOptions) {
+// ConfigureTestOptions lets configure the options for use in tests
+// using fake APIs to k8s cluster
+func ConfigureTestOptions(o *CommonOptions) {
 	o.Out = tests.Output()
 	o.BatchMode = true
 	o.Factory = cmdutil.NewFactory()

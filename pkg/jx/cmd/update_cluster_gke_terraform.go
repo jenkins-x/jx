@@ -7,6 +7,7 @@ import (
 
 	os_user "os/user"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -14,7 +15,6 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"os"
 	"path/filepath"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 )
 
 // CreateClusterOptions the flags for running create cluster

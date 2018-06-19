@@ -97,7 +97,7 @@ var (
 
 	    You can specify the git URL as an argument.
 	    
-		For more documentation see: [http://jenkins-x.io/developing/import/](http://jenkins-x.io/developing/import/)
+		For more documentation see: [https://jenkins-x.io/developing/import/](https://jenkins-x.io/developing/import/)
 	    
 	`)
 

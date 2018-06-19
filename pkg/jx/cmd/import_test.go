@@ -49,7 +49,7 @@ func assertImport(t *testing.T, testDir string) error {
 	_, dirName := filepath.Split(testDir)
 	dirName = kube.ToValidName(dirName)
 	o := &ImportOptions{}
-	configureTestOptions(&o.CommonOptions)
+	ConfigureTestOptions(&o.CommonOptions)
 	o.Dir = testDir
 	o.DryRun = true
 	o.DisableMaven = true

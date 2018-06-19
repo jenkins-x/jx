@@ -11,7 +11,7 @@ import (
 
 func TestJXNamespace(t *testing.T) {
 	o := &CommonOptions{}
-	configureTestOptions(o)
+	ConfigureTestOptions(o)
 
 	kubeClient, ns, err := o.KubeClient()
 	assert.NoError(t, err, "Failed to create kube client")
