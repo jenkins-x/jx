@@ -2,12 +2,16 @@ package cmd
 
 import (
 	"io"
+	"regexp"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -78,11 +82,6 @@ func (o *GetIssueOptions) Run() error {
 
 	table := o.CreateTable()
 	table.AddRow("ISSUE", "STATUS", "ENVIRONMENT")
-	if !issue.IsPullRequest {
-		table.AddRow(issue.URL, *issue.State, "")
-		table.Render()
-		return nil
-	}
 
 	f := o.Factory
 	client, ns, err := f.CreateJXClient()
@@ -114,7 +113,7 @@ func (o *GetIssueOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "cannot list the releases")
 		}
-		rel := o.findRelease(issue.URL, releaseList.Items)
+		rel := o.findRelease(tracker, issue, releaseList.Items)
 		if rel == nil {
 			continue
 		}
@@ -128,14 +127,64 @@ func (o *GetIssueOptions) Run() error {
 	return nil
 }
 
-func (o *GetIssueOptions) findRelease(prURL string, releases []v1.Release) *v1.Release {
+func (o *GetIssueOptions) findRelease(tracker issues.IssueProvider, issue *gits.GitIssue, releases []v1.Release) *v1.Release {
 	for _, rel := range releases {
 		prs := rel.Spec.PullRequests
+		// checks all the PRs and the issues linked into their bodies
 		for _, pr := range prs {
-			if pr.URL == prURL {
+			if pr.URL == issue.URL {
+				return &rel
+			} else {
+				issueKind := issues.GetIssueProvider(tracker)
+				issueIDs := o.parseIssueIDs(pr, issueKind)
+				issueURLs := o.convertIssueIDsToURLs(tracker, issueIDs)
+				for _, issueURL := range issueURLs {
+					if issueURL == issue.URL {
+						return &rel
+					}
+				}
+			}
+		}
+		// checks all the issues which are not pull requests
+		issues := rel.Spec.Issues
+		for _, is := range issues {
+			if is.URL == issue.URL {
 				return &rel
 			}
 		}
 	}
 	return nil
+}
+
+func (o *GetIssueOptions) parseIssueIDs(issue v1.IssueSummary, issueKind string) []string {
+	regex := regexp.MustCompile(`(\#\d+)`)
+	if issueKind == issues.Jira {
+		regex = regexp.MustCompile(`[A-Z][A-Z]+-(\d+)`)
+	}
+	issues := []string{}
+	foundIssues := map[string]bool{}
+	matches := regex.FindAllStringSubmatch(issue.Body, -1)
+	for _, match := range matches {
+		for _, result := range match {
+			id := strings.TrimPrefix(result, "#")
+			found, ok := foundIssues[id]
+			if !found || !ok {
+				issues = append(issues, id)
+				foundIssues[id] = true
+			}
+		}
+	}
+	return issues
+}
+
+func (o *GetIssueOptions) convertIssueIDsToURLs(tracker issues.IssueProvider, issueIDs []string) []string {
+	issueURLs := []string{}
+	for _, id := range issueIDs {
+		issue, err := tracker.GetIssue(id)
+		if err != nil {
+			continue
+		}
+		issueURLs = append(issueURLs, issue.URL)
+	}
+	return issueURLs
 }
