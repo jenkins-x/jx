@@ -19,7 +19,7 @@ var (
 
 	complianceRunExample = templates.Examples(`
 		# Run the compliance tests
-		jx compliance start
+		jx compliance run
 	`)
 )
 
