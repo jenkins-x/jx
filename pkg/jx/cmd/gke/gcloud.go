@@ -34,49 +34,42 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 		log.Infof("Unable to find service account %s, checking if we have enough permission to create\n", serviceAccount)
 
 		// if it doesn't check to see if we have permissions to create (assign roles) to a service account
-		args = []string{"iam",
-			"list-testable-permissions",
-			fmt.Sprintf("//cloudresourcemanager.googleapis.com/projects/%s", projectId),
-			"--filter",
-			"resourcemanager.projects.setIamPolicy"}
-
-		output, err = util.GetCommandOutput("", "gcloud", args...)
+		hasPerm, err := CheckPermission("resourcemanager.projects.setIamPolicy", projectId)
 		if err != nil {
 			return "", err
 		}
 
-		if strings.Contains(output, "resourcemanager.projects.setIamPolicy") {
-			// create service
-			log.Infof("Creating service account %s\n", serviceAccount)
-			args = []string{"iam",
-				"service-accounts",
-				"create",
-				serviceAccount}
+		if !hasPerm {
+			return "", errors.New("User does not have the required role 'resourcemanager.projects.setIamPolicy' to configure a service account")
+		}
+
+		// create service
+		log.Infof("Creating service account %s\n", serviceAccount)
+		args = []string{"iam",
+			"service-accounts",
+			"create",
+			serviceAccount}
+
+		err = util.RunCommand("", "gcloud", args...)
+		if err != nil {
+			return "", err
+		}
+
+		// assign roles to service account
+		for _, role := range REQUIRED_SERVICE_ACCOUNT_ROLES {
+			log.Infof("Assigning role %s\n", role)
+			args = []string{"projects",
+				"add-iam-policy-binding",
+				projectId,
+				"--member",
+				fmt.Sprintf("serviceAccount:%s@%s.iam.gserviceaccount.com", serviceAccount, projectId),
+				"--role",
+				role}
 
 			err = util.RunCommand("", "gcloud", args...)
 			if err != nil {
 				return "", err
 			}
-
-			// assign roles to service account
-			for _, role := range REQUIRED_SERVICE_ACCOUNT_ROLES {
-				log.Infof("Assigning role %s\n", role)
-				args = []string{"projects",
-					"add-iam-policy-binding",
-					projectId,
-					"--member",
-					fmt.Sprintf("serviceAccount:%s@%s.iam.gserviceaccount.com", serviceAccount, projectId),
-					"--role",
-					role}
-
-				err = util.RunCommand("", "gcloud", args...)
-				if err != nil {
-					return "", err
-				}
-			}
-
-		} else {
-			return "", errors.New("User does not have the required role 'resourcemanager.projects.setIamPolicy' to configure a service account")
 		}
 
 	} else {
@@ -135,4 +128,20 @@ func Login(serviceAccountKeyPath string, skipLogin bool) error {
 		}
 	}
 	return nil
+}
+
+func CheckPermission(perm string, projectId string) (bool, error) {
+	// if it doesn't check to see if we have permissions to create (assign roles) to a service account
+	args := []string{"iam",
+		"list-testable-permissions",
+		fmt.Sprintf("//cloudresourcemanager.googleapis.com/projects/%s", projectId),
+		"--filter",
+		perm}
+
+	output, err := util.GetCommandOutput("", "gcloud", args...)
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Contains(output, perm), nil
 }
