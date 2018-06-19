@@ -423,11 +423,10 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	settings, err := o.TeamSettings()
+	helmBin, err := o.TeamHelmBin()
 	if err != nil {
 		return err
 	}
-	helmBin := settings.HelmBinary
 	err = o.runCommand(helmBin, "upgrade", o.ReleaseName, ".", "--force", "--install", "--wait", "--namespace", o.Namespace, fmt.Sprintf("--values=%s", configFileName))
 	if err != nil {
 		return err
