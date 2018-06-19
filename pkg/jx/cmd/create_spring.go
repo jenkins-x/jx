@@ -17,9 +17,9 @@ var (
 	create_spring_long = templates.LongDesc(`
 		Creates a new Spring Boot application and then optionally setups CI/CD pipelines and GitOps promotion.
 
-		You can see a demo of this command here: [http://jenkins-x.io/demos/create_spring/](http://jenkins-x.io/demos/create_spring/)
+		You can see a demo of this command here: [https://jenkins-x.io/demos/create_spring/](https://jenkins-x.io/demos/create_spring/)
 
-		For more documentation see: [http://jenkins-x.io/developing/create-spring/](http://jenkins-x.io/developing/create-spring/)
+		For more documentation see: [https://jenkins-x.io/developing/create-spring/](https://jenkins-x.io/developing/create-spring/)
 
 `)
 

@@ -19,7 +19,7 @@ var (
 	deleteDevPodLong = templates.LongDesc(`
 		Deletes one or more DevPods
 
-		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
+		For more documentation see: [https://jenkins-x.io/developing/devpods/](https://jenkins-x.io/developing/devpods/)
 
 `)
 

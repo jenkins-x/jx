@@ -80,7 +80,7 @@ var (
 		Requires a --git-username and --git-api-token that can be used to create a new token.
 		This is so the Jenkins X platform can git tag your releases
 
-		For more documentation see: [http://jenkins-x.io/getting-started/install-on-cluster/](http://jenkins-x.io/getting-started/install-on-cluster/)
+		For more documentation see: [https://jenkins-x.io/getting-started/install-on-cluster/](https://jenkins-x.io/getting-started/install-on-cluster/)
 
 		The current requirements are:
 		* RBAC is enabled on the cluster
