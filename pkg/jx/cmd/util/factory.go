@@ -43,9 +43,9 @@ const (
 )
 
 type Factory interface {
-	CreateJenkinsClient() (*gojenkins.Jenkins, error)
+	CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (*gojenkins.Jenkins, error)
 
-	GetJenkinsURL() (string, error)
+	GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error)
 
 	CreateAuthConfigService(fileName string) (auth.AuthConfigService, error)
 
@@ -109,20 +109,20 @@ func (f *factory) ImpersonateUser(user string) Factory {
 }
 
 // CreateJenkinsClient creates a new jenkins client
-func (f *factory) CreateJenkinsClient() (*gojenkins.Jenkins, error) {
+func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (*gojenkins.Jenkins, error) {
 
 	svc, err := f.CreateJenkinsAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
-	url, err := f.GetJenkinsURL()
+	url, err := f.GetJenkinsURL(kubeClient, ns)
 	if err != nil {
 		return nil, fmt.Errorf("%s. Try switching to the Development Tools environment via: jx env dev", err)
 	}
 	return jenkins.GetJenkinsClient(url, f.Batch, &svc)
 }
 
-func (f *factory) GetJenkinsURL() (string, error) {
+func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error) {
 	// lets find the kubernetes service
 	client, ns, err := f.CreateClient()
 	if err != nil {

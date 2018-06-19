@@ -37,15 +37,16 @@ const (
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory   cmdutil.Factory
-	Out       io.Writer
-	Err       io.Writer
-	Cmd       *cobra.Command
-	Args      []string
-	BatchMode bool
-	Verbose   bool
-	Headless  bool
-	NoBrew    bool
+	Factory        cmdutil.Factory
+	Out            io.Writer
+	Err            io.Writer
+	Cmd            *cobra.Command
+	Args           []string
+	BatchMode      bool
+	Verbose        bool
+	Headless       bool
+	NoBrew         bool
+	ServiceAccount string
 
 	// common cached clients
 	kubeClient          kubernetes.Interface
@@ -161,13 +162,26 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 	if o.jenkinsClient == nil {
-		jenkins, err := o.JenkinsClient()
+		kubeClient, ns, err := o.KubeClient()
+		if err != nil {
+			return nil, err
+		}
+
+		jenkins, err := o.Factory.CreateJenkinsClient(kubeClient, ns)
 		if err != nil {
 			return nil, err
 		}
 		o.jenkinsClient = jenkins
 	}
 	return o.jenkinsClient, nil
+}
+func (o *CommonOptions) GetJenkinsURL() (string, error) {
+	kubeClient, ns, err := o.KubeClient()
+	if err != nil {
+		return "", err
+	}
+
+	return o.Factory.GetJenkinsURL(kubeClient, ns)
 }
 
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
