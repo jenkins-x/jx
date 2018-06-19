@@ -288,6 +288,8 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	o.appendFile(terraformVars, fmt.Sprintf("auto_upgrade = \"%t\"\n", o.Flags.AutoUpgrade))
 	o.appendFile(terraformVars, "enable_kubernetes_alpha = \"false\"\n")
 	o.appendFile(terraformVars, "enable_legacy_abac = \"true\"\n")
+	o.appendFile(terraformVars, "logging_service = \"logging.googleapis.com\"\n")
+	o.appendFile(terraformVars, "monitoring_service = \"monitoring.googleapis.com\"\n")
 
 	args := []string{"init", terraformDir}
 	err = o.runCommand("terraform", args...)
