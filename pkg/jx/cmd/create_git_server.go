@@ -16,8 +16,14 @@ var (
 `)
 
 	create_git_server_example = templates.Examples(`
-		# Add a new git server URL
-		jx create git server gitea
+		# Add a new git server
+		jx create git server bitbucket http://bitbucket.org
+
+		# Add a new git server with a name
+		jx create git server bitbucket http://bitbucket.org -n MyBitBucket 
+
+		For more documentation see: [https://jenkins-x.io/developing/git/](https://jenkins-x.io/developing/git/)
+
 	`)
 
 	gitKindToServiceName = map[string]string{

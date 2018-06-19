@@ -25,7 +25,7 @@ var (
 
 		Note that this command does not remove the underlying Git Repositories. 
 
-		For that see the [jx delete repo](http://jenkins-x.io/commands/jx_delete_repo/) command.
+		For that see the [jx delete repo](https://jenkins-x.io/commands/jx_delete_repo/) command.
 
 `)
 

@@ -80,7 +80,7 @@ var (
 	promote_long = templates.LongDesc(`
 		Promotes a version of an application to zero to many permanent environments.
 
-		For more documentation see: [http://jenkins-x.io/about/features/#promotion](http://jenkins-x.io/about/features/#promotion)
+		For more documentation see: [https://jenkins-x.io/about/features/#promotion](https://jenkins-x.io/about/features/#promotion)
 
 `)
 
@@ -344,11 +344,10 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	if err != nil {
 		return releaseInfo, err
 	}
-	settings, err := o.TeamSettings()
+	helmBin, err := o.TeamHelmBin()
 	if err != nil {
 		return releaseInfo, err
 	}
-	helmBin := settings.HelmBinary
 
 	// lets do a helm update to ensure we can find the latest version
 	if !o.NoHelmUpdate {

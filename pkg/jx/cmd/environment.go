@@ -27,7 +27,7 @@ var (
 	environment_long = templates.LongDesc(`
 		Displays or changes the current environment.
 
-		For more documentation on Environments see: [http://jenkins-x.io/about/features/#environments](http://jenkins-x.io/about/features/#environments)
+		For more documentation on Environments see: [https://jenkins-x.io/about/features/#environments](https://jenkins-x.io/about/features/#environments)
 
 `)
 	environment_example = templates.Examples(`

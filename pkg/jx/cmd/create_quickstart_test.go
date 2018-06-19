@@ -22,7 +22,7 @@ func TestCreateQuckstartProjects(t *testing.T) {
 			ProjectName: appName,
 		},
 	}
-	configureTestOptions(&o.CommonOptions)
+	ConfigureTestOptions(&o.CommonOptions)
 	o.Dir = testDir
 	o.OutDir = testDir
 	o.DryRun = true

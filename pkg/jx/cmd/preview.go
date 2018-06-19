@@ -25,7 +25,7 @@ var (
 	previewLong = templates.LongDesc(`
 		Creates or updates a Preview Environment for the given Pull Request or Branch.
 
-		For more documentation on Preview Environments see: [http://jenkins-x.io/about/features/#preview-environments](http://jenkins-x.io/about/features/#preview-environments)
+		For more documentation on Preview Environments see: [https://jenkins-x.io/about/features/#preview-environments](https://jenkins-x.io/about/features/#preview-environments)
 
 `)
 
@@ -423,11 +423,10 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	settings, err := o.TeamSettings()
+	helmBin, err := o.TeamHelmBin()
 	if err != nil {
 		return err
 	}
-	helmBin := settings.HelmBinary
 	err = o.runCommand(helmBin, "upgrade", o.ReleaseName, ".", "--force", "--install", "--wait", "--namespace", o.Namespace, fmt.Sprintf("--values=%s", configFileName))
 	if err != nil {
 		return err

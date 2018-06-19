@@ -178,7 +178,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			o.Printf("You can list the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
 			o.Printf("When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
 			o.Printf("\n")
-			o.Printf("For more help on available commands see: %s\n", util.ColorInfo("http://jenkins-x.io/developing/browsing/"))
+			o.Printf("For more help on available commands see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/browsing/"))
 			o.Printf("\n")
 		}
 		o.Printf(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary docker images get downloaded!\n\n"))

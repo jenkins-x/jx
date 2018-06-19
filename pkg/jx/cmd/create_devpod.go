@@ -36,7 +36,7 @@ var (
 	createDevPodLong = templates.LongDesc(`
 		Creates a new DevPod
 
-		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
+		For more documentation see: [https://jenkins-x.io/developing/devpods/](https://jenkins-x.io/developing/devpods/)
 
 `)
 
