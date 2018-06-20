@@ -802,13 +802,23 @@ rules:
 		return err
 	}
 
-	err = o.runCommand("kubectl", "create", "clusterrolebinding", "kube-system-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
-	if err != nil {
-		return err
+	_, err1 := o.getCommandOutput("", "kubectl", "create", "clusterrolebinding", "kube-system-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
+	if err1 != nil {
+		if strings.Contains(err1.Error(), "AlreadyExists") {
+			log.Success("role cluster-admin already exists for the cluster")
+		} else {
+			return err1
+		}
 	}
-	err = o.runCommand("kubectl", "create", "-f", tmpfile.Name())
-	if err != nil {
-		return err
+
+	_, err2 := o.getCommandOutput("", "kubectl", "create", "-f", tmpfile.Name())
+	if err2 != nil {
+		if strings.Contains(err2.Error(), "AlreadyExists") {
+			log.Success("clusterroles.rbac.authorization.k8s.io 'cluster-admin' already exists")
+		} else {
+			return err2
+		}
 	}
+
 	return nil
 }

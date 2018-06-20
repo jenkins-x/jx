@@ -245,13 +245,7 @@ func (options *InstallOptions) Run() error {
 		 */
 		err = options.createClusterAdmin()
 		if err != nil {
-			msg := err.Error()
-			if strings.Contains(msg, "AlreadyExists") {
-				log.Success("role cluster-admin already exists for the cluster")
-
-			} else {
-				return err
-			}
+			return err
 		} else {
 			log.Success("created role cluster-admin")
 		}
