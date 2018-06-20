@@ -130,8 +130,8 @@ linux:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
 docker: linux
-	docker build --no-cache -t rawlingsj/jx:dev33 .
-	docker push rawlingsj/jx:dev33
+	docker build --no-cache -t rawlingsj/jx:dev35 .
+	docker push rawlingsj/jx:dev35
 
 docker-go: linux Dockerfile.buildgo
 	docker build --no-cache -t builder-go -f Dockerfile.buildgo .
