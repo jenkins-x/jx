@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"golang.org/x/oauth2"
 )

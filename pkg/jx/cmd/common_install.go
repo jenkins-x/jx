@@ -13,7 +13,7 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"gopkg.in/AlecAivazis/survey.v1"

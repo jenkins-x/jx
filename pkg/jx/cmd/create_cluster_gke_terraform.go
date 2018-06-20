@@ -11,20 +11,21 @@ import (
 
 	os_user "os/user"
 
-	"github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/src-d/go-git.v4"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 )
 
 // CreateClusterOptions the flags for running create cluster

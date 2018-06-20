@@ -15,9 +15,9 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
