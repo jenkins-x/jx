@@ -20,8 +20,10 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -273,23 +275,23 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 
 	// create .tfvars file in .jx folder
 	terraformVars := filepath.Join(terraformDir, "terraform.tfvars")
-	o.appendFile(terraformVars, fmt.Sprintf("created_by = \"%s\"\n", username))
-	o.appendFile(terraformVars, fmt.Sprintf("created_timestamp = \"%s\"\n", time.Now().Format("20060102150405")))
-	o.appendFile(terraformVars, fmt.Sprintf("credentials = \"%s\"\n", keyPath))
-	o.appendFile(terraformVars, fmt.Sprintf("cluster_name = \"%s\"\n", o.Flags.ClusterName))
-	o.appendFile(terraformVars, fmt.Sprintf("gcp_zone = \"%s\"\n", zone))
-	o.appendFile(terraformVars, fmt.Sprintf("gcp_project = \"%s\"\n", projectId))
-	o.appendFile(terraformVars, fmt.Sprintf("min_node_count = \"%s\"\n", minNumOfNodes))
-	o.appendFile(terraformVars, fmt.Sprintf("max_node_count = \"%s\"\n", maxNumOfNodes))
-	o.appendFile(terraformVars, fmt.Sprintf("node_machine_type = \"%s\"\n", machineType))
-	o.appendFile(terraformVars, "node_preemptible = \"false\"\n")
-	o.appendFile(terraformVars, fmt.Sprintf("node_disk_size = \"%s\"\n", o.Flags.DiskSize))
-	o.appendFile(terraformVars, "auto_repair = \"false\"\n")
-	o.appendFile(terraformVars, fmt.Sprintf("auto_upgrade = \"%t\"\n", o.Flags.AutoUpgrade))
-	o.appendFile(terraformVars, "enable_kubernetes_alpha = \"false\"\n")
-	o.appendFile(terraformVars, "enable_legacy_abac = \"true\"\n")
-	o.appendFile(terraformVars, "logging_service = \"logging.googleapis.com\"\n")
-	o.appendFile(terraformVars, "monitoring_service = \"monitoring.googleapis.com\"\n")
+	o.writeKeyValueIfNotExists(terraformVars, "created_by", username)
+	o.writeKeyValueIfNotExists(terraformVars, "created_timestamp", time.Now().Format("20060102150405"))
+	o.writeKeyValueIfNotExists(terraformVars, "credentials", keyPath)
+	o.writeKeyValueIfNotExists(terraformVars, "cluster_name", o.Flags.ClusterName)
+	o.writeKeyValueIfNotExists(terraformVars, "gcp_zone", zone)
+	o.writeKeyValueIfNotExists(terraformVars, "gcp_project", projectId)
+	o.writeKeyValueIfNotExists(terraformVars, "min_node_count", minNumOfNodes)
+	o.writeKeyValueIfNotExists(terraformVars, "max_node_count", maxNumOfNodes)
+	o.writeKeyValueIfNotExists(terraformVars, "node_machine_type", machineType)
+	o.writeKeyValueIfNotExists(terraformVars, "node_preemptible", "false")
+	o.writeKeyValueIfNotExists(terraformVars, "node_disk_size", o.Flags.DiskSize)
+	o.writeKeyValueIfNotExists(terraformVars, "auto_repair", "false")
+	o.writeKeyValueIfNotExists(terraformVars, "auto_upgrade", strconv.FormatBool(o.Flags.AutoUpgrade))
+	o.writeKeyValueIfNotExists(terraformVars, "enable_kubernetes_alpha", "false")
+	o.writeKeyValueIfNotExists(terraformVars, "enable_legacy_abac", "true")
+	o.writeKeyValueIfNotExists(terraformVars, "logging_service", "logging.googleapis.com")
+	o.writeKeyValueIfNotExists(terraformVars, "monitoring_service", "monitoring.googleapis.com")
 
 	args := []string{"init", terraformDir}
 	err = o.runCommand("terraform", args...)
@@ -440,12 +442,31 @@ func (o *CreateClusterGKETerraformOptions) getGoogleProjectId() (string, error) 
 	return projectId, nil
 }
 
-func (o *CreateClusterGKETerraformOptions) appendFile(path string, line string) error {
+func (o *CreateClusterGKETerraformOptions) writeKeyValueIfNotExists(path string, key string, value string) error {
+	// file exists
+	if _, err := os.Stat(path); err == nil {
+		buffer, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		contents := string(buffer)
+
+		o.Debugf("Checking if %s contains %s\n", path, key)
+
+		if strings.Contains(contents, key) {
+			o.Debugf("Skipping %s\n", key)
+			return nil
+		}
+	}
+
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
+
+	line := fmt.Sprintf("%s = \"%s\"", key, value)
+	o.Debugf("Writing '%s' to %s\n", line, path)
 
 	_, err = file.WriteString(line)
 	if err != nil {
