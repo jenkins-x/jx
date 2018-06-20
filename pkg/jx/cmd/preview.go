@@ -425,7 +425,8 @@ func (o *PreviewOptions) Run() error {
 
 	helmBin, err := o.TeamHelmBin()
 	if err != nil {
-		return err
+		o.warnf("Failed to find helm binary: %s\n", err)
+		helmBin = "helm"
 	}
 	err = o.runCommand(helmBin, "upgrade", o.ReleaseName, ".", "--force", "--install", "--wait", "--namespace", o.Namespace, fmt.Sprintf("--values=%s", configFileName))
 	if err != nil {
