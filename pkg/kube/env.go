@@ -741,3 +741,35 @@ func (a ByOrder) Less(i, j int) bool {
 func SortEnvironments(environments []v1.Environment) {
 	sort.Sort(ByOrder(environments))
 }
+
+// NewPermanentEnvironment creates a new permanent environment for testing
+func NewPermanentEnvironment(name string) *v1.Environment {
+	return &v1.Environment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "jx",
+		},
+		Spec: v1.EnvironmentSpec{
+			Label:             strings.Title(name),
+			Namespace:         "jx-" + name,
+			PromotionStrategy: v1.PromotionStrategyTypeAutomatic,
+			Kind:              v1.EnvironmentKindTypePermanent,
+		},
+	}
+}
+
+// NewPreviewEnvironment creates a new preview environment for testing
+func NewPreviewEnvironment(name string) *v1.Environment {
+	return &v1.Environment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "jx",
+		},
+		Spec: v1.EnvironmentSpec{
+			Label:             strings.Title(name),
+			Namespace:         "jx-preview-" + name,
+			PromotionStrategy: v1.PromotionStrategyTypeAutomatic,
+			Kind:              v1.EnvironmentKindTypePreview,
+		},
+	}
+}

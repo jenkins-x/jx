@@ -21,6 +21,20 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 	return registerCRD(apiClient, name, names)
 }
 
+// RegisterEnvironmentRoleBindingCRD ensures that the CRD is registered for Environments
+func RegisterEnvironmentRoleBindingCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "environmentrolebindings." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "EnvironmentRoleBinding",
+		ListKind:   "EnvironmentRoleBindingList",
+		Plural:     "environmentrolebindings",
+		Singular:   "environmentrolebinding",
+		ShortNames: []string{"envrolebindings", "envrb"},
+	}
+
+	return registerCRD(apiClient, name, names)
+}
+
 // RegisterGitServiceCRD ensures that the CRD is registered for GitServices
 func RegisterGitServiceCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "gitservices." + jenkinsio.GroupName
