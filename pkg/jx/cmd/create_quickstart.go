@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/spf13/cobra"
 
@@ -197,7 +198,7 @@ func (o *CreateQuickstartOptions) Run() error {
 				_, appName := filepath.Split(genDir)
 				appChartDir := filepath.Join(genDir, "charts", appName)
 
-				fmt.Printf("### PostDraftPack callback copying from %s to %s!!!s\n", chartsDir, appChartDir)
+				log.Infof("### PostDraftPack callback copying from %s to %s!!!s\n", chartsDir, appChartDir)
 				err := util.CopyDirOverwrite(chartsDir, appChartDir)
 				if err != nil {
 					return err
@@ -209,7 +210,7 @@ func (o *CreateQuickstartOptions) Run() error {
 				return gits.GitRemove(genDir, filepath.Join("charts", folder))
 			}
 		} else {
-			fmt.Printf("### NO charts folder %s\n", chartsDir)
+			log.Infof("### NO charts folder %s\n", chartsDir)
 		}
 	}
 	o.Printf("Created project at %s\n\n", util.ColorInfo(genDir))
@@ -227,7 +228,6 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	}
 	client := http.Client{}
 
-	//fmt.Printf("generating spring project from: %s\n", u)
 	req, err := http.NewRequest(http.MethodGet, u, strings.NewReader(""))
 	if err != nil {
 		return answer, err

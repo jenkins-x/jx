@@ -113,8 +113,8 @@ func (o *GCHelmOptions) Run() error {
 		to_delete := versionsToDelete(versions, o.RevisionHistoryLimit)
 		if len(to_delete) > 0 {
 			if o.DryRun {
-				fmt.Println("Would delete:")
-				fmt.Printf("%v\n", to_delete)
+				log.Infoln("Would delete:")
+				log.Infof("%v\n", to_delete)
 			} else {
 				// Backup and delete
 				if o.NoBackup == false {
@@ -143,7 +143,7 @@ func (o *GCHelmOptions) Run() error {
 							b.Write(y)
 							err4 := ioutil.WriteFile(filename, b.Bytes(), 0644)
 							if err4 == nil {
-								fmt.Printf("Success. ")
+								log.Info("Success. ")
 							} else {
 								// Failed to write backup so abort
 								return err4
@@ -166,7 +166,7 @@ func (o *GCHelmOptions) Run() error {
 			}
 		} else {
 			if o.Verbose {
-				fmt.Println("Nothing to do.")
+				log.Info("Nothing to do.")
 			}
 		}
 	}

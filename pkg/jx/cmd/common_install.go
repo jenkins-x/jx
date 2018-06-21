@@ -106,7 +106,7 @@ func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileNam
 	}
 	pgmPath, err := exec.LookPath(fileName)
 	if err == nil {
-		o.Printf("%s is already available on your PATH at %s\n", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
+		log.Warnf("%s is already available on your PATH at %s\n", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
 		return
 	}
 
@@ -124,12 +124,12 @@ func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileNam
 }
 
 func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
-	o.Printf("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
+	log.Infof("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
 	err := util.DownloadFile(fullPath, clientURL)
 	if err != nil {
 		return fmt.Errorf("Unable to download file %s from %s due to: %v", fullPath, clientURL, err)
 	}
-	fmt.Printf("Downloaded %s\n", util.ColorInfo(fullPath))
+	log.Infof("Downloaded %s\n", util.ColorInfo(fullPath))
 	return nil
 }
 

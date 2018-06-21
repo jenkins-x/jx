@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/log"
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
@@ -78,16 +79,15 @@ func (c *CommonOptions) CreateTable() table.Table {
 }
 
 // Printf outputs the given text to the console
-func (c *CommonOptions) Printf(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(c.Stdout(), format, a...)
+func (c *CommonOptions) Printf(format string, a ...interface{}) {
+	log.Infof(format, a)
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
-func (c *CommonOptions) Debugf(format string, a ...interface{}) (n int, err error) {
+func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 	if c.Verbose {
-		return fmt.Fprintf(c.Stdout(), format, a...)
+		log.Infof(format, a)
 	}
-	return 0, nil
 }
 
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {

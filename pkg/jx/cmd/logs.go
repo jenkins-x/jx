@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/client-go/kubernetes"
 
@@ -170,7 +171,7 @@ func waitForReadyPodForSelector(c kubernetes.Interface, ns string, labels map[st
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf(util.ColorStatus("Waiting for a running pod in namespace %s with labels %v\n"), ns, labels)
+	log.Warnf("Waiting for a running pod in namespace %s with labels %v\n", ns, labels)
 	for {
 		pods, err := c.CoreV1().Pods(ns).List(metav1.ListOptions{
 			LabelSelector: selector.String(),
@@ -193,7 +194,7 @@ func waitForReadyPodForSelector(c kubernetes.Interface, ns string, labels map[st
 			}
 		}
 		if name != "" {
-			fmt.Printf(util.ColorStatus("Found newest pod: %s\n"), util.ColorInfo(name))
+			log.Warnf("Found newest pod: %s\n", name)
 			return name, nil
 		}
 		// TODO replace with a watch flavour
