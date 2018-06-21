@@ -778,12 +778,12 @@ func (b *BitbucketCloudProvider) CreateIssue(owner string, repo string, issue *G
 }
 
 func (b *BitbucketCloudProvider) AddPRComment(pr *GitPullRequest, comment string) error {
-	fmt.Println("WARNING: Bitbucket Cloud doesn't support adding PR comments via the REST API")
+	log.Warn("Bitbucket Cloud doesn't support adding PR comments via the REST API")
 	return nil
 }
 
 func (b *BitbucketCloudProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
-	fmt.Println("WARNING: Bitbucket Cloud doesn't support adding issue comments viea the REST API")
+	log.Warn("Bitbucket Cloud doesn't support adding issue comments viea the REST API")
 	return nil
 }
 
@@ -848,13 +848,13 @@ func (p *BitbucketCloudProvider) UserInfo(username string) *GitUser {
 }
 
 func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
-	fmt.Println("Bitbucket Cloud doesn't support releases")
+	log.Warn("Bitbucket Cloud doesn't support releases")
 	return nil
 }
 
 func (p *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	answer := []*GitRelease{}
-	fmt.Println("Bitbucket Cloud doesn't support releases")
+	log.Warn("Bitbucket Cloud doesn't support releases")
 	return answer, nil
 }
 
