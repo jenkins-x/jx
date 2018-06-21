@@ -137,7 +137,7 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 		return answer, err
 	}
 	gitRepo := "https://github.com/istio/istio.git"
-	o.Printf("Cloning %s to %s\n", util.ColorInfo(gitRepo), util.ColorInfo(answer))
+	log.Infof("Cloning %s to %s\n", util.ColorInfo(gitRepo), util.ColorInfo(answer))
 	err = gits.GitClone(gitRepo, answer)
 	if err != nil {
 		return answer, err

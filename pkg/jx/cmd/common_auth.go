@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -26,15 +27,15 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.AuthConfigService, er
 
 		kubeConfig, _, configLoadErr := kube.LoadConfig()
 		if err != nil {
-			o.Printf("WARNING: Could not load config: %s", configLoadErr)
+			log.Warnf("WARNING: Could not load config: %s", configLoadErr)
 		}
 
 		ns := kube.CurrentNamespace(kubeConfig)
 		if ns == "" {
-			o.Printf("WARNING: Could not get the current namespace")
+			log.Warnf("WARNING: Could not get the current namespace")
 		}
 
-		o.Printf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
+		log.Warnf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
 	}
 
 	fileName := cmdutil.GitAuthConfigFile
@@ -67,7 +68,7 @@ func (o *CommonOptions) createGitAuthConfigServiceFromSecrets(fileName string, s
 			// if no config file is being used lets grab the git server from the current directory
 			server, err := gits.GetGitServer("")
 			if err != nil {
-				o.Printf("WARNING: unable to get remote git repo server, %v\n", err)
+				log.Warnf("WARNING: unable to get remote git repo server, %v\n", err)
 				server = "https://github.com"
 			}
 			config.Servers = []*auth.AuthServer{

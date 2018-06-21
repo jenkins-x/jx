@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -80,7 +81,7 @@ func (o *EditHelmBinOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.HelmBinary = arg
-		o.Printf("Setting the helm binary name to: %s\n", util.ColorInfo(arg))
+		log.Infof("Setting the helm binary name to: %s\n", util.ColorInfo(arg))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

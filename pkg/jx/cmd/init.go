@@ -211,7 +211,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 
 	_, err = client.RbacV1().ClusterRoleBindings().Get(clusterRoleBindingName, meta_v1.GetOptions{})
 	if err != nil {
-		o.Printf("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, user)
+		log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, user)
 		args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
 
 		err := o.retry(3, 10*time.Second, func() (err error) {
@@ -221,7 +221,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 			return err
 		}
 
-		o.Printf("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
+		log.Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
 	}
 	return nil
 }
@@ -292,7 +292,7 @@ func (o *InitOptions) initHelm() error {
 				if err != nil {
 					return fmt.Errorf("Failed to create Role %s in namespace %s: %s", roleName, tillerNamespace, err)
 				}
-				o.Printf("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+				log.Infof("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
 			_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, meta_v1.GetOptions{})
 			if err != nil {
@@ -319,13 +319,13 @@ func (o *InitOptions) initHelm() error {
 				if err != nil {
 					return fmt.Errorf("Failed to create RoleBinding %s in namespace %s: %s", roleName, tillerNamespace, err)
 				}
-				o.Printf("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+				log.Infof("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
 		}
 
 		running, err := kube.IsDeploymentRunning(client, "tiller-deploy", tillerNamespace)
 		if running {
-			o.Printf("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
+			log.Infof("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
 			return nil
 		}
 		if err == nil && !running {
@@ -333,7 +333,7 @@ func (o *InitOptions) initHelm() error {
 		}
 
 		if !running {
-			o.Printf("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
+			log.Infof("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
 
 			err = o.runCommand("helm", "init", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
 			if err != nil {
@@ -457,7 +457,7 @@ func (o *InitOptions) initIngress() error {
 	}
 
 	if isOpenShiftProvider(o.Flags.Provider) {
-		o.Printf("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress\n")
+		log.Infoln("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
 		return nil
 	}
 	podCount, err := kube.DeploymentPodCount(client, o.Flags.IngressDeployment, ingressNamespace)
@@ -517,7 +517,7 @@ func (o *InitOptions) initIngress() error {
 			}
 			host := config.Host
 			if host == "" {
-				o.warnf("No API server host is defined in the local kube config!\n")
+				log.Warnf("No API server host is defined in the local kube config!\n")
 			} else {
 				externalIP, err = util.UrlHostNameWithoutPort(host)
 				if err != nil {
@@ -533,7 +533,7 @@ func (o *InitOptions) initIngress() error {
 			}
 			log.Infof("External loadbalancer created\n")
 		} else {
-			o.Printf("Using external IP: %s\n", util.ColorInfo(externalIP))
+			log.Infof("Using external IP: %s\n", util.ColorInfo(externalIP))
 		}
 
 		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain, ingressNamespace, o.Flags.IngressService, externalIP)
@@ -592,7 +592,7 @@ func (o *InitOptions) validateGit() error {
 			return err
 		}
 	}
-	o.Printf("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
+	log.Infof("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
 	return nil
 }
 
@@ -613,9 +613,9 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			address = ip
 		} else {
 			info := util.ColorInfo
-			o.Printf("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s\n", info(ingressNamespace), info(ingressService))
+			log.Infof("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s\n", info(ingressNamespace), info(ingressService))
 			if provider == KUBERNETES {
-				o.Printf("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s\n", info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
+				log.Infof("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s\n", info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
 			}
 			svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, meta_v1.GetOptions{})
 			if err != nil {
@@ -637,13 +637,13 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		addNip := true
 		aip := net.ParseIP(address)
 		if aip == nil {
-			o.Printf("The Ingress address %s is not an IP address. We recommend we try resolve it to a public IP address and use that for the domain to access services externally.\n", util.ColorInfo(address))
+			log.Infof("The Ingress address %s is not an IP address. We recommend we try resolve it to a public IP address and use that for the domain to access services externally.\n", util.ColorInfo(address))
 
 			addressIP := ""
 			if util.Confirm("Would you like wait and resolve this address to an IP address and use it for the domain?", true,
 				"Should we convert "+address+" to an IP address so we can access resources externally") {
 
-				o.Printf("Waiting for %s to be resolvable to an IP address...\n", util.ColorInfo(address))
+				log.Infof("Waiting for %s to be resolvable to an IP address...\n", util.ColorInfo(address))
 				f := func() error {
 					ips, err := net.LookupIP(address)
 					if err == nil {
@@ -662,9 +662,9 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			}
 			if addressIP == "" {
 				addNip = false
-				o.warnf("Still not managed to resolve address %s into an IP address. Please try figure out the domain by hand\n", address)
+				log.Infof("Still not managed to resolve address %s into an IP address. Please try figure out the domain by hand\n", address)
 			} else {
-				o.Printf("%s resolved to IP %s\n", util.ColorInfo(address), util.ColorInfo(addressIP))
+				log.Infof("%s resolved to IP %s\n", util.ColorInfo(address), util.ColorInfo(addressIP))
 				address = addressIP
 			}
 		}

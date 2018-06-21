@@ -422,7 +422,7 @@ func (o *CreateClusterGKETerraformOptions) getGoogleProjectId() (string, error) 
 		}
 	} else if len(existingProjects) == 1 {
 		projectId = existingProjects[0]
-		o.Printf("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
+		log.Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
 	} else {
 		prompts := &survey.Select{
 			Message: "Google Cloud Project:",

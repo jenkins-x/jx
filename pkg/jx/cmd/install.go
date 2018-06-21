@@ -400,7 +400,7 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	options.Printf("Generated helm values %s\n", util.ColorInfo(configFileName))
+	log.Infof("Generated helm values %s\n", util.ColorInfo(configFileName))
 
 	timeout := options.Flags.Timeout
 	if timeout == "" {
@@ -409,7 +409,7 @@ func (options *InstallOptions) Run() error {
 	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --values=%s --namespace=%s --timeout=%s", secretsFileName, adminSecretsFileName, configFileName, ns, timeout)
 
 	// run the helm install
-	options.Printf("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
+	log.Infof("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
 
 	options.Verbose = true
 	err = options.runCommandFromDir(makefileDir, "make", arg, "install")
@@ -459,7 +459,7 @@ func (options *InstallOptions) Run() error {
 			if options.BatchMode {
 				options.CreateJenkinsUserOptions.BatchMode = true
 				options.CreateJenkinsUserOptions.Headless = true
-				options.Printf("Attempting to find the Jenkins API Token with the browser in headless mode...")
+				log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
 			}
 			err = options.CreateJenkinsUserOptions.Run()
 			return
@@ -518,9 +518,9 @@ func (options *InstallOptions) Run() error {
 
 	options.logAdminPassword()
 
-	options.Printf("\nTo import existing projects into Jenkins:     %s\n", util.ColorInfo("jx import"))
-	options.Printf("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
-	options.Printf("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
+	log.Infof("\nTo import existing projects into Jenkins:     %s\n", util.ColorInfo("jx import"))
+	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
+	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
 	return nil
 }
 
@@ -534,7 +534,7 @@ func isOpenShiftProvider(provider string) bool {
 }
 
 func (o *InstallOptions) enableOpenShiftSCC(ns string) error {
-	o.Printf("Enabling anyui for the Jenkins service account in namespace %s\n", ns)
+	log.Infof("Enabling anyui for the Jenkins service account in namespace %s\n", ns)
 	err := o.runCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":jenkins")
 	if err != nil {
 		return err
@@ -561,7 +561,7 @@ func (options *InstallOptions) logAdminPassword() {
 	********************************************************
 	
 	`
-	options.Printf(astrix, fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
+	log.Infof(astrix, fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
 }
 
 // clones the jenkins-x cloud-environments repo to a local working dir
@@ -658,7 +658,7 @@ func (o *InstallOptions) getGitToken() (string, string, error) {
 			return username, os.Getenv(JX_GIT_TOKEN), nil
 		}
 	}
-	o.Printf("Lets set up a git username and API token to be able to perform CI/CD\n\n")
+	log.Infof("Lets set up a git username and API token to be able to perform CI/CD\n\n")
 	userAuth, err := o.getGitUser("")
 	if err != nil {
 		return "", "", err
@@ -766,7 +766,7 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 }
 
 func (o *InstallOptions) installAddon(name string) error {
-	o.Printf("Installing addon %s\n", util.ColorInfo(name))
+	log.Infof("Installing addon %s\n", util.ColorInfo(name))
 
 	options := &CreateAddonOptions{
 		CreateOptions: CreateOptions{

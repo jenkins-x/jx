@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -140,16 +141,16 @@ func (o *StepWaitForArtifactOptions) Run() error {
 		}
 		o.ArtifactURL = util.UrlJoin(o.RepoURL, group, artifact, version, artifact+"-"+version+"."+o.Extension)
 	}
-	o.Printf("Waiting for artifact at %s\n", util.ColorInfo(o.ArtifactURL))
+	log.Infof("Waiting for artifact at %s\n", util.ColorInfo(o.ArtifactURL))
 
 	fn := func() error {
 		return o.getUrlStatusOK(o.ArtifactURL)
 	}
 	err = o.retryQuietlyUntilTimeout(o.TimeoutDuration, o.PollDuration, fn)
 	if err == nil {
-		o.Printf("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
+		log.Infof("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
 		return nil
 	}
-	o.warnf("Failed to find artifact at %s due to %s", o.ArtifactURL, err)
+	log.Warnf("Failed to find artifact at %s due to %s", o.ArtifactURL, err)
 	return err
 }

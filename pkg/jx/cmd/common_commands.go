@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -20,7 +21,7 @@ func (o *CommonOptions) runCommandFromDir(dir, name string, args ...string) erro
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
 	}
 	return err
 }
@@ -34,7 +35,7 @@ func (o *CommonOptions) runCommand(name string, args ...string) error {
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
 	}
 	return err
 }
@@ -46,7 +47,7 @@ func (o *CommonOptions) runCommandVerbose(name string, args ...string) error {
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
 	}
 	return err
 }
@@ -61,7 +62,7 @@ func (o *CommonOptions) runCommandVerboseAt(dir string, name string, args ...str
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
 	}
 	return err
 }
@@ -84,7 +85,7 @@ func (o *CommonOptions) runCommandInteractive(interactive bool, name string, arg
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
 	}
 	return err
 }
@@ -102,7 +103,7 @@ func (o *CommonOptions) runCommandInteractiveInDir(interactive bool, dir string,
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		o.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
 	}
 	return err
 }

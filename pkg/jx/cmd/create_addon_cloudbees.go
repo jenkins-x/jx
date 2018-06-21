@@ -131,7 +131,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 	}
 
 	if missing {
-		o.Printf(`
+		log.Infof(`
 You will need your username and password to install this addon while it is in preview.
 To register to get your username/password to to: %s
 

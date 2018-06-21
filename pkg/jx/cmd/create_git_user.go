@@ -130,7 +130,7 @@ func (o *CreateGitUserOptions) Run() error {
 		return nil
 	}
 
-	o.Printf("Created user %s API Token for git server %s at %s\n",
+	log.Infof("Created user %s API Token for git server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

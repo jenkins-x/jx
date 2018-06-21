@@ -149,7 +149,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
 			jenkins.PrintGetTokenFromURL(o.Out, tokenUrl)
-			o.Printf("Then COPY the token and enter in into the form below:\n\n")
+			log.Infof("Then COPY the token and enter in into the form below:\n\n")
 			return nil
 		}
 
@@ -180,7 +180,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		return err
 	}
 
-	o.Printf("Created user %s API Token for Jenkins server %s at %s\n",
+	log.Infof("Created user %s API Token for Jenkins server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }
@@ -232,7 +232,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 		// disable screenshots to try and reduce errors when running headless
 		//o.captureScreenshot(ctxt, c, "screenshot-jenkins-login.png", "main-panel", chromedp.ByID)
 
-		o.Printf("logging in\n")
+		log.Infoln("logging in")
 		err = c.Run(ctxt, chromedp.Tasks{
 			chromedp.WaitVisible(userNameInputName, chromedp.ByID),
 			chromedp.SendKeys(userNameInputName, userAuth.Username, chromedp.ByID),
@@ -249,7 +249,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	getAPITokenButtonSelector := "//button[normalize-space(text())='Show API Token...']"
 	nodeSlice = []*cdp.Node{}
 
-	o.Printf("Getting the API Token...\n")
+	log.Infoln("Getting the API Token...")
 	err = c.Run(ctxt, chromedp.Tasks{
 		chromedp.Sleep(2 * time.Second),
 		chromedp.WaitVisible(getAPITokenButtonSelector),
@@ -268,7 +268,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 			break
 		}
 	}
-	o.Printf("Found API Token\n")
+	log.Infoln("Found API Token")
 	if token != "" {
 		userAuth.ApiToken = token
 	}
@@ -296,7 +296,7 @@ func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP,
 }
 
 func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
-	o.Printf("Creating a screenshot...\n")
+	log.Infoln("Creating a screenshot...")
 
 	var picture []byte
 	err := c.Run(ctxt, chromedp.Tasks{
@@ -306,14 +306,14 @@ func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP,
 	if err != nil {
 		return err
 	}
-	o.Printf("Saving a screenshot...\n")
+	log.Infoln("Saving a screenshot...")
 
 	err = ioutil.WriteFile(screenshotFile, picture, util.DefaultWritePermissions)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	o.Printf("Saved screenshot: %s\n", util.ColorInfo(screenshotFile))
+	log.Infof("Saved screenshot: %s\n", util.ColorInfo(screenshotFile))
 	return err
 }
 
@@ -321,7 +321,7 @@ func (o *CommonOptions) createChromeDPLogger() (chromedp.LogFunc, error) {
 	var logger chromedp.LogFunc
 	if o.Verbose {
 		logger = func(message string, args ...interface{}) {
-			o.Printf(message+"\n", args...)
+			log.Infof(message+"\n", args...)
 		}
 	} else {
 		file, err := ioutil.TempFile("", "jx-browser")
@@ -329,7 +329,7 @@ func (o *CommonOptions) createChromeDPLogger() (chromedp.LogFunc, error) {
 			return logger, err
 		}
 		writer := bufio.NewWriter(file)
-		o.Printf("Chrome debugging logs written to: %s\n", util.ColorInfo(file.Name()))
+		log.Infof("Chrome debugging logs written to: %s\n", util.ColorInfo(file.Name()))
 
 		logger = func(message string, args ...interface{}) {
 			fmt.Fprintf(writer, message+"\n", args...)

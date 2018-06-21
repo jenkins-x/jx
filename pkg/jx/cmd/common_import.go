@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -41,7 +42,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		branchPattern = patterns.DefaultBranchPattern
 	}
 	if branchPattern == "" {
-		o.Printf("Querying if the repo is a fork at %s with kind %s\n", gitProvider.ServerURL(), gitProvider.Kind())
+		log.Infof("Querying if the repo is a fork at %s with kind %s\n", gitProvider.ServerURL(), gitProvider.Kind())
 		fork, err := gits.GitIsFork(gitProvider, gitInfo, dir)
 		if err != nil {
 			return fmt.Errorf("No branch pattern specified and could not determine if the git repository is a fork: %s", err)
@@ -57,7 +58,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			}
 			// TODO do we need to scape any wacky characters to make it a valid branch pattern?
 			branchPattern = branch
-			o.Printf("No branch pattern specified and this repository appears to be a fork so defaulting the branch patterns to run CI/CD on to: %s\n", branchPattern)
+			log.Infof("No branch pattern specified and this repository appears to be a fork so defaulting the branch patterns to run CI/CD on to: %s\n", branchPattern)
 		} else {
 			branchPattern = jenkins.BranchPattern(gitProvider.Kind())
 		}
@@ -129,7 +130,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			if err != nil {
 				return fmt.Errorf("error creating jenkins credential %s at %s %v", credentials, jenk.BaseURL(), err)
 			}
-			o.Printf("Created credential %s for host %s user %s\n", util.ColorInfo(credentials), util.ColorInfo(u), util.ColorInfo(user.Username))
+			log.Infof("Created credential %s for host %s user %s\n", util.ColorInfo(credentials), util.ColorInfo(u), util.ColorInfo(user.Username))
 		}
 	}
 	org := gitInfo.Organisation
@@ -138,16 +139,14 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		// could not find folder so lets try create it
 		jobUrl := util.UrlJoin(jenk.BaseURL(), jenk.GetJobURLPath(org))
 		folderXml := jenkins.CreateFolderXml(jobUrl, org)
-		//o.Printf("XML: %s\n", folderXml)
 		err = jenk.CreateJobWithXML(folderXml, org)
 		if err != nil {
 			return fmt.Errorf("Failed to create the %s folder in jenkins: %s", org, err)
 		}
-		//o.Printf("Created Jenkins folder: %s\n", org)
 	} else {
 		c := folder.Class
 		if c != "com.cloudbees.hudson.plugins.folder.Folder" {
-			o.Printf("Warning the folder %s is of class %s", org, c)
+			log.Warnf("Warning the folder %s is of class %s", org, c)
 		}
 	}
 	projectXml := jenkins.CreateMultiBranchProjectXml(gitInfo, gitProvider, credentials, branchPattern, jenkinsfile)
@@ -157,10 +156,9 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		if failIfExists {
 			return fmt.Errorf("Job already exists in Jenkins at %s", job.Url)
 		} else {
-			o.Printf("Job already exists in Jenkins at %s\n", job.Url)
+			log.Warnf("Job already exists in Jenkins at %s\n", job.Url)
 		}
 	} else {
-		//o.Printf("Creating MultiBranchProject %s from XML: %s\n", jobName, projectXml)
 		err = jenk.CreateFolderJobWithXML(projectXml, org, jobName)
 		if err != nil {
 			return fmt.Errorf("Failed to create MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
@@ -169,19 +167,19 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		if err != nil {
 			return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
 		}
-		o.Printf("Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
-		o.Printf("\n")
+		log.Infof("Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
+		log.Blank()
 		if !isEnvironment {
-			o.Printf("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
-			o.Printf("Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
-			o.Printf("Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
-			o.Printf("You can list the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
-			o.Printf("When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
-			o.Printf("\n")
-			o.Printf("For more help on available commands see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/browsing/"))
-			o.Printf("\n")
+			log.Infof("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
+			log.Infof("Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
+			log.Infof("Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
+			log.Infof("You can list the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
+			log.Infof("When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
+			log.Blank()
+			log.Infof("For more help on available commands see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/browsing/"))
+			log.Blank()
 		}
-		o.Printf(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary docker images get downloaded!\n\n"))
+		log.Info(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary docker images get downloaded!\n\n"))
 
 		params := url.Values{}
 		err = jenk.Build(job, params)

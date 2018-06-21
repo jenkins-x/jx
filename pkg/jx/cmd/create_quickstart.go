@@ -213,7 +213,7 @@ func (o *CreateQuickstartOptions) Run() error {
 			log.Infof("### NO charts folder %s\n", chartsDir)
 		}
 	}
-	o.Printf("Created project at %s\n\n", util.ColorInfo(genDir))
+	log.Infof("Created project at %s\n\n", util.ColorInfo(genDir))
 
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
 	return o.ImportCreatedProject(genDir)
@@ -273,7 +273,7 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	if err != nil {
 		return answer, fmt.Errorf("failed to rename temp dir %s to %s: %s", tmpDir, answer, err)
 	}
-	o.Printf("Generated quickstart at %s\n", answer)
+	log.Infof("Generated quickstart at %s\n", answer)
 	return answer, nil
 }
 

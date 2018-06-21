@@ -78,11 +78,6 @@ func (c *CommonOptions) CreateTable() table.Table {
 	return c.Factory.CreateTable(c.Stdout())
 }
 
-// Printf outputs the given text to the console
-func (c *CommonOptions) Printf(format string, a ...interface{}) {
-	log.Infof(format, a)
-}
-
 // Debugf outputs the given text to the console if verbose mode is enabled
 func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 	if c.Verbose {
@@ -192,11 +187,6 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 	return kube.GetDevNamespace(kubeClient, currentNs)
 }
 
-// warnf generates a warning
-func (o *CommonOptions) warnf(format string, a ...interface{}) {
-	o.Printf(util.ColorWarning("WARNING: "+format), a...)
-}
-
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the git server to add a user")
 	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the git server to add a user")
@@ -250,7 +240,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 		if name != "" && o.BatchMode {
 			server = config.GetServerByName(name)
 			if server == nil {
-				o.warnf("Current server %s no longer exists\n", name)
+				log.Warnf("Current server %s no longer exists\n", name)
 			}
 		}
 	}
@@ -396,7 +386,7 @@ func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() err
 
 		time.Sleep(sleep)
 
-		o.Printf("retrying after error:%s\n", err)
+		log.Infof("retrying after error:%s\n", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
@@ -409,7 +399,7 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 		err = call()
 		if err == nil {
 			if dot {
-				o.Printf("\n")
+				log.Blank()
 			}
 			return
 		}
@@ -422,15 +412,15 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 
 		message := fmt.Sprintf("retrying after error: %s", err)
 		if lastMessage == message {
-			o.Printf(".")
+			log.Info(".")
 			dot = true
 		} else {
 			lastMessage = message
 			if dot {
 				dot = false
-				o.Printf("\n")
+				log.Blank()
 			}
-			o.Printf("%s\n", lastMessage)
+			log.Infof("%s\n", lastMessage)
 		}
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
@@ -446,7 +436,7 @@ func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 		err = call()
 		if err == nil {
 			if dot {
-				o.Printf("\n")
+				log.Blank()
 			}
 			return
 		}
@@ -459,15 +449,15 @@ func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 
 		message := fmt.Sprintf("retrying after error: %s", err)
 		if lastMessage == message {
-			o.Printf(".")
+			log.Info(".")
 			dot = true
 		} else {
 			lastMessage = message
 			if dot {
 				dot = false
-				o.Printf("\n")
+				log.Blank()
 			}
-			o.Printf("%s\n", lastMessage)
+			log.Infof("%s\n", lastMessage)
 		}
 	}
 }
@@ -521,7 +511,7 @@ func (o *CommonOptions) tailBuild(jobName string, build *gojenkins.Build) error 
 		return err
 	}
 	buildPath := u.Path
-	o.Printf("%s %s\n", util.ColorStatus("tailing the log of"), util.ColorInfo(fmt.Sprintf("%s #%d", jobName, build.Number)))
+	log.Infof("%s %s\n", "tailing the log of", fmt.Sprintf("%s #%d", jobName, build.Number))
 	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour*100)
 }
 
