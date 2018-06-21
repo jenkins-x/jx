@@ -4,14 +4,16 @@ import (
 	"io"
 
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"net/url"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -117,7 +119,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		o.Printf("Updated file %s\n", util.ColorInfo(name))
+		log.Infof("Updated file %s\n", util.ColorInfo(name))
 	}
 	return nil
 }
@@ -126,7 +128,7 @@ func (o *CreateEtcHostsOptions) addUrl(serviceUrl kube.ServiceURL, ipLine string
 	text := serviceUrl.URL
 	u, err := url.Parse(text)
 	if err != nil {
-		o.warnf("Ignored invalid URL %s %s", text, err)
+		log.Warnf("Ignored invalid URL %s %s", text, err)
 		return ipLine
 	}
 	host := u.Host

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/config"
@@ -124,7 +125,7 @@ func (o *EditConfigOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		o.Printf("Saved project configuration %s\n", util.ColorInfo(fileName))
+		log.Infof("Saved project configuration %s\n", util.ColorInfo(fileName))
 	}
 	return nil
 }

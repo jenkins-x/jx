@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -103,7 +104,7 @@ func (o *StepGitCredentialsOptions) createGitCredentialsFile(fileName string, se
 	if err != nil {
 		return fmt.Errorf("Failed to write to %s: %s", fileName, err)
 	}
-	o.Printf("Generated git credentials file %s\n", util.ColorInfo(fileName))
+	log.Infof("Generated git credentials file %s\n", util.ColorInfo(fileName))
 	return nil
 }
 
@@ -122,7 +123,7 @@ func (o *StepGitCredentialsOptions) createGitCredentialsFromSecrets(secretList *
 					if len(username) > 0 && len(pwd) > 0 {
 						u2, err := url.Parse(u)
 						if err != nil {
-							o.warnf("Ignoring invalid git service URL %s for pipeline credential %s\n", u, secret.Name)
+							log.Warnf("Ignoring invalid git service URL %s for pipeline credential %s\n", u, secret.Name)
 						} else {
 							u2.User = url.UserPassword(string(username), string(pwd))
 							buffer.WriteString(u2.String() + "\n")

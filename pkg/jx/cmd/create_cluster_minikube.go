@@ -11,9 +11,10 @@ import (
 	"time"
 
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -114,7 +115,7 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 func (o *CreateClusterMinikubeOptions) defaultMacVMDriver() string {
 	_, err := o.getCommandOutput("", "hyperkit", "-v")
 	if err != nil {
-		o.warnf("Could not find hyperkit on your PATH. If you install Docker for Mac then we could use hyperkit.\nSee: https://docs.docker.com/docker-for-mac/install/\n")
+		log.Warnf("Could not find hyperkit on your PATH. If you install Docker for Mac then we could use hyperkit.\nSee: https://docs.docker.com/docker-for-mac/install/\n")
 		return "xhyve"
 	}
 	return "hyperkit"

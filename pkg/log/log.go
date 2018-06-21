@@ -14,6 +14,10 @@ func Info(msg string) {
 	fmt.Print(msg)
 }
 
+func Infoln(msg string) {
+	fmt.Println(msg)
+}
+
 func Blank() {
 	fmt.Println()
 }

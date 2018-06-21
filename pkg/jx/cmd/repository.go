@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
@@ -73,7 +74,7 @@ func (o *RepoOptions) Run() error {
 	if fullURL == "" {
 		return fmt.Errorf("Could not find URL from git repository %s", gitInfo.URL)
 	}
-	o.Printf("repository: %s\n", util.ColorInfo(fullURL))
+	log.Infof("repository: %s\n", util.ColorInfo(fullURL))
 	if !o.OnlyViewURL {
 		browser.OpenURL(fullURL)
 	}

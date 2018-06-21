@@ -8,12 +8,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 func (o *CommonOptions) CreateIssueTrackerAuthConfigService() (auth.AuthConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindIssue, "")
 	if err != nil {
-		o.warnf("The current user cannot query pipeline issue tracker secrets: %s", err)
+		log.Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
 	}
 	return o.Factory.CreateIssueTrackerAuthConfigService(secrets)
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -160,7 +161,7 @@ func (o *DeleteAppOptions) Run() error {
 			}
 		}
 	}
-	o.Printf("Deleted Applications %s\n", util.ColorInfo(deleteMessage))
+	log.Infof("Deleted Applications %s\n", util.ColorInfo(deleteMessage))
 	return nil
 }
 
@@ -212,7 +213,7 @@ func (o *DeleteAppOptions) deleteAppFromEnvironment(env *v1.Environment, appName
 	if env.Spec.Source.URL == "" {
 		return nil
 	}
-	o.Printf("Removing app %s from environment %s\n", appName, env.Spec.Label)
+	log.Infof("Removing app %s from environment %s\n", appName, env.Spec.Label)
 
 	branchName := "delete-" + appName
 	title := "Delete application " + appName + " from this environment"
@@ -237,7 +238,7 @@ func (o *DeleteAppOptions) waitForGitOpsPullRequest(env *v1.Environment, pullReq
 	if pullRequestInfo != nil {
 		logMergeFailure := false
 		pr := pullRequestInfo.PullRequest
-		o.Printf("Waiting for pull request %s to merge\n", pr.URL)
+		log.Infof("Waiting for pull request %s to merge\n", pr.URL)
 
 		for {
 			gitProvider := pullRequestInfo.GitProvider
@@ -247,17 +248,17 @@ func (o *DeleteAppOptions) waitForGitOpsPullRequest(env *v1.Environment, pullReq
 			}
 
 			if pr.Merged != nil && *pr.Merged {
-				o.Printf("Pull Request %s is merged!\n", util.ColorInfo(pr.URL))
+				log.Infof("Request %s is merged!\n", util.ColorInfo(pr.URL))
 				return nil
 			} else {
 				if pr.IsClosed() {
-					o.warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
+					log.Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
 					return fmt.Errorf("Promotion failed as Pull Request %s is closed without merging", pr.URL)
 				}
 				// lets try merge if the status is good
 				status, err := gitProvider.PullRequestLastCommitStatus(pr)
 				if err != nil {
-					o.warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
+					log.Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
 					//return fmt.Errorf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
 				} else {
 					if status == "success" {
@@ -266,7 +267,7 @@ func (o *DeleteAppOptions) waitForGitOpsPullRequest(env *v1.Environment, pullReq
 							if err != nil {
 								if !logMergeFailure {
 									logMergeFailure = true
-									o.warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
+									log.Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
 								}
 							}
 						}

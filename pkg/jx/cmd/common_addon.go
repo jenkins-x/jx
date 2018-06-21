@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // getAddonAuth returns the server and user auth for the given addon service URL
@@ -49,7 +50,7 @@ func (o *CommonOptions) getAddonAuthByKind(kind, serverURL string) (*auth.AuthSe
 func (o *CommonOptions) CreateAddonAuthConfigService() (auth.AuthConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindAddon, "")
 	if err != nil {
-		o.warnf("The current user cannot query pipeline addon secrets: %s", err)
+		log.Warnf("The current user cannot query pipeline addon secrets: %s", err)
 	}
 	return o.Factory.CreateAddonAuthConfigService(secrets)
 }

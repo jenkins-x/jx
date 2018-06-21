@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
@@ -70,8 +71,8 @@ func (o *GetConfigOptions) Run() error {
 		return err
 	}
 	if pc.IsEmpty() {
-		o.Printf("No project configuration for this directory.\n")
-		o.Printf("To edit the configuration use: %s\n", util.ColorInfo("jx edit config"))
+		log.Infoln("No project configuration for this directory.")
+		log.Infof("To edit the configuration use: %s\n", util.ColorInfo("jx edit config"))
 		return nil
 	}
 	table := o.CreateTable()

@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 	rbacv1 "k8s.io/api/rbac/v1"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -131,7 +131,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 	}
 
 	if missing {
-		o.Printf(`
+		log.Infof(`
 You will need your username and password to install this addon while it is in preview.
 To register to get your username/password to to: %s
 

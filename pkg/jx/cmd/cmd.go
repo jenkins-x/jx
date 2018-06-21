@@ -173,7 +173,6 @@ func findCommands(subCommand string, commands ...*cobra.Command) []*cobra.Comman
 
 func commandHasParentName(command *cobra.Command, name string) bool {
 	path := fullPath(command)
-	//fmt.Printf("Command path %s for command %s does not contain %s\n", path, command.Use, name)
 	return strings.Contains(path, name)
 }
 

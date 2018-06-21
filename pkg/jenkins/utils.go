@@ -10,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	jenkauth "github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -59,11 +60,11 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 		if showForm {
 			return nil, fmt.Errorf("No valid Username and API Token specified for Jenkins server: %s\n", url)
 		} else {
-			fmt.Printf("No $JENKINS_USERNAME and $JENKINS_TOKEN environment variables defined!\n")
+			log.Warnf("No $JENKINS_USERNAME and $JENKINS_TOKEN environment variables defined!\n")
 			PrintGetTokenFromURL(os.Stdout, tokenUrl)
 			if batch {
-				fmt.Printf("Then run this command on your terminal and try again:\n\n")
-				fmt.Printf("export JENKINS_TOKEN=myApiToken\n\n")
+				log.Infof("Then run this command on your terminal and try again:\n\n")
+				log.Infof("export JENKINS_TOKEN=myApiToken\n\n")
 				return nil, errors.New("No environment variables (JENKINS_USERNAME and JENKINS_TOKEN) or JENKINS_BEARER_TOKEN defined")
 			}
 		}
@@ -99,11 +100,11 @@ func JenkinsTokenURL(url string) string {
 
 func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool) (jenkauth.UserAuth, error) {
 
-	fmt.Printf("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
+	log.Infof("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
 
 	f := func(username string) error {
-		fmt.Printf("\nPlease go to %s and click %s to get your API Token\n", util.ColorInfo(tokenUrl), util.ColorInfo("Show API Token"))
-		fmt.Printf("Then COPY the API token so that you can paste it into the form below:\n\n")
+		log.Infof("\nPlease go to %s and click %s to get your API Token\n", util.ColorInfo(tokenUrl), util.ColorInfo("Show API Token"))
+		log.Infof("Then COPY the API token so that you can paste it into the form below:\n\n")
 		return nil
 	}
 

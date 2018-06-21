@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
@@ -69,7 +70,7 @@ func (o *GetTrackerOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 	if len(config.Servers) == 0 {
-		o.Printf("No issue trackers registered. To register a new issue tracker use: %s\n", util.ColorInfo("jx create tracker server"))
+		log.Infof("No issue trackers registered. To register a new issue tracker use: %s\n", util.ColorInfo("jx create tracker server"))
 		return nil
 	}
 

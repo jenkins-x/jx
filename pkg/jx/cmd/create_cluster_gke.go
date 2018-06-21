@@ -15,9 +15,9 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -152,7 +152,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	// lets ensure we've got container and compute enabled
 	glcoudArgs := []string{"services", "enable", "container", "compute"}
-	o.Printf("Lets ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(glcoudArgs, " ")))
+	log.Infof("Lets ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(glcoudArgs, " ")))
 
 	err = o.runCommandVerbose("gcloud", glcoudArgs...)
 	if err != nil {
@@ -351,7 +351,7 @@ func (o *CreateClusterGKEOptions) getGoogleProjectId() (string, error) {
 		}
 	} else if len(existingProjects) == 1 {
 		projectId = existingProjects[0]
-		o.Printf("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
+		log.Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
 	} else {
 		prompts := &survey.Select{
 			Message: "Google Cloud Project:",

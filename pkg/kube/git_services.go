@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/kubernetes"
 
@@ -116,7 +117,7 @@ func GetGitServiceKindFromConfigMap(cm *corev1.ConfigMap, gitServiceUrl string) 
 			m := map[string]string{}
 			err := yaml.Unmarshal([]byte(v), &m)
 			if err != nil {
-				fmt.Printf("Warning could not parse %s YAML %s: %s due to: %s", ConfigMapJenkinsXGitKinds, k, v, err)
+				log.Warnf("Warning could not parse %s YAML %s: %s due to: %s", ConfigMapJenkinsXGitKinds, k, v, err)
 			} else {
 				for _, u := range m {
 					if u == gitServiceUrl {

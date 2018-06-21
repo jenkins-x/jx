@@ -13,7 +13,7 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -106,7 +106,7 @@ func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileNam
 	}
 	pgmPath, err := exec.LookPath(fileName)
 	if err == nil {
-		o.Printf("%s is already available on your PATH at %s\n", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
+		log.Warnf("%s is already available on your PATH at %s\n", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
 		return
 	}
 
@@ -116,7 +116,7 @@ func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileNam
 		return
 	}
 	if exists {
-		o.warnf("Please add %s to your PATH\n", util.ColorInfo(binDir))
+		log.Warnf("Please add %s to your PATH\n", util.ColorInfo(binDir))
 		return
 	}
 	download = true
@@ -124,12 +124,12 @@ func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileNam
 }
 
 func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
-	o.Printf("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
+	log.Infof("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
 	err := util.DownloadFile(fullPath, clientURL)
 	if err != nil {
 		return fmt.Errorf("Unable to download file %s from %s due to: %v", fullPath, clientURL, err)
 	}
-	fmt.Printf("Downloaded %s\n", util.ColorInfo(fullPath))
+	log.Infof("Downloaded %s\n", util.ColorInfo(fullPath))
 	return nil
 }
 
@@ -319,18 +319,18 @@ func (o *CommonOptions) installHyperkit() error {
 }
 
 func (o *CommonOptions) installKvm() error {
-	o.warnf("We cannot yet automate the installation of KVM - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads\n")
+	log.Warnf("We cannot yet automate the installation of KVM - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads\n")
 	return nil
 }
 
 func (o *CommonOptions) installKvm2() error {
-	o.warnf("We cannot yet automate the installation of KVM with KVM2 driver - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads " +
+	log.Warnf("We cannot yet automate the installation of KVM with KVM2 driver - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads " +
 		"and https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#kvm2-driver\n")
 	return nil
 }
 
 func (o *CommonOptions) installVirtualBox() error {
-	o.warnf("We cannot yet automate the installation of VirtualBox - can you install this manually please?\nPlease see: https://www.virtualbox.org/wiki/Downloads\n")
+	log.Warnf("We cannot yet automate the installation of VirtualBox - can you install this manually please?\nPlease see: https://www.virtualbox.org/wiki/Downloads\n")
 	return nil
 }
 
@@ -358,10 +358,10 @@ func (o *CommonOptions) installXhyve() error {
 		if err != nil {
 			return err
 		}
-		o.Printf("xhyve driver installed\n")
+		log.Infoln("xhyve driver installed")
 	} else {
 		pgmPath, _ := exec.LookPath("docker-machine-driver-xhyve")
-		o.Printf("xhyve driver is already available on your PATH at %s\n", pgmPath)
+		log.Infof("xhyve driver is already available on your PATH at %s\n", pgmPath)
 	}
 	return nil
 }
@@ -374,7 +374,7 @@ func (o *CommonOptions) installhyperv() error {
 	}
 	if strings.Contains(info, "Disabled") {
 
-		o.Printf("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted commmand.")
+		log.Info("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted commmand.")
 
 		message := fmt.Sprintf("Would you like to restart your computer?")
 
@@ -395,7 +395,7 @@ func (o *CommonOptions) installhyperv() error {
 		}
 
 	} else {
-		o.Printf("hyperv is already Enabled\n")
+		log.Infoln("hyperv is already Enabled")
 	}
 	return nil
 }

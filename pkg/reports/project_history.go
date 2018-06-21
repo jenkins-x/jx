@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/yaml.v2"
 )
@@ -208,7 +209,7 @@ func (s *ProjectHistoryService) SaveHistory() error {
 	}
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err == nil {
-		fmt.Printf("Wrote Project History file %s\n", util.ColorInfo(fileName))
+		log.Infof("Wrote Project History file %s\n", util.ColorInfo(fileName))
 	}
 	return err
 }

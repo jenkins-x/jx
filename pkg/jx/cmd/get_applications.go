@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/api/apps/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -159,7 +160,7 @@ func (o *GetApplicationsOptions) Run() error {
 	}
 	util.ReverseStrings(namespaces)
 	if len(apps) == 0 {
-		o.Printf("No applications found in environments %s\n", strings.Join(envNames, ", "))
+		log.Infof("No applications found in environments %s\n", strings.Join(envNames, ", "))
 		return nil
 	}
 	sort.Strings(apps)

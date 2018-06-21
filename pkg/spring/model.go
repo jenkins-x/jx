@@ -329,7 +329,6 @@ func (data *SpringBootForm) CreateProject(workDir string) (string, error) {
 		parameters = "?" + parameters
 	}
 	u := "http://start.spring.io/starter.zip" + parameters
-	//fmt.Printf("generating spring project from: %s\n", u)
 	req, err := http.NewRequest(http.MethodGet, u, strings.NewReader(""))
 	if err != nil {
 		return answer, err

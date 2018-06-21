@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/spring"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -118,7 +119,7 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Created spring boot project at %s\n", util.ColorInfo(outDir))
+	log.Infof("Created spring boot project at %s\n", util.ColorInfo(outDir))
 
 	return o.ImportCreatedProject(outDir)
 }

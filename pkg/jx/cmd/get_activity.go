@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -186,12 +187,12 @@ func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient versione
 func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlSpecMap map[string]string) {
 	activity, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		o.Printf("Object is not a PipelineActivity %#v\n", obj)
+		log.Infof("Object is not a PipelineActivity %#v\n", obj)
 		return
 	}
 	data, err := yaml.Marshal(&activity.Spec)
 	if err != nil {
-		o.warnf("Failed to marshal Activity.Spec to YAML: %s", err)
+		log.Infof("Failed to marshal Activity.Spec to YAML: %s", err)
 	} else {
 		text := string(data)
 		name := activity.Name
@@ -217,7 +218,7 @@ func (o *CommonOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivity
 	} else if promote != nil {
 		addPromoteRow(table, promote, indent)
 	} else {
-		o.warnf("Unknown step kind %#v\n", parent)
+		log.Warnf("Unknown step kind %#v\n", parent)
 	}
 }
 

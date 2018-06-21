@@ -16,10 +16,10 @@ import (
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -183,9 +183,9 @@ func (o *ImportOptions) Run() error {
 			log.Error(err.Error())
 			return err
 		}
-		o.Printf("Available draft packs:\n")
+		log.Infoln("Available draft packs:")
 		for i := 0; i < len(packs); i++ {
-			o.Printf(packs[i] + "\n")
+			log.Infof(packs[i] + "\n")
 		}
 		return nil
 	}
@@ -352,7 +352,7 @@ func (o *ImportOptions) Run() error {
 	}
 
 	if o.DryRun {
-		o.Printf("dry-run so skipping import to Jenkins X\n")
+		log.Infoln("dry-run so skipping import to Jenkins X")
 		return nil
 	}
 
@@ -370,7 +370,7 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 		return err
 	}
 
-	o.Printf("Selected repositories\n")
+	log.Infoln("Selected repositories")
 	for _, r := range repos {
 		o2 := ImportOptions{
 			CommonOptions:           o.CommonOptions,
@@ -383,7 +383,7 @@ func (o *ImportOptions) ImportProjectsFromGitHub() error {
 			DisableJenkinsfileCheck: o.DisableJenkinsfileCheck,
 			DisableDraft:            o.DisableDraft,
 		}
-		o.Printf("Importing repository %s\n", util.ColorInfo(r.Name))
+		log.Infof("Importing repository %s\n", util.ColorInfo(r.Name))
 		err = o2.Run()
 		if err != nil {
 			return err
@@ -500,20 +500,20 @@ func (o *ImportOptions) DraftCreate() error {
 	err = pack.CreateFrom(dir, lpack)
 	if err != nil {
 		// lets ignore draft errors as sometimes it can't find a pack - e.g. for environments
-		o.warnf("Failed to run draft create in %s due to %s", dir, err)
+		log.Warnf("Failed to run draft create in %s due to %s", dir, err)
 	}
 
 	if jenknisfileBackup != "" {
 		// if there's no Jenkinsfile created then rename it back again!
 		jenkinsfileExists, err = util.FileExists(jenkinsfile)
 		if err != nil {
-			o.warnf("Failed to check for Jenkinsfile %s", err)
+			log.Warnf("Failed to check for Jenkinsfile %s", err)
 		} else {
 			if jenkinsfileExists {
 				if !o.InitialisedGit {
 					err = os.Remove(jenknisfileBackup)
 					if err != nil {
-						o.warnf("Failed to remove Jenkinsfile backup %s", err)
+						log.Warnf("Failed to remove Jenkinsfile backup %s", err)
 					}
 				}
 			} else {
@@ -578,7 +578,7 @@ func (o *ImportOptions) getCurrentUser() string {
 		currentUser = o.Organisation
 	}
 	if currentUser == "" {
-		o.warnf("No username defined for the current git server!")
+		log.Warn("No username defined for the current git server!")
 		currentUser = o.DefaultOwner
 	}
 	return currentUser
@@ -630,7 +630,7 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+	log.Infof("Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	return nil
 }
 
@@ -682,7 +682,7 @@ func (o *ImportOptions) DiscoverGit() error {
 
 	// lets prompt the user to initialise the git repository
 	if !o.BatchMode {
-		o.Printf("The directory %s is not yet using git\n", util.ColorInfo(dir))
+		log.Infof("The directory %s is not yet using git\n", util.ColorInfo(dir))
 		flag := false
 		prompt := &survey.Confirm{
 			Message: "Would you like to initialise git now?",
@@ -739,7 +739,7 @@ func (o *ImportOptions) DiscoverGit() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("\nGit repository created\n")
+	log.Infof("\nGit repository created\n")
 	return nil
 }
 
@@ -828,8 +828,8 @@ func (o *ImportOptions) DoImport() error {
 
 func (o *ImportOptions) replacePlaceholders(gitServerName, gitOrg string) error {
 	gitOrg = kube.ToValidName(strings.ToLower(gitOrg))
-	o.Printf("replacing placeholders in directory %s\n", o.Dir)
-	o.Printf("app name: %s, git server: %s, org: %s\n", o.AppName, gitServerName, gitOrg)
+	log.Infof("replacing placeholders in directory %s\n", o.Dir)
+	log.Infof("app name: %s, git server: %s, org: %s\n", o.AppName, gitServerName, gitOrg)
 
 	if err := filepath.Walk(o.Dir, func(f string, fi os.FileInfo, err error) error {
 		if fi.IsDir() && (fi.Name() == ".git" || fi.Name() == "node_modules" || fi.Name() == "vendor" || fi.Name() == "target") {
@@ -981,7 +981,7 @@ func (o *ImportOptions) fixDockerIgnoreFile() error {
 				if err != nil {
 					return err
 				}
-				o.Printf("Removed old `Dockerfile` entry from %s\n", util.ColorInfo(filename))
+				log.Infof("Removed old `Dockerfile` entry from %s\n", util.ColorInfo(filename))
 			}
 		}
 	}

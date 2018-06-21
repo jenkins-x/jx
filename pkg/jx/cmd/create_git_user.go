@@ -6,10 +6,10 @@ import (
 
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -130,7 +130,7 @@ func (o *CreateGitUserOptions) Run() error {
 		return nil
 	}
 
-	o.Printf("Created user %s API Token for git server %s at %s\n",
+	log.Infof("Created user %s API Token for git server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -73,7 +74,7 @@ func (o *GetAddonOptions) Run() error {
 	}
 	statusMap, err := addon.GetChartStatusMap()
 	if err != nil {
-		o.warnf("Failed to find helm installs: %s\n", err)
+		log.Warnf("Failed to find helm installs: %s\n", err)
 	}
 
 	charts := kube.AddonCharts

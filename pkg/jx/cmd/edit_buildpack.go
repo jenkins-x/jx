@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
@@ -95,7 +96,7 @@ func (o *EditBuildpackOptions) Run() error {
 		if BuildPackRef != "" {
 			teamSettings.BuildPackRef = BuildPackRef
 		}
-		o.Printf("Setting the team build pack to repo: %s ref: %s\n", util.ColorInfo(buildPackURL), util.ColorInfo(BuildPackRef))
+		log.Infof("Setting the team build pack to repo: %s ref: %s\n", util.ColorInfo(buildPackURL), util.ColorInfo(BuildPackRef))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

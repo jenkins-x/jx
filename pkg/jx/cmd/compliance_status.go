@@ -7,6 +7,7 @@ import (
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -64,7 +65,7 @@ func (o *ComplianceStatusOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve the status")
 	}
-	fmt.Println(hummanReadableStatus(status.Status))
+	log.Info(hummanReadableStatus(status.Status))
 	return nil
 }
 

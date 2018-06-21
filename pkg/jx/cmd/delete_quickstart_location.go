@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -127,7 +128,7 @@ func (o *DeleteQuickstartLocationOptions) Run() error {
 		for i, l := range settings.QuickstartLocations {
 			if l.GitURL == o.GitUrl && l.Owner == o.Owner {
 				settings.QuickstartLocations = append(settings.QuickstartLocations[0:i], settings.QuickstartLocations[i+1:]...)
-				o.Printf("Removing quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(l.GitURL, l.Owner)))
+				log.Infof("Removing quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(l.GitURL, l.Owner)))
 				return nil
 			}
 		}

@@ -1,15 +1,17 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/spf13/cobra"
 
 	"github.com/fatih/color"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 const (
@@ -135,6 +137,6 @@ func (o *PromptOptions) Run() error {
 		namespace = nsColor.Sprint(namespace)
 	}
 	context = ctxColor.Sprint(context)
-	o.Printf("%s\n", strings.Join([]string{prefix, label, separator, namespace, divider, context, suffix}, ""))
+	log.Infof("%s\n", strings.Join([]string{prefix, label, separator, namespace, divider, context, suffix}, ""))
 	return nil
 }

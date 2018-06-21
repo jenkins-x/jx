@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"io"
 
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var (
@@ -96,7 +98,7 @@ func (o *DeleteJenkinsUserOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Deleted API tokens for users: %s for git server %s at %s from local settings\n",
+	log.Infof("Deleted API tokens for users: %s for git server %s at %s from local settings\n",
 		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

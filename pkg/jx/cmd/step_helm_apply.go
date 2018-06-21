@@ -7,6 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -89,7 +90,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 	info := util.ColorInfo
-	o.Printf("Applying helm chart at %s as release name %s to namespace %s\n", info(dir), info(releaseName), info(ns))
+	log.Infof("Applying helm chart at %s as release name %s to namespace %s\n", info(dir), info(releaseName), info(ns))
 
 	err = o.runCommandVerboseAt(dir, helmBinary, "upgrade", releaseName, dir, "--install", "--namespace", ns, "--debug")
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -72,10 +73,10 @@ func NewCmdCreateJHipster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 	_, err := o.getCommandOutput("", "jhipster", "--version")
 	if err != nil {
-		o.Printf("Installing JHipster..\n")
+		log.Infoln("Installing JHipster..")
 		_, err = o.getCommandOutput("", "rimraf", "--version")
 		if err != nil {
-			o.Printf("Installing rimraf..\n")
+			log.Infoln("Installing rimraf..")
 			_, err = o.getCommandOutput("", "npm", "install", "-g", "rimraf")
 			if err != nil {
 				return err
@@ -85,7 +86,7 @@ func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 		if err != nil {
 			return err
 		}
-		o.Printf("Installed JHipster\n")
+		log.Infoln("Installed JHipster")
 	}
 	return err
 }
@@ -123,13 +124,13 @@ func (o *CreateJHipsterOptions) Run() error {
 			return fmt.Errorf("Invalid project name: %s", dir)
 		}
 	}
-	o.Printf("\n")
+	log.Blank()
 
 	err = o.GenerateJHipster(dir)
 	if err != nil {
 		return err
 	}
 
-	o.Printf("Created JHipster project at %s\n\n", util.ColorInfo(dir))
+	log.Infof("Created JHipster project at %s\n\n", util.ColorInfo(dir))
 	return o.ImportCreatedProject(dir)
 }

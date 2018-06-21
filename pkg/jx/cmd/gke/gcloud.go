@@ -3,11 +3,12 @@ package gke
 import (
 	"errors"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 var (

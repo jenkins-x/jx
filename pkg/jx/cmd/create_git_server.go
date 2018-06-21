@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -108,7 +109,7 @@ func (o *CreateGitServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Added git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
+	log.Infof("Added git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 	return nil
 }
 

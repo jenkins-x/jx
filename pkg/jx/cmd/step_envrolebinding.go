@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -238,14 +239,14 @@ func (o *StepEnvRoleBindingOptions) onEnvironment(kubeClient kubernetes.Interfac
 		if newEnv == nil || newEnv.Spec.Namespace != oldEnv.Spec.Namespace {
 			err := o.removeEnvironment(kubeClient, ns, oldEnv)
 			if err != nil {
-				o.warnf("Failed to remove role bindings for environment %s: %s", oldEnv.Name, err)
+				log.Warnf("Failed to remove role bindings for environment %s: %s", oldEnv.Name, err)
 			}
 		}
 	}
 	if newEnv != nil {
 		err := o.upsertEnvironment(kubeClient, ns, newEnv)
 		if err != nil {
-			o.warnf("Failed to upsert role bindings for environment %s: %s", newEnv.Name, err)
+			log.Warnf("Failed to upsert role bindings for environment %s: %s", newEnv.Name, err)
 		}
 	}
 }
@@ -261,7 +262,7 @@ func (o *StepEnvRoleBindingOptions) upsertEnvironment(kubeClient kubernetes.Inte
 					roleName := binding.Spec.RoleRef.Name
 					role := o.Roles[roleName]
 					if role == nil {
-						o.warnf("Cannot find role %s in namespace %s", roleName, curNs)
+						log.Warnf("Cannot find role %s in namespace %s", roleName, curNs)
 					} else {
 						roles := kubeClient.RbacV1().Roles(ns)
 						var oldRole *rbacv1.Role
@@ -274,11 +275,11 @@ func (o *StepEnvRoleBindingOptions) upsertEnvironment(kubeClient kubernetes.Inte
 								changed = true
 							}
 							if changed {
-								o.Printf("Updating Role %s in namespace %s\n", roleName, ns)
+								log.Infof("Updating Role %s in namespace %s\n", roleName, ns)
 								_, err = roles.Update(oldRole)
 							}
 						} else {
-							o.Printf("Creating Role %s in namespace %s\n", roleName, ns)
+							log.Infof("Creating Role %s in namespace %s\n", roleName, ns)
 							newRole := &rbacv1.Role{
 								ObjectMeta: metav1.ObjectMeta{
 									Name: roleName,
@@ -311,11 +312,11 @@ func (o *StepEnvRoleBindingOptions) upsertEnvironment(kubeClient kubernetes.Inte
 						changed = true
 					}
 					if changed {
-						o.Printf("Updating RoleBinding %s in namespace %s\n", bindingName, ns)
+						log.Infof("Updating RoleBinding %s in namespace %s\n", bindingName, ns)
 						_, err = roleBindings.Update(old)
 					}
 				} else {
-					o.Printf("Creating RoleBinding %s in namespace %s\n", bindingName, ns)
+					log.Infof("Creating RoleBinding %s in namespace %s\n", bindingName, ns)
 					newBinding := &rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: bindingName,
@@ -330,7 +331,7 @@ func (o *StepEnvRoleBindingOptions) upsertEnvironment(kubeClient kubernetes.Inte
 					_, err = roleBindings.Create(newBinding)
 				}
 				if err != nil {
-					o.warnf("Failed: %s\n", err)
+					log.Warnf("Failed: %s\n", err)
 					if answer == nil {
 						answer = err
 					}
