@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"reflect"
 	"time"
@@ -25,6 +24,7 @@ type StepEnvRoleBindingOptions struct {
 
 	Watch bool
 
+	Roles           map[string]*rbacv1.Role
 	EnvRoleBindings map[string]*v1.EnvironmentRoleBinding
 }
 
@@ -34,14 +34,15 @@ type StepEnvRoleBindingFlags struct {
 
 var (
 	stepEnvRoleBindingLong = templates.LongDesc(`
-		This pipeline step command creates a git tag using a version number prefixed with 'v' and pushes it to a
-		remote origin repo.
+		Mirrors EnvironmentRoleBinding resources to Roles and RoleBindings in all matching Environment namespaces. 
 
-		This commands effectively runs:
+		RBAC in Kubernetes is either global with ClusterRoles or is namespace based with Roles per Namespace.
 
-		git commit -a -m "release $(VERSION)" --allow-empty
-		git tag -fa v$(VERSION) -m "Release version $(VERSION)"
-		git push origin v$(VERSION)
+		We use a Custom Resource called EnvironmentRoleBinding which binds Roles and its bindings from the development 
+		environment into each Environment's Namespace. 
+
+		e.g. each EnvironmentRoleBinding will result in a RoleBinding and Role resource being create in each matching Environment. 
+		So when a Preview environment is created it will have the correct Role and RoleBinding resources added. 
 
 `)
 
@@ -67,8 +68,8 @@ func NewCmdStepEnvRoleBinding(f cmdutil.Factory, out io.Writer, errOut io.Writer
 		},
 	}
 	cmd := &cobra.Command{
-		Use:     "tag",
-		Short:   "Creates a git tag and pushes to remote repo",
+		Use:     "envrolebinding",
+		Short:   "Mirrors EnvironmentRoleBinding resources to Roles and RoleBindings in all matching Environment namespaces",
 		Long:    stepEnvRoleBindingLong,
 		Example: stepEnvRoleBindingExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -108,6 +109,10 @@ func (o *StepEnvRoleBindingOptions) Run() error {
 	}
 
 	if o.Watch {
+		err = o.WatchRoles(kubeClient, ns)
+		if err != nil {
+			return err
+		}
 		err = o.WatchEnvironmentRoleBindings(jxClient, ns)
 		if err != nil {
 			return err
@@ -118,11 +123,17 @@ func (o *StepEnvRoleBindingOptions) Run() error {
 		}
 	}
 
+	roles, err := kubeClient.RbacV1().Roles(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, role := range roles.Items {
+		o.upsertRole(&role)
+	}
 	bindings, err := jxClient.JenkinsV1().EnvironmentRoleBindings(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Found %d EnvironmentRoleBindings in namespace %s\n", len(bindings.Items), ns)
 	for _, binding := range bindings.Items {
 		o.upsertEnvironmentRoleBinding(&binding)
 	}
@@ -130,13 +141,38 @@ func (o *StepEnvRoleBindingOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Found %d Environments in namespace %s\n", len(envList.Items), ns)
 	for _, env := range envList.Items {
 		err = o.upsertEnvironment(kubeClient, ns, &env)
 		if err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func (o *StepEnvRoleBindingOptions) WatchRoles(kubeClient kubernetes.Interface, ns string) error {
+	role := &rbacv1.Role{}
+	listWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "roles", ns, fields.Everything())
+	kube.SortListWatchByName(listWatch)
+	_, controller := cache.NewInformer(
+		listWatch,
+		role,
+		time.Minute*10,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				o.onRole(nil, obj)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				o.onRole(oldObj, newObj)
+			},
+			DeleteFunc: func(obj interface{}) {
+				o.onRole(obj, nil)
+			},
+		},
+	)
+
+	stop := make(chan struct{})
+	go controller.Run(stop)
 	return nil
 }
 
@@ -221,9 +257,47 @@ func (o *StepEnvRoleBindingOptions) upsertEnvironment(kubeClient kubernetes.Inte
 		for _, binding := range o.EnvRoleBindings {
 			if kube.EnvironmentMatchesAny(env, binding.Spec.Environments) {
 				var err error
-				name := binding.Name
+				if ns != curNs {
+					roleName := binding.Spec.RoleRef.Name
+					role := o.Roles[roleName]
+					if role == nil {
+						o.warnf("Cannot find role %s in namespace %s", roleName, curNs)
+					} else {
+						roles := kubeClient.RbacV1().Roles(ns)
+						var oldRole *rbacv1.Role
+						oldRole, err = roles.Get(roleName, metav1.GetOptions{})
+						if err == nil && oldRole != nil {
+							// lets update it
+							changed := false
+							if !reflect.DeepEqual(oldRole.Rules, role.Rules) {
+								oldRole.Rules = role.Rules
+								changed = true
+							}
+							if changed {
+								o.Printf("Updating Role %s in namespace %s\n", roleName, ns)
+								_, err = roles.Update(oldRole)
+							}
+						} else {
+							o.Printf("Creating Role %s in namespace %s\n", roleName, ns)
+							newRole := &rbacv1.Role{
+								ObjectMeta: metav1.ObjectMeta{
+									Name: roleName,
+									Labels: map[string]string{
+										kube.LabelCreatedBy: kube.ValueCreatedByJX,
+										kube.LabelTeam:      curNs,
+									},
+								},
+								Rules: role.Rules,
+							}
+							_, err = roles.Create(newRole)
+						}
+					}
+				}
+
+				bindingName := binding.Name
 				roleBindings := kubeClient.RbacV1().RoleBindings(ns)
-				old, err := roleBindings.Get(name, metav1.GetOptions{})
+				var old *rbacv1.RoleBinding
+				old, err = roleBindings.Get(bindingName, metav1.GetOptions{})
 				if err == nil && old != nil {
 					// lets update it
 					changed := false
@@ -237,14 +311,18 @@ func (o *StepEnvRoleBindingOptions) upsertEnvironment(kubeClient kubernetes.Inte
 						changed = true
 					}
 					if changed {
-						o.Printf("Updating RoleBinding %s in namespace %s\n", name, ns)
+						o.Printf("Updating RoleBinding %s in namespace %s\n", bindingName, ns)
 						_, err = roleBindings.Update(old)
 					}
 				} else {
-					o.Printf("Creating RoleBinding %s in namespace %s\n", name, ns)
+					o.Printf("Creating RoleBinding %s in namespace %s\n", bindingName, ns)
 					newBinding := &rbacv1.RoleBinding{
 						ObjectMeta: metav1.ObjectMeta{
-							Name: name,
+							Name: bindingName,
+							Labels: map[string]string{
+								kube.LabelCreatedBy: kube.ValueCreatedByJX,
+								kube.LabelTeam:      curNs,
+							},
 						},
 						Subjects: binding.Spec.Subjects,
 						RoleRef:  binding.Spec.RoleRef,
@@ -295,5 +373,27 @@ func (o *StepEnvRoleBindingOptions) upsertEnvironmentRoleBinding(newEnv *v1.Envi
 			o.EnvRoleBindings = map[string]*v1.EnvironmentRoleBinding{}
 		}
 		o.EnvRoleBindings[newEnv.Name] = newEnv
+	}
+}
+
+func (o *StepEnvRoleBindingOptions) onRole(oldObj interface{}, newObj interface{}) {
+	oldRole := oldObj.(*rbacv1.Role)
+	newRole := newObj.(*rbacv1.Role)
+
+	if o.Roles == nil {
+		o.Roles = map[string]*rbacv1.Role{}
+	}
+	if oldRole != nil {
+		delete(o.Roles, oldRole.Name)
+	}
+	o.upsertRole(newRole)
+}
+
+func (o *StepEnvRoleBindingOptions) upsertRole(newRole *rbacv1.Role) {
+	if newRole != nil {
+		if o.Roles == nil {
+			o.Roles = map[string]*rbacv1.Role{}
+		}
+		o.Roles[newRole.Name] = newRole
 	}
 }

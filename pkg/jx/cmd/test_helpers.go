@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -36,6 +37,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 			namespaceMap[ns.Name] = ns
 		}
 	}
+	hasDev := false
 	for _, ro := range jxObjects {
 		env, ok := ro.(*v1.Environment)
 		if ok {
@@ -43,7 +45,19 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 			if ns != "" && util.StringArrayIndex(namespacesRequired, ns) < 0 {
 				namespacesRequired = append(namespacesRequired, ns)
 			}
+			if env.Name == "dev" {
+				hasDev = true
+			}
 		}
+	}
+
+	// ensure we've the dev nenvironment
+	if !hasDev {
+		devEnv := kube.NewPermanentEnvironment("dev")
+		devEnv.Spec.Namespace = o.currentNamespace
+		devEnv.Spec.Kind = v1.EnvironmentKindTypeDevelopment
+
+		jxObjects = append(jxObjects, devEnv)
 	}
 
 	// add any missing namespaces
