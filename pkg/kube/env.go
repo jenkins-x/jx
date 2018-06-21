@@ -484,7 +484,7 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 		return err
 	}
 	if !exists {
-		fmt.Printf(util.ColorWarning("WARNING: Could not find a Makefile in %s\n"), dir)
+		log.Warnf("WARNING: Could not find a Makefile in %s\n", dir)
 		return nil
 	}
 	input, err := ioutil.ReadFile(file)

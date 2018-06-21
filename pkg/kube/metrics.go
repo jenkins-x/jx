@@ -2,6 +2,8 @@ package kube
 
 import (
 	"fmt"
+
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/client-go/kubernetes"
 
@@ -79,7 +81,7 @@ func (q *HeapterConfig) GetPodMetrics(ns string, pod string, selector string, me
 	if end != "" {
 		params["end"] = end
 	}
-	fmt.Printf("Querying %s using query parameters: %#v\n", path, params)
+	log.Infof("Querying %s using query parameters: %#v\n", path, params)
 	resp := kubeClient.CoreV1().Services(heapsterNamespace).ProxyGet(heapsterScheme, heapsterService, heapsterPort, path, params)
 	return resp.DoRaw()
 }
