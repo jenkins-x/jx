@@ -35,7 +35,7 @@ func PickPassword(message string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return answer, nil
+	return strings.TrimSpace(answer), nil
 }
 
 func PickNameWithDefault(names []string, message string, defaultValue string) (string, error) {
