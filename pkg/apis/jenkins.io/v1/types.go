@@ -1,8 +1,10 @@
 package v1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
+
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +genclient
@@ -151,6 +153,61 @@ type UserSpec struct {
 	Name     string `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
 	LinkURL  string `json:"linkUrl,omitempty" protobuf:"bytes,3,opt,name=linkUrl"`
 	ImageURL string `json:"imageUrl,omitempty" protobuf:"bytes,4,opt,name=imageUrl"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+// EnvironmentRoleBinding is like a vanilla RoleBinding but applies to a set of Namespaces based on an Environment filter
+// so that roles can be bound to multiple namespaces easil.
+//
+// For example to specify the binding of roles on all Preview environments or on all permanent environments.
+type EnvironmentRoleBinding struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	Spec   EnvironmentRoleBindingSpec   `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	Status EnvironmentRoleBindingStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+}
+
+// EnvironmentRoleBindingSpec is the specification of an EnvironmentRoleBinding
+type EnvironmentRoleBindingSpec struct {
+	// Subjects holds references to the objects the role applies to.
+	Subjects []rbacv1.Subject `json:"subjects" protobuf:"bytes,2,rep,name=subjects"`
+
+	// RoleRef can reference a Role in the current namespace or a ClusterRole in the global namespace.
+	// If the RoleRef cannot be resolved, the Authorizer must return an error.
+	RoleRef rbacv1.RoleRef `json:"roleRef" protobuf:"bytes,3,opt,name=roleRef"`
+
+	// specifies which sets of environments this binding applies to
+	Environments []EnvironmentFilter `json:"environments,omitempty" protobuf:"bytes,4,opt,name=environments"`
+}
+
+// EnvironmentFilter specifies the environments to apply the role binding to
+type EnvironmentFilter struct {
+	Kind     EnvironmentKindType `json:"kind,omitempty" protobuf:"bytes,1,opt,name=kind"`
+	Includes []string            `json:"includes,omitempty" protobuf:"bytes,2,opt,name=includes"`
+	Excludes []string            `json:"excludes,omitempty" protobuf:"bytes,3,opt,name=excludes"`
+}
+
+// EnvironmentRoleBindingStatus is the status for an EnvironmentRoleBinding resource
+type EnvironmentRoleBindingStatus struct {
+	Version string `json:"version,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// EnvironmentRoleBindingList is a list of TypeMeta resources
+type EnvironmentRoleBindingList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []EnvironmentRoleBinding `json:"items"`
 }
 
 // +genclient

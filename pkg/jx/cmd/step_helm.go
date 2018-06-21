@@ -1,16 +1,16 @@
 package cmd
 
 import (
-	"io"
-
-	"github.com/spf13/cobra"
-
 	"fmt"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/util"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+
+	"github.com/spf13/cobra"
+
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const ()
