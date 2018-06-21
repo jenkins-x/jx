@@ -497,6 +497,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 				}
 				if issue == nil {
 					o.warnf("Failed to find issue %s for repository %s\n", result, tracker.HomeURL())
+					continue
 				}
 
 				var user v1.UserDetails
