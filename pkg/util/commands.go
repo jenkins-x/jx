@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 func PathWithBinary() string {
@@ -40,7 +42,7 @@ func RunCommand(dir string, name string, args ...string) error {
 	e.Stderr = os.Stdin
 	err := e.Run()
 	if err != nil {
-		fmt.Printf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Errorf("Command failed  %s %s\n", name, strings.Join(args, " "))
 	}
 	return err
 
