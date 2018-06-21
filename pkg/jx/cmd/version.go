@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
@@ -70,7 +71,7 @@ func (o *VersionOptions) Run() error {
 	// Jenkins X version
 	output, err := o.getCommandOutput("", helmBin, "list")
 	if err != nil {
-		o.warnf("Failed to find helm installs: %s\n", err)
+		log.Warnf("Failed to find helm installs: %s\n", err)
 	} else {
 		for _, line := range strings.Split(output, "\n") {
 			fields := strings.Split(line, "\t")
@@ -89,11 +90,11 @@ func (o *VersionOptions) Run() error {
 	// kubernetes version
 	client, _, err := o.KubeClient()
 	if err != nil {
-		o.warnf("Failed to connect to kubernetes: %s\n", err)
+		log.Warnf("Failed to connect to kubernetes: %s\n", err)
 	} else {
 		serverVersion, err := client.Discovery().ServerVersion()
 		if err != nil {
-			o.warnf("Failed to get kubernetes server version: %s\n", err)
+			log.Warnf("Failed to get kubernetes server version: %s\n", err)
 		} else if serverVersion != nil {
 			table.AddRow("kubernetes cluster", info(serverVersion.String()))
 		}
@@ -102,7 +103,7 @@ func (o *VersionOptions) Run() error {
 	// kubectl version
 	output, err = o.getCommandOutput("", "kubectl", "version", "--short")
 	if err != nil {
-		o.warnf("Failed to get kubectl version: %s\n", err)
+		log.Warnf("Failed to get kubectl version: %s\n", err)
 	} else {
 		for i, line := range strings.Split(output, "\n") {
 			fields := strings.Fields(line)
@@ -127,7 +128,7 @@ func (o *VersionOptions) Run() error {
 	}
 	output, err = o.getCommandOutput("", "helm", args...)
 	if err != nil {
-		o.warnf("Failed to get helm version: %s\n", err)
+		log.Warnf("Failed to get helm version: %s\n", err)
 	} else {
 		for i, line := range strings.Split(output, "\n") {
 			fields := strings.Fields(line)
@@ -148,7 +149,7 @@ func (o *VersionOptions) Run() error {
 	// git version
 	output, err = o.getCommandOutput("", "git", "version")
 	if err != nil {
-		o.warnf("Failed to get git version: %s\n", err)
+		log.Warnf("Failed to get git version: %s\n", err)
 	} else {
 		table.AddRow("git", info(output))
 	}
@@ -174,10 +175,10 @@ func (o *VersionOptions) versionCheck() error {
 
 	if newVersion.GT(currentVersion) {
 		app := util.ColorInfo("jx")
-		o.Printf("\nA new %s version is available: %s\n", app, util.ColorInfo(newVersion.String()))
+		log.Warnf("\nA new %s version is available: %s\n", app, util.ColorInfo(newVersion.String()))
 
 		if o.BatchMode {
-			o.Printf("To upgrade to this new version use: %s\n", util.ColorInfo("jx upgrade cli"))
+			log.Warnf("To upgrade to this new version use: %s\n", util.ColorInfo("jx upgrade cli"))
 		} else {
 			message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
 			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.") {

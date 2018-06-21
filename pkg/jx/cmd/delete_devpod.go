@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -113,6 +114,6 @@ func (o *DeleteDevPodOptions) Run() error {
 			return err
 		}
 	}
-	o.Printf("Deleted DevPods %s\n", util.ColorInfo(deletePods))
+	log.Infof("Deleted DevPods %s\n", util.ColorInfo(deletePods))
 	return nil
 }

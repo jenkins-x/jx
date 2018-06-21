@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
 )
@@ -93,7 +94,7 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 		url, err = o.findService(name)
 	}
 	if err != nil && name != "" {
-		o.Printf("If the app %s is running in a different environment you could try: %s\n", util.ColorInfo(name), util.ColorInfo("jx get applications"))
+		log.Infof("If the app %s is running in a different environment you could try: %s\n", util.ColorInfo(name), util.ColorInfo("jx get applications"))
 	}
 	if err != nil {
 		return err

@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -182,7 +183,7 @@ func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 func (o *StepChangelogOptions) Run() error {
 	// lets enable batch mode if we detect we are inside a pipeline
 	if !o.BatchMode && os.Getenv("BUILD_NUMBER") != "" {
-		o.Printf("Using batch mode as inside a pipeline\n")
+		log.Infoln("Using batch mode as inside a pipeline")
 		o.BatchMode = true
 	}
 
@@ -252,14 +253,14 @@ func (o *StepChangelogOptions) Run() error {
 		return fmt.Errorf("Failed to create the templates directory %s due to %s", templatesDir, err)
 	}
 
-	o.Printf("Generating change log from git ref %s => %s\n", util.ColorInfo(previousRev), util.ColorInfo(currentRev))
+	log.Infof("Generating change log from git ref %s => %s\n", util.ColorInfo(previousRev), util.ColorInfo(currentRev))
 
 	gitDir, gitConfDir, err := gits.FindGitConfigDir(dir)
 	if err != nil {
 		return err
 	}
 	if gitDir == "" || gitConfDir == "" {
-		o.warnf("No git directory could be found from dir %s\n", dir)
+		log.Warnf("No git directory could be found from dir %s\n", dir)
 		return nil
 	}
 
@@ -293,7 +294,7 @@ func (o *StepChangelogOptions) Run() error {
 	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc, gitKind)
 	if err != nil {
 		foundGitProvider = false
-		o.warnf("Could not create GitProvide so cannot update the release notes: %s\n", err)
+		log.Warnf("Could not create GitProvide so cannot update the release notes: %s\n", err)
 	}
 	o.State.GitProvider = gitProvider
 	o.State.FoundIssueNames = map[string]bool{}
@@ -367,19 +368,19 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		release.Spec.ReleaseNotesURL = url
 		if err != nil {
-			o.warnf("Failed to update the release at %s: %s\n", url, err)
+			log.Warnf("Failed to update the release at %s: %s\n", url, err)
 			return nil
 		}
-		o.Printf("Updated the release information at %s\n", util.ColorInfo(url))
+		log.Infof("Updated the release information at %s\n", util.ColorInfo(url))
 	} else if o.OutputMarkdownFile != "" {
 		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), DefaultWritePermissions)
 		if err != nil {
 			return err
 		}
-		o.Printf("\nGenerated Changelog: %s\n", util.ColorInfo(o.OutputMarkdownFile))
+		log.Infof("\nGenerated Changelog: %s\n", util.ColorInfo(o.OutputMarkdownFile))
 	} else {
-		o.Printf("\nGenerated Changelog:\n")
-		o.Printf("%s\n\n", markdown)
+		log.Infof("\nGenerated Changelog:\n")
+		log.Infof("%s\n\n", markdown)
 	}
 
 	o.State.Release = release
@@ -398,7 +399,7 @@ func (o *StepChangelogOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to save Release YAML file %s: %s", releaseFile, err)
 		}
-		o.Printf("generated: %s\n", util.ColorInfo(releaseFile))
+		log.Infof("generated: %s\n", util.ColorInfo(releaseFile))
 	}
 	if o.GenerateCRD {
 		exists, err := util.FileExists(crdFile)
@@ -410,7 +411,7 @@ func (o *StepChangelogOptions) Run() error {
 			if err != nil {
 				return fmt.Errorf("Failed to save Release CRD YAML file %s: %s", crdFile, err)
 			}
-			o.Printf("generated: %s\n", util.ColorInfo(crdFile))
+			log.Infof("generated: %s\n", util.ColorInfo(crdFile))
 		}
 	}
 	releaseNotesURL := release.Spec.ReleaseNotesURL
@@ -433,13 +434,13 @@ func (o *StepChangelogOptions) Run() error {
 			if err == nil && a != nil && a.Spec.ReleaseNotesURL == "" {
 				_, err = activities.Update(a)
 				if err != nil {
-					o.warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+					log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
 				} else {
-					o.Printf("Updated PipelineActivities %s with release notes URL: %s\n", util.ColorInfo(name), util.ColorInfo(releaseNotesURL))
+					log.Infof("Updated PipelineActivities %s with release notes URL: %s\n", util.ColorInfo(name), util.ColorInfo(releaseNotesURL))
 				}
 			}
 		} else {
-			o.warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the ReleaseNotesURL\n")
+			log.Infof("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the ReleaseNotesURL\n")
 		}
 	}
 	return nil
@@ -463,7 +464,7 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 
 	spec.Commits = append(spec.Commits, commitSummary)
 	if err != nil {
-		o.warnf("Failed to enrich commits with issues: %s\n", err)
+		log.Warnf("Failed to enrich commits with issues: %s\n", err)
 	}
 }
 
@@ -478,7 +479,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 	issueKind := issues.GetIssueProvider(tracker)
 	if !o.State.LoggedIssueKind {
 		o.State.LoggedIssueKind = true
-		o.Printf("Finding issues in commit messages using %s format\n", issueKind)
+		log.Infof("Finding issues in commit messages using %s format\n", issueKind)
 	}
 	if issueKind == issues.Jira {
 		regex = JIRAIssueRegex
@@ -492,31 +493,31 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 				o.State.FoundIssueNames[result] = true
 				issue, err := tracker.GetIssue(result)
 				if err != nil {
-					o.warnf("Failed to lookup issue %s in issue tracker %s due to %s\n", result, tracker.HomeURL(), err)
+					log.Warnf("Failed to lookup issue %s in issue tracker %s due to %s\n", result, tracker.HomeURL(), err)
 					continue
 				}
 				if issue == nil {
-					o.warnf("Failed to find issue %s for repository %s\n", result, tracker.HomeURL())
+					log.Warnf("Failed to find issue %s for repository %s\n", result, tracker.HomeURL())
 					continue
 				}
 
 				var user v1.UserDetails
 				if issue.User == nil {
-					o.warnf("Failed to find user for issue %s repository %s\n", result, tracker.HomeURL())
+					log.Warnf("Failed to find user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
 					user = *o.gitUserToUserDetails(issue.User)
 				}
 
 				var closedBy v1.UserDetails
 				if issue.ClosedBy == nil {
-					o.warnf("Failed to find closedBy user for issue %s repository %s\n", result, tracker.HomeURL())
+					log.Warnf("Failed to find closedBy user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
 					closedBy = *o.gitUserToUserDetails(issue.User)
 				}
 
 				var assignees []v1.UserDetails
 				if issue.Assignees == nil {
-					o.warnf("Failed to find assignees for issue %s repository %s\n", result, tracker.HomeURL())
+					log.Warnf("Failed to find assignees for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
 					assignees = o.gitUserToUserDetailSlice(issue.Assignees)
 				}

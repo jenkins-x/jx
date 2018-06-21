@@ -1,12 +1,12 @@
 package tests
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -16,7 +16,7 @@ func IsDebugLog() bool {
 
 func Debugf(message string, args ...interface{}) {
 	if IsDebugLog() {
-		fmt.Printf(message, args...)
+		log.Infof(message, args...)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -111,7 +112,7 @@ func (o *GetEnvOptions) Run() error {
 		table.AddRow("NAME", "LABEL", "KIND", "NAMESPACE", "SOURCE", "REF", "PR")
 		table.AddRow(e, spec.Label, spec.Namespace, kindString(spec), spec.Source.URL, spec.Source.Ref, spec.PullRequestURL)
 		table.Render()
-		o.Printf("\n")
+		log.Blank()
 
 		ens := env.Spec.Namespace
 		if ens != "" {
@@ -137,7 +138,7 @@ func (o *GetEnvOptions) Run() error {
 			return err
 		}
 		if len(envs.Items) == 0 {
-			o.Printf("No environments found.\nTo create an environment use: jx create env\n")
+			log.Infof("No environments found.\nTo create an environment use: jx create env\n")
 			return nil
 		}
 

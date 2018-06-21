@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
@@ -23,7 +24,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 		return nil, nil, nil, err
 	}
 	if gitDir == "" || gitConfDir == "" {
-		o.warnf("No git directory could be found from dir %s\n", dir)
+		log.Warnf("No git directory could be found from dir %s\n", dir)
 		return nil, nil, nil, nil
 	}
 
@@ -123,7 +124,7 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 		if err != nil {
 			return name, fmt.Errorf("Failed to update Jenkins ConfigMap: %s", err)
 		}
-		o.Printf("Updated the Jenkins ConfigMap %s\n", kube.ConfigMapJenkinsX)
+		log.Infof("Updated the Jenkins ConfigMap %s\n", kube.ConfigMapJenkinsX)
 
 		// wait a little bit to give k8s chance to sync the ConfigMap to the file system
 		time.Sleep(time.Second * 2)
@@ -137,9 +138,9 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 		//err = jenk.Reload()
 		err = jenk.SafeRestart()
 		if err != nil {
-			o.warnf("Failed to safe restart Jenkins after configuration change %s\n", err)
+			log.Warnf("Failed to safe restart Jenkins after configuration change %s\n", err)
 		} else {
-			o.Printf("Safe Restarted Jenkins server\n")
+			log.Infoln("Safe Restarted Jenkins server")
 
 			// Let's wait 5 minutes for Jenkins to come back up.
 			// This is kinda gross, but it's just polling Jenkins every second for 5 minutes.
@@ -150,7 +151,7 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 				if err == nil {
 					break
 				}
-				o.Printf("Jenkins returned an error. Waiting for it to recover...\n")
+				log.Infoln("Jenkins returned an error. Waiting for it to recover...")
 				time.Sleep(1 * time.Second)
 			}
 		}

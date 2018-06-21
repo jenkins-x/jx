@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -88,7 +89,7 @@ func (o *CreateChatServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Added issue chat server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
+	log.Infof("Added issue chat server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 	return nil
 }
 

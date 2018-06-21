@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
@@ -97,7 +98,7 @@ func (o *DeletePreviewOptions) Run() error {
 }
 
 func (o *DeletePreviewOptions) deletePreview(name string) error {
-	o.Printf("Deleting preview environment: %s\n", util.ColorInfo(name))
+	log.Infof("Deleting preview environment: %s\n", util.ColorInfo(name))
 	deleteOptions := &DeleteEnvOptions{
 		CommonOptions:   o.CommonOptions,
 		DeleteNamespace: true,

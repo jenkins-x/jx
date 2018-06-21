@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/reports"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -168,7 +169,7 @@ func (o *StepBlogOptions) downloadsReport(provider gits.GitProvider, owner strin
 		return err
 	}
 	if len(releases) == 0 {
-		o.warnf("No releases found for %s/%s/n", owner, repo)
+		log.Warnf("No releases found for %s/%s/n", owner, repo)
 		return nil
 	}
 	if o.CombineMinorReleases {
@@ -183,7 +184,7 @@ func (o *StepBlogOptions) downloadsReport(provider gits.GitProvider, owner strin
 			issuesClosed := len(spec.Issues)
 			queryClosedIssueCount, err := o.queryClosedIssues()
 			if err != nil {
-				o.warnf("Failed to query closed issues: %s\n", err)
+				log.Warnf("Failed to query closed issues: %s\n", err)
 			}
 			if queryClosedIssueCount > issuesClosed {
 				issuesClosed = queryClosedIssueCount
@@ -195,7 +196,7 @@ func (o *StepBlogOptions) downloadsReport(provider gits.GitProvider, owner strin
 
 		repo, err := provider.GetRepository(owner, repo)
 		if err != nil {
-			o.warnf("Failed to load the repository %s", err)
+			log.Warnf("Failed to load the repository %s", err)
 		} else {
 			history.StarsMetrics(o.ToDate, repo.Stars)
 		}
@@ -222,7 +223,7 @@ func (o *StepBlogOptions) createBarReport(name string, legends ...string) report
 		jsDir := filepath.Join(outDir, "static", "news", blogName)
 		err := os.MkdirAll(jsDir, DefaultWritePermissions)
 		if err != nil {
-			o.warnf("Could not create directory %s: %s", jsDir, err)
+			log.Warnf("Could not create directory %s: %s", jsDir, err)
 		}
 		jsFileName := filepath.Join(jsDir, name+".js")
 		jsLinkURI := filepath.Join("/news", blogName, name+".js")
@@ -399,7 +400,7 @@ func (o *StepBlogOptions) report() (*reports.ProjectHistory, *reports.ProjectRep
 		toDate := o.ToDate
 		report := history.FindReport(toDate)
 		if report == nil {
-			o.warnf("No report for date %s\n", toDate)
+			log.Warnf("No report for date %s\n", toDate)
 		}
 		return history, report
 	}
@@ -435,7 +436,7 @@ func (o *StepBlogOptions) createNewCommitters() string {
 			o.addContributors(issue.Assignees)
 		}
 	} else {
-		o.warnf("No Release!\n")
+		log.Warnf("No Release!\n")
 	}
 	history, _ := o.report()
 	if history != nil {
@@ -571,7 +572,7 @@ func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
 		} else {
 			metrics, err := o.getChannelMetrics(chatConfig, devChannel)
 			if err != nil {
-				o.warnf("Failed to get chat metrics for channel %s: %s\n", devChannel, err)
+				log.Warnf("Failed to get chat metrics for channel %s: %s\n", devChannel, err)
 				return nil
 			}
 			count = metrics.MemberCount
@@ -587,7 +588,7 @@ func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
 		} else {
 			metrics, err := o.getChannelMetrics(chatConfig, userChannel)
 			if err != nil {
-				o.warnf("Failed to get chat metrics for channel %s: %s\n", userChannel, err)
+				log.Warnf("Failed to get chat metrics for channel %s: %s\n", userChannel, err)
 				return nil
 			}
 			count = metrics.MemberCount

@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -130,7 +131,7 @@ func (o *DeleteContextOptions) Run() error {
 		return fmt.Errorf("Failed to update the kube config %s", err)
 	}
 
-	o.Printf("Deleted kubernetes contexts: %s\n", util.ColorInfo(strings.Join(selected, ", ")))
+	log.Infof("Deleted kubernetes contexts: %s\n", util.ColorInfo(strings.Join(selected, ", ")))
 	return nil
 }
 

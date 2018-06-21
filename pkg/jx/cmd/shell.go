@@ -9,15 +9,17 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 const (
@@ -145,10 +147,10 @@ func (o *ShellOptions) Run() error {
 	}
 
 	info := util.ColorInfo
-	o.Printf("Creating a new shell using the kubernetes context %s\n", info(ctxName))
-	o.Printf("Bash RC file is %s\n\n", tmpRCfileName)
-	o.Printf("All changes to the kuberentes context like changing environment, namespace or context will be local to this shell\n")
-	o.Printf("To return to the global context use the command: exit\n\n")
+	log.Infof("Creating a new shell using the kubernetes context %s\n", info(ctxName))
+	log.Infof("Bash RC file is %s\n\n", tmpRCfileName)
+	log.Infof("All changes to the kuberentes context like changing environment, namespace or context will be local to this shell\n")
+	log.Infof("To return to the global context use the command: exit\n\n")
 
 	e := exec.Command(shell, "-rcfile", tmpRCfileName, "-i")
 	e.Stdout = o.Out

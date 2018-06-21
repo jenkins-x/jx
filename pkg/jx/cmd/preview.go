@@ -12,10 +12,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -118,7 +118,7 @@ func (options *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
 
 // Run implements the command
 func (o *PreviewOptions) Run() error {
-	o.Printf("Creating a preview\n")
+	log.Infoln("Creating a preview")
 	/*
 		args := o.Args
 		if len(args) > 0 && o.Name == "" {
@@ -218,7 +218,7 @@ func (o *PreviewOptions) Run() error {
 							AvatarURL: author.AvatarURL,
 						})
 						if err != nil {
-							o.warnf("An error happened attempting to CreateOrUpdateUser in namespace %s: %s\n", ns, err)
+							log.Warnf("An error happened attempting to CreateOrUpdateUser in namespace %s: %s\n", ns, err)
 						}
 					}
 
@@ -365,7 +365,7 @@ func (o *PreviewOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to create environment in namespace %s due to: %s", ns, err)
 		}
-		o.Printf("Created environment %s\n", util.ColorInfo(env.Name))
+		log.Infof("Created environment %s\n", util.ColorInfo(env.Name))
 	}
 
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, env, ns)
@@ -425,7 +425,7 @@ func (o *PreviewOptions) Run() error {
 
 	helmBin, err := o.TeamHelmBin()
 	if err != nil {
-		o.warnf("Failed to find helm binary: %s\n", err)
+		log.Warnf("Failed to find helm binary: %s\n", err)
 		helmBin = "helm"
 	}
 	err = o.runCommand(helmBin, "upgrade", o.ReleaseName, ".", "--force", "--install", "--wait", "--namespace", o.Namespace, fmt.Sprintf("--values=%s", configFileName))
@@ -444,7 +444,7 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	if url == "" {
-		o.warnf("Could not find the service URL in namespace %s for names %s\n", o.Namespace, strings.Join(appNames, ", "))
+		log.Warnf("Could not find the service URL in namespace %s for names %s\n", o.Namespace, strings.Join(appNames, ", "))
 	}
 
 	comment := fmt.Sprintf(":star: PR built and available in a preview environment **%s**", o.Name)
@@ -480,14 +480,14 @@ func (o *PreviewOptions) Run() error {
 				if updated {
 					_, err = activities.Update(a)
 					if err != nil {
-						o.warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+						log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
 					} else {
-						o.Printf("Updating PipelineActivities %s which has status %s\n", name, string(a.Spec.Status))
+						log.Infof("Updating PipelineActivities %s which has status %s\n", name, string(a.Spec.Status))
 					}
 				}
 			}
 		} else {
-			o.warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs\n")
+			log.Warnf("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the preview URLs\n")
 		}
 	}
 	if url != "" {
@@ -522,7 +522,7 @@ func (o *PreviewOptions) Run() error {
 	}
 	err = stepPRCommentOptions.Run()
 	if err != nil {
-		o.warnf("Failed to comment on the Pull Request: %s\n", err)
+		log.Warnf("Failed to comment on the Pull Request: %s\n", err)
 	}
 	return nil
 }
@@ -548,18 +548,18 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 		}
 		root, gitConf, err := gits.FindGitConfigDir(o.Dir)
 		if err != nil {
-			o.warnf("Could not find a .git directory: %s\n", err)
+			log.Warnf("Could not find a .git directory: %s\n", err)
 		} else {
 			if root != "" {
 				o.Dir = root
 				o.SourceURL, err = o.discoverGitURL(gitConf)
 				if err != nil {
-					o.warnf("Could not find the remote git source URL:  %s\n", err)
+					log.Warnf("Could not find the remote git source URL:  %s\n", err)
 				} else {
 					if o.SourceRef == "" {
 						o.SourceRef, err = gits.GitGetBranch(root)
 						if err != nil {
-							o.warnf("Could not find the remote git source ref:  %s\n", err)
+							log.Warnf("Could not find the remote git source ref:  %s\n", err)
 						}
 
 					}
@@ -581,13 +581,13 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	if o.SourceURL != "" {
 		o.GitInfo, err = gits.ParseGitURL(o.SourceURL)
 		if err != nil {
-			o.warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
+			log.Warnf("Could not parse the git URL %s due to %s\n", o.SourceURL, err)
 		} else {
 			o.SourceURL = o.GitInfo.HttpCloneURL()
 			if o.PullRequestURL == "" {
 				if o.PullRequest == "" {
 					if warnMissingName {
-						o.warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
+						log.Warnf("No Pull Request name or URL specified nor could one be found via $BRANCH_NAME\n")
 					}
 				} else {
 					o.PullRequestURL = o.GitInfo.PullRequestURL(o.PullRequestName)
@@ -613,7 +613,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 		o.Label = o.Name
 	}
 	if o.GitInfo == nil {
-		o.warnf("No GitInfo could be found!")
+		log.Warnf("No GitInfo could be found!")
 	}
 	return nil
 }

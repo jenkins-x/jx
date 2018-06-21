@@ -6,11 +6,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"fmt"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
@@ -86,7 +88,7 @@ func (o *StepNexusOptions) dropRepositories(repoIds []string, message string) er
 	for _, repoId := range repoIds {
 		err := o.dropRepository(repoId, message)
 		if err != nil {
-			o.warnf("Failed to drop repository %s: %s\n", util.ColorInfo(repoIds), util.ColorError(err))
+			log.Warnf("Failed to drop repository %s: %s\n", util.ColorInfo(repoIds), util.ColorError(err))
 			if answer == nil {
 				answer = err
 			}
@@ -99,7 +101,7 @@ func (o *StepNexusOptions) dropRepository(repoId string, message string) error {
 	if repoId == "" {
 		return nil
 	}
-	o.Printf("Dropping nexus release repository %s\n", util.ColorInfo(repoId))
+	log.Infof("Dropping nexus release repository %s\n", util.ColorInfo(repoId))
 	err := o.runCommand("mvn",
 		"org.sonatype.plugins:nexus-staging-maven-plugin:1.6.5:rc-drop",
 		"-DserverId=oss-sonatype-staging",
@@ -107,9 +109,9 @@ func (o *StepNexusOptions) dropRepository(repoId string, message string) error {
 		"-DstagingRepositoryId="+repoId,
 		"-Ddescription=\""+message+"\" -DstagingProgressTimeoutMinutes=60")
 	if err != nil {
-		o.warnf("Failed to drop repository %s due to: %s\n", repoId, err)
+		log.Infof("Failed to drop repository %s due to: %s\n", repoId, err)
 	} else {
-		o.Printf("Dropped repository %s\n", util.ColorInfo(repoId))
+		log.Infof("Dropped repository %s\n", util.ColorInfo(repoId))
 	}
 	return err
 }
@@ -118,7 +120,7 @@ func (o *StepNexusOptions) releaseRepository(repoId string) error {
 	if repoId == "" {
 		return nil
 	}
-	o.Printf("Releasing nexus release repository %s\n", util.ColorInfo(repoId))
+	log.Infof("Releasing nexus release repository %s\n", util.ColorInfo(repoId))
 	options := o
 	err := options.runCommand("mvn",
 		"org.sonatype.plugins:nexus-staging-maven-plugin:1.6.5:rc-release",
@@ -127,9 +129,9 @@ func (o *StepNexusOptions) releaseRepository(repoId string) error {
 		"-DstagingRepositoryId="+repoId,
 		"-Ddescription=\"Next release is ready\" -DstagingProgressTimeoutMinutes=60")
 	if err != nil {
-		o.warnf("Failed to release repository %s due to: %s\n", repoId, err)
+		log.Warnf("Failed to release repository %s due to: %s\n", repoId, err)
 	} else {
-		o.Printf("Released repository %s\n", util.ColorInfo(repoId))
+		log.Infof("Released repository %s\n", util.ColorInfo(repoId))
 	}
 	return err
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/nlopes/slack"
 )
@@ -44,7 +45,7 @@ func (c *SlackChatProvider) GetChannelMetrics(name string) (*ChannelMetrics, err
 		return metrics, err
 	}
 	for _, ch := range channels {
-		fmt.Printf("Found channel %s with id %s\n", ch.Name, ch.ID)
+		log.Infof("Found channel %s with id %s\n", ch.Name, ch.ID)
 		if ch.Name == name {
 			id = ch.ID
 			break

@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -132,7 +133,7 @@ func (o *DeleteRepoOptions) Run() error {
 		}
 	}
 
-	o.warnf("You are about to delete these repositories on the git provider. This operation CANNOT be undone!")
+	log.Warnf("You are about to delete these repositories on the git provider. This operation CANNOT be undone!")
 
 	flag := false
 	prompt := &survey.Confirm{
@@ -155,10 +156,10 @@ func (o *DeleteRepoOptions) Run() error {
 	for _, name := range names {
 		err = provider.DeleteRepository(owner, name)
 		if err != nil {
-			o.warnf("Ensure Git Token has delete repo permissions or manually delete, for GitHub check https://github.com/settings/tokens\n")
-			o.warnf("%s\n", err)
+			log.Warnf("Ensure Git Token has delete repo permissions or manually delete, for GitHub check https://github.com/settings/tokens\n")
+			log.Warnf("%s\n", err)
 		} else {
-			o.Printf("Deleted repository %s/%s\n", info(owner), info(name))
+			log.Infof("Deleted repository %s/%s\n", info(owner), info(name))
 		}
 	}
 	return nil

@@ -4,13 +4,14 @@ import (
 	"io"
 
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 )
 
 type StatusOptions struct {

@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -103,7 +104,7 @@ func (o *CreateIssueOptions) Run() error {
 	if createdIssue == nil {
 		return fmt.Errorf("Failed to create issue: %s", issue.Title)
 	}
-	o.Printf("\nCreated issue %s at %s\n", util.ColorInfo(createdIssue.Name()), util.ColorInfo(createdIssue.URL))
+	log.Infof("\nCreated issue %s at %s\n", util.ColorInfo(createdIssue.Name()), util.ColorInfo(createdIssue.URL))
 	return nil
 }
 

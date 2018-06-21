@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/chats"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 func (o *CommonOptions) createChatProvider(chatConfig *config.ChatConfig) (chats.ChatProvider, error) {
@@ -29,7 +30,7 @@ func (o *CommonOptions) createChatProvider(chatConfig *config.ChatConfig) (chats
 func (o *CommonOptions) CreateChatAuthConfigService() (auth.AuthConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindChat, "")
 	if err != nil {
-		o.warnf("The current user cannot query pipeline chat secrets: %s", err)
+		log.Warnf("The current user cannot query pipeline chat secrets: %s", err)
 	}
 	return o.Factory.CreateChatAuthConfigService(secrets)
 }

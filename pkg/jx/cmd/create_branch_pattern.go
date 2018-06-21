@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -74,7 +75,7 @@ func (o *CreateBranchPatternOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.BranchPatterns = arg
-		o.Printf("Setting the team branch pattern to: %s\n", util.ColorInfo(arg))
+		log.Infof("Setting the team branch pattern to: %s\n", util.ColorInfo(arg))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

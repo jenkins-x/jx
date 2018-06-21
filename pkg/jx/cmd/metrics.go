@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"io"
 
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 type MetricsOptions struct {
@@ -135,7 +137,7 @@ func (o *MetricsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		o.Printf("%s\n", string(data))
+		log.Infof("%s\n", string(data))
 		return nil
 	}
 

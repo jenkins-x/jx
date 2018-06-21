@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -138,8 +139,8 @@ func (o *StartPipelineOptions) startJob(name string, allNames []string) error {
 		i++
 
 		if last.Number != previous.Number {
-			o.Printf("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
-			o.Printf("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
+			log.Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
+			log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 			if o.Tail {
 				return o.tailBuild(name, &last)
 			}

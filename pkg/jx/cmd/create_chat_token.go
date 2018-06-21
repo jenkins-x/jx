@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
@@ -105,11 +106,11 @@ func (o *CreateChatTokenOptions) Run() error {
 
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
-			o.Printf("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
+			log.Infof("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
 			if tokenUrl != "" {
-				o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
+				log.Infof("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
 			}
-			o.Printf("Then COPY the token and enter in into the form below:\n\n")
+			log.Infof("Then COPY the token and enter in into the form below:\n\n")
 			return nil
 		}
 
@@ -130,10 +131,10 @@ func (o *CreateChatTokenOptions) Run() error {
 
 	err = o.updateChatCredentialsSecret(server, userAuth)
 	if err != nil {
-		o.warnf("Failed to update chat credentials secret: %v\n", err)
+		log.Warnf("Failed to update chat credentials secret: %v\n", err)
 	}
 
-	o.Printf("Created user %s API Token for chat server %s at %s\n",
+	log.Infof("Created user %s API Token for chat server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

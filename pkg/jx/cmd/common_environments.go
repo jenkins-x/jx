@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
@@ -106,7 +107,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	if err != nil {
 		return answer, fmt.Errorf("Failed to load remote branch names: %s", err)
 	}
-	o.Printf("Found remote branch names %s\n", strings.Join(branchNames, ", "))
+	log.Infof("Found remote branch names %s\n", strings.Join(branchNames, ", "))
 	if util.StringArrayIndex(branchNames, branchName) >= 0 {
 		// lets append a UUID as the branch name already exists
 		branchName += "-" + string(uuid.NewUUID())
@@ -142,7 +143,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 	if !changed {
-		o.Printf("%s\n", util.ColorWarning("No changes made to the GitOps Environment source code. Code must be up to date!"))
+		log.Warnf("%s\n", "No changes made to the GitOps Environment source code. Code must be up to date!")
 		return answer, nil
 	}
 	err = gits.GitCommitDir(dir, message)
@@ -188,7 +189,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	if err != nil {
 		return answer, err
 	}
-	o.Printf("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
+	log.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
 	return &ReleasePullRequestInfo{
 		GitProvider:          provider,
 		PullRequest:          pr,
@@ -222,6 +223,6 @@ func (o *CommonOptions) modifyDevEnvironment(jxClient versioned.Interface, ns st
 	if err != nil {
 		return fmt.Errorf("Failed to update Development environment in namespace %s: %s", ns, err)
 	}
-	o.Printf("Updated the team settings in namespace %s\n", ns)
+	log.Infof("Updated the team settings in namespace %s\n", ns)
 	return nil
 }
