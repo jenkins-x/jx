@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -121,6 +122,10 @@ func (o *DeleteRepoOptions) Run() error {
 		}
 	}
 
+	if org == "" {
+		org = username
+	}
+
 	names := o.Repositories
 	if len(names) == 0 {
 		repos, err := gits.PickRepositories(provider, org, "Which repositories do you want to delete:", o.SelectAll, o.SelectFilter)
@@ -133,7 +138,8 @@ func (o *DeleteRepoOptions) Run() error {
 		}
 	}
 
-	log.Warnf("You are about to delete these repositories on the git provider. This operation CANNOT be undone!")
+	log.Warnf("You are about to delete these repositories '%s' on the git provider. This operation CANNOT be undone!",
+		strings.Join(names, ","))
 
 	flag := false
 	prompt := &survey.Confirm{
