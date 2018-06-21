@@ -93,7 +93,7 @@ func (o *EditBuildpackOptions) Run() error {
 			teamSettings.BuildPackURL = buildPackURL
 		}
 		if BuildPackRef != "" {
-			teamSettings.BuildPackURL = BuildPackRef
+			teamSettings.BuildPackRef = BuildPackRef
 		}
 		o.Printf("Setting the team build pack to repo: %s ref: %s\n", util.ColorInfo(buildPackURL), util.ColorInfo(BuildPackRef))
 		return nil
