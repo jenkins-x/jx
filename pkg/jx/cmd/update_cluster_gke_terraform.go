@@ -90,7 +90,7 @@ func createUpdateClusterGKETerraformOptions(f cmdutil.Factory, out io.Writer, er
 }
 
 func (o *UpdateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(GKE, "terraform")
+	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}

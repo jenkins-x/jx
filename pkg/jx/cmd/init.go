@@ -47,6 +47,7 @@ type InitFlags struct {
 	ExternalIP                 string
 	DraftClient                bool
 	HelmClient                 bool
+	Helm3                      bool
 	RecreateExistingDraftRepos bool
 	GlobalTiller               bool
 	SkipIngress                bool
@@ -62,7 +63,7 @@ const (
 	JenkinsBuildPackURL = "https://github.com/jenkins-x/draft-packs.git"
 
 	INGRESS_SERVICE_NAME    = "jxing-nginx-ingress-controller"
-	DEFAULT_CHARTMUSEUM_URL = "http://chartmuseum.build.cd.jenkins-x.io"
+	DEFAULT_CHARTMUSEUM_URL = "https://chartmuseum.build.cd.jenkins-x.io"
 )
 
 var (
@@ -124,6 +125,7 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.Flags.GlobalTiller, "global-tiller", "", true, "Whether or not to use a cluster global tiller")
 	cmd.Flags().BoolVarP(&options.Flags.SkipIngress, "skip-ingress", "", false, "Dont install an ingress controller")
 	cmd.Flags().BoolVarP(&options.Flags.SkipTiller, "skip-tiller", "", false, "Dont install a Helms Tiller service")
+	cmd.Flags().BoolVarP(&options.Flags.Helm3, "helm3", "", false, "Use helm3 to install Jenkins X which does not use Tiller")
 	cmd.Flags().BoolVarP(&options.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the kubernetes master IP address")
 }
 
@@ -184,30 +186,38 @@ func (o *InitOptions) enableClusterAdminRole() error {
 
 	user := o.Flags.Username
 	if user == "" {
-		config, _, err := kube.LoadConfig()
-		if err != nil {
-			return err
+		if o.Flags.Provider == GKE {
+			user, err = o.getCommandOutput("", "gcloud", "config", "get-value", "core/account")
+			if err != nil {
+				return err
+			}
+			o.Printf("Using GKE user %s to enable cluster role\n", user)
+		} else {
+			config, _, err := kube.LoadConfig()
+			if err != nil {
+				return err
+			}
+			if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
+				return fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
+			}
+			contextName := config.CurrentContext
+			if contextName == "" {
+				return fmt.Errorf("No kuberentes context selected. Please select one (e.g. via jx context) first")
+			}
+			context := config.Contexts[contextName]
+			if context == nil {
+				return fmt.Errorf("No kuberentes context available for context %s", contextName)
+			}
+			user = context.AuthInfo
 		}
-		if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
-			return fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
-		}
-		contextName := config.CurrentContext
-		if contextName == "" {
-			return fmt.Errorf("No kuberentes context selected. Please select one (e.g. via jx context) first")
-		}
-		context := config.Contexts[contextName]
-		if context == nil {
-			return fmt.Errorf("No kuberentes context available for context %s", contextName)
-		}
-		user = context.AuthInfo
 	}
 	if user == "" {
 		return util.MissingOption(optionUsername)
 	}
-	user = kube.ToValidName(user)
+	userFormatted := kube.ToValidName(user)
 
 	role := o.Flags.UserClusterRole
-	clusterRoleBindingName := kube.ToValidName(user + "-" + role + "-binding")
+	clusterRoleBindingName := kube.ToValidName(userFormatted + "-" + role + "-binding")
 
 	_, err = client.RbacV1().ClusterRoleBindings().Get(clusterRoleBindingName, meta_v1.GetOptions{})
 	if err != nil {
@@ -229,8 +239,10 @@ func (o *InitOptions) enableClusterAdminRole() error {
 func (o *InitOptions) initHelm() error {
 	var err error
 
+	if o.Flags.Helm3 {
+		o.Flags.SkipTiller = true
+	}
 	if !o.Flags.SkipTiller {
-
 		client, curNs, err := o.KubeClient()
 		if err != nil {
 			return err
@@ -351,14 +363,21 @@ func (o *InitOptions) initHelm() error {
 		}
 	}
 
-	if o.Flags.HelmClient || o.Flags.SkipTiller {
+	helmBin := o.HelmBinary()
+
+	if o.Flags.Helm3 {
+		err = o.runCommand(helmBin, "init")
+		if err != nil {
+			return err
+		}
+	} else if o.Flags.HelmClient || o.Flags.SkipTiller {
 		err = o.runCommand("helm", "init", "--client-only")
 		if err != nil {
 			return err
 		}
 	}
 
-	err = o.runCommand("helm", "repo", "add", "jenkins-x", DEFAULT_CHARTMUSEUM_URL)
+	err = o.runCommand(helmBin, "repo", "add", "jenkins-x", DEFAULT_CHARTMUSEUM_URL)
 	if err != nil {
 		return err
 	}
@@ -478,10 +497,11 @@ func (o *InitOptions) initIngress() error {
 			return nil
 		}
 
+		helmBinary := o.HelmBinary()
 		i := 0
 		for {
 			//err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true", "--set", "rbac.serviceAccountName="+ingressServiceAccount)
-			err = o.runCommandVerbose("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true")
+			err = o.runCommandVerbose(helmBinary, "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true")
 			if err != nil {
 				if i >= 3 {
 					break
@@ -594,6 +614,13 @@ func (o *InitOptions) validateGit() error {
 	}
 	log.Infof("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
 	return nil
+}
+
+func (o *InitOptions) HelmBinary() string {
+	if o.Flags.Helm3 {
+		return "helm3"
+	}
+	return "helm"
 }
 
 func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, provider string, ingressNamespace string, ingressService string, externalIP string) (string, error) {

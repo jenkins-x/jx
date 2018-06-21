@@ -67,7 +67,11 @@ func NewCmdUpgradePlatform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 func (o *UpgradePlatformOptions) Run() error {
 	ns := o.Namespace
 	version := o.Version
-	err := o.runCommand("helm", "repo", "update")
+	helmBinary, err := o.TeamHelmBin()
+	if err != nil {
+		return err
+	}
+	err = o.runCommand(helmBinary, "repo", "update")
 	if err != nil {
 		return err
 	}
@@ -82,5 +86,5 @@ func (o *UpgradePlatformOptions) Run() error {
 		args = append(args, "--set", o.Set)
 	}
 	args = append(args, o.ReleaseName, o.Chart)
-	return o.runCommand("helm", args...)
+	return o.runCommand(helmBinary, args...)
 }

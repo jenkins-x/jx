@@ -39,6 +39,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installGcloud()
 		case "helm":
 			err = o.installHelm()
+		case "helm3":
+			err = o.installHelm3()
 		case "hyperkit":
 			err = o.installHyperkit()
 		case "kops":
@@ -419,6 +421,41 @@ func (o *CommonOptions) installHelm() error {
 		return err
 	}
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	tarFile := fullPath + ".tgz"
+	err = o.downloadFile(clientURL, tarFile)
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	if err != nil {
+		return err
+	}
+	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
+
+func (o *CommonOptions) installHelm3() error {
+	binDir, err := util.BinaryLocation()
+	if err != nil {
+		return err
+	}
+	binary := "helm3"
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return err
+	}
+	/*
+	   latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
+	   	if err != nil {
+	   		return err
+	   	}
+	*/
+	latestVersion := "3"
+	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-dev-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
 	err = o.downloadFile(clientURL, tarFile)
