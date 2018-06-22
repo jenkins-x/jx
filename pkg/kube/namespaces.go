@@ -10,13 +10,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	LabelValueDevEnvironment = "dev"
-
-	LabelTeam        = "team"
-	LabelEnvironment = "env"
-)
-
 func EnsureEnvironmentNamespaceSetup(kubeClient kubernetes.Interface, jxClient versioned.Interface, env *v1.Environment, ns string) error {
 	// lets create the namespace if we are on the same cluster
 	spec := &env.Spec
