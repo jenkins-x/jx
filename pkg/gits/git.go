@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -61,14 +60,7 @@ func GitClone(url string, directory string) error {
 			RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		})
 	*/
-	e := exec.Command("git", "clone", url, directory)
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err := e.Run()
-	if err != nil {
-		return fmt.Errorf("failed to invoke git clone to %s due to %s", directory, err)
-	}
-	return nil
+	return GitCmd(directory, "clone", url)
 }
 
 // GitCloneOrPull will clone the given git URL or pull if it alreasy exists
@@ -79,24 +71,9 @@ func GitCloneOrPull(url string, directory string) error {
 	}
 
 	if !empty {
-		e := exec.Command("git", "pull")
-		e.Dir = directory
-		e.Stdout = os.Stdout
-		e.Stderr = os.Stderr
-		err = e.Run()
-		if err != nil {
-			return fmt.Errorf("failed to git pull in %s due to %s", directory, err)
-		}
-		return nil
+		return GitCmd(directory, "pull")
 	}
-	e := exec.Command("git", "clone", url, directory)
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err = e.Run()
-	if err != nil {
-		return fmt.Errorf("failed to git clone to %s due to %s", directory, err)
-	}
-	return nil
+	return GitCmd("clone", url)
 }
 
 // CheckoutRemoteBranch checks out the given remote tracking branch
@@ -107,7 +84,7 @@ func CheckoutRemoteBranch(dir string, branch string) error {
 		return err
 	}
 	if util.StringArrayIndex(remoteBranches, remoteBranch) < 0 {
-		return util.RunCommand(dir, "git", "checkout", "-t", remoteBranch)
+		return GitCmd(dir, "checkout", "-t", remoteBranch)
 	}
 	cur, err := GitGetBranch(dir)
 	if err != nil {
@@ -122,7 +99,7 @@ func CheckoutRemoteBranch(dir string, branch string) error {
 // GitGetRemoteBranches returns the remote branches
 func GitGetRemoteBranches(dir string) ([]string, error) {
 	answer := []string{}
-	text, err := util.GetCommandOutput(dir, "git", "branch", "-r")
+	text, err := GitCmdWithOutput(dir, "branch", "-r")
 	if err != nil {
 		return answer, err
 	}
@@ -141,94 +118,43 @@ func GitGetRemoteBranches(dir string) ([]string, error) {
 
 // GitCheckout checks out the given branch
 func GitCheckout(dir string, branch string) error {
-	return util.RunCommand(dir, "git", "checkout", branch)
+	return GitCmd(dir, "checkout", branch)
 }
 
 func GitInit(dir string) error {
-	e := exec.Command("git", "init")
-	e.Dir = dir
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err := e.Run()
-	if err != nil {
-		return fmt.Errorf("failed to invoke git init in %s due to %s", dir, err)
-	}
-	return nil
+	return GitCmd(dir, "init")
 }
 
 func GitRemove(dir, fileName string) error {
-	e := exec.Command("git", "rm", "-r", fileName)
-	e.Dir = dir
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err := e.Run()
-	if err != nil {
-		return fmt.Errorf("failed to invoke git rm in %s due to %s", dir, err)
-	}
-	return nil
+	return GitCmd(dir, "rm", "-r", fileName)
 }
 
 func GitStatus(dir string) error {
-	e := exec.Command("git", "status")
-	e.Dir = dir
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err := e.Run()
-	if err != nil {
-		return fmt.Errorf("failed to invoke git status in %s due to %s", dir, err)
-	}
-	return nil
+	return GitCmd(dir, "status")
 }
 
 func GitGetBranch(dir string) (string, error) {
-	return util.GetCommandOutput(dir, "git", "rev-parse", "--abbrev-ref", "HEAD")
+	return GitCmdWithOutput(dir, "rev-parse", "--abbrev-ref", "HEAD")
 }
 
 func GitPush(dir string) error {
-	e := exec.Command("git", "push", "origin", "HEAD")
-	e.Dir = dir
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err := e.Run()
-	if err != nil {
-		return fmt.Errorf("failed to invoke git push in %s due to %s", dir, err)
-	}
-	return nil
+	return GitCmd(dir, "push", "origin", "HEAD")
 }
 
 func GitForcePushBranch(dir string, localBranch string, remoteBranch string) error {
-	e := exec.Command("git", "push", "-f", "origin", localBranch+":"+remoteBranch)
-	e.Dir = dir
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err := e.Run()
-	if err != nil {
-		return fmt.Errorf("failed to invoke git push in %s from local branch %s to remote branch %s due to %s", dir, localBranch, remoteBranch, err)
-	}
-	return nil
+	return GitCmd(dir, "push", "-f", "origin", localBranch+":"+remoteBranch)
 }
 
 func GitAdd(dir string, args ...string) error {
-	a := append([]string{"add"}, args...)
-	e := exec.Command("git", a...)
-	e.Dir = dir
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err := e.Run()
-	if err != nil {
-		return fmt.Errorf("failed to run git add in %s due to %s", dir, err)
-	}
-	return nil
+	add := append([]string{"add"}, args...)
+	return GitCmd(dir, add...)
 }
 
 func HasChanges(dir string) (bool, error) {
-	e := exec.Command("git", "status", "-s")
-	e.Dir = dir
-	data, err := e.Output()
+	text, err := GitCmdWithOutput(dir, "status", "-s")
 	if err != nil {
 		return false, err
 	}
-	text := string(data)
 	text = strings.TrimSpace(text)
 	return len(text) > 0, nil
 }
@@ -245,27 +171,15 @@ func GitCommitIfChanges(dir string, message string) error {
 }
 
 func GitCommitDir(dir string, message string) error {
-	e := exec.Command("git", "commit", "-m", message)
-	e.Dir = dir
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err := e.Run()
-	if err != nil {
-		return fmt.Errorf("failed to run git commit in %s due to %s", dir, err)
-	}
-	return nil
+	return GitCmd(dir, "commit", "-m", message)
 }
 
 func GitCmd(dir string, args ...string) error {
-	e := exec.Command("git", args...)
-	e.Dir = dir
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stderr
-	err := e.Run()
-	if err != nil {
-		return fmt.Errorf("failed to invoke git %s in %s due to %s", strings.Join(args, " "), dir, err)
-	}
-	return nil
+	return util.RunCommand(dir, "git", args...)
+}
+
+func GitCmdWithOutput(dir string, args ...string) (string, error) {
+	return util.GetCommandOutput(dir, "git", args...)
 }
 
 // GitCreatePushURL creates the git repository URL with the username and password encoded for HTTPS based URLs
@@ -298,26 +212,13 @@ func GetGitServer(dir string) (string, error) {
 }
 
 func GetGitInfo(dir string) (*GitRepositoryInfo, error) {
-	e := exec.Command("git", "status")
-	if dir != "" {
-		e.Dir = dir
-	}
-	data, err := e.CombinedOutput()
-	if err != nil && strings.Contains(string(data), "Not a git repository") {
+	text, err := GitCmdWithOutput(dir, "status")
+	if err != nil && strings.Contains(text, "Not a git repository") {
 		return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
 	}
 
-	e = exec.Command("git", "config", "--get", "remote.origin.url")
-	if dir != "" {
-		e.Dir = dir
-	}
-	data, err = e.CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("failed to run git commit in %s due to %s", dir, err)
-	}
-
-	rUrl := string(data)
-	rUrl = strings.TrimSpace(rUrl)
+	text, err = GitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
+	rUrl := strings.TrimSpace(text)
 
 	repo, err := ParseGitURL(rUrl)
 	if err != nil {
@@ -363,14 +264,12 @@ func ConvertToValidBranchName(name string) string {
 }
 
 func GetAuthorEmailForCommit(dir string, sha string) (string, error) {
-	e := exec.Command("git", "show", "-s", "--format=%aE", sha)
-	e.Dir = dir
-	out, err := e.Output()
+	text, err := GitCmdWithOutput(dir, "show", "-s", "--format=%aE", sha)
 	if err != nil {
 		return "", fmt.Errorf("failed to invoke git %s in %s due to %s", "show "+sha, dir, err)
 	}
 
-	return strings.TrimSpace(string(out)), nil
+	return strings.TrimSpace(text), nil
 }
 
 func SetRemoteURL(dir string, name string, gitURL string) error {
@@ -452,7 +351,7 @@ func GetRemoteUrl(config *gitcfg.Config, name string) string {
 
 func GitGetRemoteBranchNames(dir string, prefix string) ([]string, error) {
 	answer := []string{}
-	text, err := util.GetCommandOutput(dir, "git", "branch", "-a")
+	text, err := GitCmdWithOutput(dir, "branch", "-a")
 	if err != nil {
 		return answer, err
 	}
@@ -470,7 +369,7 @@ func GitGetRemoteBranchNames(dir string, prefix string) ([]string, error) {
 func GetPreviousGitTagSHA(dir string) (string, error) {
 	// when in a release branch we need to skip 2 rather that 1 to find the revision of the previous tag
 	// no idea why! :)
-	return util.GetCommandOutput(dir, "git", "rev-list", "--tags", "--skip=2", "--max-count=1")
+	return GitCmdWithOutput(dir, "rev-list", "--tags", "--skip=2", "--max-count=1")
 }
 
 // GetRevisionBeforeDate returns the revision before the given date
@@ -485,11 +384,11 @@ func GetRevisionBeforeDateText(dir string, dateText string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return util.GetCommandOutput(dir, "git", "rev-list", "-1", "--before=\""+dateText+"\"", "--max-count=1", branch)
+	return GitCmdWithOutput(dir, "rev-list", "-1", "--before=\""+dateText+"\"", "--max-count=1", branch)
 }
 
 func GetCurrentGitTagSHA(dir string) (string, error) {
-	return util.GetCommandOutput(dir, "git", "rev-list", "--tags", "--max-count=1")
+	return GitCmdWithOutput(dir, "rev-list", "--tags", "--max-count=1")
 }
 
 func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
@@ -502,8 +401,8 @@ func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username 
 
 func GitIsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error) {
 	// lets ignore errors as that just means there's no config
-	originUrl, _ := util.GetCommandOutput(dir, "git", "config", "--get", "remote.origin.url")
-	upstreamUrl, _ := util.GetCommandOutput(dir, "git", "config", "--get", "remote.upstream.url")
+	originUrl, _ := GitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
+	upstreamUrl, _ := GitCmdWithOutput(dir, "config", "--get", "remote.upstream.url")
 
 	if originUrl != upstreamUrl && originUrl != "" && upstreamUrl != "" {
 		return true, nil
