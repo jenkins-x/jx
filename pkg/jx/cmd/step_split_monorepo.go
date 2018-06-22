@@ -196,7 +196,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						if err != nil {
 							return err
 						}
-						err = gits.GitCmd(outPath, "remote", "add", "origin", gitUrl)
+						err = gits.GitAddRemote(outPath, gitUrl, "origin")
 						if err != nil {
 							return err
 						}
@@ -211,7 +211,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 					if err != nil {
 						return err
 					}
-					err = gits.GitCmd(outPath, "push", "-u", "origin", "master")
+					err = gits.GitPushMaster(outPath)
 					if err != nil {
 						return err
 					}
