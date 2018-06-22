@@ -454,19 +454,38 @@ func (o *CommonOptions) installHelm3() error {
 	   		return err
 	   	}
 	*/
-	latestVersion := "3"
-	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-dev-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, fileName)
-	tarFile := fullPath + ".tgz"
+	/*
+		latestVersion := "3"
+		clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-dev-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	*/
+	// let use our patched version
+	latestVersion := "untagged-93375777c6644a452a64"
+	clientURL := fmt.Sprintf("https://github.com/jstrachan/helm/releases/download/%v/helm-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+
+	tmpDir := filepath.Join(binDir, "helm3.tmp")
+	err = os.MkdirAll(tmpDir, DefaultWritePermissions)
+	if err != nil {
+		return err
+	}
+	fullPath := filepath.Join(binDir, binary)
+	tarFile := filepath.Join(tmpDir, fileName+".tgz")
 	err = o.downloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
-	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	err = util.UnTargz(tarFile, tmpDir, []string{"helm", "helm"})
 	if err != nil {
 		return err
 	}
 	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	err = os.Rename(filepath.Join(tmpDir, "helm"), fullPath)
+	if err != nil {
+		return err
+	}
+	err = os.RemoveAll(tmpDir)
 	if err != nil {
 		return err
 	}

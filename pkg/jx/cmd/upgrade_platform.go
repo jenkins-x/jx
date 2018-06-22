@@ -5,6 +5,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -28,6 +30,8 @@ type UpgradePlatformOptions struct {
 	Chart       string
 	Namespace   string
 	Set         string
+
+	InstallFlags InstallFlags
 }
 
 // NewCmdUpgradePlatform defines the command
@@ -60,6 +64,10 @@ func NewCmdUpgradePlatform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to")
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading")
+
+	options.addCommonFlags(cmd)
+	options.InstallFlags.addCloudEnvOptions(cmd)
+
 	return cmd
 }
 
@@ -76,7 +84,21 @@ func (o *UpgradePlatformOptions) Run() error {
 		return err
 	}
 	args := []string{"upgrade"}
+	if version == "" {
+		io := &InstallOptions{}
+		io.CommonOptions = o.CommonOptions
+		io.Flags = o.InstallFlags
+		wrkDir, err := io.cloneJXCloudEnvironmentsRepo()
+		if err != nil {
+			return err
+		}
+		version, err = loadVersionFromCloudEnvironmentsDir(wrkDir)
+		if err != nil {
+			return err
+		}
+	}
 	if version != "" {
+		log.Infof("Upgrading to version %s\n", util.ColorInfo(version))
 		args = append(args, "--version", version)
 	}
 	if ns != "" {
@@ -86,5 +108,5 @@ func (o *UpgradePlatformOptions) Run() error {
 		args = append(args, "--set", o.Set)
 	}
 	args = append(args, o.ReleaseName, o.Chart)
-	return o.runCommand(helmBinary, args...)
+	return o.runCommandVerbose(helmBinary, args...)
 }
