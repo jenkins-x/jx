@@ -237,13 +237,10 @@ func (o *StepNextVersionOptions) getLatestTag() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error fetching tags: %v", err)
 	}
-	out, err := o.getCommandOutput("", "git", "tag")
+	tags, err := gits.GitTags("")
 	if err != nil {
 		return "", err
 	}
-	str := strings.TrimSuffix(string(out), "\n")
-	tags := strings.Split(str, "\n")
-
 	if len(tags) == 0 {
 		// if no current flags exist then lets start at 0.0.0
 		return "0.0.0", fmt.Errorf("no existing tags found")

@@ -395,6 +395,16 @@ func GitFetchTags(dir string) error {
 	return GitCmd("", "fetch", "--tags", "-v")
 }
 
+func GitTags(dir string) ([]string, error) {
+	tags := []string{}
+	text, err := GitCmdWithOutput(dir, "tag")
+	if err != nil {
+		return tags, err
+	}
+	text = strings.TrimSuffix(text, "\n")
+	return strings.Split(text, "\n"), nil
+}
+
 func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
 	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL, username)
 
