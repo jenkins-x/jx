@@ -475,7 +475,7 @@ func GetPreviousGitTagSHA(dir string) (string, error) {
 
 // GetRevisionBeforeDate returns the revision before the given date
 func GetRevisionBeforeDate(dir string, t time.Time) (string, error) {
-	dateText := FormatDate(t)
+	dateText := util.FormatDate(t)
 	return GetRevisionBeforeDateText(dir, dateText)
 }
 
@@ -486,14 +486,6 @@ func GetRevisionBeforeDateText(dir string, dateText string) (string, error) {
 		return "", err
 	}
 	return util.GetCommandOutput(dir, "git", "rev-list", "-1", "--before=\""+dateText+"\"", "--max-count=1", branch)
-}
-
-func FormatDate(t time.Time) string {
-	return fmt.Sprintf("%s %d %d", t.Month().String(), t.Day(), t.Year())
-}
-
-func ParseDate(dateText string) (time.Time, error) {
-	return time.Parse(DateFormat, dateText)
 }
 
 func GetCurrentGitTagSHA(dir string) (string, error) {
