@@ -441,3 +441,17 @@ func ToGitLabels(names []string) []GitLabel {
 func GitVersion() (string, error) {
 	return GitCmdWithOutput("", "version")
 }
+
+func GitUsername(dir string) (string, error) {
+	return GitCmdWithOutput("", "config", "--global", "--get", "user.name")
+}
+
+func GitSetUsername(dir string, username string) error {
+	return GitCmd(dir, "config", "--global", "--add", "user.name", username)
+}
+func GitEmail(dir string) (string, error) {
+	return GitCmdWithOutput(dir, "config", "--global", "--get", "user.email")
+}
+func GitSetEmail(dir string, email string) error {
+	return GitCmd(dir, "config", "--global", "--add", "user.email", email)
+}

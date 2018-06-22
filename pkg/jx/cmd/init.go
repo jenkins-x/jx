@@ -577,10 +577,9 @@ func (o *InitOptions) ingressNamespace() string {
 // validateGit validates that git is configured correctly
 func (o *InitOptions) validateGit() error {
 	// lets ignore errors which indicate no value set
-	userName, _ := o.getCommandOutput("", "git", "config", "--global", "--get", "user.name")
-	userEmail, _ := o.getCommandOutput("", "git", "config", "--global", "--get", "user.email")
+	userName, _ := gits.GitUsername("")
+	userEmail, _ := gits.GitEmail("")
 	var err error
-
 	if userName == "" {
 		if !o.BatchMode {
 			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true)
@@ -591,7 +590,7 @@ func (o *InitOptions) validateGit() error {
 		if userName == "" {
 			return fmt.Errorf("No git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
 		}
-		err = o.runCommandFromDir("", "git", "config", "--global", "--add", "user.name", userName)
+		err = gits.GitSetUsername("", userName)
 		if err != nil {
 			return err
 		}
@@ -606,7 +605,7 @@ func (o *InitOptions) validateGit() error {
 		if userEmail == "" {
 			return fmt.Errorf("No git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
 		}
-		err = o.runCommandFromDir("", "git", "config", "--global", "--add", "user.email", userEmail)
+		err = gits.GitSetEmail("", userEmail)
 		if err != nil {
 			return err
 		}
