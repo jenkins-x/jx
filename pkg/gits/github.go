@@ -121,7 +121,17 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 	for {
 		repos, _, err := p.Client.Repositories.ListByOrg(p.Context, owner, options)
 		if err != nil {
-			return answer, err
+			options := &github.RepositoryListOptions{
+				ListOptions: github.ListOptions{
+					Page:    0,
+					PerPage: pageSize,
+				},
+			}
+			repos, _, err = p.Client.Repositories.List(p.Context, owner, options)
+			if err != nil {
+				return answer, err
+			}
+
 		}
 		for _, repo := range repos {
 			answer = append(answer, toGitHubRepo(asText(repo.Name), repo))
