@@ -712,7 +712,7 @@ func (o *CommonOptions) installGcloud() error {
 		return err
 	}
 
-	return o.runCommand("brew", "install", "google-cloud-sdk")
+	return o.runCommand("brew", "cask", "install", "google-cloud-sdk")
 }
 
 func (o *CommonOptions) installAzureCli() error {
