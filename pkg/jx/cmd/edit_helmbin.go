@@ -34,8 +34,6 @@ var (
 // EditHelmBinOptions the options for the create spring command
 type EditHelmBinOptions struct {
 	CreateOptions
-
-	BranchPattern string
 }
 
 // NewCmdEditHelmBin creates a command object for the "create" command

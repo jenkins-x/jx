@@ -234,7 +234,14 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	err = options.installRequirements(options.Flags.Provider)
+	initOpts := &options.InitOptions
+	initOpts.Flags.Provider = options.Flags.Provider
+	initOpts.Flags.Namespace = options.Flags.Namespace
+	initOpts.BatchMode = options.BatchMode
+
+	helmBinary := options.InitOptions.HelmBinary()
+
+	err = options.installRequirements(options.Flags.Provider, helmBinary)
 	if err != nil {
 		return err
 	}
@@ -250,11 +257,6 @@ func (options *InstallOptions) Run() error {
 			log.Success("created role cluster-admin")
 		}
 	}
-
-	initOpts := &options.InitOptions
-	initOpts.Flags.Provider = options.Flags.Provider
-	initOpts.Flags.Namespace = options.Flags.Namespace
-	initOpts.BatchMode = options.BatchMode
 
 	currentContext, err := options.getCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
@@ -406,13 +408,27 @@ func (options *InstallOptions) Run() error {
 	if timeout == "" {
 		timeout = defaultInstallTimeout
 	}
-	arg := fmt.Sprintf("ARGS=--values=%s --values=%s --values=%s --namespace=%s --timeout=%s", secretsFileName, adminSecretsFileName, configFileName, ns, timeout)
 
 	// run the helm install
 	log.Infof("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
 
 	options.Verbose = true
-	err = options.runCommandFromDir(makefileDir, "make", arg, "install")
+	err = options.addHelmBinaryRepoIfMissing(helmBinary, DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
+	if err != nil {
+		return err
+	}
+
+	version := ""
+	args := []string{"install", "jenkins-x/jenkins-x-platform", "--name", "jenkins-x", "-f", "./myvalues.yaml", "-f", "./secrets.yaml", "--namespace=" + ns, "--timeout=" + timeout}
+	valuesFiles := []string{secretsFileName, adminSecretsFileName, configFileName}
+	if version != "" {
+		args = append(args, "--version", version)
+	}
+	for _, valuesFile := range valuesFiles {
+		args = append(args, fmt.Sprintf("--values=%s", valuesFile))
+	}
+
+	options.runCommandVerboseAt(makefileDir, helmBinary, args...)
 	if err != nil {
 		return err
 	}
@@ -434,6 +450,18 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
+
+	if options.InitOptions.Flags.Helm3 {
+		// default apps to use helm3 too
+		helmOptions := EditHelmBinOptions{}
+		helmOptions.CommonOptions = options.CommonOptions
+		helmOptions.CommonOptions.BatchMode = true
+		helmOptions.CommonOptions.Args = []string{"helm3"}
+		err = helmOptions.Run()
+		if err != nil {
+			return err
+		}
+	}
 
 	addonConfig, err := addon.LoadAddonsConfig()
 	if err != nil {

@@ -122,7 +122,7 @@ func (o *CreateClusterGKETerraformOptions) addAuthFlags(cmd *cobra.Command) {
 }
 
 func (o *CreateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(GKE, "terraform")
+	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}

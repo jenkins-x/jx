@@ -330,7 +330,7 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 	// TODO due to this issue: https://github.com/kubernetes/helm/issues/4230
 	// lets stick with helm2 for this step
 	//
-	//err = o.runCommandVerboseAt(dir, helmBinary, "dependency", "build", dir)
+	//err = o.runCommandVerboseAt(dir, HelmBinary, "dependency", "build", dir)
 	err = o.runCommandVerboseAt(dir, "helm", "dependency", "build", dir)
 	if err != nil {
 		return helmBinary, err
@@ -346,7 +346,7 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 func (o *CommonOptions) defaultReleaseCharts() map[string]string {
 	return map[string]string{
 		"releases":  o.releaseChartMuseumUrl(),
-		"jenkins-x": "https://chartmuseum.build.cd.jenkins-x.io",
+		"jenkins-x": DEFAULT_CHARTMUSEUM_URL,
 	}
 }
 
