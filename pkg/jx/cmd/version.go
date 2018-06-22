@@ -126,20 +126,25 @@ func (o *VersionOptions) Run() error {
 	if o.HelmTLS {
 		args = append(args, "--tls")
 	}
-	output, err = o.getCommandOutput("", "helm", args...)
+	helmBinary, err := o.TeamHelmBin()
+	output, err = o.getCommandOutput("", helmBinary, args...)
 	if err != nil {
 		log.Warnf("Failed to get helm version: %s\n", err)
 	} else {
-		for i, line := range strings.Split(output, "\n") {
-			fields := strings.Fields(line)
-			if len(fields) > 1 {
-				v := fields[1]
-				if v != "" {
-					switch i {
-					case 0:
-						table.AddRow("helm client", info(v))
-					case 1:
-						table.AddRow("helm server", info(v))
+		if helmBinary == "helm3" {
+			table.AddRow("helm client", info(output))
+		} else {
+			for i, line := range strings.Split(output, "\n") {
+				fields := strings.Fields(line)
+				if len(fields) > 1 {
+					v := fields[1]
+					if v != "" {
+						switch i {
+						case 0:
+							table.AddRow("helm client", info(v))
+						case 1:
+							table.AddRow("helm server", info(v))
+						}
 					}
 				}
 			}
