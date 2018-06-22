@@ -59,7 +59,7 @@ type Gitter interface {
 	GetRemoteUrl(config *gitcfg.Config, name string) string
 
 	GitGetBranch(dir string) (string, error)
-	GitBranch(dir string, branch string) error
+	GitCreateBranch(dir string, branch string) error
 	CheckoutRemoteBranch(dir string, branch string) error
 	GitCheckout(dir string, branch string) error
 	ConvertToValidBranchName(name string) string
@@ -555,7 +555,7 @@ func GitSetEmail(dir string, email string) error {
 	return gitCmd(dir, "config", "--global", "--add", "user.email", email)
 }
 
-func GitBranch(dir string, branch string) error {
+func GitCreateBranch(dir string, branch string) error {
 	return gitCmd(dir, "branch", branch)
 
 }

@@ -94,7 +94,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		// lets append a UUID as the branch name already exists
 		branchName += "-" + string(uuid.NewUUID())
 	}
-	err = gits.GitBranch(dir, branchName)
+	err = gits.GitCreateBranch(dir, branchName)
 	if err != nil {
 		return answer, err
 	}
