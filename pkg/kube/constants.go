@@ -135,6 +135,15 @@ const (
 	// ValueCredentialTypeUsernamePassword for user password credential secrets
 	ValueCredentialTypeUsernamePassword = "usernamePassword"
 
+	// LabelTeam indicates the team name an environment belongs to
+	LabelTeam = "team"
+
+	// LabelEnvironment indicates the name of the environment
+	LabelEnvironment = "env"
+
+	// LabelValueDevEnvironment is the value of the LabelTeam label for Development environments (system namespace)
+	LabelValueDevEnvironment = "dev"
+
 	// AnnotationURL indicates a service/server's URL
 	AnnotationURL = "jenkins.io/url"
 

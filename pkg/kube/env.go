@@ -19,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -742,6 +743,24 @@ func GetDevNamespace(kubeClient kubernetes.Interface, ns string) (string, string
 		env = namespace.Labels[LabelEnvironment]
 	}
 	return ns, env, nil
+}
+
+// GetTeams returns the Teams the user is a member of
+func GetTeams(kubeClient kubernetes.Interface) ([]*corev1.Namespace, []string, error) {
+	names := []string{}
+	answer := []*corev1.Namespace{}
+	namespaceList, err := kubeClient.CoreV1().Namespaces().List(metav1.ListOptions{})
+	if err != err {
+		return answer, names, err
+	}
+	for idx, namespace := range namespaceList.Items {
+		if namespace.Labels[LabelEnvironment] == LabelValueDevEnvironment {
+			answer = append(answer, &namespaceList.Items[idx])
+			names = append(names, namespace.Name)
+		}
+	}
+	sort.Strings(names)
+	return answer, names, nil
 }
 
 func PickEnvironment(envNames []string, defaultEnv string) (string, error) {
