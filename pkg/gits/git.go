@@ -76,6 +76,18 @@ func GitCloneOrPull(url string, directory string) error {
 	return GitCmd("clone", url)
 }
 
+func GitPullUpstream(dir string) error {
+	return GitCmd(dir, "pull", "-r", "upstream", "master")
+}
+
+func GitAddRemote(dir string, url string) error {
+	return GitCmd(dir, "remote", "add", "upstream", url)
+}
+
+func GitUpdateRemote(dir, url string) error {
+	return GitCmd(dir, "remote", "set-url", "origin", url)
+}
+
 // CheckoutRemoteBranch checks out the given remote tracking branch
 func CheckoutRemoteBranch(dir string, branch string) error {
 	remoteBranch := "origin/" + branch
@@ -143,6 +155,10 @@ func GitPush(dir string) error {
 
 func GitForcePushBranch(dir string, localBranch string, remoteBranch string) error {
 	return GitCmd(dir, "push", "-f", "origin", localBranch+":"+remoteBranch)
+}
+
+func GitPushMaster(dir string) error {
+	return GitCmd(dir, "push", "-u", "origin", "master")
 }
 
 func GitAdd(dir string, args ...string) error {
