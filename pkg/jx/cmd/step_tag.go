@@ -85,17 +85,17 @@ func (o *StepTagOptions) Run() error {
 
 	tag := "v" + o.Flags.Version
 
-	err := gits.GitCmd("", "commit", "-a", "-m", fmt.Sprintf("release %s", o.Flags.Version), "--allow-empty")
+	err := gits.GitAddCommmit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
 
-	err = gits.GitCmd("", "tag", "-fa", tag, "-m", fmt.Sprintf("release %s", o.Flags.Version))
+	err = gits.GitCreateTag("", tag, fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
 
-	err = gits.GitCmd("", "push", "origin", tag)
+	err = gits.GitPushTag("", tag)
 	if err != nil {
 		return err
 	}

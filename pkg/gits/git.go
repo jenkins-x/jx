@@ -169,6 +169,10 @@ func GitPushMaster(dir string) error {
 	return GitCmd(dir, "push", "-u", "origin", "master")
 }
 
+func GitPushTag(dir string, tag string) error {
+	return GitCmd(dir, "push", "origin", tag)
+}
+
 func GitAdd(dir string, args ...string) error {
 	add := append([]string{"add"}, args...)
 	return GitCmd(dir, add...)
@@ -196,6 +200,10 @@ func GitCommitIfChanges(dir string, message string) error {
 
 func GitCommitDir(dir string, message string) error {
 	return GitCmd(dir, "commit", "-m", message)
+}
+
+func GitAddCommmit(dir string, msg string) error {
+	return GitCmd("", "commit", "-a", "-m", msg, "--allow-empty")
 }
 
 func GitCmd(dir string, args ...string) error {
@@ -427,6 +435,10 @@ func GitTags(dir string) ([]string, error) {
 	}
 	text = strings.TrimSuffix(text, "\n")
 	return strings.Split(text, "\n"), nil
+}
+
+func GitCreateTag(dir string, tag string, msg string) error {
+	return GitCmd("", "tag", "-fa", tag, "-m", msg)
 }
 
 func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
