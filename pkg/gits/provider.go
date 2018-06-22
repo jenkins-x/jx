@@ -2,6 +2,7 @@ package gits
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -253,6 +254,22 @@ func CreateProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, 
 	default:
 		return NewGitHubProvider(server, user)
 	}
+}
+
+// GetHost returns the Git Provider hostname, e.g github.com
+func GetHost(gitProvider GitProvider) (string, error) {
+	if gitProvider == nil {
+		return "", fmt.Errorf("no git provider")
+	}
+
+	if gitProvider.ServerURL() == "" {
+		return "", fmt.Errorf("no git provider server URL found")
+	}
+	url, err := url.Parse(gitProvider.ServerURL())
+	if err != nil {
+		return "", fmt.Errorf("error parsing ")
+	}
+	return url.Host, nil
 }
 
 func ProviderAccessTokenURL(kind string, url string, username string) string {
