@@ -478,6 +478,8 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 	if ns == "" {
 		return fmt.Errorf("No Namespace is defined for Environment %s", env.Name)
 	}
+
+	// makefile changes
 	file := filepath.Join(dir, "Makefile")
 	exists, err := util.FileExists(file)
 	if err != nil {
@@ -491,9 +493,7 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 	if err != nil {
 		return err
 	}
-
 	lines := strings.Split(string(input), "\n")
-
 	err = replaceMakeVariable(lines, "NAMESPACE", "\""+ns+"\"")
 	if err != nil {
 		return err
@@ -503,6 +503,32 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 	if err != nil {
 		return err
 	}
+
+	// Jenkinsfile changes
+	file = filepath.Join(dir, "Jenkinsfile")
+	exists, err = util.FileExists(file)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		log.Warnf("WARNING: Could not find a Jenkinsfile in %s\n", dir)
+	} else {
+		input, err := ioutil.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		lines := strings.Split(string(input), "\n")
+		err = replaceEnvVar(lines, "DEPLOY_NAMESPACE", ns)
+		if err != nil {
+			return err
+		}
+		output := strings.Join(lines, "\n")
+		err = ioutil.WriteFile(file, []byte(output), 0644)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = gits.GitAdd(dir, "*")
 	if err != nil {
 		return err
@@ -566,6 +592,21 @@ func replaceMakeVariable(lines []string, name string, value string) error {
 	replaceValue := name + " := " + value
 	for i, line := range lines {
 		lines[i] = re.ReplaceAllString(line, replaceValue)
+	}
+	return nil
+}
+
+func replaceEnvVar(lines []string, name string, value string) error {
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, name) {
+			remain := strings.TrimSpace(strings.TrimPrefix(trimmed, name))
+			if strings.HasPrefix(remain, "=") {
+				// lets preserve whitespace
+				idx := strings.Index(line, name)
+				lines[i] = line[0:idx] + name + ` = "` + value + `"`
+			}
+		}
 	}
 	return nil
 }

@@ -428,6 +428,20 @@ func (options *InstallOptions) Run() error {
 
 	args := []string{"install", "jenkins-x/jenkins-x-platform", "--name", "jenkins-x", "-f", "./myvalues.yaml", "-f", "./secrets.yaml", "--namespace=" + ns, "--timeout=" + timeout}
 	valuesFiles := []string{secretsFileName, adminSecretsFileName, configFileName}
+	curDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	myValuesFile := filepath.Join(curDir, "myvalues.yaml")
+	exists, err := util.FileExists(myValuesFile)
+	if err != nil {
+		return err
+	}
+	if exists {
+		log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
+		valuesFiles = append(valuesFiles, myValuesFile)
+	}
+
 	if version != "" {
 		args = append(args, "--version", version)
 	}

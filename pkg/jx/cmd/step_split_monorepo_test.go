@@ -30,20 +30,10 @@ func TestStepSplitMonorepo(t *testing.T) {
 	tests.Debugf("Generated split repos in: %s\n", tempDir)
 	log.Infof("Generated split repos in: %s\n", tempDir)
 
-	assertFilesExist(t, true, filepath.Join(tempDir, "bar"), filepath.Join(tempDir, "foo"))
-	assertFilesExist(t, false, filepath.Join(tempDir, "kubernetes"))
+	tests.AssertFilesExist(t, true, filepath.Join(tempDir, "bar"), filepath.Join(tempDir, "foo"))
+	tests.AssertFilesExist(t, false, filepath.Join(tempDir, "kubernetes"))
 
-	assertFilesExist(t, true,
+	tests.AssertFilesExist(t, true,
 		filepath.Join(tempDir, "bar", "charts", "bar", "Chart.yaml"),
 		filepath.Join(tempDir, "bar", "charts", "bar", "templates", "deployment.yaml"))
-}
-
-func assertFilesExist(t *testing.T, expected bool, paths ...string) {
-	for _, path := range paths {
-		if expected {
-			assertFileExists(t, path)
-		} else {
-			assertFileDoesNotExist(t, path)
-		}
-	}
 }
