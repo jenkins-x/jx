@@ -191,7 +191,6 @@ func (o *InitOptions) enableClusterAdminRole() error {
 			if err != nil {
 				return err
 			}
-			o.Printf("Using GKE user %s to enable cluster role\n", user)
 		} else {
 			config, _, err := kube.LoadConfig()
 			if err != nil {
