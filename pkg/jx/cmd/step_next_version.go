@@ -233,7 +233,7 @@ func (o *StepNextVersionOptions) getLatestTag() (string, error) {
 	// if repo isn't provided by flags fall back to using current repo if run from a git project
 	var versionsRaw []string
 
-	err := o.runCommand("git", "fetch", "--tags", "-v")
+	err := gits.GitFetchTags("")
 	if err != nil {
 		return "", fmt.Errorf("error fetching tags: %v", err)
 	}

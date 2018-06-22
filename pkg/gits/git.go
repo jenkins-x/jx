@@ -391,6 +391,10 @@ func GetCurrentGitTagSHA(dir string) (string, error) {
 	return GitCmdWithOutput(dir, "rev-list", "--tags", "--max-count=1")
 }
 
+func GitFetchTags(dir string) error {
+	return GitCmd("", "fetch", "--tags", "-v")
+}
+
 func PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
 	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL, username)
 
