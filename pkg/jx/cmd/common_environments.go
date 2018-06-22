@@ -55,15 +55,15 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		if err != nil {
 			return answer, err
 		}
-		err = gits.GitCmd(dir, "stash")
+		err = gits.GitStash(dir)
 		if err != nil {
 			return answer, err
 		}
-		err = gits.GitCmd(dir, "checkout", base)
+		err = gits.GitCheckout(dir, base)
 		if err != nil {
 			return answer, err
 		}
-		err = gits.GitCmd(dir, "pull")
+		err = gits.GitPull(dir)
 		if err != nil {
 			return answer, err
 		}
@@ -77,31 +77,13 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 			return answer, err
 		}
 		if base != "master" {
-			err = gits.GitCmd(dir, "checkout", base)
+			err = gits.GitCheckout(dir, base)
 			if err != nil {
 				return answer, err
 			}
 		}
 
 		// TODO lets fork if required???
-		/*
-			pushGitURL, err := gits.GitCreatePushURL(gitURL, details.User)
-			if err != nil {
-				return answer, err
-			}
-			err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
-			if err != nil {
-				return answer, err
-			}
-			err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
-			if err != nil {
-				return answer, err
-			}
-			err = gits.GitCmd(dir, "push", "-u", "origin", "master")
-			if err != nil {
-				return answer, err
-			}
-		*/
 	}
 	branchNames, err := gits.GitGetRemoteBranchNames(dir, "remotes/origin/")
 	if err != nil {
@@ -112,11 +94,11 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		// lets append a UUID as the branch name already exists
 		branchName += "-" + string(uuid.NewUUID())
 	}
-	err = gits.GitCmd(dir, "branch", branchName)
+	err = gits.GitBranch(dir, branchName)
 	if err != nil {
 		return answer, err
 	}
-	err = gits.GitCmd(dir, "checkout", branchName)
+	err = gits.GitCheckout(dir, branchName)
 	if err != nil {
 		return answer, err
 	}
@@ -134,7 +116,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 
 	err = helm.SaveRequirementsFile(requirementsFile, requirements)
 
-	err = gits.GitCmd(dir, "add", "*", "*/*")
+	err = gits.GitAdd(dir, "*", "*/*")
 	if err != nil {
 		return answer, err
 	}

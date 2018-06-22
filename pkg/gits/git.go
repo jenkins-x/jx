@@ -63,6 +63,10 @@ func GitClone(url string, directory string) error {
 	return GitCmd(directory, "clone", url)
 }
 
+func GitPull(dir string) error {
+	return GitCmd(dir, "pull")
+}
+
 // GitCloneOrPull will clone the given git URL or pull if it alreasy exists
 func GitCloneOrPull(url string, directory string) error {
 	empty, err := util.IsEmpty(directory)
@@ -71,7 +75,7 @@ func GitCloneOrPull(url string, directory string) error {
 	}
 
 	if !empty {
-		return GitCmd(directory, "pull")
+		return GitPull(directory)
 	}
 	return GitCmd("clone", url)
 }
@@ -86,6 +90,10 @@ func GitAddRemote(dir string, url string) error {
 
 func GitUpdateRemote(dir, url string) error {
 	return GitCmd(dir, "remote", "set-url", "origin", url)
+}
+
+func GitStash(dir string) error {
+	return GitCmd(dir, "stash")
 }
 
 // CheckoutRemoteBranch checks out the given remote tracking branch
@@ -470,4 +478,9 @@ func GitEmail(dir string) (string, error) {
 }
 func GitSetEmail(dir string, email string) error {
 	return GitCmd(dir, "config", "--global", "--add", "user.email", email)
+}
+
+func GitBranch(dir string, branch string) error {
+	return GitCmd(dir, "branch", branch)
+
 }
