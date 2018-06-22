@@ -423,3 +423,7 @@ func ToGitLabels(names []string) []GitLabel {
 	}
 	return answer
 }
+
+func GitVersion() (string, error) {
+	return GitCmdWithOutput("", "version")
+}
