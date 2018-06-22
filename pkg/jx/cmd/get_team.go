@@ -61,7 +61,7 @@ func (o *GetTeamOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	teams, err := kube.GetTeams(kubeClient)
+	teams, _, err := kube.GetTeams(kubeClient)
 	if err != nil {
 		return err
 	}

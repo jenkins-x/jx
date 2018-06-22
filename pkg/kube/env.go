@@ -746,18 +746,21 @@ func GetDevNamespace(kubeClient kubernetes.Interface, ns string) (string, string
 }
 
 // GetTeams returns the Teams the user is a member of
-func GetTeams(kubeClient kubernetes.Interface) ([]*corev1.Namespace, error) {
+func GetTeams(kubeClient kubernetes.Interface) ([]*corev1.Namespace, []string, error) {
+	names := []string{}
 	answer := []*corev1.Namespace{}
 	namespaceList, err := kubeClient.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != err {
-		return answer, err
+		return answer, names, err
 	}
 	for idx, namespace := range namespaceList.Items {
 		if namespace.Labels[LabelEnvironment] == LabelValueDevEnvironment {
 			answer = append(answer, &namespaceList.Items[idx])
+			names = append(names, namespace.Name)
 		}
 	}
-	return answer, nil
+	sort.Strings(names)
+	return answer, names, nil
 }
 
 func PickEnvironment(envNames []string, defaultEnv string) (string, error) {
