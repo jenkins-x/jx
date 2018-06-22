@@ -2,6 +2,7 @@ package kube
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -29,7 +30,21 @@ func LoadConfig() (*api.Config, *clientcmd.PathOptions, error) {
 // CurrentNamespace returns the current namespace in the context
 func CurrentNamespace(config *api.Config) string {
 	ctx := CurrentContext(config)
-	return ctx.Namespace
+	if ctx != nil {
+		n := ctx.Namespace
+		if n != "" {
+			return n
+		}
+	}
+	// if we are in a pod lets try load the pod namespace file
+	data, err := ioutil.ReadFile(PodNamespaceFile)
+	if err == nil {
+		n := string(data)
+		if n != "" {
+			return n
+		}
+	}
+	return DefaultNamespace
 }
 
 // CurrentContext returns the current context
