@@ -180,11 +180,10 @@ func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) In
 
 func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit bool) {
 	flags := &options.Flags
-	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
+	flags.addCloudEnvOptions(cmd)
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
 	cmd.Flags().BoolVarP(&flags.NoDefaultEnvironments, "no-default-environments", "", false, "Disables the creation of the default Staging and Production environments")
 	cmd.Flags().StringVarP(&flags.DefaultEnvironmentPrefix, "default-environment-prefix", "", "", "Default environment repo prefix, your git repos will be of the form 'environment-$prefix-$envName'")
-	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
 	cmd.Flags().StringVarP(&flags.EnvironmentGitOwner, "environment-git-owner", "", "", "The git provider organisation to create the environment git repositories in")
@@ -196,6 +195,11 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
 	options.AdminSecretsService.AddAdminSecretsValues(cmd)
 	options.InitOptions.addInitFlags(cmd)
+}
+
+func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
+	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }
 
 // Run implements this command
@@ -347,8 +351,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// clone the environments repo
-	wrkDir := filepath.Join(util.HomeDir(), ".jx", "cloud-environments")
-	err = options.cloneJXCloudEnvironmentsRepo(wrkDir)
+	wrkDir, err := options.cloneJXCloudEnvironmentsRepo()
 	if err != nil {
 		return err
 	}
@@ -418,7 +421,11 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	version := ""
+	version, err := loadVersionFromCloudEnvironmentsDir(wrkDir)
+	if err != nil {
+		return err
+	}
+
 	args := []string{"install", "jenkins-x/jenkins-x-platform", "--name", "jenkins-x", "-f", "./myvalues.yaml", "-f", "./secrets.yaml", "--namespace=" + ns, "--timeout=" + timeout}
 	valuesFiles := []string{secretsFileName, adminSecretsFileName, configFileName}
 	if version != "" {
@@ -592,20 +599,52 @@ func (options *InstallOptions) logAdminPassword() {
 	log.Infof(astrix, fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
 }
 
+func loadVersionFromCloudEnvironmentsDir(wrkDir string) (string, error) {
+	version := ""
+	path := filepath.Join(wrkDir, "Makefile")
+	exists, err := util.FileExists(path)
+	if err != nil {
+		return version, err
+	}
+	if !exists {
+		return version, fmt.Errorf("File does not exist %s", path)
+	}
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return version, err
+	}
+	prefix := "CHART_VERSION"
+	separator := ":="
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(line, prefix) {
+			text := strings.TrimSpace(strings.TrimPrefix(line, prefix))
+			if !strings.HasPrefix(text, separator) {
+				log.Warnf("expecting separator %s for line: %s in file %s", separator, line, path)
+			} else {
+				version = strings.TrimSpace(strings.TrimPrefix(text, separator))
+				return version, nil
+			}
+		}
+	}
+	log.Warnf("File %s does not include a line starting with %s", path, prefix)
+	return version, nil
+}
+
 // clones the jenkins-x cloud-environments repo to a local working dir
-func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
+func (o *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
+	wrkDir := filepath.Join(util.HomeDir(), ".jx", "cloud-environments")
 	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
 	if o.Flags.CloudEnvRepository == "" {
-		return fmt.Errorf("No cloud environment git URL")
+		return wrkDir, fmt.Errorf("No cloud environment git URL")
 	}
 	if o.Flags.LocalCloudEnvironment {
 		currentDir, err := os.Getwd()
 		if err != nil {
-			return fmt.Errorf("error getting current working directory %v", err)
+			return wrkDir, fmt.Errorf("error getting current working directory %v", err)
 		}
 		log.Infof("Copying local dir to %s\n", wrkDir)
 
-		return util.CopyDir(currentDir, wrkDir, true)
+		return wrkDir, util.CopyDir(currentDir, wrkDir, true)
 	}
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           o.Flags.CloudEnvRepository,
@@ -625,22 +664,22 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo(wrkDir string) error {
 				}
 				err := survey.AskOne(confirm, &flag, nil)
 				if err != nil {
-					return err
+					return wrkDir, err
 				}
 			}
 			if flag {
 				err := os.RemoveAll(wrkDir)
 				if err != nil {
-					return err
+					return wrkDir, err
 				}
 
-				return o.cloneJXCloudEnvironmentsRepo(wrkDir)
+				return o.cloneJXCloudEnvironmentsRepo()
 			}
 		} else {
-			return err
+			return wrkDir, err
 		}
 	}
-	return nil
+	return wrkDir, nil
 }
 
 // returns secrets that are used as values during the helm install
