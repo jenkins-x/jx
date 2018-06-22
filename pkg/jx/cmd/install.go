@@ -458,12 +458,12 @@ func (options *InstallOptions) Run() error {
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 
-	if options.InitOptions.Flags.Helm3 {
+	if helmBinary != "helm" {
 		// default apps to use helm3 too
 		helmOptions := EditHelmBinOptions{}
 		helmOptions.CommonOptions = options.CommonOptions
 		helmOptions.CommonOptions.BatchMode = true
-		helmOptions.CommonOptions.Args = []string{"helm3"}
+		helmOptions.CommonOptions.Args = []string{helmBinary}
 		err = helmOptions.Run()
 		if err != nil {
 			return err
