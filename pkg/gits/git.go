@@ -84,8 +84,8 @@ func GitPullUpstream(dir string) error {
 	return GitCmd(dir, "pull", "-r", "upstream", "master")
 }
 
-func GitAddRemote(dir string, url string) error {
-	return GitCmd(dir, "remote", "add", "upstream", url)
+func GitAddRemote(dir string, url string, remote string) error {
+	return GitCmd(dir, "remote", "add", remote, url)
 }
 
 func GitUpdateRemote(dir, url string) error {

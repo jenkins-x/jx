@@ -622,11 +622,11 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
+	err = gits.GitAddRemote(dir, "origin", pushGitURL)
 	if err != nil {
 		return err
 	}
-	err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+	err = gits.GitPushMaster(dir)
 	if err != nil {
 		return err
 	}
