@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// AssertFileContains asserts that a given file exists and contains the given text
 func AssertFileContains(t *testing.T, fileName string, containsText string) {
 	if AssertFileExists(t, fileName) {
 		data, err := ioutil.ReadFile(fileName)
@@ -20,6 +21,7 @@ func AssertFileContains(t *testing.T, fileName string, containsText string) {
 	}
 }
 
+// AssertFileExists asserts that the given file exists
 func AssertFileExists(t *testing.T, fileName string) bool {
 	exists, err := util.FileExists(fileName)
 	assert.NoError(t, err, "Failed checking if file exists %s", fileName)
@@ -30,6 +32,7 @@ func AssertFileExists(t *testing.T, fileName string) bool {
 	return exists
 }
 
+// AssertFileDoesNotExist asserts that the given file does not exist
 func AssertFileDoesNotExist(t *testing.T, fileName string) bool {
 	exists, err := util.FileExists(fileName)
 	assert.NoError(t, err, "Failed checking if file exists %s", fileName)
@@ -38,4 +41,15 @@ func AssertFileDoesNotExist(t *testing.T, fileName string) bool {
 		Debugf("File %s does not exist\n", fileName)
 	}
 	return exists
+}
+
+// AssertFilesExist asserts that the list of file paths either exist or don't exist
+func AssertFilesExist(t *testing.T, expected bool, paths ...string) {
+	for _, path := range paths {
+		if expected {
+			AssertFileExists(t, path)
+		} else {
+			AssertFileDoesNotExist(t, path)
+		}
+	}
 }
