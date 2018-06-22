@@ -478,6 +478,7 @@ func (options *InstallOptions) Run() error {
 		helmOptions.CommonOptions = options.CommonOptions
 		helmOptions.CommonOptions.BatchMode = true
 		helmOptions.CommonOptions.Args = []string{helmBinary}
+		helmOptions.currentNamespace = ns
 		err = helmOptions.Run()
 		if err != nil {
 			return err
