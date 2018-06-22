@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,8 +32,8 @@ func TestStepGPGCredentials(t *testing.T) {
 	err = options.GenerateGpgFiles(secret)
 	assert.NoError(t, err)
 
-	assertFileExists(t, filepath.Join(tempDir, "pubring.gpg"))
-	assertFileExists(t, filepath.Join(tempDir, "sec-jenkins.gpg"))
-	assertFileExists(t, filepath.Join(tempDir, "secring.gpg"))
-	assertFileExists(t, filepath.Join(tempDir, "trustdb.gpg"))
+	tests.AssertFileExists(t, filepath.Join(tempDir, "pubring.gpg"))
+	tests.AssertFileExists(t, filepath.Join(tempDir, "sec-jenkins.gpg"))
+	tests.AssertFileExists(t, filepath.Join(tempDir, "secring.gpg"))
+	tests.AssertFileExists(t, filepath.Join(tempDir, "trustdb.gpg"))
 }
