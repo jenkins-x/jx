@@ -23,12 +23,18 @@ func LoadConfig() (*api.Config, *clientcmd.PathOptions, error) {
 	if err != nil {
 		return nil, po, fmt.Errorf("Could not load the kube config file %s due to %s", po.GetDefaultFilename(), err)
 	}
+	if config == nil {
+		return nil, po, fmt.Errorf("Failed to load Kubernetes Config!")
+	}
 	return config, po, err
 }
 
 // CurrentNamespace returns the current namespace in the context
 func CurrentNamespace(config *api.Config) string {
 	ctx := CurrentContext(config)
+	if ctx != nil {
+		return ""
+	}
 	return ctx.Namespace
 }
 
