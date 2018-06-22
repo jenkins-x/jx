@@ -108,5 +108,5 @@ func (o *UpgradePlatformOptions) Run() error {
 		args = append(args, "--set", o.Set)
 	}
 	args = append(args, o.ReleaseName, o.Chart)
-	return o.runCommand(helmBinary, args...)
+	return o.runCommandVerbose(helmBinary, args...)
 }
