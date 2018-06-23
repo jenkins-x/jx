@@ -99,9 +99,13 @@ func (o *CommonOptions) installChart(releaseName string, chart string, version s
 
 // installChartAt installs the given chart
 func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
+	helmBinary, err := o.TeamHelmBin()
+	if err != nil {
+		return err
+	}
 	if helmUpdate {
 		log.Infoln("Updating Helm repository...")
-		err := o.runCommand("helm", "repo", "update")
+		err = o.runCommand(helmBinary, "repo", "update")
 		if err != nil {
 			return err
 		}
@@ -126,17 +130,21 @@ func (o *CommonOptions) installChartAt(dir string, releaseName string, chart str
 		log.Infof("Set chart value: --set %s\n", util.ColorInfo(value))
 	}
 	args = append(args, releaseName, chart)
-	return o.runCommandVerboseAt(dir, "helm", args...)
+	return o.runCommandVerboseAt(dir, helmBinary, args...)
 }
 
 // deleteChart deletes the given chart
 func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {
+	helmBinary, err := o.TeamHelmBin()
+	if err != nil {
+		return err
+	}
 	args := []string{"delete"}
 	if purge {
 		args = append(args, "--purge")
 	}
 	args = append(args, releaseName)
-	return o.runCommandVerbose("helm", args...)
+	return o.runCommandVerbose(helmBinary, args...)
 }
 
 func (*CommonOptions) FindHelmChart() (string, error) {
