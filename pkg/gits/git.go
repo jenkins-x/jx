@@ -8,6 +8,7 @@ import (
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
+// Gitter defines common git actions used by Jenkins X
 type Gitter interface {
 	FindGitConfigDir(dir string) (string, string, error)
 	ToGitLabels(names []string) []GitLabel

@@ -21,8 +21,10 @@ const (
 	replaceInvalidBranchChars = '_'
 )
 
+// GitCLI implements common git actions based on git CLI
 type GitCLI struct{}
 
+// NewGitCLI creates a new GitCLI instance
 func NewGitCLI() *GitCLI {
 	return &GitCLI{}
 }
@@ -60,20 +62,15 @@ func (g *GitCLI) FindGitConfigDir(dir string) (string, string, error) {
 
 // Clone clones the given git URL into the given directory
 func (g *GitCLI) Clone(url string, directory string) error {
-	/*
-		return git.PlainClone(directory, false, &git.CloneOptions{
-			URL:               url,
-			RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
-		})
-	*/
 	return g.gitCmd(directory, "clone", url)
 }
 
+// Pull pulls the git repository in the given directory
 func (g *GitCLI) Pull(dir string) error {
 	return g.gitCmd(dir, "pull")
 }
 
-// CloneOrPull will clone the given git URL or pull if it alreasy exists
+// CloneOrPull clones  the given git URL or pull if it already exists
 func (g *GitCLI) CloneOrPull(url string, directory string) error {
 	empty, err := util.IsEmpty(directory)
 	if err != nil {
@@ -86,18 +83,22 @@ func (g *GitCLI) CloneOrPull(url string, directory string) error {
 	return g.gitCmd("clone", url)
 }
 
+// PullUpstream pulls the remote upstream branch into master branch into the given directory
 func (g *GitCLI) PullUpstream(dir string) error {
 	return g.gitCmd(dir, "pull", "-r", "upstream", "master")
 }
 
+// AddRemote adds a remote repository at the given URL and with the given name
 func (g *GitCLI) AddRemote(dir string, url string, remote string) error {
 	return g.gitCmd(dir, "remote", "add", remote, url)
 }
 
+// UpdateRemote updates the URL of the remote repository
 func (g *GitCLI) UpdateRemote(dir, url string) error {
 	return g.gitCmd(dir, "remote", "set-url", "origin", url)
 }
 
+// Stash stashes the current changes from the given directory
 func (g *GitCLI) Stash(dir string) error {
 	return g.gitCmd(dir, "stash")
 }
@@ -147,43 +148,53 @@ func (g *GitCLI) Checkout(dir string, branch string) error {
 	return g.gitCmd(dir, "checkout", branch)
 }
 
+// Init inits a git repository into the given directory
 func (g *GitCLI) Init(dir string) error {
 	return g.gitCmd(dir, "init")
 }
 
+// Remove removes the given file from a git repository located at the given directory
 func (g *GitCLI) Remove(dir, fileName string) error {
 	return g.gitCmd(dir, "rm", "-r", fileName)
 }
 
+// Status returns the status of the git repository at the given directory
 func (g *GitCLI) Status(dir string) error {
 	return g.gitCmd(dir, "status")
 }
 
+// Branch returns the current branch of the repository located at the given directory
 func (g *GitCLI) Branch(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-parse", "--abbrev-ref", "HEAD")
 }
 
+// Push pushes the changes from the repository at the given directory
 func (g *GitCLI) Push(dir string) error {
 	return g.gitCmd(dir, "push", "origin", "HEAD")
 }
 
+// ForcePushBranch does a force push of the local branch into the remote branch of the repository at the given directory
 func (g *GitCLI) ForcePushBranch(dir string, localBranch string, remoteBranch string) error {
 	return g.gitCmd(dir, "push", "-f", "origin", localBranch+":"+remoteBranch)
 }
 
+// PushMaster pushes the master branch into the origin
 func (g *GitCLI) PushMaster(dir string) error {
 	return g.gitCmd(dir, "push", "-u", "origin", "master")
 }
 
+// Pushtag pushes the given tag into the origin
 func (g *GitCLI) PushTag(dir string, tag string) error {
 	return g.gitCmd(dir, "push", "origin", tag)
 }
 
+// Add does a git add for all the given arguments
 func (g *GitCLI) Add(dir string, args ...string) error {
 	add := append([]string{"add"}, args...)
 	return g.gitCmd(dir, add...)
 }
 
+// HasChanges indicates if there are any changes in the repository from the given directory
 func (g *GitCLI) HasChanges(dir string) (bool, error) {
 	text, err := g.gitCmdWithOutput(dir, "status", "-s")
 	if err != nil {
@@ -193,6 +204,7 @@ func (g *GitCLI) HasChanges(dir string) (bool, error) {
 	return len(text) > 0, nil
 }
 
+// CommiIfChanges does a commit if there are any changes in the repository at the given directory
 func (g *GitCLI) CommitIfChanges(dir string, message string) error {
 	changed, err := g.HasChanges(dir)
 	if err != nil {
@@ -204,10 +216,12 @@ func (g *GitCLI) CommitIfChanges(dir string, message string) error {
 	return g.CommitDir(dir, message)
 }
 
+// CommitDir commits all changes from the given directory
 func (g *GitCLI) CommitDir(dir string, message string) error {
 	return g.gitCmd(dir, "commit", "-m", message)
 }
 
+// AddCommit perform an add and commit of the changes from the repository at the given directory with the given messages
 func (g *GitCLI) AddCommmit(dir string, msg string) error {
 	return g.gitCmd("", "commit", "-a", "-m", msg, "--allow-empty")
 }
@@ -234,6 +248,7 @@ func (g *GitCLI) CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string
 	return cloneURL, nil
 }
 
+// RepoName formats the repository names based on the organization
 func (g *GitCLI) RepoName(org, repoName string) string {
 	if org != "" {
 		return org + "/" + repoName
@@ -241,6 +256,7 @@ func (g *GitCLI) RepoName(org, repoName string) string {
 	return repoName
 }
 
+// Server returns the git server of the repository at the given directory
 func (g *GitCLI) Server(dir string) (string, error) {
 	repo, err := g.Info(dir)
 	if err != nil {
@@ -249,6 +265,7 @@ func (g *GitCLI) Server(dir string) (string, error) {
 	return repo.HostURL(), err
 }
 
+// Info returns the git info of the repository at the given directory
 func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
 	text, err := g.gitCmdWithOutput(dir, "status")
 	if err != nil && strings.Contains(text, "Not a git repository") {
@@ -301,6 +318,7 @@ func (g *GitCLI) ConvertToValidBranchName(name string) string {
 	return buffer.String()
 }
 
+// GetAuthorEmailForCommit returns the author email from commit message with the given SHA
 func (g *GitCLI) GetAuthorEmailForCommit(dir string, sha string) (string, error) {
 	text, err := g.gitCmdWithOutput(dir, "show", "-s", "--format=%aE", sha)
 	if err != nil {
@@ -310,6 +328,7 @@ func (g *GitCLI) GetAuthorEmailForCommit(dir string, sha string) (string, error)
 	return strings.TrimSpace(text), nil
 }
 
+// SetRemoteURL sets the remote URL of the remote with the given name
 func (g *GitCLI) SetRemoteURL(dir string, name string, gitURL string) error {
 	err := g.gitCmd(dir, "remote", "add", name, gitURL)
 	if err != nil {
@@ -338,6 +357,7 @@ func (g *GitCLI) parseGitConfig(gitConf string) (*gitcfg.Config, error) {
 	return cfg, nil
 }
 
+// DiscoverRemoteGitURL discovers the remote git URL from the given git configuration
 func (g *GitCLI) DiscoverRemoteGitURL(gitConf string) (string, error) {
 	cfg, err := g.parseGitConfig(gitConf)
 	if err != nil {
@@ -354,6 +374,7 @@ func (g *GitCLI) DiscoverRemoteGitURL(gitConf string) (string, error) {
 	return rUrl, nil
 }
 
+// DiscoverUpstreamGitURL discovers the upstream git URL from the given git configuration
 func (g *GitCLI) DiscoverUpstreamGitURL(gitConf string) (string, error) {
 	cfg, err := g.parseGitConfig(gitConf)
 	if err != nil {
@@ -380,6 +401,7 @@ func (g *GitCLI) firstRemoteUrl(remote *gitcfg.RemoteConfig) string {
 	return ""
 }
 
+// GetRemoteUrl returns the remote URL from the given git config
 func (g *GitCLI) GetRemoteUrl(config *gitcfg.Config, name string) string {
 	if config.Remotes != nil {
 		return g.firstRemoteUrl(config.Remotes[name])
@@ -387,6 +409,7 @@ func (g *GitCLI) GetRemoteUrl(config *gitcfg.Config, name string) string {
 	return ""
 }
 
+// RemoteBranches returns all remote branches with the given prefix
 func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) {
 	answer := []string{}
 	text, err := g.gitCmdWithOutput(dir, "branch", "-a")
@@ -404,6 +427,7 @@ func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) 
 	return answer, nil
 }
 
+// GetPreviousGitTagSHA returns the previous git tag from the repository at the given directory
 func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, error) {
 	// when in a release branch we need to skip 2 rather that 1 to find the revision of the previous tag
 	// no idea why! :)
@@ -425,14 +449,17 @@ func (g *GitCLI) GetRevisionBeforeDateText(dir string, dateText string) (string,
 	return g.gitCmdWithOutput(dir, "rev-list", "-1", "--before=\""+dateText+"\"", "--max-count=1", branch)
 }
 
+// GetCurrentGitTagSHA return the SHA of the current git tag from the repository at the given directory
 func (g *GitCLI) GetCurrentGitTagSHA(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-list", "--tags", "--max-count=1")
 }
 
+// FetchTags fetches all the tags
 func (g *GitCLI) FetchTags(dir string) error {
 	return g.gitCmd("", "fetch", "--tags", "-v")
 }
 
+// Tags returns all tags from the repository at the given directory
 func (g *GitCLI) Tags(dir string) ([]string, error) {
 	tags := []string{}
 	text, err := g.gitCmdWithOutput(dir, "tag")
@@ -443,10 +470,12 @@ func (g *GitCLI) Tags(dir string) ([]string, error) {
 	return strings.Split(text, "\n"), nil
 }
 
+// CreateTag creates a tag with the given name and message in the repository at the given directory
 func (g *GitCLI) CreateTag(dir string, tag string, msg string) error {
 	return g.gitCmd("", "tag", "-fa", tag, "-m", msg)
 }
 
+// PrintCreateRepositoryGenerateAccessToken prints the access token URL of a git repository
 func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
 	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL, username)
 
@@ -455,6 +484,7 @@ func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServe
 	fmt.Fprint(o, "Then COPY the token and enter in into the form below:\n\n")
 }
 
+// IsFork indicates if the repository at the given directory is a fork
 func (g *GitCLI) IsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error) {
 	// lets ignore errors as that just means there's no config
 	originUrl, _ := g.gitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
@@ -480,24 +510,32 @@ func (g *GitCLI) ToGitLabels(names []string) []GitLabel {
 	return answer
 }
 
+// Version returns the git version
 func (g *GitCLI) Version() (string, error) {
 	return g.gitCmdWithOutput("", "version")
 }
 
+// Username return the username from the git configuration
 func (g *GitCLI) Username(dir string) (string, error) {
 	return g.gitCmdWithOutput("", "config", "--global", "--get", "user.name")
 }
 
+// SetUsername sets the username in the git configuration
 func (g *GitCLI) SetUsername(dir string, username string) error {
 	return g.gitCmd(dir, "config", "--global", "--add", "user.name", username)
 }
+
+// Email returns the email from the git configuration
 func (g *GitCLI) Email(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "config", "--global", "--get", "user.email")
 }
+
+// SetEmail sets the given email in the git configuration
 func (g *GitCLI) SetEmail(dir string, email string) error {
 	return g.gitCmd(dir, "config", "--global", "--add", "user.email", email)
 }
 
+// CreateBranch creates a branch with the given name in the git repository from the given directory
 func (g *GitCLI) CreateBranch(dir string, branch string) error {
 	return g.gitCmd(dir, "branch", branch)
 
