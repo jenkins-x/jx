@@ -81,6 +81,8 @@ const (
 
 	DefaultEnvironmentGitRepoURL = "https://github.com/jenkins-x/default-environment-charts.git"
 
+	DefaultOrganisationGitRepoURL = "https://github.com/jenkins-x/default-organisation.git"
+
 	// LabelKind to indicate the kind of auth, such as Git or Issue
 	LabelKind = "jenkins.io/kind"
 

@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -30,9 +31,9 @@ type Cluster struct {
 }
 
 type Flags struct {
-	Cluster              []string
-	OrganisationRepoName string
-	//ForkOrganisationGitRepo string
+	Cluster                 []string
+	OrganisationRepoName    string
+	ForkOrganisationGitRepo string
 }
 
 // CreateTerraformOptions the options for the create spring command
@@ -95,7 +96,7 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, "cluster", "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
 	cmd.Flags().StringVarP(&options.Flags.OrganisationRepoName, "organisation-repo-name", "o", "", "The organisation name that will be used as the Git repo containing cluster details")
-	//cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultEnvironmentGitRepoURL, "The Git repository used as the fork when creating new Organisation git repos")
+	cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultOrganisationGitRepoURL, "The Git repository used as the fork when creating new Organisation git repos")
 
 }
 
@@ -282,7 +283,19 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 			return err
 		}
 
-		err = gits.GitInit(dir)
+		err = gits.GitClone(o.Flags.ForkOrganisationGitRepo, dir)
+		if err != nil {
+			return err
+		}
+		pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
+		if err != nil {
+			return err
+		}
+		err = gits.GitCmd(dir, "remote", "add", "upstream", o.Flags.ForkOrganisationGitRepo)
+		if err != nil {
+			return err
+		}
+		err = gits.GitCmd(dir, "remote", "set-url", "origin", pushGitURL)
 		if err != nil {
 			return err
 		}
@@ -294,16 +307,6 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		}
 
 		err = o.commitClusters(dir)
-		if err != nil {
-			return err
-		}
-
-		pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
-		if err != nil {
-			return err
-		}
-
-		err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
 		if err != nil {
 			return err
 		}
