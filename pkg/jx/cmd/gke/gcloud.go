@@ -17,7 +17,7 @@ var (
 		"roles/container.clusterAdmin",
 		"roles/container.admin",
 		"roles/container.developer",
-	    "roles/storage.objectAdmin"}
+		"roles/storage.objectAdmin"}
 )
 
 func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterConfigDir string) (string, error) {

@@ -215,12 +215,14 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
+	_, originalNs, err := options.KubeClient()
+	if err != nil {
+		return err
+	}
+
 	ns := options.Flags.Namespace
 	if ns == "" {
-		_, ns, err = options.KubeClient()
-		if err != nil {
-			return err
-		}
+		ns = originalNs
 	}
 
 	err = kube.EnsureNamespaceCreated(client, ns, map[string]string{kube.LabelTeam: ns}, nil)
@@ -472,6 +474,8 @@ func (options *InstallOptions) Run() error {
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 
+	options.currentNamespace = ns
+
 	if helmBinary != "helm" {
 		// default apps to use helm3 too
 		helmOptions := EditHelmBinOptions{}
@@ -567,6 +571,10 @@ func (options *InstallOptions) Run() error {
 	log.Success("\nJenkins X installation completed successfully\n")
 
 	options.logAdminPassword()
+
+	log.Infof("\nYour kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
+	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx ns "+originalNs))
+	log.Infof("For help on switching contextst see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
 
 	log.Infof("\nTo import existing projects into Jenkins:     %s\n", util.ColorInfo("jx import"))
 	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
