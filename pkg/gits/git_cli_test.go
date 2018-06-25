@@ -1,8 +1,9 @@
 package gits
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type brancbNameData struct {
@@ -28,8 +29,9 @@ func Test(t *testing.T) {
 			"foo\t ~bar", "foo_bar",
 		},
 	}
+	git := &GitCLI{}
 	for _, data := range testCases {
-		actual := ConvertToValidBranchName(data.input)
+		actual := git.ConvertToValidBranchName(data.input)
 		assert.Equal(t, data.expected, actual, "Convert to valid branch name for %s", data.input)
 	}
 }

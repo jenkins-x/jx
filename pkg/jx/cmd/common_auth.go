@@ -66,7 +66,7 @@ func (o *CommonOptions) createGitAuthConfigServiceFromSecrets(fileName string, s
 		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
 		if !userAuth.IsInvalid() {
 			// if no config file is being used lets grab the git server from the current directory
-			server, err := gits.GetGitServer("")
+			server, err := o.Git().GetGitServer("")
 			if err != nil {
 				log.Warnf("WARNING: unable to get remote git repo server, %v\n", err)
 				server = "https://github.com"

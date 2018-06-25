@@ -19,9 +19,10 @@ type JiraService struct {
 	Server     *auth.AuthServer
 	UserAuth   *auth.UserAuth
 	Project    string
+	Git        gits.Gitter
 }
 
-func CreateJiraIssueProvider(server *auth.AuthServer, userAuth *auth.UserAuth, project string, batchMode bool) (IssueProvider, error) {
+func CreateJiraIssueProvider(server *auth.AuthServer, userAuth *auth.UserAuth, project string, batchMode bool, git gits.Gitter) (IssueProvider, error) {
 	u := server.URL
 	if u == "" {
 		return nil, fmt.Errorf("No base URL for server!")
@@ -52,6 +53,7 @@ func CreateJiraIssueProvider(server *auth.AuthServer, userAuth *auth.UserAuth, p
 		Server:     server,
 		UserAuth:   userAuth,
 		Project:    project,
+		Git:        git,
 	}, nil
 }
 
@@ -122,7 +124,7 @@ func (i *JiraService) jiraToGitIssue(issue *jira.Issue) *gits.GitIssue {
 	if fields != nil {
 		answer.Title = fields.Summary
 		answer.Body = fields.Description
-		answer.Labels = gits.ToGitLabels(fields.Labels)
+		answer.Labels = i.Git.ToGitLabels(fields.Labels)
 		answer.ClosedAt = jiraTimeToTimeP(fields.Resolutiondate)
 		answer.User = jiraUserToGitUser(fields.Reporter)
 		assignee := jiraUserToGitUser(fields.Assignee)

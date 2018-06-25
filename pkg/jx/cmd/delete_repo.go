@@ -109,7 +109,7 @@ func (o *DeleteRepoOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	provider, err := gits.CreateProvider(server, userAuth)
+	provider, err := gits.CreateProvider(server, userAuth, o.Git())
 	if err != nil {
 		return err
 	}

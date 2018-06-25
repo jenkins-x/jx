@@ -19,7 +19,7 @@ import (
 
 // createGitProvider creates a git from the given directory
 func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, gits.GitProvider, issues.IssueProvider, error) {
-	gitDir, gitConfDir, err := gits.FindGitConfigDir(dir)
+	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -28,7 +28,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 		return nil, nil, nil, nil
 	}
 
-	gitUrl, err := gits.DiscoverUpstreamGitURL(gitConfDir)
+	gitUrl, err := o.Git().DiscoverUpstreamGitURL(gitConfDir)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -41,7 +41,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind)
+	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind, o.Git())
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -199,9 +199,9 @@ func (o *CommonOptions) discoverGitURL(gitConf string) (string, error) {
 	if len(remotes) == 0 {
 		return "", nil
 	}
-	url := gits.GetRemoteUrl(cfg, "origin")
+	url := o.Git().GetRemoteUrl(cfg, "origin")
 	if url == "" {
-		url = gits.GetRemoteUrl(cfg, "upstream")
+		url = o.Git().GetRemoteUrl(cfg, "upstream")
 		if url == "" {
 			url, err = o.pickRemoteURL(cfg)
 			if err != nil {
@@ -275,7 +275,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind)
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git())
 }
 
 // gitProviderForURL returns a GitProvider for the given git server URL
@@ -284,5 +284,5 @@ func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(authConfigSvc, gitKind, gitServiceUrl)
+	return gits.CreateProviderForURL(authConfigSvc, gitKind, gitServiceUrl, o.Git())
 }

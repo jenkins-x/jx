@@ -43,13 +43,13 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 	}
 	if branchPattern == "" {
 		log.Infof("Querying if the repo is a fork at %s with kind %s\n", gitProvider.ServerURL(), gitProvider.Kind())
-		fork, err := gits.GitIsFork(gitProvider, gitInfo, dir)
+		fork, err := o.Git().GitIsFork(gitProvider, gitInfo, dir)
 		if err != nil {
 			return fmt.Errorf("No branch pattern specified and could not determine if the git repository is a fork: %s", err)
 		}
 		if fork {
 			// lets figure out which branches to enable for a fork
-			branch, err := gits.GitGetBranch(dir)
+			branch, err := o.Git().GitGetBranch(dir)
 			if err != nil {
 				return fmt.Errorf("Failed to get current branch in dir %s: %s", dir, err)
 			}

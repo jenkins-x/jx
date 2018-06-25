@@ -14,7 +14,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -353,7 +352,7 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) stri
 			return "go"
 		}
 	}
-	root, _, err := gits.FindGitConfigDir(o.Dir)
+	root, _, err := o.Git().FindGitConfigDir(o.Dir)
 	if err != nil {
 		log.Warnf("Could not find a .git directory: %s\n", err)
 	}

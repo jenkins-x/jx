@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -153,7 +152,7 @@ func (o *VersionOptions) Run() error {
 	}
 
 	// git version
-	version, err := gits.GitVersion()
+	version, err := o.Git().GitVersion()
 	if err != nil {
 		log.Warnf("Failed to get git version: %s\n", err)
 	} else {

@@ -23,6 +23,7 @@ type BitbucketCloudProvider struct {
 
 	Server auth.AuthServer
 	User   auth.UserAuth
+	Git    Gitter
 }
 
 var stateMap = map[string]string{
@@ -32,7 +33,7 @@ var stateMap = map[string]string{
 	"STOPPED":    "stopped",
 }
 
-func NewBitbucketCloudProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func NewBitbucketCloudProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 
 	basicAuth := bitbucket.BasicAuth{
@@ -46,6 +47,7 @@ func NewBitbucketCloudProvider(server *auth.AuthServer, user *auth.UserAuth) (Gi
 		User:     *user,
 		Username: user.Username,
 		Context:  basicAuthContext,
+		Git:      git,
 	}
 
 	cfg := bitbucket.NewConfiguration()

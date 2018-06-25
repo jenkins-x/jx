@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -138,7 +137,7 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 	}
 	gitRepo := "https://github.com/istio/istio.git"
 	log.Infof("Cloning %s to %s\n", util.ColorInfo(gitRepo), util.ColorInfo(answer))
-	err = gits.GitClone(gitRepo, answer)
+	err = o.Git().GitClone(gitRepo, answer)
 	if err != nil {
 		return answer, err
 	}

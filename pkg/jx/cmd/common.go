@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -56,6 +57,7 @@ type CommonOptions struct {
 	devNamespace        string
 	jxClient            versioned.Interface
 	jenkinsClient       *gojenkins.Jenkins
+	git                 gits.Gitter
 }
 
 type ServerFlags struct {
@@ -179,6 +181,12 @@ func (o *CommonOptions) GetJenkinsURL() (string, error) {
 	return o.Factory.GetJenkinsURL(kubeClient, ns)
 }
 
+func (o *CommonOptions) Git() gits.Gitter {
+	if o.git == nil {
+		o.git = gits.NewGitCLI()
+	}
+	return o.git
+}
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 	kubeClient, currentNs, err := o.KubeClient()
 	if err != nil {

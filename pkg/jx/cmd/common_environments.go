@@ -43,7 +43,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 
-	branchName := gits.ConvertToValidBranchName(branchNameText)
+	branchName := o.Git().ConvertToValidBranchName(branchNameText)
 	base := source.Ref
 	if base == "" {
 		base = "master"
@@ -51,19 +51,19 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 
 	if exists {
 		// lets check the git remote URL is setup correctly
-		err = gits.SetRemoteURL(dir, "origin", gitURL)
+		err = o.Git().SetRemoteURL(dir, "origin", gitURL)
 		if err != nil {
 			return answer, err
 		}
-		err = gits.GitStash(dir)
+		err = o.Git().GitStash(dir)
 		if err != nil {
 			return answer, err
 		}
-		err = gits.GitCheckout(dir, base)
+		err = o.Git().GitCheckout(dir, base)
 		if err != nil {
 			return answer, err
 		}
-		err = gits.GitPull(dir)
+		err = o.Git().GitPull(dir)
 		if err != nil {
 			return answer, err
 		}
@@ -72,12 +72,12 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		if err != nil {
 			return answer, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
-		err = gits.GitClone(gitURL, dir)
+		err = o.Git().GitClone(gitURL, dir)
 		if err != nil {
 			return answer, err
 		}
 		if base != "master" {
-			err = gits.GitCheckout(dir, base)
+			err = o.Git().GitCheckout(dir, base)
 			if err != nil {
 				return answer, err
 			}
@@ -85,7 +85,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 
 		// TODO lets fork if required???
 	}
-	branchNames, err := gits.GitGetRemoteBranchNames(dir, "remotes/origin/")
+	branchNames, err := o.Git().GitGetRemoteBranchNames(dir, "remotes/origin/")
 	if err != nil {
 		return answer, fmt.Errorf("Failed to load remote branch names: %s", err)
 	}
@@ -94,11 +94,11 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		// lets append a UUID as the branch name already exists
 		branchName += "-" + string(uuid.NewUUID())
 	}
-	err = gits.GitCreateBranch(dir, branchName)
+	err = o.Git().GitCreateBranch(dir, branchName)
 	if err != nil {
 		return answer, err
 	}
-	err = gits.GitCheckout(dir, branchName)
+	err = o.Git().GitCheckout(dir, branchName)
 	if err != nil {
 		return answer, err
 	}
@@ -116,11 +116,11 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 
 	err = helm.SaveRequirementsFile(requirementsFile, requirements)
 
-	err = gits.GitAdd(dir, "*", "*/*")
+	err = o.Git().GitAdd(dir, "*", "*/*")
 	if err != nil {
 		return answer, err
 	}
-	changed, err := gits.HasChanges(dir)
+	changed, err := o.Git().HasChanges(dir)
 	if err != nil {
 		return answer, err
 	}
@@ -128,18 +128,18 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		log.Warnf("%s\n", "No changes made to the GitOps Environment source code. Code must be up to date!")
 		return answer, nil
 	}
-	err = gits.GitCommitDir(dir, message)
+	err = o.Git().GitCommitDir(dir, message)
 	if err != nil {
 		return answer, err
 	}
 	// lets rebase an existing PR
 	if pullRequestInfo != nil {
 		remoteBranch := pullRequestInfo.PullRequestArguments.Head
-		err = gits.GitForcePushBranch(dir, branchName, remoteBranch)
+		err = o.Git().GitForcePushBranch(dir, branchName, remoteBranch)
 		return pullRequestInfo, err
 	}
 
-	err = gits.GitPush(dir)
+	err = o.Git().GitPush(dir)
 	if err != nil {
 		return answer, err
 	}
@@ -154,7 +154,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode, gitKind)
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode, gitKind, o.Git())
 	if err != nil {
 		return answer, err
 	}

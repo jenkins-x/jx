@@ -219,21 +219,21 @@ func (o *StepChangelogOptions) Run() error {
 	if previousRev == "" {
 		previousDate := o.PreviousDate
 		if previousDate != "" {
-			previousRev, err = gits.GetRevisionBeforeDateText(dir, previousDate)
+			previousRev, err = o.Git().GetRevisionBeforeDateText(dir, previousDate)
 			if err != nil {
 				return fmt.Errorf("Failed to find commits before date %s: %s", previousDate, err)
 			}
 		}
 	}
 	if previousRev == "" {
-		previousRev, err = gits.GetPreviousGitTagSHA(dir)
+		previousRev, err = o.Git().GetPreviousGitTagSHA(dir)
 		if err != nil {
 			return err
 		}
 	}
 	currentRev := o.CurrentRevision
 	if currentRev == "" {
-		currentRev, err = gits.GetCurrentGitTagSHA(dir)
+		currentRev, err = o.Git().GetCurrentGitTagSHA(dir)
 		if err != nil {
 			return err
 		}
@@ -255,7 +255,7 @@ func (o *StepChangelogOptions) Run() error {
 
 	log.Infof("Generating change log from git ref %s => %s\n", util.ColorInfo(previousRev), util.ColorInfo(currentRev))
 
-	gitDir, gitConfDir, err := gits.FindGitConfigDir(dir)
+	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func (o *StepChangelogOptions) Run() error {
 		return nil
 	}
 
-	gitUrl, err := gits.DiscoverUpstreamGitURL(gitConfDir)
+	gitUrl, err := o.Git().DiscoverUpstreamGitURL(gitConfDir)
 	if err != nil {
 		return err
 	}
@@ -291,7 +291,7 @@ func (o *StepChangelogOptions) Run() error {
 
 	gitKind, err := o.GitServerKind(gitInfo)
 	foundGitProvider := true
-	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc, gitKind)
+	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc, gitKind, o.Git())
 	if err != nil {
 		foundGitProvider = false
 		log.Warnf("Could not create GitProvide so cannot update the release notes: %s\n", err)

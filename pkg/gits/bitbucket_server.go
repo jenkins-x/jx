@@ -24,6 +24,7 @@ type BitbucketServerProvider struct {
 
 	Server auth.AuthServer
 	User   auth.UserAuth
+	Git    Gitter
 }
 
 type projectsPage struct {
@@ -65,7 +66,7 @@ type pullrequestEndpointBranch struct {
 	Name string `json:"name,omitempty"`
 }
 
-func NewBitbucketServerProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func NewBitbucketServerProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 	apiKeyAuthContext := context.WithValue(ctx, bitbucket.ContextAccessToken, user.ApiToken)
 
@@ -74,6 +75,7 @@ func NewBitbucketServerProvider(server *auth.AuthServer, user *auth.UserAuth) (G
 		User:     *user,
 		Username: user.Username,
 		Context:  apiKeyAuthContext,
+		Git:      git,
 	}
 
 	cfg := bitbucket.NewConfiguration(server.URL + "/rest")

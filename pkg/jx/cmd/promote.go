@@ -470,7 +470,7 @@ func (o *PromoteOptions) DiscoverAppName() (string, error) {
 		return helm.LoadChartName(chartFile)
 	}
 
-	gitInfo, err := gits.GetGitInfo("")
+	gitInfo, err := o.Git().GetGitInfo("")
 	if err != nil {
 		return answer, err
 	}
@@ -735,7 +735,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	build := os.Getenv("BUILD_NUMBER")
 	buildURL := os.Getenv("BUILD_URL")
 	buildLogsURL := os.Getenv("BUILD_LOG_URL")
-	gitInfo, err := gits.GetGitInfo("")
+	gitInfo, err := o.Git().GetGitInfo("")
 	releaseNotesURL := ""
 	releaseName := o.ReleaseName
 	if o.releaseResource == nil && releaseName != "" {
@@ -758,7 +758,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	if pipeline == "" {
 		if gitInfo != nil {
 			// lets default the pipeline name from the git repo
-			branch, err := gits.GitGetBranch(".")
+			branch, err := o.Git().GitGetBranch(".")
 			if err != nil {
 				log.Warnf("Could not find the branch name: %s\n", err)
 			}
@@ -891,7 +891,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind)
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind, o.Git())
 	if err != nil {
 		return err
 	}

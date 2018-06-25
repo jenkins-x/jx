@@ -15,7 +15,6 @@ import (
 
 	"github.com/blang/semver"
 	version "github.com/hashicorp/go-version"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -233,11 +232,11 @@ func (o *StepNextVersionOptions) getLatestTag() (string, error) {
 	// if repo isn't provided by flags fall back to using current repo if run from a git project
 	var versionsRaw []string
 
-	err := gits.GitFetchTags("")
+	err := o.Git().GitFetchTags("")
 	if err != nil {
 		return "", fmt.Errorf("error fetching tags: %v", err)
 	}
-	tags, err := gits.GitTags("")
+	tags, err := o.Git().GitTags("")
 	if err != nil {
 		return "", err
 	}
@@ -375,12 +374,12 @@ func (o *StepNextVersionOptions) setVersion() error {
 		return err
 	}
 
-	err = gits.GitAdd(o.Dir, o.Filename)
+	err = o.Git().GitAdd(o.Dir, o.Filename)
 	if err != nil {
 		return err
 	}
 
-	err = gits.GitCommitDir(o.Dir, fmt.Sprintf("Release %s", o.NewVersion))
+	err = o.Git().GitCommitDir(o.Dir, fmt.Sprintf("Release %s", o.NewVersion))
 	if err != nil {
 		return err
 	}
