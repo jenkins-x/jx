@@ -81,3 +81,11 @@ func BinaryLocation() (string, error) {
 	}
 	return path, nil
 }
+
+func MavenBinaryLocation() (string, error) {
+	h, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(h, "maven", "bin"), nil
+}

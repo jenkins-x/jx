@@ -999,6 +999,11 @@ func (o *ImportOptions) fixMaven() error {
 		return err
 	}
 	if exists {
+		err = o.installMavenIfRequired()
+		if err != nil {
+			return err
+		}
+
 		// lets ensure the mvn plugins are ok
 		out, err := o.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
 		if err != nil {

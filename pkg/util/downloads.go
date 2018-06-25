@@ -106,7 +106,7 @@ func UnTargz(tarball, target string, onlyFiles []string) error {
 		}
 
 		for _, value := range onlyFiles {
-			if value == path.Base(header.Name) {
+			if value == "*" || value == path.Base(header.Name) {
 				inkey = true
 				break
 			}

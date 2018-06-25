@@ -12,7 +12,12 @@ import (
 func PathWithBinary() string {
 	path := os.Getenv("PATH")
 	binDir, _ := BinaryLocation()
-	return path + string(os.PathListSeparator) + binDir
+	answer := path + string(os.PathListSeparator) + binDir
+	mvnBinDir, _ := MavenBinaryLocation()
+	if mvnBinDir != "" {
+		answer += string(os.PathListSeparator) + mvnBinDir
+	}
+	return answer
 }
 
 // GetCommandOutput evaluates the given command and returns the trimmed output
