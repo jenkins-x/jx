@@ -472,6 +472,8 @@ func (options *InstallOptions) Run() error {
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 
+	options.currentNamespace = ns
+
 	if helmBinary != "helm" {
 		// default apps to use helm3 too
 		helmOptions := EditHelmBinOptions{}
