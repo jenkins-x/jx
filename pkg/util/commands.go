@@ -50,5 +50,4 @@ func RunCommand(dir string, name string, args ...string) error {
 		log.Errorf("Command failed  %s %s\n", name, strings.Join(args, " "))
 	}
 	return err
-
 }
