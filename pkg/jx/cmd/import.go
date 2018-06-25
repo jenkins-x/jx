@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/Azure/draft/pkg/draft/draftpath"
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/golang-jenkins"
@@ -652,11 +654,11 @@ func (o *ImportOptions) CloneRepository() error {
 	}
 	cloneDir, err := util.CreateUniqueDirectory(o.Dir, gitInfo.Name, util.MaximumNewDirectoryAttempts)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create unique directory for '%s'", o.Dir)
 	}
 	err = o.Git().Clone(url, cloneDir)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to clone in directory '%s'", cloneDir)
 	}
 	o.Dir = cloneDir
 	return nil
