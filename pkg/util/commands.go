@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -31,7 +30,8 @@ func GetCommandOutput(dir string, name string, args ...string) (string, error) {
 	text := string(data)
 	text = strings.TrimSpace(text)
 	if err != nil {
-		return text, fmt.Errorf("Error: Command failed  %s %s %s %s\n", name, strings.Join(args, " "), text, err)
+		return text, errors.Wrapf(err, "failed to run '%s %s' command in directory '%s', output: '%s'",
+			name, strings.Join(args, " "), dir, text)
 	}
 	return text, err
 }
