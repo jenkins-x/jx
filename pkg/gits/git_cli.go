@@ -58,8 +58,8 @@ func (g *GitCLI) FindGitConfigDir(dir string) (string, string, error) {
 	}
 }
 
-// GitClone clones the given git URL into the given directory
-func (g *GitCLI) GitClone(url string, directory string) error {
+// Clone clones the given git URL into the given directory
+func (g *GitCLI) Clone(url string, directory string) error {
 	/*
 		return git.PlainClone(directory, false, &git.CloneOptions{
 			URL:               url,
@@ -69,61 +69,61 @@ func (g *GitCLI) GitClone(url string, directory string) error {
 	return g.gitCmd(directory, "clone", url)
 }
 
-func (g *GitCLI) GitPull(dir string) error {
+func (g *GitCLI) Pull(dir string) error {
 	return g.gitCmd(dir, "pull")
 }
 
-// GitCloneOrPull will clone the given git URL or pull if it alreasy exists
-func (g *GitCLI) GitCloneOrPull(url string, directory string) error {
+// CloneOrPull will clone the given git URL or pull if it alreasy exists
+func (g *GitCLI) CloneOrPull(url string, directory string) error {
 	empty, err := util.IsEmpty(directory)
 	if err != nil {
 		return err
 	}
 
 	if !empty {
-		return g.GitPull(directory)
+		return g.Pull(directory)
 	}
 	return g.gitCmd("clone", url)
 }
 
-func (g *GitCLI) GitPullUpstream(dir string) error {
+func (g *GitCLI) PullUpstream(dir string) error {
 	return g.gitCmd(dir, "pull", "-r", "upstream", "master")
 }
 
-func (g *GitCLI) GitAddRemote(dir string, url string, remote string) error {
+func (g *GitCLI) AddRemote(dir string, url string, remote string) error {
 	return g.gitCmd(dir, "remote", "add", remote, url)
 }
 
-func (g *GitCLI) GitUpdateRemote(dir, url string) error {
+func (g *GitCLI) UpdateRemote(dir, url string) error {
 	return g.gitCmd(dir, "remote", "set-url", "origin", url)
 }
 
-func (g *GitCLI) GitStash(dir string) error {
+func (g *GitCLI) Stash(dir string) error {
 	return g.gitCmd(dir, "stash")
 }
 
 // CheckoutRemoteBranch checks out the given remote tracking branch
 func (g *GitCLI) CheckoutRemoteBranch(dir string, branch string) error {
 	remoteBranch := "origin/" + branch
-	remoteBranches, err := g.GitGetRemoteBranches(dir)
+	remoteBranches, err := g.RemoteBranches(dir)
 	if err != nil {
 		return err
 	}
 	if util.StringArrayIndex(remoteBranches, remoteBranch) < 0 {
 		return g.gitCmd(dir, "checkout", "-t", remoteBranch)
 	}
-	cur, err := g.GitGetBranch(dir)
+	cur, err := g.Branch(dir)
 	if err != nil {
 		return err
 	}
 	if cur == branch {
 		return nil
 	}
-	return g.GitCheckout(dir, branch)
+	return g.Checkout(dir, branch)
 }
 
-// GitGetRemoteBranches returns the remote branches
-func (g *GitCLI) GitGetRemoteBranches(dir string) ([]string, error) {
+// RemoteBranches returns the remote branches
+func (g *GitCLI) RemoteBranches(dir string) ([]string, error) {
 	answer := []string{}
 	text, err := g.gitCmdWithOutput(dir, "branch", "-r")
 	if err != nil {
@@ -142,44 +142,44 @@ func (g *GitCLI) GitGetRemoteBranches(dir string) ([]string, error) {
 	return answer, nil
 }
 
-// GitCheckout checks out the given branch
-func (g *GitCLI) GitCheckout(dir string, branch string) error {
+// Checkout checks out the given branch
+func (g *GitCLI) Checkout(dir string, branch string) error {
 	return g.gitCmd(dir, "checkout", branch)
 }
 
-func (g *GitCLI) GitInit(dir string) error {
+func (g *GitCLI) Init(dir string) error {
 	return g.gitCmd(dir, "init")
 }
 
-func (g *GitCLI) GitRemove(dir, fileName string) error {
+func (g *GitCLI) Remove(dir, fileName string) error {
 	return g.gitCmd(dir, "rm", "-r", fileName)
 }
 
-func (g *GitCLI) GitStatus(dir string) error {
+func (g *GitCLI) Status(dir string) error {
 	return g.gitCmd(dir, "status")
 }
 
-func (g *GitCLI) GitGetBranch(dir string) (string, error) {
+func (g *GitCLI) Branch(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-parse", "--abbrev-ref", "HEAD")
 }
 
-func (g *GitCLI) GitPush(dir string) error {
+func (g *GitCLI) Push(dir string) error {
 	return g.gitCmd(dir, "push", "origin", "HEAD")
 }
 
-func (g *GitCLI) GitForcePushBranch(dir string, localBranch string, remoteBranch string) error {
+func (g *GitCLI) ForcePushBranch(dir string, localBranch string, remoteBranch string) error {
 	return g.gitCmd(dir, "push", "-f", "origin", localBranch+":"+remoteBranch)
 }
 
-func (g *GitCLI) GitPushMaster(dir string) error {
+func (g *GitCLI) PushMaster(dir string) error {
 	return g.gitCmd(dir, "push", "-u", "origin", "master")
 }
 
-func (g *GitCLI) GitPushTag(dir string, tag string) error {
+func (g *GitCLI) PushTag(dir string, tag string) error {
 	return g.gitCmd(dir, "push", "origin", tag)
 }
 
-func (g *GitCLI) GitAdd(dir string, args ...string) error {
+func (g *GitCLI) Add(dir string, args ...string) error {
 	add := append([]string{"add"}, args...)
 	return g.gitCmd(dir, add...)
 }
@@ -193,7 +193,7 @@ func (g *GitCLI) HasChanges(dir string) (bool, error) {
 	return len(text) > 0, nil
 }
 
-func (g *GitCLI) GitCommitIfChanges(dir string, message string) error {
+func (g *GitCLI) CommitIfChanges(dir string, message string) error {
 	changed, err := g.HasChanges(dir)
 	if err != nil {
 		return err
@@ -201,14 +201,14 @@ func (g *GitCLI) GitCommitIfChanges(dir string, message string) error {
 	if !changed {
 		return nil
 	}
-	return g.GitCommitDir(dir, message)
+	return g.CommitDir(dir, message)
 }
 
-func (g *GitCLI) GitCommitDir(dir string, message string) error {
+func (g *GitCLI) CommitDir(dir string, message string) error {
 	return g.gitCmd(dir, "commit", "-m", message)
 }
 
-func (g *GitCLI) GitAddCommmit(dir string, msg string) error {
+func (g *GitCLI) AddCommmit(dir string, msg string) error {
 	return g.gitCmd("", "commit", "-a", "-m", msg, "--allow-empty")
 }
 
@@ -220,8 +220,8 @@ func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
 	return util.GetCommandOutput(dir, "git", args...)
 }
 
-// GitCreatePushURL creates the git repository URL with the username and password encoded for HTTPS based URLs
-func (g *GitCLI) GitCreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
+// CreatePushURL creates the git repository URL with the username and password encoded for HTTPS based URLs
+func (g *GitCLI) CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
 	u, err := url.Parse(cloneURL)
 	if err != nil {
 		// already a git/ssh url?
@@ -234,22 +234,22 @@ func (g *GitCLI) GitCreatePushURL(cloneURL string, userAuth *auth.UserAuth) (str
 	return cloneURL, nil
 }
 
-func (g *GitCLI) GitRepoName(org, repoName string) string {
+func (g *GitCLI) RepoName(org, repoName string) string {
 	if org != "" {
 		return org + "/" + repoName
 	}
 	return repoName
 }
 
-func (g *GitCLI) GetGitServer(dir string) (string, error) {
-	repo, err := g.GetGitInfo(dir)
+func (g *GitCLI) Server(dir string) (string, error) {
+	repo, err := g.Info(dir)
 	if err != nil {
 		return "", err
 	}
 	return repo.HostURL(), err
 }
 
-func (g *GitCLI) GetGitInfo(dir string) (*GitRepositoryInfo, error) {
+func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
 	text, err := g.gitCmdWithOutput(dir, "status")
 	if err != nil && strings.Contains(text, "Not a git repository") {
 		return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
@@ -387,7 +387,7 @@ func (g *GitCLI) GetRemoteUrl(config *gitcfg.Config, name string) string {
 	return ""
 }
 
-func (g *GitCLI) GitGetRemoteBranchNames(dir string, prefix string) ([]string, error) {
+func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) {
 	answer := []string{}
 	text, err := g.gitCmdWithOutput(dir, "branch", "-a")
 	if err != nil {
@@ -418,7 +418,7 @@ func (g *GitCLI) GetRevisionBeforeDate(dir string, t time.Time) (string, error) 
 
 // GetRevisionBeforeDateText returns the revision before the given date in format "MonthName dayNumber year"
 func (g *GitCLI) GetRevisionBeforeDateText(dir string, dateText string) (string, error) {
-	branch, err := g.GitGetBranch(dir)
+	branch, err := g.Branch(dir)
 	if err != nil {
 		return "", err
 	}
@@ -429,11 +429,11 @@ func (g *GitCLI) GetCurrentGitTagSHA(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-list", "--tags", "--max-count=1")
 }
 
-func (g *GitCLI) GitFetchTags(dir string) error {
+func (g *GitCLI) FetchTags(dir string) error {
 	return g.gitCmd("", "fetch", "--tags", "-v")
 }
 
-func (g *GitCLI) GitTags(dir string) ([]string, error) {
+func (g *GitCLI) Tags(dir string) ([]string, error) {
 	tags := []string{}
 	text, err := g.gitCmdWithOutput(dir, "tag")
 	if err != nil {
@@ -443,7 +443,7 @@ func (g *GitCLI) GitTags(dir string) ([]string, error) {
 	return strings.Split(text, "\n"), nil
 }
 
-func (g *GitCLI) GitCreateTag(dir string, tag string, msg string) error {
+func (g *GitCLI) CreateTag(dir string, tag string, msg string) error {
 	return g.gitCmd("", "tag", "-fa", tag, "-m", msg)
 }
 
@@ -455,7 +455,7 @@ func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServe
 	fmt.Fprint(o, "Then COPY the token and enter in into the form below:\n\n")
 }
 
-func (g *GitCLI) GitIsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error) {
+func (g *GitCLI) IsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error) {
 	// lets ignore errors as that just means there's no config
 	originUrl, _ := g.gitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
 	upstreamUrl, _ := g.gitCmdWithOutput(dir, "config", "--get", "remote.upstream.url")
@@ -480,25 +480,25 @@ func (g *GitCLI) ToGitLabels(names []string) []GitLabel {
 	return answer
 }
 
-func (g *GitCLI) GitVersion() (string, error) {
+func (g *GitCLI) Version() (string, error) {
 	return g.gitCmdWithOutput("", "version")
 }
 
-func (g *GitCLI) GitUsername(dir string) (string, error) {
+func (g *GitCLI) Username(dir string) (string, error) {
 	return g.gitCmdWithOutput("", "config", "--global", "--get", "user.name")
 }
 
-func (g *GitCLI) GitSetUsername(dir string, username string) error {
+func (g *GitCLI) SetUsername(dir string, username string) error {
 	return g.gitCmd(dir, "config", "--global", "--add", "user.name", username)
 }
-func (g *GitCLI) GitEmail(dir string) (string, error) {
+func (g *GitCLI) Email(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "config", "--global", "--get", "user.email")
 }
-func (g *GitCLI) GitSetEmail(dir string, email string) error {
+func (g *GitCLI) SetEmail(dir string, email string) error {
 	return g.gitCmd(dir, "config", "--global", "--add", "user.email", email)
 }
 
-func (g *GitCLI) GitCreateBranch(dir string, branch string) error {
+func (g *GitCLI) CreateBranch(dir string, branch string) error {
 	return g.gitCmd(dir, "branch", branch)
 
 }

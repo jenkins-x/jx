@@ -344,7 +344,7 @@ func (o *ImportOptions) Run() error {
 		}
 	} else {
 		if shouldClone {
-			err = o.Git().GitPush(o.Dir)
+			err = o.Git().Push(o.Dir)
 			if err != nil {
 				return err
 			}
@@ -555,11 +555,11 @@ func (o *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	err = o.Git().GitAdd(dir, "*")
+	err = o.Git().Add(dir, "*")
 	if err != nil {
 		return err
 	}
-	err = o.Git().GitCommitIfChanges(dir, "Draft create")
+	err = o.Git().CommitIfChanges(dir, "Draft create")
 	if err != nil {
 		return err
 	}
@@ -619,15 +619,15 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	o.GitProvider = details.GitProvider
 
 	o.RepoURL = repo.CloneURL
-	pushGitURL, err := o.Git().GitCreatePushURL(repo.CloneURL, details.User)
+	pushGitURL, err := o.Git().CreatePushURL(repo.CloneURL, details.User)
 	if err != nil {
 		return err
 	}
-	err = o.Git().GitAddRemote(dir, "origin", pushGitURL)
+	err = o.Git().AddRemote(dir, "origin", pushGitURL)
 	if err != nil {
 		return err
 	}
-	err = o.Git().GitPushMaster(dir)
+	err = o.Git().PushMaster(dir)
 	if err != nil {
 		return err
 	}
@@ -654,7 +654,7 @@ func (o *ImportOptions) CloneRepository() error {
 	if err != nil {
 		return err
 	}
-	err = o.Git().GitClone(url, cloneDir)
+	err = o.Git().Clone(url, cloneDir)
 	if err != nil {
 		return err
 	}
@@ -698,7 +698,7 @@ func (o *ImportOptions) DiscoverGit() error {
 		}
 	}
 	o.InitialisedGit = true
-	err := o.Git().GitInit(dir)
+	err := o.Git().Init(dir)
 	if err != nil {
 		return err
 	}
@@ -707,16 +707,16 @@ func (o *ImportOptions) DiscoverGit() error {
 	if err != nil {
 		return err
 	}
-	err = o.Git().GitAdd(dir, ".gitignore")
+	err = o.Git().Add(dir, ".gitignore")
 	if err != nil {
 		return err
 	}
-	err = o.Git().GitAdd(dir, "*")
+	err = o.Git().Add(dir, "*")
 	if err != nil {
 		return err
 	}
 
-	err = o.Git().GitStatus(dir)
+	err = o.Git().Status(dir)
 	if err != nil {
 		return err
 	}
@@ -736,7 +736,7 @@ func (o *ImportOptions) DiscoverGit() error {
 			}
 		}
 	}
-	err = o.Git().GitCommitIfChanges(dir, message)
+	err = o.Git().CommitIfChanges(dir, message)
 	if err != nil {
 		return err
 	}
@@ -1011,11 +1011,11 @@ func (o *ImportOptions) fixMaven() error {
 			return fmt.Errorf("Failed to update maven plugin: %s output: %s", err, out)
 		}
 		if !o.DryRun {
-			err = o.Git().GitAdd(dir, "pom.xml")
+			err = o.Git().Add(dir, "pom.xml")
 			if err != nil {
 				return err
 			}
-			err = o.Git().GitCommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
+			err = o.Git().CommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
 			if err != nil {
 				return err
 			}
@@ -1027,11 +1027,11 @@ func (o *ImportOptions) fixMaven() error {
 			return fmt.Errorf("Failed to update chart: %s output: %s", err, out)
 		}
 		if !o.DryRun {
-			err = o.Git().GitAdd(dir, "charts")
+			err = o.Git().Add(dir, "charts")
 			if err != nil {
 				return err
 			}
-			err = o.Git().GitCommitIfChanges(dir, "fix:(chart) fix up the probe path")
+			err = o.Git().CommitIfChanges(dir, "fix:(chart) fix up the probe path")
 			if err != nil {
 				return err
 			}

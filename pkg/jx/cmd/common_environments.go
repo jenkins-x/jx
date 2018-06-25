@@ -55,15 +55,15 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		if err != nil {
 			return answer, err
 		}
-		err = o.Git().GitStash(dir)
+		err = o.Git().Stash(dir)
 		if err != nil {
 			return answer, err
 		}
-		err = o.Git().GitCheckout(dir, base)
+		err = o.Git().Checkout(dir, base)
 		if err != nil {
 			return answer, err
 		}
-		err = o.Git().GitPull(dir)
+		err = o.Git().Pull(dir)
 		if err != nil {
 			return answer, err
 		}
@@ -72,12 +72,12 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		if err != nil {
 			return answer, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
-		err = o.Git().GitClone(gitURL, dir)
+		err = o.Git().Clone(gitURL, dir)
 		if err != nil {
 			return answer, err
 		}
 		if base != "master" {
-			err = o.Git().GitCheckout(dir, base)
+			err = o.Git().Checkout(dir, base)
 			if err != nil {
 				return answer, err
 			}
@@ -85,7 +85,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 
 		// TODO lets fork if required???
 	}
-	branchNames, err := o.Git().GitGetRemoteBranchNames(dir, "remotes/origin/")
+	branchNames, err := o.Git().RemoteBranchNames(dir, "remotes/origin/")
 	if err != nil {
 		return answer, fmt.Errorf("Failed to load remote branch names: %s", err)
 	}
@@ -94,11 +94,11 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		// lets append a UUID as the branch name already exists
 		branchName += "-" + string(uuid.NewUUID())
 	}
-	err = o.Git().GitCreateBranch(dir, branchName)
+	err = o.Git().CreateBranch(dir, branchName)
 	if err != nil {
 		return answer, err
 	}
-	err = o.Git().GitCheckout(dir, branchName)
+	err = o.Git().Checkout(dir, branchName)
 	if err != nil {
 		return answer, err
 	}
@@ -116,7 +116,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 
 	err = helm.SaveRequirementsFile(requirementsFile, requirements)
 
-	err = o.Git().GitAdd(dir, "*", "*/*")
+	err = o.Git().Add(dir, "*", "*/*")
 	if err != nil {
 		return answer, err
 	}
@@ -128,18 +128,18 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		log.Warnf("%s\n", "No changes made to the GitOps Environment source code. Code must be up to date!")
 		return answer, nil
 	}
-	err = o.Git().GitCommitDir(dir, message)
+	err = o.Git().CommitDir(dir, message)
 	if err != nil {
 		return answer, err
 	}
 	// lets rebase an existing PR
 	if pullRequestInfo != nil {
 		remoteBranch := pullRequestInfo.PullRequestArguments.Head
-		err = o.Git().GitForcePushBranch(dir, branchName, remoteBranch)
+		err = o.Git().ForcePushBranch(dir, branchName, remoteBranch)
 		return pullRequestInfo, err
 	}
 
-	err = o.Git().GitPush(dir)
+	err = o.Git().Push(dir)
 	if err != nil {
 		return answer, err
 	}

@@ -13,60 +13,60 @@ type Gitter interface {
 	ToGitLabels(names []string) []GitLabel
 	PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer)
 
-	GitStatus(dir string) error
-	GetGitServer(dir string) (string, error)
-	GetGitInfo(dir string) (*GitRepositoryInfo, error)
-	GitIsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error)
-	GitVersion() (string, error)
-	GitRepoName(org, repoName string) string
+	Status(dir string) error
+	Server(dir string) (string, error)
+	Info(dir string) (*GitRepositoryInfo, error)
+	IsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error)
+	Version() (string, error)
+	RepoName(org, repoName string) string
 
-	GitUsername(dir string) (string, error)
-	GitSetUsername(dir string, username string) error
-	GitEmail(dir string) (string, error)
-	GitSetEmail(dir string, email string) error
+	Username(dir string) (string, error)
+	SetUsername(dir string, username string) error
+	Email(dir string) (string, error)
+	SetEmail(dir string, email string) error
 	GetAuthorEmailForCommit(dir string, sha string) (string, error)
 
-	GitInit(dir string) error
-	GitClone(url string, directory string) error
-	GitPush(dir string) error
-	GitPushMaster(dir string) error
-	GitPushTag(dir string, tag string) error
-	GitCreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error)
-	GitForcePushBranch(dir string, localBranch string, remoteBranch string) error
-	GitCloneOrPull(url string, directory string) error
-	GitPull(dir string) error
-	GitPullUpstream(dir string) error
+	Init(dir string) error
+	Clone(url string, directory string) error
+	Push(dir string) error
+	PushMaster(dir string) error
+	PushTag(dir string, tag string) error
+	CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error)
+	ForcePushBranch(dir string, localBranch string, remoteBranch string) error
+	CloneOrPull(url string, directory string) error
+	Pull(dir string) error
+	PullUpstream(dir string) error
 
-	GitAddRemote(dir string, url string, remote string) error
+	AddRemote(dir string, url string, remote string) error
 	SetRemoteURL(dir string, name string, gitURL string) error
-	GitUpdateRemote(dir, url string) error
+	UpdateRemote(dir, url string) error
 	DiscoverRemoteGitURL(gitConf string) (string, error)
 	DiscoverUpstreamGitURL(gitConf string) (string, error)
-	GitGetRemoteBranches(dir string) ([]string, error)
-	GitGetRemoteBranchNames(dir string, prefix string) ([]string, error)
+	RemoteBranches(dir string) ([]string, error)
+	RemoteBranchNames(dir string, prefix string) ([]string, error)
 	GetRemoteUrl(config *gitcfg.Config, name string) string
 
-	GitGetBranch(dir string) (string, error)
-	GitCreateBranch(dir string, branch string) error
+	Branch(dir string) (string, error)
+	CreateBranch(dir string, branch string) error
 	CheckoutRemoteBranch(dir string, branch string) error
-	GitCheckout(dir string, branch string) error
+	Checkout(dir string, branch string) error
 	ConvertToValidBranchName(name string) string
 
-	GitStash(dir string) error
+	Stash(dir string) error
 
-	GitRemove(dir, fileName string) error
-	GitAdd(dir string, args ...string) error
+	Remove(dir, fileName string) error
+	Add(dir string, args ...string) error
 
-	GitCommitIfChanges(dir string, message string) error
-	GitCommitDir(dir string, message string) error
-	GitAddCommmit(dir string, msg string) error
+	CommitIfChanges(dir string, message string) error
+	CommitDir(dir string, message string) error
+	AddCommmit(dir string, msg string) error
 	HasChanges(dir string) (bool, error)
 
 	GetPreviousGitTagSHA(dir string) (string, error)
 	GetCurrentGitTagSHA(dir string) (string, error)
-	GitFetchTags(dir string) error
-	GitTags(dir string) ([]string, error)
-	GitCreateTag(dir string, tag string, msg string) error
+	FetchTags(dir string) error
+	Tags(dir string) ([]string, error)
+	CreateTag(dir string, tag string, msg string) error
 
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)

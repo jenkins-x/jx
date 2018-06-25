@@ -152,7 +152,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 			return nil, fmt.Errorf("No repository name specified!")
 		}
 	}
-	fullName := git.GitRepoName(owner, repoName)
+	fullName := git.RepoName(owner, repoName)
 	fmt.Fprintf(out, "\n\nCreating repository %s\n", util.ColorInfo(fullName))
 	privateRepo := false
 

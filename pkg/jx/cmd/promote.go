@@ -470,7 +470,7 @@ func (o *PromoteOptions) DiscoverAppName() (string, error) {
 		return helm.LoadChartName(chartFile)
 	}
 
-	gitInfo, err := o.Git().GetGitInfo("")
+	gitInfo, err := o.Git().Info("")
 	if err != nil {
 		return answer, err
 	}
@@ -735,7 +735,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	build := os.Getenv("BUILD_NUMBER")
 	buildURL := os.Getenv("BUILD_URL")
 	buildLogsURL := os.Getenv("BUILD_LOG_URL")
-	gitInfo, err := o.Git().GetGitInfo("")
+	gitInfo, err := o.Git().Info("")
 	releaseNotesURL := ""
 	releaseName := o.ReleaseName
 	if o.releaseResource == nil && releaseName != "" {
@@ -758,7 +758,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	if pipeline == "" {
 		if gitInfo != nil {
 			// lets default the pipeline name from the git repo
-			branch, err := o.Git().GitGetBranch(".")
+			branch, err := o.Git().Branch(".")
 			if err != nil {
 				log.Warnf("Could not find the branch name: %s\n", err)
 			}

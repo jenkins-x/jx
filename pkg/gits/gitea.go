@@ -526,7 +526,7 @@ func (p *GiteaProvider) RenameRepository(org string, name string, newName string
 func (p *GiteaProvider) ValidateRepositoryName(org string, name string) error {
 	_, err := p.Client.GetRepo(org, name)
 	if err == nil {
-		return fmt.Errorf("Repository %s already exists", p.Git.GitRepoName(org, name))
+		return fmt.Errorf("Repository %s already exists", p.Git.RepoName(org, name))
 	}
 	if strings.Contains(err.Error(), "404") {
 		return nil

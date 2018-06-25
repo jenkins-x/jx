@@ -232,11 +232,11 @@ func (o *StepNextVersionOptions) getLatestTag() (string, error) {
 	// if repo isn't provided by flags fall back to using current repo if run from a git project
 	var versionsRaw []string
 
-	err := o.Git().GitFetchTags("")
+	err := o.Git().FetchTags("")
 	if err != nil {
 		return "", fmt.Errorf("error fetching tags: %v", err)
 	}
-	tags, err := o.Git().GitTags("")
+	tags, err := o.Git().Tags("")
 	if err != nil {
 		return "", err
 	}
@@ -374,12 +374,12 @@ func (o *StepNextVersionOptions) setVersion() error {
 		return err
 	}
 
-	err = o.Git().GitAdd(o.Dir, o.Filename)
+	err = o.Git().Add(o.Dir, o.Filename)
 	if err != nil {
 		return err
 	}
 
-	err = o.Git().GitCommitDir(o.Dir, fmt.Sprintf("Release %s", o.NewVersion))
+	err = o.Git().CommitDir(o.Dir, fmt.Sprintf("Release %s", o.NewVersion))
 	if err != nil {
 		return err
 	}

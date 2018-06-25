@@ -152,7 +152,7 @@ func (o *VersionOptions) Run() error {
 	}
 
 	// git version
-	version, err := o.Git().GitVersion()
+	version, err := o.Git().Version()
 	if err != nil {
 		log.Warnf("Failed to get git version: %s\n", err)
 	} else {

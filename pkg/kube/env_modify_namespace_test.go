@@ -35,7 +35,7 @@ func TestEnvModifyNamespace(t *testing.T) {
 	}
 
 	git := gits.NewGitCLI()
-	err = git.GitInit(tempDir)
+	err = git.Init(tempDir)
 	assert.NoError(t, err)
 
 	testNs := "jx-staging"

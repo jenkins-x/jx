@@ -354,11 +354,11 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 		if err != nil {
 			return "", nil, err
 		}
-		pushGitURL, err := git.GitCreatePushURL(repo.CloneURL, details.User)
+		pushGitURL, err := git.CreatePushURL(repo.CloneURL, details.User)
 		if err != nil {
 			return "", nil, err
 		}
-		err = git.GitClone(pushGitURL, dir)
+		err = git.Clone(pushGitURL, dir)
 		if err != nil {
 			return "", nil, err
 		}
@@ -370,7 +370,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 		if err != nil {
 			return "", nil, err
 		}
-		err = git.GitPushMaster(dir)
+		err = git.PushMaster(dir)
 		if err != nil {
 			return "", nil, err
 		}
@@ -403,7 +403,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 				if err != nil {
 					return "", nil, err
 				}
-				err = git.GitClone(repo.CloneURL, dir)
+				err = git.Clone(repo.CloneURL, dir)
 				if err != nil {
 					return "", nil, err
 				}
@@ -411,7 +411,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 				if err != nil {
 					return "", nil, err
 				}
-				err = git.GitPullUpstream(dir)
+				err = git.PullUpstream(dir)
 				if err != nil {
 					return "", nil, err
 				}
@@ -423,7 +423,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 				if err != nil {
 					return "", nil, err
 				}
-				err = git.GitPush(dir)
+				err = git.Push(dir)
 				if err != nil {
 					return "", nil, err
 				}
@@ -443,19 +443,19 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 			if err != nil {
 				return "", nil, err
 			}
-			err = git.GitClone(forkEnvGitURL, dir)
+			err = git.Clone(forkEnvGitURL, dir)
 			if err != nil {
 				return "", nil, err
 			}
-			pushGitURL, err := git.GitCreatePushURL(repo.CloneURL, details.User)
+			pushGitURL, err := git.CreatePushURL(repo.CloneURL, details.User)
 			if err != nil {
 				return "", nil, err
 			}
-			err = git.GitAddRemote(dir, forkEnvGitURL, "upstream")
+			err = git.AddRemote(dir, forkEnvGitURL, "upstream")
 			if err != nil {
 				return "", nil, err
 			}
-			err = git.GitUpdateRemote(dir, pushGitURL)
+			err = git.UpdateRemote(dir, pushGitURL)
 			if err != nil {
 				return "", nil, err
 			}
@@ -467,7 +467,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 			if err != nil {
 				return "", nil, err
 			}
-			err = git.GitPushMaster(dir)
+			err = git.PushMaster(dir)
 			if err != nil {
 				return "", nil, err
 			}
@@ -533,7 +533,7 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 		}
 	}
 
-	err = git.GitAdd(dir, "*")
+	err = git.Add(dir, "*")
 	if err != nil {
 		return err
 	}
@@ -542,7 +542,7 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 		return err
 	}
 	if changes {
-		return git.GitCommitDir(dir, "Use correct namespace for environment")
+		return git.CommitDir(dir, "Use correct namespace for environment")
 	}
 	return nil
 }
@@ -574,7 +574,7 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gi
 
 	f.Close()
 
-	err = git.GitAdd(dir, "*")
+	err = git.Add(dir, "*")
 	if err != nil {
 		return err
 	}
@@ -583,7 +583,7 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gi
 		return err
 	}
 	if changes {
-		return git.GitCommitDir(dir, "Add environment configuration")
+		return git.CommitDir(dir, "Add environment configuration")
 	}
 	return nil
 }

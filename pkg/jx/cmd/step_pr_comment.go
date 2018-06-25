@@ -83,7 +83,7 @@ func (o *StepPRCommentOptions) Run() error {
 		return err
 	}
 
-	gitInfo, err := o.Git().GetGitInfo("")
+	gitInfo, err := o.Git().Info("")
 	if err != nil {
 		return err
 	}

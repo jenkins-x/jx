@@ -409,7 +409,7 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 		return "", fmt.Errorf("Could not create %s: %s", dir, err)
 	}
 
-	err = o.Git().GitCloneOrPull(packUrl, dir)
+	err = o.Git().CloneOrPull(packUrl, dir)
 	if err != nil {
 		return "", err
 	}
@@ -576,8 +576,8 @@ func (o *InitOptions) ingressNamespace() string {
 // validateGit validates that git is configured correctly
 func (o *InitOptions) validateGit() error {
 	// lets ignore errors which indicate no value set
-	userName, _ := o.Git().GitUsername("")
-	userEmail, _ := o.Git().GitEmail("")
+	userName, _ := o.Git().Username("")
+	userEmail, _ := o.Git().Email("")
 	var err error
 	if userName == "" {
 		if !o.BatchMode {
@@ -589,7 +589,7 @@ func (o *InitOptions) validateGit() error {
 		if userName == "" {
 			return fmt.Errorf("No git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
 		}
-		err = o.Git().GitSetUsername("", userName)
+		err = o.Git().SetUsername("", userName)
 		if err != nil {
 			return err
 		}
@@ -604,7 +604,7 @@ func (o *InitOptions) validateGit() error {
 		if userEmail == "" {
 			return fmt.Errorf("No git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
 		}
-		err = o.Git().GitSetEmail("", userEmail)
+		err = o.Git().SetEmail("", userEmail)
 		if err != nil {
 			return err
 		}
