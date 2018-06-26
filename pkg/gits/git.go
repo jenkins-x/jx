@@ -38,7 +38,7 @@ type Gitter interface {
 	Pull(dir string) error
 	PullUpstream(dir string) error
 
-	AddRemote(dir string, url string, remote string) error
+	AddRemote(dir string, name string, url string) error
 	SetRemoteURL(dir string, name string, gitURL string) error
 	UpdateRemote(dir, url string) error
 	DiscoverRemoteGitURL(gitConf string) (string, error)

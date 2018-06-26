@@ -89,8 +89,8 @@ func (g *GitCLI) PullUpstream(dir string) error {
 }
 
 // AddRemote adds a remote repository at the given URL and with the given name
-func (g *GitCLI) AddRemote(dir string, url string, remote string) error {
-	return g.gitCmd(dir, "remote", "add", remote, url)
+func (g *GitCLI) AddRemote(dir string, name string, url string) error {
+	return g.gitCmd(dir, "remote", "add", name, url)
 }
 
 // UpdateRemote updates the URL of the remote repository
