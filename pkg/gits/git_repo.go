@@ -50,7 +50,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 					return nil, fmt.Errorf("No git servers are configured!")
 				}
 				// lets assume the first for now
-				server := config.Servers[0]
+				server = config.Servers[0]
 				currentServer := config.CurrentServer
 				if currentServer != "" {
 					for _, s := range config.Servers {
@@ -60,14 +60,13 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 						}
 					}
 				}
-				repoOptions.ServerURL = server.URL
 			} else {
 				server, err = config.PickServer("Which git service?", batchMode)
 				if err != nil {
 					return nil, err
 				}
-				repoOptions.ServerURL = server.URL
 			}
+			repoOptions.ServerURL = server.URL
 		}
 	}
 	fmt.Fprintf(out, "Using git provider %s\n", util.ColorInfo(server.Description()))
