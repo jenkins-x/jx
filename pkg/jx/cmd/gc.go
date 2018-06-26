@@ -22,7 +22,7 @@ const (
 
     * previews
     * activities
-		* helm
+	* helm
     `
 )
 
@@ -38,6 +38,7 @@ var (
 		jx gc previews
 		jx gc activities
 		jx gc helm
+		jx gc gke
 
 	`)
 )
@@ -68,6 +69,7 @@ func NewCmdGC(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 	cmd.AddCommand(NewCmdGCActivities(f, out, errOut))
 	cmd.AddCommand(NewCmdGCPreviews(f, out, errOut))
+	cmd.AddCommand(NewCmdGCGKE(f, out, errOut))
 	cmd.AddCommand(NewCmdGCHelm(f, out, errOut))
 
 	return cmd
