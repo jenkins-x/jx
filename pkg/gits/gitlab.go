@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"net/url"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -20,8 +22,30 @@ type GitlabProvider struct {
 }
 
 func NewGitlabProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+	u := server.URL
 	c := gitlab.NewClient(nil, user.ApiToken)
+	if !IsGitLabServerURL(u) {
+		// NewSelfHostedClient pull requested to prevent leaking implementation detail api/v4
+		// c := gitlab.NewSelfHostedClient(nil, user.ApiToken, u)
+		baseEndpoint, err := url.Parse(u)
+		if err != nil {
+			return nil, err
+		}
+		if !strings.HasSuffix(baseEndpoint.Path, "/") {
+			baseEndpoint.Path += "/"
+		}
+		baseEndpoint.Path += "api/v4"
+		if err := c.SetBaseURL(baseEndpoint.String()); err != nil {
+			return nil, err
+		}
+	}
+
 	return withGitlabClient(server, user, c)
+}
+
+func IsGitLabServerURL(u string) bool {
+	u = strings.TrimSuffix(u, "/")
+	return u == "" || u == "https://gitlab.com" || u == "http://gitlab.com"
 }
 
 // Used by unit tests to inject a mocked client
