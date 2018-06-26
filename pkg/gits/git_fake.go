@@ -157,9 +157,9 @@ func (g *GitFake) PullUpstream(dir string) error {
 	return nil
 }
 
-func (g *GitFake) AddRemote(dir string, url string, remote string) error {
+func (g *GitFake) AddRemote(dir string, name string, url string) error {
 	r := GitRemote{
-		Name: remote,
+		Name: name,
 		URL:  url,
 	}
 	g.Remotes = append(g.Remotes, r)
