@@ -225,7 +225,8 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		o.Flags.OrganisationRepoName = strings.ToLower(randomdata.SillyName())
 	}
 	defaultRepoName := fmt.Sprintf("organisation-%s", o.Flags.OrganisationRepoName)
-	details, err := gits.PickNewGitRepository(o.Stdout(), o.BatchMode, authConfigSvc, defaultRepoName, &o.GitRepositoryOptions, nil, nil)
+	details, err := gits.PickNewGitRepository(o.Stdout(), o.BatchMode, authConfigSvc,
+		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git())
 	if err != nil {
 		return err
 	}
@@ -245,11 +246,11 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		if err != nil {
 			return err
 		}
-		pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
+		pushGitURL, err := o.Git().CreatePushURL(repo.CloneURL, details.User)
 		if err != nil {
 			return err
 		}
-		err = gits.GitClone(pushGitURL, dir)
+		err = o.Git().Clone(pushGitURL, dir)
 		if err != nil {
 			return err
 		}
@@ -265,7 +266,7 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 			return err
 		}
 
-		err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+		err = o.Git().PushMaster(dir)
 		if err != nil {
 			return err
 		}
@@ -283,19 +284,19 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 			return err
 		}
 
-		err = gits.GitClone(o.Flags.ForkOrganisationGitRepo, dir)
+		err = o.Git().Clone(o.Flags.ForkOrganisationGitRepo, dir)
 		if err != nil {
 			return err
 		}
-		pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
+		pushGitURL, err := o.Git().CreatePushURL(repo.CloneURL, details.User)
 		if err != nil {
 			return err
 		}
-		err = gits.GitCmd(dir, "remote", "add", "upstream", o.Flags.ForkOrganisationGitRepo)
+		err = o.Git().AddRemote(dir, o.Flags.ForkOrganisationGitRepo, "upstream")
 		if err != nil {
 			return err
 		}
-		err = gits.GitCmd(dir, "remote", "set-url", "origin", pushGitURL)
+		err = o.Git().SetRemoteURL(dir, "origin", pushGitURL)
 		if err != nil {
 			return err
 		}
@@ -311,7 +312,7 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 			return err
 		}
 
-		err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+		err = o.Git().PushMaster(dir)
 		if err != nil {
 			return err
 		}
@@ -333,7 +334,7 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) e
 
 			switch c.Provider {
 			case "gke":
-				gits.GitClone(TerraformTemplatesGKE, path)
+				o.Git().Clone(TerraformTemplatesGKE, path)
 			case "aks":
 				// TODO add aks terraform templates URL
 			case "eks":
@@ -350,16 +351,16 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) e
 }
 
 func (o *CreateTerraformOptions) commitClusters(dir string) error {
-	err := gits.GitAdd(dir, "*")
+	err := o.Git().Add(dir, "*")
 	if err != nil {
 		return err
 	}
-	changes, err := gits.HasChanges(dir)
+	changes, err := o.Git().HasChanges(dir)
 	if err != nil {
 		return err
 	}
 	if changes {
-		return gits.GitCommitDir(dir, "Add organisation clusters")
+		return o.Git().CommitDir(dir, "Add organisation clusters")
 	}
 	return nil
 }
