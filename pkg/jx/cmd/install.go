@@ -53,6 +53,7 @@ type InstallFlags struct {
 	Timeout                  string
 	RegisterLocalHelmRepo    bool
 	CleanupTempFiles         bool
+	InstallOnly              bool
 	EnvironmentGitOwner      string
 	Version                  string
 }
@@ -191,6 +192,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
+	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install comand to fail if there is already an installation. Otherwise lets update the installation")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -404,9 +406,19 @@ func (options *InstallOptions) Run() error {
 			Name: JXInstallConfig,
 		},
 	}
-	_, err = options.kubeClient.CoreV1().Secrets(ns).Create(jxSecrets)
-	if err != nil {
-		return err
+	secretResources := options.kubeClient.CoreV1().Secrets(ns)
+	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
+	if oldSecret == nil || err != nil {
+		_, err = secretResources.Create(jxSecrets)
+		if err != nil {
+			return err
+		}
+	} else {
+		oldSecret.Data = jxSecrets.Data
+		_, err = secretResources.Update(oldSecret)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Infof("Generated helm values %s\n", util.ColorInfo(configFileName))
@@ -433,7 +445,11 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	args := []string{"install", "jenkins-x/jenkins-x-platform", "--name", "jenkins-x", "-f", "./myvalues.yaml", "-f", "./secrets.yaml", "--namespace=" + ns, "--timeout=" + timeout}
+	args := []string{"install", "--name"}
+	if !options.Flags.InstallOnly {
+		args = []string{"upgrade", "--install"}
+	}
+	args = append(args, "jenkins-x", "jenkins-x/jenkins-x-platform", "-f", "./myvalues.yaml", "-f", "./secrets.yaml", "--namespace="+ns, "--timeout="+timeout)
 	valuesFiles := []string{secretsFileName, adminSecretsFileName, configFileName}
 	curDir, err := os.Getwd()
 	if err != nil {
@@ -527,37 +543,47 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 
-		if options.Flags.DefaultEnvironmentPrefix == "" {
-			options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
-		}
-
-		log.Info("Creating default staging and production environments\n")
-		options.CreateEnvOptions.Options.Name = "staging"
-		options.CreateEnvOptions.Options.Spec.Label = "Staging"
-		options.CreateEnvOptions.Options.Spec.Order = 100
-		options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
-		options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
-		if options.BatchMode {
-			options.CreateEnvOptions.BatchMode = options.BatchMode
-		}
-
-		err = options.CreateEnvOptions.Run()
+		jxClient, _, err := options.JXClient()
 		if err != nil {
 			return err
 		}
-		options.CreateEnvOptions.Options.Name = "production"
-		options.CreateEnvOptions.Options.Spec.Label = "Production"
-		options.CreateEnvOptions.Options.Spec.Order = 200
-		options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
-		options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
-		options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
-		if options.BatchMode {
-			options.CreateEnvOptions.BatchMode = options.BatchMode
-		}
 
-		err = options.CreateEnvOptions.Run()
-		if err != nil {
-			return err
+		// lets only recreate the environments if its the first time we run this
+		_, envNames, err := kube.GetEnvironments(jxClient, ns)
+		if err != nil || len(envNames) == 0 {
+
+			if options.Flags.DefaultEnvironmentPrefix == "" {
+				options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+			}
+
+			log.Info("Creating default staging and production environments\n")
+			options.CreateEnvOptions.Options.Name = "staging"
+			options.CreateEnvOptions.Options.Spec.Label = "Staging"
+			options.CreateEnvOptions.Options.Spec.Order = 100
+			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
+			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
+			if options.BatchMode {
+				options.CreateEnvOptions.BatchMode = options.BatchMode
+			}
+
+			err = options.CreateEnvOptions.Run()
+			if err != nil {
+				return err
+			}
+			options.CreateEnvOptions.Options.Name = "production"
+			options.CreateEnvOptions.Options.Spec.Label = "Production"
+			options.CreateEnvOptions.Options.Spec.Order = 200
+			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
+			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
+			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
+			if options.BatchMode {
+				options.CreateEnvOptions.BatchMode = options.BatchMode
+			}
+
+			err = options.CreateEnvOptions.Run()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
