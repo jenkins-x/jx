@@ -16,6 +16,7 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -28,6 +29,15 @@ import (
 type Cluster struct {
 	Name     string
 	Provider string
+}
+
+type GKECluster struct {
+	Cluster
+	ProjectId     string
+	Zone          string
+	MachineType   string
+	MinNumOfNodes string
+	MaxNumOfNodes string
 }
 
 type Flags struct {
@@ -335,10 +345,13 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) e
 			switch c.Provider {
 			case "gke":
 				o.Git().Clone(TerraformTemplatesGKE, path)
+				o.configureGKECluster(c)
 			case "aks":
 				// TODO add aks terraform templates URL
+				return fmt.Errorf("creating an AKS cluster via terraform is not currently supported")
 			case "eks":
 				// TODO add eks terraform templates URL
+				return fmt.Errorf("creating an EKS cluster via terraform is not currently supported")
 			default:
 				return fmt.Errorf("unknown kubernetes provider type %s must be one of %v", c.Provider, validTerraformClusterProviders)
 			}
@@ -363,4 +376,130 @@ func (o *CreateTerraformOptions) commitClusters(dir string) error {
 		return o.Git().CommitDir(dir, "Add organisation clusters")
 	}
 	return nil
+}
+
+func (o *CreateTerraformOptions) configureGKECluster(c Cluster) error {
+	gkeCluster := GKECluster{
+		Cluster: c,
+	}
+
+	if gkeCluster.ProjectId == "" {
+		projectId, err := o.getGoogleProjectId()
+		if err != nil {
+			return err
+		}
+		gkeCluster.ProjectId = projectId
+	}
+
+	if gkeCluster.Name == "" {
+		gkeCluster.Name = strings.ToLower(randomdata.SillyName())
+		log.Infof("No cluster name provided so using a generated one: %s\n", gkeCluster.Name)
+	}
+
+	zone := gkeCluster.Zone
+	if zone == "" {
+		availableZones, err := gke.GetGoogleZones()
+		if err != nil {
+			return err
+		}
+		prompts := &survey.Select{
+			Message:  "Google Cloud Zone:",
+			Options:  availableZones,
+			PageSize: 10,
+			Help:     "The compute zone (e.g. us-central1-a) for the cluster",
+		}
+
+		err = survey.AskOne(prompts, &zone, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	machineType := gkeCluster.MachineType
+	if machineType == "" {
+		prompts := &survey.Select{
+			Message:  "Google Cloud Machine Type:",
+			Options:  gke.GetGoogleMachineTypes(),
+			Help:     "We recommend a minimum of n1-standard-2 for Jenkins X,  a table of machine descriptions can be found here https://cloud.google.com/kubernetes-engine/docs/concepts/cluster-architecture",
+			PageSize: 10,
+			Default:  "n1-standard-2",
+		}
+
+		err := survey.AskOne(prompts, &machineType, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	minNumOfNodes := gkeCluster.MinNumOfNodes
+	if minNumOfNodes == "" {
+		prompt := &survey.Input{
+			Message: "Minimum number of Nodes",
+			Default: "3",
+			Help:    "We recommend a minimum of 3 for Jenkins X,  the minimum number of nodes to be created in each of the cluster's zones",
+		}
+
+		survey.AskOne(prompt, &minNumOfNodes, nil)
+	}
+
+	maxNumOfNodes := gkeCluster.MaxNumOfNodes
+	if maxNumOfNodes == "" {
+		prompt := &survey.Input{
+			Message: "Maximum number of Nodes",
+			Default: "5",
+			Help:    "We recommend at least 5 for Jenkins X,  the maximum number of nodes to be created in each of the cluster's zones",
+		}
+
+		survey.AskOne(prompt, &maxNumOfNodes, nil)
+	}
+
+	return nil
+}
+
+// asks to chose from existing projects or optionally creates one if none exist
+func (o *CreateTerraformOptions) getGoogleProjectId() (string, error) {
+	existingProjects, err := gke.GetGoogleProjects()
+	if err != nil {
+		return "", err
+	}
+
+	var projectId string
+	if len(existingProjects) == 0 {
+		confirm := &survey.Confirm{
+			Message: fmt.Sprintf("No existing Google Projects exist, create one now?"),
+			Default: true,
+		}
+		flag := true
+		err = survey.AskOne(confirm, &flag, nil)
+		if err != nil {
+			return "", err
+		}
+		if !flag {
+			return "", errors.New("no google project to create cluster in, please manual create one and rerun this wizard")
+		}
+
+		if flag {
+			return "", errors.New("auto creating projects not yet implemented, please manually create one and rerun the wizard")
+		}
+	} else if len(existingProjects) == 1 {
+		projectId = existingProjects[0]
+		log.Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
+	} else {
+		prompts := &survey.Select{
+			Message: "Google Cloud Project:",
+			Options: existingProjects,
+			Help:    "Select a Google Project to create the cluster in",
+		}
+
+		err := survey.AskOne(prompts, &projectId, nil)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if projectId == "" {
+		return "", errors.New("no Google Cloud Project to create cluster in, please manual create one and rerun this wizard")
+	}
+
+	return projectId, nil
 }
