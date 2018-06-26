@@ -62,7 +62,7 @@ func (g *GitCLI) FindGitConfigDir(dir string) (string, string, error) {
 
 // Clone clones the given git URL into the given directory
 func (g *GitCLI) Clone(url string, dir string) error {
-	return g.gitCmd(dir, "clone", url)
+	return g.gitCmd(dir, "clone", url, ".")
 }
 
 // Pull pulls the git repository in the given directory
@@ -80,7 +80,7 @@ func (g *GitCLI) CloneOrPull(url string, dir string) error {
 	if !empty {
 		return g.Pull(dir)
 	}
-	return g.gitCmd(dir, "clone", url)
+	return g.Clone(url, dir)
 }
 
 // PullUpstream pulls the remote upstream branch into master branch into the given directory
