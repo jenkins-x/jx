@@ -451,7 +451,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 			if err != nil {
 				return "", nil, err
 			}
-			err = git.AddRemote(dir, forkEnvGitURL, "upstream")
+			err = git.AddRemote(dir, "upstream", forkEnvGitURL)
 			if err != nil {
 				return "", nil, err
 			}

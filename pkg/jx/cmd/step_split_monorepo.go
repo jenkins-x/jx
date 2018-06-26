@@ -196,7 +196,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						if err != nil {
 							return err
 						}
-						err = o.Git().AddRemote(outPath, gitUrl, "origin")
+						err = o.Git().AddRemote(outPath, "origin", gitUrl)
 						if err != nil {
 							return err
 						}
