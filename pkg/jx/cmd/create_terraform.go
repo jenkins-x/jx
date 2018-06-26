@@ -292,7 +292,7 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		if err != nil {
 			return err
 		}
-		err = o.Git().AddRemote(dir, o.Flags.ForkOrganisationGitRepo, "upstream")
+		err = o.Git().AddRemote(dir, "upstream", o.Flags.ForkOrganisationGitRepo)
 		if err != nil {
 			return err
 		}
