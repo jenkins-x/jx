@@ -19,8 +19,8 @@ func PathWithBinary() string {
 	return answer
 }
 
-// GetCommandOutput evaluates the given command and returns the trimmed output
-func GetCommandOutput(dir string, name string, args ...string) (string, error) {
+// RunCommandWithOutput evaluates the given command and returns the trimmed output
+func RunCommandWithOutput(dir string, name string, args ...string) (string, error) {
 	os.Setenv("PATH", PathWithBinary())
 	e := exec.Command(name, args...)
 	if dir != "" {

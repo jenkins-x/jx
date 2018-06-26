@@ -27,7 +27,7 @@ func GetGoogleZones() ([]string, error) {
 }
 
 func GetGoogleProjects() ([]string, error) {
-	out, err := util.GetCommandOutput("", "gcloud", "projects", "list")
+	out, err := util.RunCommandWithOutput("", "gcloud", "projects", "list")
 	if err != nil {
 		return nil, err
 	}

@@ -29,6 +29,6 @@ func Output() io.Writer {
 }
 
 func TestShouldDisableMaven() bool {
-	_, err := util.GetCommandOutput("", "mvn", "-v")
+	_, err := util.RunCommandWithOutput("", "mvn", "-v")
 	return err != nil
 }

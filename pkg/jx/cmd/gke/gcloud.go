@@ -27,7 +27,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 		"--filter",
 		serviceAccount}
 
-	output, err := util.GetCommandOutput("", "gcloud", args...)
+	output, err := util.RunCommandWithOutput("", "gcloud", args...)
 	if err != nil {
 		return "", err
 	}
@@ -140,7 +140,7 @@ func CheckPermission(perm string, projectId string) (bool, error) {
 		"--filter",
 		perm}
 
-	output, err := util.GetCommandOutput("", "gcloud", args...)
+	output, err := util.RunCommandWithOutput("", "gcloud", args...)
 	if err != nil {
 		return false, err
 	}

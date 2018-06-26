@@ -231,7 +231,7 @@ func (g *GitCLI) gitCmd(dir string, args ...string) error {
 }
 
 func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
-	return util.GetCommandOutput(dir, "git", args...)
+	return util.RunCommandWithOutput(dir, "git", args...)
 }
 
 // CreatePushURL creates the git repository URL with the username and password encoded for HTTPS based URLs
