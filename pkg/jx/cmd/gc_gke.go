@@ -8,10 +8,17 @@ import (
 
 	"encoding/json"
 
+	"fmt"
+
+	"io/ioutil"
+
+	"os"
+
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -76,34 +83,68 @@ func NewCmdGCGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 // Run implements this command
 func (o *GCGKEOptions) Run() error {
 
-	err := o.cleanUpFirewalls()
+	dir, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	err = o.cleanUpPersistentDisks()
+	path := util.UrlJoin(dir, "gc_gke.sh")
+	util.FileExists(path)
+
+	os.Remove(path)
+
+	message := `
+
+###################################################################################################
+#
+#  WARNING: this command is experimental and the generated script should be executed at the users own risk.  We use this
+#  generated command on the Jenkins X project itself but it has not been tested on other clusters.
+#
+###################################################################################################
+
+%s
+
+%v
+
+`
+	log.Warn("This command is experimental and the generated script should be executed at the users own risk\n")
+	log.Warn("We will generate a script for you to review and execute, this command will not delete any resources by itself\n")
+	log.Info("It may take a few minutes to create the script\n")
+
+	fw, err := o.cleanUpFirewalls()
 	if err != nil {
 		return err
 	}
+
+	disks, err := o.cleanUpPersistentDisks()
+	if err != nil {
+		return err
+	}
+
+	data := fmt.Sprintf(message, fw, disks)
+	data = strings.Replace(data, "[", "", -1)
+	data = strings.Replace(data, "]", "", -1)
+
+	err = ioutil.WriteFile("gc_gke.sh", []byte(data), util.DefaultWritePermissions)
 	return nil
 }
 
-func (p *GCGKEOptions) cleanUpFirewalls() error {
+func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 	o := CommonOptions{}
 	data, err := o.getCommandOutput("", "gcloud", "compute", "firewall-rules", "list", "--format", "json")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var rules []Rule
 	err = json.Unmarshal([]byte(data), &rules)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	out, err := o.getCommandOutput("", "gcloud", "container", "clusters", "list")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	lines := strings.Split(string(out), "\n")
@@ -112,7 +153,6 @@ func (p *GCGKEOptions) cleanUpFirewalls() error {
 		if strings.Contains(l, "NAME") {
 			continue
 		}
-		log.Infof("Line: %s \n", l)
 		if strings.TrimSpace(l) == "" {
 			break
 		}
@@ -129,49 +169,47 @@ func (p *GCGKEOptions) cleanUpFirewalls() error {
 				tag := strings.TrimPrefix(tagFull, "gke-")
 
 				if !contains(existingClusters, tag) {
-
-					log.Infof("Matched: %s %s\n", rule.Name, tagFull)
 					nameToDelete = append(nameToDelete, rule.Name)
 				}
 			}
 		}
 	}
-	message := `
 
-###################################################################################################
-#
-#  WARNING: this command is experimental and should be executed at the users own risk.  We use this
-#  generated command on the Jenkins X project itself but it has not been tested on other clusters.
-#
-###################################################################################################
-
-
-`
-	log.Warn(message)
 	args := "gcloud compute firewall-rules delete "
 	for _, name := range nameToDelete {
 		args = args + " " + name
 	}
-	log.Info(args)
-	return nil
+
+	return args, nil
 }
 
-func (o *GCGKEOptions) cleanUpPersistentDisks() error {
+func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
 
-	zones := o.getCommandOutput()
+	cmd := "gcloud compute zones list | grep -v NAME | awk '{printf $1 \" \"}'"
 
-	echo "Checking whether there are disks to delete..."
-	for zone in $(gcloud compute zones list | grep -v NAME | awk '{printf $1 " "}')
-do
-echo "Checking zone $zone"
-for disk in $(gcloud compute disks list --filter="NOT users:* AND zone:($zone)" | grep -v NAME | awk '{printf $1 " "}')
-do
-echo "deleting ${disk}..."
-#gcloud compute disks delete --zone=$zone --quiet ${disk}
-done
-done
+	rs, err := o.getCommandOutput("", "bash", "-c", cmd)
+	if err != nil {
+		return nil, err
+	}
+	zones := strings.Split(rs, " ")
+	var line []string
 
-	return nil
+	for _, z := range zones {
+		diskCmd := fmt.Sprintf("gcloud compute disks list --filter=\"NOT users:* AND zone:(%s)\" | grep -v NAME | awk '{printf $1 \" \"}'", z)
+		diskRs, err := o.getCommandOutput("", "bash", "-c", diskCmd)
+		if err != nil {
+			return nil, err
+		}
+
+		disks := strings.Split(diskRs, " ")
+		for _, d := range disks {
+			if strings.HasPrefix(d, "gke-") {
+				line = append(line, fmt.Sprintf("gcloud compute disks delete --zone=%s --quiet %s\n", z, d))
+			}
+		}
+	}
+
+	return line, nil
 }
 
 func contains(s []string, e string) bool {
