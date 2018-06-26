@@ -36,6 +36,7 @@ var (
 )
 
 const (
+	DOCKER_REGISTRY                        = "DOCKER_REGISTRY"
 	JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST = "JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST"
 	JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT = "JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT"
 	ORG                                    = "ORG"
@@ -626,27 +627,41 @@ func writePreviewURL(o *PreviewOptions, url string) {
 	}
 }
 
-func getImageName() (string, error) {
+func getContainerRegistry() (string, error) {
+	registry := os.Getenv(DOCKER_REGISTRY)
+	if registry != "" {
+		return registry, nil
+	}
+
 	registryHost := os.Getenv(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	if registryHost == "" {
 		return "", fmt.Errorf("no %s environment variable found", JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST)
 	}
 	registryPort := os.Getenv(JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT)
-	if registryHost == "" {
+	if registryPort == "" {
 		return "", fmt.Errorf("no %s environment variable found", JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT)
 	}
 
+	return fmt.Sprintf("%s:%s", registryHost, registryPort), nil
+}
+
+func getImageName() (string, error) {
+	containerRegistry, err := getContainerRegistry()
+	if err != nil {
+		return "", err
+	}
+
 	organisation := os.Getenv(ORG)
-	if registryHost == "" {
+	if organisation == "" {
 		return "", fmt.Errorf("no %s environment variable found", ORG)
 	}
 
 	app := os.Getenv(APP_NAME)
-	if registryHost == "" {
+	if app == "" {
 		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
 	}
 
-	return fmt.Sprintf("%s:%s/%s/%s", registryHost, registryPort, organisation, app), nil
+	return fmt.Sprintf("%s/%s/%s", containerRegistry, organisation, app), nil
 }
 
 func getImageTag() (string, error) {
