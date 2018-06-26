@@ -23,6 +23,7 @@ import (
 )
 
 const (
+	// JenkinsXQuickstartsOrganisation is the default organisation for quickstarts
 	JenkinsXQuickstartsOrganisation = "jenkins-x-quickstarts"
 )
 
@@ -96,6 +97,7 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Filter.Framework, "framework", "", "", "The framework to filter on")
 	cmd.Flags().StringVarP(&options.GitHost, "git-host", "", "", "The Git server host if not using GitHub when pushing created project")
 	cmd.Flags().StringVarP(&options.Filter.Text, "filter", "f", "", "The text filter")
+	cmd.Flags().StringVarP(&options.Filter.ProjectName, "project-name", "p", "", "The project name (for use with -b batch mode)")
 	return cmd
 }
 
@@ -290,16 +292,17 @@ func findFirstDirectory(dir string) (string, error) {
 	return "", fmt.Errorf("no child directory found in %s", dir)
 }
 
+// LoadQuickstartsFromMap Load all quickstarts
 func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig, gitMap map[string]map[string]v1.QuickStartLocation) (*quickstarts.QuickstartModel, error) {
 	model := quickstarts.NewQuickstartModel()
 
-	for gitUrl, m := range gitMap {
+	for gitURL, m := range gitMap {
 		for _, location := range m {
 			kind := location.GitKind
 			if kind == "" {
 				kind = gits.KindGitHub
 			}
-			gitProvider, err := o.gitProviderForGitServerURL(gitUrl, kind)
+			gitProvider, err := o.gitProviderForGitServerURL(gitURL, kind)
 			if err != nil {
 				return model, err
 			}
