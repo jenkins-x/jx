@@ -340,6 +340,7 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 	return nil
 }
 func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) error {
+    o.writeGitIgnoreFile(dir)
 
 	for _, c := range o.Clusters {
 		path := filepath.Join(dir, Clusters, c.Name, Terraform)
@@ -369,6 +370,23 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) e
 
 	}
 
+	return nil
+}
+
+func (o *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
+	gitignore := filepath.Join(dir, ".gitignore")
+	if _, err := os.Stat(gitignore); os.IsNotExist(err) {
+		file, err := os.OpenFile(gitignore, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = file.WriteString("**/*.key.json\n")
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
