@@ -445,6 +445,11 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	err = options.runCommand(helmBinary, "repo", "update")
+	if err != nil {
+		return err
+	}
+
 	args := []string{"install", "--name"}
 	if !options.Flags.InstallOnly {
 		args = []string{"upgrade", "--install"}
