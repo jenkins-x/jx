@@ -83,7 +83,8 @@ func (suite *BitbucketServerProviderTestSuite) SetupSuite() {
 		ApiToken: "0123456789abdef",
 	}
 
-	bp, err := NewBitbucketServerProvider(&as, &ua)
+	git := NewGitCLI()
+	bp, err := NewBitbucketServerProvider(&as, &ua, git)
 
 	suite.Require().NotNil(bp)
 	suite.Require().Nil(err)

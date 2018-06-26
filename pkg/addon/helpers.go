@@ -9,7 +9,7 @@ import (
 // GetChartStatusMap return the map of chart name -> status
 func GetChartStatusMap() (map[string]string, error) {
 	statusMap := map[string]string{}
-	output, err := util.GetCommandOutput("", "helm", "list")
+	output, err := util.RunCommandWithOutput("", "helm", "list")
 	if err == nil {
 		for _, line := range strings.Split(output, "\n") {
 			fields := strings.Split(line, "\t")

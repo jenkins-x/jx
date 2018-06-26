@@ -143,7 +143,8 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, &env, &o.Options, o.ForkEnvironmentGitRepo, ns, jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix)
+	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, &env, &o.Options, o.ForkEnvironmentGitRepo, ns,
+		jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git())
 	if err != nil {
 		return err
 	}

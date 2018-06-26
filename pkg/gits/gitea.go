@@ -18,9 +18,10 @@ type GiteaProvider struct {
 
 	Server auth.AuthServer
 	User   auth.UserAuth
+	Git    Gitter
 }
 
-func NewGiteaProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func NewGiteaProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	client := gitea.NewClient(server.URL, user.ApiToken)
 
 	provider := GiteaProvider{
@@ -28,6 +29,7 @@ func NewGiteaProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider
 		Server:   *server,
 		User:     *user,
 		Username: user.Username,
+		Git:      git,
 	}
 
 	return &provider, nil
@@ -524,7 +526,7 @@ func (p *GiteaProvider) RenameRepository(org string, name string, newName string
 func (p *GiteaProvider) ValidateRepositoryName(org string, name string) error {
 	_, err := p.Client.GetRepo(org, name)
 	if err == nil {
-		return fmt.Errorf("Repository %s already exists", GitRepoName(org, name))
+		return fmt.Errorf("Repository %s already exists", p.Git.RepoName(org, name))
 	}
 	if strings.Contains(err.Error(), "404") {
 		return nil

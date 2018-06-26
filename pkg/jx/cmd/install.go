@@ -831,7 +831,7 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 	}
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
-			gits.PrintCreateRepositoryGenerateAccessToken(server, username, o.Out)
+			o.Git().PrintCreateRepositoryGenerateAccessToken(server, username, o.Out)
 			return nil
 		}
 

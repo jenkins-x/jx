@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/Azure/draft/pkg/draft/draftpath"
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/golang-jenkins"
@@ -241,7 +243,7 @@ func (o *ImportOptions) Run() error {
 		}
 		if userAuth.IsInvalid() {
 			f := func(username string) error {
-				gits.PrintCreateRepositoryGenerateAccessToken(server, username, o.Out)
+				o.Git().PrintCreateRepositoryGenerateAccessToken(server, username, o.Out)
 				return nil
 			}
 			err = config.EditUserAuth(server.Label(), userAuth, userAuth.Username, true, o.BatchMode, f)
@@ -270,7 +272,7 @@ func (o *ImportOptions) Run() error {
 
 		o.GitServer = server
 		o.GitUserAuth = userAuth
-		o.GitProvider, err = gits.CreateProvider(server, userAuth)
+		o.GitProvider, err = gits.CreateProvider(server, userAuth, o.Git())
 		if err != nil {
 			return err
 		}
@@ -344,7 +346,7 @@ func (o *ImportOptions) Run() error {
 		}
 	} else {
 		if shouldClone {
-			err = gits.GitPush(o.Dir)
+			err = o.Git().Push(o.Dir)
 			if err != nil {
 				return err
 			}
@@ -555,11 +557,11 @@ func (o *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	err = gits.GitAdd(dir, "*")
+	err = o.Git().Add(dir, "*")
 	if err != nil {
 		return err
 	}
-	err = gits.GitCommitIfChanges(dir, "Draft create")
+	err = o.Git().CommitIfChanges(dir, "Draft create")
 	if err != nil {
 		return err
 	}
@@ -607,7 +609,8 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	if o.Organisation != "" {
 		o.GitRepositoryOptions.Owner = o.Organisation
 	}
-	details, err := gits.PickNewGitRepository(o.Out, o.BatchMode, authConfigSvc, defaultRepoName, &o.GitRepositoryOptions, o.GitServer, o.GitUserAuth)
+	details, err := gits.PickNewGitRepository(o.Out, o.BatchMode, authConfigSvc, defaultRepoName, &o.GitRepositoryOptions,
+		o.GitServer, o.GitUserAuth, o.Git())
 	if err != nil {
 		return err
 	}
@@ -618,15 +621,15 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 	o.GitProvider = details.GitProvider
 
 	o.RepoURL = repo.CloneURL
-	pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
+	pushGitURL, err := o.Git().CreatePushURL(repo.CloneURL, details.User)
 	if err != nil {
 		return err
 	}
-	err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
+	err = o.Git().AddRemote(dir, "origin", pushGitURL)
 	if err != nil {
 		return err
 	}
-	err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+	err = o.Git().PushMaster(dir)
 	if err != nil {
 		return err
 	}
@@ -651,11 +654,11 @@ func (o *ImportOptions) CloneRepository() error {
 	}
 	cloneDir, err := util.CreateUniqueDirectory(o.Dir, gitInfo.Name, util.MaximumNewDirectoryAttempts)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create unique directory for '%s'", o.Dir)
 	}
-	err = gits.GitClone(url, cloneDir)
+	err = o.Git().Clone(url, cloneDir)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to clone in directory '%s'", cloneDir)
 	}
 	o.Dir = cloneDir
 	return nil
@@ -664,7 +667,7 @@ func (o *ImportOptions) CloneRepository() error {
 // DiscoverGit checks if there is a git clone or prompts the user to import it
 func (o *ImportOptions) DiscoverGit() error {
 	if !o.DisableDotGitSearch {
-		root, gitConf, err := gits.FindGitConfigDir(o.Dir)
+		root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
 		if err != nil {
 			return err
 		}
@@ -697,7 +700,7 @@ func (o *ImportOptions) DiscoverGit() error {
 		}
 	}
 	o.InitialisedGit = true
-	err := gits.GitInit(dir)
+	err := o.Git().Init(dir)
 	if err != nil {
 		return err
 	}
@@ -706,16 +709,16 @@ func (o *ImportOptions) DiscoverGit() error {
 	if err != nil {
 		return err
 	}
-	err = gits.GitAdd(dir, ".gitignore")
+	err = o.Git().Add(dir, ".gitignore")
 	if err != nil {
 		return err
 	}
-	err = gits.GitAdd(dir, "*")
+	err = o.Git().Add(dir, "*")
 	if err != nil {
 		return err
 	}
 
-	err = gits.GitStatus(dir)
+	err = o.Git().Status(dir)
 	if err != nil {
 		return err
 	}
@@ -735,7 +738,7 @@ func (o *ImportOptions) DiscoverGit() error {
 			}
 		}
 	}
-	err = gits.GitCommitIfChanges(dir, message)
+	err = o.Git().CommitIfChanges(dir, message)
 	if err != nil {
 		return err
 	}
@@ -781,9 +784,9 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 	if len(remotes) == 0 {
 		return nil
 	}
-	url := gits.GetRemoteUrl(cfg, "origin")
+	url := o.Git().GetRemoteUrl(cfg, "origin")
 	if url == "" {
-		url = gits.GetRemoteUrl(cfg, "upstream")
+		url = o.Git().GetRemoteUrl(cfg, "upstream")
 		if url == "" {
 			url, err = o.pickRemoteURL(cfg)
 			if err != nil {
@@ -1010,11 +1013,11 @@ func (o *ImportOptions) fixMaven() error {
 			return fmt.Errorf("Failed to update maven plugin: %s output: %s", err, out)
 		}
 		if !o.DryRun {
-			err = gits.GitAdd(dir, "pom.xml")
+			err = o.Git().Add(dir, "pom.xml")
 			if err != nil {
 				return err
 			}
-			err = gits.GitCommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
+			err = o.Git().CommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
 			if err != nil {
 				return err
 			}
@@ -1026,11 +1029,11 @@ func (o *ImportOptions) fixMaven() error {
 			return fmt.Errorf("Failed to update chart: %s output: %s", err, out)
 		}
 		if !o.DryRun {
-			err = gits.GitAdd(dir, "charts")
+			err = o.Git().Add(dir, "charts")
 			if err != nil {
 				return err
 			}
-			err = gits.GitCommitIfChanges(dir, "fix:(chart) fix up the probe path")
+			err = o.Git().CommitIfChanges(dir, "fix:(chart) fix up the probe path")
 			if err != nil {
 				return err
 			}

@@ -7,7 +7,6 @@ import (
 
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -85,17 +84,17 @@ func (o *StepTagOptions) Run() error {
 
 	tag := "v" + o.Flags.Version
 
-	err := gits.GitCmd("", "commit", "-a", "-m", fmt.Sprintf("release %s", o.Flags.Version), "--allow-empty")
+	err := o.Git().AddCommmit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
 
-	err = gits.GitCmd("", "tag", "-fa", tag, "-m", fmt.Sprintf("release %s", o.Flags.Version))
+	err = o.Git().CreateTag("", tag, fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
 
-	err = gits.GitCmd("", "push", "origin", tag)
+	err = o.Git().PushTag("", tag)
 	if err != nil {
 		return err
 	}

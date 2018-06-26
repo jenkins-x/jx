@@ -15,7 +15,6 @@ import (
 
 	"github.com/blang/semver"
 	version "github.com/hashicorp/go-version"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -233,17 +232,14 @@ func (o *StepNextVersionOptions) getLatestTag() (string, error) {
 	// if repo isn't provided by flags fall back to using current repo if run from a git project
 	var versionsRaw []string
 
-	err := o.runCommand("git", "fetch", "--tags", "-v")
+	err := o.Git().FetchTags("")
 	if err != nil {
 		return "", fmt.Errorf("error fetching tags: %v", err)
 	}
-	out, err := o.getCommandOutput("", "git", "tag")
+	tags, err := o.Git().Tags("")
 	if err != nil {
 		return "", err
 	}
-	str := strings.TrimSuffix(string(out), "\n")
-	tags := strings.Split(str, "\n")
-
 	if len(tags) == 0 {
 		// if no current flags exist then lets start at 0.0.0
 		return "0.0.0", fmt.Errorf("no existing tags found")
@@ -378,12 +374,12 @@ func (o *StepNextVersionOptions) setVersion() error {
 		return err
 	}
 
-	err = gits.GitAdd(o.Dir, o.Filename)
+	err = o.Git().Add(o.Dir, o.Filename)
 	if err != nil {
 		return err
 	}
 
-	err = gits.GitCommitDir(o.Dir, fmt.Sprintf("Release %s", o.NewVersion))
+	err = o.Git().CommitDir(o.Dir, fmt.Sprintf("Release %s", o.NewVersion))
 	if err != nil {
 		return err
 	}

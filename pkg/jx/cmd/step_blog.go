@@ -101,8 +101,8 @@ func NewCmdStepBlog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
-	cmd.Flags().StringVarP(&options.FromDate, "from-date", "f", "", "The date to create the charts from. Defaults to a week before the to date. Should be a format: "+gits.DateFormat)
-	cmd.Flags().StringVarP(&options.ToDate, "to-date", "t", "", "The date to query up to. Defaults to now. Should be a format: "+gits.DateFormat)
+	cmd.Flags().StringVarP(&options.FromDate, "from-date", "f", "", "The date to create the charts from. Defaults to a week before the to date. Should be a format: "+util.DateFormat)
+	cmd.Flags().StringVarP(&options.ToDate, "to-date", "t", "", "The date to query up to. Defaults to now. Should be a format: "+util.DateFormat)
 	cmd.Flags().StringVarP(&options.BlogOutputDir, "blog-dir", "", "", "The Hugo-style blog source code to generate the charts into")
 	cmd.Flags().StringVarP(&options.BlogName, "blog-name", "n", "", "The blog name")
 	cmd.Flags().BoolVarP(&options.CombineMinorReleases, "combine-minor", "c", true, "If enabled lets combine minor releases together to simplify the charts")
@@ -276,11 +276,11 @@ func (o *StepBlogOptions) generateChangelog() error {
 	if previousDate == "" {
 		// default to 4 weeks ago
 		t := now.Add(-time.Hour * 24 * 7 * 4)
-		previousDate = gits.FormatDate(t)
+		previousDate = util.FormatDate(t)
 		o.FromDate = previousDate
 	}
 	if o.ToDate == "" {
-		o.ToDate = gits.FormatDate(now)
+		o.ToDate = util.FormatDate(now)
 	}
 	options := &StepChangelogOptions{
 		StepOptions: o.StepOptions,
@@ -612,7 +612,7 @@ func (o *StepBlogOptions) queryClosedIssues() (int, error) {
 	if fromDate == "" {
 		return 0, fmt.Errorf("No from date specified!")
 	}
-	t, err := gits.ParseDate(fromDate)
+	t, err := util.ParseDate(fromDate)
 	if err != nil {
 		return 0, fmt.Errorf("Failed to parse from date: %s: %s", fromDate, err)
 	}

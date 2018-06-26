@@ -26,9 +26,10 @@ type GitHubProvider struct {
 
 	Server auth.AuthServer
 	User   auth.UserAuth
+	Git    Gitter
 }
 
-func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 
 	provider := GitHubProvider{
@@ -36,6 +37,7 @@ func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvide
 		User:     *user,
 		Context:  ctx,
 		Username: user.Username,
+		Git:      git,
 	}
 
 	ts := oauth2.StaticTokenSource(
@@ -471,12 +473,12 @@ func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepo
 					if err != nil {
 						return answer, err
 					}
-					gitDir, _, err := FindGitConfigDir(dir)
+					gitDir, _, err := p.Git.FindGitConfigDir(dir)
 					if err != nil {
 						return answer, err
 					}
 					log.Info("Looking for commits in: " + gitDir + "\n")
-					email, err := GetAuthorEmailForCommit(gitDir, commit.GetSHA())
+					email, err := p.Git.GetAuthorEmailForCommit(gitDir, commit.GetSHA())
 					if err != nil {
 						log.Warn("Commit not found: " + commit.GetSHA() + "\n")
 						continue
@@ -616,7 +618,7 @@ func (p *GitHubProvider) RenameRepository(org string, name string, newName strin
 func (p *GitHubProvider) ValidateRepositoryName(org string, name string) error {
 	_, r, err := p.Client.Repositories.Get(p.Context, org, name)
 	if err == nil {
-		return fmt.Errorf("Repository %s already exists", GitRepoName(org, name))
+		return fmt.Errorf("Repository %s already exists", p.Git.RepoName(org, name))
 	}
 	if r != nil && r.StatusCode == 404 {
 		return nil

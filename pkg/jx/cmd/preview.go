@@ -183,7 +183,7 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 
-		gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind)
+		gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind, o.Git())
 
 		if prNum > 0 {
 			pullRequest, err := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
@@ -546,7 +546,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 			}
 			o.Dir = dir
 		}
-		root, gitConf, err := gits.FindGitConfigDir(o.Dir)
+		root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
 		if err != nil {
 			log.Warnf("Could not find a .git directory: %s\n", err)
 		} else {
@@ -557,7 +557,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 					log.Warnf("Could not find the remote git source URL:  %s\n", err)
 				} else {
 					if o.SourceRef == "" {
-						o.SourceRef, err = gits.GitGetBranch(root)
+						o.SourceRef, err = o.Git().Branch(root)
 						if err != nil {
 							log.Warnf("Could not find the remote git source ref:  %s\n", err)
 						}

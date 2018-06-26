@@ -104,7 +104,7 @@ func (o *GCPreviewsOptions) Run() error {
 				return err
 			}
 
-			gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind)
+			gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind, o.Git())
 			if err != nil {
 				return err
 			}

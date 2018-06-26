@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx/pkg/gits"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -77,4 +78,5 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	o.kubeClient = fake.NewSimpleClientset(k8sObjects...)
 	o.jxClient = v1fake.NewSimpleClientset(jxObjects...)
 	o.apiExtensionsClient = apifake.NewSimpleClientset()
+	o.git = gits.NewGitCLI()
 }

@@ -28,7 +28,9 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (gits.GitProvider, error) {
+func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment,
+	config *v1.Environment, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string,
+	gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter) (gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	name := data.Name
 	createMode := name == ""
@@ -265,7 +267,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 
 				if createRepo {
 					showUrlEdit = false
-					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix)
+					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git)
 					if err != nil {
 						return nil, err
 					}
@@ -329,9 +331,10 @@ func GetTeamExposecontrollerConfig(kubeClient kubernetes.Interface, ns string) (
 	return m, nil
 }
 
-func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (string, gits.GitProvider, error) {
+func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string,
+	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter) (string, gits.GitProvider, error) {
 	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
-	details, err := gits.PickNewGitRepository(out, batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil)
+	details, err := gits.PickNewGitRepository(out, batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil, git)
 	if err != nil {
 		return "", nil, err
 	}
@@ -351,23 +354,23 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 		if err != nil {
 			return "", nil, err
 		}
-		pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
+		pushGitURL, err := git.CreatePushURL(repo.CloneURL, details.User)
 		if err != nil {
 			return "", nil, err
 		}
-		err = gits.GitClone(pushGitURL, dir)
+		err = git.Clone(pushGitURL, dir)
 		if err != nil {
 			return "", nil, err
 		}
-		err = modifyNamespace(out, dir, env)
+		err = modifyNamespace(out, dir, env, git)
 		if err != nil {
 			return "", nil, err
 		}
-		err = addValues(out, dir, helmValues)
+		err = addValues(out, dir, helmValues, git)
 		if err != nil {
 			return "", nil, err
 		}
-		err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+		err = git.PushMaster(dir)
 		if err != nil {
 			return "", nil, err
 		}
@@ -400,27 +403,27 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 				if err != nil {
 					return "", nil, err
 				}
-				err = gits.GitClone(repo.CloneURL, dir)
+				err = git.Clone(repo.CloneURL, dir)
 				if err != nil {
 					return "", nil, err
 				}
-				err = gits.SetRemoteURL(dir, "upstream", forkEnvGitURL)
+				err = git.SetRemoteURL(dir, "upstream", forkEnvGitURL)
 				if err != nil {
 					return "", nil, err
 				}
-				err = gits.GitCmd(dir, "pull", "-r", "upstream", "master")
+				err = git.PullUpstream(dir)
 				if err != nil {
 					return "", nil, err
 				}
-				err = modifyNamespace(out, dir, env)
+				err = modifyNamespace(out, dir, env, git)
 				if err != nil {
 					return "", nil, err
 				}
-				err = addValues(out, dir, helmValues)
+				err = addValues(out, dir, helmValues, git)
 				if err != nil {
 					return "", nil, err
 				}
-				err = gits.GitPush(dir)
+				err = git.Push(dir)
 				if err != nil {
 					return "", nil, err
 				}
@@ -440,31 +443,31 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 			if err != nil {
 				return "", nil, err
 			}
-			err = gits.GitClone(forkEnvGitURL, dir)
+			err = git.Clone(forkEnvGitURL, dir)
 			if err != nil {
 				return "", nil, err
 			}
-			pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
+			pushGitURL, err := git.CreatePushURL(repo.CloneURL, details.User)
 			if err != nil {
 				return "", nil, err
 			}
-			err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
+			err = git.AddRemote(dir, forkEnvGitURL, "upstream")
 			if err != nil {
 				return "", nil, err
 			}
-			err = gits.GitCmd(dir, "remote", "set-url", "origin", pushGitURL)
+			err = git.UpdateRemote(dir, pushGitURL)
 			if err != nil {
 				return "", nil, err
 			}
-			err = modifyNamespace(out, dir, env)
+			err = modifyNamespace(out, dir, env, git)
 			if err != nil {
 				return "", nil, err
 			}
-			err = addValues(out, dir, helmValues)
+			err = addValues(out, dir, helmValues, git)
 			if err != nil {
 				return "", nil, err
 			}
-			err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+			err = git.PushMaster(dir)
 			if err != nil {
 				return "", nil, err
 			}
@@ -474,7 +477,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 	return repo.CloneURL, provider, nil
 }
 
-func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
+func modifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gitter) error {
 	ns := env.Spec.Namespace
 	if ns == "" {
 		return fmt.Errorf("No Namespace is defined for Environment %s", env.Name)
@@ -530,21 +533,21 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 		}
 	}
 
-	err = gits.GitAdd(dir, "*")
+	err = git.Add(dir, "*")
 	if err != nil {
 		return err
 	}
-	changes, err := gits.HasChanges(dir)
+	changes, err := git.HasChanges(dir)
 	if err != nil {
 		return err
 	}
 	if changes {
-		return gits.GitCommitDir(dir, "Use correct namespace for environment")
+		return git.CommitDir(dir, "Use correct namespace for environment")
 	}
 	return nil
 }
 
-func addValues(out io.Writer, dir string, values config.HelmValuesConfig) error {
+func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gits.Gitter) error {
 
 	file := filepath.Join(dir, "env", "values.yaml")
 	exists, err := util.FileExists(file)
@@ -571,16 +574,16 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig) error 
 
 	f.Close()
 
-	err = gits.GitAdd(dir, "*")
+	err = git.Add(dir, "*")
 	if err != nil {
 		return err
 	}
-	changes, err := gits.HasChanges(dir)
+	changes, err := git.HasChanges(dir)
 	if err != nil {
 		return err
 	}
 	if changes {
-		return gits.GitCommitDir(dir, "Add environment configuration")
+		return git.CommitDir(dir, "Add environment configuration")
 	}
 	return nil
 }

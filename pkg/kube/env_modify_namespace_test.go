@@ -34,7 +34,8 @@ func TestEnvModifyNamespace(t *testing.T) {
 		}
 	}
 
-	err = gits.GitInit(tempDir)
+	git := gits.NewGitCLI()
+	err = git.Init(tempDir)
 	assert.NoError(t, err)
 
 	testNs := "jx-staging"
@@ -42,7 +43,7 @@ func TestEnvModifyNamespace(t *testing.T) {
 	env := NewPermanentEnvironment("jx")
 	env.Spec.Namespace = testNs
 
-	err = modifyNamespace(os.Stdout, tempDir, env)
+	err = modifyNamespace(os.Stdout, tempDir, env, git)
 	assert.NoError(t, err)
 
 	tests.AssertFileContains(t, filepath.Join(tempDir, "Makefile"), `NAMESPACE := "`+testNs+`"`)

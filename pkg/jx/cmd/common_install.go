@@ -494,7 +494,7 @@ func (o *CommonOptions) installHelm3() error {
 }
 
 func (o *CommonOptions) installMavenIfRequired() error {
-	_, err := util.GetCommandOutput("", "mvn", "-v")
+	_, err := util.RunCommandWithOutput("", "mvn", "-v")
 	if err == nil {
 		return nil
 	}

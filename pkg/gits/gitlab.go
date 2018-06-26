@@ -17,20 +17,22 @@ type GitlabProvider struct {
 
 	Server auth.AuthServer
 	User   auth.UserAuth
+	Git    Gitter
 }
 
-func NewGitlabProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func NewGitlabProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	c := gitlab.NewClient(nil, user.ApiToken)
-	return withGitlabClient(server, user, c)
+	return withGitlabClient(server, user, c, git)
 }
 
 // Used by unit tests to inject a mocked client
-func withGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitlab.Client) (GitProvider, error) {
+func withGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitlab.Client, git Gitter) (GitProvider, error) {
 	provider := &GitlabProvider{
 		Server:   *server,
 		User:     *user,
 		Username: user.Username,
 		Client:   client,
+		Git:      git,
 	}
 	return provider, nil
 }

@@ -207,7 +207,7 @@ func (o *CreateQuickstartOptions) Run() error {
 				if err != nil {
 					return err
 				}
-				return gits.GitRemove(genDir, filepath.Join("charts", folder))
+				return o.Git().Remove(genDir, filepath.Join("charts", folder))
 			}
 		} else {
 			log.Infof("### NO charts folder %s\n", chartsDir)
