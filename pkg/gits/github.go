@@ -852,7 +852,7 @@ func GitHubAccessTokenURL(url string) string {
 	if strings.Index(url, "://") < 0 {
 		url = "https://" + url
 	}
-	return util.UrlJoin(url, "/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook")
+	return util.UrlJoin(url, "/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook,delete_repo")
 }
 
 func (p *GitHubProvider) Label() string {
