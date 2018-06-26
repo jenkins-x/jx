@@ -51,6 +51,9 @@ pipeline {
                         sh "creating team: ${TEAM}"
 
                         sh "echo running: ./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke"
+
+                        input "Ready?"
+
                         sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke"
 
                         sh "now running the BDD tests"
