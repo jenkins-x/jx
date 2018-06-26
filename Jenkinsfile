@@ -45,9 +45,15 @@ pipeline {
                         sh "echo the values.yaml file is:"
                         sh "cat values.yaml"
 
+                        sh "contents of ./build/linux:"
+                        sh "ls -al ./build/linux"
+
                         sh "creating team: ${TEAM}"
 
+                        sh "echo running: ./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke"
                         sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke"
+
+                        sh "now running the BDD tests"
 
                         dir ('/home/jenkins/go/src/github.com/jenkins-x/godog-jx'){
                             git "https://github.com/jenkins-x/godog-jx"
