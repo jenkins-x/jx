@@ -48,7 +48,7 @@ pipeline {
                         sh "echo contents of ./build/linux:"
                         sh "ls -al ./build/linux"
 
-                        sh "creating team: ${TEAM}"
+                        sh "echo creating team: ${TEAM}"
 
                         sh "echo running: ./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke"
 
