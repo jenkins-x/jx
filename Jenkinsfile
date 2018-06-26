@@ -47,7 +47,11 @@ pipeline {
                         sh "cat values.yaml"
 
                         sh "echo creating team: ${TEAM}"
-                        sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke -b --default-admin-password $JENKINS_CREDS_PSW"
+
+                        sh "git config --global --add user.name JenkinsXBot"
+                        sh "git config --global --add user.email jenkins-x@googlegroups.com"
+
+                        sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW"
 
                         sh "now running the BDD tests"
 
