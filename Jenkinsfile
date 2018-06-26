@@ -45,16 +45,8 @@ pipeline {
                         sh "echo the values.yaml file is:"
                         sh "cat values.yaml"
 
-                        sh "echo contents of ./build/linux:"
-                        sh "ls -al ./build/linux"
-
                         sh "echo creating team: ${TEAM}"
-
-                        sh "echo running: ./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke"
-
-                        input "Ready?"
-
-                        sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke"
+                        sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke -b"
 
                         sh "now running the BDD tests"
 
