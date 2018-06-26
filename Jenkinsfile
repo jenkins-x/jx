@@ -45,7 +45,7 @@ pipeline {
                         sh "echo the values.yaml file is:"
                         sh "cat values.yaml"
 
-                        sh "contents of ./build/linux:"
+                        sh "echo contents of ./build/linux:"
                         sh "ls -al ./build/linux"
 
                         sh "creating team: ${TEAM}"
