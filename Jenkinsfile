@@ -6,6 +6,7 @@ pipeline {
         GH_CREDS            = credentials('jenkins-x-github')
         CHARTMUSEUM_CREDS   = credentials('jenkins-x-chartmuseum')
         GKE_SA              = credentials('gke-sa')
+        JENKINS_CREDS       = credentials('test-jenkins-user')
         BUILD_NUMBER        = "$BUILD_NUMBER"
         GIT_USERNAME        = "$GH_CREDS_USR"
         GIT_API_TOKEN       = "$GH_CREDS_PSW"
@@ -46,7 +47,7 @@ pipeline {
                         sh "cat values.yaml"
 
                         sh "echo creating team: ${TEAM}"
-                        sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke -b"
+                        sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke -b --default-admin-password $JENKINS_CREDS_PSW"
 
                         sh "now running the BDD tests"
 
