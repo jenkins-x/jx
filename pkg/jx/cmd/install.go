@@ -212,6 +212,14 @@ func (options *InstallOptions) Run() error {
 	}
 	options.kubeClient = client
 
+	initOpts := &options.InitOptions
+	helmBinary := initOpts.HelmBinary()
+
+	err = options.installRequirements(options.Flags.Provider, helmBinary)
+	if err != nil {
+		return err
+	}
+
 	context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
@@ -242,17 +250,9 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	initOpts := &options.InitOptions
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
 	initOpts.BatchMode = options.BatchMode
-
-	helmBinary := options.InitOptions.HelmBinary()
-
-	err = options.installRequirements(options.Flags.Provider, helmBinary)
-	if err != nil {
-		return err
-	}
 
 	if options.Flags.Provider == AKS {
 		/**
