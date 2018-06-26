@@ -1,0 +1,15 @@
+jenkins:
+  Agent:
+    PodTemplates:
+      Maven:
+        Containers:
+          Maven:
+            Image: jenkinsxio/builder-maven:$VERSION
+      Nodejs:
+        Containers:
+          Nodejs:
+            Image: jenkinsxio/builder-nodejs:$VERSION
+      Go:
+        Containers:
+          Go:
+            Image: jenkinsxio/builder-go:$VERSION
