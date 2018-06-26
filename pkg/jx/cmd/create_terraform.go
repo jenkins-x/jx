@@ -6,6 +6,8 @@ import (
 
 	"fmt"
 
+	os_user "os/user"
+
 	"strconv"
 
 	"errors"
@@ -24,6 +26,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"io/ioutil"
+	"time"
 )
 
 type Cluster struct {
@@ -38,6 +42,9 @@ type GKECluster struct {
 	MachineType   string
 	MinNumOfNodes string
 	MaxNumOfNodes string
+	DiskSize      string
+	AutoRepair    bool
+	AutoUpgrade   bool
 }
 
 type Flags struct {
@@ -68,6 +75,7 @@ var (
 
 const (
 	Clusters              = "clusters"
+	Terraform             = "terraform"
 	TerraformTemplatesGKE = "https://github.com/jenkins-x/terraform-jx-templates-gke.git"
 )
 
@@ -334,7 +342,7 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) error {
 
 	for _, c := range o.Clusters {
-		path := filepath.Join(dir, Clusters, c.Name)
+		path := filepath.Join(dir, Clusters, c.Name, Terraform)
 		exists, err := util.FileExists(path)
 		if err != nil {
 			return fmt.Errorf("unable to check if existing folder exists for path %s: %v", path, err)
@@ -345,7 +353,7 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) e
 			switch c.Provider {
 			case "gke":
 				o.Git().Clone(TerraformTemplatesGKE, path)
-				o.configureGKECluster(c)
+				o.configureGKECluster(c, path)
 			case "aks":
 				// TODO add aks terraform templates URL
 				return fmt.Errorf("creating an AKS cluster via terraform is not currently supported")
@@ -356,6 +364,7 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) e
 				return fmt.Errorf("unknown kubernetes provider type %s must be one of %v", c.Provider, validTerraformClusterProviders)
 			}
 			os.RemoveAll(filepath.Join(path, ".git"))
+			os.RemoveAll(filepath.Join(path, ".gitignore"))
 		}
 
 	}
@@ -378,9 +387,12 @@ func (o *CreateTerraformOptions) commitClusters(dir string) error {
 	return nil
 }
 
-func (o *CreateTerraformOptions) configureGKECluster(c Cluster) error {
+func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) error {
 	gkeCluster := GKECluster{
 		Cluster: c,
+		DiskSize: "100",
+		AutoUpgrade: false,
+		AutoRepair: false,
 	}
 
 	if gkeCluster.ProjectId == "" {
@@ -453,6 +465,31 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster) error {
 		survey.AskOne(prompt, &maxNumOfNodes, nil)
 	}
 
+	user, err := os_user.Current()
+	if err != nil {
+		return err
+	}
+	username := sanitizeLabel(user.Username)
+
+	terraformVars := filepath.Join(path, "terraform.tfvars")
+	o.writeKeyValueIfNotExists(terraformVars, "created_by", username)
+	o.writeKeyValueIfNotExists(terraformVars, "created_timestamp", time.Now().Format("20060102150405"))
+	//o.writeKeyValueIfNotExists(terraformVars, "credentials", keyPath)
+	o.writeKeyValueIfNotExists(terraformVars, "cluster_name", gkeCluster.Name)
+	o.writeKeyValueIfNotExists(terraformVars, "gcp_zone", zone)
+	o.writeKeyValueIfNotExists(terraformVars, "gcp_project", gkeCluster.ProjectId)
+	o.writeKeyValueIfNotExists(terraformVars, "min_node_count", gkeCluster.MinNumOfNodes)
+	o.writeKeyValueIfNotExists(terraformVars, "max_node_count", gkeCluster.MaxNumOfNodes)
+	o.writeKeyValueIfNotExists(terraformVars, "node_machine_type", gkeCluster.MachineType)
+	o.writeKeyValueIfNotExists(terraformVars, "node_preemptible", "false")
+	o.writeKeyValueIfNotExists(terraformVars, "node_disk_size", gkeCluster.DiskSize)
+	o.writeKeyValueIfNotExists(terraformVars, "auto_repair", strconv.FormatBool(gkeCluster.AutoRepair))
+	o.writeKeyValueIfNotExists(terraformVars, "auto_upgrade", strconv.FormatBool(gkeCluster.AutoUpgrade))
+	o.writeKeyValueIfNotExists(terraformVars, "enable_kubernetes_alpha", "false")
+	o.writeKeyValueIfNotExists(terraformVars, "enable_legacy_abac", "true")
+	o.writeKeyValueIfNotExists(terraformVars, "logging_service", "logging.googleapis.com")
+	o.writeKeyValueIfNotExists(terraformVars, "monitoring_service", "monitoring.googleapis.com")
+
 	return nil
 }
 
@@ -502,4 +539,71 @@ func (o *CreateTerraformOptions) getGoogleProjectId() (string, error) {
 	}
 
 	return projectId, nil
+}
+
+func (o *CreateTerraformOptions) writeLineIfNotExists(path string, line string) error {
+	// file exists
+	if _, err := os.Stat(path); err == nil {
+		buffer, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		contents := string(buffer)
+
+		o.Debugf("Checking if %s contains '%s'\n", path, line)
+
+		if strings.Contains(contents, line) {
+			o.Debugf("Skipping %s\n", line)
+			return nil
+		}
+	}
+
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	o.Debugf("Writing '%s' to %s\n", line, path)
+
+	_, err = file.WriteString(line)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *CreateTerraformOptions) writeKeyValueIfNotExists(path string, key string, value string) error {
+	// file exists
+	if _, err := os.Stat(path); err == nil {
+		buffer, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		contents := string(buffer)
+
+		o.Debugf("Checking if %s contains %s\n", path, key)
+
+		if strings.Contains(contents, key) {
+			o.Debugf("Skipping %s\n", key)
+			return nil
+		}
+	}
+
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	line := fmt.Sprintf("%s = \"%s\"\n", key, value)
+	o.Debugf("Writing '%s' to %s\n", line, path)
+
+	_, err = file.WriteString(line)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
