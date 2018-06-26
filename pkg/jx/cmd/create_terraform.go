@@ -441,6 +441,7 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) err
 		if err != nil {
 			return err
 		}
+		gkeCluster.MachineType = machineType
 	}
 
 	minNumOfNodes := gkeCluster.MinNumOfNodes
@@ -452,6 +453,7 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) err
 		}
 
 		survey.AskOne(prompt, &minNumOfNodes, nil)
+		gkeCluster.MinNumOfNodes = minNumOfNodes
 	}
 
 	maxNumOfNodes := gkeCluster.MaxNumOfNodes
@@ -463,6 +465,7 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) err
 		}
 
 		survey.AskOne(prompt, &maxNumOfNodes, nil)
+		gkeCluster.MaxNumOfNodes = maxNumOfNodes
 	}
 
 	user, err := os_user.Current()
@@ -474,7 +477,6 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) err
 	terraformVars := filepath.Join(path, "terraform.tfvars")
 	o.writeKeyValueIfNotExists(terraformVars, "created_by", username)
 	o.writeKeyValueIfNotExists(terraformVars, "created_timestamp", time.Now().Format("20060102150405"))
-	//o.writeKeyValueIfNotExists(terraformVars, "credentials", keyPath)
 	o.writeKeyValueIfNotExists(terraformVars, "cluster_name", gkeCluster.Name)
 	o.writeKeyValueIfNotExists(terraformVars, "gcp_zone", zone)
 	o.writeKeyValueIfNotExists(terraformVars, "gcp_project", gkeCluster.ProjectId)
