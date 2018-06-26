@@ -54,6 +54,7 @@ type InstallFlags struct {
 	RegisterLocalHelmRepo    bool
 	CleanupTempFiles         bool
 	EnvironmentGitOwner      string
+	Version                  string
 }
 
 type Secrets struct {
@@ -190,6 +191,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
+	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -423,9 +425,12 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	version, err := loadVersionFromCloudEnvironmentsDir(wrkDir)
-	if err != nil {
-		return err
+	version := options.Flags.Version
+	if version == "" {
+		version, err = loadVersionFromCloudEnvironmentsDir(wrkDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	args := []string{"install", "jenkins-x/jenkins-x-platform", "--name", "jenkins-x", "-f", "./myvalues.yaml", "-f", "./secrets.yaml", "--namespace=" + ns, "--timeout=" + timeout}
@@ -574,9 +579,9 @@ func (options *InstallOptions) Run() error {
 
 	log.Infof("\nYour kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
 	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx ns "+originalNs))
-	log.Infof("For help on switching contextst see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
+	log.Infof("For help on switching contexts see: %s\n\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
 
-	log.Infof("\nTo import existing projects into Jenkins:     %s\n", util.ColorInfo("jx import"))
+	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
 	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
 	return nil
