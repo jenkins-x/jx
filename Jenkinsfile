@@ -42,9 +42,9 @@ pipeline {
                         sh "gcloud container clusters get-credentials anthorse --zone europe-west1-b --project jenkinsx-dev"
 
 
-                        sh "sed 's/\$VERSION/${PREVIEW_IMAGE_TAG}/g' values.yaml.template > values.yaml"
-                        sh "echo the values.yaml file is:"
-                        sh "cat values.yaml"
+                        sh "sed 's/\$VERSION/${PREVIEW_IMAGE_TAG}/g' myvalues.yaml.template > myvalues.yaml"
+                        sh "echo the myvalues.yaml file is:"
+                        sh "cat myvalues.yaml"
 
                         sh "echo creating team: ${TEAM}"
 
@@ -53,7 +53,7 @@ pipeline {
 
                         sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW"
 
-                        sh "now running the BDD tests"
+                        sh "echo now running the BDD tests"
 
                         dir ('/home/jenkins/go/src/github.com/jenkins-x/godog-jx'){
                             git "https://github.com/jenkins-x/godog-jx"
