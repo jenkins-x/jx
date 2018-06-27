@@ -6,6 +6,7 @@ pipeline {
         CHARTMUSEUM_CREDS   = credentials('jenkins-x-chartmuseum')
         JENKINS_CREDS       = credentials('test-jenkins-user')
         GH_CREDS            = credentials('jenkins-x-github')
+        GHE_CREDS           = credentials('ghe-test-user')
         GKE_SA              = credentials('gke-sa')
         BUILD_NUMBER        = "$BUILD_NUMBER"
         GIT_USERNAME        = "$GH_CREDS_USR"
