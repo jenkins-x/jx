@@ -64,9 +64,6 @@ const (
 	// ConfigMapExposecontroller the name of the ConfigMap with the Exposecontroller configuration
 	ConfigMapExposecontroller = "exposecontroller"
 
-	// ConfigMapJenkinsXGitKinds the name of the ConfigMap in the development namespace that maps kinds to URLs
-	ConfigMapJenkinsXGitKinds = "jenkins-x-git-kinds"
-
 	// ConfigMapJenkinsX the name of the ConfigMap with the Jenkins configuration
 	ConfigMapJenkinsX = "jenkins"
 
