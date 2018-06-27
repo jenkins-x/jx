@@ -354,7 +354,10 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) e
 			switch c.Provider {
 			case "gke":
 				o.Git().Clone(TerraformTemplatesGKE, path)
-				o.configureGKECluster(c, path)
+				err := o.configureGKECluster(c, path)
+				if err != nil {
+					return err
+				}
 			case "aks":
 				// TODO add aks terraform templates URL
 				return fmt.Errorf("creating an AKS cluster via terraform is not currently supported")
@@ -382,7 +385,7 @@ func (o *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
 		}
 		defer file.Close()
 
-		_, err = file.WriteString("**/*.key.json\n")
+		_, err = file.WriteString("**/*.key.json\n.terraform\n**/*.tfstate\n")
 		if err != nil {
 			return err
 		}
@@ -509,6 +512,83 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) err
 	o.writeKeyValueIfNotExists(terraformVars, "enable_legacy_abac", "true")
 	o.writeKeyValueIfNotExists(terraformVars, "logging_service", "logging.googleapis.com")
 	o.writeKeyValueIfNotExists(terraformVars, "monitoring_service", "monitoring.googleapis.com")
+
+	serviceAccountName := fmt.Sprintf("jx-%s-%s" , o.Flags.OrganisationRepoName, gkeCluster.Name)
+	gke.GetOrCreateServiceAccount(serviceAccountName, gkeCluster.ProjectId, filepath.Dir(path) )
+
+	serviceAccountPath := filepath.Join(filepath.Dir(path), fmt.Sprintf("%s.key.json" , serviceAccountName))
+
+	args := []string{"init", path}
+	err = o.runCommand("terraform", args...)
+	if err != nil {
+		return err
+	}
+
+	terraformState := filepath.Join(path, "terraform.tfstate")
+
+	args = []string{"plan",
+		fmt.Sprintf("-state=%s", terraformState),
+		fmt.Sprintf("-var-file=%s", terraformVars),
+		"-var",
+		fmt.Sprintf("credentials=%s", serviceAccountPath),
+		path}
+
+	output, err := o.getCommandOutput("", "terraform", args...)
+	if err != nil {
+		return err
+	}
+
+	log.Info("Applying plan...\n")
+
+	args = []string{"apply",
+		"-auto-approve",
+		fmt.Sprintf("-state=%s", terraformState),
+		fmt.Sprintf("-var-file=%s", terraformVars),
+		"-var",
+		fmt.Sprintf("credentials=%s", serviceAccountPath),
+		path}
+
+	err = o.runCommandVerbose("terraform", args...)
+	if err != nil {
+		return err
+	}
+
+	// should we setup the labels at this point?
+	//gcloud container clusters update ninjacandy --update-labels ''
+	args = []string{"container",
+		"clusters",
+		"update",
+		gkeCluster.Name}
+
+	labels := ""
+	if err == nil && user != nil {
+		username := sanitizeLabel(user.Username)
+		if username != "" {
+			sep := ""
+			if labels != "" {
+				sep = ","
+			}
+			labels += sep + "created-by=" + username
+		}
+	}
+
+	sep := ""
+	if labels != "" {
+		sep = ","
+	}
+	labels += sep + fmt.Sprintf("created-with=terraform,created-on=%s", time.Now().Format("20060102150405"))
+	args = append(args, "--update-labels="+strings.ToLower(labels))
+
+	err = o.runCommand("gcloud", args...)
+	if err != nil {
+		return err
+	}
+
+	output, err = o.getCommandOutput("", "gcloud", "container", "clusters", "get-credentials", gkeCluster.Name, "--zone", zone, "--project", gkeCluster.ProjectId)
+	if err != nil {
+		return err
+	}
+	log.Info(output)
 
 	return nil
 }
