@@ -555,7 +555,7 @@ func (options *InstallOptions) Run() error {
 
 		// lets only recreate the environments if its the first time we run this
 		_, envNames, err := kube.GetEnvironments(jxClient, ns)
-		if err != nil || len(envNames) == 0 {
+		if err != nil || len(envNames) <= 1 {
 
 			if options.Flags.DefaultEnvironmentPrefix == "" {
 				options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
