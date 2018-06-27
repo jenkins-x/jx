@@ -180,7 +180,7 @@ func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, erro
 		}
 		svcURL := kube.GetServiceURL(svc)
 		if svcURL == "" {
-			return authConfigSvc, fmt.Errorf("unable to find external URL annotation on service %s", svc.Name)
+			return authConfigSvc, fmt.Errorf("unable to find external URL annotation on service %s in namespace %s", svc.Name, ns)
 		}
 
 		u, err := url.Parse(svcURL)
