@@ -4,16 +4,12 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
-	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/kubernetes"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -89,13 +85,6 @@ func GetGitServiceKind(jxClient versioned.Interface, kubeClient kubernetes.Inter
 	if answer != "" {
 		return answer, nil
 	}
-	cm, err := kubeClient.CoreV1().ConfigMaps(devNs).Get(ConfigMapJenkinsXGitKinds, metav1.GetOptions{})
-	if err == nil {
-		answer = GetGitServiceKindFromConfigMap(cm, gitServiceUrl)
-		if answer != "" {
-			return answer, nil
-		}
-	}
 
 	gitServices := jxClient.JenkinsV1().GitServices(devNs)
 	list, err := gitServices.List(metav1.ListOptions{})
@@ -108,34 +97,4 @@ func GetGitServiceKind(jxClient versioned.Interface, kubeClient kubernetes.Inter
 	}
 	// TODO should we default to github?
 	return answer, nil
-}
-
-func GetGitServiceKindFromConfigMap(cm *corev1.ConfigMap, gitServiceUrl string) string {
-	gitServiceUrl = strings.TrimSuffix(gitServiceUrl, "/")
-	for k, v := range cm.Data {
-		if strings.TrimSpace(v) != "" {
-			m := map[string]string{}
-			err := yaml.Unmarshal([]byte(v), &m)
-			if err != nil {
-				log.Warnf("Warning could not parse %s YAML %s: %s due to: %s", ConfigMapJenkinsXGitKinds, k, v, err)
-			} else {
-				for _, u := range m {
-					if u == gitServiceUrl {
-						return k
-					}
-					if k == "github" {
-						// lets trim /api/ paths from github repos
-						idx := strings.LastIndex(u, "/api/")
-						if idx > 0 {
-							u2 := u[0:idx]
-							if gitServiceUrl == u2 {
-								return k
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	return ""
 }
