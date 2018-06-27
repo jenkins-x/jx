@@ -19,6 +19,9 @@ pipeline {
         PREVIEW_VERSION     = "0.0.0-SNAPSHOT-$BRANCH_NAME-$BUILD_NUMBER"
         TEAM                = "$BRANCH_NAME-$BUILD_NUMBER".toLowerCase()
         PREVIEW_IMAGE_TAG   = "SNAPSHOT-JX-$BRANCH_NAME-$BUILD_NUMBER"
+
+        // for BDD tests
+        GIT_PROVIDER_URL     = "https://github.beescloud.com"
     }
     stages {
         stage('CI Build and Test') {
@@ -53,10 +56,15 @@ pipeline {
 
                         sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW"
 
+                        // lets test we have the jenkins token setup
+                        sh "./build/linux/jx get pipeline"
+                        
                         sh "echo now running the BDD tests"
 
                         dir ('/home/jenkins/go/src/github.com/jenkins-x/godog-jx'){
                             git "https://github.com/jenkins-x/godog-jx"
+                            sh "make configure-ghe"
+
                             sh "make bdd-tests"
                         }
                     }
