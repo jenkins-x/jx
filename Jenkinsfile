@@ -3,10 +3,10 @@ pipeline {
         label "jenkins-go"
     }
     environment {
-        GH_CREDS            = credentials('jenkins-x-github')
         CHARTMUSEUM_CREDS   = credentials('jenkins-x-chartmuseum')
-        GKE_SA              = credentials('gke-sa')
         JENKINS_CREDS       = credentials('test-jenkins-user')
+        GH_CREDS            = credentials('jenkins-x-github')
+        GKE_SA              = credentials('gke-sa')
         BUILD_NUMBER        = "$BUILD_NUMBER"
         GIT_USERNAME        = "$GH_CREDS_USR"
         GIT_API_TOKEN       = "$GH_CREDS_PSW"
@@ -22,6 +22,7 @@ pipeline {
 
         // for BDD tests
         GIT_PROVIDER_URL     = "https://github.beescloud.com"
+        GHE_TOKEN            = "$GHE_CREDS_PSW"
     }
     stages {
         stage('CI Build and Test') {
