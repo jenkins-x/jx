@@ -49,7 +49,7 @@ type Factory interface {
 
 	CreateAuthConfigService(fileName string) (auth.AuthConfigService, error)
 
-	CreateJenkinsAuthConfigService() (auth.AuthConfigService, error)
+	CreateJenkinsAuthConfigService(kubernetes.Interface, string) (auth.AuthConfigService, error)
 
 	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
 
@@ -111,7 +111,7 @@ func (f *factory) ImpersonateUser(user string) Factory {
 // CreateJenkinsClient creates a new jenkins client
 func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (*gojenkins.Jenkins, error) {
 
-	svc, err := f.CreateJenkinsAuthConfigService()
+	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 	return url, err
 }
 
-func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, error) {
+func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string) (auth.AuthConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(JenkinsAuthConfigFile)
 
 	if err != nil {
@@ -160,11 +160,6 @@ func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, erro
 	}
 
 	if len(config.Servers) == 0 {
-		c, ns, err := f.CreateClient()
-		if err != nil {
-			return authConfigSvc, err
-		}
-
 		s, err := c.CoreV1().Secrets(ns).Get(kube.SecretJenkins, metav1.GetOptions{})
 		if err != nil {
 			return authConfigSvc, err
@@ -180,7 +175,7 @@ func (f *factory) CreateJenkinsAuthConfigService() (auth.AuthConfigService, erro
 		}
 		svcURL := kube.GetServiceURL(svc)
 		if svcURL == "" {
-			return authConfigSvc, fmt.Errorf("unable to find external URL annotation on service %s", svc.Name)
+			return authConfigSvc, fmt.Errorf("unable to find external URL annotation on service %s in namespace %s", svc.Name, ns)
 		}
 
 		u, err := url.Parse(svcURL)

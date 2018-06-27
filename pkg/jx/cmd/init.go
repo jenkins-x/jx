@@ -20,7 +20,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -47,6 +47,7 @@ type InitFlags struct {
 	DraftClient                bool
 	HelmClient                 bool
 	Helm3                      bool
+	HelmBin                    string
 	RecreateExistingDraftRepos bool
 	GlobalTiller               bool
 	SkipIngress                bool
@@ -217,21 +218,39 @@ func (o *InitOptions) enableClusterAdminRole() error {
 	role := o.Flags.UserClusterRole
 	clusterRoleBindingName := kube.ToValidName(userFormatted + "-" + role + "-binding")
 
-	_, err = client.RbacV1().ClusterRoleBindings().Get(clusterRoleBindingName, meta_v1.GetOptions{})
-	if err != nil {
-		log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, user)
-		args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
-
-		err := o.retry(3, 10*time.Second, func() (err error) {
-			return o.runCommand("kubectl", args...)
-		})
-		if err != nil {
-			return err
-		}
-
-		log.Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
+	clusterRoleBindingInterface := client.RbacV1().ClusterRoleBindings()
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: clusterRoleBindingName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "User",
+				Name:     user,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     role,
+		},
 	}
-	return nil
+
+	return o.retry(3, 10*time.Second, func() (err error) {
+		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
+		if err != nil {
+			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, user)
+
+			//args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
+
+			_, err = clusterRoleBindingInterface.Create(clusterRoleBinding)
+			if err == nil {
+				log.Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
+			}
+		}
+		return err
+	})
 }
 
 func (o *InitOptions) initHelm() error {
@@ -240,6 +259,8 @@ func (o *InitOptions) initHelm() error {
 	if o.Flags.Helm3 {
 		o.Flags.SkipTiller = true
 	}
+	helmBin := o.HelmBinary()
+
 	if !o.Flags.SkipTiller {
 		client, curNs, err := o.KubeClient()
 		if err != nil {
@@ -282,11 +303,11 @@ func (o *InitOptions) initHelm() error {
 			roleName := "tiller-manager"
 			roleBindingName := "tiller-binding"
 
-			_, err = client.RbacV1().Roles(tillerNamespace).Get(roleName, meta_v1.GetOptions{})
+			_, err = client.RbacV1().Roles(tillerNamespace).Get(roleName, metav1.GetOptions{})
 			if err != nil {
 				// lets create a Role for tiller
 				role := &rbacv1.Role{
-					ObjectMeta: meta_v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      roleName,
 						Namespace: tillerNamespace,
 					},
@@ -304,11 +325,11 @@ func (o *InitOptions) initHelm() error {
 				}
 				log.Infof("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
-			_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, meta_v1.GetOptions{})
+			_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, metav1.GetOptions{})
 			if err != nil {
 				// lets create a RoleBinding for tiller
 				roleBinding := &rbacv1.RoleBinding{
-					ObjectMeta: meta_v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      roleBindingName,
 						Namespace: tillerNamespace,
 					},
@@ -345,11 +366,11 @@ func (o *InitOptions) initHelm() error {
 		if !running {
 			log.Infof("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
 
-			err = o.runCommand("helm", "init", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
+			err = o.runCommand(helmBin, "init", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
 			if err != nil {
 				return err
 			}
-			err = o.runCommand("helm", "init", "--upgrade", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
+			err = o.runCommand(helmBin, "init", "--upgrade", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
 			if err != nil {
 				return err
 			}
@@ -361,15 +382,13 @@ func (o *InitOptions) initHelm() error {
 		}
 	}
 
-	helmBin := o.HelmBinary()
-
 	if o.Flags.Helm3 {
 		err = o.runCommand(helmBin, "init")
 		if err != nil {
 			return err
 		}
 	} else if o.Flags.HelmClient || o.Flags.SkipTiller {
-		err = o.runCommand("helm", "init", "--client-only")
+		err = o.runCommand(helmBin, "init", "--client-only")
 		if err != nil {
 			return err
 		}
@@ -617,6 +636,10 @@ func (o *InitOptions) HelmBinary() string {
 	if o.Flags.Helm3 {
 		return "helm3"
 	}
+	testHelmBin := o.Flags.HelmBin
+	if testHelmBin != "" {
+		return testHelmBin
+	}
 	return "helm"
 }
 
@@ -641,7 +664,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			if provider == KUBERNETES {
 				log.Infof("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s\n", info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
 			}
-			svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, meta_v1.GetOptions{})
+			svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, metav1.GetOptions{})
 			if err != nil {
 				return "", err
 			}
