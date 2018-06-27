@@ -25,7 +25,9 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 		"service-accounts",
 		"list",
 		"--filter",
-		serviceAccount}
+		serviceAccount,
+		"--project",
+		projectId}
 
 	output, err := util.RunCommandWithOutput("", "gcloud", args...)
 	if err != nil {
@@ -50,7 +52,9 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 		args = []string{"iam",
 			"service-accounts",
 			"create",
-			serviceAccount}
+			serviceAccount,
+			"--project",
+			projectId}
 
 		err = util.RunCommand("", "gcloud", args...)
 		if err != nil {
@@ -66,7 +70,9 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 				"--member",
 				fmt.Sprintf("serviceAccount:%s@%s.iam.gserviceaccount.com", serviceAccount, projectId),
 				"--role",
-				role}
+				role,
+				"--project",
+				projectId}
 
 			err = util.RunCommand("", "gcloud", args...)
 			if err != nil {
@@ -89,7 +95,9 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 			"create",
 			keyPath,
 			"--iam-account",
-			fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccount, projectId)}
+			fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccount, projectId),
+			"--project",
+			projectId}
 
 		err = util.RunCommand("", "gcloud", args...)
 		if err != nil {

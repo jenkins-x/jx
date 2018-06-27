@@ -51,6 +51,14 @@ type Flags struct {
 	Cluster                 []string
 	OrganisationRepoName    string
 	ForkOrganisationGitRepo string
+	GKEProjectId            string
+	GKEZone                 string
+	GKEMachineType          string
+	GKEMinNumOfNodes        string
+	GKEMaxNumOfNodes        string
+	GKEDiskSize             string
+	GKEAutoRepair           bool
+	GKEAutoUpgrade          bool
 }
 
 // CreateTerraformOptions the options for the create spring command
@@ -111,11 +119,19 @@ func NewCmdCreateTerraform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 }
 
 func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command) {
-
+	// global flags
 	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, "cluster", "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
 	cmd.Flags().StringVarP(&options.Flags.OrganisationRepoName, "organisation-repo-name", "o", "", "The organisation name that will be used as the Git repo containing cluster details")
 	cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultOrganisationGitRepoURL, "The Git repository used as the fork when creating new Organisation git repos")
-
+	// gke specific overrides
+	cmd.Flags().StringVarP(&options.Flags.GKEDiskSize, "gke-disk-size", "", "100", "Size in GB for node VM boot disks. Defaults to 100GB")
+	cmd.Flags().BoolVarP(&options.Flags.GKEAutoUpgrade, "gke-enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
+	cmd.Flags().BoolVarP(&options.Flags.GKEAutoRepair, "gke-enable-autoupgrade", "", true, "Sets autoupgrade feature for a cluster's default node-pool(s)")
+	cmd.Flags().StringVarP(&options.Flags.GKEMachineType, "gke-machine-type", "", "", "The type of machine to use for nodes")
+	cmd.Flags().StringVarP(&options.Flags.GKEMinNumOfNodes, "gke-min-num-nodes", "", "", "The minimum number of nodes to be created in each of the cluster's zones")
+	cmd.Flags().StringVarP(&options.Flags.GKEMaxNumOfNodes, "gke-max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
+	cmd.Flags().StringVarP(&options.Flags.GKEProjectId, "gke-project-id", "", "", "Google Project ID to create cluster in")
+	cmd.Flags().StringVarP(&options.Flags.GKEZone, "gke-zone", "", "", "The compute zone (e.g. us-central1-a) for the cluster")
 }
 
 func stringInValidProviders(a string) bool {
@@ -274,7 +290,12 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		}
 
 		// add any new clusters
-		err = o.createOrganisationFolderStructure(dir)
+		clusterDefinitions, err := o.createOrganisationFolderStructure(dir)
+		if err != nil {
+			return err
+		}
+
+		err = o.createClusters(dir, clusterDefinitions)
 		if err != nil {
 			return err
 		}
@@ -320,7 +341,12 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		}
 
 		// create directory structure
-		err = o.createOrganisationFolderStructure(dir)
+		clusterDefinitions, err := o.createOrganisationFolderStructure(dir)
+		if err != nil {
+			return err
+		}
+
+		err = o.createClusters(dir, clusterDefinitions)
 		if err != nil {
 			return err
 		}
@@ -339,14 +365,17 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 	}
 	return nil
 }
-func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) error {
-    o.writeGitIgnoreFile(dir)
+
+func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) ([]interface{}, error) {
+	o.writeGitIgnoreFile(dir)
+
+	clusterDefinitions := []interface{}{}
 
 	for _, c := range o.Clusters {
 		path := filepath.Join(dir, Clusters, c.Name, Terraform)
 		exists, err := util.FileExists(path)
 		if err != nil {
-			return fmt.Errorf("unable to check if existing folder exists for path %s: %v", path, err)
+			return nil, fmt.Errorf("unable to check if existing folder exists for path %s: %v", path, err)
 		}
 		if !exists {
 			os.MkdirAll(path, DefaultWritePermissions)
@@ -354,23 +383,39 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) e
 			switch c.Provider {
 			case "gke":
 				o.Git().Clone(TerraformTemplatesGKE, path)
-				err := o.configureGKECluster(c, path)
+				g, err := o.configureGKECluster(c, path)
 				if err != nil {
-					return err
+					return nil, err
 				}
+
+				clusterDefinitions = append(clusterDefinitions, g)
 			case "aks":
 				// TODO add aks terraform templates URL
-				return fmt.Errorf("creating an AKS cluster via terraform is not currently supported")
+				return nil, fmt.Errorf("creating an AKS cluster via terraform is not currently supported")
 			case "eks":
 				// TODO add eks terraform templates URL
-				return fmt.Errorf("creating an EKS cluster via terraform is not currently supported")
+				return nil, fmt.Errorf("creating an EKS cluster via terraform is not currently supported")
 			default:
-				return fmt.Errorf("unknown kubernetes provider type %s must be one of %v", c.Provider, validTerraformClusterProviders)
+				return nil, fmt.Errorf("unknown kubernetes provider type %s must be one of %v", c.Provider, validTerraformClusterProviders)
 			}
 			os.RemoveAll(filepath.Join(path, ".git"))
 			os.RemoveAll(filepath.Join(path, ".gitignore"))
 		}
 
+	}
+
+	return clusterDefinitions, nil
+}
+
+func (o *CreateTerraformOptions) createClusters(dir string, clusterDefinitions []interface{}) error {
+	for _, c := range clusterDefinitions {
+		switch v := c.(type) {
+		case *GKECluster:
+			path := filepath.Join(dir, Clusters, v.Cluster.Name, Terraform)
+			o.applyTerraformGKE(v, path)
+		default:
+			return fmt.Errorf("unknown kubernetes provider type, must be one of %v, got %s", validTerraformClusterProviders, v)
+		}
 	}
 
 	return nil
@@ -408,32 +453,36 @@ func (o *CreateTerraformOptions) commitClusters(dir string) error {
 	return nil
 }
 
-func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) error {
-	gkeCluster := GKECluster{
-		Cluster: c,
-		DiskSize: "100",
-		AutoUpgrade: false,
-		AutoRepair: false,
+func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) (*GKECluster, error) {
+	g := GKECluster{
+		Cluster:     c,
+		DiskSize:    o.Flags.GKEDiskSize,
+		AutoUpgrade: o.Flags.GKEAutoUpgrade,
+		AutoRepair:  o.Flags.GKEAutoRepair,
+		MachineType:  o.Flags.GKEMachineType,
+		Zone:  o.Flags.GKEZone,
+		ProjectId:  o.Flags.GKEProjectId,
+		MinNumOfNodes:  o.Flags.GKEMinNumOfNodes,
+		MaxNumOfNodes:  o.Flags.GKEMaxNumOfNodes,
 	}
 
-	if gkeCluster.ProjectId == "" {
+	if g.ProjectId == "" {
 		projectId, err := o.getGoogleProjectId()
 		if err != nil {
-			return err
+			return nil, err
 		}
-		gkeCluster.ProjectId = projectId
+		g.ProjectId = projectId
 	}
 
-	if gkeCluster.Name == "" {
-		gkeCluster.Name = strings.ToLower(randomdata.SillyName())
-		log.Infof("No cluster name provided so using a generated one: %s\n", gkeCluster.Name)
+	if c.Name == "" {
+		c.Name = strings.ToLower(randomdata.SillyName())
+		log.Infof("No cluster name provided so using a generated one: %s\n", c.Name)
 	}
 
-	zone := gkeCluster.Zone
-	if zone == "" {
+	if g.Zone == "" {
 		availableZones, err := gke.GetGoogleZones()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		prompts := &survey.Select{
 			Message:  "Google Cloud Zone:",
@@ -442,14 +491,13 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) err
 			Help:     "The compute zone (e.g. us-central1-a) for the cluster",
 		}
 
-		err = survey.AskOne(prompts, &zone, nil)
+		err = survey.AskOne(prompts, &g.Zone, nil)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	machineType := gkeCluster.MachineType
-	if machineType == "" {
+	if g.MachineType == "" {
 		prompts := &survey.Select{
 			Message:  "Google Cloud Machine Type:",
 			Options:  gke.GetGoogleMachineTypes(),
@@ -458,65 +506,74 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) err
 			Default:  "n1-standard-2",
 		}
 
-		err := survey.AskOne(prompts, &machineType, nil)
+		err := survey.AskOne(prompts, &g.MachineType, nil)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		gkeCluster.MachineType = machineType
 	}
 
-	minNumOfNodes := gkeCluster.MinNumOfNodes
-	if minNumOfNodes == "" {
+	if g.MinNumOfNodes == "" {
 		prompt := &survey.Input{
 			Message: "Minimum number of Nodes",
 			Default: "3",
 			Help:    "We recommend a minimum of 3 for Jenkins X,  the minimum number of nodes to be created in each of the cluster's zones",
 		}
 
-		survey.AskOne(prompt, &minNumOfNodes, nil)
-		gkeCluster.MinNumOfNodes = minNumOfNodes
+		survey.AskOne(prompt, &g.MinNumOfNodes, nil)
 	}
 
-	maxNumOfNodes := gkeCluster.MaxNumOfNodes
-	if maxNumOfNodes == "" {
+	if g.MaxNumOfNodes == "" {
 		prompt := &survey.Input{
 			Message: "Maximum number of Nodes",
 			Default: "5",
 			Help:    "We recommend at least 5 for Jenkins X,  the maximum number of nodes to be created in each of the cluster's zones",
 		}
 
-		survey.AskOne(prompt, &maxNumOfNodes, nil)
-		gkeCluster.MaxNumOfNodes = maxNumOfNodes
+		survey.AskOne(prompt, &g.MaxNumOfNodes, nil)
 	}
 
 	user, err := os_user.Current()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	username := sanitizeLabel(user.Username)
 
 	terraformVars := filepath.Join(path, "terraform.tfvars")
 	o.writeKeyValueIfNotExists(terraformVars, "created_by", username)
 	o.writeKeyValueIfNotExists(terraformVars, "created_timestamp", time.Now().Format("20060102150405"))
-	o.writeKeyValueIfNotExists(terraformVars, "cluster_name", gkeCluster.Name)
-	o.writeKeyValueIfNotExists(terraformVars, "gcp_zone", zone)
-	o.writeKeyValueIfNotExists(terraformVars, "gcp_project", gkeCluster.ProjectId)
-	o.writeKeyValueIfNotExists(terraformVars, "min_node_count", gkeCluster.MinNumOfNodes)
-	o.writeKeyValueIfNotExists(terraformVars, "max_node_count", gkeCluster.MaxNumOfNodes)
-	o.writeKeyValueIfNotExists(terraformVars, "node_machine_type", gkeCluster.MachineType)
+	o.writeKeyValueIfNotExists(terraformVars, "cluster_name", c.Name)
+	o.writeKeyValueIfNotExists(terraformVars, "gcp_zone", g.Zone)
+	o.writeKeyValueIfNotExists(terraformVars, "gcp_project", g.ProjectId)
+	o.writeKeyValueIfNotExists(terraformVars, "min_node_count", g.MinNumOfNodes)
+	o.writeKeyValueIfNotExists(terraformVars, "max_node_count", g.MaxNumOfNodes)
+	o.writeKeyValueIfNotExists(terraformVars, "node_machine_type", g.MachineType)
 	o.writeKeyValueIfNotExists(terraformVars, "node_preemptible", "false")
-	o.writeKeyValueIfNotExists(terraformVars, "node_disk_size", gkeCluster.DiskSize)
-	o.writeKeyValueIfNotExists(terraformVars, "auto_repair", strconv.FormatBool(gkeCluster.AutoRepair))
-	o.writeKeyValueIfNotExists(terraformVars, "auto_upgrade", strconv.FormatBool(gkeCluster.AutoUpgrade))
+	o.writeKeyValueIfNotExists(terraformVars, "node_disk_size", g.DiskSize)
+	o.writeKeyValueIfNotExists(terraformVars, "auto_repair", strconv.FormatBool(g.AutoRepair))
+	o.writeKeyValueIfNotExists(terraformVars, "auto_upgrade", strconv.FormatBool(g.AutoUpgrade))
 	o.writeKeyValueIfNotExists(terraformVars, "enable_kubernetes_alpha", "false")
 	o.writeKeyValueIfNotExists(terraformVars, "enable_legacy_abac", "true")
 	o.writeKeyValueIfNotExists(terraformVars, "logging_service", "logging.googleapis.com")
 	o.writeKeyValueIfNotExists(terraformVars, "monitoring_service", "monitoring.googleapis.com")
 
-	serviceAccountName := fmt.Sprintf("jx-%s-%s" , o.Flags.OrganisationRepoName, gkeCluster.Name)
-	gke.GetOrCreateServiceAccount(serviceAccountName, gkeCluster.ProjectId, filepath.Dir(path) )
+	return &g, nil
+}
 
-	serviceAccountPath := filepath.Join(filepath.Dir(path), fmt.Sprintf("%s.key.json" , serviceAccountName))
+func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) error {
+	log.Info("Applying Terraform changes\n")
+	user, err := os_user.Current()
+	if err != nil {
+		return err
+	}
+
+	terraformVars := filepath.Join(path, "terraform.tfvars")
+	serviceAccountName := fmt.Sprintf("jx-%s-%s", o.Flags.OrganisationRepoName, g.Cluster.Name)
+	// create service account
+	_, err = gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectId, filepath.Dir(path))
+	if err != nil {
+		return err
+	}
+	serviceAccountPath := filepath.Join(filepath.Dir(path), fmt.Sprintf("%s.key.json", serviceAccountName))
 
 	args := []string{"init", path}
 	err = o.runCommand("terraform", args...)
@@ -558,7 +615,7 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) err
 	args = []string{"container",
 		"clusters",
 		"update",
-		gkeCluster.Name}
+		g.Cluster.Name}
 
 	labels := ""
 	if err == nil && user != nil {
@@ -584,7 +641,7 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) err
 		return err
 	}
 
-	output, err = o.getCommandOutput("", "gcloud", "container", "clusters", "get-credentials", gkeCluster.Name, "--zone", zone, "--project", gkeCluster.ProjectId)
+	output, err = o.getCommandOutput("", "gcloud", "container", "clusters", "get-credentials", g.Cluster.Name, "--zone", g.Zone, "--project", g.ProjectId)
 	if err != nil {
 		return err
 	}
