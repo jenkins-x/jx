@@ -259,6 +259,8 @@ func (o *InitOptions) initHelm() error {
 	if o.Flags.Helm3 {
 		o.Flags.SkipTiller = true
 	}
+	helmBin := o.HelmBinary()
+
 	if !o.Flags.SkipTiller {
 		client, curNs, err := o.KubeClient()
 		if err != nil {
@@ -364,11 +366,11 @@ func (o *InitOptions) initHelm() error {
 		if !running {
 			log.Infof("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
 
-			err = o.runCommand("helm", "init", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
+			err = o.runCommand(helmBin, "init", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
 			if err != nil {
 				return err
 			}
-			err = o.runCommand("helm", "init", "--upgrade", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
+			err = o.runCommand(helmBin, "init", "--upgrade", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
 			if err != nil {
 				return err
 			}
@@ -380,15 +382,13 @@ func (o *InitOptions) initHelm() error {
 		}
 	}
 
-	helmBin := o.HelmBinary()
-
 	if o.Flags.Helm3 {
 		err = o.runCommand(helmBin, "init")
 		if err != nil {
 			return err
 		}
 	} else if o.Flags.HelmClient || o.Flags.SkipTiller {
-		err = o.runCommand("helm", "init", "--client-only")
+		err = o.runCommand(helmBin, "init", "--client-only")
 		if err != nil {
 			return err
 		}
