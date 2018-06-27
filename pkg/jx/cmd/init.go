@@ -47,6 +47,7 @@ type InitFlags struct {
 	DraftClient                bool
 	HelmClient                 bool
 	Helm3                      bool
+	HelmBin                    string
 	RecreateExistingDraftRepos bool
 	GlobalTiller               bool
 	SkipIngress                bool
@@ -634,6 +635,10 @@ func (o *InitOptions) validateGit() error {
 func (o *InitOptions) HelmBinary() string {
 	if o.Flags.Helm3 {
 		return "helm3"
+	}
+	testHelmBin := o.Flags.HelmBin
+	if testHelmBin != "" {
+		return testHelmBin
 	}
 	return "helm"
 }
