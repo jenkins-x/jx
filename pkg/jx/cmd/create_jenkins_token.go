@@ -95,12 +95,12 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	_, _, err := o.KubeClient()
+	kubeClient, ns, err := o.KubeClient()
 	if err != nil {
 		return fmt.Errorf("error connecting to kubernetes cluster: %v", err)
 	}
 
-	authConfigSvc, err := o.Factory.CreateJenkinsAuthConfigService()
+	authConfigSvc, err := o.Factory.CreateJenkinsAuthConfigService(kubeClient, ns)
 	if err != nil {
 		return err
 	}

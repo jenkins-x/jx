@@ -534,6 +534,7 @@ func (options *InstallOptions) Run() error {
 	if !options.Flags.NoDefaultEnvironments {
 		log.Info("Getting Jenkins API Token\n")
 		err = options.retry(3, 2*time.Second, func() (err error) {
+			options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 			options.CreateJenkinsUserOptions.UseBrowser = true
 			if options.BatchMode {
