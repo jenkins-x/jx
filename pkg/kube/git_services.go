@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -80,21 +83,56 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 }
 
 // GetGitServiceKind returns the kind of the given host if one can be found or ""
-func GetGitServiceKind(jxClient versioned.Interface, kubeClient kubernetes.Interface, devNs string, gitServiceUrl string) (string, error) {
-	answer := gits.SaasGitKind(gitServiceUrl)
+func GetGitServiceKind(jxClient versioned.Interface, kubeClient kubernetes.Interface, devNs string, gitServiceURL string) (string, error) {
+	answer := gits.SaasGitKind(gitServiceURL)
 	if answer != "" {
 		return answer, nil
 	}
 
-	gitServices := jxClient.JenkinsV1().GitServices(devNs)
+	answer, err := getServiceKindFromSecrets(kubeClient, devNs, gitServiceURL)
+	if err == nil && answer != "" {
+		return answer, nil
+	}
+
+	return getServiceKindFromGitServices(jxClient, devNs, gitServiceURL)
+}
+
+func getServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitServiceURL string) (string, error) {
+	secretList, err := kubeClient.CoreV1().Secrets(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to list the secrets")
+	}
+
+	for _, secret := range secretList.Items {
+		if strings.HasPrefix(secret.GetName(), SecretJenkinsPipelineGitCredentials) {
+			annotations := secret.GetAnnotations()
+			url, ok := annotations[AnnotationURL]
+			if !ok {
+				continue
+			}
+			if url == gitServiceURL {
+				labels := secret.GetLabels()
+				serviceKind, ok := labels[LabelServiceKind]
+				if !ok {
+					return "", fmt.Errorf("no service kind label found on secret '%s' for git service '%s'",
+						secret.GetName(), gitServiceURL)
+				}
+				return serviceKind, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("no secret found with configuration for '%s' git service", gitServiceURL)
+}
+
+func getServiceKindFromGitServices(jxClient versioned.Interface, ns string, gitServiceURL string) (string, error) {
+	gitServices := jxClient.JenkinsV1().GitServices(ns)
 	list, err := gitServices.List(metav1.ListOptions{})
 	if err == nil {
 		for _, gs := range list.Items {
-			if gs.Spec.URL == gitServiceUrl {
+			if gs.Spec.URL == gitServiceURL {
 				return gs.Spec.GitKind, nil
 			}
 		}
 	}
-	// TODO should we default to github?
-	return answer, nil
+	return "", fmt.Errorf("no git service resource found with URL '%s'", gitServiceURL)
 }
