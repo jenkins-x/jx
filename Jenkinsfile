@@ -35,11 +35,13 @@ pipeline {
                     checkout scm
                     container('go') {
                         sh "make linux"
-                        try {
-                            sh "make test"
-                        } finally {
-                            input "Build Paused"
-                        }
+						script {
+                        	try {
+                            	sh "make test"
+                        	} finally {
+                            	input "Build Paused"
+                        	}
+						}
                         sh "./build/linux/jx --help"
 
                         sh "docker build -t docker.io/$ORG/$APP_NAME:$PREVIEW_VERSION ."
