@@ -15,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 )
 
@@ -40,7 +39,7 @@ var (
 )
 
 // NewCmdGetIssue creates the command
-func NewCmdGetIssue(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetIssue(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetIssueOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{

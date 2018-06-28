@@ -8,7 +8,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -58,7 +57,7 @@ var (
 `)
 )
 
-func NewCmdStepEnvRoleBinding(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepEnvRoleBinding(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepEnvRoleBindingOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{

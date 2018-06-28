@@ -16,7 +16,6 @@ import (
 	"github.com/blang/semver"
 	version "github.com/hashicorp/go-version"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 )
@@ -59,7 +58,7 @@ var (
 `)
 )
 
-func NewCmdStepNextVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepNextVersion(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepNextVersionOptions{}
 	cmd := &cobra.Command{
 		Use:     "next-version",

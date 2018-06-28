@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -48,7 +47,7 @@ type CreateLileOptions struct {
 }
 
 // NewCmdCreateLile creates a command object for the "create" command
-func NewCmdCreateLile(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateLile(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateLileOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{

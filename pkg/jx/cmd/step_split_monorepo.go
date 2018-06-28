@@ -9,7 +9,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -49,7 +48,7 @@ type StepSplitMonorepoOptions struct {
 }
 
 // NewCmdStepSplitMonorepo Creates a new Command object
-func NewCmdStepSplitMonorepo(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepSplitMonorepo(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &StepSplitMonorepoOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{

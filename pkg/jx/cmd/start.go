@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // Start contains the command line options
@@ -27,7 +26,7 @@ var (
 
 // NewCmdStart creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdStart(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStart(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &Start{
 		CommonOptions{
 			Factory: f,

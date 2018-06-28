@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
@@ -26,7 +25,7 @@ type VersionOptions struct {
 	NoVersionCheck bool
 }
 
-func NewCmdVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdVersion(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &VersionOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

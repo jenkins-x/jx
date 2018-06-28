@@ -5,8 +5,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/spf13/cobra"
-
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetTokenOptions the command line options
@@ -18,7 +16,7 @@ type GetTokenOptions struct {
 }
 
 // NewCmdGetToken creates the command
-func NewCmdGetToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetTokenOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{

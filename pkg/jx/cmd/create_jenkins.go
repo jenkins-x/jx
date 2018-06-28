@@ -3,7 +3,6 @@ package cmd
 import (
 	"io"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +12,7 @@ type CreateJenkinsOptions struct {
 }
 
 // NewCmdCreateJenkins creates a command object for the "create" command
-func NewCmdCreateJenkins(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateJenkins(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateJenkinsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

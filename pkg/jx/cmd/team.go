@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -39,7 +38,7 @@ var (
 `)
 )
 
-func NewCmdTeam(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdTeam(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &TeamOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

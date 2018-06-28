@@ -3,7 +3,6 @@ package cmd
 import (
 	"io"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +12,7 @@ type CreateTrackerOptions struct {
 }
 
 // NewCmdCreateTracker creates a command object for the "create" command
-func NewCmdCreateTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateTracker(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateTrackerOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

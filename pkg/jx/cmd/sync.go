@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -63,7 +62,7 @@ node_modules
 `
 )
 
-func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdSync(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &SyncOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

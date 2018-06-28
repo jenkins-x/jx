@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 var (
@@ -32,7 +31,7 @@ type CreateCamelOptions struct {
 }
 
 // NewCmdCreateCamel creates a command object for the "create" command
-func NewCmdCreateCamel(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateCamel(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateCamelOptions{
 		CreateArchetypeOptions{
 			CreateProjectOptions: CreateProjectOptions{

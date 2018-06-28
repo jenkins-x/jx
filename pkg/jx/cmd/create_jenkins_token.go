@@ -14,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -52,7 +51,7 @@ type CreateJenkinsUserOptions struct {
 }
 
 // NewCmdCreateJenkinsUser creates a command
-func NewCmdCreateJenkinsUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateJenkinsUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateJenkinsUserOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -32,7 +31,7 @@ var (
 		jx uninstall`)
 )
 
-func NewCmdUninstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUninstall(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &UninstallOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -172,7 +171,7 @@ func (o *UninstallOptions) deleteNamespace(namespace string) error {
 }
 
 func (o *UninstallOptions) cleanupConfig() error {
-	authConfigSvc, err := o.Factory.CreateAuthConfigService(cmdutil.JenkinsAuthConfigFile)
+	authConfigSvc, err := o.Factory.CreateAuthConfigService(JenkinsAuthConfigFile)
 	if err != nil {
 		return nil
 	}

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -32,7 +31,7 @@ type DeleteTrackerTokenOptions struct {
 }
 
 // NewCmdDeleteTrackerToken defines the command
-func NewCmdDeleteTrackerToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTrackerToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteTrackerTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

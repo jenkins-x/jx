@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -57,7 +56,7 @@ var (
 `)
 )
 
-func NewCmdStepWaitForArtifact(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepWaitForArtifact(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepWaitForArtifactOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{

@@ -7,7 +7,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -34,7 +33,7 @@ type DeleteEnvOptions struct {
 }
 
 // NewCmdDeleteEnv creates a command object for the "delete repo" command
-func NewCmdDeleteEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteEnvOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

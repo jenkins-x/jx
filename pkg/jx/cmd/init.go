@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -78,7 +77,7 @@ var (
 
 // NewCmdInit creates a command object for the generic "init" action, which
 // primes a kubernetes cluster so it's ready for jenkins x to be installed
-func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdInit(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &InitOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

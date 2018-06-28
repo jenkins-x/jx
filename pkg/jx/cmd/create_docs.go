@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -46,7 +45,7 @@ type CreateDocsOptions struct {
 }
 
 // NewCmdCreateDocs creates a command object for the "create" command
-func NewCmdCreateDocs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDocs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateDocsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

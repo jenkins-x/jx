@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // DeleteOptions are the flags for delete commands
@@ -28,7 +27,7 @@ var (
 
 // NewCmdDelete creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDelete(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDelete(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteOptions{
 		CommonOptions{
 			Factory: f,

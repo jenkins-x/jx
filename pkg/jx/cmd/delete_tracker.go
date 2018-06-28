@@ -4,8 +4,6 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
-
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // DeleteTrackerOptions are the flags for delete commands
@@ -15,7 +13,7 @@ type DeleteTrackerOptions struct {
 
 // NewCmdDeleteTracker creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTracker(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteTrackerOptions{
 		CommonOptions{
 			Factory: f,

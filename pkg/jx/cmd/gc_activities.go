@@ -16,7 +16,6 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
@@ -42,7 +41,7 @@ var (
 )
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCActivities(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGCActivities(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GCActivitiesOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

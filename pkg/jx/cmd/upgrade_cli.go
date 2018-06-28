@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
@@ -31,7 +30,7 @@ type UpgradeCLIOptions struct {
 }
 
 // NewCmdUpgradeCLI defines the command
-func NewCmdUpgradeCLI(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeCLI(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &UpgradeCLIOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

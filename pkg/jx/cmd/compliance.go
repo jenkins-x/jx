@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/heptio/sonobuoy/pkg/buildinfo"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +24,7 @@ type ComplianceOptions struct {
 
 // NewCompliance creates a command object for the generic "compliance" action, which
 // executes the compliance tests against a Kubernetes cluster
-func NewCompliance(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCompliance(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ComplianceOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

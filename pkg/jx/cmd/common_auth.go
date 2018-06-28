@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +14,7 @@ import (
 
 func (o *CommonOptions) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfigService, error) {
 	if dryRun {
-		fileName := cmdutil.GitAuthConfigFile
+		fileName := GitAuthConfigFile
 		return o.createGitAuthConfigServiceFromSecrets(fileName, nil, false)
 	}
 	return o.CreateGitAuthConfigService()
@@ -38,7 +37,7 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.AuthConfigService, er
 		log.Warnf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
 	}
 
-	fileName := cmdutil.GitAuthConfigFile
+	fileName := GitAuthConfigFile
 	return o.createGitAuthConfigServiceFromSecrets(fileName, secrets, o.Factory.IsInCDPIpeline())
 }
 

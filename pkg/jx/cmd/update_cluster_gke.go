@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +26,7 @@ var (
 `)
 )
 
-func NewCmdUpdateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpdateClusterGKE(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := createUpdateClusterGKEOptions(f, out, errOut, GKE)
 
 	cmd := &cobra.Command{
@@ -48,7 +47,7 @@ func NewCmdUpdateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	return cmd
 }
 
-func createUpdateClusterGKEOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer, cloudProvider string) UpdateClusterGKEOptions {
+func createUpdateClusterGKEOptions(f Factory, out io.Writer, errOut io.Writer, cloudProvider string) UpdateClusterGKEOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
 		Out:     out,

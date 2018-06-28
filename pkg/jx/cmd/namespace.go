@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
@@ -41,7 +40,7 @@ var (
 		jx ns cheese`)
 )
 
-func NewCmdNamespace(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdNamespace(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &NamespaceOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

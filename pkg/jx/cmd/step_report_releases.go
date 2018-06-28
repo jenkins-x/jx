@@ -10,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	pe "github.com/jenkins-x/jx/pkg/pipeline_events"
@@ -37,7 +36,7 @@ var (
 `)
 )
 
-func NewCmdStepReportReleases(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepReportReleases(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepReportReleasesOptions{
 		StepReportOptions: StepReportOptions{
 			StepOptions: StepOptions{

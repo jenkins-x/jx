@@ -14,8 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/errors"
-
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 const (
@@ -46,7 +44,7 @@ type StepValidateOptions struct {
 }
 
 // NewCmdStepValidate Creates a new Command object
-func NewCmdStepValidate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepValidate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &StepValidateOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{

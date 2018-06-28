@@ -10,7 +10,6 @@ import (
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/client/results"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/pkg/errors"
@@ -35,7 +34,7 @@ type ComplianceResultsOptions struct {
 
 // NewCmdComplianceResults creates a command object for the "compliance results" action, which
 // shows the results of E2E compliance tests
-func NewCmdComplianceResults(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceResults(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ComplianceResultsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

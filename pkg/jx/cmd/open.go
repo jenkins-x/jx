@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 type OpenOptions struct {
@@ -30,7 +29,7 @@ var (
 		jx open`)
 )
 
-func NewCmdOpen(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdOpen(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &OpenOptions{
 		ConsoleOptions: ConsoleOptions{
 			GetURLOptions: GetURLOptions{

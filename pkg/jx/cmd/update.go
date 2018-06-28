@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // Update contains the command line options
@@ -31,7 +30,7 @@ var (
 )
 
 // NewCmdUpdate creates a command object for the "update" command
-func NewCmdUpdate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpdate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &UpdateOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

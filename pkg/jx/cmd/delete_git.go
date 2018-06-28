@@ -4,8 +4,6 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
-
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // DeleteGitOptions are the flags for delete commands
@@ -15,7 +13,7 @@ type DeleteGitOptions struct {
 
 // NewCmdDeleteGit creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteGit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteGit(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteGitOptions{
 		CommonOptions{
 			Factory: f,

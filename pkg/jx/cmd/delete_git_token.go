@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -32,7 +31,7 @@ type DeleteGitTokenOptions struct {
 }
 
 // NewCmdDeleteGitToken defines the command
-func NewCmdDeleteGitToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteGitToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteGitTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

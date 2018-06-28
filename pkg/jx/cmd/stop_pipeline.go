@@ -10,7 +10,6 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -40,7 +39,7 @@ var (
 )
 
 // NewCmdStopPipeline creates the command
-func NewCmdStopPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStopPipeline(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &StopPipelineOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{

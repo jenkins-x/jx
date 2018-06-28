@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +36,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdUpdateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpdateCluster(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := createUpdateClusterOptions(f, out, errOut, "")
 
 	cmd := &cobra.Command{
@@ -58,7 +57,7 @@ func NewCmdUpdateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	return cmd
 }
 
-func createUpdateClusterOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer, cloudProvider string) UpdateClusterOptions {
+func createUpdateClusterOptions(f Factory, out io.Writer, errOut io.Writer, cloudProvider string) UpdateClusterOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
 		Out:     out,

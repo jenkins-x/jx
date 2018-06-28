@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -31,7 +30,7 @@ type DeleteTrackerServerOptions struct {
 }
 
 // NewCmdDeleteTrackerServer defines the command
-func NewCmdDeleteTrackerServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTrackerServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteTrackerServerOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

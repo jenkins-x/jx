@@ -8,7 +8,6 @@ import (
 
 	"fmt"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -22,7 +21,7 @@ type DeleteAddonOptions struct {
 
 // NewCmdDeleteAddon creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteAddonOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

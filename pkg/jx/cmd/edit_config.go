@@ -11,7 +11,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -50,7 +49,7 @@ type EditConfigOptions struct {
 }
 
 // NewCmdEditConfig creates a command object for the "create" command
-func NewCmdEditConfig(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEditConfig(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &EditConfigOptions{
 		EditOptions: EditOptions{
 			CommonOptions: CommonOptions{

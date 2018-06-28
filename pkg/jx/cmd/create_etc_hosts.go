@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -40,7 +39,7 @@ type CreateEtcHostsOptions struct {
 }
 
 // NewCmdCreateEtcHosts creates a command object for the "create" command
-func NewCmdCreateEtcHosts(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateEtcHosts(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateEtcHostsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

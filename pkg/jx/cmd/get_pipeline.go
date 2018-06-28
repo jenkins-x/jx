@@ -10,7 +10,6 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/table"
 )
 
@@ -33,7 +32,7 @@ var (
 )
 
 // NewCmdGetPipeline creates the command
-func NewCmdGetPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetPipeline(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetPipelineOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{

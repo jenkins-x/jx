@@ -3,7 +3,6 @@ package cmd
 import (
 	"io"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +12,7 @@ type CreateGitOptions struct {
 }
 
 // NewCmdCreateGit creates a command object for the "create" command
-func NewCmdCreateGit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGit(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateGitOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

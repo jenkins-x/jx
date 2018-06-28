@@ -7,7 +7,6 @@ import (
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +35,7 @@ type ComplianceLogsOptions struct {
 
 // NewCmdComplianceLogs creates a command object for the "compliance logs" action, which
 // prints the logs of compliance tests
-func NewCmdComplianceLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceLogs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ComplianceLogsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

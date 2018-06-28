@@ -13,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/client-go/kubernetes"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -43,7 +42,7 @@ var (
 `)
 )
 
-func NewCmdLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdLogs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &LogsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

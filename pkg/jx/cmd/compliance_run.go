@@ -6,7 +6,6 @@ import (
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
@@ -30,7 +29,7 @@ type ComplianceRunOptions struct {
 
 // NewCmdComplianceRun creates a command object for the "compliance run" action, which
 // starts the E2E compliance tests
-func NewCmdComplianceRun(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceRun(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ComplianceRunOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

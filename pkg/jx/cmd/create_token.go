@@ -3,7 +3,6 @@ package cmd
 import (
 	"io"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +12,7 @@ type CreateTokenOptions struct {
 }
 
 // NewCmdCreateToken creates a command object for the "create" command
-func NewCmdCreateToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GCOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -45,7 +44,7 @@ var (
 
 // NewCmdGC creates a command object for the generic "gc" action, which
 // retrieves one or more resources from a server.
-func NewCmdGC(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGC(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GCOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

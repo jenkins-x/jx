@@ -7,7 +7,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -38,7 +37,7 @@ var (
 )
 
 // NewCmdGetEnv creates the new command for: jx get env
-func NewCmdGetEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetEnvOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{

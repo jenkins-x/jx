@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -37,7 +36,7 @@ type EditHelmBinOptions struct {
 }
 
 // NewCmdEditHelmBin creates a command object for the "create" command
-func NewCmdEditHelmBin(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEditHelmBin(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &EditHelmBinOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{

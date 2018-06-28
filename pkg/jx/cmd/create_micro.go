@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -42,7 +41,7 @@ type CreateMicroOptions struct {
 }
 
 // NewCmdCreateMicro creates a command object for the "create" command
-func NewCmdCreateMicro(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateMicro(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateMicroOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{

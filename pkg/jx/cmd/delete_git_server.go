@@ -7,7 +7,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -34,7 +33,7 @@ type DeleteGitServerOptions struct {
 }
 
 // NewCmdDeleteGitServer defines the command
-func NewCmdDeleteGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteGitServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteGitServerOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

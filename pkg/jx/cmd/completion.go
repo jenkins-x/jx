@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
@@ -48,7 +47,7 @@ var (
 	}
 )
 
-func NewCmdCompletion(f cmdutil.Factory, out io.Writer) *cobra.Command {
+func NewCmdCompletion(f Factory, out io.Writer) *cobra.Command {
 	options := &CommonOptions{
 		Factory: f,
 		Out:     out,

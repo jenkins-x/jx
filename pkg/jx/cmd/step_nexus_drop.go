@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -27,7 +26,7 @@ var (
 `)
 )
 
-func NewCmdStepNexusDrop(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepNexusDrop(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepNexusDropOptions{
 		StepNexusOptions: StepNexusOptions{
 			StepOptions: StepOptions{

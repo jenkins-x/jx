@@ -12,8 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"k8s.io/client-go/tools/clientcmd"
-
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 type ContextOptions struct {
@@ -37,7 +35,7 @@ var (
 		jx ctx minikube`)
 )
 
-func NewCmdContext(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdContext(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ContextOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

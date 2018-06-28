@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -27,7 +26,7 @@ type StepNexusOptions struct {
 }
 
 // NewCmdStepNexus Steps a command object for the "step" command
-func NewCmdStepNexus(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepNexus(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &StepNexusOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{

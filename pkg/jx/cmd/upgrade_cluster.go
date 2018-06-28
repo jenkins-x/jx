@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -34,7 +33,7 @@ type UpgradeClusterOptions struct {
 }
 
 // NewCmdUpgradeCluster defines the command
-func NewCmdUpgradeCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeCluster(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &UpgradeClusterOptions{
 		UpgradeOptions: UpgradeOptions{
 			CommonOptions: CommonOptions{

@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -49,7 +48,7 @@ var (
 `)
 )
 
-func NewCmdRsh(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdRsh(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &RshOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
