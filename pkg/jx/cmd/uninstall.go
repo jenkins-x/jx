@@ -1,23 +1,25 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/spf13/cobra"
 
-	"fmt"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type UninstallOptions struct {
 	CommonOptions
+
+	Namespace string
+	Confirm   bool
 }
 
 var (
@@ -48,7 +50,9 @@ func NewCmdUninstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			cmdutil.CheckErr(err)
 		},
 	}
-
+	options.addCommonFlags(cmd)
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The team namespace to uninstall. Defaults to the current namespace.")
+	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
 	return cmd
 }
 
@@ -62,19 +66,29 @@ func (o *UninstallOptions) Run() error {
 		return err
 	}
 	server := kube.CurrentServer(config)
-	namespace := kube.CurrentNamespace(config)
-	confirm := &survey.Confirm{
-		Message: fmt.Sprintf("Are you sure you wish to remove the Jenkins X platform from the '%s' namespace on cluster '%s'? :", namespace, server),
-		Default: false,
+	namespace := o.Namespace
+	if namespace == "" {
+		namespace = kube.CurrentNamespace(config)
 	}
-	flag := false
-	err = survey.AskOne(confirm, &flag, nil)
-	if err != nil {
-		return err
+	if o.BatchMode {
+		if !o.Confirm {
+			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
+		}
+	} else {
+		confirm := &survey.Confirm{
+			Message: fmt.Sprintf("Are you sure you wish to remove the Jenkins X platform from the '%s' namespace on cluster '%s'? :", namespace, server),
+			Default: false,
+		}
+		flag := false
+		err = survey.AskOne(confirm, &flag, nil)
+		if err != nil {
+			return err
+		}
+		if !flag {
+			return nil
+		}
 	}
-	if !flag {
-		return nil
-	}
+	log.Infof("Removing installation of Jenkins X in team namespace %s\n", util.ColorInfo(namespace))
 
 	err = o.cleanupConfig()
 	if err != nil {
@@ -127,12 +141,12 @@ func (o *UninstallOptions) Run() error {
 			return err
 		}
 	}
-	log.Success("Jenkins X has been successfully uninstalled ")
+	log.Successf("Jenkins X has been successfully uninstalled from team namespace %s", namespace)
 	return nil
 }
 
 func (o *UninstallOptions) cleanupConfig() error {
-	authConfigSvc, err := o.Factory.CreateAuthConfigService(util.JenkinsAuthConfigFile)
+	authConfigSvc, err := o.Factory.CreateAuthConfigService(cmdutil.JenkinsAuthConfigFile)
 	if err != nil {
 		return nil
 	}
