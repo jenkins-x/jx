@@ -66,7 +66,7 @@ func NewCmdStepValidate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.MinimumJxVersion, optionMinJxVersion, "v", "", "The minimum version of the 'jx' command line tool required")

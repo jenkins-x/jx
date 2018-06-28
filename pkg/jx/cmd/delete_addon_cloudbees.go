@@ -49,7 +49,7 @@ func NewCmdDeleteAddonCloudBees(f cmdutil.Factory, out io.Writer, errOut io.Writ
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultCloudBeesReleaseName, "The chart release name")

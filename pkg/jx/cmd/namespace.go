@@ -12,10 +12,11 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"sort"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"k8s.io/client-go/kubernetes"
-	"sort"
 )
 
 type NamespaceOptions struct {
@@ -58,7 +59,7 @@ func NewCmdNamespace(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)

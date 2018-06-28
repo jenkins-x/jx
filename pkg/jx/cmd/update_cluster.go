@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
-	"io"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -48,7 +49,7 @@ func NewCmdUpdateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd2
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

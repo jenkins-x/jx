@@ -108,7 +108,7 @@ func NewCmdCreateTerraform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

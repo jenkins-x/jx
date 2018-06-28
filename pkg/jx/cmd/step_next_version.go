@@ -70,7 +70,7 @@ func NewCmdStepNextVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Filename, "filename", "f", "", "Filename that contains version property to update, e.g. package.json")

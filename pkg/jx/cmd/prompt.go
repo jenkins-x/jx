@@ -74,7 +74,7 @@ func NewCmdPrompt(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Prefix, "prefix", "p", "", "The prefix text for the prompt")

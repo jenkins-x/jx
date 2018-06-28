@@ -52,7 +52,7 @@ func NewCmdGetAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

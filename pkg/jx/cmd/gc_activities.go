@@ -60,7 +60,7 @@ func NewCmdGCActivities(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "", 5, "Minimum number of Activities per application to keep")

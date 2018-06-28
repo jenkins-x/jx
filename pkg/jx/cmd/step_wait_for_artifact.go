@@ -76,7 +76,7 @@ func NewCmdStepWaitForArtifact(f cmdutil.Factory, out io.Writer, errOut io.Write
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.ArtifactURL, "artifact-url", "", "", "The full URL of the artifact to wait for. If not specified it is calculated from the repository URL, group, artifact and version")

@@ -59,7 +59,7 @@ func NewCmdGetBuildLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", true, "Tails the build log to the current terminal")

@@ -81,7 +81,7 @@ func NewCmdSync(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	/*	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")

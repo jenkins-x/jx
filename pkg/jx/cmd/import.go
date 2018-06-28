@@ -35,8 +35,6 @@ const (
 	PlaceHolderGitProvider = "REPLACE_ME_GIT_PROVIDER"
 	PlaceHolderOrg         = "REPLACE_ME_ORG"
 
-	DefaultWritePermissions = 0760
-
 	jenkinsfileBackupSuffix = ".backup"
 
 	minimumMavenDeployVersion = "2.8.2"
@@ -141,7 +139,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.RepoURL, "url", "u", "", "The git clone URL to clone into the current directory and then import")
