@@ -239,7 +239,7 @@ func (o *PreviewOptions) Run() error {
 					}
 
 					if author.Email != "" {
-						userDetailService := cmdutil.NewUserDetailService(jxClient, ns)
+						userDetailService := kube.NewUserDetailService(jxClient, ns)
 						err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
 							Login:     author.Login,
 							Email:     author.Email,

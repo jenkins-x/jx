@@ -607,7 +607,7 @@ func (o *StepChangelogOptions) gitUserToUserDetails(user *gits.GitUser) *v1.User
 }
 
 func (o *StepChangelogOptions) toUserDetails(signature object.Signature) *v1.UserDetails {
-	userDetailService := cmdutil.NewUserDetailService(o.jxClient, o.devNamespace)
+	userDetailService := kube.NewUserDetailService(o.jxClient, o.devNamespace)
 
 	user := userDetailService.FindByEmail(signature.Email)
 
