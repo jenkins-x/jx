@@ -33,7 +33,6 @@ var (
 	#Link services from jx-staging namespace to the jx-prod namespace including all but the ones starting with  the characters 'cheese'
 	jx step link services --from-namespace jx-staging --to-namespace jx-prod --includes * --excludes cheese*
 `)
-	currentNamespace = blankString
 )
 
 // StepLinkServicesOptions contains the command line flags
@@ -83,7 +82,7 @@ func (o *StepLinkServicesOptions) Run() error {
 	if o.FromNamespace == blankString {
 		return util.MissingOption(fromNamespace)
 	}
-	currentNamespace = o.ToNamespace
+	currentNamespace := o.ToNamespace
 	if currentNamespace == blankString {
 		//Derive current namespace since o.ToNameSpace is blank
 		config, po, err := kube.LoadConfig()
@@ -98,18 +97,16 @@ func (o *StepLinkServicesOptions) Run() error {
 		serviceList, err := o.kubeClient.CoreV1().Services(o.FromNamespace).List(metav1.ListOptions{})
 		if err != nil {
 			return err
-		} /*else {
+		} else {
 			for _, service := range serviceList.Items {
 				if util.StringMatchesAny(service.Name, o.Includes, o.Excludes) {
-					ing, err := kube.GetServiceURLFromName(o.kubeClient, service.Name, o.FromNamespace)
-					err = kube.CreateServiceLink(o.kubeClient,  o.FromNamespace,currentNamespace, service.Name, ing)
-
-
-					o.kubeClient.CoreV1().Services(currentNamespace).Create(service.Name)
+					lookedUpService, err := o.kubeClient.CoreV1().Services(o.currentNamespace).Get(service.GetName(), metav1.GetOptions{})
+					//TODO add condition if lookUpService is not essentially nil
 					// TODO create a Service resource if one does not exist with `service.Name` in namespace toNs with an external name pointing to this service
+					o.kubeClient.CoreV1().Services(currentNamespace).Create(lookedUpService)
 				}
 			}
-		}*/
+		}
 	}
 	return nil //TODO change return
 }
