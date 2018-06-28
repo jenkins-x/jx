@@ -69,6 +69,9 @@ pipeline {
 
                             sh "make bdd-tests"
                         }
+
+                        sh "echo now tearing down the team ${TEAM}"
+                        sh "./build/linux/jx uninstall -b -y --namespace ${TEAM}"
                     }
                 }
             }
