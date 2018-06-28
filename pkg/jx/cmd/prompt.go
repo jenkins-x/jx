@@ -12,6 +12,7 @@ import (
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
@@ -108,15 +109,15 @@ func (o *PromptOptions) Run() error {
 	prefix := o.Prefix
 	suffix := o.Suffix
 
-	labelColor, err := cmdutil.GetColor(optionLabelColor, o.LabelColor)
+	labelColor, err := util.GetColor(optionLabelColor, o.LabelColor)
 	if err != nil {
 		return err
 	}
-	nsColor, err := cmdutil.GetColor(optionLabelColor, o.NamespaceColor)
+	nsColor, err := util.GetColor(optionLabelColor, o.NamespaceColor)
 	if err != nil {
 		return err
 	}
-	ctxColor, err := cmdutil.GetColor(optionLabelColor, o.ContextColor)
+	ctxColor, err := util.GetColor(optionLabelColor, o.ContextColor)
 	if err != nil {
 		return err
 	}
