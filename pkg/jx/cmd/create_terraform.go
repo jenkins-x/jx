@@ -18,7 +18,6 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -28,6 +27,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"io/ioutil"
 	"time"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 )
 
 type Cluster struct {
