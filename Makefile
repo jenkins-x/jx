@@ -142,9 +142,21 @@ docker-maven: linux Dockerfile.maven
 docker-pipeline: linux
 	docker build -t rawlingsj/builder-base:dev . -f Dockerfile-pipeline
 
+docker-dev: linux 
+	docker build --no-cache -t $(DOCKER_HUB_USER)/jx:dev .
+	docker push $(DOCKER_HUB_USER)/jx:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-go:dev -f Dockerfile.buildgo .
+	docker push $(DOCKER_HUB_USER)/builder-go:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-maven:dev -f Dockerfile.maven .
+	docker push $(DOCKER_HUB_USER)/builder-maven:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-nodejs:dev -f Dockerfile.nodejs .
+	docker push $(DOCKER_HUB_USER)/builder-nodejs:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-base:dev -f Dockerfile.base .
+	docker push $(DOCKER_HUB_USER)/builder-base:dev
+
 .PHONY: release clean arm
 
-preview: linux
+preview:
 	docker build --no-cache -t docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.maven .
 	docker push docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
 	docker build --no-cache -t docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.buildgo .

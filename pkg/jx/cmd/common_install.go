@@ -82,9 +82,16 @@ func binaryShouldBeInstalled(d string) string {
 	if err != nil {
 		// look for windows exec
 		if runtime.GOOS == "windows" {
-			d2 := d + ".exe"
-			_, err = exec.LookPath(d2)
+			d = d + ".exe"
+			_, err = exec.LookPath(d)
 			if err == nil {
+				return ""
+			}
+		}
+		binDir, err := util.BinaryLocation()
+		if err == nil {
+			exists, err := util.FileExists(filepath.Join(binDir, d))
+			if err == nil && exists {
 				return ""
 			}
 		}
@@ -806,12 +813,12 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 
 func (o *CommonOptions) getClusterDependencies(deps []string) []string {
 	d := binaryShouldBeInstalled("kubectl")
-	if d != "" {
+	if d != "" && util.StringArrayIndex(deps, d) < 0 {
 		deps = append(deps, d)
 	}
 
 	d = binaryShouldBeInstalled("helm")
-	if d != "" {
+	if d != "" && util.StringArrayIndex(deps, d) < 0 {
 		deps = append(deps, d)
 	}
 
@@ -819,7 +826,7 @@ func (o *CommonOptions) getClusterDependencies(deps []string) []string {
 	if runtime.GOOS == "darwin" {
 		if !o.NoBrew {
 			d = binaryShouldBeInstalled("brew")
-			if d != "" {
+			if d != "" && util.StringArrayIndex(deps, d) < 0 {
 				deps = append(deps, d)
 			}
 		}
@@ -872,7 +879,7 @@ func (o *CommonOptions) installRequirements(cloudProvider string, extraDependenc
 
 func (o *CommonOptions) addRequiredBinary(binName string, deps []string) []string {
 	d := binaryShouldBeInstalled(binName)
-	if d != "" {
+	if d != "" && util.StringArrayIndex(deps, d) < 0 {
 		deps = append(deps, d)
 	}
 	return deps

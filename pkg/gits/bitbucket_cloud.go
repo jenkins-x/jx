@@ -143,6 +143,7 @@ func (b *BitbucketCloudProvider) CreateRepository(
 	options := map[string]interface{}{}
 	options["body"] = bitbucket.Repository{
 		IsPrivate: private,
+		Scm: "git",
 	}
 
 	result, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPost(

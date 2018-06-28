@@ -53,7 +53,9 @@ type InstallFlags struct {
 	Timeout                  string
 	RegisterLocalHelmRepo    bool
 	CleanupTempFiles         bool
+	InstallOnly              bool
 	EnvironmentGitOwner      string
+	Version                  string
 }
 
 type Secrets struct {
@@ -190,6 +192,8 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
+	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install comand to fail if there is already an installation. Otherwise lets update the installation")
+	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -209,6 +213,14 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 	options.kubeClient = client
+
+	initOpts := &options.InitOptions
+	helmBinary := initOpts.HelmBinary()
+
+	err = options.installRequirements(options.Flags.Provider, helmBinary)
+	if err != nil {
+		return err
+	}
 
 	context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
@@ -240,17 +252,9 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	initOpts := &options.InitOptions
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
 	initOpts.BatchMode = options.BatchMode
-
-	helmBinary := options.InitOptions.HelmBinary()
-
-	err = options.installRequirements(options.Flags.Provider, helmBinary)
-	if err != nil {
-		return err
-	}
 
 	if options.Flags.Provider == AKS {
 		/**
@@ -402,9 +406,19 @@ func (options *InstallOptions) Run() error {
 			Name: JXInstallConfig,
 		},
 	}
-	_, err = options.kubeClient.CoreV1().Secrets(ns).Create(jxSecrets)
-	if err != nil {
-		return err
+	secretResources := options.kubeClient.CoreV1().Secrets(ns)
+	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
+	if oldSecret == nil || err != nil {
+		_, err = secretResources.Create(jxSecrets)
+		if err != nil {
+			return err
+		}
+	} else {
+		oldSecret.Data = jxSecrets.Data
+		_, err = secretResources.Update(oldSecret)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Infof("Generated helm values %s\n", util.ColorInfo(configFileName))
@@ -423,12 +437,24 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	version, err := loadVersionFromCloudEnvironmentsDir(wrkDir)
+	version := options.Flags.Version
+	if version == "" {
+		version, err = loadVersionFromCloudEnvironmentsDir(wrkDir)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = options.runCommand(helmBinary, "repo", "update")
 	if err != nil {
 		return err
 	}
 
-	args := []string{"install", "jenkins-x/jenkins-x-platform", "--name", "jenkins-x", "-f", "./myvalues.yaml", "-f", "./secrets.yaml", "--namespace=" + ns, "--timeout=" + timeout}
+	args := []string{"install", "--name"}
+	if !options.Flags.InstallOnly {
+		args = []string{"upgrade", "--install"}
+	}
+	args = append(args, "jenkins-x", "jenkins-x/jenkins-x-platform", "-f", "./myvalues.yaml", "-f", "./secrets.yaml", "--namespace="+ns, "--timeout="+timeout)
 	valuesFiles := []string{secretsFileName, adminSecretsFileName, configFileName}
 	curDir, err := os.Getwd()
 	if err != nil {
@@ -508,6 +534,7 @@ func (options *InstallOptions) Run() error {
 	if !options.Flags.NoDefaultEnvironments {
 		log.Info("Getting Jenkins API Token\n")
 		err = options.retry(3, 2*time.Second, func() (err error) {
+			options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 			options.CreateJenkinsUserOptions.UseBrowser = true
 			if options.BatchMode {
@@ -522,37 +549,47 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 
-		if options.Flags.DefaultEnvironmentPrefix == "" {
-			options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
-		}
-
-		log.Info("Creating default staging and production environments\n")
-		options.CreateEnvOptions.Options.Name = "staging"
-		options.CreateEnvOptions.Options.Spec.Label = "Staging"
-		options.CreateEnvOptions.Options.Spec.Order = 100
-		options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
-		options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
-		if options.BatchMode {
-			options.CreateEnvOptions.BatchMode = options.BatchMode
-		}
-
-		err = options.CreateEnvOptions.Run()
+		jxClient, _, err := options.JXClient()
 		if err != nil {
 			return err
 		}
-		options.CreateEnvOptions.Options.Name = "production"
-		options.CreateEnvOptions.Options.Spec.Label = "Production"
-		options.CreateEnvOptions.Options.Spec.Order = 200
-		options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
-		options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
-		options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
-		if options.BatchMode {
-			options.CreateEnvOptions.BatchMode = options.BatchMode
-		}
 
-		err = options.CreateEnvOptions.Run()
-		if err != nil {
-			return err
+		// lets only recreate the environments if its the first time we run this
+		_, envNames, err := kube.GetEnvironments(jxClient, ns)
+		if err != nil || len(envNames) <= 1 {
+
+			if options.Flags.DefaultEnvironmentPrefix == "" {
+				options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+			}
+
+			log.Info("Creating default staging and production environments\n")
+			options.CreateEnvOptions.Options.Name = "staging"
+			options.CreateEnvOptions.Options.Spec.Label = "Staging"
+			options.CreateEnvOptions.Options.Spec.Order = 100
+			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
+			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
+			if options.BatchMode {
+				options.CreateEnvOptions.BatchMode = options.BatchMode
+			}
+
+			err = options.CreateEnvOptions.Run()
+			if err != nil {
+				return err
+			}
+			options.CreateEnvOptions.Options.Name = "production"
+			options.CreateEnvOptions.Options.Spec.Label = "Production"
+			options.CreateEnvOptions.Options.Spec.Order = 200
+			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
+			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
+			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
+			if options.BatchMode {
+				options.CreateEnvOptions.BatchMode = options.BatchMode
+			}
+
+			err = options.CreateEnvOptions.Run()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -574,9 +611,9 @@ func (options *InstallOptions) Run() error {
 
 	log.Infof("\nYour kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
 	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx ns "+originalNs))
-	log.Infof("For help on switching contextst see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
+	log.Infof("For help on switching contexts see: %s\n\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
 
-	log.Infof("\nTo import existing projects into Jenkins:     %s\n", util.ColorInfo("jx import"))
+	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
 	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
 	return nil

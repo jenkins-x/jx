@@ -45,9 +45,26 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 		if repoOptions.ServerURL != "" {
 			server = config.GetOrCreateServer(repoOptions.ServerURL)
 		} else {
-			server, err = config.PickServer("Which git service?", batchMode)
-			if err != nil {
-				return nil, err
+			if batchMode {
+				if len(config.Servers) == 0 {
+					return nil, fmt.Errorf("No git servers are configured!")
+				}
+				// lets assume the first for now
+				server = config.Servers[0]
+				currentServer := config.CurrentServer
+				if currentServer != "" {
+					for _, s := range config.Servers {
+						if s.Name == currentServer {
+							server = s
+							break
+						}
+					}
+				}
+			} else {
+				server, err = config.PickServer("Which git service?", batchMode)
+				if err != nil {
+					return nil, err
+				}
 			}
 			repoOptions.ServerURL = server.URL
 		}
@@ -114,13 +131,17 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 	}
 	owner := repoOptions.Owner
 	if owner == "" {
-		org, err := PickOrganisation(provider, gitUsername)
-		if err != nil {
-			return nil, err
-		}
-		owner = org
-		if org == "" {
+		if batchMode {
 			owner = gitUsername
+		} else {
+			org, err := PickOrganisation(provider, gitUsername)
+			if err != nil {
+				return nil, err
+			}
+			owner = org
+			if org == "" {
+				owner = gitUsername
+			}
 		}
 	}
 	repoName := ""

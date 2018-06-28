@@ -36,6 +36,8 @@ type CreateClusterAWSFlags struct {
 	InsecureDockerRegistry string
 	UseRBAC                bool
 	TerraformDirectory     string
+	NodeSize               string
+	MasterSize             string
 }
 
 var (
@@ -90,6 +92,8 @@ func NewCmdCreateClusterAWS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability zones. Defaults to $AWS_AVAILABILITY_ZONES")
 	cmd.Flags().StringVarP(&options.Flags.InsecureDockerRegistry, "insecure-registry", "", "100.64.0.0/10", "The insecure docker registries to allow")
 	cmd.Flags().StringVarP(&options.Flags.TerraformDirectory, "terraform", "t", "", "The directory to save terraform configuration.")
+	cmd.Flags().StringVarP(&options.Flags.NodeSize, "node-size", "", "", "The size of a node in the kops created cluster.")
+	cmd.Flags().StringVarP(&options.Flags.MasterSize, "master-size", "", "", "The size of a master in the kops created cluster.")
 	return cmd
 }
 
@@ -164,6 +168,13 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 	if flags.KubeVersion != "" {
 		args = append(args, "--kubernetes-version", flags.KubeVersion)
+	}
+
+	if flags.NodeSize != "" {
+		args = append(args, "--node-size", flags.NodeSize)
+	}
+	if flags.MasterSize != "" {
+		args = append(args, "--master-size", flags.MasterSize)
 	}
 
 	auth := "RBAC"
