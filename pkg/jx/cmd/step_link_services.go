@@ -100,10 +100,11 @@ func (o *StepLinkServicesOptions) Run() error {
 		} else {
 			for _, service := range serviceList.Items {
 				if util.StringMatchesAny(service.Name, o.Includes, o.Excludes) {
+					lookedUpServiceFromSourceNamespace, err := o.kubeClient.CoreV1().Services(o.FromNamespace).Get(service.GetName(), metav1.GetOptions{})
 					lookedUpService, err := o.kubeClient.CoreV1().Services(o.currentNamespace).Get(service.GetName(), metav1.GetOptions{})
 					//TODO add condition if lookUpService is not essentially nil
 					// TODO create a Service resource if one does not exist with `service.Name` in namespace toNs with an external name pointing to this service
-					o.kubeClient.CoreV1().Services(currentNamespace).Create(lookedUpService)
+					o.kubeClient.CoreV1().Services(currentNamespace).Create(lookedUpServiceFromSourceNamespace)
 				}
 			}
 		}
