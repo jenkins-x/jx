@@ -645,7 +645,7 @@
   branch = "master"
   name = "github.com/wbrefvem/go-gitlab"
   packages = ["."]
-  revision = "83c9148e1da614c7092e1db7bb9de1bdba436081"
+  revision = "ecc4c5b8455a01dc64009b828cd19db9db3f3590"
 
 [[projects]]
   branch = "master"
@@ -1105,6 +1105,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a9a2e983bbe925d1e473e9feeb69aff550f563d3f7e1f49a426d214fabdced3f"
+  inputs-digest = "8520e981f46b2bfa53742b7802109a063c580fe9d49a49dcdd6072d3d147be01"
   solver-name = "gps-cdcl"
   solver-version = 1
