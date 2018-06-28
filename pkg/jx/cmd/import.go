@@ -444,14 +444,14 @@ func (o *ImportOptions) DraftCreate() error {
 
 	if len(lpack) == 0 {
 		if exists, err := util.FileExists(pomName); err == nil && exists {
-			pack, err := cmdutil.PomFlavour(pomName)
+			pack, err := util.PomFlavour(pomName)
 			if err != nil {
 				return err
 			}
 			if len(pack) > 0 {
-				if pack == cmdutil.LIBERTY {
+				if pack == util.LIBERTY {
 					lpack = filepath.Join(packsDir, "liberty")
-				} else if pack == cmdutil.APPSERVER {
+				} else if pack == util.APPSERVER {
 					lpack = filepath.Join(packsDir, "appserver")
 				} else {
 					log.Warn("Do not know how to handle pack: " + pack)
