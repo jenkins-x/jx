@@ -1,10 +1,11 @@
 package gke
 
 import (
-	"github.com/jenkins-x/jx/pkg/util"
 	"os/exec"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 var PROJECT_LIST_HEADER = "PROJECT_ID"
