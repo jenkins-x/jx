@@ -64,19 +64,20 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 	testDir1 := path.Join(dir, "clusters", "foo", "terraform")
 	exists, err := util.FileExists(testDir1)
 	assert.NoError(t, err)
-	assert.True(t, exists)
+	assert.True(t, exists, "Directory clusters/foo/terraform should exist")
+
 	testDir1NoGit := path.Join(testDir1, ".git")
 	exists, err = util.FileExists(testDir1NoGit)
 	assert.NoError(t, err)
-	assert.False(t, exists)
+	assert.False(t, exists, "Directory clusters/foo/terraform/.git should not exist")
 
 	testDir2 := path.Join(dir, "clusters", "bar", "terraform")
 	exists, err = util.FileExists(testDir2)
 	assert.NoError(t, err)
-	assert.True(t, exists)
+	assert.True(t, exists, "Directory clusters/bar/terraform should not exist")
 
 	gitignore, err := util.LoadBytes(dir, ".gitignore")
-	assert.NotEmpty(t, gitignore, ".gitignore not founc")
+	assert.NotEmpty(t, gitignore, ".gitignore not found")
 
 	testFile, err := util.LoadBytes(testDir1, "main.tf")
 	assert.NotEmpty(t, testFile, "no terraform files found")
