@@ -533,10 +533,12 @@ func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) (*G
 	}
 
 	user, err := os_user.Current()
+	var username string
 	if err != nil {
-		return nil, err
+		username = "unknown"
+	} else {
+		username = sanitizeLabel(user.Username)
 	}
-	username := sanitizeLabel(user.Username)
 
 	terraformVars := filepath.Join(path, "terraform.tfvars")
 	o.writeKeyValueIfNotExists(terraformVars, "created_by", username)
