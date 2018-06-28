@@ -5,12 +5,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/table"
 )
 
 // GetPipelineOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
