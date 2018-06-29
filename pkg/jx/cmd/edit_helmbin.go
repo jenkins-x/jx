@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
@@ -76,6 +77,12 @@ func (o *EditHelmBinOptions) Run() error {
 	if !strings.HasPrefix(arg, "helm") {
 		return util.InvalidArgError(arg, fmt.Errorf("Helm binary name should start with 'helm'"))
 	}
+
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	kube.RegisterEnvironmentCRD(apisClient)
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.HelmBinary = arg
