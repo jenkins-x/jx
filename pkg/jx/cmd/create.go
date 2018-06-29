@@ -79,6 +79,7 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.AddCommand(NewCmdCreateJenkins(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateJHipster(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateMicro(f, out, errOut))
+	cmd.AddCommand(NewCmdCreatePostPreviewJob(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateQuickstart(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateQuickstartLocation(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateSpring(f, out, errOut))
