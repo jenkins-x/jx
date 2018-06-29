@@ -1,3 +1,4 @@
+# override the build pod images
 jenkins:
   Agent:
     PodTemplates:
@@ -13,3 +14,23 @@ jenkins:
         Containers:
           Go:
             Image: jenkinsxio/builder-go:$VERSION
+
+# disable stuff
+pipelinecontroller:
+  enabled: false
+monocular:
+  enabled: false
+
+# service link nexus
+nexus:
+  enabled: false
+nexusServiceLink:
+  enabled: true
+  externalName: "nexus.jx.svc.cluster.local"
+
+# service link chartmuseum
+chartmuseum:
+  enabled: false
+chartmuseumServiceLink:
+  enabled: true
+  externalName: "jenkins-x-chartmuseum.jx.svc.cluster.local"
