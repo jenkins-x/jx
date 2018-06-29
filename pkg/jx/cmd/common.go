@@ -470,6 +470,23 @@ func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 	}
 }
 
+// retryUntilTrueOrTimeout waits until complete is true, an error occurs or the timeout
+func (o *CommonOptions) retryUntilTrueOrTimeout(timeout time.Duration, sleep time.Duration, call func() (bool, error)) (err error) {
+	timeoutTime := time.Now().Add(timeout)
+
+	for i := 0; ; i++ {
+		complete, err := call()
+		if complete || err != nil {
+			return err
+		}
+		if time.Now().After(timeoutTime) {
+			return fmt.Errorf("Timed out after %s, last error: %s", timeout.String(), err)
+		}
+
+		time.Sleep(sleep)
+	}
+}
+
 func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, error) {
 	jobMap := map[string]gojenkins.Job{}
 	jenkins, err := o.JenkinsClient()
