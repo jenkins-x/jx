@@ -1,7 +1,14 @@
 package helm
 
+type Version int
+
+const (
+	V2 Version = 2
+	V3         = 3
+)
+
 type Helmer interface {
-	InstallBinary() error
+	InstallBinary(version Version) error
 	Init(clientOnly bool, serviceAccount string, tillerNamespace string, upgrade bool)
 	AddRepo(repo string, URL string) error
 	RemoveRepo(repo string) error
