@@ -56,10 +56,12 @@ pipeline {
                         sh "git config --global --add user.name JenkinsXBot"
                         sh "git config --global --add user.email jenkins-x@googlegroups.com"
 
+                        sh "cp ./build/linux/jx /usr/bin"
+
                         sh "./build/linux/jx install --namespace ${TEAM} --helm3 --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW --version 0.0.1614"
 
                         // lets test we have the jenkins token setup
-                        sh "./build/linux/jx get pipeline"
+                        sh "jx get pipeline"
                         
                         sh "echo now running the BDD tests"
 
@@ -71,7 +73,7 @@ pipeline {
                         }
 
                         sh "echo now tearing down the team ${TEAM}"
-                        sh "./build/linux/jx uninstall -b -y --namespace ${TEAM}"
+                        sh "jx uninstall -b -y --namespace ${TEAM}"
                     }
                 }
             }
