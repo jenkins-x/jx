@@ -276,10 +276,11 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 	envDir := filepath.Join(organisationDir, owner)
 	provider := details.GitProvider
 	repo, err := provider.GetRepository(owner, repoName)
+	var dir string
 	if err == nil {
 		fmt.Fprintf(o.Stdout(), "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 		// if the repo already exists then lets just modify it if required
-		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
+		dir, err = util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
 			return err
 		}
@@ -291,28 +292,6 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		if err != nil {
 			return err
 		}
-
-		// add any new clusters
-		clusterDefinitions, err := o.createOrganisationFolderStructure(dir)
-		if err != nil {
-			return err
-		}
-
-		err = o.createClusters(dir, clusterDefinitions)
-		if err != nil {
-			return err
-		}
-
-		err = o.commitClusters(dir)
-		if err != nil {
-			return err
-		}
-
-		err = o.Git().PushMaster(dir)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(o.Stdout(), "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	} else {
 		fmt.Fprintf(o.Stdout(), "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
@@ -321,7 +300,7 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 			return err
 		}
 
-		dir, err := util.CreateUniqueDirectory(organisationDir, details.RepoName, util.MaximumNewDirectoryAttempts)
+		dir, err = util.CreateUniqueDirectory(organisationDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
 			return err
 		}
@@ -342,30 +321,32 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		if err != nil {
 			return err
 		}
-
-		// create directory structure
-		clusterDefinitions, err := o.createOrganisationFolderStructure(dir)
-		if err != nil {
-			return err
-		}
-
-		err = o.createClusters(dir, clusterDefinitions)
-		if err != nil {
-			return err
-		}
-
-		err = o.commitClusters(dir)
-		if err != nil {
-			return err
-		}
-
-		err = o.Git().PushMaster(dir)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(o.Stdout(), "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
-
 	}
+
+	// create directory structure
+	clusterDefinitions, err := o.createOrganisationFolderStructure(dir)
+	if err != nil {
+		return err
+	}
+
+	err = o.createClusters(dir, clusterDefinitions)
+	if err != nil {
+		return err
+	}
+
+	err = o.commitClusters(dir)
+	if err != nil {
+		return err
+	}
+
+	err = o.Git().PushMaster(dir)
+	if err != nil {
+		return err
+	}
+	
+	fmt.Fprintf(o.Stdout(), "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+
+
 	return nil
 }
 
