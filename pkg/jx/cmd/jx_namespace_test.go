@@ -5,13 +5,14 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestJXNamespace(t *testing.T) {
 	o := &CommonOptions{}
-	ConfigureTestOptions(o)
+	ConfigureTestOptions(o, gits.NewGitCLI())
 
 	kubeClient, ns, err := o.KubeClient()
 	assert.NoError(t, err, "Failed to create kube client")

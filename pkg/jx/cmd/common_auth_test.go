@@ -33,7 +33,7 @@ func TestAuthLoadFromPipelineGitCredentials(t *testing.T) {
 	}
 
 	o := &CommonOptions{}
-	ConfigureTestOptions(o)
+	ConfigureTestOptions(o, gits.NewGitCLI())
 
 	fileName := "doesNotExist.yaml"
 
