@@ -17,6 +17,7 @@ import (
 	"os"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
@@ -27,7 +28,6 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"io/ioutil"
 	"time"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 )
 
 type Cluster struct {
@@ -51,6 +51,7 @@ type Flags struct {
 	Cluster                 []string
 	OrganisationRepoName    string
 	ForkOrganisationGitRepo string
+	SkipTerraformApply      bool
 	GKEProjectId            string
 	GKEZone                 string
 	GKEMachineType          string
@@ -123,6 +124,8 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, "cluster", "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
 	cmd.Flags().StringVarP(&options.Flags.OrganisationRepoName, "organisation-repo-name", "o", "", "The organisation name that will be used as the Git repo containing cluster details")
 	cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultOrganisationGitRepoURL, "The Git repository used as the fork when creating new Organisation git repos")
+	cmd.Flags().BoolVarP(&options.Flags.SkipTerraformApply, "skip-terraform-apply", "", false, "Skip applying the generated terraform plans")
+
 	// gke specific overrides
 	cmd.Flags().StringVarP(&options.Flags.GKEDiskSize, "gke-disk-size", "", "100", "Size in GB for node VM boot disks. Defaults to 100GB")
 	cmd.Flags().BoolVarP(&options.Flags.GKEAutoUpgrade, "gke-enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
@@ -273,10 +276,11 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 	envDir := filepath.Join(organisationDir, owner)
 	provider := details.GitProvider
 	repo, err := provider.GetRepository(owner, repoName)
+	var dir string
 	if err == nil {
 		fmt.Fprintf(o.Stdout(), "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 		// if the repo already exists then lets just modify it if required
-		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
+		dir, err = util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
 			return err
 		}
@@ -288,28 +292,6 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		if err != nil {
 			return err
 		}
-
-		// add any new clusters
-		clusterDefinitions, err := o.createOrganisationFolderStructure(dir)
-		if err != nil {
-			return err
-		}
-
-		err = o.createClusters(dir, clusterDefinitions)
-		if err != nil {
-			return err
-		}
-
-		err = o.commitClusters(dir)
-		if err != nil {
-			return err
-		}
-
-		err = o.Git().PushMaster(dir)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(o.Stdout(), "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	} else {
 		fmt.Fprintf(o.Stdout(), "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
@@ -318,7 +300,7 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 			return err
 		}
 
-		dir, err := util.CreateUniqueDirectory(organisationDir, details.RepoName, util.MaximumNewDirectoryAttempts)
+		dir, err = util.CreateUniqueDirectory(organisationDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
 			return err
 		}
@@ -339,30 +321,30 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		if err != nil {
 			return err
 		}
-
-		// create directory structure
-		clusterDefinitions, err := o.createOrganisationFolderStructure(dir)
-		if err != nil {
-			return err
-		}
-
-		err = o.createClusters(dir, clusterDefinitions)
-		if err != nil {
-			return err
-		}
-
-		err = o.commitClusters(dir)
-		if err != nil {
-			return err
-		}
-
-		err = o.Git().PushMaster(dir)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(o.Stdout(), "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
-
 	}
+
+	// create directory structure
+	clusterDefinitions, err := o.createOrganisationFolderStructure(dir)
+	if err != nil {
+		return err
+	}
+
+	err = o.commitClusters(dir)
+	if err != nil {
+		return err
+	}
+
+	err = o.Git().PushMaster(dir)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(o.Stdout(), "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+	err = o.createClusters(dir, clusterDefinitions)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -408,13 +390,15 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) (
 }
 
 func (o *CreateTerraformOptions) createClusters(dir string, clusterDefinitions []interface{}) error {
-	for _, c := range clusterDefinitions {
-		switch v := c.(type) {
-		case *GKECluster:
-			path := filepath.Join(dir, Clusters, v.Cluster.Name, Terraform)
-			o.applyTerraformGKE(v, path)
-		default:
-			return fmt.Errorf("unknown kubernetes provider type, must be one of %v, got %s", validTerraformClusterProviders, v)
+	if !o.Flags.SkipTerraformApply {
+		for _, c := range clusterDefinitions {
+			switch v := c.(type) {
+			case *GKECluster:
+				path := filepath.Join(dir, Clusters, v.Cluster.Name, Terraform)
+				o.applyTerraformGKE(v, path)
+			default:
+				return fmt.Errorf("unknown kubernetes provider type, must be one of %v, got %s", validTerraformClusterProviders, v)
+			}
 		}
 	}
 
@@ -455,15 +439,15 @@ func (o *CreateTerraformOptions) commitClusters(dir string) error {
 
 func (o *CreateTerraformOptions) configureGKECluster(c Cluster, path string) (*GKECluster, error) {
 	g := GKECluster{
-		Cluster:     c,
-		DiskSize:    o.Flags.GKEDiskSize,
-		AutoUpgrade: o.Flags.GKEAutoUpgrade,
-		AutoRepair:  o.Flags.GKEAutoRepair,
-		MachineType:  o.Flags.GKEMachineType,
-		Zone:  o.Flags.GKEZone,
-		ProjectId:  o.Flags.GKEProjectId,
-		MinNumOfNodes:  o.Flags.GKEMinNumOfNodes,
-		MaxNumOfNodes:  o.Flags.GKEMaxNumOfNodes,
+		Cluster:       c,
+		DiskSize:      o.Flags.GKEDiskSize,
+		AutoUpgrade:   o.Flags.GKEAutoUpgrade,
+		AutoRepair:    o.Flags.GKEAutoRepair,
+		MachineType:   o.Flags.GKEMachineType,
+		Zone:          o.Flags.GKEZone,
+		ProjectId:     o.Flags.GKEProjectId,
+		MinNumOfNodes: o.Flags.GKEMinNumOfNodes,
+		MaxNumOfNodes: o.Flags.GKEMaxNumOfNodes,
 	}
 
 	if g.ProjectId == "" {

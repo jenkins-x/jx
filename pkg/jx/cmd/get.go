@@ -79,6 +79,7 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.AddCommand(NewCmdGetIssue(f, out, errOut))
 	cmd.AddCommand(NewCmdGetIssues(f, out, errOut))
 	cmd.AddCommand(NewCmdGetPipeline(f, out, errOut))
+	cmd.AddCommand(NewCmdGetPostPreviewJob(f, out, errOut))
 	cmd.AddCommand(NewCmdGetPreview(f, out, errOut))
 	cmd.AddCommand(NewCmdGetQuickstartLocation(f, out, errOut))
 	cmd.AddCommand(NewCmdGetTeam(f, out, errOut))

@@ -63,8 +63,8 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 
 	clusterDefinitions, err := o.createOrganisationFolderStructure(dir)
 	assert.NoError(t, err)
-	assert.Equal(t,2 , len(clusterDefinitions))
-	
+	assert.Equal(t, 2, len(clusterDefinitions))
+
 	t.Logf("Generated cluster definitions %s", clusterDefinitions)
 
 	testDir1 := path.Join(dir, "clusters", "foo", "terraform")

@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
@@ -366,21 +367,24 @@ func createKubeConfig() *string {
 	if kubeConfigCache != nil {
 		return kubeConfigCache
 	}
-	kubeconfenv := os.Getenv("KUBECONFIG")
-	if kubeconfenv != "" {
-		kubeconfig = &kubeconfenv
+	if home := util.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
-		if home := util.HomeDir(); home != "" {
-			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-		} else {
-			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-		}
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 	kubeConfigCache = kubeconfig
 	return kubeconfig
 }
 
 func (f *factory) CreateKubeConfig() (*rest.Config, error) {
+	masterUrl := ""
+	kubeConfigEnv := os.Getenv("KUBECONFIG")
+	if kubeConfigEnv != "" {
+		pathList := filepath.SplitList(kubeConfigEnv)
+		return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+			&clientcmd.ClientConfigLoadingRules{Precedence: pathList},
+			&clientcmd.ConfigOverrides{ClusterInfo: clientcmdapi.Cluster{Server: masterUrl}}).ClientConfig()
+	}
 	kubeconfig := createKubeConfig()
 	var config *rest.Config
 	var err error
@@ -388,7 +392,7 @@ func (f *factory) CreateKubeConfig() (*rest.Config, error) {
 		exists, err := util.FileExists(*kubeconfig)
 		if err == nil && exists {
 			// use the current context in kubeconfig
-			config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
+			config, err = clientcmd.BuildConfigFromFlags(masterUrl, *kubeconfig)
 			if err != nil {
 				return nil, err
 			}

@@ -13,7 +13,7 @@ type BranchPatterns struct {
 }
 
 const (
-	defaultBuildPackRef = "2.0"
+	defaultBuildPackRef = "2.1"
 	defaultHelmBin      = "helm"
 )
 
@@ -86,6 +86,12 @@ func (o *CommonOptions) TeamHelmBin() (string, error) {
 
 // ModifyDevEnvironment modifies the development environment settings
 func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) error) error {
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	kube.RegisterEnvironmentCRD(apisClient)
+
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
