@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -18,7 +19,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -42,27 +46,36 @@ const (
 	ORG                                    = "ORG"
 	APP_NAME                               = "APP_NAME"
 	PREVIEW_VERSION                        = "PREVIEW_VERSION"
+
+	optionPostPreviewJobTimeout  = "post-preview-job-timeout"
+	optionPostPreviewJobPollTime = "post-preview-poll-time"
 )
 
 // PreviewOptions the options for viewing running PRs
 type PreviewOptions struct {
 	PromoteOptions
 
-	Name           string
-	Label          string
-	Namespace      string
-	DevNamespace   string
-	Cluster        string
-	PullRequestURL string
-	PullRequest    string
-	SourceURL      string
-	SourceRef      string
-	Dir            string
+	Name                   string
+	Label                  string
+	Namespace              string
+	DevNamespace           string
+	Cluster                string
+	PullRequestURL         string
+	PullRequest            string
+	SourceURL              string
+	SourceRef              string
+	Dir                    string
+	PostPreviewJobTimeout  string
+	PostPreviewJobPollTime string
 
 	PullRequestName string
 	GitConfDir      string
 	GitProvider     gits.GitProvider
 	GitInfo         *gits.GitRepositoryInfo
+
+	// calculated fields
+	PostPreviewJobTimeoutDuration time.Duration
+	PostPreviewJobPollDuration    time.Duration
 
 	HelmValuesConfig config.HelmValuesConfig
 }
@@ -115,10 +128,26 @@ func (options *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.PullRequestURL, "pr-url", "", "", "The Pull Request URL")
 	cmd.Flags().StringVarP(&options.SourceURL, "source-url", "s", "", "The source code git URL")
 	cmd.Flags().StringVarP(&options.SourceRef, "source-ref", "", "", "The source code git ref (branch/sha)")
+	cmd.Flags().StringVarP(&options.PostPreviewJobTimeout, optionPostPreviewJobTimeout, "", "2h", "The duration before we consider the post preview Jobs failed")
+	cmd.Flags().StringVarP(&options.PostPreviewJobPollTime, optionPostPreviewJobPollTime, "", "10s", "The amount of time between polls for the post preview Job status")
 }
 
 // Run implements the command
 func (o *PreviewOptions) Run() error {
+	var err error
+	if o.PostPreviewJobPollTime != "" {
+		o.PostPreviewJobPollDuration, err = time.ParseDuration(o.PostPreviewJobPollTime)
+		if err != nil {
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PostPreviewJobPollTime, optionPostPreviewJobPollTime, err)
+		}
+	}
+	if o.PostPreviewJobTimeout != "" {
+		o.PostPreviewJobTimeoutDuration, err = time.ParseDuration(o.Timeout)
+		if err != nil {
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionPostPreviewJobTimeout, err)
+		}
+	}
+
 	log.Infoln("Creating a preview")
 	/*
 		args := o.Args
@@ -429,7 +458,7 @@ func (o *PreviewOptions) Run() error {
 		log.Warnf("Failed to find helm binary: %s\n", err)
 		helmBin = "helm"
 	}
-	err = o.runCommand(helmBin, "upgrade", o.ReleaseName, ".", "--force", "--install", "--wait", "--namespace", o.Namespace, fmt.Sprintf("--values=%s", configFileName))
+	err = o.runCommandVerbose(helmBin, "upgrade", o.ReleaseName, ".", "--force", "--install", "--debug", "--wait", "--namespace", o.Namespace, fmt.Sprintf("--values=%s", configFileName))
 	if err != nil {
 		return err
 	}
@@ -453,9 +482,10 @@ func (o *PreviewOptions) Run() error {
 		comment += fmt.Sprintf(" [here](%s) ", url)
 	}
 
+	pipeline := os.Getenv("JOB_NAME")
+	build := os.Getenv("BUILD_NUMBER")
+
 	if url != "" || o.PullRequestURL != "" {
-		pipeline := os.Getenv("JOB_NAME")
-		build := os.Getenv("BUILD_NUMBER")
 		if pipeline != "" && build != "" {
 			name := kube.ToValidName(pipeline + "-" + build)
 			// lets see if we can update the pipeline
@@ -503,6 +533,7 @@ func (o *PreviewOptions) Run() error {
 				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}
 		}
+		log.Infof("Preview application is now available at: %s\n\n", util.ColorInfo(url))
 	}
 
 	stepPRCommentOptions := StepPRCommentOptions{
@@ -525,7 +556,116 @@ func (o *PreviewOptions) Run() error {
 	if err != nil {
 		log.Warnf("Failed to comment on the Pull Request: %s\n", err)
 	}
+	return o.RunPostPreviewSteps(kubeClient, o.Namespace, url, pipeline, build)
+}
+
+// RunPostPreviewSteps lets run any post-preview steps that are configured for all apps in a team
+func (o *PreviewOptions) RunPostPreviewSteps(kubeClient kubernetes.Interface, ns string, url string, pipeline string, build string) error {
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return err
+	}
+	envVars := map[string]string{
+		"JX_PREVIEW_URL": url,
+		"JX_PIPELINE":    pipeline,
+		"JX_BUILD":       build,
+	}
+
+	jobs := teamSettings.PostPreviewJobs
+	jobResources := kubeClient.BatchV1().Jobs(ns)
+	createdJobs := []*batchv1.Job{}
+	for _, job := range jobs {
+		// TODO lets modify the job name?
+		job2 := o.modifyJob(&job, envVars)
+		log.Infof("Triggering post preview Job %s in namespace %s\n", util.ColorInfo(job2.Name), util.ColorInfo(ns))
+
+		gracePeriod := int64(0)
+		propationPolicy := metav1.DeletePropagationForeground
+
+		// lets try delete it if it exists
+		jobResources.Delete(job2.Name, &metav1.DeleteOptions{
+			GracePeriodSeconds: &gracePeriod,
+			PropagationPolicy:  &propationPolicy,
+		})
+
+		// lets wait for the resource to be gone
+		hasJob := func() (bool, error) {
+			job, err := jobResources.Get(job.Name, metav1.GetOptions{})
+			return job == nil || err != nil, nil
+		}
+		o.retryUntilTrueOrTimeout(time.Minute, time.Second, hasJob)
+
+		createdJob, err := jobResources.Create(job2)
+		if err != nil {
+			return err
+		}
+		createdJobs = append(createdJobs, createdJob)
+	}
+	return o.waitForJobsToComplete(kubeClient, createdJobs)
+}
+
+func (o *PreviewOptions) waitForJobsToComplete(kubeClient kubernetes.Interface, jobs []*batchv1.Job) error {
+	for _, job := range jobs {
+		err := o.waitForJob(kubeClient, job)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+// waits for this job to complete
+func (o *PreviewOptions) waitForJob(kubeClient kubernetes.Interface, job *batchv1.Job) error {
+	name := job.Name
+	ns := job.Namespace
+	log.Infof("waiting for Job %s in namespace %s to complete...\n\n", util.ColorInfo(name), util.ColorInfo(ns))
+
+	count := 0
+	fn := func() (bool, error) {
+		curJob, err := kubeClient.BatchV1().Jobs(ns).Get(name, metav1.GetOptions{})
+		if err != nil {
+			return true, err
+		}
+		if kube.IsJobFinished(curJob) {
+			if kube.IsJobSucceeded(curJob) {
+				return true, nil
+			} else {
+				failed := curJob.Status.Failed
+				succeeded := curJob.Status.Succeeded
+				return true, fmt.Errorf("Job %s in namepace %s has %d failed containers and %d succeeded containers", name, ns, failed, succeeded)
+			}
+		}
+		count += 1
+		if count > 1 {
+			// TODO we could maybe do better - using a prefix on all logs maybe with the job name?
+			o.runCommandVerbose("kubectl", "logs", "-f", "job/"+name, "-n", ns)
+		}
+		return false, nil
+	}
+	err := o.retryUntilTrueOrTimeout(o.PostPreviewJobTimeoutDuration, o.PostPreviewJobPollDuration, fn)
+	if err != nil {
+		log.Warnf("\nFailed to complete post Preview Job %s in namespace %s: %s\n", name, ns, err)
+	}
+	return err
+}
+
+// modifyJob adds the given enviroment variables into all the containers in the job
+func (o *PreviewOptions) modifyJob(originalJob *batchv1.Job, envVars map[string]string) *batchv1.Job {
+	job := *originalJob
+	for k, v := range envVars {
+		templateSpec := &job.Spec.Template.Spec
+		for i, _ := range templateSpec.Containers {
+			container := &templateSpec.Containers[i]
+			if kube.GetEnvVar(container, k) == nil {
+				container.Env = append(container.Env, corev1.EnvVar{
+					Name:  k,
+					Value: v,
+				})
+			}
+		}
+	}
+
+	return &job
 }
 
 func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
