@@ -13,7 +13,7 @@ type BranchPatterns struct {
 }
 
 const (
-	defaultBuildPackRef = "2.0"
+	defaultBuildPackRef = "2.1"
 	defaultHelmBin      = "helm"
 )
 

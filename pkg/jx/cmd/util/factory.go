@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/golang-jenkins"
@@ -368,13 +369,20 @@ func createKubeConfig() *string {
 	}
 	kubeconfenv := os.Getenv("KUBECONFIG")
 	if kubeconfenv != "" {
-		kubeconfig = &kubeconfenv
-	} else {
-		if home := util.HomeDir(); home != "" {
-			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-		} else {
-			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		pathList := filepath.SplitList(kubeconfenv)
+		for _, path := range pathList {
+			exists, err := util.FileExists(path)
+			if err == nil && exists {
+				return &path
+			}
 		}
+		log.Warnf("None of the values in $KUBECONFIG exist: %s", kubeconfenv)
+	}
+
+	if home := util.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 	kubeConfigCache = kubeconfig
 	return kubeconfig

@@ -212,6 +212,19 @@ func (o *GetApplicationsOptions) Run() error {
 				if url == "" {
 					url, _ = kube.FindServiceURL(kubeClient, d.Namespace, d.Name)
 				}
+				if url == "" {
+					// handle helm3
+					chart := d.Labels["chart"]
+					if chart != "" {
+						idx := strings.LastIndex(chart, "-")
+						if idx > 0 {
+							svcName := chart[0:idx]
+							if svcName != appName && svcName != d.Name {
+								url, _ = kube.FindServiceURL(kubeClient, d.Namespace, svcName)
+							}
+						}
+					}
+				}
 				row = append(row, url)
 			}
 		}
