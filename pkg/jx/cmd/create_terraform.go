@@ -329,11 +329,6 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		return err
 	}
 
-	err = o.createClusters(dir, clusterDefinitions)
-	if err != nil {
-		return err
-	}
-
 	err = o.commitClusters(dir)
 	if err != nil {
 		return err
@@ -343,9 +338,12 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 	if err != nil {
 		return err
 	}
-	
-	fmt.Fprintf(o.Stdout(), "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
+	fmt.Fprintf(o.Stdout(), "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+	err = o.createClusters(dir, clusterDefinitions)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
