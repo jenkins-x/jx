@@ -818,7 +818,8 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 		url := ""
 		url, err = options.findService(kube.ServiceChartMuseum)
 		if err != nil {
-			return err
+			log.Warnf("No service called %s could be found so couldn't wire up the local auth file to talk to chart museum\n", kube.ServiceChartMuseum)
+			return nil
 		}
 		server = config.GetOrCreateServer(url)
 	} else {

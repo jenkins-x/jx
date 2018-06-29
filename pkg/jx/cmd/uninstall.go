@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/pkg/errors"
+
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -115,20 +117,33 @@ func (o *UninstallOptions) Run() error {
 	}
 	err = o.runCommand(helmBinary, "delete", "--purge", "jenkins-x")
 	if err != nil {
-		return err
+		errc := o.cleanupNamesapces(namespace, envNames)
+		if errc != nil {
+			errc = errors.Wrap(errc, "failed to cleanup the jenkins-x platform")
+			return errc
+		}
+		return errors.Wrap(err, "failed to purge the jenkins-x chart")
 	}
 	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection(&meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
 	if err != nil {
 		return err
 	}
-
-	client, _, err := o.KubeClient()
+	err = o.cleanupNamesapces(namespace, envNames)
 	if err != nil {
 		return err
 	}
-	err = client.CoreV1().Namespaces().Delete(namespace, &meta_v1.DeleteOptions{})
+	log.Successf("Jenkins X has been successfully uninstalled from team namespace %s", namespace)
+	return nil
+}
+
+func (o *UninstallOptions) cleanupNamesapces(namespace string, envNames []string) error {
+	client, _, err := o.KubeClient()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get the kube client")
+	}
+	err = o.deleteNamespace(namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete team namespace namespace")
 	}
 	for _, env := range envNames {
 		envNamespace := namespace + "-" + env
@@ -136,12 +151,23 @@ func (o *UninstallOptions) Run() error {
 		if err != nil {
 			continue
 		}
-		err = client.CoreV1().Namespaces().Delete(envNamespace, &meta_v1.DeleteOptions{})
+		err = o.deleteNamespace(envNamespace)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to delete environment namespace")
 		}
 	}
-	log.Successf("Jenkins X has been successfully uninstalled from team namespace %s", namespace)
+	return nil
+}
+
+func (o *UninstallOptions) deleteNamespace(namespace string) error {
+	client, _, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to get the kube client")
+	}
+	err = client.CoreV1().Namespaces().Delete(namespace, &meta_v1.DeleteOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete the namespace '%s'", namespace)
+	}
 	return nil
 }
 
