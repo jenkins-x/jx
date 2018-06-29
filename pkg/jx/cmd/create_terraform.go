@@ -340,9 +340,12 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 	}
 
 	fmt.Fprintf(o.Stdout(), "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
-	err = o.createClusters(dir, clusterDefinitions)
-	if err != nil {
-		return err
+
+	if !o.Flags.SkipTerraformApply {
+		err = o.createClusters(dir, clusterDefinitions)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -390,7 +393,6 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) (
 }
 
 func (o *CreateTerraformOptions) createClusters(dir string, clusterDefinitions []interface{}) error {
-	if !o.Flags.SkipTerraformApply {
 		for _, c := range clusterDefinitions {
 			switch v := c.(type) {
 			case *GKECluster:
@@ -400,7 +402,6 @@ func (o *CreateTerraformOptions) createClusters(dir string, clusterDefinitions [
 				return fmt.Errorf("unknown kubernetes provider type, must be one of %v, got %s", validTerraformClusterProviders, v)
 			}
 		}
-	}
 
 	return nil
 }
