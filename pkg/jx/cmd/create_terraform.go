@@ -49,7 +49,7 @@ type GKECluster struct {
 
 type Flags struct {
 	Cluster                 []string
-	OrganisationRepoName    string
+	OrganisationName        string
 	ForkOrganisationGitRepo string
 	SkipTerraformApply      bool
 	GKEProjectId            string
@@ -122,7 +122,7 @@ func NewCmdCreateTerraform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command) {
 	// global flags
 	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, "cluster", "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
-	cmd.Flags().StringVarP(&options.Flags.OrganisationRepoName, "organisation-repo-name", "o", "", "The organisation name that will be used as the Git repo containing cluster details")
+	cmd.Flags().StringVarP(&options.Flags.OrganisationName, "organisation-name", "o", "", "The organisation name that will be used as the Git repo containing cluster details, the repo will be organisation-<org name>")
 	cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultOrganisationGitRepoURL, "The Git repository used as the fork when creating new Organisation git repos")
 	cmd.Flags().BoolVarP(&options.Flags.SkipTerraformApply, "skip-terraform-apply", "", false, "Skip applying the generated terraform plans")
 
@@ -258,10 +258,10 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		return err
 	}
 
-	if o.Flags.OrganisationRepoName == "" {
-		o.Flags.OrganisationRepoName = strings.ToLower(randomdata.SillyName())
+	if o.Flags.OrganisationName == "" {
+		o.Flags.OrganisationName = strings.ToLower(randomdata.SillyName())
 	}
-	defaultRepoName := fmt.Sprintf("organisation-%s", o.Flags.OrganisationRepoName)
+	defaultRepoName := fmt.Sprintf("organisation-%s", o.Flags.OrganisationName)
 	details, err := gits.PickNewGitRepository(o.Stdout(), o.BatchMode, authConfigSvc,
 		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git())
 	if err != nil {
@@ -273,14 +273,13 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 	if owner == "" {
 		owner = details.User.Username
 	}
-	envDir := filepath.Join(organisationDir, owner)
 	provider := details.GitProvider
 	repo, err := provider.GetRepository(owner, repoName)
 	var dir string
 	if err == nil {
 		fmt.Fprintf(o.Stdout(), "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 		// if the repo already exists then lets just modify it if required
-		dir, err = util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
+		dir, err = util.CreateUniqueDirectory(organisationDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
 			return err
 		}
@@ -340,9 +339,12 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 	}
 
 	fmt.Fprintf(o.Stdout(), "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
-	err = o.createClusters(dir, clusterDefinitions)
-	if err != nil {
-		return err
+
+	if !o.Flags.SkipTerraformApply {
+		err = o.createClusters(dir, clusterDefinitions)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -354,6 +356,8 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) (
 	clusterDefinitions := []interface{}{}
 
 	for _, c := range o.Clusters {
+		fmt.Fprintf(o.Stdout(), "Creating config for cluster %s\n\n", util.ColorInfo(c.Name))
+
 		path := filepath.Join(dir, Clusters, c.Name, Terraform)
 		exists, err := util.FileExists(path)
 		if err != nil {
@@ -390,7 +394,6 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) (
 }
 
 func (o *CreateTerraformOptions) createClusters(dir string, clusterDefinitions []interface{}) error {
-	if !o.Flags.SkipTerraformApply {
 		for _, c := range clusterDefinitions {
 			switch v := c.(type) {
 			case *GKECluster:
@@ -400,7 +403,6 @@ func (o *CreateTerraformOptions) createClusters(dir string, clusterDefinitions [
 				return fmt.Errorf("unknown kubernetes provider type, must be one of %v, got %s", validTerraformClusterProviders, v)
 			}
 		}
-	}
 
 	return nil
 }
@@ -553,7 +555,7 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 	}
 
 	terraformVars := filepath.Join(path, "terraform.tfvars")
-	serviceAccountName := fmt.Sprintf("jx-%s-%s", o.Flags.OrganisationRepoName, g.Cluster.Name)
+	serviceAccountName := fmt.Sprintf("jx-%s-%s", o.Flags.OrganisationName, g.Cluster.Name)
 	// create service account
 	_, err = gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectId, filepath.Dir(path))
 	if err != nil {
