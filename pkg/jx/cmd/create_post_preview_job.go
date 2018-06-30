@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,7 +42,7 @@ type CreatePostPreviewJobOptions struct {
 }
 
 // NewCmdCreatePostPreviewJob creates a command object for the "create" command
-func NewCmdCreatePostPreviewJob(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreatePostPreviewJob(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreatePostPreviewJobOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -64,7 +63,7 @@ func NewCmdCreatePostPreviewJob(f cmdutil.Factory, out io.Writer, errOut io.Writ
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Name, optionName, "n", "", "The name of the job")
