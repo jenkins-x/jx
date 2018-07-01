@@ -34,6 +34,7 @@ type InstallOptions struct {
 	CreateJenkinsUserOptions
 	CreateEnvOptions
 	config.AdminSecretsService
+	config.DockerRegistryService
 
 	InitOptions InitOptions
 	Flags       InstallFlags
@@ -54,6 +55,7 @@ type InstallFlags struct {
 	CleanupTempFiles         bool
 	InstallOnly              bool
 	EnvironmentGitOwner      string
+	DockerRegistry           string
 	Version                  string
 }
 
@@ -69,6 +71,7 @@ const (
 
 	GitSecretsFile        = "gitSecrets.yaml"
 	AdminSecretsFile      = "adminSecrets.yaml"
+	DockerRegistryFile    = "dockerRegistry.yaml"
 	ExtraValuesFile       = "extraValues.yaml"
 	JXInstallConfig       = "jx-install-config"
 	defaultInstallTimeout = "6000"
@@ -197,6 +200,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
 	options.AdminSecretsService.AddAdminSecretsValues(cmd)
+	options.DockerRegistryService.AddDockerRegistryValues(cmd)
 	options.InitOptions.addInitFlags(cmd)
 }
 
@@ -331,6 +335,16 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
+	err = options.DockerRegistryService.NewDockerRegistryConfig()
+	if err != nil {
+		return err
+	}
+
+	dockerRegistry, err := options.DockerRegistryService.DockerRegistry.String()
+	if err != nil {
+		return err
+	}
+
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	if helmConfig.ExposeController.Config.Domain == "" {
 		helmConfig.ExposeController.Config.Domain = options.InitOptions.Flags.Domain
@@ -388,6 +402,20 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
+	dockerRegistryFileName := filepath.Join(dir, DockerRegistryFile)
+	if options.DockerRegistryService.HasPrefix() {
+		err = ioutil.WriteFile(dockerRegistryFileName, []byte(dockerRegistry), 0644)
+		if err != nil {
+			return err
+		}
+
+		// override images
+		err = options.DockerRegistryService.OverrideImages(makefileDir)
+		if err != nil {
+			return err
+		}
+	}
+
 	configFileName := filepath.Join(dir, ExtraValuesFile)
 	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
 	if err != nil {
@@ -398,6 +426,7 @@ func (options *InstallOptions) Run() error {
 	data[ExtraValuesFile] = []byte(config)
 	data[AdminSecretsFile] = []byte(adminSecrets)
 	data[GitSecretsFile] = []byte(secrets)
+	data[DockerRegistryFile] = []byte(dockerRegistry)
 
 	jxSecrets := &core_v1.Secret{
 		Data: data,
@@ -459,6 +488,11 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	if options.DockerRegistryService.HasPrefix() {
+		valuesFiles = append(valuesFiles, dockerRegistryFileName)
+	}
+
 	myValuesFile := filepath.Join(curDir, "myvalues.yaml")
 	exists, err := util.FileExists(myValuesFile)
 	if err != nil {
