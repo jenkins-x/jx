@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 )
@@ -48,7 +47,7 @@ var (
 `)
 )
 
-func NewCmdStepTag(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepTag(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 	options := StepTagOptions{
 		StepOptions: StepOptions{
@@ -68,7 +67,7 @@ func NewCmdStepTag(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

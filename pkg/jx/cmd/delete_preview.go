@@ -9,8 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // DeletePreviewOptions are the flags for delete commands
@@ -19,7 +17,7 @@ type DeletePreviewOptions struct {
 }
 
 // NewCmdDeletePreview creates a command object
-func NewCmdDeletePreview(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeletePreview(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeletePreviewOptions{
 		PreviewOptions: PreviewOptions{
 			PromoteOptions: PromoteOptions{
@@ -39,7 +37,7 @@ func NewCmdDeletePreview(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addPreviewOptions(cmd)

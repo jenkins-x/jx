@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // Run runs the command
@@ -14,6 +13,6 @@ func Run() error {
 		defer logs.FlushLogs()
 	*/
 
-	cmd := cmd.NewJXCommand(cmdutil.NewFactory(), os.Stdin, os.Stdout, os.Stderr)
+	cmd := cmd.NewJXCommand(cmd.NewFactory(), os.Stdin, os.Stdout, os.Stderr)
 	return cmd.Execute()
 }

@@ -26,7 +26,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	chgit "github.com/jenkins-x/chyle/chyle/git"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -133,7 +132,7 @@ e.g. define environment variables GIT_USERNAME and GIT_API_TOKEN
 	JIRAIssueRegex   = regexp.MustCompile(`[A-Z][A-Z]+-(\d+)`)
 )
 
-func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepChangelog(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepChangelogOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -153,7 +152,7 @@ func NewCmdStepChangelog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)
@@ -607,7 +606,7 @@ func (o *StepChangelogOptions) gitUserToUserDetails(user *gits.GitUser) *v1.User
 }
 
 func (o *StepChangelogOptions) toUserDetails(signature object.Signature) *v1.UserDetails {
-	userDetailService := cmdutil.NewUserDetailService(o.jxClient, o.devNamespace)
+	userDetailService := kube.NewUserDetailService(o.jxClient, o.devNamespace)
 
 	user := userDetailService.FindByEmail(signature.Email)
 

@@ -16,7 +16,6 @@ import (
 	"github.com/blang/semver"
 	version "github.com/hashicorp/go-version"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 )
@@ -59,7 +58,7 @@ var (
 `)
 )
 
-func NewCmdStepNextVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepNextVersion(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepNextVersionOptions{}
 	cmd := &cobra.Command{
 		Use:     "next-version",
@@ -70,7 +69,7 @@ func NewCmdStepNextVersion(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Filename, "filename", "f", "", "Filename that contains version property to update, e.g. package.json")

@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -40,7 +39,7 @@ type CreateGitServerOptions struct {
 }
 
 // NewCmdCreateGitServer creates a command object for the "create" command
-func NewCmdCreateGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGitServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateGitServerOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -61,7 +60,7 @@ func NewCmdCreateGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

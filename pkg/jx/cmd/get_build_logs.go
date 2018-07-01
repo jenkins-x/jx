@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -38,7 +37,7 @@ var (
 )
 
 // NewCmdGetBuildLogs creates the command
-func NewCmdGetBuildLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuildLogs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -59,7 +58,7 @@ func NewCmdGetBuildLogs(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", true, "Tails the build log to the current terminal")

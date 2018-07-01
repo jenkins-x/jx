@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -39,7 +38,7 @@ var (
 `)
 )
 
-func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdMetrics(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &MetricsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -57,7 +56,7 @@ func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

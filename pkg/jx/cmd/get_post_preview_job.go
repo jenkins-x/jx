@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 var (
@@ -29,7 +28,7 @@ type GetPostPreviewJobOptions struct {
 }
 
 // NewCmdGetPostPreviewJob creates a command object for the "create" command
-func NewCmdGetPostPreviewJob(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetPostPreviewJob(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetPostPreviewJobOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -50,7 +49,7 @@ func NewCmdGetPostPreviewJob(f cmdutil.Factory, out io.Writer, errOut io.Writer)
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)

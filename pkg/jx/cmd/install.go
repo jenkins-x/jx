@@ -16,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -104,7 +103,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "install" action, which
 // installs the jenkins-x platform on a kubernetes cluster.
-func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdInstall(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 	options := createInstallOptions(f, out, errOut)
 
@@ -117,7 +116,7 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 		SuggestFor: []string{"list", "ps"},
 	}
@@ -129,7 +128,7 @@ func NewCmdInstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	return cmd
 }
 
-func createInstallOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer) InstallOptions {
+func createInstallOptions(f Factory, out io.Writer, errOut io.Writer) InstallOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
 		Out:     out,

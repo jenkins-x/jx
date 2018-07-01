@@ -12,7 +12,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -47,7 +46,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdUpdateClusterGKETerraform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpdateClusterGKETerraform(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := createUpdateClusterGKETerraformOptions(f, out, errOut, GKE)
 
 	cmd := &cobra.Command{
@@ -59,7 +58,7 @@ func NewCmdUpdateClusterGKETerraform(f cmdutil.Factory, out io.Writer, errOut io
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -72,7 +71,7 @@ func NewCmdUpdateClusterGKETerraform(f cmdutil.Factory, out io.Writer, errOut io
 	return cmd
 }
 
-func createUpdateClusterGKETerraformOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer, cloudProvider string) UpdateClusterGKETerraformOptions {
+func createUpdateClusterGKETerraformOptions(f Factory, out io.Writer, errOut io.Writer, cloudProvider string) UpdateClusterGKETerraformOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
 		Out:     out,

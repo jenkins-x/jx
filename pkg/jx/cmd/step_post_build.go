@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -50,7 +49,7 @@ podAnnotations:
   jenkins-x.io/cve-image-id: %s
 `
 
-func NewCmdStepPostBuild(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepPostBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepPostBuildOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -69,7 +68,7 @@ func NewCmdStepPostBuild(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

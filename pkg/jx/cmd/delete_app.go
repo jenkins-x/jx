@@ -16,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -56,7 +55,7 @@ type DeleteAppOptions struct {
 }
 
 // NewCmdDeleteApp creates a command object for this command
-func NewCmdDeleteApp(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteApp(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteAppOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -75,7 +74,7 @@ func NewCmdDeleteApp(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.IgnoreEnvironments, "no-env", "", false, "Do not remove the app from any of the Environments")

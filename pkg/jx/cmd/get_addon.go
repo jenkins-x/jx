@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -31,7 +30,7 @@ var (
 )
 
 // NewCmdGetAddon creates the command
-func NewCmdGetAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetAddonOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -52,7 +51,7 @@ func NewCmdGetAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

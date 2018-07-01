@@ -1,7 +1,7 @@
 package reports
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
+	"github.com/jenkins-x/jx/pkg/table"
 )
 
 type TableBarReport struct {

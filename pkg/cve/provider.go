@@ -2,7 +2,7 @@ package cve
 
 import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
+	"github.com/jenkins-x/jx/pkg/table"
 	"k8s.io/client-go/kubernetes"
 )
 

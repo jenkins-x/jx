@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -32,7 +31,7 @@ type DeleteChatTokenOptions struct {
 }
 
 // NewCmdDeleteChatToken defines the command
-func NewCmdDeleteChatToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteChatToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteChatTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -53,7 +52,7 @@ func NewCmdDeleteChatToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.ServerFlags.addGitServerFlags(cmd)

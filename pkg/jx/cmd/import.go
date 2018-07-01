@@ -19,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -34,8 +33,6 @@ const (
 	PlaceHolderAppName     = "REPLACE_ME_APP_NAME"
 	PlaceHolderGitProvider = "REPLACE_ME_GIT_PROVIDER"
 	PlaceHolderOrg         = "REPLACE_ME_ORG"
-
-	DefaultWritePermissions = 0760
 
 	jenkinsfileBackupSuffix = ".backup"
 
@@ -124,7 +121,7 @@ var (
 		`)
 )
 
-func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdImport(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ImportOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -141,7 +138,7 @@ func NewCmdImport(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.RepoURL, "url", "u", "", "The git clone URL to clone into the current directory and then import")
@@ -444,14 +441,14 @@ func (o *ImportOptions) DraftCreate() error {
 
 	if len(lpack) == 0 {
 		if exists, err := util.FileExists(pomName); err == nil && exists {
-			pack, err := cmdutil.PomFlavour(pomName)
+			pack, err := util.PomFlavour(pomName)
 			if err != nil {
 				return err
 			}
 			if len(pack) > 0 {
-				if pack == cmdutil.LIBERTY {
+				if pack == util.LIBERTY {
 					lpack = filepath.Join(packsDir, "liberty")
-				} else if pack == cmdutil.APPSERVER {
+				} else if pack == util.APPSERVER {
 					lpack = filepath.Join(packsDir, "appserver")
 				} else {
 					log.Warn("Do not know how to handle pack: " + pack)

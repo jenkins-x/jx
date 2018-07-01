@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
@@ -48,7 +47,7 @@ var (
 	}
 )
 
-func NewCmdCompletion(f cmdutil.Factory, out io.Writer) *cobra.Command {
+func NewCmdCompletion(f Factory, out io.Writer) *cobra.Command {
 	options := &CommonOptions{
 		Factory: f,
 		Out:     out,
@@ -68,7 +67,7 @@ func NewCmdCompletion(f cmdutil.Factory, out io.Writer) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 		ValidArgs: shells,
 	}
@@ -98,7 +97,7 @@ func (o *CommonOptions) Run() error {
 
 	}
 	if len(args) > 1 {
-		return cmdutil.UsageError(cmd, "Too many arguments. Expected only the shell type.")
+		return UsageError(cmd, "Too many arguments. Expected only the shell type.")
 	}
 	if ShellName == "" {
 		ShellName = args[0]
@@ -107,7 +106,7 @@ func (o *CommonOptions) Run() error {
 	run, found := completion_shells[ShellName]
 
 	if !found {
-		return cmdutil.UsageError(cmd, "Unsupported shell type %q.", args[0])
+		return UsageError(cmd, "Unsupported shell type %q.", args[0])
 	}
 
 	return run(o.Out, cmd.Parent())

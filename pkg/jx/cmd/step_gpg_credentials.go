@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -40,7 +39,7 @@ var (
 `)
 )
 
-func NewCmdStepGpgCredentials(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepGpgCredentials(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepGpgCredentialsOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -59,7 +58,7 @@ func NewCmdStepGpgCredentials(f cmdutil.Factory, out io.Writer, errOut io.Writer
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.OutputDir, optionOutputFile, "o", "", "The output directory")

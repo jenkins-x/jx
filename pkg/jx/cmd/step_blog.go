@@ -19,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/reports"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -75,7 +74,7 @@ type StepBlogState struct {
 }
 
 // NewCmdStepBlog Creates a new Command object
-func NewCmdStepBlog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepBlog(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &StepBlogOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -95,7 +94,7 @@ func NewCmdStepBlog(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)

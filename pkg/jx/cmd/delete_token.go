@@ -4,8 +4,6 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
-
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // DeleteTokenOptions are the flags for delete commands
@@ -15,7 +13,7 @@ type DeleteTokenOptions struct {
 
 // NewCmdDeleteToken creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteTokenOptions{
 		CommonOptions{
 			Factory: f,
@@ -32,7 +30,7 @@ func NewCmdDeleteToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
