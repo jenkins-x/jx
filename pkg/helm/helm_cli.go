@@ -284,3 +284,7 @@ func (h *HelmCLI) Lint() (string, error) {
 func (h *HelmCLI) Version() (string, error) {
 	return h.runHelmWithOutput("version")
 }
+
+func (h *HelmCLI) PackageChart() error {
+	return h.runHelm("package", h.CWD)
+}

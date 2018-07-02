@@ -69,12 +69,13 @@ func NewCmdStepHelmRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 func (o *StepHelmReleaseOptions) Run() error {
 	dir := o.Dir
-	helmBinary, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	_, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
 	if err != nil {
 		return err
 	}
 
-	err = o.runCommandVerboseAt(dir, helmBinary, "package", ".")
+	o.Helm().SetCWD(".")
+	err = o.Helm().PackageChart()
 	if err != nil {
 		return err
 	}

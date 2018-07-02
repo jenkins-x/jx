@@ -229,3 +229,10 @@ func TestFindChart(t *testing.T) {
 	assert.NoError(t, err, "should find the chart file")
 	assert.Equal(t, path, chartFile, "should find chart file '%s'", path)
 }
+
+func TestPackage(t *testing.T) {
+	expectedArgs := fmt.Sprintf("package %s", cwd)
+	helm := createHelm(expectedArgs)
+	err := helm.PackageChart()
+	assert.NoError(t, err, "should package chart without any error")
+}
