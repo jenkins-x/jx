@@ -12,10 +12,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+type runCommandFunc func(dir string, name string, args ...string) error
+type runCommandWithOutputFunc func(dir string, name string, args ...string) (string, error)
+
+type helmRunner struct {
+	run           runCommandFunc
+	runWithOutput runCommandWithOutputFunc
+}
+
 type HelmCLI struct {
 	Binary     string
 	BinVersion Version
 	CWD        string
+	runner     helmRunner
 }
 
 func NewHelmCLI(binary string, version Version, cwd string) *HelmCLI {
@@ -23,6 +32,19 @@ func NewHelmCLI(binary string, version Version, cwd string) *HelmCLI {
 		Binary:     binary,
 		BinVersion: version,
 		CWD:        cwd,
+		runner: helmRunner{
+			run:           util.RunCommand,
+			runWithOutput: util.RunCommandWithOutput,
+		},
+	}
+}
+
+func newHelmCLIWithRunner(binary string, version Version, cwd string, runner helmRunner) *HelmCLI {
+	return &HelmCLI{
+		Binary:     binary,
+		BinVersion: version,
+		CWD:        cwd,
+		runner:     runner,
 	}
 }
 
@@ -31,11 +53,11 @@ func (h *HelmCLI) SetCWD(dir string) {
 }
 
 func (h *HelmCLI) runHelm(args ...string) error {
-	return util.RunCommand(h.CWD, h.Binary, args...)
+	return h.runner.run(h.CWD, h.Binary, args...)
 }
 
 func (h *HelmCLI) runHelmWithOutput(args ...string) (string, error) {
-	return util.RunCommandWithOutput(h.CWD, h.Binary, args...)
+	return h.runner.runWithOutput(h.CWD, h.Binary, args...)
 }
 
 func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace string, upgrade bool) error {
