@@ -249,3 +249,22 @@ func LoadBytes(dir, name string) ([]byte, error) {
 	}
 	return bytes, nil
 }
+
+func DeleteFile(fileName string) (err error) {
+	if fileName != "" {
+		exists, err := FileExists(fileName)
+		if err != nil {
+			return fmt.Errorf("Could not check if file exists %s due to %s", fileName, err)
+		}
+
+		if exists {
+			err = os.Remove(fileName)
+			if err != nil {
+				return fmt.Errorf("Could not remove file due to %s", fileName, err)
+			}
+		}
+	} else {
+		return fmt.Errorf("Filename is not valid")
+	}
+	return nil
+}

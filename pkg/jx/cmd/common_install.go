@@ -66,6 +66,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installhyperv()
 		case "terraform":
 			err = o.installTerraform()
+		case "oci":
+			err = o.installOciCli()
 		default:
 			return fmt.Errorf("unknown dependency to install %s\n", i)
 		}
@@ -784,6 +786,25 @@ func (o *CommonOptions) installAzureCli() error {
 	return o.runCommand("brew", "install", "azure-cli")
 }
 
+func (o *CommonOptions) installOciCli() error {
+	var err error
+	filePath := "./install.sh"
+	log.Info("Installing OCI CLI...\n")
+	err = o.runCommand("curl", "-LO", "https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh")
+
+	if err != nil {
+		return err
+	}
+	os.Chmod(filePath, 0755)
+
+	err = o.runCommandVerbose(filePath, "--accept-all-defaults")
+	if err != nil {
+		return err
+	}
+
+	return os.Remove(filePath)
+}
+
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 	if p == "" {
 		// lets detect minikube
@@ -803,7 +824,7 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 			Message: "Cloud Provider",
 			Options: KUBERNETES_PROVIDERS,
 			Default: MINIKUBE,
-			Help:    "Cloud service providing the kubernetes cluster, local VM (minikube), Google (GKE), Azure (AKS)",
+			Help:    "Cloud service providing the kubernetes cluster, local VM (minikube), Google (GKE), Oracle (OCE), Azure (AKS)",
 		}
 
 		survey.AskOne(prompt, &p, nil)
@@ -866,6 +887,8 @@ func (o *CommonOptions) installRequirements(cloudProvider string, extraDependenc
 		deps = o.addRequiredBinary("az", deps)
 	case GKE:
 		deps = o.addRequiredBinary("gcloud", deps)
+	case OCE:
+		deps = o.addRequiredBinary("oci", deps)
 	case MINIKUBE:
 		deps = o.addRequiredBinary("minikube", deps)
 	}
