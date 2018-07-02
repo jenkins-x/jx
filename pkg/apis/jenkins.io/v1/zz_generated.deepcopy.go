@@ -5,6 +5,7 @@
 package v1
 
 import (
+	batch_v1 "k8s.io/api/batch/v1"
 	rbac_v1 "k8s.io/api/rbac/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -923,6 +924,13 @@ func (in *TeamSettings) DeepCopyInto(out *TeamSettings) {
 	if in.QuickstartLocations != nil {
 		in, out := &in.QuickstartLocations, &out.QuickstartLocations
 		*out = make([]QuickStartLocation, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.PostPreviewJobs != nil {
+		in, out := &in.PostPreviewJobs, &out.PostPreviewJobs
+		*out = make([]batch_v1.Job, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

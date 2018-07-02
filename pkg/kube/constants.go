@@ -143,6 +143,12 @@ const (
 	// LabelValueDevEnvironment is the value of the LabelTeam label for Development environments (system namespace)
 	LabelValueDevEnvironment = "dev"
 
+	// LabelJobKind the kind of job
+	LabelJobKind = "jenkins.io/job-kind"
+
+	// ValueJobKindPostPreview
+	ValueJobKindPostPreview = "post-preview-step"
+
 	// AnnotationURL indicates a service/server's URL
 	AnnotationURL = "jenkins.io/url"
 

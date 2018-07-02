@@ -17,13 +17,14 @@ import (
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
-func ConfigureTestOptions(o *CommonOptions) {
-	ConfigureTestOptionsWithResources(o, nil, nil)
+func ConfigureTestOptions(o *CommonOptions, git gits.Gitter) {
+	ConfigureTestOptionsWithResources(o, nil, nil, git)
 }
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
-func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object, jxObjects []runtime.Object) {
+func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object,
+	jxObjects []runtime.Object, git gits.Gitter) {
 	o.Out = tests.Output()
 	o.BatchMode = true
 	o.Factory = cmdutil.NewFactory()
@@ -78,5 +79,5 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	o.kubeClient = fake.NewSimpleClientset(k8sObjects...)
 	o.jxClient = v1fake.NewSimpleClientset(jxObjects...)
 	o.apiExtensionsClient = apifake.NewSimpleClientset()
-	o.git = gits.NewGitCLI()
+	o.git = git
 }

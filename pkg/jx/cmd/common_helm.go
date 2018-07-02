@@ -85,7 +85,7 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmBinary string, helmUrl st
 		log.Infof("Adding missing helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
 		err = o.runCommandVerbose(helmBinary, "repo", "add", repoName, helmUrl)
 		if err == nil {
-			log.Infof("Succesfully added Helm repository %s.\n", repoName)
+			log.Infof("Successfully added Helm repository %s.\n", repoName)
 		}
 		return err
 	}
