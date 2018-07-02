@@ -160,14 +160,21 @@ func (h *HelmCLI) BuildDependency() error {
 	return h.runHelm("dependency", "build")
 }
 
-func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, values []string, valueFiles []string) error {
+func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
+	values []string, valueFiles []string) error {
 	args := []string{}
 	args = append(args, "install", "--name", releaseName, "--namespace", ns, chart)
+	if timeout != nil {
+		args = append(args, "--timeout", strconv.Itoa(*timeout))
+	}
+	if version != nil {
+		args = append(args, "--version", *version)
+	}
 	for _, value := range values {
 		args = append(args, "--set", value)
 	}
 	for _, valueFile := range valueFiles {
-		args = append(args, "-f", valueFile)
+		args = append(args, "--values", valueFile)
 	}
 	return h.runHelm(args...)
 }
@@ -196,7 +203,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 		args = append(args, "--set", value)
 	}
 	for _, valueFile := range valueFiles {
-		args = append(args, "-f", valueFile)
+		args = append(args, "--values", valueFile)
 	}
 	args = append(args, releaseName, chart)
 	return h.runHelm(args...)

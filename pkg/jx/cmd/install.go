@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -460,21 +461,16 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	err = options.runCommand(helmBinary, "repo", "update")
+	err = options.Helm().UpdateRepo()
 	if err != nil {
 		return err
 	}
 
-	args := []string{"install", "--name"}
-	if !options.Flags.InstallOnly {
-		args = []string{"upgrade", "--install"}
-	}
-	args = append(args, "jenkins-x", "jenkins-x/jenkins-x-platform", "-f", "./myvalues.yaml", "-f", "./secrets.yaml", "--namespace="+ns, "--timeout="+timeout)
-	valuesFiles := []string{secretsFileName, adminSecretsFileName, configFileName}
 	curDir, err := os.Getwd()
 	if err != nil {
 		return err
 	}
+
 	myValuesFile := filepath.Join(curDir, "myvalues.yaml")
 	exists, err := util.FileExists(myValuesFile)
 	if err != nil {
@@ -482,17 +478,20 @@ func (options *InstallOptions) Run() error {
 	}
 	if exists {
 		log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
-		valuesFiles = append(valuesFiles, myValuesFile)
 	}
-
-	if version != "" {
-		args = append(args, "--version", version)
+	valueFiles := []string{"./myvalues.yaml", "./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName, myValuesFile}
+	timeoutInt, err := strconv.Atoi(timeout)
+	if err != nil {
+		return err
 	}
-	for _, valuesFile := range valuesFiles {
-		args = append(args, fmt.Sprintf("--values=%s", valuesFile))
+	options.Helm().SetCWD(makefileDir)
+	jxChart := "jenkins-x/jenkins-x-platform"
+	jxRelName := "jenkins-x"
+	if !options.Flags.InstallOnly {
+		err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil, valueFiles)
+	} else {
+		err = options.Helm().InstallChart(jxChart, jxRelName, ns, &version, &timeoutInt, nil, valueFiles)
 	}
-
-	options.runCommandVerboseAt(makefileDir, helmBinary, args...)
 	if err != nil {
 		return err
 	}
