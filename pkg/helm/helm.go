@@ -19,9 +19,9 @@ type Helmer interface {
 	IsRepoMissing(URL string) (bool, error)
 	RemoveRequirementsLock() error
 	BuildDependency() error
-	InstallChart(chart string, releaseName string, ns string, values []string) error
+	InstallChart(chart string, releaseName string, ns string, values []string, valueFiles []string) error
 	UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-		timeout *int, force bool, wait bool, values []string) error
+		timeout *int, force bool, wait bool, values []string, valueFiles []string) error
 	DeleteRelease(releaseName string, purge bool) error
 	ListCharts() (string, error)
 	SearchChartVersions(chart string) ([]string, error)

@@ -151,21 +151,23 @@ func TestBuildDependency(t *testing.T) {
 
 func TestInstallChart(t *testing.T) {
 	value := []string{"test"}
-	expectedArgs := fmt.Sprintf("install --name %s --namespace %s %s --set %s",
-		releaseName, namespace, chart, value[0])
+	valueFile := []string{"./myvalues.yaml"}
+	expectedArgs := fmt.Sprintf("install --name %s --namespace %s %s --set %s -f %s",
+		releaseName, namespace, chart, value[0], valueFile[0])
 	helm := createHelm(expectedArgs)
-	err := helm.InstallChart(chart, releaseName, namespace, value)
+	err := helm.InstallChart(chart, releaseName, namespace, value, valueFile)
 	assert.NoError(t, err, "should install the chart without any error")
 }
 
 func TestUpgradeChart(t *testing.T) {
 	value := []string{"test"}
+	valueFile := []string{"./myvalues.yaml"}
 	version := "0.0.1"
 	timeout := 600
-	expectedArgs := fmt.Sprintf("upgrade --namespace %s --install --wait --force --timeout %d --version %s --set %s %s %s",
-		namespace, timeout, version, value[0], releaseName, chart)
+	expectedArgs := fmt.Sprintf("upgrade --namespace %s --install --wait --force --timeout %d --version %s --set %s -f %s %s %s",
+		namespace, timeout, version, value[0], valueFile[0], releaseName, chart)
 	helm := createHelm(expectedArgs)
-	err := helm.UpgradeChart(chart, releaseName, namespace, &version, true, &timeout, true, true, value)
+	err := helm.UpgradeChart(chart, releaseName, namespace, &version, true, &timeout, true, true, value, valueFile)
 	assert.NoError(t, err, "should upgrade the chart without any error")
 }
 
