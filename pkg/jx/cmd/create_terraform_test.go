@@ -30,13 +30,13 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 	dir, err := ioutil.TempDir("", "test-create-org-struct")
 	assert.NoError(t, err)
 
-	c1 := Cluster{
-		Name:     "foo",
-		Provider: "gke",
+	c1 := GKECluster{
+		name:     "foo",
+		provider: "gke",
 	}
-	c2 := Cluster{
-		Name:     "bar",
-		Provider: "gke",
+	c2 := GKECluster{
+		name:     "bar",
+		provider: "gke",
 	}
 
 	o := CreateTerraformOptions{
