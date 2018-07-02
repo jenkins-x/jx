@@ -714,7 +714,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 	if !exists {
 		log.Warnf("No helm home dir at %s so lets initialise helm client\n", helmHomeDir)
 
-		_, err = o.helmInit("")
+		err = o.helmInit("")
 		if err != nil {
 			return err
 		}

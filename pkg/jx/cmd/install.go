@@ -447,7 +447,7 @@ func (options *InstallOptions) Run() error {
 	log.Infof("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
 
 	options.Verbose = true
-	err = options.addHelmBinaryRepoIfMissing(helmBinary, DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
+	err = options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
 	if err != nil {
 		return err
 	}

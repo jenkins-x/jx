@@ -52,6 +52,14 @@ func (h *HelmCLI) SetCWD(dir string) {
 	h.CWD = dir
 }
 
+func (h *HelmCLI) HelmBinary() string {
+	return h.Binary
+}
+
+func (h *HelmCLI) SetHelmBinary(binary string) {
+	h.Binary = binary
+}
+
 func (h *HelmCLI) runHelm(args ...string) error {
 	return h.runner.run(h.CWD, h.Binary, args...)
 }

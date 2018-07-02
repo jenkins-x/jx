@@ -9,6 +9,8 @@ const (
 
 type Helmer interface {
 	SetCWD(dir string)
+	HelmBinary() string
+	SetHelmBinary(binary string)
 	Init(clientOnly bool, serviceAccount string, tillerNamespace string, upgrade bool) error
 	AddRepo(repo string, URL string) error
 	RemoveRepo(repo string) error
