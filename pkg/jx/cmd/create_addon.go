@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -21,7 +20,7 @@ type CreateAddonOptions struct {
 }
 
 // NewCmdCreateAddon creates a command object for the "create" command
-func NewCmdCreateAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -40,7 +39,7 @@ func NewCmdCreateAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

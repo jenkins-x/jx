@@ -1,4 +1,4 @@
-package util
+package cmd
 
 import (
 	"flag"
@@ -10,8 +10,8 @@ import (
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/golang-jenkins"

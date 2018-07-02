@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetGitOptions the command line options
@@ -27,7 +26,7 @@ var (
 )
 
 // NewCmdGetGit creates the command
-func NewCmdGetGit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetGit(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetGitOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -48,7 +47,7 @@ func NewCmdGetGit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

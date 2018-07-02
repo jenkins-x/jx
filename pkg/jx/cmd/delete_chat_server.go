@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -31,7 +30,7 @@ type DeleteChatServerOptions struct {
 }
 
 // NewCmdDeleteChatServer defines the command
-func NewCmdDeleteChatServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteChatServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteChatServerOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -49,7 +48,7 @@ func NewCmdDeleteChatServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.IgnoreMissingServer, "ignore-missing", "i", false, "Silently ignore attempts to remove an chat server name that does not exist")

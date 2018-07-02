@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetConfigOptions the command line options
@@ -32,7 +31,7 @@ var (
 )
 
 // NewCmdGetConfig creates the command
-func NewCmdGetConfig(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetConfig(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetConfigOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -53,7 +52,7 @@ func NewCmdGetConfig(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addGetConfigFlags(cmd)

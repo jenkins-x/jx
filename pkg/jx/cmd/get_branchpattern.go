@@ -5,7 +5,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +38,7 @@ var (
 )
 
 // NewCmdGetBranchPattern creates the new command for: jx get env
-func NewCmdGetBranchPattern(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetBranchPattern(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetBranchPatternOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -59,7 +58,7 @@ func NewCmdGetBranchPattern(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

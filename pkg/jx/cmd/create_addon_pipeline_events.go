@@ -10,7 +10,6 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -47,7 +46,7 @@ type CreateAddonPipelineEventsOptions struct {
 }
 
 // NewCmdCreateAddonPipelineEvents creates a command object for the "create" command
-func NewCmdCreateAddonPipelineEvents(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonPipelineEvents(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonPipelineEventsOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -70,7 +69,7 @@ func NewCmdCreateAddonPipelineEvents(f cmdutil.Factory, out io.Writer, errOut io
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +22,7 @@ type CreateClusterOptions struct {
 
 const (
 	GKE        = "gke"
+	OCE        = "oce"
 	EKS        = "eks"
 	AKS        = "aks"
 	AWS        = "aws"
@@ -40,7 +40,7 @@ const (
 	optionClusterName       = "cluster-name"
 )
 
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, AKS, AWS, EKS, KUBERNETES, IBM, OPENSHIFT, ORACLE, MINISHIFT, JX_INFRA, PKS}
+var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OCE, AKS, AWS, EKS, KUBERNETES, IBM, OPENSHIFT, MINISHIFT, JX_INFRA, PKS}
 
 const (
 	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
@@ -50,6 +50,7 @@ const (
     * aks (Azure Container Service - https://docs.microsoft.com/en-us/azure/aks)
     * aws (Amazon Web Services via kops - https://github.com/aws-samples/aws-workshop-for-kubernetes/blob/master/readme.adoc)
     * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
+    * oce (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
     * kubernetes for custom installations of Kubernetes
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
 	* minishift (single-node OpenShift cluster inside a VM on your laptop)
@@ -78,6 +79,7 @@ var (
 		- minishift (single-node OpenShift cluster inside a VM on your laptop)
 		- virtualisation drivers (to run minikube in a VM)
 		- gcloud (Google Cloud CLI)
+		- oci (Oracle Cloud Infrastructure CLI)
 		- az (Azure CLI)
 
 		For more documentation see: [https://jenkins-x.io/getting-started/create-cluster/](https://jenkins-x.io/getting-started/create-cluster/)
@@ -101,7 +103,7 @@ func KubernetesProviderOptions() string {
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateCluster(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := createCreateClusterOptions(f, out, errOut, "")
 
 	cmd := &cobra.Command{
@@ -113,11 +115,12 @@ func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd2
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
 	cmd.AddCommand(NewCmdCreateClusterAKS(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterOCE(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterAWS(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterGKE(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterMinikube(f, out, errOut))
@@ -126,7 +129,7 @@ func NewCmdCreateCluster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 	return cmd
 }
 
-func createCreateClusterOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer, cloudProvider string) CreateClusterOptions {
+func createCreateClusterOptions(f Factory, out io.Writer, errOut io.Writer, cloudProvider string) CreateClusterOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
 		Out:     out,

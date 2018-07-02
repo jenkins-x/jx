@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -40,7 +39,7 @@ type DeleteContextOptions struct {
 }
 
 // NewCmdDeleteContext creates a command object for the "delete repo" command
-func NewCmdDeleteContext(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteContext(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteContextOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -61,7 +60,7 @@ func NewCmdDeleteContext(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	//addDeleteFlags(cmd, &options.CreateOptions)

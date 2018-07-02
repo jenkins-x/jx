@@ -9,9 +9,9 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
@@ -56,7 +56,7 @@ var (
 )
 
 // NewCmdPrompt creates the new command for: jx get prompt
-func NewCmdPrompt(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdPrompt(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &PromptOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -73,7 +73,7 @@ func NewCmdPrompt(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Prefix, "prefix", "p", "", "The prefix text for the prompt")
@@ -108,15 +108,15 @@ func (o *PromptOptions) Run() error {
 	prefix := o.Prefix
 	suffix := o.Suffix
 
-	labelColor, err := cmdutil.GetColor(optionLabelColor, o.LabelColor)
+	labelColor, err := util.GetColor(optionLabelColor, o.LabelColor)
 	if err != nil {
 		return err
 	}
-	nsColor, err := cmdutil.GetColor(optionLabelColor, o.NamespaceColor)
+	nsColor, err := util.GetColor(optionLabelColor, o.NamespaceColor)
 	if err != nil {
 		return err
 	}
-	ctxColor, err := cmdutil.GetColor(optionLabelColor, o.ContextColor)
+	ctxColor, err := util.GetColor(optionLabelColor, o.ContextColor)
 	if err != nil {
 		return err
 	}

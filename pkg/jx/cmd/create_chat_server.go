@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -30,7 +29,7 @@ type CreateChatServerOptions struct {
 }
 
 // NewCmdCreateChatServer creates a command object for the "create" command
-func NewCmdCreateChatServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateChatServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateChatServerOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -51,7 +50,7 @@ func NewCmdCreateChatServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

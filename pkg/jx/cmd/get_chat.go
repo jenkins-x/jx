@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetChatOptions the command line options
@@ -34,7 +33,7 @@ var (
 )
 
 // NewCmdGetChat creates the command
-func NewCmdGetChat(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetChat(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetChatOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -55,7 +54,7 @@ func NewCmdGetChat(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "", "Filters the chats by the kinds: "+strings.Join(chats.ChatKinds, ", "))

@@ -4,7 +4,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/gits"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -27,7 +26,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	jxObjects []runtime.Object, git gits.Gitter) {
 	o.Out = tests.Output()
 	o.BatchMode = true
-	o.Factory = cmdutil.NewFactory()
+	o.Factory = NewFactory()
 	o.currentNamespace = "jx"
 
 	namespacesRequired := []string{o.currentNamespace}

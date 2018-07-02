@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetBuildOptions the command line options
@@ -34,7 +33,7 @@ var (
 )
 
 // NewCmdGetBuild creates the command object
-func NewCmdGetBuild(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetBuildOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -52,7 +51,7 @@ func NewCmdGetBuild(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.C
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 		SuggestFor: []string{"list", "ps"},
 	}

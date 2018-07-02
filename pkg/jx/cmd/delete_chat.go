@@ -4,8 +4,6 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
-
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // DeleteChatOptions are the flags for delete commands
@@ -15,7 +13,7 @@ type DeleteChatOptions struct {
 
 // NewCmdDeleteChat creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteChat(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteChat(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteChatOptions{
 		CommonOptions{
 			Factory: f,
@@ -32,7 +30,7 @@ func NewCmdDeleteChat(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

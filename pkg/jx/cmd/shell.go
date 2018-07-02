@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"k8s.io/client-go/tools/clientcmd"
@@ -54,7 +53,7 @@ var (
 `)
 )
 
-func NewCmdShell(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdShell(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ShellOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -72,7 +71,7 @@ func NewCmdShell(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)

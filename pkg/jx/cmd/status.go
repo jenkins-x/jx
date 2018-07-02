@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -31,7 +30,7 @@ var (
 `)
 )
 
-func NewCmdStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStatus(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &StatusOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -49,7 +48,7 @@ func NewCmdStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
