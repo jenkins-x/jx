@@ -93,12 +93,12 @@ func (h *HelmCLI) ListRepos() (map[string]string, error) {
 	}
 	repos := map[string]string{}
 	lines := strings.Split(output, "\n")
-	for _, line := range lines[1:] {
+	for _, line := range lines[2:] {
 		line = strings.TrimSpace(line)
 		fields := strings.Fields(line)
 		if len(fields) > 1 {
 			repos[fields[0]] = fields[1]
-		} else {
+		} else if len(fields) > 0 {
 			repos[fields[0]] = ""
 		}
 	}
@@ -108,24 +108,24 @@ func (h *HelmCLI) ListRepos() (map[string]string, error) {
 func (h *HelmCLI) IsRepoMissing(URL string) (bool, error) {
 	repos, err := h.ListRepos()
 	if err != nil {
-		return false, errors.Wrap(err, "failed to list the repositories")
+		return true, errors.Wrap(err, "failed to list the repositories")
 	}
 	searchedURL, err := url.Parse(URL)
 	if err != nil {
-		return false, errors.Wrap(err, "provided repo URL is invalid")
+		return true, errors.Wrap(err, "provided repo URL is invalid")
 	}
 	for _, repoURL := range repos {
 		if len(repoURL) > 0 {
 			url, err := url.Parse(repoURL)
 			if err != nil {
-				return false, errors.Wrap(err, "failed to parse the repo URL")
+				return true, errors.Wrap(err, "failed to parse the repo URL")
 			}
 			if url.Host == searchedURL.Host {
-				return true, nil
+				return false, nil
 			}
 		}
 	}
-	return false, fmt.Errorf("no repository with URL '%s' found", URL)
+	return true, fmt.Errorf("no repository with URL '%s' found", URL)
 }
 
 func (h *HelmCLI) UpdateRepo() error {
@@ -208,10 +208,8 @@ func (h *HelmCLI) SearchChartVersions(chart string) ([]string, error) {
 		return nil, errors.Wrapf(err, "failed to search chart '%s'", chart)
 	}
 	versions := []string{}
-	for i, line := range strings.Split(output, "\n") {
-		if i == 0 {
-			continue
-		}
+	lines := strings.Split(output, "\n")
+	for _, line := range lines[2:] {
 		fields := strings.Fields(line)
 		if len(fields) > 1 {
 			v := fields[1]
