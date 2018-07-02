@@ -138,14 +138,10 @@ func (o *CreateClusterOCEOptions) Run() error {
 
 func (o *CreateClusterOCEOptions) createClusterOCE() error {
 	//we assume user has prepared the oci config file under ~/.oci/
-
 	imagesArray, kubeVersionsArray, shapesArray, latestKubeVersion, err := oce.GetOptionValues()
 	if err != nil {
 		fmt.Println("error")
 	}
-	//fmt.Println("Image array is %s\n", imagesArray)
-	//fmt.Println("kubeVersionsArray array is %s\n", kubeVersionsArray)
-	//fmt.Println("shapesArray array is %s\n", shapesArray)
 
 	endpoint := o.Flags.Endpoint
 	if endpoint == "" {
@@ -262,22 +258,6 @@ func (o *CreateClusterOCEOptions) createClusterOCE() error {
 	//Start processing optional parameters
 	serviceLbSubnetIds := o.Flags.ServiceLbSubnetIds
 	if serviceLbSubnetIds != "" {
-		/*
-			serviceLbSubnetIdsArray := strings.Split(serviceLbSubnetIds, ",")
-			resp := ClusterCustomOptions{
-				ServiceLbSubnetIds: serviceLbSubnetIdsArray,
-			}
-
-			js, _ := json.Marshal(resp)
-
-			err := ioutil.WriteFile("/tmp/oce_cluster_config.json", js, 0644)
-			if err != nil {
-				log.Errorf("error write file to /tmp file %v", err)
-				return err
-			}
-		*/
-		//serviceLbSubnetIdsArray := strings.Split(serviceLbSubnetIds, ",")
-
 		serviceLbSubnetIdsArray := strings.Split(serviceLbSubnetIds, ",")
 		for i := range serviceLbSubnetIdsArray {
 			serviceLbSubnetIdsArray[i] = "\"" + serviceLbSubnetIdsArray[i] + "\""
