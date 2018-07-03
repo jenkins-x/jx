@@ -74,7 +74,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 				"--project",
 				projectId}
 
-			err = util.RunCommand("", "gcloud", args...)
+			err = util.RunCommandQuietly("", "gcloud", args...)
 			if err != nil {
 				return "", err
 			}
