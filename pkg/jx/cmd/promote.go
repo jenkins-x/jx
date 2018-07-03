@@ -656,38 +656,27 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 }
 
 func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
-	helmBin, err := o.TeamHelmBin()
+	versions, err := o.Helm().SearchChartVersions(app)
 	if err != nil {
 		return "", err
 	}
-	output, err := o.getCommandOutput("", helmBin, "search", app, "--versions")
-	if err != nil {
-		return "", err
-	}
+
 	var maxSemVer *semver.Version
 	maxString := ""
-	for i, line := range strings.Split(output, "\n") {
-		if i == 0 {
-			continue
-		}
-		fields := strings.Fields(line)
-		if len(fields) > 1 {
-			v := fields[1]
-			if v != "" {
-				sv, err := semver.Parse(v)
-				if err != nil {
-					log.Warnf("Invalid semantic version: %s %s\n", v, err)
-				} else {
-					if maxSemVer == nil || maxSemVer.Compare(sv) > 0 {
-						maxSemVer = &sv
-					}
-				}
-				if maxString == "" || strings.Compare(v, maxString) > 0 {
-					maxString = v
-				}
+	for _, version := range versions {
+		sv, err := semver.Parse(version)
+		if err != nil {
+			log.Warnf("Invalid semantic version: %s %s\n", version, err)
+			if maxString == "" || strings.Compare(version, maxString) > 0 {
+				maxString = version
+			}
+		} else {
+			if maxSemVer == nil || maxSemVer.Compare(sv) > 0 {
+				maxSemVer = &sv
 			}
 		}
 	}
+
 	if maxSemVer != nil {
 		return maxSemVer.String(), nil
 	}
