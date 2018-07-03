@@ -1,5 +1,6 @@
 package helm
 
+// Version defines the helm version
 type Version int
 
 const (
@@ -7,6 +8,7 @@ const (
 	V3         = 3
 )
 
+// Helmer defines common helm actions used within Jenkins X
 type Helmer interface {
 	SetCWD(dir string)
 	HelmBinary() string

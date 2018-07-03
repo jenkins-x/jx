@@ -20,6 +20,7 @@ type helmRunner struct {
 	runWithOutput runCommandWithOutputFunc
 }
 
+// HelmCLI implements common helm actions based on helm CLI
 type HelmCLI struct {
 	Binary     string
 	BinVersion Version
@@ -27,6 +28,8 @@ type HelmCLI struct {
 	runner     helmRunner
 }
 
+// NewHelmCLI creates a new HelmCLI instance configured to used the provided helm CLI in
+// the given current working directory
 func NewHelmCLI(binary string, version Version, cwd string) *HelmCLI {
 	return &HelmCLI{
 		Binary:     binary,
@@ -48,14 +51,17 @@ func newHelmCLIWithRunner(binary string, version Version, cwd string, runner hel
 	}
 }
 
+// SetCWD configures the common working directory of helm CLI
 func (h *HelmCLI) SetCWD(dir string) {
 	h.CWD = dir
 }
 
+// HelmBinary return the configured helm CLI
 func (h *HelmCLI) HelmBinary() string {
 	return h.Binary
 }
 
+// SetHelmBinary configure a new helm CLI
 func (h *HelmCLI) SetHelmBinary(binary string) {
 	h.Binary = binary
 }
@@ -68,6 +74,7 @@ func (h *HelmCLI) runHelmWithOutput(args ...string) (string, error) {
 	return h.runner.runWithOutput(h.CWD, h.Binary, args...)
 }
 
+// Init executes the helm init command according with the given flags
 func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace string, upgrade bool) error {
 	args := []string{}
 	args = append(args, "init")
@@ -86,14 +93,17 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 	return h.runHelm(args...)
 }
 
+// AddRepo adds a new helm repo with the given name and URL
 func (h *HelmCLI) AddRepo(repo string, URL string) error {
 	return h.runHelm("repo", "add", repo, URL)
 }
 
+// RemoveRepo removes the given repo from helm
 func (h *HelmCLI) RemoveRepo(repo string) error {
 	return h.runHelm("repo", "remove", repo)
 }
 
+// ListRepos list the installed helm repos together with their URL
 func (h *HelmCLI) ListRepos() (map[string]string, error) {
 	output, err := h.runHelmWithOutput("repo", "list")
 	if err != nil {
@@ -113,6 +123,7 @@ func (h *HelmCLI) ListRepos() (map[string]string, error) {
 	return repos, nil
 }
 
+// IsRepoMissing checks if the repository with the given URL is missing from helm
 func (h *HelmCLI) IsRepoMissing(URL string) (bool, error) {
 	repos, err := h.ListRepos()
 	if err != nil {
@@ -136,10 +147,12 @@ func (h *HelmCLI) IsRepoMissing(URL string) (bool, error) {
 	return true, fmt.Errorf("no repository with URL '%s' found", URL)
 }
 
+// UpdateRepo updates the helm repositories
 func (h *HelmCLI) UpdateRepo() error {
 	return h.runHelm("repo", "update")
 }
 
+// RemoveRequirementsLock removes the requirements.lock file from the current working directory
 func (h *HelmCLI) RemoveRequirementsLock() error {
 	dir := h.CWD
 	path := filepath.Join(dir, "requirements.lock")
@@ -156,10 +169,12 @@ func (h *HelmCLI) RemoveRequirementsLock() error {
 	return nil
 }
 
+// BuildDependency builds the helm dependencies of the helm chart from the current working directory
 func (h *HelmCLI) BuildDependency() error {
 	return h.runHelm("dependency", "build")
 }
 
+// InstallChart installs a helm chart according with the given flags
 func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
 	values []string, valueFiles []string) error {
 	args := []string{}
@@ -179,6 +194,7 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	return h.runHelm(args...)
 }
 
+// UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
 	timeout *int, force bool, wait bool, values []string, valueFiles []string) error {
 	args := []string{}
@@ -209,6 +225,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	return h.runHelm(args...)
 }
 
+// DeleteRelease removes the given release
 func (h *HelmCLI) DeleteRelease(releaseName string, purge bool) error {
 	args := []string{}
 	args = append(args, "delete")
@@ -219,10 +236,12 @@ func (h *HelmCLI) DeleteRelease(releaseName string, purge bool) error {
 	return h.runHelm(args...)
 }
 
+// ListCharts execute the helm list command and returns its output
 func (h *HelmCLI) ListCharts() (string, error) {
 	return h.runHelmWithOutput("list")
 }
 
+// SearchChartVersions search all version of the given chart
 func (h *HelmCLI) SearchChartVersions(chart string) ([]string, error) {
 	output, err := h.runHelmWithOutput("search", chart, "--versions")
 	if err != nil {
@@ -242,6 +261,7 @@ func (h *HelmCLI) SearchChartVersions(chart string) ([]string, error) {
 	return versions, nil
 }
 
+// FindChart find a chart in the current working directory, if no chart file is found an error is returned
 func (h *HelmCLI) FindChart() (string, error) {
 	dir := h.CWD
 	chartFile := filepath.Join(dir, "Chart.yaml")
@@ -273,10 +293,12 @@ func (h *HelmCLI) FindChart() (string, error) {
 	return chartFile, nil
 }
 
+// StatusRelease returns the output of the helm status command for a given release
 func (h *HelmCLI) StatusRelease(releaseName string) error {
 	return h.runHelm("status", releaseName)
 }
 
+// StatusReleases returns the status of all installed releases
 func (h *HelmCLI) StatusReleases() (map[string]string, error) {
 	output, err := h.ListCharts()
 	if err != nil {
@@ -295,10 +317,12 @@ func (h *HelmCLI) StatusReleases() (map[string]string, error) {
 	return statusMap, nil
 }
 
+// Lint lints the helm chart from the current working directory and returns the warnings in the output
 func (h *HelmCLI) Lint() (string, error) {
 	return h.runHelmWithOutput("lint")
 }
 
+// Version executes the helm version command and returns its output
 func (h *HelmCLI) Version(tls bool) (string, error) {
 	args := []string{}
 	args = append(args, "version --short")
@@ -308,6 +332,7 @@ func (h *HelmCLI) Version(tls bool) (string, error) {
 	return h.runHelmWithOutput(args...)
 }
 
+// PackageChart packages the chart from the current working directory
 func (h *HelmCLI) PackageChart() error {
 	return h.runHelm("package", h.CWD)
 }
