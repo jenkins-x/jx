@@ -277,6 +277,24 @@ func (h *HelmCLI) StatusRelease(releaseName string) error {
 	return h.runHelm("status", releaseName)
 }
 
+func (h *HelmCLI) StatusReleases() (map[string]string, error) {
+	output, err := h.ListCharts()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list the installed chart releases")
+	}
+	lines := strings.Split(output, "\n")
+	statusMap := map[string]string{}
+	for _, line := range lines[2:] {
+		fields := strings.Split(line, "\t")
+		if len(fields) > 3 {
+			release := strings.TrimSpace(fields[0])
+			status := strings.TrimSpace(fields[3])
+			statusMap[release] = status
+		}
+	}
+	return statusMap, nil
+}
+
 func (h *HelmCLI) Lint() (string, error) {
 	return h.runHelmWithOutput("lint")
 }

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -120,6 +121,9 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 }
 
 func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
+	if o.Factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
 	if o.jxClient == nil {
 		jxClient, ns, err := o.Factory.CreateJXClient()
 		if err != nil {

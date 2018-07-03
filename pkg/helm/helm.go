@@ -29,6 +29,7 @@ type Helmer interface {
 	FindChart() (string, error)
 	PackageChart() error
 	StatusRelease(releaseName string) error
+	StatusReleases() (map[string]string, error)
 	Lint() (string, error)
 	Version() (string, error)
 }

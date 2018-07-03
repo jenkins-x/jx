@@ -31,6 +31,14 @@ jenkins-x/jenkins-x-platform            0.0.1481                        Jenkins 
 jenkins-x/jenkins-x-platform            0.0.1480                        Jenkins X 
 jenkins-x/jenkins-x-platform            0.0.1479                        Jenkins X 
 `
+const listReleasesOutput = `
+NAME                            REVISION        UPDATED                         STATUS          CHART                           NAMESPACE
+jenkins-x                       1               Mon Jul  2 16:16:20 2018        DEPLOYED        jenkins-x-platform-0.0.1655     jx
+jx-production                   1               Mon Jul  2 16:22:47 2018        DEPLOYED        env-0.0.1                       jx-production
+jx-staging                      1               Mon Jul  2 16:21:06 2018        DEPLOYED        env-0.0.1                       jx-staging
+jxing                           1               Wed Jun  6 14:24:42 2018        DEPLOYED        nginx-ingress-0.20.1            kube-system
+vault-operator                  1               Mon Jun 25 16:09:28 2018        DEPLOYED        vault-operator-0.1.0            jx
+`
 
 func checkArgs(expectedDir string, expectedName string, exptectedArgs string, dir string, name string, args ...string) error {
 	if dir != expectedDir {
@@ -178,11 +186,28 @@ func TestDeleteRelaese(t *testing.T) {
 	assert.NoError(t, err, "should delete helm chart release without any error")
 }
 
-func TestStatus(t *testing.T) {
+func TestStatusRelease(t *testing.T) {
 	expectedArgs := fmt.Sprintf("status %s", releaseName)
 	helm := createHelm(expectedArgs)
 	err := helm.StatusRelease(releaseName)
 	assert.NoError(t, err, "should get the status of a helm chart release without any error")
+}
+
+func TestStatusReleases(t *testing.T) {
+	expectedArgs := "list"
+	expectedSatusMap := map[string]string{
+		"jenkins-x":      "DEPLOYED",
+		"jx-production":  "DEPLOYED",
+		"jx-staging":     "DEPLOYED",
+		"jxing":          "DEPLOYED",
+		"vault-operator": "DEPLOYED",
+	}
+	helm := createHelmWithOutput(expectedArgs, listReleasesOutput)
+	statusMap, err := helm.StatusReleases()
+	assert.NoError(t, err, "should list the release statuses without any error")
+	for release, status := range statusMap {
+		assert.Equal(t, expectedSatusMap[release], status, "expected status '%s', got '%s'", expectedSatusMap[release], status)
+	}
 }
 
 func TestLint(t *testing.T) {

@@ -71,7 +71,7 @@ func (o *GetAddonOptions) Run() error {
 			addonEnabled[addon.Name] = true
 		}
 	}
-	statusMap, err := addon.GetChartStatusMap()
+	statusMap, err := o.Helm().StatusReleases()
 	if err != nil {
 		log.Warnf("Failed to find helm installs: %s\n", err)
 	}
