@@ -21,6 +21,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
@@ -213,7 +214,7 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 func (options *InstallOptions) Run() error {
 	client, originalNs, err := options.KubeClient()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create the kube client")
 	}
 	options.kubeClient = client
 
@@ -225,12 +226,12 @@ func (options *InstallOptions) Run() error {
 
 	err = options.installRequirements(options.Flags.Provider, helmBinary)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to install the platform requirements")
 	}
 
 	context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
 	}
 
 	ns := options.Flags.Namespace
@@ -246,12 +247,12 @@ func (options *InstallOptions) Run() error {
 
 	err = options.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
 	}
 
 	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to get the cloud provider '%s'", options.Flags.Provider)
 	}
 
 	initOpts.Flags.Provider = options.Flags.Provider
@@ -264,7 +265,7 @@ func (options *InstallOptions) Run() error {
 		 */
 		err = options.createClusterAdmin()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create the cluster admin")
 		} else {
 			log.Success("created role cluster-admin")
 		}
@@ -272,7 +273,7 @@ func (options *InstallOptions) Run() error {
 
 	currentContext, err := options.getCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get the current context")
 	}
 	if options.Flags.Provider == AWS || options.Flags.Provider == EKS {
 		err = options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
@@ -287,7 +288,7 @@ func (options *InstallOptions) Run() error {
 		}
 		ip, err := options.getCommandOutput("", "minikube", "ip")
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to get the IP from minikube")
 		}
 		options.Flags.Domain = ip + ".nip.io"
 	}
@@ -310,13 +311,13 @@ func (options *InstallOptions) Run() error {
 
 	err = initOpts.Run()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to initialize the jx")
 	}
 
 	if isOpenShiftProvider(options.Flags.Provider) {
 		err = options.enableOpenShiftSCC(ns)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
 		}
 	}
 
@@ -328,17 +329,17 @@ func (options *InstallOptions) Run() error {
 	// get secrets to use in helm install
 	secrets, err := options.getGitSecrets()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read the git secrets from configuration")
 	}
 
 	err = options.AdminSecretsService.NewAdminSecretsConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create the admin secret config service")
 	}
 
 	adminSecrets, err := options.AdminSecretsService.Secrets.String()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read the admin secrets")
 	}
 
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
@@ -363,22 +364,22 @@ func (options *InstallOptions) Run() error {
 	// lets add any GitHub Enterprise servers
 	gitAuthCfg, err := options.CreateGitAuthConfigService()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create the git auth config service")
 	}
 	err = options.addGitServersToJenkinsConfig(helmConfig, gitAuthCfg)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to add the git servers to Jenkins config")
 	}
 
 	config, err := helmConfig.String()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get the helm config")
 	}
 
 	// clone the environments repo
 	wrkDir, err := options.cloneJXCloudEnvironmentsRepo()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to clone the jx cloud environments reppo")
 	}
 
 	// run  helm install setting the token and domain values
@@ -393,25 +394,25 @@ func (options *InstallOptions) Run() error {
 	// create a temporary file that's used to pass current git creds to helm in order to create a secret for pipelines to tag releases
 	dir, err := util.ConfigDir()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create a temporary config dir for git credentials")
 	}
 
 	secretsFileName := filepath.Join(dir, GitSecretsFile)
 	err = ioutil.WriteFile(secretsFileName, []byte(secrets), 0644)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to write the git secrets in the secrets file")
 	}
 
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
 	err = ioutil.WriteFile(adminSecretsFileName, []byte(adminSecrets), 0644)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to write the admin secrets in the secrets file")
 	}
 
 	configFileName := filepath.Join(dir, ExtraValuesFile)
 	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to write the config file")
 	}
 
 	data := make(map[string][]byte)
@@ -430,13 +431,13 @@ func (options *InstallOptions) Run() error {
 	if oldSecret == nil || err != nil {
 		_, err = secretResources.Create(jxSecrets)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create the jx secret resource")
 		}
 	} else {
 		oldSecret.Data = jxSecrets.Data
 		_, err = secretResources.Update(oldSecret)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to update the jx secret resource")
 		}
 	}
 
@@ -452,20 +453,20 @@ func (options *InstallOptions) Run() error {
 	options.Verbose = true
 	err = options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
 	}
 
 	version := options.Flags.Version
 	if version == "" {
 		version, err = loadVersionFromCloudEnvironmentsDir(wrkDir)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to load version from cloud environments dir")
 		}
 	}
 
 	err = options.Helm().UpdateRepo()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to update the helm repo")
 	}
 
 	valueFiles := []string{"./myvalues.yaml", "./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName}
@@ -474,12 +475,12 @@ func (options *InstallOptions) Run() error {
 	// from ~/.jx folder also only if is present
 	curDir, err := os.Getwd()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get the current working directory")
 	}
 	myValuesFile := filepath.Join(curDir, "myvalues.yaml")
 	exists, err := util.FileExists(myValuesFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to check if the myvaules.yaml file exists in the current directory")
 	}
 	if exists {
 		valueFiles = append(valueFiles, myValuesFile)
@@ -488,7 +489,7 @@ func (options *InstallOptions) Run() error {
 		myValuesFile = filepath.Join(dir, "myvalues.yaml")
 		exists, err = util.FileExists(myValuesFile)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to check if the myvaules.yaml file exists in the .jx directory")
 		}
 		if exists {
 			valueFiles = append(valueFiles, myValuesFile)
@@ -498,7 +499,7 @@ func (options *InstallOptions) Run() error {
 
 	timeoutInt, err := strconv.Atoi(timeout)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to convert the helm install timeout value")
 	}
 	options.Helm().SetCWD(makefileDir)
 	jxChart := "jenkins-x/jenkins-x-platform"
@@ -509,24 +510,24 @@ func (options *InstallOptions) Run() error {
 		err = options.Helm().InstallChart(jxChart, jxRelName, ns, &version, &timeoutInt, nil, valueFiles)
 	}
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to install/upgrade the jenkins-x platform chart")
 	}
 
 	if options.Flags.CleanupTempFiles {
 		err = os.Remove(secretsFileName)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to cleanup the secrets file")
 		}
 
 		err = os.Remove(configFileName)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to cleanup the config file")
 		}
 	}
 
 	err = options.waitForInstallToBeReady(ns)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to wait for jenkinx-x chart installation to be ready")
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 
@@ -541,13 +542,13 @@ func (options *InstallOptions) Run() error {
 		helmOptions.currentNamespace = ns
 		err = helmOptions.Run()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to edit the helm options")
 		}
 	}
 
 	addonConfig, err := addon.LoadAddonsConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to load the addons configuration")
 	}
 
 	for _, ac := range addonConfig.Addons {
@@ -576,12 +577,12 @@ func (options *InstallOptions) Run() error {
 			return
 		})
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to get the Jenkins API token")
 		}
 
 		jxClient, _, err := options.JXClient()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create the jx client")
 		}
 
 		// lets only recreate the environments if its the first time we run this
@@ -604,7 +605,7 @@ func (options *InstallOptions) Run() error {
 
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to create staging environment")
 			}
 			options.CreateEnvOptions.Options.Name = "production"
 			options.CreateEnvOptions.Options.Spec.Label = "Production"
@@ -618,20 +619,20 @@ func (options *InstallOptions) Run() error {
 
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to create the production environment")
 			}
 		}
 	}
 
 	err = options.saveChartmuseumAuthConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to save the auth config for Chartmuseum")
 	}
 
 	if options.Flags.RegisterLocalHelmRepo {
 		err = options.registerLocalHelmRepo(options.Flags.LocalHelmRepoName, ns)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to register the local helm repo '%s'", options.Flags.LocalHelmRepoName)
 		}
 	}
 
