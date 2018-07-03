@@ -20,6 +20,24 @@ var (
 		"roles/storage.objectAdmin"}
 )
 
+func BucketExists(bucketName string) (bool, error) {
+	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
+	output, err := util.RunCommandWithOutput("", "gsutil", "ls")
+	if err != nil {
+		return false, err
+	}
+	return strings.Contains(output, fullBucketName), nil
+}
+
+func CreateBucket(bucketName string) error {
+	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
+	err := util.RunCommand("", "gsutil", "mb", fullBucketName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterConfigDir string) (string, error) {
 	args := []string{"iam",
 		"service-accounts",

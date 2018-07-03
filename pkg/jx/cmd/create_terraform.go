@@ -22,6 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/terraform"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -90,6 +91,16 @@ var (
 		jx create terraform -c dev=gke -c stage=gke -c prod=gke
 
 `)
+	validTerraformVersions = "0.11.0"
+
+	gkeBucketConfiguration = `terraform {
+  required_version = ">= %s"
+  backend "gcs" {
+    bucket      = "%s-%s-terraform-state"
+    prefix      = "%s"
+    credentials = "%s"
+  }
+}`
 )
 
 const (
@@ -444,7 +455,7 @@ func (o *CreateTerraformOptions) findDevCluster(clusterDefinitions []Cluster) (C
 			return c, nil
 		}
 	}
-	return nil, fmt.Errorf("Unable to find jx environment %s" , o.Flags.JxEnvironment)
+	return nil, fmt.Errorf("Unable to find jx environment %s", o.Flags.JxEnvironment)
 }
 
 func (o *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
@@ -479,7 +490,7 @@ func (o *CreateTerraformOptions) commitClusters(dir string) error {
 	return nil
 }
 
-func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string) (error) {
+func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string) error {
 	g.DiskSize = o.Flags.GKEDiskSize
 	g.AutoUpgrade = o.Flags.GKEAutoUpgrade
 	g.AutoRepair = o.Flags.GKEAutoRepair
@@ -606,44 +617,58 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 	}
 	serviceAccountPath := filepath.Join(filepath.Dir(path), fmt.Sprintf("%s.key.json", serviceAccountName))
 
-	args := []string{"init", path}
-	err = o.runCommand("terraform", args...)
+	storageBucket := fmt.Sprintf(gkeBucketConfiguration, validTerraformVersions, g.ProjectId, o.Flags.OrganisationName, g.Name(), serviceAccountPath)
+	o.Debugf("Using bucket configuration %s", storageBucket)
+
+	terraformTf := filepath.Join(path, "terraform.tf")
+
+	// file exists
+	if _, err := os.Stat(terraformTf); os.IsNotExist(err) {
+		file, err := os.OpenFile(terraformTf, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = file.WriteString(storageBucket)
+		if err != nil {
+			return err
+		}
+	}
+
+	// create the bucket
+	bucketName := fmt.Sprintf("%s-%s-terraform-state", g.ProjectId, o.Flags.OrganisationName)
+	exists, err := gke.BucketExists(bucketName)
 	if err != nil {
 		return err
 	}
 
-	terraformState := filepath.Join(path, "terraform.tfstate")
+	if !exists {
+		err = gke.CreateBucket(bucketName)
+		if err != nil {
+			return err
+		}
+	}
 
-	args = []string{"plan",
-		fmt.Sprintf("-state=%s", terraformState),
-		fmt.Sprintf("-var-file=%s", terraformVars),
-		"-var",
-		fmt.Sprintf("credentials=%s", serviceAccountPath),
-		path}
+	err = terraform.Init(path)
+	if err != nil {
+		return err
+	}
 
-	err = o.runCommand("terraform", args...)
+	err = terraform.Plan(path, terraformVars, serviceAccountPath)
 	if err != nil {
 		return err
 	}
 
 	log.Info("Applying plan...\n")
 
-	args = []string{"apply",
-		"-auto-approve",
-		fmt.Sprintf("-state=%s", terraformState),
-		fmt.Sprintf("-var-file=%s", terraformVars),
-		"-var",
-		fmt.Sprintf("credentials=%s", serviceAccountPath),
-		path}
-
-	err = o.runCommandVerbose("terraform", args...)
+	err = terraform.Apply(path, terraformVars, serviceAccountPath)
 	if err != nil {
 		return err
 	}
 
 	// should we setup the labels at this point?
-	//gcloud container clusters update ninjacandy --update-labels ''
-	args = []string{"container",
+	args := []string{"container",
 		"clusters",
 		"update",
 		g.Name()}
