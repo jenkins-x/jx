@@ -465,20 +465,16 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	curDir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	myValuesFile := filepath.Join(curDir, "myvalues.yaml")
+	myValuesFile := filepath.Join(dir, "myvalues.yaml")
 	exists, err := util.FileExists(myValuesFile)
 	if err != nil {
 		return err
 	}
+	valueFiles := []string{"./myvalues.yaml", "./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName}
 	if exists {
+		valueFiles = append(valueFiles, myValuesFile)
 		log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
 	}
-	valueFiles := []string{"./myvalues.yaml", "./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName, myValuesFile}
 	timeoutInt, err := strconv.Atoi(timeout)
 	if err != nil {
 		return err
