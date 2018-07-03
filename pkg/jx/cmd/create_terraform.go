@@ -356,15 +356,19 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 			return err
 		}
 
-		//err = o.installJx(dir, clusterDefinitions)
-		//if err != nil {
-		//	return err
-		//}
+		devCluster, err := o.findDevCluster(clusterDefinitions)
+		if err != nil {
+			fmt.Fprintf(o.Stdout(), "Skipping jx install\n")
+		} else {
+			err = o.installJx(devCluster)
+			if err != nil {
+				return err
+			}
+		}
+
 	} else {
 		fmt.Fprintf(o.Stdout(), "Skipping terraform apply\n")
 	}
-
-	// if the cluster is called dev, install jx
 
 	return nil
 }
@@ -429,6 +433,15 @@ func (o *CreateTerraformOptions) createClusters(dir string, clusterDefinitions [
 	}
 
 	return nil
+}
+
+func (o *CreateTerraformOptions) findDevCluster(clusterDefinitions []Cluster) (Cluster, error) {
+	for _, c := range clusterDefinitions {
+		if c.Name() == o.Flags.JxEnvironment {
+			return c, nil
+		}
+	}
+	return nil, fmt.Errorf("Unable to find jx environment %s" , o.Flags.JxEnvironment)
 }
 
 func (o *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
