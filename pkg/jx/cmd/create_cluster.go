@@ -49,6 +49,7 @@ const (
 
     * aks (Azure Container Service - https://docs.microsoft.com/en-us/azure/aks)
     * aws (Amazon Web Services via kops - https://github.com/aws-samples/aws-workshop-for-kubernetes/blob/master/readme.adoc)
+    * eks (Amazon Web Services Elastic Container Service for Kubernetes - https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html)
     * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
     * oce (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
     * kubernetes for custom installations of Kubernetes
@@ -120,11 +121,12 @@ func NewCmdCreateCluster(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 	}
 
 	cmd.AddCommand(NewCmdCreateClusterAKS(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterOCE(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterAWS(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterEKS(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterGKE(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterMinikube(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterMinishift(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterOCE(f, out, errOut))
 
 	return cmd
 }
