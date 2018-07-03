@@ -108,6 +108,7 @@ func NewCmdCreateTerraform(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 				Err:     errOut,
 			},
 		},
+		InstallOptions: createInstallOptions(f, out, errOut),
 	}
 
 	cmd := &cobra.Command{
@@ -124,7 +125,6 @@ func NewCmdCreateTerraform(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd)
-	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 
 	return cmd
 }
@@ -146,6 +146,9 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.GKEMaxNumOfNodes, "gke-max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.GKEProjectId, "gke-project-id", "", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.GKEZone, "gke-zone", "", "", "The compute zone (e.g. us-central1-a) for the cluster")
+
+	// install options
+	options.InstallOptions.addInstallFlags(cmd, true)
 }
 
 func stringInValidProviders(a string) bool {
