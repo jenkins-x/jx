@@ -33,7 +33,7 @@ import (
 const (
 	optionServerName        = "name"
 	optionServerURL         = "url"
-	exposecontrollerVersion = "2.3.56"
+	exposecontrollerVersion = "2.3.60"
 	exposecontroller        = "exposecontroller"
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
@@ -118,6 +118,7 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 		}
 		o.kubeClient = kubeClient
 		o.currentNamespace = currentNs
+
 	}
 	return o.kubeClient, o.currentNamespace, nil
 }
@@ -623,18 +624,26 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName, passw
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
 
-	var exValues []string
-	if targetNamespace != devNamespace {
-		// run exposecontroller using existing team config
-		exValues = []string{
-			"config.exposer=" + exposecontrollerConfig["exposer"],
-			"config.domain=" + exposecontrollerConfig["domain"],
-			"config.http=" + exposecontrollerConfig["http"],
-			"config.tls-acme=" + exposecontrollerConfig["tls-acme"],
-		}
+	return o.runExposecontroller(devNamespace, targetNamespace, releaseName, exposecontrollerConfig)
+}
+
+func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace, releaseName string, exposecontrollerConfig map[string]string) error {
+
+	//var exValues []string
+	//if targetNamespace != devNamespace {
+	// run exposecontroller using existing team config
+	exValues := []string{
+		"config.exposer=" + exposecontrollerConfig["exposer"],
+		"config.domain=" + exposecontrollerConfig["domain"],
+		"config.tlsacme=" + exposecontrollerConfig["tls-acme"],
 	}
 
-	err = o.installChart("expose"+releaseName, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
+	if exposecontrollerConfig["http"] == "true" {
+		exValues = append(exValues, "config.http="+exposecontrollerConfig["http"])
+	}
+	//}
+
+	err := o.installChart("expose"+releaseName, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}
@@ -643,7 +652,6 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName, passw
 		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
 	}
 	return kube.DeleteJob(o.kubeClient, targetNamespace, exposecontroller)
-
 }
 
 func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, error) {

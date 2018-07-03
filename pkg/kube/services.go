@@ -16,7 +16,11 @@ import (
 )
 
 const (
-	ExposeURLAnnotation = "fabric8.io/exposeUrl"
+	ExposeAnnotation          = "fabric8.io/expose"
+	ExposeURLAnnotation       = "fabric8.io/exposeUrl"
+	JenkinsXSkipTLSAnnotation = "jenkins-x.io/skip.tls" // do this in exposecontroller and don t write the TLS stuff
+	ExposeIngressAnnotation   = "fabric8.io/ingress.annotations"
+	CertManagerAnnotation     = "certmanager.k8s.io/issuer"
 )
 
 type ServiceURL struct {
