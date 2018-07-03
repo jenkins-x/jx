@@ -24,6 +24,9 @@ pipeline {
         // for BDD tests
         GIT_PROVIDER_URL     = "https://github.beescloud.com"
         GHE_TOKEN            = "$GHE_CREDS_PSW"
+
+        JX_DISABLE_DELETE_APP  = "true"
+        JX_DISABLE_DELETE_REPO = "true"
     }
     stages {
         stage('CI Build and Test') {
