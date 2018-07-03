@@ -53,10 +53,8 @@ type CreateClusterOCEFlags struct {
 
 var (
 	createClusterOCELong = templates.LongDesc(`
-		This command creates a new kubernetes cluster on OCE, installing required local dependencies and provisions the
+		This command creates a new kubernetes cluster on OCE, installs required local dependencies and provisions the
 		Jenkins X platform
-
-		You can see a demo of this command here: [http://jenkins-x.io/demos/create_cluster_oce/](http://jenkins-x.io/demos/create_cluster_oce/)
 
 	  Oracle Cloud Infrastructure Container Engine for Kubernetes is a fully-managed, scalable, and highly available
 	  service that you can use to deploy your containerized applications to the cloud.
@@ -105,11 +103,11 @@ func NewCmdCreateClusterOCE(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	cmd.Flags().StringVarP(&options.Flags.ServicesCidr, "servicesCidr", "", "", "Kubernetes Service CIDR Block.")
 	cmd.Flags().BoolVarP(&options.Flags.IsKubernetesDashboardEnabled, "isKubernetesDashboardEnabled", "", true, "Is KubernetesDashboard Enabled.")
 	cmd.Flags().BoolVarP(&options.Flags.IsTillerEnabled, "isTillerEnabled", "", false, "Is Tiller Enabled.")
-	cmd.Flags().StringVarP(&options.Flags.ServiceLbSubnetIds, "serviceLbSubnetIds", "", "", "Kubernetes Service LB Subnets.")
+	cmd.Flags().StringVarP(&options.Flags.ServiceLbSubnetIds, "serviceLbSubnetIds", "", "", "Kubernetes Service LB Subnets. Optional but nice to have it as Jenkins X will create ingress controller based on it.")
 	cmd.Flags().StringVarP(&options.Flags.NodePoolName, "nodePoolName", "", "", "The name of the node pool.")
 	cmd.Flags().StringVarP(&options.Flags.NodeImageName, "nodeImageName", "", "", "The name of the image running on the nodes in the node pool.")
 	cmd.Flags().StringVarP(&options.Flags.NodeShape, "nodeShape", "", "", "The name of the node shape of the nodes in the node pool.")
-	cmd.Flags().StringVarP(&options.Flags.SSHPublicKey, "sshPublicKey", "", "", "The SSH public key to add to each node in the node pool.")
+	cmd.Flags().StringVarP(&options.Flags.SSHPublicKey, "sshPublicKey", "", "", "The SSH public key to add to each node in the node pool. Optional but nice to have it as user can access work nodes with it.")
 	cmd.Flags().StringVarP(&options.Flags.QuantityPerSubnet, "quantityPerSubnet", "", "", "The number of nodes to create in each subnet.")
 	cmd.Flags().StringVarP(&options.Flags.NodePoolSubnetIds, "nodePoolSubnetIds", "", "", "The OCIDs of the subnets in which to place nodes for this node pool.")
 	cmd.Flags().StringVarP(&options.Flags.ClusterMaxWaitSeconds, "clusterMaxWaitSeconds", "", "", "The maximum time to wait for the work request to reach the state defined by --wait-for-state. Defaults to 1200 seconds.")
@@ -257,6 +255,17 @@ func (o *CreateClusterOCEOptions) createClusterOCE() error {
 
 	//Start processing optional parameters
 	serviceLbSubnetIds := o.Flags.ServiceLbSubnetIds
+
+	if serviceLbSubnetIds == "" {
+		prompt := &survey.Input{
+			Message: "The OCIDs of Kubernetes Service LB Subnets:",
+			Default: "",
+			Help:    "This is optional parameter and nice to have it as Jenkins X will create ingress controller based on it",
+		}
+
+		survey.AskOne(prompt, &serviceLbSubnetIds, nil)
+	}
+
 	if serviceLbSubnetIds != "" {
 		serviceLbSubnetIdsArray := strings.Split(serviceLbSubnetIds, ",")
 		for i := range serviceLbSubnetIdsArray {
@@ -271,6 +280,17 @@ func (o *CreateClusterOCEOptions) createClusterOCE() error {
 		}
 
 		args = append(args, "--service-lb-subnet-ids", "file:///tmp/oce_cluster_config.json")
+	}
+
+	sshPublicKeyValue := o.Flags.SSHPublicKey
+	if sshPublicKeyValue == "" {
+		prompt := &survey.Input{
+			Message: "The SSH public key to add to each node in the node pool:",
+			Default: "",
+			Help:    "This is optional parameter and nice to have it as user can access work nodes with it",
+		}
+
+		survey.AskOne(prompt, &sshPublicKeyValue, nil)
 	}
 
 	isKubernetesDashboardEnabled := o.Flags.IsKubernetesDashboardEnabled
@@ -371,8 +391,8 @@ func (o *CreateClusterOCEOptions) createClusterOCE() error {
 		log.Info("Creating Node Pool...\n")
 		poolArgsArray := strings.Split(poolArgs, " ")
 
-		if o.Flags.SSHPublicKey != "" {
-			sshPubKey := "--ssh-public-key=" + o.Flags.SSHPublicKey
+		if sshPublicKeyValue != "" {
+			sshPubKey := "--ssh-public-key=" + sshPublicKeyValue
 			poolArgsArray = append(poolArgsArray, sshPubKey)
 		}
 
