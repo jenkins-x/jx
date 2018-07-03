@@ -452,12 +452,7 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	helmBin, err := o.TeamHelmBin()
-	if err != nil {
-		log.Warnf("Failed to find helm binary: %s\n", err)
-		helmBin = "helm"
-	}
-	err = o.runCommandVerbose(helmBin, "upgrade", o.ReleaseName, ".", "--force", "--install", "--debug", "--wait", "--namespace", o.Namespace, fmt.Sprintf("--values=%s", configFileName))
+	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, nil, true, nil, true, true, nil, []string{configFileName})
 	if err != nil {
 		return err
 	}

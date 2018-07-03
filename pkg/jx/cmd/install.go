@@ -444,7 +444,6 @@ func (options *InstallOptions) Run() error {
 		timeout = defaultInstallTimeout
 	}
 
-	// run the helm install
 	log.Infof("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
 
 	options.Verbose = true

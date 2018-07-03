@@ -343,15 +343,11 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	if err != nil {
 		return releaseInfo, err
 	}
-	helmBin, err := o.TeamHelmBin()
-	if err != nil {
-		return releaseInfo, err
-	}
 
 	// lets do a helm update to ensure we can find the latest version
 	if !o.NoHelmUpdate {
 		log.Info("Updating the helm repositories to ensure we can find the latest versions...")
-		err = o.runCommand(helmBin, "repo", "update")
+		err = o.Helm().UpdateRepo()
 		if err != nil {
 			return releaseInfo, err
 		}
@@ -366,11 +362,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(o.Activities, startPromote)
 
-	if version != "" {
-		err = o.runCommand(helmBin, "upgrade", "--install", "--wait", "--namespace", targetNS, "--version", version, releaseName, fullAppName)
-	} else {
-		err = o.runCommand(helmBin, "upgrade", "--install", "--wait", "--namespace", targetNS, releaseName, fullAppName)
-	}
+	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil)
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
 		if err != nil {

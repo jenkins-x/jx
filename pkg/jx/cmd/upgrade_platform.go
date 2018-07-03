@@ -74,15 +74,10 @@ func NewCmdUpgradePlatform(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 func (o *UpgradePlatformOptions) Run() error {
 	ns := o.Namespace
 	version := o.Version
-	helmBinary, err := o.TeamHelmBin()
+	err := o.Helm().UpdateRepo()
 	if err != nil {
 		return err
 	}
-	err = o.runCommand(helmBinary, "repo", "update")
-	if err != nil {
-		return err
-	}
-	args := []string{"upgrade"}
 	if version == "" {
 		io := &InstallOptions{}
 		io.CommonOptions = o.CommonOptions
@@ -98,14 +93,10 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 	if version != "" {
 		log.Infof("Upgrading to version %s\n", util.ColorInfo(version))
-		args = append(args, "--version", version)
 	}
-	if ns != "" {
-		args = append(args, "--namespace", ns)
-	}
+	values := []string{}
 	if o.Set != "" {
-		args = append(args, "--set", o.Set)
+		values = append(values, o.Set)
 	}
-	args = append(args, o.ReleaseName, o.Chart)
-	return o.runCommandVerbose(helmBinary, args...)
+	return o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, nil, false, nil, false, false, values, nil)
 }
