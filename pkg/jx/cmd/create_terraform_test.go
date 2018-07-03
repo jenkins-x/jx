@@ -31,12 +31,24 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 	assert.NoError(t, err)
 
 	c1 := GKECluster{
-		name:     "foo",
-		provider: "gke",
+		_Name:     "foo",
+		_Provider: "gke",
 	}
+
 	c2 := GKECluster{
-		name:     "bar",
-		provider: "gke",
+		_Name:     "bar",
+		_Provider: "gke",
+	}
+
+	clusterArray := []Cluster{ c1, c2 }
+
+	for _, c := range clusterArray {
+		assert.NotNil(t, c)
+		_, ok := c.(GKECluster)
+		assert.True(t, ok, "TEST: Unable to assert type to GKECluster")
+
+		_, ok = c.(*GKECluster)
+		assert.False(t, ok, "TEST: Unable to assert type to *GKECluster")
 	}
 
 	o := CreateTerraformOptions{
@@ -45,7 +57,7 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 				BatchMode: true,
 			},
 		},
-		Clusters: []Cluster{c1, c2},
+		Clusters: clusterArray,
 		Flags: Flags{
 			OrganisationName: "my-org",
 			GKEProjectId:     "gke_project",

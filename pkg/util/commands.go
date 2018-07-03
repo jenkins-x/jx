@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"io/ioutil"
 )
 
 func PathWithBinary() string {
@@ -45,6 +46,21 @@ func RunCommand(dir string, name string, args ...string) error {
 	}
 	e.Stdout = os.Stdout
 	e.Stderr = os.Stdin
+	err := e.Run()
+	if err != nil {
+		return errors.Wrapf(err, "failed to run '%s %s' command in directory '%s'", name, strings.Join(args, " "), dir)
+	}
+	return err
+}
+
+func RunCommandQuietly(dir string, name string, args ...string) error {
+	os.Setenv("PATH", PathWithBinary())
+	e := exec.Command(name, args...)
+	if dir != "" {
+		e.Dir = dir
+	}
+	e.Stdout = ioutil.Discard
+	e.Stderr = ioutil.Discard
 	err := e.Run()
 	if err != nil {
 		return errors.Wrapf(err, "failed to run '%s %s' command in directory '%s'", name, strings.Join(args, " "), dir)
