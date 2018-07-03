@@ -465,16 +465,34 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	myValuesFile := filepath.Join(dir, "myvalues.yaml")
+	valueFiles := []string{"./myvalues.yaml", "./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName}
+
+	// Overwrite the values with the content of myvaules.yaml files from the current folder if exists, otherwise
+	// from ~/.jx folder also only if is present
+	curDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	myValuesFile := filepath.Join(curDir, "myvalues.yaml")
 	exists, err := util.FileExists(myValuesFile)
 	if err != nil {
 		return err
 	}
-	valueFiles := []string{"./myvalues.yaml", "./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName}
 	if exists {
 		valueFiles = append(valueFiles, myValuesFile)
 		log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
+	} else {
+		myValuesFile = filepath.Join(dir, "myvalues.yaml")
+		exists, err = util.FileExists(myValuesFile)
+		if err != nil {
+			return err
+		}
+		if exists {
+			valueFiles = append(valueFiles, myValuesFile)
+			log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
+		}
 	}
+
 	timeoutInt, err := strconv.Atoi(timeout)
 	if err != nil {
 		return err
