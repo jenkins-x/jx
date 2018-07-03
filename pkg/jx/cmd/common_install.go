@@ -68,6 +68,12 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installTerraform()
 		case "oci":
 			err = o.installOciCli()
+		case "aws":
+			err = o.installAws()
+		case "eksctl":
+			err = o.installEksCtl()
+		case "heptio-authenticator-aws":
+			err = o.installHeptioAuthenticatorAws()
 		default:
 			return fmt.Errorf("unknown dependency to install %s\n", i)
 		}
@@ -803,6 +809,87 @@ func (o *CommonOptions) installOciCli() error {
 	}
 
 	return os.Remove(filePath)
+}
+
+func (o *CommonOptions) installAws() error {
+	// TODO
+	return nil
+}
+
+func (o *CommonOptions) installEksCtl() error {
+	binDir, err := util.BinaryLocation()
+	binary := "eksctl"
+	if err != nil {
+		return err
+	}
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return err
+	}
+	latestVersion, err := util.GetLatestVersionFromGitHub("weaveworks", binary)
+	if err != nil {
+		return err
+	}
+	extension := "tgz"
+	if runtime.GOOS == "windows" {
+		extension = "zip"
+	}
+	clientURL := fmt.Sprintf("https://github.com/weaveworks/eksctl/releases/download/%s/eksctl_%s_%s.%s", latestVersion, strings.Title(runtime.GOOS), runtime.GOARCH, extension)
+	fullPath := filepath.Join(binDir, fileName)
+	tarFile := fullPath + "." + extension
+	err = o.downloadFile(clientURL, tarFile)
+	if err != nil {
+		return err
+	}
+	if extension == "zip" {
+		zipDir := filepath.Join(binDir, "eksctl-tmp-"+uuid.NewUUID().String())
+		err = os.MkdirAll(zipDir, DefaultWritePermissions)
+		if err != nil {
+			return err
+		}
+		err = util.Unzip(tarFile, zipDir)
+		if err != nil {
+			return err
+		}
+		f := filepath.Join(zipDir, fileName)
+		exists, err := util.FileExists(f)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return fmt.Errorf("Could not find file %s inside the downloaded eksctl.zip!", f)
+		}
+		err = os.Rename(f, fullPath)
+		if err != nil {
+			return err
+		}
+		err = os.RemoveAll(zipDir)
+	} else {
+		err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	}
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
+
+func (o *CommonOptions) installHeptioAuthenticatorAws() error {
+	url := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/heptio-authenticator-aws"
+	fileName := "heptio-authenticator-aws"
+
+	if runtime.GOOS == "darwin" {
+		url = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/darwin/amd64/heptio-authenticator-aws"
+	} else if runtime.GOOS == "windows" {
+		url = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/windows/amd64/heptio-authenticator-aws.exe"
+		fileName = "heptio-authenticator-aws.exe"
+	}
+	binDir, err := util.BinaryLocation()
+	fullPath := filepath.Join(binDir, fileName)
+	err = o.downloadFile(url, fullPath)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
 }
 
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
