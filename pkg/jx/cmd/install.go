@@ -220,6 +220,9 @@ func (options *InstallOptions) Run() error {
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
 
+	// configure the helm binary
+	options.Helm().SetHelmBinary(helmBinary)
+
 	err = options.installRequirements(options.Flags.Provider, helmBinary)
 	if err != nil {
 		return err

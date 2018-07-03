@@ -61,8 +61,6 @@ pipeline {
 
                         sh "cp ./build/linux/jx /usr/bin"
 
-                        input 'ok'
-
                         sh "jx install --namespace ${TEAM} --helm3 --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW"
 
                         // lets test we have the jenkins token setup
