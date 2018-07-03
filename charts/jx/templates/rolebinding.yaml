@@ -11,7 +11,7 @@ roleRef:
   name: {{ template "jx.name" . }}
 subjects:
 - kind: ServiceAccount
-  name: {{ template "jx.name" . }}
+  name: {{ template "jx.fullname" . }}
   namespace: {{ .Release.Namespace }}
 {{- end }}
 {{- end }}
