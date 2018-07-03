@@ -31,5 +31,5 @@ type Helmer interface {
 	StatusRelease(releaseName string) error
 	StatusReleases() (map[string]string, error)
 	Lint() (string, error)
-	Version() (string, error)
+	Version(tls bool) (string, error)
 }

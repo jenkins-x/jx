@@ -182,7 +182,7 @@ func (o *CommonOptions) getInstalledChartRepos(helmBinary string) (map[string]st
 
 func (o *CommonOptions) helmInit(dir string) error {
 	o.Helm().SetCWD(dir)
-	_, err := o.Helm().Version()
+	_, err := o.Helm().Version(false)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 		return o.Helm().HelmBinary(), err
 	}
 
-	_, err = o.Helm().Version()
+	_, err = o.Helm().Version(false)
 	if err != nil {
 		return o.Helm().HelmBinary(), err
 	}

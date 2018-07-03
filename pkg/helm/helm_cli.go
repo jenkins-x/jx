@@ -299,8 +299,13 @@ func (h *HelmCLI) Lint() (string, error) {
 	return h.runHelmWithOutput("lint")
 }
 
-func (h *HelmCLI) Version() (string, error) {
-	return h.runHelmWithOutput("version")
+func (h *HelmCLI) Version(tls bool) (string, error) {
+	args := []string{}
+	args = append(args, "version --short")
+	if tls {
+		args = append(args, "--tls")
+	}
+	return h.runHelmWithOutput(args...)
 }
 
 func (h *HelmCLI) PackageChart() error {

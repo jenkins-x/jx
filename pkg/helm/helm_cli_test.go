@@ -220,10 +220,10 @@ func TestLint(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	expectedArgs := "version"
+	expectedArgs := "version --short"
 	expectedOutput := "1.0.0"
 	helm := createHelmWithOutput(expectedArgs, expectedOutput)
-	output, err := helm.Version()
+	output, err := helm.Version(false)
 	assert.NoError(t, err, "should get the version without any error")
 	assert.Equal(t, expectedOutput, output)
 }
