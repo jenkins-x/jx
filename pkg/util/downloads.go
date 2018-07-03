@@ -50,6 +50,17 @@ func DownloadFile(filepath string, url string) (err error) {
 }
 
 func GetLatestVersionFromGitHub(githubOwner, githubRepo string) (semver.Version, error) {
+	text, err := GetLatestVersionStringFromGitHub(githubOwner, githubRepo)
+	if err != nil {
+		return semver.Version{}, err
+	}
+	if text == "" {
+		return semver.Version{}, fmt.Errorf("No version found")
+	}
+	return semver.Make(text)
+}
+
+func GetLatestVersionStringFromGitHub(githubOwner, githubRepo string) (string, error) {
 	if githubClient == nil {
 		token := os.Getenv("GH_TOKEN")
 		var tc *http.Client
@@ -69,14 +80,14 @@ func GetLatestVersionFromGitHub(githubOwner, githubRepo string) (semver.Version,
 	)
 	release, resp, err = client.Repositories.GetLatestRelease(context.Background(), githubOwner, githubRepo)
 	if err != nil {
-		return semver.Version{}, fmt.Errorf("Unable to get latest version for github.com/%s/%s %v", githubOwner, githubRepo, err)
+		return "", fmt.Errorf("Unable to get latest version for github.com/%s/%s %v", githubOwner, githubRepo, err)
 	}
 	defer resp.Body.Close()
 	latestVersionString := release.TagName
 	if latestVersionString != nil {
-		return semver.Make(strings.TrimPrefix(*latestVersionString, "v"))
+		return strings.TrimPrefix(*latestVersionString, "v"), nil
 	}
-	return semver.Version{}, fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
+	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
 }
 
 // untargz a tarball to a target, from

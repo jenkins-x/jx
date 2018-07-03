@@ -117,7 +117,7 @@ func (o *CreateClusterEKSOptions) Run() error {
 		args = append(args, "--ssh-public-key", flags.SshPublicKey)
 	}
 	if flags.NodeCount >= 0 {
-		args = append(args, "--node-count", strconv.Itoa(flags.NodeCount))
+		args = append(args, "--nodes", strconv.Itoa(flags.NodeCount))
 	}
 	if flags.NodesMin >= 0 {
 		args = append(args, "--nodes-min", strconv.Itoa(flags.NodesMin))
