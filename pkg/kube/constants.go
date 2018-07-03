@@ -169,6 +169,9 @@ const (
 	// AnnotationLocalDir the local directory that is sync'd to the DevPod
 	AnnotationLocalDir = "jenkins.io/local-dir"
 
+	// AnnotationIsDefaultStorageClass used to indicate a storageclass is default
+	AnnotationIsDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
+
 	// SecretDataUsername the username in a Secret/Credentials
 	SecretDataUsername = "username"
 
