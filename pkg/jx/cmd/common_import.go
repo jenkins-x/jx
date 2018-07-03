@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -134,59 +135,71 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		}
 	}
 	org := gitInfo.Organisation
-	folder, err := jenk.GetJob(org)
-	if err != nil {
-		// could not find folder so lets try create it
-		jobUrl := util.UrlJoin(jenk.BaseURL(), jenk.GetJobURLPath(org))
-		folderXml := jenkins.CreateFolderXml(jobUrl, org)
-		err = jenk.CreateJobWithXML(folderXml, org)
+	err = o.retry(10, time.Second*10, func() error {
+		folder, err := jenk.GetJob(org)
 		if err != nil {
-			return fmt.Errorf("Failed to create the %s folder in jenkins: %s", org, err)
-		}
-	} else {
-		c := folder.Class
-		if c != "com.cloudbees.hudson.plugins.folder.Folder" {
-			log.Warnf("Warning the folder %s is of class %s", org, c)
-		}
-	}
-	projectXml := jenkins.CreateMultiBranchProjectXml(gitInfo, gitProvider, credentials, branchPattern, jenkinsfile)
-	jobName := gitInfo.Name
-	job, err := jenk.GetJobByPath(org, jobName)
-	if err == nil {
-		if failIfExists {
-			return fmt.Errorf("Job already exists in Jenkins at %s", job.Url)
+			// could not find folder so lets try create it
+			jobUrl := util.UrlJoin(jenk.BaseURL(), jenk.GetJobURLPath(org))
+			folderXml := jenkins.CreateFolderXml(jobUrl, org)
+			err = jenk.CreateJobWithXML(folderXml, org)
+			if err != nil {
+				return fmt.Errorf("Failed to create the %s folder in jenkins: %s", org, err)
+			}
 		} else {
-			log.Warnf("Job already exists in Jenkins at %s\n", job.Url)
+			c := folder.Class
+			if c != "com.cloudbees.hudson.plugins.folder.Folder" {
+				log.Warnf("Warning the folder %s is of class %s", org, c)
+			}
 		}
-	} else {
-		err = jenk.CreateFolderJobWithXML(projectXml, org, jobName)
-		if err != nil {
-			return fmt.Errorf("Failed to create MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
-		}
-		job, err = jenk.GetJobByPath(org, jobName)
-		if err != nil {
-			return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
-		}
-		log.Infof("Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
-		log.Blank()
-		if !isEnvironment {
-			log.Infof("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
-			log.Infof("Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
-			log.Infof("Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
-			log.Infof("You can list the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
-			log.Infof("When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
-			log.Blank()
-			log.Infof("For more help on available commands see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/browsing/"))
-			log.Blank()
-		}
-		log.Info(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary docker images get downloaded!\n\n"))
+		return nil
+	})
+	if err != nil {
+		return err
+	}
 
-		params := url.Values{}
-		err = jenk.Build(job, params)
-		if err != nil {
-			return fmt.Errorf("Failed to trigger job %s due to %s", job.Url, err)
-		}
+	err = o.retry(10, time.Second*10, func() error {
+		projectXml := jenkins.CreateMultiBranchProjectXml(gitInfo, gitProvider, credentials, branchPattern, jenkinsfile)
+		jobName := gitInfo.Name
+		job, err := jenk.GetJobByPath(org, jobName)
+		if err == nil {
+			if failIfExists {
+				return fmt.Errorf("Job already exists in Jenkins at %s", job.Url)
+			} else {
+				log.Warnf("Job already exists in Jenkins at %s\n", job.Url)
+			}
+		} else {
+			err = jenk.CreateFolderJobWithXML(projectXml, org, jobName)
+			if err != nil {
+				return fmt.Errorf("Failed to create MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
+			}
+			job, err = jenk.GetJobByPath(org, jobName)
+			if err != nil {
+				return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
+			}
+			log.Infof("Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
+			log.Blank()
+			if !isEnvironment {
+				log.Infof("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
+				log.Infof("Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
+				log.Infof("Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
+				log.Infof("You can list the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
+				log.Infof("When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
+				log.Blank()
+				log.Infof("For more help on available commands see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/browsing/"))
+				log.Blank()
+			}
+			log.Info(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary docker images get downloaded!\n\n"))
 
+			params := url.Values{}
+			err = jenk.Build(job, params)
+			if err != nil {
+				return fmt.Errorf("Failed to trigger job %s due to %s", job.Url, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	// register the webhook
