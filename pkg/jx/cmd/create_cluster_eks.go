@@ -41,9 +41,6 @@ var (
 	createClusterEKSExample = templates.Examples(`
         # to create a new kubernetes cluster with Jenkins X in your default zones (from $EKS_AVAILABILITY_ZONES)
 		jx create cluster eks
-
-		# to specify the zones
-		jx create cluster eks --zones us-west-2a,us-west-2b,us-west-2c
 `)
 )
 
@@ -69,7 +66,7 @@ func NewCmdCreateClusterEKS(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "eks1", "The name of this cluster.")
-	cmd.Flags().IntVarP(&options.Flags.NodeCount, optionNodes, "o", 0, "number of nodes")
+	cmd.Flags().IntVarP(&options.Flags.NodeCount, optionNodes, "o", -1, "number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.NodesMin, "nodes-min", "", -1, "minimum number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.NodesMax, "nodes-max", "", -1, "maximum number of nodes")
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "us-west-2", "The region to use.")
@@ -117,7 +114,7 @@ func (o *CreateClusterEKSOptions) Run() error {
 		args = append(args, "--ssh-public-key", flags.SshPublicKey)
 	}
 	if flags.NodeCount >= 0 {
-		args = append(args, "--node-count", strconv.Itoa(flags.NodeCount))
+		args = append(args, "--nodes", strconv.Itoa(flags.NodeCount))
 	}
 	if flags.NodesMin >= 0 {
 		args = append(args, "--nodes-min", strconv.Itoa(flags.NodesMin))
@@ -127,6 +124,8 @@ func (o *CreateClusterEKSOptions) Run() error {
 	}
 
 	log.Info("Creating EKS cluster - this can take a while so please be patient...\n")
+	log.Infof("You can watch progress in the CloudFormation console: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/cloudformation/"))
+
 	log.Infof("running command: %s\n", util.ColorInfo("eksctl "+strings.Join(args, " ")))
 	err = o.runCommandVerbose("eksctl", args...)
 	if err != nil {
