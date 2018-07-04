@@ -732,7 +732,7 @@ func GetEditEnvironmentNamespace(jxClient versioned.Interface, ns string) (strin
 func GetDevNamespace(kubeClient kubernetes.Interface, ns string) (string, string, error) {
 	env := ""
 	namespace, err := kubeClient.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
-	if err != err {
+	if err != nil {
 		return ns, env, err
 	}
 	if namespace == nil {
