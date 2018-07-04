@@ -23,8 +23,13 @@ type JenkinsValuesConfig struct {
 }
 
 type JenkinsServersValuesConfig struct {
-	Gitea []JenkinsGiteaServersValuesConfig  `yaml:"Gitea,omitempty"`
-	GHE   []JenkinsGithubServersValuesConfig `yaml:"GHE,omitempty"`
+	Gitea  []JenkinsGiteaServersValuesConfig  `yaml:"Gitea,omitempty"`
+	GHE    []JenkinsGithubServersValuesConfig `yaml:"GHE,omitempty"`
+	Global JenkinsServersGlobalConfig         `yaml:"Global,omitempty"`
+}
+
+type JenkinsServersGlobalConfig struct {
+	EnvVars map[string]string `yaml:"EnvVars,omitempty"`
 }
 
 type JenkinsGiteaServersValuesConfig struct {
