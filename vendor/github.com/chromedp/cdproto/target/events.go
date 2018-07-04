@@ -34,6 +34,13 @@ type EventTargetDestroyed struct {
 	TargetID ID `json:"targetId"`
 }
 
+// EventTargetCrashed issued when a target has crashed.
+type EventTargetCrashed struct {
+	TargetID  ID     `json:"targetId"`
+	Status    string `json:"status"`    // Termination status type.
+	ErrorCode int64  `json:"errorCode"` // Termination error code.
+}
+
 // EventTargetInfoChanged issued when some information about a target has
 // changed. This only happens between targetCreated and targetDestroyed.
 type EventTargetInfoChanged struct {

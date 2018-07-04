@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 	"syscall"
@@ -14,14 +13,14 @@ import (
 )
 
 var (
-	singleArgFunctions = map[rune]func(int){
-		'A': CursorUp,
-		'B': CursorDown,
-		'C': CursorForward,
-		'D': CursorBack,
-		'E': CursorNextLine,
-		'F': CursorPreviousLine,
-		'G': CursorHorizontalAbsolute,
+	cursorFunctions = map[rune]func(c *Cursor) func(int){
+		'A': func(c *Cursor) func(int) { return c.Up },
+		'B': func(c *Cursor) func(int) { return c.Down },
+		'C': func(c *Cursor) func(int) { return c.Forward },
+		'D': func(c *Cursor) func(int) { return c.Back },
+		'E': func(c *Cursor) func(int) { return c.NextLine },
+		'F': func(c *Cursor) func(int) { return c.PreviousLine },
+		'G': func(c *Cursor) func(int) { return c.HorizontalAbsolute },
 	}
 )
 
@@ -39,14 +38,13 @@ const (
 )
 
 type Writer struct {
-	out     io.Writer
+	out     FileWriter
 	handle  syscall.Handle
 	orgAttr word
 }
 
-func NewAnsiStdout() io.Writer {
+func NewAnsiStdout(out FileWriter) io.Writer {
 	var csbi consoleScreenBufferInfo
-	out := os.Stdout
 	if !isatty.IsTerminal(out.Fd()) {
 		return out
 	}
@@ -55,9 +53,8 @@ func NewAnsiStdout() io.Writer {
 	return &Writer{out: out, handle: handle, orgAttr: csbi.attributes}
 }
 
-func NewAnsiStderr() io.Writer {
+func NewAnsiStderr(out FileWriter) io.Writer {
 	var csbi consoleScreenBufferInfo
-	out := os.Stderr
 	if !isatty.IsTerminal(out.Fd()) {
 		return out
 	}
@@ -128,18 +125,20 @@ func (w *Writer) handleEscape(r *bytes.Reader) (n int, err error) {
 }
 
 func (w *Writer) applyEscapeCode(buf []byte, arg string, code rune) {
+	c := &Cursor{Out: w.out}
+
 	switch arg + string(code) {
 	case "?25h":
-		CursorShow()
+		c.Show()
 		return
 	case "?25l":
-		CursorHide()
+		c.Hide()
 		return
 	}
 
-	if f, ok := singleArgFunctions[code]; ok {
+	if f, ok := cursorFunctions[code]; ok {
 		if n, err := strconv.Atoi(arg); err == nil {
-			f(n)
+			f(c)(n)
 			return
 		}
 	}

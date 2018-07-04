@@ -2,6 +2,7 @@ package jira
 
 import (
 	"fmt"
+
 	"github.com/google/go-querystring/query"
 )
 
@@ -67,7 +68,7 @@ func (s *SprintService) GetIssuesForSprint(sprintID int) ([]Issue, *Response, er
 	return result.Issues, resp, err
 }
 
-// Get returns a full representation of the issue for the given issue key.
+// GetIssue returns a full representation of the issue for the given issue key.
 // JIRA will attempt to identify the issue by the issueIdOrKey path parameter.
 // This can be an issue id, or an issue key.
 // If the issue cannot be found via an exact match, JIRA will also look for the issue in a case-insensitive way, or by looking to see if the issue was moved.

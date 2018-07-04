@@ -99,6 +99,23 @@ func (s *UserService) GetGroups(username string) (*[]UserGroup, *Response, error
 	return userGroups, resp, nil
 }
 
+// Get information about the current logged-in user
+//
+// JIRA API docs: https://developer.atlassian.com/cloud/jira/platform/rest/#api-api-2-myself-get
+func (s *UserService) GetSelf() (*User, *Response, error) {
+	const apiEndpoint = "rest/api/2/myself"
+	req, err := s.client.NewRequest("GET", apiEndpoint, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	var user User
+	resp, err := s.client.Do(req, &user)
+	if err != nil {
+		return nil, resp, NewJiraError(resp, err)
+	}
+	return &user, resp, nil
+}
+
 // Find searches for user info from JIRA:
 // It can find users by email, username or name
 //

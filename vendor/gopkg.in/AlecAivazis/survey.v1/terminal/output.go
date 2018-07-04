@@ -4,17 +4,16 @@ package terminal
 
 import (
 	"io"
-	"os"
 )
 
 // Returns special stdout, which converts escape sequences to Windows API calls
 // on Windows environment.
-func NewAnsiStdout() io.Writer {
-	return os.Stdout
+func NewAnsiStdout(out FileWriter) io.Writer {
+	return out
 }
 
 // Returns special stderr, which converts escape sequences to Windows API calls
 // on Windows environment.
-func NewAnsiStderr() io.Writer {
-	return os.Stderr
+func NewAnsiStderr(out FileWriter) io.Writer {
+	return out
 }

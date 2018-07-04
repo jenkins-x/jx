@@ -44,7 +44,8 @@ const defaultSkipList = `Alpha|Kubectl|\[(Disruptive|Feature:[^\]]+|Flaky)\]`
 var modeMap = map[string]Mode{
 	string(Conformance): Conformance,
 	string(Quick):       Quick,
-	string(Extended):    Extended,
+	// Removing until the extended tests are open sourced
+	//	string(Extended):    Extended,
 }
 
 // ModeConfig represents the sonobuoy configuration for a given mode.

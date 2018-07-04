@@ -22,7 +22,7 @@ import (
 	"github.com/heptio/sonobuoy/pkg/config"
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -78,19 +78,27 @@ type PreflightConfig struct {
 	Namespace string
 }
 
+// SonobuoyKubeAPIClient is the interface Sonobuoy uses to communicate with a kube-apiserver.
+type SonobuoyKubeAPIClient interface {
+	CreateObject(*unstructured.Unstructured) (*unstructured.Unstructured, error)
+	Name(*unstructured.Unstructured) (string, error)
+	Namespace(*unstructured.Unstructured) (string, error)
+	ResourceVersion(*unstructured.Unstructured) (string, error)
+}
+
 // SonobuoyClient is a high-level interface to Sonobuoy operations.
 type SonobuoyClient struct {
 	RestConfig    *rest.Config
 	client        kubernetes.Interface
-	dynamicClient dynamic.ClientPool
+	dynamicClient SonobuoyKubeAPIClient
 }
 
 // NewSonobuoyClient creates a new SonobuoyClient
-func NewSonobuoyClient(restConfig *rest.Config) (*SonobuoyClient, error) {
+func NewSonobuoyClient(restConfig *rest.Config, skc SonobuoyKubeAPIClient) (*SonobuoyClient, error) {
 	sc := &SonobuoyClient{
 		RestConfig:    restConfig,
 		client:        nil,
-		dynamicClient: nil,
+		dynamicClient: skc,
 	}
 	return sc, nil
 }
@@ -105,14 +113,6 @@ func (s *SonobuoyClient) Client() (kubernetes.Interface, error) {
 		s.client = client
 	}
 	return s.client, nil
-}
-
-// DynamicClientPool creates or retrieves an existing dynamic client from the SonobuoyClient's RESTConfig.
-func (s *SonobuoyClient) DynamicClientPool() dynamic.ClientPool {
-	if s.dynamicClient == nil {
-		s.dynamicClient = dynamic.NewDynamicClientPool(s.RestConfig)
-	}
-	return s.dynamicClient
 }
 
 // Make sure SonobuoyClient implements the interface

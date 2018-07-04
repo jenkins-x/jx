@@ -49,6 +49,7 @@ type GroupMember struct {
 	TimeZone     string `json:"timeZone,omitempty"`
 }
 
+// GroupSearchOptions specifies the optional parameters for the Get Group methods
 type GroupSearchOptions struct {
 	StartAt              int
 	MaxResults           int
@@ -78,7 +79,7 @@ func (s *GroupService) Get(name string) ([]GroupMember, *Response, error) {
 	return group.Members, resp, nil
 }
 
-// Get returns a paginated list of members of the specified group and its subgroups.
+// GetWithOptions returns a paginated list of members of the specified group and its subgroups.
 // Users in the page are ordered by user names.
 // User of this resource is required to have sysadmin or admin permissions.
 //
