@@ -845,9 +845,9 @@ func (o *ImportOptions) replacePlaceholders(gitServerName, gitOrg string) error 
 			lines := strings.Split(string(input), "\n")
 
 			for i, line := range lines {
-				line = strings.Replace(line, PlaceHolderAppName, o.AppName, -1)
-				line = strings.Replace(line, PlaceHolderGitProvider, gitServerName, -1)
-				line = strings.Replace(line, PlaceHolderOrg, gitOrg, -1)
+				line = strings.Replace(line, PlaceHolderAppName, strings.ToLower(o.AppName), -1)
+				line = strings.Replace(line, PlaceHolderGitProvider, strings.ToLower(gitServerName), -1)
+				line = strings.Replace(line, PlaceHolderOrg, strings.ToLower(gitOrg), -1)
 				lines[i] = line
 			}
 			output := strings.Join(lines, "\n")
