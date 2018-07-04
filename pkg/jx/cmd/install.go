@@ -540,6 +540,7 @@ func (options *InstallOptions) Run() error {
 		helmOptions.CommonOptions.BatchMode = true
 		helmOptions.CommonOptions.Args = []string{helmBinary}
 		helmOptions.currentNamespace = ns
+		helmOptions.devNamespace = ns
 		err = helmOptions.Run()
 		if err != nil {
 			return errors.Wrap(err, "failed to edit the helm options")
