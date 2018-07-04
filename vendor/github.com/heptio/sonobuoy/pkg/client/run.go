@@ -23,16 +23,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	kubeerror "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 )
 
 const bufferSize = 4096
@@ -44,12 +38,6 @@ func (c *SonobuoyClient) Run(cfg *RunConfig) error {
 	}
 
 	buf := bytes.NewBuffer(manifest)
-
-	mapper, err := newMapper(c.RestConfig)
-	if err != nil {
-		return errors.Wrap(err, "couldn't retrieve API spec from server")
-	}
-
 	d := yaml.NewYAMLOrJSONDecoder(buf, bufferSize)
 
 	for {
@@ -67,44 +55,32 @@ func (c *SonobuoyClient) Run(cfg *RunConfig) error {
 			continue
 		}
 
-		obj := unstructured.Unstructured{}
-		if err := runtime.DecodeInto(scheme.Codecs.UniversalDecoder(), ext.Raw, &obj); err != nil {
+		obj := &unstructured.Unstructured{}
+		if err := runtime.DecodeInto(scheme.Codecs.UniversalDecoder(), ext.Raw, obj); err != nil {
 			return errors.Wrap(err, "couldn't decode template")
 		}
-
-		err := createObject(c.DynamicClientPool(), &obj, mapper)
+		name, err := c.dynamicClient.Name(obj)
 		if err != nil {
+			return errors.Wrap(err, "could not get object name")
+		}
+		namespace, err := c.dynamicClient.Namespace(obj)
+		if err != nil {
+			return errors.Wrap(err, "could not get object namespace")
+		}
+		// err is used to determine output for user; but first extract resource
+		newObj, err := c.dynamicClient.CreateObject(obj)
+		resource, err2 := c.dynamicClient.ResourceVersion(newObj)
+		if err2 != nil {
+			return errors.Wrap(err, "could not get resource of object")
+		}
+		if err := handleCreateError(name, namespace, resource, err); err != nil {
 			return errors.Wrap(err, "failed to create object")
 		}
 	}
 	return nil
 }
 
-func createObject(pool dynamic.ClientPool, obj *unstructured.Unstructured, mapper meta.RESTMapper) error {
-	client, err := pool.ClientForGroupVersionKind(obj.GroupVersionKind())
-	if err != nil {
-		return errors.Wrap(err, "could not make kubernetes client")
-	}
-
-	mapping, err := mapper.RESTMapping(
-		obj.GroupVersionKind().GroupKind(),
-		obj.GroupVersionKind().Version,
-	)
-	if err != nil {
-		return errors.Wrap(err, "could not get resource for object")
-	}
-	resource := mapping.Resource
-
-	name, namespace, err := getNames(obj)
-	if err != nil {
-		return errors.Wrap(err, "couldn't retrive object metadata")
-	}
-
-	_, err = client.Resource(&metav1.APIResource{
-		Name:       resource,
-		Namespaced: namespace != "",
-	}, namespace).Create(obj)
-
+func handleCreateError(name, namespace, resource string, err error) error {
 	log := logrus.WithFields(logrus.Fields{
 		"name":      name,
 		"namespace": namespace,
@@ -122,45 +98,5 @@ func createObject(pool dynamic.ClientPool, obj *unstructured.Unstructured, mappe
 	case err != nil:
 		return errors.Wrapf(err, "failed to create API resource %s", name)
 	}
-
 	return nil
-}
-
-func newMapper(cfg *rest.Config) (meta.RESTMapper, error) {
-	client, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "couldn't create discovery client")
-	}
-	resources, err := discovery.GetAPIGroupResources(client)
-	if err != nil {
-		return nil, errors.Wrap(err, "couldn't retrieve API resources from server")
-	}
-
-	return discovery.NewRESTMapper(
-		resources,
-		unstructuredVersionInterface,
-	), nil
-}
-
-func getNames(obj runtime.Object) (string, string, error) {
-	accessor := meta.NewAccessor()
-	name, err := accessor.Name(obj)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "couldn't get name for object %T", obj)
-	}
-
-	namespace, err := accessor.Namespace(obj)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "couldn't get namespace for object %s", name)
-	}
-
-	return name, namespace, nil
-}
-
-// implements meta.VersionInterfacesFunc
-func unstructuredVersionInterface(version schema.GroupVersion) (*meta.VersionInterfaces, error) {
-	return &meta.VersionInterfaces{
-		ObjectConvertor:  &unstructured.UnstructuredObjectConverter{},
-		MetadataAccessor: meta.NewAccessor(),
-	}, nil
 }

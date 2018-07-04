@@ -83,7 +83,7 @@ func (r *Repository) List() ([]string, error) {
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			repoPack := filepath.Join(r.Name, file.Name())
+			repoPack := filepath.ToSlash(filepath.Join(r.Name, file.Name()))
 			packs = append(packs, repoPack)
 		}
 	}

@@ -37,6 +37,7 @@ type DOMNode struct {
 	IsClickable           bool                         `json:"isClickable,omitempty"`           // Whether this DOM node responds to mouse clicks. This includes nodes that have had click event listeners attached via JavaScript as well as anchor tags that naturally navigate when clicked.
 	EventListeners        []*domdebugger.EventListener `json:"eventListeners,omitempty"`        // Details of the node's event listeners, if any.
 	CurrentSourceURL      string                       `json:"currentSourceURL,omitempty"`      // The selected url for nodes with a srcset attribute.
+	OriginURL             string                       `json:"originURL,omitempty"`             // The url of the script (if any) that generates this node.
 }
 
 // InlineTextBox details of post layout rendered text positions. The exact
@@ -67,4 +68,88 @@ type ComputedStyle struct {
 type NameValue struct {
 	Name  string `json:"name"`  // Attribute/property name.
 	Value string `json:"value"` // Attribute/property value.
+}
+
+// StringIndex index of the string in the strings table.
+type StringIndex int64
+
+// Int64 returns the StringIndex as int64 value.
+func (t StringIndex) Int64() int64 {
+	return int64(t)
+}
+
+// ArrayOfStrings index of the string in the strings table.
+type ArrayOfStrings []int64
+
+// RareStringData data that is only present on rare nodes.
+type RareStringData struct {
+	Index []int64       `json:"index"`
+	Value []StringIndex `json:"value"`
+}
+
+// RareBooleanData [no description].
+type RareBooleanData struct {
+	Index []int64 `json:"index"`
+}
+
+// RareIntegerData [no description].
+type RareIntegerData struct {
+	Index []int64 `json:"index"`
+	Value []int64 `json:"value"`
+}
+
+// Rectangle [no description].
+type Rectangle []float64
+
+// DOMTreeSnapshot DOM tree snapshot.
+type DOMTreeSnapshot struct {
+	ParentIndex           []int64             `json:"parentIndex,omitempty"`           // Parent node index.
+	NodeType              []int64             `json:"nodeType,omitempty"`              // Node's nodeType.
+	NodeName              []StringIndex       `json:"nodeName,omitempty"`              // Node's nodeName.
+	NodeValue             []StringIndex       `json:"nodeValue,omitempty"`             // Node's nodeValue.
+	BackendNodeID         []cdp.BackendNodeID `json:"backendNodeId,omitempty"`         // Node's id, corresponds to DOM.Node.backendNodeId.
+	Attributes            []ArrayOfStrings    `json:"attributes,omitempty"`            // Attributes of an Element node. Flatten name, value pairs.
+	LayoutNodeIndex       []int64             `json:"layoutNodeIndex,omitempty"`       // The index of the node's related layout tree node in the layoutTreeNodes array returned by captureSnapshot, if any.
+	TextValue             *RareStringData     `json:"textValue,omitempty"`             // Only set for textarea elements, contains the text value.
+	InputValue            *RareStringData     `json:"inputValue,omitempty"`            // Only set for input elements, contains the input's associated text value.
+	InputChecked          *RareBooleanData    `json:"inputChecked,omitempty"`          // Only set for radio and checkbox input elements, indicates if the element has been checked
+	OptionSelected        *RareBooleanData    `json:"optionSelected,omitempty"`        // Only set for option elements, indicates if the element has been selected
+	DocumentURL           *RareStringData     `json:"documentURL,omitempty"`           // Document URL that Document or FrameOwner node points to.
+	BaseURL               *RareStringData     `json:"baseURL,omitempty"`               // Base URL that Document or FrameOwner node uses for URL completion.
+	ContentLanguage       *RareStringData     `json:"contentLanguage,omitempty"`       // Only set for documents, contains the document's content language.
+	DocumentEncoding      *RareStringData     `json:"documentEncoding,omitempty"`      // Only set for documents, contains the document's character set encoding.
+	PublicID              *RareStringData     `json:"publicId,omitempty"`              // DocumentType node's publicId.
+	SystemID              *RareStringData     `json:"systemId,omitempty"`              // DocumentType node's systemId.
+	FrameID               *RareStringData     `json:"frameId,omitempty"`               // Frame ID for frame owner elements and also for the document node.
+	ContentDocumentIndex  *RareIntegerData    `json:"contentDocumentIndex,omitempty"`  // The index of a frame owner element's content document in the domNodes array returned by captureSnapshot, if any.
+	ImportedDocumentIndex *RareIntegerData    `json:"importedDocumentIndex,omitempty"` // Index of the imported document's node of a link element in the domNodes array returned by captureSnapshot, if any.
+	TemplateContentIndex  *RareIntegerData    `json:"templateContentIndex,omitempty"`  // Index of the content node of a template element in the domNodes array returned by captureSnapshot.
+	PseudoType            *RareStringData     `json:"pseudoType,omitempty"`            // Type of a pseudo element node.
+	IsClickable           *RareBooleanData    `json:"isClickable,omitempty"`           // Whether this DOM node responds to mouse clicks. This includes nodes that have had click event listeners attached via JavaScript as well as anchor tags that naturally navigate when clicked.
+	CurrentSourceURL      *RareStringData     `json:"currentSourceURL,omitempty"`      // The selected url for nodes with a srcset attribute.
+	OriginURL             *RareStringData     `json:"originURL,omitempty"`             // The url of the script (if any) that generates this node.
+}
+
+// TextBoxSnapshot details of post layout rendered text positions. The exact
+// layout should not be regarded as stable and may change between versions.
+type TextBoxSnapshot struct {
+	LayoutIndex []int64     `json:"layoutIndex"` // Intex of th elayout tree node that owns this box collection.
+	Bounds      []Rectangle `json:"bounds"`      // The absolute position bounding box.
+	Start       []int64     `json:"start"`       // The starting index in characters, for this post layout textbox substring. Characters that would be represented as a surrogate pair in UTF-16 have length 2.
+	Length      []int64     `json:"length"`      // The number of characters in this post layout textbox substring. Characters that would be represented as a surrogate pair in UTF-16 have length 2.
+}
+
+// LayoutTreeSnapshot details of an element in the DOM tree with a
+// LayoutObject.
+type LayoutTreeSnapshot struct {
+	NodeIndex []int64          `json:"nodeIndex"` // The index of the related DOM node in the domNodes array returned by getSnapshot.
+	Styles    []ArrayOfStrings `json:"styles"`    // Index into the computedStyles array returned by captureSnapshot.
+	Bounds    []Rectangle      `json:"bounds"`    // The absolute position bounding box.
+	Text      []StringIndex    `json:"text"`      // Contents of the LayoutText, if any.
+	TextBoxes *TextBoxSnapshot `json:"textBoxes"` // The post-layout inline text nodes
+}
+
+// StylesSnapshot computed style snapshot.
+type StylesSnapshot struct {
+	Values []ArrayOfStrings `json:"values"` // Whitelisted ComputedStyle property values referenced by styleIndex.
 }

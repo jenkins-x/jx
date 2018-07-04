@@ -316,8 +316,8 @@ func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP,
 	return err
 }
 
-func (o *CommonOptions) createChromeDPLogger() (chromedp.LogFunc, error) {
-	var logger chromedp.LogFunc
+func (o *CommonOptions) createChromeDPLogger() (func(string, ...interface{}), error) {
+	var logger func(string, ...interface{})
 	if o.Verbose {
 		logger = func(message string, args ...interface{}) {
 			log.Infof(message+"\n", args...)

@@ -106,6 +106,43 @@ func (p *CloseTargetParams) Do(ctxt context.Context, h cdp.Executor) (success bo
 	return res.Success, nil
 }
 
+// ExposeDevToolsProtocolParams inject object to the target's main frame that
+// provides a communication channel with browser target. Injected object will be
+// available as window[bindingName]. The object has the follwing API: -
+// binding.send(json) - a method to send messages over the remote debugging
+// protocol - binding.onmessage = json => handleMessage(json) - a callback that
+// will be called for the protocol notifications and command responses.
+type ExposeDevToolsProtocolParams struct {
+	TargetID    ID     `json:"targetId"`
+	BindingName string `json:"bindingName,omitempty"` // Binding name, 'cdp' if not specified.
+}
+
+// ExposeDevToolsProtocol inject object to the target's main frame that
+// provides a communication channel with browser target. Injected object will be
+// available as window[bindingName]. The object has the follwing API: -
+// binding.send(json) - a method to send messages over the remote debugging
+// protocol - binding.onmessage = json => handleMessage(json) - a callback that
+// will be called for the protocol notifications and command responses.
+//
+// parameters:
+//   targetID
+func ExposeDevToolsProtocol(targetID ID) *ExposeDevToolsProtocolParams {
+	return &ExposeDevToolsProtocolParams{
+		TargetID: targetID,
+	}
+}
+
+// WithBindingName binding name, 'cdp' if not specified.
+func (p ExposeDevToolsProtocolParams) WithBindingName(bindingName string) *ExposeDevToolsProtocolParams {
+	p.BindingName = bindingName
+	return &p
+}
+
+// Do executes Target.exposeDevToolsProtocol against the provided context.
+func (p *ExposeDevToolsProtocolParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandExposeDevToolsProtocol, p, nil)
+}
+
 // CreateBrowserContextParams creates a new empty BrowserContext. Similar to
 // an incognito profile but you can have more than one.
 type CreateBrowserContextParams struct{}
@@ -278,17 +315,20 @@ func (p *DisposeBrowserContextParams) Do(ctxt context.Context, h cdp.Executor) (
 
 // GetTargetInfoParams returns information about a target.
 type GetTargetInfoParams struct {
-	TargetID ID `json:"targetId"`
+	TargetID ID `json:"targetId,omitempty"`
 }
 
 // GetTargetInfo returns information about a target.
 //
 // parameters:
-//   targetID
-func GetTargetInfo(targetID ID) *GetTargetInfoParams {
-	return &GetTargetInfoParams{
-		TargetID: targetID,
-	}
+func GetTargetInfo() *GetTargetInfoParams {
+	return &GetTargetInfoParams{}
+}
+
+// WithTargetID [no description].
+func (p GetTargetInfoParams) WithTargetID(targetID ID) *GetTargetInfoParams {
+	p.TargetID = targetID
+	return &p
 }
 
 // GetTargetInfoReturns return values.
@@ -442,18 +482,19 @@ func (p *SetRemoteLocationsParams) Do(ctxt context.Context, h cdp.Executor) (err
 
 // Command names.
 const (
-	CommandActivateTarget        = "Target.activateTarget"
-	CommandAttachToTarget        = "Target.attachToTarget"
-	CommandCloseTarget           = "Target.closeTarget"
-	CommandCreateBrowserContext  = "Target.createBrowserContext"
-	CommandGetBrowserContexts    = "Target.getBrowserContexts"
-	CommandCreateTarget          = "Target.createTarget"
-	CommandDetachFromTarget      = "Target.detachFromTarget"
-	CommandDisposeBrowserContext = "Target.disposeBrowserContext"
-	CommandGetTargetInfo         = "Target.getTargetInfo"
-	CommandGetTargets            = "Target.getTargets"
-	CommandSendMessageToTarget   = "Target.sendMessageToTarget"
-	CommandSetAutoAttach         = "Target.setAutoAttach"
-	CommandSetDiscoverTargets    = "Target.setDiscoverTargets"
-	CommandSetRemoteLocations    = "Target.setRemoteLocations"
+	CommandActivateTarget         = "Target.activateTarget"
+	CommandAttachToTarget         = "Target.attachToTarget"
+	CommandCloseTarget            = "Target.closeTarget"
+	CommandExposeDevToolsProtocol = "Target.exposeDevToolsProtocol"
+	CommandCreateBrowserContext   = "Target.createBrowserContext"
+	CommandGetBrowserContexts     = "Target.getBrowserContexts"
+	CommandCreateTarget           = "Target.createTarget"
+	CommandDetachFromTarget       = "Target.detachFromTarget"
+	CommandDisposeBrowserContext  = "Target.disposeBrowserContext"
+	CommandGetTargetInfo          = "Target.getTargetInfo"
+	CommandGetTargets             = "Target.getTargets"
+	CommandSendMessageToTarget    = "Target.sendMessageToTarget"
+	CommandSetAutoAttach          = "Target.setAutoAttach"
+	CommandSetDiscoverTargets     = "Target.setDiscoverTargets"
+	CommandSetRemoteLocations     = "Target.setRemoteLocations"
 )

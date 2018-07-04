@@ -773,6 +773,26 @@ func (p *SetCustomObjectFormatterEnabledParams) Do(ctxt context.Context, h cdp.E
 	return h.Execute(ctxt, CommandSetCustomObjectFormatterEnabled, p, nil)
 }
 
+// SetMaxCallStackSizeToCaptureParams [no description].
+type SetMaxCallStackSizeToCaptureParams struct {
+	Size int64 `json:"size"`
+}
+
+// SetMaxCallStackSizeToCapture [no description].
+//
+// parameters:
+//   size
+func SetMaxCallStackSizeToCapture(size int64) *SetMaxCallStackSizeToCaptureParams {
+	return &SetMaxCallStackSizeToCaptureParams{
+		Size: size,
+	}
+}
+
+// Do executes Runtime.setMaxCallStackSizeToCapture against the provided context.
+func (p *SetMaxCallStackSizeToCaptureParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandSetMaxCallStackSizeToCapture, p, nil)
+}
+
 // TerminateExecutionParams terminate current or next JavaScript execution.
 // Will cancel the termination when the outer-most script execution ends.
 type TerminateExecutionParams struct{}
@@ -786,6 +806,69 @@ func TerminateExecution() *TerminateExecutionParams {
 // Do executes Runtime.terminateExecution against the provided context.
 func (p *TerminateExecutionParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
 	return h.Execute(ctxt, CommandTerminateExecution, nil, nil)
+}
+
+// AddBindingParams if executionContextId is empty, adds binding with the
+// given name on the global objects of all inspected contexts, including those
+// created later, bindings survive reloads. If executionContextId is specified,
+// adds binding only on global object of given execution context. Binding
+// function takes exactly one argument, this argument should be string, in case
+// of any other input, function throws an exception. Each binding function call
+// produces Runtime.bindingCalled notification.
+type AddBindingParams struct {
+	Name               string             `json:"name"`
+	ExecutionContextID ExecutionContextID `json:"executionContextId,omitempty"`
+}
+
+// AddBinding if executionContextId is empty, adds binding with the given
+// name on the global objects of all inspected contexts, including those created
+// later, bindings survive reloads. If executionContextId is specified, adds
+// binding only on global object of given execution context. Binding function
+// takes exactly one argument, this argument should be string, in case of any
+// other input, function throws an exception. Each binding function call
+// produces Runtime.bindingCalled notification.
+//
+// parameters:
+//   name
+func AddBinding(name string) *AddBindingParams {
+	return &AddBindingParams{
+		Name: name,
+	}
+}
+
+// WithExecutionContextID [no description].
+func (p AddBindingParams) WithExecutionContextID(executionContextID ExecutionContextID) *AddBindingParams {
+	p.ExecutionContextID = executionContextID
+	return &p
+}
+
+// Do executes Runtime.addBinding against the provided context.
+func (p *AddBindingParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandAddBinding, p, nil)
+}
+
+// RemoveBindingParams this method does not remove binding function from
+// global object but unsubscribes current runtime agent from
+// Runtime.bindingCalled notifications.
+type RemoveBindingParams struct {
+	Name string `json:"name"`
+}
+
+// RemoveBinding this method does not remove binding function from global
+// object but unsubscribes current runtime agent from Runtime.bindingCalled
+// notifications.
+//
+// parameters:
+//   name
+func RemoveBinding(name string) *RemoveBindingParams {
+	return &RemoveBindingParams{
+		Name: name,
+	}
+}
+
+// Do executes Runtime.removeBinding against the provided context.
+func (p *RemoveBindingParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandRemoveBinding, p, nil)
 }
 
 // Command names.
@@ -807,5 +890,8 @@ const (
 	CommandRunIfWaitingForDebugger         = "Runtime.runIfWaitingForDebugger"
 	CommandRunScript                       = "Runtime.runScript"
 	CommandSetCustomObjectFormatterEnabled = "Runtime.setCustomObjectFormatterEnabled"
+	CommandSetMaxCallStackSizeToCapture    = "Runtime.setMaxCallStackSizeToCapture"
 	CommandTerminateExecution              = "Runtime.terminateExecution"
+	CommandAddBinding                      = "Runtime.addBinding"
+	CommandRemoveBinding                   = "Runtime.removeBinding"
 )

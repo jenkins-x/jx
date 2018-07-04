@@ -447,5 +447,5 @@ func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "compliance client failed to load the Kubernetes configuration")
 	}
-	return client.NewSonobuoyClient(config)
+	return client.NewSonobuoyClient(config, nil)
 }

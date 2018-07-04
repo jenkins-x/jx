@@ -2,7 +2,6 @@ package survey
 
 import (
 	"errors"
-	"os"
 	"strings"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
@@ -200,17 +199,17 @@ func (s *Select) Prompt() (interface{}, error) {
 		return "", err
 	}
 
-	// hide the cursor
-	terminal.CursorHide()
-	// show the cursor when we're done
-	defer terminal.CursorShow()
-
 	// by default, use the default value
 	s.useDefault = true
 
-	rr := terminal.NewRuneReader(os.Stdin)
+	rr := s.NewRuneReader()
 	rr.SetTermMode()
 	defer rr.RestoreTermMode()
+
+	cursor := s.NewCursor()
+	cursor.Hide()       // hide the cursor
+	defer cursor.Show() // show the cursor when we're done
+
 	// start waiting for input
 	for {
 		r, _, err := rr.ReadRune()

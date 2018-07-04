@@ -888,6 +888,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser9(in *jlexer.Lexer, ou
 		switch key {
 		case "query":
 			out.Query = string(in.String())
+		case "delta":
+			out.Delta = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -911,6 +913,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser9(out *jwriter.Writer,
 			out.RawString(prefix)
 		}
 		out.String(string(in.Query))
+	}
+	if in.Delta {
+		const prefix string = ",\"delta\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.Delta))
 	}
 	out.RawByte('}')
 }
@@ -1038,6 +1050,8 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoBrowser11(in *jlexer.Lexer, o
 		switch key {
 		case "name":
 			out.Name = string(in.String())
+		case "delta":
+			out.Delta = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -1061,6 +1075,16 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoBrowser11(out *jwriter.Writer
 			out.RawString(prefix)
 		}
 		out.String(string(in.Name))
+	}
+	if in.Delta {
+		const prefix string = ",\"delta\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.Delta))
 	}
 	out.RawByte('}')
 }
