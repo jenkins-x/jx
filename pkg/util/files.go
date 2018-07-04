@@ -260,7 +260,7 @@ func DeleteFile(fileName string) (err error) {
 		if exists {
 			err = os.Remove(fileName)
 			if err != nil {
-				return fmt.Errorf("Could not remove file due to %s", fileName, err)
+				return fmt.Errorf("Could not remove file %s due to %s", fileName, err)
 			}
 		}
 	} else {
