@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/pkg/errors"
 
 	"github.com/Azure/draft/pkg/draft/draftpath"
@@ -25,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	//_ "github.com/Azure/draft/pkg/linguist"
 )
 
@@ -543,17 +544,11 @@ func (o *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	currentUser := o.getCurrentUser()
-	org := o.getOrganisation()
-	if org == "" {
-		org = currentUser
-	}
-
+	org := o.getOrganisationOrCurrentUser()
 	err = o.replacePlaceholders(gitServerName, org)
 	if err != nil {
 		return err
 	}
-
 	err = o.Git().Add(dir, "*")
 	if err != nil {
 		return err
@@ -563,6 +558,15 @@ func (o *ImportOptions) DraftCreate() error {
 		return err
 	}
 	return nil
+}
+
+func (o *ImportOptions) getOrganisationOrCurrentUser() string {
+	currentUser := o.getCurrentUser()
+	org := o.getOrganisation()
+	if org == "" {
+		org = currentUser
+	}
+	return org
 }
 
 func (o *ImportOptions) getCurrentUser() string {
@@ -823,7 +827,48 @@ func (o *ImportOptions) DoImport() error {
 	if jenkinsfile == "" {
 		jenkinsfile = jenkins.DefaultJenkinsfile
 	}
+	err = o.ensureDockerRepositoryExists()
+	if err != nil {
+		return err
+	}
+
 	return o.ImportProject(gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc, false, o.BatchMode)
+}
+
+// ensureDockerRepositoryExists for some kinds of container registry we need to pre-initialise its use such as for ECR
+func (o *ImportOptions) ensureDockerRepositoryExists() error {
+	orgName := o.getOrganisationOrCurrentUser()
+	appName := o.AppName
+	if orgName == "" {
+		log.Warnf("Missing organisation name!\n")
+		return nil
+	}
+	if appName == "" {
+		log.Warnf("Missing application name!\n")
+		return nil
+	}
+	kubeClient, curNs, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
+	if err != nil {
+		return err
+	}
+
+	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsDockerRegistry, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
+	}
+	if cm.Data != nil {
+		dockerRegistry := cm.Data["docker.registry"]
+		if dockerRegistry != "" {
+			if strings.HasSuffix(dockerRegistry, ".amazonaws.com") && strings.Index(dockerRegistry, ".ecr.") > 0 {
+				return amazon.LazyCreateRegistry(orgName, appName)
+			}
+		}
+	}
+	return nil
 }
 
 func (o *ImportOptions) replacePlaceholders(gitServerName, gitOrg string) error {
@@ -902,7 +947,7 @@ func (o *ImportOptions) checkChartmuseumCredentialExists() error {
 	_, err := o.Jenkins.GetCredential(name)
 
 	if err != nil {
-		secret, err := o.kubeClient.CoreV1().Secrets(o.currentNamespace).Get(name, meta_v1.GetOptions{})
+		secret, err := o.kubeClient.CoreV1().Secrets(o.currentNamespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("error getting %s secret %v", name, err)
 		}
