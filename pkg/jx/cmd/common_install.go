@@ -451,7 +451,11 @@ func (o *CommonOptions) installHelm() error {
 	if err != nil {
 		return err
 	}
-	return os.Chmod(fullPath, 0755)
+	err = os.Chmod(fullPath, 0755)
+	if err != nil {
+		return err
+	}
+	return o.installHelmSecretsPlugin(fullPath)
 }
 
 func (o *CommonOptions) installHelm3() error {
@@ -505,7 +509,16 @@ func (o *CommonOptions) installHelm3() error {
 	if err != nil {
 		return err
 	}
-	return os.Chmod(fullPath, 0755)
+
+	err = os.Chmod(fullPath, 0755)
+	if err != nil {
+		return err
+	}
+	return o.installHelmSecretsPlugin(fullPath)
+}
+
+func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string) error {
+	return util.RunCommand("", helmBinary, "plugin", "install", "https://github.com/futuresimple/helm-secrets")
 }
 
 func (o *CommonOptions) installMavenIfRequired() error {
