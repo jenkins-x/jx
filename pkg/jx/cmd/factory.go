@@ -127,20 +127,21 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 	// lets find the kubernetes service
 	client, ns, err := f.CreateClient()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to create the kube client")
 	}
 	url, err := kube.FindServiceURL(client, ns, kube.ServiceJenkins)
 	if err != nil {
 		// lets try the real environment
 		realNS, _, err := kube.GetDevNamespace(client, ns)
 		if err != nil {
-			return "", err
+			return "", errors.Wrapf(err, "failed to get the dev namespace from '%s' namespace")
 		}
 		if realNS != ns {
 			url, err = kube.FindServiceURL(client, realNS, kube.ServiceJenkins)
 			if err != nil {
 				return "", fmt.Errorf("%s in namespaces %s and %s", err, realNS, ns)
 			}
+			return url, nil
 		}
 	}
 	if err != nil {
