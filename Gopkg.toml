@@ -141,6 +141,10 @@ required = [
   source = "https://github.com/jenkins-x/helm.git"
 
 [[constraint]]
+  name = "github.com/aws/aws-sdk-go"
+  version = "1.14.18"
+
+[[constraint]]
   name = "github.com/heptio/sonobuoy"
   branch = "master"
 
