@@ -75,6 +75,42 @@
   version = "v1.5.0"
 
 [[projects]]
+  name = "github.com/aws/aws-sdk-go"
+  packages = [
+    "aws",
+    "aws/awserr",
+    "aws/awsutil",
+    "aws/client",
+    "aws/client/metadata",
+    "aws/corehandlers",
+    "aws/credentials",
+    "aws/credentials/ec2rolecreds",
+    "aws/credentials/endpointcreds",
+    "aws/credentials/stscreds",
+    "aws/csm",
+    "aws/defaults",
+    "aws/ec2metadata",
+    "aws/endpoints",
+    "aws/request",
+    "aws/session",
+    "aws/signer/v4",
+    "internal/sdkio",
+    "internal/sdkrand",
+    "internal/shareddefaults",
+    "private/protocol",
+    "private/protocol/json/jsonutil",
+    "private/protocol/jsonrpc",
+    "private/protocol/query",
+    "private/protocol/query/queryutil",
+    "private/protocol/rest",
+    "private/protocol/xml/xmlutil",
+    "service/ecr",
+    "service/sts"
+  ]
+  revision = "e4f914808a9655ef3220bb0082002239cc7f3561"
+  version = "v1.14.19"
+
+[[projects]]
   name = "github.com/beevik/etree"
   packages = ["."]
   revision = "9d7e8feddccb4ed1b8afb54e368bd323d2ff652c"
@@ -224,6 +260,12 @@
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/go-ini/ini"
+  packages = ["."]
+  revision = "06f5f3d67269ccec1fe5fe4134ba6e982984f7f5"
+  version = "v1.37.0"
 
 [[projects]]
   name = "github.com/gobwas/glob"
@@ -440,6 +482,11 @@
   name = "github.com/jenkins-x/golang-jenkins"
   packages = ["."]
   revision = "0bc3c6465b1cbac88473244061521e75c5394d1e"
+
+[[projects]]
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
+  revision = "0b12d6b5"
 
 [[projects]]
   name = "github.com/json-iterator/go"
@@ -1198,6 +1245,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "272d86cd2a1ab2dc2a21cf6d9c6db030c93956496854dffe2d3f9f143b194149"
+  inputs-digest = "59a2830d52aed20d5174833043300757f183f9f35a2a1db3863ef5cb6cd9ed33"
   solver-name = "gps-cdcl"
   solver-version = 1
