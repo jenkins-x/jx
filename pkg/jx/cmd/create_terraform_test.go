@@ -40,7 +40,7 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 		_Provider: "gke",
 	}
 
-	clusterArray := []Cluster{ c1, c2 }
+	clusterArray := []Cluster{c1, c2}
 
 	for _, c := range clusterArray {
 		assert.NotNil(t, c)

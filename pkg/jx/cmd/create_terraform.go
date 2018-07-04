@@ -22,16 +22,17 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/terraform"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"io/ioutil"
 	"time"
 )
 
 type Cluster interface {
 	Name() string
 	Provider() string
+	CreateTfVarsFile(path string) error
 }
 
 type GKECluster struct {
@@ -47,12 +48,41 @@ type GKECluster struct {
 	AutoUpgrade   bool
 }
 
-func (c GKECluster) Name() string {
-	return c._Name
+func (g GKECluster) Name() string {
+	return g._Name
 }
 
-func (c GKECluster) Provider() string {
-	return c._Provider
+func (g GKECluster) Provider() string {
+	return g._Provider
+}
+
+func (g GKECluster) CreateTfVarsFile(path string) error {
+	user, err := os_user.Current()
+	var username string
+	if err != nil {
+		username = "unknown"
+	} else {
+		username = sanitizeLabel(user.Username)
+	}
+
+	terraform.WriteKeyValueToFileIfNotExists(path, "created_by", username)
+	terraform.WriteKeyValueToFileIfNotExists(path, "created_timestamp", time.Now().Format("20060102150405"))
+	terraform.WriteKeyValueToFileIfNotExists(path, "cluster_name", g.Name())
+	terraform.WriteKeyValueToFileIfNotExists(path, "gcp_zone", g.Zone)
+	terraform.WriteKeyValueToFileIfNotExists(path, "gcp_project", g.ProjectId)
+	terraform.WriteKeyValueToFileIfNotExists(path, "min_node_count", g.MinNumOfNodes)
+	terraform.WriteKeyValueToFileIfNotExists(path, "max_node_count", g.MaxNumOfNodes)
+	terraform.WriteKeyValueToFileIfNotExists(path, "node_machine_type", g.MachineType)
+	terraform.WriteKeyValueToFileIfNotExists(path, "node_preemptible", "false")
+	terraform.WriteKeyValueToFileIfNotExists(path, "node_disk_size", g.DiskSize)
+	terraform.WriteKeyValueToFileIfNotExists(path, "auto_repair", strconv.FormatBool(g.AutoRepair))
+	terraform.WriteKeyValueToFileIfNotExists(path, "auto_upgrade", strconv.FormatBool(g.AutoUpgrade))
+	terraform.WriteKeyValueToFileIfNotExists(path, "enable_kubernetes_alpha", "false")
+	terraform.WriteKeyValueToFileIfNotExists(path, "enable_legacy_abac", "true")
+	terraform.WriteKeyValueToFileIfNotExists(path, "logging_service", "logging.googleapis.com")
+	terraform.WriteKeyValueToFileIfNotExists(path, "monitoring_service", "monitoring.googleapis.com")
+
+	return nil
 }
 
 type Flags struct {
@@ -90,6 +120,16 @@ var (
 		jx create terraform -c dev=gke -c stage=gke -c prod=gke
 
 `)
+	validTerraformVersions = "0.11.0"
+
+	gkeBucketConfiguration = `terraform {
+  required_version = ">= %s"
+  backend "gcs" {
+    bucket      = "%s-%s-terraform-state"
+    prefix      = "%s"
+    credentials = "%s"
+  }
+}`
 )
 
 const (
@@ -201,6 +241,8 @@ func (o *CreateTerraformOptions) ClusterDetailsWizard() error {
 		return err
 	}
 
+	jxEnvironment := ""
+
 	for i := 1; i <= numOfClusters; i++ {
 		var name string
 		var provider string
@@ -236,10 +278,25 @@ func (o *CreateTerraformOptions) ClusterDetailsWizard() error {
 			return err
 		}
 
+		if jxEnvironment == "" {
+			confirm := false
+			prompt := &survey.Confirm{
+				Message:  fmt.Sprintf("Would you like to install Jenkins X in cluster %v", name),
+				Default: true, 
+			}
+			survey.AskOne(prompt, &confirm, nil)
+
+			if confirm {
+				jxEnvironment = name
+			}
+		}
 		c := GKECluster{_Name: name, _Provider: provider}
 
 		o.Clusters = append(o.Clusters, c)
 	}
+
+	o.Flags.JxEnvironment = jxEnvironment
+
 	return nil
 }
 
@@ -444,7 +501,7 @@ func (o *CreateTerraformOptions) findDevCluster(clusterDefinitions []Cluster) (C
 			return c, nil
 		}
 	}
-	return nil, fmt.Errorf("Unable to find jx environment %s" , o.Flags.JxEnvironment)
+	return nil, fmt.Errorf("Unable to find jx environment %s", o.Flags.JxEnvironment)
 }
 
 func (o *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
@@ -456,7 +513,7 @@ func (o *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
 		}
 		defer file.Close()
 
-		_, err = file.WriteString("**/*.key.json\n.terraform\n**/*.tfstate\n")
+		_, err = file.WriteString("**/*.key.json\n.terraform\n**/*.tfstate\n**/terraform.tf\n")
 		if err != nil {
 			return err
 		}
@@ -479,7 +536,7 @@ func (o *CreateTerraformOptions) commitClusters(dir string) error {
 	return nil
 }
 
-func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string) (error) {
+func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string) error {
 	g.DiskSize = o.Flags.GKEDiskSize
 	g.AutoUpgrade = o.Flags.GKEAutoUpgrade
 	g.AutoRepair = o.Flags.GKEAutoRepair
@@ -561,31 +618,11 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 		}
 	}
 
-	user, err := os_user.Current()
-	var username string
-	if err != nil {
-		username = "unknown"
-	} else {
-		username = sanitizeLabel(user.Username)
-	}
-
 	terraformVars := filepath.Join(path, "terraform.tfvars")
-	o.writeKeyValueIfNotExists(terraformVars, "created_by", username)
-	o.writeKeyValueIfNotExists(terraformVars, "created_timestamp", time.Now().Format("20060102150405"))
-	o.writeKeyValueIfNotExists(terraformVars, "cluster_name", g.Name())
-	o.writeKeyValueIfNotExists(terraformVars, "gcp_zone", g.Zone)
-	o.writeKeyValueIfNotExists(terraformVars, "gcp_project", g.ProjectId)
-	o.writeKeyValueIfNotExists(terraformVars, "min_node_count", g.MinNumOfNodes)
-	o.writeKeyValueIfNotExists(terraformVars, "max_node_count", g.MaxNumOfNodes)
-	o.writeKeyValueIfNotExists(terraformVars, "node_machine_type", g.MachineType)
-	o.writeKeyValueIfNotExists(terraformVars, "node_preemptible", "false")
-	o.writeKeyValueIfNotExists(terraformVars, "node_disk_size", g.DiskSize)
-	o.writeKeyValueIfNotExists(terraformVars, "auto_repair", strconv.FormatBool(g.AutoRepair))
-	o.writeKeyValueIfNotExists(terraformVars, "auto_upgrade", strconv.FormatBool(g.AutoUpgrade))
-	o.writeKeyValueIfNotExists(terraformVars, "enable_kubernetes_alpha", "false")
-	o.writeKeyValueIfNotExists(terraformVars, "enable_legacy_abac", "true")
-	o.writeKeyValueIfNotExists(terraformVars, "logging_service", "logging.googleapis.com")
-	o.writeKeyValueIfNotExists(terraformVars, "monitoring_service", "monitoring.googleapis.com")
+	err := g.CreateTfVarsFile(terraformVars)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -606,44 +643,58 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 	}
 	serviceAccountPath := filepath.Join(filepath.Dir(path), fmt.Sprintf("%s.key.json", serviceAccountName))
 
-	args := []string{"init", path}
-	err = o.runCommand("terraform", args...)
+	storageBucket := fmt.Sprintf(gkeBucketConfiguration, validTerraformVersions, g.ProjectId, o.Flags.OrganisationName, g.Name(), serviceAccountPath)
+	o.Debugf("Using bucket configuration %s", storageBucket)
+
+	terraformTf := filepath.Join(path, "terraform.tf")
+
+	// file exists
+	if _, err := os.Stat(terraformTf); os.IsNotExist(err) {
+		file, err := os.OpenFile(terraformTf, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = file.WriteString(storageBucket)
+		if err != nil {
+			return err
+		}
+	}
+
+	// create the bucket
+	bucketName := fmt.Sprintf("%s-%s-terraform-state", g.ProjectId, o.Flags.OrganisationName)
+	exists, err := gke.BucketExists(bucketName)
 	if err != nil {
 		return err
 	}
 
-	terraformState := filepath.Join(path, "terraform.tfstate")
+	if !exists {
+		err = gke.CreateBucket(bucketName)
+		if err != nil {
+			return err
+		}
+	}
 
-	args = []string{"plan",
-		fmt.Sprintf("-state=%s", terraformState),
-		fmt.Sprintf("-var-file=%s", terraformVars),
-		"-var",
-		fmt.Sprintf("credentials=%s", serviceAccountPath),
-		path}
+	err = terraform.Init(path)
+	if err != nil {
+		return err
+	}
 
-	err = o.runCommand("terraform", args...)
+	err = terraform.Plan(path, terraformVars, serviceAccountPath)
 	if err != nil {
 		return err
 	}
 
 	log.Info("Applying plan...\n")
 
-	args = []string{"apply",
-		"-auto-approve",
-		fmt.Sprintf("-state=%s", terraformState),
-		fmt.Sprintf("-var-file=%s", terraformVars),
-		"-var",
-		fmt.Sprintf("credentials=%s", serviceAccountPath),
-		path}
-
-	err = o.runCommandVerbose("terraform", args...)
+	err = terraform.Apply(path, terraformVars, serviceAccountPath)
 	if err != nil {
 		return err
 	}
 
 	// should we setup the labels at this point?
-	//gcloud container clusters update ninjacandy --update-labels ''
-	args = []string{"container",
+	args := []string{"container",
 		"clusters",
 		"update",
 		g.Name()}
@@ -729,73 +780,6 @@ func (o *CreateTerraformOptions) getGoogleProjectId() (string, error) {
 	return projectId, nil
 }
 
-func (o *CreateTerraformOptions) writeLineIfNotExists(path string, line string) error {
-	// file exists
-	if _, err := os.Stat(path); err == nil {
-		buffer, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		contents := string(buffer)
-
-		o.Debugf("Checking if %s contains '%s'\n", path, line)
-
-		if strings.Contains(contents, line) {
-			o.Debugf("Skipping %s\n", line)
-			return nil
-		}
-	}
-
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	o.Debugf("Writing '%s' to %s\n", line, path)
-
-	_, err = file.WriteString(line)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (o *CreateTerraformOptions) writeKeyValueIfNotExists(path string, key string, value string) error {
-	// file exists
-	if _, err := os.Stat(path); err == nil {
-		buffer, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		contents := string(buffer)
-
-		o.Debugf("Checking if %s contains %s\n", path, key)
-
-		if strings.Contains(contents, key) {
-			o.Debugf("Skipping %s\n", key)
-			return nil
-		}
-	}
-
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	line := fmt.Sprintf("%s = \"%s\"\n", key, value)
-	o.Debugf("Writing '%s' to %s\n", line, path)
-
-	_, err = file.WriteString(line)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (o *CreateTerraformOptions) installJx(c Cluster) error {
 	log.Info("Initialising cluster ...\n")
 	o.InstallOptions.Flags.DefaultEnvironmentPrefix = c.Name()
@@ -834,6 +818,7 @@ func (o *CreateTerraformOptions) initAndInstall(provider string) error {
 	// call jx init
 	o.InstallOptions.BatchMode = o.BatchMode
 	o.InstallOptions.Flags.Provider = provider
+	o.InstallOptions.Flags.NoDefaultEnvironments = true
 
 	// call jx install
 	installOpts := &o.InstallOptions
