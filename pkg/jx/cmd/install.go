@@ -23,7 +23,9 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -271,6 +273,13 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	if options.Flags.Provider == AWS || options.Flags.Provider == EKS {
+		err = options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
+		if err != nil {
+			return err
+		}
+	}
+
 	if currentContext == "minikube" {
 		if options.Flags.Provider == "" {
 			options.Flags.Provider = MINIKUBE
@@ -927,4 +936,55 @@ func (o *InstallOptions) addGitServersToJenkinsConfig(helmConfig *config.HelmVal
 		}
 	}
 	return nil
+}
+
+func (o *InstallOptions) ensureDefaultStorageClass(client kubernetes.Interface, name string, provisioner string, typeName string) error {
+	storageClassInterface := client.StorageV1().StorageClasses()
+	storageClasses, err := storageClassInterface.List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	var foundSc *storagev1.StorageClass
+	for idx, sc := range storageClasses.Items {
+		ann := sc.Annotations
+		if ann != nil && ann[kube.AnnotationIsDefaultStorageClass] == "true" {
+			return nil
+		}
+		if sc.Name == name {
+			foundSc = &storageClasses.Items[idx]
+		}
+	}
+
+	if foundSc != nil {
+		// lets update the storageclass to be default
+		if foundSc.Annotations == nil {
+			foundSc.Annotations = map[string]string{}
+		}
+		foundSc.Annotations[kube.AnnotationIsDefaultStorageClass] = "true"
+
+		log.Infof("Updating storageclass %s to be the default\n", util.ColorInfo(name))
+		_, err = storageClassInterface.Create(foundSc)
+		return err
+	}
+
+	// lets create a default storage class
+	reclaimPolicy := core_v1.PersistentVolumeReclaimRetain
+
+	sc := &storagev1.StorageClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Annotations: map[string]string{
+				kube.AnnotationIsDefaultStorageClass: "true",
+			},
+		},
+		Provisioner: provisioner,
+		Parameters: map[string]string{
+			"type": typeName,
+		},
+		ReclaimPolicy: &reclaimPolicy,
+		MountOptions:  []string{"debug"},
+	}
+	log.Infof("Creating default storageclass %s with provisioner %s\n", util.ColorInfo(name), util.ColorInfo(provisioner))
+	_, err = storageClassInterface.Create(sc)
+	return err
 }

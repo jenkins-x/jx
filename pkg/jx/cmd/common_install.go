@@ -826,11 +826,11 @@ func (o *CommonOptions) installEksCtl() error {
 	if err != nil || !flag {
 		return err
 	}
-	latestVersion, err := util.GetLatestVersionFromGitHub("weaveworks", binary)
+	latestVersion, err := util.GetLatestVersionStringFromGitHub("weaveworks", binary)
 	if err != nil {
 		return err
 	}
-	extension := "tgz"
+	extension := "tar.gz"
 	if runtime.GOOS == "windows" {
 		extension = "zip"
 	}
@@ -867,6 +867,10 @@ func (o *CommonOptions) installEksCtl() error {
 	} else {
 		err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
 	}
+	if err != nil {
+		return err
+	}
+	err = os.Remove(tarFile)
 	if err != nil {
 		return err
 	}
