@@ -3,6 +3,7 @@ package amazon
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -55,6 +56,11 @@ func GetContainerRegistryHost() (string, error) {
 
 // LazyCreateRegistry lazily creates the ECR registry if it does not already exist
 func LazyCreateRegistry(orgName string, appName string) error {
+	// strip any tag/version from the app name
+	idx := strings.Index(appName, ":")
+	if idx > 0 {
+		appName = appName[0:idx]
+	}
 	repoName := appName
 	if orgName != "" {
 		repoName = orgName + "/" + appName

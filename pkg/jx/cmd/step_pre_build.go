@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"strings"
 
@@ -16,8 +15,7 @@ import (
 type StepPreBuildOptions struct {
 	StepOptions
 
-	FullImageName string
-	OutputFile    string
+	Image string
 }
 
 var (
@@ -52,16 +50,20 @@ func NewCmdStepPreBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 			CheckErr(err)
 		},
 	}
-
+	cmd.Flags().StringVarP(&options.Image, optionImage, "i", "", "The image name that is about to be built")
 	return cmd
 }
 
 func (o *StepPreBuildOptions) Run() error {
-	args := o.Args
-	if len(args) == 0 {
-		return fmt.Errorf("Missing argument for the dockerRegistry/organisation/appName")
+	imageName := o.Image
+	if imageName == "" {
+		args := o.Args
+		if len(args) == 0 {
+			return util.MissingOption(optionImage)
+		} else {
+			imageName = args[0]
+		}
 	}
-	imageName := args[0]
 	paths := strings.Split(imageName, "/")
 	l := len(paths)
 	if l > 2 {
