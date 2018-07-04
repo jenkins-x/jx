@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -347,6 +348,16 @@ func (options *InstallOptions) Run() error {
 	domain := helmConfig.ExposeController.Config.Domain
 	if domain != "" && addon.IsAddonEnabled("gitea") {
 		helmConfig.Jenkins.Servers.GetOrCreateFirstGitea().Url = "http://gitea-gitea." + ns + "." + domain
+	}
+	dockerRegistry, err := options.dockerRegistryValue()
+	if err != nil {
+		return err
+	}
+	if dockerRegistry != "" {
+		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
+			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+		}
+		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
 	}
 
 	// lets add any GitHub Enterprise servers
@@ -987,4 +998,12 @@ func (o *InstallOptions) ensureDefaultStorageClass(client kubernetes.Interface, 
 	log.Infof("Creating default storageclass %s with provisioner %s\n", util.ColorInfo(name), util.ColorInfo(provisioner))
 	_, err = storageClassInterface.Create(sc)
 	return err
+}
+
+// returns the docker registry string for the given provider
+func (o *InstallOptions) dockerRegistryValue() (string, error) {
+	if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
+		return amazon.GetContainerRegistryHost()
+	}
+	return "", nil
 }

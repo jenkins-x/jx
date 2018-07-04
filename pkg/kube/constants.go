@@ -70,6 +70,9 @@ const (
 	// ConfigMapJenkinsPodTemplates is the ConfigMap containing all the Pod Templates available
 	ConfigMapJenkinsPodTemplates = "jenkins-x-pod-templates"
 
+	// ConfigMapJenkinsDockerRegistry is the ConfigMap containing the Docker Registry configuration
+	ConfigMapJenkinsDockerRegistry = "jenkins-x-docker-registry"
+
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
 

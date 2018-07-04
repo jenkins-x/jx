@@ -63,8 +63,9 @@ func NewCmdGet(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdGetActivity(f, out, errOut))
-	cmd.AddCommand(NewCmdGetApplications(f, out, errOut))
 	cmd.AddCommand(NewCmdGetAddon(f, out, errOut))
+	cmd.AddCommand(NewCmdGetApplications(f, out, errOut))
+	cmd.AddCommand(NewCmdGetAWSInfo(f, out, errOut))
 	cmd.AddCommand(NewCmdGetBranchPattern(f, out, errOut))
 	cmd.AddCommand(NewCmdGetBuild(f, out, errOut))
 	cmd.AddCommand(NewCmdGetBuildPack(f, out, errOut))
