@@ -56,6 +56,10 @@ func (g GKECluster) Provider() string {
 	return g._Provider
 }
 
+func (g GKECluster) Region() string {
+	return gke.GetRegionFromZone(g.Zone)
+}
+
 func (g GKECluster) CreateTfVarsFile(path string) error {
 	user, err := os_user.Current()
 	var username string
@@ -281,8 +285,8 @@ func (o *CreateTerraformOptions) ClusterDetailsWizard() error {
 		if jxEnvironment == "" {
 			confirm := false
 			prompt := &survey.Confirm{
-				Message:  fmt.Sprintf("Would you like to install Jenkins X in cluster %v", name),
-				Default: true, 
+				Message: fmt.Sprintf("Would you like to install Jenkins X in cluster %v", name),
+				Default: true,
 			}
 			survey.AskOne(prompt, &confirm, nil)
 
@@ -670,7 +674,7 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 	}
 
 	if !exists {
-		err = gke.CreateBucket(bucketName)
+		err = gke.CreateBucket(bucketName, g.Region())
 		if err != nil {
 			return err
 		}

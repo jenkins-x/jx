@@ -3,8 +3,8 @@ package terraform
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/util"
-	"os"
 	"io/ioutil"
+	"os"
 	"strings"
 )
 
