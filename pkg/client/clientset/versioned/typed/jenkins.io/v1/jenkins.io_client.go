@@ -12,6 +12,7 @@ import (
 type JenkinsV1Interface interface {
 	RESTClient() rest.Interface
 	EnvironmentsGetter
+	EnvironmentRoleBindingsGetter
 	GitServicesGetter
 	PipelineActivitiesGetter
 	ReleasesGetter
@@ -25,6 +26,10 @@ type JenkinsV1Client struct {
 
 func (c *JenkinsV1Client) Environments(namespace string) EnvironmentInterface {
 	return newEnvironments(c, namespace)
+}
+
+func (c *JenkinsV1Client) EnvironmentRoleBindings(namespace string) EnvironmentRoleBindingInterface {
+	return newEnvironmentRoleBindings(c, namespace)
 }
 
 func (c *JenkinsV1Client) GitServices(namespace string) GitServiceInterface {

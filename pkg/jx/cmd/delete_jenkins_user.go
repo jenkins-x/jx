@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"io"
 
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var (
@@ -32,7 +33,7 @@ type DeleteJenkinsUserOptions struct {
 }
 
 // NewCmdDeleteJenkinsUser defines the command
-func NewCmdDeleteJenkinsUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteJenkinsUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteJenkinsUserOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -53,7 +54,7 @@ func NewCmdDeleteJenkinsUser(f cmdutil.Factory, out io.Writer, errOut io.Writer)
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.ServerFlags.addGitServerFlags(cmd)
@@ -66,7 +67,11 @@ func (o *DeleteJenkinsUserOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing jenkins user name")
 	}
-	authConfigSvc, err := o.Factory.CreateJenkinsAuthConfigService()
+	kubeClient, ns, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	authConfigSvc, err := o.Factory.CreateJenkinsAuthConfigService(kubeClient, ns)
 	if err != nil {
 		return err
 	}
@@ -96,7 +101,7 @@ func (o *DeleteJenkinsUserOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Deleted API tokens for users: %s for git server %s at %s from local settings\n",
+	log.Infof("Deleted API tokens for users: %s for git server %s at %s from local settings\n",
 		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

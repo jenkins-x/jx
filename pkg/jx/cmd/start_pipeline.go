@@ -11,7 +11,7 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -44,7 +44,7 @@ var (
 )
 
 // NewCmdStartPipeline creates the command
-func NewCmdStartPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStartPipeline(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &StartPipelineOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -65,7 +65,7 @@ func NewCmdStartPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", false, "Tails the build log to the current terminal")
@@ -138,8 +138,8 @@ func (o *StartPipelineOptions) startJob(name string, allNames []string) error {
 		i++
 
 		if last.Number != previous.Number {
-			o.Printf("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
-			o.Printf("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
+			log.Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
+			log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 			if o.Tail {
 				return o.tailBuild(name, &last)
 			}

@@ -7,8 +7,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -46,7 +46,7 @@ type DeleteQuickstartLocationOptions struct {
 }
 
 // NewCmdDeleteQuickstartLocation defines the command
-func NewCmdDeleteQuickstartLocation(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteQuickstartLocation(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteQuickstartLocationOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -65,7 +65,7 @@ func NewCmdDeleteQuickstartLocation(f cmdutil.Factory, out io.Writer, errOut io.
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.GitUrl, optionGitUrl, "u", gits.GitHubURL, "The URL of the git service")
@@ -127,7 +127,7 @@ func (o *DeleteQuickstartLocationOptions) Run() error {
 		for i, l := range settings.QuickstartLocations {
 			if l.GitURL == o.GitUrl && l.Owner == o.Owner {
 				settings.QuickstartLocations = append(settings.QuickstartLocations[0:i], settings.QuickstartLocations[i+1:]...)
-				o.Printf("Removing quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(l.GitURL, l.Owner)))
+				log.Infof("Removing quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(l.GitURL, l.Owner)))
 				return nil
 			}
 		}

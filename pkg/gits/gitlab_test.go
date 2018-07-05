@@ -21,7 +21,7 @@ const (
 )
 
 var gitlabRouter = util.Router{
-	"/projects/testperson%2Ftest-project": util.MethodMap{
+	"/api/v4/projects/testperson%2Ftest-project": util.MethodMap{
 		"GET": "project.json",
 	},
 }
@@ -64,27 +64,28 @@ func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *Gitla
 		ApiToken: "test",
 	}
 	// Gitlab provider that we want to test
-	provider, _ := withGitlabClient(new(auth.AuthServer), userAuth, client)
+	git := NewGitCLI()
+	provider, _ := withGitlabClient(new(auth.AuthServer), userAuth, client, git)
 
 	return mux, server, provider.(*GitlabProvider)
 }
 
 func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
-	mux.HandleFunc("/groups", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v4/groups", func(w http.ResponseWriter, r *http.Request) {
 		src, err := ioutil.ReadFile("test_data/gitlab/groups.json")
 
 		suite.Require().Nil(err)
 		w.Write(src)
 	})
 
-	mux.HandleFunc(fmt.Sprintf("/groups/%s/projects", gitlabOrgName), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/api/v4/groups/%s/projects", gitlabOrgName), func(w http.ResponseWriter, r *http.Request) {
 		src, err := ioutil.ReadFile("test_data/gitlab/group-projects.json")
 
 		suite.Require().Nil(err)
 		w.Write(src)
 	})
 
-	mux.HandleFunc(fmt.Sprintf("/users/%s/projects", gitlabUserName), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/api/v4/users/%s/projects", gitlabUserName), func(w http.ResponseWriter, r *http.Request) {
 		src, err := ioutil.ReadFile("test_data/gitlab/user-projects.json")
 
 		suite.Require().Nil(err)

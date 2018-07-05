@@ -1,23 +1,26 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
+
+	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 
-	"fmt"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type UninstallOptions struct {
 	CommonOptions
+
+	Namespace string
+	Confirm   bool
 }
 
 var (
@@ -28,7 +31,7 @@ var (
 		jx uninstall`)
 )
 
-func NewCmdUninstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUninstall(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &UninstallOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -45,10 +48,12 @@ func NewCmdUninstall(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
-
+	options.addCommonFlags(cmd)
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The team namespace to uninstall. Defaults to the current namespace.")
+	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
 	return cmd
 }
 
@@ -57,24 +62,34 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	jxClient, _, err := o.Factory.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return err
 	}
 	server := kube.CurrentServer(config)
-	namespace := kube.CurrentNamespace(config)
-	confirm := &survey.Confirm{
-		Message: fmt.Sprintf("Are you sure you wish to remove the Jenkins X platform from the '%s' namespace on cluster '%s'? :", namespace, server),
-		Default: false,
+	namespace := o.Namespace
+	if namespace == "" {
+		namespace = kube.CurrentNamespace(config)
 	}
-	flag := false
-	err = survey.AskOne(confirm, &flag, nil)
-	if err != nil {
-		return err
+	if o.BatchMode {
+		if !o.Confirm {
+			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
+		}
+	} else {
+		confirm := &survey.Confirm{
+			Message: fmt.Sprintf("Are you sure you wish to remove the Jenkins X platform from the '%s' namespace on cluster '%s'? :", namespace, server),
+			Default: false,
+		}
+		flag := false
+		err = survey.AskOne(confirm, &flag, nil)
+		if err != nil {
+			return err
+		}
+		if !flag {
+			return nil
+		}
 	}
-	if !flag {
-		return nil
-	}
+	log.Infof("Removing installation of Jenkins X in team namespace %s\n", util.ColorInfo(namespace))
 
 	err = o.cleanupConfig()
 	if err != nil {
@@ -82,35 +97,52 @@ func (o *UninstallOptions) Run() error {
 	}
 	envNames, err := kube.GetEnvironmentNames(jxClient, namespace)
 	if err != nil {
+		log.Warnf("Failed to find Environments. Probably not installed yet?. Error: %s\n", err)
+	}
+	helmBinary, err := o.TeamHelmBin()
+	if err != nil {
 		return err
 	}
 	for _, env := range envNames {
 		release := namespace + "-" + env
-		err := o.runCommandQuietly("helm", "status", release)
+		err := o.runCommandQuietly(helmBinary, "status", release)
 		if err != nil {
 			continue
 		}
-		err = o.runCommand("helm", "delete", "--purge", release)
+		err = o.runCommand(helmBinary, "delete", "--purge", release)
 		if err != nil {
-			return err
+			log.Warnf("Failed to uninstall environment chart %s: %s\n", release, err)
 		}
 	}
-	err = o.runCommand("helm", "delete", "--purge", "jenkins-x")
+	err = o.runCommand(helmBinary, "delete", "--purge", "jenkins-x")
 	if err != nil {
-		return err
+		errc := o.cleanupNamesapces(namespace, envNames)
+		if errc != nil {
+			errc = errors.Wrap(errc, "failed to cleanup the jenkins-x platform")
+			return errc
+		}
+		return errors.Wrap(err, "failed to purge the jenkins-x chart")
 	}
 	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection(&meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
 	if err != nil {
 		return err
 	}
-
-	client, _, err := o.Factory.CreateClient()
+	err = o.cleanupNamesapces(namespace, envNames)
 	if err != nil {
 		return err
 	}
-	err = client.CoreV1().Namespaces().Delete(namespace, &meta_v1.DeleteOptions{})
+	log.Successf("Jenkins X has been successfully uninstalled from team namespace %s", namespace)
+	return nil
+}
+
+func (o *UninstallOptions) cleanupNamesapces(namespace string, envNames []string) error {
+	client, _, err := o.KubeClient()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get the kube client")
+	}
+	err = o.deleteNamespace(namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete team namespace namespace")
 	}
 	for _, env := range envNames {
 		envNamespace := namespace + "-" + env
@@ -118,17 +150,28 @@ func (o *UninstallOptions) Run() error {
 		if err != nil {
 			continue
 		}
-		err = client.CoreV1().Namespaces().Delete(envNamespace, &meta_v1.DeleteOptions{})
+		err = o.deleteNamespace(envNamespace)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to delete environment namespace")
 		}
 	}
-	log.Success("Jenkins X has been successfully uninstalled ")
+	return nil
+}
+
+func (o *UninstallOptions) deleteNamespace(namespace string) error {
+	client, _, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to get the kube client")
+	}
+	err = client.CoreV1().Namespaces().Delete(namespace, &meta_v1.DeleteOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete the namespace '%s'", namespace)
+	}
 	return nil
 }
 
 func (o *UninstallOptions) cleanupConfig() error {
-	authConfigSvc, err := o.Factory.CreateAuthConfigService(util.JenkinsAuthConfigFile)
+	authConfigSvc, err := o.Factory.CreateAuthConfigService(JenkinsAuthConfigFile)
 	if err != nil {
 		return nil
 	}

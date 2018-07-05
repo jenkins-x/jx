@@ -2,9 +2,10 @@ package gits
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/util"
 	"net/url"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
@@ -20,6 +21,7 @@ type GitRepositoryInfo struct {
 	Host         string
 	Organisation string
 	Name         string
+	Project      string
 }
 
 func (i *GitRepositoryInfo) IsGitHub() bool {
@@ -145,14 +147,19 @@ func ParseGitURL(text string) (*GitRepositoryInfo, error) {
 }
 
 func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error) {
-	arr := strings.Split(strings.TrimPrefix(path, "/"), "/")
-	if len(arr) >= 2 {
-		info.Organisation = arr[0]
-		info.Name = strings.TrimSuffix(arr[1], ".git")
+	trimPath := strings.TrimSuffix(path, "/")
+	trimPath = strings.TrimSuffix(trimPath, ".git")
+	arr := strings.Split(trimPath, "/")
+	arrayLength := len(arr)
+	if arrayLength >= 2 {
+		info.Organisation = arr[arrayLength-2]
+		info.Project = arr[arrayLength-2]
+		info.Name = arr[arrayLength-1]
+
 		return info, nil
-	} else {
-		return info, fmt.Errorf("Invalid path %s could not determine organisation and repository name", path)
 	}
+
+	return info, fmt.Errorf("Invalid path %s could not determine organisation and repository name", path)
 }
 
 // SaasGitKind returns the kind for SaaS git providers or "" if the URL could not be deduced
@@ -163,9 +170,9 @@ func SaasGitKind(gitServiceUrl string) string {
 	case "https://github.com":
 		return KindGitHub
 	case "http://bitbucket.org":
-		return KindBitBucket
+		return KindBitBucketCloud
 	case BitbucketCloudURL:
-		return KindBitBucket
+		return KindBitBucketCloud
 	default:
 		return ""
 	}

@@ -44,7 +44,7 @@ type jsonContent struct {
 	Domains             []string `json:"domains"`
 	People              []string `json:"people"`
 	StreetTypes         []string `json:"streetTypes"` // Taken from https://github.com/tomharris/random_data/blob/master/lib/random_data/locations.rb
-	Paragraphs          []string `json:"paragraphs"`  // Taken from feedbooks.com
+	Paragraphs          []string `json:"paragraphs"`  // Taken from feedbooks.com and www.gutenberg.org
 	Countries           []string `json:"countries"`   // Fetched from the world bank at http://siteresources.worldbank.org/DATASTATISTICS/Resources/CLASS.XLS
 	CountriesThreeChars []string `json:"countriesThreeChars"`
 	CountriesTwoChars   []string `json:"countriesTwoChars"`
@@ -62,8 +62,10 @@ type jsonContent struct {
 }
 
 var jsonData = jsonContent{}
+var privateRand *rand.Rand
 
 func init() {
+	privateRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 	jsonData = jsonContent{}
 
 	err := json.Unmarshal(data, &jsonData)
@@ -73,19 +75,13 @@ func init() {
 	}
 }
 
-func seedAndReturnRandom(n int) int {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Intn(n)
-}
-
-func seedAndReturnRandomFloat() float64 {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Float64()
+func CustomRand(randToUse *rand.Rand) {
+	privateRand = randToUse
 }
 
 // Returns a random part of a slice
 func randomFrom(source []string) string {
-	return source[seedAndReturnRandom(len(source))]
+	return source[privateRand.Intn(len(source))]
 }
 
 // Title returns a random title, gender decides the gender of the name
@@ -99,8 +95,7 @@ func Title(gender int) string {
 		title = randomFrom(jsonData.FemaleTitles)
 		break
 	default:
-		rand.Seed(time.Now().UnixNano())
-		title = FirstName(rand.Intn(2))
+		title = FirstName(privateRand.Intn(2))
 		break
 	}
 	return title
@@ -117,7 +112,6 @@ func FirstName(gender int) string {
 		name = randomFrom(jsonData.FirstNamesFemale)
 		break
 	default:
-		rand.Seed(time.Now().UnixNano())
 		name = FirstName(rand.Intn(2))
 		break
 	}
@@ -198,24 +192,22 @@ func Paragraph() string {
 // if a second argument is supplied it returns a number in [n1,n2)
 func Number(numberRange ...int) int {
 	nr := 0
-	rand.Seed(time.Now().UnixNano())
 	if len(numberRange) > 1 {
 		nr = 1
-		nr = seedAndReturnRandom(numberRange[1]-numberRange[0]) + numberRange[0]
+		nr = privateRand.Intn(numberRange[1]-numberRange[0]) + numberRange[0]
 	} else {
-		nr = seedAndReturnRandom(numberRange[0])
+		nr = privateRand.Intn(numberRange[0])
 	}
 	return nr
 }
 
 func Decimal(numberRange ...int) float64 {
 	nr := 0.0
-	rand.Seed(time.Now().UnixNano())
 	if len(numberRange) > 1 {
 		nr = 1.0
-		nr = seedAndReturnRandomFloat()*(float64(numberRange[1])-float64(numberRange[0])) + float64(numberRange[0])
+		nr = privateRand.Float64()*(float64(numberRange[1])-float64(numberRange[0])) + float64(numberRange[0])
 	} else {
-		nr = seedAndReturnRandomFloat() * float64(numberRange[0])
+		nr = privateRand.Float64() * float64(numberRange[0])
 	}
 
 	if len(numberRange) > 2 {
@@ -256,7 +248,7 @@ func StringSample(stringList ...string) string {
 }
 
 func Boolean() bool {
-	nr := seedAndReturnRandom(2)
+	nr := privateRand.Intn(2)
 	return nr != 0
 }
 
@@ -291,7 +283,7 @@ func SillyName() string {
 func IpV4Address() string {
 	blocks := []string{}
 	for i := 0; i < 4; i++ {
-		number := seedAndReturnRandom(255)
+		number := privateRand.Intn(255)
 		blocks = append(blocks, strconv.Itoa(number))
 	}
 
@@ -302,7 +294,7 @@ func IpV4Address() string {
 func IpV6Address() string {
 	var ip net.IP
 	for i := 0; i < net.IPv6len; i++ {
-		number := uint8(seedAndReturnRandom(255))
+		number := uint8(privateRand.Intn(255))
 		ip = append(ip, number)
 	}
 	return ip.String()
@@ -312,7 +304,7 @@ func IpV6Address() string {
 func MacAddress() string {
 	blocks := []string{}
 	for i := 0; i < 6; i++ {
-		number := fmt.Sprintf("%02x", seedAndReturnRandom(255))
+		number := fmt.Sprintf("%02x", privateRand.Intn(255))
 		blocks = append(blocks, number)
 	}
 
@@ -379,7 +371,7 @@ func UserAgentString() string {
 func PhoneNumber() string {
 	str := randomFrom(jsonData.CountryCallingCodes) + " "
 
-	str += Digits(rand.Intn(3) + 1)
+	str += Digits(privateRand.Intn(3) + 1)
 
 	for {
 		// max 15 chars
@@ -387,6 +379,6 @@ func PhoneNumber() string {
 		if remaining < 2 {
 			return "+" + str
 		}
-		str += " " + Digits(rand.Intn(remaining-1)+1)
+		str += " " + Digits(privateRand.Intn(remaining-1)+1)
 	}
 }

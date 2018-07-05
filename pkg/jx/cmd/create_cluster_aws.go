@@ -8,10 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -36,6 +35,8 @@ type CreateClusterAWSFlags struct {
 	InsecureDockerRegistry string
 	UseRBAC                bool
 	TerraformDirectory     string
+	NodeSize               string
+	MasterSize             string
 }
 
 var (
@@ -63,7 +64,7 @@ var (
 )
 
 // NewCmdCreateClusterAWS creates the command
-func NewCmdCreateClusterAWS(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterAWS(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAWSOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, AKS),
 	}
@@ -76,7 +77,7 @@ func NewCmdCreateClusterAWS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -90,6 +91,8 @@ func NewCmdCreateClusterAWS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability zones. Defaults to $AWS_AVAILABILITY_ZONES")
 	cmd.Flags().StringVarP(&options.Flags.InsecureDockerRegistry, "insecure-registry", "", "100.64.0.0/10", "The insecure docker registries to allow")
 	cmd.Flags().StringVarP(&options.Flags.TerraformDirectory, "terraform", "t", "", "The directory to save terraform configuration.")
+	cmd.Flags().StringVarP(&options.Flags.NodeSize, "node-size", "", "", "The size of a node in the kops created cluster.")
+	cmd.Flags().StringVarP(&options.Flags.MasterSize, "master-size", "", "", "The size of a master in the kops created cluster.")
 	return cmd
 }
 
@@ -133,7 +136,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	if zones == "" {
 		zones = os.Getenv("AWS_AVAILABILITY_ZONES")
 		if zones == "" {
-			o.warnf("No AWS_AVAILABILITY_ZONES environment variable is defined or %s option!\n", optionZones)
+			log.Warnf("No AWS_AVAILABILITY_ZONES environment variable is defined or %s option!\n", optionZones)
 
 			prompt := &survey.Input{
 				Message: "Availability zones",
@@ -166,6 +169,13 @@ func (o *CreateClusterAWSOptions) Run() error {
 		args = append(args, "--kubernetes-version", flags.KubeVersion)
 	}
 
+	if flags.NodeSize != "" {
+		args = append(args, "--node-size", flags.NodeSize)
+	}
+	if flags.MasterSize != "" {
+		args = append(args, "--master-size", flags.MasterSize)
+	}
+
 	auth := "RBAC"
 	if !flags.UseRBAC {
 		auth = "AlwaysAllow"
@@ -178,47 +188,47 @@ func (o *CreateClusterAWSOptions) Run() error {
 
 	// TODO allow add custom args?
 	log.Info("Creating cluster...\n")
-	o.Printf("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
+	log.Infof("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
 	err = o.runCommandVerbose("kops", args...)
 	if err != nil {
 		return err
 	}
 
-	o.Printf("\nKops has created cluster %s it will take a minute or so to startup\n", util.ColorInfo(name))
-	o.Printf("You can check on the status in another terminal via the command: %s\n", util.ColorStatus("kops validate cluster"))
+	log.Infof("\nKops has created cluster %s it will take a minute or so to startup\n", util.ColorInfo(name))
+	log.Infof("You can check on the status in another terminal via the command: %s\n", util.ColorStatus("kops validate cluster"))
 
 	time.Sleep(5 * time.Second)
 
 	insecureRegistries := flags.InsecureDockerRegistry
 	if insecureRegistries != "" {
-		o.Printf("Waiting for the Cluster configuration...\n")
+		log.Warn("Waiting for the Cluster configuration...")
 		igJson, err := o.waitForClusterJson(name)
 		if err != nil {
 			return fmt.Errorf("Failed to wait for the Cluster JSON: %s\n", err)
 		}
-		o.Printf("Loaded Cluster JSON: %s\n", igJson)
+		log.Infof("Loaded Cluster JSON: %s\n", igJson)
 
 		err = o.modifyClusterConfigJson(igJson, insecureRegistries)
 		if err != nil {
 			return err
 		}
-		o.Printf("Cluster configuration updated\n")
+		log.Infoln("Cluster configuration updated")
 	}
 
-	o.Printf("Waiting for the kubernetes cluster to be ready so we can continue...\n")
+	log.Infoln("Waiting for the kubernetes cluster to be ready so we can continue...")
 	err = o.waitForClusterToComeUp()
 	if err != nil {
 		return fmt.Errorf("Failed to wait for Kubernetes cluster to start: %s\n", err)
 	}
 
-	o.Printf("\n")
-	o.Printf("Validating kops cluster state...\n")
+	log.Blank()
+	log.Infoln("Validating kops cluster state...")
 	err = o.runCommand("kops", "validate", "cluster")
 	if err != nil {
 		return fmt.Errorf("Failed to successfully validate kops cluster state: %s\n", err)
 	}
-	o.Printf("State of kops cluster: OK\n")
-	o.Printf("\n")
+	log.Infoln("State of kops cluster: OK")
+	log.Blank()
 
 	log.Info("Initialising cluster ...\n")
 	return o.initAndInstall(AWS)
@@ -256,7 +266,7 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 	if newJson == json {
 		return nil
 	}
-	o.Printf("new json: %s\n", newJson)
+	log.Infof("new json: %s\n", newJson)
 	tmpFile, err := ioutil.TempFile("", "kops-ig-json-")
 	if err != nil {
 		return err
@@ -267,23 +277,23 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 		return fmt.Errorf("Failed to write InstanceGroup JSON %s: %s", fileName, err)
 	}
 
-	o.Printf("Updating Cluster configuration to enable insecure docker registries %s\n", util.ColorInfo(insecureRegistries))
+	log.Infof("Updating Cluster configuration to enable insecure docker registries %s\n", util.ColorInfo(insecureRegistries))
 	err = o.runCommand("kops", "replace", "-f", fileName)
 	if err != nil {
 		return err
 	}
 
-	o.Printf("Updating the cluster\n")
+	log.Infoln("Updating the cluster")
 	err = o.runCommand("kops", "update", "cluster", "--yes")
 	if err != nil {
 		return err
 	}
 
-	o.Printf("Rolling update the cluster\n")
+	log.Infoln("Rolling update the cluster")
 	err = o.runCommand("kops", "rolling-update", "cluster", "--cloudonly", "--yes")
 	if err != nil {
 		// lets not fail to install if the rolling upgrade fails
-		o.warnf("Failed to perform rolling upgrade: %s\n", err)
+		log.Warnf("Failed to perform rolling upgrade: %s\n", err)
 		//return err
 	}
 	return nil

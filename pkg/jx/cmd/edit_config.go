@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -49,7 +49,7 @@ type EditConfigOptions struct {
 }
 
 // NewCmdEditConfig creates a command object for the "create" command
-func NewCmdEditConfig(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEditConfig(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &EditConfigOptions{
 		EditOptions: EditOptions{
 			CommonOptions: CommonOptions{
@@ -70,7 +70,7 @@ func NewCmdEditConfig(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The root project directory")
@@ -124,7 +124,7 @@ func (o *EditConfigOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		o.Printf("Saved project configuration %s\n", util.ColorInfo(fileName))
+		log.Infof("Saved project configuration %s\n", util.ColorInfo(fileName))
 	}
 	return nil
 }

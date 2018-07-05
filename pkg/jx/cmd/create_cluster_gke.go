@@ -14,10 +14,9 @@ import (
 	"regexp"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/gke"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -54,7 +53,7 @@ var (
 		This command creates a new kubernetes cluster on GKE, installing required local dependencies and provisions the
 		Jenkins X platform
 
-		You can see a demo of this command here: [http://jenkins-x.io/demos/create_cluster_gke/](http://jenkins-x.io/demos/create_cluster_gke/)
+		You can see a demo of this command here: [https://jenkins-x.io/demos/create_cluster_gke/](https://jenkins-x.io/demos/create_cluster_gke/)
 
 		Google Kubernetes Engine is a managed environment for deploying containerized applications. It brings our latest
 		innovations in developer productivity, resource efficiency, automated operations, and open source flexibility to
@@ -75,7 +74,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterGKE(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKEOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, GKE),
 	}
@@ -88,7 +87,7 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -107,6 +106,9 @@ func NewCmdCreateClusterGKE(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
+
+	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, out, errOut))
+
 	return cmd
 }
 
@@ -128,7 +130,7 @@ func (o *CreateClusterGKEOptions) Run() error {
 func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	var err error
 	if !o.Flags.SkipLogin {
-		err := o.runCommand("gcloud", "auth", "login", "--brief")
+		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
 			return err
 		}
@@ -142,7 +144,16 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	err = o.runCommand("gcloud", "config", "set", "project", projectId)
+	err = o.runCommandVerbose("gcloud", "config", "set", "project", projectId)
+	if err != nil {
+		return err
+	}
+
+	// lets ensure we've got container and compute enabled
+	glcoudArgs := []string{"services", "enable", "container", "compute"}
+	log.Infof("Lets ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(glcoudArgs, " ")))
+
+	err = o.runCommandVerbose("gcloud", glcoudArgs...)
 	if err != nil {
 		return err
 	}
@@ -160,7 +171,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 		prompts := &survey.Select{
 			Message:  "Google Cloud Zone:",
-			Options: availableZones,
+			Options:  availableZones,
 			PageSize: 10,
 			Help:     "The compute zone (e.g. us-central1-a) for the cluster",
 		}
@@ -279,8 +290,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	ns := o.InstallOptions.Flags.Namespace
 	if ns == "" {
-		f := o.Factory
-		_, ns, _ = f.CreateClient()
+		_, ns, _ = o.KubeClient()
 		if err != nil {
 			return err
 		}
@@ -340,7 +350,7 @@ func (o *CreateClusterGKEOptions) getGoogleProjectId() (string, error) {
 		}
 	} else if len(existingProjects) == 1 {
 		projectId = existingProjects[0]
-		o.Printf("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
+		log.Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
 	} else {
 		prompts := &survey.Select{
 			Message: "Google Cloud Project:",

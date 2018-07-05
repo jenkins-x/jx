@@ -17,20 +17,22 @@ type GitlabProvider struct {
 
 	Server auth.AuthServer
 	User   auth.UserAuth
+	Git    Gitter
 }
 
-func NewGitlabProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func NewGitlabProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	c := gitlab.NewClient(nil, user.ApiToken)
-	return withGitlabClient(server, user, c)
+	return withGitlabClient(server, user, c, git)
 }
 
 // Used by unit tests to inject a mocked client
-func withGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitlab.Client) (GitProvider, error) {
+func withGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitlab.Client, git Gitter) (GitProvider, error) {
 	provider := &GitlabProvider{
 		Server:   *server,
 		User:     *user,
 		Username: user.Username,
 		Client:   client,
+		Git:      git,
 	}
 	return provider, nil
 }
@@ -169,8 +171,8 @@ func (g *GitlabProvider) ValidateRepositoryName(org, name string) error {
 }
 
 func (g *GitlabProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
-	owner := data.Owner
-	repo := data.Repo
+	owner := data.GitRepositoryInfo.Organisation
+	repo := data.GitRepositoryInfo.Name
 	title := data.Title
 	body := data.Body
 	head := data.Head
@@ -221,10 +223,10 @@ func (g *GitlabProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
-func (p *GitlabProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
+func (p *GitlabProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
 	pr := &GitPullRequest{
 		Owner:  owner,
-		Repo:   repo,
+		Repo:   repo.Name,
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
@@ -237,7 +239,8 @@ func (p *GitlabProvider) GetPullRequest(owner, repo string, number int) (*GitPul
 	return pr, err
 }
 
-func (p *GitlabProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+func (p *GitlabProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+	repo := repository.Name
 	pid := projectId(owner, p.Username, repo)
 	commits, _, err := p.Client.MergeRequests.GetMergeRequestCommits(pid, number, nil)
 
@@ -322,7 +325,7 @@ func (g *GitlabProvider) MergePullRequest(pr *GitPullRequest, message string) er
 }
 
 func (g *GitlabProvider) CreateWebHook(data *GitWebHookArguments) error {
-	pid := projectId(data.Owner, g.Username, data.Repo)
+	pid := projectId(data.Owner, g.Username, data.Repo.Name)
 
 	opt := &gitlab.AddProjectHookOptions{
 		URL:   &data.URL,
@@ -452,7 +455,11 @@ func (g *GitlabProvider) IsGitea() bool {
 	return false
 }
 
-func (g *GitlabProvider) IsBitbucket() bool {
+func (g *GitlabProvider) IsBitbucketCloud() bool {
+	return false
+}
+
+func (g *GitlabProvider) IsBitbucketServer() bool {
 	return false
 }
 

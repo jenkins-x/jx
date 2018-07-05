@@ -3,11 +3,11 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetTokenAddonOptions the command line options
@@ -28,7 +28,7 @@ var (
 )
 
 // NewCmdGetTokenAddon creates the command
-func NewCmdGetTokenAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetTokenAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetTokenAddonOptions{
 		GetTokenOptions{
 			GetOptions: GetOptions{
@@ -51,7 +51,7 @@ func NewCmdGetTokenAddon(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addFlags(cmd)
@@ -66,7 +66,7 @@ func (o *GetTokenAddonOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 	if len(config.Servers) == 0 {
-		o.Printf("No addon servers registered. To register a new token for an addon server use: %s\n", util.ColorInfo("jx create token addon"))
+		log.Warnf("No addon servers registered. To register a new token for an addon server use: %s\n", util.ColorInfo("jx create token addon"))
 		return nil
 	}
 	return o.displayUsersWithTokens(authConfigSvc)

@@ -8,10 +8,9 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cve"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -43,7 +42,7 @@ var (
 )
 
 // NewCmdGetCVE creates the command
-func NewCmdGetCVE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetCVE(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetCVEOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -64,7 +63,7 @@ func NewCmdGetCVE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -89,12 +88,12 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
 	}
 
-	jxClient, _, err := o.Factory.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return fmt.Errorf("cannot create jx client: %v", err)
 	}
 
-	externalURL, err := o.ensureAddonServiceAvailable(anchoreServiceName)
+	externalURL, err := o.ensureAddonServiceAvailable(kube.AddonServices[defaultAnchoreName])
 	if err != nil {
 		log.Warnf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.\n")
 		return fmt.Errorf("if no CVE provider running, try running `jx create addon anchore` in your teams dev environment: %v", err)

@@ -13,9 +13,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -25,7 +25,7 @@ var (
 
 		Note that this command does not remove the underlying Git Repositories. 
 
-		For that see the [jx delete repo](http://jenkins-x.io/commands/jx_delete_repo/) command.
+		For that see the [jx delete repo](https://jenkins-x.io/commands/jx_delete_repo/) command.
 
 `)
 
@@ -55,7 +55,7 @@ type DeleteAppOptions struct {
 }
 
 // NewCmdDeleteApp creates a command object for this command
-func NewCmdDeleteApp(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteApp(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteAppOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -74,7 +74,7 @@ func NewCmdDeleteApp(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.IgnoreEnvironments, "no-env", "", false, "Do not remove the app from any of the Environments")
@@ -83,6 +83,7 @@ func NewCmdDeleteApp(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filter the list of apps to those containing this text")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
+	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Run without being prompted. WARNING! You will not be asked to confirm deletions if you use this flag.")
 
 	return cmd
 }
@@ -148,8 +149,10 @@ func (o *DeleteAppOptions) Run() error {
 	}
 	deleteMessage := strings.Join(args, ", ")
 
-	if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins") {
-		return nil
+	if !o.BatchMode {
+		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins") {
+			return nil
+		}
 	}
 	for _, name := range args {
 		job := m[name]
@@ -160,7 +163,7 @@ func (o *DeleteAppOptions) Run() error {
 			}
 		}
 	}
-	o.Printf("Deleted Applications %s\n", util.ColorInfo(deleteMessage))
+	log.Infof("Deleted Applications %s\n", util.ColorInfo(deleteMessage))
 	return nil
 }
 
@@ -212,7 +215,7 @@ func (o *DeleteAppOptions) deleteAppFromEnvironment(env *v1.Environment, appName
 	if env.Spec.Source.URL == "" {
 		return nil
 	}
-	o.Printf("Removing app %s from environment %s\n", appName, env.Spec.Label)
+	log.Infof("Removing app %s from environment %s\n", appName, env.Spec.Label)
 
 	branchName := "delete-" + appName
 	title := "Delete application " + appName + " from this environment"
@@ -237,7 +240,7 @@ func (o *DeleteAppOptions) waitForGitOpsPullRequest(env *v1.Environment, pullReq
 	if pullRequestInfo != nil {
 		logMergeFailure := false
 		pr := pullRequestInfo.PullRequest
-		o.Printf("Waiting for pull request %s to merge\n", pr.URL)
+		log.Infof("Waiting for pull request %s to merge\n", pr.URL)
 
 		for {
 			gitProvider := pullRequestInfo.GitProvider
@@ -247,17 +250,17 @@ func (o *DeleteAppOptions) waitForGitOpsPullRequest(env *v1.Environment, pullReq
 			}
 
 			if pr.Merged != nil && *pr.Merged {
-				o.Printf("Pull Request %s is merged!\n", util.ColorInfo(pr.URL))
+				log.Infof("Request %s is merged!\n", util.ColorInfo(pr.URL))
 				return nil
 			} else {
 				if pr.IsClosed() {
-					o.warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
+					log.Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
 					return fmt.Errorf("Promotion failed as Pull Request %s is closed without merging", pr.URL)
 				}
 				// lets try merge if the status is good
 				status, err := gitProvider.PullRequestLastCommitStatus(pr)
 				if err != nil {
-					o.warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
+					log.Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
 					//return fmt.Errorf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
 				} else {
 					if status == "success" {
@@ -266,7 +269,7 @@ func (o *DeleteAppOptions) waitForGitOpsPullRequest(env *v1.Environment, pullReq
 							if err != nil {
 								if !logMergeFailure {
 									logMergeFailure = true
-									o.warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
+									log.Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
 								}
 							}
 						}

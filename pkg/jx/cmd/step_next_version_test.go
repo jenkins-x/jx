@@ -66,7 +66,8 @@ func TestSetVersionJavascript(t *testing.T) {
 	err = util.CopyDir(testData, f, true)
 	assert.NoError(t, err)
 
-	err = gits.GitInit(f)
+	git := gits.NewGitCLI()
+	err = git.Init(f)
 	assert.NoError(t, err)
 
 	o := StepNextVersionOptions{}
@@ -97,7 +98,8 @@ func TestSetVersionChart(t *testing.T) {
 	err = util.CopyDir(testData, f, true)
 	assert.NoError(t, err)
 
-	err = gits.GitInit(f)
+	git := gits.NewGitCLI()
+	err = git.Init(f)
 	assert.NoError(t, err)
 
 	o := StepNextVersionOptions{}

@@ -12,7 +12,7 @@ const (
 	Exposecontroller = "exposecontroller"
 )
 
-func GetConfigmapData(client *kubernetes.Clientset, name, ns string) (map[string]string, error) {
+func GetConfigmapData(client kubernetes.Interface, name, ns string) (map[string]string, error) {
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(name, meta_v1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get configmap %s in namespace %s, %v", name, ns, err)
@@ -21,7 +21,7 @@ func GetConfigmapData(client *kubernetes.Clientset, name, ns string) (map[string
 	return cm.Data, nil
 }
 
-func GetCurrentDomain(client *kubernetes.Clientset, ns string) (string, error) {
+func GetCurrentDomain(client kubernetes.Interface, ns string) (string, error) {
 
 	data, err := GetConfigmapData(client, Exposecontroller, ns)
 	if err != nil {

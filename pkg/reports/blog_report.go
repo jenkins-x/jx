@@ -1,11 +1,11 @@
 package reports
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -48,7 +48,7 @@ func (r *BlogBarReport) Render() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Generated JavaScript %s\n", util.ColorInfo(r.JSFileName))
+	log.Infof("Generated JavaScript %s\n", util.ColorInfo(r.JSFileName))
 	return nil
 }
 

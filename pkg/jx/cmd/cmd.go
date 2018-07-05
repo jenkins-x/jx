@@ -3,8 +3,6 @@ package cmd
 import (
 	"io"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -24,7 +22,7 @@ const (
 )
 
 // NewJXCommand creates the `jx` command and its nested children.
-func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Command {
+func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 	cmds := &cobra.Command{
 		Use:   "jx",
 		Short: "jx is a command line tool for working with Jenkins X",
@@ -40,6 +38,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	deleteCommands := NewCmdDelete(f, out, err)
 	getCommands := NewCmdGet(f, out, err)
 	editCommands := NewCmdEdit(f, out, err)
+	updateCommands := NewCmdUpdate(f, out, err)
 
 	installCommands := []*cobra.Command{
 		NewCmdInstall(f, out, err),
@@ -47,6 +46,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 		NewCmdUpgrade(f, out, err),
 	}
 	installCommands = append(installCommands, findCommands("cluster", createCommands, deleteCommands)...)
+	installCommands = append(installCommands, findCommands("cluster", updateCommands)...)
 	installCommands = append(installCommands, findCommands("jenkins token", createCommands, deleteCommands)...)
 	installCommands = append(installCommands, NewCmdInit(f, out, err))
 
@@ -62,6 +62,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 	gitCommands := []*cobra.Command{}
 	gitCommands = append(gitCommands, findCommands("git server", createCommands, deleteCommands)...)
 	gitCommands = append(gitCommands, findCommands("git token", createCommands, deleteCommands)...)
+	gitCommands = append(gitCommands, NewCmdRepo(f, out, err))
 
 	addonCommands := []*cobra.Command{}
 	addonCommands = append(addonCommands, findCommands("addon", createCommands, deleteCommands)...)
@@ -92,9 +93,11 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 		{
 			Message: "Working with Kubernetes:",
 			Commands: []*cobra.Command{
+				NewCompliance(f, out, err),
 				NewCmdCompletion(f, out),
 				NewCmdContext(f, out, err),
 				NewCmdEnvironment(f, out, err),
+				NewCmdTeam(f, out, err),
 				NewCmdGC(f, out, err),
 				NewCmdNamespace(f, out, err),
 				NewCmdPrompt(f, out, err),
@@ -123,6 +126,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 				getCommands,
 				editCommands,
 				createCommands,
+				updateCommands,
 				deleteCommands,
 				NewCmdStart(f, out, err),
 				NewCmdStop(f, out, err),
@@ -168,7 +172,6 @@ func findCommands(subCommand string, commands ...*cobra.Command) []*cobra.Comman
 
 func commandHasParentName(command *cobra.Command, name string) bool {
 	path := fullPath(command)
-	//fmt.Printf("Command path %s for command %s does not contain %s\n", path, command.Use, name)
 	return strings.Contains(path, name)
 }
 

@@ -65,7 +65,7 @@ func ValidNameOption(option string, value string) error {
 	return nil
 }
 
-func ValidateEnvironmentDoesNotExist(jxClient *versioned.Clientset, ns string, str string) error {
+func ValidateEnvironmentDoesNotExist(jxClient versioned.Interface, ns string, str string) error {
 	if str != "" {
 		_, err := jxClient.JenkinsV1().Environments(ns).Get(str, metav1.GetOptions{})
 		if err == nil {

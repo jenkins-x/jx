@@ -56,6 +56,12 @@ test:
 test1:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v -run $(TEST)
 
+testbin:
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-test
+
+debugtest1: testbin
+	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-test -- -test.run $(TEST)
+
 full: $(PKGS)
 
 install: $(GO_DEPENDENCIES)
@@ -85,6 +91,10 @@ release: check
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
+
+	docker build -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
+	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
+
 	chmod +x build/darwin/$(NAME)
 	chmod +x build/linux/$(NAME)
 	chmod +x build/arm/$(NAME)
@@ -117,10 +127,11 @@ clean:
 	rm -rf build release
 
 linux:
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-linux-amd64 cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
-docker: linux Dockerfile.buildgo
-	docker build --no-cache -t rawlingsj/jx:dev -f Dockerfile .
+docker: linux
+	docker build --no-cache -t rawlingsj/jx:dev35 .
+	docker push rawlingsj/jx:dev35
 
 docker-go: linux Dockerfile.buildgo
 	docker build --no-cache -t builder-go -f Dockerfile.buildgo .
@@ -131,9 +142,21 @@ docker-maven: linux Dockerfile.maven
 docker-pipeline: linux
 	docker build -t rawlingsj/builder-base:dev . -f Dockerfile-pipeline
 
+docker-dev: linux 
+	docker build --no-cache -t $(DOCKER_HUB_USER)/jx:dev .
+	docker push $(DOCKER_HUB_USER)/jx:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-go:dev -f Dockerfile.buildgo .
+	docker push $(DOCKER_HUB_USER)/builder-go:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-maven:dev -f Dockerfile.maven .
+	docker push $(DOCKER_HUB_USER)/builder-maven:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-nodejs:dev -f Dockerfile.nodejs .
+	docker push $(DOCKER_HUB_USER)/builder-nodejs:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-base:dev -f Dockerfile.base .
+	docker push $(DOCKER_HUB_USER)/builder-base:dev
+
 .PHONY: release clean arm
 
-preview: linux
+preview:
 	docker build --no-cache -t docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.maven .
 	docker push docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
 	docker build --no-cache -t docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.buildgo .
@@ -181,5 +204,14 @@ tools.govet:
 		go get golang.org/x/tools/cmd/vet; \
 	fi
 
+GAS := $(GOPATH)/bin/gas
+$(GAS):
+	go get github.com/GoASTScanner/gas/cmd/gas/...
+
+.PHONY: sec
+sec: $(GAS)
+	@echo "SECURITY"
+	@mkdir -p scanning
+	$(GAS) -fmt=yaml -out=scanning/results.yaml ./...
 
 

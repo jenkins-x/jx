@@ -5,12 +5,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/table"
 )
 
 // GetPipelineOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -32,7 +32,7 @@ var (
 )
 
 // NewCmdGetPipeline creates the command
-func NewCmdGetPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetPipeline(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetPipelineOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -53,7 +53,7 @@ func NewCmdGetPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -63,8 +63,7 @@ func NewCmdGetPipeline(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 
 // Run implements this command
 func (o *GetPipelineOptions) Run() error {
-	f := o.Factory
-	jenkins, err := f.CreateJenkinsClient()
+	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return err
 	}

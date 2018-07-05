@@ -5,10 +5,10 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -36,7 +36,7 @@ type CreateBranchPatternOptions struct {
 }
 
 // NewCmdCreateBranchPattern creates a command object for the "create" command
-func NewCmdCreateBranchPattern(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateBranchPattern(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateBranchPatternOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -57,7 +57,7 @@ func NewCmdCreateBranchPattern(f cmdutil.Factory, out io.Writer, errOut io.Write
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -74,7 +74,7 @@ func (o *CreateBranchPatternOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.BranchPatterns = arg
-		o.Printf("Setting the team branch pattern to: %s\n", util.ColorInfo(arg))
+		log.Infof("Setting the team branch pattern to: %s\n", util.ColorInfo(arg))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

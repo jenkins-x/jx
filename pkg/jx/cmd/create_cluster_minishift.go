@@ -8,9 +8,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -51,7 +50,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterMinishift(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterMinishift(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinishiftOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, MINISHIFT),
 	}
@@ -64,7 +63,7 @@ func NewCmdCreateClusterMinishift(f cmdutil.Factory, out io.Writer, errOut io.Wr
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -200,6 +199,18 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		}
 	}
 
+	log.Info("Installing default addons ...\n")
+	err = o.runCommand("minishift", "addons", "install", "--defaults")
+	if err != nil {
+		return err
+	}
+
+	log.Info("Enabling admin user...\n")
+	err = o.runCommand("minishift", "addons", "enable", "admin-user")
+	if err != nil {
+		return err
+	}
+
 	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", driver}
 	hyperVVirtualSwitch := o.Flags.HyperVVirtualSwitch
 	if hyperVVirtualSwitch != "" {
@@ -218,23 +229,17 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	}
 	o.InstallOptions.Flags.Domain = ip + ".nip.io"
 
-	err = o.runCommand("oc", "login", "-u", "system:admin")
+	err = o.runCommand("oc", "login", "-u", "admin", "-p", "admin", "--insecure-skip-tls-verify=true")
 	if err != nil {
 		return err
 	}
 
 	ns := o.Flags.Namespace
 	if ns == "" {
-		f := o.Factory
-		_, ns, _ = f.CreateClient()
+		_, ns, _ = o.KubeClient()
 		if err != nil {
 			return err
 		}
-	}
-
-	err = o.runCommand("oc", "project", ns)
-	if err != nil {
-		return err
 	}
 
 	log.Info("Initialising cluster ...\n")

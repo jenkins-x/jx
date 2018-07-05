@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +28,7 @@ var (
 `)
 )
 
-func NewCmdStepNexusRelease(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepNexusRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepNexusReleaseOptions{
 		StepNexusOptions: StepNexusOptions{
 			StepOptions: StepOptions{
@@ -50,7 +50,7 @@ func NewCmdStepNexusRelease(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.DropOnFailure, "drop-on-fail", "d", true, "Should we drop the repository on failure")
@@ -65,7 +65,7 @@ func (o *StepNexusReleaseOptions) Run() error {
 	m := map[string]string{}
 
 	if len(repoIds) == 0 {
-		o.Printf("No Nexus staging repository ids found in %s\n", util.ColorInfo(statingRepositoryProperties))
+		log.Infof("No Nexus staging repository ids found in %s\n", util.ColorInfo(statingRepositoryProperties))
 		return nil
 	}
 	var answer error

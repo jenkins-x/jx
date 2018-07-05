@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -56,7 +56,7 @@ var (
 `)
 )
 
-func NewCmdStepWaitForArtifact(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepWaitForArtifact(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepWaitForArtifactOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -75,7 +75,7 @@ func NewCmdStepWaitForArtifact(f cmdutil.Factory, out io.Writer, errOut io.Write
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.ArtifactURL, "artifact-url", "", "", "The full URL of the artifact to wait for. If not specified it is calculated from the repository URL, group, artifact and version")
@@ -140,16 +140,16 @@ func (o *StepWaitForArtifactOptions) Run() error {
 		}
 		o.ArtifactURL = util.UrlJoin(o.RepoURL, group, artifact, version, artifact+"-"+version+"."+o.Extension)
 	}
-	o.Printf("Waiting for artifact at %s\n", util.ColorInfo(o.ArtifactURL))
+	log.Infof("Waiting for artifact at %s\n", util.ColorInfo(o.ArtifactURL))
 
 	fn := func() error {
 		return o.getUrlStatusOK(o.ArtifactURL)
 	}
 	err = o.retryQuietlyUntilTimeout(o.TimeoutDuration, o.PollDuration, fn)
 	if err == nil {
-		o.Printf("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
+		log.Infof("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
 		return nil
 	}
-	o.warnf("Failed to find artifact at %s due to %s", o.ArtifactURL, err)
+	log.Warnf("Failed to find artifact at %s due to %s", o.ArtifactURL, err)
 	return err
 }

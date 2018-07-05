@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"io"
 
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 type MetricsOptions struct {
@@ -37,7 +38,7 @@ var (
 `)
 )
 
-func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdMetrics(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &MetricsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -55,7 +56,7 @@ func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -70,7 +71,7 @@ func NewCmdMetrics(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 func (o *MetricsOptions) Run() error {
 	args := o.Args
 
-	client, curNs, err := o.Factory.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -135,7 +136,7 @@ func (o *MetricsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		o.Printf("%s\n", string(data))
+		log.Infof("%s\n", string(data))
 		return nil
 	}
 

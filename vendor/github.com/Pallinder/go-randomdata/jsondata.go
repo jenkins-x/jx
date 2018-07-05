@@ -1002,7 +1002,15 @@ var data = []byte(`{
         "He completely abandoned the child of his marriage with Adelaida Ivanovna, not from malice, nor because of his matrimoni- al grievances, but simply because he forgot him.",
         "It was at this time that the meeting, or, rather gathering of the mem- bers of this inharmonious family took place in the cell of the elder who had such an extraordinary influence on Alyosha.",
         "The secular cooling that must someday overtake our planet has already gone far indeed with our neighbour.",
-        "Near it in the field, I remember, were three faint points of light, three telescopic stars infinitely remote, and all around it was the unfathomable darkness of empty space."
+        "Near it in the field, I remember, were three faint points of light, three telescopic stars infinitely remote, and all around it was the unfathomable darkness of empty space.",
+		"It is no doubt an optimistic enterprise. But it is good for awhile to be free from the carping note that must needs be audible when we discuss our present imperfections, to release ourselves from practical difficulties and the tangle of ways and means. It is good to stop by the track for a space, put aside the knapsack, wipe the brows, and talk a little of the upper slopes of the mountain we think we are climbing, would but the trees let us see it",
+		"But what sort of language would we have the world speak, if we were told the miracle of Babel was presently to be reversed?",
+		"I protest, even warmly, that neither he nor his sorrows were in my intention.",
+		"Have I come to Utopia to hear this sort of thing?",
+		"Then followed a battle of looks between them, but the captain soon knuckled under, put up his weapon, and resumed his seat, grumbling like a beaten dog.",
+		"And with that he went off to see my father, taking me with him by the arm.",
+		"It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
+		"I am all in a sea of wonders. I doubt; I fear; I think strange things, which I dare not confess to my own soul. God keep me, if only for the sake of those dear to me!"
     ],
     "countries": [
         "Afghanistan",

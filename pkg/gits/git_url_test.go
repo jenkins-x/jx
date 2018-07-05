@@ -1,8 +1,9 @@
 package gits
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type parseGitUrlData struct {
@@ -43,6 +44,9 @@ func TestParseGitURL(t *testing.T) {
 		},
 		{
 			"bar/foo", "github.com", "bar", "foo",
+		},
+		{
+			"http://test-user@auth.example.com/scm/bar/foo.git", "auth.example.com", "bar", "foo",
 		},
 	}
 	for _, data := range testCases {

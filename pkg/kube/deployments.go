@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/log"
 	"k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func GetDeployments(kubeClient *kubernetes.Clientset, ns string) (map[string]v1beta1.Deployment, error) {
+func GetDeployments(kubeClient kubernetes.Interface, ns string) (map[string]v1beta1.Deployment, error) {
 	answer := map[string]v1beta1.Deployment{}
 	deps, err := kubeClient.AppsV1beta1().Deployments(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -27,7 +27,7 @@ func GetDeployments(kubeClient *kubernetes.Clientset, ns string) (map[string]v1b
 	return answer, nil
 }
 
-func GetDeploymentNames(client *kubernetes.Clientset, ns string, filter string) ([]string, error) {
+func GetDeploymentNames(client kubernetes.Interface, ns string, filter string) ([]string, error) {
 	names := []string{}
 	list, err := client.AppsV1beta1().Deployments(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -43,7 +43,7 @@ func GetDeploymentNames(client *kubernetes.Clientset, ns string, filter string) 
 	return names, nil
 }
 
-func IsDeploymentRunning(client *kubernetes.Clientset, name, namespace string) (bool, error) {
+func IsDeploymentRunning(client kubernetes.Interface, name, namespace string) (bool, error) {
 	options := metav1.GetOptions{}
 
 	d, err := client.ExtensionsV1beta1().Deployments(namespace).Get(name, options)
@@ -57,7 +57,7 @@ func IsDeploymentRunning(client *kubernetes.Clientset, name, namespace string) (
 	return false, nil
 }
 
-func WaitForAllDeploymentsToBeReady(client *kubernetes.Clientset, namespace string, timeoutPerDeploy time.Duration) error {
+func WaitForAllDeploymentsToBeReady(client kubernetes.Interface, namespace string, timeoutPerDeploy time.Duration) error {
 	deployList, err := client.ExtensionsV1beta1().Deployments(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -76,7 +76,7 @@ func WaitForAllDeploymentsToBeReady(client *kubernetes.Clientset, namespace stri
 }
 
 // waits for the pods of a deployment to become ready
-func WaitForDeploymentToBeReady(client *kubernetes.Clientset, name, namespace string, timeout time.Duration) error {
+func WaitForDeploymentToBeReady(client kubernetes.Interface, name, namespace string, timeout time.Duration) error {
 
 	d, err := client.ExtensionsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -109,7 +109,7 @@ func WaitForDeploymentToBeReady(client *kubernetes.Clientset, name, namespace st
 	return nil
 }
 
-func DeploymentPodCount(client *kubernetes.Clientset, name, namespace string) (int, error) {
+func DeploymentPodCount(client kubernetes.Interface, name, namespace string) (int, error) {
 	pods, err := GetDeploymentPods(client, name, namespace)
 	if err == nil {
 		return len(pods), err
@@ -117,7 +117,7 @@ func DeploymentPodCount(client *kubernetes.Clientset, name, namespace string) (i
 	return 0, err
 }
 
-func GetDeploymentPods(client *kubernetes.Clientset, name, namespace string) ([]v1.Pod, error) {
+func GetDeploymentPods(client kubernetes.Interface, name, namespace string) ([]v1.Pod, error) {
 	d, err := client.ExtensionsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err

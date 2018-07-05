@@ -8,7 +8,6 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetIssuesOptions contains the command line options
@@ -31,7 +30,7 @@ var (
 )
 
 // NewCmdGetIssues creates the command
-func NewCmdGetIssues(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetIssues(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetIssuesOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -47,12 +46,12 @@ func NewCmdGetIssues(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 		Short:   "Display one or many issues",
 		Long:    GetIssuesLong,
 		Example: GetIssuesExample,
-		Aliases: []string{"issue", "jira"},
+		Aliases: []string{"jira"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The root project directory")

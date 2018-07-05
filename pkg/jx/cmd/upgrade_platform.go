@@ -4,7 +4,8 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -28,10 +29,12 @@ type UpgradePlatformOptions struct {
 	Chart       string
 	Namespace   string
 	Set         string
+
+	InstallFlags InstallFlags
 }
 
 // NewCmdUpgradePlatform defines the command
-func NewCmdUpgradePlatform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradePlatform(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &UpgradePlatformOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -52,7 +55,7 @@ func NewCmdUpgradePlatform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to")
@@ -60,6 +63,10 @@ func NewCmdUpgradePlatform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to")
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading")
+
+	options.addCommonFlags(cmd)
+	options.InstallFlags.addCloudEnvOptions(cmd)
+
 	return cmd
 }
 
@@ -67,12 +74,30 @@ func NewCmdUpgradePlatform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 func (o *UpgradePlatformOptions) Run() error {
 	ns := o.Namespace
 	version := o.Version
-	err := o.runCommand("helm", "repo", "update")
+	helmBinary, err := o.TeamHelmBin()
+	if err != nil {
+		return err
+	}
+	err = o.runCommand(helmBinary, "repo", "update")
 	if err != nil {
 		return err
 	}
 	args := []string{"upgrade"}
+	if version == "" {
+		io := &InstallOptions{}
+		io.CommonOptions = o.CommonOptions
+		io.Flags = o.InstallFlags
+		wrkDir, err := io.cloneJXCloudEnvironmentsRepo()
+		if err != nil {
+			return err
+		}
+		version, err = loadVersionFromCloudEnvironmentsDir(wrkDir)
+		if err != nil {
+			return err
+		}
+	}
 	if version != "" {
+		log.Infof("Upgrading to version %s\n", util.ColorInfo(version))
 		args = append(args, "--version", version)
 	}
 	if ns != "" {
@@ -82,5 +107,5 @@ func (o *UpgradePlatformOptions) Run() error {
 		args = append(args, "--set", o.Set)
 	}
 	args = append(args, o.ReleaseName, o.Chart)
-	return o.runCommand("helm", args...)
+	return o.runCommandVerbose(helmBinary, args...)
 }

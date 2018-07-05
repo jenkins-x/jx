@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"golang.org/x/oauth2"
 )
@@ -26,9 +26,10 @@ type GitHubProvider struct {
 
 	Server auth.AuthServer
 	User   auth.UserAuth
+	Git    Gitter
 }
 
-func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 
 	provider := GitHubProvider{
@@ -36,6 +37,7 @@ func NewGitHubProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvide
 		User:     *user,
 		Context:  ctx,
 		Username: user.Username,
+		Git:      git,
 	}
 
 	ts := oauth2.StaticTokenSource(
@@ -121,7 +123,17 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 	for {
 		repos, _, err := p.Client.Repositories.ListByOrg(p.Context, owner, options)
 		if err != nil {
-			return answer, err
+			options := &github.RepositoryListOptions{
+				ListOptions: github.ListOptions{
+					Page:    0,
+					PerPage: pageSize,
+				},
+			}
+			repos, _, err = p.Client.Repositories.List(p.Context, owner, options)
+			if err != nil {
+				return answer, err
+			}
+
 		}
 		for _, repo := range repos {
 			answer = append(answer, toGitHubRepo(asText(repo.Name), repo))
@@ -242,7 +254,7 @@ func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destina
 			owner = p.Username
 		}
 		if strings.Contains(err.Error(), "try again later") {
-			fmt.Printf("Waiting for the fork of %s/%s to appear...\n", owner, name)
+			log.Warnf("Waiting for the fork of %s/%s to appear...\n", owner, name)
 			// lets wait for the fork to occur...
 			start := time.Now()
 			deadline := start.Add(time.Minute)
@@ -276,7 +288,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	if owner == "" {
 		owner = p.Username
 	}
-	repo := data.Repo
+	repo := data.Repo.Name
 	if repo == "" {
 		return fmt.Errorf("Missing property Repo")
 	}
@@ -286,13 +298,13 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	}
 	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
 	if err != nil {
-		fmt.Printf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
+		log.Errorf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
 	}
 	for _, hook := range hooks {
 		c := hook.Config["url"]
 		s, ok := c.(string)
 		if ok && s == webhookUrl {
-			fmt.Printf("Already has a webhook registered for %s\n", webhookUrl)
+			log.Warnf("Already has a webhook registered for %s\n", webhookUrl)
 			return nil
 		}
 	}
@@ -308,14 +320,14 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Config: config,
 		Events: []string{"*"},
 	}
-	fmt.Printf("Creating github webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
+	log.Infof("Creating github webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
 	_, _, err = p.Client.Repositories.CreateHook(p.Context, owner, repo, hook)
 	return err
 }
 
 func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
-	owner := data.Owner
-	repo := data.Repo
+	owner := data.GitRepositoryInfo.Organisation
+	repo := data.GitRepositoryInfo.Name
 	title := data.Title
 	body := data.Body
 	head := data.Head
@@ -402,10 +414,10 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
-func (p *GitHubProvider) GetPullRequest(owner, repo string, number int) (*GitPullRequest, error) {
+func (p *GitHubProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
 	pr := &GitPullRequest{
 		Owner:  owner,
-		Repo:   repo,
+		Repo:   repo.Name,
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
@@ -425,7 +437,8 @@ func (p *GitHubProvider) GetPullRequest(owner, repo string, number int) (*GitPul
 	return pr, err
 }
 
-func (p *GitHubProvider) GetPullRequestCommits(owner, repo string, number int) ([]*GitCommit, error) {
+func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+	repo := repository.Name
 	commits, _, err := p.Client.PullRequests.ListCommits(p.Context, owner, repo, number, nil)
 
 	if err != nil {
@@ -460,12 +473,12 @@ func (p *GitHubProvider) GetPullRequestCommits(owner, repo string, number int) (
 					if err != nil {
 						return answer, err
 					}
-					gitDir, _, err := FindGitConfigDir(dir)
+					gitDir, _, err := p.Git.FindGitConfigDir(dir)
 					if err != nil {
 						return answer, err
 					}
 					log.Info("Looking for commits in: " + gitDir + "\n")
-					email, err := GetAuthorEmailForCommit(gitDir, commit.GetSHA())
+					email, err := p.Git.GetAuthorEmailForCommit(gitDir, commit.GetSHA())
 					if err != nil {
 						log.Warn("Commit not found: " + commit.GetSHA() + "\n")
 						continue
@@ -605,7 +618,7 @@ func (p *GitHubProvider) RenameRepository(org string, name string, newName strin
 func (p *GitHubProvider) ValidateRepositoryName(org string, name string) error {
 	_, r, err := p.Client.Repositories.Get(p.Context, org, name)
 	if err == nil {
-		return fmt.Errorf("Repository %s already exists", GitRepoName(org, name))
+		return fmt.Errorf("Repository %s already exists", p.Git.RepoName(org, name))
 	}
 	if r != nil && r.StatusCode == 404 {
 		return nil
@@ -645,7 +658,7 @@ func (p *GitHubProvider) UpdateRelease(owner string, repo string, tag string, re
 		release.Body = &releaseInfo.Body
 	}
 	if r != nil && r.StatusCode == 404 {
-		fmt.Printf("No release found for %s/%s and tag %s so creating a new release\n", owner, repo, tag)
+		log.Warnf("No release found for %s/%s and tag %s so creating a new release\n", owner, repo, tag)
 		_, _, err = p.Client.Repositories.CreateRelease(p.Context, owner, repo, release)
 		return err
 	}
@@ -819,6 +832,14 @@ func (p *GitHubProvider) IsGitea() bool {
 	return false
 }
 
+func (p *GitHubProvider) IsBitbucketCloud() bool {
+	return false
+}
+
+func (p *GitHubProvider) IsBitbucketServer() bool {
+	return false
+}
+
 func (p *GitHubProvider) Kind() string {
 	return KindGitHub
 }
@@ -831,7 +852,7 @@ func GitHubAccessTokenURL(url string) string {
 	if strings.Index(url, "://") < 0 {
 		url = "https://" + url
 	}
-	return util.UrlJoin(url, "/settings/tokens/new?scopes=repo,read:user,user:email,write:repo_hook")
+	return util.UrlJoin(url, "/settings/tokens/new?scopes=repo,read:user,read:org,user:email,write:repo_hook,delete_repo")
 }
 
 func (p *GitHubProvider) Label() string {

@@ -31,10 +31,10 @@ type IssueProvider interface {
 	HomeURL() string
 }
 
-func CreateIssueProvider(kind string, server *auth.AuthServer, userAuth *auth.UserAuth, project string, batchMode bool) (IssueProvider, error) {
+func CreateIssueProvider(kind string, server *auth.AuthServer, userAuth *auth.UserAuth, project string, batchMode bool, git gits.Gitter) (IssueProvider, error) {
 	switch kind {
 	case Jira:
-		return CreateJiraIssueProvider(server, userAuth, project, batchMode)
+		return CreateJiraIssueProvider(server, userAuth, project, batchMode, git)
 	default:
 		return nil, fmt.Errorf("Unsupported issue provider kind: %s", kind)
 	}

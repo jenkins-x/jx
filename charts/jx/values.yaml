@@ -1,11 +1,14 @@
 image:
-  repository: rawlingsj/jx
-  tag: dev10
+  repository: jenkinsxio/jx
+  tag: dev
   pullPolicy: IfNotPresent
 
 replicaCount: 1
 
 deployment:
+  enabled: false
+
+service:
   enabled: false
 
 daemonset:
@@ -15,22 +18,83 @@ job:
   enabled: false
 
 cronjob:
-  enabled: true
+  enabled: false
   schedule: "* * * * *"
   failedJobsHistoryLimit: 1
   successfulJobsHistoryLimit: 3
   concurrencyPolicy: Forbid
 
-activeDeadlineSeconds: 100
+serviceaccount:
+  enabled: false
+
+role:
+  enabled: false
+# example:
+#  rules:
+#  - apiGroups:
+#    - jenkins.io
+#    resources:
+#    - pipelineactivities
+#    verbs:
+#    - list
+#    - delete
+#  - apiGroups:
+#    - ""
+#    resources:
+#    - secrets
+#    - services
+#    verbs:
+#    - get
+  rules:
+  - apiGroups:
+    - jenkins.io
+    resources:
+    - environments
+    verbs:
+    - list
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - secrets
+    verbs:
+    - get
+    - list
+  - apiGroups:
+    - apiextensions.k8s.io
+    resources:
+    - customresourcedefinitions
+    verbs:
+    - create
+
+clusterrole:
+  enabled: false
+  rules:
+  - apiGroups:
+    - apiextensions.k8s.io
+    resources:
+    - customresourcedefinitions
+    verbs:
+    - get
+  - apiGroups:
+    - ""
+    resources:
+    - namespace
+    verbs:
+    - get
+    - delete
+    - list
+
+activeDeadlineSeconds: 300
 backoffLimit: 5
 
 # default is Always but for Jobs use Never or OnFailure
 restartPolicy: Never
 
-command: ["/jx"]
+command: ["jx"]
 args:
   - "gc"
-  - "activities"
+  - "previews"
 
 env:
   foo: bar

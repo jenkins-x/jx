@@ -22,7 +22,7 @@ var (
 
 // GetQuickstartLocations returns the current quickstart locations. If no locations are defined
 // yet lets return the defaults
-func GetQuickstartLocations(jxClient *versioned.Clientset, ns string) ([]v1.QuickStartLocation, error) {
+func GetQuickstartLocations(jxClient versioned.Interface, ns string) ([]v1.QuickStartLocation, error) {
 	var answer []v1.QuickStartLocation
 	env, err := EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {

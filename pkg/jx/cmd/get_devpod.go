@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 )
 
@@ -21,7 +20,7 @@ var (
 	getDevPodLong = templates.LongDesc(`
 		Display the available DevPods
 
-		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
+		For more documentation see: [https://jenkins-x.io/developing/devpods/](https://jenkins-x.io/developing/devpods/)
 
 `)
 
@@ -32,7 +31,7 @@ var (
 )
 
 // NewCmdGetDevPod creates the command
-func NewCmdGetDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetDevPodOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -53,7 +52,7 @@ func NewCmdGetDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

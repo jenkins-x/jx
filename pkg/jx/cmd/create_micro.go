@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -41,7 +41,7 @@ type CreateMicroOptions struct {
 }
 
 // NewCmdCreateMicro creates a command object for the "create" command
-func NewCmdCreateMicro(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateMicro(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateMicroOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -63,7 +63,7 @@ func NewCmdCreateMicro(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	return cmd
@@ -73,7 +73,7 @@ func NewCmdCreateMicro(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 func (o CreateMicroOptions) checkMicroInstalled() error {
 	_, err := o.getCommandOutput("", "micro", "help")
 	if err != nil {
-		o.Printf("Installing micro's dependencies...\n")
+		log.Infoln("Installing micro's dependencies...")
 		// lets install micro
 		err = o.installBrewIfRequired()
 		if err != nil {
@@ -85,21 +85,21 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 				return err
 			}
 		}
-		o.Printf("Downloading and building micro dependencies...\n")
+		log.Infoln("Downloading and building micro dependencies...")
 		packages := []string{"github.com/golang/protobuf/proto", "github.com/golang/protobuf/protoc-gen-go", "github.com/micro/protoc-gen-micro"}
 		for _, p := range packages {
-			o.Printf("Installing %s\n", p)
+			log.Infof("Installing %s\n", p)
 			err = o.runCommand("go", "get", "-u", p)
 			if err != nil {
 				return fmt.Errorf("Failed to install %s: %s", p, err)
 			}
 		}
-		o.Printf("Installed micro dependencies\n")
+		log.Infoln("Installed micro dependencies")
 
-		o.Printf("Downloading and building micro - this can take a minute or so...\n")
+		log.Infoln("Downloading and building micro - this can take a minute or so...")
 		err = o.runCommand("go", "get", "-u", "github.com/micro/micro")
 		if err == nil {
-			o.Printf("Installed micro and its dependencies!\n")
+			log.Infoln("Installed micro and its dependencies!")
 		}
 	}
 	return err
@@ -114,7 +114,7 @@ func (o CreateMicroOptions) GenerateMicro(dir string) error {
 func (o *CreateMicroOptions) Run() error {
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
-		o.Printf(`No $GOPATH found. 
+		log.Warnf(`No $GOPATH found. 
 
 You need to have installed go on your machine to be able to create micro services. 
 
@@ -146,7 +146,7 @@ For instructions please see: %s
 			return fmt.Errorf("Invalid project name: %s", dir)
 		}
 	}
-	o.Printf("\n")
+	log.Blank()
 
 	// generate micro project
 	err = o.GenerateMicro(dir)
@@ -155,7 +155,7 @@ For instructions please see: %s
 	}
 
 	path := filepath.Join(gopath, "src", dir)
-	o.Printf("Created micro project at %s\n\n", util.ColorInfo(path))
+	log.Infof("Created micro project at %s\n\n", util.ColorInfo(path))
 
 	return o.ImportCreatedProject(path)
 }

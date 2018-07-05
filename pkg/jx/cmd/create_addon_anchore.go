@@ -10,20 +10,19 @@ import (
 
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
+	defaultAnchoreName        = "anchore"
 	defaultAnchoreNamespace   = "anchore"
 	defaultAnchoreReleaseName = "anchore"
 	defaultAnchoreVersion     = "0.1.4"
 	defaultAnchorePassword    = "anchore"
 	defaultAnchoreConfigDir   = "/anchore_service_dir"
-	anchoreServiceName        = "anchore-anchore-engine"
 	anchoreDeploymentName     = "anchore-anchore-engine-core"
 )
 
@@ -51,7 +50,7 @@ type CreateAddonAnchoreOptions struct {
 }
 
 // NewCmdCreateAddonAnchore creates a command object for the "create" command
-func NewCmdCreateAddonAnchore(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonAnchore(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonAnchoreOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -74,7 +73,7 @@ func NewCmdCreateAddonAnchore(f cmdutil.Factory, out io.Writer, errOut io.Writer
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -122,6 +121,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return err
 	}
 
+	anchoreServiceName := kube.AddonServices[defaultAnchoreName]
 	// annotate the anchore engine service so exposecontroller can create an ingress rule
 	svc, err := o.kubeClient.CoreV1().Services(o.Namespace).Get(anchoreServiceName, meta_v1.GetOptions{})
 	if err != nil {

@@ -13,8 +13,8 @@ type BranchPatterns struct {
 }
 
 const (
-	defaultBuildPackURL = "https://jenkins-x/draft-packs.git"
-	defaultBuildPackRef = "master"
+	defaultBuildPackRef = "2.1"
+	defaultHelmBin      = "helm"
 )
 
 // TeamSettings returns the team settings
@@ -25,12 +25,12 @@ func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
 	}
 	err = o.registerEnvironmentCRD()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to register Environment CRD: %s", err)
 	}
 
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to setup dev Environment in namespace %s: %s", ns, err)
 	}
 	if env == nil {
 		return nil, fmt.Errorf("No Development environment found for namespace %s", ns)
@@ -38,7 +38,7 @@ func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
 
 	teamSettings := &env.Spec.TeamSettings
 	if teamSettings.BuildPackURL == "" {
-		teamSettings.BuildPackURL = defaultBuildPackURL
+		teamSettings.BuildPackURL = JenkinsBuildPackURL
 	}
 	if teamSettings.BuildPackRef == "" {
 		teamSettings.BuildPackRef = defaultBuildPackRef
@@ -69,8 +69,29 @@ func (o *CommonOptions) TeamBranchPatterns() (*BranchPatterns, error) {
 	}, nil
 }
 
+// TeamHelmBin returns the helm binary used for a team
+func (o *CommonOptions) TeamHelmBin() (string, error) {
+	helmBin := defaultHelmBin
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return helmBin, err
+	}
+
+	helmBin = teamSettings.HelmBinary
+	if helmBin == "" {
+		helmBin = defaultHelmBin
+	}
+	return helmBin, nil
+}
+
 // ModifyDevEnvironment modifies the development environment settings
 func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) error) error {
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	kube.RegisterEnvironmentCRD(apisClient)
+
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err

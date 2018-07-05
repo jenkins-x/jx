@@ -7,10 +7,8 @@ import (
 
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 )
 
@@ -49,7 +47,7 @@ var (
 `)
 )
 
-func NewCmdStepTag(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepTag(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 	options := StepTagOptions{
 		StepOptions: StepOptions{
@@ -69,7 +67,7 @@ func NewCmdStepTag(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -85,17 +83,17 @@ func (o *StepTagOptions) Run() error {
 
 	tag := "v" + o.Flags.Version
 
-	err := gits.GitCmd("", "commit", "-a", "-m", fmt.Sprintf("release %s", o.Flags.Version), "--allow-empty")
+	err := o.Git().AddCommmit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
 
-	err = gits.GitCmd("", "tag", "-fa", tag, "-m", fmt.Sprintf("release %s", o.Flags.Version))
+	err = o.Git().CreateTag("", tag, fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
 
-	err = gits.GitCmd("", "push", "origin", tag)
+	err = o.Git().PushTag("", tag)
 	if err != nil {
 		return err
 	}

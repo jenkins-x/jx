@@ -8,7 +8,7 @@ import (
 )
 
 // RegisterEnvironmentCRD ensures that the CRD is registered for Environments
-func RegisterEnvironmentCRD(apiClient *apiextensionsclientset.Clientset) error {
+func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "environments." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{
 		Kind:       "Environment",
@@ -21,8 +21,22 @@ func RegisterEnvironmentCRD(apiClient *apiextensionsclientset.Clientset) error {
 	return registerCRD(apiClient, name, names)
 }
 
+// RegisterEnvironmentRoleBindingCRD ensures that the CRD is registered for Environments
+func RegisterEnvironmentRoleBindingCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "environmentrolebindings." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "EnvironmentRoleBinding",
+		ListKind:   "EnvironmentRoleBindingList",
+		Plural:     "environmentrolebindings",
+		Singular:   "environmentrolebinding",
+		ShortNames: []string{"envrolebindings", "envrb"},
+	}
+
+	return registerCRD(apiClient, name, names)
+}
+
 // RegisterGitServiceCRD ensures that the CRD is registered for GitServices
-func RegisterGitServiceCRD(apiClient *apiextensionsclientset.Clientset) error {
+func RegisterGitServiceCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "gitservices." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{
 		Kind:       "GitService",
@@ -36,7 +50,7 @@ func RegisterGitServiceCRD(apiClient *apiextensionsclientset.Clientset) error {
 }
 
 // RegisterPipelineActivityCRD ensures that the CRD is registered for PipelineActivity
-func RegisterPipelineActivityCRD(apiClient *apiextensionsclientset.Clientset) error {
+func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "pipelineactivities." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{
 		Kind:       "PipelineActivity",
@@ -50,7 +64,7 @@ func RegisterPipelineActivityCRD(apiClient *apiextensionsclientset.Clientset) er
 }
 
 // RegisterReleaseCRD ensures that the CRD is registered for Release
-func RegisterReleaseCRD(apiClient *apiextensionsclientset.Clientset) error {
+func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "releases." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{
 		Kind:       "Release",
@@ -64,7 +78,7 @@ func RegisterReleaseCRD(apiClient *apiextensionsclientset.Clientset) error {
 }
 
 // RegisterUserCRD ensures that the CRD is registered for User
-func RegisterUserCRD(apiClient *apiextensionsclientset.Clientset) error {
+func RegisterUserCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "users." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{
 		Kind:       "User",
@@ -77,7 +91,7 @@ func RegisterUserCRD(apiClient *apiextensionsclientset.Clientset) error {
 	return registerCRD(apiClient, name, names)
 }
 
-func registerCRD(apiClient *apiextensionsclientset.Clientset, name string, names *v1beta1.CustomResourceDefinitionNames) error {
+func registerCRD(apiClient apiextensionsclientset.Interface, name string, names *v1beta1.CustomResourceDefinitionNames) error {
 	_, err := apiClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(name, metav1.GetOptions{})
 	if err == nil {
 		return nil

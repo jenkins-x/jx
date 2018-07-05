@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"io"
 
+	"github.com/spf13/cobra"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
@@ -43,7 +44,7 @@ type CreateAddonGiteaOptions struct {
 }
 
 // NewCmdCreateAddonGitea creates a command object for the "create" command
-func NewCmdCreateAddonGitea(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonGitea(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonGiteaOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -66,7 +67,7 @@ func NewCmdCreateAddonGitea(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -157,7 +158,7 @@ func (o *CreateAddonGiteaOptions) createGitServer() error {
 }
 
 func (o *CreateAddonGiteaOptions) createGitUser() error {
-	o.Printf("Generating user: %s with email: %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
+	log.Infof("Generating user: %s with email: %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
 	options := &CreateGitUserOptions{
 		CreateOptions: o.CreateOptions,
 		Username:      o.Username,
@@ -171,7 +172,7 @@ func (o *CreateAddonGiteaOptions) createGitUser() error {
 }
 
 func (o *CreateAddonGiteaOptions) createGitToken() error {
-	o.Printf("Generating token for user %s with email %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
+	log.Infof("Generating token for user %s with email %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
 	options := &CreateGitTokenOptions{
 		CreateOptions: o.CreateOptions,
 		Username:      o.Username,

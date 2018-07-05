@@ -4,8 +4,6 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
-
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // DeleteJenkinsOptions are the flags for delete commands
@@ -15,7 +13,7 @@ type DeleteJenkinsOptions struct {
 
 // NewCmdDeleteJenkins creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteJenkins(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteJenkins(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteJenkinsOptions{
 		CommonOptions{
 			Factory: f,
@@ -31,7 +29,7 @@ func NewCmdDeleteJenkins(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 		SuggestFor: []string{"remove", "rm"},
 	}

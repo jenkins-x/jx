@@ -1,0 +1,17 @@
+{{- if .Values.clusterrole.enabled -}}
+{{- if .Values.serviceaccount.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "jx.name" . }}-{{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "jx.name" . }}-{{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "jx.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- end }}

@@ -14,10 +14,9 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -36,7 +35,7 @@ var (
 	createDevPodLong = templates.LongDesc(`
 		Creates a new DevPod
 
-		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
+		For more documentation see: [https://jenkins-x.io/developing/devpods/](https://jenkins-x.io/developing/devpods/)
 
 `)
 
@@ -63,7 +62,7 @@ type CreateDevPodOptions struct {
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
-func NewCmdCreateDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateDevPodOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -84,7 +83,7 @@ func NewCmdCreateDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -254,14 +253,14 @@ func (o *CreateDevPodOptions) Run() error {
 			if ann != nil && ann[kube.AnnotationLocalDir] == dir && p.DeletionTimestamp == nil {
 				create = false
 				name = p.Name
-				o.Printf("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
+				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
 				break
 			}
 		}
 	}
 
 	if create {
-		o.Printf("Creating a dev pod of label: %s\n", util.ColorInfo(label))
+		log.Infof("Creating a dev pod of label: %s\n", util.ColorInfo(label))
 		_, err = podResources.Create(pod)
 		if err != nil {
 			if o.Verbose {
@@ -270,7 +269,7 @@ func (o *CreateDevPodOptions) Run() error {
 				return fmt.Errorf("Failed to create pod %s", err)
 			}
 		}
-		o.Printf("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
+		log.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
 	}
 
 	err = kube.WaitForPodNameToBeReady(client, ns, name, time.Hour)
@@ -278,8 +277,8 @@ func (o *CreateDevPodOptions) Run() error {
 		return err
 	}
 
-	o.Printf("Pod %s is now ready!\n", util.ColorInfo(name))
-	o.Printf("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod --reuse"))
+	log.Infof("Pod %s is now ready!\n", util.ColorInfo(name))
+	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod --reuse"))
 
 	if o.Sync {
 		syncOptions := &SyncOptions{
@@ -337,7 +336,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	editNs := env.Spec.Namespace
 	flag, err = kube.IsDeploymentRunning(kubeClient, kube.DeploymentExposecontrollerService, editNs)
 	if !flag || err != nil {
-		o.Printf("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
+		log.Infof("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
 		err = o.installChart(releaseName, kube.ChartExposecontrollerService, "", editNs, true, nil)
 	}
@@ -352,20 +351,20 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) stri
 			return "go"
 		}
 	}
-	root, _, err := gits.FindGitConfigDir(o.Dir)
+	root, _, err := o.Git().FindGitConfigDir(o.Dir)
 	if err != nil {
-		o.warnf("Could not find a .git directory: %s\n", err)
+		log.Warnf("Could not find a .git directory: %s\n", err)
 	}
 	answer := ""
 	if root != "" {
 		jenkinsfile := filepath.Join(root, "Jenkinsfile")
 		exists, err := util.FileExists(jenkinsfile)
 		if err != nil {
-			o.warnf("Could not find a Jenkinsfile at %s: %s\n", jenkinsfile, err)
+			log.Warnf("Could not find a Jenkinsfile at %s: %s\n", jenkinsfile, err)
 		} else if exists {
 			answer, err = findDevPodLabelFromJenkinsfile(jenkinsfile, labels)
 			if err != nil {
-				o.warnf("Could not extract the pod template label from Jenkinsfile at %s: %s\n", jenkinsfile, err)
+				log.Warnf("Could not extract the pod template label from Jenkinsfile at %s: %s\n", jenkinsfile, err)
 			}
 
 		}

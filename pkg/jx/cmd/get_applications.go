@@ -10,8 +10,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/api/apps/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +55,7 @@ var (
 )
 
 // NewCmdGetApplications creates the new command for: jx get version
-func NewCmdGetApplications(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetApplications(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetApplicationsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -73,7 +73,7 @@ func NewCmdGetApplications(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.HideUrl, "url", "u", false, "Hide the URLs")
@@ -96,7 +96,7 @@ func (o *GetApplicationsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.Factory.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func (o *GetApplicationsOptions) Run() error {
 	}
 	util.ReverseStrings(namespaces)
 	if len(apps) == 0 {
-		o.Printf("No applications found in environments %s\n", strings.Join(envNames, ", "))
+		log.Infof("No applications found in environments %s\n", strings.Join(envNames, ", "))
 		return nil
 	}
 	sort.Strings(apps)
@@ -210,6 +210,19 @@ func (o *GetApplicationsOptions) Run() error {
 				url, _ := kube.FindServiceURL(kubeClient, d.Namespace, appName)
 				if url == "" {
 					url, _ = kube.FindServiceURL(kubeClient, d.Namespace, d.Name)
+				}
+				if url == "" {
+					// handle helm3
+					chart := d.Labels["chart"]
+					if chart != "" {
+						idx := strings.LastIndex(chart, "-")
+						if idx > 0 {
+							svcName := chart[0:idx]
+							if svcName != appName && svcName != d.Name {
+								url, _ = kube.FindServiceURL(kubeClient, d.Namespace, svcName)
+							}
+						}
+					}
 				}
 				row = append(row, url)
 			}

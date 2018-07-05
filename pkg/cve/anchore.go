@@ -9,7 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
+	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -71,7 +71,7 @@ func NewAnchoreProvider(server *auth.AuthServer, user *auth.UserAuth) (CVEProvid
 	return &provider, nil
 }
 
-func (a AnchoreProvider) GetImageVulnerabilityTable(jxClient *versioned.Clientset, client *kubernetes.Clientset, table *table.Table, query CVEQuery) error {
+func (a AnchoreProvider) GetImageVulnerabilityTable(jxClient versioned.Interface, client kubernetes.Interface, table *table.Table, query CVEQuery) error {
 
 	var err error
 	var vList VulnerabilityList

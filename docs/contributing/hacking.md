@@ -65,7 +65,7 @@ Run `make` to build the `jx`  binaries:
 
 ```shell
 
-$ make build      # runs glide and builds `jx`  inside the build/
+$ make build      # runs dep and builds `jx`  inside the build/
 ```
 
 ## Testing
@@ -116,6 +116,24 @@ If you want to debug using `jx` with `stdin` to test out terminal interaction, y
 dlv --listen=:2345 --headless=true --api-version=2 attach SomePID
 ```
 
+### Debugging a unit test
+
+You can run a single unit test via
+
+```shell
+export TEST="TestSomething"
+make test1
+```
+
+You can then start a Delve debug session on a unit test via:
+
+```shell
+export TEST="TestSomething"
+make debugtest1
+```
+
+Then set breakpoints and debug in your IDE like in the above debugging.
+
 ### Using a helper script
 
 If you create a bash file called `jxDebug` as the following (replacing `SomePid` with the actual `pid`):
@@ -129,7 +147,7 @@ dlv --listen=:2345 --headless=true --api-version=2 exec `which jx` -- $*
 Then you can change your `jx someArgs` CLI to `jxDebug someArgs` then debug it!
 
 [git]: https://git-scm.com/
-[glide]: https://github.com/Masterminds/glide
+[dep]: https://github.com/golang/dep 
 [go]: https://golang.org/
 [Homebrew]: https://brew.sh/
 [Kubernetes]: https://github.com/kubernetes/kubernetes

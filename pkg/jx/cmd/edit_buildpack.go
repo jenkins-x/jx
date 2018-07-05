@@ -4,11 +4,11 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 var (
@@ -33,7 +33,7 @@ type EditBuildpackOptions struct {
 }
 
 // NewCmdEditBuildpack creates a command object for the "create" command
-func NewCmdEditBuildpack(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEditBuildpack(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &EditBuildpackOptions{
 		EditOptions: EditOptions{
 			CommonOptions: CommonOptions{
@@ -54,7 +54,7 @@ func NewCmdEditBuildpack(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack git repository")
@@ -93,9 +93,9 @@ func (o *EditBuildpackOptions) Run() error {
 			teamSettings.BuildPackURL = buildPackURL
 		}
 		if BuildPackRef != "" {
-			teamSettings.BuildPackURL = BuildPackRef
+			teamSettings.BuildPackRef = BuildPackRef
 		}
-		o.Printf("Setting the team build pack to repo: %s ref: %s\n", util.ColorInfo(buildPackURL), util.ColorInfo(BuildPackRef))
+		log.Infof("Setting the team build pack to repo: %s ref: %s\n", util.ColorInfo(buildPackURL), util.ColorInfo(BuildPackRef))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

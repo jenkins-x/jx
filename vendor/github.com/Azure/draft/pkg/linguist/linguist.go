@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -112,10 +113,14 @@ func initLinguistAttributes(dir string) error {
 				continue
 			}
 			path := strings.Trim(words[0], string(filepath.Separator))
+			if runtime.GOOS == "windows" {
+				// on Windows, we also accept / as a path separator, so let's strip those as well
+				path = strings.Trim(words[0], "/")
+			}
 			attribute := words[1]
 			if strings.HasPrefix(attribute, "linguist-documentation") || strings.HasPrefix(attribute, "linguist-vendored") || strings.HasPrefix(attribute, "linguist-generated") {
 				if !strings.HasSuffix(strings.ToLower(attribute), "false") {
-					ignore = append(except, path)
+					ignore = append(ignore, path)
 				}
 			} else if strings.HasPrefix(attribute, "linguist-language") {
 				attr := strings.Split(attribute, "=")
@@ -134,9 +139,14 @@ func initLinguistAttributes(dir string) error {
 
 	isIgnored = func(filename string) bool {
 		for _, p := range ignore {
-			if m, _ := filepath.Match(p, strings.TrimPrefix(filename, dir+string(filepath.Separator))); m {
+			cleanPath, err := filepath.Rel(dir, filename)
+			if err != nil {
+				log.Debugf("could not get relative path: %v", err)
+				return false
+			}
+			if m, _ := filepath.Match(p, cleanPath); m {
 				for _, e := range except {
-					if m, _ := filepath.Match(e, strings.TrimPrefix(filename, dir+string(filepath.Separator))); m {
+					if m, _ := filepath.Match(e, cleanPath); m {
 						return false
 					}
 				}
@@ -147,7 +157,12 @@ func initLinguistAttributes(dir string) error {
 	}
 	isDetectedInGitAttributes = func(filename string) string {
 		for p, lang := range detected {
-			if m, _ := filepath.Match(p, strings.TrimPrefix(filename, dir+string(filepath.Separator))); m {
+			cleanPath, err := filepath.Rel(dir, filename)
+			if err != nil {
+				log.Debugf("could not get relative path: %v", err)
+				return ""
+			}
+			if m, _ := filepath.Match(p, cleanPath); m {
 				return lang
 			}
 		}
@@ -194,17 +209,17 @@ func ProcessDir(dirname string) ([]*Language, error) {
 	}
 	filepath.Walk(dirname, func(path string, file os.FileInfo, err error) error {
 		size := int(file.Size())
-		log.Debugln("with file: ", path)
+		log.Debugf("with file: %s", path)
 		log.Debugln(path, "is", size, "bytes")
-		if size == 0 {
-			log.Debugln(path, "is empty file, skipping")
-			return nil
-		}
 		if isIgnored(path) {
 			log.Debugln(path, "is ignored, skipping")
 			if file.IsDir() {
 				return filepath.SkipDir
 			}
+			return nil
+		}
+		if size == 0 {
+			log.Debugln(path, "is empty file, skipping")
 			return nil
 		}
 		if file.IsDir() {
@@ -214,7 +229,7 @@ func ProcessDir(dirname string) ([]*Language, error) {
 			}
 		} else if (file.Mode() & os.ModeSymlink) == 0 {
 			if ShouldIgnoreFilename(path) {
-				log.Debugln(path, ": filename should be ignored, skipping")
+				log.Debugf("%s: filename should be ignored, skipping", path)
 				return nil
 			}
 

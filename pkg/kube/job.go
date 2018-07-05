@@ -13,7 +13,7 @@ import (
 )
 
 // waits for the job to complete
-func WaitForJobToSucceeded(client *kubernetes.Clientset, namespace, jobName string, timeout time.Duration) error {
+func WaitForJobToSucceeded(client kubernetes.Interface, namespace, jobName string, timeout time.Duration) error {
 
 	job, err := client.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
 	if err != nil {
@@ -41,11 +41,18 @@ func WaitForJobToSucceeded(client *kubernetes.Clientset, namespace, jobName stri
 	return nil
 }
 
+// IsJobSucceeded returns true if the job completed and did not fail
 func IsJobSucceeded(job *batchv1.Job) bool {
-	return job.Status.Succeeded == 1
+	return IsJobFinished(job) && job.Status.Succeeded > 0
 }
 
-func DeleteJob(client *kubernetes.Clientset, namespace, name string) error {
+// IsJobFinished returns true if the job has completed
+func IsJobFinished(job *batchv1.Job) bool {
+	BackoffLimit := job.Spec.BackoffLimit
+	return job.Status.CompletionTime != nil || (job.Status.Active == 0 && BackoffLimit != nil && job.Status.Failed >= *BackoffLimit)
+}
+
+func DeleteJob(client kubernetes.Interface, namespace, name string) error {
 	err := client.BatchV1().Jobs(namespace).Delete(name, metav1.NewDeleteOptions(0))
 	if err != nil {
 		return fmt.Errorf("error deleting job %s. error: %v", name, err)

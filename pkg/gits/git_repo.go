@@ -36,7 +36,8 @@ func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 	return d.GitProvider.CreateRepository(d.Organisation, d.RepoName, d.PrivateRepo)
 }
 
-func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string, repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth) (*CreateRepoData, error) {
+func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
+	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter) (*CreateRepoData, error) {
 	config := authConfigSvc.Config()
 
 	var err error
@@ -44,9 +45,26 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 		if repoOptions.ServerURL != "" {
 			server = config.GetOrCreateServer(repoOptions.ServerURL)
 		} else {
-			server, err = config.PickServer("Which git service?", batchMode)
-			if err != nil {
-				return nil, err
+			if batchMode {
+				if len(config.Servers) == 0 {
+					return nil, fmt.Errorf("No git servers are configured!")
+				}
+				// lets assume the first for now
+				server = config.Servers[0]
+				currentServer := config.CurrentServer
+				if currentServer != "" {
+					for _, s := range config.Servers {
+						if s.Name == currentServer {
+							server = s
+							break
+						}
+					}
+				}
+			} else {
+				server, err = config.PickServer("Which git service?", batchMode)
+				if err != nil {
+					return nil, err
+				}
 			}
 			repoOptions.ServerURL = server.URL
 		}
@@ -82,7 +100,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 	}
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
-			PrintCreateRepositoryGenerateAccessToken(server, username, out)
+			git.PrintCreateRepositoryGenerateAccessToken(server, username, out)
 			return nil
 		}
 
@@ -107,19 +125,23 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 	gitUsername := userAuth.Username
 	fmt.Fprintf(out, "\n\nAbout to create repository %s on server %s with user %s\n", util.ColorInfo(defaultRepoName), util.ColorInfo(url), util.ColorInfo(gitUsername))
 
-	provider, err := CreateProvider(server, userAuth)
+	provider, err := CreateProvider(server, userAuth, git)
 	if err != nil {
 		return nil, err
 	}
 	owner := repoOptions.Owner
 	if owner == "" {
-		org, err := PickOrganisation(provider, gitUsername)
-		if err != nil {
-			return nil, err
-		}
-		owner = org
-		if org == "" {
+		if batchMode {
 			owner = gitUsername
+		} else {
+			org, err := PickOrganisation(provider, gitUsername)
+			if err != nil {
+				return nil, err
+			}
+			owner = org
+			if org == "" {
+				owner = gitUsername
+			}
 		}
 	}
 	repoName := ""
@@ -151,7 +173,7 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 			return nil, fmt.Errorf("No repository name specified!")
 		}
 	}
-	fullName := GitRepoName(owner, repoName)
+	fullName := git.RepoName(owner, repoName)
 	fmt.Fprintf(out, "\n\nCreating repository %s\n", util.ColorInfo(fullName))
 	privateRepo := false
 

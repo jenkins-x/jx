@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -35,7 +36,7 @@ func PickPassword(message string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return answer, nil
+	return strings.TrimSpace(answer), nil
 }
 
 func PickNameWithDefault(names []string, message string, defaultValue string) (string, error) {
@@ -143,6 +144,6 @@ func Confirm(message string, defaultValue bool, help string) bool {
 		Help:    help,
 	}
 	survey.AskOne(prompt, &answer, nil)
-	fmt.Printf("\n")
+	log.Blank()
 	return answer
 }

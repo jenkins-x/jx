@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 const (

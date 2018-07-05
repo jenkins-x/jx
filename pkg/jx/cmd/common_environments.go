@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
@@ -42,7 +43,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 
-	branchName := gits.ConvertToValidBranchName(branchNameText)
+	branchName := o.Git().ConvertToValidBranchName(branchNameText)
 	base := source.Ref
 	if base == "" {
 		base = "master"
@@ -50,19 +51,19 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 
 	if exists {
 		// lets check the git remote URL is setup correctly
-		err = gits.SetRemoteURL(dir, "origin", gitURL)
+		err = o.Git().SetRemoteURL(dir, "origin", gitURL)
 		if err != nil {
 			return answer, err
 		}
-		err = gits.GitCmd(dir, "stash")
+		err = o.Git().Stash(dir)
 		if err != nil {
 			return answer, err
 		}
-		err = gits.GitCmd(dir, "checkout", base)
+		err = o.Git().Checkout(dir, base)
 		if err != nil {
 			return answer, err
 		}
-		err = gits.GitCmd(dir, "pull")
+		err = o.Git().Pull(dir)
 		if err != nil {
 			return answer, err
 		}
@@ -71,51 +72,33 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		if err != nil {
 			return answer, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
-		err = gits.GitClone(gitURL, dir)
+		err = o.Git().Clone(gitURL, dir)
 		if err != nil {
 			return answer, err
 		}
 		if base != "master" {
-			err = gits.GitCmd(dir, "checkout", base)
+			err = o.Git().Checkout(dir, base)
 			if err != nil {
 				return answer, err
 			}
 		}
 
 		// TODO lets fork if required???
-		/*
-			pushGitURL, err := gits.GitCreatePushURL(gitURL, details.User)
-			if err != nil {
-				return answer, err
-			}
-			err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
-			if err != nil {
-				return answer, err
-			}
-			err = gits.GitCmd(dir, "remote", "add", "origin", pushGitURL)
-			if err != nil {
-				return answer, err
-			}
-			err = gits.GitCmd(dir, "push", "-u", "origin", "master")
-			if err != nil {
-				return answer, err
-			}
-		*/
 	}
-	branchNames, err := gits.GitGetRemoteBranchNames(dir, "remotes/origin/")
+	branchNames, err := o.Git().RemoteBranchNames(dir, "remotes/origin/")
 	if err != nil {
 		return answer, fmt.Errorf("Failed to load remote branch names: %s", err)
 	}
-	o.Printf("Found remote branch names %s\n", strings.Join(branchNames, ", "))
+	log.Infof("Found remote branch names %s\n", strings.Join(branchNames, ", "))
 	if util.StringArrayIndex(branchNames, branchName) >= 0 {
 		// lets append a UUID as the branch name already exists
 		branchName += "-" + string(uuid.NewUUID())
 	}
-	err = gits.GitCmd(dir, "branch", branchName)
+	err = o.Git().CreateBranch(dir, branchName)
 	if err != nil {
 		return answer, err
 	}
-	err = gits.GitCmd(dir, "checkout", branchName)
+	err = o.Git().Checkout(dir, branchName)
 	if err != nil {
 		return answer, err
 	}
@@ -133,35 +116,35 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 
 	err = helm.SaveRequirementsFile(requirementsFile, requirements)
 
-	err = gits.GitCmd(dir, "add", "*", "*/*")
+	err = o.Git().Add(dir, "*", "*/*")
 	if err != nil {
 		return answer, err
 	}
-	changed, err := gits.HasChanges(dir)
+	changed, err := o.Git().HasChanges(dir)
 	if err != nil {
 		return answer, err
 	}
 	if !changed {
-		o.Printf("%s\n", util.ColorWarning("No changes made to the GitOps Environment source code. Code must be up to date!"))
+		log.Warnf("%s\n", "No changes made to the GitOps Environment source code. Code must be up to date!")
 		return answer, nil
 	}
-	err = gits.GitCommitDir(dir, message)
+	err = o.Git().CommitDir(dir, message)
 	if err != nil {
 		return answer, err
 	}
 	// lets rebase an existing PR
 	if pullRequestInfo != nil {
 		remoteBranch := pullRequestInfo.PullRequestArguments.Head
-		err = gits.GitForcePushBranch(dir, branchName, remoteBranch)
+		err = o.Git().ForcePushBranch(dir, branchName, remoteBranch)
 		return pullRequestInfo, err
 	}
 
-	err = gits.GitPush(dir)
+	err = o.Git().Push(dir)
 	if err != nil {
 		return answer, err
 	}
 
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return answer, err
 	}
@@ -171,25 +154,24 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode, gitKind)
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode, gitKind, o.Git())
 	if err != nil {
 		return answer, err
 	}
 
 	gha := &gits.GitPullRequestArguments{
-		Owner: gitInfo.Organisation,
-		Repo:  gitInfo.Name,
-		Title: title,
-		Body:  message,
-		Base:  base,
-		Head:  branchName,
+		GitRepositoryInfo: gitInfo,
+		Title:             title,
+		Body:              message,
+		Base:              base,
+		Head:              branchName,
 	}
 
 	pr, err := provider.CreatePullRequest(gha)
 	if err != nil {
 		return answer, err
 	}
-	o.Printf("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
+	log.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
 	return &ReleasePullRequestInfo{
 		GitProvider:          provider,
 		PullRequest:          pr,
@@ -207,7 +189,7 @@ func (o *CommonOptions) registerEnvironmentCRD() error {
 }
 
 // modifyDevEnvironment performs some mutation on the Development environemnt to modify team settings
-func (o *CommonOptions) modifyDevEnvironment(jxClient *versioned.Clientset, ns string, fn func(env *v1.Environment) error) error {
+func (o *CommonOptions) modifyDevEnvironment(jxClient versioned.Interface, ns string, fn func(env *v1.Environment) error) error {
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
 		return err
@@ -223,6 +205,6 @@ func (o *CommonOptions) modifyDevEnvironment(jxClient *versioned.Clientset, ns s
 	if err != nil {
 		return fmt.Errorf("Failed to update Development environment in namespace %s: %s", ns, err)
 	}
-	o.Printf("Updated the team settings in namespace %s\n", ns)
+	log.Infof("Updated the team settings in namespace %s\n", ns)
 	return nil
 }

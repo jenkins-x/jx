@@ -7,15 +7,15 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"sort"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"k8s.io/client-go/kubernetes"
-	"sort"
 )
 
 type NamespaceOptions struct {
@@ -40,7 +40,7 @@ var (
 		jx ns cheese`)
 )
 
-func NewCmdNamespace(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdNamespace(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &NamespaceOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -58,7 +58,7 @@ func NewCmdNamespace(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)
@@ -75,7 +75,7 @@ func (o *NamespaceOptions) Run() error {
 	if len(args) > 0 {
 		ns = args[0]
 	}
-	client, _, err := o.Factory.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (o *NamespaceOptions) Run() error {
 }
 
 // GetNamespaceNames returns the sorted list of environment names
-func GetNamespaceNames(client *kubernetes.Clientset) ([]string, error) {
+func GetNamespaceNames(client kubernetes.Interface) ([]string, error) {
 	names := []string{}
 	list, err := client.CoreV1().Namespaces().List(meta_v1.ListOptions{})
 	if err != nil {

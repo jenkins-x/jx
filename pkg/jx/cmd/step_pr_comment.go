@@ -10,7 +10,6 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -29,7 +28,7 @@ type StepPRCommentFlags struct {
 }
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPRComment(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepPRComment(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &StepPRCommentOptions{
 		StepPROptions: StepPROptions{
 			StepOptions: StepOptions{
@@ -49,7 +48,7 @@ func NewCmdStepPRComment(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -78,12 +77,12 @@ func (o *StepPRCommentOptions) Run() error {
 		return fmt.Errorf("no comment provided")
 	}
 
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
 
-	gitInfo, err := gits.GetGitInfo("")
+	gitInfo, err := o.Git().Info("")
 	if err != nil {
 		return err
 	}
@@ -92,7 +91,7 @@ func (o *StepPRCommentOptions) Run() error {
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit comment as", o.BatchMode, gitKind)
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit comment as", o.BatchMode, gitKind, o.Git())
 	if err != nil {
 		return err
 	}

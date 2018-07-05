@@ -9,7 +9,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -40,7 +39,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGet(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -58,14 +57,15 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 		SuggestFor: []string{"list", "ps"},
 	}
 
 	cmd.AddCommand(NewCmdGetActivity(f, out, errOut))
-	cmd.AddCommand(NewCmdGetApplications(f, out, errOut))
 	cmd.AddCommand(NewCmdGetAddon(f, out, errOut))
+	cmd.AddCommand(NewCmdGetApplications(f, out, errOut))
+	cmd.AddCommand(NewCmdGetAWSInfo(f, out, errOut))
 	cmd.AddCommand(NewCmdGetBranchPattern(f, out, errOut))
 	cmd.AddCommand(NewCmdGetBuild(f, out, errOut))
 	cmd.AddCommand(NewCmdGetBuildPack(f, out, errOut))
@@ -75,10 +75,14 @@ func NewCmdGet(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.AddCommand(NewCmdGetDevPod(f, out, errOut))
 	cmd.AddCommand(NewCmdGetEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdGetGit(f, out, errOut))
+	cmd.AddCommand(NewCmdGetHelmBin(f, out, errOut))
+	cmd.AddCommand(NewCmdGetIssue(f, out, errOut))
 	cmd.AddCommand(NewCmdGetIssues(f, out, errOut))
 	cmd.AddCommand(NewCmdGetPipeline(f, out, errOut))
+	cmd.AddCommand(NewCmdGetPostPreviewJob(f, out, errOut))
 	cmd.AddCommand(NewCmdGetPreview(f, out, errOut))
 	cmd.AddCommand(NewCmdGetQuickstartLocation(f, out, errOut))
+	cmd.AddCommand(NewCmdGetTeam(f, out, errOut))
 	cmd.AddCommand(NewCmdGetToken(f, out, errOut))
 	cmd.AddCommand(NewCmdGetTracker(f, out, errOut))
 	cmd.AddCommand(NewCmdGetURL(f, out, errOut))

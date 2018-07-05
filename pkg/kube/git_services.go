@@ -6,18 +6,18 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/kubernetes"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EnsureGitServiceExistsForHost ensures that there is a GitService CRD for the given host and kind
-func EnsureGitServiceExistsForHost(jxClient *versioned.Clientset, devNs string, kind string, name string, gitUrl string, out io.Writer) error {
+func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, kind string, name string, gitUrl string, out io.Writer) error {
 	if kind == "" || kind == "github" || gitUrl == "" {
 		return nil
 	}
@@ -83,58 +83,56 @@ func EnsureGitServiceExistsForHost(jxClient *versioned.Clientset, devNs string, 
 }
 
 // GetGitServiceKind returns the kind of the given host if one can be found or ""
-func GetGitServiceKind(jxClient *versioned.Clientset, kubeClient *kubernetes.Clientset, devNs string, gitServiceUrl string) (string, error) {
-	answer := gits.SaasGitKind(gitServiceUrl)
+func GetGitServiceKind(jxClient versioned.Interface, kubeClient kubernetes.Interface, devNs string, gitServiceURL string) (string, error) {
+	answer := gits.SaasGitKind(gitServiceURL)
 	if answer != "" {
 		return answer, nil
 	}
-	cm, err := kubeClient.CoreV1().ConfigMaps(devNs).Get(ConfigMapJenkinsXGitKinds, metav1.GetOptions{})
-	if err == nil {
-		answer = GetGitServiceKindFromConfigMap(cm, gitServiceUrl)
-		if answer != "" {
-			return answer, nil
-		}
+
+	answer, err := getServiceKindFromSecrets(kubeClient, devNs, gitServiceURL)
+	if err == nil && answer != "" {
+		return answer, nil
 	}
 
-	gitServices := jxClient.JenkinsV1().GitServices(devNs)
+	return getServiceKindFromGitServices(jxClient, devNs, gitServiceURL)
+}
+
+func getServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitServiceURL string) (string, error) {
+	secretList, err := kubeClient.CoreV1().Secrets(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to list the secrets")
+	}
+
+	for _, secret := range secretList.Items {
+		if strings.HasPrefix(secret.GetName(), SecretJenkinsPipelineGitCredentials) {
+			annotations := secret.GetAnnotations()
+			url, ok := annotations[AnnotationURL]
+			if !ok {
+				continue
+			}
+			if url == gitServiceURL {
+				labels := secret.GetLabels()
+				serviceKind, ok := labels[LabelServiceKind]
+				if !ok {
+					return "", fmt.Errorf("no service kind label found on secret '%s' for git service '%s'",
+						secret.GetName(), gitServiceURL)
+				}
+				return serviceKind, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("no secret found with configuration for '%s' git service", gitServiceURL)
+}
+
+func getServiceKindFromGitServices(jxClient versioned.Interface, ns string, gitServiceURL string) (string, error) {
+	gitServices := jxClient.JenkinsV1().GitServices(ns)
 	list, err := gitServices.List(metav1.ListOptions{})
 	if err == nil {
 		for _, gs := range list.Items {
-			if gs.Spec.URL == gitServiceUrl {
+			if gs.Spec.URL == gitServiceURL {
 				return gs.Spec.GitKind, nil
 			}
 		}
 	}
-	// TODO should we default to github?
-	return answer, nil
-}
-
-func GetGitServiceKindFromConfigMap(cm *corev1.ConfigMap, gitServiceUrl string) string {
-	gitServiceUrl = strings.TrimSuffix(gitServiceUrl, "/")
-	for k, v := range cm.Data {
-		if strings.TrimSpace(v) != "" {
-			m := map[string]string{}
-			err := yaml.Unmarshal([]byte(v), &m)
-			if err != nil {
-				fmt.Printf("Warning could not parse %s YAML %s: %s due to: %s", ConfigMapJenkinsXGitKinds, k, v, err)
-			} else {
-				for _, u := range m {
-					if u == gitServiceUrl {
-						return k
-					}
-					if k == "github" {
-						// lets trim /api/ paths from github repos
-						idx := strings.LastIndex(u, "/api/")
-						if idx > 0 {
-							u2 := u[0:idx]
-							if gitServiceUrl == u2 {
-								return k
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	return ""
+	return "", fmt.Errorf("no git service resource found with URL '%s'", gitServiceURL)
 }

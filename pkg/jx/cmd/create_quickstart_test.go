@@ -5,7 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
+	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,10 +24,11 @@ func TestCreateQuckstartProjects(t *testing.T) {
 			ProjectName: appName,
 		},
 	}
-	configureOptions(&o.CommonOptions)
+	ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI())
 	o.Dir = testDir
 	o.OutDir = testDir
 	o.DryRun = true
+	o.DisableMaven = true
 	o.Verbose = true
 	o.IgnoreTeam = true
 	o.Repository = appName
@@ -35,10 +38,10 @@ func TestCreateQuckstartProjects(t *testing.T) {
 	if err == nil {
 		appDir := filepath.Join(testDir, appName)
 		jenkinsfile := filepath.Join(appDir, "Jenkinsfile")
-		assertFileExists(t, jenkinsfile)
-		assertFileExists(t, filepath.Join(appDir, "Dockerfile"))
-		assertFileExists(t, filepath.Join(appDir, "charts", appName, "Chart.yaml"))
-		assertFileExists(t, filepath.Join(appDir, "charts", appName, "Makefile"))
-		assertFileDoesNotExist(t, filepath.Join(appDir, "charts", "spring-petclinic-vets-service", "Chart.yaml"))
+		tests.AssertFileExists(t, jenkinsfile)
+		tests.AssertFileExists(t, filepath.Join(appDir, "Dockerfile"))
+		tests.AssertFileExists(t, filepath.Join(appDir, "charts", appName, "Chart.yaml"))
+		tests.AssertFileExists(t, filepath.Join(appDir, "charts", appName, "Makefile"))
+		tests.AssertFileDoesNotExist(t, filepath.Join(appDir, "charts", "spring-petclinic-vets-service", "Chart.yaml"))
 	}
 }

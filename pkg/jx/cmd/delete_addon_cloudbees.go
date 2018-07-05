@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +27,7 @@ type DeleteAddonCDXOptions struct {
 }
 
 // NewCmdDeleteAddonCloudBees defines the command
-func NewCmdDeleteAddonCloudBees(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddonCloudBees(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteAddonGiteaOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
 			CommonOptions: CommonOptions{
@@ -49,7 +48,7 @@ func NewCmdDeleteAddonCloudBees(f cmdutil.Factory, out io.Writer, errOut io.Writ
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultCloudBeesReleaseName, "The chart release name")

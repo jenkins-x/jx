@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -16,8 +16,14 @@ var (
 `)
 
 	create_git_server_example = templates.Examples(`
-		# Add a new git server URL
-		jx create git server gitea
+		# Add a new git server
+		jx create git server bitbucket http://bitbucket.org
+
+		# Add a new git server with a name
+		jx create git server bitbucket http://bitbucket.org -n MyBitBucket 
+
+		For more documentation see: [https://jenkins-x.io/developing/git/](https://jenkins-x.io/developing/git/)
+
 	`)
 
 	gitKindToServiceName = map[string]string{
@@ -33,7 +39,7 @@ type CreateGitServerOptions struct {
 }
 
 // NewCmdCreateGitServer creates a command object for the "create" command
-func NewCmdCreateGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGitServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateGitServerOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -54,7 +60,7 @@ func NewCmdCreateGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -82,7 +88,7 @@ func (o *CreateGitServerOptions) Run() error {
 		if serviceName != "" {
 			url, err := o.findService(serviceName)
 			if err != nil {
-				return fmt.Errorf("Failed to find %s git serivce %s: %s", kind, serviceName, err)
+				return fmt.Errorf("Failed to find %s git service %s: %s", kind, serviceName, err)
 			}
 			gitUrl = url
 		}
@@ -91,7 +97,7 @@ func (o *CreateGitServerOptions) Run() error {
 	if gitUrl == "" {
 		return missingGitServerArguments()
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -102,7 +108,7 @@ func (o *CreateGitServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Added git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
+	log.Infof("Added git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 	return nil
 }
 

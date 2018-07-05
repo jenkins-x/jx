@@ -7,8 +7,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +37,7 @@ var (
 )
 
 // NewCmdGetEnv creates the new command for: jx get env
-func NewCmdGetEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetEnvOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -57,7 +57,7 @@ func NewCmdGetEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -75,7 +75,7 @@ func (o *GetEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.Factory.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (o *GetEnvOptions) Run() error {
 		table.AddRow("NAME", "LABEL", "KIND", "NAMESPACE", "SOURCE", "REF", "PR")
 		table.AddRow(e, spec.Label, spec.Namespace, kindString(spec), spec.Source.URL, spec.Source.Ref, spec.PullRequestURL)
 		table.Render()
-		o.Printf("\n")
+		log.Blank()
 
 		ens := env.Spec.Namespace
 		if ens != "" {
@@ -137,7 +137,7 @@ func (o *GetEnvOptions) Run() error {
 			return err
 		}
 		if len(envs.Items) == 0 {
-			o.Printf("No environments found.\nTo create an environment use: jx create env\n")
+			log.Infof("No environments found.\nTo create an environment use: jx create env\n")
 			return nil
 		}
 

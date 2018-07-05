@@ -1,17 +1,16 @@
 package gits
 
 const (
-	KindBitBucket       = "bitbucket"
+	KindBitBucketCloud  = "bitbucketcloud"
 	KindBitBucketServer = "bitbucketserver"
 	KindGitea           = "gitea"
 	KindGitlab          = "gitlab"
 	KindGitHub          = "github"
-
-	DateFormat = "January 2 2006"
+	KindUnknown         = "unknown"
 
 	BitbucketCloudURL = "https://bitbucket.org"
 )
 
 var (
-	KindGits = []string{KindBitBucket, KindGitea, KindGitHub, KindGitlab}
+	KindGits = []string{KindBitBucketCloud, KindBitBucketServer, KindGitea, KindGitHub, KindGitlab}
 )

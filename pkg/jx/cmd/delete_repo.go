@@ -3,18 +3,19 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 var (
-	delete_repo_long = templates.LongDesc(`
+	deleteRepoLong = templates.LongDesc(`
 		Deletes one or more repositories.
 
 		This command will require the delete repo role on your Persona Access Token. 
@@ -22,7 +23,7 @@ var (
 		Note that command will ask for confirmation before doing anything!
 `)
 
-	delete_repo_example = templates.Examples(`
+	deleteRepoExample = templates.Examples(`
 		# Selects the repositories to delete from the given github organisation
 		jx delete repo --github --org myname 
 
@@ -45,7 +46,7 @@ type DeleteRepoOptions struct {
 }
 
 // NewCmdDeleteRepo creates a command object for the "delete repo" command
-func NewCmdDeleteRepo(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteRepo(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteRepoOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -60,13 +61,13 @@ func NewCmdDeleteRepo(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 		Use:     "repo",
 		Short:   "Deletes one or more git repositories",
 		Aliases: []string{"repository"},
-		Long:    delete_repo_long,
-		Example: delete_repo_example,
+		Long:    deleteRepoLong,
+		Example: deleteRepoExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	//addDeleteFlags(cmd, &options.CreateOptions)
@@ -74,15 +75,16 @@ func NewCmdDeleteRepo(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 	cmd.Flags().StringVarP(&options.Organisation, "org", "o", "", "Specify the git provider organisation that includes the repository to delete")
 	cmd.Flags().StringArrayVarP(&options.Repositories, "name", "n", []string{}, "Specify the git repository names to delete")
 	cmd.Flags().StringVarP(&options.GitHost, "git-host", "g", "", "The Git server host if not using GitHub")
-	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wis to pick the repositories from GitHub to import")
+	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wish to pick the repositories from GitHub to import")
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "If selecting projects to import from a git provider this defaults to selecting them all")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "If selecting projects to import from a git provider this filters the list of repositories")
+	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Run without being prompted. WARNING! You will not be asked to confirm deletions if you use this flag.")
 	return cmd
 }
 
 // Run implements the command
 func (o *DeleteRepoOptions) Run() error {
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -101,13 +103,13 @@ func (o *DeleteRepoOptions) Run() error {
 		}
 	}
 	if server == nil {
-		return fmt.Errorf("No git server provided!")
+		return fmt.Errorf("No git server provided")
 	}
 	userAuth, err := config.PickServerUserAuth(server, "git user name", o.BatchMode)
 	if err != nil {
 		return err
 	}
-	provider, err := gits.CreateProvider(server, userAuth)
+	provider, err := gits.CreateProvider(server, userAuth, o.Git())
 	if err != nil {
 		return err
 	}
@@ -118,6 +120,10 @@ func (o *DeleteRepoOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if org == "" {
+		org = username
 	}
 
 	names := o.Repositories
@@ -132,19 +138,22 @@ func (o *DeleteRepoOptions) Run() error {
 		}
 	}
 
-	o.warnf("You are about to delete these repositories on the git provider. This operation CANNOT be undone!")
+	if !o.BatchMode {
+		log.Warnf("You are about to delete these repositories '%s' on the git provider. This operation CANNOT be undone!",
+			strings.Join(names, ","))
 
-	flag := false
-	prompt := &survey.Confirm{
-		Message: "Are you sure you want to delete these all these repositories?",
-		Default: false,
-	}
-	err = survey.AskOne(prompt, &flag, nil)
-	if err != nil {
-		return err
-	}
-	if !flag {
-		return nil
+		flag := false
+		prompt := &survey.Confirm{
+			Message: "Are you sure you want to delete these all these repositories?",
+			Default: false,
+		}
+		err = survey.AskOne(prompt, &flag, nil)
+		if err != nil {
+			return err
+		}
+		if !flag {
+			return nil
+		}
 	}
 
 	owner := org
@@ -155,10 +164,10 @@ func (o *DeleteRepoOptions) Run() error {
 	for _, name := range names {
 		err = provider.DeleteRepository(owner, name)
 		if err != nil {
-			o.warnf("Ensure Git Token has delete repo permissions or manually delete, for GitHub check https://github.com/settings/tokens\n")
-			o.warnf("%s\n", err)
+			log.Warnf("Ensure Git Token has delete repo permissions or manually delete, for GitHub check https://github.com/settings/tokens\n")
+			log.Warnf("%s\n", err)
 		} else {
-			o.Printf("Deleted repository %s/%s\n", info(owner), info(name))
+			log.Infof("Deleted repository %s/%s\n", info(owner), info(name))
 		}
 	}
 	return nil

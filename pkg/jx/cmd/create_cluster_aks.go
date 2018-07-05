@@ -5,13 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"path/filepath"
-
 	"github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/aks"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
@@ -67,7 +64,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterAKS(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAKSOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, AKS),
 	}
@@ -80,13 +77,13 @@ func NewCmdCreateClusterAKS(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
 	options.addCreateClusterFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.UserName, "user name", "u", "", "user name")
+	cmd.Flags().StringVarP(&options.Flags.UserName, "user-name", "u", "", "user name")
 	cmd.Flags().StringVarP(&options.Flags.Password, "password", "p", "", "password")
 	cmd.Flags().StringVarP(&options.Flags.ResourceName, "resource-group-name", "n", "", "Name of the resource group")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "cluster-name", "c", "", "Name of the cluster")
@@ -269,77 +266,10 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	getCredentials := []string{"aks", "get-credentials", "--resource-group", resourceName, "--name", clusterName}
 
 	err = o.runCommand("az", getCredentials...)
-
 	if err != nil {
 		return err
-	}
-
-	/**
-	 * create a cluster admin role
-	 */
-
-	err = o.createClusterAdmin()
-	if err != nil {
-		msg := err.Error()
-		if strings.Contains(msg, "AlreadyExists") {
-			log.Success("role cluster-admin already exists for the cluster")
-
-		} else {
-			return err
-		}
-	} else {
-		log.Success("created role cluster-admin")
 	}
 
 	log.Info("Initialising cluster ...\n")
 	return o.initAndInstall(AKS)
-}
-
-func (o *CreateClusterAKSOptions) createClusterAdmin() error {
-
-	content := []byte(
-		`apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  creationTimestamp: null
-  name: cluster-admin
-  annotations:
-    rbac.authorization.kubernetes.io/autoupdate: "true"
-rules:
-- apiGroups:
-  - '*'
-  resources:
-  - '*'
-  verbs:
-  - '*'
-- nonResourceURLs:
-  - '*'
-  verbs:
-  - '*'`)
-
-	fileName := randomdata.SillyName() + ".yml"
-	fileName = filepath.Join(os.TempDir(), fileName)
-	tmpfile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
-	if err != nil {
-		return err
-	}
-
-	defer os.Remove(tmpfile.Name()) // clean up
-
-	if _, err := tmpfile.Write(content); err != nil {
-		return err
-	}
-	if err := tmpfile.Close(); err != nil {
-		return err
-	}
-
-	err = o.runCommand("kubectl", "create", "clusterrolebinding", "kube-system-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
-	if err != nil {
-		return err
-	}
-	err = o.runCommand("kubectl", "create", "-f", tmpfile.Name())
-	if err != nil {
-		return err
-	}
-	return nil
 }

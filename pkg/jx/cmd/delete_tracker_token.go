@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"io"
 
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var (
@@ -30,7 +31,7 @@ type DeleteTrackerTokenOptions struct {
 }
 
 // NewCmdDeleteTrackerToken defines the command
-func NewCmdDeleteTrackerToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTrackerToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteTrackerTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -51,7 +52,7 @@ func NewCmdDeleteTrackerToken(f cmdutil.Factory, out io.Writer, errOut io.Writer
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.ServerFlags.addGitServerFlags(cmd)
@@ -84,7 +85,7 @@ func (o *DeleteTrackerTokenOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Deleted API tokens for users: %s for issue tracker server %s at %s from local settings\n",
+	log.Infof("Deleted API tokens for users: %s for issue tracker server %s at %s from local settings\n",
 		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

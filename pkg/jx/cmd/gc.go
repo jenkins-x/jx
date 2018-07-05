@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GCOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -22,6 +21,7 @@ const (
 
     * previews
     * activities
+	* helm
     `
 )
 
@@ -36,13 +36,15 @@ var (
 	gc_example = templates.Examples(`
 		jx gc previews
 		jx gc activities
+		jx gc helm
+		jx gc gke
 
 	`)
 )
 
 // NewCmdGC creates a command object for the generic "gc" action, which
 // retrieves one or more resources from a server.
-func NewCmdGC(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGC(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GCOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -60,12 +62,14 @@ func NewCmdGC(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
 	cmd.AddCommand(NewCmdGCActivities(f, out, errOut))
 	cmd.AddCommand(NewCmdGCPreviews(f, out, errOut))
+	cmd.AddCommand(NewCmdGCGKE(f, out, errOut))
+	cmd.AddCommand(NewCmdGCHelm(f, out, errOut))
 
 	return cmd
 }

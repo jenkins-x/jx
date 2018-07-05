@@ -14,10 +14,9 @@ import (
 
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -50,7 +49,7 @@ podAnnotations:
   jenkins-x.io/cve-image-id: %s
 `
 
-func NewCmdStepPostBuild(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepPostBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepPostBuildOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -69,7 +68,7 @@ func NewCmdStepPostBuild(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -97,7 +96,7 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 		return util.MissingOption("image")
 	}
 
-	present, err := kube.IsServicePresent(o.kubeClient, anchoreServiceName, o.currentNamespace)
+	present, err := kube.IsServicePresent(o.kubeClient, kube.AddonServices[defaultAnchoreName], o.currentNamespace)
 	if err != nil || !present {
 		log.Infof("no CVE provider running in the current %s namespace so skip adding image to be analysed", o.currentNamespace)
 		return nil
@@ -166,7 +165,7 @@ func (o *StepPostBuildOptions) addImageToAnchore() (string, error) {
 
 func (o *StepPostBuildOptions) getAnchoreDetails() (anchoreDetails, error) {
 	var a anchoreDetails
-	secretsList, err := o.Factory.LoadPipelineSecrets(kube.ValueKindAddon, kube.ValueKindCVE)
+	secretsList, err := o.LoadPipelineSecrets(kube.ValueKindAddon, kube.ValueKindCVE)
 	if err != nil {
 		return a, err
 	}

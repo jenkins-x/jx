@@ -5,11 +5,11 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -52,7 +52,7 @@ type CreateQuickstartLocationOptions struct {
 }
 
 // NewCmdCreateQuickstartLocation creates a command object for the "create" command
-func NewCmdCreateQuickstartLocation(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateQuickstartLocation(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateQuickstartLocationOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -73,7 +73,7 @@ func NewCmdCreateQuickstartLocation(f cmdutil.Factory, out io.Writer, errOut io.
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -106,7 +106,7 @@ func (o *CreateQuickstartLocationOptions) Run() error {
 	}
 
 	if o.GitKind == "" {
-		authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+		authConfigSvc, err := o.CreateGitAuthConfigService()
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func (o *CreateQuickstartLocationOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.QuickstartLocations = locations
-		o.Printf("Adding the quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(o.GitUrl, o.Owner)))
+		log.Infof("Adding the quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(o.GitUrl, o.Owner)))
 		return nil
 	}
 	return o.modifyDevEnvironment(jxClient, ns, callback)
