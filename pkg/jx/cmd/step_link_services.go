@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"io"
@@ -82,29 +81,33 @@ func (o *StepLinkServicesOptions) Run() error {
 	if o.FromNamespace == blankString {
 		return util.MissingOption(fromNamespace)
 	}
-	currentNamespace := o.ToNamespace
-	if currentNamespace == blankString {
-		//Derive current namespace since o.ToNameSpace is blank
-		config, po, err := kube.LoadConfig()
-		if err != nil {
-			return err
-		}
-		currentNamespace = kube.CurrentNamespace(config)
+	kubeClient, currentNs, err := o.KubeClient()
+	targetNamespace := o.ToNamespace
+	if targetNamespace == blankString {
+		//to-namespace wasn't supplied, let's assume it is current namespace
+		targetNamespace = currentNs
 	}
-	if currentNamespace == blankString {
+	if targetNamespace == blankString {
+		//We don't want to continue if we still can't derive to-namespace
 		return util.MissingOption(toNamespace)
 	} else {
-		serviceList, err := o.kubeClient.CoreV1().Services(o.FromNamespace).List(metav1.ListOptions{})
+		serviceList, err := kubeClient.CoreV1().Services(o.FromNamespace).List(metav1.ListOptions{})
 		if err != nil {
 			return err
 		} else {
 			for _, service := range serviceList.Items {
 				if util.StringMatchesAny(service.Name, o.Includes, o.Excludes) {
-					lookedUpServiceFromSourceNamespace, err := o.kubeClient.CoreV1().Services(o.FromNamespace).Get(service.GetName(), metav1.GetOptions{})
-					lookedUpService, err := o.kubeClient.CoreV1().Services(o.currentNamespace).Get(service.GetName(), metav1.GetOptions{})
-					//TODO add condition if lookUpService is not essentially nil
-					// TODO create a Service resource if one does not exist with `service.Name` in namespace toNs with an external name pointing to this service
-					o.kubeClient.CoreV1().Services(currentNamespace).Create(lookedUpServiceFromSourceNamespace)
+					lookedUpServiceFromSourceNamespace, err := kubeClient.CoreV1().Services(o.FromNamespace).Get(service.GetName(), metav1.GetOptions{})
+					if err != nil {
+						return err
+					}
+					lookedUpServiceFromTargetNamespace, err := kubeClient.CoreV1().Services(o.currentNamespace).Get(service.GetName(), metav1.GetOptions{})
+					// We would create a new service if it doesn't already exist OR update if it already exists
+					if lookedUpServiceFromTargetNamespace.Name != blankString {
+						kubeClient.CoreV1().Services(targetNamespace).Update(lookedUpServiceFromSourceNamespace)
+					} else {
+						kubeClient.CoreV1().Services(targetNamespace).Create(lookedUpServiceFromSourceNamespace)
+					}
 				}
 			}
 		}
