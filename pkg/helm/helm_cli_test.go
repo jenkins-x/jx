@@ -126,7 +126,7 @@ func TestIsRepoMissing(t *testing.T) {
 	assert.False(t, missing, "should find url '%s'", url)
 	url = "https://test"
 	missing, err = helm.IsRepoMissing(url)
-	assert.Error(t, err, "should search missing repos return an error")
+	assert.NoError(t, err, "search missing repos should not return an error")
 	assert.True(t, missing, "should not find url '%s'", url)
 }
 
