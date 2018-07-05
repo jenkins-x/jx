@@ -1,7 +1,6 @@
 package helm
 
 import (
-	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -144,7 +143,7 @@ func (h *HelmCLI) IsRepoMissing(URL string) (bool, error) {
 			}
 		}
 	}
-	return true, fmt.Errorf("no repository with URL '%s' found", URL)
+	return true, nil
 }
 
 // UpdateRepo updates the helm repositories
