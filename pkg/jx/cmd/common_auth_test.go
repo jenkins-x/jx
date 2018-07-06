@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func TestAuthLoadFromPipelineGitCredentials(t *testing.T) {
 	}
 
 	o := &CommonOptions{}
-	ConfigureTestOptions(o, gits.NewGitCLI())
+	ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, ""))
 
 	fileName := "doesNotExist.yaml"
 

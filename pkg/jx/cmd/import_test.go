@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -50,7 +51,7 @@ func assertImport(t *testing.T, testDir string) error {
 	_, dirName := filepath.Split(testDir)
 	dirName = kube.ToValidName(dirName)
 	o := &ImportOptions{}
-	ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI())
+	ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName))
 	o.Dir = testDir
 	o.DryRun = true
 	o.DisableMaven = true

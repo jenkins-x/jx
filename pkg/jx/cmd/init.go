@@ -258,7 +258,6 @@ func (o *InitOptions) initHelm() error {
 	if o.Flags.Helm3 {
 		o.Flags.SkipTiller = true
 	}
-	helmBin := o.HelmBinary()
 
 	if !o.Flags.SkipTiller {
 		client, curNs, err := o.KubeClient()
@@ -365,11 +364,11 @@ func (o *InitOptions) initHelm() error {
 		if !running {
 			log.Infof("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
 
-			err = o.runCommand(helmBin, "init", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
+			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, false)
 			if err != nil {
 				return err
 			}
-			err = o.runCommand(helmBin, "init", "--upgrade", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
+			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, true)
 			if err != nil {
 				return err
 			}
@@ -382,18 +381,18 @@ func (o *InitOptions) initHelm() error {
 	}
 
 	if o.Flags.Helm3 {
-		err = o.runCommand(helmBin, "init")
+		err = o.Helm().Init(false, "", "", false)
 		if err != nil {
 			return err
 		}
 	} else if o.Flags.HelmClient || o.Flags.SkipTiller {
-		err = o.runCommand(helmBin, "init", "--client-only")
+		err = o.Helm().Init(true, "", "", false)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = o.runCommand(helmBin, "repo", "add", "jenkins-x", DEFAULT_CHARTMUSEUM_URL)
+	err = o.Helm().AddRepo("jenkins-x", DEFAULT_CHARTMUSEUM_URL)
 	if err != nil {
 		return err
 	}
@@ -513,11 +512,10 @@ func (o *InitOptions) initIngress() error {
 			return nil
 		}
 
-		helmBinary := o.HelmBinary()
 		i := 0
 		for {
-			//err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true", "--set", "rbac.serviceAccountName="+ingressServiceAccount)
-			err = o.runCommandVerbose(helmBinary, "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true")
+			values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
+			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values, nil)
 			if err != nil {
 				if i >= 3 {
 					break

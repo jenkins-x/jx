@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/pkg/errors"
 )
 
 type BranchPatterns struct {
@@ -88,22 +89,22 @@ func (o *CommonOptions) TeamHelmBin() (string, error) {
 func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) error) error {
 	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create the api extensions client")
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create the jx client")
 	}
 	err = o.registerEnvironmentCRD()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to register the environment CRD")
 	}
 
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to setup the dev environment for namespace '%s'", ns)
 	}
 	if env == nil {
 		return fmt.Errorf("No Development environment found for namespace %s", ns)
