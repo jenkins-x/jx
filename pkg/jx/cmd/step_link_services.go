@@ -99,20 +99,19 @@ func (o *StepLinkServicesOptions) Run() error {
 			for _, service := range serviceList.Items {
 				if util.StringMatchesAny(service.Name, o.Includes, o.Excludes) {
 					lookedUpServiceFromTargetNamespace, _ := kubeClient.CoreV1().Services(targetNamespace).Get(service.GetName(), metav1.GetOptions{})
+					//Change the namespace in the service to target namespace
+					targetService := service
+					targetService.Namespace = targetNamespace
 					// We would create a new service if it doesn't already exist OR update if it already exists
 					if lookedUpServiceFromTargetNamespace != nil {
-						kubeClient.CoreV1().Services(targetNamespace).Update(&service)
+						kubeClient.CoreV1().Services(targetNamespace).Update(&targetService)
 					} else {
-						kubeClient.CoreV1().Services(targetNamespace).Create(&service)
-						/*						serviceListFromTNs, _ := kubeClient.CoreV1().Services(targetNamespace).List(metav1.ListOptions{})
-												for _, serviceFromTns := range serviceListFromTNs.Items {
-													print(serviceFromTns.Name)
-												}
-						*/
+
+						kubeClient.CoreV1().Services(targetNamespace).Create(&targetService)
 					}
 				}
 			}
 		}
 	}
-	return nil //TODO change return
+	return nil
 }
