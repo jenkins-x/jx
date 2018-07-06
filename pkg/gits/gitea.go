@@ -606,6 +606,10 @@ func (p *GiteaProvider) IsBitbucketServer() bool {
 	return false
 }
 
+func (p *GiteaProvider) IsGerrit() bool {
+	return false
+}
+
 func (p *GiteaProvider) Kind() string {
 	return "gitea"
 }
