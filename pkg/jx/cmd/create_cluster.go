@@ -22,7 +22,7 @@ type CreateClusterOptions struct {
 
 const (
 	GKE        = "gke"
-	OCE        = "oce"
+	OKE        = "oke"
 	EKS        = "eks"
 	AKS        = "aks"
 	AWS        = "aws"
@@ -40,7 +40,7 @@ const (
 	optionClusterName       = "cluster-name"
 )
 
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OCE, AKS, AWS, EKS, KUBERNETES, IBM, OPENSHIFT, MINISHIFT, JX_INFRA, PKS}
+var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IBM, OPENSHIFT, MINISHIFT, JX_INFRA, PKS}
 
 const (
 	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
@@ -51,7 +51,7 @@ const (
     * aws (Amazon Web Services via kops - https://github.com/aws-samples/aws-workshop-for-kubernetes/blob/master/readme.adoc)
     * eks (Amazon Web Services Elastic Container Service for Kubernetes - https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html)
     * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
-    * oce (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
+    * oke (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
     * kubernetes for custom installations of Kubernetes
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
 	* minishift (single-node OpenShift cluster inside a VM on your laptop)
@@ -126,7 +126,7 @@ func NewCmdCreateCluster(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 	cmd.AddCommand(NewCmdCreateClusterGKE(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterMinikube(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterMinishift(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterOCE(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterOKE(f, out, errOut))
 
 	return cmd
 }
