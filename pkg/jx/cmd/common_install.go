@@ -928,7 +928,7 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 			Message: "Cloud Provider",
 			Options: KUBERNETES_PROVIDERS,
 			Default: MINIKUBE,
-			Help:    "Cloud service providing the kubernetes cluster, local VM (minikube), Google (GKE), Oracle (OCE), Azure (AKS)",
+			Help:    "Cloud service providing the kubernetes cluster, local VM (minikube), Google (GKE), Oracle (OKE), Azure (AKS)",
 		}
 
 		survey.AskOne(prompt, &p, nil)
@@ -991,7 +991,7 @@ func (o *CommonOptions) installRequirements(cloudProvider string, extraDependenc
 		deps = o.addRequiredBinary("az", deps)
 	case GKE:
 		deps = o.addRequiredBinary("gcloud", deps)
-	case OCE:
+	case OKE:
 		deps = o.addRequiredBinary("oci", deps)
 	case MINIKUBE:
 		deps = o.addRequiredBinary("minikube", deps)
