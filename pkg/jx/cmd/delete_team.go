@@ -124,10 +124,25 @@ func (o *DeleteTeamOptions) Run() error {
 			Confirm:       true,
 		}
 		uninstall.BatchMode = true
+
+		o.changeNamespace(name)
 		err = uninstall.Run()
 		if err != nil {
 			log.Warnf("Failed to delete team %s\n", name)
 		}
+		o.changeNamespace("default")
 	}
 	return nil
+}
+
+func (o *DeleteTeamOptions) changeNamespace(ns string) {
+	nsOptions := &NamespaceOptions{
+		CommonOptions: o.CommonOptions,
+	}
+	nsOptions.BatchMode = true
+	nsOptions.Args = []string{ns}
+	err := nsOptions.Run()
+	if err != nil {
+		log.Warnf("Failed to set context to namespace %s: %s", ns, err)
+	}
 }
