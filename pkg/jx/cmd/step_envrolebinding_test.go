@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -69,7 +70,9 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
 			envRoleBinding,
 		},
-		gits.NewGitCLI())
+		gits.NewGitCLI(),
+		helm.NewHelmCLI("helm", helm.V2, ""),
+	)
 
 	err := o.Run()
 	assert.NoError(t, err)

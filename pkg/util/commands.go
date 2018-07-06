@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"strings"
@@ -44,11 +45,14 @@ func RunCommand(dir string, name string, args ...string) error {
 	if dir != "" {
 		e.Dir = dir
 	}
-	e.Stdout = os.Stdout
-	e.Stderr = os.Stdin
+	var b bytes.Buffer
+	e.Stdout = &b
+	e.Stderr = &b
 	err := e.Run()
+	output := string(b.Bytes())
 	if err != nil {
-		return errors.Wrapf(err, "failed to run '%s %s' command in directory '%s'", name, strings.Join(args, " "), dir)
+		return errors.Wrapf(err, "failed to run '%s %s' command in directory '%s', output: '%s'",
+			name, strings.Join(args, " "), dir, output)
 	}
 	return err
 }

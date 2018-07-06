@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -119,7 +118,7 @@ func (o *StepValidateOptions) verifyAddons() []error {
 	if len(config.Addons) == 0 {
 		return errs
 	}
-	statusMap, err := addon.GetChartStatusMap()
+	statusMap, err := o.Helm().StatusReleases()
 	if err != nil {
 		errs = append(errs, fmt.Errorf("Failed to load addons statuses: %s", err))
 		return errs

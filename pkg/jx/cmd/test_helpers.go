@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -16,14 +17,14 @@ import (
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
-func ConfigureTestOptions(o *CommonOptions, git gits.Gitter) {
-	ConfigureTestOptionsWithResources(o, nil, nil, git)
+func ConfigureTestOptions(o *CommonOptions, git gits.Gitter, helm helm.Helmer) {
+	ConfigureTestOptionsWithResources(o, nil, nil, git, helm)
 }
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
 func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object,
-	jxObjects []runtime.Object, git gits.Gitter) {
+	jxObjects []runtime.Object, git gits.Gitter, helm helm.Helmer) {
 	o.Out = tests.Output()
 	o.BatchMode = true
 	o.Factory = NewFactory()
@@ -79,4 +80,5 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	o.jxClient = v1fake.NewSimpleClientset(jxObjects...)
 	o.apiExtensionsClient = apifake.NewSimpleClientset()
 	o.git = git
+	o.helm = helm
 }

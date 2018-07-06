@@ -99,22 +99,18 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		log.Warnf("Failed to find Environments. Probably not installed yet?. Error: %s\n", err)
 	}
-	helmBinary, err := o.TeamHelmBin()
-	if err != nil {
-		return err
-	}
 	for _, env := range envNames {
 		release := namespace + "-" + env
-		err := o.runCommandQuietly(helmBinary, "status", release)
+		err := o.Helm().StatusRelease(release)
 		if err != nil {
 			continue
 		}
-		err = o.runCommand(helmBinary, "delete", "--purge", release)
+		err = o.Helm().DeleteRelease(release, true)
 		if err != nil {
 			log.Warnf("Failed to uninstall environment chart %s: %s\n", release, err)
 		}
 	}
-	err = o.runCommand(helmBinary, "delete", "--purge", "jenkins-x")
+	err = o.Helm().DeleteRelease("jenkins-x", true)
 	if err != nil {
 		errc := o.cleanupNamesapces(namespace, envNames)
 		if errc != nil {
