@@ -137,15 +137,15 @@ func (o *DeleteAppOptions) Run() error {
 		if err != nil {
 			return err
 		}
+		if len(args) == 0 {
+			return fmt.Errorf("No application was picked to be removed from Jenkins")
+		}
 	} else {
 		for _, arg := range args {
 			if util.StringArrayIndex(names, arg) < 0 {
 				return util.InvalidArg(arg, names)
 			}
 		}
-	}
-	if len(args) == 0 {
-		return fmt.Errorf("There are no Apps in Jenkins")
 	}
 	deleteMessage := strings.Join(args, ", ")
 
