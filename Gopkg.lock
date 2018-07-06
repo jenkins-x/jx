@@ -69,6 +69,12 @@
   revision = "15df0648130a623e418886f81b2aaecd0a00547b"
 
 [[projects]]
+  name = "github.com/andygrunwald/go-gerrit"
+  packages = ["."]
+  revision = "95b11af228a177a6c9961202fa40ff284ba86849"
+  version = "0.5.2"
+
+[[projects]]
   name = "github.com/andygrunwald/go-jira"
   packages = ["."]
   revision = "0298784c4606cdf01e99644da115863c052a737c"
@@ -1245,6 +1251,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "59a2830d52aed20d5174833043300757f183f9f35a2a1db3863ef5cb6cd9ed33"
+  inputs-digest = "692b4c278dcc53baa2edd56935cc3710bd1865f5d5a3d0aaa0999cfe100bf117"
   solver-name = "gps-cdcl"
   solver-version = 1
