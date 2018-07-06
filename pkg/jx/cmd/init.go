@@ -542,7 +542,7 @@ func (o *InitOptions) initIngress() error {
 
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
 
-		if o.Flags.Provider == OCE {
+		if o.Flags.Provider == OKE {
 			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account\n")
 		}
 
