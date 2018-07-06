@@ -25,12 +25,12 @@ func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
 	}
 	err = o.registerEnvironmentCRD()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to register Environment CRD: %s", err)
 	}
 
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to setup dev Environment in namespace %s: %s", ns, err)
 	}
 	if env == nil {
 		return nil, fmt.Errorf("No Development environment found for namespace %s", ns)
