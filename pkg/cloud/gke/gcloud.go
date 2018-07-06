@@ -17,7 +17,8 @@ var (
 		"roles/container.clusterAdmin",
 		"roles/container.admin",
 		"roles/container.developer",
-		"roles/storage.objectAdmin"}
+		"roles/storage.objectAdmin",
+		"roles/editor"}
 )
 
 func BucketExists(bucketName string) (bool, error) {
@@ -29,13 +30,17 @@ func BucketExists(bucketName string) (bool, error) {
 	return strings.Contains(output, fullBucketName), nil
 }
 
-func CreateBucket(bucketName string) error {
+func CreateBucket(bucketName string, location string) error {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
-	err := util.RunCommand("", "gsutil", "mb", fullBucketName)
+	err := util.RunCommand("", "gsutil", "mb", "-l", location, fullBucketName)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func GetRegionFromZone(zone string) string {
+	return zone[0 : len(zone)-2]
 }
 
 func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterConfigDir string) (string, error) {
