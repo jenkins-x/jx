@@ -987,7 +987,7 @@ func (o *InstallOptions) ensureDefaultStorageClass(client kubernetes.Interface, 
 		foundSc.Annotations[kube.AnnotationIsDefaultStorageClass] = "true"
 
 		log.Infof("Updating storageclass %s to be the default\n", util.ColorInfo(name))
-		_, err = storageClassInterface.Create(foundSc)
+		_, err = storageClassInterface.Update(foundSc)
 		return err
 	}
 
