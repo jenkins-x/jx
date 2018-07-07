@@ -55,7 +55,8 @@ func TestServiceLinking(t *testing.T) {
 	ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{fromNspc, toNspc, svcInFromNs, svcInToNs, svcDummyInFromNs},
 		nil,
-		gits.NewGitCLI())
+		gits.NewGitCLI(),
+	  	helm.NewHelmCLI("helm", helm.V2, ""))
 
 	err := o.Run()
 	serviceList, _ := o.kubeClient.CoreV1().Services(toNs).List(metav1.ListOptions{})
