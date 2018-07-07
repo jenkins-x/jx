@@ -759,6 +759,10 @@ func (b *BitbucketServerProvider) IsBitbucketServer() bool {
 	return true
 }
 
+func (b *BitbucketServerProvider) IsGerrit() bool {
+	return false
+}
+
 func (b *BitbucketServerProvider) Kind() string {
 	return "bitbucketserver"
 }

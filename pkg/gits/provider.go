@@ -56,6 +56,8 @@ type GitProvider interface {
 
 	IsBitbucketServer() bool
 
+	IsGerrit() bool
+
 	Kind() string
 
 	GetIssue(org string, name string, number int) (*GitIssue, error)
