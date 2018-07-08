@@ -63,6 +63,10 @@ type InstallFlags struct {
 	EnvironmentGitOwner      string
 	Version                  string
 	Prow                     bool
+	BinaryRepositoryManager  string
+	ArtifactoryUrl           string
+	ArtifactoryUser          string
+	ArtifactoryPassword      string
 }
 
 type Secrets struct {
@@ -190,6 +194,7 @@ func createInstallOptions(f Factory, out io.Writer, errOut io.Writer) InstallOpt
 func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit bool) {
 	flags := &options.Flags
 	flags.addCloudEnvOptions(cmd)
+	flags.addBinaryRepositoryManagerOptions(cmd)
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
 	cmd.Flags().BoolVarP(&flags.NoDefaultEnvironments, "no-default-environments", "", false, "Disables the creation of the default Staging and Production environments")
 	cmd.Flags().StringVarP(&flags.DefaultEnvironmentPrefix, "default-environment-prefix", "", "", "Default environment repo prefix, your git repos will be of the form 'environment-$prefix-$envName'")
@@ -214,6 +219,13 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
+}
+
+func (flags *InstallFlags) addBinaryRepositoryManagerOptions(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&flags.BinaryRepositoryManager, "binary-repository-manager", "", "Binary repository manager to resolve dependencies and for uploading builds. Choose between Artifactory and Nexus")
+	cmd.Flags().StringVar(&flags.ArtifactoryUrl, "artifactory-url", "", "Artifactory server URL")
+	cmd.Flags().StringVar(&flags.ArtifactoryUser, "artifactory-user", "", "Artifactory server username")
+	cmd.Flags().StringVar(&flags.ArtifactoryPassword, "artifactory-password", "", "Artifactory server password")
 }
 
 // Run implements this command
@@ -379,6 +391,24 @@ func (options *InstallOptions) Run() error {
 			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
 		}
 		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
+	}
+
+	err, binaryRepositoryManager := options.getBinaryRepositoryManager()
+	if err != nil {
+		return err
+	}
+	if binaryRepositoryManager == ArtifactoryRepoMgr {
+		err = options.readArtifactoryDetails()
+		if err != nil {
+			return err
+		}
+		err = options.createArtifactorySecret()
+		if err != nil {
+			return err
+		}
+		options.configureArtifactorySecretVolume()
+		enableNexus := false
+		helmConfig.Nexus.Enabled = &enableNexus
 	}
 
 	// lets add any GitHub Enterprise servers
@@ -687,6 +717,13 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	if binaryRepositoryManager == ArtifactoryRepoMgr {
+		err = options.deleteArtifactorySecret()
+		if err != nil {
+			return err
+		}
+	}
+
 	log.Success("\nJenkins X installation completed successfully\n")
 
 	options.logAdminPassword()
@@ -938,6 +975,93 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 
 	config.CurrentServer = server.URL
 	return authConfigSvc.SaveConfig()
+}
+
+func (options *InstallOptions) configureArtifactorySecretVolume() {
+	options.AdminSecretsService.Secrets.Jenkins.Persistence.Mounts = []config.Mounts{
+		{
+			Name:      kube.SecretJenkinsArtifactoryCredentials,
+			MountPath: "/var/artifactory",
+		},
+	}
+	options.AdminSecretsService.Secrets.Jenkins.Persistence.Volumes = []config.Volumes{
+		{
+			Name: kube.SecretJenkinsArtifactoryCredentials,
+			Secret: config.Secret{
+				SecretName: kube.SecretJenkinsArtifactoryCredentials,
+			},
+		},
+	}
+}
+
+func (options *InstallOptions) getBinaryRepositoryManager() (error, string) {
+	binaryRepositoryManager := options.Flags.BinaryRepositoryManager
+	if binaryRepositoryManager != "" {
+		binaryRepositoryManager = strings.TrimSpace(binaryRepositoryManager)
+		return nil, strings.Title(binaryRepositoryManager)
+	}
+	if options.Flags.ArtifactoryUrl != "" {
+		return nil, ArtifactoryRepoMgr
+	}
+	binaryRepositoryManagers := []string{NexusRepoMgr, ArtifactoryRepoMgr}
+	prompts := &survey.Select{
+		Message: "Select binary repository manager:",
+		Options: binaryRepositoryManagers,
+		Default: NexusRepoMgr,
+		Help:    "Binary repository manager to resolve dependencies and for uploading builds",
+	}
+	err := survey.AskOne(prompts, &binaryRepositoryManager, nil)
+	return err, binaryRepositoryManager
+}
+
+func (options *InstallOptions) readArtifactoryDetails() error {
+	if options.Flags.ArtifactoryUrl == "" {
+		prompt := &survey.Input{
+			Message: "Artifactory server URL",
+		}
+		if err := survey.AskOne(prompt, &options.Flags.ArtifactoryUrl, nil); err != nil {
+			return err
+		}
+	}
+	if options.Flags.ArtifactoryUser == "" {
+		prompt := &survey.Input{
+			Message: "Artifactory server username",
+		}
+		if err := survey.AskOne(prompt, &options.Flags.ArtifactoryUser, nil); err != nil {
+			return err
+		}
+	}
+	if options.Flags.ArtifactoryPassword == "" {
+		prompt := &survey.Password{
+			Message: "Artifactory server password",
+		}
+		if err := survey.AskOne(prompt, &options.Flags.ArtifactoryPassword, nil); err != nil {
+			return err
+		}
+	}
+
+	return nil
+
+}
+
+func (options *InstallOptions) createArtifactorySecret() error {
+	data := make(map[string][]byte)
+	data["artifactoryUrl"] = []byte(options.Flags.ArtifactoryUrl)
+	data["artifactoryUsername"] = []byte(options.Flags.ArtifactoryUser)
+	data["artifactoryPassword"] = []byte(options.Flags.ArtifactoryPassword)
+
+	artifactorySecret := &core_v1.Secret{
+		Data: data,
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.SecretJenkinsArtifactoryCredentials,
+		},
+	}
+	_, err := options.kubeClient.CoreV1().Secrets(options.Flags.Namespace).Create(artifactorySecret)
+	return err
+}
+
+func (options *InstallOptions) deleteArtifactorySecret() error {
+	return options.kubeClient.CoreV1().Secrets(options.Flags.Namespace).Delete(kube.SecretJenkinsArtifactoryCredentials, &metav1.DeleteOptions{})
 }
 
 func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
