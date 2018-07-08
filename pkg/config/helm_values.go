@@ -22,6 +22,10 @@ type JenkinsValuesConfig struct {
 	Servers JenkinsServersValuesConfig `yaml:"Servers,omitempty"`
 }
 
+type NexusValuesConfig struct {
+	Enabled *bool `yaml:"enabled,omitempty"`
+}
+
 type JenkinsServersValuesConfig struct {
 	Gitea  []JenkinsGiteaServersValuesConfig  `yaml:"Gitea,omitempty"`
 	GHE    []JenkinsGithubServersValuesConfig `yaml:"GHE,omitempty"`
@@ -46,6 +50,7 @@ type JenkinsGithubServersValuesConfig struct {
 type HelmValuesConfig struct {
 	ExposeController *ExposeController   `yaml:"expose,omitempty"`
 	Jenkins          JenkinsValuesConfig `yaml:"jenkins,omitempty"`
+	Nexus            NexusValuesConfig   `yaml:"nexus,omitempty"`
 }
 
 type HelmValuesConfigService struct {
