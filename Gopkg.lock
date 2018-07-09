@@ -446,7 +446,7 @@
     "pkg/tarball",
     "pkg/templates"
   ]
-  revision = "4f61a018106bf21f03498d20fc9145df020a9668"
+  revision = "44ad2a73f77d04124de57df5d6c0044f12a31ccf"
 
 [[projects]]
   name = "github.com/imdario/mergo"

@@ -68,8 +68,8 @@ func (c *SonobuoyClient) Run(cfg *RunConfig) error {
 			return errors.Wrap(err, "could not get object namespace")
 		}
 		// err is used to determine output for user; but first extract resource
-		newObj, err := c.dynamicClient.CreateObject(obj)
-		resource, err2 := c.dynamicClient.ResourceVersion(newObj)
+		_, err = c.dynamicClient.CreateObject(obj)
+		resource, err2 := c.dynamicClient.ResourceVersion(obj)
 		if err2 != nil {
 			return errors.Wrap(err, "could not get resource of object")
 		}

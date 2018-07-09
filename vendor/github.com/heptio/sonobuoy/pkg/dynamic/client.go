@@ -94,5 +94,9 @@ func (a *APIHelper) Namespace(obj *unstructured.Unstructured) (string, error) {
 
 // ResourceVersion returns the resource version of a kubernetes object.
 func (a *APIHelper) ResourceVersion(obj *unstructured.Unstructured) (string, error) {
-	return a.Accessor.ResourceVersion(obj)
+	restMapping, err := a.Mapper.RESTMapping(obj.GroupVersionKind().GroupKind(), obj.GroupVersionKind().Version)
+	if err != nil {
+		return "", errors.Wrap(err, "could not get restMapping")
+	}
+	return restMapping.Resource.GroupResource().Resource, nil
 }
