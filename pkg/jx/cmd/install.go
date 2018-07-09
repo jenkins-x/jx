@@ -210,7 +210,7 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
-	client, _, err := options.KubeClient()
+	client, originalNs, err := options.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -229,15 +229,11 @@ func (options *InstallOptions) Run() error {
 		return err
 	}
 
-	_, originalNs, err := options.KubeClient()
-	if err != nil {
-		return err
-	}
-
 	ns := options.Flags.Namespace
 	if ns == "" {
 		ns = originalNs
 	}
+	options.devNamespace = ns
 
 	err = kube.EnsureNamespaceCreated(client, ns, map[string]string{kube.LabelTeam: ns}, nil)
 	if err != nil {
