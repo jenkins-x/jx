@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
@@ -192,14 +193,14 @@ func (o *CommonOptions) registerEnvironmentCRD() error {
 func (o *CommonOptions) modifyDevEnvironment(jxClient versioned.Interface, ns string, fn func(env *v1.Environment) error) error {
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to ensure that dev environment is setup for namespace '%s'", ns)
 	}
 	if env == nil {
 		return fmt.Errorf("No Development environment found in namespace %s", ns)
 	}
 	err = fn(env)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to call the callback function for dev environment")
 	}
 	_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
 	if err != nil {

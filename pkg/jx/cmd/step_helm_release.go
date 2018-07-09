@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -69,20 +70,21 @@ func NewCmdStepHelmRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 func (o *StepHelmReleaseOptions) Run() error {
 	dir := o.Dir
-	helmBinary, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	_, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to build dependencies for chart from directory '%s'", dir)
 	}
 
-	err = o.runCommandVerboseAt(dir, helmBinary, "package", ".")
+	o.Helm().SetCWD(dir)
+	err = o.Helm().PackageChart()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to package the chart from directory '%s'", dir)
 	}
 
 	chartFile := filepath.Join(dir, "Chart.yaml")
 	name, version, err := helm.LoadChartNameAndVersion(chartFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to load chart name and version")
 	}
 
 	if name == "" {
@@ -94,7 +96,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	tarball := fmt.Sprintf("%s-%s.tgz", name, version)
 	exists, err := util.FileExists(tarball)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "don't find the chart archive '%s'", tarball)
 	}
 	if !exists {
 		return fmt.Errorf("Generated helm file %s does not exist!", tarball)
@@ -109,7 +111,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 		// lets try load them from the secret directly
 		client, ns, err := o.KubeClient()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create the kube client")
 		}
 		secret, err := client.CoreV1().Secrets(ns).Get(kube.SecretJenkinsChartMuseum, metav1.GetOptions{})
 		if err != nil {
@@ -139,22 +141,23 @@ func (o *StepHelmReleaseOptions) Run() error {
 
 	file, err := os.Open(tarball)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to open the chart archive '%s'", tarball)
 	}
 	log.Infof("Uploading chart file %s to %s\n", util.ColorInfo(tarball), util.ColorInfo(u))
 	req, err := http.NewRequest(http.MethodPost, u, bufio.NewReader(file))
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to build the chart upload request for endpoint '%s'", u)
 	}
 	req.SetBasicAuth(userName, password)
 	req.Header.Set("Content-Type", "application/gzip")
 	res, err := client.Do(req)
 	if err != nil {
-		return err
+		errRes, _ := ioutil.ReadAll(res.Body)
+		return errors.Wrapf(err, "failed to execute the chart upload HTTP request, response: '%s'", string(errRes))
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read the response body of chart upload request")
 	}
 	responseMessage := string(body)
 	statusCode := res.StatusCode

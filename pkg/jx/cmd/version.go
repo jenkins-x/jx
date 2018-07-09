@@ -62,13 +62,8 @@ func (o *VersionOptions) Run() error {
 	table.AddRow("NAME", "VERSION")
 	table.AddRow("jx", info(version.GetVersion()))
 
-	helmBin, err := o.TeamHelmBin()
-	if err != nil {
-		return err
-	}
-
 	// Jenkins X version
-	output, err := o.getCommandOutput("", helmBin, "list")
+	output, err := o.Helm().ListCharts()
 	if err != nil {
 		log.Warnf("Failed to find helm installs: %s\n", err)
 	} else {
@@ -121,15 +116,11 @@ func (o *VersionOptions) Run() error {
 	}
 
 	// helm version
-	args := []string{"version", "--short"}
-	if o.HelmTLS {
-		args = append(args, "--tls")
-	}
-	helmBinary, err := o.TeamHelmBin()
-	output, err = o.getCommandOutput("", helmBinary, args...)
+	output, err = o.Helm().Version(o.HelmTLS)
 	if err != nil {
 		log.Warnf("Failed to get helm version: %s\n", err)
 	} else {
+		helmBinary := o.Helm().HelmBinary()
 		if helmBinary == "helm3" {
 			table.AddRow("helm client", info(output))
 		} else {

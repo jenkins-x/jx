@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func TestCreateQuckstartProjects(t *testing.T) {
 			ProjectName: appName,
 		},
 	}
-	ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI())
+	ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, testDir))
 	o.Dir = testDir
 	o.OutDir = testDir
 	o.DryRun = true

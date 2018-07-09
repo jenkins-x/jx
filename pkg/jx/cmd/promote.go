@@ -343,15 +343,11 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	if err != nil {
 		return releaseInfo, err
 	}
-	helmBin, err := o.TeamHelmBin()
-	if err != nil {
-		return releaseInfo, err
-	}
 
 	// lets do a helm update to ensure we can find the latest version
 	if !o.NoHelmUpdate {
 		log.Info("Updating the helm repositories to ensure we can find the latest versions...")
-		err = o.runCommand(helmBin, "repo", "update")
+		err = o.Helm().UpdateRepo()
 		if err != nil {
 			return releaseInfo, err
 		}
@@ -366,11 +362,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(o.Activities, startPromote)
 
-	if version != "" {
-		err = o.runCommand(helmBin, "upgrade", "--install", "--wait", "--namespace", targetNS, "--version", version, releaseName, fullAppName)
-	} else {
-		err = o.runCommand(helmBin, "upgrade", "--install", "--wait", "--namespace", targetNS, releaseName, fullAppName)
-	}
+	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil)
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
 		if err != nil {
@@ -664,38 +656,27 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 }
 
 func (o *PromoteOptions) findLatestVersion(app string) (string, error) {
-	helmBin, err := o.TeamHelmBin()
+	versions, err := o.Helm().SearchChartVersions(app)
 	if err != nil {
 		return "", err
 	}
-	output, err := o.getCommandOutput("", helmBin, "search", app, "--versions")
-	if err != nil {
-		return "", err
-	}
+
 	var maxSemVer *semver.Version
 	maxString := ""
-	for i, line := range strings.Split(output, "\n") {
-		if i == 0 {
-			continue
-		}
-		fields := strings.Fields(line)
-		if len(fields) > 1 {
-			v := fields[1]
-			if v != "" {
-				sv, err := semver.Parse(v)
-				if err != nil {
-					log.Warnf("Invalid semantic version: %s %s\n", v, err)
-				} else {
-					if maxSemVer == nil || maxSemVer.Compare(sv) > 0 {
-						maxSemVer = &sv
-					}
-				}
-				if maxString == "" || strings.Compare(v, maxString) > 0 {
-					maxString = v
-				}
+	for _, version := range versions {
+		sv, err := semver.Parse(version)
+		if err != nil {
+			log.Warnf("Invalid semantic version: %s %s\n", version, err)
+			if maxString == "" || strings.Compare(version, maxString) > 0 {
+				maxString = version
+			}
+		} else {
+			if maxSemVer == nil || maxSemVer.Compare(sv) > 0 {
+				maxSemVer = &sv
 			}
 		}
 	}
+
 	if maxSemVer != nil {
 		return maxSemVer.String(), nil
 	}
@@ -714,7 +695,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 	if !exists {
 		log.Warnf("No helm home dir at %s so lets initialise helm client\n", helmHomeDir)
 
-		_, err = o.helmInit("")
+		err = o.helmInit("")
 		if err != nil {
 			return err
 		}

@@ -45,6 +45,7 @@ func NewCmdStep(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdStepGit(f, out, errOut))
 	cmd.AddCommand(NewCmdStepGpgCredentials(f, out, errOut))
 	cmd.AddCommand(NewCmdStepHelm(f, out, errOut))
+	cmd.AddCommand(NewCmdStepLinkServices(f, out, errOut))
 	cmd.AddCommand(NewCmdStepNexus(f, out, errOut))
 	cmd.AddCommand(NewCmdStepNextVersion(f, out, errOut))
 	cmd.AddCommand(NewCmdStepPre(f, out, errOut))

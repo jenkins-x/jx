@@ -463,6 +463,10 @@ func (g *GitlabProvider) IsBitbucketServer() bool {
 	return false
 }
 
+func (g *GitlabProvider) IsGerrit() bool {
+	return false
+}
+
 func (g *GitlabProvider) Kind() string {
 	return "gitlab"
 }

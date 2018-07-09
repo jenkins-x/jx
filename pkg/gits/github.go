@@ -840,6 +840,10 @@ func (p *GitHubProvider) IsBitbucketServer() bool {
 	return false
 }
 
+func (p *GitHubProvider) IsGerrit() bool {
+	return false
+}
+
 func (p *GitHubProvider) Kind() string {
 	return KindGitHub
 }

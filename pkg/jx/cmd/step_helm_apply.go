@@ -91,7 +91,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	info := util.ColorInfo
 	log.Infof("Applying helm chart at %s as release name %s to namespace %s\n", info(dir), info(releaseName), info(ns))
 
-	err = o.runCommandVerboseAt(dir, helmBinary, "upgrade", releaseName, dir, "--install", "--namespace", ns, "--debug")
+	err = o.Helm().UpgradeChart(dir, releaseName, ns, nil, true, nil, false, false, nil, nil)
 	if err != nil {
 		return err
 	}
