@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
+	"path/filepath"
 )
 
 func TestValidateClusterDetails(t *testing.T) {
@@ -99,4 +100,43 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 
 	testFile, err := util.LoadBytes(testDir1, "main.tf")
 	assert.NotEmpty(t, testFile, "no terraform files found")
+}
+
+func TestCanCreateTerraformVarsFile(t *testing.T) {
+	c := GKECluster{
+		ProjectId:     "project",
+		Zone:          "zone",
+		MinNumOfNodes: "3",
+		MaxNumOfNodes: "5",
+		MachineType:   "n1-standard-2",
+		DiskSize:      "100",
+		AutoRepair:    true,
+		AutoUpgrade:   false,
+	}
+
+	file, err := ioutil.TempFile("", "terraform-tf-vars")
+	if err != nil {
+		assert.Error(t, err)
+	}
+
+	path, err := filepath.Abs(file.Name())
+
+	t.Logf("Writing output to %s", path)
+
+	err = c.CreateTfVarsFile(path)
+	if err != nil {
+		assert.Error(t, err)
+	}
+
+	c2 := GKECluster{}
+	c2.ParseTfVarsFile(path)
+
+	assert.Equal(t, "project", c2.ProjectId)
+	assert.Equal(t, "zone", c2.Zone)
+	assert.Equal(t, "3", c2.MinNumOfNodes)
+	assert.Equal(t, "5", c2.MaxNumOfNodes)
+	assert.Equal(t, "n1-standard-2", c2.MachineType)
+	assert.Equal(t, true, c2.AutoRepair)
+	assert.Equal(t, false, c2.AutoUpgrade)
+
 }

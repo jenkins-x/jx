@@ -69,24 +69,88 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 		username = sanitizeLabel(user.Username)
 	}
 
-	terraform.WriteKeyValueToFileIfNotExists(path, "created_by", username)
-	terraform.WriteKeyValueToFileIfNotExists(path, "created_timestamp", time.Now().Format("20060102150405"))
-	terraform.WriteKeyValueToFileIfNotExists(path, "cluster_name", g.Name())
-	terraform.WriteKeyValueToFileIfNotExists(path, "gcp_zone", g.Zone)
-	terraform.WriteKeyValueToFileIfNotExists(path, "gcp_project", g.ProjectId)
-	terraform.WriteKeyValueToFileIfNotExists(path, "min_node_count", g.MinNumOfNodes)
-	terraform.WriteKeyValueToFileIfNotExists(path, "max_node_count", g.MaxNumOfNodes)
-	terraform.WriteKeyValueToFileIfNotExists(path, "node_machine_type", g.MachineType)
-	terraform.WriteKeyValueToFileIfNotExists(path, "node_preemptible", "false")
-	terraform.WriteKeyValueToFileIfNotExists(path, "node_disk_size", g.DiskSize)
-	terraform.WriteKeyValueToFileIfNotExists(path, "auto_repair", strconv.FormatBool(g.AutoRepair))
-	terraform.WriteKeyValueToFileIfNotExists(path, "auto_upgrade", strconv.FormatBool(g.AutoUpgrade))
-	terraform.WriteKeyValueToFileIfNotExists(path, "enable_kubernetes_alpha", "false")
-	terraform.WriteKeyValueToFileIfNotExists(path, "enable_legacy_abac", "true")
-	terraform.WriteKeyValueToFileIfNotExists(path, "logging_service", "logging.googleapis.com")
-	terraform.WriteKeyValueToFileIfNotExists(path, "monitoring_service", "monitoring.googleapis.com")
-
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "created_by", username)
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "created_timestamp", time.Now().Format("20060102150405"))
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "cluster_name", g.Name())
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "gcp_zone", g.Zone)
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "gcp_project", g.ProjectId)
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "min_node_count", g.MinNumOfNodes)
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "max_node_count", g.MaxNumOfNodes)
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "node_machine_type", g.MachineType)
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "node_preemptible", "false")
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "node_disk_size", g.DiskSize)
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "auto_repair", strconv.FormatBool(g.AutoRepair))
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "auto_upgrade", strconv.FormatBool(g.AutoUpgrade))
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_kubernetes_alpha", "false")
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_legacy_abac", "true")
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "logging_service", "logging.googleapis.com")
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "monitoring_service", "monitoring.googleapis.com")
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func (g *GKECluster) ParseTfVarsFile(path string) {
+	g.Zone, _ = terraform.ReadValueFromFile(path, "gcp_zone")
+	g.ProjectId, _ = terraform.ReadValueFromFile(path, "gcp_project")
+	g.MinNumOfNodes, _ = terraform.ReadValueFromFile(path, "min_node_count")
+	g.MaxNumOfNodes, _ = terraform.ReadValueFromFile(path, "max_node_count")
+	g.MachineType, _ = terraform.ReadValueFromFile(path, "node_machine_type")
+	g.DiskSize, _ = terraform.ReadValueFromFile(path, "node_disk_size")
+
+	autoRepair, _ := terraform.ReadValueFromFile(path, "auto_repair")
+	b, _ := strconv.ParseBool(autoRepair)
+	g.AutoRepair = b
+
+	autoUpgrade, _ := terraform.ReadValueFromFile(path, "auto_upgrade")
+	b, _ = strconv.ParseBool(autoUpgrade)
+	g.AutoUpgrade = b
 }
 
 type Flags struct {
@@ -131,7 +195,6 @@ var (
   backend "gcs" {
     bucket      = "%s-%s-terraform-state"
     prefix      = "%s"
-    credentials = "%s"
   }
 }`
 )
@@ -450,6 +513,7 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) (
 		if err != nil {
 			return nil, fmt.Errorf("unable to check if existing folder exists for path %s: %v", path, err)
 		}
+
 		if !exists {
 			os.MkdirAll(path, DefaultWritePermissions)
 
@@ -475,6 +539,27 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) (
 			}
 			os.RemoveAll(filepath.Join(path, ".git"))
 			os.RemoveAll(filepath.Join(path, ".gitignore"))
+		} else {
+			// if the directory already exists, try to load its config
+
+			switch c.Provider() {
+			case "gke":
+				g := c.(GKECluster)
+				terraformVars := filepath.Join(path, "terraform.tfvars")
+				fmt.Fprintf(o.Stdout(), "loading config from %s\n", util.ColorInfo(terraformVars))
+
+				g.ParseTfVarsFile(terraformVars)
+				clusterDefinitions = append(clusterDefinitions, g)
+
+			case "aks":
+				// TODO add aks terraform templates URL
+				return nil, fmt.Errorf("creating an AKS cluster via terraform is not currently supported")
+			case "eks":
+				// TODO add eks terraform templates URL
+				return nil, fmt.Errorf("creating an EKS cluster via terraform is not currently supported")
+			default:
+				return nil, fmt.Errorf("unknown kubernetes provider type %s must be one of %v", c.Provider(), validTerraformClusterProviders)
+			}
 		}
 	}
 
@@ -482,11 +567,12 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) (
 }
 
 func (o *CreateTerraformOptions) createClusters(dir string, clusterDefinitions []Cluster) error {
-	fmt.Printf("Creating/Updating %v clusters\n", len(clusterDefinitions))
+	fmt.Printf("Creating/Updating %v clusters\n", util.ColorInfo(len(clusterDefinitions)))
 	for _, c := range clusterDefinitions {
 		switch v := c.(type) {
 		case GKECluster:
 			path := filepath.Join(dir, Clusters, v.Name(), Terraform)
+			fmt.Fprintf(o.Stdout(), "Creating/Updating cluster %s\n", util.ColorInfo(c.Name()))
 			err := o.applyTerraformGKE(&v, path)
 			if err != nil {
 				return err
@@ -517,7 +603,7 @@ func (o *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
 		}
 		defer file.Close()
 
-		_, err = file.WriteString("**/*.key.json\n.terraform\n**/*.tfstate\n**/terraform.tf\n")
+		_, err = file.WriteString("**/*.key.json\n.terraform\n**/*.tfstate\n")
 		if err != nil {
 			return err
 		}
@@ -628,30 +714,10 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 		return err
 	}
 
-	return nil
-}
-
-func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) error {
-	log.Info("Applying Terraform changes\n")
-	user, err := os_user.Current()
-	if err != nil {
-		return err
-	}
-
-	terraformVars := filepath.Join(path, "terraform.tfvars")
-	serviceAccountName := fmt.Sprintf("jx-%s-%s", o.Flags.OrganisationName, g.Name())
-	// create service account
-	_, err = gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectId, filepath.Dir(path))
-	if err != nil {
-		return err
-	}
-	serviceAccountPath := filepath.Join(filepath.Dir(path), fmt.Sprintf("%s.key.json", serviceAccountName))
-
-	storageBucket := fmt.Sprintf(gkeBucketConfiguration, validTerraformVersions, g.ProjectId, o.Flags.OrganisationName, g.Name(), serviceAccountPath)
+	storageBucket := fmt.Sprintf(gkeBucketConfiguration, validTerraformVersions, g.ProjectId, o.Flags.OrganisationName, g.Name())
 	o.Debugf("Using bucket configuration %s", storageBucket)
 
 	terraformTf := filepath.Join(path, "terraform.tf")
-
 	// file exists
 	if _, err := os.Stat(terraformTf); os.IsNotExist(err) {
 		file, err := os.OpenFile(terraformTf, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
@@ -664,7 +730,32 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 		if err != nil {
 			return err
 		}
+
+		log.Infof("Created %s\n", terraformTf)
 	}
+
+	return nil
+}
+
+func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) error {
+	if g.ProjectId == "" {
+		return errors.New("Unable to apply terraform, projectId has not been set")
+	}
+
+	log.Info("Applying Terraform changes\n")
+	user, err := os_user.Current()
+	if err != nil {
+		return err
+	}
+
+	terraformVars := filepath.Join(path, "terraform.tfvars")
+	serviceAccountName := fmt.Sprintf("jx-%s-%s", o.Flags.OrganisationName, g.Name())
+
+	_, err = gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectId, filepath.Dir(path))
+	if err != nil {
+		return err
+	}
+	serviceAccountPath := filepath.Join(filepath.Dir(path), fmt.Sprintf("%s.key.json", serviceAccountName))
 
 	// create the bucket
 	bucketName := fmt.Sprintf("%s-%s-terraform-state", g.ProjectId, o.Flags.OrganisationName)
@@ -680,7 +771,7 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 		}
 	}
 
-	err = terraform.Init(path)
+	err = terraform.Init(path, serviceAccountPath)
 	if err != nil {
 		return err
 	}
