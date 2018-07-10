@@ -36,16 +36,17 @@ type Cluster interface {
 }
 
 type GKECluster struct {
-	_Name         string
-	_Provider     string
-	ProjectId     string
-	Zone          string
-	MachineType   string
-	MinNumOfNodes string
-	MaxNumOfNodes string
-	DiskSize      string
-	AutoRepair    bool
-	AutoUpgrade   bool
+	_Name          string
+	_Provider      string
+	ProjectId      string
+	Zone           string
+	MachineType    string
+	MinNumOfNodes  string
+	MaxNumOfNodes  string
+	DiskSize       string
+	AutoRepair     bool
+	AutoUpgrade    bool
+	ServiceAccount string
 }
 
 func (g GKECluster) Name() string {
@@ -167,6 +168,7 @@ type Flags struct {
 	GKEDiskSize             string
 	GKEAutoRepair           bool
 	GKEAutoUpgrade          bool
+	GKEServiceAccount       string
 }
 
 // CreateTerraformOptions the options for the create spring command
@@ -253,6 +255,7 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.GKEMaxNumOfNodes, "gke-max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.GKEProjectId, "gke-project-id", "", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.GKEZone, "gke-zone", "", "", "The compute zone (e.g. us-central1-a) for the cluster")
+	cmd.Flags().StringVarP(&options.Flags.GKEServiceAccount, "gke-service-account", "", "", "The service account to use to connect to GKE")
 
 	// install options
 	options.InstallOptions.addInstallFlags(cmd, true)
@@ -635,6 +638,19 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 	g.ProjectId = o.Flags.GKEProjectId
 	g.MinNumOfNodes = o.Flags.GKEMinNumOfNodes
 	g.MaxNumOfNodes = o.Flags.GKEMaxNumOfNodes
+	g.ServiceAccount = o.Flags.GKEServiceAccount
+
+	if g.ServiceAccount != "" {
+		err := gke.Login(g.ServiceAccount, false)
+		if err != nil {
+			return err
+		}
+
+		err = gke.EnableApis("iam", "compute", "container")
+		if err != nil {
+			return err
+		}
+	}
 
 	if g.ProjectId == "" {
 		projectId, err := o.getGoogleProjectId()
@@ -749,13 +765,21 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 	}
 
 	terraformVars := filepath.Join(path, "terraform.tfvars")
-	serviceAccountName := fmt.Sprintf("jx-%s-%s", o.Flags.OrganisationName, g.Name())
 
-	_, err = gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectId, filepath.Dir(path))
-	if err != nil {
-		return err
+	var serviceAccountPath string
+	if g.ServiceAccount == "" {
+		serviceAccountName := fmt.Sprintf("jx-%s-%s", o.Flags.OrganisationName, g.Name())
+
+		_, err = gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectId, filepath.Dir(path))
+		if err != nil {
+			return err
+		}
+		serviceAccountPath = filepath.Join(filepath.Dir(path), fmt.Sprintf("%s.key.json", serviceAccountName))
+		fmt.Fprintf(o.Stdout(), "Created GCP service account: %s\n", util.ColorInfo(serviceAccountPath))
+	} else {
+		serviceAccountPath = g.ServiceAccount
+		fmt.Fprintf(o.Stdout(), "Using provided GCP service account: %s\n", util.ColorInfo(serviceAccountPath))
 	}
-	serviceAccountPath := filepath.Join(filepath.Dir(path), fmt.Sprintf("%s.key.json", serviceAccountName))
 
 	// create the bucket
 	bucketName := fmt.Sprintf("%s-%s-terraform-state", g.ProjectId, o.Flags.OrganisationName)
@@ -769,6 +793,7 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 		if err != nil {
 			return err
 		}
+		fmt.Fprintf(o.Stdout(), "Created GCS bucket: %s in region %s\n", util.ColorInfo(bucketName), util.ColorInfo(g.Region()))
 	}
 
 	err = terraform.Init(path, serviceAccountPath)
