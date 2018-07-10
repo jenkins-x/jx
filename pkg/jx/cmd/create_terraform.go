@@ -646,7 +646,7 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 			return err
 		}
 
-		err = gke.EnableApis("iam", "compute", "container")
+		err = gke.EnableApis(g.ProjectId, "iam", "compute", "container")
 		if err != nil {
 			return err
 		}
@@ -774,7 +774,7 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 				return err
 			}
 
-			err = gke.EnableApis("iam", "compute", "container")
+			err = gke.EnableApis(g.ProjectId, "iam", "compute", "container")
 			if err != nil {
 				return err
 			}

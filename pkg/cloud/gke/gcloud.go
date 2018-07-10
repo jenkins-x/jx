@@ -131,8 +131,8 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 	return keyPath, nil
 }
 
-func EnableApis(apis ...string) error {
-	args := []string{"services", "enable"}
+func EnableApis(projectId string, apis ...string) error {
+	args := []string{"--project", projectId, "services", "enable"}
 	args = append(args, apis...)
 
 	log.Infof("Lets ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(args, " ")))
