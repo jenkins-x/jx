@@ -725,7 +725,7 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 	}
 
 	terraformVars := filepath.Join(path, "terraform.tfvars")
-	err = g.CreateTfVarsFile(terraformVars)
+	err := g.CreateTfVarsFile(terraformVars)
 	if err != nil {
 		return err
 	}
