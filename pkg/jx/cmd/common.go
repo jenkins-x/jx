@@ -33,7 +33,7 @@ import (
 const (
 	optionServerName        = "name"
 	optionServerURL         = "url"
-	exposecontrollerVersion = "2.3.60"
+	exposecontrollerVersion = "2.3.63"
 	exposecontroller        = "exposecontroller"
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
@@ -173,6 +173,7 @@ func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 		}
 
 		jenkins, err := o.Factory.CreateJenkinsClient(kubeClient, ns)
+
 		if err != nil {
 			return nil, err
 		}

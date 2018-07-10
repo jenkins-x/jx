@@ -31,8 +31,12 @@ var (
 )
 
 const (
-	CertManagerDeployment = "cert-manager-cert-manager"
-	CertManagerNamespace  = "cert-manager"
+	CertManagerDeployment         = "cert-manager-cert-manager"
+	CertManagerNamespace          = "cert-manager"
+	CertmanagerCertificateProd    = "letsencrypt-prod"
+	CertmanagerCertificateStaging = "letsencrypt-staging"
+	CertmanagerIssuerProd         = "letsencrypt-prod"
+	CertmanagerIssuerStaging      = "letsencrypt-staging"
 )
 
 // UpgradeIngressOptions the options for the create spring command
@@ -102,6 +106,11 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	// confirm values
 	util.Confirm(fmt.Sprintf("Using exposecontroller config values %v, ok?", exposecontrollerConfig), true, "")
+
+	err = o.cleanServiceAnnotations()
+	if err != nil {
+		return err
+	}
 
 	// if tls create CRDs
 	if exposecontrollerConfig["tls-acme"] == "true" {
@@ -322,26 +331,7 @@ func (o *UpgradeIngressOptions) annotateExposedServicesWithCertManager() error {
 				// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
 				if s.Annotations[kube.ExposeIngressAnnotation] != "" {
 
-					annotationsForIngress := s.Annotations[kube.ExposeIngressAnnotation]
-					if annotationsForIngress != "" {
-
-						var newAnnotations []string
-						annotations := strings.Split(annotationsForIngress, "\n")
-						for _, element := range annotations {
-							annotation := strings.SplitN(element, ":", 2)
-							key, _ := annotation[0], strings.TrimSpace(annotation[1])
-							if key != kube.CertManagerAnnotation {
-								newAnnotations = append(newAnnotations, element)
-							}
-						}
-						annotationsForIngress = ""
-						for _, v := range newAnnotations {
-							annotationsForIngress = v + "\n"
-						}
-						s.Annotations[kube.ExposeIngressAnnotation] = annotationsForIngress + kube.CertManagerAnnotation + ": " + o.Issuer
-					} else {
-						s.Annotations[kube.ExposeIngressAnnotation] = s.Annotations[kube.ExposeIngressAnnotation] + "\n" + kube.CertManagerAnnotation + ": " + o.Issuer
-					}
+					s.Annotations[kube.ExposeIngressAnnotation] = s.Annotations[kube.ExposeIngressAnnotation] + "\n" + kube.CertManagerAnnotation + ": " + o.Issuer
 
 				} else {
 					s.Annotations[kube.ExposeIngressAnnotation] = kube.CertManagerAnnotation + ": " + o.Issuer
@@ -372,70 +362,102 @@ func (o *UpgradeIngressOptions) cleanExposecontrollerReources(ns string) error {
 
 func (o *UpgradeIngressOptions) cleanCertmanagerReources(ns string) error {
 
-	if o.Issuer == "letsencrypt-prod" {
-		resp, err := o.kubeClient.CoreV1().RESTClient().Get().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name("letsencrypt-prod").DoRaw()
-		log.Infof("1 %s \n", string(resp))
+	if o.Issuer == CertmanagerIssuerProd {
+		_, err := o.kubeClient.CoreV1().RESTClient().Get().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerProd).DoRaw()
 		if err == nil {
 			// existing clusterissuers found, recreate
-			resp, err = o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name("letsencrypt-prod").DoRaw()
-			log.Infof("2 %s \n", string(resp))
+			_, err = o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerProd).DoRaw()
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to delete issuer %s %v", "letsencrypt-prod", err)
 			}
 		}
 
 		issuerProd := fmt.Sprintf(certmanager.Cert_manager_issuer_prod, o.Email)
 		json, err := yaml.YAMLToJSON([]byte(issuerProd))
 
-		resp, err = o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
+		resp, err := o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create issuer %v: %s", err, string(resp))
 		}
 
 	} else {
-		resp, err := o.kubeClient.CoreV1().RESTClient().Get().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name("letsencrypt-staging").DoRaw()
-		log.Infof("3 %s \n", string(resp))
+		_, err := o.kubeClient.CoreV1().RESTClient().Get().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerStaging).DoRaw()
 		if err == nil {
 			// existing clusterissuers found, recreate
-			resp, err = o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name("letsencrypt-staging").DoRaw()
-			log.Infof("4 %s \n", string(resp))
+			resp, err := o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerStaging).DoRaw()
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to delete issuer %v: %s", err, string(resp))
 			}
 		}
 
 		issuerStage := fmt.Sprintf(certmanager.Cert_manager_issuer_stage, o.Email)
 		json, err := yaml.YAMLToJSON([]byte(issuerStage))
-		log.Infof("creating cluster issuer %s \n", string(json))
-		_, err = o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
+
+		resp, err := o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create issuer %v: %s", err, string(resp))
 		}
 	}
 
-	log.Info("5  \n")
-
 	// lets not error if they dont exist
-	resp, err := o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Name("letsencrypt-staging").DoRaw()
-	if err != nil {
-		log.Infof("%s\n", "ok1")
-		//return err
-	}
-	resp, err = o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Name("letsencrypt-prod").DoRaw()
-	if err != nil {
-		log.Infof("%s\n", "ok2")
+	o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Name(CertmanagerCertificateStaging).DoRaw()
+	o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Name(CertmanagerCertificateProd).DoRaw()
 
-	}
 	cert := fmt.Sprintf(certmanager.Cert_manager_certificate, o.Issuer, o.Issuer, o.Domain, o.Domain, o.Domain)
 	json, err := yaml.YAMLToJSON([]byte(cert))
 	if err != nil {
 		return fmt.Errorf("unable to convert YAML %s to JSON: %v", cert, err)
 	}
-	log.Infof("%s\n", "3")
-	resp, err = o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Body(json).DoRaw()
+	_, err = o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Body(json).DoRaw()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create certificate %v", err)
 	}
-	log.Infof("GOT %s", string(resp))
+	return nil
+}
+
+func (o *UpgradeIngressOptions) cleanServiceAnnotations() error {
+	for _, n := range o.TargetNamespaces {
+		svcList, err := kube.GetServices(o.kubeClient, n)
+		if err != nil {
+			return err
+		}
+		for _, s := range svcList {
+			if s.Annotations[kube.ExposeAnnotation] == "true" && s.Annotations[kube.JenkinsXSkipTLSAnnotation] != "true" {
+				// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
+				if s.Annotations[kube.ExposeIngressAnnotation] != "" {
+
+					annotationsForIngress := s.Annotations[kube.ExposeIngressAnnotation]
+					if annotationsForIngress != "" {
+
+						var newAnnotations []string
+						annotations := strings.Split(annotationsForIngress, "\n")
+						for _, element := range annotations {
+							annotation := strings.SplitN(element, ":", 2)
+							key, _ := annotation[0], strings.TrimSpace(annotation[1])
+							if key != kube.CertManagerAnnotation {
+								newAnnotations = append(newAnnotations, element)
+							}
+						}
+						annotationsForIngress = ""
+						for _, v := range newAnnotations {
+							if len(annotationsForIngress) > 0 {
+								annotationsForIngress = "\n" + v
+							} else {
+								annotationsForIngress = v
+							}
+						}
+						s.Annotations[kube.ExposeIngressAnnotation] = annotationsForIngress
+					}
+				}
+				delete(s.Annotations, kube.ExposeURLAnnotation)
+
+				_, err = o.kubeClient.CoreV1().Services(n).Update(s)
+				if err != nil {
+					return fmt.Errorf("failed to clean service %s annotations in namespace %s: %v", s.Name, n, err)
+				}
+			}
+		}
+	}
+
 	return nil
 }
