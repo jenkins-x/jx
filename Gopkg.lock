@@ -433,6 +433,7 @@
     "pkg/client/results/e2e",
     "pkg/config",
     "pkg/discovery",
+    "pkg/dynamic",
     "pkg/errlog",
     "pkg/plugin",
     "pkg/plugin/aggregation",
@@ -445,7 +446,7 @@
     "pkg/tarball",
     "pkg/templates"
   ]
-  revision = "4f61a018106bf21f03498d20fc9145df020a9668"
+  revision = "44ad2a73f77d04124de57df5d6c0044f12a31ccf"
 
 [[projects]]
   name = "github.com/imdario/mergo"
@@ -1088,6 +1089,7 @@
   packages = [
     "discovery",
     "discovery/fake",
+    "dynamic",
     "kubernetes",
     "kubernetes/fake",
     "kubernetes/scheme",
@@ -1161,6 +1163,7 @@
     "plugin/pkg/client/auth/openstack",
     "rest",
     "rest/watch",
+    "restmapper",
     "testing",
     "third_party/forked/golang/template",
     "tools/auth",
@@ -1251,6 +1254,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "692b4c278dcc53baa2edd56935cc3710bd1865f5d5a3d0aaa0999cfe100bf117"
+  inputs-digest = "35af37325e42f40d207c4c78c91cd7e128e450a357e31719aaa5254917a19022"
   solver-name = "gps-cdcl"
   solver-version = 1
