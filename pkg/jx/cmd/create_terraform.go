@@ -837,7 +837,9 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 	args := []string{"container",
 		"clusters",
 		"update",
-		g.Name()}
+		g.Name(),
+		"--project", 
+		g.ProjectId}
 
 	labels := ""
 	if err == nil && user != nil {
