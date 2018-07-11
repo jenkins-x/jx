@@ -324,7 +324,7 @@ func (h *HelmCLI) Lint() (string, error) {
 // Version executes the helm version command and returns its output
 func (h *HelmCLI) Version(tls bool) (string, error) {
 	args := []string{}
-	args = append(args, "version --short")
+	args = append(args, "version", "--short")
 	if tls {
 		args = append(args, "--tls")
 	}

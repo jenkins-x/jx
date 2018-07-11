@@ -57,7 +57,7 @@ func TestServiceLinking(t *testing.T) {
 		[]runtime.Object{fromNspc, toNspc, svcInFromNs, svcInToNs, svcDummyInFromNs},
 		nil,
 		gits.NewGitCLI(),
-	  	helm.NewHelmCLI("helm", helm.V2, ""))
+		helm.NewHelmCLI("helm", helm.V2, ""))
 
 	err := o.Run()
 	serviceList, _ := o.kubeClient.CoreV1().Services(toNs).List(metav1.ListOptions{})

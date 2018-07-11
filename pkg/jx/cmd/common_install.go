@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -17,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/maven"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
+	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -455,7 +455,7 @@ func (o *CommonOptions) installHelm() error {
 	if err != nil {
 		return err
 	}
-	return o.installHelmSecretsPlugin(fullPath)
+	return o.installHelmSecretsPlugin(fullPath, true)
 }
 
 func (o *CommonOptions) installHelm3() error {
@@ -514,10 +514,16 @@ func (o *CommonOptions) installHelm3() error {
 	if err != nil {
 		return err
 	}
-	return o.installHelmSecretsPlugin(fullPath)
+	return o.installHelmSecretsPlugin(fullPath, false)
 }
 
-func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string) error {
+func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly bool) error {
+	err := o.Helm().Init(clientOnly, "", "", false)
+	if err != nil {
+		errors.Wrap(err, "failed to initialize helm")
+	}
+	// remove the plugin just in case is already installed
+	util.RunCommand("", helmBinary, "plugin", "remove", "secrets")
 	return util.RunCommand("", helmBinary, "plugin", "install", "https://github.com/futuresimple/helm-secrets")
 }
 
@@ -620,9 +626,6 @@ func (o *CommonOptions) getLatestJXVersion() (semver.Version, error) {
 }
 
 func (o *CommonOptions) installKops() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.runCommand("brew", "install", "kops")
-	}
 	binDir, err := util.BinaryLocation()
 	if err != nil {
 		return err
@@ -632,7 +635,7 @@ func (o *CommonOptions) installKops() error {
 	if err != nil || !flag {
 		return err
 	}
-	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "kops")
+	latestVersion, err := util.GetLatestVersionStringFromGitHub("kubernetes", "kops")
 	if err != nil {
 		return err
 	}
