@@ -15,5 +15,18 @@ func EnableInsecureRegistry(iqJson string, dockerRegistry string) (string, error
 	if err != nil {
 		return "", err
 	}
+
+	nodeJson := `[
+      {
+        "Effect": "Allow",
+        "Action": ["ecr:InitiateLayerUpload", "ecr:UploadLayerPart","ecr:CompleteLayerUpload","ecr:PutImage"],
+        "Resource": ["*"]
+      }
+    ]`
+
+	_, err = doc.Set(nodeJson, "spec", "additionalPolicies", "node")
+	if err != nil {
+		return "", err
+	}
 	return doc.String(), nil
 }
