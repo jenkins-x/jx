@@ -799,13 +799,13 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 
 	// create the bucket
 	bucketName := fmt.Sprintf("%s-%s-terraform-state", g.ProjectId, o.Flags.OrganisationName)
-	exists, err := gke.BucketExists(bucketName)
+	exists, err := gke.BucketExists(g.ProjectId, bucketName)
 	if err != nil {
 		return err
 	}
 
 	if !exists {
-		err = gke.CreateBucket(bucketName, g.Region())
+		err = gke.CreateBucket(g.ProjectId, bucketName, g.Region())
 		if err != nil {
 			return err
 		}
