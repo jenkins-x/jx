@@ -272,6 +272,10 @@ func stringInValidProviders(a string) bool {
 
 // Run implements this command
 func (o *CreateTerraformOptions) Run() error {
+	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
+	if err != nil {
+		return err
+	}
 
 	if len(o.Flags.Cluster) >= 1 {
 		err := o.validateClusterDetails()
@@ -287,7 +291,7 @@ func (o *CreateTerraformOptions) Run() error {
 		}
 	}
 
-	err := o.createOrganisationGitRepo()
+	err = o.createOrganisationGitRepo()
 	if err != nil {
 		return err
 	}
