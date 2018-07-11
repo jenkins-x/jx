@@ -626,9 +626,6 @@ func (o *CommonOptions) getLatestJXVersion() (semver.Version, error) {
 }
 
 func (o *CommonOptions) installKops() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.runCommand("brew", "install", "kops")
-	}
 	binDir, err := util.BinaryLocation()
 	if err != nil {
 		return err
@@ -638,7 +635,7 @@ func (o *CommonOptions) installKops() error {
 	if err != nil || !flag {
 		return err
 	}
-	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "kops")
+	latestVersion, err := util.GetLatestVersionStringFromGitHub("kubernetes", "kops")
 	if err != nil {
 		return err
 	}

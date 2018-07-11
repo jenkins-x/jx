@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 const (
@@ -37,6 +40,7 @@ type CreateClusterAWSFlags struct {
 	TerraformDirectory     string
 	NodeSize               string
 	MasterSize             string
+	State                  string
 }
 
 var (
@@ -93,6 +97,7 @@ func NewCmdCreateClusterAWS(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	cmd.Flags().StringVarP(&options.Flags.TerraformDirectory, "terraform", "t", "", "The directory to save terraform configuration.")
 	cmd.Flags().StringVarP(&options.Flags.NodeSize, "node-size", "", "", "The size of a node in the kops created cluster.")
 	cmd.Flags().StringVarP(&options.Flags.MasterSize, "master-size", "", "", "The size of a master in the kops created cluster.")
+	cmd.Flags().StringVarP(&options.Flags.State, "state", "", "", "The S3 bucket used to store the state of the cluster.")
 	return cmd
 }
 
@@ -136,6 +141,19 @@ func (o *CreateClusterAWSOptions) Run() error {
 	if zones == "" {
 		zones = os.Getenv("AWS_AVAILABILITY_ZONES")
 		if zones == "" {
+			availabilityZones, err := amazon.AvailabilityZones()
+			if err != nil {
+				return err
+			}
+			c := len(availabilityZones)
+			if c > 0 {
+				zones, err = util.PickNameWithDefault(availabilityZones, "Pick availability zone: ", availabilityZones[c-1])
+				if err != nil {
+					return err
+				}
+			}
+		}
+		if zones == "" {
 			log.Warnf("No AWS_AVAILABILITY_ZONES environment variable is defined or %s option!\n", optionZones)
 
 			prompt := &survey.Input{
@@ -151,6 +169,35 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 	if zones == "" {
 		return fmt.Errorf("No Availility zones provided!")
+	}
+	accountId, _, err := amazon.GetAccountIDAndRegion()
+	if err != nil {
+		return err
+	}
+	state := flags.State
+	if state == "" {
+		kopsState := os.Getenv("KOPS_STATE_STORE")
+		if kopsState == "" {
+			bucketName := "kops-state-" + accountId + "-" + string(uuid.NewUUID())
+			log.Infof("Creating S3 bucket %s to store kops state\n", util.ColorInfo(bucketName))
+
+			location, err := amazon.CreateS3Bucket(bucketName, "us-west-1")
+			if err != nil {
+				return err
+			}
+			u, err := url.Parse(location)
+			if err != nil {
+				return fmt.Errorf("Failed to parse S3 bucket location URL %s: %s", location, err)
+			}
+			state = u.Hostname()
+			idx := strings.Index(state, ".")
+			if idx > 0 {
+				state = state[0:idx]
+			}
+			state = "s3://" + state
+
+			log.Infof("To work more easily with kops on the command line you may wish to run the following: %s\n", util.ColorInfo("export KOPS_STATE_STORE="+state))
+		}
 	}
 
 	name := flags.ClusterName
@@ -174,6 +221,9 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 	if flags.MasterSize != "" {
 		args = append(args, "--master-size", flags.MasterSize)
+	}
+	if state != "" {
+		args = append(args, "--state", state)
 	}
 
 	auth := "RBAC"
@@ -278,19 +328,19 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 	}
 
 	log.Infof("Updating Cluster configuration to enable insecure docker registries %s\n", util.ColorInfo(insecureRegistries))
-	err = o.runCommand("kops", "replace", "-f", fileName)
+	err = o.runCommandVerbose("kops", "replace", "-f", fileName)
 	if err != nil {
 		return err
 	}
 
 	log.Infoln("Updating the cluster")
-	err = o.runCommand("kops", "update", "cluster", "--yes")
+	err = o.runCommandVerbose("kops", "update", "cluster", "--yes")
 	if err != nil {
 		return err
 	}
 
 	log.Infoln("Rolling update the cluster")
-	err = o.runCommand("kops", "rolling-update", "cluster", "--cloudonly", "--yes")
+	err = o.runCommandVerbose("kops", "rolling-update", "cluster", "--cloudonly", "--yes")
 	if err != nil {
 		// lets not fail to install if the rolling upgrade fails
 		log.Warnf("Failed to perform rolling upgrade: %s\n", err)
