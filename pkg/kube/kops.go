@@ -4,6 +4,10 @@ import (
 	"github.com/Jeffail/gabs"
 )
 
+const (
+	additionalNodePolicies = `[{"Action":["ecr:InitiateLayerUpload","ecr:UploadLayerPart","ecr:CompleteLayerUpload","ecr:PutImage"],"Effect":"Allow","Resource":["*"],"Sid":"kopsK8sECRwrite"}]`
+)
+
 // EnableInsecureRegistry appends the Docker Registry
 func EnableInsecureRegistry(iqJson string, dockerRegistry string) (string, error) {
 	doc, err := gabs.ParseJSON([]byte(iqJson))
@@ -16,16 +20,7 @@ func EnableInsecureRegistry(iqJson string, dockerRegistry string) (string, error
 		return "", err
 	}
 
-	nodeJson := `[
-      {
-        "Sid": "kopsK8sECRwrite",
-        "Effect": "Allow",
-        "Action": ["ecr:InitiateLayerUpload", "ecr:UploadLayerPart","ecr:CompleteLayerUpload","ecr:PutImage"],
-        "Resource": ["*"]
-      }
-    ]`
-
-	_, err = doc.Set(nodeJson, "spec", "additionalPolicies", "node")
+	_, err = doc.Set(additionalNodePolicies, "spec", "additionalPolicies", "node")
 	if err != nil {
 		return "", err
 	}
