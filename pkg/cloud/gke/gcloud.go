@@ -21,18 +21,18 @@ var (
 		"roles/editor"}
 )
 
-func BucketExists(bucketName string) (bool, error) {
+func BucketExists(projectId string, bucketName string) (bool, error) {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
-	output, err := util.RunCommandWithOutput("", "gsutil", "ls")
+	output, err := util.RunCommandWithOutput("", "gsutil", "ls", "-p", projectId)
 	if err != nil {
 		return false, err
 	}
 	return strings.Contains(output, fullBucketName), nil
 }
 
-func CreateBucket(bucketName string, location string) error {
+func CreateBucket(projectId string, bucketName string, location string) error {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
-	err := util.RunCommand("", "gsutil", "mb", "-l", location, fullBucketName)
+	err := util.RunCommand("", "gsutil", "mb", "-l", location, "-p", projectId, fullBucketName)
 	if err != nil {
 		return err
 	}
