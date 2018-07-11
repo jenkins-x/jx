@@ -18,6 +18,7 @@ func EnableInsecureRegistry(iqJson string, dockerRegistry string) (string, error
 
 	nodeJson := `[
       {
+        "Sid": "kopsK8sECRwrite",
         "Effect": "Allow",
         "Action": ["ecr:InitiateLayerUpload", "ecr:UploadLayerPart","ecr:CompleteLayerUpload","ecr:PutImage"],
         "Resource": ["*"]
