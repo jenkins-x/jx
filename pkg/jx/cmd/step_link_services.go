@@ -54,7 +54,7 @@ func NewCmdStepLinkServices(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	}
 
 	cmd := &cobra.Command{
-		Use:     "service linking",
+		Use:     "link services",
 		Short:   "achieve service linking in preview environments",
 		Long:    StepLinkServicesLong,
 		Example: StepLinkServicesExample,
