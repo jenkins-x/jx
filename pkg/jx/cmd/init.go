@@ -576,7 +576,7 @@ func (o *InitOptions) initIngress() error {
 			log.Infof("Using external IP: %s\n", util.ColorInfo(externalIP))
 		}
 
-		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain, ingressNamespace, o.Flags.IngressService, externalIP)
+		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Provider, ingressNamespace, o.Flags.IngressService, externalIP)
 		if err != nil {
 			return err
 		}
@@ -683,7 +683,8 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		}
 	}
 	defaultDomain := address
-	if address != "" {
+	if provider != AWS && provider != EKS && address != "" {
+		log.Infof("Provider %s\n", provider)
 		addNip := true
 		aip := net.ParseIP(address)
 		if aip == nil {
