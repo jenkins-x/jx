@@ -6,8 +6,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/pkg/errors"
 	"io/ioutil"
+
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 )
 
 func PathWithBinary() string {
@@ -57,6 +59,27 @@ func RunCommand(dir string, name string, args ...string) error {
 	return err
 }
 
+// RunCommandVerbose runs the given command and logs the output
+func RunCommandVerbose(dir string, name string, args ...string) error {
+	os.Setenv("PATH", PathWithBinary())
+	e := exec.Command(name, args...)
+	if dir != "" {
+		e.Dir = dir
+	}
+	var b bytes.Buffer
+	e.Stdout = &b
+	e.Stderr = &b
+	err := e.Run()
+	output := string(b.Bytes())
+	if err != nil {
+		return errors.Wrapf(err, "failed to run '%s %s' command in directory '%s', output: '%s'",
+			name, strings.Join(args, " "), dir, output)
+	}
+	log.Infoln(output)
+	return nil
+}
+
+// RunCommandQuietly runs the given command and discards the output
 func RunCommandQuietly(dir string, name string, args ...string) error {
 	os.Setenv("PATH", PathWithBinary())
 	e := exec.Command(name, args...)
