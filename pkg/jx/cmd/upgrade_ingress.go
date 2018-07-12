@@ -134,7 +134,24 @@ func (o *UpgradeIngressOptions) Run() error {
 		}
 	}
 
-	return o.recreateIngressRules(exposecontrollerConfig)
+	err = o.recreateIngressRules(exposecontrollerConfig)
+	if err != nil {
+		return err
+	}
+
+	// todo wait for certs secrets to update ingress rules?
+
+	log.Success("Ingress rules recreated\n")
+
+	if exposecontrollerConfig["tls-acme"] == "true" {
+		log.Success("It may take a few minutes for Cert manager to get signed certificates and update Ingress rules\n")
+		log.Info("Use the following commands to diagnose issues\n`kubectl `\n")
+		log.Info("jx logs cert-manager-cert-manager -n cert-manager\n")
+		log.Info("kubectl describe certificates\n")
+		log.Info("kubectl describe issuers\n")
+	}
+
+	return o.updateJenkinsURL(o.TargetNamespaces)
 
 }
 

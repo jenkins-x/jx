@@ -535,6 +535,11 @@ func (options *InstallOptions) Run() error {
 
 	options.currentNamespace = ns
 
+	err = options.updateJenkinsURL([]string{ns})
+	if err != nil {
+		log.Warnf("failed to update the Jenkins external URL")
+	}
+
 	if helmBinary != "helm" {
 		// default apps to use helm3 too
 		helmOptions := EditHelmBinOptions{}
