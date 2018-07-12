@@ -57,12 +57,12 @@ func TestAnnotateNoExisting(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestAnnotateWithExistingAnnotation(t *testing.T) {
+func TestAnnotateWithExistingAnnotations(t *testing.T) {
 
 	o := TestOptions{}
 	o.Setup()
 
-	o.Service.Annotations[kube.ExposeIngressAnnotation] = "foo: bar"
+	o.Service.Annotations[kube.ExposeIngressAnnotation] = "foo: bar\nkubernetes.io/ingress.class: nginx\nnginx.ingress.kubernetes.io/proxy-body-size: 500m"
 
 	_, err := o.kubeClient.CoreV1().Services("test").Create(&o.Service)
 	assert.NoError(t, err)
@@ -76,7 +76,7 @@ func TestAnnotateWithExistingAnnotation(t *testing.T) {
 	rs, err := o.kubeClient.CoreV1().Services("test").Get("foo", metav1.GetOptions{})
 	ingressAnnotations := rs.Annotations[kube.ExposeIngressAnnotation]
 
-	assert.Equal(t, "foo: bar\ncertmanager.k8s.io/issuer: letsencrypt-prod", ingressAnnotations)
+	assert.Equal(t, "foo: bar\nkubernetes.io/ingress.class: nginx\nnginx.ingress.kubernetes.io/proxy-body-size: 500m\ncertmanager.k8s.io/issuer: letsencrypt-prod", ingressAnnotations)
 	assert.NoError(t, err)
 }
 
@@ -85,7 +85,7 @@ func TestAnnotateWithExistingCertManagerAnnotation(t *testing.T) {
 	o := TestOptions{}
 	o.Setup()
 
-	o.Service.Annotations[kube.ExposeIngressAnnotation] = "foo: bar\n" + kube.CertManagerAnnotation + ": letsencrypt-foo"
+	o.Service.Annotations[kube.ExposeIngressAnnotation] = kube.CertManagerAnnotation + ": letsencrypt-staging"
 
 	_, err := o.kubeClient.CoreV1().Services("test").Create(&o.Service)
 	assert.NoError(t, err)
@@ -99,7 +99,7 @@ func TestAnnotateWithExistingCertManagerAnnotation(t *testing.T) {
 	rs, err := o.kubeClient.CoreV1().Services("test").Get("foo", metav1.GetOptions{})
 	ingressAnnotations := rs.Annotations[kube.ExposeIngressAnnotation]
 
-	assert.Equal(t, "foo: bar\ncertmanager.k8s.io/issuer: letsencrypt-prod", ingressAnnotations)
+	assert.Equal(t, "certmanager.k8s.io/issuer: letsencrypt-prod", ingressAnnotations)
 	assert.NoError(t, err)
 }
 

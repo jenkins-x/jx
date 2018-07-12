@@ -139,20 +139,23 @@ func (o *UpgradeIngressOptions) Run() error {
 		return err
 	}
 
+	err = o.updateJenkinsURL(o.TargetNamespaces)
+	if err != nil {
+		return err
+	}
 	// todo wait for certs secrets to update ingress rules?
 
 	log.Success("Ingress rules recreated\n")
 
 	if exposecontrollerConfig["tls-acme"] == "true" {
 		log.Success("It may take a few minutes for Cert manager to get signed certificates and update Ingress rules\n")
-		log.Info("Use the following commands to diagnose issues\n`kubectl `\n")
+		log.Info("Use the following commands to diagnose issues:\n")
 		log.Info("jx logs cert-manager-cert-manager -n cert-manager\n")
 		log.Info("kubectl describe certificates\n")
 		log.Info("kubectl describe issuers\n")
 	}
 
-	return o.updateJenkinsURL(o.TargetNamespaces)
-
+	return nil
 }
 
 func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, error) {
@@ -344,11 +347,13 @@ func (o *UpgradeIngressOptions) annotateExposedServicesWithCertManager() error {
 			return err
 		}
 		for _, s := range svcList {
-			if s.Annotations[kube.ExposeAnnotation] == "true" && s.Annotations[kube.JenkinsXSkipTLSAnnotation] != "true" {
-				// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
-				if s.Annotations[kube.ExposeIngressAnnotation] != "" {
 
-					s.Annotations[kube.ExposeIngressAnnotation] = s.Annotations[kube.ExposeIngressAnnotation] + "\n" + kube.CertManagerAnnotation + ": " + o.Issuer
+			if s.Annotations[kube.ExposeAnnotation] == "true" && s.Annotations[kube.JenkinsXSkipTLSAnnotation] != "true" {
+				existingAnnotations, exists := s.Annotations[kube.ExposeIngressAnnotation]
+				// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
+				if exists {
+
+					s.Annotations[kube.ExposeIngressAnnotation] = existingAnnotations + "\n" + kube.CertManagerAnnotation + ": " + o.Issuer
 
 				} else {
 					s.Annotations[kube.ExposeIngressAnnotation] = kube.CertManagerAnnotation + ": " + o.Issuer
@@ -441,30 +446,30 @@ func (o *UpgradeIngressOptions) cleanServiceAnnotations() error {
 		for _, s := range svcList {
 			if s.Annotations[kube.ExposeAnnotation] == "true" && s.Annotations[kube.JenkinsXSkipTLSAnnotation] != "true" {
 				// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
-				if s.Annotations[kube.ExposeIngressAnnotation] != "" {
+				annotationsForIngress, exists := s.Annotations[kube.ExposeIngressAnnotation]
+				if exists {
 
-					annotationsForIngress := s.Annotations[kube.ExposeIngressAnnotation]
-					if annotationsForIngress != "" {
-
-						var newAnnotations []string
-						annotations := strings.Split(annotationsForIngress, "\n")
-						for _, element := range annotations {
-							annotation := strings.SplitN(element, ":", 2)
-							key, _ := annotation[0], strings.TrimSpace(annotation[1])
-							if key != kube.CertManagerAnnotation {
-								newAnnotations = append(newAnnotations, element)
-							}
+					var newAnnotations []string
+					annotations := strings.Split(annotationsForIngress, "\n")
+					for _, element := range annotations {
+						annotation := strings.SplitN(element, ":", 2)
+						log.Infof("%s %v\n", s.Name, element)
+						log.Infof("%s %v\n", s.Name, annotation)
+						key, _ := annotation[0], strings.TrimSpace(annotation[1])
+						if key != kube.CertManagerAnnotation {
+							newAnnotations = append(newAnnotations, element)
 						}
-						annotationsForIngress = ""
-						for _, v := range newAnnotations {
-							if len(annotationsForIngress) > 0 {
-								annotationsForIngress = "\n" + v
-							} else {
-								annotationsForIngress = v
-							}
-						}
-						s.Annotations[kube.ExposeIngressAnnotation] = annotationsForIngress
 					}
+					annotationsForIngress = ""
+					for _, v := range newAnnotations {
+						if len(annotationsForIngress) > 0 {
+							annotationsForIngress = annotationsForIngress + "\n" + v
+						} else {
+							annotationsForIngress = v
+						}
+					}
+					s.Annotations[kube.ExposeIngressAnnotation] = annotationsForIngress
+
 				}
 				delete(s.Annotations, kube.ExposeURLAnnotation)
 

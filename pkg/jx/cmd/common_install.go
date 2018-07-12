@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -1117,13 +1118,13 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 			return err
 		}
 
-		url, err := kube.GetServiceURLFromName(o.kubeClient, "jenkins", n)
+		externalURL, err := kube.GetServiceURLFromName(o.kubeClient, "jenkins", n)
 		if err != nil {
 			// skip namespace if no Jenkins service found
 			continue
 		}
 		data := url.Values{}
-		data.Add("script", fmt.Sprintf(groovy, url))
+		data.Add("script", fmt.Sprintf(groovy, externalURL))
 
 		err = jenkins.Post("/scriptText", data, nil)
 	}

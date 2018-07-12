@@ -535,11 +535,6 @@ func (options *InstallOptions) Run() error {
 
 	options.currentNamespace = ns
 
-	err = options.updateJenkinsURL([]string{ns})
-	if err != nil {
-		log.Warnf("failed to update the Jenkins external URL")
-	}
-
 	if helmBinary != "helm" {
 		// default apps to use helm3 too
 		helmOptions := EditHelmBinOptions{}
@@ -570,29 +565,34 @@ func (options *InstallOptions) Run() error {
 
 	options.logAdminPassword()
 
+	log.Info("Getting Jenkins API Token\n")
+	err = options.retry(3, 2*time.Second, func() (err error) {
+		options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
+		options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
+		options.CreateJenkinsUserOptions.UseBrowser = true
+		if options.BatchMode {
+			options.CreateJenkinsUserOptions.BatchMode = true
+			options.CreateJenkinsUserOptions.Headless = true
+			log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
+		}
+		err = options.CreateJenkinsUserOptions.Run()
+		return
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to get the Jenkins API token")
+	}
+
+	jxClient, _, err := options.JXClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the jx client")
+	}
+
+	err = options.updateJenkinsURL([]string{ns})
+	if err != nil {
+		log.Warnf("failed to update the Jenkins external URL")
+	}
+
 	if !options.Flags.NoDefaultEnvironments {
-		log.Info("Getting Jenkins API Token\n")
-		err = options.retry(3, 2*time.Second, func() (err error) {
-			options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
-			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
-			options.CreateJenkinsUserOptions.UseBrowser = true
-			if options.BatchMode {
-				options.CreateJenkinsUserOptions.BatchMode = true
-				options.CreateJenkinsUserOptions.Headless = true
-				log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
-			}
-			err = options.CreateJenkinsUserOptions.Run()
-			return
-		})
-		if err != nil {
-			return errors.Wrap(err, "failed to get the Jenkins API token")
-		}
-
-		jxClient, _, err := options.JXClient()
-		if err != nil {
-			return errors.Wrap(err, "failed to create the jx client")
-		}
-
 		// lets only recreate the environments if its the first time we run this
 		_, envNames, err := kube.GetEnvironments(jxClient, ns)
 		if err != nil || len(envNames) <= 1 {
