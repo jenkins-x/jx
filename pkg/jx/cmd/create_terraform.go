@@ -838,7 +838,7 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 		"clusters",
 		"update",
 		g.Name(),
-		"--project", 
+		"--project",
 		g.ProjectId,
 		"--zone",
 		g.Zone}
