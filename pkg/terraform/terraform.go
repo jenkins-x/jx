@@ -8,7 +8,8 @@ import (
 	"strings"
 )
 
-func Init(terraformDir string) error {
+func Init(terraformDir string, serviceAccountPath string) error {
+	os.Setenv("GOOGLE_CREDENTIALS", serviceAccountPath)
 	err := util.RunCommand("", "terraform", "init", terraformDir)
 	if err != nil {
 		return err
@@ -16,11 +17,11 @@ func Init(terraformDir string) error {
 	return nil
 }
 
-func Plan(terraformDir string, terraformVars string, credentials string) error {
+func Plan(terraformDir string, terraformVars string, serviceAccountPath string) error {
 	err := util.RunCommand("", "terraform", "plan",
 		fmt.Sprintf("-var-file=%s", terraformVars),
 		"-var",
-		fmt.Sprintf("credentials=%s", credentials),
+		fmt.Sprintf("credentials=%s", serviceAccountPath),
 		terraformDir)
 	if err != nil {
 		return err
@@ -28,11 +29,11 @@ func Plan(terraformDir string, terraformVars string, credentials string) error {
 	return nil
 }
 
-func Apply(terraformDir string, terraformVars string, credentials string) error {
+func Apply(terraformDir string, terraformVars string, serviceAccountPath string) error {
 	err := util.RunCommand("", "terraform", "apply", "-auto-approve",
 		fmt.Sprintf("-var-file=%s", terraformVars),
 		"-var",
-		fmt.Sprintf("credentials=%s", credentials),
+		fmt.Sprintf("credentials=%s", serviceAccountPath),
 		terraformDir)
 	if err != nil {
 		return err
@@ -68,4 +69,24 @@ func WriteKeyValueToFileIfNotExists(path string, key string, value string) error
 	}
 
 	return nil
+}
+
+func ReadValueFromFile(path string, key string) (string, error) {
+	if _, err := os.Stat(path); err == nil {
+		buffer, err := ioutil.ReadFile(path)
+		if err != nil {
+			return "", err
+		}
+		contents := string(buffer)
+		lines := strings.Split(contents, "\n")
+		for _, line := range lines {
+			if strings.Contains(line, key) {
+				tokens := strings.Split(line, "=")
+				trimmedValue := strings.Trim(strings.TrimSpace(tokens[1]), "\"")
+				return trimmedValue, nil
+			}
+		}
+
+	}
+	return "", nil
 }

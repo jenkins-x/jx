@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/heptio/sonobuoy/pkg/client"
+	"github.com/heptio/sonobuoy/pkg/dynamic"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
@@ -448,5 +449,9 @@ func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "compliance client failed to load the Kubernetes configuration")
 	}
-	return client.NewSonobuoyClient(config, nil)
+	skc, err := dynamic.NewAPIHelperFromRESTConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "compliance dynamic client failed to be created")
+	}
+	return client.NewSonobuoyClient(config, skc)
 }

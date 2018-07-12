@@ -2,11 +2,13 @@ package helm
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"sort"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/util"
-	"io/ioutil"
 	"k8s.io/helm/pkg/chartutil"
-	"path/filepath"
 )
 
 const (
@@ -62,6 +64,13 @@ type Requirements struct {
 	Dependencies []*Dependency `json:"dependencies"`
 }
 
+// DepSorter Used to avoid merge conflicts by sorting deps by name
+type DepSorter []*Dependency
+
+func (a DepSorter) Len() int           { return len(a) }
+func (a DepSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a DepSorter) Less(i, j int) bool { return a[i].Name < a[j].Name }
+
 // SetAppVersion sets the version of the app to use
 func (r *Requirements) SetAppVersion(app string, version string, repository string) {
 	if r.Dependencies == nil {
@@ -79,6 +88,7 @@ func (r *Requirements) SetAppVersion(app string, version string, repository stri
 		Version:    version,
 		Repository: repository,
 	})
+	sort.Sort(DepSorter(r.Dependencies))
 }
 
 // RemoveApp removes the given app name. Returns true if a dependency was removed
@@ -86,6 +96,7 @@ func (r *Requirements) RemoveApp(app string) bool {
 	for i, dep := range r.Dependencies {
 		if dep != nil && dep.Name == app {
 			r.Dependencies = append(r.Dependencies[:i], r.Dependencies[i+1:]...)
+			sort.Sort(DepSorter(r.Dependencies))
 			return true
 		}
 	}
@@ -152,10 +163,9 @@ func LoadRequirementsFile(fileName string) (*Requirements, error) {
 			return nil, err
 		}
 		return LoadRequirements(data)
-	} else {
-		r := &Requirements{}
-		return r, nil
 	}
+	r := &Requirements{}
+	return r, nil
 }
 
 // LoadRequirements loads the requirements from some data

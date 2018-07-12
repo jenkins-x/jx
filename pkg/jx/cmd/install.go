@@ -46,6 +46,7 @@ type InstallOptions struct {
 
 type InstallFlags struct {
 	Domain                   string
+	DockerRegistry           string
 	Provider                 string
 	CloudEnvRepository       string
 	LocalHelmRepoName        string
@@ -202,6 +203,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install comand to fail if there is already an installation. Otherwise lets update the installation")
+	cmd.Flags().StringVarP(&flags.DockerRegistry, "docker-registry", "", "", "The Docker Registry host or host:port which is used when tagging and pushing images. If not specified it defaults to the internal registry unless there is a better provider default (e.g. ECR on AWS/EKS)")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -1139,6 +1141,9 @@ func (o *InstallOptions) ensureDefaultStorageClass(client kubernetes.Interface, 
 
 // returns the docker registry string for the given provider
 func (o *InstallOptions) dockerRegistryValue() (string, error) {
+	if o.Flags.DockerRegistry != "" {
+		return o.Flags.DockerRegistry, nil
+	}
 	if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
 		return amazon.GetContainerRegistryHost()
 	}
