@@ -970,16 +970,22 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 		return nil
 	}
 
-	if o.BatchMode {
-		return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
-	}
 	install := []string{}
-	prompt := &survey.MultiSelect{
-		Message: "Missing required dependencies, deselect to avoid auto installing:",
-		Options: deps,
-		Default: deps,
+
+	if o.InstallDependencies {
+		install = append(install, deps...)
+	} else {
+		if o.BatchMode {
+			return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
+		}
+
+		prompt := &survey.MultiSelect{
+			Message: "Missing required dependencies, deselect to avoid auto installing:",
+			Options: deps,
+			Default: deps,
+		}
+		survey.AskOne(prompt, &install, nil)
 	}
-	survey.AskOne(prompt, &install, nil)
 
 	return o.doInstallMissingDependencies(install)
 }
