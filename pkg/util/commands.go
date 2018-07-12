@@ -59,6 +59,7 @@ func RunCommand(dir string, name string, args ...string) error {
 	return err
 }
 
+// RunCommandVerbose runs the given command and logs the output
 func RunCommandVerbose(dir string, name string, args ...string) error {
 	os.Setenv("PATH", PathWithBinary())
 	e := exec.Command(name, args...)
@@ -78,6 +79,7 @@ func RunCommandVerbose(dir string, name string, args ...string) error {
 	return nil
 }
 
+// RunCommandQuietly runs the given command and discards the output
 func RunCommandQuietly(dir string, name string, args ...string) error {
 	os.Setenv("PATH", PathWithBinary())
 	e := exec.Command(name, args...)
