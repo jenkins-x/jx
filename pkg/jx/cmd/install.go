@@ -310,9 +310,6 @@ func (options *InstallOptions) Run() error {
 			ecConfig.Domain = options.Flags.Domain
 			log.Success("set exposeController Config Domain " + ecConfig.Domain + "\n")
 		}
-		if options.Flags.ExposeControllerPathMode == "" && isAwsProvider {
-			options.Flags.ExposeControllerPathMode = "path"
-		}
 		if ecConfig.PathMode == "" && options.Flags.ExposeControllerPathMode != "" {
 			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
 			log.Success("set exposeController Config PathMode " + ecConfig.PathMode + "\n")

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -728,7 +729,31 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			return defaultDomain, nil
 		}
 		log.Successf("You can now configure a wildcard DNS pointing to the new loadbalancer address %s", address)
-		log.Infof("If you don't have a wildcard DNS yet you can use the default %s", defaultDomain)
+
+		if provider == AWS || provider == EKS {
+			log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your kubernetes cluster\n")
+			log.Infof("If you do not have a custom DNS name you can use yet you can register a new one here: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
+
+			for {
+				if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
+					"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.") {
+					customDomain := ""
+					prompt := &survey.Input{
+						Message: "Your custom DNS name: ",
+						Help:    "Enter your custom domain that we can use to setup a Route 53 ALIAS record to point at the ELB host: " + address,
+					}
+					survey.AskOne(prompt, &customDomain, nil)
+					if customDomain != "" {
+						err := amazon.RegisterAwsCustomDomain(customDomain, address)
+						return customDomain, err
+					}
+				} else {
+					break
+				}
+			}
+		}
+
+		log.Infof("\nIf you don't have a wildcard DNS setup then setup a new CNAME and point it at: %s then use the DNS domain in the next input...\n", defaultDomain)
 
 		if domain == "" {
 			prompt := &survey.Input{
