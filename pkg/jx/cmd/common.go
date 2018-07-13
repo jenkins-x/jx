@@ -630,9 +630,6 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName, passw
 
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace, releaseName string, exposecontrollerConfig map[string]string) error {
 
-	//var exValues []string
-	//if targetNamespace != devNamespace {
-	// run exposecontroller using existing team config
 	exValues := []string{
 		"config.exposer=" + exposecontrollerConfig["exposer"],
 		"config.domain=" + exposecontrollerConfig["domain"],

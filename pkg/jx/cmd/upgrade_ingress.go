@@ -51,6 +51,7 @@ type UpgradeIngressOptions struct {
 	Email            string
 	Domain           string
 	Issuer           string
+	tls              bool
 }
 
 // NewCmdUpgradeIngress defines the command
@@ -113,7 +114,7 @@ func (o *UpgradeIngressOptions) Run() error {
 	}
 
 	// if tls create CRDs
-	if exposecontrollerConfig["tls-acme"] == "true" {
+	if o.tls {
 		err = o.ensureCertmanagerSetup(exposecontrollerConfig)
 		if err != nil {
 			return err
@@ -148,8 +149,8 @@ func (o *UpgradeIngressOptions) Run() error {
 	log.Success("Ingress rules recreated\n")
 
 	if exposecontrollerConfig["tls-acme"] == "true" {
-		log.Success("It may take a few minutes for Cert manager to get signed certificates and update Ingress rules\n")
-		log.Info("Use the following commands to diagnose issues:\n")
+		log.Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
+		log.Info("Use the following commands to diagnose any issues:\n")
 		log.Info("jx logs cert-manager-cert-manager -n cert-manager\n")
 		log.Info("kubectl describe certificates\n")
 		log.Info("kubectl describe issuers\n")
@@ -246,45 +247,35 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() (map[string]stri
 	}
 	o.Domain = config["domain"]
 
-	tls := false
+	config["http"] = "true"
+
 	if !strings.HasSuffix(config["domain"], "nip.io") {
 
-		tls = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt")
-		config["tls-acme"] = strconv.FormatBool(tls)
+		o.tls = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt")
+		config["tls-acme"] = strconv.FormatBool(o.tls)
 
-		clusterIssuer, err := util.PickNameWithDefault([]string{"prod", "staging"}, "Use LetsEncrypt staging or production?  Warning if testing use staging else you may be rate limited:", "stage")
-		if err != nil {
-			return config, err
-		}
-		o.Issuer = "letsencrypt-" + clusterIssuer
+		if o.tls {
+			clusterIssuer, err := util.PickNameWithDefault([]string{"prod", "staging"}, "Use LetsEncrypt staging or production?  Warning if testing use staging else you may be rate limited:", "staging")
+			if err != nil {
+				return config, err
+			}
+			o.Issuer = "letsencrypt-" + clusterIssuer
 
-		//TODO get git email to use as default value?
-		email1 := ""
-		email1, err = util.PickValue("Email address to register with LetsEncrypt:", email1, true)
-		if err != nil {
-			return config, err
-		}
+			email1, err := o.getCommandOutput("", "git", "config", "user.email")
+			if err != nil {
+				return config, err
+			}
 
-		email2, err := util.PickValue("Confirm email address:", "", true)
-		if err != nil {
-			return config, err
-		}
-		if email1 != email2 {
-			return config, fmt.Errorf("email addresses do not match")
-		}
+			o.Email = strings.TrimSpace(email1)
 
-		o.Email = email1
+			o.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.Email, true)
+			if err != nil {
+				return config, err
+			}
 
-	}
-	if tls {
-		config["http"] = "false"
-	} else {
-		config["http"], err = util.PickNameWithDefault([]string{"true", "false"}, "HTTP", config["http"])
-		if err != nil {
-			return config, err
+			config["http"] = "false"
 		}
 	}
-
 	return config, nil
 
 }
@@ -298,12 +289,17 @@ func (o *UpgradeIngressOptions) recreateIngressRules(config map[string]string) e
 		if err != nil {
 			return err
 		}
+
+		err := o.cleanTLSSecrets(n)
+		if err != nil {
+			return err
+		}
+
 		err = o.cleanCertmanagerReources(n)
 		if err != nil {
 			return err
 		}
 
-		log.Infof("%s\n", "c")
 		err = o.runExposecontroller(devNamespace, n, strings.ToLower(randomdata.SillyName()), config)
 		if err != nil {
 			return err
@@ -349,12 +345,10 @@ func (o *UpgradeIngressOptions) annotateExposedServicesWithCertManager() error {
 		for _, s := range svcList {
 
 			if s.Annotations[kube.ExposeAnnotation] == "true" && s.Annotations[kube.JenkinsXSkipTLSAnnotation] != "true" {
-				existingAnnotations, exists := s.Annotations[kube.ExposeIngressAnnotation]
+				existingAnnotations, _ := s.Annotations[kube.ExposeIngressAnnotation]
 				// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
-				if exists {
-
+				if len(existingAnnotations) > 0 {
 					s.Annotations[kube.ExposeIngressAnnotation] = existingAnnotations + "\n" + kube.CertManagerAnnotation + ": " + o.Issuer
-
 				} else {
 					s.Annotations[kube.ExposeIngressAnnotation] = kube.CertManagerAnnotation + ": " + o.Issuer
 				}
@@ -365,7 +359,6 @@ func (o *UpgradeIngressOptions) annotateExposedServicesWithCertManager() error {
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -394,12 +387,14 @@ func (o *UpgradeIngressOptions) cleanCertmanagerReources(ns string) error {
 			}
 		}
 
-		issuerProd := fmt.Sprintf(certmanager.Cert_manager_issuer_prod, o.Email)
-		json, err := yaml.YAMLToJSON([]byte(issuerProd))
+		if o.tls {
+			issuerProd := fmt.Sprintf(certmanager.Cert_manager_issuer_prod, o.Email)
+			json, err := yaml.YAMLToJSON([]byte(issuerProd))
 
-		resp, err := o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
-		if err != nil {
-			return fmt.Errorf("failed to create issuer %v: %s", err, string(resp))
+			resp, err := o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
+			if err != nil {
+				return fmt.Errorf("failed to create issuer %v: %s", err, string(resp))
+			}
 		}
 
 	} else {
@@ -412,12 +407,14 @@ func (o *UpgradeIngressOptions) cleanCertmanagerReources(ns string) error {
 			}
 		}
 
-		issuerStage := fmt.Sprintf(certmanager.Cert_manager_issuer_stage, o.Email)
-		json, err := yaml.YAMLToJSON([]byte(issuerStage))
+		if o.tls {
+			issuerStage := fmt.Sprintf(certmanager.Cert_manager_issuer_stage, o.Email)
+			json, err := yaml.YAMLToJSON([]byte(issuerStage))
 
-		resp, err := o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
-		if err != nil {
-			return fmt.Errorf("failed to create issuer %v: %s", err, string(resp))
+			resp, err := o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
+			if err != nil {
+				return fmt.Errorf("failed to create issuer %v: %s", err, string(resp))
+			}
 		}
 	}
 
@@ -425,15 +422,18 @@ func (o *UpgradeIngressOptions) cleanCertmanagerReources(ns string) error {
 	o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Name(CertmanagerCertificateStaging).DoRaw()
 	o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Name(CertmanagerCertificateProd).DoRaw()
 
-	cert := fmt.Sprintf(certmanager.Cert_manager_certificate, o.Issuer, o.Issuer, o.Domain, o.Domain, o.Domain)
-	json, err := yaml.YAMLToJSON([]byte(cert))
-	if err != nil {
-		return fmt.Errorf("unable to convert YAML %s to JSON: %v", cert, err)
+	if o.tls {
+		cert := fmt.Sprintf(certmanager.Cert_manager_certificate, o.Issuer, o.Issuer, o.Domain, o.Domain, o.Domain)
+		json, err := yaml.YAMLToJSON([]byte(cert))
+		if err != nil {
+			return fmt.Errorf("unable to convert YAML %s to JSON: %v", cert, err)
+		}
+		_, err = o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Body(json).DoRaw()
+		if err != nil {
+			return fmt.Errorf("failed to create certificate %v", err)
+		}
 	}
-	_, err = o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Body(json).DoRaw()
-	if err != nil {
-		return fmt.Errorf("failed to create certificate %v", err)
-	}
+
 	return nil
 }
 
@@ -446,15 +446,13 @@ func (o *UpgradeIngressOptions) cleanServiceAnnotations() error {
 		for _, s := range svcList {
 			if s.Annotations[kube.ExposeAnnotation] == "true" && s.Annotations[kube.JenkinsXSkipTLSAnnotation] != "true" {
 				// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
-				annotationsForIngress, exists := s.Annotations[kube.ExposeIngressAnnotation]
-				if exists {
+				annotationsForIngress, _ := s.Annotations[kube.ExposeIngressAnnotation]
+				if len(annotationsForIngress) > 0 {
 
 					var newAnnotations []string
 					annotations := strings.Split(annotationsForIngress, "\n")
 					for _, element := range annotations {
 						annotation := strings.SplitN(element, ":", 2)
-						log.Infof("%s %v\n", s.Name, element)
-						log.Infof("%s %v\n", s.Name, annotation)
 						key, _ := annotation[0], strings.TrimSpace(annotation[1])
 						if key != kube.CertManagerAnnotation {
 							newAnnotations = append(newAnnotations, element)
@@ -481,5 +479,21 @@ func (o *UpgradeIngressOptions) cleanServiceAnnotations() error {
 		}
 	}
 
+	return nil
+}
+func (o *UpgradeIngressOptions) cleanTLSSecrets(ns string) error {
+	// delete the tls related secrets so we dont reuse old ones when switching from http to https
+	secrets, err := o.kubeClient.CoreV1().Secrets(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, s := range secrets.Items {
+		if strings.HasPrefix(s.Name, "tls-") {
+			err := o.kubeClient.CoreV1().Secrets(ns).Delete(s.Name, &metav1.DeleteOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to delete tls secret %s: %v", s.Name, err)
+			}
+		}
+	}
 	return nil
 }

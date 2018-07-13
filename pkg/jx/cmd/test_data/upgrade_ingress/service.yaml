@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    fabric8.io/expose: "true"
+    fabric8.io/exposeUrl: https://jenkins.jx.wine.rawlings.it
+    fabric8.io/ingress.annotations: "kubernetes.io/ingress.class: nginx\nnginx.ingress.kubernetes.io/proxy-body-size: 500m"
+  creationTimestamp: 2018-07-12T12:46:25Z
+  labels:
+    app: jenkins
+    chart: jenkins-0.10.29
+    component: jenkins-x-jenkins-master
+    heritage: Tiller
+    release: jenkins-x
+  name: jenkins
+  namespace: test
+  resourceVersion: "30218"
+  selfLink: /api/v1/namespaces/jx/services/jenkins
+  uid: 969c4575-85d1-11e8-bb99-42010af00094
+spec:
+  clusterIP: 10.47.248.184
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    component: jenkins-x-jenkins-master
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

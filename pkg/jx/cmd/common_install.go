@@ -1112,17 +1112,20 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 	// loop over each namespace and update the Jenkins URL if a Jenkins service is found
 	for _, n := range namespaces {
+		externalURL, err := kube.GetServiceURLFromName(o.kubeClient, "jenkins", n)
+		if err != nil {
+			// skip namespace if no Jenkins service found
+			continue
+		}
+
+		log.Infof("Updating Jenkins with new external URL details %s\n", externalURL)
+
 		jenkins, err := o.Factory.CreateJenkinsClient(o.kubeClient, n)
 
 		if err != nil {
 			return err
 		}
 
-		externalURL, err := kube.GetServiceURLFromName(o.kubeClient, "jenkins", n)
-		if err != nil {
-			// skip namespace if no Jenkins service found
-			continue
-		}
 		data := url.Values{}
 		data.Add("script", fmt.Sprintf(groovy, externalURL))
 
