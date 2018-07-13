@@ -1,4 +1,4 @@
-// Package tethering provides the Chrome Debugging Protocol
+// Package tethering provides the Chrome DevTools Protocol
 // commands, types, and events for the Tethering domain.
 //
 // The Tethering domain defines methods and events for browser port binding.

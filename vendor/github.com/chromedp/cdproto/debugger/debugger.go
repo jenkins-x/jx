@@ -1,4 +1,4 @@
-// Package debugger provides the Chrome Debugging Protocol
+// Package debugger provides the Chrome DevTools Protocol
 // commands, types, and events for the Debugger domain.
 //
 // Debugger domain exposes JavaScript debugging capabilities. It allows

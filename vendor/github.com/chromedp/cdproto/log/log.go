@@ -1,4 +1,4 @@
-// Package log provides the Chrome Debugging Protocol
+// Package log provides the Chrome DevTools Protocol
 // commands, types, and events for the Log domain.
 //
 // Provides access to log entries.
