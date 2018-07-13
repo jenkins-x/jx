@@ -314,6 +314,10 @@ func (jenkins *Jenkins) getConfigXml(path string, params url.Values, body interf
 	return jenkins.parseXmlResponseWithWrapperElement(resp, body, "item")
 }
 
+func (jenkins *Jenkins) Post(path string, params url.Values, body interface{}) (err error) {
+	return jenkins.post(path, params, body)
+}
+
 func (jenkins *Jenkins) post(path string, params url.Values, body interface{}) (err error) {
 	requestUrl := jenkins.buildUrl(path, params)
 

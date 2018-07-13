@@ -602,7 +602,7 @@
   name = "github.com/jenkins-x/golang-jenkins"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "0bc3c6465b1cbac88473244061521e75c5394d1e"
+  revision = "b5ec7e72291c19eeb6a0916609eb359897f6cdf8"
 
 [[projects]]
   digest = "1:ac6d01547ec4f7f673311b4663909269bfb8249952de3279799289467837c3cc"
