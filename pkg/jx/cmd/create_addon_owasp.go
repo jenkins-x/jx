@@ -29,6 +29,7 @@ var (
 type CreateAddonOwaspOptions struct {
 	CreateAddonOptions
 	BackoffLimit int32
+	Image        string
 }
 
 func NewCmdCreateAddonOwasp(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
@@ -57,22 +58,16 @@ func NewCmdCreateAddonOwasp(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	}
 
 	cmd.Flags().Int32VarP(&options.BackoffLimit, "backoff-limit", "l", int32(2), "The backoff limit: how many times to retry the job before considering it failed) to run in the Job")
+	cmd.Flags().StringVarP(&options.Image, "image", "i", "owasp/zap2docker-live:latest", "The OWASP image to use to run the ZA Proxy baseline scan")
 
 	return cmd
 }
 
-// Run implements the command
-/*
-func (o *CreateAddonOwaspOptions) Run() error {
-	println("FFS")
-	return nil
-}
-*/
 // Create the addon
 func (o *CreateAddonOwaspOptions) Run() error {
 	name := "owasp"
 	commands := []string{"zap-baseline.py", "-I", "-t", "$(JX_PREVIEW_URL)"}
-	image := "owasp/zap2docker-live:latest"
+	image := o.Image
 	if name == "" {
 		return util.MissingOption(optionName)
 	}
