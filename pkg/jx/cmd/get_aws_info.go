@@ -40,7 +40,7 @@ func NewCmdGetAWSInfo(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 	cmd := &cobra.Command{
 		Use:     "aws info",
 		Short:   "Displays AWS account information",
-		Aliases: []string{"team"},
+		Aliases: []string{"aws"},
 		Long:    getAWSInfoLong,
 		Example: getAWSInfoExample,
 		Run: func(cmd *cobra.Command, args []string) {

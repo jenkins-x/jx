@@ -8,10 +8,11 @@ import (
 )
 
 type ExposeControllerConfig struct {
-	Domain  string `yaml:"domain,omitempty"`
-	Exposer string `yaml:"exposer"`
-	HTTP    string `yaml:"http"`
-	TLSAcme string `yaml:"tlsacme"`
+	Domain   string `yaml:"domain,omitempty"`
+	Exposer  string `yaml:"exposer"`
+	HTTP     string `yaml:"http"`
+	TLSAcme  string `yaml:"tlsacme"`
+	PathMode string `yaml:"pathMode"`
 }
 type ExposeController struct {
 	Config      ExposeControllerConfig `yaml:"config,omitempty"`

@@ -1,15 +1,23 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
+	"os"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetPreviewOptions containers the CLI options
 type GetPreviewOptions struct {
 	GetEnvOptions
+
+	Current bool
 }
 
 var (
@@ -53,12 +61,50 @@ func NewCmdGetPreview(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 		},
 	}
 
+	cmd.Flags().BoolVarP(&options.Current, "current", "c", false, "Output the URL of the current Preview application the current pipeline just deployed")
+
 	options.addGetFlags(cmd)
 	return cmd
 }
 
 // Run implements this command
 func (o *GetPreviewOptions) Run() error {
+	if o.Current {
+		return o.CurrentPreviewUrl()
+	}
 	o.PreviewOnly = true
 	return o.GetEnvOptions.Run()
+}
+
+func (o *GetPreviewOptions) CurrentPreviewUrl() error {
+	pipeline := os.Getenv("JOB_NAME")
+	if pipeline == "" {
+		return fmt.Errorf("No $JOB_NAME defined for the current pipeline job to use")
+	}
+	name := kube.ToValidName(pipeline)
+
+	client, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterEnvironmentCRD(apisClient)
+	if err != nil {
+		return err
+	}
+
+	envList, err := client.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, env := range envList.Items {
+		if env.Spec.Kind == v1.EnvironmentKindTypePreview && env.Name == name {
+			log.Info(env.Spec.PreviewGitSpec.ApplicationURL)
+			return nil
+		}
+	}
+	return fmt.Errorf("No Preview for name: %s", name)
 }
