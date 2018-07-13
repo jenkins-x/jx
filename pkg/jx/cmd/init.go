@@ -684,7 +684,6 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 	}
 	defaultDomain := address
 	if provider != AWS && provider != EKS && address != "" {
-		log.Infof("Provider %s\n", provider)
 		addNip := true
 		aip := net.ParseIP(address)
 		if aip == nil {
