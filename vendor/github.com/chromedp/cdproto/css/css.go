@@ -1,4 +1,4 @@
-// Package css provides the Chrome Debugging Protocol
+// Package css provides the Chrome DevTools Protocol
 // commands, types, and events for the CSS domain.
 //
 // This domain exposes CSS read/write operations. All CSS objects

@@ -1,4 +1,4 @@
-// Package dom provides the Chrome Debugging Protocol
+// Package dom provides the Chrome DevTools Protocol
 // commands, types, and events for the DOM domain.
 //
 // This domain exposes DOM read/write operations. Each DOM Node is

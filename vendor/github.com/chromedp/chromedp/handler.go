@@ -24,7 +24,7 @@ import (
 	"github.com/chromedp/chromedp/client"
 )
 
-// TargetHandler manages a Chrome Debugging Protocol target.
+// TargetHandler manages a Chrome DevTools Protocol target.
 type TargetHandler struct {
 	conn client.Transport
 
@@ -64,7 +64,7 @@ type TargetHandler struct {
 
 // NewTargetHandler creates a new handler for the specified client target.
 func NewTargetHandler(t client.Target, logf, debugf, errf func(string, ...interface{})) (*TargetHandler, error) {
-	conn, err := client.Dial(t)
+	conn, err := client.Dial(t.GetWebsocketURL())
 	if err != nil {
 		return nil, err
 	}
