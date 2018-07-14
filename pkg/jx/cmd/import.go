@@ -880,7 +880,7 @@ func (o *ImportOptions) replacePlaceholders(gitServerName, gitOrg string) error 
 		if fi.IsDir() && (fi.Name() == ".git" || fi.Name() == "node_modules" || fi.Name() == "vendor" || fi.Name() == "target") {
 			return filepath.SkipDir
 		}
-		if !fi.IsDir() {
+		if !fi.IsDir() && (fi.Mode()&os.ModeSymlink) != os.ModeSymlink {
 			input, err := ioutil.ReadFile(f)
 			if err != nil {
 				log.Errorf("failed to read file %s: %v", f, err)
