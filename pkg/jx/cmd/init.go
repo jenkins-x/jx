@@ -184,36 +184,16 @@ func (o *InitOptions) enableClusterAdminRole() error {
 		return err
 	}
 
-	user := o.Flags.Username
-	if user == "" {
-		if o.Flags.Provider == GKE {
-			user, err = o.getCommandOutput("", "gcloud", "config", "get-value", "core/account")
-			if err != nil {
-				return err
-			}
-		} else {
-			config, _, err := kube.LoadConfig()
-			if err != nil {
-				return err
-			}
-			if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
-				return fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
-			}
-			contextName := config.CurrentContext
-			if contextName == "" {
-				return fmt.Errorf("No kuberentes context selected. Please select one (e.g. via jx context) first")
-			}
-			context := config.Contexts[contextName]
-			if context == nil {
-				return fmt.Errorf("No kuberentes context available for context %s", contextName)
-			}
-			user = context.AuthInfo
+	if o.Flags.Username == "" {
+		o.Flags.Username, err = o.GetClusterUserName()
+		if err != err {
+			return err
 		}
 	}
-	if user == "" {
+	if o.Flags.Username == "" {
 		return util.MissingOption(optionUsername)
 	}
-	userFormatted := kube.ToValidName(user)
+	userFormatted := kube.ToValidName(o.Flags.Username)
 
 	role := o.Flags.UserClusterRole
 	clusterRoleBindingName := kube.ToValidName(userFormatted + "-" + role + "-binding")
@@ -227,7 +207,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 			{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "User",
-				Name:     user,
+				Name:     o.Flags.Username,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -240,7 +220,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 	return o.retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
-			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, user)
+			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, o.Flags.Username)
 
 			//args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
 

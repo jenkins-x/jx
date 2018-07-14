@@ -23,6 +23,12 @@ type JenkinsValuesConfig struct {
 	Servers JenkinsServersValuesConfig `yaml:"Servers,omitempty"`
 }
 
+type ProwValuesConfig struct {
+	User       string `yaml:"user,omitempty"`
+	HMACtoken  string `yaml:"hmacToken,omitempty"`
+	OAUTHtoken string `yaml:"oauthToken,omitempty"`
+}
+
 type JenkinsServersValuesConfig struct {
 	Gitea  []JenkinsGiteaServersValuesConfig  `yaml:"Gitea,omitempty"`
 	GHE    []JenkinsGithubServersValuesConfig `yaml:"GHE,omitempty"`
@@ -47,6 +53,7 @@ type JenkinsGithubServersValuesConfig struct {
 type HelmValuesConfig struct {
 	ExposeController *ExposeController   `yaml:"expose,omitempty"`
 	Jenkins          JenkinsValuesConfig `yaml:"jenkins,omitempty"`
+	Prow             ProwValuesConfig    `yaml:"jenkins,omitempty"`
 }
 
 type HelmValuesConfigService struct {

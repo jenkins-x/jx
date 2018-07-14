@@ -5,6 +5,8 @@ import (
 	"path"
 	"testing"
 
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,4 +19,9 @@ func TestInstall(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "0.0.1436", version, "For Makefile in dir %s", testDir)
+}
+
+func TestGenerateProwSecret(t *testing.T) {
+
+	fmt.Println(util.RandStringBytesMaskImprSrc(41))
 }

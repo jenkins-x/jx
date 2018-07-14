@@ -374,6 +374,15 @@ func (options *InstallOptions) Run() error {
 		}
 		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
 	}
+	helmConfig.Prow.User = initOpts.Flags.Username
+	helmConfig.Prow.HMACtoken, err = util.RandStringBytesMaskImprSrc(41)
+	if err != nil {
+		return fmt.Errorf("cannot create a random hmac token for Prow")
+	}
+	_, helmConfig.Prow.OAUTHtoken, err = options.getGitToken()
+	if err != nil {
+		return fmt.Errorf("cannot get git token used for Prow")
+	}
 
 	// lets add any GitHub Enterprise servers
 	gitAuthCfg, err := options.CreateGitAuthConfigService()
