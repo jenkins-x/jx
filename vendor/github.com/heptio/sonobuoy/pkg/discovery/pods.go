@@ -36,6 +36,20 @@ const (
 	PodLogsLocation = "podlogs"
 )
 
+// Only set values if they have values greater than 0 (as in they user specified).
+func getPodLogOptions(container string, limitBytes, sinceSeconds int64) *v1.PodLogOptions {
+	options := &v1.PodLogOptions{
+		Container: container,
+	}
+	if limitBytes > 0 {
+		options.LimitBytes = &limitBytes
+	}
+	if sinceSeconds > 0 {
+		options.SinceSeconds = &sinceSeconds
+	}
+	return options
+}
+
 // gatherPodLogs will loop through collecting pod logs and placing them into a directory tree
 func gatherPodLogs(kubeClient kubernetes.Interface, ns string, opts metav1.ListOptions, cfg *config.Config) error {
 	// 1 - Collect the list of pods
@@ -56,19 +70,11 @@ func gatherPodLogs(kubeClient kubernetes.Interface, ns string, opts metav1.ListO
 			continue
 		}
 		for _, container := range pod.Spec.Containers {
-			body, err := kubeClient.CoreV1().Pods(ns).GetLogs(
-				pod.Name,
-				&v1.PodLogOptions{
-					Container:    container.Name,
-					LimitBytes:   &limitBytes,
-					SinceSeconds: &limitTime,
-				},
-			).Do().Raw()
-
+			options := getPodLogOptions(container.Name, limitBytes, limitTime)
+			body, err := kubeClient.CoreV1().Pods(ns).GetLogs(pod.Name, options).DoRaw()
 			if err != nil {
 				return errors.WithStack(err)
 			}
-
 			outdir := path.Join(cfg.OutputDir(), PodLogsLocation, ns, pod.Name, "logs")
 			if err = os.MkdirAll(outdir, 0755); err != nil {
 				return errors.WithStack(err)

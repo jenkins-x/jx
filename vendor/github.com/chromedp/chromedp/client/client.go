@@ -1,5 +1,4 @@
-// Package client provides the low level Chrome Debugging Protocol JSON types
-// and related funcs.
+// Package client provides the low level Chrome DevTools Protocol client.
 package client
 
 //go:generate go run gen.go
@@ -45,15 +44,16 @@ const (
 	ErrUnsupportedProtocolVersion Error = "unsupported protocol version"
 )
 
-// Target is the common interface for a Chrome Debugging Protocol target.
+// Target is the common interface for a Chrome DevTools Protocol target.
 type Target interface {
 	String() string
 	GetID() string
 	GetType() TargetType
+	GetDevtoolsURL() string
 	GetWebsocketURL() string
 }
 
-// Client is a Chrome Debugging Protocol client.
+// Client is a Chrome DevTools Protocol client.
 type Client struct {
 	url     string
 	check   time.Duration
@@ -63,7 +63,7 @@ type Client struct {
 	rw       sync.RWMutex
 }
 
-// New creates a new Chrome Debugging Protocol client.
+// New creates a new Chrome DevTools Protocol client.
 func New(opts ...Option) *Client {
 	c := &Client{
 		url:     DefaultEndpoint,
@@ -120,8 +120,7 @@ func (c *Client) ListTargets(ctxt context.Context) ([]Target, error) {
 	var err error
 
 	var l []json.RawMessage
-	err = c.doReq(ctxt, "list", &l)
-	if err != nil {
+	if err = c.doReq(ctxt, "list", &l); err != nil {
 		return nil, err
 	}
 
@@ -200,8 +199,7 @@ func (c *Client) newTarget(ctxt context.Context, buf []byte) (Target, error) {
 	case "chrome", "chromium", "microsoft edge", "safari", "":
 		x := new(Chrome)
 		if buf != nil {
-			err = easyjson.Unmarshal(buf, x)
-			if err != nil {
+			if err = easyjson.Unmarshal(buf, x); err != nil {
 				return nil, err
 			}
 		}
@@ -226,8 +224,7 @@ func (c *Client) NewPageTargetWithURL(ctxt context.Context, urlstr string) (Targ
 		u += "?" + urlstr
 	}
 
-	err = c.doReq(ctxt, u, t)
-	if err != nil {
+	if err = c.doReq(ctxt, u, t); err != nil {
 		return nil, err
 	}
 
@@ -251,23 +248,15 @@ func (c *Client) CloseTarget(ctxt context.Context, t Target) error {
 
 // VersionInfo returns information about the remote debugging protocol.
 func (c *Client) VersionInfo(ctxt context.Context) (map[string]string, error) {
-	var err error
-
-	v := map[string]string{}
-	err = c.doReq(ctxt, "version", &v)
-	if err != nil {
+	v := make(map[string]string)
+	if err := c.doReq(ctxt, "version", &v); err != nil {
 		return nil, err
 	}
-
 	return v, nil
 }
 
 // WatchPageTargets watches for new page targets.
 func (c *Client) WatchPageTargets(ctxt context.Context) <-chan Target {
-	if ctxt == nil {
-		ctxt = context.Background()
-	}
-
 	ch := make(chan Target)
 	go func() {
 		defer close(ch)
@@ -311,10 +300,11 @@ func (c *Client) WatchPageTargets(ctxt context.Context) <-chan Target {
 	return ch
 }
 
-// Option is a Chrome Debugging Protocol client option.
+// Option is a Chrome DevTools Protocol client option.
 type Option func(*Client)
 
-// URL is a client option to specify the remote Chrome instance to connect to.
+// URL is a client option to specify the remote Chrome DevTools Protocol
+// instance to connect to.
 func URL(urlstr string) Option {
 	return func(c *Client) {
 		// since chrome 66+, dev tools requires the host name to be either an

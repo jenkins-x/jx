@@ -46,6 +46,7 @@ type InstallOptions struct {
 
 type InstallFlags struct {
 	Domain                   string
+	ExposeControllerPathMode string
 	DockerRegistry           string
 	Provider                 string
 	CloudEnvRepository       string
@@ -199,6 +200,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install comand to fail if there is already an installation. Otherwise lets update the installation")
 	cmd.Flags().StringVarP(&flags.DockerRegistry, "docker-registry", "", "", "The Docker Registry host or host:port which is used when tagging and pushing images. If not specified it defaults to the internal registry unless there is a better provider default (e.g. ECR on AWS/EKS)")
+	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -277,7 +279,8 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get the current context")
 	}
-	if options.Flags.Provider == AWS || options.Flags.Provider == EKS {
+	isAwsProvider := options.Flags.Provider == AWS || options.Flags.Provider == EKS
+	if isAwsProvider {
 		err = options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
 		if err != nil {
 			return err
@@ -301,13 +304,22 @@ func (options *InstallOptions) Run() error {
 
 	// lets default the helm domain
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
-	if exposeController != nil && exposeController.Config.Domain == "" && options.Flags.Domain != "" {
-		exposeController.Config.Domain = options.Flags.Domain
-		log.Success("set exposeController Config Domain " + exposeController.Config.Domain + "\n")
-	}
 	if exposeController != nil {
+		ecConfig := &exposeController.Config
+		if ecConfig.Domain == "" && options.Flags.Domain != "" {
+			ecConfig.Domain = options.Flags.Domain
+			log.Success("set exposeController Config Domain " + ecConfig.Domain + "\n")
+		}
+		if ecConfig.PathMode == "" && options.Flags.ExposeControllerPathMode != "" {
+			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
+			log.Success("set exposeController Config PathMode " + ecConfig.PathMode + "\n")
+		}
+		if ecConfig.Domain == "" && options.Flags.Domain != "" {
+			ecConfig.Domain = options.Flags.Domain
+			log.Success("set exposeController Config Domain " + ecConfig.Domain + "\n")
+		}
 		if isOpenShiftProvider(options.Flags.Provider) {
-			exposeController.Config.Exposer = "Route"
+			ecConfig.Exposer = "Route"
 		}
 	}
 
@@ -565,29 +577,34 @@ func (options *InstallOptions) Run() error {
 
 	options.logAdminPassword()
 
+	log.Info("Getting Jenkins API Token\n")
+	err = options.retry(3, 2*time.Second, func() (err error) {
+		options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
+		options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
+		options.CreateJenkinsUserOptions.UseBrowser = true
+		if options.BatchMode {
+			options.CreateJenkinsUserOptions.BatchMode = true
+			options.CreateJenkinsUserOptions.Headless = true
+			log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
+		}
+		err = options.CreateJenkinsUserOptions.Run()
+		return
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to get the Jenkins API token")
+	}
+
+	jxClient, _, err := options.JXClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the jx client")
+	}
+
+	err = options.updateJenkinsURL([]string{ns})
+	if err != nil {
+		log.Warnf("failed to update the Jenkins external URL")
+	}
+
 	if !options.Flags.NoDefaultEnvironments {
-		log.Info("Getting Jenkins API Token\n")
-		err = options.retry(3, 2*time.Second, func() (err error) {
-			options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
-			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
-			options.CreateJenkinsUserOptions.UseBrowser = true
-			if options.BatchMode {
-				options.CreateJenkinsUserOptions.BatchMode = true
-				options.CreateJenkinsUserOptions.Headless = true
-				log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
-			}
-			err = options.CreateJenkinsUserOptions.Run()
-			return
-		})
-		if err != nil {
-			return errors.Wrap(err, "failed to get the Jenkins API token")
-		}
-
-		jxClient, _, err := options.JXClient()
-		if err != nil {
-			return errors.Wrap(err, "failed to create the jx client")
-		}
-
 		// lets only recreate the environments if its the first time we run this
 		_, envNames, err := kube.GetEnvironments(jxClient, ns)
 		if err != nil || len(envNames) <= 1 {

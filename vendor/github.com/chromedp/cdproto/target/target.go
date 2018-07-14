@@ -1,4 +1,4 @@
-// Package target provides the Chrome Debugging Protocol
+// Package target provides the Chrome DevTools Protocol
 // commands, types, and events for the Target domain.
 //
 // Supports additional targets discovery and allows to attach to them.
@@ -36,7 +36,8 @@ func (p *ActivateTargetParams) Do(ctxt context.Context, h cdp.Executor) (err err
 
 // AttachToTargetParams attaches to the target with given id.
 type AttachToTargetParams struct {
-	TargetID ID `json:"targetId"`
+	TargetID ID   `json:"targetId"`
+	Flatten  bool `json:"flatten,omitempty"` // Enables "flat" access to the session via specifying sessionId attribute in the commands.
 }
 
 // AttachToTarget attaches to the target with given id.
@@ -47,6 +48,13 @@ func AttachToTarget(targetID ID) *AttachToTargetParams {
 	return &AttachToTargetParams{
 		TargetID: targetID,
 	}
+}
+
+// WithFlatten enables "flat" access to the session via specifying sessionId
+// attribute in the commands.
+func (p AttachToTargetParams) WithFlatten(flatten bool) *AttachToTargetParams {
+	p.Flatten = flatten
+	return &p
 }
 
 // AttachToTargetReturns return values.
