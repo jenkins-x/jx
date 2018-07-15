@@ -17,6 +17,7 @@ type StepHelmApplyOptions struct {
 
 	Namespace   string
 	ReleaseName string
+	Wait        bool
 }
 
 var (
@@ -62,6 +63,7 @@ func NewCmdStepHelmApply(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The kubernetes namespace to apply the helm chart to")
 	cmd.Flags().StringVarP(&options.ReleaseName, "name", "", "", "The name of the release")
+	cmd.Flags().BoolVarP(&options.Wait, "wait", "", true, "Wait for Kubernetes readiness probe to confirm deployment")
 	return cmd
 }
 
@@ -91,7 +93,12 @@ func (o *StepHelmApplyOptions) Run() error {
 	info := util.ColorInfo
 	log.Infof("Applying helm chart at %s as release name %s to namespace %s\n", info(dir), info(releaseName), info(ns))
 
-	err = o.Helm().UpgradeChart(dir, releaseName, ns, nil, true, nil, false, false, nil, nil)
+	if o.Wait {
+		timeout := 600
+		err = o.Helm().UpgradeChart(dir, releaseName, ns, nil, true, &timeout, false, true, nil, nil)
+	} else {
+		err = o.Helm().UpgradeChart(dir, releaseName, ns, nil, true, nil, false, false, nil, nil)
+	}
 	if err != nil {
 		return err
 	}
