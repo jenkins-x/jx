@@ -53,7 +53,7 @@ type JenkinsGithubServersValuesConfig struct {
 type HelmValuesConfig struct {
 	ExposeController *ExposeController   `yaml:"expose,omitempty"`
 	Jenkins          JenkinsValuesConfig `yaml:"jenkins,omitempty"`
-	Prow             ProwValuesConfig    `yaml:"jenkins,omitempty"`
+	Prow             ProwValuesConfig    `yaml:"prow,omitempty"`
 }
 
 type HelmValuesConfigService struct {

@@ -374,15 +374,6 @@ func (options *InstallOptions) Run() error {
 		}
 		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
 	}
-	helmConfig.Prow.User = initOpts.Flags.Username
-	helmConfig.Prow.HMACtoken, err = util.RandStringBytesMaskImprSrc(41)
-	if err != nil {
-		return fmt.Errorf("cannot create a random hmac token for Prow")
-	}
-	_, helmConfig.Prow.OAUTHtoken, err = options.getGitToken()
-	if err != nil {
-		return fmt.Errorf("cannot get git token used for Prow")
-	}
 
 	// lets add any GitHub Enterprise servers
 	gitAuthCfg, err := options.CreateGitAuthConfigService()
@@ -546,6 +537,21 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "failed to cleanup the config file")
 		}
+	}
+
+	tls, err := strconv.ParseBool(exposeController.Config.TLSAcme)
+	if err != nil {
+		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
+	}
+	ic := kube.IngressConfig{
+		Domain:  domain,
+		TLS:     tls,
+		Exposer: exposeController.Config.Exposer,
+	}
+	// save details to a configmap
+	err = kube.SaveIngressConfig(options.kubeClient, ns, ic)
+	if err != nil {
+		return err
 	}
 
 	err = options.waitForInstallToBeReady(ns)
@@ -804,6 +810,19 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 
 // returns secrets that are used as values during the helm install
 func (o *InstallOptions) getGitSecrets() (string, error) {
+
+	// TODO JR convert to a struct and add the equivelent of the below to the secrets to enable prow
+	//helmConfig.Prow.User = initOpts.Flags.Username
+	//helmConfig.Prow.HMACtoken, err = util.RandStringBytesMaskImprSrc(41)
+	//if err != nil {
+	//	return fmt.Errorf("cannot create a random hmac token for Prow")
+	//}
+	//userAuth, err := options.getGitUser("Git user to send webhook events as")
+	//helmConfig.Prow.OAUTHtoken = userAuth.ApiToken
+	//if err != nil {
+	//	return fmt.Errorf("cannot get git token used for Prow")
+	//}
+
 	username, token, err := o.getGitToken()
 	if err != nil {
 		return "", err
@@ -817,7 +836,7 @@ func (o *InstallOptions) getGitSecrets() (string, error) {
 	server = strings.TrimPrefix(server, "http://")
 
 	url := fmt.Sprintf("%s:%s@%s", username, token, server)
-	// TODO convert to a struct
+
 	pipelineSecrets := `
 PipelineSecrets:
   GitCreds: |-

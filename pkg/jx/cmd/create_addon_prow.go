@@ -13,6 +13,8 @@ import (
 
 const (
 	defaultProwReleaseName = "prow"
+	defaultProwNamespace   = "prow"
+	prowVersion            = "0.0.3"
 )
 
 var (
@@ -36,6 +38,7 @@ type CreateAddonProwOptions struct {
 	Chart      string
 	HMACToken  string
 	OAUTHToken string
+	Username   string
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
@@ -66,12 +69,13 @@ func NewCmdCreateAddonProw(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, "", defaultProwReleaseName)
+	options.addFlags(cmd, defaultProwNamespace, defaultProwReleaseName)
 
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version of the prow addon to use")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", prowVersion, "The version of the prow addon to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartProw, "The name of the chart to use")
 	cmd.Flags().StringVarP(&options.HMACToken, "hmac-token", "", "", "OPTIONAL: The hmac-token is the token that you give to GitHub for validating webhooks. Generate it using any reasonable randomness-generator, eg openssl rand -hex 20")
 	cmd.Flags().StringVarP(&options.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")
+	cmd.Flags().StringVarP(&options.Username, "username", "", "", "Overwrite cluster admin username")
 	return cmd
 }
 
@@ -107,13 +111,26 @@ func (o *CreateAddonProwOptions) Run() error {
 		o.OAUTHToken = userAuth.ApiToken
 	}
 
-	username, err := o.GetClusterUserName()
+	if o.Username == "" {
+		o.Username, err = o.GetClusterUserName()
+		if err != nil {
+			return err
+		}
+	}
+
+	devNamespace, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
+	if err != nil {
+		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
+	}
+
+	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return err
 	}
 
-	values := []string{username, o.OAUTHToken, o.HMACToken}
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
+	// create the ingress rule
+	err = o.expose(devNamespace, o.Namespace, "")
 	if err != nil {
 		return err
 	}
