@@ -4,6 +4,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -88,7 +89,11 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return util.MissingOption(optionRelease)
 	}
 
-	_, _, err := o.KubeClient()
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
+	_, _, err = o.KubeClient()
 	if err != nil {
 		return err
 	}

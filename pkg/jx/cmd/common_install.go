@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	"os"
 	"os/exec"
@@ -20,7 +21,6 @@ import (
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"net/url"
 )
 
 var (

@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -89,6 +90,10 @@ func NewCmdCreateAddonAnchore(f Factory, out io.Writer, errOut io.Writer) *cobra
 
 // Run implements the command
 func (o *CreateAddonAnchoreOptions) Run() error {
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
 
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
@@ -96,7 +101,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	_, _, err := o.KubeClient()
+	_, _, err = o.KubeClient()
 	if err != nil {
 		return err
 	}
