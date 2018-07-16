@@ -13,7 +13,6 @@ import (
 
 const (
 	defaultProwReleaseName = "prow"
-	defaultProwNamespace   = "prow"
 	prowVersion            = "0.0.4"
 )
 
@@ -70,7 +69,7 @@ func NewCmdCreateAddonProw(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultProwNamespace, defaultProwReleaseName)
+	options.addFlags(cmd, "", defaultProwReleaseName)
 
 	cmd.Flags().StringVarP(&options.Version, "version", "v", prowVersion, "The version of the prow addon to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartProw, "The name of the chart to use")
@@ -126,13 +125,13 @@ func (o *CreateAddonProwOptions) Run() error {
 	}
 
 	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
 	if err != nil {
 		return err
 	}
 
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, o.Password)
+	err = o.expose(devNamespace, devNamespace, o.Password)
 	if err != nil {
 		return err
 	}
