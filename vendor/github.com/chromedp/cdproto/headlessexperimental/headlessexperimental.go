@@ -1,4 +1,4 @@
-// Package headlessexperimental provides the Chrome DevTools Protocol
+// Package headlessexperimental provides the Chrome Debugging Protocol
 // commands, types, and events for the HeadlessExperimental domain.
 //
 // This domain provides experimental commands only supported in headless

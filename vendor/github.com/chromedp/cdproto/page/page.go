@@ -1,4 +1,4 @@
-// Package page provides the Chrome DevTools Protocol
+// Package page provides the Chrome Debugging Protocol
 // commands, types, and events for the Page domain.
 //
 // Actions and events related to the inspected page belong to the page

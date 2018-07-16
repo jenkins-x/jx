@@ -4,14 +4,12 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"io"
-	"os"
 	"sort"
 	"strings"
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/client/results"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/pkg/errors"
@@ -29,7 +27,7 @@ var (
 	`)
 )
 
-// ComplianceResultsOptions options for "compliance results" command
+// ComplianceStatusOptions options for "compliance results" command
 type ComplianceResultsOptions struct {
 	CommonOptions
 }
@@ -72,20 +70,10 @@ func (o *ComplianceResultsOptions) Run() error {
 		Namespace: complianceNamespace,
 	}
 
-	reader, errch := cc.RetrieveResults(cfg)
-
-	// TODO Refactor? Seems like there should be a nicer way to handle this...
-	go func() {
-		for {
-			select {
-			case err := <-errch:
-				if err != nil {
-					log.Fatalf("could not retrieve the compliance results\n %v", err)
-					o.Exit(1)
-				}
-			}
-		}
-	}()
+	reader, err := cc.RetrieveResults(cfg)
+	if err != nil {
+		return errors.Wrap(err, "could not retrieve the compliance results")
+	}
 
 	resultsReader, err := untarResults(reader)
 	if err != nil {
@@ -110,12 +98,7 @@ func (o *ComplianceResultsOptions) Run() error {
 	return nil
 }
 
-// Exit the main goroutine with status
-func (o *ComplianceResultsOptions) Exit(status int) {
-	os.Exit(status)
-}
-
-// StatusSortedTestCases implements Sort by status of a list of test case
+// StatusSotedTestCase implements Sort by status of a list of test case
 type StatusSortedTestCases []reporters.JUnitTestCase
 
 var statuses = map[string]int{

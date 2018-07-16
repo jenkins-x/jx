@@ -1,4 +1,4 @@
-// Package network provides the Chrome DevTools Protocol
+// Package network provides the Chrome Debugging Protocol
 // commands, types, and events for the Network domain.
 //
 // Network domain allows tracking network activities of the page. It exposes

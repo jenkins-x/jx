@@ -5,7 +5,6 @@ package kb
 //go:generate go run gen.go -out keys.go -pkg kb
 
 import (
-	"runtime"
 	"unicode"
 
 	"github.com/chromedp/cdproto/input"
@@ -97,9 +96,6 @@ func Encode(r rune) []*input.DispatchKeyEventParams {
 		Code:                  v.Code,
 		NativeVirtualKeyCode:  v.Native,
 		WindowsVirtualKeyCode: v.Windows,
-	}
-	if runtime.GOOS == "darwin" {
-		keyDown.NativeVirtualKeyCode = 0
 	}
 	if v.Shift {
 		keyDown.Modifiers |= input.ModifierShift
