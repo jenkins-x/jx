@@ -261,3 +261,18 @@ func (o *CommonOptions) releaseChartMuseumUrl() string {
 	}
 	return chartRepo
 }
+
+func (o *CommonOptions) ensureHelm() error {
+	_, err := o.Helm().Version(false)
+	if err == nil {
+		return nil
+	}
+	err = o.installHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to install helm")
+	}
+	initOpts := InitOptions{
+		CommonOptions: *o,
+	}
+	return initOpts.initHelm()
+}

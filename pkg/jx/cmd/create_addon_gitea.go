@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -93,7 +94,12 @@ func (o *CreateAddonGiteaOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	err := o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, nil)
+
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, nil)
 	if err != nil {
 		return err
 	}
