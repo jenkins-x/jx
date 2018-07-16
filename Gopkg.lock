@@ -69,6 +69,13 @@
   revision = "15df0648130a623e418886f81b2aaecd0a00547b"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/alexflint/go-filemutex"
+  packages = ["."]
+  revision = "d358565f3c3f5334209f1e80693e4f621650c489"
+  source = "https://github.com/i0n/go-filemutex.git"
+
+[[projects]]
   name = "github.com/andygrunwald/go-gerrit"
   packages = ["."]
   revision = "95b11af228a177a6c9961202fa40ff284ba86849"
