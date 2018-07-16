@@ -1,4 +1,4 @@
-// Package audits provides the Chrome Debugging Protocol
+// Package audits provides the Chrome DevTools Protocol
 // commands, types, and events for the Audits domain.
 //
 // Audits domain allows investigation of page violations and possible
