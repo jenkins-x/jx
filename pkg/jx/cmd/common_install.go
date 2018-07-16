@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/Pallinder/go-randomdata"
+	filemutex "github.com/alexflint/go-filemutex"
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -568,44 +569,59 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 }
 
 func (o *CommonOptions) installMavenIfRequired() error {
+	homeDir, err := util.ConfigDir()
+	if err != nil {
+		return err
+	}
+	m, err := filemutex.New(homeDir + "/jx.lock")
+	if err != nil {
+		panic(err)
+	}
+	m.Lock()
+
 	cmd := util.Command{
 		Name: "mvn",
 		Args: []string{"-v"},
 	}
-	_, err := cmd.RunWithoutRetry()
+	_, err = cmd.RunWithoutRetry()
 	if err == nil {
+		m.Unlock()
 		return nil
 	}
 	// lets assume maven is not installed so lets download it
 	clientURL := fmt.Sprintf("http://central.maven.org/maven2/org/apache/maven/apache-maven/%s/apache-maven-%s-bin.zip", maven.MavenVersion, maven.MavenVersion)
 
 	log.Infof("Apache Maven is not installed so lets download: %s\n", util.ColorInfo(clientURL))
-	homeDir, err := util.ConfigDir()
-	if err != nil {
-		return err
-	}
+
 	mvnDir := filepath.Join(homeDir, "maven")
 	mvnTmpDir := filepath.Join(homeDir, "maven-tmp")
 	zipFile := filepath.Join(homeDir, "mvn.zip")
 
 	err = os.MkdirAll(mvnDir, DefaultWritePermissions)
 	if err != nil {
+		m.Unlock()
 		return err
 	}
 
+	log.Info("\ndownloadFile\n")
 	err = o.downloadFile(clientURL, zipFile)
 	if err != nil {
+		m.Unlock()
 		return err
 	}
 
+	log.Info("\nutil.Unzip\n")
 	err = util.Unzip(zipFile, mvnTmpDir)
 	if err != nil {
+		m.Unlock()
 		return err
 	}
 
 	// lets find a directory inside the unzipped folder
+	log.Info("\nReadDir\n")
 	files, err := ioutil.ReadDir(mvnTmpDir)
 	if err != nil {
+		m.Unlock()
 		return err
 	}
 	for _, f := range files {
@@ -615,16 +631,26 @@ func (o *CommonOptions) installMavenIfRequired() error {
 
 			err = os.Rename(filepath.Join(mvnTmpDir, name), mvnDir)
 			if err != nil {
+				m.Unlock()
 				return err
 			}
 			log.Infof("Apache Maven is installed at: %s\n", util.ColorInfo(mvnDir))
+			m.Unlock()
 			err = os.Remove(zipFile)
 			if err != nil {
+				m.Unlock()
 				return err
 			}
-			return os.RemoveAll(mvnTmpDir)
+			err = os.RemoveAll(mvnTmpDir)
+			if err != nil {
+				m.Unlock()
+				return err
+			}
+			m.Unlock()
+			return nil
 		}
 	}
+	m.Unlock()
 	return fmt.Errorf("Could not find an apache-maven folder inside the unzipped maven distro at %s", mvnTmpDir)
 }
 

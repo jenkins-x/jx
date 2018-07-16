@@ -148,6 +148,11 @@ required = [
   name = "github.com/heptio/sonobuoy"
   branch = "master"
 
+[[constraint]]
+  name = "github.com/alexflint/go-filemutex"
+  branch = "master"
+  source = "https://github.com/i0n/go-filemutex.git"
+
 [prune]
   non-go = true
   go-tests = true
