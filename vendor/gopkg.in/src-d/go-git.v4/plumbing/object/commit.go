@@ -3,7 +3,6 @@ package object
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -76,8 +75,7 @@ func (c *Commit) Tree() (*Tree, error) {
 }
 
 // Patch returns the Patch between the actual commit and the provided one.
-// Error will be return if context expires. Provided context must be non-nil
-func (c *Commit) PatchContext(ctx context.Context, to *Commit) (*Patch, error) {
+func (c *Commit) Patch(to *Commit) (*Patch, error) {
 	fromTree, err := c.Tree()
 	if err != nil {
 		return nil, err
@@ -88,12 +86,7 @@ func (c *Commit) PatchContext(ctx context.Context, to *Commit) (*Patch, error) {
 		return nil, err
 	}
 
-	return fromTree.PatchContext(ctx, toTree)
-}
-
-// Patch returns the Patch between the actual commit and the provided one.
-func (c *Commit) Patch(to *Commit) (*Patch, error) {
-	return c.PatchContext(context.Background(), to)
+	return fromTree.Patch(toTree)
 }
 
 // Parents return a CommitIter to the parent Commits.

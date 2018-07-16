@@ -17,16 +17,15 @@ limitations under the License.
 package discovery
 
 import (
-	"context"
 	"encoding/json"
 	"os"
 	"path"
-	"time"
 
 	"github.com/heptio/sonobuoy/pkg/config"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type nodeData struct {
@@ -35,73 +34,67 @@ type nodeData struct {
 	HealthzStatus int                    `json:"healthzStatus,omitempty"`
 }
 
-// getNodeEndpoint returns the response from pinging a node endpoint
-func getNodeEndpoint(client rest.Interface, nodeName, endpoint string) (rest.Result, error) {
-	// TODO(chuckha) make this timeout configurable
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(30*time.Second))
-	defer cancel()
-	req := client.
-		Get().
-		Context(ctx).
-		Resource("nodes").
-		Name(nodeName).
-		SubResource("proxy").
-		Suffix(endpoint)
-
-	result := req.Do()
-	if result.Error() != nil {
-		logrus.Warningf("Could not get %v endpoint for node %v: %v", endpoint, nodeName, result.Error())
-	}
-	return result, result.Error()
-}
-
 // gatherNodeData collects non-resource information about a node through the
 // kubernetes API.  That is, its `healthz` and `configz` endpoints, which are
 // not "resources" per se, although they are accessible through the apiserver.
-func gatherNodeData(nodeNames []string, restclient rest.Interface, cfg *config.Config) error {
+func gatherNodeData(kubeClient kubernetes.Interface, cfg *config.Config) error {
 	logrus.Info("Collecting Node Configuration and Health...")
 
-	for _, name := range nodeNames {
-		// Create the output for each node
-		out := path.Join(cfg.OutputDir(), HostsLocation, name)
-		logrus.Infof("Creating host results for %v under %v\n", name, out)
-		if err := os.MkdirAll(out, 0755); err != nil {
+	nodelist, err := kubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, node := range nodelist.Items {
+		// We hit the master on /api/v1/proxy/nodes/<node> to gather node
+		// information without having to reinvent auth
+		proxypath := "/api/v1/proxy/nodes/" + node.Name
+		restclient := kubeClient.CoreV1().RESTClient()
+
+		out := path.Join(cfg.OutputDir(), HostsLocation, node.Name)
+		logrus.Infof("Creating host results for %v under %v\n", node.Name, out)
+		if err = os.MkdirAll(out, 0755); err != nil {
 			return err
 		}
 
-		_, err := untypedQuery(out, "configz.json", func() (interface{}, error) {
-			data := make(map[string]interface{})
-			result, err := getNodeEndpoint(restclient, name, "configz")
-			if err != nil {
-				return data, err
+		_, err = untypedQuery(out, "configz.json", func() (interface{}, error) {
+			var configz map[string]interface{}
+
+			// Get the configz endpoint, put the result in the nodeData
+			request := restclient.Get().RequestURI(proxypath + "/configz")
+			if result, err := request.Do().Raw(); err == nil {
+				json.Unmarshal(result, &configz)
+			} else {
+				logrus.Warningf("Could not get configz endpoint for node %v: %v", node.Name, err)
 			}
 
-			resultBytes, err := result.Raw()
-			if err != nil {
-				return data, err
-			}
-			json.Unmarshal(resultBytes, &data)
-			return data, err
+			return configz, err
 		})
 		if err != nil {
 			return err
 		}
 
 		_, err = untypedQuery(out, "healthz.json", func() (interface{}, error) {
-			data := make(map[string]interface{})
-			result, err := getNodeEndpoint(restclient, name, "healthz")
-			if err != nil {
-				return data, err
-			}
+			// Since health is just an int, we wrap it in a JSON object that looks like
+			// `{"status":200}`
+			health := make(map[string]interface{})
 			var healthstatus int
-			result.StatusCode(&healthstatus)
-			data["status"] = healthstatus
-			return data, nil
+
+			// Get the healthz endpoint too. We care about the response code in this
+			// case, not the body.
+			request := restclient.Get().RequestURI(proxypath + "/healthz")
+			if result := request.Do(); result.Error() == nil {
+				result.StatusCode(&healthstatus)
+				health["status"] = healthstatus
+			} else {
+				logrus.Warningf("Could not get healthz endpoint for node %v: %v", node.Name, result.Error())
+			}
+			return health, err
 		})
 		if err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return err
 }

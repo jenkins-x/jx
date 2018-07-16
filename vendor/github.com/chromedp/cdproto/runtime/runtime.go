@@ -1,4 +1,4 @@
-// Package runtime provides the Chrome DevTools Protocol
+// Package runtime provides the Chrome Debugging Protocol
 // commands, types, and events for the Runtime domain.
 //
 // Runtime domain exposes JavaScript runtime by means of remote evaluation

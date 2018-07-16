@@ -2,7 +2,6 @@ package object
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -296,30 +295,15 @@ func (from *Tree) Diff(to *Tree) (Changes, error) {
 	return DiffTree(from, to)
 }
 
-// Diff returns a list of changes between this tree and the provided one
-// Error will be returned if context expires
-// Provided context must be non nil
-func (from *Tree) DiffContext(ctx context.Context, to *Tree) (Changes, error) {
-	return DiffTreeContext(ctx, from, to)
-}
-
 // Patch returns a slice of Patch objects with all the changes between trees
 // in chunks. This representation can be used to create several diff outputs.
 func (from *Tree) Patch(to *Tree) (*Patch, error) {
-	return from.PatchContext(context.Background(), to)
-}
-
-// Patch returns a slice of Patch objects with all the changes between trees
-// in chunks. This representation can be used to create several diff outputs.
-// If context expires, an error will be returned
-// Provided context must be non-nil
-func (from *Tree) PatchContext(ctx context.Context, to *Tree) (*Patch, error) {
-	changes, err := DiffTreeContext(ctx, from, to)
+	changes, err := DiffTree(from, to)
 	if err != nil {
 		return nil, err
 	}
 
-	return changes.PatchContext(ctx)
+	return changes.Patch()
 }
 
 // treeEntryIter facilitates iterating through the TreeEntry objects in a Tree.
