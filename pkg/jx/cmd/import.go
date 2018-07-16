@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	//_ "github.com/Azure/draft/pkg/linguist"
 	"github.com/denormal/go-gitignore"
+	"time"
 )
 
 const (
@@ -977,7 +978,10 @@ func (o *ImportOptions) checkChartmuseumCredentialExists() error {
 		username := string(data["BASIC_AUTH_USER"])
 		password := string(data["BASIC_AUTH_PASS"])
 
-		err = o.Jenkins.CreateCredential(name, username, password)
+		err = o.retry(3, 10*time.Second, func() (err error) {
+			return o.Jenkins.CreateCredential(name, username, password)
+		})
+
 		if err != nil {
 			return fmt.Errorf("error creating jenkins credential %s %v", name, err)
 		}
