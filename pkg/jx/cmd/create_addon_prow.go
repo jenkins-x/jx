@@ -39,6 +39,7 @@ type CreateAddonProwOptions struct {
 	HMACToken  string
 	OAUTHToken string
 	Username   string
+	Password   string
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
@@ -76,6 +77,7 @@ func NewCmdCreateAddonProw(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd.Flags().StringVarP(&options.HMACToken, "hmac-token", "", "", "OPTIONAL: The hmac-token is the token that you give to GitHub for validating webhooks. Generate it using any reasonable randomness-generator, eg openssl rand -hex 20")
 	cmd.Flags().StringVarP(&options.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")
 	cmd.Flags().StringVarP(&options.Username, "username", "", "", "Overwrite cluster admin username")
+	cmd.Flags().StringVarP(&options.Password, "password", "", "", "Overwrite the default admin password used to login to the Deck UI")
 	return cmd
 }
 
@@ -130,7 +132,7 @@ func (o *CreateAddonProwOptions) Run() error {
 	}
 
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, "")
+	err = o.expose(devNamespace, o.Namespace, o.Password)
 	if err != nil {
 		return err
 	}
