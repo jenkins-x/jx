@@ -1134,3 +1134,31 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 	return nil
 }
+
+func (o *CommonOptions) GetClusterUserName() (string, error) {
+
+	username, _ := o.getCommandOutput("", "gcloud", "config", "get-value", "core/account")
+
+	if username != "" {
+		return username, nil
+	}
+
+	config, _, err := kube.LoadConfig()
+	if err != nil {
+		return username, err
+	}
+	if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
+		return username, fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
+	}
+	contextName := config.CurrentContext
+	if contextName == "" {
+		return username, fmt.Errorf("No kuberentes context selected. Please select one (e.g. via jx context) first")
+	}
+	context := config.Contexts[contextName]
+	if context == nil {
+		return username, fmt.Errorf("No kuberentes context available for context %s", contextName)
+	}
+	username = context.AuthInfo
+
+	return username, nil
+}

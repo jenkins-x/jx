@@ -18,6 +18,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
@@ -28,6 +29,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"strconv"
 )
 
 const (
@@ -591,7 +593,7 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 
 // todo switch to using exposecontroller as a jx plugin
 // get existing config from the devNamespace and run exposecontroller in the target environment
-func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName, password string) error {
+func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) error {
 
 	_, err := o.kubeClient.CoreV1().Secrets(targetNamespace).Get(kube.SecretBasicAuth, v1.GetOptions{})
 	if err != nil {
@@ -620,28 +622,44 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName, passw
 		}
 	}
 
-	exposecontrollerConfig, err := kube.GetTeamExposecontrollerConfig(o.kubeClient, devNamespace)
+	ic, err := kube.GetIngressConfig(o.kubeClient, devNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
 
-	return o.runExposecontroller(devNamespace, targetNamespace, releaseName, exposecontrollerConfig)
+	err = kube.CleanServiceAnnotations(o.kubeClient, targetNamespace)
+	if err != nil {
+		return err
+	}
+
+	err = kube.AnnotateNamespaceServicesWithCertManager(o.kubeClient, targetNamespace, ic.Issuer)
+	if err != nil {
+		return err
+	}
+
+	// if targetnamespace is different than dev check if there's any certmanager CRDs, if not check dev and copy any found across
+	err = o.copyCertmanagerResources(targetNamespace, ic)
+	if err != nil {
+		return fmt.Errorf("failed to copy certmanager resources from %s to %s namespace: %v", devNamespace, targetNamespace, err)
+	}
+
+	return o.runExposecontroller(devNamespace, targetNamespace, ic)
 }
 
-func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace, releaseName string, exposecontrollerConfig map[string]string) error {
+func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig) error {
 
 	exValues := []string{
-		"config.exposer=" + exposecontrollerConfig["exposer"],
-		"config.domain=" + exposecontrollerConfig["domain"],
-		"config.tlsacme=" + exposecontrollerConfig["tls-acme"],
+		"config.exposer=" + ic.Exposer,
+		"config.domain=" + ic.Domain,
+		"config.tlsacme=" + strconv.FormatBool(ic.TLS),
 	}
 
-	if exposecontrollerConfig["http"] == "true" {
-		exValues = append(exValues, "config.http="+exposecontrollerConfig["http"])
+	if !ic.TLS && ic.Issuer != "" {
+		exValues = append(exValues, "config.http=true")
 	}
-	//}
 
-	err := o.installChart("expose"+releaseName, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
+	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
+	err := o.installChart(helmRelease, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}
@@ -649,7 +667,8 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace, relea
 	if err != nil {
 		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
 	}
-	return kube.DeleteJob(o.kubeClient, targetNamespace, exposecontroller)
+	return o.helm.DeleteRelease(helmRelease, true)
+
 }
 
 func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, error) {
@@ -682,4 +701,15 @@ func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string,
 
 	// todo ask if user wants to install addon?
 	return "", nil
+}
+
+func (o *CommonOptions) copyCertmanagerResources(targetNamespace string, ic kube.IngressConfig) error {
+	if ic.TLS {
+		err := kube.CleanCertmanagerResources(o.kubeClient, targetNamespace, ic)
+		if err != nil {
+			return fmt.Errorf("failed to create certmanager resources in target namespace %s: %v", targetNamespace, err)
+		}
+	}
+
+	return nil
 }
