@@ -1,4 +1,4 @@
-// Package browser provides the Chrome DevTools Protocol
+// Package browser provides the Chrome Debugging Protocol
 // commands, types, and events for the Browser domain.
 //
 // The Browser domain defines methods and events for browser managing.

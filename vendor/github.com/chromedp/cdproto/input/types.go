@@ -69,7 +69,7 @@ func (t *GestureType) UnmarshalJSON(buf []byte) error {
 	return easyjson.Unmarshal(buf, t)
 }
 
-// TimeSinceEpoch UTC time in seconds, counted from January 1, 1970.
+// TimeSinceEpoch uTC time in seconds, counted from January 1, 1970.
 type TimeSinceEpoch time.Time
 
 // Time returns the TimeSinceEpoch as time.Time value.

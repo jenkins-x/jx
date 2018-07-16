@@ -1,4 +1,4 @@
-// Package domstorage provides the Chrome DevTools Protocol
+// Package domstorage provides the Chrome Debugging Protocol
 // commands, types, and events for the DOMStorage domain.
 //
 // Query and modify DOM storage.

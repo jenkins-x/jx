@@ -1,4 +1,4 @@
-// Package emulation provides the Chrome DevTools Protocol
+// Package emulation provides the Chrome Debugging Protocol
 // commands, types, and events for the Emulation domain.
 //
 // This domain emulates different environments for the page.

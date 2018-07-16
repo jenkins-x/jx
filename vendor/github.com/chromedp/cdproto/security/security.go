@@ -1,4 +1,4 @@
-// Package security provides the Chrome DevTools Protocol
+// Package security provides the Chrome Debugging Protocol
 // commands, types, and events for the Security domain.
 //
 // Security.
