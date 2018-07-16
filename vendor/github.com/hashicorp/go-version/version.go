@@ -15,7 +15,7 @@ var versionRegexp *regexp.Regexp
 // The raw regular expression string used for testing the validity
 // of a version.
 const VersionRegexpRaw string = `v?([0-9]+(\.[0-9]+)*?)` +
-	`(-?([0-9A-Za-z\-~]+(\.[0-9A-Za-z\-~]+)*))?` +
+	`(-([0-9]+[0-9A-Za-z\-~]*(\.[0-9A-Za-z\-~]+)*)|(-?([A-Za-z\-~]+[0-9A-Za-z\-~]*(\.[0-9A-Za-z\-~]+)*)))?` +
 	`(\+([0-9A-Za-z\-~]+(\.[0-9A-Za-z\-~]+)*))?` +
 	`?`
 
@@ -59,9 +59,14 @@ func NewVersion(v string) (*Version, error) {
 		segments = append(segments, 0)
 	}
 
+	pre := matches[7]
+	if pre == "" {
+		pre = matches[4]
+	}
+
 	return &Version{
-		metadata: matches[7],
-		pre:      matches[4],
+		metadata: matches[10],
+		pre:      pre,
 		segments: segments,
 		si:       si,
 	}, nil

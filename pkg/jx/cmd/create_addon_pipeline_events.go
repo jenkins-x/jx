@@ -143,7 +143,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		}
 	}
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, defaultPEReleaseName, o.Password)
+	err = o.expose(devNamespace, o.Namespace, o.Password)
 	if err != nil {
 		return err
 	}

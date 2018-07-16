@@ -25,3 +25,5 @@ release/
 scanning/
 .updatebot-repos/
 .terraform/
+myvalues.yaml
+myvalues.yml

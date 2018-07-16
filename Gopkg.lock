@@ -35,8 +35,8 @@
     "autorest/azure",
     "autorest/date"
   ]
-  revision = "1f7cd6cfe0adea687ad44a512dfe76140f804318"
-  version = "v10.12.0"
+  revision = "894522ed0d5cab8d143c39116ddc5f605a1931ee"
+  version = "v10.13.0"
 
 [[projects]]
   name = "github.com/BurntSushi/toml"
@@ -121,8 +121,8 @@
     "service/s3",
     "service/sts"
   ]
-  revision = "9e9afa0895e9daff556cc18f90dc53eb91f41ffd"
-  version = "v1.14.26"
+  revision = "94b80148ea4b1b136682116294b151766a3b85c2"
+  version = "v1.14.27"
 
 [[projects]]
   name = "github.com/beevik/etree"
@@ -186,10 +186,9 @@
     "tethering",
     "tracing"
   ]
-  revision = "e314dc1070136cd1453b86e8ef125271d9c16f29"
+  revision = "2df4c50ff9773a4e4134e27662a2d59416651748"
 
 [[projects]]
-  branch = "master"
   name = "github.com/chromedp/chromedp"
   packages = [
     ".",
@@ -197,7 +196,8 @@
     "kb",
     "runner"
   ]
-  revision = "34591780d9d429c470ccf81a2760c40245fc823a"
+  revision = "0406fa8a8ae689ea13f9161dc9c53efbb562361c"
+  version = "v0.1.1"
 
 [[projects]]
   name = "github.com/cpuguy83/go-md2man"
@@ -314,8 +314,8 @@
     "proto",
     "sortkeys"
   ]
-  revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
-  version = "v1.0.0"
+  revision = "7d68e886eac4f7e34d0d82241a6273d6c304c5cf"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"
@@ -345,7 +345,7 @@
   branch = "master"
   name = "github.com/google/go-github"
   packages = ["github"]
-  revision = "e96f1f1b07a5be7cba161bc7c1fd636044bfd75c"
+  revision = "b14883f2b71b5f7dd303ed96d00bfaefeaeecea2"
 
 [[projects]]
   branch = "master"
@@ -381,7 +381,7 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "ea2f0eefdc4eeac2e4db99e1a37ede0314efbff4"
+  revision = "edd944db6f0236dd272a0a320d2cd02cfeea6425"
 
 [[projects]]
   name = "github.com/gorilla/context"
@@ -414,7 +414,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
-  revision = "23480c0665776210b5fbbac6eaaee40e3e6a96b7"
+  revision = "78879f5e1be14bb4812abd0bb547a923b5aeac23"
 
 [[projects]]
   branch = "master"
@@ -466,7 +466,7 @@
     "pkg/tarball",
     "pkg/templates"
   ]
-  revision = "786ff490d49df92569b086bf27c4d9d9ef150742"
+  revision = "ddaf085e1285cb88c04f3208329d322810502b5c"
 
 [[projects]]
   name = "github.com/imdario/mergo"
@@ -584,7 +584,7 @@
   branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "bb74f1db0675b241733089d5a1faa5dd8b0ef57b"
+  revision = "f15292f7a699fcc1a38a80977f80a046874ba8ac"
 
 [[projects]]
   name = "github.com/modern-go/concurrent"
@@ -602,7 +602,7 @@
   branch = "master"
   name = "github.com/nlopes/slack"
   packages = ["."]
-  revision = "1a894400a36157b34f9887c4d8ded3c608b43ccd"
+  revision = "8ac1139f0b5b26ddb4a5c05b727e7ce155cc37f4"
 
 [[projects]]
   name = "github.com/onsi/ginkgo"
@@ -857,7 +857,7 @@
     "unix",
     "windows"
   ]
-  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
+  revision = "ac767d655b305d4e9612f5f6e33120b9176c4ad4"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -894,7 +894,7 @@
     "imports",
     "internal/fastwalk"
   ]
-  revision = "2087f8c10712366cfc2f4fcb1bf99eeef61ab21e"
+  revision = "fd2d2c45eb2dff7b87eab4303a1016b4dbf95e81"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -1274,6 +1274,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e7f71782c3f330b2530f73bb56636f5abebcb83797f480ce0b54f55745df366d"
+  inputs-digest = "51577174d34575fc44697e56fe84796cff9050953a335d6edb3c9706d6703e80"
   solver-name = "gps-cdcl"
   solver-version = 1

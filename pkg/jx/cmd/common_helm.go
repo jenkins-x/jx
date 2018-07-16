@@ -114,7 +114,7 @@ func (o *CommonOptions) installChartAt(dir string, releaseName string, chart str
 	}
 	o.Helm().SetCWD(dir)
 	return o.Helm().UpgradeChart(chart, releaseName, ns, &version, true,
-		&timeout, false, false, setValues, nil)
+		&timeout, true, false, setValues, nil)
 }
 
 // deleteChart deletes the given chart

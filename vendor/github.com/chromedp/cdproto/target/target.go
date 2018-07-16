@@ -77,6 +77,36 @@ func (p *AttachToTargetParams) Do(ctxt context.Context, h cdp.Executor) (session
 	return res.SessionID, nil
 }
 
+// AttachToBrowserTargetParams attaches to the browser target, only uses flat
+// sessionId mode.
+type AttachToBrowserTargetParams struct{}
+
+// AttachToBrowserTarget attaches to the browser target, only uses flat
+// sessionId mode.
+func AttachToBrowserTarget() *AttachToBrowserTargetParams {
+	return &AttachToBrowserTargetParams{}
+}
+
+// AttachToBrowserTargetReturns return values.
+type AttachToBrowserTargetReturns struct {
+	SessionID SessionID `json:"sessionId,omitempty"` // Id assigned to the session.
+}
+
+// Do executes Target.attachToBrowserTarget against the provided context.
+//
+// returns:
+//   sessionID - Id assigned to the session.
+func (p *AttachToBrowserTargetParams) Do(ctxt context.Context, h cdp.Executor) (sessionID SessionID, err error) {
+	// execute
+	var res AttachToBrowserTargetReturns
+	err = h.Execute(ctxt, CommandAttachToBrowserTarget, nil, &res)
+	if err != nil {
+		return "", err
+	}
+
+	return res.SessionID, nil
+}
+
 // CloseTargetParams closes the target. If the target is a page that gets
 // closed too.
 type CloseTargetParams struct {
@@ -492,6 +522,7 @@ func (p *SetRemoteLocationsParams) Do(ctxt context.Context, h cdp.Executor) (err
 const (
 	CommandActivateTarget         = "Target.activateTarget"
 	CommandAttachToTarget         = "Target.attachToTarget"
+	CommandAttachToBrowserTarget  = "Target.attachToBrowserTarget"
 	CommandCloseTarget            = "Target.closeTarget"
 	CommandExposeDevToolsProtocol = "Target.exposeDevToolsProtocol"
 	CommandCreateBrowserContext   = "Target.createBrowserContext"

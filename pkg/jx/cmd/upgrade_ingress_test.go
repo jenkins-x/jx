@@ -24,7 +24,9 @@ func (o *TestOptions) Setup() {
 				kubeClient: testclient.NewSimpleClientset(),
 			},
 		},
-		Issuer:           "letsencrypt-prod",
+		IngressConfig: kube.IngressConfig{
+			Issuer: "letsencrypt-prod",
+		},
 		TargetNamespaces: []string{"test"},
 	}
 
