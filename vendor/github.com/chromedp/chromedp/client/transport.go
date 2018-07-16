@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var (
+const (
 	// DefaultReadBufferSize is the default maximum read buffer size.
 	DefaultReadBufferSize = 25 * 1024 * 1024
 
@@ -14,7 +14,7 @@ var (
 	DefaultWriteBufferSize = 10 * 1024 * 1024
 )
 
-// Transport is the common interface to send/receive messages to a target.
+// Transport is the common interface to send/receive messages.
 type Transport interface {
 	Read() ([]byte, error)
 	Write([]byte) error
@@ -43,7 +43,7 @@ func (c *Conn) Write(buf []byte) error {
 // Dial dials the specified target's websocket URL.
 //
 // Note: uses gorilla/websocket.
-func Dial(urlstr string, opts ...DialOption) (Transport, error) {
+func Dial(t Target, opts ...DialOption) (Transport, error) {
 	d := &websocket.Dialer{
 		ReadBufferSize:  DefaultReadBufferSize,
 		WriteBufferSize: DefaultWriteBufferSize,
@@ -55,7 +55,7 @@ func Dial(urlstr string, opts ...DialOption) (Transport, error) {
 	}
 
 	// connect
-	conn, _, err := d.Dial(urlstr, nil)
+	conn, _, err := d.Dial(t.GetWebsocketURL(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -65,3 +65,5 @@ func Dial(urlstr string, opts ...DialOption) (Transport, error) {
 
 // DialOption is a dial option.
 type DialOption func(*websocket.Dialer)
+
+// TODO: add dial options ...
