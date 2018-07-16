@@ -169,3 +169,7 @@ required = [
 [[constraint]]
   name = "github.com/andygrunwald/go-gerrit"
   version = "0.5.2"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/denormal/go-gitignore"
