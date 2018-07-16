@@ -14,7 +14,7 @@ import (
 const (
 	defaultProwReleaseName = "prow"
 	defaultProwNamespace   = "prow"
-	prowVersion            = "0.0.3"
+	prowVersion            = "0.0.4"
 )
 
 var (
