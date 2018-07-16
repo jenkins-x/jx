@@ -3,9 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/Pallinder/go-randomdata"
-	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/certmanager"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -14,7 +11,6 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -31,12 +27,9 @@ var (
 )
 
 const (
-	CertManagerDeployment         = "cert-manager-cert-manager"
-	CertManagerNamespace          = "cert-manager"
-	CertmanagerCertificateProd    = "letsencrypt-prod"
-	CertmanagerCertificateStaging = "letsencrypt-staging"
-	CertmanagerIssuerProd         = "letsencrypt-prod"
-	CertmanagerIssuerStaging      = "letsencrypt-staging"
+	CertManagerDeployment = "cert-manager"
+	CertManagerNamespace  = "cert-manager"
+	Exposecontroller      = "exposecontroller"
 )
 
 // UpgradeIngressOptions the options for the create spring command
@@ -48,10 +41,8 @@ type UpgradeIngressOptions struct {
 	Namespaces       []string
 	Version          string
 	TargetNamespaces []string
-	Email            string
-	Domain           string
-	Issuer           string
-	tls              bool
+
+	IngressConfig kube.IngressConfig
 }
 
 // NewCmdUpgradeIngress defines the command
@@ -93,6 +84,11 @@ func (o *UpgradeIngressOptions) Run() error {
 		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
 	}
 
+	o.devNamespace, _, err = kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
+	if err != nil {
+		return err
+	}
+
 	// if existing ingress exist in the namespaces ask do you want to delete them?
 	ingressToDelete, err := o.getExistingIngressRules()
 	if err != nil {
@@ -100,13 +96,19 @@ func (o *UpgradeIngressOptions) Run() error {
 	}
 
 	// wizard to ask for config values
-	exposecontrollerConfig, err := o.confirmExposecontrollerConfig()
+	err = o.confirmExposecontrollerConfig()
 	if err != nil {
 		return err
 	}
 
 	// confirm values
-	util.Confirm(fmt.Sprintf("Using exposecontroller config values %v, ok?", exposecontrollerConfig), true, "")
+	util.Confirm(fmt.Sprintf("Using  config values %v, ok?", o.IngressConfig), true, "")
+
+	// save details to a configmap
+	err = kube.SaveIngressConfig(o.kubeClient, o.devNamespace, o.IngressConfig)
+	if err != nil {
+		return err
+	}
 
 	err = o.cleanServiceAnnotations()
 	if err != nil {
@@ -114,8 +116,8 @@ func (o *UpgradeIngressOptions) Run() error {
 	}
 
 	// if tls create CRDs
-	if o.tls {
-		err = o.ensureCertmanagerSetup(exposecontrollerConfig)
+	if o.IngressConfig.TLS {
+		err = o.ensureCertmanagerSetup()
 		if err != nil {
 			return err
 		}
@@ -135,7 +137,7 @@ func (o *UpgradeIngressOptions) Run() error {
 		}
 	}
 
-	err = o.recreateIngressRules(exposecontrollerConfig)
+	err = o.recreateIngressRules()
 	if err != nil {
 		return err
 	}
@@ -148,10 +150,10 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	log.Success("Ingress rules recreated\n")
 
-	if exposecontrollerConfig["tls-acme"] == "true" {
+	if o.IngressConfig.TLS {
 		log.Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
 		log.Info("Use the following commands to diagnose any issues:\n")
-		log.Info("jx logs cert-manager-cert-manager -n cert-manager\n")
+		log.Infof("jx logs %s -n %s\n", CertManagerDeployment, CertManagerNamespace)
 		log.Info("kubectl describe certificates\n")
 		log.Info("kubectl describe issuers\n")
 	}
@@ -170,7 +172,9 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			existingIngressNames[i.Name] = i.Namespace
+			if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
+				existingIngressNames[i.Name] = i.Namespace
+			}
 		}
 
 		nsList, err := o.kubeClient.CoreV1().Namespaces().List(metav1.ListOptions{})
@@ -187,7 +191,9 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 				return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 			}
 			for _, i := range ings.Items {
-				existingIngressNames[i.Name] = i.Namespace
+				if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
+					existingIngressNames[i.Name] = i.Namespace
+				}
 			}
 			o.TargetNamespaces = append(o.TargetNamespaces, n)
 		}
@@ -201,7 +207,9 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			existingIngressNames[i.Name] = i.Namespace
+			if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
+				existingIngressNames[i.Name] = i.Namespace
+			}
 		}
 		o.TargetNamespaces = append(o.TargetNamespaces, o.currentNamespace)
 	}
@@ -222,64 +230,60 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 	return existingIngressNames, nil
 }
 
-func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() (map[string]string, error) {
-	config := map[string]string{}
-	// get current exposecontroller configmap to use as defaults
+func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
+
+	// get current ingress config to use as existing defaults
 	devNamespace, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
 	if err != nil {
-		return config, fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
+		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
-	config, err = kube.GetTeamExposecontrollerConfig(o.kubeClient, devNamespace)
+	o.IngressConfig, err = kube.GetIngressConfig(o.kubeClient, devNamespace)
 	if err != nil {
-		log.Warnf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
-		config = map[string]string{}
+		// carry on as it just means we dont have any defaults
 	}
 
-	config["exposer"], err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", config["exposer"])
+	o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer)
 	if err != nil {
-		return config, err
+		return err
 	}
 
-	config["domain"], err = util.PickValue("Domain:", config["domain"], true)
+	o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true)
 	if err != nil {
-		return config, err
+		return err
 	}
-	o.Domain = config["domain"]
 
-	config["http"] = "true"
+	if !strings.HasSuffix(o.IngressConfig.Domain, "nip.io") {
 
-	if !strings.HasSuffix(config["domain"], "nip.io") {
+		o.IngressConfig.TLS = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt")
 
-		o.tls = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt")
-		config["tls-acme"] = strconv.FormatBool(o.tls)
-
-		if o.tls {
+		if o.IngressConfig.TLS {
 			clusterIssuer, err := util.PickNameWithDefault([]string{"prod", "staging"}, "Use LetsEncrypt staging or production?  Warning if testing use staging else you may be rate limited:", "staging")
 			if err != nil {
-				return config, err
+				return err
 			}
-			o.Issuer = "letsencrypt-" + clusterIssuer
+			o.IngressConfig.Issuer = "letsencrypt-" + clusterIssuer
 
-			email1, err := o.getCommandOutput("", "git", "config", "user.email")
+			if o.IngressConfig.Email == "" {
+				email1, err := o.getCommandOutput("", "git", "config", "user.email")
+				if err != nil {
+					return err
+				}
+
+				o.IngressConfig.Email = strings.TrimSpace(email1)
+			}
+
+			o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true)
 			if err != nil {
-				return config, err
+				return err
 			}
-
-			o.Email = strings.TrimSpace(email1)
-
-			o.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.Email, true)
-			if err != nil {
-				return config, err
-			}
-
-			config["http"] = "false"
 		}
 	}
-	return config, nil
+
+	return nil
 
 }
-func (o *UpgradeIngressOptions) recreateIngressRules(config map[string]string) error {
+func (o *UpgradeIngressOptions) recreateIngressRules() error {
 	devNamespace, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
@@ -295,12 +299,12 @@ func (o *UpgradeIngressOptions) recreateIngressRules(config map[string]string) e
 			return err
 		}
 
-		err = o.cleanCertmanagerReources(n)
+		err = kube.CleanCertmanagerResources(o.kubeClient, n, o.IngressConfig)
 		if err != nil {
 			return err
 		}
 
-		err = o.runExposecontroller(devNamespace, n, strings.ToLower(randomdata.SillyName()), config)
+		err = o.runExposecontroller(devNamespace, n, o.IngressConfig)
 		if err != nil {
 			return err
 		}
@@ -308,7 +312,7 @@ func (o *UpgradeIngressOptions) recreateIngressRules(config map[string]string) e
 	return nil
 }
 
-func (o *UpgradeIngressOptions) ensureCertmanagerSetup(config map[string]string) error {
+func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
 
 	if !o.SkipCertManager {
 		log.Infof("Looking for %s deployment in namespace %s\n", CertManagerDeployment, CertManagerNamespace)
@@ -317,7 +321,7 @@ func (o *UpgradeIngressOptions) ensureCertmanagerSetup(config map[string]string)
 			ok := util.Confirm("CertManager deployment not found, shall we install it now?", true, "CertManager automatically configures Ingress rules with TLS using signed certificates from LetsEncrypt")
 			if ok {
 
-				values := []string{"rbac.create=true", "ingressShim.extraArgs='{--default-issuer-name=letsencrypt-staging,--default-issuer-kind=ClusterIssuer}'"}
+				values := []string{"rbac.create=true", "ingressShim.extraArgs='{--default-issuer-name=letsencrypt-staging,--default-issuer-kind=Issuer}'"}
 				err = o.installChart("cert-manager", "stable/cert-manager", "", CertManagerNamespace, true, values)
 				if err != nil {
 					return fmt.Errorf("CertManager deployment failed: %v", err)
@@ -338,25 +342,9 @@ func (o *UpgradeIngressOptions) ensureCertmanagerSetup(config map[string]string)
 
 func (o *UpgradeIngressOptions) annotateExposedServicesWithCertManager() error {
 	for _, n := range o.TargetNamespaces {
-		svcList, err := kube.GetServices(o.kubeClient, n)
+		err := kube.AnnotateNamespaceServicesWithCertManager(o.kubeClient, n, o.IngressConfig.Issuer)
 		if err != nil {
 			return err
-		}
-		for _, s := range svcList {
-
-			if s.Annotations[kube.ExposeAnnotation] == "true" && s.Annotations[kube.JenkinsXSkipTLSAnnotation] != "true" {
-				existingAnnotations, _ := s.Annotations[kube.ExposeIngressAnnotation]
-				// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
-				if len(existingAnnotations) > 0 {
-					s.Annotations[kube.ExposeIngressAnnotation] = existingAnnotations + "\n" + kube.CertManagerAnnotation + ": " + o.Issuer
-				} else {
-					s.Annotations[kube.ExposeIngressAnnotation] = kube.CertManagerAnnotation + ": " + o.Issuer
-				}
-				_, err = o.kubeClient.CoreV1().Services(n).Update(s)
-				if err != nil {
-					return fmt.Errorf("failed to annotate and update service %s in namespace %s: %v", s.Name, n, err)
-				}
-			}
 		}
 	}
 	return nil
@@ -375,107 +363,11 @@ func (o *UpgradeIngressOptions) cleanExposecontrollerReources(ns string) error {
 	return nil
 }
 
-func (o *UpgradeIngressOptions) cleanCertmanagerReources(ns string) error {
-
-	if o.Issuer == CertmanagerIssuerProd {
-		_, err := o.kubeClient.CoreV1().RESTClient().Get().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerProd).DoRaw()
-		if err == nil {
-			// existing clusterissuers found, recreate
-			_, err = o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerProd).DoRaw()
-			if err != nil {
-				return fmt.Errorf("failed to delete issuer %s %v", "letsencrypt-prod", err)
-			}
-		}
-
-		if o.tls {
-			issuerProd := fmt.Sprintf(certmanager.Cert_manager_issuer_prod, o.Email)
-			json, err := yaml.YAMLToJSON([]byte(issuerProd))
-
-			resp, err := o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
-			if err != nil {
-				return fmt.Errorf("failed to create issuer %v: %s", err, string(resp))
-			}
-		}
-
-	} else {
-		_, err := o.kubeClient.CoreV1().RESTClient().Get().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerStaging).DoRaw()
-		if err == nil {
-			// existing clusterissuers found, recreate
-			resp, err := o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerStaging).DoRaw()
-			if err != nil {
-				return fmt.Errorf("failed to delete issuer %v: %s", err, string(resp))
-			}
-		}
-
-		if o.tls {
-			issuerStage := fmt.Sprintf(certmanager.Cert_manager_issuer_stage, o.Email)
-			json, err := yaml.YAMLToJSON([]byte(issuerStage))
-
-			resp, err := o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
-			if err != nil {
-				return fmt.Errorf("failed to create issuer %v: %s", err, string(resp))
-			}
-		}
-	}
-
-	// lets not error if they dont exist
-	o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Name(CertmanagerCertificateStaging).DoRaw()
-	o.kubeClient.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Name(CertmanagerCertificateProd).DoRaw()
-
-	if o.tls {
-		cert := fmt.Sprintf(certmanager.Cert_manager_certificate, o.Issuer, o.Issuer, o.Domain, o.Domain, o.Domain)
-		json, err := yaml.YAMLToJSON([]byte(cert))
-		if err != nil {
-			return fmt.Errorf("unable to convert YAML %s to JSON: %v", cert, err)
-		}
-		_, err = o.kubeClient.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Body(json).DoRaw()
-		if err != nil {
-			return fmt.Errorf("failed to create certificate %v", err)
-		}
-	}
-
-	return nil
-}
-
 func (o *UpgradeIngressOptions) cleanServiceAnnotations() error {
 	for _, n := range o.TargetNamespaces {
-		svcList, err := kube.GetServices(o.kubeClient, n)
+		err := kube.CleanServiceAnnotations(o.kubeClient, n)
 		if err != nil {
 			return err
-		}
-		for _, s := range svcList {
-			if s.Annotations[kube.ExposeAnnotation] == "true" && s.Annotations[kube.JenkinsXSkipTLSAnnotation] != "true" {
-				// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
-				annotationsForIngress, _ := s.Annotations[kube.ExposeIngressAnnotation]
-				if len(annotationsForIngress) > 0 {
-
-					var newAnnotations []string
-					annotations := strings.Split(annotationsForIngress, "\n")
-					for _, element := range annotations {
-						annotation := strings.SplitN(element, ":", 2)
-						key, _ := annotation[0], strings.TrimSpace(annotation[1])
-						if key != kube.CertManagerAnnotation {
-							newAnnotations = append(newAnnotations, element)
-						}
-					}
-					annotationsForIngress = ""
-					for _, v := range newAnnotations {
-						if len(annotationsForIngress) > 0 {
-							annotationsForIngress = annotationsForIngress + "\n" + v
-						} else {
-							annotationsForIngress = v
-						}
-					}
-					s.Annotations[kube.ExposeIngressAnnotation] = annotationsForIngress
-
-				}
-				delete(s.Annotations, kube.ExposeURLAnnotation)
-
-				_, err = o.kubeClient.CoreV1().Services(n).Update(s)
-				if err != nil {
-					return fmt.Errorf("failed to clean service %s annotations in namespace %s: %v", s.Name, n, err)
-				}
-			}
 		}
 	}
 
