@@ -801,7 +801,7 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoInput5(out *jwriter.Writer, i
 		}
 		out.Float64(float64(in.DeltaY))
 	}
-	{
+	if in.Modifiers != 0 {
 		const prefix string = ",\"modifiers\":"
 		if first {
 			first = false
@@ -960,7 +960,7 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoInput6(out *jwriter.Writer, i
 			out.RawByte(']')
 		}
 	}
-	{
+	if in.Modifiers != 0 {
 		const prefix string = ",\"modifiers\":"
 		if first {
 			first = false
@@ -1095,7 +1095,7 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoInput7(out *jwriter.Writer, i
 		}
 		out.Float64(float64(in.Y))
 	}
-	{
+	if in.Modifiers != 0 {
 		const prefix string = ",\"modifiers\":"
 		if first {
 			first = false
@@ -1260,7 +1260,7 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoInput8(out *jwriter.Writer, i
 		}
 		(in.Type).MarshalEasyJSON(out)
 	}
-	{
+	if in.Modifiers != 0 {
 		const prefix string = ",\"modifiers\":"
 		if first {
 			first = false
@@ -1350,7 +1350,7 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoInput8(out *jwriter.Writer, i
 		}
 		out.Int64(int64(in.NativeVirtualKeyCode))
 	}
-	{
+	if in.AutoRepeat {
 		const prefix string = ",\"autoRepeat\":"
 		if first {
 			first = false
@@ -1360,7 +1360,7 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoInput8(out *jwriter.Writer, i
 		}
 		out.Bool(bool(in.AutoRepeat))
 	}
-	{
+	if in.IsKeypad {
 		const prefix string = ",\"isKeypad\":"
 		if first {
 			first = false
@@ -1370,7 +1370,7 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoInput8(out *jwriter.Writer, i
 		}
 		out.Bool(bool(in.IsKeypad))
 	}
-	{
+	if in.IsSystemKey {
 		const prefix string = ",\"isSystemKey\":"
 		if first {
 			first = false

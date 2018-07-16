@@ -2449,8 +2449,6 @@ func easyjsonC5a4559bDecodeGithubComChromedpCdprotoTarget29(in *jlexer.Lexer, ou
 		switch key {
 		case "targetId":
 			out.TargetID = ID(in.String())
-		case "flatten":
-			out.Flatten = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -2474,16 +2472,6 @@ func easyjsonC5a4559bEncodeGithubComChromedpCdprotoTarget29(out *jwriter.Writer,
 			out.RawString(prefix)
 		}
 		out.String(string(in.TargetID))
-	}
-	if in.Flatten {
-		const prefix string = ",\"flatten\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		out.Bool(bool(in.Flatten))
 	}
 	out.RawByte('}')
 }

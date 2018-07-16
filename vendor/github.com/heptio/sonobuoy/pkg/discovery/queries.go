@@ -17,13 +17,11 @@ limitations under the License.
 package discovery
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"time"
 
 	"github.com/heptio/sonobuoy/pkg/config"
-	"github.com/heptio/sonobuoy/pkg/errlog"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -173,6 +171,8 @@ func queryNsResource(ns string, resourceKind string, opts metav1.ListOptions, ku
 		return kubeClient.CoreV1().Pods(ns).List(opts)
 	case "PodDisruptionBudgets":
 		return kubeClient.PolicyV1beta1().PodDisruptionBudgets(ns).List(opts)
+	case "PodPresets":
+		return kubeClient.SettingsV1alpha1().PodPresets(ns).List(opts)
 	case "PodTemplates":
 		return kubeClient.CoreV1().PodTemplates(ns).List(opts)
 	case "ReplicaSets":
@@ -209,6 +209,8 @@ func queryNsResource(ns string, resourceKind string, opts metav1.ListOptions, ku
 			return lst, err
 		}
 		return lst, err
+	case "Secrets":
+		return kubeClient.CoreV1().Secrets(ns).List(opts)
 	case "ServiceAccounts":
 		return kubeClient.CoreV1().ServiceAccounts(ns).List(opts)
 	case "Services":
@@ -315,8 +317,7 @@ func QueryNSResources(kubeClient kubernetes.Interface, recorder *QueryRecorder, 
 			start := time.Now()
 			err := gatherPodLogs(kubeClient, ns, opts, cfg)
 			if err != nil {
-				errlog.LogError(err)
-				continue
+				return err
 			}
 			duration := time.Since(start)
 			recorder.RecordQuery("PodLogs", ns, duration, err)
@@ -355,45 +356,29 @@ func QueryClusterResources(kubeClient kubernetes.Interface, recorder *QueryRecor
 				return untypedQuery(cfg.OutputDir(), "serverversion.json", objqry)
 			}
 			timedQuery(recorder, "serverversion", "", query)
-			continue
 		case "ServerGroups":
 			objqry := func() (interface{}, error) { return kubeClient.Discovery().ServerGroups() }
 			query := func() (time.Duration, error) {
 				return untypedQuery(cfg.OutputDir(), "servergroups.json", objqry)
 			}
 			timedQuery(recorder, "servergroups", "", query)
-			continue
 		case "Nodes":
 			// cfg.Nodes configures whether users want to gather the Nodes resource in the
 			// cluster, but we also use that option to guide whether we get node data such
 			// as configz and healthz endpoints.
 
-			// TODO(chuckha) Use a separate configuration like NodeConfiguration for node configz/healthz to make
-			// this switch flow less confusing. "Nodes" is responsible for too much.
-
 			// NOTE: Node data collection is an aggregated time b/c propagating that detail back up
 			// is odd and would pollute some of the output.
-
 			start := time.Now()
-			// TODO(chuckha) look at FieldSelector for list options{}
-			nodeList, err := kubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
-			if err != nil {
-				errlog.LogError(fmt.Errorf("failed to get node list: %v", err))
-				// Do not return or continue because we also want to query nodes as resources
-				break
-			}
-			nodeNames := make([]string, len(nodeList.Items))
-			for i, node := range nodeList.Items {
-				nodeNames[i] = node.Name
-			}
-			err = gatherNodeData(nodeNames, kubeClient.CoreV1().RESTClient(), cfg)
+			err := gatherNodeData(kubeClient, cfg)
 			duration := time.Since(start)
 			recorder.RecordQuery("Nodes", "", duration, err)
-			// do not continue because we want to now query nodes as resources
+			fallthrough
+		default:
+			lister := func() (runtime.Object, error) { return queryNonNsResource(resourceKind, kubeClient) }
+			query := func() (time.Duration, error) { return objListQuery(outdir+"/", resourceKind+".json", lister) }
+			timedQuery(recorder, resourceKind, "", query)
 		}
-		lister := func() (runtime.Object, error) { return queryNonNsResource(resourceKind, kubeClient) }
-		query := func() (time.Duration, error) { return objListQuery(outdir+"/", resourceKind+".json", lister) }
-		timedQuery(recorder, resourceKind, "", query)
 	}
 
 	return nil
