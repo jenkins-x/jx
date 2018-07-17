@@ -138,9 +138,22 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/bouk/monkey"
+  packages = ["."]
+  revision = "5df1f207ff77e025801505ae4d903133a0b4353f"
+  source = "github.com/i0n/monkey"
+
+[[projects]]
+  branch = "master"
   name = "github.com/c2h5oh/datasize"
   packages = ["."]
   revision = "4eba002a5eaea69cf8d235a388fc6b65ae68d2dd"
+
+[[projects]]
+  name = "github.com/cenkalti/backoff"
+  packages = ["."]
+  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
+  version = "v2.0.0"
 
 [[projects]]
   branch = "master"
@@ -1286,6 +1299,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "74d0700959840117869d226bcaab2b82b155f4a4be42becf655c570c7dece1ca"
+  inputs-digest = "20f692bceb2049eaa3632b5628a99552c8309a43b1bb5565fd049127240516fb"
   solver-name = "gps-cdcl"
   solver-version = 1

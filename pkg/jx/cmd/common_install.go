@@ -551,12 +551,28 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 		errors.Wrap(err, "failed to initialize helm")
 	}
 	// remove the plugin just in case is already installed
-	util.RunCommand("", helmBinary, "plugin", "remove", "secrets")
-	return util.RunCommand("", helmBinary, "plugin", "install", "https://github.com/futuresimple/helm-secrets")
+	cmd := util.Command{
+		Name: helmBinary,
+		Args: []string{"plugin", "remove", "secrets"},
+	}
+	_, err = cmd.RunWithoutRetry()
+	if err != nil {
+		errors.Wrap(err, "failed to remove helm secrets")
+	}
+	cmd = util.Command{
+		Name: helmBinary,
+		Args: []string{"plugin", "install", "https://github.com/futuresimple/helm-secrets"},
+	}
+	_, err = cmd.RunWithoutRetry()
+	return err
 }
 
 func (o *CommonOptions) installMavenIfRequired() error {
-	_, err := util.RunCommandWithOutput("", "mvn", "-v")
+	cmd := util.Command{
+		Name: "mvn",
+		Args: []string{"-v"},
+	}
+	_, err := cmd.RunWithoutRetry()
 	if err == nil {
 		return nil
 	}
