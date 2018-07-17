@@ -16,6 +16,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"io/ioutil"
 	"strings"
+	"github.com/jenkins-x/jx/pkg/version"
 )
 
 type CreateCodeshipFlags struct {
@@ -24,7 +25,6 @@ type CreateCodeshipFlags struct {
 	CodeshipUsername     string
 	CodeshipPassword     string
 	CodeshipOrganisation string
-	JxVersion            string
 	GitUser              string
 	GitEmail             string
 	GKEServiceAccount    string
@@ -86,7 +86,6 @@ func (options *CreateCodeshipOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.CodeshipPassword, "codeship-password", "", "", "The password to login to Codeship with, this will not be stored anywhere")
 	cmd.Flags().StringVarP(&options.Flags.CodeshipOrganisation, "codeship-organisation", "", "", "The Codeship organisation to use, this will not be stored anywhere")
 
-	cmd.Flags().StringVarP(&options.Flags.JxVersion, "jx-version", "", "1.3.88", "The version of JX that Codeship will use")
 	cmd.Flags().StringVarP(&options.Flags.GitUser, "git-user", "", "Codeship", "The name to use for any git commits")
 	cmd.Flags().StringVarP(&options.Flags.GitEmail, "git-email", "", "codeship@jenkins-x.io", "The email to use for any git commits")
 
@@ -245,7 +244,7 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "ORG", Value: o.Flags.OrganisationName},
 				{Name: "GIT_USERNAME", Value: details.User.Username},
 				{Name: "GIT_API_TOKEN", Value: details.User.ApiToken},
-				{Name: "JX_VERSION", Value: o.Flags.JxVersion},
+				{Name: "JX_VERSION", Value: version.Version},
 				{Name: "GIT_USER", Value: o.Flags.GitUser},
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
 				{Name: "ENVIRONMENTS", Value: strings.Join(o.Flags.Cluster, ",")},
