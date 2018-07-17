@@ -16,6 +16,8 @@ spec:
     config:
     - http01:
         ingressClass: nginx
+      domains:
+      - %s
 `
 
 	Cert_manager_issuer_prod = `
