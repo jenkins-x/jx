@@ -200,6 +200,13 @@
   version = "v0.1.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/codeship/codeship-go"
+  packages = ["."]
+  revision = "c4291b64fe936347aba3bc4a917f77a645e0bb30"
+  source = "github.com/garethjevans/codeship-go"
+
+[[projects]]
   name = "github.com/cpuguy83/go-md2man"
   packages = ["md2man"]
   revision = "20f5889cbdc3c73dbd2862796665e7c465ade7d1"
@@ -1274,6 +1281,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "51577174d34575fc44697e56fe84796cff9050953a335d6edb3c9706d6703e80"
+  inputs-digest = "72d2db863662207a97ade3a1571c7333759966d14bb933a83fe65851c7e0d0b8"
   solver-name = "gps-cdcl"
   solver-version = 1

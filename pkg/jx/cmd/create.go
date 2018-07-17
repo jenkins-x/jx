@@ -68,6 +68,7 @@ func NewCmdCreate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateBranchPattern(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateCamel(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateChat(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateCodeship(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateCluster(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateDevPod(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateDocs(f, out, errOut))
