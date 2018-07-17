@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"context"
+	"errors"
 	"github.com/codeship/codeship-go"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -13,8 +14,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"errors"
 	"io/ioutil"
+	"strings"
 )
 
 type CreateCodeshipFlags struct {
@@ -26,7 +27,7 @@ type CreateCodeshipFlags struct {
 	JxVersion            string
 	GitUser              string
 	GitEmail             string
-	GKEServiceAccount string
+	GKEServiceAccount    string
 }
 
 // CreateCodeshipOptions the options for the create spring command
@@ -92,14 +93,45 @@ func (options *CreateCodeshipOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.GKEServiceAccount, "gke-service-account", "", "", "The GKE service account to use")
 }
 
-// Run implements this command
-func (o *CreateCodeshipOptions) Run() error {
+func (o *CreateCodeshipOptions) validate() error {
+
+	if len(o.Flags.Cluster) == 0 {
+		return errors.New("No cluster details provided")
+	}
+
+	err := o.validateClusterDetails()
+	if err != nil {
+		return err
+	}
+
 	if o.Flags.OrganisationName == "" {
 		return errors.New("No organisation has been set")
 	}
 
 	if o.Flags.GKEServiceAccount == "" {
 		return errors.New("No gke service account has been set")
+	}
+	return nil
+}
+
+func (o *CreateCodeshipOptions) validateClusterDetails() error {
+	for _, p := range o.Flags.Cluster {
+		pair := strings.Split(p, "=")
+		if len(pair) != 2 {
+			return errors.New("need to provide cluster values as --cluster name=provider, e.g. --cluster production=gke")
+		}
+		if !stringInValidProviders(pair[1]) {
+			return errors.New(fmt.Sprintf("invalid cluster provider type %s, must be one of %v", p, validTerraformClusterProviders))
+		}
+	}
+	return nil
+}
+
+// Run implements this command
+func (o *CreateCodeshipOptions) Run() error {
+	err := o.validate()
+	if err != nil {
+		return err
 	}
 
 	if o.Flags.CodeshipUsername == "" {
@@ -196,14 +228,12 @@ func (o *CreateCodeshipOptions) Run() error {
 
 	_, uuid, err := ProjectExists(ctx, csOrg, o.Flags.CodeshipOrganisation, repoName)
 
-
 	b, err := ioutil.ReadFile(o.Flags.GKEServiceAccount)
 	if err != nil {
 		return err
 	}
 
 	serviceAccount := string(b)
-
 
 	if uuid == "" {
 		createProjectRequest := codeship.ProjectCreateRequest{
@@ -218,7 +248,7 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "JX_VERSION", Value: o.Flags.JxVersion},
 				{Name: "GIT_USER", Value: o.Flags.GitUser},
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
-				{Name: "ENVIRONMENTS", Value: "dev=gke"},
+				{Name: "ENVIRONMENTS", Value: strings.Join(o.Flags.Cluster, ",")},
 			},
 		}
 
