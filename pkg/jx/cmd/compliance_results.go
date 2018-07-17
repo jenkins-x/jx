@@ -12,6 +12,7 @@ import (
 	"github.com/heptio/sonobuoy/pkg/client/results"
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/pkg/errors"
@@ -75,7 +76,8 @@ func (o *ComplianceResultsOptions) Run() error {
 	}
 
 	if status.Status != aggregation.CompleteStatus {
-		return errors.New("Compliance results not ready. Run `jx compliance status` for status.")
+		log.Info("Compliance results not ready. Run `jx compliance status` for status.")
+		return nil
 	}
 
 	cfg := &client.RetrieveConfig{
