@@ -176,5 +176,4 @@ required = [
 
 [[constraint]]
   name = "github.com/codeship/codeship-go"
-  branch = "master"
-  source = "github.com/garethjevans/codeship-go"
+  version = "0.3.1"

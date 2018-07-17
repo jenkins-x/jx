@@ -14,9 +14,9 @@ type ProjectType int
 
 const (
 	// ProjectTypeBasic represents a Codeship Basic project type
-	ProjectTypeBasic ProjectType = 1
+	ProjectTypeBasic ProjectType = iota
 	// ProjectTypePro represents a Codeship Pro project type
-	ProjectTypePro   ProjectType = 2
+	ProjectTypePro
 )
 
 var (
@@ -112,7 +112,7 @@ type Project struct {
 	SSHKey               string                `json:"ssh_key,omitempty"`
 	TeamIDs              []int                 `json:"team_ids,omitempty"`
 	TestPipelines        []TestPipeline        `json:"test_pipelines,omitempty"`
-	Type                 ProjectType           `json:"type,omitempty"`
+	Type                 ProjectType           `json:"type"`
 	UpdatedAt            time.Time             `json:"updated_at,omitempty"`
 	UUID                 string                `json:"uuid,omitempty"`
 }
@@ -126,7 +126,7 @@ type ProjectCreateRequest struct {
 	SetupCommands        []string              `json:"setup_commands,omitempty"`
 	TeamIDs              []int                 `json:"team_ids,omitempty"`
 	TestPipelines        []TestPipeline        `json:"test_pipelines,omitempty"`
-	Type                 ProjectType           `json:"type,omitempty"`
+	Type                 ProjectType           `json:"type"`
 }
 
 // ProjectUpdateRequest structure for updating a Project
@@ -135,7 +135,7 @@ type ProjectUpdateRequest struct {
 	NotificationRules    []NotificationRule    `json:"notification_rules,omitempty"`
 	SetupCommands        []string              `json:"setup_commands,omitempty"`
 	TeamIDs              []int                 `json:"team_ids,omitempty"`
-	Type                 ProjectType           `json:"type,omitempty"`
+	Type                 ProjectType           `json:"type"`
 }
 
 // ProjectList holds a list of Project objects
