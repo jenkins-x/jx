@@ -244,7 +244,7 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "ORG", Value: o.Flags.OrganisationName},
 				{Name: "GIT_USERNAME", Value: details.User.Username},
 				{Name: "GIT_API_TOKEN", Value: details.User.ApiToken},
-				{Name: "JX_VERSION", Value: version.Version},
+				{Name: "JX_VERSION", Value: jxVersion()},
 				{Name: "GIT_USER", Value: o.Flags.GitUser},
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
 				{Name: "ENVIRONMENTS", Value: strings.Join(o.Flags.Cluster, ",")},
@@ -252,7 +252,6 @@ func (o *CreateCodeshipOptions) Run() error {
 		}
 
 		project, _, err := csOrg.CreateProject(ctx, createProjectRequest)
-		fmt.Println(project)
 
 		if err != nil {
 			return err
@@ -260,10 +259,31 @@ func (o *CreateCodeshipOptions) Run() error {
 
 		uuid = project.UUID
 
-		fmt.Println("Created Project")
-		fmt.Println(project)
+		log.Infof("Created Project %s\n", util.ColorInfo(project.Name))
+	} else {
+		updateProjectRequest := codeship.ProjectUpdateRequest{
+			Type:          codeship.ProjectTypeBasic,
+			SetupCommands: []string{"./build.sh"},
+			EnvironmentVariables: []codeship.EnvironmentVariable{
+				{Name: "GKE_SA_JSON", Value: serviceAccount},
+				{Name: "ORG", Value: o.Flags.OrganisationName},
+				{Name: "GIT_USERNAME", Value: details.User.Username},
+				{Name: "GIT_API_TOKEN", Value: details.User.ApiToken},
+				{Name: "JX_VERSION", Value: jxVersion()},
+				{Name: "GIT_USER", Value: o.Flags.GitUser},
+				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
+				{Name: "ENVIRONMENTS", Value: strings.Join(o.Flags.Cluster, ",")},
+			},
+		}
+
+		project, _, err := csOrg.UpdateProject(ctx, uuid, updateProjectRequest)
+		if err != nil {
+			return err
+		}
+		log.Infof("Updated Project %s\n", util.ColorInfo(project.Name))
 	}
 
+	log.Infof("Triggering build for %s\n", util.ColorInfo(uuid))
 	_, _, err = csOrg.CreateBuild(ctx, uuid, "heads/master", "")
 	if err != nil {
 		return err
@@ -281,14 +301,17 @@ func ProjectExists(ctx context.Context, org *codeship.Organization, codeshipOrg 
 	projectName := fmt.Sprintf("%s/%s", codeshipOrg, codeshipRepo)
 
 	for _, p := range projects.Projects {
-		fmt.Println(p)
-		fmt.Println(p.Name)
-
 		if p.Name == projectName {
 			log.Infof("Project %s already exists\n", util.ColorInfo(p.Name))
 			return true, p.UUID, nil
 		}
 	}
 	return false, "", nil
+}
 
+func jxVersion() string {
+	if version.Version == "1.0.1" {
+		return "1.3.99"
+	}
+	return version.Version
 }
