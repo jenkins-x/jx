@@ -244,7 +244,7 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "ORG", Value: o.Flags.OrganisationName},
 				{Name: "GIT_USERNAME", Value: details.User.Username},
 				{Name: "GIT_API_TOKEN", Value: details.User.ApiToken},
-				{Name: "JX_VERSION", Value: version.Version},
+				{Name: "JX_VERSION", Value: jxVersion()},
 				{Name: "GIT_USER", Value: o.Flags.GitUser},
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
 				{Name: "ENVIRONMENTS", Value: strings.Join(o.Flags.Cluster, ",")},
@@ -269,7 +269,7 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "ORG", Value: o.Flags.OrganisationName},
 				{Name: "GIT_USERNAME", Value: details.User.Username},
 				{Name: "GIT_API_TOKEN", Value: details.User.ApiToken},
-				{Name: "JX_VERSION", Value: version.Version},
+				{Name: "JX_VERSION", Value: jxVersion()},
 				{Name: "GIT_USER", Value: o.Flags.GitUser},
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
 				{Name: "ENVIRONMENTS", Value: strings.Join(o.Flags.Cluster, ",")},
@@ -307,5 +307,11 @@ func ProjectExists(ctx context.Context, org *codeship.Organization, codeshipOrg 
 		}
 	}
 	return false, "", nil
+}
 
+func jxVersion() string {
+	if version.Version == "1.0.1" {
+		return "1.3.99"
+	}
+	return version.Version
 }
