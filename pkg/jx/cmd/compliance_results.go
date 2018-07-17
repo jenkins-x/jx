@@ -88,11 +88,7 @@ func (o *ComplianceResultsOptions) Run() error {
 	eg := &errgroup.Group{}
 	eg.Go(func() error { return <-errch })
 	eg.Go(func() error {
-		resultsReader, err := untarResults(reader)
-		if err != nil {
-			return errors.Wrap(err, "could not extract the compliance results from archive")
-		}
-
+		resultsReader, errch := untarResults(reader)
 		gzr, err := gzip.NewReader(resultsReader)
 		if err != nil {
 			return errors.Wrap(err, "could not create a gzip reader for compliance results ")
@@ -108,6 +104,11 @@ func (o *ComplianceResultsOptions) Run() error {
 			}, testResults)
 		sort.Sort(StatusSortedTestCases(testResults))
 		o.printResults(testResults)
+
+		err = <-errch
+		if err != nil {
+			return errors.Wrap(err, "could not extract the compliance results from archive")
+		}
 		return nil
 	})
 
@@ -164,27 +165,34 @@ func status(junitResult reporters.JUnitTestCase) string {
 	}
 }
 
-func untarResults(src io.Reader) (io.Reader, error) {
+func untarResults(src io.Reader) (io.Reader, <-chan error) {
+	ec := make(chan error, 1)
 	tarReader := tar.NewReader(src)
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
 			if err != io.EOF {
-				return nil, err
+				ec <- err
+				return nil, ec
+			} else {
+				ec <- errors.New("no compliance results archive found")
+				return nil, ec
 			}
-			break
 		}
 		if strings.HasSuffix(header.Name, ".tar.gz") {
 			reader, writer := io.Pipe()
-			//TODO propagate the error out of the goroutine
-			go func(writer *io.PipeWriter) {
+			go func(writer *io.PipeWriter, ec chan error) {
 				defer writer.Close()
-				io.Copy(writer, tarReader)
-			}(writer)
+				defer close(ec)
+				_, err := io.Copy(writer, tarReader)
+				if err != nil {
+					ec <- err
+				}
+			}(writer, ec)
 			return reader, nil
 		}
 	}
-	return nil, errors.New("no compliance results archive found")
+	return nil, ec
 }
 
 func filterTests(predicate func(testCase reporters.JUnitTestCase) bool, testCases []reporters.JUnitTestCase) []reporters.JUnitTestCase {
