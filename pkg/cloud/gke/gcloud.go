@@ -22,6 +22,9 @@ var (
 )
 
 func BucketExists(projectId string, bucketName string) (bool, error) {
+	if projectId == "" {
+		return false, errors.New("cannot check bucket without a projectId")
+	}
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
 	output, err := util.RunCommandWithOutput("", "gsutil", "ls", "-p", projectId)
 	if err != nil {
@@ -31,6 +34,9 @@ func BucketExists(projectId string, bucketName string) (bool, error) {
 }
 
 func CreateBucket(projectId string, bucketName string, location string) error {
+	if projectId == "" {
+		return errors.New("cannot create a bucket without a projectId")
+	}
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
 	err := util.RunCommand("", "gsutil", "mb", "-l", location, "-p", projectId, fullBucketName)
 	if err != nil {
@@ -44,6 +50,9 @@ func GetRegionFromZone(zone string) string {
 }
 
 func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterConfigDir string) (string, error) {
+	if projectId == "" {
+		return "", errors.New("cannot get/create a service account without a projectId")
+	}
 	args := []string{"iam",
 		"service-accounts",
 		"list",
@@ -132,6 +141,9 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 }
 
 func EnableApis(projectId string, apis ...string) error {
+	if projectId == "" {
+		return errors.New("cannot enable apis without a projectId")
+	}
 	args := []string{"--project", projectId, "services", "enable"}
 	args = append(args, apis...)
 
@@ -164,6 +176,9 @@ func Login(serviceAccountKeyPath string, skipLogin bool) error {
 }
 
 func CheckPermission(perm string, projectId string) (bool, error) {
+	if projectId == "" {
+		return false, errors.New("cannot check permission without a projectId")
+	}
 	// if it doesn't check to see if we have permissions to create (assign roles) to a service account
 	args := []string{"iam",
 		"list-testable-permissions",

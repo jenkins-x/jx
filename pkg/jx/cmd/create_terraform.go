@@ -504,6 +504,11 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		fmt.Fprintf(o.Stdout(), "Skipping terraform apply\n")
 	}
 
+	err = o.configureEnvironments()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -649,11 +654,6 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 		if err != nil {
 			return err
 		}
-
-		err = gke.EnableApis(g.ProjectId, "iam", "compute", "container")
-		if err != nil {
-			return err
-		}
 	}
 
 	if g.ProjectId == "" {
@@ -662,6 +662,11 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 			return err
 		}
 		g.ProjectId = projectId
+	}
+
+	err := gke.EnableApis(g.ProjectId, "iam", "compute", "container")
+	if err != nil {
+		return err
 	}
 
 	if g.Name() == "" {
@@ -729,7 +734,7 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 	}
 
 	terraformVars := filepath.Join(path, "terraform.tfvars")
-	err := g.CreateTfVarsFile(terraformVars)
+	err = g.CreateTfVarsFile(terraformVars)
 	if err != nil {
 		return err
 	}
@@ -970,6 +975,30 @@ func (o *CreateTerraformOptions) initAndInstall(provider string) error {
 	err := installOpts.Run()
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (o *CreateTerraformOptions) configureEnvironments() error {
+	log.Info("Creating default environments\n")
+
+	for index, cluster := range o.Clusters {
+		environmentOrder := (index + 1) * 100
+		o.InstallOptions.CreateEnvOptions.Options.Name = cluster.Name()
+		o.InstallOptions.CreateEnvOptions.Options.Spec.Label = cluster.Name()
+		o.InstallOptions.CreateEnvOptions.Options.Spec.Order = int32(environmentOrder)
+		o.InstallOptions.CreateEnvOptions.GitRepositoryOptions.Owner = o.InstallOptions.Flags.EnvironmentGitOwner
+		o.InstallOptions.CreateEnvOptions.Prefix = o.InstallOptions.Flags.DefaultEnvironmentPrefix
+		o.InstallOptions.CreateEnvOptions.Options.ClusterName = cluster.Name()
+		if o.BatchMode {
+			o.InstallOptions.CreateEnvOptions.BatchMode = o.BatchMode
+		}
+
+		err := o.InstallOptions.CreateEnvOptions.Run()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
