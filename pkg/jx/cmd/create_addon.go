@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -49,7 +50,9 @@ func NewCmdCreateAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.AddCommand(NewCmdCreateAddonGitea(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonIstio(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonKubeless(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonOwasp(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonProw(f, out, errOut))
 
 	options.addFlags(cmd, "", "")
 	return cmd
@@ -78,12 +81,16 @@ func (o *CreateAddonOptions) Run() error {
 }
 
 func (o *CreateAddonOptions) CreateAddon(addon string) error {
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
 	charts := kube.AddonCharts
 	chart := charts[addon]
 	if chart == "" {
 		return util.InvalidArg(addon, util.SortedMapKeys(charts))
 	}
-	err := o.installChart(addon, chart, o.Version, o.Namespace, o.HelmUpdate, nil)
+	err = o.installChart(addon, chart, o.Version, o.Namespace, o.HelmUpdate, nil)
 	if err != nil {
 		return fmt.Errorf("Failed to install chart %s: %s", chart, err)
 	}

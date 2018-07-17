@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -84,6 +85,11 @@ func (o *CreateAddonAmbassadorOptions) Run() error {
 	err := o.addHelmRepoIfMissing(ambassadorRepoUrl, ambassadorRepoName)
 	if err != nil {
 		return err
+	}
+
+	err = o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
 
 	//values := []string{"rbac.create=true"}

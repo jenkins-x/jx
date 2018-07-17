@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,12 +14,38 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
+)
+
+var (
+	groovy = `
+// imports
+import jenkins.model.Jenkins
+import jenkins.model.JenkinsLocationConfiguration
+
+// parameters
+def jenkinsParameters = [
+  url:    '%s/'
+]
+
+// get Jenkins location configuration
+def jenkinsLocationConfiguration = JenkinsLocationConfiguration.get()
+
+// set Jenkins URL
+jenkinsLocationConfiguration.setUrl(jenkinsParameters.url)
+
+// set Jenkins admin email address
+jenkinsLocationConfiguration.setAdminAddress(jenkinsParameters.email)
+
+// save current Jenkins state to disk
+jenkinsLocationConfiguration.save()
+`
 )
 
 func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
@@ -1078,4 +1106,59 @@ rules:
 	}
 
 	return nil
+}
+
+func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
+
+	// loop over each namespace and update the Jenkins URL if a Jenkins service is found
+	for _, n := range namespaces {
+		externalURL, err := kube.GetServiceURLFromName(o.kubeClient, "jenkins", n)
+		if err != nil {
+			// skip namespace if no Jenkins service found
+			continue
+		}
+
+		log.Infof("Updating Jenkins with new external URL details %s\n", externalURL)
+
+		jenkins, err := o.Factory.CreateJenkinsClient(o.kubeClient, n)
+
+		if err != nil {
+			return err
+		}
+
+		data := url.Values{}
+		data.Add("script", fmt.Sprintf(groovy, externalURL))
+
+		err = jenkins.Post("/scriptText", data, nil)
+	}
+
+	return nil
+}
+
+func (o *CommonOptions) GetClusterUserName() (string, error) {
+
+	username, _ := o.getCommandOutput("", "gcloud", "config", "get-value", "core/account")
+
+	if username != "" {
+		return username, nil
+	}
+
+	config, _, err := kube.LoadConfig()
+	if err != nil {
+		return username, err
+	}
+	if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
+		return username, fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
+	}
+	contextName := config.CurrentContext
+	if contextName == "" {
+		return username, fmt.Errorf("No kuberentes context selected. Please select one (e.g. via jx context) first")
+	}
+	context := config.Contexts[contextName]
+	if context == nil {
+		return username, fmt.Errorf("No kuberentes context available for context %s", contextName)
+	}
+	username = context.AuthInfo
+
+	return username, nil
 }

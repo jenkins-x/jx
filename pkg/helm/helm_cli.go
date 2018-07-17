@@ -35,7 +35,7 @@ func NewHelmCLI(binary string, version Version, cwd string) *HelmCLI {
 		BinVersion: version,
 		CWD:        cwd,
 		runner: helmRunner{
-			run:           util.RunCommand,
+			run:           util.RunCommandVerbose,
 			runWithOutput: util.RunCommandWithOutput,
 		},
 	}

@@ -1,4 +1,4 @@
-// Package target provides the Chrome Debugging Protocol
+// Package target provides the Chrome DevTools Protocol
 // commands, types, and events for the Target domain.
 //
 // Supports additional targets discovery and allows to attach to them.
@@ -36,7 +36,8 @@ func (p *ActivateTargetParams) Do(ctxt context.Context, h cdp.Executor) (err err
 
 // AttachToTargetParams attaches to the target with given id.
 type AttachToTargetParams struct {
-	TargetID ID `json:"targetId"`
+	TargetID ID   `json:"targetId"`
+	Flatten  bool `json:"flatten,omitempty"` // Enables "flat" access to the session via specifying sessionId attribute in the commands.
 }
 
 // AttachToTarget attaches to the target with given id.
@@ -47,6 +48,13 @@ func AttachToTarget(targetID ID) *AttachToTargetParams {
 	return &AttachToTargetParams{
 		TargetID: targetID,
 	}
+}
+
+// WithFlatten enables "flat" access to the session via specifying sessionId
+// attribute in the commands.
+func (p AttachToTargetParams) WithFlatten(flatten bool) *AttachToTargetParams {
+	p.Flatten = flatten
+	return &p
 }
 
 // AttachToTargetReturns return values.
@@ -62,6 +70,36 @@ func (p *AttachToTargetParams) Do(ctxt context.Context, h cdp.Executor) (session
 	// execute
 	var res AttachToTargetReturns
 	err = h.Execute(ctxt, CommandAttachToTarget, p, &res)
+	if err != nil {
+		return "", err
+	}
+
+	return res.SessionID, nil
+}
+
+// AttachToBrowserTargetParams attaches to the browser target, only uses flat
+// sessionId mode.
+type AttachToBrowserTargetParams struct{}
+
+// AttachToBrowserTarget attaches to the browser target, only uses flat
+// sessionId mode.
+func AttachToBrowserTarget() *AttachToBrowserTargetParams {
+	return &AttachToBrowserTargetParams{}
+}
+
+// AttachToBrowserTargetReturns return values.
+type AttachToBrowserTargetReturns struct {
+	SessionID SessionID `json:"sessionId,omitempty"` // Id assigned to the session.
+}
+
+// Do executes Target.attachToBrowserTarget against the provided context.
+//
+// returns:
+//   sessionID - Id assigned to the session.
+func (p *AttachToBrowserTargetParams) Do(ctxt context.Context, h cdp.Executor) (sessionID SessionID, err error) {
+	// execute
+	var res AttachToBrowserTargetReturns
+	err = h.Execute(ctxt, CommandAttachToBrowserTarget, nil, &res)
 	if err != nil {
 		return "", err
 	}
@@ -484,6 +522,7 @@ func (p *SetRemoteLocationsParams) Do(ctxt context.Context, h cdp.Executor) (err
 const (
 	CommandActivateTarget         = "Target.activateTarget"
 	CommandAttachToTarget         = "Target.attachToTarget"
+	CommandAttachToBrowserTarget  = "Target.attachToBrowserTarget"
 	CommandCloseTarget            = "Target.closeTarget"
 	CommandExposeDevToolsProtocol = "Target.exposeDevToolsProtocol"
 	CommandCreateBrowserContext   = "Target.createBrowserContext"
