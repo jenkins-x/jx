@@ -2,13 +2,16 @@ package cmd
 
 import (
 	"io"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -89,7 +92,11 @@ func (o *CreateAddonProwOptions) Run() error {
 		return util.MissingOption(optionChart)
 	}
 
-	var err error
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
+
 	if o.HMACToken == "" {
 		o.HMACToken, err = util.RandStringBytesMaskImprSrc(41)
 		if err != nil {
@@ -125,6 +132,8 @@ func (o *CreateAddonProwOptions) Run() error {
 	}
 
 	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
 	err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
 	if err != nil {
 		return err
