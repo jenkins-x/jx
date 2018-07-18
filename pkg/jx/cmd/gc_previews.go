@@ -118,7 +118,7 @@ func (o *GCPreviewsOptions) Run() error {
 
 			lowerState := strings.ToLower(*pullRequest.State)
 
-			if strings.HasPrefix(lowerState, "clos") {
+			if strings.HasPrefix(lowerState, "clos") || strings.HasPrefix(lowerState, "merged") || strings.HasPrefix(lowerState, "superseded") || strings.HasPrefix(lowerState, "declined") {
 				// lets delete the preview environment
 				deleteOpts := DeleteEnvOptions{
 					DeleteNamespace: true,
