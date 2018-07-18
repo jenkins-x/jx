@@ -161,6 +161,7 @@ type Flags struct {
 	SkipTerraformApply      bool
 	JxEnvironment           string
 	GKEProjectId            string
+	GKESkipEnableApis       bool
 	GKEZone                 string
 	GKEMachineType          string
 	GKEMinNumOfNodes        string
@@ -664,9 +665,11 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 		g.ProjectId = projectId
 	}
 
-	err := gke.EnableApis(g.ProjectId, "iam", "compute", "container")
-	if err != nil {
-		return err
+	if !o.Flags.GKESkipEnableApis {
+		err := gke.EnableApis(g.ProjectId, "iam", "compute", "container")
+		if err != nil {
+			return err
+		}
 	}
 
 	if g.Name() == "" {
@@ -734,7 +737,7 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 	}
 
 	terraformVars := filepath.Join(path, "terraform.tfvars")
-	err = g.CreateTfVarsFile(terraformVars)
+	err := g.CreateTfVarsFile(terraformVars)
 	if err != nil {
 		return err
 	}
