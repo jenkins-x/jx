@@ -88,7 +88,7 @@ func (o *ComplianceResultsOptions) Run() error {
 	eg := &errgroup.Group{}
 	eg.Go(func() error { return <-errch })
 	eg.Go(func() error {
-		resultsReader, errch := untarResults(reader)
+		resultsReader, ec := untarResults(reader)
 		gzr, err := gzip.NewReader(resultsReader)
 		if err != nil {
 			return errors.Wrap(err, "could not create a gzip reader for compliance results ")
@@ -105,7 +105,7 @@ func (o *ComplianceResultsOptions) Run() error {
 		sort.Sort(StatusSortedTestCases(testResults))
 		o.printResults(testResults)
 
-		err = <-errch
+		err = <-ec
 		if err != nil {
 			return errors.Wrap(err, "could not extract the compliance results from archive")
 		}
@@ -168,19 +168,17 @@ func status(junitResult reporters.JUnitTestCase) string {
 func untarResults(src io.Reader) (io.Reader, <-chan error) {
 	ec := make(chan error, 1)
 	tarReader := tar.NewReader(src)
+	reader, writer := io.Pipe()
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
 			if err != io.EOF {
 				ec <- err
-				return nil, ec
-			} else {
-				ec <- errors.New("no compliance results archive found")
-				return nil, ec
+				return reader, ec
 			}
+			break
 		}
 		if strings.HasSuffix(header.Name, ".tar.gz") {
-			reader, writer := io.Pipe()
 			go func(writer *io.PipeWriter, ec chan error) {
 				defer writer.Close()
 				defer close(ec)
@@ -188,11 +186,12 @@ func untarResults(src io.Reader) (io.Reader, <-chan error) {
 				if err != nil {
 					ec <- err
 				}
+				tarReader.Next()
 			}(writer, ec)
-			return reader, nil
+			break
 		}
 	}
-	return nil, ec
+	return reader, ec
 }
 
 func filterTests(predicate func(testCase reporters.JUnitTestCase) bool, testCases []reporters.JUnitTestCase) []reporters.JUnitTestCase {
