@@ -21,7 +21,7 @@ const (
 	defaultAnchoreName        = "anchore"
 	defaultAnchoreNamespace   = "anchore"
 	defaultAnchoreReleaseName = "anchore"
-	defaultAnchoreVersion     = "0.1.4"
+	defaultAnchoreVersion     = "0.1.7"
 	defaultAnchorePassword    = "anchore"
 	defaultAnchoreConfigDir   = "/anchore_service_dir"
 	anchoreDeploymentName     = "anchore-anchore-engine-core"
