@@ -61,7 +61,6 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 		Clusters: clusterArray,
 		Flags: Flags{
 			OrganisationName: "my-org",
-			GKEProjectId:     "gke_project",
 			GKEZone:          "gke_zone",
 			GKEMachineType:   "n1-standard-1",
 			GKEMinNumOfNodes: "3",
