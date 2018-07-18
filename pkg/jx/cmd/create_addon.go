@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -17,6 +18,7 @@ type CreateAddonOptions struct {
 	Namespace   string
 	Version     string
 	ReleaseName string
+	SetValues   string
 	HelmUpdate  bool
 }
 
@@ -61,6 +63,7 @@ func NewCmdCreateAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 func (options *CreateAddonOptions) addFlags(cmd *cobra.Command, defaultNamespace string, defaultOptionRelease string) {
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", defaultNamespace, "The Namespace to install into")
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultOptionRelease, "The chart release name")
+	cmd.Flags().StringVarP(&options.SetValues, "set", "s", "", "The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	cmd.Flags().BoolVarP(&options.HelmUpdate, "helm-update", "", true, "Should we run helm update first to ensure we use the latest version")
 }
 
@@ -90,7 +93,8 @@ func (o *CreateAddonOptions) CreateAddon(addon string) error {
 	if chart == "" {
 		return util.InvalidArg(addon, util.SortedMapKeys(charts))
 	}
-	err = o.installChart(addon, chart, o.Version, o.Namespace, o.HelmUpdate, nil)
+	setValues := strings.Split(o.SetValues, ",")
+	err = o.installChart(addon, chart, o.Version, o.Namespace, o.HelmUpdate, setValues)
 	if err != nil {
 		return fmt.Errorf("Failed to install chart %s: %s", chart, err)
 	}
