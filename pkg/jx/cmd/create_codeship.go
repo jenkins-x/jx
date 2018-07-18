@@ -12,11 +12,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"io/ioutil"
 	"strings"
-	"github.com/jenkins-x/jx/pkg/version"
 )
 
 type CreateCodeshipFlags struct {
