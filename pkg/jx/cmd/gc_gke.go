@@ -125,6 +125,8 @@ func (o *GCGKEOptions) Run() error {
 	data = strings.Replace(data, "]", "", -1)
 
 	err = ioutil.WriteFile("gc_gke.sh", []byte(data), util.DefaultWritePermissions)
+
+	log.Info("Script 'gc_gke.sh' created!\n")
 	return nil
 }
 
