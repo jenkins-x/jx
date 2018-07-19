@@ -213,6 +213,10 @@ func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
 		}
 	}
 
+	if len(line) == 0 {
+		line = append(line, "# No disks found for deletion\n")
+	}
+
 	return line, nil
 }
 
