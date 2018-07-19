@@ -176,12 +176,15 @@ func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 		}
 	}
 
-	args := "gcloud compute firewall-rules delete "
-	for _, name := range nameToDelete {
-		args = args + " " + name
+	if nameToDelete != nil {
+		args := "gcloud compute firewall-rules delete "
+		for _, name := range nameToDelete {
+			args = args + " " + name
+		}
+		return args, nil
 	}
 
-	return args, nil
+	return "# No firewalls found for deletion", nil
 }
 
 func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
