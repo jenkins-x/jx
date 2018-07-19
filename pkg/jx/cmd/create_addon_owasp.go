@@ -22,7 +22,7 @@ var (
 
 	createAddonOwaspExample = templates.Examples(`
 		# Create the kubeless addon in the ` + defaultKubelessNamespace + ` namespace 
-		jx create addon owasp
+		jx create addon owasp-zap
 	`)
 )
 
@@ -46,8 +46,8 @@ func NewCmdCreateAddonOwasp(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	}
 
 	cmd := &cobra.Command{
-		Use:     "owasp",
-		Short:   "Create a owasp addon for dynamic security checks",
+		Use:     "owasp-zap",
+		Short:   "Create the OWASP Zed Attack Proxy addon for dynamic security checks against running apps",
 		Aliases: []string{"env"},
 		Long:    createAddonOwaspLong,
 		Example: createAddonOwaspExample,
@@ -65,7 +65,7 @@ func NewCmdCreateAddonOwasp(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 // Create the addon
 func (o *CreateAddonOwaspOptions) Run() error {
-	name := "owasp"
+	name := "owasp-zap"
 	commands := []string{"zap-baseline.py", "-I", "-t", "$(JX_PREVIEW_URL)"}
 	image := o.Image
 	if name == "" {
