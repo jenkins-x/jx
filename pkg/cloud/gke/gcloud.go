@@ -23,7 +23,6 @@ var (
 
 func BucketExists(projectId string, bucketName string) (bool, error) {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
-
 	args := []string{"ls"}
 
 	if projectId != "" {
@@ -31,7 +30,11 @@ func BucketExists(projectId string, bucketName string) (bool, error) {
 		args = append(args, projectId)
 	}
 
-	output, err := util.RunCommandWithOutput("", "gsutil", args...)
+	cmd := util.Command{
+		Name: "gsutil",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
 	if err != nil {
 		return false, err
 	}
@@ -40,7 +43,6 @@ func BucketExists(projectId string, bucketName string) (bool, error) {
 
 func CreateBucket(projectId string, bucketName string, location string) error {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
-
 	args := []string{"mb", "-l", location}
 
 	if projectId != "" {
@@ -50,7 +52,11 @@ func CreateBucket(projectId string, bucketName string, location string) error {
 
 	args = append(args, fullBucketName)
 
-	err := util.RunCommand("", "gsutil", args...)
+	cmd := util.Command{
+		Name: "gsutil",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
 	if err != nil {
 		return err
 	}
@@ -74,7 +80,11 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 		"--project",
 		projectId}
 
-	output, err := util.RunCommandWithOutput("", "gcloud", args...)
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +111,11 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 			"--project",
 			projectId}
 
-		err = util.RunCommand("", "gcloud", args...)
+		cmd := util.Command{
+			Name: "gsutil",
+			Args: args,
+		}
+		_, err = cmd.RunWithoutRetry()
 		if err != nil {
 			return "", err
 		}
@@ -119,7 +133,12 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 				"--project",
 				projectId}
 
-			err = util.RunCommandQuietly("", "gcloud", args...)
+			cmd := util.Command{
+				Name:  "gcloud",
+				Args:  args,
+				Quiet: true,
+			}
+			_, err := cmd.RunWithoutRetry()
 			if err != nil {
 				return "", err
 			}
@@ -144,7 +163,11 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 			"--project",
 			projectId}
 
-		err = util.RunCommand("", "gcloud", args...)
+		cmd := util.Command{
+			Name: "gcloud",
+			Args: args,
+		}
+		_, err := cmd.RunWithoutRetry()
 		if err != nil {
 			return "", err
 		}
@@ -164,7 +187,11 @@ func EnableApis(projectId string, apis ...string) error {
 
 	log.Infof("Lets ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(args, " ")))
 
-	err := util.RunCommand("", "gcloud", args...)
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
 	if err != nil {
 		return err
 	}
@@ -177,12 +204,20 @@ func Login(serviceAccountKeyPath string, skipLogin bool) error {
 			return errors.New("Unable to locate service account " + serviceAccountKeyPath)
 		}
 
-		err := util.RunCommand("", "gcloud", "auth", "activate-service-account", "--key-file", serviceAccountKeyPath)
+		cmd := util.Command{
+			Name: "gcloud",
+			Args: []string{"auth", "activate-service-account", "--key-file", serviceAccountKeyPath},
+		}
+		_, err := cmd.RunWithoutRetry()
 		if err != nil {
 			return err
 		}
 	} else if !skipLogin {
-		err := util.RunCommand("", "gcloud", "auth", "login", "--brief")
+		cmd := util.Command{
+			Name: "gcloud",
+			Args: []string{"auth", "login", "--brief"},
+		}
+		_, err := cmd.RunWithoutRetry()
 		if err != nil {
 			return err
 		}
@@ -201,7 +236,11 @@ func CheckPermission(perm string, projectId string) (bool, error) {
 		"--filter",
 		perm}
 
-	output, err := util.RunCommandWithOutput("", "gcloud", args...)
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
 	if err != nil {
 		return false, err
 	}
