@@ -104,6 +104,29 @@ func TestRunFailWithTimeout(t *testing.T) {
 
 }
 
+func TestRunThreadSafety(t *testing.T) {
+	gp := os.Getenv("GOPATH")
+	projectRoot := path.Join(gp, "src/github.com/jenkins-x/jx")
+	exPath := projectRoot + "/pkg/jx/cmd/test_data/scripts"
+	ex := "sleep.sh"
+	args := []string{"2"}
+
+	cmd := util.Command{
+		Name:    ex,
+		Dir:     exPath,
+		Args:    args,
+		Timeout: 1 * time.Second,
+	}
+
+	res, err := cmd.Run()
+
+	assert.NoError(t, err, "Run should exit without failure")
+	assert.Equal(t, "2", res)
+	assert.Equal(t, false, cmd.DidError())
+	assert.Equal(t, false, cmd.DidFail())
+	assert.Equal(t, 1, cmd.Attempts())
+}
+
 func TestRunWithoutRetry(t *testing.T) {
 
 	tmpFileName := "test_run_without_retry.txt"
