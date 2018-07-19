@@ -96,6 +96,10 @@ func (o *CreateAddonProwOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
+	_, _, err = o.KubeClient()
+	if err != nil {
+		return err
+	}
 
 	if o.HMACToken == "" {
 		o.HMACToken, err = util.RandStringBytesMaskImprSrc(41)
