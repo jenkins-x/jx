@@ -2,19 +2,21 @@ package cmd
 
 import (
 	"io"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
 
 const (
 	defaultProwReleaseName = "prow"
-	defaultProwNamespace   = "prow"
-	prowVersion            = "0.0.4"
+	prowVersion            = "0.0.9"
 )
 
 var (
@@ -70,7 +72,7 @@ func NewCmdCreateAddonProw(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultProwNamespace, defaultProwReleaseName)
+	options.addFlags(cmd, "", defaultProwReleaseName)
 
 	cmd.Flags().StringVarP(&options.Version, "version", "v", prowVersion, "The version of the prow addon to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartProw, "The name of the chart to use")
@@ -90,7 +92,11 @@ func (o *CreateAddonProwOptions) Run() error {
 		return util.MissingOption(optionChart)
 	}
 
-	var err error
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
+
 	if o.HMACToken == "" {
 		o.HMACToken, err = util.RandStringBytesMaskImprSrc(41)
 		if err != nil {
@@ -126,13 +132,15 @@ func (o *CreateAddonProwOptions) Run() error {
 	}
 
 	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
 	if err != nil {
 		return err
 	}
 
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, o.Password)
+	err = o.expose(devNamespace, devNamespace, o.Password)
 	if err != nil {
 		return err
 	}

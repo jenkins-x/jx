@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -21,7 +22,7 @@ const (
 	defaultAnchoreName        = "anchore"
 	defaultAnchoreNamespace   = "anchore"
 	defaultAnchoreReleaseName = "anchore"
-	defaultAnchoreVersion     = "0.1.4"
+	defaultAnchoreVersion     = "0.1.7"
 	defaultAnchorePassword    = "anchore"
 	defaultAnchoreConfigDir   = "/anchore_service_dir"
 	anchoreDeploymentName     = "anchore-anchore-engine-core"
@@ -114,6 +115,8 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	log.Infof("found dev namespace %s\n", devNamespace)
 
 	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
 	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return fmt.Errorf("anchore deployment failed: %v", err)

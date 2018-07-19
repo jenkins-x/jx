@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -86,6 +87,8 @@ func (o *CreateAddonKubelessOptions) Run() error {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
 	values := []string{"rbac.create=true"}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
 	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return err

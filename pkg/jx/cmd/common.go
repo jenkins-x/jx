@@ -627,11 +627,6 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
 
-	err = kube.CleanServiceAnnotations(o.kubeClient, targetNamespace)
-	if err != nil {
-		return err
-	}
-
 	err = kube.AnnotateNamespaceServicesWithCertManager(o.kubeClient, targetNamespace, ic.Issuer)
 	if err != nil {
 		return err

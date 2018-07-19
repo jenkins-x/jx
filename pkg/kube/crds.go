@@ -170,17 +170,18 @@ func CleanCertmanagerResources(c kubernetes.Interface, ns string, config Ingress
 	c.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Name(CertmanagerCertificateStaging).DoRaw()
 	c.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Name(CertmanagerCertificateProd).DoRaw()
 
-	if config.TLS {
-		cert := fmt.Sprintf(certmanager.Cert_manager_certificate, config.Issuer, config.Issuer, config.Domain)
-		json, err := yaml.YAMLToJSON([]byte(cert))
-		if err != nil {
-			return fmt.Errorf("unable to convert YAML %s to JSON: %v", cert, err)
-		}
-		_, err = c.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Body(json).DoRaw()
-		if err != nil {
-			return fmt.Errorf("failed to create certificate %v", err)
-		}
-	}
+	// dont think we need this as we use a shim from ingress annotations to dynamically create the certificates
+	//if config.TLS {
+	//	cert := fmt.Sprintf(certmanager.Cert_manager_certificate, config.Issuer, config.Issuer, config.Domain, config.Domain)
+	//	json, err := yaml.YAMLToJSON([]byte(cert))
+	//	if err != nil {
+	//		return fmt.Errorf("unable to convert YAML %s to JSON: %v", cert, err)
+	//	}
+	//	_, err = c.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/certificates", ns)).Body(json).DoRaw()
+	//	if err != nil {
+	//		return fmt.Errorf("failed to create certificate %v", err)
+	//	}
+	//}
 
 	return nil
 }

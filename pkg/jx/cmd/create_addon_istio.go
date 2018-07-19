@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -127,6 +128,8 @@ func (o *CreateAddonIstioOptions) Run() error {
 	if o.NoInjectorWebhook {
 		values = append(values, "sidecarInjectorWebhook.enabled=false")
 	}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
 	err = o.installChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return fmt.Errorf("istio deployment failed: %v", err)

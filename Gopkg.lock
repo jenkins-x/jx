@@ -200,11 +200,10 @@
   version = "v0.1.1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/codeship/codeship-go"
   packages = ["."]
-  revision = "c4291b64fe936347aba3bc4a917f77a645e0bb30"
-  source = "github.com/garethjevans/codeship-go"
+  revision = "7793ca823354b36324de25a0d05011a29aaa42a8"
+  version = "0.3.1"
 
 [[projects]]
   name = "github.com/cpuguy83/go-md2man"
@@ -859,6 +858,12 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/sync"
+  packages = ["errgroup"]
+  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -1281,6 +1286,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "72d2db863662207a97ade3a1571c7333759966d14bb933a83fe65851c7e0d0b8"
+  inputs-digest = "74d0700959840117869d226bcaab2b82b155f4a4be42becf655c570c7dece1ca"
   solver-name = "gps-cdcl"
   solver-version = 1
