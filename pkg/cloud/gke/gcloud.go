@@ -22,11 +22,16 @@ var (
 )
 
 func BucketExists(projectId string, bucketName string) (bool, error) {
-	if projectId == "" {
-		return false, errors.New("cannot check bucket without a projectId")
-	}
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
-	output, err := util.RunCommandWithOutput("", "gsutil", "ls", "-p", projectId)
+
+	args := []string{"ls"}
+
+	if projectId != "" {
+		args = append(args, "-p")
+		args = append(args, projectId)
+	}
+
+	output, err := util.RunCommandWithOutput("", "gsutil", args...)
 	if err != nil {
 		return false, err
 	}
@@ -34,11 +39,18 @@ func BucketExists(projectId string, bucketName string) (bool, error) {
 }
 
 func CreateBucket(projectId string, bucketName string, location string) error {
-	if projectId == "" {
-		return errors.New("cannot create a bucket without a projectId")
-	}
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
-	err := util.RunCommand("", "gsutil", "mb", "-l", location, "-p", projectId, fullBucketName)
+
+	args := []string{"mb", "-l", location}
+
+	if projectId != "" {
+		args = append(args, "-p")
+		args = append(args, projectId)
+	}
+
+	args = append(args, fullBucketName)
+
+	err := util.RunCommand("", "gsutil", args...)
 	if err != nil {
 		return err
 	}
@@ -53,6 +65,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 	if projectId == "" {
 		return "", errors.New("cannot get/create a service account without a projectId")
 	}
+
 	args := []string{"iam",
 		"service-accounts",
 		"list",
@@ -141,11 +154,13 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 }
 
 func EnableApis(projectId string, apis ...string) error {
-	if projectId == "" {
-		return errors.New("cannot enable apis without a projectId")
-	}
-	args := []string{"--project", projectId, "services", "enable"}
+	args := []string{"services", "enable"}
 	args = append(args, apis...)
+
+	if projectId != "" {
+		args = append(args, "--project")
+		args = append(args, projectId)
+	}
 
 	log.Infof("Lets ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(args, " ")))
 
