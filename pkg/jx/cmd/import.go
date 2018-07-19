@@ -573,15 +573,20 @@ func (o *ImportOptions) getOrganisationOrCurrentUser() string {
 
 func (o *ImportOptions) getCurrentUser() string {
 	//walk through every file in the given dir and update the placeholders
-	currentUser := o.GitServer.CurrentUser
-	if currentUser == "" {
-		if o.GitProvider != nil {
-			currentUser = o.GitProvider.CurrentUsername()
+	var currentUser string
+	if o.Organisation != "" {
+		return o.Organisation
+	}
+	if o.GitServer != nil {
+		currentUser = o.GitServer.CurrentUser
+		if currentUser == "" {
+			if o.GitProvider != nil {
+				currentUser = o.GitProvider.CurrentUsername()
+			}
 		}
+		log.Warn("No git server found!\n")
 	}
-	if currentUser == "" {
-		currentUser = o.Organisation
-	}
+
 	if currentUser == "" {
 		log.Warn("No username defined for the current git server!")
 		currentUser = o.DefaultOwner
