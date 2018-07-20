@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -105,8 +106,8 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 
 	log.Infof("found dev namespace %s\n", devNamespace)
 
-	//values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
-	err = o.installChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, []string{})
+	setValues := strings.Split(o.SetValues, ",")
+	err = o.installChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, setValues)
 	if err != nil {
 		return fmt.Errorf("elasticsearch deployment failed: %v", err)
 	}

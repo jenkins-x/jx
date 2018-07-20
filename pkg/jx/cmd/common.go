@@ -18,6 +18,8 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
+	"strconv"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -29,7 +31,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"strconv"
 )
 
 const (
@@ -625,11 +626,6 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	ic, err := kube.GetIngressConfig(o.kubeClient, devNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
-	}
-
-	err = kube.CleanServiceAnnotations(o.kubeClient, targetNamespace)
-	if err != nil {
-		return err
 	}
 
 	err = kube.AnnotateNamespaceServicesWithCertManager(o.kubeClient, targetNamespace, ic.Issuer)

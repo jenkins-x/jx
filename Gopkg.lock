@@ -69,6 +69,13 @@
   revision = "15df0648130a623e418886f81b2aaecd0a00547b"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/alexflint/go-filemutex"
+  packages = ["."]
+  revision = "d358565f3c3f5334209f1e80693e4f621650c489"
+  source = "https://github.com/i0n/go-filemutex.git"
+
+[[projects]]
   name = "github.com/andygrunwald/go-gerrit"
   packages = ["."]
   revision = "95b11af228a177a6c9961202fa40ff284ba86849"
@@ -138,9 +145,22 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/bouk/monkey"
+  packages = ["."]
+  revision = "5df1f207ff77e025801505ae4d903133a0b4353f"
+  source = "github.com/i0n/monkey"
+
+[[projects]]
+  branch = "master"
   name = "github.com/c2h5oh/datasize"
   packages = ["."]
   revision = "4eba002a5eaea69cf8d235a388fc6b65ae68d2dd"
+
+[[projects]]
+  name = "github.com/cenkalti/backoff"
+  packages = ["."]
+  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
+  version = "v2.0.0"
 
 [[projects]]
   branch = "master"
@@ -200,11 +220,10 @@
   version = "v0.1.1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/codeship/codeship-go"
   packages = ["."]
-  revision = "c4291b64fe936347aba3bc4a917f77a645e0bb30"
-  source = "github.com/garethjevans/codeship-go"
+  revision = "7793ca823354b36324de25a0d05011a29aaa42a8"
+  version = "0.3.1"
 
 [[projects]]
   name = "github.com/cpuguy83/go-md2man"
@@ -859,6 +878,12 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/sync"
+  packages = ["errgroup"]
+  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -1281,6 +1306,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "72d2db863662207a97ade3a1571c7333759966d14bb933a83fe65851c7e0d0b8"
+  inputs-digest = "20f692bceb2049eaa3632b5628a99552c8309a43b1bb5565fd049127240516fb"
   solver-name = "gps-cdcl"
   solver-version = 1
