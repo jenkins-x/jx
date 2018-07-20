@@ -142,7 +142,17 @@ docker-maven: linux Dockerfile.builder-maven
 docker-pipeline: linux
 	docker build -t rawlingsj/builder-base:dev . -f Dockerfile-pipeline
 
-docker-dev: linux 
+docker-dev: build linux
+	docker images | grep -v REPOSITORY | awk '{print $$1}' | uniq -u | grep jenkinsxio | awk '{print $$1":latest"}' | xargs -L1 docker pull
+	docker build --no-cache -t $(DOCKER_HUB_USER)/jx:dev .
+	docker push $(DOCKER_HUB_USER)/jx:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-base:dev -f Dockerfile.builder-base .
+	docker push $(DOCKER_HUB_USER)/builder-base:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-maven:dev -f Dockerfile.builder-maven .
+	docker push $(DOCKER_HUB_USER)/builder-maven:dev
+
+docker-dev-all: build linux
+	docker images | grep -v REPOSITORY | awk '{print $$1}' | uniq -u | grep jenkinsxio | awk '{print $$1":latest"}' | xargs -L1 docker pull
 	docker build --no-cache -t $(DOCKER_HUB_USER)/jx:dev .
 	docker push $(DOCKER_HUB_USER)/jx:dev
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-base:dev -f Dockerfile.builder-base .
