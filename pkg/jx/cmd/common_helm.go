@@ -114,7 +114,7 @@ func (o *CommonOptions) installChartAt(dir string, releaseName string, chart str
 	}
 	o.Helm().SetCWD(dir)
 	return o.Helm().UpgradeChart(chart, releaseName, ns, &version, true,
-		&timeout, false, false, setValues, nil)
+		&timeout, true, false, setValues, nil)
 }
 
 // deleteChart deletes the given chart
@@ -260,4 +260,19 @@ func (o *CommonOptions) releaseChartMuseumUrl() string {
 		log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
 	}
 	return chartRepo
+}
+
+func (o *CommonOptions) ensureHelm() error {
+	_, err := o.Helm().Version(false)
+	if err == nil {
+		return nil
+	}
+	err = o.installHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to install helm")
+	}
+	initOpts := InitOptions{
+		CommonOptions: *o,
+	}
+	return initOpts.initHelm()
 }

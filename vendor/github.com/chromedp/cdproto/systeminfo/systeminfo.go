@@ -1,4 +1,4 @@
-// Package systeminfo provides the Chrome Debugging Protocol
+// Package systeminfo provides the Chrome DevTools Protocol
 // commands, types, and events for the SystemInfo domain.
 //
 // The SystemInfo domain defines methods and events for querying low-level

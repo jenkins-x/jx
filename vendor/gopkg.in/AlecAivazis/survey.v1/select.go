@@ -95,17 +95,26 @@ func (s *Select) OnChange(line []rune, pos int, key rune) (newLine []rune, newPo
 		// only show the help message if we have one
 	} else if key == core.HelpInputRune && s.Help != "" {
 		s.showingHelp = true
+		// if the user wants to toggle vim mode on/off
 	} else if key == terminal.KeyEscape {
 		s.VimMode = !s.VimMode
+		// if the user hits any of the keys that clear the filter
 	} else if key == terminal.KeyDeleteWord || key == terminal.KeyDeleteLine {
 		s.filter = ""
+		// if the user is deleting a character in the filter
 	} else if key == terminal.KeyDelete || key == terminal.KeyBackspace {
+		// if there is content in the filter to delete
 		if s.filter != "" {
+			// subtract a line from the current filter
 			s.filter = s.filter[0 : len(s.filter)-1]
+			// we removed the last value in the filter
 		}
 	} else if key >= terminal.KeySpace {
 		s.filter += string(key)
+		// make sure vim mode is disabled
 		s.VimMode = false
+		// make sure that we use the current value in the filtered list
+		s.useDefault = false
 	}
 
 	s.FilterMessage = ""

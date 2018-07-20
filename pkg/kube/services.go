@@ -16,7 +16,12 @@ import (
 )
 
 const (
-	ExposeURLAnnotation = "fabric8.io/exposeUrl"
+	ExposeAnnotation            = "fabric8.io/expose"
+	ExposeURLAnnotation         = "fabric8.io/exposeUrl"
+	ExposeGeneratedByAnnotation = "fabric8.io/generated-by"
+	JenkinsXSkipTLSAnnotation   = "jenkins-x.io/skip.tls"
+	ExposeIngressAnnotation     = "fabric8.io/ingress.annotations"
+	CertManagerAnnotation       = "certmanager.k8s.io/issuer"
 )
 
 type ServiceURL struct {
@@ -226,4 +231,70 @@ func IsServicePresent(c kubernetes.Interface, name, ns string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func AnnotateNamespaceServicesWithCertManager(c kubernetes.Interface, ns, issuer string) error {
+	svcList, err := GetServices(c, ns)
+	if err != nil {
+		return err
+	}
+
+	for _, s := range svcList {
+		if s.Annotations[ExposeAnnotation] == "true" && s.Annotations[JenkinsXSkipTLSAnnotation] != "true" {
+			existingAnnotations, _ := s.Annotations[ExposeIngressAnnotation]
+			// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
+			if len(existingAnnotations) > 0 {
+				s.Annotations[ExposeIngressAnnotation] = existingAnnotations + "\n" + CertManagerAnnotation + ": " + issuer
+			} else {
+				s.Annotations[ExposeIngressAnnotation] = CertManagerAnnotation + ": " + issuer
+			}
+			_, err = c.CoreV1().Services(ns).Update(s)
+			if err != nil {
+				return fmt.Errorf("failed to annotate and update service %s in namespace %s: %v", s.Name, ns, err)
+			}
+		}
+	}
+	return nil
+}
+
+func CleanServiceAnnotations(c kubernetes.Interface, ns string) error {
+	svcList, err := GetServices(c, ns)
+	if err != nil {
+		return err
+	}
+	for _, s := range svcList {
+		if s.Annotations[ExposeAnnotation] == "true" && s.Annotations[JenkinsXSkipTLSAnnotation] != "true" {
+			// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
+			annotationsForIngress, _ := s.Annotations[ExposeIngressAnnotation]
+			if len(annotationsForIngress) > 0 {
+
+				var newAnnotations []string
+				annotations := strings.Split(annotationsForIngress, "\n")
+				for _, element := range annotations {
+					annotation := strings.SplitN(element, ":", 2)
+					key, _ := annotation[0], strings.TrimSpace(annotation[1])
+					if key != CertManagerAnnotation {
+						newAnnotations = append(newAnnotations, element)
+					}
+				}
+				annotationsForIngress = ""
+				for _, v := range newAnnotations {
+					if len(annotationsForIngress) > 0 {
+						annotationsForIngress = annotationsForIngress + "\n" + v
+					} else {
+						annotationsForIngress = v
+					}
+				}
+				s.Annotations[ExposeIngressAnnotation] = annotationsForIngress
+
+			}
+			delete(s.Annotations, ExposeURLAnnotation)
+
+			_, err = c.CoreV1().Services(ns).Update(s)
+			if err != nil {
+				return fmt.Errorf("failed to clean service %s annotations in namespace %s: %v", s.Name, ns, err)
+			}
+		}
+	}
+	return nil
 }

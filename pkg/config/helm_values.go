@@ -8,10 +8,11 @@ import (
 )
 
 type ExposeControllerConfig struct {
-	Domain  string `yaml:"domain,omitempty"`
-	Exposer string `yaml:"exposer"`
-	HTTP    string `yaml:"http"`
-	TLSAcme string `yaml:"tlsacme"`
+	Domain   string `yaml:"domain,omitempty"`
+	Exposer  string `yaml:"exposer"`
+	HTTP     string `yaml:"http"`
+	TLSAcme  string `yaml:"tlsacme"`
+	PathMode string `yaml:"pathMode"`
 }
 type ExposeController struct {
 	Config      ExposeControllerConfig `yaml:"config,omitempty"`
@@ -20,6 +21,12 @@ type ExposeController struct {
 
 type JenkinsValuesConfig struct {
 	Servers JenkinsServersValuesConfig `yaml:"Servers,omitempty"`
+}
+
+type ProwValuesConfig struct {
+	User       string `yaml:"user,omitempty"`
+	HMACtoken  string `yaml:"hmacToken,omitempty"`
+	OAUTHtoken string `yaml:"oauthToken,omitempty"`
 }
 
 type JenkinsServersValuesConfig struct {
@@ -46,6 +53,7 @@ type JenkinsGithubServersValuesConfig struct {
 type HelmValuesConfig struct {
 	ExposeController *ExposeController   `yaml:"expose,omitempty"`
 	Jenkins          JenkinsValuesConfig `yaml:"jenkins,omitempty"`
+	Prow             ProwValuesConfig    `yaml:"prow,omitempty"`
 }
 
 type HelmValuesConfigService struct {

@@ -227,11 +227,22 @@ func (g *GitCLI) AddCommmit(dir string, msg string) error {
 }
 
 func (g *GitCLI) gitCmd(dir string, args ...string) error {
-	return util.RunCommand(dir, "git", args...)
+	cmd := util.Command{
+		Dir:  dir,
+		Name: "git",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	return err
 }
 
 func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
-	return util.RunCommandWithOutput(dir, "git", args...)
+	cmd := util.Command{
+		Dir:  dir,
+		Name: "git",
+		Args: args,
+	}
+	return cmd.RunWithoutRetry()
 }
 
 // CreatePushURL creates the git repository URL with the username and password encoded for HTTPS based URLs

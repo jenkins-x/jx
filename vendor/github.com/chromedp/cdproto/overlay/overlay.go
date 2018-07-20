@@ -1,4 +1,4 @@
-// Package overlay provides the Chrome Debugging Protocol
+// Package overlay provides the Chrome DevTools Protocol
 // commands, types, and events for the Overlay domain.
 //
 // This domain provides various functionality related to drawing atop the

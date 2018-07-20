@@ -161,6 +161,7 @@ type Flags struct {
 	SkipTerraformApply      bool
 	JxEnvironment           string
 	GKEProjectId            string
+	GKESkipEnableApis       bool
 	GKEZone                 string
 	GKEMachineType          string
 	GKEMinNumOfNodes        string
@@ -405,8 +406,8 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		o.Flags.OrganisationName = strings.ToLower(randomdata.SillyName())
 	}
 	defaultRepoName := fmt.Sprintf("organisation-%s", o.Flags.OrganisationName)
-	details, err := gits.PickNewGitRepository(o.Stdout(), o.BatchMode, authConfigSvc,
-		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git())
+	details, err := gits.PickNewOrExistingGitRepository(o.Stdout(), o.BatchMode, authConfigSvc,
+		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git(), true)
 	if err != nil {
 		return err
 	}
@@ -502,6 +503,11 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 
 	} else {
 		fmt.Fprintf(o.Stdout(), "Skipping terraform apply\n")
+	}
+
+	err = o.configureEnvironments()
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -649,11 +655,6 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 		if err != nil {
 			return err
 		}
-
-		err = gke.EnableApis(g.ProjectId, "iam", "compute", "container")
-		if err != nil {
-			return err
-		}
 	}
 
 	if g.ProjectId == "" {
@@ -662,6 +663,13 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 			return err
 		}
 		g.ProjectId = projectId
+	}
+
+	if !o.Flags.GKESkipEnableApis {
+		err := gke.EnableApis(g.ProjectId, "iam", "compute", "container")
+		if err != nil {
+			return err
+		}
 	}
 
 	if g.Name() == "" {
@@ -925,9 +933,15 @@ func (o *CreateTerraformOptions) getGoogleProjectId() (string, error) {
 }
 
 func (o *CreateTerraformOptions) installJx(c Cluster) error {
-	log.Info("Initialising cluster ...\n")
+	log.Infof("Installing jx on cluster %s ...\n", util.ColorInfo(c.Name()))
+
+	err := o.runCommand("kubectl", "config", "set-context", c.Name())
+	if err != nil {
+		return err
+	}
+
 	o.InstallOptions.Flags.DefaultEnvironmentPrefix = c.Name()
-	err := o.initAndInstall(c.Provider())
+	err = o.initAndInstall(c.Provider())
 	if err != nil {
 		return err
 	}
@@ -936,7 +950,6 @@ func (o *CreateTerraformOptions) installJx(c Cluster) error {
 	if err != nil {
 		return err
 	}
-	log.Info(context)
 
 	ns := o.InstallOptions.Flags.Namespace
 	if ns == "" {
@@ -970,6 +983,44 @@ func (o *CreateTerraformOptions) initAndInstall(provider string) error {
 	err := installOpts.Run()
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (o *CreateTerraformOptions) configureEnvironments() error {
+	log.Info("Creating default environments\n")
+
+	for index, cluster := range o.Clusters {
+		if cluster.Name() != o.Flags.JxEnvironment {
+			jxClient, _, err := o.JXClient()
+			if err != nil {
+				return err
+			}
+
+			log.Infof("Checking for environments %s\n", cluster.Name())
+			_, envNames, err := kube.GetEnvironments(jxClient, cluster.Name())
+
+			log.Infof("Got environment names %s", envNames)
+
+			if err != nil || len(envNames) <= 1 {
+				environmentOrder := (index) * 100
+				o.InstallOptions.CreateEnvOptions.Options.Name = cluster.Name()
+				o.InstallOptions.CreateEnvOptions.Options.Spec.Label = cluster.Name()
+				o.InstallOptions.CreateEnvOptions.Options.Spec.Order = int32(environmentOrder)
+				o.InstallOptions.CreateEnvOptions.GitRepositoryOptions.Owner = o.InstallOptions.Flags.EnvironmentGitOwner
+				o.InstallOptions.CreateEnvOptions.Prefix = o.InstallOptions.Flags.DefaultEnvironmentPrefix
+				o.InstallOptions.CreateEnvOptions.Options.ClusterName = cluster.Name()
+				if o.BatchMode {
+					o.InstallOptions.CreateEnvOptions.BatchMode = o.BatchMode
+				}
+
+				err := o.InstallOptions.CreateEnvOptions.Run()
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return nil
 }

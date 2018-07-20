@@ -1,4 +1,4 @@
-// Package domsnapshot provides the Chrome Debugging Protocol
+// Package domsnapshot provides the Chrome DevTools Protocol
 // commands, types, and events for the DOMSnapshot domain.
 //
 // This domain facilitates obtaining document snapshots with DOM, layout, and
@@ -66,26 +66,24 @@ func CaptureSnapshot(computedStyles []string) *CaptureSnapshotParams {
 
 // CaptureSnapshotReturns return values.
 type CaptureSnapshotReturns struct {
-	Nodes   *DOMTreeSnapshot    `json:"nodes,omitempty"`   // The nodes in the DOM tree. The DOMNode at index 0 corresponds to the root document.
-	Layout  *LayoutTreeSnapshot `json:"layout,omitempty"`  // The nodes in the layout tree.
-	Strings []string            `json:"strings,omitempty"` // Shared string table that all string properties refer to with indexes.
+	Documents []*DocumentSnapshot `json:"documents,omitempty"` // The nodes in the DOM tree. The DOMNode at index 0 corresponds to the root document.
+	Strings   []string            `json:"strings,omitempty"`   // Shared string table that all string properties refer to with indexes.
 }
 
 // Do executes DOMSnapshot.captureSnapshot against the provided context.
 //
 // returns:
-//   nodes - The nodes in the DOM tree. The DOMNode at index 0 corresponds to the root document.
-//   layout - The nodes in the layout tree.
+//   documents - The nodes in the DOM tree. The DOMNode at index 0 corresponds to the root document.
 //   strings - Shared string table that all string properties refer to with indexes.
-func (p *CaptureSnapshotParams) Do(ctxt context.Context, h cdp.Executor) (nodes *DOMTreeSnapshot, layout *LayoutTreeSnapshot, strings []string, err error) {
+func (p *CaptureSnapshotParams) Do(ctxt context.Context, h cdp.Executor) (documents []*DocumentSnapshot, strings []string, err error) {
 	// execute
 	var res CaptureSnapshotReturns
 	err = h.Execute(ctxt, CommandCaptureSnapshot, p, &res)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	return res.Nodes, res.Layout, res.Strings, nil
+	return res.Documents, res.Strings, nil
 }
 
 // Command names.

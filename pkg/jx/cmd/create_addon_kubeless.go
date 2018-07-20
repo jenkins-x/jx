@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"io"
+	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -80,8 +82,14 @@ func (o *CreateAddonKubelessOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
 	values := []string{"rbac.create=true"}
-	err := o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return err
 	}

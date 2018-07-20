@@ -121,7 +121,8 @@ func DiscoverVersion(reader io.Reader) (string, error) {
 	} else if strings.HasPrefix(conf.Version, VersionTen) {
 		version = VersionTen
 	} else {
-		return "", errors.New("cannot discover Sonobuoy archive version")
+		// This should be the version with the most recent sonobuoy tarball layout.
+		version = VersionTen
 	}
 	return version, nil
 }
