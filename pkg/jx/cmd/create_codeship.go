@@ -181,8 +181,8 @@ func (o *CreateCodeshipOptions) Run() error {
 
 	defaultRepoName := fmt.Sprintf("organisation-%s", o.Flags.OrganisationName)
 
-	details, err := gits.PickNewGitRepository(o.Stdout(), o.BatchMode, authConfigSvc,
-		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git())
+	details, err := gits.PickNewOrExistingGitRepository(o.Stdout(), o.BatchMode, authConfigSvc,
+		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git(), true)
 	if err != nil {
 		return err
 	}
