@@ -150,12 +150,6 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 		if repoName == "" {
 			repoName = "dummy"
 		}
-		if !allowExistingRepo {
-			err := provider.ValidateRepositoryName(owner, repoName)
-			if err != nil {
-				return nil, err
-			}
-		}
 	} else {
 		prompt := &survey.Input{
 			Message: "Enter the new repository name: ",
