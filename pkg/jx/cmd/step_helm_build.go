@@ -3,8 +3,10 @@ package cmd
 import (
 	"io"
 
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // StepHelmBuildOptions contains the command line flags
@@ -51,11 +53,33 @@ func NewCmdStepHelmBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 			CheckErr(err)
 		},
 	}
+
 	options.addStepHelmFlags(cmd)
 	return cmd
 }
 
 func (o *StepHelmBuildOptions) Run() error {
-	_, err := o.helmInitDependencyBuild(o.Dir, o.defaultReleaseCharts())
+
+	_, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
+	dir := o.Dir
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
+
+	// if we're in a prow job we need to clone and change dir to find the Helm Chart.yaml
+	if os.Getenv(PROW_JOB_ID) != "" {
+		dir, err = o.cloneProwPullRequest(dir, o.GitProvider)
+		if err != nil {
+			return fmt.Errorf("failed to clone pull request: %v", err)
+		}
+	}
+	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
 	return err
 }
