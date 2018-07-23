@@ -26,11 +26,12 @@ var (
 `)
 
 	getPreviewExample = templates.Examples(`
-		# List all environments
-		jx get environments
+		# List all preview environments
+		jx get previews
 
-		# List all environments using the shorter alias
-		jx get env
+		# View the current preview environment URL
+		# inside a CI pipeline
+		jx get preview --current
 	`)
 )
 
