@@ -61,7 +61,7 @@ func NewCmdCreateCodeship(f Factory, out io.Writer, errOut io.Writer) *cobra.Com
 
 	cmd := &cobra.Command{
 		Use:     "codeship",
-		Short:   "Creates a Codeship build to apply ",
+		Short:   "Creates a build on CodeShip to create/update JX clusters",
 		Example: createCodeshipExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd

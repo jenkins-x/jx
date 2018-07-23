@@ -13,29 +13,29 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 )
 
-type CreateGcpServiceAccountFlags struct {
+type CreateGkeServiceAccountFlags struct {
 	Name    string
 	Project string
 }
 
-type CreateGcpServiceAccountOptions struct {
+type CreateGkeServiceAccountOptions struct {
 	CreateOptions
-	Flags CreateGcpServiceAccountFlags
+	Flags CreateGkeServiceAccountFlags
 }
 
 var (
-	createGcpServiceAccountExample = templates.Examples(`
-		jx create gcp-service-account
+	createGkeServiceAccountExample = templates.Examples(`
+		jx create gke-service-account
 
 		# to specify the options via flags
-		jx create gcp-service-account --name my-service-account --project my-gcp-project
+		jx create gke-service-account --name my-service-account --project my-gke-project
 
 `)
 )
 
-// NewCmdCreateGcpServiceAccount creates a command object for the "create" command
-func NewCmdCreateGcpServiceAccount(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &CreateGcpServiceAccountOptions{
+// NewCmdCreateGkeServiceAccount creates a command object for the "create" command
+func NewCmdCreateGkeServiceAccount(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := &CreateGkeServiceAccountOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -46,9 +46,9 @@ func NewCmdCreateGcpServiceAccount(f Factory, out io.Writer, errOut io.Writer) *
 	}
 
 	cmd := &cobra.Command{
-		Use:     "gcp-service-account",
-		Short:   "Creates a GCP service account",
-		Example: createGcpServiceAccountExample,
+		Use:     "gke-service-account",
+		Short:   "Creates a GKE service account",
+		Example: createGkeServiceAccountExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -63,13 +63,13 @@ func NewCmdCreateGcpServiceAccount(f Factory, out io.Writer, errOut io.Writer) *
 	return cmd
 }
 
-func (options *CreateGcpServiceAccountOptions) addFlags(cmd *cobra.Command) {
+func (options *CreateGkeServiceAccountOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.Name, "name", "n", "", "The name of the service account to create")
 	cmd.Flags().StringVarP(&options.Flags.Project, "project", "p", "", "The GCP project to create the service account in")
 }
 
 // Run implements this command
-func (o *CreateGcpServiceAccountOptions) Run() error {
+func (o *CreateGkeServiceAccountOptions) Run() error {
 	if o.Flags.Name == "" {
 		prompt := &survey.Input{
 			Message: "Name for the service account",
@@ -108,7 +108,7 @@ func (o *CreateGcpServiceAccountOptions) Run() error {
 }
 
 // asks to chose from existing projects or optionally creates one if none exist
-func (o *CreateGcpServiceAccountOptions) getGoogleProjectId() (string, error) {
+func (o *CreateGkeServiceAccountOptions) getGoogleProjectId() (string, error) {
 	existingProjects, err := gke.GetGoogleProjects()
 	if err != nil {
 		return "", err
