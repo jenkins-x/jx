@@ -74,6 +74,7 @@ func NewCmdCreate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateDocs(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateEtcHosts(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateGcpServiceAccount(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateGit(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateIssue(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateJenkins(f, out, errOut))
