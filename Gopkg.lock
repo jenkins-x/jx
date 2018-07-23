@@ -41,10 +41,11 @@
     "autorest",
     "autorest/adal",
     "autorest/azure",
-    "autorest/date"
+    "autorest/date",
+    "version"
   ]
-  revision = "894522ed0d5cab8d143c39116ddc5f605a1931ee"
-  version = "v10.13.0"
+  revision = "bca49d5b51a50dc5bb17bbf6204c711c6dbded06"
+  version = "v10.14.0"
 
 [[projects]]
   name = "github.com/BurntSushi/toml"
@@ -136,8 +137,8 @@
     "service/s3",
     "service/sts"
   ]
-  revision = "94b80148ea4b1b136682116294b151766a3b85c2"
-  version = "v1.14.27"
+  revision = "bc3f534c19ffdf835e524e11f0f825b3eaf541c3"
+  version = "v1.14.31"
 
 [[projects]]
   name = "github.com/beevik/etree"
@@ -155,7 +156,7 @@
   branch = "master"
   name = "github.com/blang/semver"
   packages = ["."]
-  revision = "c5e971dbed7850a93c23aa6ff69db5771d8e23b3"
+  revision = "3c1074078d32d767e08ab2c8564867292da86926"
 
 [[projects]]
   branch = "master"
@@ -220,7 +221,7 @@
     "tethering",
     "tracing"
   ]
-  revision = "2df4c50ff9773a4e4134e27662a2d59416651748"
+  revision = "57cf4773008d11a73b8d49a9324a9d0bc1f48bcb"
 
 [[projects]]
   name = "github.com/chromedp/chromedp"
@@ -354,8 +355,8 @@
     "proto",
     "sortkeys"
   ]
-  revision = "7d68e886eac4f7e34d0d82241a6273d6c304c5cf"
-  version = "v1.1.0"
+  revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
+  version = "v1.1.1"
 
 [[projects]]
   branch = "master"
@@ -386,7 +387,7 @@
   branch = "master"
   name = "github.com/google/go-github"
   packages = ["github"]
-  revision = "b14883f2b71b5f7dd303ed96d00bfaefeaeecea2"
+  revision = "e1be32f26e66c63933619603172ead18ebf4f79d"
 
 [[projects]]
   branch = "master"
@@ -428,7 +429,7 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "edd944db6f0236dd272a0a320d2cd02cfeea6425"
+  revision = "9bb899a7c1d92abca2da4992cff2f284fdf62cce"
 
 [[projects]]
   name = "github.com/gorilla/context"
@@ -473,7 +474,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
-  revision = "78879f5e1be14bb4812abd0bb547a923b5aeac23"
+  revision = "270f2f71b1ee587f3b609f00f422b76a6b28f348"
 
 [[projects]]
   branch = "master"
@@ -525,7 +526,7 @@
     "pkg/tarball",
     "pkg/templates"
   ]
-  revision = "ddaf085e1285cb88c04f3208329d322810502b5c"
+  revision = "093f4a7fc64edd1c3d1d0b56ba304bf3a050910d"
 
 [[projects]]
   name = "github.com/imdario/mergo"
@@ -562,6 +563,7 @@
   name = "github.com/jenkins-x/draft-repo"
   packages = ["pkg/draft/pack"]
   revision = "2f66cc518135de45b732980fa90af2cd056bd975"
+  source = "https://github.com/jenkins-x/old-draft-repo.git"
 
 [[projects]]
   branch = "master"
@@ -613,7 +615,7 @@
     "jlexer",
     "jwriter"
   ]
-  revision = "3fdea8d05856a0c8df22ed4bc71b3219245e4485"
+  revision = "efc7eb8984d6655c26b5c9d2e65c024e5767c37c"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -667,7 +669,7 @@
   branch = "master"
   name = "github.com/nlopes/slack"
   packages = ["."]
-  revision = "8ac1139f0b5b26ddb4a5c05b727e7ce155cc37f4"
+  revision = "347a74b1ea3055e8adcf17d2e14cbf3939238f6f"
 
 [[projects]]
   name = "github.com/onsi/ginkgo"
@@ -675,12 +677,10 @@
     "config",
     "reporters",
     "reporters/stenographer",
-    "reporters/stenographer/support/go-colorable",
-    "reporters/stenographer/support/go-isatty",
     "types"
   ]
-  revision = "fa5fabab2a1bfbd924faf4c067d07ae414e2aedf"
-  version = "v1.5.0"
+  revision = "3774a09d95489ccaa16032e0770d08ea77ba6184"
+  version = "v1.6.0"
 
 [[projects]]
   name = "github.com/pborman/uuid"
@@ -788,10 +788,32 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/shurcooL/githubv4"
+  packages = ["."]
+  revision = "19298c78142b5fe80c2cdaa2091bc51cbc3a94fc"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/shurcooL/go"
+  packages = ["ctxhttp"]
+  revision = "9e1955d9fb6e1ee2345ba1f5e71669263e719e27"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/shurcooL/graphql"
+  packages = [
+    ".",
+    "ident",
+    "internal/jsonutil"
+  ]
+  revision = "62c9ce094e75302d560f7adcdf16c06d05aaa958"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
-  version = "v1.0.5"
+  revision = "3e01752db0189b9157070a0e1668a620f9a85da2"
+  version = "v1.0.6"
 
 [[projects]]
   name = "github.com/spf13/afero"
@@ -931,7 +953,7 @@
     "ssh/knownhosts",
     "ssh/terminal"
   ]
-  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
+  revision = "c126467f60eb25f8f27e5a981f32a87e3965053f"
 
 [[projects]]
   branch = "master"
@@ -956,7 +978,7 @@
     "internal/timeseries",
     "trace"
   ]
-  revision = "d0887baf81f4598189d4e12a37c6da86f0bba4d0"
+  revision = "a680a1efc54dd51c040b3b5ce4939ea3cf2ea0d1"
 
 [[projects]]
   branch = "master"
@@ -1020,7 +1042,7 @@
     "imports",
     "internal/fastwalk"
   ]
-  revision = "fd2d2c45eb2dff7b87eab4303a1016b4dbf95e81"
+  revision = "ded554d0681e0cba3cf074977cdc12e2c0906fe6"
 
 [[projects]]
   branch = "master"
@@ -1427,7 +1449,7 @@
     "parser",
     "types"
   ]
-  revision = "fdcf9f9480fdd5bf2b3c3df9bf4ecd22b25b87e2"
+  revision = "906d99f89cd644eecf75ab547b29bf9f876f0b59"
 
 [[projects]]
   name = "k8s.io/helm"
@@ -1446,7 +1468,7 @@
   branch = "master"
   name = "k8s.io/kube-openapi"
   packages = ["pkg/util/proto"]
-  revision = "0cf8f7e6ed1d2e3d47d02e3b6e559369af24d803"
+  revision = "d8ea2fe547a448256204cfc68dfee7b26c720acb"
 
 [[projects]]
   branch = "release-1.10"
@@ -1483,13 +1505,17 @@
     "prow/sidecar",
     "testgrid/util/gcs"
   ]
-  revision = "61bac246561f2fb506811b9cc7d47de1dd57be50"
+  revision = "6cb3cf67617bf7439fe28b511b9c75459e7f67a8"
   source = "https://github.com/jenkins-x/test-infra.git"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
+<<<<<<< HEAD
   inputs-digest = "20f692bceb2049eaa3632b5628a99552c8309a43b1bb5565fd049127240516fb"
   inputs-digest = "75e51db96e95e3a8ccfbed3fe42338125972d8079f8cd658911ed5989ef1c2eb"
+=======
+  inputs-digest = "679684bbc1d5a13709910468ce95475d625814965b092baf628fdf4beb711b0b"
+>>>>>>> resolve kubernetes dependency clashes after prining in prow
   solver-name = "gps-cdcl"
   solver-version = 1

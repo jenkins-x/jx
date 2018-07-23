@@ -25,12 +25,7 @@
 #   unused-packages = true
 
 required = [
-  "k8s.io/code-generator/cmd/client-gen",
-  "k8s.io/test-infra/prow/config",
-]
-
-ignored = [
-    "github.com/shurcooL/githubql"
+  "k8s.io/code-generator/cmd/client-gen"
 ]
 
 [[constraint]]
@@ -84,6 +79,7 @@ ignored = [
 [[constraint]]
   branch = "copy-pack-contents"
   name = "github.com/jenkins-x/draft-repo"
+  source = "https://github.com/jenkins-x/old-draft-repo.git"
 
 [[constraint]]
   branch = "master"

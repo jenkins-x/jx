@@ -20,10 +20,10 @@ limitations under the License.
 package buildinfo
 
 // Version is the current version of Sonobuoy, set by the go linker's -X flag at build time
-var Version = "v0.11.3"
+var Version = "v0.11.4"
 
 // MinimumKubeVersion is the lowest API version of Kubernetes this release of Sonobuoy supports.
-var MinimumKubeVersion = "1.8.0"
+var MinimumKubeVersion = "1.9.0"
 
 // MaximumKubeVersion is the highest API version of Kubernetes this release of Sonobuoy supports.
-var MaximumKubeVersion = "1.11.0"
+var MaximumKubeVersion = "1.11.99"

@@ -34,7 +34,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/shurcooL/githubql"
+	"github.com/shurcooL/githubv4"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
@@ -195,7 +195,7 @@ func NewClient(token string, bases ...string) *Client {
 	return &Client{
 		logger: logrus.WithField("client", "github"),
 		time:   &standardTime{},
-		gqlc:   githubql.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))),
+		gqlc:   githubv4.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))),
 		client: &http.Client{},
 		token:  token,
 		bases:  bases,
@@ -215,7 +215,7 @@ func NewDryRunClient(token string, bases ...string) *Client {
 	return &Client{
 		logger: logrus.WithField("client", "github"),
 		time:   &standardTime{},
-		gqlc:   githubql.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))),
+		gqlc:   githubv4.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))),
 		client: &http.Client{},
 		token:  token,
 		bases:  bases,
@@ -1691,7 +1691,7 @@ func (c *Client) GetFile(org, repo, filepath, commit string) ([]byte, error) {
 	return decoded, nil
 }
 
-// Query runs a GraphQL query using shurcooL/githubql's client.
+// Query runs a GraphQL query using shurcooL/githubv4's client.
 func (c *Client) Query(ctx context.Context, q interface{}, vars map[string]interface{}) error {
 	// Don't log query here because Query is typically called multiple times to get all pages.
 	// Instead log once per search and include total search cost.

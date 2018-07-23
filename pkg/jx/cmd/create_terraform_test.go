@@ -6,10 +6,11 @@ import (
 
 	"path"
 
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/kubernetes/fake"
-	"path/filepath"
 )
 
 func TestValidateClusterDetails(t *testing.T) {

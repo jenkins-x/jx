@@ -56,7 +56,7 @@ var (
 ///////////////////////////////////////////////////////
 // Note: The described resources are a 1:1 match
 // with kubectl UX for consistent user experience.
-// xref: https://kubernetes.io/docs/api-reference/v1.8/
+// xref: https://kubernetes.io/docs/api-reference/v1.11/
 ///////////////////////////////////////////////////////
 
 // ClusterResources is the list of API resources that are scoped to the entire
@@ -73,7 +73,6 @@ var ClusterResources = []string{
 	"ServerGroups",
 	"ServerVersion",
 	"StorageClasses",
-	"ThirdPartyResources",
 }
 
 // NamespacedResources is the list of API resources that are scoped to a
@@ -94,6 +93,36 @@ var NamespacedResources = []string{
 	"PersistentVolumeClaims",
 	"PodDisruptionBudgets",
 	"PodLogs",
+	"PodTemplates",
+	"Pods",
+	"ReplicaSets",
+	"ReplicationControllers",
+	"ResourceQuotas",
+	"RoleBindings",
+	"Roles",
+	"ServiceAccounts",
+	"Services",
+	"StatefulSets",
+}
+
+// NamespacedDefaults is the default-list of API resources to gather
+// TODO (tstclair): Clean up defaulting, this is temporary
+var NamespacedDefaults = []string{
+	"ConfigMaps",
+	"ControllerRevisions",
+	"CronJobs",
+	"DaemonSets",
+	"Deployments",
+	"Endpoints",
+	//"Events",
+	//"HorizontalPodAutoscalers",
+	"Ingresses",
+	"Jobs",
+	"LimitRanges",
+	"NetworkPolicies",
+	"PersistentVolumeClaims",
+	"PodDisruptionBudgets",
+	//"PodLogs",
 	"PodTemplates",
 	"Pods",
 	"ReplicaSets",
@@ -249,7 +278,7 @@ func New() *Config {
 	cfg.Filters.Namespaces = ".*"
 
 	cfg.Resources = ClusterResources
-	cfg.Resources = append(cfg.Resources, NamespacedResources...)
+	cfg.Resources = append(cfg.Resources, NamespacedDefaults...)
 
 	cfg.Namespace = DefaultNamespace
 

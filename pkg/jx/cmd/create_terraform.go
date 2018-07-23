@@ -16,6 +16,8 @@ import (
 
 	"os"
 
+	"time"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -26,8 +28,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+
 	"path"
-	"time"
 )
 
 type Cluster interface {
