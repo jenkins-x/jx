@@ -448,9 +448,12 @@ func (o *CommonOptions) installhyperv() error {
 }
 
 func (o *CommonOptions) installHelm() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.runCommand("brew", "install", "kubernetes-helm")
-	}
+	// TODO temporary hack while we are on the 2.10-rc version:
+	/*
+		if runtime.GOOS == "darwin" && !o.NoBrew {
+			return o.runCommand("brew", "install", "kubernetes-helm")
+		}
+	*/
 
 	binDir, err := util.BinaryLocation()
 	if err != nil {
@@ -461,10 +464,14 @@ func (o *CommonOptions) installHelm() error {
 	if err != nil || !flag {
 		return err
 	}
-	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
-	if err != nil {
-		return err
-	}
+	// TODO temporary hack while we are on the 2.10-rc version:
+	latestVersion := "2.10.0-rc.1"
+	/*
+		latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
+		if err != nil {
+			return err
+		}
+	*/
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
