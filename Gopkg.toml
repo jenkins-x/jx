@@ -25,7 +25,12 @@
 #   unused-packages = true
 
 required = [
-  "k8s.io/code-generator/cmd/client-gen"
+  "k8s.io/code-generator/cmd/client-gen",
+  "k8s.io/test-infra/prow/config",
+]
+
+ignored = [
+    "github.com/shurcooL/githubql"
 ]
 
 [[constraint]]
@@ -152,6 +157,11 @@ required = [
   name = "github.com/alexflint/go-filemutex"
   branch = "master"
   source = "https://github.com/i0n/go-filemutex.git"
+
+[[constraint]]
+  name = "k8s.io/test-infra"
+  branch = "release-1.11"
+  source = "https://github.com/jenkins-x/test-infra.git"
 
 [prune]
   non-go = true

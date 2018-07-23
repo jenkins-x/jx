@@ -460,7 +460,6 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		repo, err := provider.GetRepository(owner, repoName)
 		remoteRepoExists := err == nil
 
-
 		if !remoteRepoExists {
 			fmt.Fprintf(o.Stdout(), "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
@@ -502,7 +501,7 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 			if localDirExists {
 				// if remote repo does exist & local does exist, git pull the local repo
 				fmt.Fprintf(o.Stdout(), "local directory already exists\n")
-				
+
 				err = o.Git().Pull(dir)
 				if err != nil {
 					return err
