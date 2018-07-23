@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/client-go/kubernetes/fake"
 	"path/filepath"
 )
 
@@ -140,4 +141,18 @@ func TestCanCreateTerraformVarsFile(t *testing.T) {
 	assert.Equal(t, true, c2.AutoRepair)
 	assert.Equal(t, false, c2.AutoUpgrade)
 
+}
+
+func TestCreateProwConfig(t *testing.T) {
+
+	o := CreateTerraformOptions{
+		InstallOptions: InstallOptions{
+			CommonOptions: CommonOptions{
+				kubeClient: fake.NewSimpleClientset(),
+			},
+		},
+	}
+
+	err := o.installProw()
+	assert.NoError(t, err)
 }
