@@ -667,6 +667,11 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 		if err != nil {
 			return err
 		}
+
+		err = gke.EnableApis("iam", "compute", "container")
+		if err != nil {
+			return err
+		}
 	}
 
 	if g.ProjectId == "" {
