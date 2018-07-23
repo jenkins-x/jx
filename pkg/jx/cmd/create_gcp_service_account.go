@@ -3,24 +3,24 @@ package cmd
 import (
 	"io"
 
+	"errors"
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/util"
-	"fmt"
-	"errors"
-	"github.com/jenkins-x/jx/pkg/log"
 )
 
 type CreateGcpServiceAccountFlags struct {
-	Name              string
+	Name    string
 	Project string
 }
 
 type CreateGcpServiceAccountOptions struct {
 	CreateOptions
-	Flags                CreateGcpServiceAccountFlags
+	Flags CreateGcpServiceAccountFlags
 }
 
 var (
@@ -75,10 +75,18 @@ func (o *CreateGcpServiceAccountOptions) Run() error {
 			Message: "Name for the service account",
 		}
 
-		err := survey.AskOne(prompt, &o.Flags.Name, nil)
+		err := survey.AskOne(prompt, &o.Flags.Name, func(val interface{}) error {
+			// since we are validating an Input, the assertion will always succeed
+			if str, ok := val.(string); !ok || len(str) < 6 {
+				return errors.New("Service Account name must be longer than 5 characters")
+			}
+			return nil
+		})
+
 		if err != nil {
 			return err
 		}
+
 	}
 
 	if o.Flags.Project == "" {

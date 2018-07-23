@@ -57,7 +57,7 @@ func (g GKECluster) Name() string {
 }
 
 func (g GKECluster) ClusterName() string {
-	return fmt.Sprintf("%s-%s", g.Organisation, g._Name )
+	return fmt.Sprintf("%s-%s", g.Organisation, g._Name)
 }
 
 func (g GKECluster) Provider() string {
@@ -1026,7 +1026,6 @@ func (o *CreateTerraformOptions) initAndInstall(provider string) error {
 }
 
 func (o *CreateTerraformOptions) configureEnvironments(clusters []Cluster) error {
-
 
 	for index, cluster := range clusters {
 		if cluster.Name() != o.Flags.JxEnvironment {
