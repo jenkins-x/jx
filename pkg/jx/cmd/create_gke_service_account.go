@@ -14,8 +14,9 @@ import (
 )
 
 type CreateGkeServiceAccountFlags struct {
-	Name    string
-	Project string
+	Name      string
+	Project   string
+	SkipLogin bool
 }
 
 type CreateGkeServiceAccountOptions struct {
@@ -66,10 +67,19 @@ func NewCmdCreateGkeServiceAccount(f Factory, out io.Writer, errOut io.Writer) *
 func (options *CreateGkeServiceAccountOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.Name, "name", "n", "", "The name of the service account to create")
 	cmd.Flags().StringVarP(&options.Flags.Project, "project", "p", "", "The GCP project to create the service account in")
+	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
+
 }
 
 // Run implements this command
 func (o *CreateGkeServiceAccountOptions) Run() error {
+	if !o.Flags.SkipLogin {
+		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
+		if err != nil {
+			return err
+		}
+	}
+
 	if o.Flags.Name == "" {
 		prompt := &survey.Input{
 			Message: "Name for the service account",
