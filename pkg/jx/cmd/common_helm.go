@@ -193,7 +193,7 @@ func (o *CommonOptions) helmInit(dir string) error {
 	if o.Helm().HelmBinary() == "helm" {
 		return o.Helm().Init(false, "", "", true)
 	} else {
-		return o.Helm().Init(false, "", "", true)
+		return o.Helm().Init(false, "", "", false)
 	}
 }
 
@@ -214,7 +214,7 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 	if o.Helm().HelmBinary() == "helm" {
 		err = o.Helm().Init(false, "", "", true)
 	} else {
-		err = o.Helm().Init(false, "", "", true)
+		err = o.Helm().Init(false, "", "", false)
 	}
 
 	if err != nil {
