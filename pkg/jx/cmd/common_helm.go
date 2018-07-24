@@ -212,7 +212,7 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 	}
 
 	if o.Helm().HelmBinary() == "helm" {
-		err = o.Helm().Init(true, "", "", true)
+		err = o.Helm().Init(false, "", "", true)
 	} else {
 		err = o.Helm().Init(false, "", "", true)
 	}
