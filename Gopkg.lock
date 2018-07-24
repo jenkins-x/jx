@@ -615,7 +615,7 @@
     "jlexer",
     "jwriter"
   ]
-  revision = "efc7eb8984d6655c26b5c9d2e65c024e5767c37c"
+  revision = "d5012789d6659eeed305f54c1b1542e7b65829e6"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -1058,7 +1058,7 @@
     "storage/v1",
     "transport/http"
   ]
-  revision = "cd7aead8ef3786a3a18faf2d54d3960991153b64"
+  revision = "2c45710c7f3fb0ab63506810a1ba84325ab90ab8"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -1489,20 +1489,26 @@
   name = "k8s.io/test-infra"
   packages = [
     "prow/clonerefs",
+    "prow/commentpruner",
     "prow/config",
     "prow/config/org",
     "prow/entrypoint",
     "prow/errorutil",
     "prow/gcsupload",
+    "prow/git",
     "prow/github",
     "prow/initupload",
     "prow/kube",
+    "prow/pluginhelp",
+    "prow/plugins",
     "prow/pod-utils/clone",
     "prow/pod-utils/decorate",
     "prow/pod-utils/downwardapi",
     "prow/pod-utils/gcs",
     "prow/pod-utils/wrapper",
+    "prow/repoowners",
     "prow/sidecar",
+    "prow/slack",
     "testgrid/util/gcs"
   ]
   revision = "6cb3cf67617bf7439fe28b511b9c75459e7f67a8"
@@ -1511,11 +1517,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-<<<<<<< HEAD
-  inputs-digest = "20f692bceb2049eaa3632b5628a99552c8309a43b1bb5565fd049127240516fb"
-  inputs-digest = "75e51db96e95e3a8ccfbed3fe42338125972d8079f8cd658911ed5989ef1c2eb"
-=======
-  inputs-digest = "679684bbc1d5a13709910468ce95475d625814965b092baf628fdf4beb711b0b"
->>>>>>> resolve kubernetes dependency clashes after prining in prow
+  inputs-digest = "c8bbce17027cf72eb616877a1e607d4ebf259e828cc433fcc5aa47b24f6fa0e0"
   solver-name = "gps-cdcl"
   solver-version = 1
