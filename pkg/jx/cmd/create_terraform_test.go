@@ -147,13 +147,14 @@ func TestCanCreateTerraformVarsFile(t *testing.T) {
 func TestCreateProwConfig(t *testing.T) {
 
 	o := CreateTerraformOptions{
-		InstallOptions: InstallOptions{
+
+		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				kubeClient: fake.NewSimpleClientset(),
 			},
 		},
 	}
 
-	err := o.installProw()
+	err := o.installProw("foo")
 	assert.NoError(t, err)
 }
