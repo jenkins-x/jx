@@ -414,7 +414,7 @@ func (o *ImportOptions) DraftCreate() error {
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
 
-	jenkinsfile := filepath.Join(dir, "Jenkinsfile")
+	jenkinsfile := filepath.Join(dir, o.Jenkinsfile)
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
 	lpack := ""
@@ -503,6 +503,16 @@ func (o *ImportOptions) DraftCreate() error {
 	if err != nil {
 		// lets ignore draft errors as sometimes it can't find a pack - e.g. for environments
 		log.Warnf("Failed to run draft create in %s due to %s", dir, err)
+	}
+
+	var unpackedDefaultJenkinsfile = filepath.Join(dir, jenkins.DefaultJenkinsfile)
+	var unpackedDefaultJenkinsfileExists = false
+	unpackedDefaultJenkinsfileExists, err = util.FileExists(unpackedDefaultJenkinsfile)
+	if unpackedDefaultJenkinsfileExists {
+		err = util.RenameFile(unpackedDefaultJenkinsfile, jenkinsfile)
+		if err != nil {
+			return fmt.Errorf("Failed to rename Jenkinsfile file to '%s': %s", unpackedDefaultJenkinsfile, err)
+		}
 	}
 
 	if jenkinsfileBackup != "" {
