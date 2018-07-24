@@ -191,9 +191,9 @@ func (o *CommonOptions) helmInit(dir string) error {
 		return errors.Wrap(err, "failed to read the helm version")
 	}
 	if o.Helm().HelmBinary() == "helm" {
-		return o.Helm().Init(true, "", "", false)
+		return o.Helm().Init(false, "", "", true)
 	} else {
-		return o.Helm().Init(false, "", "", false)
+		return o.Helm().Init(false, "", "", true)
 	}
 }
 
