@@ -199,7 +199,7 @@ func (o *CommonOptions) helmInit(dir string) error {
 	if o.Helm().HelmBinary() == "helm" {
 		return o.Helm().Init(false, "", "", true)
 	} else {
-		return o.Helm().Init(false, "", "", false)
+		return o.Helm().Init(false, "", "", true)
 	}
 }
 
