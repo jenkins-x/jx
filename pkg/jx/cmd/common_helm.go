@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -76,11 +77,16 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName stri
 	}
 	if missing {
 		log.Infof("Adding missing helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
-		err = o.Helm().AddRepo(repoName, helmUrl)
-		if err == nil {
-			log.Infof("Successfully added Helm repository %s.\n", repoName)
+		err = o.retry(6, 10*time.Second, func() (err error) {
+			err = o.Helm().AddRepo(repoName, helmUrl)
+			if err == nil {
+				log.Infof("Successfully added Helm repository %s.\n", repoName)
+			}
+			return errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmUrl)
+		})
+		if err != nil {
+			return err
 		}
-		return errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmUrl)
 	}
 	return nil
 }
@@ -191,7 +197,7 @@ func (o *CommonOptions) helmInit(dir string) error {
 		return errors.Wrap(err, "failed to read the helm version")
 	}
 	if o.Helm().HelmBinary() == "helm" {
-		return o.Helm().Init(true, "", "", false)
+		return o.Helm().Init(false, "", "", true)
 	} else {
 		return o.Helm().Init(false, "", "", false)
 	}
@@ -212,7 +218,7 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 	}
 
 	if o.Helm().HelmBinary() == "helm" {
-		err = o.Helm().Init(true, "", "", false)
+		err = o.Helm().Init(false, "", "", true)
 	} else {
 		err = o.Helm().Init(false, "", "", false)
 	}
