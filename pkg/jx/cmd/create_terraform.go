@@ -1101,5 +1101,4 @@ func (o *CreateTerraformOptions) configureEnvironments(clusters []Cluster) error
 			}
 		}
 	}
-	return nil
 }

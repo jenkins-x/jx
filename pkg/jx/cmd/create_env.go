@@ -45,6 +45,7 @@ type CreateEnvOptions struct {
 	HelmValuesConfig       config.HelmValuesConfig
 	PromotionStrategy      string
 	NoGitOps               bool
+	Prow                   bool
 	ForkEnvironmentGitRepo string
 	EnvJobCredentials      string
 	GitRepositoryOptions   gits.GitRepositoryOptions
@@ -97,6 +98,7 @@ func NewCmdCreateEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command 
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on the enivronment git repository")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
+	cmd.Flags().BoolVarP(&options.Prow, "prow", "", false, "Install and use Prow for environment promotion")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
@@ -153,6 +155,13 @@ func (o *CreateEnvOptions) Run() error {
 		return err
 	}
 	log.Infof("Created environment %s\n", util.ColorInfo(env.Name))
+
+	// todo if cluster name set store current cluster and switch context
+
+	// if prow flag set install prow
+	if o.Prow {
+
+	}
 
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, ns)
 	if err != nil {
