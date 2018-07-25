@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"net"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -191,7 +189,7 @@ func (o *StepVerifyOptions) determineAppAndNamespace(activity *v1.PipelineActivi
 
 		if step.Kind == v1.ActivityStepKindTypePromote {
 			promote := step.Promote
-			if promote != nil {
+			if promote == nil {
 				return "", "", fmt.Errorf("empty promote step in pipeline activity '%s'", activity.Name)
 			}
 			applicationURL := promote.ApplicationURL
@@ -205,17 +203,12 @@ func (o *StepVerifyOptions) determineAppAndNamespace(activity *v1.PipelineActivi
 }
 
 func (o *StepVerifyOptions) parseApplicationURL(applicationURL string) (string, string, error) {
-	url, err := url.Parse(applicationURL)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to parse the application URL '%s'", applicationURL)
-	}
-
-	host, _, _ := net.SplitHostPort(url.Host)
-	parts := strings.Split(host, ".")
+	applicationURL = strings.TrimPrefix(applicationURL, "https://")
+	applicationURL = strings.TrimPrefix(applicationURL, "http://")
+	parts := strings.Split(applicationURL, ".")
 	if len(parts) < 2 {
-		return "", "", fmt.Errorf("cannot parse the application name and namespace from URL Host '%s'", host)
+		return "", "", fmt.Errorf("cannot parse the application name and namespace from URL '%s'", applicationURL)
 	}
-
 	return parts[0], parts[1], nil
 }
 
