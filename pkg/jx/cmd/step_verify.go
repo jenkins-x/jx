@@ -3,7 +3,10 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"net"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -20,11 +23,9 @@ const appLabel = "app"
 type StepVerifyOptions struct {
 	StepOptions
 
-	After       int32
-	Application string
-	Namespace   string
-	Pods        int32
-	Restarts    int32
+	After    int32
+	Pods     int32
+	Restarts int32
 }
 
 var (
@@ -62,8 +63,6 @@ func NewCmdStepVerify(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 	}
 
 	cmd.Flags().Int32VarP(&options.After, "after", "", 60, "The time in seconds after which the application should be ready")
-	cmd.Flags().StringVarP(&options.Application, optionApplication, "a", "", "The Application to verify")
-	cmd.Flags().StringVarP(&options.Namespace, kube.OptionNamespace, "n", "", "The Kubernetes namespace where the application to verify runs")
 	cmd.Flags().Int32VarP(&options.Pods, "pods", "p", 1, "Number of expected pods to be running")
 	cmd.Flags().Int32VarP(&options.Restarts, "restarts", "r", 0, "Maximum number of restarts which are acceptable within the given time")
 
@@ -71,18 +70,14 @@ func NewCmdStepVerify(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 }
 
 func (o *StepVerifyOptions) Run() error {
-	var err error
-	app := o.Application
-	if app == "" {
-		app, err = o.DiscoverAppName()
-		if err != nil {
-			return errors.Wrap(err, "failed to discover application")
-		}
+	activity, err := o.detectPipelineActivity()
+	if err != nil {
+		return errors.Wrap(err, "failed to detect the pipeline activity")
 	}
 
-	ns := o.Namespace
-	if ns == "" {
-		ns = o.currentNamespace
+	app, ns, err := o.determineAppAndNamespace(activity)
+	if err != nil {
+		return errors.Wrap(err, "failed to determine the application name and namespace from pipeline activity")
 	}
 
 	// Wait for the given time to exceed before starting the verification
@@ -115,7 +110,7 @@ func (o *StepVerifyOptions) Run() error {
 					if restarts < o.Restarts {
 						continue
 					} else {
-						err = o.updatePipelineActivity(v1.ActivityStatusTypeFailed)
+						err = o.updatePipelineActivity(activity, v1.ActivityStatusTypeFailed)
 						if err != nil {
 							return err
 						}
@@ -124,7 +119,7 @@ func (o *StepVerifyOptions) Run() error {
 					}
 				} else {
 					if restarts > o.Restarts {
-						err = o.updatePipelineActivity(v1.ActivityStatusTypeFailed)
+						err = o.updatePipelineActivity(activity, v1.ActivityStatusTypeFailed)
 						if err != nil {
 							return err
 						}
@@ -137,21 +132,94 @@ func (o *StepVerifyOptions) Run() error {
 	}
 
 	if foundPods != o.Pods {
-		err = o.updatePipelineActivity(v1.ActivityStatusTypeFailed)
+		err = o.updatePipelineActivity(activity, v1.ActivityStatusTypeFailed)
 		if err != nil {
 			return err
 		}
 		return fmt.Errorf("found '%d' pods running but expects '%d'", foundPods, o.Pods)
 	}
 
-	err = o.updatePipelineActivity(v1.ActivityStatusTypeSucceeded)
+	err = o.updatePipelineActivity(activity, v1.ActivityStatusTypeSucceeded)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (o *StepVerifyOptions) updatePipelineActivity(status v1.ActivityStatusType) error {
+func (o *StepVerifyOptions) detectPipelineActivity() (*v1.PipelineActivity, error) {
+	pipeline := os.Getenv("JOB_NAME")
+	build := os.Getenv("BUILD_NUMBER")
+	if pipeline == "" || build == "" {
+		return nil, errors.New("JOB_NAME or BUILD_NUMBER environment variables not set")
+	}
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create the api extensions client")
+	}
+	err = kube.RegisterPipelineActivityCRD(apisClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to register the pipeline activity CRD")
+	}
+
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get the jx client")
+	}
+
+	name := kube.ToValidName(pipeline + "-" + build)
+	activities := jxClient.JenkinsV1().PipelineActivities(devNs)
+	activity, err := activities.Get(name, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get the activity with name '%s'", name)
+	}
+	return activity, nil
+}
+
+func (o *StepVerifyOptions) determineAppAndNamespace(activity *v1.PipelineActivity) (string, string, error) {
+	for _, step := range activity.Spec.Steps {
+		if step.Kind == v1.ActivityStepKindTypePreview {
+			preview := step.Preview
+			if preview == nil {
+				return "", "", fmt.Errorf("empty preview step in pipeline activity '%s'", activity.Name)
+			}
+			applicationURL := preview.ApplicationURL
+			if applicationURL == "" {
+				return "", "", fmt.Errorf("empty application URL in pipeline activity '%s'", activity.Name)
+			}
+			return o.parseApplicationURL(applicationURL)
+		}
+
+		if step.Kind == v1.ActivityStepKindTypePromote {
+			promote := step.Promote
+			if promote != nil {
+				return "", "", fmt.Errorf("empty promote step in pipeline activity '%s'", activity.Name)
+			}
+			applicationURL := promote.ApplicationURL
+			if applicationURL == "" {
+				return "", "", fmt.Errorf("empty application URL in pipeline activity '%s'", activity.Name)
+			}
+			return o.parseApplicationURL(applicationURL)
+		}
+	}
+	return "", "", fmt.Errorf("could not determine the application name and namespace from activity '%s'", activity.Name)
+}
+
+func (o *StepVerifyOptions) parseApplicationURL(applicationURL string) (string, string, error) {
+	url, err := url.Parse(applicationURL)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse the application URL '%s'", applicationURL)
+	}
+
+	host, _, _ := net.SplitHostPort(url.Host)
+	parts := strings.Split(host, ".")
+	if len(parts) < 2 {
+		return "", "", fmt.Errorf("cannot parse the application name and namespace from URL Host '%s'", host)
+	}
+
+	return parts[0], parts[1], nil
+}
+
+func (o *StepVerifyOptions) updatePipelineActivity(activity *v1.PipelineActivity, status v1.ActivityStatusType) error {
 	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the api extensions client")
@@ -166,20 +234,11 @@ func (o *StepVerifyOptions) updatePipelineActivity(status v1.ActivityStatusType)
 		return errors.Wrap(err, "failed to get the jx client")
 	}
 
-	pipeline := os.Getenv("JOB_NAME")
-	build := os.Getenv("BUILD_NUMBER")
-	if pipeline != "" && build != "" {
-		name := kube.ToValidName(pipeline + "-" + build)
-		activities := jxClient.JenkinsV1().PipelineActivities(devNs)
-		activity, err := activities.Get(name, metav1.GetOptions{})
-		if err != nil {
-			return errors.Wrapf(err, "failed to get the activity with name '%s'", name)
-		}
-		activity.Spec.Status = status
-		_, err = activities.Update(activity)
-		if err != nil {
-			return errors.Wrapf(err, "failed to update activity status to '%s'", status)
-		}
+	activities := jxClient.JenkinsV1().PipelineActivities(devNs)
+	activity.Spec.Status = status
+	_, err = activities.Update(activity)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update activity status to '%s'", status)
 	}
 
 	return nil
