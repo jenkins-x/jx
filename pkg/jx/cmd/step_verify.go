@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,6 +87,8 @@ func (o *StepVerifyOptions) Run() error {
 
 	// Wait for the given time to exceed before starting the verification
 	time.Sleep(time.Duration(o.After) * time.Second)
+
+	log.Infof("Verifying if app '%s' is running in namespace '%s'", app, ns)
 
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
