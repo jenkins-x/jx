@@ -36,7 +36,7 @@ var (
 		jx get cve # using current dir as the context for app name
 		jx get cve --app foo
 		jx get cve --app foo --version 1.0.0
-		jx get cve --app foo --env staging
+		jx get cve --app foo --environment staging
 		jx get cve --environment staging
 	`)
 )
@@ -101,7 +101,7 @@ func (o *GetCVEOptions) Run() error {
 
 	// if no flags are set try and guess the image name from the current directory
 	if o.ImageID == "" && o.ImageName == "" && o.Env == "" {
-		return fmt.Errorf("no --image-name, --image-id or --env flags set\n")
+		return fmt.Errorf("no --image-name, --image-id or --environment flags set\n")
 	}
 
 	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindCVE, externalURL)
