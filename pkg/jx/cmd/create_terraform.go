@@ -97,6 +97,10 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 	if err != nil {
 		return err
 	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "provider", g._Provider)
+	if err != nil {
+		return err
+	}
 	err = terraform.WriteKeyValueToFileIfNotExists(path, "gcp_zone", g.Zone)
 	if err != nil {
 		return err
@@ -155,6 +159,7 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 func (g *GKECluster) ParseTfVarsFile(path string) {
 	g.Zone, _ = terraform.ReadValueFromFile(path, "gcp_zone")
 	g.Organisation, _ = terraform.ReadValueFromFile(path, "organisation")
+	g._Provider, _ = terraform.ReadValueFromFile(path, "provider")
 	g.ProjectId, _ = terraform.ReadValueFromFile(path, "gcp_project")
 	g.MinNumOfNodes, _ = terraform.ReadValueFromFile(path, "min_node_count")
 	g.MaxNumOfNodes, _ = terraform.ReadValueFromFile(path, "max_node_count")
@@ -984,9 +989,12 @@ func (o *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) error 
 			return err
 		}
 
-		err = o.configureEnvironments(clusters)
-		if err != nil {
-			return err
+		// if more than 1 clusters are defined, we will install an environment in each
+		if len(clusters) > 1 {
+			err = o.configureEnvironments(clusters)
+			if err != nil {
+				return err
+			}
 		}
 
 		return err
