@@ -20,6 +20,7 @@ type StepVerifyOptions struct {
 	After       int32
 	Application string
 	Namespace   string
+	Pods        int32
 	Restarts    int32
 }
 
@@ -60,6 +61,7 @@ func NewCmdStepVerify(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 	cmd.Flags().Int32VarP(&options.After, "after", "", 60, "The time in seconds after which the application should be ready")
 	cmd.Flags().StringVarP(&options.Application, optionApplication, "a", "", "The Application to verify")
 	cmd.Flags().StringVarP(&options.Namespace, kube.OptionNamespace, "n", "", "The Kubernetes namespace where the application to verify runs")
+	cmd.Flags().Int32VarP(&options.Pods, "pods", "p", 1, "Number of expected pods to be running")
 	cmd.Flags().Int32VarP(&options.Restarts, "restarts", "r", 0, "Maximum number of restarts which are acceptable within the given time")
 
 	return cmd
@@ -93,7 +95,7 @@ func (o *StepVerifyOptions) Run() error {
 		return errors.Wrapf(err, "failed to list the PODs in namespace '%s'", ns)
 	}
 
-	foundPod := false
+	var foundPods int32
 	appNames := []string{app, ns + "-preview", ns + "-" + app}
 	for _, pod := range pods.Items {
 		appLabelValue, ok := pod.Labels[appLabel]
@@ -102,7 +104,7 @@ func (o *StepVerifyOptions) Run() error {
 		}
 		for _, appName := range appNames {
 			if appName == appLabelValue {
-				foundPod = true
+				foundPods += 1
 				restarts := kube.GetPodRestarts(&pod)
 				if !kube.IsPodReady(&pod) {
 					if restarts < o.Restarts {
@@ -113,7 +115,7 @@ func (o *StepVerifyOptions) Run() error {
 					}
 				} else {
 					if restarts > o.Restarts {
-						return fmt.Errorf("pod '%s' is running but was restarted '%d' which exceeds max number of restarts '%d'",
+						return fmt.Errorf("pod '%s' is running but was restarted '%d', which exceeds max number of restarts '%d'",
 							pod.Name, restarts, o.Restarts)
 					}
 				}
@@ -121,8 +123,8 @@ func (o *StepVerifyOptions) Run() error {
 		}
 	}
 
-	if !foundPod {
-		return fmt.Errorf("no pod found running for application '%s' in namespace '%s'", app, ns)
+	if foundPods != o.Pods {
+		return fmt.Errorf("found '%d' pods running but expects '%d'", foundPods, o.Pods)
 	}
 
 	return nil
