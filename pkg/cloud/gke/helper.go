@@ -28,9 +28,17 @@ func GetGoogleZones() ([]string, error) {
 }
 
 func GetGoogleProjects() ([]string, error) {
-	out, err := util.RunCommandWithOutput("", "gcloud", "projects", "list")
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: []string{"projects", "list"},
+	}
+	out, err := cmd.RunWithoutRetry()
 	if err != nil {
 		return nil, err
+	}
+
+	if out == "Listed 0 items." {
+		return []string{}, nil
 	}
 
 	lines := strings.Split(string(out), "\n")

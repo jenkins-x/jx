@@ -11,43 +11,36 @@ import (
 	"github.com/pkg/errors"
 )
 
-type runCommandFunc func(dir string, name string, args ...string) error
-type runCommandWithOutputFunc func(dir string, name string, args ...string) (string, error)
-
-type helmRunner struct {
-	run           runCommandFunc
-	runWithOutput runCommandWithOutputFunc
-}
-
 // HelmCLI implements common helm actions based on helm CLI
 type HelmCLI struct {
 	Binary     string
 	BinVersion Version
 	CWD        string
-	runner     helmRunner
+	Runner     *util.Command
 }
 
 // NewHelmCLI creates a new HelmCLI instance configured to used the provided helm CLI in
 // the given current working directory
-func NewHelmCLI(binary string, version Version, cwd string) *HelmCLI {
-	return &HelmCLI{
+func NewHelmCLI(binary string, version Version, cwd string, args ...string) *HelmCLI {
+	a := []string{}
+	for _, x := range args {
+		y := strings.Split(x, " ")
+		for _, z := range y {
+			a = append(a, z)
+		}
+	}
+	runner := &util.Command{
+		Args: a,
+		Name: binary,
+		Dir:  cwd,
+	}
+	cli := &HelmCLI{
 		Binary:     binary,
 		BinVersion: version,
 		CWD:        cwd,
-		runner: helmRunner{
-			run:           util.RunCommandVerbose,
-			runWithOutput: util.RunCommandWithOutput,
-		},
+		Runner:     runner,
 	}
-}
-
-func newHelmCLIWithRunner(binary string, version Version, cwd string, runner helmRunner) *HelmCLI {
-	return &HelmCLI{
-		Binary:     binary,
-		BinVersion: version,
-		CWD:        cwd,
-		runner:     runner,
-	}
+	return cli
 }
 
 // SetCWD configures the common working directory of helm CLI
@@ -66,11 +59,18 @@ func (h *HelmCLI) SetHelmBinary(binary string) {
 }
 
 func (h *HelmCLI) runHelm(args ...string) error {
-	return h.runner.run(h.CWD, h.Binary, args...)
+	h.Runner.Name = h.Binary
+	h.Runner.Dir = h.CWD
+	h.Runner.Args = args
+	_, err := h.Runner.RunWithoutRetry()
+	return err
 }
 
 func (h *HelmCLI) runHelmWithOutput(args ...string) (string, error) {
-	return h.runner.runWithOutput(h.CWD, h.Binary, args...)
+	h.Runner.Dir = h.CWD
+	h.Runner.Name = h.Binary
+	h.Runner.Args = args
+	return h.Runner.RunWithoutRetry()
 }
 
 // Init executes the helm init command according with the given flags
@@ -87,7 +87,7 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 		args = append(args, "--tiller-namespace", tillerNamespace)
 	}
 	if upgrade {
-		args = append(args, "--upgrade")
+		args = append(args, "--upgrade", "--wait")
 	}
 	return h.runHelm(args...)
 }

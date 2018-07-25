@@ -29,6 +29,10 @@ func Output() io.Writer {
 }
 
 func TestShouldDisableMaven() bool {
-	_, err := util.RunCommandWithOutput("", "mvn", "-v")
+	cmd := util.Command{
+		Name: "mvn",
+		Args: []string{"-v"},
+	}
+	_, err := cmd.RunWithoutRetry()
 	return err != nil
 }
