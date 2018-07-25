@@ -125,6 +125,8 @@ func (o *GCGKEOptions) Run() error {
 	data = strings.Replace(data, "]", "", -1)
 
 	err = ioutil.WriteFile("gc_gke.sh", []byte(data), util.DefaultWritePermissions)
+
+	log.Info("Script 'gc_gke.sh' created!\n")
 	return nil
 }
 
@@ -174,12 +176,15 @@ func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 		}
 	}
 
-	args := "gcloud compute firewall-rules delete "
-	for _, name := range nameToDelete {
-		args = args + " " + name
+	if nameToDelete != nil {
+		args := "gcloud compute firewall-rules delete "
+		for _, name := range nameToDelete {
+			args = args + " " + name
+		}
+		return args, nil
 	}
 
-	return args, nil
+	return "# No firewalls found for deletion", nil
 }
 
 func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
@@ -206,6 +211,10 @@ func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
 				line = append(line, fmt.Sprintf("gcloud compute disks delete --zone=%s --quiet %s\n", z, d))
 			}
 		}
+	}
+
+	if len(line) == 0 {
+		line = append(line, "# No disks found for deletion\n")
 	}
 
 	return line, nil

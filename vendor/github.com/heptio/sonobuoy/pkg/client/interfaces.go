@@ -128,7 +128,7 @@ type Interface interface {
 	// GenerateManifest fills in a template with a Sonobuoy config
 	GenerateManifest(cfg *GenConfig) ([]byte, error)
 	// RetrieveResults copies results from a sonobuoy run into a Reader in tar format.
-	RetrieveResults(cfg *RetrieveConfig) (io.Reader, error)
+	RetrieveResults(cfg *RetrieveConfig) (io.Reader, <-chan error)
 	// GetStatus determines the status of the sonobuoy run in order to assist the user.
 	GetStatus(namespace string) (*aggregation.Status, error)
 	// LogReader returns a reader that contains a merged stream of sonobuoy logs.

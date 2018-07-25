@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -183,36 +184,16 @@ func (o *InitOptions) enableClusterAdminRole() error {
 		return err
 	}
 
-	user := o.Flags.Username
-	if user == "" {
-		if o.Flags.Provider == GKE {
-			user, err = o.getCommandOutput("", "gcloud", "config", "get-value", "core/account")
-			if err != nil {
-				return err
-			}
-		} else {
-			config, _, err := kube.LoadConfig()
-			if err != nil {
-				return err
-			}
-			if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
-				return fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
-			}
-			contextName := config.CurrentContext
-			if contextName == "" {
-				return fmt.Errorf("No kuberentes context selected. Please select one (e.g. via jx context) first")
-			}
-			context := config.Contexts[contextName]
-			if context == nil {
-				return fmt.Errorf("No kuberentes context available for context %s", contextName)
-			}
-			user = context.AuthInfo
+	if o.Flags.Username == "" {
+		o.Flags.Username, err = o.GetClusterUserName()
+		if err != err {
+			return err
 		}
 	}
-	if user == "" {
+	if o.Flags.Username == "" {
 		return util.MissingOption(optionUsername)
 	}
-	userFormatted := kube.ToValidName(user)
+	userFormatted := kube.ToValidName(o.Flags.Username)
 
 	role := o.Flags.UserClusterRole
 	clusterRoleBindingName := kube.ToValidName(userFormatted + "-" + role + "-binding")
@@ -226,7 +207,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 			{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "User",
-				Name:     user,
+				Name:     o.Flags.Username,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -239,7 +220,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 	return o.retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
-			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, user)
+			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, o.Flags.Username)
 
 			//args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
 
@@ -576,7 +557,7 @@ func (o *InitOptions) initIngress() error {
 			log.Infof("Using external IP: %s\n", util.ColorInfo(externalIP))
 		}
 
-		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain, ingressNamespace, o.Flags.IngressService, externalIP)
+		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Provider, ingressNamespace, o.Flags.IngressService, externalIP)
 		if err != nil {
 			return err
 		}
@@ -683,7 +664,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		}
 	}
 	defaultDomain := address
-	if address != "" {
+	if provider != AWS && provider != EKS && address != "" {
 		addNip := true
 		aip := net.ParseIP(address)
 		if aip == nil {
@@ -728,7 +709,33 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			return defaultDomain, nil
 		}
 		log.Successf("You can now configure a wildcard DNS pointing to the new loadbalancer address %s", address)
-		log.Infof("If you don't have a wildcard DNS yet you can use the default %s", defaultDomain)
+		log.Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic dns nip.io.")
+		log.Infof("\nOnce you have a customer domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
+
+		if provider == AWS || provider == EKS {
+			log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your kubernetes cluster\n")
+			log.Infof("If you do not have a custom DNS name you can use yet you can register a new one here: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
+
+			for {
+				if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
+					"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.") {
+					customDomain := ""
+					prompt := &survey.Input{
+						Message: "Your custom DNS name: ",
+						Help:    "Enter your custom domain that we can use to setup a Route 53 ALIAS record to point at the ELB host: " + address,
+					}
+					survey.AskOne(prompt, &customDomain, nil)
+					if customDomain != "" {
+						err := amazon.RegisterAwsCustomDomain(customDomain, address)
+						return customDomain, err
+					}
+				} else {
+					break
+				}
+			}
+		}
+
+		log.Infof("\nIf you don't have a wildcard DNS setup then setup a new CNAME and point it at: %s then use the DNS domain in the next input...\n", defaultDomain)
 
 		if domain == "" {
 			prompt := &survey.Input{

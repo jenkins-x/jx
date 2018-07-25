@@ -1,4 +1,4 @@
-// Package domdebugger provides the Chrome Debugging Protocol
+// Package domdebugger provides the Chrome DevTools Protocol
 // commands, types, and events for the DOMDebugger domain.
 //
 // DOM debugging allows setting breakpoints on particular DOM operations and

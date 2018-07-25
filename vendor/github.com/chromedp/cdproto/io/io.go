@@ -1,4 +1,4 @@
-// Package io provides the Chrome Debugging Protocol
+// Package io provides the Chrome DevTools Protocol
 // commands, types, and events for the IO domain.
 //
 // Input/Output operations for streams produced by DevTools.

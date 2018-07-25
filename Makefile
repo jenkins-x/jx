@@ -92,7 +92,8 @@ release: check
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
 
-	docker build -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
+	docker system prune -f
+	docker build --ulimit nofile=90000:90000 -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
 	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
 
 	chmod +x build/darwin/$(NAME)
@@ -220,14 +221,14 @@ tools.govet:
 		go get golang.org/x/tools/cmd/vet; \
 	fi
 
-GAS := $(GOPATH)/bin/gas
-$(GAS):
-	go get github.com/GoASTScanner/gas/cmd/gas/...
+GOSEC := $(GOPATH)/bin/gosec
+$(GOSEC):
+	go get github.com/securego/gosec/cmd/gosec/...
 
 .PHONY: sec
-sec: $(GAS)
+sec: $(GOSEC)
 	@echo "SECURITY"
 	@mkdir -p scanning
-	$(GAS) -fmt=yaml -out=scanning/results.yaml ./...
+	$(GOSEC) -fmt=yaml -out=scanning/results.yaml ./...
 
 

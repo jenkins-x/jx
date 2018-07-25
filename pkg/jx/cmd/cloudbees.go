@@ -26,6 +26,8 @@ var (
 		Opens the CloudBees app for Kubernetes in a browser.
 
 		Which helps you visualise your CI/CD pipelines, apps, environments and teams.
+
+		For more information please see [https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x](https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x)
 `)
 	cdx_example = templates.Examples(`
 		# Open the CDX dashboard in a browser
@@ -68,7 +70,7 @@ func (o *CloudBeesOptions) Run() error {
 
 	url, err := kube.GetServiceURLFromName(client, kube.ServiceCloudBees, defaultCloudBeesNamespace)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s\n\nDid you install the CloudBees addon via: %s\n\nFor more information see: %s", err, util.ColorInfo("jx create addon cloudbees"), util.ColorInfo("https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x"))
 	}
 
 	if appendTeam {

@@ -4,16 +4,20 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"io"
+	"os"
 	"sort"
 	"strings"
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/client/results"
+	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -27,7 +31,7 @@ var (
 	`)
 )
 
-// ComplianceStatusOptions options for "compliance results" command
+// ComplianceResultsOptions options for "compliance results" command
 type ComplianceResultsOptions struct {
 	CommonOptions
 }
@@ -66,39 +70,61 @@ func (o *ComplianceResultsOptions) Run() error {
 		return errors.Wrap(err, "could not create the compliance client")
 	}
 
+	status, err := cc.GetStatus(complianceNamespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve the compliance status")
+	}
+
+	if status.Status != aggregation.CompleteStatus {
+		log.Info("Compliance results not ready. Run `jx compliance status` for status.")
+		return nil
+	}
+
 	cfg := &client.RetrieveConfig{
 		Namespace: complianceNamespace,
 	}
 
-	reader, err := cc.RetrieveResults(cfg)
-	if err != nil {
-		return errors.Wrap(err, "could not retrieve the compliance results")
-	}
+	reader, errch := cc.RetrieveResults(cfg)
+	eg := &errgroup.Group{}
+	eg.Go(func() error { return <-errch })
+	eg.Go(func() error {
+		resultsReader, ec := untarResults(reader)
+		gzr, err := gzip.NewReader(resultsReader)
+		if err != nil {
+			return errors.Wrap(err, "could not create a gzip reader for compliance results ")
+		}
 
-	resultsReader, err := untarResults(reader)
-	if err != nil {
-		return errors.Wrap(err, "could not extract the compliance results from archive")
-	}
+		testResults, err := cc.GetTests(gzr, "all")
+		if err != nil {
+			return errors.Wrap(err, "could not get the results of the compliance tests from the archive")
+		}
+		testResults = filterTests(
+			func(tc reporters.JUnitTestCase) bool {
+				return !results.Skipped(tc)
+			}, testResults)
+		sort.Sort(StatusSortedTestCases(testResults))
+		o.printResults(testResults)
 
-	gzr, err := gzip.NewReader(resultsReader)
-	if err != nil {
-		return errors.Wrap(err, "could not create a gzip reader for compliance results ")
-	}
+		err = <-ec
+		if err != nil {
+			return errors.Wrap(err, "could not extract the compliance results from archive")
+		}
+		return nil
+	})
 
-	testResults, err := cc.GetTests(gzr, "all")
+	err = eg.Wait()
 	if err != nil {
-		return errors.Wrap(err, "could not get the results of the compliance tests from the archive")
+		return errors.Wrap(err, "failed to retrieve the results")
 	}
-	testResults = filterTests(
-		func(tc reporters.JUnitTestCase) bool {
-			return !results.Skipped(tc)
-		}, testResults)
-	sort.Sort(StatusSortedTestCases(testResults))
-	o.printResults(testResults)
 	return nil
 }
 
-// StatusSotedTestCase implements Sort by status of a list of test case
+// Exit the main goroutine with status
+func (o *ComplianceResultsOptions) Exit(status int) {
+	os.Exit(status)
+}
+
+// StatusSortedTestCases implements Sort by status of a list of test case
 type StatusSortedTestCases []reporters.JUnitTestCase
 
 var statuses = map[string]int{
@@ -139,27 +165,33 @@ func status(junitResult reporters.JUnitTestCase) string {
 	}
 }
 
-func untarResults(src io.Reader) (io.Reader, error) {
+func untarResults(src io.Reader) (io.Reader, <-chan error) {
+	ec := make(chan error, 1)
 	tarReader := tar.NewReader(src)
+	reader, writer := io.Pipe()
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
 			if err != io.EOF {
-				return nil, err
+				ec <- err
+				return reader, ec
 			}
 			break
 		}
 		if strings.HasSuffix(header.Name, ".tar.gz") {
-			reader, writer := io.Pipe()
-			//TODO propagate the error out of the goroutine
-			go func(writer *io.PipeWriter) {
+			go func(writer *io.PipeWriter, ec chan error) {
 				defer writer.Close()
-				io.Copy(writer, tarReader)
-			}(writer)
-			return reader, nil
+				defer close(ec)
+				_, err := io.Copy(writer, tarReader)
+				if err != nil {
+					ec <- err
+				}
+				tarReader.Next()
+			}(writer, ec)
+			break
 		}
 	}
-	return nil, errors.New("no compliance results archive found")
+	return reader, ec
 }
 
 func filterTests(predicate func(testCase reporters.JUnitTestCase) bool, testCases []reporters.JUnitTestCase) []reporters.JUnitTestCase {

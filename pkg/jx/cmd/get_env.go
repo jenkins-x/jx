@@ -70,8 +70,7 @@ func NewCmdGetEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 // Run implements this command
 func (o *GetEnvOptions) Run() error {
-	f := o.Factory
-	client, currentNs, err := f.CreateJXClient()
+	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
@@ -79,11 +78,7 @@ func (o *GetEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
-	if err != nil {
-		return err
-	}
-	apisClient, err := f.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}

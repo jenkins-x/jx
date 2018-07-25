@@ -2,15 +2,20 @@ package terraform
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 func Init(terraformDir string, serviceAccountPath string) error {
 	os.Setenv("GOOGLE_CREDENTIALS", serviceAccountPath)
-	err := util.RunCommand("", "terraform", "init", terraformDir)
+	cmd := util.Command{
+		Name: "terraform",
+		Args: []string{"init", terraformDir},
+	}
+	_, err := cmd.RunWithoutRetry()
 	if err != nil {
 		return err
 	}
@@ -18,11 +23,15 @@ func Init(terraformDir string, serviceAccountPath string) error {
 }
 
 func Plan(terraformDir string, terraformVars string, serviceAccountPath string) error {
-	err := util.RunCommand("", "terraform", "plan",
-		fmt.Sprintf("-var-file=%s", terraformVars),
-		"-var",
-		fmt.Sprintf("credentials=%s", serviceAccountPath),
-		terraformDir)
+	cmd := util.Command{
+		Name: "terraform",
+		Args: []string{"plan",
+			fmt.Sprintf("-var-file=%s", terraformVars),
+			"-var",
+			fmt.Sprintf("credentials=%s", serviceAccountPath),
+			terraformDir},
+	}
+	_, err := cmd.RunWithoutRetry()
 	if err != nil {
 		return err
 	}
@@ -30,11 +39,15 @@ func Plan(terraformDir string, terraformVars string, serviceAccountPath string) 
 }
 
 func Apply(terraformDir string, terraformVars string, serviceAccountPath string) error {
-	err := util.RunCommand("", "terraform", "apply", "-auto-approve",
-		fmt.Sprintf("-var-file=%s", terraformVars),
-		"-var",
-		fmt.Sprintf("credentials=%s", serviceAccountPath),
-		terraformDir)
+	cmd := util.Command{
+		Name: "terraform",
+		Args: []string{"apply", "-auto-approve",
+			fmt.Sprintf("-var-file=%s", terraformVars),
+			"-var",
+			fmt.Sprintf("credentials=%s", serviceAccountPath),
+			terraformDir},
+	}
+	_, err := cmd.RunWithoutRetry()
 	if err != nil {
 		return err
 	}
