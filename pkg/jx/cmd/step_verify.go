@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"os"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
@@ -110,11 +112,19 @@ func (o *StepVerifyOptions) Run() error {
 					if restarts < o.Restarts {
 						continue
 					} else {
+						err = o.updatePipelineActivity(v1.ActivityStatusTypeFailed)
+						if err != nil {
+							return err
+						}
 						return fmt.Errorf("pod '%s' is '%s' and was restarted '%d', which exceeds max number of restarts '%d'",
 							pod.Name, pod.Status.Phase, restarts, o.Restarts)
 					}
 				} else {
 					if restarts > o.Restarts {
+						err = o.updatePipelineActivity(v1.ActivityStatusTypeFailed)
+						if err != nil {
+							return err
+						}
 						return fmt.Errorf("pod '%s' is running but was restarted '%d', which exceeds max number of restarts '%d'",
 							pod.Name, restarts, o.Restarts)
 					}
@@ -124,7 +134,49 @@ func (o *StepVerifyOptions) Run() error {
 	}
 
 	if foundPods != o.Pods {
+		err = o.updatePipelineActivity(v1.ActivityStatusTypeFailed)
+		if err != nil {
+			return err
+		}
 		return fmt.Errorf("found '%d' pods running but expects '%d'", foundPods, o.Pods)
+	}
+
+	err = o.updatePipelineActivity(v1.ActivityStatusTypeSucceeded)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (o *StepVerifyOptions) updatePipelineActivity(status v1.ActivityStatusType) error {
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the api extensions client")
+	}
+	err = kube.RegisterPipelineActivityCRD(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the pipeline activity CRD")
+	}
+
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to get the jx client")
+	}
+
+	pipeline := os.Getenv("JOB_NAME")
+	build := os.Getenv("BUILD_NUMBER")
+	if pipeline != "" && build != "" {
+		name := kube.ToValidName(pipeline + "-" + build)
+		activities := jxClient.JenkinsV1().PipelineActivities(devNs)
+		activity, err := activities.Get(name, metav1.GetOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "failed to get the activity with name '%s'", name)
+		}
+		activity.Spec.Status = status
+		_, err = activities.Update(activity)
+		if err != nil {
+			return errors.Wrapf(err, "failed to update activity status to '%s'", status)
+		}
 	}
 
 	return nil
