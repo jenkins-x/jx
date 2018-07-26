@@ -30,6 +30,7 @@ func Plan(terraformDir string, terraformVars string, serviceAccountPath string) 
 			"-var",
 			fmt.Sprintf("credentials=%s", serviceAccountPath),
 			terraformDir},
+		Verbose: true,
 	}
 	_, err := cmd.RunWithoutRetry()
 	if err != nil {
@@ -46,6 +47,7 @@ func Apply(terraformDir string, terraformVars string, serviceAccountPath string)
 			"-var",
 			fmt.Sprintf("credentials=%s", serviceAccountPath),
 			terraformDir},
+		Verbose: true,
 	}
 	_, err := cmd.RunWithoutRetry()
 	if err != nil {
