@@ -28,7 +28,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-
 	"path"
 )
 
@@ -1101,4 +1100,5 @@ func (o *CreateTerraformOptions) configureEnvironments(clusters []Cluster) error
 			}
 		}
 	}
+	return nil
 }

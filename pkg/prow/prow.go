@@ -3,6 +3,7 @@ package prow
 import (
 	"fmt"
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -10,30 +11,44 @@ import (
 	"k8s.io/test-infra/prow/plugins"
 )
 
-type Prow struct {
+const (
+	Hook                   = "hook"
+	DefaultProwReleaseName = "prow"
+	ProwVersion            = "0.0.9"
+	ChartProw              = "jenkins-x/prow"
+)
+
+type prowOptions struct {
 	kubeClient kubernetes.Interface
-	Repos      []string
+	repos      []string
+	ns         string
 }
 
-func (o *Prow) installProw(ns string) error {
+func AddRepo(kubeClient kubernetes.Interface, repos []string, ns string) error {
 
-	if len(o.Repos) == 0 {
-		return fmt.Errorf("no repos defined")
+	if len(repos) == 0 {
+		return fmt.Errorf("no repo defined")
+	}
+	o := prowOptions{
+		kubeClient: kubeClient,
+		repos:      repos,
+		ns:         ns,
 	}
 
-	err := o.addProwConfig(ns)
+	err := o.addProwConfig()
 	if err != nil {
 		return err
 	}
 
-	err = o.addProwPlugins(ns)
-	if err != nil {
-		return err
-	}
-
-	return err
+	return o.addProwPlugins()
 }
-func (o *Prow) createPreSubmit() config.Presubmit {
+
+// create git repo?
+// get config and update / overwrite repos?
+// should we get the existing CM and do a diff?
+// should we just be using git for config and use prow to auto update via gitops?
+
+func (o *prowOptions) createPreSubmit() config.Presubmit {
 	ps := config.Presubmit{}
 
 	ps.Name = "promotion-gate"
@@ -67,7 +82,7 @@ func (o *Prow) createPreSubmit() config.Presubmit {
 
 	return ps
 }
-func (o *Prow) createPostSubmit() config.Postsubmit {
+func (o *prowOptions) createPostSubmit() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Name = "test-postsubmits"
 
@@ -96,14 +111,14 @@ func (o *Prow) createPostSubmit() config.Postsubmit {
 
 	return ps
 }
-func (o *Prow) createTide() config.Tide {
+func (o *prowOptions) createTide() config.Tide {
 	t := config.Tide{
 		TargetURL: "https://tide.jx.felix.rawlings.it",
 	}
 
 	var qs []config.TideQuery
 
-	for _, r := range o.Repos {
+	for _, r := range o.repos {
 		q := config.TideQuery{
 			Repos:         []string{r},
 			Labels:        []string{"lgtm", "approved"},
@@ -143,10 +158,8 @@ func (o *Prow) createTide() config.Tide {
 
 	return t
 }
-func (o *Prow) addProwConfig(ns string) error {
+func (o *prowOptions) addProwConfig() error {
 	prowConfig := config.Config{}
-	prowConfig.ProwJobNamespace = ns
-	prowConfig.PodNamespace = ns
 
 	preSubmit := o.createPreSubmit()
 	postSubmit := o.createPostSubmit()
@@ -155,7 +168,7 @@ func (o *Prow) addProwConfig(ns string) error {
 	preSubmits := make(map[string][]config.Presubmit)
 	postSubmits := make(map[string][]config.Postsubmit)
 
-	for _, r := range o.Repos {
+	for _, r := range o.repos {
 		preSubmits[r] = []config.Presubmit{preSubmit}
 		postSubmits[r] = []config.Postsubmit{postSubmit}
 	}
@@ -178,17 +191,17 @@ func (o *Prow) addProwConfig(ns string) error {
 		},
 	}
 
-	_, err = o.kubeClient.CoreV1().ConfigMaps(ns).Create(&cm)
+	_, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Create(&cm)
 	return err
 }
-func (o *Prow) addProwPlugins(ns string) error {
+func (o *prowOptions) addProwPlugins() error {
 
 	pluginsList := []string{"approve", "assign", "blunderbuss", "help", "hold", "lgtm", "lifecycle", "size", "trigger", "wip"}
 
 	repoPlugins := make(map[string][]string)
 	var approves []plugins.Approve
 
-	for _, r := range o.Repos {
+	for _, r := range o.repos {
 		repoPlugins[r] = pluginsList
 
 		a := plugins.Approve{
@@ -217,6 +230,18 @@ func (o *Prow) addProwPlugins(ns string) error {
 			Name: "config",
 		},
 	}
-	_, err = o.kubeClient.CoreV1().ConfigMaps(ns).Create(&cm)
+	_, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Create(&cm)
 	return err
+}
+
+func IsProwInstalled(kubeClient kubernetes.Interface, ns string) (bool, error) {
+
+	podCount, err := kube.DeploymentPodCount(kubeClient, Hook, ns)
+	if err != nil {
+		return false, fmt.Errorf("failed when looking for hook deployment: %v", err)
+	}
+	if podCount == 0 {
+		return false, nil
+	}
+	return true, nil
 }

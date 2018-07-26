@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -48,6 +49,15 @@ jenkinsLocationConfiguration.setAdminAddress(jenkinsParameters.email)
 jenkinsLocationConfiguration.save()
 `
 )
+
+type Prow struct {
+	Version     string
+	Chart       string
+	SetValues   string
+	ReleaseName string
+	HMACToken   string
+	OAUTHToken  string
+}
 
 func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 	// install package managers first
@@ -1210,4 +1220,61 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 	username = context.AuthInfo
 
 	return username, nil
+}
+
+func (o *CommonOptions) installProw() error {
+
+	if o.ReleaseName == "" {
+		o.ReleaseName = prow.DefaultProwReleaseName
+	}
+
+	if o.Chart == "" {
+		o.Chart = prow.ChartProw
+	}
+
+	if o.Chart == "" {
+		o.Version = prow.ProwVersion
+	}
+
+	var err error
+	if o.HMACToken == "" {
+		// why 41?  seems all examples so far have a random token of 41 chars
+		o.HMACToken, err = util.RandStringBytesMaskImprSrc(41)
+		if err != nil {
+			return fmt.Errorf("cannot create a random hmac token for Prow")
+		}
+	}
+
+	if o.OAUTHToken == "" {
+		authConfigSvc, err := o.CreateGitAuthConfigService()
+		if err != nil {
+			return err
+		}
+
+		config := authConfigSvc.Config()
+		server := config.GetOrCreateServer(config.CurrentServer)
+		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode)
+		if err != nil {
+			return err
+		}
+		o.OAUTHToken = userAuth.ApiToken
+	}
+
+	if o.Username == "" {
+		o.Username, err = o.GetClusterUserName()
+		if err != nil {
+			return err
+		}
+	}
+
+	devNamespace, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
+	if err != nil {
+		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
+	}
+
+	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
+	return o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
+
 }
