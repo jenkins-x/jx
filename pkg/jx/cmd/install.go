@@ -261,6 +261,11 @@ func (options *InstallOptions) Run() error {
 
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
+	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
+	initOpts.Flags.Http = true
+	if exposeController != nil {
+		initOpts.Flags.Http = exposeController.Config.HTTP == "true"
+	}
 	initOpts.BatchMode = options.BatchMode
 
 	if options.Flags.Provider == AKS {
@@ -303,7 +308,6 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// lets default the helm domain
-	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	if exposeController != nil {
 		ecConfig := &exposeController.Config
 		if ecConfig.Domain == "" && options.Flags.Domain != "" {
