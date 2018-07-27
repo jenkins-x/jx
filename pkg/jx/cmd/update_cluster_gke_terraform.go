@@ -7,13 +7,14 @@ import (
 
 	os_user "os/user"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -24,7 +25,9 @@ type UpdateClusterGKETerraformOptions struct {
 }
 
 type UpdateClusterGKETerraformFlags struct {
-	ClusterName string
+	ClusterName    string
+	SkipLogin      bool
+	ServiceAccount string
 }
 
 var (
@@ -43,7 +46,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdUpdateClusterGKETerraform(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpdateClusterGKETerraform(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := createUpdateClusterGKETerraformOptions(f, out, errOut, GKE)
 
 	cmd := &cobra.Command{
@@ -55,18 +58,20 @@ func NewCmdUpdateClusterGKETerraform(f cmdutil.Factory, out io.Writer, errOut io
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
 	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster")
+	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "", "Use a service account to login to GCE")
 
 	return cmd
 }
 
-func createUpdateClusterGKETerraformOptions(f cmdutil.Factory, out io.Writer, errOut io.Writer, cloudProvider string) UpdateClusterGKETerraformOptions {
+func createUpdateClusterGKETerraformOptions(f Factory, out io.Writer, errOut io.Writer, cloudProvider string) UpdateClusterGKETerraformOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
 		Out:     out,
@@ -84,7 +89,7 @@ func createUpdateClusterGKETerraformOptions(f cmdutil.Factory, out io.Writer, er
 }
 
 func (o *UpdateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(GKE, "terraform")
+	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}
@@ -112,7 +117,10 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		}
 	}
 
-	var err error
+	err := gke.Login(o.ServiceAccount, o.Flags.SkipLogin)
+	if err != nil {
+		return err
+	}
 
 	if o.Flags.ClusterName == "" {
 		log.Info("No cluster name provided\n")
@@ -131,7 +139,12 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 	clusterHome := filepath.Join(clustersHome, o.Flags.ClusterName)
 	os.MkdirAll(clusterHome, os.ModePerm)
 
-	keyPath := filepath.Join(clusterHome, fmt.Sprintf("%s.key.json", serviceAccount))
+	var keyPath string
+	if o.ServiceAccount == "" {
+		keyPath = filepath.Join(clusterHome, fmt.Sprintf("%s.key.json", serviceAccount))
+	} else {
+		keyPath = o.ServiceAccount
+	}
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
 		log.Infof("Unable to find service account key %s\n", keyPath)

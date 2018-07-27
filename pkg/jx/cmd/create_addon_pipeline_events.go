@@ -2,17 +2,18 @@ package cmd
 
 import (
 	"io"
+	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -47,7 +48,7 @@ type CreateAddonPipelineEventsOptions struct {
 }
 
 // NewCmdCreateAddonPipelineEvents creates a command object for the "create" command
-func NewCmdCreateAddonPipelineEvents(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonPipelineEvents(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonPipelineEventsOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -70,7 +71,7 @@ func NewCmdCreateAddonPipelineEvents(f cmdutil.Factory, out io.Writer, errOut io
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -89,7 +90,11 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return util.MissingOption(optionRelease)
 	}
 
-	_, _, err := o.KubeClient()
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
+	_, _, err = o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -101,8 +106,8 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 
 	log.Infof("found dev namespace %s\n", devNamespace)
 
-	//values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
-	err = o.installChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, []string{})
+	setValues := strings.Split(o.SetValues, ",")
+	err = o.installChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, setValues)
 	if err != nil {
 		return fmt.Errorf("elasticsearch deployment failed: %v", err)
 	}
@@ -139,7 +144,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		}
 	}
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, defaultPEReleaseName, o.Password)
+	err = o.expose(devNamespace, o.Namespace, o.Password)
 	if err != nil {
 		return err
 	}

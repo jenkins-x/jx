@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"io"
 
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var (
@@ -30,7 +31,7 @@ type DeleteGitTokenOptions struct {
 }
 
 // NewCmdDeleteGitToken defines the command
-func NewCmdDeleteGitToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteGitToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteGitTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -51,7 +52,7 @@ func NewCmdDeleteGitToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.ServerFlags.addGitServerFlags(cmd)
@@ -64,7 +65,7 @@ func (o *DeleteGitTokenOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing git user name")
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -84,7 +85,7 @@ func (o *DeleteGitTokenOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Deleted API tokens for users: %s for git server %s at %s from local settings\n",
+	log.Infof("Deleted API tokens for users: %s for git server %s at %s from local settings\n",
 		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

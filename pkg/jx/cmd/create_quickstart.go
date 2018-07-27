@@ -12,16 +12,17 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
+	// JenkinsXQuickstartsOrganisation is the default organisation for quickstarts
 	JenkinsXQuickstartsOrganisation = "jenkins-x-quickstarts"
 )
 
@@ -32,7 +33,7 @@ var (
 		This will create a new project for you from the selected template.
 		It will exclude any work-in-progress repos (containing the "WIP-" pattern)
 
-		For more documentation see: [http://jenkins-x.io/developing/create-quickstart/](http://jenkins-x.io/developing/create-quickstart/)
+		For more documentation see: [https://jenkins-x.io/developing/create-quickstart/](https://jenkins-x.io/developing/create-quickstart/)
 
 `)
 
@@ -60,7 +61,7 @@ type CreateQuickstartOptions struct {
 }
 
 // NewCmdCreateQuickstart creates a command object for the "create" command
-func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateQuickstart(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateQuickstartOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -83,7 +84,7 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCreateAppFlags(cmd)
@@ -95,12 +96,13 @@ func NewCmdCreateQuickstart(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 	cmd.Flags().StringVarP(&options.Filter.Framework, "framework", "", "", "The framework to filter on")
 	cmd.Flags().StringVarP(&options.GitHost, "git-host", "", "", "The Git server host if not using GitHub when pushing created project")
 	cmd.Flags().StringVarP(&options.Filter.Text, "filter", "f", "", "The text filter")
+	cmd.Flags().StringVarP(&options.Filter.ProjectName, "project-name", "p", "", "The project name (for use with -b batch mode)")
 	return cmd
 }
 
 // Run implements the generic Create command
 func (o *CreateQuickstartOptions) Run() error {
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -197,7 +199,7 @@ func (o *CreateQuickstartOptions) Run() error {
 				_, appName := filepath.Split(genDir)
 				appChartDir := filepath.Join(genDir, "charts", appName)
 
-				fmt.Printf("### PostDraftPack callback copying from %s to %s!!!s\n", chartsDir, appChartDir)
+				log.Infof("### PostDraftPack callback copying from %s to %s!!!s\n", chartsDir, appChartDir)
 				err := util.CopyDirOverwrite(chartsDir, appChartDir)
 				if err != nil {
 					return err
@@ -206,13 +208,13 @@ func (o *CreateQuickstartOptions) Run() error {
 				if err != nil {
 					return err
 				}
-				return gits.GitRemove(genDir, filepath.Join("charts", folder))
+				return o.Git().Remove(genDir, filepath.Join("charts", folder))
 			}
 		} else {
-			fmt.Printf("### NO charts folder %s\n", chartsDir)
+			log.Infof("### NO charts folder %s\n", chartsDir)
 		}
 	}
-	o.Printf("Created project at %s\n\n", util.ColorInfo(genDir))
+	log.Infof("Created project at %s\n\n", util.ColorInfo(genDir))
 
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
 	return o.ImportCreatedProject(genDir)
@@ -227,7 +229,6 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	}
 	client := http.Client{}
 
-	//fmt.Printf("generating spring project from: %s\n", u)
 	req, err := http.NewRequest(http.MethodGet, u, strings.NewReader(""))
 	if err != nil {
 		return answer, err
@@ -273,7 +274,7 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	if err != nil {
 		return answer, fmt.Errorf("failed to rename temp dir %s to %s: %s", tmpDir, answer, err)
 	}
-	o.Printf("Generated quickstart at %s\n", answer)
+	log.Infof("Generated quickstart at %s\n", answer)
 	return answer, nil
 }
 
@@ -290,16 +291,17 @@ func findFirstDirectory(dir string) (string, error) {
 	return "", fmt.Errorf("no child directory found in %s", dir)
 }
 
+// LoadQuickstartsFromMap Load all quickstarts
 func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig, gitMap map[string]map[string]v1.QuickStartLocation) (*quickstarts.QuickstartModel, error) {
 	model := quickstarts.NewQuickstartModel()
 
-	for gitUrl, m := range gitMap {
+	for gitURL, m := range gitMap {
 		for _, location := range m {
 			kind := location.GitKind
 			if kind == "" {
 				kind = gits.KindGitHub
 			}
-			gitProvider, err := o.gitProviderForGitServerURL(gitUrl, kind)
+			gitProvider, err := o.gitProviderForGitServerURL(gitURL, kind)
 			if err != nil {
 				return model, err
 			}

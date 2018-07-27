@@ -31,12 +31,13 @@ type IssueService struct {
 
 // Issue represents a JIRA issue.
 type Issue struct {
-	Expand    string       `json:"expand,omitempty" structs:"expand,omitempty"`
-	ID        string       `json:"id,omitempty" structs:"id,omitempty"`
-	Self      string       `json:"self,omitempty" structs:"self,omitempty"`
-	Key       string       `json:"key,omitempty" structs:"key,omitempty"`
-	Fields    *IssueFields `json:"fields,omitempty" structs:"fields,omitempty"`
-	Changelog *Changelog   `json:"changelog,omitempty" structs:"changelog,omitempty"`
+	Expand         string               `json:"expand,omitempty" structs:"expand,omitempty"`
+	ID             string               `json:"id,omitempty" structs:"id,omitempty"`
+	Self           string               `json:"self,omitempty" structs:"self,omitempty"`
+	Key            string               `json:"key,omitempty" structs:"key,omitempty"`
+	Fields         *IssueFields         `json:"fields,omitempty" structs:"fields,omitempty"`
+	RenderedFields *IssueRenderedFields `json:"renderedFields,omitempty" structs:"renderedFields,omitempty"`
+	Changelog      *Changelog           `json:"changelog,omitempty" structs:"changelog,omitempty"`
 }
 
 // ChangelogItems reflects one single changelog item of a history item
@@ -196,6 +197,23 @@ func (i *IssueFields) UnmarshalJSON(data []byte) error {
 
 }
 
+// IssueRenderedFields represents rendered fields of a JIRA issue.
+// Not all IssueFields are rendered.
+type IssueRenderedFields struct {
+	// TODO Missing fields
+	//      * "aggregatetimespent": null,
+	//      * "workratio": -1,
+	//      * "lastViewed": null,
+	//      * "aggregatetimeoriginalestimate": null,
+	//      * "aggregatetimeestimate": null,
+	//      * "environment": null,
+	Resolutiondate string    `json:"resolutiondate,omitempty" structs:"resolutiondate,omitempty"`
+	Created        string    `json:"created,omitempty" structs:"created,omitempty"`
+	Duedate        string    `json:"duedate,omitempty" structs:"duedate,omitempty"`
+	Updated        string    `json:"updated,omitempty" structs:"updated,omitempty"`
+	Comments       *Comments `json:"comment,omitempty" structs:"comment,omitempty"`
+}
+
 // IssueType represents a type of a JIRA issue.
 // Typical types are "Request", "Bug", "Story", ...
 type IssueType struct {
@@ -206,24 +224,6 @@ type IssueType struct {
 	Name        string `json:"name,omitempty" structs:"name,omitempty"`
 	Subtask     bool   `json:"subtask,omitempty" structs:"subtask,omitempty"`
 	AvatarID    int    `json:"avatarId,omitempty" structs:"avatarId,omitempty"`
-}
-
-// Resolution represents a resolution of a JIRA issue.
-// Typical types are "Fixed", "Suspended", "Won't Fix", ...
-type Resolution struct {
-	Self        string `json:"self" structs:"self"`
-	ID          string `json:"id" structs:"id"`
-	Description string `json:"description" structs:"description"`
-	Name        string `json:"name" structs:"name"`
-}
-
-// Priority represents a priority of a JIRA issue.
-// Typical types are "Normal", "Moderate", "Urgent", ...
-type Priority struct {
-	Self    string `json:"self,omitempty" structs:"self,omitempty"`
-	IconURL string `json:"iconUrl,omitempty" structs:"iconUrl,omitempty"`
-	Name    string `json:"name,omitempty" structs:"name,omitempty"`
-	ID      string `json:"id,omitempty" structs:"id,omitempty"`
 }
 
 // Watches represents a type of how many and which user are "observing" a JIRA issue to track the status / updates.
@@ -268,16 +268,6 @@ type Status struct {
 	Name           string         `json:"name" structs:"name"`
 	ID             string         `json:"id" structs:"id"`
 	StatusCategory StatusCategory `json:"statusCategory" structs:"statusCategory"`
-}
-
-// StatusCategory represents the category a status belongs to.
-// Those categories can be user defined in every JIRA instance.
-type StatusCategory struct {
-	Self      string `json:"self" structs:"self"`
-	ID        int    `json:"id" structs:"id"`
-	Name      string `json:"name" structs:"name"`
-	Key       string `json:"key" structs:"key"`
-	ColorName string `json:"colorName" structs:"colorName"`
 }
 
 // Progress represents the progress of a JIRA issue.

@@ -6,7 +6,7 @@ import (
 
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -29,7 +29,7 @@ type ComplianceStatusOptions struct {
 
 // NewCmdComplianceStatus creates a command object for the "compliance status" action, which
 // retrieve the status of E2E compliance tests
-func NewCmdComplianceStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceStatus(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ComplianceStatusOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -47,7 +47,7 @@ func NewCmdComplianceStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -64,7 +64,7 @@ func (o *ComplianceStatusOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve the status")
 	}
-	fmt.Println(hummanReadableStatus(status.Status))
+	log.Info(hummanReadableStatus(status.Status))
 	return nil
 }
 

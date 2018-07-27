@@ -4,114 +4,135 @@ package terminal
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 var COORDINATE_SYSTEM_BEGIN Short = 1
-// CursorUp moves the cursor n cells to up.
-func CursorUp(n int) {
-	fmt.Printf("\x1b[%dA", n)
+
+var dsrPattern = regexp.MustCompile(`\x1b\[(\d+);(\d+)R$`)
+
+type Cursor struct {
+	In  FileReader
+	Out FileWriter
 }
 
-// CursorDown moves the cursor n cells to down.
-func CursorDown(n int) {
-	fmt.Printf("\x1b[%dB", n)
+// Up moves the cursor n cells to up.
+func (c *Cursor) Up(n int) {
+	fmt.Fprintf(c.Out, "\x1b[%dA", n)
 }
 
-// CursorForward moves the cursor n cells to right.
-func CursorForward(n int) {
-	fmt.Printf("\x1b[%dC", n)
+// Down moves the cursor n cells to down.
+func (c *Cursor) Down(n int) {
+	fmt.Fprintf(c.Out, "\x1b[%dB", n)
 }
 
-// CursorBack moves the cursor n cells to left.
-func CursorBack(n int) {
-	fmt.Printf("\x1b[%dD", n)
+// Forward moves the cursor n cells to right.
+func (c *Cursor) Forward(n int) {
+	fmt.Fprintf(c.Out, "\x1b[%dC", n)
 }
 
-// CursorNextLine moves cursor to beginning of the line n lines down.
-func CursorNextLine(n int) {
-	fmt.Printf("\x1b[%dE", n)
+// Back moves the cursor n cells to left.
+func (c *Cursor) Back(n int) {
+	fmt.Fprintf(c.Out, "\x1b[%dD", n)
 }
 
-// CursorPreviousLine moves cursor to beginning of the line n lines up.
-func CursorPreviousLine(n int) {
-	fmt.Printf("\x1b[%dF", n)
+// NextLine moves cursor to beginning of the line n lines down.
+func (c *Cursor) NextLine(n int) {
+	fmt.Fprintf(c.Out, "\x1b[%dE", n)
 }
 
-// CursorHorizontalAbsolute moves cursor horizontally to x.
-func CursorHorizontalAbsolute(x int) {
-	fmt.Printf("\x1b[%dG", x)
+// PreviousLine moves cursor to beginning of the line n lines up.
+func (c *Cursor) PreviousLine(n int) {
+	fmt.Fprintf(c.Out, "\x1b[%dF", n)
 }
 
-// CursorShow shows the cursor.
-func CursorShow() {
-	fmt.Print("\x1b[?25h")
+// HorizontalAbsolute moves cursor horizontally to x.
+func (c *Cursor) HorizontalAbsolute(x int) {
+	fmt.Fprintf(c.Out, "\x1b[%dG", x)
 }
 
-// CursorHide hide the cursor.
-func CursorHide() {
-	fmt.Print("\x1b[?25l")
+// Show shows the cursor.
+func (c *Cursor) Show() {
+	fmt.Fprint(c.Out, "\x1b[?25h")
 }
 
-// CursorMove moves the cursor to a specific x,y location.
-func CursorMove(x int, y int) {
-	fmt.Printf("\x1b[%d;%df", x, y)
+// Hide hide the cursor.
+func (c *Cursor) Hide() {
+	fmt.Fprint(c.Out, "\x1b[?25l")
 }
 
-// CursorSave saves the current position
-func CursorSave() {
-	fmt.Print("\x1b7")
+// Move moves the cursor to a specific x,y location.
+func (c *Cursor) Move(x int, y int) {
+	fmt.Fprintf(c.Out, "\x1b[%d;%df", x, y)
 }
 
-// CursorRestore restores the saved position of the cursor
-func CursorRestore() {
-	fmt.Print("\x1b8")
+// Save saves the current position
+func (c *Cursor) Save() {
+	fmt.Fprint(c.Out, "\x1b7")
 }
 
-// CursorLocation returns the current location of the cursor in the terminal
-func CursorLocation() (*Coord, error) {
-	// print the escape sequence to receive the position in our stdin
-	fmt.Print("\x1b[6n")
+// Restore restores the saved position of the cursor
+func (c *Cursor) Restore() {
+	fmt.Fprint(c.Out, "\x1b8")
+}
 
-	// read from stdin to get the response
-	reader := bufio.NewReader(os.Stdin)
-	// spec says we read 'til R, so do that
-	text, err := reader.ReadSlice('R')
+// for comparability purposes between windows
+// in unix we need to print out a new line on some terminals
+func (c *Cursor) MoveNextLine(cur *Coord, terminalSize *Coord) {
+	if cur.Y == terminalSize.Y {
+		fmt.Fprintln(c.Out)
+	}
+	c.NextLine(1)
+}
+
+// Location returns the current location of the cursor in the terminal
+func (c *Cursor) Location(buf *bytes.Buffer) (*Coord, error) {
+	// ANSI escape sequence for DSR - Device Status Report
+	// https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_sequences
+	fmt.Fprint(c.Out, "\x1b[6n")
+
+	// There may be input in Stdin prior to CursorLocation so make sure we don't
+	// drop those bytes.
+	var loc []int
+	var match string
+	for loc == nil {
+		// Reports the cursor position (CPR) to the application as (as though typed at
+		// the keyboard) ESC[n;mR, where n is the row and m is the column.
+		reader := bufio.NewReader(c.In)
+		text, err := reader.ReadSlice('R')
+		if err != nil {
+			return nil, err
+		}
+
+		loc = dsrPattern.FindStringIndex(string(text))
+		if loc == nil {
+			// Stdin contains R that doesn't match DSR.
+			buf.Write(text)
+		} else {
+			buf.Write(text[:loc[0]])
+			match = string(text[loc[0]:loc[1]])
+		}
+	}
+
+	matches := dsrPattern.FindStringSubmatch(string(match))
+	if len(matches) != 3 {
+		return nil, fmt.Errorf("incorrect number of matches: %d", len(matches))
+	}
+
+	col, err := strconv.Atoi(matches[2])
 	if err != nil {
 		return nil, err
 	}
 
-	// spec also says they're split by ;, so do that too
-	if strings.Contains(string(text), ";") {
-		// a regex to parse the output of the ansi code
-		re := regexp.MustCompile(`\d+;\d+`)
-		line := re.FindString(string(text))
-
-		// find the column and rows embedded in the string
-		coords := strings.Split(line, ";")
-
-		// try to cast the col number to an int
-		col, err := strconv.Atoi(coords[1])
-		if err != nil {
-			return nil, err
-		}
-
-		// try to cast the row number to an int
-		row, err := strconv.Atoi(coords[0])
-		if err != nil {
-			return nil, err
-		}
-
-		// return the coordinate object with the col and row we calculated
-		return &Coord{Short(col), Short(row)}, nil
+	row, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return nil, err
 	}
 
-	// it didn't work so return an error
-	return nil, fmt.Errorf("could not compute the cursor position using ascii escape sequences")
+	return &Coord{Short(col), Short(row)}, nil
 }
 
 func (cur Coord) CursorIsAtLineEnd(size *Coord) bool {
@@ -123,30 +144,30 @@ func (cur Coord) CursorIsAtLineBegin() bool {
 }
 
 // Size returns the height and width of the terminal.
-func Size() (*Coord, error) {
+func (c *Cursor) Size(buf *bytes.Buffer) (*Coord, error) {
 	// the general approach here is to move the cursor to the very bottom
 	// of the terminal, ask for the current location and then move the
 	// cursor back where we started
 
 	// hide the cursor (so it doesn't blink when getting the size of the terminal)
-	CursorHide()
+	c.Hide()
 	// save the current location of the cursor
-	CursorSave()
+	c.Save()
 
 	// move the cursor to the very bottom of the terminal
-	CursorMove(999, 999)
+	c.Move(999, 999)
 
 	// ask for the current location
-	bottom, err := CursorLocation()
+	bottom, err := c.Location(buf)
 	if err != nil {
 		return nil, err
 	}
 
 	// move back where we began
-	CursorRestore()
+	c.Restore()
 
 	// show the cursor
-	CursorShow()
+	c.Show()
 	// sice the bottom was calcuated in the lower right corner, it
 	// is the dimensions we are looking for
 	return bottom, nil

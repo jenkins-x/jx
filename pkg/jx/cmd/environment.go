@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
@@ -27,7 +26,7 @@ var (
 	environment_long = templates.LongDesc(`
 		Displays or changes the current environment.
 
-		For more documentation on Environments see: [http://jenkins-x.io/about/features/#environments](http://jenkins-x.io/about/features/#environments)
+		For more documentation on Environments see: [https://jenkins-x.io/about/features/#environments](https://jenkins-x.io/about/features/#environments)
 
 `)
 	environment_example = templates.Examples(`
@@ -42,7 +41,7 @@ var (
 `)
 )
 
-func NewCmdEnvironment(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEnvironment(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &EnvironmentOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -60,7 +59,7 @@ func NewCmdEnvironment(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)
@@ -68,17 +67,16 @@ func NewCmdEnvironment(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 }
 
 func (o *EnvironmentOptions) Run() error {
-	f := o.Factory
-	kubeClient, currentNs, err := f.CreateClient()
+	kubeClient, currentNs, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	jxClient, _, err := f.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return err
 	}
 
-	apisClient, err := f.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}

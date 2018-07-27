@@ -4,14 +4,15 @@ import (
 	"io"
 
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"net/url"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -38,7 +39,7 @@ type CreateEtcHostsOptions struct {
 }
 
 // NewCmdCreateEtcHosts creates a command object for the "create" command
-func NewCmdCreateEtcHosts(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateEtcHosts(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateEtcHostsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -59,7 +60,7 @@ func NewCmdCreateEtcHosts(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -85,8 +86,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 	if o.IP == "" {
 		return fmt.Errorf("Could not discover a node IP address")
 	}
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		o.Printf("Updated file %s\n", util.ColorInfo(name))
+		log.Infof("Updated file %s\n", util.ColorInfo(name))
 	}
 	return nil
 }
@@ -127,7 +127,7 @@ func (o *CreateEtcHostsOptions) addUrl(serviceUrl kube.ServiceURL, ipLine string
 	text := serviceUrl.URL
 	u, err := url.Parse(text)
 	if err != nil {
-		o.warnf("Ignored invalid URL %s %s", text, err)
+		log.Warnf("Ignored invalid URL %s %s", text, err)
 		return ipLine
 	}
 	host := u.Host

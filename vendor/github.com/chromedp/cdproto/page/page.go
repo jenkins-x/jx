@@ -1,4 +1,4 @@
-// Package page provides the Chrome Debugging Protocol
+// Package page provides the Chrome DevTools Protocol
 // commands, types, and events for the Page domain.
 //
 // Actions and events related to the inspected page belong to the page
@@ -862,6 +862,46 @@ func (p *SetBypassCSPParams) Do(ctxt context.Context, h cdp.Executor) (err error
 	return h.Execute(ctxt, CommandSetBypassCSP, p, nil)
 }
 
+// SetFontFamiliesParams set generic font families.
+type SetFontFamiliesParams struct {
+	FontFamilies *FontFamilies `json:"fontFamilies"` // Specifies font families to set. If a font family is not specified, it won't be changed.
+}
+
+// SetFontFamilies set generic font families.
+//
+// parameters:
+//   fontFamilies - Specifies font families to set. If a font family is not specified, it won't be changed.
+func SetFontFamilies(fontFamilies *FontFamilies) *SetFontFamiliesParams {
+	return &SetFontFamiliesParams{
+		FontFamilies: fontFamilies,
+	}
+}
+
+// Do executes Page.setFontFamilies against the provided context.
+func (p *SetFontFamiliesParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandSetFontFamilies, p, nil)
+}
+
+// SetFontSizesParams set default font sizes.
+type SetFontSizesParams struct {
+	FontSizes *FontSizes `json:"fontSizes"` // Specifies font sizes to set. If a font size is not specified, it won't be changed.
+}
+
+// SetFontSizes set default font sizes.
+//
+// parameters:
+//   fontSizes - Specifies font sizes to set. If a font size is not specified, it won't be changed.
+func SetFontSizes(fontSizes *FontSizes) *SetFontSizesParams {
+	return &SetFontSizesParams{
+		FontSizes: fontSizes,
+	}
+}
+
+// Do executes Page.setFontSizes against the provided context.
+func (p *SetFontSizesParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandSetFontSizes, p, nil)
+}
+
 // SetDocumentContentParams sets given markup as the document's HTML.
 type SetDocumentContentParams struct {
 	FrameID cdp.FrameID `json:"frameId"` // Frame id to set HTML for.
@@ -1090,6 +1130,8 @@ const (
 	CommandSearchInResource                    = "Page.searchInResource"
 	CommandSetAdBlockingEnabled                = "Page.setAdBlockingEnabled"
 	CommandSetBypassCSP                        = "Page.setBypassCSP"
+	CommandSetFontFamilies                     = "Page.setFontFamilies"
+	CommandSetFontSizes                        = "Page.setFontSizes"
 	CommandSetDocumentContent                  = "Page.setDocumentContent"
 	CommandSetDownloadBehavior                 = "Page.setDownloadBehavior"
 	CommandSetLifecycleEventsEnabled           = "Page.setLifecycleEventsEnabled"

@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
@@ -39,7 +39,7 @@ var (
 `)
 )
 
-func NewCmdStepGpgCredentials(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepGpgCredentials(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepGpgCredentialsOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -58,7 +58,7 @@ func NewCmdStepGpgCredentials(f cmdutil.Factory, out io.Writer, errOut io.Writer
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.OutputDir, optionOutputFile, "o", "", "The output directory")
@@ -83,7 +83,7 @@ func (o *StepGpgCredentialsOptions) Run() error {
 				secret = secret2
 				err = nil
 			} else {
-				o.warnf("Failed to find secret %s in namespace %s due to: %s", name, curNs, err2)
+				log.Warnf("Failed to find secret %s in namespace %s due to: %s", name, curNs, err2)
 			}
 		}
 	}
@@ -109,7 +109,7 @@ func (o *StepGpgCredentialsOptions) GenerateGpgFiles(secret *v1.Secret) error {
 		if err != nil {
 			return err
 		}
-		o.Printf("Generated file %s\n", util.ColorInfo(fileName))
+		log.Infof("Generated file %s\n", util.ColorInfo(fileName))
 	}
 	return nil
 }

@@ -2,7 +2,6 @@ package survey
 
 import (
 	"errors"
-	"os"
 	"strings"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
@@ -96,17 +95,26 @@ func (s *Select) OnChange(line []rune, pos int, key rune) (newLine []rune, newPo
 		// only show the help message if we have one
 	} else if key == core.HelpInputRune && s.Help != "" {
 		s.showingHelp = true
+		// if the user wants to toggle vim mode on/off
 	} else if key == terminal.KeyEscape {
 		s.VimMode = !s.VimMode
+		// if the user hits any of the keys that clear the filter
 	} else if key == terminal.KeyDeleteWord || key == terminal.KeyDeleteLine {
 		s.filter = ""
+		// if the user is deleting a character in the filter
 	} else if key == terminal.KeyDelete || key == terminal.KeyBackspace {
+		// if there is content in the filter to delete
 		if s.filter != "" {
+			// subtract a line from the current filter
 			s.filter = s.filter[0 : len(s.filter)-1]
+			// we removed the last value in the filter
 		}
 	} else if key >= terminal.KeySpace {
 		s.filter += string(key)
+		// make sure vim mode is disabled
 		s.VimMode = false
+		// make sure that we use the current value in the filtered list
+		s.useDefault = false
 	}
 
 	s.FilterMessage = ""
@@ -200,17 +208,17 @@ func (s *Select) Prompt() (interface{}, error) {
 		return "", err
 	}
 
-	// hide the cursor
-	terminal.CursorHide()
-	// show the cursor when we're done
-	defer terminal.CursorShow()
-
 	// by default, use the default value
 	s.useDefault = true
 
-	rr := terminal.NewRuneReader(os.Stdin)
+	rr := s.NewRuneReader()
 	rr.SetTermMode()
 	defer rr.RestoreTermMode()
+
+	cursor := s.NewCursor()
+	cursor.Hide()       // hide the cursor
+	defer cursor.Show() // show the cursor when we're done
+
 	// start waiting for input
 	for {
 		r, _, err := rr.ReadRune()

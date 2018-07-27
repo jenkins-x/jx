@@ -44,7 +44,7 @@ func CurrentNamespace(config *api.Config) string {
 			return n
 		}
 	}
-	return DefaultNamespace
+	return "default"
 }
 
 // CurrentContext returns the current context

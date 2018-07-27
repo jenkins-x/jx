@@ -2,11 +2,9 @@ package survey
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // Confirm is a regular text input that accept yes/no answers. Response type is a bool.
@@ -50,9 +48,11 @@ func yesNo(t bool) string {
 }
 
 func (c *Confirm) getBool(showHelp bool) (bool, error) {
-	rr := terminal.NewRuneReader(os.Stdin)
+	cursor := c.NewCursor()
+	rr := c.NewRuneReader()
 	rr.SetTermMode()
 	defer rr.RestoreTermMode()
+
 	// start waiting for input
 	for {
 		line, err := rr.ReadLine(0)
@@ -60,7 +60,7 @@ func (c *Confirm) getBool(showHelp bool) (bool, error) {
 			return false, err
 		}
 		// move back up a line to compensate for the \n echoed from terminal
-		terminal.CursorPreviousLine(1)
+		cursor.PreviousLine(1)
 		val := string(line)
 
 		// get the answer that matches the

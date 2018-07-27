@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +27,7 @@ var (
 )
 
 // NewCmdUpgrade creates the command
-func NewCmdUpgrade(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgrade(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &UpgradeOptions{
 		CommonOptions{
 			Factory: f,
@@ -46,13 +45,14 @@ func NewCmdUpgrade(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 		SuggestFor: []string{"remove", "rm"},
 	}
 
 	cmd.AddCommand(NewCmdUpgradeCLI(f, out, errOut))
 	cmd.AddCommand(NewCmdUpgradeCluster(f, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeIngress(f, out, errOut))
 	cmd.AddCommand(NewCmdUpgradePlatform(f, out, errOut))
 	return cmd
 }

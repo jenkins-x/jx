@@ -2,10 +2,12 @@ package object
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -34,6 +36,7 @@ type Tree struct {
 
 	s storer.EncodedObjectStorer
 	m map[string]*TreeEntry
+	t map[string]*Tree // tree path cache
 }
 
 // GetTree gets a tree from an object storer and decodes it.
@@ -111,14 +114,37 @@ func (t *Tree) TreeEntryFile(e *TreeEntry) (*File, error) {
 
 // FindEntry search a TreeEntry in this tree or any subtree.
 func (t *Tree) FindEntry(path string) (*TreeEntry, error) {
+	if t.t == nil {
+		t.t = make(map[string]*Tree)
+	}
+
 	pathParts := strings.Split(path, "/")
+	startingTree := t
+	pathCurrent := ""
+
+	// search for the longest path in the tree path cache
+	for i := len(pathParts); i > 1; i-- {
+		path := filepath.Join(pathParts[:i]...)
+
+		tree, ok := t.t[path]
+		if ok {
+			startingTree = tree
+			pathParts = pathParts[i:]
+			pathCurrent = path
+
+			break
+		}
+	}
 
 	var tree *Tree
 	var err error
-	for tree = t; len(pathParts) > 1; pathParts = pathParts[1:] {
+	for tree = startingTree; len(pathParts) > 1; pathParts = pathParts[1:] {
 		if tree, err = tree.dir(pathParts[0]); err != nil {
 			return nil, err
 		}
+
+		pathCurrent = filepath.Join(pathCurrent, pathParts[0])
+		t.t[pathCurrent] = tree
 	}
 
 	return tree.entry(pathParts[0])
@@ -233,7 +259,7 @@ func (t *Tree) Decode(o plumbing.EncodedObject) (err error) {
 }
 
 // Encode transforms a Tree into a plumbing.EncodedObject.
-func (t *Tree) Encode(o plumbing.EncodedObject) error {
+func (t *Tree) Encode(o plumbing.EncodedObject) (err error) {
 	o.SetType(plumbing.TreeObject)
 	w, err := o.Writer()
 	if err != nil {
@@ -242,7 +268,7 @@ func (t *Tree) Encode(o plumbing.EncodedObject) error {
 
 	defer ioutil.CheckClose(w, &err)
 	for _, entry := range t.Entries {
-		if _, err := fmt.Fprintf(w, "%o %s", entry.Mode, entry.Name); err != nil {
+		if _, err = fmt.Fprintf(w, "%o %s", entry.Mode, entry.Name); err != nil {
 			return err
 		}
 
@@ -270,15 +296,30 @@ func (from *Tree) Diff(to *Tree) (Changes, error) {
 	return DiffTree(from, to)
 }
 
+// Diff returns a list of changes between this tree and the provided one
+// Error will be returned if context expires
+// Provided context must be non nil
+func (from *Tree) DiffContext(ctx context.Context, to *Tree) (Changes, error) {
+	return DiffTreeContext(ctx, from, to)
+}
+
 // Patch returns a slice of Patch objects with all the changes between trees
 // in chunks. This representation can be used to create several diff outputs.
 func (from *Tree) Patch(to *Tree) (*Patch, error) {
-	changes, err := DiffTree(from, to)
+	return from.PatchContext(context.Background(), to)
+}
+
+// Patch returns a slice of Patch objects with all the changes between trees
+// in chunks. This representation can be used to create several diff outputs.
+// If context expires, an error will be returned
+// Provided context must be non-nil
+func (from *Tree) PatchContext(ctx context.Context, to *Tree) (*Patch, error) {
+	changes, err := DiffTreeContext(ctx, from, to)
 	if err != nil {
 		return nil, err
 	}
 
-	return changes.Patch()
+	return changes.PatchContext(ctx)
 }
 
 // treeEntryIter facilitates iterating through the TreeEntry objects in a Tree.

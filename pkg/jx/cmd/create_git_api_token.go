@@ -13,8 +13,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -55,7 +55,7 @@ type CreateGitTokenOptions struct {
 }
 
 // NewCmdCreateGitToken creates a command
-func NewCmdCreateGitToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGitToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateGitTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -76,7 +76,7 @@ func NewCmdCreateGitToken(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)
@@ -97,7 +97,7 @@ func (o *CreateGitTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -132,9 +132,9 @@ func (o *CreateGitTokenOptions) Run() error {
 		f := func(username string) error {
 			tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL, username)
 
-			o.Printf("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
-			o.Printf("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
-			o.Printf("Then COPY the token and enter in into the form below:\n\n")
+			log.Infof("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
+			log.Infof("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
+			log.Infof("Then COPY the token and enter in into the form below:\n\n")
 			return nil
 		}
 
@@ -155,15 +155,15 @@ func (o *CreateGitTokenOptions) Run() error {
 
 	err = o.updateGitCredentialsSecret(server, userAuth)
 	if err != nil {
-		o.warnf("Failed to update jenkins git credentials secret: %v\n", err)
+		log.Warnf("Failed to update jenkins git credentials secret: %v\n", err)
 	}
 
 	_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
 	if err != nil {
-		o.warnf("Failed to update Jenkins X pipeline git credentials secret: %v\n", err)
+		log.Warnf("Failed to update Jenkins X pipeline git credentials secret: %v\n", err)
 	}
 
-	o.Printf("Created user %s API Token for git server %s at %s\n",
+	log.Infof("Created user %s API Token for git server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 
 	return nil
@@ -183,7 +183,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 		ctxt, cancel = context.WithCancel(context.Background())
 	}
 	defer cancel()
-	o.Printf("Trying to generate an API token for user: %s\n", util.ColorInfo(userAuth.Username))
+	log.Infof("Trying to generate an API token for user: %s\n", util.ColorInfo(userAuth.Username))
 
 	c, err := o.createChromeClient(ctxt)
 	if err != nil {
@@ -214,7 +214,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 	if login {
 		o.captureScreenshot(ctxt, c, "screenshot-git-login.png", "//div")
 
-		o.Printf("logging in\n")
+		log.Infof("logging in\n")
 		err = c.Run(ctxt, chromedp.Tasks{
 			chromedp.WaitVisible("user_name", chromedp.ByID),
 			chromedp.SendKeys("user_name", userAuth.Username, chromedp.ByID),
@@ -227,7 +227,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 
 	o.captureScreenshot(ctxt, c, "screenshot-git-api-token.png", "//div")
 
-	o.Printf("Generating new token\n")
+	log.Infoln("Generating new token")
 
 	tokenId := "jx-" + string(uuid.NewUUID())
 	generateNewTokenButtonSelector := "//div[normalize-space(text())='Generate New Token']"
@@ -252,7 +252,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 			break
 		}
 	}
-	o.Printf("Found API Token\n")
+	log.Infoln("Found API Token")
 	if token != "" {
 		userAuth.ApiToken = token
 	}
@@ -265,7 +265,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 }
 
 func (o *CreateGitTokenOptions) updateGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
-	client, ns, err := o.Factory.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

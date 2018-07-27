@@ -1,16 +1,18 @@
 package cmd
 
 import (
-	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
 
 func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
@@ -23,70 +25,68 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	password := "admin"
 
 	// lets check if we have a local helm repository
-	client, _, err := o.Factory.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create the kube client")
 	}
 	u, err := kube.FindServiceURL(client, ns, kube.ServiceChartMuseum)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to find the service URL of the chartmuseum")
 	}
 	u2, err := url.Parse(u)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse the chartmuseum URL")
 	}
 	if u2.User == nil {
 		u2.User = url.UserPassword(username, password)
 	}
 	helmUrl := u2.String()
 	// lets check if we already have the helm repo installed or if we need to add it or remove + add it
-	text, err := o.getCommandOutput("", "helm", "repo", "list")
-	if err != nil {
-		return err
-	}
-	lines := strings.Split(text, "\n")
 	remove := false
-	for _, line := range lines {
-		t := strings.TrimSpace(line)
-		if t != "" {
-			fields := strings.Fields(t)
-			if len(fields) > 1 {
-				if fields[0] == repoName {
-					if fields[1] == helmUrl {
-						return nil
-					} else {
-						remove = true
-					}
-				}
+	repos, err := o.Helm().ListRepos()
+	if err != nil {
+		return errors.Wrap(err, "failed to list the repositories")
+	}
+	for repo, repoURL := range repos {
+		if repo == repoName {
+			if repoURL == helmUrl {
+				return nil
+			} else {
+				remove = true
 			}
 		}
 	}
 	if remove {
-		err = o.runCommand("helm", "repo", "remove", repoName)
+		err = o.Helm().RemoveRepo(repoName)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to remove the repository '%s'", repoName)
 		}
 	}
-	return o.runCommand("helm", "repo", "add", repoName, helmUrl)
+	return o.Helm().AddRepo(repoName, helmUrl)
 }
 
 // addHelmRepoIfMissing adds the given helm repo if its not already added
 func (o *CommonOptions) addHelmRepoIfMissing(helmUrl string, repoName string) error {
-	return o.addHelmBinaryRepoIfMissing("helm", helmUrl, repoName)
+	return o.addHelmBinaryRepoIfMissing(helmUrl, repoName)
 }
 
-func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmBinary string, helmUrl string, repoName string) error {
-	missing, err := o.isHelmRepoMissing(helmUrl)
+func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName string) error {
+	missing, err := o.Helm().IsRepoMissing(helmUrl)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to check if the repository with URL '%s' is missing", helmUrl)
 	}
 	if missing {
-		o.Printf("Adding missing helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
-		err = o.runCommandVerbose(helmBinary, "repo", "add", repoName, helmUrl)
-		if err == nil {
-			o.Printf("Succesfully added Helm repository %s.\n", repoName)
+		log.Infof("Adding missing helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
+		err = o.retry(6, 10*time.Second, func() (err error) {
+			err = o.Helm().AddRepo(repoName, helmUrl)
+			if err == nil {
+				log.Infof("Successfully added Helm repository %s.\n", repoName)
+			}
+			return errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmUrl)
+		})
+		if err != nil {
+			return err
 		}
-		return err
 	}
 	return nil
 }
@@ -99,122 +99,61 @@ func (o *CommonOptions) installChart(releaseName string, chart string, version s
 // installChartAt installs the given chart
 func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
 	if helmUpdate {
-		o.Printf("Updating Helm repository...\n")
-		err := o.runCommand("helm", "repo", "update")
+		log.Infoln("Updating Helm repository...")
+		err := o.Helm().UpdateRepo()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to update repository")
 		}
-		o.Printf("Helm repository update done.\n")
-	}
-	timeout := fmt.Sprintf("--timeout=%s", defaultInstallTimeout)
-	args := []string{"upgrade", "--install", timeout}
-	if version != "" {
-		args = append(args, "--version", version)
+		log.Infoln("Helm repository update done.")
 	}
 	if ns != "" {
 		kubeClient, _, err := o.KubeClient()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create the kube client")
 		}
 		annotations := map[string]string{"jenkins-x.io/created-by": "Jenkins X"}
 		kube.EnsureNamespaceCreated(kubeClient, ns, nil, annotations)
-		args = append(args, "--namespace", ns)
 	}
-	for _, value := range setValues {
-		args = append(args, "--set", value)
-		o.Printf("Set chart value: --set %s\n", util.ColorInfo(value))
+	timeout, err := strconv.Atoi(defaultInstallTimeout)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert the timeout to an int")
 	}
-	args = append(args, releaseName, chart)
-	return o.runCommandVerboseAt(dir, "helm", args...)
+	o.Helm().SetCWD(dir)
+	return o.Helm().UpgradeChart(chart, releaseName, ns, &version, true,
+		&timeout, true, false, setValues, nil)
 }
 
 // deleteChart deletes the given chart
 func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {
-	args := []string{"delete"}
-	if purge {
-		args = append(args, "--purge")
-	}
-	args = append(args, releaseName)
-	return o.runCommandVerbose("helm", args...)
+	return o.Helm().DeleteRelease(releaseName, purge)
 }
 
-func (*CommonOptions) FindHelmChart() (string, error) {
+func (o *CommonOptions) FindHelmChart() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to get the current working directory")
 	}
-	// lets try find the chart file
-	chartFile := filepath.Join(dir, "Chart.yaml")
-	exists, err := util.FileExists(chartFile)
-	if err != nil {
-		return "", err
-	}
-	if !exists {
-		// lets try find all the chart files
-		files, err := filepath.Glob("*/Chart.yaml")
-		if err != nil {
-			return "", err
-		}
-		if len(files) > 0 {
-			chartFile = files[0]
-		} else {
-			files, err = filepath.Glob("*/*/Chart.yaml")
-			if err != nil {
-				return "", err
-			}
-			if len(files) > 0 {
-				for _, file := range files {
-					if !strings.HasSuffix(file, "/preview/Chart.yaml") {
-						return file, nil
-					}
-				}
-			}
-		}
-	}
-	return "", nil
+	o.Helm().SetCWD(dir)
+	return o.Helm().FindChart()
 }
+
 func (o *CommonOptions) isHelmRepoMissing(helmUrlString string) (bool, error) {
-	// lets check if we already have the helm repo installed or if we need to add it or remove + add it
-	text, err := o.getCommandOutput("", "helm", "repo", "list")
-	if err != nil {
-		return false, err
-	}
-	helmUrl, err := url.Parse(helmUrlString)
-	if err != nil {
-		return false, err
-	}
-	lines := strings.Split(text, "\n")
-	for _, line := range lines {
-		t := strings.TrimSpace(line)
-		if t != "" {
-			fields := strings.Fields(t)
-			if len(fields) > 1 {
-				localURL, err := url.Parse(fields[1])
-				if err != nil {
-					return false, err
-				}
-				if localURL.Host == helmUrl.Host {
-					return false, nil
-				}
-			}
-		}
-	}
-	return true, nil
+	return o.Helm().IsRepoMissing(helmUrlString)
 }
 
 func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos map[string]string) error {
 	installedChartRepos, err := o.getInstalledChartRepos(helmBinary)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to retrieve the install charts")
 	}
 	repoCounter := len(installedChartRepos)
 	if chartRepos != nil {
 		for name, url := range chartRepos {
 			if !util.StringMapHasValue(installedChartRepos, url) {
 				repoCounter++
-				err = o.addHelmBinaryRepoIfMissing(helmBinary, url, name)
+				err = o.addHelmBinaryRepoIfMissing(url, name)
 				if err != nil {
-					return err
+					return errors.Wrapf(err, "failed to add the helm repository with name '%s' and URL '%s'", name, url)
 				}
 			}
 		}
@@ -223,22 +162,22 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 	reqfile := filepath.Join(dir, "requirements.yaml")
 	exists, err := util.FileExists(reqfile)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "requirements.yaml file not found in the chart directory '%s'", dir)
 	}
 	if exists {
 		requirements, err := helm.LoadRequirementsFile(reqfile)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to load the helm requirements file")
 		}
 		if requirements != nil {
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
-				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo {
+				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo && !strings.HasPrefix(repo, "file:") {
 					repoCounter++
 					// TODO we could provide some mechanism to customise the names of repos somehow?
-					err = o.addHelmBinaryRepoIfMissing(helmBinary, repo, "repo"+strconv.Itoa(repoCounter))
+					err = o.addHelmBinaryRepoIfMissing(repo, "repo"+strconv.Itoa(repoCounter))
 					if err != nil {
-						return err
+						return errors.Wrapf(err, "failed to add helm repository '%s'", repo)
 					}
 				}
 			}
@@ -248,76 +187,67 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 }
 
 func (o *CommonOptions) getInstalledChartRepos(helmBinary string) (map[string]string, error) {
-	installedChartRepos := map[string]string{}
-	text, err := o.getCommandOutput("", helmBinary, "repo", "list")
+	return o.Helm().ListRepos()
+}
+
+func (o *CommonOptions) helmInit(dir string) error {
+	o.Helm().SetCWD(dir)
+	_, err := o.Helm().Version(false)
 	if err != nil {
-		return installedChartRepos, err
+		return errors.Wrap(err, "failed to read the helm version")
 	}
-	lines := strings.Split(text, "\n")
-	for idx, line := range lines {
-		if idx > 0 {
-			cols := strings.Split(line, "\t")
-			if len(cols) > 1 {
-				name := strings.TrimSpace(cols[0])
-				url := strings.TrimSpace(cols[1])
-				if name != "" && url != "" {
-					installedChartRepos[name] = url
-				}
-			}
-		}
+	if o.Helm().HelmBinary() == "helm" {
+		return o.Helm().Init(false, "", "", true)
+	} else {
+		return o.Helm().Init(false, "", "", false)
 	}
-	return installedChartRepos, nil
 }
 
 func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[string]string) (string, error) {
-	helmBinary := ""
-	path := filepath.Join(dir, "requirements.lock")
-	exists, err := util.FileExists(path)
+	o.Helm().SetCWD(dir)
+	err := o.Helm().RemoveRequirementsLock()
 	if err != nil {
-		return helmBinary, err
-	}
-	if exists {
-		err = os.Remove(path)
-		if err != nil {
-			return helmBinary, err
-		}
-	}
-	helmBinary, err = o.TeamHelmBin()
-	if err != nil {
-		return helmBinary, err
-	}
-	o.Printf("Using the helm binary: %s for generating the chart release\n", util.ColorInfo(helmBinary))
-
-	err = o.runCommandVerboseAt(dir, helmBinary, "version")
-	if err != nil {
-		return helmBinary, err
+		return o.Helm().HelmBinary(),
+			errors.Wrapf(err, "failed to remove requirements.lock file from chat '%s'", dir)
 	}
 
-	if helmBinary == "helm" {
-		err = o.runCommandVerboseAt(dir, helmBinary, "init", "--client-only")
+	_, err = o.Helm().Version(false)
+	if err != nil {
+		return o.Helm().HelmBinary(),
+			errors.Wrap(err, "failed to read the helm version")
+	}
+
+	if o.Helm().HelmBinary() == "helm" {
+		err = o.Helm().Init(false, "", "", true)
 	} else {
-		err = o.runCommandVerboseAt(dir, helmBinary, "init")
+		err = o.Helm().Init(false, "", "", false)
 	}
+
 	if err != nil {
-		return helmBinary, err
+		return o.Helm().HelmBinary(),
+			errors.Wrap(err, "failed to initialize helm")
 	}
-	err = o.addChartRepos(dir, helmBinary, chartRepos)
+	err = o.addChartRepos(dir, o.Helm().HelmBinary(), chartRepos)
 	if err != nil {
-		return helmBinary, err
+		return o.Helm().HelmBinary(),
+			errors.Wrap(err, "failed to add chart repositories")
 	}
 
 	// TODO due to this issue: https://github.com/kubernetes/helm/issues/4230
 	// lets stick with helm2 for this step
 	//
-	//err = o.runCommandVerboseAt(dir, helmBinary, "dependency", "build", dir)
-	err = o.runCommandVerboseAt(dir, "helm", "dependency", "build", dir)
+	helmBinary := o.Helm().HelmBinary()
+	o.Helm().SetHelmBinary("helm")
+	o.Helm().SetCWD(dir)
+	err = o.Helm().BuildDependency()
 	if err != nil {
-		return helmBinary, err
+		return helmBinary, errors.Wrapf(err, "failed to build the dependencies of chart '%s'", dir)
 	}
 
-	err = o.runCommandVerboseAt(dir, helmBinary, "lint", dir)
+	o.Helm().SetHelmBinary(helmBinary)
+	_, err = o.Helm().Lint()
 	if err != nil {
-		return helmBinary, err
+		return helmBinary, errors.Wrapf(err, "failed to lint the chart '%s'", dir)
 	}
 	return helmBinary, nil
 }
@@ -325,7 +255,7 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 func (o *CommonOptions) defaultReleaseCharts() map[string]string {
 	return map[string]string{
 		"releases":  o.releaseChartMuseumUrl(),
-		"jenkins-x": "https://chartmuseum.build.cd.jenkins-x.io",
+		"jenkins-x": DEFAULT_CHARTMUSEUM_URL,
 	}
 }
 
@@ -333,7 +263,22 @@ func (o *CommonOptions) releaseChartMuseumUrl() string {
 	chartRepo := os.Getenv("CHART_REPOSITORY")
 	if chartRepo == "" {
 		chartRepo = defaultChartRepo
-		o.warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
+		log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
 	}
 	return chartRepo
+}
+
+func (o *CommonOptions) ensureHelm() error {
+	_, err := o.Helm().Version(false)
+	if err == nil {
+		return nil
+	}
+	err = o.installHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to install helm")
+	}
+	initOpts := InitOptions{
+		CommonOptions: *o,
+	}
+	return initOpts.initHelm()
 }

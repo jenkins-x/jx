@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -11,13 +12,18 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/log"
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
+	"strconv"
+
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -30,30 +36,34 @@ import (
 const (
 	optionServerName        = "name"
 	optionServerURL         = "url"
-	exposecontrollerVersion = "2.3.56"
+	exposecontrollerVersion = "2.3.63"
 	exposecontroller        = "exposecontroller"
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory   cmdutil.Factory
-	Out       io.Writer
-	Err       io.Writer
-	Cmd       *cobra.Command
-	Args      []string
-	BatchMode bool
-	Verbose   bool
-	Headless  bool
-	NoBrew    bool
+	Factory             Factory
+	Out                 io.Writer
+	Err                 io.Writer
+	Cmd                 *cobra.Command
+	Args                []string
+	BatchMode           bool
+	Verbose             bool
+	Headless            bool
+	NoBrew              bool
+	InstallDependencies bool
+	ServiceAccount      string
 
 	// common cached clients
 	kubeClient          kubernetes.Interface
 	apiExtensionsClient apiextensionsclientset.Interface
 	currentNamespace    string
 	devNamespace        string
-	jxClient            *versioned.Clientset
+	jxClient            versioned.Interface
 	jenkinsClient       *gojenkins.Jenkins
+	git                 gits.Gitter
+	helm                helm.Helmer
 }
 
 type ServerFlags struct {
@@ -76,17 +86,11 @@ func (c *CommonOptions) CreateTable() table.Table {
 	return c.Factory.CreateTable(c.Stdout())
 }
 
-// Printf outputs the given text to the console
-func (c *CommonOptions) Printf(format string, a ...interface{}) (n int, err error) {
-	return fmt.Fprintf(c.Stdout(), format, a...)
-}
-
 // Debugf outputs the given text to the console if verbose mode is enabled
-func (c *CommonOptions) Debugf(format string, a ...interface{}) (n int, err error) {
+func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 	if c.Verbose {
-		return fmt.Fprintf(c.Stdout(), format, a...)
+		log.Infof(format, a)
 	}
-	return 0, nil
 }
 
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
@@ -94,6 +98,7 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
 	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install or upgrade command line dependencies")
+	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")
 	options.Cmd = cmd
 }
 
@@ -116,11 +121,15 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 		}
 		o.kubeClient = kubeClient
 		o.currentNamespace = currentNs
+
 	}
 	return o.kubeClient, o.currentNamespace, nil
 }
 
-func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
+func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
+	if o.Factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
 	if o.jxClient == nil {
 		jxClient, ns, err := o.Factory.CreateJXClient()
 		if err != nil {
@@ -134,9 +143,9 @@ func (o *CommonOptions) JXClient() (*versioned.Clientset, string, error) {
 	return o.jxClient, o.currentNamespace, nil
 }
 
-func (o *CommonOptions) JXClientAndDevNamespace() (*versioned.Clientset, string, error) {
+func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, error) {
 	if o.jxClient == nil {
-		jxClient, ns, err := o.Factory.CreateJXClient()
+		jxClient, ns, err := o.JXClient()
 		if err != nil {
 			return nil, ns, err
 		}
@@ -161,13 +170,45 @@ func (o *CommonOptions) JXClientAndDevNamespace() (*versioned.Clientset, string,
 
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 	if o.jenkinsClient == nil {
-		jenkins, err := o.Factory.CreateJenkinsClient()
+		kubeClient, ns, err := o.KubeClient()
+		if err != nil {
+			return nil, err
+		}
+
+		jenkins, err := o.Factory.CreateJenkinsClient(kubeClient, ns)
+
 		if err != nil {
 			return nil, err
 		}
 		o.jenkinsClient = jenkins
 	}
 	return o.jenkinsClient, nil
+}
+func (o *CommonOptions) GetJenkinsURL() (string, error) {
+	kubeClient, ns, err := o.KubeClient()
+	if err != nil {
+		return "", err
+	}
+
+	return o.Factory.GetJenkinsURL(kubeClient, ns)
+}
+
+func (o *CommonOptions) Git() gits.Gitter {
+	if o.git == nil {
+		o.git = gits.NewGitCLI()
+	}
+	return o.git
+}
+
+func (o *CommonOptions) Helm() helm.Helmer {
+	if o.helm == nil {
+		helmBinary, err := o.TeamHelmBin()
+		if err != nil {
+			helmBinary = defaultHelmBin
+		}
+		o.helm = helm.NewHelmCLI(helmBinary, helm.V2, "")
+	}
+	return o.helm
 }
 
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
@@ -176,11 +217,6 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 		return "", "", err
 	}
 	return kube.GetDevNamespace(kubeClient, currentNs)
-}
-
-// warnf generates a warning
-func (o *CommonOptions) warnf(format string, a ...interface{}) {
-	o.Printf(util.ColorWarning("WARNING: "+format), a...)
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
@@ -236,7 +272,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 		if name != "" && o.BatchMode {
 			server = config.GetServerByName(name)
 			if server == nil {
-				o.warnf("Current server %s no longer exists\n", name)
+				log.Warnf("Current server %s no longer exists\n", name)
 			}
 		}
 	}
@@ -270,8 +306,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 }
 
 func (o *CommonOptions) findService(name string) (string, error) {
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
@@ -308,12 +343,11 @@ func (o *CommonOptions) findService(name string) (string, error) {
 }
 
 func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error) {
-	f := o.Factory
-	client, ns, err := f.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
-	jxClient, _, err := f.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return "", err
 	}
@@ -339,8 +373,7 @@ func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error)
 }
 
 func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, error) {
-	f := o.Factory
-	client, curNs, err := f.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
@@ -385,7 +418,7 @@ func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() err
 
 		time.Sleep(sleep)
 
-		o.Printf("retrying after error:%s\n", err)
+		log.Infof("retrying after error:%s\n", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
@@ -398,7 +431,7 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 		err = call()
 		if err == nil {
 			if dot {
-				o.Printf("\n")
+				log.Blank()
 			}
 			return
 		}
@@ -411,15 +444,15 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 
 		message := fmt.Sprintf("retrying after error: %s", err)
 		if lastMessage == message {
-			o.Printf(".")
+			log.Info(".")
 			dot = true
 		} else {
 			lastMessage = message
 			if dot {
 				dot = false
-				o.Printf("\n")
+				log.Blank()
 			}
-			o.Printf("%s\n", lastMessage)
+			log.Infof("%s\n", lastMessage)
 		}
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
@@ -435,7 +468,7 @@ func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 		err = call()
 		if err == nil {
 			if dot {
-				o.Printf("\n")
+				log.Blank()
 			}
 			return
 		}
@@ -448,16 +481,33 @@ func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 
 		message := fmt.Sprintf("retrying after error: %s", err)
 		if lastMessage == message {
-			o.Printf(".")
+			log.Info(".")
 			dot = true
 		} else {
 			lastMessage = message
 			if dot {
 				dot = false
-				o.Printf("\n")
+				log.Blank()
 			}
-			o.Printf("%s\n", lastMessage)
+			log.Infof("%s\n", lastMessage)
 		}
+	}
+}
+
+// retryUntilTrueOrTimeout waits until complete is true, an error occurs or the timeout
+func (o *CommonOptions) retryUntilTrueOrTimeout(timeout time.Duration, sleep time.Duration, call func() (bool, error)) (err error) {
+	timeoutTime := time.Now().Add(timeout)
+
+	for i := 0; ; i++ {
+		complete, err := call()
+		if complete || err != nil {
+			return err
+		}
+		if time.Now().After(timeoutTime) {
+			return fmt.Errorf("Timed out after %s, last error: %s", timeout.String(), err)
+		}
+
+		time.Sleep(sleep)
 	}
 }
 
@@ -510,7 +560,7 @@ func (o *CommonOptions) tailBuild(jobName string, build *gojenkins.Build) error 
 		return err
 	}
 	buildPath := u.Path
-	o.Printf("%s %s\n", util.ColorStatus("tailing the log of"), util.ColorInfo(fmt.Sprintf("%s #%d", jobName, build.Number)))
+	log.Infof("%s %s\n", "tailing the log of", fmt.Sprintf("%s #%d", jobName, build.Number))
 	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour*100)
 }
 
@@ -544,7 +594,7 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 
 // todo switch to using exposecontroller as a jx plugin
 // get existing config from the devNamespace and run exposecontroller in the target environment
-func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName, password string) error {
+func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) error {
 
 	_, err := o.kubeClient.CoreV1().Secrets(targetNamespace).Get(kube.SecretBasicAuth, v1.GetOptions{})
 	if err != nil {
@@ -573,23 +623,39 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName, passw
 		}
 	}
 
-	exposecontrollerConfig, err := kube.GetTeamExposecontrollerConfig(o.kubeClient, devNamespace)
+	ic, err := kube.GetIngressConfig(o.kubeClient, devNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
 
-	var exValues []string
-	if targetNamespace != devNamespace {
-		// run exposecontroller using existing team config
-		exValues = []string{
-			"config.exposer=" + exposecontrollerConfig["exposer"],
-			"config.domain=" + exposecontrollerConfig["domain"],
-			"config.http=" + exposecontrollerConfig["http"],
-			"config.tls-acme=" + exposecontrollerConfig["tls-acme"],
-		}
+	err = kube.AnnotateNamespaceServicesWithCertManager(o.kubeClient, targetNamespace, ic.Issuer)
+	if err != nil {
+		return err
 	}
 
-	err = o.installChart("expose"+releaseName, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
+	// if targetnamespace is different than dev check if there's any certmanager CRDs, if not check dev and copy any found across
+	err = o.copyCertmanagerResources(targetNamespace, ic)
+	if err != nil {
+		return fmt.Errorf("failed to copy certmanager resources from %s to %s namespace: %v", devNamespace, targetNamespace, err)
+	}
+
+	return o.runExposecontroller(devNamespace, targetNamespace, ic)
+}
+
+func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig) error {
+
+	exValues := []string{
+		"config.exposer=" + ic.Exposer,
+		"config.domain=" + ic.Domain,
+		"config.tlsacme=" + strconv.FormatBool(ic.TLS),
+	}
+
+	if !ic.TLS && ic.Issuer != "" {
+		exValues = append(exValues, "config.http=true")
+	}
+
+	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
+	err := o.installChart(helmRelease, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}
@@ -597,7 +663,7 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, releaseName, passw
 	if err != nil {
 		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
 	}
-	return kube.DeleteJob(o.kubeClient, targetNamespace, exposecontroller)
+	return o.helm.DeleteRelease(helmRelease, true)
 
 }
 
@@ -631,4 +697,15 @@ func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string,
 
 	// todo ask if user wants to install addon?
 	return "", nil
+}
+
+func (o *CommonOptions) copyCertmanagerResources(targetNamespace string, ic kube.IngressConfig) error {
+	if ic.TLS {
+		err := kube.CleanCertmanagerResources(o.kubeClient, targetNamespace, ic)
+		if err != nil {
+			return fmt.Errorf("failed to create certmanager resources in target namespace %s: %v", targetNamespace, err)
+		}
+	}
+
+	return nil
 }

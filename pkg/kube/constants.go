@@ -16,6 +16,8 @@ const (
 	// ChartAnchore the default chart for the Anchore plugin
 	ChartPipelineEvent = "jenkins-x/pipeline-events-addon"
 
+	ChartProw = "jenkins-x/prow"
+
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
 
@@ -64,14 +66,14 @@ const (
 	// ConfigMapExposecontroller the name of the ConfigMap with the Exposecontroller configuration
 	ConfigMapExposecontroller = "exposecontroller"
 
-	// ConfigMapJenkinsXGitKinds the name of the ConfigMap in the development namespace that maps kinds to URLs
-	ConfigMapJenkinsXGitKinds = "jenkins-x-git-kinds"
-
 	// ConfigMapJenkinsX the name of the ConfigMap with the Jenkins configuration
 	ConfigMapJenkinsX = "jenkins"
 
 	// ConfigMapJenkinsPodTemplates is the ConfigMap containing all the Pod Templates available
 	ConfigMapJenkinsPodTemplates = "jenkins-x-pod-templates"
+
+	// ConfigMapJenkinsDockerRegistry is the ConfigMap containing the Docker Registry configuration
+	ConfigMapJenkinsDockerRegistry = "jenkins-x-docker-registry"
 
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
@@ -80,6 +82,8 @@ const (
 	DeploymentExposecontrollerService = "exposecontroller-service"
 
 	DefaultEnvironmentGitRepoURL = "https://github.com/jenkins-x/default-environment-charts.git"
+
+	DefaultOrganisationGitRepoURL = "https://github.com/jenkins-x/default-organisation.git"
 
 	// LabelKind to indicate the kind of auth, such as Git or Issue
 	LabelKind = "jenkins.io/kind"
@@ -135,6 +139,21 @@ const (
 	// ValueCredentialTypeUsernamePassword for user password credential secrets
 	ValueCredentialTypeUsernamePassword = "usernamePassword"
 
+	// LabelTeam indicates the team name an environment belongs to
+	LabelTeam = "team"
+
+	// LabelEnvironment indicates the name of the environment
+	LabelEnvironment = "env"
+
+	// LabelValueDevEnvironment is the value of the LabelTeam label for Development environments (system namespace)
+	LabelValueDevEnvironment = "dev"
+
+	// LabelJobKind the kind of job
+	LabelJobKind = "jenkins.io/job-kind"
+
+	// ValueJobKindPostPreview
+	ValueJobKindPostPreview = "post-preview-step"
+
 	// AnnotationURL indicates a service/server's URL
 	AnnotationURL = "jenkins.io/url"
 
@@ -154,6 +173,9 @@ const (
 	AnnotationWorkingDir = "jenkins.io/working-dir"
 	// AnnotationLocalDir the local directory that is sync'd to the DevPod
 	AnnotationLocalDir = "jenkins.io/local-dir"
+
+	// AnnotationIsDefaultStorageClass used to indicate a storageclass is default
+	AnnotationIsDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
 
 	// SecretDataUsername the username in a Secret/Credentials
 	SecretDataUsername = "username"

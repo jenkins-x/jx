@@ -1,5 +1,10 @@
 package terminal
 
+import (
+	"fmt"
+	"io"
+)
+
 const (
 	KeyArrowLeft       = '\x02'
 	KeyArrowRight      = '\x06'
@@ -20,6 +25,6 @@ const (
 	IgnoreKey          = '\000'
 )
 
-func soundBell() {
-	Print("\a")
+func soundBell(out io.Writer) {
+	fmt.Fprint(out, "\a")
 }

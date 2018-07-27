@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // GetTrackerOptions the command line options
@@ -33,7 +33,7 @@ var (
 )
 
 // NewCmdGetTracker creates the command
-func NewCmdGetTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetTracker(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetTrackerOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -54,7 +54,7 @@ func NewCmdGetTracker(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "", "Filters the issue trackers by the kinds: "+strings.Join(issues.IssueTrackerKinds, ", "))
@@ -69,7 +69,7 @@ func (o *GetTrackerOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 	if len(config.Servers) == 0 {
-		o.Printf("No issue trackers registered. To register a new issue tracker use: %s\n", util.ColorInfo("jx create tracker server"))
+		log.Infof("No issue trackers registered. To register a new issue tracker use: %s\n", util.ColorInfo("jx create tracker server"))
 		return nil
 	}
 

@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 // CreateOptions contains the command line options
@@ -43,7 +42,7 @@ var (
 )
 
 // NewCmdCreate creates a command object for the "create" command
-func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -60,7 +59,7 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -69,19 +68,23 @@ func NewCmdCreate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	cmd.AddCommand(NewCmdCreateBranchPattern(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateCamel(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateChat(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateCodeship(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateCluster(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateDevPod(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateDocs(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateEtcHosts(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateGkeServiceAccount(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateGit(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateIssue(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateJenkins(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateJHipster(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateMicro(f, out, errOut))
+	cmd.AddCommand(NewCmdCreatePostPreviewJob(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateQuickstart(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateQuickstartLocation(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateSpring(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateTerraform(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateToken(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateTracker(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateLile(f, out, errOut))

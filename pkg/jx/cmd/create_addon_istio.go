@@ -5,13 +5,13 @@ import (
 	"io"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -48,7 +48,7 @@ type CreateAddonIstioOptions struct {
 }
 
 // NewCmdCreateAddonIstio creates a command object for the "create" command
-func NewCmdCreateAddonIstio(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonIstio(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonIstioOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -71,7 +71,7 @@ func NewCmdCreateAddonIstio(f cmdutil.Factory, out io.Writer, errOut io.Writer) 
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -108,7 +108,11 @@ func (o *CreateAddonIstioOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	_, _, err := o.KubeClient()
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
+	_, _, err = o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -124,6 +128,8 @@ func (o *CreateAddonIstioOptions) Run() error {
 	if o.NoInjectorWebhook {
 		values = append(values, "sidecarInjectorWebhook.enabled=false")
 	}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
 	err = o.installChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return fmt.Errorf("istio deployment failed: %v", err)
@@ -137,8 +143,8 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 		return answer, err
 	}
 	gitRepo := "https://github.com/istio/istio.git"
-	o.Printf("Cloning %s to %s\n", util.ColorInfo(gitRepo), util.ColorInfo(answer))
-	err = gits.GitClone(gitRepo, answer)
+	log.Infof("Cloning %s to %s\n", util.ColorInfo(gitRepo), util.ColorInfo(answer))
+	err = o.Git().Clone(gitRepo, answer)
 	if err != nil {
 		return answer, err
 	}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -49,7 +49,7 @@ type CreateIssueOptions struct {
 }
 
 // NewCmdCreateIssue creates a command object for the "create" command
-func NewCmdCreateIssue(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateIssue(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateIssueOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -70,7 +70,7 @@ func NewCmdCreateIssue(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -103,19 +103,19 @@ func (o *CreateIssueOptions) Run() error {
 	if createdIssue == nil {
 		return fmt.Errorf("Failed to create issue: %s", issue.Title)
 	}
-	o.Printf("\nCreated issue %s at %s\n", util.ColorInfo(createdIssue.Name()), util.ColorInfo(createdIssue.URL))
+	log.Infof("\nCreated issue %s at %s\n", util.ColorInfo(createdIssue.Name()), util.ColorInfo(createdIssue.URL))
 	return nil
 }
 
 func (o *CreateIssueOptions) FindGitInfo(dir string) (*gits.GitRepositoryInfo, error) {
-	_, gitConf, err := gits.FindGitConfigDir(dir)
+	_, gitConf, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("Could not find a .git directory: %s\n", err)
 	} else {
 		if gitConf == "" {
 			return nil, fmt.Errorf("No git conf dir found")
 		}
-		gitURL, err := gits.DiscoverUpstreamGitURL(gitConf)
+		gitURL, err := o.Git().DiscoverUpstreamGitURL(gitConf)
 		if err != nil {
 			return nil, fmt.Errorf("Could not find the remote git source URL:  %s", err)
 		}

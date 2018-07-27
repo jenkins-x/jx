@@ -69,6 +69,19 @@ func EnvironmentsDir() (string, error) {
 	return path, nil
 }
 
+func OrganisationsDir() (string, error) {
+	h, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(h, "organisations")
+	err = os.MkdirAll(path, DefaultWritePermissions)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func BinaryLocation() (string, error) {
 	h, err := ConfigDir()
 	if err != nil {
@@ -80,4 +93,12 @@ func BinaryLocation() (string, error) {
 		return "", err
 	}
 	return path, nil
+}
+
+func MavenBinaryLocation() (string, error) {
+	h, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(h, "maven", "bin"), nil
 }

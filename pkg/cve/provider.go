@@ -2,7 +2,7 @@ package cve
 
 import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/table"
+	"github.com/jenkins-x/jx/pkg/table"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -18,5 +18,5 @@ type CVEQuery struct {
 	TargetNamespace string
 }
 type CVEProvider interface {
-	GetImageVulnerabilityTable(jxClient *versioned.Clientset, client kubernetes.Interface, table *table.Table, query CVEQuery) error
+	GetImageVulnerabilityTable(jxClient versioned.Interface, client kubernetes.Interface, table *table.Table, query CVEQuery) error
 }

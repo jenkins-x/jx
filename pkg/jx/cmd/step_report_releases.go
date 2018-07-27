@@ -9,10 +9,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	pe "github.com/jenkins-x/jx/pkg/pipeline_events"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +36,7 @@ var (
 `)
 )
 
-func NewCmdStepReportReleases(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepReportReleases(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepReportReleasesOptions{
 		StepReportOptions: StepReportOptions{
 			StepOptions: StepOptions{
@@ -58,7 +57,7 @@ func NewCmdStepReportReleases(f cmdutil.Factory, out io.Writer, errOut io.Writer
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -79,7 +78,7 @@ func (o *StepReportReleasesOptions) Run() error {
 		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
 	}
 
-	jxClient, _, err := o.Factory.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return fmt.Errorf("cannot create jx client: %v", err)
 	}
@@ -125,7 +124,7 @@ func (o *StepReportReleasesOptions) Run() error {
 	return nil
 }
 
-func (o *StepReportReleasesOptions) getPipelineReleases(jxClient *versioned.Clientset, ns string) error {
+func (o *StepReportReleasesOptions) getPipelineReleases(jxClient versioned.Interface, ns string) error {
 	releases, err := jxClient.JenkinsV1().Releases(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -140,7 +139,7 @@ func (o *StepReportReleasesOptions) getPipelineReleases(jxClient *versioned.Clie
 	return nil
 }
 
-func (o *StepReportReleasesOptions) watchPipelineReleases(jxClient *versioned.Clientset, ns string) error {
+func (o *StepReportReleasesOptions) watchPipelineReleases(jxClient versioned.Interface, ns string) error {
 
 	release := &v1.Release{}
 	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "releases", metav1.NamespaceAll, fields.Everything())

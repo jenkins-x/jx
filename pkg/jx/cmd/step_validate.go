@@ -5,16 +5,14 @@ import (
 	"io"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/errors"
-
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 const (
@@ -45,7 +43,7 @@ type StepValidateOptions struct {
 }
 
 // NewCmdStepValidate Creates a new Command object
-func NewCmdStepValidate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepValidate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &StepValidateOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -65,7 +63,7 @@ func NewCmdStepValidate(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.MinimumJxVersion, optionMinJxVersion, "v", "", "The minimum version of the 'jx' command line tool required")
@@ -97,8 +95,8 @@ func (o *StepValidateOptions) verifyJxVersion(minJxVersion string) error {
 	}
 	if require.GT(current) {
 		info := util.ColorInfo
-		o.Printf("\nThe current installation of the %s CLI is too old: %s.\nWe require an installation of %s or later.\n\n", info("jx"), info(current.String()), info(require.String()))
-		o.Printf(`To upgrade try these commands:
+		log.Infof("\nThe current installation of the %s CLI is too old: %s.\nWe require an installation of %s or later.\n\n", info("jx"), info(current.String()), info(require.String()))
+		log.Infof(`To upgrade try these commands:
 
 * to upgrade the platform:    %s
 * to upgrade the CLI locally: %s
@@ -120,7 +118,7 @@ func (o *StepValidateOptions) verifyAddons() []error {
 	if len(config.Addons) == 0 {
 		return errs
 	}
-	statusMap, err := addon.GetChartStatusMap()
+	statusMap, err := o.Helm().StatusReleases()
 	if err != nil {
 		errs = append(errs, fmt.Errorf("Failed to load addons statuses: %s", err))
 		return errs
@@ -140,7 +138,7 @@ func (o *StepValidateOptions) verifyAddons() []error {
 func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileName string, statusMap map[string]string) error {
 	name := addonConfig.Name
 	if name == "" {
-		o.warnf("Ignoring addon with no name inside the projects configuration file %s", fileName)
+		log.Warnf("Ignoring addon with no name inside the projects configuration file %s", fileName)
 		return nil
 	}
 	ch := kube.AddonCharts[name]
@@ -153,7 +151,7 @@ func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileN
 	}
 	info := util.ColorInfo
 
-	o.Printf(`
+	log.Infof(`
 The Project Configuration %s requires the %s addon to be installed. To fix this please type:
 
     %s

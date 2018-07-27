@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/ghodss/yaml"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,13 +11,14 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/ghodss/yaml"
+
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -45,7 +45,7 @@ var (
 )
 
 // NewCmdGCHelm  a command object for the "garbage collect" command
-func NewCmdGCHelm(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGCHelm(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GCHelmOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -63,7 +63,7 @@ func NewCmdGCHelm(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)
@@ -75,8 +75,7 @@ func NewCmdGCHelm(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 }
 
 func (o *GCHelmOptions) Run() error {
-	f := o.Factory
-	kubeClient, _, err := f.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -113,8 +112,8 @@ func (o *GCHelmOptions) Run() error {
 		to_delete := versionsToDelete(versions, o.RevisionHistoryLimit)
 		if len(to_delete) > 0 {
 			if o.DryRun {
-				fmt.Println("Would delete:")
-				fmt.Printf("%v\n", to_delete)
+				log.Infoln("Would delete:")
+				log.Infof("%v\n", to_delete)
 			} else {
 				// Backup and delete
 				if o.NoBackup == false {
@@ -143,7 +142,7 @@ func (o *GCHelmOptions) Run() error {
 							b.Write(y)
 							err4 := ioutil.WriteFile(filename, b.Bytes(), 0644)
 							if err4 == nil {
-								fmt.Printf("Success. ")
+								log.Info("Success. ")
 							} else {
 								// Failed to write backup so abort
 								return err4
@@ -166,7 +165,7 @@ func (o *GCHelmOptions) Run() error {
 			}
 		} else {
 			if o.Verbose {
-				fmt.Println("Nothing to do.")
+				log.Info("Nothing to do.")
 			}
 		}
 	}

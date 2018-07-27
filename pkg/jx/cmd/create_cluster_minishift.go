@@ -8,9 +8,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -51,7 +50,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterMinishift(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterMinishift(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinishiftOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, MINISHIFT),
 	}
@@ -64,7 +63,7 @@ func NewCmdCreateClusterMinishift(f cmdutil.Factory, out io.Writer, errOut io.Wr
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -237,8 +236,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 
 	ns := o.Flags.Namespace
 	if ns == "" {
-		f := o.Factory
-		_, ns, _ = f.CreateClient()
+		_, ns, _ = o.KubeClient()
 		if err != nil {
 			return err
 		}

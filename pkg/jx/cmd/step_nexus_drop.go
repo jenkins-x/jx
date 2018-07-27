@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +26,7 @@ var (
 `)
 )
 
-func NewCmdStepNexusDrop(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepNexusDrop(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepNexusDropOptions{
 		StepNexusOptions: StepNexusOptions{
 			StepOptions: StepOptions{
@@ -48,7 +48,7 @@ func NewCmdStepNexusDrop(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	//cmd.Flags().StringVarP(&options.Flags.Version, VERSION, "v", "", "version number for the tag [required]")
@@ -61,7 +61,7 @@ func (o *StepNexusDropOptions) Run() error {
 		return err
 	}
 	if len(repoIds) == 0 {
-		o.Printf("No Nexus staging repository ids found in %s\n", util.ColorInfo(statingRepositoryProperties))
+		log.Infof("No Nexus staging repository ids found in %s\n", util.ColorInfo(statingRepositoryProperties))
 		return nil
 	}
 	return o.dropRepositories(repoIds, "Dropping staging repositories")

@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/spring"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -17,9 +17,9 @@ var (
 	create_spring_long = templates.LongDesc(`
 		Creates a new Spring Boot application and then optionally setups CI/CD pipelines and GitOps promotion.
 
-		You can see a demo of this command here: [http://jenkins-x.io/demos/create_spring/](http://jenkins-x.io/demos/create_spring/)
+		You can see a demo of this command here: [https://jenkins-x.io/demos/create_spring/](https://jenkins-x.io/demos/create_spring/)
 
-		For more documentation see: [http://jenkins-x.io/developing/create-spring/](http://jenkins-x.io/developing/create-spring/)
+		For more documentation see: [https://jenkins-x.io/developing/create-spring/](https://jenkins-x.io/developing/create-spring/)
 
 `)
 
@@ -47,7 +47,7 @@ type CreateSpringOptions struct {
 }
 
 // NewCmdCreateSpring creates a command object for the "create" command
-func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateSpring(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateSpringOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -69,7 +69,7 @@ func NewCmdCreateSpring(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCreateAppFlags(cmd)
@@ -118,7 +118,7 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Created spring boot project at %s\n", util.ColorInfo(outDir))
+	log.Infof("Created spring boot project at %s\n", util.ColorInfo(outDir))
 
 	return o.ImportCreatedProject(outDir)
 }

@@ -4,6 +4,8 @@ package v1
 
 type EnvironmentExpansion interface{}
 
+type EnvironmentRoleBindingExpansion interface{}
+
 type GitServiceExpansion interface{}
 
 type PipelineActivityExpansion interface{}

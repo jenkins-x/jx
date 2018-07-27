@@ -1,4 +1,4 @@
-// Package dom provides the Chrome Debugging Protocol
+// Package dom provides the Chrome DevTools Protocol
 // commands, types, and events for the DOM domain.
 //
 // This domain exposes DOM read/write operations. Each DOM Node is
@@ -349,6 +349,60 @@ func (p *GetBoxModelParams) Do(ctxt context.Context, h cdp.Executor) (model *Box
 	}
 
 	return res.Model, nil
+}
+
+// GetContentQuadsParams returns quads that describe node position on the
+// page. This method might return multiple quads for inline nodes.
+type GetContentQuadsParams struct {
+	NodeID        cdp.NodeID             `json:"nodeId,omitempty"`        // Identifier of the node.
+	BackendNodeID cdp.BackendNodeID      `json:"backendNodeId,omitempty"` // Identifier of the backend node.
+	ObjectID      runtime.RemoteObjectID `json:"objectId,omitempty"`      // JavaScript object id of the node wrapper.
+}
+
+// GetContentQuads returns quads that describe node position on the page.
+// This method might return multiple quads for inline nodes.
+//
+// parameters:
+func GetContentQuads() *GetContentQuadsParams {
+	return &GetContentQuadsParams{}
+}
+
+// WithNodeID identifier of the node.
+func (p GetContentQuadsParams) WithNodeID(nodeID cdp.NodeID) *GetContentQuadsParams {
+	p.NodeID = nodeID
+	return &p
+}
+
+// WithBackendNodeID identifier of the backend node.
+func (p GetContentQuadsParams) WithBackendNodeID(backendNodeID cdp.BackendNodeID) *GetContentQuadsParams {
+	p.BackendNodeID = backendNodeID
+	return &p
+}
+
+// WithObjectID JavaScript object id of the node wrapper.
+func (p GetContentQuadsParams) WithObjectID(objectID runtime.RemoteObjectID) *GetContentQuadsParams {
+	p.ObjectID = objectID
+	return &p
+}
+
+// GetContentQuadsReturns return values.
+type GetContentQuadsReturns struct {
+	Quads []Quad `json:"quads,omitempty"` // Quads that describe node layout relative to viewport.
+}
+
+// Do executes DOM.getContentQuads against the provided context.
+//
+// returns:
+//   quads - Quads that describe node layout relative to viewport.
+func (p *GetContentQuadsParams) Do(ctxt context.Context, h cdp.Executor) (quads []Quad, err error) {
+	// execute
+	var res GetContentQuadsReturns
+	err = h.Execute(ctxt, CommandGetContentQuads, p, &res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Quads, nil
 }
 
 // GetDocumentParams returns the root DOM node (and optionally the subtree)
@@ -1353,6 +1407,7 @@ const (
 	CommandFocus                           = "DOM.focus"
 	CommandGetAttributes                   = "DOM.getAttributes"
 	CommandGetBoxModel                     = "DOM.getBoxModel"
+	CommandGetContentQuads                 = "DOM.getContentQuads"
 	CommandGetDocument                     = "DOM.getDocument"
 	CommandGetFlattenedDocument            = "DOM.getFlattenedDocument"
 	CommandGetNodeForLocation              = "DOM.getNodeForLocation"

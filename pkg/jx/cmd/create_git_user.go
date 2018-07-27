@@ -6,10 +6,9 @@ import (
 
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -38,7 +37,7 @@ type CreateGitUserOptions struct {
 }
 
 // NewCmdCreateGitUser creates a command
-func NewCmdCreateGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGitUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateGitUserOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -58,7 +57,7 @@ func NewCmdCreateGitUser(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)
@@ -80,7 +79,7 @@ func (o *CreateGitUserOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -99,7 +98,7 @@ func (o *CreateGitUserOptions) Run() error {
 		return fmt.Errorf("No password or ApiToken specified")
 	}
 
-	client, ns, err := o.Factory.CreateClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -130,7 +129,7 @@ func (o *CreateGitUserOptions) Run() error {
 		return nil
 	}
 
-	o.Printf("Created user %s API Token for git server %s at %s\n",
+	log.Infof("Created user %s API Token for git server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

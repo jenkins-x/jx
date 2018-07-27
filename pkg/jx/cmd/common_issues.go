@@ -8,12 +8,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 func (o *CommonOptions) CreateIssueTrackerAuthConfigService() (auth.AuthConfigService, error) {
-	secrets, err := o.Factory.LoadPipelineSecrets(kube.ValueKindIssue, "")
+	secrets, err := o.LoadPipelineSecrets(kube.ValueKindIssue, "")
 	if err != nil {
-		o.warnf("The current user cannot query pipeline issue tracker secrets: %s", err)
+		log.Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
 	}
 	return o.Factory.CreateIssueTrackerAuthConfigService(secrets)
 }
@@ -27,7 +28,7 @@ func (o *CommonOptions) errorCreateIssueTrackerAuthConfigService(parentError err
 }
 
 func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, error) {
-	gitDir, gitConfDir, err := gits.FindGitConfigDir(dir)
+	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("No issue tracker configured for this project and cannot find the .git directory: %s", err)
 	}
@@ -55,7 +56,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 				if err != nil {
 					return nil, err
 				}
-				return issues.CreateIssueProvider(it.Kind, server, userAuth, it.Project, o.BatchMode)
+				return issues.CreateIssueProvider(it.Kind, server, userAuth, it.Project, o.BatchMode, o.Git())
 			}
 		}
 	}
@@ -63,7 +64,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 	if gitConfDir == "" {
 		return nil, fmt.Errorf("No issue tracker configured and no git directory could be found from dir %s\n", dir)
 	}
-	gitUrl, err := gits.DiscoverUpstreamGitURL(gitConfDir)
+	gitUrl, err := o.Git().DiscoverUpstreamGitURL(gitConfDir)
 	if err != nil {
 		return nil, fmt.Errorf("No issue tracker configured and could not find the upstream git URL for dir %s, due to: %s\n", dir, err)
 	}

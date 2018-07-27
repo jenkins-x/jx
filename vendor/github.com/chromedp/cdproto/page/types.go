@@ -21,20 +21,22 @@ func (t ResourceType) String() string {
 
 // ResourceType values.
 const (
-	ResourceTypeDocument       ResourceType = "Document"
-	ResourceTypeStylesheet     ResourceType = "Stylesheet"
-	ResourceTypeImage          ResourceType = "Image"
-	ResourceTypeMedia          ResourceType = "Media"
-	ResourceTypeFont           ResourceType = "Font"
-	ResourceTypeScript         ResourceType = "Script"
-	ResourceTypeTextTrack      ResourceType = "TextTrack"
-	ResourceTypeXHR            ResourceType = "XHR"
-	ResourceTypeFetch          ResourceType = "Fetch"
-	ResourceTypeEventSource    ResourceType = "EventSource"
-	ResourceTypeWebSocket      ResourceType = "WebSocket"
-	ResourceTypeManifest       ResourceType = "Manifest"
-	ResourceTypeSignedExchange ResourceType = "SignedExchange"
-	ResourceTypeOther          ResourceType = "Other"
+	ResourceTypeDocument           ResourceType = "Document"
+	ResourceTypeStylesheet         ResourceType = "Stylesheet"
+	ResourceTypeImage              ResourceType = "Image"
+	ResourceTypeMedia              ResourceType = "Media"
+	ResourceTypeFont               ResourceType = "Font"
+	ResourceTypeScript             ResourceType = "Script"
+	ResourceTypeTextTrack          ResourceType = "TextTrack"
+	ResourceTypeXHR                ResourceType = "XHR"
+	ResourceTypeFetch              ResourceType = "Fetch"
+	ResourceTypeEventSource        ResourceType = "EventSource"
+	ResourceTypeWebSocket          ResourceType = "WebSocket"
+	ResourceTypeManifest           ResourceType = "Manifest"
+	ResourceTypeSignedExchange     ResourceType = "SignedExchange"
+	ResourceTypePing               ResourceType = "Ping"
+	ResourceTypeCSPViolationReport ResourceType = "CSPViolationReport"
+	ResourceTypeOther              ResourceType = "Other"
 )
 
 // MarshalEasyJSON satisfies easyjson.Marshaler.
@@ -76,6 +78,10 @@ func (t *ResourceType) UnmarshalEasyJSON(in *jlexer.Lexer) {
 		*t = ResourceTypeManifest
 	case ResourceTypeSignedExchange:
 		*t = ResourceTypeSignedExchange
+	case ResourceTypePing:
+		*t = ResourceTypePing
+	case ResourceTypeCSPViolationReport:
+		*t = ResourceTypeCSPViolationReport
 	case ResourceTypeOther:
 		*t = ResourceTypeOther
 
@@ -296,6 +302,23 @@ type Viewport struct {
 	Width  float64 `json:"width"`  // Rectangle width in CSS pixels
 	Height float64 `json:"height"` // Rectangle height in CSS pixels
 	Scale  float64 `json:"scale"`  // Page scale factor.
+}
+
+// FontFamilies generic font families collection.
+type FontFamilies struct {
+	Standard   string `json:"standard,omitempty"`   // The standard font-family.
+	Fixed      string `json:"fixed,omitempty"`      // The fixed font-family.
+	Serif      string `json:"serif,omitempty"`      // The serif font-family.
+	SansSerif  string `json:"sansSerif,omitempty"`  // The sansSerif font-family.
+	Cursive    string `json:"cursive,omitempty"`    // The cursive font-family.
+	Fantasy    string `json:"fantasy,omitempty"`    // The fantasy font-family.
+	Pictograph string `json:"pictograph,omitempty"` // The pictograph font-family.
+}
+
+// FontSizes default font sizes.
+type FontSizes struct {
+	Standard int64 `json:"standard,omitempty"` // Default standard font size.
+	Fixed    int64 `json:"fixed,omitempty"`    // Default fixed font size.
 }
 
 // FrameScheduledNavigationReason the reason for the navigation.

@@ -7,17 +7,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 const (
@@ -52,7 +53,7 @@ var (
 `)
 )
 
-func NewCmdShell(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdShell(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &ShellOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -70,7 +71,7 @@ func NewCmdShell(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)
@@ -145,10 +146,10 @@ func (o *ShellOptions) Run() error {
 	}
 
 	info := util.ColorInfo
-	o.Printf("Creating a new shell using the kubernetes context %s\n", info(ctxName))
-	o.Printf("Bash RC file is %s\n\n", tmpRCfileName)
-	o.Printf("All changes to the kuberentes context like changing environment, namespace or context will be local to this shell\n")
-	o.Printf("To return to the global context use the command: exit\n\n")
+	log.Infof("Creating a new shell using the kubernetes context %s\n", info(ctxName))
+	log.Infof("Bash RC file is %s\n\n", tmpRCfileName)
+	log.Infof("All changes to the kuberentes context like changing environment, namespace or context will be local to this shell\n")
+	log.Infof("To return to the global context use the command: exit\n\n")
 
 	e := exec.Command(shell, "-rcfile", tmpRCfileName, "-i")
 	e.Stdout = o.Out
@@ -176,7 +177,7 @@ func (o *ShellOptions) PickContext(names []string, defaultValue string) (string,
 
 func (o *ShellOptions) createNewBashPrompt(prompt string) string {
 	if prompt == "" {
-		return "[\\u@\\h \\W \\$(jx prompt) ]\\$ "
+		return "'[\\u@\\h \\W \\$(jx prompt) ]\\$ '"
 	}
 	if strings.Contains(prompt, "jx prompt") {
 		return prompt

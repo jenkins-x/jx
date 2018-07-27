@@ -3,20 +3,23 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"strings"
 
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"strings"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
-	delete_git_server_long = templates.LongDesc(`
+	deleteGitServerLong = templates.LongDesc(`
 		Deletes one or more git servers from your local settings
 `)
 
-	delete_git_server_example = templates.Examples(`
+	deleteGitServerExample = templates.Examples(`
 		# Deletes a git provider
 		jx delete git server MyProvider
 	`)
@@ -30,7 +33,7 @@ type DeleteGitServerOptions struct {
 }
 
 // NewCmdDeleteGitServer defines the command
-func NewCmdDeleteGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteGitServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteGitServerOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -41,14 +44,14 @@ func NewCmdDeleteGitServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 
 	cmd := &cobra.Command{
 		Use:     "server",
-		Short:   "Deletes one or more git server",
-		Long:    delete_git_server_long,
-		Example: delete_git_server_example,
+		Short:   "Deletes one or more git servers",
+		Long:    deleteGitServerLong,
+		Example: deleteGitServerExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.IgnoreMissingServer, "ignore-missing", "i", false, "Silently ignore attempts to remove a git server name that does not exist")
@@ -61,7 +64,7 @@ func (o *DeleteGitServerOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing git server name argument")
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -76,12 +79,62 @@ func (o *DeleteGitServerOptions) Run() error {
 			}
 			return util.InvalidArg(arg, serverNames)
 		}
+		server := config.Servers[idx]
+		if server != nil {
+			err = o.deleteServerResources(server)
+			if err != nil {
+				return err
+			}
+		}
 		config.Servers = append(config.Servers[0:idx], config.Servers[idx+1:]...)
 	}
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
 		return err
 	}
-	o.Printf("Deleted git servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
+	log.Infof("Deleted git servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
+	return nil
+}
+
+func (o *DeleteGitServerOptions) deleteServerResources(server *auth.AuthServer) error {
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, server.Kind)
+	if err != nil {
+		return err
+	}
+	for _, secret := range secrets.Items {
+		ann := secret.Annotations
+		if ann != nil && ann[kube.AnnotationURL] == server.URL {
+			name := secret.Name
+			log.Infof("Deleting Secret %s\n", util.ColorInfo(name))
+
+			err = kubeClient.CoreV1().Secrets(ns).Delete(name, nil)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	gitServiceResources := jxClient.JenkinsV1().GitServices(ns)
+	gitServices, err := gitServiceResources.List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, gitService := range gitServices.Items {
+		if gitService.Spec.URL == server.URL {
+			name := gitService.Name
+			log.Infof("Deleting GitService %s\n", util.ColorInfo(name))
+			err = gitServiceResources.Delete(name, nil)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }

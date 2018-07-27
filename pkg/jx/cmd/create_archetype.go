@@ -2,15 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"io"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-	"github.com/jenkins-x/jx/pkg/maven"
-	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/maven"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 var (
@@ -44,7 +46,7 @@ type CreateArchetypeOptions struct {
 }
 
 // NewCmdCreateArchetype creates a command object for the "create" command
-func NewCmdCreateArchetype(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateArchetype(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateArchetypeOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -67,7 +69,7 @@ func NewCmdCreateArchetype(f cmdutil.Factory, out io.Writer, errOut io.Writer) *
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCreateAppFlags(cmd)
@@ -108,7 +110,7 @@ func (o *CreateArchetypeOptions) Run() error {
 		return err
 	}
 
-	o.Printf("Invoking: jx create archetype -g %s -a %s -v %s\n\n", form.ArchetypeGroupId, form.ArchetypeArtifactId, form.ArchetypeVersion)
+	log.Infof("Invoking: jx create archetype -g %s -a %s -v %s\n\n", form.ArchetypeGroupId, form.ArchetypeArtifactId, form.ArchetypeVersion)
 
 	return o.CreateArchetype()
 }
@@ -160,7 +162,7 @@ func (o *CreateArchetypeOptions) CreateArchetype() error {
 			}
 		}
 		if newline {
-			o.Printf("\n")
+			log.Blank()
 		}
 	}
 	if form.GroupId != "" {
@@ -179,7 +181,7 @@ func (o *CreateArchetypeOptions) CreateArchetype() error {
 	}
 	outDir := filepath.Join(dir, form.ArtifactId)
 	o.Dir = outDir
-	o.Printf("Created project at %s\n\n", util.ColorInfo(outDir))
+	log.Infof("Created project at %s\n\n", util.ColorInfo(outDir))
 
 	return o.ImportCreatedProject(outDir)
 }

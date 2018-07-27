@@ -6,7 +6,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 )
@@ -44,7 +43,7 @@ var (
 )
 
 // NewCmdGetQuickstartLocation creates the new command for: jx get env
-func NewCmdGetQuickstartLocation(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetQuickstartLocation(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetQuickstartLocationOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -64,7 +63,7 @@ func NewCmdGetQuickstartLocation(f cmdutil.Factory, out io.Writer, errOut io.Wri
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 

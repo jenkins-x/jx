@@ -3,8 +3,6 @@ package cmd
 import (
 	"io"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
-
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -24,7 +22,7 @@ const (
 )
 
 // NewJXCommand creates the `jx` command and its nested children.
-func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Command {
+func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 	cmds := &cobra.Command{
 		Use:   "jx",
 		Short: "jx is a command line tool for working with Jenkins X",
@@ -99,6 +97,7 @@ func NewJXCommand(f cmdutil.Factory, in io.Reader, out, err io.Writer) *cobra.Co
 				NewCmdCompletion(f, out),
 				NewCmdContext(f, out, err),
 				NewCmdEnvironment(f, out, err),
+				NewCmdTeam(f, out, err),
 				NewCmdGC(f, out, err),
 				NewCmdNamespace(f, out, err),
 				NewCmdPrompt(f, out, err),
@@ -173,7 +172,6 @@ func findCommands(subCommand string, commands ...*cobra.Command) []*cobra.Comman
 
 func commandHasParentName(command *cobra.Command, name string) bool {
 	path := fullPath(command)
-	//fmt.Printf("Command path %s for command %s does not contain %s\n", path, command.Use, name)
 	return strings.Contains(path, name)
 }
 

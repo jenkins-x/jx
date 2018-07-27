@@ -1,4 +1,4 @@
-// Package browser provides the Chrome Debugging Protocol
+// Package browser provides the Chrome DevTools Protocol
 // commands, types, and events for the Browser domain.
 //
 // The Browser domain defines methods and events for browser managing.
@@ -97,6 +97,7 @@ func (p *GetBrowserCommandLineParams) Do(ctxt context.Context, h cdp.Executor) (
 // GetHistogramsParams get Chrome histograms.
 type GetHistogramsParams struct {
 	Query string `json:"query,omitempty"` // Requested substring in name. Only histograms which have query as a substring in their name are extracted. An empty or absent query returns all histograms.
+	Delta bool   `json:"delta,omitempty"` // If true, retrieve delta since last call.
 }
 
 // GetHistograms get Chrome histograms.
@@ -111,6 +112,12 @@ func GetHistograms() *GetHistogramsParams {
 // histograms.
 func (p GetHistogramsParams) WithQuery(query string) *GetHistogramsParams {
 	p.Query = query
+	return &p
+}
+
+// WithDelta if true, retrieve delta since last call.
+func (p GetHistogramsParams) WithDelta(delta bool) *GetHistogramsParams {
+	p.Delta = delta
 	return &p
 }
 
@@ -136,7 +143,8 @@ func (p *GetHistogramsParams) Do(ctxt context.Context, h cdp.Executor) (histogra
 
 // GetHistogramParams get a Chrome histogram by name.
 type GetHistogramParams struct {
-	Name string `json:"name"` // Requested histogram name.
+	Name  string `json:"name"`            // Requested histogram name.
+	Delta bool   `json:"delta,omitempty"` // If true, retrieve delta since last call.
 }
 
 // GetHistogram get a Chrome histogram by name.
@@ -147,6 +155,12 @@ func GetHistogram(name string) *GetHistogramParams {
 	return &GetHistogramParams{
 		Name: name,
 	}
+}
+
+// WithDelta if true, retrieve delta since last call.
+func (p GetHistogramParams) WithDelta(delta bool) *GetHistogramParams {
+	p.Delta = delta
+	return &p
 }
 
 // GetHistogramReturns return values.

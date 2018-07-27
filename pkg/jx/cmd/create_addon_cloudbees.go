@@ -8,10 +8,9 @@ import (
 	"github.com/spf13/cobra"
 	rbacv1 "k8s.io/api/rbac/v1"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,6 +28,8 @@ var (
 		Creates the CloudBees app for Kubernetes addon
 
 		CloudBees app for Kubernetes provides unified Continuous Delivery Environment console to make it easier to do CI/CD and Environments across a number of microservices and teams
+
+		For more information please see [https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x](https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x)
 `)
 
 	CreateAddonCloudBeesExample = templates.Examples(`
@@ -43,7 +44,7 @@ type CreateAddonCloudBeesOptions struct {
 }
 
 // NewCmdCreateAddonCloudBees creates a command object for the "create" command
-func NewCmdCreateAddonCloudBees(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonCloudBees(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonCloudBeesOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -66,7 +67,7 @@ func NewCmdCreateAddonCloudBees(f cmdutil.Factory, out io.Writer, errOut io.Writ
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -131,7 +132,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 	}
 
 	if missing {
-		o.Printf(`
+		log.Infof(`
 You will need your username and password to install this addon while it is in preview.
 To register to get your username/password to to: %s
 
@@ -176,7 +177,7 @@ To register to get your username/password to to: %s
 	log.Infof("target namespace %s\n", o.Namespace)
 
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, defaultCloudBeesReleaseName, "")
+	err = o.expose(devNamespace, o.Namespace, "")
 	if err != nil {
 		return err
 	}

@@ -56,6 +56,12 @@ test:
 test1:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v -run $(TEST)
 
+testbin:
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-test
+
+debugtest1: testbin
+	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-test -- -test.run $(TEST)
+
 full: $(PKGS)
 
 install: $(GO_DEPENDENCIES)
@@ -86,7 +92,8 @@ release: check
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
 
-	docker build -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
+	docker system prune -f
+	docker build --ulimit nofile=90000:90000 -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
 	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
 
 	chmod +x build/darwin/$(NAME)
@@ -124,27 +131,55 @@ linux:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
 docker: linux
-	docker build --no-cache -t rawlingsj/jx:dev33 .
-	docker push rawlingsj/jx:dev33
+	docker build --no-cache -t rawlingsj/jx:dev35 .
+	docker push rawlingsj/jx:dev35
 
-docker-go: linux Dockerfile.buildgo
-	docker build --no-cache -t builder-go -f Dockerfile.buildgo .
+docker-go: linux Dockerfile.builder-go
+	docker build --no-cache -t builder-go -f Dockerfile.builder-go .
 
-docker-maven: linux Dockerfile.maven
-	docker build --no-cache -t builder-maven -f Dockerfile.maven .
+docker-maven: linux Dockerfile.builder-maven
+	docker build --no-cache -t builder-maven -f Dockerfile.builder-maven .
 
 docker-pipeline: linux
 	docker build -t rawlingsj/builder-base:dev . -f Dockerfile-pipeline
 
+docker-dev: linux 
+	docker build --no-cache -t $(DOCKER_HUB_USER)/jx:dev .
+	docker push $(DOCKER_HUB_USER)/jx:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-base:dev -f Dockerfile.builder-base .
+	docker push $(DOCKER_HUB_USER)/builder-base:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-go:dev -f Dockerfile.builder-go .
+	docker push $(DOCKER_HUB_USER)/builder-go:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-gradle:dev -f Dockerfile.builder-gradle .
+	docker push $(DOCKER_HUB_USER)/builder-gradle:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-maven:dev -f Dockerfile.builder-maven .
+	docker push $(DOCKER_HUB_USER)/builder-maven:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-rust:dev -f Dockerfile.builder-rust .
+	docker push $(DOCKER_HUB_USER)/builder-rust:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-scala:dev -f Dockerfile.builder-scala .
+	docker push $(DOCKER_HUB_USER)/builder-scala:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-swift:dev -f Dockerfile.builder-swift .
+	docker push $(DOCKER_HUB_USER)/builder-swift:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-terraform:dev -f Dockerfile.builder-terraform .
+	docker push $(DOCKER_HUB_USER)/builder-terraform:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-nodejs:dev -f Dockerfile.builder-nodejs .
+	docker push $(DOCKER_HUB_USER)/builder-nodejs:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-python:dev -f Dockerfile.builder-python .
+	docker push $(DOCKER_HUB_USER)/builder-python:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-python2:dev -f Dockerfile.builder-python2 .
+	docker push $(DOCKER_HUB_USER)/builder-python2:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-ruby:dev -f Dockerfile.builder-ruby .
+	docker push $(DOCKER_HUB_USER)/builder-ruby:dev
+
 .PHONY: release clean arm
 
-preview: linux
-	docker build --no-cache -t docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.maven .
+preview:
+	docker build --no-cache -t docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-maven .
 	docker push docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
-	docker build --no-cache -t docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.buildgo .
+	docker build --no-cache -t docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-go .
 	docker push docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
-	#docker build --no-cache -t docker.io/jenkinsxio/builder-nodejs:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.nodejs .
-	#docker push docker.io/jenkinsxio/builder-nodejs:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-nodejs:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-nodejs .
+	docker push docker.io/jenkinsxio/builder-nodejs:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
 
 FGT := $(GOPATH)/bin/fgt
 $(FGT):
@@ -186,14 +221,14 @@ tools.govet:
 		go get golang.org/x/tools/cmd/vet; \
 	fi
 
-GAS := $(GOPATH)/bin/gas
-$(GAS):
-	go get github.com/GoASTScanner/gas/cmd/gas/...
+GOSEC := $(GOPATH)/bin/gosec
+$(GOSEC):
+	go get github.com/securego/gosec/cmd/gosec/...
 
 .PHONY: sec
-sec: $(GAS)
+sec: $(GOSEC)
 	@echo "SECURITY"
 	@mkdir -p scanning
-	$(GAS) -fmt=yaml -out=scanning/results.yaml ./...
+	$(GOSEC) -fmt=yaml -out=scanning/results.yaml ./...
 
 

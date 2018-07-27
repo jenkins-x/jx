@@ -1,13 +1,13 @@
 package kube
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,7 +46,7 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		Spec: v1.PipelineActivitySpec{},
 	}
 	if activities == nil {
-		fmt.Printf("Warning: no PipelineActivities client available!\n")
+		log.Warn("Warning: no PipelineActivities client available!")
 		return defaultActivity, nil
 	}
 	a, err := activities.Get(name, metav1.GetOptions{})
@@ -239,7 +239,7 @@ func (k *PromoteStepActivityKey) OnPromotePullRequest(activities typev1.Pipeline
 		return nil
 	}
 	if activities == nil {
-		fmt.Printf("Warning: no PipelineActivities client available!\n")
+		log.Warn("Warning: no PipelineActivities client available!")
 		return nil
 	}
 	a, s, ps, p, added, err := k.GetOrCreatePromotePullRequest(activities)
@@ -264,7 +264,7 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActiv
 		return nil
 	}
 	if activities == nil {
-		fmt.Printf("Warning: no PipelineActivities client available!\n")
+		log.Warn("Warning: no PipelineActivities client available!")
 		return nil
 	}
 	a, s, ps, p, added, err := k.GetOrCreatePromoteUpdate(activities)

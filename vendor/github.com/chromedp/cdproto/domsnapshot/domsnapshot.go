@@ -1,4 +1,4 @@
-// Package domsnapshot provides the Chrome Debugging Protocol
+// Package domsnapshot provides the Chrome DevTools Protocol
 // commands, types, and events for the DOMSnapshot domain.
 //
 // This domain facilitates obtaining document snapshots with DOM, layout, and
@@ -15,77 +15,80 @@ import (
 	"github.com/chromedp/cdproto/cdp"
 )
 
-// GetSnapshotParams returns a document snapshot, including the full DOM tree
+// DisableParams disables DOM snapshot agent for the given page.
+type DisableParams struct{}
+
+// Disable disables DOM snapshot agent for the given page.
+func Disable() *DisableParams {
+	return &DisableParams{}
+}
+
+// Do executes DOMSnapshot.disable against the provided context.
+func (p *DisableParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandDisable, nil, nil)
+}
+
+// EnableParams enables DOM snapshot agent for the given page.
+type EnableParams struct{}
+
+// Enable enables DOM snapshot agent for the given page.
+func Enable() *EnableParams {
+	return &EnableParams{}
+}
+
+// Do executes DOMSnapshot.enable against the provided context.
+func (p *EnableParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandEnable, nil, nil)
+}
+
+// CaptureSnapshotParams returns a document snapshot, including the full DOM
+// tree of the root node (including iframes, template contents, and imported
+// documents) in a flattened array, as well as layout and white-listed computed
+// style information for the nodes. Shadow DOM in the returned DOM tree is
+// flattened.
+type CaptureSnapshotParams struct {
+	ComputedStyles []string `json:"computedStyles"` // Whitelist of computed styles to return.
+}
+
+// CaptureSnapshot returns a document snapshot, including the full DOM tree
 // of the root node (including iframes, template contents, and imported
 // documents) in a flattened array, as well as layout and white-listed computed
 // style information for the nodes. Shadow DOM in the returned DOM tree is
 // flattened.
-type GetSnapshotParams struct {
-	ComputedStyleWhitelist     []string `json:"computedStyleWhitelist"`               // Whitelist of computed styles to return.
-	IncludeEventListeners      bool     `json:"includeEventListeners,omitempty"`      // Whether or not to retrieve details of DOM listeners (default false).
-	IncludePaintOrder          bool     `json:"includePaintOrder,omitempty"`          // Whether to determine and include the paint order index of LayoutTreeNodes (default false).
-	IncludeUserAgentShadowTree bool     `json:"includeUserAgentShadowTree,omitempty"` // Whether to include UA shadow tree in the snapshot (default false).
-}
-
-// GetSnapshot returns a document snapshot, including the full DOM tree of
-// the root node (including iframes, template contents, and imported documents)
-// in a flattened array, as well as layout and white-listed computed style
-// information for the nodes. Shadow DOM in the returned DOM tree is flattened.
 //
 // parameters:
-//   computedStyleWhitelist - Whitelist of computed styles to return.
-func GetSnapshot(computedStyleWhitelist []string) *GetSnapshotParams {
-	return &GetSnapshotParams{
-		ComputedStyleWhitelist: computedStyleWhitelist,
+//   computedStyles - Whitelist of computed styles to return.
+func CaptureSnapshot(computedStyles []string) *CaptureSnapshotParams {
+	return &CaptureSnapshotParams{
+		ComputedStyles: computedStyles,
 	}
 }
 
-// WithIncludeEventListeners whether or not to retrieve details of DOM
-// listeners (default false).
-func (p GetSnapshotParams) WithIncludeEventListeners(includeEventListeners bool) *GetSnapshotParams {
-	p.IncludeEventListeners = includeEventListeners
-	return &p
+// CaptureSnapshotReturns return values.
+type CaptureSnapshotReturns struct {
+	Documents []*DocumentSnapshot `json:"documents,omitempty"` // The nodes in the DOM tree. The DOMNode at index 0 corresponds to the root document.
+	Strings   []string            `json:"strings,omitempty"`   // Shared string table that all string properties refer to with indexes.
 }
 
-// WithIncludePaintOrder whether to determine and include the paint order
-// index of LayoutTreeNodes (default false).
-func (p GetSnapshotParams) WithIncludePaintOrder(includePaintOrder bool) *GetSnapshotParams {
-	p.IncludePaintOrder = includePaintOrder
-	return &p
-}
-
-// WithIncludeUserAgentShadowTree whether to include UA shadow tree in the
-// snapshot (default false).
-func (p GetSnapshotParams) WithIncludeUserAgentShadowTree(includeUserAgentShadowTree bool) *GetSnapshotParams {
-	p.IncludeUserAgentShadowTree = includeUserAgentShadowTree
-	return &p
-}
-
-// GetSnapshotReturns return values.
-type GetSnapshotReturns struct {
-	DomNodes        []*DOMNode        `json:"domNodes,omitempty"`        // The nodes in the DOM tree. The DOMNode at index 0 corresponds to the root document.
-	LayoutTreeNodes []*LayoutTreeNode `json:"layoutTreeNodes,omitempty"` // The nodes in the layout tree.
-	ComputedStyles  []*ComputedStyle  `json:"computedStyles,omitempty"`  // Whitelisted ComputedStyle properties for each node in the layout tree.
-}
-
-// Do executes DOMSnapshot.getSnapshot against the provided context.
+// Do executes DOMSnapshot.captureSnapshot against the provided context.
 //
 // returns:
-//   domNodes - The nodes in the DOM tree. The DOMNode at index 0 corresponds to the root document.
-//   layoutTreeNodes - The nodes in the layout tree.
-//   computedStyles - Whitelisted ComputedStyle properties for each node in the layout tree.
-func (p *GetSnapshotParams) Do(ctxt context.Context, h cdp.Executor) (domNodes []*DOMNode, layoutTreeNodes []*LayoutTreeNode, computedStyles []*ComputedStyle, err error) {
+//   documents - The nodes in the DOM tree. The DOMNode at index 0 corresponds to the root document.
+//   strings - Shared string table that all string properties refer to with indexes.
+func (p *CaptureSnapshotParams) Do(ctxt context.Context, h cdp.Executor) (documents []*DocumentSnapshot, strings []string, err error) {
 	// execute
-	var res GetSnapshotReturns
-	err = h.Execute(ctxt, CommandGetSnapshot, p, &res)
+	var res CaptureSnapshotReturns
+	err = h.Execute(ctxt, CommandCaptureSnapshot, p, &res)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	return res.DomNodes, res.LayoutTreeNodes, res.ComputedStyles, nil
+	return res.Documents, res.Strings, nil
 }
 
 // Command names.
 const (
-	CommandGetSnapshot = "DOMSnapshot.getSnapshot"
+	CommandDisable         = "DOMSnapshot.disable"
+	CommandEnable          = "DOMSnapshot.enable"
+	CommandCaptureSnapshot = "DOMSnapshot.captureSnapshot"
 )

@@ -29,7 +29,7 @@ import (
 )
 
 // GetTests extracts the junit results from a sonobuoy archive and returns the requested tests.
-func (c *SonobuoyClient) GetTests(reader io.Reader, show string) ([]reporters.JUnitTestCase, error) {
+func (*SonobuoyClient) GetTests(reader io.Reader, show string) ([]reporters.JUnitTestCase, error) {
 	read := results.NewReaderWithVersion(reader, "irrelevant")
 	junitResults := reporters.JUnitTestSuite{}
 	err := read.WalkFiles(func(path string, info os.FileInfo, err error) error {

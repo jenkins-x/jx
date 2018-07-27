@@ -6,8 +6,7 @@ const (
 	KindGitea           = "gitea"
 	KindGitlab          = "gitlab"
 	KindGitHub          = "github"
-
-	DateFormat = "January 2 2006"
+	KindUnknown         = "unknown"
 
 	BitbucketCloudURL = "https://bitbucket.org"
 )

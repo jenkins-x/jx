@@ -22,7 +22,7 @@ import (
 	"github.com/heptio/sonobuoy/pkg/config"
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -78,19 +78,27 @@ type PreflightConfig struct {
 	Namespace string
 }
 
+// SonobuoyKubeAPIClient is the interface Sonobuoy uses to communicate with a kube-apiserver.
+type SonobuoyKubeAPIClient interface {
+	CreateObject(*unstructured.Unstructured) (*unstructured.Unstructured, error)
+	Name(*unstructured.Unstructured) (string, error)
+	Namespace(*unstructured.Unstructured) (string, error)
+	ResourceVersion(*unstructured.Unstructured) (string, error)
+}
+
 // SonobuoyClient is a high-level interface to Sonobuoy operations.
 type SonobuoyClient struct {
 	RestConfig    *rest.Config
 	client        kubernetes.Interface
-	dynamicClient dynamic.ClientPool
+	dynamicClient SonobuoyKubeAPIClient
 }
 
 // NewSonobuoyClient creates a new SonobuoyClient
-func NewSonobuoyClient(restConfig *rest.Config) (*SonobuoyClient, error) {
+func NewSonobuoyClient(restConfig *rest.Config, skc SonobuoyKubeAPIClient) (*SonobuoyClient, error) {
 	sc := &SonobuoyClient{
 		RestConfig:    restConfig,
 		client:        nil,
-		dynamicClient: nil,
+		dynamicClient: skc,
 	}
 	return sc, nil
 }
@@ -107,14 +115,6 @@ func (s *SonobuoyClient) Client() (kubernetes.Interface, error) {
 	return s.client, nil
 }
 
-// DynamicClientPool creates or retrieves an existing dynamic client from the SonobuoyClient's RESTConfig.
-func (s *SonobuoyClient) DynamicClientPool() dynamic.ClientPool {
-	if s.dynamicClient == nil {
-		s.dynamicClient = dynamic.NewDynamicClientPool(s.RestConfig)
-	}
-	return s.dynamicClient
-}
-
 // Make sure SonobuoyClient implements the interface
 var _ Interface = &SonobuoyClient{}
 
@@ -128,7 +128,7 @@ type Interface interface {
 	// GenerateManifest fills in a template with a Sonobuoy config
 	GenerateManifest(cfg *GenConfig) ([]byte, error)
 	// RetrieveResults copies results from a sonobuoy run into a Reader in tar format.
-	RetrieveResults(cfg *RetrieveConfig) (io.Reader, error)
+	RetrieveResults(cfg *RetrieveConfig) (io.Reader, <-chan error)
 	// GetStatus determines the status of the sonobuoy run in order to assist the user.
 	GetStatus(namespace string) (*aggregation.Status, error)
 	// LogReader returns a reader that contains a merged stream of sonobuoy logs.

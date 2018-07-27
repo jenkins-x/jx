@@ -5,23 +5,23 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -47,6 +47,8 @@ type InitFlags struct {
 	ExternalIP                 string
 	DraftClient                bool
 	HelmClient                 bool
+	Helm3                      bool
+	HelmBin                    string
 	RecreateExistingDraftRepos bool
 	GlobalTiller               bool
 	SkipIngress                bool
@@ -59,10 +61,10 @@ const (
 	optionNamespace       = "namespace"
 	optionTillerNamespace = "tiller-namespace"
 
-	jenkinsPackURL = "https://github.com/jenkins-x/draft-packs"
+	JenkinsBuildPackURL = "https://github.com/jenkins-x/draft-packs.git"
 
 	INGRESS_SERVICE_NAME    = "jxing-nginx-ingress-controller"
-	DEFAULT_CHARTMUSEUM_URL = "http://chartmuseum.build.cd.jenkins-x.io"
+	DEFAULT_CHARTMUSEUM_URL = "https://chartmuseum.build.cd.jenkins-x.io"
 )
 
 var (
@@ -77,7 +79,7 @@ var (
 
 // NewCmdInit creates a command object for the generic "init" action, which
 // primes a kubernetes cluster so it's ready for jenkins x to be installed
-func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdInit(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &InitOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -95,7 +97,7 @@ func NewCmdInit(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -124,6 +126,7 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.Flags.GlobalTiller, "global-tiller", "", true, "Whether or not to use a cluster global tiller")
 	cmd.Flags().BoolVarP(&options.Flags.SkipIngress, "skip-ingress", "", false, "Dont install an ingress controller")
 	cmd.Flags().BoolVarP(&options.Flags.SkipTiller, "skip-tiller", "", false, "Dont install a Helms Tiller service")
+	cmd.Flags().BoolVarP(&options.Flags.Helm3, "helm3", "", false, "Use helm3 to install Jenkins X which does not use Tiller")
 	cmd.Flags().BoolVarP(&options.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the kubernetes master IP address")
 }
 
@@ -157,9 +160,9 @@ func (o *InitOptions) Run() error {
 	}
 
 	// draft init
-	err = o.initDraft()
+	_, err = o.initBuildPacks()
 	if err != nil {
-		log.Fatalf("draft init failed: %v", err)
+		log.Fatalf("initialise build packs failed: %v", err)
 		return err
 	}
 
@@ -177,63 +180,69 @@ func (o *InitOptions) Run() error {
 }
 
 func (o *InitOptions) enableClusterAdminRole() error {
-	f := o.Factory
-	client, _, err := f.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
 
-	user := o.Flags.Username
-	if user == "" {
-		config, _, err := kube.LoadConfig()
-		if err != nil {
+	if o.Flags.Username == "" {
+		o.Flags.Username, err = o.GetClusterUserName()
+		if err != err {
 			return err
 		}
-		if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
-			return fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
-		}
-		contextName := config.CurrentContext
-		if contextName == "" {
-			return fmt.Errorf("No kuberentes context selected. Please select one (e.g. via jx context) first")
-		}
-		context := config.Contexts[contextName]
-		if context == nil {
-			return fmt.Errorf("No kuberentes context available for context %s", contextName)
-		}
-		user = context.AuthInfo
 	}
-	if user == "" {
+	if o.Flags.Username == "" {
 		return util.MissingOption(optionUsername)
 	}
-	user = kube.ToValidName(user)
+	userFormatted := kube.ToValidName(o.Flags.Username)
 
 	role := o.Flags.UserClusterRole
-	clusterRoleBindingName := kube.ToValidName(user + "-" + role + "-binding")
+	clusterRoleBindingName := kube.ToValidName(userFormatted + "-" + role + "-binding")
 
-	_, err = client.RbacV1().ClusterRoleBindings().Get(clusterRoleBindingName, meta_v1.GetOptions{})
-	if err != nil {
-		o.Printf("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, user)
-		args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
-
-		err := o.retry(3, 10*time.Second, func() (err error) {
-			return o.runCommand("kubectl", args...)
-		})
-		if err != nil {
-			return err
-		}
-
-		o.Printf("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
+	clusterRoleBindingInterface := client.RbacV1().ClusterRoleBindings()
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: clusterRoleBindingName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "User",
+				Name:     o.Flags.Username,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     role,
+		},
 	}
-	return nil
+
+	return o.retry(3, 10*time.Second, func() (err error) {
+		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
+		if err != nil {
+			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, o.Flags.Username)
+
+			//args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
+
+			_, err = clusterRoleBindingInterface.Create(clusterRoleBinding)
+			if err == nil {
+				log.Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
+			}
+		}
+		return err
+	})
 }
 
 func (o *InitOptions) initHelm() error {
 	var err error
 
-	if !o.Flags.SkipTiller {
+	if o.Flags.Helm3 {
+		o.Flags.SkipTiller = true
+	}
 
-		f := o.Factory
-		client, curNs, err := f.CreateClient()
+	if !o.Flags.SkipTiller {
+		client, curNs, err := o.KubeClient()
 		if err != nil {
 			return err
 		}
@@ -274,11 +283,11 @@ func (o *InitOptions) initHelm() error {
 			roleName := "tiller-manager"
 			roleBindingName := "tiller-binding"
 
-			_, err = client.RbacV1().Roles(tillerNamespace).Get(roleName, meta_v1.GetOptions{})
+			_, err = client.RbacV1().Roles(tillerNamespace).Get(roleName, metav1.GetOptions{})
 			if err != nil {
 				// lets create a Role for tiller
 				role := &rbacv1.Role{
-					ObjectMeta: meta_v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      roleName,
 						Namespace: tillerNamespace,
 					},
@@ -294,13 +303,13 @@ func (o *InitOptions) initHelm() error {
 				if err != nil {
 					return fmt.Errorf("Failed to create Role %s in namespace %s: %s", roleName, tillerNamespace, err)
 				}
-				o.Printf("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+				log.Infof("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
-			_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, meta_v1.GetOptions{})
+			_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, metav1.GetOptions{})
 			if err != nil {
 				// lets create a RoleBinding for tiller
 				roleBinding := &rbacv1.RoleBinding{
-					ObjectMeta: meta_v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      roleBindingName,
 						Namespace: tillerNamespace,
 					},
@@ -321,13 +330,13 @@ func (o *InitOptions) initHelm() error {
 				if err != nil {
 					return fmt.Errorf("Failed to create RoleBinding %s in namespace %s: %s", roleName, tillerNamespace, err)
 				}
-				o.Printf("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+				log.Infof("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
 		}
 
 		running, err := kube.IsDeploymentRunning(client, "tiller-deploy", tillerNamespace)
 		if running {
-			o.Printf("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
+			log.Infof("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
 			return nil
 		}
 		if err == nil && !running {
@@ -335,13 +344,13 @@ func (o *InitOptions) initHelm() error {
 		}
 
 		if !running {
-			o.Printf("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
+			log.Infof("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
 
-			err = o.runCommand("helm", "init", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
+			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, false)
 			if err != nil {
 				return err
 			}
-			err = o.runCommand("helm", "init", "--upgrade", "--service-account", serviceAccountName, "--tiller-namespace", tillerNamespace)
+			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, true)
 			if err != nil {
 				return err
 			}
@@ -353,14 +362,19 @@ func (o *InitOptions) initHelm() error {
 		}
 	}
 
-	if o.Flags.HelmClient || o.Flags.SkipTiller {
-		err = o.runCommand("helm", "init", "--client-only")
+	if o.Flags.Helm3 {
+		err = o.Helm().Init(false, "", "", false)
+		if err != nil {
+			return err
+		}
+	} else if o.Flags.HelmClient || o.Flags.SkipTiller {
+		err = o.Helm().Init(true, "", "", false)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = o.runCommand("helm", "repo", "add", "jenkins-x", DEFAULT_CHARTMUSEUM_URL)
+	err = o.Helm().AddRepo("jenkins-x", DEFAULT_CHARTMUSEUM_URL)
 	if err != nil {
 		return err
 	}
@@ -369,25 +383,43 @@ func (o *InitOptions) initHelm() error {
 	return nil
 }
 
-func (o *InitOptions) initDraft() error {
+// initBuildPacks initalise the build packs
+func (o *InitOptions) initBuildPacks() (string, error) {
+	settings, err := o.TeamSettings()
+
+	if err != nil {
+		return "", err
+	}
+
+	packUrl := settings.BuildPackURL
+	packRef := settings.BuildPackRef
+
+	u, err := url.Parse(strings.TrimSuffix(packUrl, ".git"))
+	if err != nil {
+		return "", fmt.Errorf("Failed to parse build pack URL: %s: %s", packUrl, err)
+	}
 
 	draftDir, err := util.DraftDir()
 	if err != nil {
-		return err
+		return "", err
 	}
-	dir := filepath.Join(draftDir, "packs", "github.com", "jenkins-x", "draft-packs")
-
+	dir := filepath.Join(draftDir, "packs", u.Host, u.Path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("Could not create %s: %s", dir, err)
+		return "", fmt.Errorf("Could not create %s: %s", dir, err)
 	}
 
-	return gits.GitCloneOrPull(jenkinsPackURL, dir)
-
+	err = o.Git().CloneOrPull(packUrl, dir)
+	if err != nil {
+		return "", err
+	}
+	if packRef != "master" {
+		err = o.Git().CheckoutRemoteBranch(dir, packRef)
+	}
+	return filepath.Join(dir, "packs"), err
 }
 
 func (o *InitOptions) initIngress() error {
-	f := o.Factory
-	client, _, err := f.CreateClient()
+	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -441,7 +473,7 @@ func (o *InitOptions) initIngress() error {
 	}
 
 	if isOpenShiftProvider(o.Flags.Provider) {
-		o.Printf("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress\n")
+		log.Infoln("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
 		return nil
 	}
 
@@ -510,8 +542,8 @@ func (o *InitOptions) initIngress() error {
 
 		i := 0
 		for {
-			//err = o.runCommand("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true", "--set", "rbac.serviceAccountName="+ingressServiceAccount)
-			err = o.runCommandVerbose("helm", "install", "--name", "jxing", "stable/nginx-ingress", "--namespace", ingressNamespace, "--set", "rbac.create=true")
+			values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
+			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values, nil)
 			if err != nil {
 				if i >= 3 {
 					break
@@ -533,21 +565,27 @@ func (o *InitOptions) initIngress() error {
 	}
 
 	if o.Flags.Provider != MINIKUBE && o.Flags.Provider != MINISHIFT && o.Flags.Provider != OPENSHIFT {
+
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
+
+		if o.Flags.Provider == OKE {
+			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account\n")
+		}
 
 		if o.Flags.Provider == GKE {
 			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s\n", util.ColorInfo("gcloud compute project-info describe"))
 		}
+
 		externalIP := o.Flags.ExternalIP
 		if externalIP == "" && o.Flags.OnPremise {
 			// lets find the kubernetes master IP
-			config, err := f.CreateKubeConfig()
+			config, err := o.Factory.CreateKubeConfig()
 			if err != nil {
 				return err
 			}
 			host := config.Host
 			if host == "" {
-				o.warnf("No API server host is defined in the local kube config!\n")
+				log.Warnf("No API server host is defined in the local kube config!\n")
 			} else {
 				externalIP, err = util.UrlHostNameWithoutPort(host)
 				if err != nil {
@@ -563,10 +601,10 @@ func (o *InitOptions) initIngress() error {
 			}
 			log.Infof("External loadbalancer created\n")
 		} else {
-			o.Printf("Using external IP: %s\n", util.ColorInfo(externalIP))
+			log.Infof("Using external IP: %s\n", util.ColorInfo(externalIP))
 		}
 
-		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Domain, ingressNamespace, o.Flags.IngressService, externalIP)
+		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Provider, ingressNamespace, o.Flags.IngressService, externalIP)
 		if err != nil {
 			return err
 		}
@@ -588,10 +626,9 @@ func (o *InitOptions) ingressNamespace() string {
 // validateGit validates that git is configured correctly
 func (o *InitOptions) validateGit() error {
 	// lets ignore errors which indicate no value set
-	userName, _ := o.getCommandOutput("", "git", "config", "--global", "--get", "user.name")
-	userEmail, _ := o.getCommandOutput("", "git", "config", "--global", "--get", "user.email")
+	userName, _ := o.Git().Username("")
+	userEmail, _ := o.Git().Email("")
 	var err error
-
 	if userName == "" {
 		if !o.BatchMode {
 			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true)
@@ -602,7 +639,7 @@ func (o *InitOptions) validateGit() error {
 		if userName == "" {
 			return fmt.Errorf("No git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
 		}
-		err = o.runCommandFromDir("", "git", "config", "--global", "--add", "user.name", userName)
+		err = o.Git().SetUsername("", userName)
 		if err != nil {
 			return err
 		}
@@ -617,13 +654,24 @@ func (o *InitOptions) validateGit() error {
 		if userEmail == "" {
 			return fmt.Errorf("No git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
 		}
-		err = o.runCommandFromDir("", "git", "config", "--global", "--add", "user.email", userEmail)
+		err = o.Git().SetEmail("", userEmail)
 		if err != nil {
 			return err
 		}
 	}
-	o.Printf("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
+	log.Infof("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
 	return nil
+}
+
+func (o *InitOptions) HelmBinary() string {
+	if o.Flags.Helm3 {
+		return "helm3"
+	}
+	testHelmBin := o.Flags.HelmBin
+	if testHelmBin != "" {
+		return testHelmBin
+	}
+	return "helm"
 }
 
 func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, provider string, ingressNamespace string, ingressService string, externalIP string) (string, error) {
@@ -643,11 +691,11 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			address = ip
 		} else {
 			info := util.ColorInfo
-			o.Printf("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s\n", info(ingressNamespace), info(ingressService))
+			log.Infof("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s\n", info(ingressNamespace), info(ingressService))
 			if provider == KUBERNETES {
-				o.Printf("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s\n", info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
+				log.Infof("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s\n", info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
 			}
-			svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, meta_v1.GetOptions{})
+			svc, err := client.CoreV1().Services(ingressNamespace).Get(ingressService, metav1.GetOptions{})
 			if err != nil {
 				return "", err
 			}
@@ -663,17 +711,17 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		}
 	}
 	defaultDomain := address
-	if address != "" {
+	if provider != AWS && provider != EKS && address != "" {
 		addNip := true
 		aip := net.ParseIP(address)
 		if aip == nil {
-			o.Printf("The Ingress address %s is not an IP address. We recommend we try resolve it to a public IP address and use that for the domain to access services externally.\n", util.ColorInfo(address))
+			log.Infof("The Ingress address %s is not an IP address. We recommend we try resolve it to a public IP address and use that for the domain to access services externally.\n", util.ColorInfo(address))
 
 			addressIP := ""
 			if util.Confirm("Would you like wait and resolve this address to an IP address and use it for the domain?", true,
 				"Should we convert "+address+" to an IP address so we can access resources externally") {
 
-				o.Printf("Waiting for %s to be resolvable to an IP address...\n", util.ColorInfo(address))
+				log.Infof("Waiting for %s to be resolvable to an IP address...\n", util.ColorInfo(address))
 				f := func() error {
 					ips, err := net.LookupIP(address)
 					if err == nil {
@@ -692,9 +740,9 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			}
 			if addressIP == "" {
 				addNip = false
-				o.warnf("Still not managed to resolve address %s into an IP address. Please try figure out the domain by hand\n", address)
+				log.Infof("Still not managed to resolve address %s into an IP address. Please try figure out the domain by hand\n", address)
 			} else {
-				o.Printf("%s resolved to IP %s\n", util.ColorInfo(address), util.ColorInfo(addressIP))
+				log.Infof("%s resolved to IP %s\n", util.ColorInfo(address), util.ColorInfo(addressIP))
 				address = addressIP
 			}
 		}
@@ -708,7 +756,33 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			return defaultDomain, nil
 		}
 		log.Successf("You can now configure a wildcard DNS pointing to the new loadbalancer address %s", address)
-		log.Infof("If you don't have a wildcard DNS yet you can use the default %s", defaultDomain)
+		log.Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic dns nip.io.")
+		log.Infof("\nOnce you have a customer domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
+
+		if provider == AWS || provider == EKS {
+			log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your kubernetes cluster\n")
+			log.Infof("If you do not have a custom DNS name you can use yet you can register a new one here: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
+
+			for {
+				if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
+					"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.") {
+					customDomain := ""
+					prompt := &survey.Input{
+						Message: "Your custom DNS name: ",
+						Help:    "Enter your custom domain that we can use to setup a Route 53 ALIAS record to point at the ELB host: " + address,
+					}
+					survey.AskOne(prompt, &customDomain, nil)
+					if customDomain != "" {
+						err := amazon.RegisterAwsCustomDomain(customDomain, address)
+						return customDomain, err
+					}
+				} else {
+					break
+				}
+			}
+		}
+
+		log.Infof("\nIf you don't have a wildcard DNS setup then setup a new CNAME and point it at: %s then use the DNS domain in the next input...\n", defaultDomain)
 
 		if domain == "" {
 			prompt := &survey.Input{

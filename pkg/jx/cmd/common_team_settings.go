@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/pkg/errors"
 )
 
 type BranchPatterns struct {
@@ -13,8 +14,7 @@ type BranchPatterns struct {
 }
 
 const (
-	defaultBuildPackURL = "https://jenkins-x/draft-packs.git"
-	defaultBuildPackRef = "master"
+	defaultBuildPackRef = "2.1"
 	defaultHelmBin      = "helm"
 )
 
@@ -26,12 +26,12 @@ func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
 	}
 	err = o.registerEnvironmentCRD()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to register Environment CRD: %s", err)
 	}
 
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to setup dev Environment in namespace %s: %s", ns, err)
 	}
 	if env == nil {
 		return nil, fmt.Errorf("No Development environment found for namespace %s", ns)
@@ -39,7 +39,7 @@ func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
 
 	teamSettings := &env.Spec.TeamSettings
 	if teamSettings.BuildPackURL == "" {
-		teamSettings.BuildPackURL = defaultBuildPackURL
+		teamSettings.BuildPackURL = JenkinsBuildPackURL
 	}
 	if teamSettings.BuildPackRef == "" {
 		teamSettings.BuildPackRef = defaultBuildPackRef
@@ -87,18 +87,24 @@ func (o *CommonOptions) TeamHelmBin() (string, error) {
 
 // ModifyDevEnvironment modifies the development environment settings
 func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) error) error {
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the api extensions client")
+	}
+	kube.RegisterEnvironmentCRD(apisClient)
+
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create the jx client")
 	}
 	err = o.registerEnvironmentCRD()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to register the environment CRD")
 	}
 
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to setup the dev environment for namespace '%s'", ns)
 	}
 	if env == nil {
 		return fmt.Errorf("No Development environment found for namespace %s", ns)

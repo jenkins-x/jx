@@ -92,7 +92,8 @@ func (suite *BitbucketCloudProviderTestSuite) SetupSuite() {
 		ApiToken: "0123456789abdef",
 	}
 
-	bp, err := NewBitbucketCloudProvider(&as, &ua)
+	git := NewGitCLI()
+	bp, err := NewBitbucketCloudProvider(&as, &ua, git)
 
 	suite.Require().NotNil(bp)
 	suite.Require().Nil(err)
@@ -185,7 +186,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestRenameRepository() {
 
 func (suite *BitbucketCloudProviderTestSuite) TestCreatePullRequest() {
 	args := GitPullRequestArguments{
-		GitRepositoryInfo: &GitRepositoryInfo{Name: "test-repo"},
+		GitRepositoryInfo: &GitRepositoryInfo{Name: "test-repo", Organisation: "test-user"},
 		Head:              "83777f6",
 		Base:              "77d0a923f297",
 		Title:             "Test Pull Request",
@@ -285,7 +286,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestMergePullRequest() {
 func (suite *BitbucketCloudProviderTestSuite) TestCreateWebHook() {
 
 	data := &GitWebHookArguments{
-		Repo: &GitRepositoryInfo{Name: "test-repo"},
+		Repo: &GitRepositoryInfo{Name: "test-repo", Organisation: "test-user"},
 		URL:  "https://my-jenkins.example.com/bitbucket-webhook/",
 	}
 	err := suite.provider.CreateWebHook(data)

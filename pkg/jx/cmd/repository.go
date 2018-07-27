@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 )
 
 type RepoOptions struct {
@@ -34,7 +34,7 @@ var (
 `)
 )
 
-func NewCmdRepo(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdRepo(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &RepoOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -52,7 +52,7 @@ func NewCmdRepo(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)
@@ -73,7 +73,7 @@ func (o *RepoOptions) Run() error {
 	if fullURL == "" {
 		return fmt.Errorf("Could not find URL from git repository %s", gitInfo.URL)
 	}
-	o.Printf("repository: %s\n", util.ColorInfo(fullURL))
+	log.Infof("repository: %s\n", util.ColorInfo(fullURL))
 	if !o.OnlyViewURL {
 		browser.OpenURL(fullURL)
 	}

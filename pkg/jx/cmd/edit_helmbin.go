@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -33,12 +33,10 @@ var (
 // EditHelmBinOptions the options for the create spring command
 type EditHelmBinOptions struct {
 	CreateOptions
-
-	BranchPattern string
 }
 
 // NewCmdEditHelmBin creates a command object for the "create" command
-func NewCmdEditHelmBin(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEditHelmBin(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &EditHelmBinOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -59,7 +57,7 @@ func NewCmdEditHelmBin(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -80,7 +78,7 @@ func (o *EditHelmBinOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.HelmBinary = arg
-		o.Printf("Setting the helm binary name to: %s\n", util.ColorInfo(arg))
+		log.Infof("Setting the helm binary name to: %s\n", util.ColorInfo(arg))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

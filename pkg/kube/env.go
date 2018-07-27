@@ -16,9 +16,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -27,7 +28,9 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, ns string, jxClient *versioned.Clientset, kubeClient kubernetes.Interface, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (gits.GitProvider, error) {
+func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment,
+	config *v1.Environment, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string,
+	gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter) (gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	name := data.Name
 	createMode := name == ""
@@ -264,7 +267,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 
 				if createRepo {
 					showUrlEdit = false
-					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix)
+					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git)
 					if err != nil {
 						return nil, err
 					}
@@ -328,9 +331,10 @@ func GetTeamExposecontrollerConfig(kubeClient kubernetes.Interface, ns string) (
 	return m, nil
 }
 
-func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string, environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string) (string, gits.GitProvider, error) {
+func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string,
+	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter) (string, gits.GitProvider, error) {
 	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
-	details, err := gits.PickNewGitRepository(out, batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil)
+	details, err := gits.PickNewGitRepository(out, batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil, git)
 	if err != nil {
 		return "", nil, err
 	}
@@ -350,23 +354,23 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 		if err != nil {
 			return "", nil, err
 		}
-		pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
+		pushGitURL, err := git.CreatePushURL(repo.CloneURL, details.User)
 		if err != nil {
 			return "", nil, err
 		}
-		err = gits.GitClone(pushGitURL, dir)
+		err = git.Clone(pushGitURL, dir)
 		if err != nil {
 			return "", nil, err
 		}
-		err = modifyNamespace(out, dir, env)
+		err = modifyNamespace(out, dir, env, git)
 		if err != nil {
 			return "", nil, err
 		}
-		err = addValues(out, dir, helmValues)
+		err = addValues(out, dir, helmValues, git)
 		if err != nil {
 			return "", nil, err
 		}
-		err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+		err = git.PushMaster(dir)
 		if err != nil {
 			return "", nil, err
 		}
@@ -399,27 +403,27 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 				if err != nil {
 					return "", nil, err
 				}
-				err = gits.GitClone(repo.CloneURL, dir)
+				err = git.Clone(repo.CloneURL, dir)
 				if err != nil {
 					return "", nil, err
 				}
-				err = gits.SetRemoteURL(dir, "upstream", forkEnvGitURL)
+				err = git.SetRemoteURL(dir, "upstream", forkEnvGitURL)
 				if err != nil {
 					return "", nil, err
 				}
-				err = gits.GitCmd(dir, "pull", "-r", "upstream", "master")
+				err = git.PullUpstream(dir)
 				if err != nil {
 					return "", nil, err
 				}
-				err = modifyNamespace(out, dir, env)
+				err = modifyNamespace(out, dir, env, git)
 				if err != nil {
 					return "", nil, err
 				}
-				err = addValues(out, dir, helmValues)
+				err = addValues(out, dir, helmValues, git)
 				if err != nil {
 					return "", nil, err
 				}
-				err = gits.GitPush(dir)
+				err = git.Push(dir)
 				if err != nil {
 					return "", nil, err
 				}
@@ -439,31 +443,31 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 			if err != nil {
 				return "", nil, err
 			}
-			err = gits.GitClone(forkEnvGitURL, dir)
+			err = git.Clone(forkEnvGitURL, dir)
 			if err != nil {
 				return "", nil, err
 			}
-			pushGitURL, err := gits.GitCreatePushURL(repo.CloneURL, details.User)
+			pushGitURL, err := git.CreatePushURL(repo.CloneURL, details.User)
 			if err != nil {
 				return "", nil, err
 			}
-			err = gits.GitCmd(dir, "remote", "add", "upstream", forkEnvGitURL)
+			err = git.AddRemote(dir, "upstream", forkEnvGitURL)
 			if err != nil {
 				return "", nil, err
 			}
-			err = gits.GitCmd(dir, "remote", "set-url", "origin", pushGitURL)
+			err = git.UpdateRemote(dir, pushGitURL)
 			if err != nil {
 				return "", nil, err
 			}
-			err = modifyNamespace(out, dir, env)
+			err = modifyNamespace(out, dir, env, git)
 			if err != nil {
 				return "", nil, err
 			}
-			err = addValues(out, dir, helmValues)
+			err = addValues(out, dir, helmValues, git)
 			if err != nil {
 				return "", nil, err
 			}
-			err = gits.GitCmd(dir, "push", "-u", "origin", "master")
+			err = git.PushMaster(dir)
 			if err != nil {
 				return "", nil, err
 			}
@@ -473,27 +477,27 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 	return repo.CloneURL, provider, nil
 }
 
-func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
+func modifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gitter) error {
 	ns := env.Spec.Namespace
 	if ns == "" {
 		return fmt.Errorf("No Namespace is defined for Environment %s", env.Name)
 	}
+
+	// makefile changes
 	file := filepath.Join(dir, "Makefile")
 	exists, err := util.FileExists(file)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		fmt.Printf(util.ColorWarning("WARNING: Could not find a Makefile in %s\n"), dir)
+		log.Warnf("WARNING: Could not find a Makefile in %s\n", dir)
 		return nil
 	}
 	input, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
 	}
-
 	lines := strings.Split(string(input), "\n")
-
 	err = replaceMakeVariable(lines, "NAMESPACE", "\""+ns+"\"")
 	if err != nil {
 		return err
@@ -503,21 +507,47 @@ func modifyNamespace(out io.Writer, dir string, env *v1.Environment) error {
 	if err != nil {
 		return err
 	}
-	err = gits.GitAdd(dir, "*")
+
+	// Jenkinsfile changes
+	file = filepath.Join(dir, "Jenkinsfile")
+	exists, err = util.FileExists(file)
 	if err != nil {
 		return err
 	}
-	changes, err := gits.HasChanges(dir)
+	if !exists {
+		log.Warnf("WARNING: Could not find a Jenkinsfile in %s\n", dir)
+	} else {
+		input, err := ioutil.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		lines := strings.Split(string(input), "\n")
+		err = replaceEnvVar(lines, "DEPLOY_NAMESPACE", ns)
+		if err != nil {
+			return err
+		}
+		output := strings.Join(lines, "\n")
+		err = ioutil.WriteFile(file, []byte(output), 0644)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = git.Add(dir, "*")
+	if err != nil {
+		return err
+	}
+	changes, err := git.HasChanges(dir)
 	if err != nil {
 		return err
 	}
 	if changes {
-		return gits.GitCommitDir(dir, "Use correct namespace for environment")
+		return git.CommitDir(dir, "Use correct namespace for environment")
 	}
 	return nil
 }
 
-func addValues(out io.Writer, dir string, values config.HelmValuesConfig) error {
+func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gits.Gitter) error {
 
 	file := filepath.Join(dir, "env", "values.yaml")
 	exists, err := util.FileExists(file)
@@ -544,16 +574,16 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig) error 
 
 	f.Close()
 
-	err = gits.GitAdd(dir, "*")
+	err = git.Add(dir, "*")
 	if err != nil {
 		return err
 	}
-	changes, err := gits.HasChanges(dir)
+	changes, err := git.HasChanges(dir)
 	if err != nil {
 		return err
 	}
 	if changes {
-		return gits.GitCommitDir(dir, "Add environment configuration")
+		return git.CommitDir(dir, "Add environment configuration")
 	}
 	return nil
 }
@@ -570,8 +600,23 @@ func replaceMakeVariable(lines []string, name string, value string) error {
 	return nil
 }
 
+func replaceEnvVar(lines []string, name string, value string) error {
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, name) {
+			remain := strings.TrimSpace(strings.TrimPrefix(trimmed, name))
+			if strings.HasPrefix(remain, "=") {
+				// lets preserve whitespace
+				idx := strings.Index(line, name)
+				lines[i] = line[0:idx] + name + ` = "` + value + `"`
+			}
+		}
+	}
+	return nil
+}
+
 // GetEnvironmentNames returns the sorted list of environment names
-func GetEnvironmentNames(jxClient *versioned.Clientset, ns string) ([]string, error) {
+func GetEnvironmentNames(jxClient versioned.Interface, ns string) ([]string, error) {
 	envNames := []string{}
 	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -593,7 +638,7 @@ func IsPreviewEnvironment(env *v1.Environment) bool {
 }
 
 // GetFilteredEnvironmentNames returns the sorted list of environment names
-func GetFilteredEnvironmentNames(jxClient *versioned.Clientset, ns string, fn func(environment *v1.Environment) bool) ([]string, error) {
+func GetFilteredEnvironmentNames(jxClient versioned.Interface, ns string, fn func(environment *v1.Environment) bool) ([]string, error) {
 	envNames := []string{}
 	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -611,7 +656,7 @@ func GetFilteredEnvironmentNames(jxClient *versioned.Clientset, ns string, fn fu
 }
 
 // GetOrderedEnvironments returns a map of the environments along with the correctly ordered  names
-func GetOrderedEnvironments(jxClient *versioned.Clientset, ns string) (map[string]*v1.Environment, []string, error) {
+func GetOrderedEnvironments(jxClient versioned.Interface, ns string) (map[string]*v1.Environment, []string, error) {
 	m := map[string]*v1.Environment{}
 
 	envNames := []string{}
@@ -632,7 +677,7 @@ func GetOrderedEnvironments(jxClient *versioned.Clientset, ns string) (map[strin
 }
 
 // GetEnvironments returns a map of the environments along with a sorted list of names
-func GetEnvironments(jxClient *versioned.Clientset, ns string) (map[string]*v1.Environment, []string, error) {
+func GetEnvironments(jxClient versioned.Interface, ns string) (map[string]*v1.Environment, []string, error) {
 	m := map[string]*v1.Environment{}
 
 	envNames := []string{}
@@ -653,7 +698,7 @@ func GetEnvironments(jxClient *versioned.Clientset, ns string) (map[string]*v1.E
 }
 
 // GetEnvironments returns the namespace name for a given environment
-func GetEnvironmentNamespace(jxClient *versioned.Clientset, ns, environment string) (string, error) {
+func GetEnvironmentNamespace(jxClient versioned.Interface, ns, environment string) (string, error) {
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(environment, metav1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -665,7 +710,7 @@ func GetEnvironmentNamespace(jxClient *versioned.Clientset, ns, environment stri
 }
 
 // GetEditEnvironmentNamespace returns the namespace of the current users edit environment
-func GetEditEnvironmentNamespace(jxClient *versioned.Clientset, ns string) (string, error) {
+func GetEditEnvironmentNamespace(jxClient versioned.Interface, ns string) (string, error) {
 	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return "", err
@@ -687,7 +732,7 @@ func GetEditEnvironmentNamespace(jxClient *versioned.Clientset, ns string) (stri
 func GetDevNamespace(kubeClient kubernetes.Interface, ns string) (string, string, error) {
 	env := ""
 	namespace, err := kubeClient.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
-	if err != err {
+	if err != nil {
 		return ns, env, err
 	}
 	if namespace == nil {
@@ -701,6 +746,24 @@ func GetDevNamespace(kubeClient kubernetes.Interface, ns string) (string, string
 		env = namespace.Labels[LabelEnvironment]
 	}
 	return ns, env, nil
+}
+
+// GetTeams returns the Teams the user is a member of
+func GetTeams(kubeClient kubernetes.Interface) ([]*corev1.Namespace, []string, error) {
+	names := []string{}
+	answer := []*corev1.Namespace{}
+	namespaceList, err := kubeClient.CoreV1().Namespaces().List(metav1.ListOptions{})
+	if err != err {
+		return answer, names, err
+	}
+	for idx, namespace := range namespaceList.Items {
+		if namespace.Labels[LabelEnvironment] == LabelValueDevEnvironment {
+			answer = append(answer, &namespaceList.Items[idx])
+			names = append(names, namespace.Name)
+		}
+	}
+	sort.Strings(names)
+	return answer, names, nil
 }
 
 func PickEnvironment(envNames []string, defaultEnv string) (string, error) {
@@ -740,4 +803,36 @@ func (a ByOrder) Less(i, j int) bool {
 
 func SortEnvironments(environments []v1.Environment) {
 	sort.Sort(ByOrder(environments))
+}
+
+// NewPermanentEnvironment creates a new permanent environment for testing
+func NewPermanentEnvironment(name string) *v1.Environment {
+	return &v1.Environment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "jx",
+		},
+		Spec: v1.EnvironmentSpec{
+			Label:             strings.Title(name),
+			Namespace:         "jx-" + name,
+			PromotionStrategy: v1.PromotionStrategyTypeAutomatic,
+			Kind:              v1.EnvironmentKindTypePermanent,
+		},
+	}
+}
+
+// NewPreviewEnvironment creates a new preview environment for testing
+func NewPreviewEnvironment(name string) *v1.Environment {
+	return &v1.Environment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "jx",
+		},
+		Spec: v1.EnvironmentSpec{
+			Label:             strings.Title(name),
+			Namespace:         "jx-preview-" + name,
+			PromotionStrategy: v1.PromotionStrategyTypeAutomatic,
+			Kind:              v1.EnvironmentKindTypePreview,
+		},
+	}
 }

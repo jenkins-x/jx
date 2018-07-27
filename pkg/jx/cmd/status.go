@@ -4,13 +4,13 @@ import (
 	"io"
 
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
 )
 
 type StatusOptions struct {
@@ -30,7 +30,7 @@ var (
 `)
 )
 
-func NewCmdStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStatus(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &StatusOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -48,7 +48,7 @@ func NewCmdStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -58,7 +58,7 @@ func NewCmdStatus(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 
 func (o *StatusOptions) Run() error {
 
-	client, namespace, err := o.Factory.CreateClient()
+	client, namespace, err := o.KubeClient()
 	if err != nil {
 
 		log.Warn("Unable to connect to Kubernetes cluster -  is one running ?")

@@ -15,9 +15,8 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -42,7 +41,7 @@ var (
 )
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCActivities(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGCActivities(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GCActivitiesOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -60,7 +59,7 @@ func NewCmdGCActivities(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "", 5, "Minimum number of Activities per application to keep")
@@ -88,7 +87,7 @@ func (o *GCActivitiesOptions) Run() error {
 		return nil
 	}
 
-	o.jclient, err = o.Factory.CreateJenkinsClient()
+	o.jclient, err = o.JenkinsClient()
 	if err != nil {
 		return err
 	}
@@ -140,6 +139,7 @@ func (o *GCActivitiesOptions) Run() error {
 		for i < len(builds)-o.RevisionHistoryLimit {
 			activityName := fmt.Sprintf("%s-%v", pipeline, builds[i])
 			activityName = strings.Replace(activityName, "/", "-", -1)
+			activityName = strings.Replace(activityName, "_", "-", -1)
 			activityName = strings.ToLower(activityName)
 
 			err = client.JenkinsV1().PipelineActivities(currentNs).Delete(activityName, metav1.NewDeleteOptions(0))

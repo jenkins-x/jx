@@ -64,7 +64,8 @@ func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *Gitla
 		ApiToken: "test",
 	}
 	// Gitlab provider that we want to test
-	provider, _ := withGitlabClient(new(auth.AuthServer), userAuth, client)
+	git := NewGitCLI()
+	provider, _ := withGitlabClient(new(auth.AuthServer), userAuth, client, git)
 
 	return mux, server, provider.(*GitlabProvider)
 }

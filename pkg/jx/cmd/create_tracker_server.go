@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -33,7 +33,7 @@ type CreateTrackerServerOptions struct {
 }
 
 // NewCmdCreateTrackerServer creates a command object for the "create" command
-func NewCmdCreateTrackerServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateTrackerServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateTrackerServerOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -54,7 +54,7 @@ func NewCmdCreateTrackerServer(f cmdutil.Factory, out io.Writer, errOut io.Write
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -102,7 +102,7 @@ func (o *CreateTrackerServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Added issue tracker server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
+	log.Infof("Added issue tracker server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 	return nil
 }
 

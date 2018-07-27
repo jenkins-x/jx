@@ -72,6 +72,15 @@ type ProjectComponent struct {
 	ProjectID           int    `json:"projectId" structs:"projectId,omitempty"`
 }
 
+// PermissionScheme represents the permission scheme for the project
+type PermissionScheme struct {
+	Expand      string `json:"expand" structs:"expand,omitempty"`
+	Self        string `json:"self" structs:"self,omitempty"`
+	ID          int    `json:"id" structs:"id,omitempty"`
+	Name        string `json:"name" structs:"name,omitempty"`
+	Description string `json:"description" structs:"description,omitempty"`
+}
+
 // GetList gets all projects form JIRA
 //
 // JIRA API docs: https://docs.atlassian.com/jira/REST/latest/#api/2/project-getAllProjects
@@ -128,4 +137,26 @@ func (s *ProjectService) Get(projectID string) (*Project, *Response, error) {
 	}
 
 	return project, resp, nil
+}
+
+// GetPermissionScheme returns a full representation of the permission scheme for the project
+// JIRA will attempt to identify the project by the projectIdOrKey path parameter.
+// This can be an project id, or an project key.
+//
+// JIRA API docs: https://docs.atlassian.com/jira/REST/latest/#api/2/project-getProject
+func (s *ProjectService) GetPermissionScheme(projectID string) (*PermissionScheme, *Response, error) {
+	apiEndpoint := fmt.Sprintf("/rest/api/2/project/%s/permissionscheme", projectID)
+	req, err := s.client.NewRequest("GET", apiEndpoint, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ps := new(PermissionScheme)
+	resp, err := s.client.Do(req, ps)
+	if err != nil {
+		jerr := NewJiraError(resp, err)
+		return nil, resp, jerr
+	}
+
+	return ps, resp, nil
 }

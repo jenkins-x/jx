@@ -7,8 +7,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +33,7 @@ type DeleteEnvOptions struct {
 }
 
 // NewCmdDeleteEnv creates a command object for the "delete repo" command
-func NewCmdDeleteEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteEnvOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -52,7 +52,7 @@ func NewCmdDeleteEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	//addDeleteFlags(cmd, &options.CreateOptions)
@@ -63,16 +63,15 @@ func NewCmdDeleteEnv(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.
 
 // Run implements the command
 func (o *DeleteEnvOptions) Run() error {
-	f := o.Factory
-	jxClient, currentNs, err := f.CreateJXClient()
+	jxClient, currentNs, err := o.JXClient()
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := f.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	apisClient, err := f.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -114,12 +113,12 @@ func (o *DeleteEnvOptions) Run() error {
 	return nil
 }
 
-func (o *DeleteEnvOptions) deleteEnviroment(jxClient *versioned.Clientset, ns string, name string, envMap map[string]*v1.Environment) error {
-	//err := jxClient.JenkinsV1().Environments(ns).Delete(name, &metav1.DeleteOptions{})
-	//if err != nil {
-	//	return err
-	//}
-	//o.Printf("Deleted environment %s\n", util.ColorInfo(name))
+func (o *DeleteEnvOptions) deleteEnviroment(jxClient versioned.Interface, ns string, name string, envMap map[string]*v1.Environment) error {
+	err := jxClient.JenkinsV1().Environments(ns).Delete(name, &metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	log.Infof("Deleted environment %s\n", util.ColorInfo(name))
 
 	env := envMap[name]
 	envNs := env.Spec.Namespace
@@ -128,9 +127,9 @@ func (o *DeleteEnvOptions) deleteEnviroment(jxClient *versioned.Clientset, ns st
 	}
 	kind := env.Spec.Kind
 	if o.DeleteNamespace || !kind.IsPermanent() {
-		return o.kubeClient.CoreV1().Namespaces().Delete(name, &metav1.DeleteOptions{})
+		return o.kubeClient.CoreV1().Namespaces().Delete(envNs, &metav1.DeleteOptions{})
 	}
-	o.Printf("To delete the associated namespace %s for environment %s then please run this command\n", name, envNs)
-	o.Printf(util.ColorInfo("  kubectl delete namespace %s\n"), envNs)
+	log.Infof("To delete the associated namespace %s for environment %s then please run this command\n", name, envNs)
+	log.Infof(util.ColorInfo("  kubectl delete namespace %s\n"), envNs)
 	return nil
 }

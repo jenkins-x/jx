@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/wbrefvem/go-bitbucket"
 )
 
@@ -23,6 +23,7 @@ type BitbucketCloudProvider struct {
 
 	Server auth.AuthServer
 	User   auth.UserAuth
+	Git    Gitter
 }
 
 var stateMap = map[string]string{
@@ -32,7 +33,7 @@ var stateMap = map[string]string{
 	"STOPPED":    "stopped",
 }
 
-func NewBitbucketCloudProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func NewBitbucketCloudProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 
 	basicAuth := bitbucket.BasicAuth{
@@ -46,6 +47,7 @@ func NewBitbucketCloudProvider(server *auth.AuthServer, user *auth.UserAuth) (Gi
 		User:     *user,
 		Username: user.Username,
 		Context:  basicAuthContext,
+		Git:      git,
 	}
 
 	cfg := bitbucket.NewConfiguration()
@@ -141,11 +143,12 @@ func (b *BitbucketCloudProvider) CreateRepository(
 	options := map[string]interface{}{}
 	options["body"] = bitbucket.Repository{
 		IsPrivate: private,
+		Scm:       "git",
 	}
 
 	result, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPost(
 		b.Context,
-		b.Username,
+		org,
 		name,
 		options,
 	)
@@ -179,7 +182,7 @@ func (b *BitbucketCloudProvider) DeleteRepository(org string, name string) error
 
 	_, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugDelete(
 		b.Context,
-		b.Username,
+		org,
 		name,
 		nil,
 	)
@@ -212,7 +215,7 @@ func (b *BitbucketCloudProvider) ForkRepository(
 
 	_, _, err = b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugForksGet(
 		b.Context,
-		b.Username,
+		originalOrg,
 		repo.Name,
 	)
 
@@ -223,7 +226,7 @@ func (b *BitbucketCloudProvider) ForkRepository(
 		for i := 0; i < 30; i++ {
 			_, _, err = b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugForksGet(
 				b.Context,
-				b.Username,
+				originalOrg,
 				repo.Name,
 			)
 
@@ -250,7 +253,7 @@ func (b *BitbucketCloudProvider) RenameRepository(
 
 	repo, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugPut(
 		b.Context,
-		b.Username,
+		org,
 		name,
 		options,
 	)
@@ -266,7 +269,7 @@ func (b *BitbucketCloudProvider) ValidateRepositoryName(org string, name string)
 
 	_, r, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugGet(
 		b.Context,
-		b.Username,
+		org,
 		name,
 	)
 
@@ -275,7 +278,7 @@ func (b *BitbucketCloudProvider) ValidateRepositoryName(org string, name string)
 	}
 
 	if err == nil {
-		return fmt.Errorf("repository %s/%s already exists", b.Username, name)
+		return fmt.Errorf("repository %s/%s already exists", org, name)
 	}
 
 	return err
@@ -286,7 +289,7 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 ) (*GitPullRequest, error) {
 
 	head := bitbucket.PullrequestEndpointBranch{Name: data.Head}
-	sourceFullName := fmt.Sprintf("%s/%s", b.Username, data.GitRepositoryInfo.Name)
+	sourceFullName := fmt.Sprintf("%s/%s", data.GitRepositoryInfo.Organisation, data.GitRepositoryInfo.Name)
 	sourceRepo := bitbucket.Repository{FullName: sourceFullName}
 	source := bitbucket.PullrequestEndpoint{
 		Repository: &sourceRepo,
@@ -310,7 +313,7 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 
 	pr, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPost(
 		b.Context,
-		b.Username,
+		data.GitRepositoryInfo.Organisation,
 		data.GitRepositoryInfo.Name,
 		options,
 	)
@@ -321,7 +324,7 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 
 	_, _, err = b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 		b.Context,
-		b.Username,
+		data.GitRepositoryInfo.Organisation,
 		data.GitRepositoryInfo.Name,
 		pr.Id,
 	)
@@ -331,7 +334,7 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 		for i := 0; i < 30; i++ {
 			_, _, err = b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 				b.Context,
-				b.Username,
+				data.GitRepositoryInfo.Organisation,
 				data.GitRepositoryInfo.Name,
 				pr.Id,
 			)
@@ -648,7 +651,7 @@ func (b *BitbucketCloudProvider) CreateWebHook(data *GitWebHookArguments) error 
 
 	_, _, err := b.Client.RepositoriesApi.RepositoriesUsernameRepoSlugHooksPost(
 		b.Context,
-		b.Username,
+		data.Repo.Organisation,
 		data.Repo.Name,
 		options,
 	)
@@ -778,12 +781,12 @@ func (b *BitbucketCloudProvider) CreateIssue(owner string, repo string, issue *G
 }
 
 func (b *BitbucketCloudProvider) AddPRComment(pr *GitPullRequest, comment string) error {
-	fmt.Println("WARNING: Bitbucket Cloud doesn't support adding PR comments via the REST API")
+	log.Warn("Bitbucket Cloud doesn't support adding PR comments via the REST API")
 	return nil
 }
 
 func (b *BitbucketCloudProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
-	fmt.Println("WARNING: Bitbucket Cloud doesn't support adding issue comments viea the REST API")
+	log.Warn("Bitbucket Cloud doesn't support adding issue comments viea the REST API")
 	return nil
 }
 
@@ -804,6 +807,10 @@ func (b *BitbucketCloudProvider) IsBitbucketCloud() bool {
 }
 
 func (b *BitbucketCloudProvider) IsBitbucketServer() bool {
+	return false
+}
+
+func (b *BitbucketCloudProvider) IsGerrit() bool {
 	return false
 }
 
@@ -848,13 +855,13 @@ func (p *BitbucketCloudProvider) UserInfo(username string) *GitUser {
 }
 
 func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
-	fmt.Println("Bitbucket Cloud doesn't support releases")
+	log.Warn("Bitbucket Cloud doesn't support releases")
 	return nil
 }
 
 func (p *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	answer := []*GitRelease{}
-	fmt.Println("Bitbucket Cloud doesn't support releases")
+	log.Warn("Bitbucket Cloud doesn't support releases")
 	return answer, nil
 }
 

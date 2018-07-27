@@ -5,7 +5,7 @@ import (
 	"runtime"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
@@ -30,7 +30,7 @@ type UpgradeCLIOptions struct {
 }
 
 // NewCmdUpgradeCLI defines the command
-func NewCmdUpgradeCLI(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeCLI(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &UpgradeCLIOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
@@ -51,7 +51,7 @@ func NewCmdUpgradeCLI(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific version to upgrade to")
@@ -71,11 +71,11 @@ func (o *UpgradeCLIOptions) Run() error {
 	}
 
 	if newVersion.EQ(currentVersion) {
-		o.Printf("You are already on the latest version of jx %s\n", util.ColorInfo(currentVersion.String()))
+		log.Infof("You are already on the latest version of jx %s\n", util.ColorInfo(currentVersion.String()))
 		return nil
 	}
 	if newVersion.LE(currentVersion) {
-		o.Printf("Your jx version %s is actually newer than the latest available version %s\n", util.ColorInfo(currentVersion.String()), util.ColorInfo(newVersion.String()))
+		log.Infof("Your jx version %s is actually newer than the latest available version %s\n", util.ColorInfo(currentVersion.String()), util.ColorInfo(newVersion.String()))
 		return nil
 	}
 

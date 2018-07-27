@@ -8,10 +8,9 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cve"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -37,13 +36,13 @@ var (
 		jx get cve # using current dir as the context for app name
 		jx get cve --app foo
 		jx get cve --app foo --version 1.0.0
-		jx get cve --app foo --env staging
+		jx get cve --app foo --environment staging
 		jx get cve --environment staging
 	`)
 )
 
 // NewCmdGetCVE creates the command
-func NewCmdGetCVE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetCVE(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetCVEOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
@@ -64,7 +63,7 @@ func NewCmdGetCVE(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -89,7 +88,7 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
 	}
 
-	jxClient, _, err := o.Factory.CreateJXClient()
+	jxClient, _, err := o.JXClient()
 	if err != nil {
 		return fmt.Errorf("cannot create jx client: %v", err)
 	}
@@ -102,7 +101,7 @@ func (o *GetCVEOptions) Run() error {
 
 	// if no flags are set try and guess the image name from the current directory
 	if o.ImageID == "" && o.ImageName == "" && o.Env == "" {
-		return fmt.Errorf("no --image-name, --image-id or --env flags set\n")
+		return fmt.Errorf("no --image-name, --image-id or --environment flags set\n")
 	}
 
 	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindCVE, externalURL)

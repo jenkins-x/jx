@@ -39,6 +39,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=jenkins.io, Version=v1
 	case v1.SchemeGroupVersion.WithResource("environments"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Jenkins().V1().Environments().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("environmentrolebindings"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Jenkins().V1().EnvironmentRoleBindings().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("gitservices"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Jenkins().V1().GitServices().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("pipelineactivities"):

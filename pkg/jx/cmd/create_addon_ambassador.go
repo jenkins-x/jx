@@ -1,11 +1,13 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"io"
+	"strings"
+
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -38,7 +40,7 @@ type CreateAddonAmbassadorOptions struct {
 }
 
 // NewCmdCreateAddonAmbassador creates a command object for the "create" command
-func NewCmdCreateAddonAmbassador(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonAmbassador(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonAmbassadorOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -61,7 +63,7 @@ func NewCmdCreateAddonAmbassador(f cmdutil.Factory, out io.Writer, errOut io.Wri
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -86,8 +88,12 @@ func (o *CreateAddonAmbassadorOptions) Run() error {
 		return err
 	}
 
-	//values := []string{"rbac.create=true"}
-	values := []string{""}
+	err = o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
+
+	values := strings.Split(o.SetValues, ",")
 	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return err

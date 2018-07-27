@@ -12,7 +12,7 @@ import (
 
 	bitbucket "github.com/gfleury/go-bitbucket-v1"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -24,6 +24,7 @@ type BitbucketServerProvider struct {
 
 	Server auth.AuthServer
 	User   auth.UserAuth
+	Git    Gitter
 }
 
 type projectsPage struct {
@@ -65,7 +66,7 @@ type pullrequestEndpointBranch struct {
 	Name string `json:"name,omitempty"`
 }
 
-func NewBitbucketServerProvider(server *auth.AuthServer, user *auth.UserAuth) (GitProvider, error) {
+func NewBitbucketServerProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 	apiKeyAuthContext := context.WithValue(ctx, bitbucket.ContextAccessToken, user.ApiToken)
 
@@ -74,6 +75,7 @@ func NewBitbucketServerProvider(server *auth.AuthServer, user *auth.UserAuth) (G
 		User:     *user,
 		Username: user.Username,
 		Context:  apiKeyAuthContext,
+		Git:      git,
 	}
 
 	cfg := bitbucket.NewConfiguration(server.URL + "/rest")
@@ -689,7 +691,7 @@ func (b *BitbucketServerProvider) SearchIssues(org string, name string, query st
 
 	gitIssues := []*GitIssue{}
 
-	fmt.Println("WARNING: Searching issues on bitbucket server is not supported at this moment")
+	log.Warn("Searching issues on bitbucket server is not supported at this moment")
 
 	return gitIssues, nil
 }
@@ -704,7 +706,7 @@ func (b *BitbucketServerProvider) SearchIssuesClosedSince(org string, name strin
 
 func (b *BitbucketServerProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
 
-	fmt.Println("WARNING: Finding an issue on bitbucket server is not supported at this moment")
+	log.Warn("Finding an issue on bitbucket server is not supported at this moment")
 	return &GitIssue{}, nil
 }
 
@@ -723,17 +725,17 @@ func (b *BitbucketServerProvider) IssueURL(org string, name string, number int, 
 
 func (b *BitbucketServerProvider) CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error) {
 
-	fmt.Println("WARNING: Creating an issue on bitbucket server is not suuported at this moment")
+	log.Warn("Creating an issue on bitbucket server is not suuported at this moment")
 	return &GitIssue{}, nil
 }
 
 func (b *BitbucketServerProvider) AddPRComment(pr *GitPullRequest, comment string) error {
-	fmt.Println("WARNING: Bitbucket Server doesn't support adding PR comments via the REST API")
+	log.Warn("Bitbucket Server doesn't support adding PR comments via the REST API")
 	return nil
 }
 
 func (b *BitbucketServerProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
-	fmt.Println("WARNING: Bitbucket Server doesn't support adding issue comments via the REST API")
+	log.Warn("Bitbucket Server doesn't support adding issue comments via the REST API")
 	return nil
 }
 
@@ -755,6 +757,10 @@ func (b *BitbucketServerProvider) IsBitbucketCloud() bool {
 
 func (b *BitbucketServerProvider) IsBitbucketServer() bool {
 	return true
+}
+
+func (b *BitbucketServerProvider) IsGerrit() bool {
+	return false
 }
 
 func (b *BitbucketServerProvider) Kind() string {
@@ -800,13 +806,13 @@ func (b *BitbucketServerProvider) UserInfo(username string) *GitUser {
 }
 
 func (b *BitbucketServerProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
-	fmt.Println("Bitbucket Server doesn't support releases")
+	log.Warn("Bitbucket Server doesn't support releases")
 	return nil
 }
 
 func (p *BitbucketServerProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	answer := []*GitRelease{}
-	fmt.Println("Bitbucket Server doesn't support releases")
+	log.Warn("Bitbucket Server doesn't support releases")
 	return answer, nil
 }
 

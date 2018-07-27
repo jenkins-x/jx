@@ -1,9 +1,12 @@
 package util
 
 import (
+	"encoding/hex"
+	"math/rand"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 // RegexpSplit splits a string into an array using the regexSep as a separator
@@ -112,4 +115,16 @@ func StringMatchesPattern(text string, pattern string) bool {
 		return strings.HasPrefix(text, prefix)
 	}
 	return text == pattern
+}
+
+// RandStringBytesMaskImprSrc returns a random hexadecimal string of length n.
+func RandStringBytesMaskImprSrc(n int) (string, error) {
+	src := rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, (n+1)/2) // can be simplified to n/2 if n is always even
+
+	if _, err := src.Read(b); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(b)[:n], nil
 }

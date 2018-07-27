@@ -6,6 +6,14 @@ import (
 	"github.com/mailru/easyjson"
 )
 
+// EventBindingCalled notification is issued every time when binding is
+// called.
+type EventBindingCalled struct {
+	Name               string             `json:"name"`
+	Payload            string             `json:"payload"`
+	ExecutionContextID ExecutionContextID `json:"executionContextId"` // Identifier of the context where the call was made.
+}
+
 // EventConsoleAPICalled issued when console API was called.
 type EventConsoleAPICalled struct {
 	Type               APIType            `json:"type"`                 // Type of the call.

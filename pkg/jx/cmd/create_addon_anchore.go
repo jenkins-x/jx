@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"io"
+	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -10,10 +12,9 @@ import (
 
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -21,7 +22,7 @@ const (
 	defaultAnchoreName        = "anchore"
 	defaultAnchoreNamespace   = "anchore"
 	defaultAnchoreReleaseName = "anchore"
-	defaultAnchoreVersion     = "0.1.4"
+	defaultAnchoreVersion     = "0.1.7"
 	defaultAnchorePassword    = "anchore"
 	defaultAnchoreConfigDir   = "/anchore_service_dir"
 	anchoreDeploymentName     = "anchore-anchore-engine-core"
@@ -51,7 +52,7 @@ type CreateAddonAnchoreOptions struct {
 }
 
 // NewCmdCreateAddonAnchore creates a command object for the "create" command
-func NewCmdCreateAddonAnchore(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonAnchore(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonAnchoreOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -74,7 +75,7 @@ func NewCmdCreateAddonAnchore(f cmdutil.Factory, out io.Writer, errOut io.Writer
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -90,6 +91,10 @@ func NewCmdCreateAddonAnchore(f cmdutil.Factory, out io.Writer, errOut io.Writer
 
 // Run implements the command
 func (o *CreateAddonAnchoreOptions) Run() error {
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
 
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
@@ -97,7 +102,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	_, _, err := o.KubeClient()
+	_, _, err = o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -110,6 +115,8 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	log.Infof("found dev namespace %s\n", devNamespace)
 
 	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
 	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return fmt.Errorf("anchore deployment failed: %v", err)
@@ -141,7 +148,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	}
 
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, defaultAnchoreReleaseName, "")
+	err = o.expose(devNamespace, o.Namespace, "")
 	if err != nil {
 		return err
 	}

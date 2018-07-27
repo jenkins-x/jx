@@ -1,4 +1,4 @@
-// Package network provides the Chrome Debugging Protocol
+// Package network provides the Chrome DevTools Protocol
 // commands, types, and events for the Network domain.
 //
 // Network domain allows tracking network activities of the page. It exposes
@@ -874,27 +874,6 @@ func (p *SetRequestInterceptionParams) Do(ctxt context.Context, h cdp.Executor) 
 	return h.Execute(ctxt, CommandSetRequestInterception, p, nil)
 }
 
-// SetUserAgentOverrideParams allows overriding user agent with the given
-// string.
-type SetUserAgentOverrideParams struct {
-	UserAgent string `json:"userAgent"` // User agent to use.
-}
-
-// SetUserAgentOverride allows overriding user agent with the given string.
-//
-// parameters:
-//   userAgent - User agent to use.
-func SetUserAgentOverride(userAgent string) *SetUserAgentOverrideParams {
-	return &SetUserAgentOverrideParams{
-		UserAgent: userAgent,
-	}
-}
-
-// Do executes Network.setUserAgentOverride against the provided context.
-func (p *SetUserAgentOverrideParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
-	return h.Execute(ctxt, CommandSetUserAgentOverride, p, nil)
-}
-
 // Command names.
 const (
 	CommandClearBrowserCache                       = "Network.clearBrowserCache"
@@ -921,5 +900,4 @@ const (
 	CommandSetDataSizeLimitsForTest                = "Network.setDataSizeLimitsForTest"
 	CommandSetExtraHTTPHeaders                     = "Network.setExtraHTTPHeaders"
 	CommandSetRequestInterception                  = "Network.setRequestInterception"
-	CommandSetUserAgentOverride                    = "Network.setUserAgentOverride"
 )

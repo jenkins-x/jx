@@ -3,13 +3,15 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"os/user"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -17,6 +19,7 @@ import (
 
 const (
 	DefaultShell = "/bin/sh"
+	ShellsFile   = "/etc/shells"
 )
 
 type RshOptions struct {
@@ -49,7 +52,7 @@ var (
 `)
 )
 
-func NewCmdRsh(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdRsh(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &RshOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -67,7 +70,7 @@ func NewCmdRsh(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Container, "container", "c", "", "The name of the container to log")
@@ -81,7 +84,7 @@ func NewCmdRsh(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 func (o *RshOptions) Run() error {
 	args := o.Args
 
-	client, curNs, err := o.Factory.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -106,9 +109,6 @@ func (o *RshOptions) Run() error {
 			return err
 		}
 	} else {
-		if o.Executable == "" {
-			o.Executable = DefaultShell
-		}
 		names, err = kube.GetPodNames(client, ns, "")
 		if err != nil {
 			return err
@@ -153,12 +153,8 @@ func (o *RshOptions) Run() error {
 	}
 
 	commandArguments := []string{}
-	if o.Executable != "" {
-		commandArguments = []string{o.Executable}
-	}
-
-	if o.DevPod {
-		if o.Executable == "" {
+	if o.Executable == "" {
+		if o.DevPod {
 			workingDir := ""
 			pod := pods[name]
 			if pod != nil && pod.Annotations != nil {
@@ -169,7 +165,18 @@ func (o *RshOptions) Run() error {
 			} else {
 				commandArguments = []string{"--", "/bin/sh", "-c", "bash"}
 			}
+		} else {
+			bash, err := o.detectBash(ns, name, o.Container)
+			if err != nil {
+				commandArguments = []string{DefaultShell}
+			} else {
+				commandArguments = []string{bash}
+			}
 		}
+	}
+
+	if len(commandArguments) == 0 {
+		commandArguments = []string{o.Executable}
 	}
 
 	a := []string{"exec", "-it", "-n", ns}
@@ -183,4 +190,30 @@ func (o *RshOptions) Run() error {
 		a = append(a, commandArguments...)
 	}
 	return o.runCommandInteractive(true, "kubectl", a...)
+}
+
+func (o *RshOptions) detectBash(ns string, podName string, container string) (string, error) {
+	fileName := "/tmp/pod_" + podName + "_shells"
+	args := []string{"cp", ns + "/" + podName + ":" + ShellsFile, fileName}
+	if container != "" {
+		args = append(args, "-c", container)
+	}
+	err := o.runCommandQuietly("kubectl", args...)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to copy the shell file form POD '%s'", podName)
+	}
+	defer os.Remove(fileName)
+
+	content, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read the copied shell")
+	}
+
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		if strings.HasSuffix(line, "bash") {
+			return line, nil
+		}
+	}
+	return "", fmt.Errorf("no bash found in POD '%s'", podName)
 }

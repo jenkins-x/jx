@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
@@ -18,16 +19,16 @@ import (
 
 // createGitProvider creates a git from the given directory
 func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, gits.GitProvider, issues.IssueProvider, error) {
-	gitDir, gitConfDir, err := gits.FindGitConfigDir(dir)
+	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	if gitDir == "" || gitConfDir == "" {
-		o.warnf("No git directory could be found from dir %s\n", dir)
+		log.Warnf("No git directory could be found from dir %s\n", dir)
 		return nil, nil, nil, nil
 	}
 
-	gitUrl, err := gits.DiscoverUpstreamGitURL(gitConfDir)
+	gitUrl, err := o.Git().DiscoverUpstreamGitURL(gitConfDir)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -35,12 +36,12 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind)
+	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind, o.Git())
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -52,7 +53,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 }
 
 func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) (string, error) {
-	client, curNs, err := o.Factory.CreateClient()
+	client, curNs, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
@@ -123,7 +124,7 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 		if err != nil {
 			return name, fmt.Errorf("Failed to update Jenkins ConfigMap: %s", err)
 		}
-		o.Printf("Updated the Jenkins ConfigMap %s\n", kube.ConfigMapJenkinsX)
+		log.Infof("Updated the Jenkins ConfigMap %s\n", kube.ConfigMapJenkinsX)
 
 		// wait a little bit to give k8s chance to sync the ConfigMap to the file system
 		time.Sleep(time.Second * 2)
@@ -137,9 +138,9 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 		//err = jenk.Reload()
 		err = jenk.SafeRestart()
 		if err != nil {
-			o.warnf("Failed to safe restart Jenkins after configuration change %s\n", err)
+			log.Warnf("Failed to safe restart Jenkins after configuration change %s\n", err)
 		} else {
-			o.Printf("Safe Restarted Jenkins server\n")
+			log.Infoln("Safe Restarted Jenkins server")
 
 			// Let's wait 5 minutes for Jenkins to come back up.
 			// This is kinda gross, but it's just polling Jenkins every second for 5 minutes.
@@ -150,7 +151,7 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 				if err == nil {
 					break
 				}
-				o.Printf("Jenkins returned an error. Waiting for it to recover...\n")
+				log.Infoln("Jenkins returned an error. Waiting for it to recover...")
 				time.Sleep(1 * time.Second)
 			}
 		}
@@ -198,9 +199,9 @@ func (o *CommonOptions) discoverGitURL(gitConf string) (string, error) {
 	if len(remotes) == 0 {
 		return "", nil
 	}
-	url := gits.GetRemoteUrl(cfg, "origin")
+	url := o.Git().GetRemoteUrl(cfg, "origin")
 	if url == "" {
-		url = gits.GetRemoteUrl(cfg, "upstream")
+		url = o.Git().GetRemoteUrl(cfg, "upstream")
 		if url == "" {
 			url, err = o.pickRemoteURL(cfg)
 			if err != nil {
@@ -232,7 +233,7 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		return "", err
 	}
 
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return "", err
 	}
@@ -266,7 +267,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
@@ -274,14 +275,14 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind)
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git())
 }
 
 // gitProviderForURL returns a GitProvider for the given git server URL
 func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
-	authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(authConfigSvc, gitKind, gitServiceUrl)
+	return gits.CreateProviderForURL(authConfigSvc, gitKind, gitServiceUrl, o.Git())
 }

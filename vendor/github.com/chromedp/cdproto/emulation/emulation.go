@@ -1,4 +1,4 @@
-// Package emulation provides the Chrome Debugging Protocol
+// Package emulation provides the Chrome DevTools Protocol
 // commands, types, and events for the Emulation domain.
 //
 // This domain emulates different environments for the page.
@@ -13,7 +13,6 @@ import (
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/page"
-	"github.com/chromedp/cdproto/runtime"
 )
 
 // CanEmulateParams tells whether emulation is supported.
@@ -233,6 +232,46 @@ func (p *SetDeviceMetricsOverrideParams) Do(ctxt context.Context, h cdp.Executor
 	return h.Execute(ctxt, CommandSetDeviceMetricsOverride, p, nil)
 }
 
+// SetScrollbarsHiddenParams [no description].
+type SetScrollbarsHiddenParams struct {
+	Hidden bool `json:"hidden"` // Whether scrollbars should be always hidden.
+}
+
+// SetScrollbarsHidden [no description].
+//
+// parameters:
+//   hidden - Whether scrollbars should be always hidden.
+func SetScrollbarsHidden(hidden bool) *SetScrollbarsHiddenParams {
+	return &SetScrollbarsHiddenParams{
+		Hidden: hidden,
+	}
+}
+
+// Do executes Emulation.setScrollbarsHidden against the provided context.
+func (p *SetScrollbarsHiddenParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandSetScrollbarsHidden, p, nil)
+}
+
+// SetDocumentCookieDisabledParams [no description].
+type SetDocumentCookieDisabledParams struct {
+	Disabled bool `json:"disabled"` // Whether document.coookie API should be disabled.
+}
+
+// SetDocumentCookieDisabled [no description].
+//
+// parameters:
+//   disabled - Whether document.coookie API should be disabled.
+func SetDocumentCookieDisabled(disabled bool) *SetDocumentCookieDisabledParams {
+	return &SetDocumentCookieDisabledParams{
+		Disabled: disabled,
+	}
+}
+
+// Do executes Emulation.setDocumentCookieDisabled against the provided context.
+func (p *SetDocumentCookieDisabledParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandSetDocumentCookieDisabled, p, nil)
+}
+
 // SetEmitTouchEventsForMouseParams [no description].
 type SetEmitTouchEventsForMouseParams struct {
 	Enabled       bool                                    `json:"enabled"`                 // Whether touch emulation based on mouse input should be enabled.
@@ -318,28 +357,6 @@ func (p SetGeolocationOverrideParams) WithAccuracy(accuracy float64) *SetGeoloca
 // Do executes Emulation.setGeolocationOverride against the provided context.
 func (p *SetGeolocationOverrideParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
 	return h.Execute(ctxt, CommandSetGeolocationOverride, p, nil)
-}
-
-// SetNavigatorOverridesParams overrides value returned by the javascript
-// navigator object.
-type SetNavigatorOverridesParams struct {
-	Platform string `json:"platform"` // The platform navigator.platform should return.
-}
-
-// SetNavigatorOverrides overrides value returned by the javascript navigator
-// object.
-//
-// parameters:
-//   platform - The platform navigator.platform should return.
-func SetNavigatorOverrides(platform string) *SetNavigatorOverridesParams {
-	return &SetNavigatorOverridesParams{
-		Platform: platform,
-	}
-}
-
-// Do executes Emulation.setNavigatorOverrides against the provided context.
-func (p *SetNavigatorOverridesParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
-	return h.Execute(ctxt, CommandSetNavigatorOverrides, p, nil)
 }
 
 // SetPageScaleFactorParams sets a specified page scale factor.
@@ -466,24 +483,57 @@ func (p SetVirtualTimePolicyParams) WithInitialVirtualTime(initialVirtualTime *c
 
 // SetVirtualTimePolicyReturns return values.
 type SetVirtualTimePolicyReturns struct {
-	VirtualTimeBase      *runtime.Timestamp `json:"virtualTimeBase,omitempty"`      // Absolute timestamp at which virtual time was first enabled (milliseconds since epoch).
-	VirtualTimeTicksBase float64            `json:"virtualTimeTicksBase,omitempty"` // Absolute timestamp at which virtual time was first enabled (up time in milliseconds).
+	VirtualTimeTicksBase float64 `json:"virtualTimeTicksBase,omitempty"` // Absolute timestamp at which virtual time was first enabled (up time in milliseconds).
 }
 
 // Do executes Emulation.setVirtualTimePolicy against the provided context.
 //
 // returns:
-//   virtualTimeBase - Absolute timestamp at which virtual time was first enabled (milliseconds since epoch).
 //   virtualTimeTicksBase - Absolute timestamp at which virtual time was first enabled (up time in milliseconds).
-func (p *SetVirtualTimePolicyParams) Do(ctxt context.Context, h cdp.Executor) (virtualTimeBase *runtime.Timestamp, virtualTimeTicksBase float64, err error) {
+func (p *SetVirtualTimePolicyParams) Do(ctxt context.Context, h cdp.Executor) (virtualTimeTicksBase float64, err error) {
 	// execute
 	var res SetVirtualTimePolicyReturns
 	err = h.Execute(ctxt, CommandSetVirtualTimePolicy, p, &res)
 	if err != nil {
-		return nil, 0, err
+		return 0, err
 	}
 
-	return res.VirtualTimeBase, res.VirtualTimeTicksBase, nil
+	return res.VirtualTimeTicksBase, nil
+}
+
+// SetUserAgentOverrideParams allows overriding user agent with the given
+// string.
+type SetUserAgentOverrideParams struct {
+	UserAgent      string `json:"userAgent"`                // User agent to use.
+	AcceptLanguage string `json:"acceptLanguage,omitempty"` // Browser langugage to emulate.
+	Platform       string `json:"platform,omitempty"`       // The platform navigator.platform should return.
+}
+
+// SetUserAgentOverride allows overriding user agent with the given string.
+//
+// parameters:
+//   userAgent - User agent to use.
+func SetUserAgentOverride(userAgent string) *SetUserAgentOverrideParams {
+	return &SetUserAgentOverrideParams{
+		UserAgent: userAgent,
+	}
+}
+
+// WithAcceptLanguage browser langugage to emulate.
+func (p SetUserAgentOverrideParams) WithAcceptLanguage(acceptLanguage string) *SetUserAgentOverrideParams {
+	p.AcceptLanguage = acceptLanguage
+	return &p
+}
+
+// WithPlatform the platform navigator.platform should return.
+func (p SetUserAgentOverrideParams) WithPlatform(platform string) *SetUserAgentOverrideParams {
+	p.Platform = platform
+	return &p
+}
+
+// Do executes Emulation.setUserAgentOverride against the provided context.
+func (p *SetUserAgentOverrideParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandSetUserAgentOverride, p, nil)
 }
 
 // Command names.
@@ -495,12 +545,14 @@ const (
 	CommandSetCPUThrottlingRate              = "Emulation.setCPUThrottlingRate"
 	CommandSetDefaultBackgroundColorOverride = "Emulation.setDefaultBackgroundColorOverride"
 	CommandSetDeviceMetricsOverride          = "Emulation.setDeviceMetricsOverride"
+	CommandSetScrollbarsHidden               = "Emulation.setScrollbarsHidden"
+	CommandSetDocumentCookieDisabled         = "Emulation.setDocumentCookieDisabled"
 	CommandSetEmitTouchEventsForMouse        = "Emulation.setEmitTouchEventsForMouse"
 	CommandSetEmulatedMedia                  = "Emulation.setEmulatedMedia"
 	CommandSetGeolocationOverride            = "Emulation.setGeolocationOverride"
-	CommandSetNavigatorOverrides             = "Emulation.setNavigatorOverrides"
 	CommandSetPageScaleFactor                = "Emulation.setPageScaleFactor"
 	CommandSetScriptExecutionDisabled        = "Emulation.setScriptExecutionDisabled"
 	CommandSetTouchEmulationEnabled          = "Emulation.setTouchEmulationEnabled"
 	CommandSetVirtualTimePolicy              = "Emulation.setVirtualTimePolicy"
+	CommandSetUserAgentOverride              = "Emulation.setUserAgentOverride"
 )

@@ -13,9 +13,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/log"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -41,7 +40,7 @@ var (
 )
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCPreviews(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGCPreviews(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GCPreviewsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -59,7 +58,7 @@ func NewCmdGCPreviews(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCommonFlags(cmd)
@@ -94,7 +93,7 @@ func (o *GCPreviewsOptions) Run() error {
 				return err
 			}
 			// we need pull request info to include
-			authConfigSvc, err := o.Factory.CreateGitAuthConfigService()
+			authConfigSvc, err := o.CreateGitAuthConfigService()
 			if err != nil {
 				return err
 			}
@@ -104,7 +103,7 @@ func (o *GCPreviewsOptions) Run() error {
 				return err
 			}
 
-			gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind)
+			gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind, o.Git())
 			if err != nil {
 				return err
 			}
@@ -119,7 +118,7 @@ func (o *GCPreviewsOptions) Run() error {
 
 			lowerState := strings.ToLower(*pullRequest.State)
 
-			if strings.HasPrefix(lowerState, "clos") {
+			if strings.HasPrefix(lowerState, "clos") || strings.HasPrefix(lowerState, "merged") || strings.HasPrefix(lowerState, "superseded") || strings.HasPrefix(lowerState, "declined") {
 				// lets delete the preview environment
 				deleteOpts := DeleteEnvOptions{
 					DeleteNamespace: true,

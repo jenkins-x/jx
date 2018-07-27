@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -17,6 +17,7 @@ type StepHelmApplyOptions struct {
 
 	Namespace   string
 	ReleaseName string
+	Wait        bool
 }
 
 var (
@@ -33,7 +34,7 @@ var (
 `)
 )
 
-func NewCmdStepHelmApply(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmApply(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := StepHelmApplyOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
@@ -55,13 +56,14 @@ func NewCmdStepHelmApply(f cmdutil.Factory, out io.Writer, errOut io.Writer) *co
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addStepHelmFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The kubernetes namespace to apply the helm chart to")
 	cmd.Flags().StringVarP(&options.ReleaseName, "name", "", "", "The name of the release")
+	cmd.Flags().BoolVarP(&options.Wait, "wait", "", true, "Wait for Kubernetes readiness probe to confirm deployment")
 	return cmd
 }
 
@@ -89,9 +91,14 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 	info := util.ColorInfo
-	o.Printf("Applying helm chart at %s as release name %s to namespace %s\n", info(dir), info(releaseName), info(ns))
+	log.Infof("Applying helm chart at %s as release name %s to namespace %s\n", info(dir), info(releaseName), info(ns))
 
-	err = o.runCommandVerboseAt(dir, helmBinary, "upgrade", releaseName, dir, "--install", "--namespace", ns, "--debug")
+	if o.Wait {
+		timeout := 600
+		err = o.Helm().UpgradeChart(dir, releaseName, ns, nil, true, &timeout, false, true, nil, nil)
+	} else {
+		err = o.Helm().UpgradeChart(dir, releaseName, ns, nil, true, nil, false, false, nil, nil)
+	}
 	if err != nil {
 		return err
 	}

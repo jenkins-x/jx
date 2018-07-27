@@ -1,6 +1,6 @@
 image:
-  repository: rawlingsj/jx
-  tag: dev33
+  repository: jenkinsxio/jx
+  tag: dev
   pullPolicy: IfNotPresent
 
 replicaCount: 1
@@ -83,6 +83,7 @@ clusterrole:
     verbs:
     - get
     - delete
+    - list
 
 activeDeadlineSeconds: 300
 backoffLimit: 5

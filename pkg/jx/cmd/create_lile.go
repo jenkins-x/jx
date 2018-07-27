@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -47,7 +47,7 @@ type CreateLileOptions struct {
 }
 
 // NewCmdCreateLile creates a command object for the "create" command
-func NewCmdCreateLile(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateLile(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateLileOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -69,7 +69,7 @@ func NewCmdCreateLile(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.OutDir, optionOutputDir, "o", "", "Relative directory to output the project to. Defaults to current directory")
@@ -81,7 +81,7 @@ func NewCmdCreateLile(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra
 func (o CreateLileOptions) checkLileInstalled() error {
 	_, err := o.getCommandOutput("", "lile", "help")
 	if err != nil {
-		o.Printf("Installing lile's dependencies...\n")
+		log.Infoln("Installing lile's dependencies...")
 		// lets install lile
 		err = o.installBrewIfRequired()
 		if err != nil {
@@ -94,10 +94,10 @@ func (o CreateLileOptions) checkLileInstalled() error {
 			}
 		}
 
-		o.Printf("Downloading and building lile - this can take a while...\n")
+		log.Infoln("Downloading and building lile - this can take a while...")
 		err = o.runCommand("go", "get", "-u", "github.com/lileio/lile/...")
 		if err == nil {
-			o.Printf("Installed lile and its dependencies!\n")
+			log.Infoln("Installed lile and its dependencies!")
 		}
 	}
 	return err
@@ -142,7 +142,7 @@ func (o *CreateLileOptions) Run() error {
 		return err
 	}
 
-	o.Printf("Created lile project at %s\n\n", util.ColorInfo(dir))
+	log.Infof("Created lile project at %s\n\n", util.ColorInfo(dir))
 
 	return o.ImportCreatedProject(dir)
 }

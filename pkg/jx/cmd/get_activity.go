@@ -8,10 +8,10 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	tbl "github.com/jenkins-x/jx/pkg/jx/cmd/table"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	tbl "github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,7 +50,7 @@ var (
 )
 
 // NewCmdGetActivity creates the new command for: jx get version
-func NewCmdGetActivity(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetActivity(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &GetActivityOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -68,7 +68,7 @@ func NewCmdGetActivity(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobr
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Text to filter the pipeline names")
@@ -84,7 +84,7 @@ func (o *GetActivityOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.Factory.CreateClient()
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (o *GetActivityOptions) addTableRow(table *tbl.Table, activity *v1.Pipeline
 	return false
 }
 
-func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient *versioned.Clientset, ns string) error {
+func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient versioned.Interface, ns string) error {
 	yamlSpecMap := map[string]string{}
 	activity := &v1.PipelineActivity{}
 	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "pipelineactivities", ns, fields.Everything())
@@ -186,12 +186,12 @@ func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient *version
 func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlSpecMap map[string]string) {
 	activity, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		o.Printf("Object is not a PipelineActivity %#v\n", obj)
+		log.Infof("Object is not a PipelineActivity %#v\n", obj)
 		return
 	}
 	data, err := yaml.Marshal(&activity.Spec)
 	if err != nil {
-		o.warnf("Failed to marshal Activity.Spec to YAML: %s", err)
+		log.Infof("Failed to marshal Activity.Spec to YAML: %s", err)
 	} else {
 		text := string(data)
 		name := activity.Name
@@ -217,7 +217,7 @@ func (o *CommonOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivity
 	} else if promote != nil {
 		addPromoteRow(table, promote, indent)
 	} else {
-		o.warnf("Unknown step kind %#v\n", parent)
+		log.Warnf("Unknown step kind %#v\n", parent)
 	}
 }
 

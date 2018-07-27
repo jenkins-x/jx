@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -39,7 +39,7 @@ type CreateJHipsterOptions struct {
 }
 
 // NewCmdCreateJHipster creates a command object for the "create" command
-func NewCmdCreateJHipster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateJHipster(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &CreateJHipsterOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -61,7 +61,7 @@ func NewCmdCreateJHipster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	options.addCreateAppFlags(cmd)
@@ -72,10 +72,10 @@ func NewCmdCreateJHipster(f cmdutil.Factory, out io.Writer, errOut io.Writer) *c
 func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 	_, err := o.getCommandOutput("", "jhipster", "--version")
 	if err != nil {
-		o.Printf("Installing JHipster..\n")
+		log.Infoln("Installing JHipster..")
 		_, err = o.getCommandOutput("", "rimraf", "--version")
 		if err != nil {
-			o.Printf("Installing rimraf..\n")
+			log.Infoln("Installing rimraf..")
 			_, err = o.getCommandOutput("", "npm", "install", "-g", "rimraf")
 			if err != nil {
 				return err
@@ -85,7 +85,7 @@ func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 		if err != nil {
 			return err
 		}
-		o.Printf("Installed JHipster\n")
+		log.Infoln("Installed JHipster")
 	}
 	return err
 }
@@ -123,13 +123,13 @@ func (o *CreateJHipsterOptions) Run() error {
 			return fmt.Errorf("Invalid project name: %s", dir)
 		}
 	}
-	o.Printf("\n")
+	log.Blank()
 
 	err = o.GenerateJHipster(dir)
 	if err != nil {
 		return err
 	}
 
-	o.Printf("Created JHipster project at %s\n\n", util.ColorInfo(dir))
+	log.Infof("Created JHipster project at %s\n\n", util.ColorInfo(dir))
 	return o.ImportCreatedProject(dir)
 }

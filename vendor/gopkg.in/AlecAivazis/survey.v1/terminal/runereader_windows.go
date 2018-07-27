@@ -1,7 +1,7 @@
 package terminal
 
 import (
-	"os"
+	"bytes"
 	"syscall"
 	"unsafe"
 )
@@ -18,13 +18,13 @@ const (
 
 	// key codes for arrow keys
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
-	VK_DELETE= 0x2E
-	VK_END   = 0x23
-	VK_HOME  = 0x24
-	VK_LEFT  = 0x25
-	VK_UP    = 0x26
-	VK_RIGHT = 0x27
-	VK_DOWN  = 0x28
+	VK_DELETE = 0x2E
+	VK_END    = 0x23
+	VK_HOME   = 0x24
+	VK_LEFT   = 0x25
+	VK_UP     = 0x26
+	VK_RIGHT  = 0x27
+	VK_DOWN   = 0x28
 
 	RIGHT_CTRL_PRESSED = 0x0004
 	LEFT_CTRL_PRESSED  = 0x0008
@@ -53,12 +53,16 @@ type runeReaderState struct {
 	term uint32
 }
 
-func newRuneReaderState(input *os.File) runeReaderState {
+func newRuneReaderState(input FileReader) runeReaderState {
 	return runeReaderState{}
 }
 
+func (rr *RuneReader) Buffer() *bytes.Buffer {
+	return nil
+}
+
 func (rr *RuneReader) SetTermMode() error {
-	r, _, err := getConsoleMode.Call(uintptr(rr.Input.Fd()), uintptr(unsafe.Pointer(&rr.state.term)))
+	r, _, err := getConsoleMode.Call(uintptr(rr.stdio.In.Fd()), uintptr(unsafe.Pointer(&rr.state.term)))
 	// windows return 0 on error
 	if r == 0 {
 		return err
@@ -66,7 +70,7 @@ func (rr *RuneReader) SetTermMode() error {
 
 	newState := rr.state.term
 	newState &^= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT
-	r, _, err = setConsoleMode.Call(uintptr(rr.Input.Fd()), uintptr(newState))
+	r, _, err = setConsoleMode.Call(uintptr(rr.stdio.In.Fd()), uintptr(newState))
 	// windows return 0 on error
 	if r == 0 {
 		return err
@@ -75,7 +79,7 @@ func (rr *RuneReader) SetTermMode() error {
 }
 
 func (rr *RuneReader) RestoreTermMode() error {
-	r, _, err := setConsoleMode.Call(uintptr(rr.Input.Fd()), uintptr(rr.state.term))
+	r, _, err := setConsoleMode.Call(uintptr(rr.stdio.In.Fd()), uintptr(rr.state.term))
 	// windows return 0 on error
 	if r == 0 {
 		return err
@@ -87,7 +91,7 @@ func (rr *RuneReader) ReadRune() (rune, int, error) {
 	ir := &inputRecord{}
 	bytesRead := 0
 	for {
-		rv, _, e := readConsoleInput.Call(rr.Input.Fd(), uintptr(unsafe.Pointer(ir)), 1, uintptr(unsafe.Pointer(&bytesRead)))
+		rv, _, e := readConsoleInput.Call(rr.stdio.In.Fd(), uintptr(unsafe.Pointer(ir)), 1, uintptr(unsafe.Pointer(&bytesRead)))
 		// windows returns non-zero to indicate success
 		if rv == 0 && e != nil {
 			return 0, 0, e

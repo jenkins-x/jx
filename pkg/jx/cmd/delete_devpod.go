@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +19,7 @@ var (
 	deleteDevPodLong = templates.LongDesc(`
 		Deletes one or more DevPods
 
-		For more documentation see: [http://jenkins-x.io/developing/devpods/](http://jenkins-x.io/developing/devpods/)
+		For more documentation see: [https://jenkins-x.io/developing/devpods/](https://jenkins-x.io/developing/devpods/)
 
 `)
 
@@ -39,7 +39,7 @@ type DeleteDevPodOptions struct {
 
 // NewCmdDeleteDevPod creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteDevPodOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -58,7 +58,7 @@ func NewCmdDeleteDevPod(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cob
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 
@@ -113,6 +113,6 @@ func (o *DeleteDevPodOptions) Run() error {
 			return err
 		}
 	}
-	o.Printf("Deleted DevPods %s\n", util.ColorInfo(deletePods))
+	log.Infof("Deleted DevPods %s\n", util.ColorInfo(deletePods))
 	return nil
 }

@@ -1,20 +1,31 @@
 package terminal
 
 import (
-	"os"
+	"fmt"
 	"unicode"
 )
 
 type RuneReader struct {
-	Input *os.File
-
-	state runeReaderState
+	stdio  Stdio
+	cursor *Cursor
+	state  runeReaderState
 }
 
-func NewRuneReader(input *os.File) *RuneReader {
+func NewRuneReader(stdio Stdio) *RuneReader {
 	return &RuneReader{
-		Input: input,
-		state: newRuneReaderState(input),
+		stdio: stdio,
+		state: newRuneReaderState(stdio.In),
+	}
+}
+
+func (rr *RuneReader) printChar(char rune, mask rune) {
+	// if we don't need to mask the input
+	if mask == 0 {
+		// just print the character the user pressed
+		fmt.Fprintf(rr.stdio.Out, "%c", char)
+	} else {
+		// otherwise print the mask we were given
+		fmt.Fprintf(rr.stdio.Out, "%c", mask)
 	}
 }
 
@@ -23,8 +34,13 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 	// we only care about horizontal displacements from the origin so start counting at 0
 	index := 0
 
+	cursor := &Cursor{
+		In:  rr.stdio.In,
+		Out: rr.stdio.Out,
+	}
+
 	// we get the terminal width and height (if resized after this point the property might become invalid)
-	terminalSize, _ := Size()
+	terminalSize, _ := cursor.Size(rr.Buffer())
 	for {
 		// wait for some input
 		r, _, err := rr.ReadRune()
@@ -32,33 +48,34 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 			return line, err
 		}
 		// we set the current location of the cursor and update it after every key press
-		cursorCurrent, err := CursorLocation()
+		cursorCurrent, err := cursor.Location(rr.Buffer())
 		// if the user pressed enter or some other newline/termination like ctrl+d
 		if r == '\r' || r == '\n' || r == KeyEndTransmission {
 			// delete what's printed out on the console screen (cleanup)
 			for index > 0 {
 				if cursorCurrent.CursorIsAtLineBegin() {
-					EraseLine(ERASE_LINE_END)
-					CursorPreviousLine(1)
-					CursorForward(int(terminalSize.X))
+					EraseLine(rr.stdio.Out, ERASE_LINE_END)
+					cursor.PreviousLine(1)
+					cursor.Forward(int(terminalSize.X))
 					cursorCurrent.X = terminalSize.X
 					cursorCurrent.Y--
 
 				} else {
-					CursorBack(1)
+					cursor.Back(1)
 					cursorCurrent.X--
 				}
 				index--
 			}
 			// move the cursor the a new line
-			CursorNextLine(1)
+			cursor.MoveNextLine(cursorCurrent, terminalSize)
+
 			// we're done processing the input
 			return line, nil
 		}
 		// if the user interrupts (ie with ctrl+c)
 		if r == KeyInterrupt {
 			// go to the beginning of the next line
-			Print("\r\n")
+			fmt.Fprint(rr.stdio.Out, "\r\n")
 
 			// we're done processing the input, and treat interrupt like an error
 			return line, InterruptErr
@@ -74,14 +91,14 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 					line = line[:len(line)-1]
 					// go back one
 					if cursorCurrent.X == 1 {
-						CursorPreviousLine(1)
-						CursorForward(int(terminalSize.X))
+						cursor.PreviousLine(1)
+						cursor.Forward(int(terminalSize.X))
 					} else {
-						CursorBack(1)
+						cursor.Back(1)
 					}
 
 					// clear the rest of the line
-					EraseLine(ERASE_LINE_END)
+					EraseLine(rr.stdio.Out, ERASE_LINE_END)
 				} else {
 					// we need to remove a character from the middle of the word
 
@@ -91,31 +108,31 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 					// save the current position of the cursor, as we have to move the cursor one back to erase the current symbol
 					// and then move the cursor for each symbol in line[index-1:] to print it out, afterwards we want to restore
 					// the cursor to its previous location.
-					CursorSave()
+					cursor.Save()
 
 					// clear the rest of the line
-					CursorBack(1)
+					cursor.Back(1)
 
 					// print what comes after
 					for _, char := range line[index-1:] {
 						//Erase symbols which are left over from older print
-						EraseLine(ERASE_LINE_END)
+						EraseLine(rr.stdio.Out, ERASE_LINE_END)
 						// print characters to the new line appropriately
-						Printf("%c", char)
+						rr.printChar(char, mask)
 
 					}
 					// erase what's left over from last print
 					if cursorCurrent.Y < terminalSize.Y {
-						CursorNextLine(1)
-						EraseLine(ERASE_LINE_END)
+						cursor.NextLine(1)
+						EraseLine(rr.stdio.Out, ERASE_LINE_END)
 					}
 					// restore cursor
-					CursorRestore()
+					cursor.Restore()
 					if cursorCurrent.CursorIsAtLineBegin() {
-						CursorPreviousLine(1)
-						CursorForward(int(terminalSize.X))
+						cursor.PreviousLine(1)
+						cursor.Forward(int(terminalSize.X))
 					} else {
-						CursorBack(1)
+						cursor.Back(1)
 					}
 				}
 
@@ -123,7 +140,7 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 				index--
 			} else {
 				// otherwise the user pressed backspace while at the beginning of the line
-				soundBell()
+				soundBell(rr.stdio.Out)
 			}
 
 			// we're done processing this key
@@ -136,10 +153,10 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 			if index > 0 {
 				//move the cursor to the prev line if necessary
 				if cursorCurrent.CursorIsAtLineBegin() {
-					CursorPreviousLine(1)
-					CursorForward(int(terminalSize.X))
+					cursor.PreviousLine(1)
+					cursor.Forward(int(terminalSize.X))
 				} else {
-					CursorBack(1)
+					cursor.Back(1)
 				}
 				//decrement the index
 				index--
@@ -147,7 +164,7 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 			} else {
 				// otherwise we are at the beginning of where we started reading lines
 				// sound the bell
-				soundBell()
+				soundBell(rr.stdio.Out)
 			}
 
 			// we're done processing this key press
@@ -160,16 +177,16 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 			if index < len(line) {
 				// move the cursor to the next line if necessary
 				if cursorCurrent.CursorIsAtLineEnd(terminalSize) {
-					CursorNextLine(1)
+					cursor.NextLine(1)
 				} else {
-					CursorForward(1)
+					cursor.Forward(1)
 				}
 				index++
 
 			} else {
 				// otherwise we are at the end of the word and can't go past
 				// sound the bell
-				soundBell()
+				soundBell(rr.stdio.Out)
 			}
 
 			// we're done processing this key press
@@ -179,13 +196,13 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 		if r == SpecialKeyHome {
 			for index > 0 {
 				if cursorCurrent.CursorIsAtLineBegin() {
-					CursorPreviousLine(1)
-					CursorForward(int(terminalSize.X))
+					cursor.PreviousLine(1)
+					cursor.Forward(int(terminalSize.X))
 					cursorCurrent.X = terminalSize.X
 					cursorCurrent.Y--
 
 				} else {
-					CursorBack(1)
+					cursor.Back(1)
 					cursorCurrent.X--
 				}
 				index--
@@ -195,12 +212,12 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 		} else if r == SpecialKeyEnd {
 			for index != len(line) {
 				if cursorCurrent.CursorIsAtLineEnd(terminalSize) {
-					CursorNextLine(1)
+					cursor.NextLine(1)
 					cursorCurrent.X = COORDINATE_SYSTEM_BEGIN
 					cursorCurrent.Y++
 
 				} else {
-					CursorForward(1)
+					cursor.Forward(1)
 					cursorCurrent.X++
 				}
 				index++
@@ -213,23 +230,24 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 				// save the current position of the cursor, as we have to  erase the current symbol
 				// and then move the cursor for each symbol in line[index:] to print it out, afterwards we want to restore
 				// the cursor to its previous location.
-				CursorSave()
+				cursor.Save()
 				// remove the symbol after the cursor
 				line = append(line[:index], line[index+1:]...)
 				// print the updated line
 				for _, char := range line[index:] {
-					EraseLine(ERASE_LINE_END)
-					Printf("%c", char)
+					EraseLine(rr.stdio.Out, ERASE_LINE_END)
+					// print out the character
+					rr.printChar(char, mask)
 				}
 				// erase what's left on last line
 				if cursorCurrent.Y < terminalSize.Y {
-					CursorNextLine(1)
-					EraseLine(ERASE_LINE_END)
+					cursor.NextLine(1)
+					EraseLine(rr.stdio.Out, ERASE_LINE_END)
 				}
 				// restore cursor
-				CursorRestore()
+				cursor.Restore()
 				if len(line) == 0 || index == len(line) {
-					EraseLine(ERASE_LINE_END)
+					EraseLine(rr.stdio.Out, ERASE_LINE_END)
 				}
 			}
 			continue
@@ -249,51 +267,42 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 			line = append(line, r)
 			// save the location of the cursor
 			index++
-			// if we don't need to mask the input
-			if mask == 0 {
-				// just print the character the user pressed
-				Printf("%c", r)
-			} else {
-				// otherwise print the mask we were given
-				Printf("%c", mask)
-			}
+			// print out the character
+			rr.printChar(r, mask)
 		} else {
 			// we are in the middle of the word so we need to insert the character the user pressed
 			line = append(line[:index], append([]rune{r}, line[index:]...)...)
 			// save the current position of the cursor, as we have to move the cursor back to erase the current symbol
 			// and then move for each symbol in line[index:] to print it out, afterwards we want to restore
 			// cursor's location to its previous one.
-			CursorSave()
-			EraseLine(ERASE_LINE_END)
+			cursor.Save()
+			EraseLine(rr.stdio.Out, ERASE_LINE_END)
 			// remove the symbol after the cursor
 			// print the updated line
 			for _, char := range line[index:] {
-				EraseLine(ERASE_LINE_END)
-				if mask == 0 {
-					Printf("%c", char)
-				} else {
-					Printf("%c", mask)
-				}
+				EraseLine(rr.stdio.Out, ERASE_LINE_END)
+				// print out the character
+				rr.printChar(char, mask)
 				cursorCurrent.X++
 			}
 			// if we are at the last line, we want to visually insert a new line and append to it.
 			if cursorCurrent.CursorIsAtLineEnd(terminalSize) && cursorCurrent.Y == terminalSize.Y {
 				// add a new line to the terminal
-				Println()
+				fmt.Fprintln(rr.stdio.Out)
 				// restore the position of the cursor horizontally
-				CursorRestore()
+				cursor.Restore()
 				// restore the position of the cursor vertically
-				CursorUp(1)
+				cursor.Up(1)
 			} else {
 				// restore cursor
-				CursorRestore()
+				cursor.Restore()
 			}
 			// check if cursor needs to move to next line
-			cursorCurrent, _ = CursorLocation()
+			cursorCurrent, _ = cursor.Location(rr.Buffer())
 			if cursorCurrent.CursorIsAtLineEnd(terminalSize) {
-				CursorNextLine(1)
+				cursor.NextLine(1)
 			} else {
-				CursorForward(1)
+				cursor.Forward(1)
 			}
 			// increment the index
 			index++

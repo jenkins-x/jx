@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	cmdutil "github.com/jenkins-x/jx/pkg/jx/cmd/util"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -30,7 +30,7 @@ type DeleteTrackerServerOptions struct {
 }
 
 // NewCmdDeleteTrackerServer defines the command
-func NewCmdDeleteTrackerServer(f cmdutil.Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTrackerServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options := &DeleteTrackerServerOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
@@ -48,7 +48,7 @@ func NewCmdDeleteTrackerServer(f cmdutil.Factory, out io.Writer, errOut io.Write
 			options.Cmd = cmd
 			options.Args = args
 			err := options.Run()
-			cmdutil.CheckErr(err)
+			CheckErr(err)
 		},
 	}
 	cmd.Flags().BoolVarP(&options.IgnoreMissingServer, "ignore-missing", "i", false, "Silently ignore attempts to remove an issue tracker server name that does not exist")
@@ -82,6 +82,6 @@ func (o *DeleteTrackerServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.Printf("Deleted issue tracker servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
+	log.Infof("Deleted issue tracker servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
 	return nil
 }

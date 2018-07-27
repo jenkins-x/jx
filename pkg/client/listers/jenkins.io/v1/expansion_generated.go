@@ -10,6 +10,14 @@ type EnvironmentListerExpansion interface{}
 // EnvironmentNamespaceLister.
 type EnvironmentNamespaceListerExpansion interface{}
 
+// EnvironmentRoleBindingListerExpansion allows custom methods to be added to
+// EnvironmentRoleBindingLister.
+type EnvironmentRoleBindingListerExpansion interface{}
+
+// EnvironmentRoleBindingNamespaceListerExpansion allows custom methods to be added to
+// EnvironmentRoleBindingNamespaceLister.
+type EnvironmentRoleBindingNamespaceListerExpansion interface{}
+
 // GitServiceListerExpansion allows custom methods to be added to
 // GitServiceLister.
 type GitServiceListerExpansion interface{}

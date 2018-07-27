@@ -1,7 +1,7 @@
 package survey
 
 import (
-	"os"
+	"fmt"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -39,12 +39,12 @@ func (p *Password) Prompt() (line interface{}, err error) {
 		PasswordQuestionTemplate,
 		PasswordTemplateData{Password: *p},
 	)
-	terminal.Print(out)
+	fmt.Fprint(terminal.NewAnsiStdout(p.Stdio().Out), out)
 	if err != nil {
 		return "", err
 	}
 
-	rr := terminal.NewRuneReader(os.Stdin)
+	rr := p.NewRuneReader()
 	rr.SetTermMode()
 	defer rr.RestoreTermMode()
 
@@ -53,6 +53,8 @@ func (p *Password) Prompt() (line interface{}, err error) {
 		line, err := rr.ReadLine('*')
 		return string(line), err
 	}
+
+	cursor := p.NewCursor()
 
 	// process answers looking for help prompt answer
 	for {
@@ -63,7 +65,7 @@ func (p *Password) Prompt() (line interface{}, err error) {
 
 		if string(line) == string(core.HelpInputRune) {
 			// terminal will echo the \n so we need to jump back up one row
-			terminal.CursorPreviousLine(1)
+			cursor.PreviousLine(1)
 
 			err = p.Render(
 				PasswordQuestionTemplate,

@@ -11,7 +11,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/format/objfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
-	"gopkg.in/src-d/go-git.v4/storage/filesystem/internal/dotgit"
+	"gopkg.in/src-d/go-git.v4/storage/filesystem/dotgit"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 	"gopkg.in/src-d/go-git.v4/utils/ioutil"
 
@@ -26,7 +26,8 @@ type ObjectStorage struct {
 	index map[plumbing.Hash]*packfile.Index
 }
 
-func newObjectStorage(dir *dotgit.DotGit) (ObjectStorage, error) {
+// NewObjectStorage creates a new ObjectStorage with the given .git directory.
+func NewObjectStorage(dir *dotgit.DotGit) (ObjectStorage, error) {
 	s := ObjectStorage{
 		deltaBaseCache: cache.NewObjectLRUDefault(),
 		dir:            dir,
@@ -55,7 +56,7 @@ func (s *ObjectStorage) requireIndex() error {
 	return nil
 }
 
-func (s *ObjectStorage) loadIdxFile(h plumbing.Hash) error {
+func (s *ObjectStorage) loadIdxFile(h plumbing.Hash) (err error) {
 	f, err := s.dir.ObjectPackIdx(h)
 	if err != nil {
 		return err
@@ -94,7 +95,7 @@ func (s *ObjectStorage) PackfileWriter() (io.WriteCloser, error) {
 }
 
 // SetEncodedObject adds a new object to the storage.
-func (s *ObjectStorage) SetEncodedObject(o plumbing.EncodedObject) (plumbing.Hash, error) {
+func (s *ObjectStorage) SetEncodedObject(o plumbing.EncodedObject) (h plumbing.Hash, err error) {
 	if o.Type() == plumbing.OFSDeltaObject || o.Type() == plumbing.REFDeltaObject {
 		return plumbing.ZeroHash, plumbing.ErrInvalidType
 	}
@@ -113,11 +114,11 @@ func (s *ObjectStorage) SetEncodedObject(o plumbing.EncodedObject) (plumbing.Has
 
 	defer ioutil.CheckClose(or, &err)
 
-	if err := ow.WriteHeader(o.Type(), o.Size()); err != nil {
+	if err = ow.WriteHeader(o.Type(), o.Size()); err != nil {
 		return plumbing.ZeroHash, err
 	}
 
-	if _, err := io.Copy(ow, or); err != nil {
+	if _, err = io.Copy(ow, or); err != nil {
 		return plumbing.ZeroHash, err
 	}
 
@@ -166,7 +167,7 @@ func (s *ObjectStorage) EncodedObject(t plumbing.ObjectType, h plumbing.Hash) (p
 			// Create a new object storage with the DotGit(s) and check for the
 			// required hash object. Skip when not found.
 			for _, dg := range dotgits {
-				o, oe := newObjectStorage(dg)
+				o, oe := NewObjectStorage(dg)
 				if oe != nil {
 					continue
 				}
@@ -365,7 +366,7 @@ func (s *ObjectStorage) IterEncodedObjects(t plumbing.ObjectType) (storer.Encode
 		return nil, err
 	}
 
-	seen := make(map[plumbing.Hash]bool)
+	seen := make(map[plumbing.Hash]struct{})
 	var iters []storer.EncodedObjectIter
 	if len(objects) != 0 {
 		iters = append(iters, &objectsIter{s: s, t: t, h: objects})
@@ -377,11 +378,11 @@ func (s *ObjectStorage) IterEncodedObjects(t plumbing.ObjectType) (storer.Encode
 		return nil, err
 	}
 
-	iters = append(iters, packi...)
+	iters = append(iters, packi)
 	return storer.NewMultiEncodedObjectIter(iters), nil
 }
 
-func (s *ObjectStorage) buildPackfileIters(t plumbing.ObjectType, seen map[plumbing.Hash]bool) ([]storer.EncodedObjectIter, error) {
+func (s *ObjectStorage) buildPackfileIters(t plumbing.ObjectType, seen map[plumbing.Hash]struct{}) (storer.EncodedObjectIter, error) {
 	if err := s.requireIndex(); err != nil {
 		return nil, err
 	}
@@ -390,23 +391,63 @@ func (s *ObjectStorage) buildPackfileIters(t plumbing.ObjectType, seen map[plumb
 	if err != nil {
 		return nil, err
 	}
+	return &lazyPackfilesIter{
+		hashes: packs,
+		open: func(h plumbing.Hash) (storer.EncodedObjectIter, error) {
+			pack, err := s.dir.ObjectPack(h)
+			if err != nil {
+				return nil, err
+			}
+			return newPackfileIter(pack, t, seen, s.index[h], s.deltaBaseCache)
+		},
+	}, nil
+}
 
-	var iters []storer.EncodedObjectIter
-	for _, h := range packs {
-		pack, err := s.dir.ObjectPack(h)
-		if err != nil {
+type lazyPackfilesIter struct {
+	hashes []plumbing.Hash
+	open   func(h plumbing.Hash) (storer.EncodedObjectIter, error)
+	cur    storer.EncodedObjectIter
+}
+
+func (it *lazyPackfilesIter) Next() (plumbing.EncodedObject, error) {
+	for {
+		if it.cur == nil {
+			if len(it.hashes) == 0 {
+				return nil, io.EOF
+			}
+			h := it.hashes[0]
+			it.hashes = it.hashes[1:]
+
+			sub, err := it.open(h)
+			if err == io.EOF {
+				continue
+			} else if err != nil {
+				return nil, err
+			}
+			it.cur = sub
+		}
+		ob, err := it.cur.Next()
+		if err == io.EOF {
+			it.cur.Close()
+			it.cur = nil
+			continue
+		} else if err != nil {
 			return nil, err
 		}
-
-		iter, err := newPackfileIter(pack, t, seen, s.index[h], s.deltaBaseCache)
-		if err != nil {
-			return nil, err
-		}
-
-		iters = append(iters, iter)
+		return ob, nil
 	}
+}
 
-	return iters, nil
+func (it *lazyPackfilesIter) ForEach(cb func(plumbing.EncodedObject) error) error {
+	return storer.ForEachIterator(it, cb)
+}
+
+func (it *lazyPackfilesIter) Close() {
+	if it.cur != nil {
+		it.cur.Close()
+		it.cur = nil
+	}
+	it.hashes = nil
 }
 
 type packfileIter struct {
@@ -414,16 +455,16 @@ type packfileIter struct {
 	d *packfile.Decoder
 	t plumbing.ObjectType
 
-	seen     map[plumbing.Hash]bool
+	seen     map[plumbing.Hash]struct{}
 	position uint32
 	total    uint32
 }
 
 func NewPackfileIter(f billy.File, t plumbing.ObjectType) (storer.EncodedObjectIter, error) {
-	return newPackfileIter(f, t, make(map[plumbing.Hash]bool), nil, nil)
+	return newPackfileIter(f, t, make(map[plumbing.Hash]struct{}), nil, nil)
 }
 
-func newPackfileIter(f billy.File, t plumbing.ObjectType, seen map[plumbing.Hash]bool,
+func newPackfileIter(f billy.File, t plumbing.ObjectType, seen map[plumbing.Hash]struct{},
 	index *packfile.Index, cache cache.Object) (storer.EncodedObjectIter, error) {
 	s := packfile.NewScanner(f)
 	_, total, err := s.Header()
@@ -464,7 +505,7 @@ func (iter *packfileIter) Next() (plumbing.EncodedObject, error) {
 			continue
 		}
 
-		if iter.seen[obj.Hash()] {
+		if _, ok := iter.seen[obj.Hash()]; ok {
 			return iter.Next()
 		}
 
@@ -516,12 +557,11 @@ func (iter *objectsIter) Close() {
 	iter.h = []plumbing.Hash{}
 }
 
-func hashListAsMap(l []plumbing.Hash) map[plumbing.Hash]bool {
-	m := make(map[plumbing.Hash]bool, len(l))
+func hashListAsMap(l []plumbing.Hash) map[plumbing.Hash]struct{} {
+	m := make(map[plumbing.Hash]struct{}, len(l))
 	for _, h := range l {
-		m[h] = true
+		m[h] = struct{}{}
 	}
-
 	return m
 }
 
