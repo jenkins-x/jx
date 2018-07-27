@@ -23,10 +23,6 @@ type JenkinsValuesConfig struct {
 	Servers JenkinsServersValuesConfig `yaml:"Servers,omitempty"`
 }
 
-type NexusValuesConfig struct {
-	Enabled *bool `yaml:"enabled,omitempty"`
-}
-
 type ProwValuesConfig struct {
 	User       string `yaml:"user,omitempty"`
 	HMACtoken  string `yaml:"hmacToken,omitempty"`
@@ -57,7 +53,6 @@ type JenkinsGithubServersValuesConfig struct {
 type HelmValuesConfig struct {
 	ExposeController *ExposeController   `yaml:"expose,omitempty"`
 	Jenkins          JenkinsValuesConfig `yaml:"jenkins,omitempty"`
-	Nexus            NexusValuesConfig   `yaml:"nexus,omitempty"`
 	Prow             ProwValuesConfig    `yaml:"prow,omitempty"`
 }
 
