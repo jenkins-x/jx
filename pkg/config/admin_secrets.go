@@ -20,7 +20,7 @@ const defaultMavenSettings = `<settings>
       <interactiveMode>false</interactiveMode>
       <mirrors>
           <mirror>
-          <id>nexus</id>
+          <id>repository</id>
           <mirrorOf>external:*</mirrorOf>
           <url>http://nexus/repository/maven-group/</url>
           </mirror>
@@ -79,11 +79,38 @@ type GrafanaSecret struct {
 }
 
 type Jenkins struct {
-	JenkinsSecret JenkinsAdminSecret `yaml:"Master"`
+	JenkinsSecret JenkinsMaster `yaml:"Master"`
+	Persistence   Persistence   `yaml:"Persistence,omitempty"`
 }
 
-type JenkinsAdminSecret struct {
-	Password string `yaml:"AdminPassword"`
+type JenkinsMaster struct {
+	Password         string         `yaml:"AdminPassword"`
+	InitContainerEnv []ContainerEnv `yaml:"InitContainerEnv,omitempty"`
+	ContainerEnv     []ContainerEnv `yaml:"ContainerEnv,omitempty"`
+}
+
+type ContainerEnv struct {
+	Name  string `yaml:"name,omitempty"`
+	Value string `yaml:"value,omitempty"`
+}
+
+type Persistence struct {
+	Mounts  []Mounts  `yaml:"mounts,omitempty"`
+	Volumes []Volumes `yaml:"volumes,omitempty"`
+}
+
+type Mounts struct {
+	Name      string `yaml:"Name,omitempty"`
+	MountPath string `yaml:"MountPath,omitempty"`
+}
+
+type Volumes struct {
+	Name   string `yaml:"Name,omitempty"`
+	Secret Secret `yaml:"Secret,omitempty"`
+}
+
+type Secret struct {
+	SecretName string `yaml:"secretName,omitempty"`
 }
 
 type PipelineSecrets struct {
