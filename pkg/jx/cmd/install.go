@@ -694,6 +694,14 @@ func isOpenShiftProvider(provider string) bool {
 	}
 }
 
+func isInhouseProvider(provider string) bool {
+	isInhouse := false
+	if provider == KUBERNETES {
+		isInhouse = true
+	}
+	return isInhouse
+}
+
 func (o *InstallOptions) enableOpenShiftSCC(ns string) error {
 	log.Infof("Enabling anyui for the Jenkins service account in namespace %s\n", ns)
 	err := o.runCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":jenkins")
