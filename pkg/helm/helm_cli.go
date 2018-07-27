@@ -177,7 +177,7 @@ func (h *HelmCLI) BuildDependency() error {
 func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
 	values []string, valueFiles []string) error {
 	args := []string{}
-	args = append(args, "install", "--name", releaseName, "--namespace", ns, chart)
+	args = append(args, "install", "--wait", "--name", releaseName, "--namespace", ns, chart)
 	if timeout != nil {
 		args = append(args, "--timeout", strconv.Itoa(*timeout))
 	}
