@@ -188,7 +188,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 				log.Infof("For more help on available commands see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/browsing/"))
 				log.Blank()
 			}
-			log.Info(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary docker images get downloaded!\n\n"))
+			log.Info(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary images get downloaded!\n\n"))
 
 			params := url.Values{}
 			err = jenk.Build(job, params)
