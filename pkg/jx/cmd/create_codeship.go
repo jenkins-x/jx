@@ -16,11 +16,11 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"io/ioutil"
+	"path"
 	"strings"
 )
 
 type CreateCodeshipFlags struct {
-	Cluster              []string
 	OrganisationName     string
 	CodeshipUsername     string
 	CodeshipPassword     string
@@ -79,7 +79,6 @@ func NewCmdCreateCodeship(f Factory, out io.Writer, errOut io.Writer) *cobra.Com
 
 func (options *CreateCodeshipOptions) addFlags(cmd *cobra.Command) {
 	// global flags
-	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, "cluster", "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
 	cmd.Flags().StringVarP(&options.Flags.OrganisationName, "organisation-name", "o", "", "The organisation name that will be used as the Git repo containing cluster details, the repo will be organisation-<org name>")
 
 	cmd.Flags().StringVarP(&options.Flags.CodeshipUsername, "codeship-username", "", "", "The username to login to Codeship with, this will not be stored anywhere")
@@ -93,35 +92,13 @@ func (options *CreateCodeshipOptions) addFlags(cmd *cobra.Command) {
 }
 
 func (o *CreateCodeshipOptions) validate() error {
-
-	if len(o.Flags.Cluster) == 0 {
-		return errors.New("No cluster details provided")
-	}
-
-	err := o.validateClusterDetails()
-	if err != nil {
-		return err
-	}
-
 	if o.Flags.OrganisationName == "" {
 		return errors.New("No organisation has been set")
 	}
 
+	// TODO we should only do this if a GKE cluster has been specified
 	if o.Flags.GKEServiceAccount == "" {
 		return errors.New("No gke service account has been set")
-	}
-	return nil
-}
-
-func (o *CreateCodeshipOptions) validateClusterDetails() error {
-	for _, p := range o.Flags.Cluster {
-		pair := strings.Split(p, "=")
-		if len(pair) != 2 {
-			return errors.New("need to provide cluster values as --cluster name=provider, e.g. --cluster production=gke")
-		}
-		if !stringInValidProviders(pair[1]) {
-			return errors.New(fmt.Sprintf("invalid cluster provider type %s, must be one of %v", p, validTerraformClusterProviders))
-		}
 	}
 	return nil
 }
@@ -212,6 +189,12 @@ func (o *CreateCodeshipOptions) Run() error {
 		}
 	}
 
+	clusterDir := path.Join(dir , "clusters")
+	clusters, err := findClusters(clusterDir)
+	if err != nil {
+		return err
+	}
+	
 	auth := codeship.NewBasicAuth(o.Flags.CodeshipUsername, o.Flags.CodeshipPassword)
 	client, err := codeship.New(auth)
 	if err != nil {
@@ -247,7 +230,7 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "JX_VERSION", Value: jxVersion()},
 				{Name: "GIT_USER", Value: o.Flags.GitUser},
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
-				{Name: "ENVIRONMENTS", Value: strings.Join(o.Flags.Cluster, ",")},
+				{Name: "ENVIRONMENTS", Value: strings.Join(clusters, ",")},
 			},
 		}
 
@@ -272,7 +255,7 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "JX_VERSION", Value: jxVersion()},
 				{Name: "GIT_USER", Value: o.Flags.GitUser},
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
-				{Name: "ENVIRONMENTS", Value: strings.Join(o.Flags.Cluster, ",")},
+				{Name: "ENVIRONMENTS", Value: strings.Join(clusters, ",")},
 			},
 		}
 
@@ -314,4 +297,20 @@ func jxVersion() string {
 		return "1.3.99"
 	}
 	return version.Version
+}
+
+func findClusters(path string) ([]string,error){
+	var clusters = []string{}
+
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return clusters, err
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			clusters = append(clusters, fmt.Sprintf("%s=gke" , f.Name()))
+		}
+	}
+	return clusters, nil
 }

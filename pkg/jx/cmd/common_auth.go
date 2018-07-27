@@ -98,7 +98,7 @@ func (o *CommonOptions) LoadPipelineSecrets(kind, serviceKind string) (*corev1.S
 	// TODO return empty list if not inside a pipeline?
 	kubeClient, curNs, err := o.KubeClient()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create a kuberntees client %s", err)
+		return nil, fmt.Errorf("Failed to create a kubernetes client %s", err)
 	}
 	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
 	if err != nil {
