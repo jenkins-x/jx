@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/url"
 	"os"
@@ -53,6 +54,7 @@ type InitFlags struct {
 	SkipIngress                bool
 	SkipTiller                 bool
 	OnPremise                  bool
+	Http                       bool
 }
 
 const (
@@ -493,12 +495,47 @@ func (o *InitOptions) initIngress() error {
 			return nil
 		}
 
+		values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
+		valuesFiles := []string{}
+		if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
+			// we can only enable one port for NLBs right now
+			enableHttp := "false"
+			enableHttps := "true"
+			if o.Flags.Http {
+				enableHttp = "true"
+				enableHttps = "false"
+			}
+			yamlText := `---
+rbac:
+ create: true
+
+controller:
+ service:
+   annotations:
+     service.beta.kubernetes.io/aws-load-balancer-type: nlb
+   enableHttp: ` + enableHttp + `
+   enableHttps: ` + enableHttps + `
+`
+
+			f, err := ioutil.TempFile("", "ing-values-")
+			if err != nil {
+				return err
+			}
+			fileName := f.Name()
+			err = ioutil.WriteFile(fileName, []byte(yamlText), DefaultWritePermissions)
+			if err != nil {
+				return err
+			}
+			log.Infof("Using helm values file: %s\n", fileName)
+			valuesFiles = append(valuesFiles, fileName)
+		}
+
 		i := 0
 		for {
-			values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
-			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values, nil)
+			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values, valuesFiles)
 			if err != nil {
 				if i >= 3 {
+					log.Errorf("Failed to install ingress chart: %s", err)
 					break
 				}
 				i++
@@ -664,7 +701,31 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		}
 	}
 	defaultDomain := address
-	if provider != AWS && provider != EKS && address != "" {
+
+	if domain == "" && (provider == AWS || provider == EKS) {
+		log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your kubernetes cluster to ensure you can use all of your availability zones\n")
+		log.Infof("If you do not have a custom DNS name you can use yet you can register a new one here: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
+
+		for {
+			if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
+				"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.") {
+				customDomain := ""
+				prompt := &survey.Input{
+					Message: "Your custom DNS name: ",
+					Help:    "Enter your custom domain that we can use to setup a Route 53 ALIAS record to point at the ELB host: " + address,
+				}
+				survey.AskOne(prompt, &customDomain, nil)
+				if customDomain != "" {
+					err := amazon.RegisterAwsCustomDomain(customDomain, address)
+					return customDomain, err
+				}
+			} else {
+				break
+			}
+		}
+	}
+
+	if address != "" {
 		addNip := true
 		aip := net.ParseIP(address)
 		if aip == nil {
@@ -711,29 +772,6 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		log.Successf("You can now configure a wildcard DNS pointing to the new loadbalancer address %s", address)
 		log.Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic dns nip.io.")
 		log.Infof("\nOnce you have a customer domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
-
-		if provider == AWS || provider == EKS {
-			log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your kubernetes cluster\n")
-			log.Infof("If you do not have a custom DNS name you can use yet you can register a new one here: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
-
-			for {
-				if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
-					"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.") {
-					customDomain := ""
-					prompt := &survey.Input{
-						Message: "Your custom DNS name: ",
-						Help:    "Enter your custom domain that we can use to setup a Route 53 ALIAS record to point at the ELB host: " + address,
-					}
-					survey.AskOne(prompt, &customDomain, nil)
-					if customDomain != "" {
-						err := amazon.RegisterAwsCustomDomain(customDomain, address)
-						return customDomain, err
-					}
-				} else {
-					break
-				}
-			}
-		}
 
 		log.Infof("\nIf you don't have a wildcard DNS setup then setup a new CNAME and point it at: %s then use the DNS domain in the next input...\n", defaultDomain)
 
