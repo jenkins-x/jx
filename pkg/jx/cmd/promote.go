@@ -502,6 +502,7 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 	return nil
 }
 
+// TODO This could do with a refactor and some tests...
 func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment, releaseInfo *ReleaseInfo, end time.Time, duration time.Duration, promoteKey *kube.PromoteStepActivityKey) error {
 	pullRequestInfo := releaseInfo.PullRequestInfo
 	logMergeFailure := false
@@ -539,6 +540,8 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							return nil
 						}
 						promoteKey.OnPromotePullRequest(o.Activities, mergedPR)
+						// Returning here to fix bug with promotions never completing even though the app has been deployed...
+						return nil
 					}
 
 					promoteKey.OnPromoteUpdate(o.Activities, kube.StartPromotionUpdate)

@@ -62,6 +62,9 @@ func setup(output string) {
 	monkey.PatchInstanceMethod(reflect.TypeOf(r), "RunWithoutRetry", func(_ *util.Command) (string, error) {
 		return output, nil
 	})
+	monkey.PatchInstanceMethod(reflect.TypeOf(r), "Run", func(_ *util.Command) (string, error) {
+		return output, nil
+	})
 }
 
 func createHelm(expectedArgs string) (*HelmCLI, error) {

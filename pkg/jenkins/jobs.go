@@ -75,7 +75,7 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
 			  <strategyId>1</strategyId>
 			</org.jenkinsci.plugins.github__branch__source.BranchDiscoveryTrait>
 			<org.jenkinsci.plugins.github__branch__source.OriginPullRequestDiscoveryTrait>
-			  <strategyId>1</strategyId>
+			  <strategyId>2</strategyId>
 			</org.jenkinsci.plugins.github__branch__source.OriginPullRequestDiscoveryTrait>
 			<org.jenkinsci.plugins.github__branch__source.ForkPullRequestDiscoveryTrait>
 			  <strategyId>1</strategyId>
@@ -99,7 +99,7 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
               <strategyId>1</strategyId>
             </org.jenkinsci.plugin.gitea.BranchDiscoveryTrait>
             <org.jenkinsci.plugin.gitea.OriginPullRequestDiscoveryTrait>
-              <strategyId>1</strategyId>
+              <strategyId>2</strategyId>
             </org.jenkinsci.plugin.gitea.OriginPullRequestDiscoveryTrait>
             <org.jenkinsci.plugin.gitea.ForkPullRequestDiscoveryTrait>
               <strategyId>1</strategyId>
@@ -123,7 +123,7 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
 	 	      <strategyId>1</strategyId>
 	 	    </com.cloudbees.jenkins.plugins.bitbucket.BranchDiscoveryTrait>
 	 	    <com.cloudbees.jenkins.plugins.bitbucket.OriginPullRequestDiscoveryTrait>
-	 	      <strategyId>1</strategyId>
+	 	      <strategyId>2</strategyId>
 	 	    </com.cloudbees.jenkins.plugins.bitbucket.OriginPullRequestDiscoveryTrait>
 	 	    <com.cloudbees.jenkins.plugins.bitbucket.ForkPullRequestDiscoveryTrait>
 	 	      <strategyId>1</strategyId>
