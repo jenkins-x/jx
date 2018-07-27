@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -135,6 +136,31 @@ func (o *CommonOptions) FindHelmChart() (string, error) {
 	}
 	o.Helm().SetCWD(dir)
 	return o.Helm().FindChart()
+}
+
+func (o *CommonOptions) DiscoverAppName() (string, error) {
+	answer := ""
+	chartFile, err := o.FindHelmChart()
+	if err != nil {
+		return answer, err
+	}
+	if chartFile != "" {
+		return helm.LoadChartName(chartFile)
+	}
+
+	gitInfo, err := o.Git().Info("")
+	if err != nil {
+		return answer, err
+	}
+
+	if gitInfo == nil {
+		return answer, fmt.Errorf("no git info found to discover app name from")
+	}
+	answer = gitInfo.Name
+
+	if answer == "" {
+	}
+	return answer, nil
 }
 
 func (o *CommonOptions) isHelmRepoMissing(helmUrlString string) (bool, error) {
