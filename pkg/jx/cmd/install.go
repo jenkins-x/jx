@@ -1000,6 +1000,12 @@ func (options *InstallOptions) getBinaryRepositoryManager() (error, string) {
 		binaryRepositoryManager = strings.TrimSpace(binaryRepositoryManager)
 		return nil, strings.Title(binaryRepositoryManager)
 	}
+
+	// configure Nexus by default in headless mode
+	if options.Headless {
+		binaryRepositoryManager = NexusRepoMgr
+	}
+
 	if options.Flags.ArtifactoryUrl != "" {
 		return nil, ArtifactoryRepoMgr
 	}
