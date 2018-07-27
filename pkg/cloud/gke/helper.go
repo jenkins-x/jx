@@ -37,6 +37,10 @@ func GetGoogleProjects() ([]string, error) {
 		return nil, err
 	}
 
+	if out == "Listed 0 items." {
+		return []string{}, nil
+	}
+
 	lines := strings.Split(string(out), "\n")
 	var existingProjects []string
 	for _, l := range lines {
