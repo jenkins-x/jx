@@ -112,7 +112,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 			projectId}
 
 		cmd := util.Command{
-			Name: "gsutil",
+			Name: "gcloud",
 			Args: args,
 		}
 		_, err = cmd.RunWithoutRetry()
@@ -134,9 +134,8 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 				projectId}
 
 			cmd := util.Command{
-				Name:  "gcloud",
-				Args:  args,
-				Quiet: true,
+				Name: "gcloud",
+				Args: args,
 			}
 			_, err := cmd.RunWithoutRetry()
 			if err != nil {

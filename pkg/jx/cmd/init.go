@@ -709,6 +709,8 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			return defaultDomain, nil
 		}
 		log.Successf("You can now configure a wildcard DNS pointing to the new loadbalancer address %s", address)
+		log.Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic dns nip.io.")
+		log.Infof("\nOnce you have a customer domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
 
 		if provider == AWS || provider == EKS {
 			log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your kubernetes cluster\n")

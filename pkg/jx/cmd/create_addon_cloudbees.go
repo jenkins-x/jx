@@ -28,6 +28,8 @@ var (
 		Creates the CloudBees app for Kubernetes addon
 
 		CloudBees app for Kubernetes provides unified Continuous Delivery Environment console to make it easier to do CI/CD and Environments across a number of microservices and teams
+
+		For more information please see [https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x](https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x)
 `)
 
 	CreateAddonCloudBeesExample = templates.Examples(`

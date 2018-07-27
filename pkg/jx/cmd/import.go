@@ -489,11 +489,11 @@ func (o *ImportOptions) DraftCreate() error {
 			}
 		}
 	}
-	jenknisfileBackup := ""
+	jenkinsfileBackup := ""
 	if jenkinsfileExists && o.InitialisedGit && !o.DisableJenkinsfileCheck {
 		// lets copy the old Jenkinsfile in case we overwrite it
-		jenknisfileBackup = jenkinsfile + jenkinsfileBackupSuffix
-		err = util.RenameFile(jenkinsfile, jenknisfileBackup)
+		jenkinsfileBackup = jenkinsfile + jenkinsfileBackupSuffix
+		err = util.RenameFile(jenkinsfile, jenkinsfileBackup)
 		if err != nil {
 			return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
 		}
@@ -505,7 +505,7 @@ func (o *ImportOptions) DraftCreate() error {
 		log.Warnf("Failed to run draft create in %s due to %s", dir, err)
 	}
 
-	if jenknisfileBackup != "" {
+	if jenkinsfileBackup != "" {
 		// if there's no Jenkinsfile created then rename it back again!
 		jenkinsfileExists, err = util.FileExists(jenkinsfile)
 		if err != nil {
@@ -513,14 +513,14 @@ func (o *ImportOptions) DraftCreate() error {
 		} else {
 			if jenkinsfileExists {
 				if !o.InitialisedGit {
-					err = os.Remove(jenknisfileBackup)
+					err = os.Remove(jenkinsfileBackup)
 					if err != nil {
 						log.Warnf("Failed to remove Jenkinsfile backup %s", err)
 					}
 				}
 			} else {
 				// lets put the old one back again
-				err = util.RenameFile(jenknisfileBackup, jenkinsfile)
+				err = util.RenameFile(jenkinsfileBackup, jenkinsfile)
 				if err != nil {
 					return fmt.Errorf("Failed to rename Jenkinsfile backup file: %s", err)
 				}
