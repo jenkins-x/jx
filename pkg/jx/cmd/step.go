@@ -55,6 +55,7 @@ func NewCmdStep(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdStepSplitMonorepo(f, out, errOut))
 	cmd.AddCommand(NewCmdStepTag(f, out, errOut))
 	cmd.AddCommand(NewCmdStepValidate(f, out, errOut))
+	cmd.AddCommand(NewCmdStepVerify(f, out, errOut))
 	cmd.AddCommand(NewCmdStepWaitForArtifact(f, out, errOut))
 
 	return cmd

@@ -78,7 +78,10 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 		} else {
 			if batchMode {
 				if len(server.Users) == 0 {
-					return nil, fmt.Errorf("Server %s has no user auths defined!", url)
+					server = config.GetOrCreateServer(repoOptions.ServerURL)
+					if len(server.Users) == 0 {
+						return nil, fmt.Errorf("Server %s has no user auths defined!", url)
+					}
 				}
 				var ua *auth.UserAuth
 				if server.CurrentUser != "" {
