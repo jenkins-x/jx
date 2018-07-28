@@ -71,18 +71,14 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 	}
 	fmt.Fprintf(out, "Using git provider %s\n", util.ColorInfo(server.Description()))
 	url := server.URL
+
 	if userAuth == nil {
 		if repoOptions.Username != "" {
 			userAuth = config.GetOrCreateUserAuth(url, repoOptions.Username)
 		} else {
 			if batchMode {
 				if len(server.Users) == 0 {
-					fmt.Fprintf(out, "before %s\n", server)
-					server = config.GetOrCreateServer(repoOptions.ServerURL)
-					fmt.Fprintf(out, "after %s\n", server)
-					if len(server.Users) == 0 {
-						return nil, fmt.Errorf("Server %s has no user auths defined!", url)
-					}
+					return nil, fmt.Errorf("Server %s has no user auths defined!", url)
 				}
 				var ua *auth.UserAuth
 				if server.CurrentUser != "" {
@@ -100,9 +96,11 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 			}
 		}
 	}
+
 	if userAuth.IsInvalid() && repoOptions.ApiToken != "" {
 		userAuth.ApiToken = repoOptions.ApiToken
 	}
+
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
 			git.PrintCreateRepositoryGenerateAccessToken(server, username, out)

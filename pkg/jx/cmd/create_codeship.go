@@ -230,6 +230,7 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "JX_VERSION", Value: jxVersion()},
 				{Name: "GIT_USER", Value: o.Flags.GitUser},
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
+				{Name: "BUILD_NUMBER", Value: "1"},
 				{Name: "ENVIRONMENTS", Value: strings.Join(clusters, ",")},
 			},
 		}
