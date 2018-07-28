@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
+	"github.com/jenkins-x/jx/pkg/jenkins"
 )
 
 const (
@@ -66,7 +67,11 @@ func assertImport(t *testing.T, testDir string) error {
 	err := o.Run()
 	assert.NoError(t, err, "Failed with %s", err)
 	if err == nil {
-		jenkinsfile := filepath.Join(testDir, "Jenkinsfile")
+		tempJenkinsfile := o.Jenkinsfile
+		if tempJenkinsfile == "" {
+			tempJenkinsfile = jenkins.DefaultJenkinsfile
+		}
+		jenkinsfile := filepath.Join(testDir, tempJenkinsfile)
 		tests.AssertFileExists(t, jenkinsfile)
 		tests.AssertFileExists(t, filepath.Join(testDir, "Dockerfile"))
 		tests.AssertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))

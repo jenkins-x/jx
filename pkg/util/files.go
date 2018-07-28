@@ -79,6 +79,9 @@ func RenameDir(src string, dst string, force bool) (err error) {
 }
 
 func RenameFile(src string, dst string) (err error) {
+	if (src == dst) {
+		return nil
+	}
 	err = CopyFile(src, dst)
 	if err != nil {
 		return fmt.Errorf("failed to copy source file %s to %s: %s", src, dst, err)

@@ -414,7 +414,11 @@ func (o *ImportOptions) DraftCreate() error {
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
 
-	jenkinsfile := filepath.Join(dir, o.Jenkinsfile)
+	tempJenkinsfile := o.Jenkinsfile
+	if tempJenkinsfile == "" {
+		tempJenkinsfile = jenkins.DefaultJenkinsfile
+	}
+	jenkinsfile := filepath.Join(dir, tempJenkinsfile)
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
 	lpack := ""
@@ -505,13 +509,15 @@ func (o *ImportOptions) DraftCreate() error {
 		log.Warnf("Failed to run draft create in %s due to %s", dir, err)
 	}
 
-	var unpackedDefaultJenkinsfile = filepath.Join(dir, jenkins.DefaultJenkinsfile)
-	var unpackedDefaultJenkinsfileExists = false
-	unpackedDefaultJenkinsfileExists, err = util.FileExists(unpackedDefaultJenkinsfile)
-	if unpackedDefaultJenkinsfileExists {
-		err = util.RenameFile(unpackedDefaultJenkinsfile, jenkinsfile)
-		if err != nil {
-			return fmt.Errorf("Failed to rename Jenkinsfile file to '%s': %s", unpackedDefaultJenkinsfile, err)
+	unpackedDefaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
+	if unpackedDefaultJenkinsfile != jenkinsfile {
+		unpackedDefaultJenkinsfileExists := false
+		unpackedDefaultJenkinsfileExists, err = util.FileExists(unpackedDefaultJenkinsfile)
+		if unpackedDefaultJenkinsfileExists {
+			err = util.RenameFile(unpackedDefaultJenkinsfile, jenkinsfile)
+			if err != nil {
+				return fmt.Errorf("Failed to rename Jenkinsfile file from '%s' to '%s': %s", unpackedDefaultJenkinsfile, jenkinsfile, err)
+			}
 		}
 	}
 
