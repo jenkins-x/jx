@@ -99,9 +99,11 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 			}
 		}
 	}
+
 	if userAuth.IsInvalid() && repoOptions.ApiToken != "" {
 		userAuth.ApiToken = repoOptions.ApiToken
 	}
+
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
 			git.PrintCreateRepositoryGenerateAccessToken(server, username, out)
