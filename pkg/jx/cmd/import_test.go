@@ -19,9 +19,9 @@ import (
 
 const (
 	mavenKeepOldJenkinsfile = "maven_keep_old_jenkinsfile"
-	mavenOldJenkinsfile = "maven_old_jenkinsfile"
-	mavenCamel              = "maven-camel"
-	mavenSpringBoot         = "maven-springboot"
+	mavenOldJenkinsfile 	= "maven_old_jenkinsfile"
+	mavenCamel              = "maven_camel"
+	mavenSpringBoot         = "maven_springboot"
 	probePrefix             = "probePath:"
 )
 
@@ -40,20 +40,21 @@ func TestImportProjects(t *testing.T) {
 		if f.IsDir() {
 			name := f.Name()
 			srcDir := filepath.Join(testData, name)
-			testDir := filepath.Join(tempDir, name)
-			util.CopyDir(srcDir, testDir, true)
-
-			err = assertImport(t, testDir, name,false)
-			assert.NoError(t, err, "Importing dir %s from source %s", testDir, srcDir)
-
-			// Now test the same with renamed Jenkinsfiles
-			testDirWithRename := filepath.Join(tempDir, name + "-RenamedJenkinsfile")
-			util.CopyDir(srcDir, testDirWithRename, true)
-
-			err = assertImport(t, testDirWithRename, name,true)
-			assert.NoError(t, err, "Importing dir %s from source %s", testDirWithRename, srcDir)
+			testImportProject(t, tempDir, name, srcDir, false)
+			testImportProject(t, tempDir, name, srcDir, true)
 		}
 	}
+}
+
+func testImportProject(t *testing.T, tempDir string, testcase string, srcDir string, withRename bool) {
+	testDirSuffix := "DefaultJenkinsfile"
+	if withRename {
+		testDirSuffix = "RenamedJenkinsfile"
+	}
+	testDir := filepath.Join(tempDir + "-" + testDirSuffix, testcase)
+	util.CopyDir(srcDir, testDir, true)
+	err := assertImport(t, testDir, testcase, withRename)
+	assert.NoError(t, err, "Importing dir %s from source %s", testDir, srcDir)
 }
 
 func assertImport(t *testing.T, testDir string, testcase string, withRename bool) error {
