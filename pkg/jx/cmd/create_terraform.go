@@ -846,14 +846,14 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 		return err
 	}
 
-	err = terraform.Plan(path, terraformVars, serviceAccountPath)
+	err = terraform.Plan(path, terraformVars, serviceAccountPath, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
 
 	log.Info("Applying plan...\n")
 
-	err = terraform.Apply(path, terraformVars, serviceAccountPath)
+	err = terraform.Apply(path, terraformVars, serviceAccountPath, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
