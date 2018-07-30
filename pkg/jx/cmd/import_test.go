@@ -10,16 +10,16 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"github.com/jenkins-x/jx/pkg/jenkins"
 )
 
 const (
 	mavenKeepOldJenkinsfile = "maven_keep_old_jenkinsfile"
-	mavenOldJenkinsfile 	= "maven_old_jenkinsfile"
+	mavenOldJenkinsfile     = "maven_old_jenkinsfile"
 	mavenCamel              = "maven_camel"
 	mavenSpringBoot         = "maven_springboot"
 	probePrefix             = "probePath:"
@@ -51,7 +51,7 @@ func testImportProject(t *testing.T, tempDir string, testcase string, srcDir str
 	if withRename {
 		testDirSuffix = "RenamedJenkinsfile"
 	}
-	testDir := filepath.Join(tempDir + "-" + testDirSuffix, testcase)
+	testDir := filepath.Join(tempDir+"-"+testDirSuffix, testcase)
 	util.CopyDir(srcDir, testDir, true)
 	err := assertImport(t, testDir, testcase, withRename)
 	assert.NoError(t, err, "Importing dir %s from source %s", testDir, srcDir)

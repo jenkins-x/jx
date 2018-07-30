@@ -90,7 +90,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 	}
 
 	if output == "Listed 0 items." {
-		log.Infof("Unable to find service account %s, checking if we have enough permission to create\n", serviceAccount)
+		log.Infof("Unable to find service account %s, checking if we have enough permission to create\n", util.ColorInfo(serviceAccount))
 
 		// if it doesn't check to see if we have permissions to create (assign roles) to a service account
 		hasPerm, err := CheckPermission("resourcemanager.projects.setIamPolicy", projectId)
@@ -103,7 +103,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 		}
 
 		// create service
-		log.Infof("Creating service account %s\n", serviceAccount)
+		log.Infof("Creating service account %s\n", util.ColorInfo(serviceAccount))
 		args = []string{"iam",
 			"service-accounts",
 			"create",
@@ -199,6 +199,8 @@ func EnableApis(projectId string, apis ...string) error {
 
 func Login(serviceAccountKeyPath string, skipLogin bool) error {
 	if serviceAccountKeyPath != "" {
+		log.Infof("Activating service account %s\n", util.ColorInfo(serviceAccountKeyPath))
+
 		if _, err := os.Stat(serviceAccountKeyPath); os.IsNotExist(err) {
 			return errors.New("Unable to locate service account " + serviceAccountKeyPath)
 		}

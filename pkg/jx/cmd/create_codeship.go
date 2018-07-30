@@ -7,9 +7,11 @@ import (
 
 	"context"
 	"errors"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/codeship/codeship-go"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
@@ -18,21 +20,25 @@ import (
 	"io/ioutil"
 	"path"
 	"strings"
-)
+	"os"
+	)
 
 type CreateCodeshipFlags struct {
-	OrganisationName     string
-	CodeshipUsername     string
-	CodeshipPassword     string
-	CodeshipOrganisation string
-	GitUser              string
-	GitEmail             string
-	GKEServiceAccount    string
+	OrganisationName        string
+	ForkOrganisationGitRepo string
+	CodeshipUsername        string
+	CodeshipPassword        string
+	CodeshipOrganisation    string
+	GitUser                 string
+	GitEmail                string
+	GKEServiceAccount       string
 }
 
 // CreateCodeshipOptions the options for the create spring command
 type CreateCodeshipOptions struct {
 	CreateOptions
+	CreateTerraformOptions
+	CreateGkeServiceAccountOptions
 	Flags                CreateCodeshipFlags
 	GitRepositoryOptions gits.GitRepositoryOptions
 }
@@ -57,6 +63,25 @@ func NewCmdCreateCodeship(f Factory, out io.Writer, errOut io.Writer) *cobra.Com
 				Err:     errOut,
 			},
 		},
+		CreateTerraformOptions: CreateTerraformOptions{
+			CreateOptions: CreateOptions{
+				CommonOptions: CommonOptions{
+					Factory: f,
+					Out:     out,
+					Err:     errOut,
+				},
+			},
+			InstallOptions: createInstallOptions(f, out, errOut),
+		},
+		CreateGkeServiceAccountOptions: CreateGkeServiceAccountOptions{
+			CreateOptions: CreateOptions{
+				CommonOptions: CommonOptions{
+					Factory: f,
+					Out:     out,
+					Err:     errOut,
+				},
+			},
+		},
 	}
 
 	cmd := &cobra.Command{
@@ -74,6 +99,9 @@ func NewCmdCreateCodeship(f Factory, out io.Writer, errOut io.Writer) *cobra.Com
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd)
 
+	options.CreateGkeServiceAccountOptions.addFlags(cmd)
+	options.CreateTerraformOptions.addFlags(cmd)
+
 	return cmd
 }
 
@@ -84,6 +112,8 @@ func (options *CreateCodeshipOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.CodeshipUsername, "codeship-username", "", "", "The username to login to Codeship with, this will not be stored anywhere")
 	cmd.Flags().StringVarP(&options.Flags.CodeshipPassword, "codeship-password", "", "", "The password to login to Codeship with, this will not be stored anywhere")
 	cmd.Flags().StringVarP(&options.Flags.CodeshipOrganisation, "codeship-organisation", "", "", "The Codeship organisation to use, this will not be stored anywhere")
+
+	cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultOrganisationGitRepoURL, "The Git repository used as the fork when creating new Organisation git repos")
 
 	cmd.Flags().StringVarP(&options.Flags.GitUser, "git-user", "", "Codeship", "The name to use for any git commits")
 	cmd.Flags().StringVarP(&options.Flags.GitEmail, "git-email", "", "codeship@jenkins-x.io", "The email to use for any git commits")
@@ -105,6 +135,24 @@ func (o *CreateCodeshipOptions) validate() error {
 
 // Run implements this command
 func (o *CreateCodeshipOptions) Run() error {
+	if o.Flags.OrganisationName == "" {
+		o.Flags.OrganisationName = strings.ToLower(randomdata.SillyName())
+	}
+
+	// if gke-service-account is not set, create the service account
+	if o.Flags.GKEServiceAccount == "" {
+		gkeServiceAccountPath := path.Join(util.HomeDir(), fmt.Sprintf("%s.key.json", o.Flags.OrganisationName))
+
+		o.CreateGkeServiceAccountOptions.Flags.Name = o.Flags.OrganisationName
+		o.CreateGkeServiceAccountOptions.CommonOptions.BatchMode = o.CreateOptions.CommonOptions.BatchMode
+		err := o.CreateGkeServiceAccountOptions.Run()
+		if err != nil {
+			return err
+		}
+
+		o.Flags.GKEServiceAccount = gkeServiceAccountPath
+	}
+
 	err := o.validate()
 	if err != nil {
 		return err
@@ -171,11 +219,23 @@ func (o *CreateCodeshipOptions) Run() error {
 	}
 	provider := details.GitProvider
 	repo, err := provider.GetRepository(owner, repoName)
+	remoteRepoExists := err == nil
 	var dir string
-	if err == nil {
-		fmt.Fprintf(o.Stdout(), "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
-		// if the repo already exists then lets just modify it if required
+
+	if !remoteRepoExists {
+		fmt.Fprintf(o.Stdout(), "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+
+		repo, err = details.CreateRepository()
+		if err != nil {
+			return err
+		}
+
 		dir, err = util.CreateUniqueDirectory(organisationDir, details.RepoName, util.MaximumNewDirectoryAttempts)
+		if err != nil {
+			return err
+		}
+
+		err = o.Git().Clone(o.Flags.ForkOrganisationGitRepo, dir)
 		if err != nil {
 			return err
 		}
@@ -183,7 +243,58 @@ func (o *CreateCodeshipOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		err = o.Git().Clone(pushGitURL, dir)
+		err = o.Git().AddRemote(dir, "upstream", o.Flags.ForkOrganisationGitRepo)
+		if err != nil {
+			return err
+		}
+		err = o.Git().SetRemoteURL(dir, "origin", pushGitURL)
+		if err != nil {
+			return err
+		}
+	} else {
+		fmt.Fprintf(o.Stdout(), "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+
+		dir = path.Join(organisationDir, details.RepoName)
+		localDirExists, err := util.FileExists(dir)
+		if err != nil {
+			return err
+		}
+
+		if localDirExists {
+			// if remote repo does exist & local does exist, git pull the local repo
+			fmt.Fprintf(o.Stdout(), "local directory already exists\n")
+
+			err = o.Git().Pull(dir)
+			if err != nil {
+				return err
+			}
+		} else {
+			fmt.Fprintf(o.Stdout(), "cloning repository locally\n")
+			err = os.MkdirAll(dir, os.FileMode(0755))
+			if err != nil {
+				return err
+			}
+
+			// if remote repo does exist & local directory does not exist, clone locally
+			pushGitURL, err := o.Git().CreatePushURL(repo.CloneURL, details.User)
+			if err != nil {
+				return err
+			}
+			err = o.Git().Clone(pushGitURL, dir)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if !remoteRepoExists {
+		o.CreateTerraformOptions.CommonOptions.BatchMode = o.CreateOptions.CommonOptions.BatchMode
+		o.CreateTerraformOptions.Flags.OrganisationName = o.Flags.OrganisationName
+		o.CreateTerraformOptions.Flags.SkipTerraformApply = true
+		o.CreateTerraformOptions.Flags.GKEServiceAccount = o.Flags.GKEServiceAccount
+		o.CreateTerraformOptions.Flags.LocalRepository = dir
+
+		err = o.CreateTerraformOptions.Run()
 		if err != nil {
 			return err
 		}
@@ -296,7 +407,7 @@ func ProjectExists(ctx context.Context, org *codeship.Organization, codeshipOrg 
 
 func jxVersion() string {
 	if version.Version == "1.0.1" {
-		return "1.3.99"
+		return "1.3.132"
 	}
 	return version.Version
 }

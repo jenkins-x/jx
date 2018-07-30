@@ -3,8 +3,8 @@ package gits
 import (
 	"context"
 	"fmt"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
