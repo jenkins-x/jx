@@ -68,11 +68,11 @@ pipeline {
                         
                         sh "echo now running the BDD tests"
 
-                        dir ('/home/jenkins/go/src/github.com/jenkins-x/godog-jx'){
-                            git "https://github.com/jenkins-x/godog-jx"
+                        dir ('/home/jenkins/go/src/github.com/jenkins-x/bdd-jx'){
+                            git "https://github.com/jenkins-x/bdd-jx"
                             sh "make configure-ghe"
-
-                            sh "make bdd-tests"
+                            sh "make bootstrap"
+                            sh "make test-parallel"
                         }
 
                         sh "echo now tearing down the team ${TEAM}"
@@ -99,6 +99,17 @@ pipeline {
                         sh "helm init --client-only"
                         sh "make release"
                     }
+                }
+                dir ('/home/jenkins/go/src/github.com/jenkins-x/bdd-jx'){
+                    sh "git clone https://github.com/jenkins-x/jenkins-x-website.git /home/jenkins/go/src/github.com/jenkins-x/jenkins-x-website"
+                    sh "cp -f reports/build-status.md /home/jenkins/go/src/github.com/jenkins-x/jenkins-x-website/content/developing/build-status.md"
+                }
+
+                dir("/home/jenkins/go/src/github.com/jenkins-x/jenkins-x-website") {
+                  sh 'git config credential.helper store'
+                  sh 'git add *'
+                  sh "git commit --allow-empty -a -m \"updated build status\""
+                  sh "git push origin"
                 }
             }
         }

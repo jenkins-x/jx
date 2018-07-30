@@ -5,16 +5,68 @@ jenkins:
       Maven:
         Containers:
           Maven:
-            Image: jenkinsxio/builder-maven:$VERSION
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-maven:$VERSION
       Nodejs:
         Containers:
           Nodejs:
-            Image: jenkinsxio/builder-nodejs:$VERSION
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-nodejs:$VERSION
       Go:
         Containers:
           Go:
-            Image: jenkinsxio/builder-go:$VERSION
-
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-go:$VERSION
+      Gradle:
+        Containers:
+          Gradle:
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-gradle:$VERSION
+      JX-base:
+        Containers:
+          JX-base:
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-base:$VERSION
+      Promote:
+        Containers:
+          Promote:
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-base:$VERSION
+      Python:
+        Containers:
+          Python:
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-python:$VERSION
+      Python2:
+        Containers:
+          Python:
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-python2:$VERSION
+      Ruby:
+        Containers:
+          Ruby:
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-ruby:$VERSION
+      Rust:
+        Containers:
+          Rust:
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-rust:$VERSION
+      Scala:
+        Containers:
+          Scala:
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-scala:$VERSION
+      Swift:
+        Containers:
+          Swift:
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-swift:$VERSION
+      Terraform:
+        Containers:
+          Terraform:
+            AlwaysPullImage: true
+            Image: jenkinsxiow/builder-terraform:$VERSION
 # disable stuff
 pipelinecontroller:
   enabled: false
