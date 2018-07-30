@@ -994,7 +994,7 @@ func (o *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) error 
 	_, err = o.findEnvironmentNamespace(c.Name())
 	if err != nil {
 		// jx is missing, install,
-		o.InstallOptions.Flags.DefaultEnvironmentPrefix = c.Name()
+		o.InstallOptions.Flags.DefaultEnvironmentPrefix = c.ClusterName()
 		err = o.initAndInstall(c.Provider())
 		if err != nil {
 			return err
