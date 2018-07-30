@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
+	"io"
 )
 
 func Init(terraformDir string, serviceAccountPath string) error {
@@ -22,7 +23,7 @@ func Init(terraformDir string, serviceAccountPath string) error {
 	return nil
 }
 
-func Plan(terraformDir string, terraformVars string, serviceAccountPath string) error {
+func Plan(terraformDir string, terraformVars string, serviceAccountPath string, stdout io.Writer, stderr io.Writer) error {
 	cmd := util.Command{
 		Name: "terraform",
 		Args: []string{"plan",
@@ -30,6 +31,8 @@ func Plan(terraformDir string, terraformVars string, serviceAccountPath string) 
 			"-var",
 			fmt.Sprintf("credentials=%s", serviceAccountPath),
 			terraformDir},
+		Out: stdout,
+		Err: stderr,
 	}
 	_, err := cmd.RunWithoutRetry()
 	if err != nil {
@@ -38,7 +41,7 @@ func Plan(terraformDir string, terraformVars string, serviceAccountPath string) 
 	return nil
 }
 
-func Apply(terraformDir string, terraformVars string, serviceAccountPath string) error {
+func Apply(terraformDir string, terraformVars string, serviceAccountPath string, stdout io.Writer, stderr io.Writer) error {
 	cmd := util.Command{
 		Name: "terraform",
 		Args: []string{"apply", "-auto-approve",
@@ -46,6 +49,8 @@ func Apply(terraformDir string, terraformVars string, serviceAccountPath string)
 			"-var",
 			fmt.Sprintf("credentials=%s", serviceAccountPath),
 			terraformDir},
+		Out: stdout,
+		Err: stderr,
 	}
 	_, err := cmd.RunWithoutRetry()
 	if err != nil {

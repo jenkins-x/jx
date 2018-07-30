@@ -3,6 +3,7 @@ package gits
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -21,8 +22,19 @@ type GitlabProvider struct {
 }
 
 func NewGitlabProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+	u := server.URL
 	c := gitlab.NewClient(nil, user.ApiToken)
+	if !IsGitLabServerURL(u) {
+		if err := c.SetBaseURL(u); err != nil {
+			return nil, err
+		}
+	}
 	return withGitlabClient(server, user, c, git)
+}
+
+func IsGitLabServerURL(u string) bool {
+	u = strings.TrimSuffix(u, "/")
+	return u == "" || u == "https://gitlab.com" || u == "http://gitlab.com"
 }
 
 // Used by unit tests to inject a mocked client

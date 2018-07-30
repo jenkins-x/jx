@@ -4,7 +4,7 @@ import (
 	"os"
 )
 
-// CreateAuthUserFromEnvironment creates a user auth from environment vairables
+// CreateAuthUserFromEnvironment creates a user auth from environment variables
 func CreateAuthUserFromEnvironment(prefix string) UserAuth {
 	answer := UserAuth{
 		Username:    os.Getenv(prefix + "_USERNAME"),
