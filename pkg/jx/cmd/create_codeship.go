@@ -41,8 +41,8 @@ var (
 	createCodeshipExample = templates.Examples(`
 		jx create codeship
 
-		# to specify the clusters via flags
-		jx create codeship -o org
+		# to specify the org and service account via flags
+		jx create codeship -o org --gke-service-account <path>
 
 `)
 )
@@ -189,12 +189,12 @@ func (o *CreateCodeshipOptions) Run() error {
 		}
 	}
 
-	clusterDir := path.Join(dir , "clusters")
+	clusterDir := path.Join(dir, "clusters")
 	clusters, err := findClusters(clusterDir)
 	if err != nil {
 		return err
 	}
-	
+
 	auth := codeship.NewBasicAuth(o.Flags.CodeshipUsername, o.Flags.CodeshipPassword)
 	client, err := codeship.New(auth)
 	if err != nil {
@@ -230,6 +230,7 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "JX_VERSION", Value: jxVersion()},
 				{Name: "GIT_USER", Value: o.Flags.GitUser},
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
+				{Name: "BUILD_NUMBER", Value: "1"},
 				{Name: "ENVIRONMENTS", Value: strings.Join(clusters, ",")},
 			},
 		}
@@ -255,6 +256,7 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "JX_VERSION", Value: jxVersion()},
 				{Name: "GIT_USER", Value: o.Flags.GitUser},
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
+				{Name: "BUILD_NUMBER", Value: "1"},
 				{Name: "ENVIRONMENTS", Value: strings.Join(clusters, ",")},
 			},
 		}
@@ -299,7 +301,7 @@ func jxVersion() string {
 	return version.Version
 }
 
-func findClusters(path string) ([]string,error){
+func findClusters(path string) ([]string, error) {
 	var clusters = []string{}
 
 	files, err := ioutil.ReadDir(path)
@@ -309,7 +311,7 @@ func findClusters(path string) ([]string,error){
 
 	for _, f := range files {
 		if f.IsDir() {
-			clusters = append(clusters, fmt.Sprintf("%s=gke" , f.Name()))
+			clusters = append(clusters, fmt.Sprintf("%s=gke", f.Name()))
 		}
 	}
 	return clusters, nil

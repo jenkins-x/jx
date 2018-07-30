@@ -150,8 +150,6 @@ func TestRunWithoutRetry(t *testing.T) {
 
 	assert.Error(t, err, "Run should exit with failure")
 	assert.Equal(t, "FAILURE!", res)
-	assert.Equal(t, false, cmd.Verbose)
-	assert.Equal(t, false, cmd.Quiet)
 	assert.Equal(t, true, cmd.DidError())
 	assert.Equal(t, true, cmd.DidFail())
 	assert.Equal(t, 1, len(cmd.Errors))
@@ -178,7 +176,6 @@ func TestRunVerbose(t *testing.T) {
 		Dir:     exPath,
 		Args:    args,
 		Timeout: 3 * time.Second,
-		Verbose: true,
 	}
 
 	res, err := cmd.RunWithoutRetry()
@@ -189,8 +186,6 @@ func TestRunVerbose(t *testing.T) {
 	assert.Equal(t, true, cmd.DidFail())
 	assert.Equal(t, 1, len(cmd.Errors))
 	assert.Equal(t, 1, cmd.Attempts())
-	assert.Equal(t, true, cmd.IsVerbose())
-	assert.Equal(t, false, cmd.IsQuiet())
 
 	os.Remove(exPath + "/" + tmpFileName)
 
@@ -213,47 +208,17 @@ func TestRunQuiet(t *testing.T) {
 		Dir:     exPath,
 		Args:    args,
 		Timeout: 3 * time.Second,
-		Quiet:   true,
 	}
 
 	res, err := cmd.RunWithoutRetry()
 
 	assert.Error(t, err, "Run should exit with failure")
-	assert.Equal(t, "", res)
+	assert.Equal(t, "FAILURE!", res)
 	assert.Equal(t, true, cmd.DidError())
 	assert.Equal(t, true, cmd.DidFail())
 	assert.Equal(t, 1, len(cmd.Errors))
 	assert.Equal(t, 1, cmd.Attempts())
-	assert.Equal(t, false, cmd.IsVerbose())
-	assert.Equal(t, true, cmd.IsQuiet())
 
 	os.Remove(exPath + "/" + tmpFileName)
-
-}
-
-func TestRunIsVerboseAndIsQuiet(t *testing.T) {
-
-	cmd := util.Command{}
-	assert.Equal(t, false, cmd.IsVerbose())
-	assert.Equal(t, false, cmd.IsQuiet())
-
-	cmd = util.Command{
-		Verbose: true,
-	}
-	assert.Equal(t, true, cmd.IsVerbose())
-	assert.Equal(t, false, cmd.IsQuiet())
-
-	cmd = util.Command{
-		Verbose: true,
-		Quiet:   true,
-	}
-	assert.Equal(t, true, cmd.IsVerbose())
-	assert.Equal(t, false, cmd.IsQuiet())
-
-	cmd = util.Command{
-		Quiet: true,
-	}
-	assert.Equal(t, false, cmd.IsVerbose())
-	assert.Equal(t, true, cmd.IsQuiet())
 
 }

@@ -6,11 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"io/ioutil"
-
 	"github.com/cenkalti/backoff"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
+	"io"
 )
 
 // Command is a struct containing the details of an external command to be executed
@@ -22,8 +20,8 @@ type Command struct {
 	Args               []string
 	ExponentialBackOff *backoff.ExponentialBackOff
 	Timeout            time.Duration
-	Verbose            bool
-	Quiet              bool
+	Out                io.Writer
+	Err                io.Writer
 }
 
 // CommandInterface defines the interface for a Command
@@ -32,8 +30,6 @@ type CommandInterface interface {
 	DidError() bool
 	DidFail() bool
 	Error() error
-	IsVerbose() bool
-	IsQuiet() bool
 	Run() (string, error)
 	RunWithoutRetry() (string, error)
 }
@@ -65,22 +61,6 @@ func (c *Command) Error() error {
 		return c.Errors[len(c.Errors)-1]
 	}
 	return nil
-}
-
-// IsVerbose Evaluates options and returns if Command is set to verbose
-func (c *Command) IsVerbose() bool {
-	return c.Verbose
-}
-
-// IsQuiet Evaluates options and returns if Command is set to quiet
-func (c *Command) IsQuiet() bool {
-	if c.IsVerbose() {
-		return false
-	}
-	if c.Quiet {
-		return true
-	}
-	return false
 }
 
 // Run Execute the command and block waiting for return values
@@ -131,20 +111,34 @@ func (c *Command) run() (string, error) {
 	if c.Dir != "" {
 		e.Dir = c.Dir
 	}
-	if c.IsQuiet() {
-		e.Stdout = ioutil.Discard
-		e.Stderr = ioutil.Discard
+
+	if c.Out != nil {
+		e.Stdout = c.Out
 	}
-	data, err := e.CombinedOutput()
-	output := string(data)
-	text := strings.TrimSpace(output)
-	if err != nil {
-		return text, errors.Wrapf(err, "failed to run '%s %s' command in directory '%s', output: '%s'",
-			c.Name, strings.Join(c.Args, " "), c.Dir, text)
+
+	if c.Err != nil {
+		e.Stderr = c.Err
 	}
-	if c.IsVerbose() {
-		log.Infoln(output)
+
+	var text string
+	var err error
+
+	if c.Out != nil {
+		err := e.Run()
+		if err != nil {
+			return text, errors.Wrapf(err, "failed to run '%s %s' command in directory '%s', output: '%s'",
+				c.Name, strings.Join(c.Args, " "), c.Dir, text)
+		}
+	} else {
+		data, err := e.CombinedOutput()
+		output := string(data)
+		text = strings.TrimSpace(output)
+		if err != nil {
+			return text, errors.Wrapf(err, "failed to run '%s %s' command in directory '%s', output: '%s'",
+				c.Name, strings.Join(c.Args, " "), c.Dir, text)
+		}
 	}
+
 	return text, err
 }
 

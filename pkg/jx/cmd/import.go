@@ -414,7 +414,13 @@ func (o *ImportOptions) DraftCreate() error {
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
 
-	jenkinsfile := filepath.Join(dir, "Jenkinsfile")
+	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
+	jenkinsfile := defaultJenkinsfile
+	withRename := false
+	if o.Jenkinsfile != "" {
+		jenkinsfile = filepath.Join(dir, o.Jenkinsfile)
+		withRename = true
+	}
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
 	lpack := ""
@@ -497,6 +503,16 @@ func (o *ImportOptions) DraftCreate() error {
 		if err != nil {
 			return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
 		}
+	} else if withRename {
+		defaultJenkinsfileExists, err := util.FileExists(defaultJenkinsfile)
+		if defaultJenkinsfileExists && o.InitialisedGit && !o.DisableJenkinsfileCheck {
+			jenkinsfileBackup = defaultJenkinsfile + jenkinsfileBackupSuffix
+			err = util.RenameFile(defaultJenkinsfile, jenkinsfileBackup)
+			if err != nil {
+				return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
+			}
+
+		}
 	}
 
 	err = pack.CreateFrom(dir, lpack)
@@ -505,7 +521,23 @@ func (o *ImportOptions) DraftCreate() error {
 		log.Warnf("Failed to run draft create in %s due to %s", dir, err)
 	}
 
-	if jenkinsfileBackup != "" {
+	unpackedDefaultJenkinsfile := defaultJenkinsfile
+	if unpackedDefaultJenkinsfile != jenkinsfile {
+		unpackedDefaultJenkinsfileExists := false
+		unpackedDefaultJenkinsfileExists, err = util.FileExists(unpackedDefaultJenkinsfile)
+		if unpackedDefaultJenkinsfileExists {
+			err = util.RenameFile(unpackedDefaultJenkinsfile, jenkinsfile)
+			if err != nil {
+				return fmt.Errorf("Failed to rename Jenkinsfile file from '%s' to '%s': %s", unpackedDefaultJenkinsfile, jenkinsfile, err)
+			}
+			if jenkinsfileBackup != "" {
+				err = util.RenameFile(jenkinsfileBackup, defaultJenkinsfile)
+				if err != nil {
+					return fmt.Errorf("Failed to rename Jenkinsfile backup file: %s", err)
+				}
+			}
+		}
+	} else if jenkinsfileBackup != "" {
 		// if there's no Jenkinsfile created then rename it back again!
 		jenkinsfileExists, err = util.FileExists(jenkinsfile)
 		if err != nil {
