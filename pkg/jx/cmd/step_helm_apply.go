@@ -78,8 +78,6 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
-	log.Infof("using dir %s \n", dir)
-
 	// if we're in a prow job we need to clone and change dir to find the Helm Chart.yaml
 	if os.Getenv(PROW_JOB_ID) != "" {
 		dir, err = o.cloneProwPullRequest(dir, o.GitProvider)
@@ -87,8 +85,6 @@ func (o *StepHelmApplyOptions) Run() error {
 			return fmt.Errorf("failed to clone pull request: %v", err)
 		}
 	}
-
-	log.Infof("using dir 2 %s \n", dir)
 
 	helmBinary, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
 	if err != nil {

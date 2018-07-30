@@ -53,7 +53,6 @@ func NewCmdStepHelmBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 			CheckErr(err)
 		},
 	}
-
 	options.addStepHelmFlags(cmd)
 	return cmd
 }

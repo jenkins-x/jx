@@ -167,7 +167,6 @@ func (o *InitOptions) Run() error {
 	}
 
 	// install ingress
-
 	if !o.Flags.SkipIngress {
 		err = o.initIngress()
 		if err != nil {
@@ -196,8 +195,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 	}
 	userFormatted := kube.ToValidName(o.Username)
 
-	role := o.Flags.UserClusterRole
-	clusterRoleBindingName := kube.ToValidName(userFormatted + "-" + role + "-binding")
+	clusterRoleBindingName := kube.ToValidName(userFormatted + "-" + o.Flags.UserClusterRole + "-binding")
 
 	clusterRoleBindingInterface := client.RbacV1().ClusterRoleBindings()
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
@@ -214,14 +212,14 @@ func (o *InitOptions) enableClusterAdminRole() error {
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     role,
+			Name:     o.Flags.UserClusterRole,
 		},
 	}
 
 	return o.retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
-			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n", clusterRoleBindingName, role, o.Username)
+			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n: %v", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
 
 			//args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
 

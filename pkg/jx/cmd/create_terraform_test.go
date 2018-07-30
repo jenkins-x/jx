@@ -10,7 +10,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestValidateClusterDetails(t *testing.T) {
@@ -142,19 +141,4 @@ func TestCanCreateTerraformVarsFile(t *testing.T) {
 	assert.Equal(t, true, c2.AutoRepair)
 	assert.Equal(t, false, c2.AutoUpgrade)
 
-}
-
-func TestCreateProwConfig(t *testing.T) {
-
-	o := CreateTerraformOptions{
-
-		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				kubeClient: fake.NewSimpleClientset(),
-			},
-		},
-	}
-
-	err := o.installProw("foo")
-	assert.NoError(t, err)
 }
