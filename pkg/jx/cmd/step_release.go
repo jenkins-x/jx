@@ -110,12 +110,18 @@ func (o *StepReleaseOptions) Run() error {
 	stepNextVersionOptions := &StepNextVersionOptions{
 		StepOptions: o.StepOptions,
 	}
-	nextVersionOptions := stepNextVersionOptions
-	err = nextVersionOptions.Run()
+	if o.isMaven() {
+		stepNextVersionOptions.Filename = "pom.xml"
+	} else if o.isNode() {
+		stepNextVersionOptions.Filename = "package.json"
+	} else {
+		stepNextVersionOptions.UseGitTagOnly = true
+	}
+	err = stepNextVersionOptions.Run()
 	if err != nil {
 		return fmt.Errorf("Failed to create next version: %s", err)
 	}
-	o.Version = nextVersionOptions.NewVersion
+	o.Version = stepNextVersionOptions.NewVersion
 	err = os.Setenv("VERSION", o.Version)
 	if err != nil {
 		return err
@@ -243,5 +249,10 @@ func (o *StepReleaseOptions) promote(dir string) error {
 
 func (o *StepReleaseOptions) isMaven() bool {
 	exists, err := util.FileExists("pom.xml")
+	return exists && err == nil
+}
+
+func (o *StepReleaseOptions) isNode() bool {
+	exists, err := util.FileExists("package.json")
 	return exists && err == nil
 }
