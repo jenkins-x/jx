@@ -17,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"strconv"
 
@@ -644,6 +645,8 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig) error {
 
+	o.cleanExposecontrollerReources(targetNamespace)
+
 	exValues := []string{
 		"config.exposer=" + ic.Exposer,
 		"config.domain=" + ic.Domain,
@@ -664,6 +667,18 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
 	}
 	return o.helm.DeleteRelease(helmRelease, true)
+
+}
+
+func (o *CommonOptions) cleanExposecontrollerReources(ns string) {
+
+	// let's not error if nothing to cleanup
+	o.kubeClient.RbacV1().Roles(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
+	o.kubeClient.RbacV1().RoleBindings(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
+	o.kubeClient.RbacV1().ClusterRoleBindings().Delete(exposecontroller, &metav1.DeleteOptions{})
+	o.kubeClient.CoreV1().ConfigMaps(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
+	o.kubeClient.CoreV1().ServiceAccounts(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
+	o.kubeClient.BatchV1().Jobs(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
 
 }
 

@@ -289,10 +289,7 @@ func (o *UpgradeIngressOptions) recreateIngressRules() error {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 	for _, n := range o.TargetNamespaces {
-		err = o.cleanExposecontrollerReources(n)
-		if err != nil {
-			return err
-		}
+		o.cleanExposecontrollerReources(n)
 
 		err := o.cleanTLSSecrets(n)
 		if err != nil {
@@ -347,19 +344,6 @@ func (o *UpgradeIngressOptions) annotateExposedServicesWithCertManager() error {
 			return err
 		}
 	}
-	return nil
-}
-
-func (o *UpgradeIngressOptions) cleanExposecontrollerReources(ns string) error {
-
-	// lets not error if they dont exist
-	o.kubeClient.RbacV1().Roles(ns).Delete("exposecontroller", &metav1.DeleteOptions{})
-	o.kubeClient.RbacV1().RoleBindings(ns).Delete("exposecontroller", &metav1.DeleteOptions{})
-	o.kubeClient.RbacV1().ClusterRoleBindings().Delete("exposecontroller", &metav1.DeleteOptions{})
-	o.kubeClient.CoreV1().ConfigMaps(ns).Delete("exposecontroller", &metav1.DeleteOptions{})
-	o.kubeClient.CoreV1().ServiceAccounts(ns).Delete("exposecontroller", &metav1.DeleteOptions{})
-	o.kubeClient.BatchV1().Jobs(ns).Delete("exposecontroller", &metav1.DeleteOptions{})
-
 	return nil
 }
 
