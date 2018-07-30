@@ -64,7 +64,7 @@ func (o *StepReleaseOptions) Run() error {
 	}
 	err = stepGitCredentialsOptions.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to setup git credentials: %s", err)
 	}
 
 	if o.DockerRegistry == "" {
@@ -113,7 +113,7 @@ func (o *StepReleaseOptions) Run() error {
 	nextVersionOptions := stepNextVersionOptions
 	err = nextVersionOptions.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to create next version: %s", err)
 	}
 	o.Version = nextVersionOptions.NewVersion
 	err = os.Setenv("VERSION", o.Version)
@@ -123,7 +123,7 @@ func (o *StepReleaseOptions) Run() error {
 
 	err = o.updateVersionInSource()
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to update version in source: %s", err)
 	}
 
 	stepTagOptions := &StepTagOptions{
@@ -140,7 +140,7 @@ func (o *StepReleaseOptions) Run() error {
 	}
 	err = o.runCommandVerbose("skaffold", "run", "-f", "skaffold.yaml")
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to run skaffold: %s", err)
 	}
 	imageName := fmt.Sprintf("%s/%s/%s:%s", o.DockerRegistry, o.Organisation, o.Application, o.Version)
 
@@ -150,19 +150,19 @@ func (o *StepReleaseOptions) Run() error {
 	}
 	err = stepPostBuildOptions.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to run post build step: %s", err)
 	}
 
 	// now lets promote from the charts dir...
 	chartsDir := filepath.Join("charts", o.Application)
 	exists, err := util.FileExists(chartsDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to find chart folder: %s", err)
 	}
 	if exists {
 		err = o.promote(chartsDir)
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to promote: %s", err)
 		}
 	} else {
 		log.Infof("No charts directory %s so not promoting\n", util.ColorInfo(chartsDir))
@@ -217,7 +217,7 @@ func (o *StepReleaseOptions) promote(dir string) error {
 	}
 	err := stepChangelogOptions.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to generate changelog: %s", err)
 	}
 
 	stepHelmReleaseOptions := &StepHelmReleaseOptions{
@@ -228,7 +228,7 @@ func (o *StepReleaseOptions) promote(dir string) error {
 	}
 	err = stepHelmReleaseOptions.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to release helm chart: %s", err)
 	}
 
 	promoteOptions := PromoteOptions{
