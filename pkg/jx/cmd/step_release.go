@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -21,6 +22,9 @@ type StepReleaseOptions struct {
 	Organisation   string
 	Application    string
 	Version        string
+	GitUsername    string
+	GitEmail       string
+	Dir            string
 }
 
 // NewCmdStep Steps a command object for the "step" command
@@ -49,6 +53,8 @@ func NewCmdStepRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "r", "", "the docker registry host or host:port to use. If not specified it is loaded from the `docker-registry` ConfigMap")
 	cmd.Flags().StringVarP(&options.Organisation, "organisation", "o", "", "the docker organisation for the generated docker image")
 	cmd.Flags().StringVarP(&options.Application, "application", "a", "", "the docker application image name")
+	cmd.Flags().StringVarP(&options.GitUsername, "git-username", "u", "", "The git username to configure if there is none already setup")
+	cmd.Flags().StringVarP(&options.GitEmail, "git-email", "e", "", "The git email address to configure if there is none already setup")
 
 	return cmd
 }
@@ -65,6 +71,35 @@ func (o *StepReleaseOptions) Run() error {
 	err = stepGitCredentialsOptions.Run()
 	if err != nil {
 		return fmt.Errorf("Failed to setup git credentials: %s", err)
+	}
+	dir := o.Dir
+	gitUser, err := o.Git().Username(dir)
+	if err != nil || gitUser == "" {
+		gitUser = o.GitUsername
+		if gitUser == "" {
+			user, err := user.Current()
+			if err == nil && user != nil {
+				gitUser = user.Username
+			}
+		}
+		if gitUser == "" {
+			gitUser = "jenkins-x-bot"
+		}
+		err = o.Git().SetUsername(dir, gitUser)
+		if err != nil {
+			return fmt.Errorf("Failed to set git user %s: %s", gitUser, err)
+		}
+	}
+	gitEmail, err := o.Git().Email(dir)
+	if err != nil || gitEmail == "" {
+		gitEmail = o.GitEmail
+		if gitEmail == "" {
+			gitEmail = "jenkins-x-user@googlegroups.com"
+		}
+		err = o.Git().SetEmail(dir, gitEmail)
+		if err != nil {
+			return fmt.Errorf("Failed to set git email %s: %s", gitEmail, err)
+		}
 	}
 
 	if o.DockerRegistry == "" {
