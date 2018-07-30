@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"io"
-
 	"errors"
-
 	"fmt"
+	"io"
+	"io/ioutil"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +24,8 @@ type StepTagOptions struct {
 }
 
 type StepTagFlags struct {
-	Version string
+	Version     string
+	VersionFile string
 }
 
 var (
@@ -72,11 +73,24 @@ func NewCmdStepTag(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.Flags.Version, VERSION, "v", "", "version number for the tag [required]")
+	cmd.Flags().StringVarP(&options.Flags.VersionFile, "version-file", "", "VERSION", "The file name used to load the version number from if no '--version' option is specified")
 
 	return cmd
 }
 
 func (o *StepTagOptions) Run() error {
+	if o.Flags.Version == "" {
+		// lets see if its defined in the VERSION file
+		path := o.Flags.VersionFile
+		exists, err := util.FileExists(path)
+		if exists && err == nil {
+			data, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			o.Flags.Version = string(data)
+		}
+	}
 	if o.Flags.Version == "" {
 		return errors.New("No version flag")
 	}
