@@ -6,67 +6,67 @@ jenkins:
         Containers:
           Maven:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-maven:$VERSION
+            Image: jenkinsxio/builder-maven:$VERSION
       Nodejs:
         Containers:
           Nodejs:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-nodejs:$VERSION
+            Image: jenkinsxio/builder-nodejs:$VERSION
       Go:
         Containers:
           Go:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-go:$VERSION
+            Image: jenkinsxio/builder-go:$VERSION
       Gradle:
         Containers:
           Gradle:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-gradle:$VERSION
+            Image: jenkinsxio/builder-gradle:$VERSION
       JX-base:
         Containers:
           JX-base:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-base:$VERSION
+            Image: jenkinsxio/builder-base:$VERSION
       Promote:
         Containers:
           Promote:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-base:$VERSION
+            Image: jenkinsxio/builder-base:$VERSION
       Python:
         Containers:
           Python:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-python:$VERSION
+            Image: jenkinsxio/builder-python:$VERSION
       Python2:
         Containers:
           Python:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-python2:$VERSION
+            Image: jenkinsxio/builder-python2:$VERSION
       Ruby:
         Containers:
           Ruby:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-ruby:$VERSION
+            Image: jenkinsxio/builder-ruby:$VERSION
       Rust:
         Containers:
           Rust:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-rust:$VERSION
+            Image: jenkinsxio/builder-rust:$VERSION
       Scala:
         Containers:
           Scala:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-scala:$VERSION
+            Image: jenkinsxio/builder-scala:$VERSION
       Swift:
         Containers:
           Swift:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-swift:$VERSION
+            Image: jenkinsxio/builder-swift:$VERSION
       Terraform:
         Containers:
           Terraform:
             AlwaysPullImage: true
-            Image: jenkinsxiow/builder-terraform:$VERSION
+            Image: jenkinsxio/builder-terraform:$VERSION
 # disable stuff
 pipelinecontroller:
   enabled: false

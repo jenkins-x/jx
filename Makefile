@@ -184,12 +184,30 @@ docker-dev-all: build linux
 .PHONY: release clean arm
 
 preview:
-	docker build --no-cache -t docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-maven .
-	docker push docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-base:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-base .
+	docker push docker.io/jenkinsxio/builder-base:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
 	docker build --no-cache -t docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-go .
 	docker push docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-gradle:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-gradle .
+	docker push docker.io/jenkinsxio/builder-gradle:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-maven .
+	docker push docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-rust:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-rust .
+	docker push docker.io/jenkinsxio/builder-rust:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-scala:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-scala .
+	docker push docker.io/jenkinsxio/builder-scala:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-swift:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-swift .
+	docker push docker.io/jenkinsxio/builder-swift:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-terraform:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-terraform .
+	docker push docker.io/jenkinsxio/builder-terraform:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
 	docker build --no-cache -t docker.io/jenkinsxio/builder-nodejs:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-nodejs .
 	docker push docker.io/jenkinsxio/builder-nodejs:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-python:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-python .
+	docker push docker.io/jenkinsxio/builder-python:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-python2:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-python2 .
+	docker push docker.io/jenkinsxio/builder-python2:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+	docker build --no-cache -t docker.io/jenkinsxio/builder-ruby:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-ruby .
+	docker push docker.io/jenkinsxio/builder-ruby:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
 
 FGT := $(GOPATH)/bin/fgt
 $(FGT):
