@@ -74,11 +74,11 @@ monocular:
   enabled: false
 
 # service link nexus
-#nexus:
-#  enabled: false
-#nexusServiceLink:
-#  enabled: true
-#  externalName: "nexus.jx.svc.cluster.local"
+nexus:
+  enabled: false
+nexusServiceLink:
+  enabled: true
+  externalName: "nexus.jx.svc.cluster.local"
 
 # service link chartmuseum
 chartmuseum:
