@@ -194,7 +194,7 @@ func (o *StepReleaseOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.runCommandVerbose("skaffold", "run", "-f", "skaffold.yaml")
+	err = o.runCommandVerbose("skaffold", "build", "-f", "skaffold.yaml")
 	if err != nil {
 		return fmt.Errorf("Failed to run skaffold: %s", err)
 	}
