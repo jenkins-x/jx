@@ -26,6 +26,7 @@ type StepReleaseOptions struct {
 	GitEmail       string
 	Dir            string
 	XdgConfigHome  string
+	NoBatch        bool
 }
 
 // NewCmdStep Steps a command object for the "step" command
@@ -57,13 +58,14 @@ func NewCmdStepRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.Flags().StringVarP(&options.GitUsername, "git-username", "u", "", "The git username to configure if there is none already setup")
 	cmd.Flags().StringVarP(&options.GitEmail, "git-email", "e", "", "The git email address to configure if there is none already setup")
 	cmd.Flags().StringVarP(&options.XdgConfigHome, "xdg-config-home", "", "/home/jenkins", "The home directory where git config is setup")
+	cmd.Flags().BoolVarP(&options.NoBatch, "no-batch", "", false, "Whether to disable batch mode")
 
 	return cmd
 }
 
 // Run implements this command
 func (o *StepReleaseOptions) Run() error {
-
+	o.BatchMode = !o.NoBatch
 	err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
 	if err != nil {
 		return err
