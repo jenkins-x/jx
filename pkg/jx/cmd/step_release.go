@@ -25,6 +25,7 @@ type StepReleaseOptions struct {
 	GitUsername    string
 	GitEmail       string
 	Dir            string
+	XdgConfigHome  string
 }
 
 // NewCmdStep Steps a command object for the "step" command
@@ -55,16 +56,27 @@ func NewCmdStepRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.Flags().StringVarP(&options.Application, "application", "a", "", "the docker application image name")
 	cmd.Flags().StringVarP(&options.GitUsername, "git-username", "u", "", "The git username to configure if there is none already setup")
 	cmd.Flags().StringVarP(&options.GitEmail, "git-email", "e", "", "The git email address to configure if there is none already setup")
+	cmd.Flags().StringVarP(&options.XdgConfigHome, "xdg-config-home", "", "/home/jenkins", "The home directory where git config is setup")
 
 	return cmd
 }
 
 // Run implements this command
 func (o *StepReleaseOptions) Run() error {
+
 	err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
 	if err != nil {
 		return err
 	}
+	if o.XdgConfigHome != "" {
+		if os.Getenv("XDG_CONFIG_HOME") == "" {
+			err = o.Setenv("XDG_CONFIG_HOME", o.XdgConfigHome)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	stepGitCredentialsOptions := &StepGitCredentialsOptions{
 		StepOptions: o.StepOptions,
 	}
@@ -94,7 +106,7 @@ func (o *StepReleaseOptions) Run() error {
 	if err != nil || gitEmail == "" {
 		gitEmail = o.GitEmail
 		if gitEmail == "" {
-			gitEmail = "jenkins-x-user@googlegroups.com"
+			gitEmail = "jenkins-x@googlegroups.com"
 		}
 		err = o.Git().SetEmail(dir, gitEmail)
 		if err != nil {
