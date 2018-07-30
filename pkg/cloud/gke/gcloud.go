@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"time"
 )
 
 var (
@@ -170,6 +171,8 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 		if err != nil {
 			return "", err
 		}
+	} else {
+		log.Info("Key already exists")
 	}
 
 	return keyPath, nil
@@ -213,6 +216,22 @@ func Login(serviceAccountKeyPath string, skipLogin bool) error {
 		if err != nil {
 			return err
 		}
+
+		retry(10, 10*time.Second, func() error {
+			log.Infof("Checking for readiness...\n")
+
+			projects, err := GetGoogleProjects()
+			if err != nil {
+				return err
+			}
+
+			if len(projects)== 0 {
+				return errors.New("service account not ready yet")
+			}
+
+			return nil
+		})
+
 	} else if !skipLogin {
 		cmd := util.Command{
 			Name: "gcloud",
@@ -224,6 +243,26 @@ func Login(serviceAccountKeyPath string, skipLogin bool) error {
 		}
 	}
 	return nil
+}
+
+func retry(attempts int, sleep time.Duration, fn func() error) error {
+	if err := fn(); err != nil {
+		if s, ok := err.(stop); ok {
+			// Return the original error for later checking
+			return s.error
+		}
+
+		if attempts--; attempts > 0 {
+			time.Sleep(sleep)
+			return retry(attempts, 2*sleep, fn)
+		}
+		return err
+	}
+	return nil
+}
+
+type stop struct {
+	error
 }
 
 func CheckPermission(perm string, projectId string) (bool, error) {
