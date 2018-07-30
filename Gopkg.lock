@@ -537,6 +537,56 @@
   revision = "b5ec7e72291c19eeb6a0916609eb359897f6cdf8"
 
 [[projects]]
+  name = "github.com/jenkins-x/jx"
+  packages = [
+    "cmd/jx/app",
+    "pkg/addon",
+    "pkg/apis/jenkins.io",
+    "pkg/apis/jenkins.io/v1",
+    "pkg/auth",
+    "pkg/chats",
+    "pkg/client/clientset/versioned",
+    "pkg/client/clientset/versioned/fake",
+    "pkg/client/clientset/versioned/scheme",
+    "pkg/client/clientset/versioned/typed/jenkins.io/v1",
+    "pkg/client/clientset/versioned/typed/jenkins.io/v1/fake",
+    "pkg/client/informers/externalversions/internalinterfaces",
+    "pkg/client/informers/externalversions/jenkins.io",
+    "pkg/client/informers/externalversions/jenkins.io/v1",
+    "pkg/client/listers/jenkins.io/v1",
+    "pkg/cloud/aks",
+    "pkg/cloud/amazon",
+    "pkg/cloud/gke",
+    "pkg/cloud/oke",
+    "pkg/config",
+    "pkg/cve",
+    "pkg/draft",
+    "pkg/gits",
+    "pkg/helm",
+    "pkg/issues",
+    "pkg/jenkins",
+    "pkg/jx/cmd",
+    "pkg/jx/cmd/certmanager",
+    "pkg/jx/cmd/templates",
+    "pkg/kube",
+    "pkg/log",
+    "pkg/maven",
+    "pkg/nodes",
+    "pkg/pipeline_events",
+    "pkg/quickstarts",
+    "pkg/reports",
+    "pkg/spring",
+    "pkg/table",
+    "pkg/terraform",
+    "pkg/testkube",
+    "pkg/tests",
+    "pkg/util",
+    "pkg/version"
+  ]
+  revision = "6effde83b693de7c5ab9cb11449ffbcf3e8ed6e4"
+  version = "v1.3.109"
+
+[[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "0b12d6b5"
@@ -810,6 +860,12 @@
   name = "github.com/wbrefvem/go-gitlab"
   packages = ["."]
   revision = "ecc4c5b8455a01dc64009b828cd19db9db3f3590"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/xanzy/go-gitlab"
+  packages = ["."]
+  revision = "696e3cf592c0f71a0fce1934ad500376abe2e12d"
 
 [[projects]]
   name = "github.com/xanzy/ssh-agent"
@@ -1306,6 +1362,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "20f692bceb2049eaa3632b5628a99552c8309a43b1bb5565fd049127240516fb"
+  inputs-digest = "29b5cfa6f9f2209a221dc521140c4335c51e0db14cbf4d42f451fe5b0b669522"
   solver-name = "gps-cdcl"
   solver-version = 1
