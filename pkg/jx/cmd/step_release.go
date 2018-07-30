@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -18,17 +19,21 @@ import (
 type StepReleaseOptions struct {
 	StepOptions
 
-	DockerRegistry      string
-	Organisation        string
-	Application         string
-	Version             string
-	GitUsername         string
-	GitEmail            string
-	Dir                 string
-	XdgConfigHome       string
-	NoBatch             bool
+	DockerRegistry string
+	Organisation   string
+	Application    string
+	Version        string
+	GitUsername    string
+	GitEmail       string
+	Dir            string
+	XdgConfigHome  string
+	NoBatch        bool
+
+	// promote flags
 	Timeout             string
 	PullRequestPollTime string
+	LocalHelmRepoName   string
+	HelmRepositoryURL   string
 }
 
 // NewCmdStep Steps a command object for the "step" command
@@ -63,6 +68,8 @@ func NewCmdStepRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.Flags().BoolVarP(&options.NoBatch, "no-batch", "", false, "Whether to disable batch mode")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "10m", "Poll time when waiting for a Pull Request to merge")
+	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
+	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
 
 	return cmd
 }
@@ -187,8 +194,18 @@ func (o *StepReleaseOptions) Run() error {
 		return fmt.Errorf("Failed to update version in source: %s", err)
 	}
 
+	chartsDir := filepath.Join("charts", o.Application)
+	chartExists, err := util.FileExists(chartsDir)
+	if err != nil {
+		return fmt.Errorf("Failed to find chart folder: %s", err)
+	}
+
 	stepTagOptions := &StepTagOptions{
 		StepOptions: o.StepOptions,
+	}
+	if chartExists {
+		stepTagOptions.Flags.ChartsDir = chartsDir
+		stepTagOptions.Flags.ChartValueRepository = fmt.Sprintf("%s/%s/%s", o.DockerRegistry, o.Organisation, o.Application)
 	}
 	stepTagOptions.Flags.Version = o.Version
 	err = stepTagOptions.Run()
@@ -216,12 +233,7 @@ func (o *StepReleaseOptions) Run() error {
 	}
 
 	// now lets promote from the charts dir...
-	chartsDir := filepath.Join("charts", o.Application)
-	exists, err := util.FileExists(chartsDir)
-	if err != nil {
-		return fmt.Errorf("Failed to find chart folder: %s", err)
-	}
-	if exists {
+	if chartExists {
 		err = o.releaseAndPromoteChart(chartsDir)
 		if err != nil {
 			return fmt.Errorf("Failed to promote: %s", err)
@@ -302,6 +314,8 @@ func (o *StepReleaseOptions) releaseAndPromoteChart(dir string) error {
 		Timeout:             o.Timeout,
 		PullRequestPollTime: o.PullRequestPollTime,
 		Version:             o.Version,
+		LocalHelmRepoName:   o.LocalHelmRepoName,
+		HelmRepositoryURL:   o.HelmRepositoryURL,
 	}
 	promoteOptions.BatchMode = true
 	return promoteOptions.Run()
