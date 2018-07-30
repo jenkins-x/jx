@@ -216,7 +216,7 @@ func (o *StepReleaseOptions) Run() error {
 		return fmt.Errorf("Failed to find chart folder: %s", err)
 	}
 	if exists {
-		err = o.promote(chartsDir)
+		err = o.releaseAndPromoteChart(chartsDir)
 		if err != nil {
 			return fmt.Errorf("Failed to promote: %s", err)
 		}
@@ -266,12 +266,16 @@ func (o *StepReleaseOptions) loadDockerRegistry() (string, error) {
 	return "", fmt.Errorf("Could not find the docker.registry property in the ConfigMap: %s", configMapName)
 }
 
-func (o *StepReleaseOptions) promote(dir string) error {
+func (o *StepReleaseOptions) releaseAndPromoteChart(dir string) error {
+	err := os.Chdir(dir)
+	if err != nil {
+		return fmt.Errorf("Failed to change to directory %s: %s", dir, err)
+	}
+
 	stepChangelogOptions := &StepChangelogOptions{
 		StepOptions: o.StepOptions,
-		Dir:         dir,
 	}
-	err := stepChangelogOptions.Run()
+	err = stepChangelogOptions.Run()
 	if err != nil {
 		return fmt.Errorf("Failed to generate changelog: %s", err)
 	}
@@ -279,7 +283,6 @@ func (o *StepReleaseOptions) promote(dir string) error {
 	stepHelmReleaseOptions := &StepHelmReleaseOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: o.StepOptions,
-			Dir:         dir,
 		},
 	}
 	err = stepHelmReleaseOptions.Run()
