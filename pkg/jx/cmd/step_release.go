@@ -94,15 +94,15 @@ func (o *StepReleaseOptions) Run() error {
 			o.Application = gitInfo.Name
 		}
 	}
-	err = os.Setenv("DOCKER_REGISTRY", o.DockerRegistry)
+	err = o.Setenv("DOCKER_REGISTRY", o.DockerRegistry)
 	if err != nil {
 		return err
 	}
-	err = os.Setenv("ORG", o.Organisation)
+	err = o.Setenv("ORG", o.Organisation)
 	if err != nil {
 		return err
 	}
-	err = os.Setenv("APP_NAME", o.Application)
+	err = o.Setenv("APP_NAME", o.Application)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (o *StepReleaseOptions) Run() error {
 		return fmt.Errorf("Failed to create next version: %s", err)
 	}
 	o.Version = stepNextVersionOptions.NewVersion
-	err = os.Setenv("VERSION", o.Version)
+	err = o.Setenv("VERSION", o.Version)
 	if err != nil {
 		return err
 	}
@@ -137,9 +137,10 @@ func (o *StepReleaseOptions) Run() error {
 	stepTagOptions := &StepTagOptions{
 		StepOptions: o.StepOptions,
 	}
+	stepTagOptions.Flags.Version = o.Version
 	err = stepTagOptions.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to tag source: %s", err)
 	}
 
 	err = o.buildSource()
@@ -257,4 +258,12 @@ func (o *StepReleaseOptions) isMaven() bool {
 func (o *StepReleaseOptions) isNode() bool {
 	exists, err := util.FileExists("package.json")
 	return exists && err == nil
+}
+
+func (o *StepReleaseOptions) Setenv(key string, value string) error {
+	err := os.Setenv(key, value)
+	if err != nil {
+		return fmt.Errorf("Failed to set environment variable %s=%s: %s", key, value, err)
+	}
+	return nil
 }

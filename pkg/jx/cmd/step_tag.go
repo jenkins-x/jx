@@ -14,6 +14,8 @@ import (
 
 const (
 	VERSION = "version"
+
+	defaultVersionFile = "VERSION"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -73,7 +75,7 @@ func NewCmdStepTag(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.Flags.Version, VERSION, "v", "", "version number for the tag [required]")
-	cmd.Flags().StringVarP(&options.Flags.VersionFile, "version-file", "", "VERSION", "The file name used to load the version number from if no '--version' option is specified")
+	cmd.Flags().StringVarP(&options.Flags.VersionFile, "version-file", "", defaultVersionFile, "The file name used to load the version number from if no '--version' option is specified")
 
 	return cmd
 }
@@ -82,6 +84,9 @@ func (o *StepTagOptions) Run() error {
 	if o.Flags.Version == "" {
 		// lets see if its defined in the VERSION file
 		path := o.Flags.VersionFile
+		if path == "" {
+			path = "VERSION"
+		}
 		exists, err := util.FileExists(path)
 		if exists && err == nil {
 			data, err := ioutil.ReadFile(path)
