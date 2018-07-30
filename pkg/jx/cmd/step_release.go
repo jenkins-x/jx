@@ -110,10 +110,12 @@ func (o *StepReleaseOptions) Run() error {
 	stepNextVersionOptions := &StepNextVersionOptions{
 		StepOptions: o.StepOptions,
 	}
-	if o.isMaven() {
-		stepNextVersionOptions.Filename = "pom.xml"
-	} else if o.isNode() {
-		stepNextVersionOptions.Filename = "package.json"
+	if o.isNode() {
+		stepNextVersionOptions.Filename = packagejson
+		/*
+			} else if o.isMaven() {
+				stepNextVersionOptions.Filename = pomxml
+		*/
 	} else {
 		stepNextVersionOptions.UseGitTagOnly = true
 	}
