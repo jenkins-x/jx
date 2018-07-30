@@ -67,7 +67,7 @@ func NewCmdStepRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.Flags().StringVarP(&options.XdgConfigHome, "xdg-config-home", "", "/home/jenkins", "The home directory where git config is setup")
 	cmd.Flags().BoolVarP(&options.NoBatch, "no-batch", "", false, "Whether to disable batch mode")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
-	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "10m", "Poll time when waiting for a Pull Request to merge")
+	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
 
