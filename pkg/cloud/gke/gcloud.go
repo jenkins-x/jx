@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"time"
 )
 
 var (
@@ -90,7 +91,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 	}
 
 	if output == "Listed 0 items." {
-		log.Infof("Unable to find service account %s, checking if we have enough permission to create\n", serviceAccount)
+		log.Infof("Unable to find service account %s, checking if we have enough permission to create\n", util.ColorInfo(serviceAccount))
 
 		// if it doesn't check to see if we have permissions to create (assign roles) to a service account
 		hasPerm, err := CheckPermission("resourcemanager.projects.setIamPolicy", projectId)
@@ -103,7 +104,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 		}
 
 		// create service
-		log.Infof("Creating service account %s\n", serviceAccount)
+		log.Infof("Creating service account %s\n", util.ColorInfo(serviceAccount))
 		args = []string{"iam",
 			"service-accounts",
 			"create",
@@ -170,6 +171,8 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 		if err != nil {
 			return "", err
 		}
+	} else {
+		log.Info("Key already exists")
 	}
 
 	return keyPath, nil
@@ -199,6 +202,8 @@ func EnableApis(projectId string, apis ...string) error {
 
 func Login(serviceAccountKeyPath string, skipLogin bool) error {
 	if serviceAccountKeyPath != "" {
+		log.Infof("Activating service account %s\n", util.ColorInfo(serviceAccountKeyPath))
+
 		if _, err := os.Stat(serviceAccountKeyPath); os.IsNotExist(err) {
 			return errors.New("Unable to locate service account " + serviceAccountKeyPath)
 		}
@@ -211,6 +216,22 @@ func Login(serviceAccountKeyPath string, skipLogin bool) error {
 		if err != nil {
 			return err
 		}
+
+		retry(10, 10*time.Second, func() error {
+			log.Infof("Checking for readiness...\n")
+
+			projects, err := GetGoogleProjects()
+			if err != nil {
+				return err
+			}
+
+			if len(projects)== 0 {
+				return errors.New("service account not ready yet")
+			}
+
+			return nil
+		})
+
 	} else if !skipLogin {
 		cmd := util.Command{
 			Name: "gcloud",
@@ -222,6 +243,26 @@ func Login(serviceAccountKeyPath string, skipLogin bool) error {
 		}
 	}
 	return nil
+}
+
+func retry(attempts int, sleep time.Duration, fn func() error) error {
+	if err := fn(); err != nil {
+		if s, ok := err.(stop); ok {
+			// Return the original error for later checking
+			return s.error
+		}
+
+		if attempts--; attempts > 0 {
+			time.Sleep(sleep)
+			return retry(attempts, 2*sleep, fn)
+		}
+		return err
+	}
+	return nil
+}
+
+type stop struct {
+	error
 }
 
 func CheckPermission(perm string, projectId string) (bool, error) {
