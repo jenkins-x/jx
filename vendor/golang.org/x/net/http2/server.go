@@ -1487,6 +1487,12 @@ func (sc *serverConn) processSettings(f *SettingsFrame) error {
 		}
 		return nil
 	}
+	if f.NumSettings() > 100 || f.HasDuplicates() {
+		// This isn't actually in the spec, but hang up on
+		// suspiciously large settings frames or those with
+		// duplicate entries.
+		return ConnectionError(ErrCodeProtocol)
+	}
 	if err := f.ForeachSetting(sc.processSetting); err != nil {
 		return err
 	}

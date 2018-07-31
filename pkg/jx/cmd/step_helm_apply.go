@@ -68,7 +68,24 @@ func NewCmdStepHelmApply(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 }
 
 func (o *StepHelmApplyOptions) Run() error {
+	var err error
+	chartName := o.Dir
 	dir := o.Dir
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
+
+	// if we're in a prow job we need to clone and change dir to find the Helm Chart.yaml
+	if os.Getenv(PROW_JOB_ID) != "" {
+		dir, err = o.cloneProwPullRequest(dir, o.GitProvider)
+		if err != nil {
+			return fmt.Errorf("failed to clone pull request: %v", err)
+		}
+	}
+
 	helmBinary, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
 	if err != nil {
 		return err
@@ -90,14 +107,17 @@ func (o *StepHelmApplyOptions) Run() error {
 			releaseName = "jx"
 		}
 	}
+
 	info := util.ColorInfo
 	log.Infof("Applying helm chart at %s as release name %s to namespace %s\n", info(dir), info(releaseName), info(ns))
 
+	o.Helm().SetCWD(dir)
+
 	if o.Wait {
 		timeout := 600
-		err = o.Helm().UpgradeChart(dir, releaseName, ns, nil, true, &timeout, false, true, nil, nil)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, false, true, nil, nil)
 	} else {
-		err = o.Helm().UpgradeChart(dir, releaseName, ns, nil, true, nil, false, false, nil, nil)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, false, false, nil, nil)
 	}
 	if err != nil {
 		return err

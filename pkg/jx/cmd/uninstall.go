@@ -110,6 +110,7 @@ func (o *UninstallOptions) Run() error {
 			log.Warnf("Failed to uninstall environment chart %s: %s\n", release, err)
 		}
 	}
+	o.Helm().DeleteRelease("jx-prow", true)
 	err = o.Helm().DeleteRelease("jenkins-x", true)
 	if err != nil {
 		errc := o.cleanupNamesapces(namespace, envNames)

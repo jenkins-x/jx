@@ -430,6 +430,9 @@ const (
 	CommandPageClose                                       = page.CommandClose
 	CommandPageSetWebLifecycleState                        = page.CommandSetWebLifecycleState
 	CommandPageStopScreencast                              = page.CommandStopScreencast
+	CommandPageSetProduceCompilationCache                  = page.CommandSetProduceCompilationCache
+	CommandPageAddCompilationCache                         = page.CommandAddCompilationCache
+	CommandPageClearCompilationCache                       = page.CommandClearCompilationCache
 	EventPageDomContentEventFired                          = "Page.domContentEventFired"
 	EventPageFrameAttached                                 = "Page.frameAttached"
 	EventPageFrameClearedScheduledNavigation               = "Page.frameClearedScheduledNavigation"
@@ -449,6 +452,7 @@ const (
 	EventPageScreencastFrame                               = "Page.screencastFrame"
 	EventPageScreencastVisibilityChanged                   = "Page.screencastVisibilityChanged"
 	EventPageWindowOpen                                    = "Page.windowOpen"
+	EventPageCompilationCacheProduced                      = "Page.compilationCacheProduced"
 	CommandPerformanceDisable                              = performance.CommandDisable
 	CommandPerformanceEnable                               = performance.CommandEnable
 	CommandPerformanceGetMetrics                           = performance.CommandGetMetrics
@@ -1674,6 +1678,15 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 	case CommandPageStopScreencast:
 		return emptyVal, nil
 
+	case CommandPageSetProduceCompilationCache:
+		return emptyVal, nil
+
+	case CommandPageAddCompilationCache:
+		return emptyVal, nil
+
+	case CommandPageClearCompilationCache:
+		return emptyVal, nil
+
 	case EventPageDomContentEventFired:
 		v = new(page.EventDomContentEventFired)
 
@@ -1730,6 +1743,9 @@ func UnmarshalMessage(msg *Message) (interface{}, error) {
 
 	case EventPageWindowOpen:
 		v = new(page.EventWindowOpen)
+
+	case EventPageCompilationCacheProduced:
+		v = new(page.EventCompilationCacheProduced)
 
 	case CommandPerformanceDisable:
 		return emptyVal, nil

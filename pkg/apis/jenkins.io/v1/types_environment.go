@@ -67,6 +67,9 @@ const (
 // EnvironmentKindType is the kind of an environment
 type EnvironmentKindType string
 
+// PromotionEngineType is the type of promotion implementation the team uses
+type PromotionEngineType string
+
 const (
 	// EnvironmentKindTypePermanent specifies that the environment is a regular permanent one
 	EnvironmentKindTypePermanent EnvironmentKindType = "Permanent"
@@ -78,6 +81,9 @@ const (
 	EnvironmentKindTypeEdit EnvironmentKindType = "Edit"
 	// EnvironmentKindTypeDevelopment specifies that an environment is a development environment; for developer tools like Jenkins, Nexus etc
 	EnvironmentKindTypeDevelopment EnvironmentKindType = "Development"
+
+	PromotionEngineJenkins PromotionEngineType = "Jenkins"
+	PromotionEngineProw    PromotionEngineType = "Prow"
 )
 
 // IsPermanent returns true if this environment is permanent
@@ -123,6 +129,7 @@ type TeamSettings struct {
 	BuildPackRef        string               `json:"buildPackRef,omitempty" protobuf:"bytes,7,opt,name=buildPackRef"`
 	HelmBinary          string               `json:"helmBinary,omitempty" protobuf:"bytes,8,opt,name=helmBinary"`
 	PostPreviewJobs     []batchv1.Job        `json:"postPreviewJobs,omitempty" protobuf:"bytes,9,opt,name=postPreviewJobs"`
+	PromotionEngine     PromotionEngineType  `json:"promotionEngine,omitempty" protobuf:"bytes,10,opt,name=promotionEngine"`
 }
 
 // QuickStartLocation

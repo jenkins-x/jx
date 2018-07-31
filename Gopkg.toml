@@ -79,6 +79,7 @@ required = [
 [[constraint]]
   branch = "copy-pack-contents"
   name = "github.com/jenkins-x/draft-repo"
+  source = "https://github.com/jenkins-x/old-draft-repo.git"
 
 [[constraint]]
   branch = "master"
@@ -152,6 +153,11 @@ required = [
   name = "github.com/alexflint/go-filemutex"
   branch = "master"
   source = "https://github.com/i0n/go-filemutex.git"
+
+[[constraint]]
+  name = "k8s.io/test-infra"
+  branch = "release-1.11"
+  source = "https://github.com/jenkins-x/test-infra.git"
 
 [prune]
   non-go = true
