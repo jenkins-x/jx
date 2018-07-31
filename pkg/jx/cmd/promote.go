@@ -515,8 +515,6 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							return nil
 						}
 						promoteKey.OnPromotePullRequest(o.Activities, mergedPR)
-						// Returning here to fix bug with promotions never completing even though the app has been deployed...
-						return nil
 					}
 
 					promoteKey.OnPromoteUpdate(o.Activities, kube.StartPromotionUpdate)

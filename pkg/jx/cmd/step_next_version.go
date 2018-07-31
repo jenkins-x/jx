@@ -336,6 +336,7 @@ func (o *StepNextVersionOptions) getNewVersionFromTag() (string, error) {
 
 	return fmt.Sprintf("%d.%d.%d", majorVersion, minorVersion, patchVersion), nil
 }
+
 func (o *StepNextVersionOptions) setVersion() error {
 	var err error
 	var matchField string

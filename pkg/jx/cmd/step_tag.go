@@ -1,19 +1,28 @@
 package cmd
 
 import (
-	"io"
-
 	"errors"
-
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"k8s.io/helm/pkg/chartutil"
 )
 
 const (
 	VERSION = "version"
+
+	defaultVersionFile = "VERSION"
+
+	valuesYamlRepositoryPrefix = "  repository:"
+	valuesYamlTagPrefix        = "  tag:"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -24,7 +33,10 @@ type StepTagOptions struct {
 }
 
 type StepTagFlags struct {
-	Version string
+	Version              string
+	VersionFile          string
+	ChartsDir            string
+	ChartValueRepository string
 }
 
 var (
@@ -48,7 +60,6 @@ var (
 )
 
 func NewCmdStepTag(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-
 	options := StepTagOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -72,13 +83,43 @@ func NewCmdStepTag(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.Flags.Version, VERSION, "v", "", "version number for the tag [required]")
+	cmd.Flags().StringVarP(&options.Flags.VersionFile, "version-file", "", defaultVersionFile, "The file name used to load the version number from if no '--version' option is specified")
+
+	cmd.Flags().StringVarP(&options.Flags.ChartsDir, "charts-dir", "d", "", "the directory of the chart to update the version")
+	cmd.Flags().StringVarP(&options.Flags.ChartValueRepository, "charts-value-repository", "r", "", "the fully qualified image name without the version tag. e.g. 'dockerregistry/myorg/myapp'")
 
 	return cmd
 }
 
 func (o *StepTagOptions) Run() error {
 	if o.Flags.Version == "" {
+		// lets see if its defined in the VERSION file
+		path := o.Flags.VersionFile
+		if path == "" {
+			path = "VERSION"
+		}
+		exists, err := util.FileExists(path)
+		if exists && err == nil {
+			data, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			o.Flags.Version = string(data)
+		}
+	}
+	if o.Flags.Version == "" {
 		return errors.New("No version flag")
+	}
+	chartsDir := o.Flags.ChartsDir
+	if chartsDir != "" {
+		err := o.updateChart(o.Flags.Version, chartsDir)
+		if err != nil {
+			return err
+		}
+		err = o.updateChartValues(o.Flags.Version, chartsDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	tag := "v" + o.Flags.Version
@@ -100,4 +141,74 @@ func (o *StepTagOptions) Run() error {
 
 	log.Successf("Tag %s created and pushed to remote origin", tag)
 	return nil
+}
+
+func (o *StepTagOptions) updateChart(version string, chartsDir string) error {
+	chartFile := filepath.Join(chartsDir, "Chart.yaml")
+
+	exists, err := util.FileExists(chartFile)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+	chart, err := chartutil.LoadChartfile(chartFile)
+	if err != nil {
+		return err
+	}
+	if chart.Version == version {
+		return nil
+	}
+	chart.Version = version
+	err = chartutil.SaveChartfile(chartFile, chart)
+	if err != nil {
+		return fmt.Errorf("Failed to save chart %s: %s", chartFile, err)
+	}
+	return nil
+}
+
+func (o *StepTagOptions) updateChartValues(version string, chartsDir string) error {
+	valuesFile := filepath.Join(chartsDir, "values.yaml")
+
+	exists, err := util.FileExists(valuesFile)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+	data, err := ioutil.ReadFile(valuesFile)
+	lines := strings.Split(string(data), "\n")
+	chartValueRepository := o.Flags.ChartValueRepository
+	if chartValueRepository == "" {
+		chartValueRepository = o.defaultChartValueRepository()
+	}
+	updated := false
+	for idx, line := range lines {
+		if chartValueRepository != "" && strings.HasPrefix(line, valuesYamlRepositoryPrefix) {
+			updated = true
+			lines[idx] = valuesYamlRepositoryPrefix + " " + chartValueRepository
+		} else if strings.HasPrefix(line, valuesYamlTagPrefix) {
+			updated = true
+			lines[idx] = valuesYamlTagPrefix + " " + version
+		}
+	}
+	if updated {
+		err = ioutil.WriteFile(valuesFile, []byte(strings.Join(lines, "\n")), DefaultWritePermissions)
+		if err != nil {
+			return fmt.Errorf("Failed to save chart file %s: %s", valuesFile, err)
+		}
+	}
+	return nil
+}
+
+func (o *StepTagOptions) defaultChartValueRepository() string {
+	dockerRegistry := os.Getenv("DOCKER_REGISTRY")
+	organsation := os.Getenv("ORG")
+	appName := os.Getenv("APP_NAME")
+	if dockerRegistry != "" && organsation != "" && appName != "" {
+		return dockerRegistry + "/" + organsation + "/" + appName
+	}
+	return ""
 }

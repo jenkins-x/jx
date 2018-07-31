@@ -24,6 +24,7 @@ type LogsOptions struct {
 	Namespace       string
 	Environment     string
 	Filter          string
+	Label           string
 	EditEnvironment bool
 }
 
@@ -67,6 +68,7 @@ func NewCmdLogs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for the Deployment. Defaults to the current namespace")
 	cmd.Flags().StringVarP(&options.Environment, "env", "e", "", "the Environment to look for the Deployment. Defaults to the current environment")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters the available deployments if no deployment argument is provided")
+	cmd.Flags().StringVarP(&options.Label, "label", "l", "", "The label to filter the pods if no deployment argument is provided")
 	cmd.Flags().BoolVarP(&options.EditEnvironment, "edit", "d", false, "Use my Edit Environment to look for the Deployment pods")
 	return cmd
 }
@@ -115,11 +117,13 @@ func (o *LogsOptions) Run() error {
 	}
 	name := ""
 	if len(args) == 0 {
-		n, err := util.PickName(names, "Pick Deployment:")
-		if err != nil {
-			return err
+		if o.Label == "" {
+			n, err := util.PickName(names, "Pick Deployment:")
+			if err != nil {
+				return err
+			}
+			name = n
 		}
-		name = n
 	} else {
 		name = args[0]
 		if util.StringArrayIndex(names, name) < 0 {
@@ -128,28 +132,56 @@ func (o *LogsOptions) Run() error {
 	}
 
 	for {
-		pod, err := waitForReadyPodForDeployment(client, ns, name, names, false)
-		if err != nil {
-			return err
+		pod := ""
+		if o.Label != "" {
+			selector, err := parseSelector(o.Label)
+			if err != nil {
+				return err
+			}
+			pod, err = o.waitForReadyPodForSelector(client, ns, selector, false)
+			if err != nil {
+				return err
+			}
+			if pod == "" {
+				return fmt.Errorf("No pod found for namespace %s with selector %s", ns, o.Label)
+			}
+		} else {
+			pod, err = o.waitForReadyPodForDeployment(client, ns, name, names, false)
+			if err != nil {
+				return err
+			}
+			if pod == "" {
+				return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
+			}
 		}
-		if pod == "" {
-			return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
-		}
-		args := []string{"logs", "-n", ns, "-f"}
-		if o.Container != "" {
-			args = append(args, "-c", o.Container)
-		}
-		args = append(args, pod)
-		o.Verbose = true
-		err = o.runCommand("kubectl", args...)
+		err = o.tailLogs(ns, pod, o.Container)
 		if err != nil {
 			return nil
 		}
 	}
 }
 
+func parseSelector(selectorText string) (map[string]string, error) {
+	selector, err := metav1.ParseToLabelSelector(selectorText)
+	if err != nil {
+		return nil, err
+	}
+	return selector.MatchLabels, nil
+}
+
+func (o *CommonOptions) tailLogs(ns string, pod string, containerName string) error {
+	args := []string{"logs", "-n", ns, "-f"}
+	if containerName != "" {
+		args = append(args, "-c", containerName)
+	}
+	args = append(args, pod)
+	o.Verbose = true
+	return o.runCommand("kubectl", args...)
+
+}
+
 // waitForReadyPodForDeployment waits for a ready pod in a Deployment in the given namespace with the given name
-func waitForReadyPodForDeployment(c kubernetes.Interface, ns string, name string, names []string, readyOnly bool) (string, error) {
+func (o *CommonOptions) waitForReadyPodForDeployment(c kubernetes.Interface, ns string, name string, names []string, readyOnly bool) (string, error) {
 	deployment, err := c.AppsV1beta1().Deployments(ns).Get(name, metav1.GetOptions{})
 	if err != nil || deployment == nil {
 		return "", util.InvalidArg(name, names)
@@ -162,14 +194,15 @@ func waitForReadyPodForDeployment(c kubernetes.Interface, ns string, name string
 	if labels == nil {
 		return "", fmt.Errorf("No MatchLabels defined on the Selector of Deployment %s in namespace %s", name, ns)
 	}
-	return waitForReadyPodForSelector(c, ns, labels, readyOnly)
+	return o.waitForReadyPodForSelector(c, ns, labels, readyOnly)
 }
 
-func waitForReadyPodForSelector(c kubernetes.Interface, ns string, labels map[string]string, readyOnly bool) (string, error) {
+func (o *CommonOptions) waitForReadyPodForSelector(c kubernetes.Interface, ns string, labels map[string]string, readyOnly bool) (string, error) {
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return "", err
 	}
+	lastPod := ""
 	log.Warnf("Waiting for a running pod in namespace %s with labels %v\n", ns, labels)
 	for {
 		pods, err := c.CoreV1().Pods(ns).List(metav1.ListOptions{
@@ -179,24 +212,66 @@ func waitForReadyPodForSelector(c kubernetes.Interface, ns string, labels map[st
 			return "", err
 		}
 		name := ""
+		loggedInitContainerIdx := -1
+		var latestPod *corev1.Pod
 		lastTime := time.Time{}
 		for _, pod := range pods.Items {
 			phase := pod.Status.Phase
-			if phase == corev1.PodRunning {
-				if !readyOnly || kube.IsPodReady(&pod) {
+			if phase == corev1.PodRunning || phase == corev1.PodPending {
+				if !readyOnly {
 					created := pod.CreationTimestamp
 					if name == "" || created.After(lastTime) {
 						lastTime = created.Time
 						name = pod.Name
+						latestPod = &pod
 					}
 				}
 			}
 		}
-		if name != "" {
-			log.Warnf("Found newest pod: %s\n", name)
-			return name, nil
+		if latestPod != nil && name != "" {
+			if name != lastPod {
+				lastPod = name
+				loggedInitContainerIdx = -1
+				log.Warnf("Found newest pod: %s\n", name)
+			}
+			if kube.IsPodReady(latestPod) {
+				return name, nil
+			}
+
+			initContainers := latestPod.Status.InitContainerStatuses
+			for idx, ic := range initContainers {
+				if isContainerStarted(&ic.State) && idx > loggedInitContainerIdx {
+					loggedInitContainerIdx = idx
+					containerName := ic.Name
+					log.Warnf("Init container on pod: %s is: %s\n", name, containerName)
+					err = o.tailLogs(ns, name, containerName)
+					if err != nil {
+						break
+					}
+				}
+			}
 		}
 		// TODO replace with a watch flavour
 		time.Sleep(time.Second)
 	}
+}
+
+func isContainerStarted(state *corev1.ContainerState) bool {
+	if state == nil {
+		return false
+	}
+	if state.Running != nil {
+		return !state.Running.StartedAt.IsZero()
+	}
+	if state != nil && state.Terminated != nil {
+		return !state.Terminated.StartedAt.IsZero()
+	}
+	return false
+}
+
+func isContainerCompleted(state *corev1.ContainerState) bool {
+	if state != nil && state.Terminated != nil {
+		return !state.Terminated.FinishedAt.IsZero()
+	}
+	return false
 }
