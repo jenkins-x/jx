@@ -76,6 +76,9 @@ func (o *StepGitCredentialsOptions) Run() error {
 	if outFile == "" {
 		// lets figure out the default output file
 		cfgHome := os.Getenv("XDG_CONFIG_HOME")
+		if cfgHome == "" {
+			cfgHome = util.HomeDir()
+		}
 		if cfgHome != "" {
 			outFile = filepath.Join(cfgHome, "git", "credentials")
 		}

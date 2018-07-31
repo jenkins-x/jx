@@ -68,6 +68,9 @@ func NewCmdStepVerify(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 }
 
 func (o *StepVerifyOptions) Run() error {
+	// Wait for the given time to exceed before starting the verification
+	time.Sleep(time.Duration(o.After) * time.Second)
+
 	activity, err := o.detectPipelineActivity()
 	if err != nil {
 		return errors.Wrap(err, "failed to detect the pipeline activity")
@@ -77,9 +80,6 @@ func (o *StepVerifyOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to determine the application name and namespace from pipeline activity")
 	}
-
-	// Wait for the given time to exceed before starting the verification
-	time.Sleep(time.Duration(o.After) * time.Second)
 
 	log.Infof("Verifying if app '%s' is running in namespace '%s'", app, ns)
 

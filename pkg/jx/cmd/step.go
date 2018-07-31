@@ -52,6 +52,7 @@ func NewCmdStep(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdStepPR(f, out, errOut))
 	cmd.AddCommand(NewCmdStepPost(f, out, errOut))
 	cmd.AddCommand(NewCmdStepReport(f, out, errOut))
+	cmd.AddCommand(NewCmdStepRelease(f, out, errOut))
 	cmd.AddCommand(NewCmdStepSplitMonorepo(f, out, errOut))
 	cmd.AddCommand(NewCmdStepTag(f, out, errOut))
 	cmd.AddCommand(NewCmdStepValidate(f, out, errOut))
