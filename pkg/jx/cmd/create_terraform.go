@@ -493,19 +493,27 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		} else {
 			fmt.Fprintf(o.Stdout(), "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
-			localDir := path.Join(organisationDir, details.RepoName)
-			localDirExists, err := util.FileExists(localDir)
+			dir = path.Join(organisationDir, details.RepoName)
+			localDirExists, err := util.FileExists(dir)
 			if err != nil {
 				return err
 			}
 
 			if localDirExists {
 				// if remote repo does exist & local does exist, git pull the local repo
-				err = o.Git().Pull(localDir)
+				fmt.Fprintf(o.Stdout(), "local directory already exists\n")
+				
+				err = o.Git().Pull(dir)
 				if err != nil {
 					return err
 				}
 			} else {
+				fmt.Fprintf(o.Stdout(), "cloning repository locally\n")
+				err = os.MkdirAll(dir, os.FileMode(0755))
+				if err != nil {
+					return err
+				}
+
 				// if remote repo does exist & local directory does not exist, clone locally
 				pushGitURL, err := o.Git().CreatePushURL(repo.CloneURL, details.User)
 				if err != nil {
@@ -994,7 +1002,7 @@ func (o *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) error 
 	_, err = o.findEnvironmentNamespace(c.Name())
 	if err != nil {
 		// jx is missing, install,
-		o.InstallOptions.Flags.DefaultEnvironmentPrefix = c.Name()
+		o.InstallOptions.Flags.DefaultEnvironmentPrefix = c.ClusterName()
 		err = o.initAndInstall(c.Provider())
 		if err != nil {
 			return err

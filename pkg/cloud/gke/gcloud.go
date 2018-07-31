@@ -216,7 +216,8 @@ func Login(serviceAccountKeyPath string, skipLogin bool) error {
 		if err != nil {
 			return err
 		}
-
+		
+		// GCP IAM changes can take up to 80 seconds to propagate
 		retry(10, 10*time.Second, func() error {
 			log.Infof("Checking for readiness...\n")
 
