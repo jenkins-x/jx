@@ -64,7 +64,7 @@ const (
 	JenkinsBuildPackURL = "https://github.com/jenkins-x/draft-packs.git"
 
 	INGRESS_SERVICE_NAME    = "jxing-nginx-ingress-controller"
-	DEFAULT_CHARTMUSEUM_URL = "https://chartmuseum.build.cd.jenkins-x.io"
+	DEFAULT_CHARTMUSEUM_URL = "https://storage.googleapis.com/jenkinsx-chartmuseum"
 )
 
 var (
