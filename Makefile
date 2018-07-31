@@ -16,7 +16,7 @@
 
 SHELL := /bin/bash
 NAME := jx
-GO := GO15VENDOREXPERIMENT=1 go
+GO := $(shell command -v vgo || (go get -u golang.org/x/vgo > /dev/null && command -v vgo))
 VERSION := $(shell cat pkg/version/VERSION)
 #ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
@@ -80,8 +80,7 @@ win:
 bootstrap: vendoring
 
 vendoring:
-	$(GO) get -u github.com/golang/dep/cmd/dep
-	GO15VENDOREXPERIMENT=1 dep ensure
+	go get -u golang.org/x/vgo
 
 release: check
 	rm -rf build release && mkdir build release
