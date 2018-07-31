@@ -421,12 +421,25 @@ func (o *StepChangelogOptions) Run() error {
 			name := kube.ToValidName(pipeline + "-" + build)
 			// lets see if we can update the pipeline
 			activities := jxClient.JenkinsV1().PipelineActivities(devNs)
+			lastCommitSha := ""
+			lastCommitMessage := ""
+			lastCommitURL := ""
+			commits := release.Spec.Commits
+			if len(commits) > 0 {
+				lastCommit := commits[len(commits)-1]
+				lastCommitSha = lastCommit.SHA
+				lastCommitMessage = lastCommit.Message
+				lastCommitURL = lastCommit.URL
+			}
 			key := &kube.PromoteStepActivityKey{
 				PipelineActivityKey: kube.PipelineActivityKey{
-					Name:            name,
-					Pipeline:        pipeline,
-					Build:           build,
-					ReleaseNotesURL: releaseNotesURL,
+					Name:              name,
+					Pipeline:          pipeline,
+					Build:             build,
+					ReleaseNotesURL:   releaseNotesURL,
+					LastCommitSHA:     lastCommitSha,
+					LastCommitMessage: lastCommitMessage,
+					LastCommitURL:     lastCommitURL,
 				},
 			}
 			a, err := key.GetOrCreate(activities)
