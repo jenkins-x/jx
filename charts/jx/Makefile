@@ -4,7 +4,8 @@ OS := $(shell uname)
 RELEASE_VERSION := $(shell cat ../../pkg/version/VERSION)
 
 setup:
-	helm repo add jenkins-x https://chartmuseum.build.cd.jenkins-x.io
+	helm repo add jenkins-x-api https://chartmuseum.build.cd.jenkins-x.io
+	helm repo add jenkins-x https://storage.googleapis.com/jenkinsx-chartmuseum
 
 build: setup clean
 	helm dependency build
@@ -38,4 +39,4 @@ endif
 	helm package .
 	curl --fail -u $(CHARTMUSEUM_CREDS_USR):$(CHARTMUSEUM_CREDS_PSW) --data-binary "@$(NAME)-$(RELEASE_VERSION).tgz" $(CHART_REPO)/api/charts
 	rm -rf ${NAME}*.tgz
-
+	helm repo update
