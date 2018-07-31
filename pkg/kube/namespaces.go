@@ -61,10 +61,11 @@ func EnsureDevEnvironmentSetup(jxClient versioned.Interface, ns string) (*v1.Env
 					UseGitOPs:           true,
 					AskOnCreate:         false,
 					QuickstartLocations: DefaultQuickstartLocations,
+					PromotionEngine:     v1.PromotionEngineJenkins,
 				},
 			},
 		}
-		_, err = jxClient.JenkinsV1().Environments(ns).Create(env)
+		env, err = jxClient.JenkinsV1().Environments(ns).Create(env)
 		if err != nil {
 			return nil, err
 		}

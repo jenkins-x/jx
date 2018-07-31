@@ -100,7 +100,8 @@ func (u *updater) Serialize() (string, error) {
 }
 
 // Annotate serialises the status json, then annotates the aggregator pod with the status.
-func (u *updater) Annotate() error {
+func (u *updater) Annotate(results map[string]*plugin.Result) error {
+	u.ReceiveAll(results)
 	u.RLock()
 	defer u.RUnlock()
 	str, err := u.Serialize()
@@ -118,6 +119,7 @@ func (u *updater) Annotate() error {
 	return errors.Wrap(err, "couldn't patch pod annotation")
 }
 
+// TODO (tstclair): Evaluate if this should be exported.
 // ReceiveAll takes a map of plugin.Result and calls Receive on all of them.
 func (u *updater) ReceiveAll(results map[string]*plugin.Result) {
 	// Could have race conditions, but will be eventually consistent

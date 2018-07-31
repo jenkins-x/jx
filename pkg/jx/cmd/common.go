@@ -55,6 +55,7 @@ type CommonOptions struct {
 	NoBrew              bool
 	InstallDependencies bool
 	ServiceAccount      string
+	Username            string
 
 	// common cached clients
 	kubeClient          kubernetes.Interface
@@ -65,6 +66,8 @@ type CommonOptions struct {
 	jenkinsClient       *gojenkins.Jenkins
 	git                 gits.Gitter
 	helm                helm.Helmer
+
+	Prow
 }
 
 type ServerFlags struct {

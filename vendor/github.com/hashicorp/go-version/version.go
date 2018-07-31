@@ -25,6 +25,7 @@ type Version struct {
 	pre      string
 	segments []int64
 	si       int
+	original string
 }
 
 func init() {
@@ -69,6 +70,7 @@ func NewVersion(v string) (*Version, error) {
 		pre:      pre,
 		segments: segments,
 		si:       si,
+		original: v,
 	}, nil
 }
 
@@ -306,11 +308,19 @@ func (v *Version) Segments() []int {
 // for a version "1.2.3-beta", segments will return a slice of
 // 1, 2, 3.
 func (v *Version) Segments64() []int64 {
-	return v.segments
+	result := make([]int64, len(v.segments))
+	copy(result, v.segments)
+	return result
 }
 
 // String returns the full version string included pre-release
 // and metadata information.
+//
+// This value is rebuilt according to the parsed segments and other
+// information. Therefore, ambiguities in the version string such as
+// prefixed zeroes (1.04.0 => 1.4.0), `v` prefix (v1.0.0 => 1.0.0), and
+// missing parts (1.0 => 1.0.0) will be made into a canonicalized form
+// as shown in the parenthesized examples.
 func (v *Version) String() string {
 	var buf bytes.Buffer
 	fmtParts := make([]string, len(v.segments))
@@ -328,4 +338,10 @@ func (v *Version) String() string {
 	}
 
 	return buf.String()
+}
+
+// Original returns the original parsed version as-is, including any
+// potential whitespace, `v` prefix, etc.
+func (v *Version) Original() string {
+	return v.original
 }

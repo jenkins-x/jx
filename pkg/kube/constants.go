@@ -16,8 +16,6 @@ const (
 	// ChartAnchore the default chart for the Anchore plugin
 	ChartPipelineEvent = "jenkins-x/pipeline-events-addon"
 
-	ChartProw = "jenkins-x/prow"
-
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
 

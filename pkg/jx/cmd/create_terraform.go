@@ -16,6 +16,8 @@ import (
 
 	"os"
 
+	"time"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -27,7 +29,6 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"path"
-	"time"
 )
 
 type Cluster interface {
@@ -256,6 +257,7 @@ func NewCmdCreateTerraform(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 		},
 	}
 
+	options.InstallOptions.addInstallFlags(cmd, true)
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd)
 
@@ -282,8 +284,6 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.GKEProjectId, "gke-project-id", "", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.GKEZone, "gke-zone", "", "", "The compute zone (e.g. us-central1-a) for the cluster")
 
-	// install options
-	options.InstallOptions.addInstallFlags(cmd, true)
 }
 
 func stringInValidProviders(a string) bool {
@@ -297,6 +297,7 @@ func stringInValidProviders(a string) bool {
 
 // Run implements this command
 func (o *CreateTerraformOptions) Run() error {
+	o.InstallOptions.Flags.Prow = true
 	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
@@ -460,7 +461,6 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		repo, err := provider.GetRepository(owner, repoName)
 		remoteRepoExists := err == nil
 
-
 		if !remoteRepoExists {
 			fmt.Fprintf(o.Stdout(), "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
@@ -502,7 +502,7 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 			if localDirExists {
 				// if remote repo does exist & local does exist, git pull the local repo
 				fmt.Fprintf(o.Stdout(), "local directory already exists\n")
-				
+
 				err = o.Git().Pull(dir)
 				if err != nil {
 					return err
@@ -1003,6 +1003,7 @@ func (o *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) error 
 	if err != nil {
 		// jx is missing, install,
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = c.ClusterName()
+		o.InstallOptions.Flags.Prow = true
 		err = o.initAndInstall(c.Provider())
 		if err != nil {
 			return err
@@ -1077,7 +1078,6 @@ func (o *CreateTerraformOptions) configureEnvironments(clusters []Cluster) error
 			if err != nil {
 				return err
 			}
-
 			log.Infof("Checking for environments %s on cluster %s\n", cluster.Name(), cluster.ClusterName())
 			_, envNames, err := kube.GetEnvironments(jxClient, cluster.Name())
 

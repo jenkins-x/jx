@@ -18,10 +18,10 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"io/ioutil"
+	"os"
 	"path"
 	"strings"
-	"os"
-	)
+)
 
 type CreateCodeshipFlags struct {
 	OrganisationName        string
@@ -349,7 +349,7 @@ func (o *CreateCodeshipOptions) Run() error {
 		project, _, err := csOrg.CreateProject(ctx, createProjectRequest)
 
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create project, check CodeShip is configured to authenticate against your git provider https://app.codeship.com/authentications.  error: %v", err)
 		}
 
 		uuid = project.UUID
