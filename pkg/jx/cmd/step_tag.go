@@ -60,7 +60,6 @@ var (
 )
 
 func NewCmdStepTag(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-
 	options := StepTagOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -114,6 +113,10 @@ func (o *StepTagOptions) Run() error {
 	chartsDir := o.Flags.ChartsDir
 	if chartsDir != "" {
 		err := o.updateChart(o.Flags.Version, chartsDir)
+		if err != nil {
+			return err
+		}
+		err = o.updateChartValues(o.Flags.Version, chartsDir)
 		if err != nil {
 			return err
 		}
