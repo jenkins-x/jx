@@ -292,7 +292,7 @@ func (o *CreateCodeshipOptions) Run() error {
 		o.CreateTerraformOptions.Flags.OrganisationName = o.Flags.OrganisationName
 		o.CreateTerraformOptions.Flags.SkipTerraformApply = true
 		o.CreateTerraformOptions.Flags.GKEServiceAccount = o.Flags.GKEServiceAccount
-		o.CreateTerraformOptions.Flags.LocalRepository = dir
+		o.CreateTerraformOptions.Flags.LocalOrganisationRepository = dir
 
 		err = o.CreateTerraformOptions.Run()
 		if err != nil {
@@ -307,6 +307,7 @@ func (o *CreateCodeshipOptions) Run() error {
 	}
 
 	auth := codeship.NewBasicAuth(o.Flags.CodeshipUsername, o.Flags.CodeshipPassword)
+	//client, err := codeship.New(auth, codeship.Verbose(true))
 	client, err := codeship.New(auth)
 	if err != nil {
 		return err
@@ -329,6 +330,10 @@ func (o *CreateCodeshipOptions) Run() error {
 	serviceAccount := string(b)
 
 	if uuid == "" {
+		//m := make(map[string]interface{})
+		//m["type"] = "script_deployment"
+		//m["commands"] = []string{"./build.sh"}
+
 		createProjectRequest := codeship.ProjectCreateRequest{
 			Type:          codeship.ProjectTypeBasic,
 			RepositoryURL: fmt.Sprintf("git@github.com:%s/%s", owner, repoName),
@@ -344,6 +349,13 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "BUILD_NUMBER", Value: "1"},
 				{Name: "ENVIRONMENTS", Value: strings.Join(clusters, ",")},
 			},
+			//DeploymentPipelines: []codeship.DeploymentPipeline{
+			//	{
+			//		Branch: codeship.DeploymentBranch{ BranchName: "master", MatchMode: "exact"},
+			//		Config: m,
+			//		Position: 1,
+			//	},
+			//} ,
 		}
 
 		project, _, err := csOrg.CreateProject(ctx, createProjectRequest)

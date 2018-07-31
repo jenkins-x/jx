@@ -178,22 +178,23 @@ func (g *GKECluster) ParseTfVarsFile(path string) {
 }
 
 type Flags struct {
-	Cluster                 []string
-	OrganisationName        string
-	ForkOrganisationGitRepo string
-	SkipTerraformApply      bool
-	JxEnvironment           string
-	GKEProjectId            string
-	GKESkipEnableApis       bool
-	GKEZone                 string
-	GKEMachineType          string
-	GKEMinNumOfNodes        string
-	GKEMaxNumOfNodes        string
-	GKEDiskSize             string
-	GKEAutoRepair           bool
-	GKEAutoUpgrade          bool
-	GKEServiceAccount       string
-	LocalRepository         string
+	Cluster                     []string
+	OrganisationName            string
+	ForkOrganisationGitRepo     string
+	SkipTerraformApply          bool
+	IgnoreTerraformWarnings     bool
+	JxEnvironment               string
+	GKEProjectId                string
+	GKESkipEnableApis           bool
+	GKEZone                     string
+	GKEMachineType              string
+	GKEMinNumOfNodes            string
+	GKEMaxNumOfNodes            string
+	GKEDiskSize                 string
+	GKEAutoRepair               bool
+	GKEAutoUpgrade              bool
+	GKEServiceAccount           string
+	LocalOrganisationRepository string
 }
 
 // CreateTerraformOptions the options for the create spring command
@@ -272,7 +273,9 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command) {
 	// global flags
 	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, "cluster", "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
 	cmd.Flags().BoolVarP(&options.Flags.SkipTerraformApply, "skip-terraform-apply", "", false, "Skip applying the generated terraform plans")
+	cmd.Flags().BoolVarP(&options.Flags.IgnoreTerraformWarnings, "ignore-terraform-warnings", "", false, "Ignore any warnings about the terraform plan being potentially destructive")
 	cmd.Flags().StringVarP(&options.Flags.JxEnvironment, "jx-environment", "", "dev", "The cluster name to install jx inside")
+	cmd.Flags().StringVarP(&options.Flags.LocalOrganisationRepository, "local-organisation-repository", "", "", "Rather than cloning from a remote git server, the local directory to use for the organisational folder")
 
 	// gke specific overrides
 	cmd.Flags().StringVarP(&options.Flags.GKEDiskSize, "gke-disk-size", "", "100", "Size in GB for node VM boot disks. Defaults to 100GB")
@@ -435,15 +438,15 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 
 	var dir string
 
-	if o.Flags.LocalRepository != "" {
-		exists, err := util.FileExists(o.Flags.LocalRepository)
+	if o.Flags.LocalOrganisationRepository != "" {
+		exists, err := util.FileExists(o.Flags.LocalOrganisationRepository)
 		if err != nil {
 			return err
 		}
 		if exists {
-			dir = o.Flags.LocalRepository
+			dir = o.Flags.LocalOrganisationRepository
 		} else {
-			return errors.New("unable to find local repository " + o.Flags.LocalRepository)
+			return errors.New("unable to find local repository " + o.Flags.LocalOrganisationRepository)
 		}
 	} else {
 		details, err := gits.PickNewOrExistingGitRepository(o.Stdout(), o.BatchMode, authConfigSvc,
@@ -544,15 +547,15 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		return err
 	}
 
-	fmt.Fprintf(o.Stdout(), "Pushed git repository\n")
+	fmt.Fprintf(o.Stdout(), "Pushed git repository %s\n", util.ColorInfo(dir))
+
+	fmt.Fprintf(o.Stdout(), "Creating Clusters...\n")
+	err = o.createClusters(dir, clusterDefinitions)
+	if err != nil {
+		return err
+	}
 
 	if !o.Flags.SkipTerraformApply {
-		fmt.Fprintf(o.Stdout(), "Creating Clusters...\n")
-		err = o.createClusters(dir, clusterDefinitions)
-		if err != nil {
-			return err
-		}
-
 		devCluster, err := o.findDevCluster(clusterDefinitions)
 		if err != nil {
 			fmt.Fprintf(o.Stdout(), "Skipping jx install\n")
@@ -562,9 +565,8 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 				return err
 			}
 		}
-
 	} else {
-		fmt.Fprintf(o.Stdout(), "Skipping terraform apply\n")
+		fmt.Fprintf(o.Stdout(), "Skipping jx install\n")
 	}
 
 	return nil
@@ -887,58 +889,84 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 		return err
 	}
 
-	err = terraform.Plan(path, terraformVars, serviceAccountPath, o.Out, o.Err)
+	plan, err := terraform.Plan(path, terraformVars, serviceAccountPath)
 	if err != nil {
 		return err
 	}
 
-	log.Info("Applying plan...\n")
+	fmt.Fprintf(o.Stdout(), plan)
 
-	err = terraform.Apply(path, terraformVars, serviceAccountPath, o.Out, o.Err)
-	if err != nil {
-		return err
-	}
+	if !o.BatchMode {
+		confirm := false
+		prompt := &survey.Confirm{
+			Message: "Would you like to apply this plan?",
+		}
+		survey.AskOne(prompt, &confirm, nil)
 
-	// should we setup the labels at this point?
-	args := []string{"container",
-		"clusters",
-		"update",
-		g.ClusterName(),
-		"--project",
-		g.ProjectId,
-		"--zone",
-		g.Zone}
-
-	labels := ""
-	if err == nil && user != nil {
-		username := sanitizeLabel(user.Username)
-		if username != "" {
-			sep := ""
-			if labels != "" {
-				sep = ","
-			}
-			labels += sep + "created-by=" + username
+		if !confirm {
+			// exit at this point
+			return nil
 		}
 	}
 
-	sep := ""
-	if labels != "" {
-		sep = ","
-	}
-	labels += sep + fmt.Sprintf("created-with=terraform,created-on=%s", time.Now().Format("20060102150405"))
-	args = append(args, "--update-labels="+strings.ToLower(labels))
-
-	err = o.runCommand("gcloud", args...)
-	if err != nil {
-		return err
+	if !o.Flags.IgnoreTerraformWarnings {
+		if strings.Contains(plan, "forces new resource") {
+			fmt.Fprintf(o.Stdout(), "%s\n", util.ColorError("It looks like this plan is destructive, aborting."))
+			fmt.Fprintf(o.Stdout(), "Use --ignore-terraform-warnings to override\n")
+			return errors.New("Aborting destructive plan")
+		}
 	}
 
-	output, err := o.getCommandOutput("", "gcloud", "container", "clusters", "get-credentials", g.ClusterName(), "--zone", g.Zone, "--project", g.ProjectId)
-	if err != nil {
-		return err
-	}
-	log.Info(output)
+	if !o.Flags.SkipTerraformApply {
+		log.Info("Applying plan...\n")
 
+		err = terraform.Apply(path, terraformVars, serviceAccountPath, o.Out, o.Err)
+		if err != nil {
+			return err
+		}
+
+		// should we setup the labels at this point?
+		args := []string{"container",
+			"clusters",
+			"update",
+			g.ClusterName(),
+			"--project",
+			g.ProjectId,
+			"--zone",
+			g.Zone}
+
+		labels := ""
+		if err == nil && user != nil {
+			username := sanitizeLabel(user.Username)
+			if username != "" {
+				sep := ""
+				if labels != "" {
+					sep = ","
+				}
+				labels += sep + "created-by=" + username
+			}
+		}
+
+		sep := ""
+		if labels != "" {
+			sep = ","
+		}
+		labels += sep + fmt.Sprintf("created-with=terraform,created-on=%s", time.Now().Format("20060102150405"))
+		args = append(args, "--update-labels="+strings.ToLower(labels))
+
+		err = o.runCommand("gcloud", args...)
+		if err != nil {
+			return err
+		}
+
+		output, err := o.getCommandOutput("", "gcloud", "container", "clusters", "get-credentials", g.ClusterName(), "--zone", g.Zone, "--project", g.ProjectId)
+		if err != nil {
+			return err
+		}
+		log.Info(output)
+	} else {
+		fmt.Fprintf(o.Stdout(), "Skipping terraform apply\n")
+	}
 	return nil
 }
 
