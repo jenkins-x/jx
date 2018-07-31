@@ -297,10 +297,14 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 			if batchMode {
 				createRepo = true
 			} else {
+				defaultBranch := data.Spec.Source.Ref
+				if defaultBranch == "" {
+					defaultBranch = "master"
+				}
 				q := &survey.Input{
-					Message: "Git Ref for the Environment source code:",
-					Default: data.Spec.Source.Ref,
-					Help:    "The git clone Ref for the Environment's Helm charts source code and custom configuration",
+					Message: "Git branch for the Environment source code:",
+					Default: defaultBranch,
+					Help:    "The git release branch in the Environments git repository used to store Helm charts source code and custom configuration",
 				}
 				err := survey.AskOne(q, &data.Spec.Source.Ref, nil)
 				if err != nil {
