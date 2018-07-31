@@ -414,46 +414,44 @@ func (o *StepChangelogOptions) Run() error {
 		}
 	}
 	releaseNotesURL := release.Spec.ReleaseNotesURL
-	if releaseNotesURL != "" {
-		pipeline := os.Getenv("JOB_NAME")
-		build := os.Getenv("BUILD_NUMBER")
-		if pipeline != "" && build != "" {
-			name := kube.ToValidName(pipeline + "-" + build)
-			// lets see if we can update the pipeline
-			activities := jxClient.JenkinsV1().PipelineActivities(devNs)
-			lastCommitSha := ""
-			lastCommitMessage := ""
-			lastCommitURL := ""
-			commits := release.Spec.Commits
-			if len(commits) > 0 {
-				lastCommit := commits[len(commits)-1]
-				lastCommitSha = lastCommit.SHA
-				lastCommitMessage = lastCommit.Message
-				lastCommitURL = lastCommit.URL
-			}
-			key := &kube.PromoteStepActivityKey{
-				PipelineActivityKey: kube.PipelineActivityKey{
-					Name:              name,
-					Pipeline:          pipeline,
-					Build:             build,
-					ReleaseNotesURL:   releaseNotesURL,
-					LastCommitSHA:     lastCommitSha,
-					LastCommitMessage: lastCommitMessage,
-					LastCommitURL:     lastCommitURL,
-				},
-			}
-			a, err := key.GetOrCreate(activities)
-			if err == nil && a != nil && a.Spec.ReleaseNotesURL == "" {
-				_, err = activities.Update(a)
-				if err != nil {
-					log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
-				} else {
-					log.Infof("Updated PipelineActivities %s with release notes URL: %s\n", util.ColorInfo(name), util.ColorInfo(releaseNotesURL))
-				}
-			}
-		} else {
-			log.Infof("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the ReleaseNotesURL\n")
+	pipeline := os.Getenv("JOB_NAME")
+	build := os.Getenv("BUILD_NUMBER")
+	if pipeline != "" && build != "" {
+		name := kube.ToValidName(pipeline + "-" + build)
+		// lets see if we can update the pipeline
+		activities := jxClient.JenkinsV1().PipelineActivities(devNs)
+		lastCommitSha := ""
+		lastCommitMessage := ""
+		lastCommitURL := ""
+		commits := release.Spec.Commits
+		if len(commits) > 0 {
+			lastCommit := commits[len(commits)-1]
+			lastCommitSha = lastCommit.SHA
+			lastCommitMessage = lastCommit.Message
+			lastCommitURL = lastCommit.URL
 		}
+		key := &kube.PromoteStepActivityKey{
+			PipelineActivityKey: kube.PipelineActivityKey{
+				Name:              name,
+				Pipeline:          pipeline,
+				Build:             build,
+				ReleaseNotesURL:   releaseNotesURL,
+				LastCommitSHA:     lastCommitSha,
+				LastCommitMessage: lastCommitMessage,
+				LastCommitURL:     lastCommitURL,
+			},
+		}
+		a, created, err := key.GetOrCreate(activities)
+		if err == nil && a != nil && !created {
+			_, err = activities.Update(a)
+			if err != nil {
+				log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+			} else {
+				log.Infof("Updated PipelineActivities %s with release notes URL: %s\n", util.ColorInfo(name), util.ColorInfo(releaseNotesURL))
+			}
+		}
+	} else {
+		log.Infof("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the ReleaseNotesURL\n")
 	}
 	return nil
 }
