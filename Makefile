@@ -49,7 +49,7 @@ build: $(GO_DEPENDENCIES)
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDFLAGS) -o build/$(NAME) cmd/jx/jx.go
 
 test: 
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(PACKAGE_DIRS) -test.v
 
 #	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jx/cmds
 
