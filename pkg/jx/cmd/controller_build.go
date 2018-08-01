@@ -221,13 +221,13 @@ func (o *ControllerBuildOptions) updatePipelineActivity(activity *v1.PipelineAct
 		} else if terminated != nil {
 			startedAt = terminated.StartedAt
 			finishedAt = terminated.FinishedAt
-		}
 
+			if !finishedAt.IsZero() {
+				stage.CompletedTimestamp = &finishedAt
+			}
+		}
 		if !startedAt.IsZero() {
 			stage.StartedTimestamp = &startedAt
-		}
-		if !finishedAt.IsZero() {
-			stage.CompletedTimestamp = &finishedAt
 		}
 		stage.Description = createStepDescription(c.Name, pod)
 
@@ -276,6 +276,9 @@ func (o *ControllerBuildOptions) updatePipelineActivity(activity *v1.PipelineAct
 			}
 			if stage.Status == v1.ActivityStatusTypeRunning {
 				running = true
+			}
+			if stage.Status == v1.ActivityStatusTypeRunning || stage.Status == v1.ActivityStatusTypePending {
+				allCompleted = false
 			}
 		}
 	}
