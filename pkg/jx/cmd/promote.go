@@ -43,6 +43,7 @@ type PromoteOptions struct {
 	Namespace           string
 	Environment         string
 	Application         string
+	Build               string
 	Version             string
 	ReleaseName         string
 	LocalHelmRepoName   string
@@ -130,6 +131,7 @@ func NewCmdPromote(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Application, optionApplication, "a", "", "The Application to promote")
+	cmd.Flags().StringVarP(&options.Build, "build", "b", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
@@ -688,7 +690,10 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 
 func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
 	pipeline := os.Getenv("JOB_NAME")
-	build := os.Getenv("BUILD_NUMBER")
+	build := o.Build
+	if build == "" {
+		build = os.Getenv("BUILD_NUMBER")
+	}
 	buildURL := os.Getenv("BUILD_URL")
 	buildLogsURL := os.Getenv("BUILD_LOG_URL")
 	gitInfo, err := o.Git().Info("")
@@ -739,7 +744,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 			log.Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
 		}
 	} else if build == "" {
-		log.Warnf("No $BUILD_NUMBER environment variablefound so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
+		log.Warnf("No $BUILD_NUMBER environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
 	}
 	name := pipeline
 	if build != "" {
