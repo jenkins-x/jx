@@ -57,6 +57,7 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		create = true
 		a = defaultActivity
 	}
+	oldSpec := a.Spec
 	spec := &a.Spec
 	if k.Pipeline != "" && spec.Pipeline == "" {
 		spec.Pipeline = k.Pipeline
@@ -98,6 +99,10 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		answer, err := activities.Create(a)
 		return answer, true, err
 	} else {
+		if !reflect.DeepEqual(&a.Spec, &oldSpec) {
+			_, err = activities.Update(a)
+			return a, false, err
+		}
 		return a, false, nil
 	}
 }
