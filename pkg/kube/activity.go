@@ -100,8 +100,8 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		return answer, true, err
 	} else {
 		if !reflect.DeepEqual(&a.Spec, &oldSpec) {
-			_, err = activities.Update(a)
-			return a, false, err
+			answer, err := activities.Update(a)
+			return answer, false, err
 		}
 		return a, false, nil
 	}
