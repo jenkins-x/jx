@@ -2,8 +2,8 @@ OS := $(shell uname)
 
 gc-activities:
 	helm init --client-only
-	helm repo add chartmuseum http://jenkins-x-chartmuseum:8080
-	helm repo add chartmuseum https://chartmuseum.build.cd.jenkins-x.io
+	helm repo add jenkins-x-api http://jenkins-x-chartmuseum:8080
+	helm repo add jenkins-x-api https://chartmuseum.build.cd.jenkins-x.io
 ifeq ($(OS),Darwin)
 	sed -i "" -e "s/version:.*/version: $(PREVIEW_VERSION)/" Chart.yaml
 	sed -i "" -e "s/version:.*/version: $(PREVIEW_VERSION)/" ../*/Chart.yaml
