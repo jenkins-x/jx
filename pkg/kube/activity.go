@@ -57,6 +57,7 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		create = true
 		a = defaultActivity
 	}
+	oldSpec := a.Spec
 	spec := &a.Spec
 	if k.Pipeline != "" && spec.Pipeline == "" {
 		spec.Pipeline = k.Pipeline
@@ -98,6 +99,10 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		answer, err := activities.Create(a)
 		return answer, true, err
 	} else {
+		if !reflect.DeepEqual(&a.Spec, &oldSpec) {
+			answer, err := activities.Update(a)
+			return answer, false, err
+		}
 		return a, false, nil
 	}
 }
@@ -150,6 +155,28 @@ func (k *PromoteStepActivityKey) GetOrCreatePreview(activities typev1.PipelineAc
 	}
 	spec.Steps = append(spec.Steps, step)
 	return a, &spec.Steps[len(spec.Steps)-1], preview, true, nil
+}
+
+// GetOrCreateStage gets or creates the step for the given name
+func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineActivityStep, *v1.StageActivityStep, bool) {
+	spec := &a.Spec
+	for _, step := range spec.Steps {
+		stage := step.Stage
+		if stage != nil && stage.Name == stageName {
+			return &step, stage, false
+		}
+	}
+
+	stage := &v1.StageActivityStep{
+		CoreActivityStep: v1.CoreActivityStep{
+			Name: stageName,
+		},
+	}
+	spec.Steps = append(spec.Steps, v1.PipelineActivityStep{
+		Kind:  v1.ActivityStepKindTypeStage,
+		Stage: stage,
+	})
+	return &spec.Steps[len(spec.Steps)-1], stage, true
 }
 
 // GetOrCreatePromote gets or creates the Promote step for the key

@@ -98,7 +98,6 @@ func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 				NewCmdContext(f, out, err),
 				NewCmdEnvironment(f, out, err),
 				NewCmdTeam(f, out, err),
-				NewCmdGC(f, out, err),
 				NewCmdNamespace(f, out, err),
 				NewCmdPrompt(f, out, err),
 				NewCmdShell(f, out, err),
@@ -136,6 +135,13 @@ func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 			Message: "Jenkins X Pipeline Commands:",
 			Commands: []*cobra.Command{
 				NewCmdStep(f, out, err),
+			},
+		},
+		{
+			Message: "Jenkins X services:",
+			Commands: []*cobra.Command{
+				NewCmdController(f, out, err),
+				NewCmdGC(f, out, err),
 			},
 		},
 	}
