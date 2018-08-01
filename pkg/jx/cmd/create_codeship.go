@@ -419,7 +419,7 @@ func ProjectExists(ctx context.Context, org *codeship.Organization, codeshipOrg 
 
 func jxVersion() string {
 	if version.Version == "1.0.1" {
-		return "1.3.132"
+		return "1.3.143"
 	}
 	return version.Version
 }
