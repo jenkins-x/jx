@@ -689,11 +689,8 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 }
 
 func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
-	pipeline := os.Getenv("JOB_NAME")
+	pipeline := ""
 	build := o.Build
-	if build == "" {
-		build = os.Getenv("BUILD_NUMBER")
-	}
 	buildURL := os.Getenv("BUILD_URL")
 	buildLogsURL := os.Getenv("BUILD_LOG_URL")
 	gitInfo, err := o.Git().Info("")
@@ -717,32 +714,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 		o.GitInfo = gitInfo
 	}
 	if pipeline == "" {
-		if gitInfo != nil {
-			// lets default the pipeline name from the git repo
-			branch, err := o.Git().Branch(".")
-			if err != nil {
-				log.Warnf("Could not find the branch name: %s\n", err)
-			}
-			if branch == "" {
-				branch = "master"
-			}
-			pipeline = util.UrlJoin(gitInfo.Organisation, gitInfo.Name, branch)
-			if build == "" {
-				// lets validate and determine the current active pipeline branch
-				p, b, err := o.getLatestPipelineBuild(pipeline)
-				if err != nil {
-					log.Warnf("Failed to try detect the current Jenkins pipeline for %s due to %s\n", pipeline, err)
-					pipeline = ""
-				} else {
-					pipeline = p
-					build = b
-				}
-			}
-		}
-		if pipeline == "" {
-			// lets try find
-			log.Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
-		}
+		pipeline, build = o.getPipelineName(gitInfo, pipeline, build)
 	} else if build == "" {
 		log.Warnf("No $BUILD_NUMBER environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
 	}
@@ -787,8 +759,44 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	}
 }
 
+func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipeline string, build string) (string, string) {
+	if pipeline == "" {
+		pipeline = os.Getenv("JOB_NAME")
+	}
+	if build == "" {
+		build = os.Getenv("BUILD_NUMBER")
+	}
+	if gitInfo != nil && pipeline == "" {
+		// lets default the pipeline name from the git repo
+		branch, err := o.Git().Branch(".")
+		if err != nil {
+			log.Warnf("Could not find the branch name: %s\n", err)
+		}
+		if branch == "" {
+			branch = "master"
+		}
+		pipeline = util.UrlJoin(gitInfo.Organisation, gitInfo.Name, branch)
+		if build == "" {
+			// lets validate and determine the current active pipeline branch
+			p, b, err := o.getLatestPipelineBuild(pipeline)
+			if err != nil {
+				log.Warnf("Failed to try detect the current Jenkins pipeline for %s due to %s\n", pipeline, err)
+				pipeline = ""
+			} else {
+				pipeline = p
+				build = b
+			}
+		}
+	}
+	if pipeline == "" {
+		// lets try find
+		log.Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
+	}
+	return pipeline, build
+}
+
 // getLatestPipelineBuild for the given pipeline name lets try find the Jenkins Pipeline and the latest build
-func (o *PromoteOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
+func (o *CommonOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
 	log.Infof("pipeline %s\n", pipeline)
 	build := ""
 	jenkins, err := o.JenkinsClient()

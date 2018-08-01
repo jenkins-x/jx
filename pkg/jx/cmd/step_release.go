@@ -294,6 +294,7 @@ func (o *StepReleaseOptions) releaseAndPromoteChart(dir string) error {
 
 	stepChangelogOptions := &StepChangelogOptions{
 		StepOptions: o.StepOptions,
+		Build:       o.Build,
 	}
 	err = stepChangelogOptions.Run()
 	if err != nil {
