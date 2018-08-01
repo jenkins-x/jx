@@ -157,6 +157,28 @@ func (k *PromoteStepActivityKey) GetOrCreatePreview(activities typev1.PipelineAc
 	return a, &spec.Steps[len(spec.Steps)-1], preview, true, nil
 }
 
+// GetOrCreateStage gets or creates the step for the given name
+func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineActivityStep, *v1.StageActivityStep, bool) {
+	spec := &a.Spec
+	for _, step := range spec.Steps {
+		stage := step.Stage
+		if stage != nil && stage.Name == stageName {
+			return &step, stage, false
+		}
+	}
+
+	stage := &v1.StageActivityStep{
+		CoreActivityStep: v1.CoreActivityStep{
+			Name: stageName,
+		},
+	}
+	spec.Steps = append(spec.Steps, v1.PipelineActivityStep{
+		Kind:  v1.ActivityStepKindTypeStage,
+		Stage: stage,
+	})
+	return &spec.Steps[len(spec.Steps)-1], stage, true
+}
+
 // GetOrCreatePromote gets or creates the Promote step for the key
 func (k *PromoteStepActivityKey) GetOrCreatePromote(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, bool, error) {
 	a, _, err := k.GetOrCreate(activities)
