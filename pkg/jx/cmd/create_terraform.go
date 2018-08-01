@@ -675,7 +675,7 @@ func (o *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
 		}
 		defer file.Close()
 
-		_, err = file.WriteString("**/*.key.json\n.terraform\n**/*.tfstate\n")
+		_, err = file.WriteString("**/*.key.json\n.terraform\n**/*.tfstate\njx\n")
 		if err != nil {
 			return err
 		}
@@ -921,40 +921,6 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 		log.Info("Applying plan...\n")
 
 		err = terraform.Apply(path, terraformVars, serviceAccountPath, o.Out, o.Err)
-		if err != nil {
-			return err
-		}
-
-		// should we setup the labels at this point?
-		args := []string{"container",
-			"clusters",
-			"update",
-			g.ClusterName(),
-			"--project",
-			g.ProjectId,
-			"--zone",
-			g.Zone}
-
-		labels := ""
-		if err == nil && user != nil {
-			username := sanitizeLabel(user.Username)
-			if username != "" {
-				sep := ""
-				if labels != "" {
-					sep = ","
-				}
-				labels += sep + "created-by=" + username
-			}
-		}
-
-		sep := ""
-		if labels != "" {
-			sep = ","
-		}
-		labels += sep + fmt.Sprintf("created-with=terraform,created-on=%s", time.Now().Format("20060102150405"))
-		args = append(args, "--update-labels="+strings.ToLower(labels))
-
-		err = o.runCommand("gcloud", args...)
 		if err != nil {
 			return err
 		}
