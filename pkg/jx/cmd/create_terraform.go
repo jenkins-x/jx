@@ -537,17 +537,18 @@ func (o *CreateTerraformOptions) createOrganisationGitRepo() error {
 		return err
 	}
 
-	err = o.commitClusters(dir)
+	changes, err := o.commitClusters(dir)
 	if err != nil {
 		return err
 	}
 
-	err = o.Git().PushMaster(dir)
-	if err != nil {
-		return err
+	if changes {
+		err = o.Git().PushMaster(dir)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(o.Stdout(), "Pushed git repository %s\n", util.ColorInfo(dir))
 	}
-
-	fmt.Fprintf(o.Stdout(), "Pushed git repository %s\n", util.ColorInfo(dir))
 
 	fmt.Fprintf(o.Stdout(), "Creating Clusters...\n")
 	err = o.createClusters(dir, clusterDefinitions)
@@ -683,19 +684,19 @@ func (o *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
 	return nil
 }
 
-func (o *CreateTerraformOptions) commitClusters(dir string) error {
+func (o *CreateTerraformOptions) commitClusters(dir string) (bool, error) {
 	err := o.Git().Add(dir, "*")
 	if err != nil {
-		return err
+		return false, err
 	}
 	changes, err := o.Git().HasChanges(dir)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if changes {
-		return o.Git().CommitDir(dir, "Add organisation clusters")
+		return true, o.Git().CommitDir(dir, "Add organisation clusters")
 	}
-	return nil
+	return false, nil
 }
 
 func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string) error {
