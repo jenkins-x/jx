@@ -475,7 +475,7 @@ func (o *CommonOptions) installHelm() error {
 		return err
 	}
 	// TODO temporary hack while we are on the 2.10-rc version:
-	latestVersion := "2.10.0-rc.1"
+	latestVersion := "2.10.0-rc.2"
 	/*
 		latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
 		if err != nil {
@@ -981,18 +981,18 @@ func (o *CommonOptions) installEksCtl() error {
 }
 
 func (o *CommonOptions) installHeptioAuthenticatorAws() error {
-	url := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/heptio-authenticator-aws"
+	awsUrl := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/heptio-authenticator-aws"
 	fileName := "heptio-authenticator-aws"
 
 	if runtime.GOOS == "darwin" {
-		url = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/darwin/amd64/heptio-authenticator-aws"
+		awsUrl = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/darwin/amd64/heptio-authenticator-aws"
 	} else if runtime.GOOS == "windows" {
-		url = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/windows/amd64/heptio-authenticator-aws.exe"
+		awsUrl = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/windows/amd64/heptio-authenticator-aws.exe"
 		fileName = "heptio-authenticator-aws.exe"
 	}
 	binDir, err := util.BinaryLocation()
 	fullPath := filepath.Join(binDir, fileName)
-	err = o.downloadFile(url, fullPath)
+	err = o.downloadFile(awsUrl, fullPath)
 	if err != nil {
 		return err
 	}
