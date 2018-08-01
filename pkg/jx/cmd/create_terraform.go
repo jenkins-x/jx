@@ -832,10 +832,6 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 	}
 
 	log.Info("Applying Terraform changes\n")
-	user, err := os_user.Current()
-	if err != nil {
-		return err
-	}
 
 	terraformVars := filepath.Join(path, "terraform.tfvars")
 
@@ -859,7 +855,7 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 		serviceAccountName := fmt.Sprintf("jx-%s-%s", o.Flags.OrganisationName, g.Name())
 		fmt.Fprintf(o.Stdout(), "No GCP service account provided, creating %s\n", util.ColorInfo(serviceAccountName))
 
-		_, err = gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectId, filepath.Dir(path))
+		_, err := gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectId, filepath.Dir(path))
 		if err != nil {
 			return err
 		}
