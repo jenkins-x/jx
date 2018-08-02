@@ -1252,6 +1252,10 @@ func (o *CommonOptions) installProw() error {
 		}
 
 		config := authConfigSvc.Config()
+		if "" == config.CurrentServer {
+			config.CurrentServer = "https://github.com"
+		}
+
 		server := config.GetOrCreateServer(config.CurrentServer)
 		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode)
 		if err != nil {
