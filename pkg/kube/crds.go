@@ -154,6 +154,20 @@ func RegisterUserCRD(apiClient apiextensionsclientset.Interface) error {
 	return registerCRD(apiClient, name, names, columns)
 }
 
+// RegisterTeamCRD ensures that the CRD is registered for Team
+func RegisterTeamCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "teams." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "Team",
+		ListKind:   "TeamList",
+		Plural:     "teams",
+		Singular:   "team",
+		ShortNames: []string{"tm"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{}
+	return registerCRD(apiClient, name, names, columns)
+}
+
 func registerCRD(apiClient apiextensionsclientset.Interface, name string, names *v1beta1.CustomResourceDefinitionNames, columns []v1beta1.CustomResourceColumnDefinition) error {
 	crd := &v1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{

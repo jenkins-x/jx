@@ -84,6 +84,7 @@ func NewCmdCreate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateQuickstart(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateQuickstartLocation(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateSpring(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateTeam(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateTerraform(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateToken(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateTracker(f, out, errOut))
