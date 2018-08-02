@@ -93,7 +93,7 @@ func (c *CommonOptions) CreateTable() table.Table {
 // Debugf outputs the given text to the console if verbose mode is enabled
 func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 	if c.Verbose {
-		log.Infof(format, a)
+		log.Infof(format, a...)
 	}
 }
 
