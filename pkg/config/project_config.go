@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -16,6 +17,7 @@ const (
 )
 
 type ProjectConfig struct {
+	Builds              []*BranchBuild            `yaml:"builds,omitempty"`
 	PreviewEnvironments *PreviewEnvironmentConfig `yaml:"previewEnvironments,omitempty"`
 	IssueTracker        *IssueTrackerConfig       `yaml:"issueTracker,omitempty"`
 	Chat                *ChatConfig               `yaml:"chat,omitempty"`
@@ -51,6 +53,35 @@ type ChatConfig struct {
 type AddonConfig struct {
 	Name    string `yaml:"name,omitempty"`
 	Version string `yaml:"version,omitempty"`
+}
+
+type BranchBuild struct {
+	BranchKind string `yaml:"branchKind,omitempty"`
+	Build      Build  `yaml:"version,omitempty"`
+}
+
+type Build struct {
+	// Steps are the steps of the build; each step is run sequentially with the
+	// source mounted into /workspace.
+	Steps []corev1.Container `json:"steps,omitempty"`
+
+	// Volumes is a collection of volumes that are available to mount into the
+	// steps of the build.
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// The name of the service account as which to run this build.
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// Template, if specified, references a BuildTemplate resource to use to
+	// populate fields in the build, and optional Arguments to pass to the
+	// template.
+	//Template *TemplateInstantiationSpec `json:"template,omitempty"`
+
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // LoadProjectConfig loads the project configuration if there is a project configuration file

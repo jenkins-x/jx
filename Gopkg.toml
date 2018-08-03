@@ -159,6 +159,10 @@ required = [
   branch = "release-1.11"
   source = "https://github.com/jenkins-x/test-infra.git"
 
+[[constraint]]
+  name = "github.com/knative/build"
+  branch = "master"
+
 [prune]
   non-go = true
   go-tests = true
