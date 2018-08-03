@@ -17,7 +17,10 @@ type User struct {
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
+	// Deprecated, use Spec
 	User UserDetails `json:"user,omitempty" protobuf:"bytes,2,opt,name=user"`
+
+	Spec UserDetails `json:"spec,omitempty" protobuf:"bytes,3,opt,name=spec"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -38,4 +41,6 @@ type UserDetails struct {
 	CreationTimestamp *metav1.Time `json:"creationTimestamp,omitempty" protobuf:"bytes,4,opt,name=creationTimestamp"`
 	URL               string       `json:"url,omitempty"  protobuf:"bytes,5,opt,name=url"`
 	AvatarURL         string       `json:"avatarUrl,omitempty"  protobuf:"bytes,6,opt,name=avatarUrl"`
+	ServiceAccount    string       `json:"serviceAccount,omitempty"  protobuf:"bytes,7,opt,name=serviceAccount"`
+	SlackUser         string       `json:"slackUser,omitempty"  protobuf:"bytes,8,opt,name=slackUser"`
 }

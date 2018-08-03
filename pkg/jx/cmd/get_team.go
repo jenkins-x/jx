@@ -8,7 +8,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
 )
 
 // GetTeamOptions containers the CLI options
@@ -24,8 +23,11 @@ var (
 `)
 
 	getTeamExample = templates.Examples(`
-		# List the team or teams the current user is a member of
+		# List the provisioned team or teams the current user is a member of
 		jx get team
+
+		# List the pending Teams which are not yet provisioned and available for use
+		jx get team -p
 	`)
 )
 
@@ -66,7 +68,7 @@ func (o *GetTeamOptions) Run() error {
 		return err
 	}
 	if o.Pending {
-		return o.getPendingTeams(kubeClient)
+		return o.getPendingTeams()
 	}
 	teams, _, err := kube.GetTeams(kubeClient)
 	if err != nil {
@@ -90,22 +92,13 @@ See https://jenkins-x.io/getting-started/\n for more detail
 	return nil
 }
 
-func (o *GetTeamOptions) getPendingTeams(kubeClient kubernetes.Interface) error {
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterTeamCRD(apisClient)
+func (o *GetTeamOptions) getPendingTeams() error {
+	err := o.registerTeamCRD()
 	if err != nil {
 		return err
 	}
 
-	jxClient, devNs, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-
-	ns, err := kube.GetAdminNamespace(kubeClient, devNs)
+	jxClient, ns, err := o.JXClientAndAdminNamespace()
 	if err != nil {
 		return err
 	}
@@ -126,7 +119,7 @@ There are no pending Teams yet. Try create one via: jx create team --pending
 	table.AddRow("NAME", "STATUS", "KIND", "MEMBERS")
 	for _, team := range teams {
 		spec := &team.Spec
-		table.AddRow(team.Name, string(team.Status.TeamStatus), string(spec.Kind), strings.Join(spec.Members, ", "))
+		table.AddRow(team.Name, string(team.Status.ProvisionStatus), string(spec.Kind), strings.Join(spec.Members, ", "))
 	}
 	table.Render()
 	return nil

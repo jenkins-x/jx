@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type BranchPatterns struct {
@@ -110,4 +112,138 @@ func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) 
 		return fmt.Errorf("No Development environment found for namespace %s", ns)
 	}
 	return o.modifyDevEnvironment(jxClient, ns, callback)
+}
+
+func (o *CommonOptions) registerTeamCRD() error {
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterTeamCRD(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Team CRD")
+	}
+	return nil
+}
+
+func (o *CommonOptions) registerUserCRD() error {
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterUserCRD(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the User CRD")
+	}
+	return nil
+}
+
+// ModifyTeam lazily creates the team if it does not exist or updates it if it requires a change
+func (o *CommonOptions) ModifyTeam(teamName string, callback func(env *v1.Team) error) error {
+	err := o.registerTeamCRD()
+	if err != nil {
+		return err
+	}
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the jx client")
+	}
+	ns, err := kube.GetAdminNamespace(kubeClient, devNs)
+	if err != nil {
+		return err
+	}
+
+	if ns == "" {
+		// there is no admin namespace yet so its too early to create a Team resource
+		return nil
+	}
+
+	teamInterface := jxClient.JenkinsV1().Teams(ns)
+	create := false
+	team, err := teamInterface.Get(teamName, metav1.GetOptions{})
+	if err != nil {
+		team = kube.CreateTeam(ns, teamName, nil)
+		create = true
+	}
+
+	original := *team
+	if callback != nil {
+		err = callback(team)
+		if err != nil {
+			return errors.Wrapf(err, "failed process Team %s", teamName)
+		}
+	}
+	if create {
+		_, err = teamInterface.Create(team)
+		if err != nil {
+			return errors.Wrapf(err, "failed create Team %s", teamName)
+		}
+	} else {
+		if !reflect.DeepEqual(&original, team) {
+			_, err = teamInterface.Update(team)
+			if err != nil {
+				return errors.Wrapf(err, "failed update Team %s", teamName)
+			}
+		}
+	}
+	return nil
+}
+
+// ModifyUser lazily creates the user if it does not exist or updates it if it requires a change
+func (o *CommonOptions) ModifyUser(userName string, callback func(env *v1.User) error) error {
+	err := o.registerUserCRD()
+	if err != nil {
+		return err
+	}
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the jx client")
+	}
+	ns, err := kube.GetAdminNamespace(kubeClient, devNs)
+	if err != nil {
+		return err
+	}
+
+	if ns == "" {
+		// there is no admin namespace yet so its too early to create a User resource
+		return nil
+	}
+
+	userInterface := jxClient.JenkinsV1().Users(ns)
+	create := false
+	user, err := userInterface.Get(userName, metav1.GetOptions{})
+	if err != nil {
+		user = kube.CreateUser(ns, userName, "", "")
+		create = true
+	}
+
+	original := *user
+	if callback != nil {
+		err = callback(user)
+		if err != nil {
+			return errors.Wrapf(err, "failed process User %s", userName)
+		}
+	}
+	if create {
+		_, err = userInterface.Create(user)
+		if err != nil {
+			return errors.Wrapf(err, "failed create User %s", userName)
+		}
+	} else {
+		if !reflect.DeepEqual(&original, user) {
+			_, err = userInterface.Update(user)
+			if err != nil {
+				return errors.Wrapf(err, "failed update User %s", userName)
+			}
+		}
+	}
+	return nil
 }

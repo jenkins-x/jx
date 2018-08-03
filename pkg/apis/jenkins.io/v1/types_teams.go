@@ -31,6 +31,7 @@ type TeamSpec struct {
 // TeamStatus is the status for an Team resource
 type TeamStatus struct {
 	ProvisionStatus TeamProvisionStatusType `json:"provisionStatus,omitempty"`
+	Message         string                  `json:"message,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -57,12 +58,18 @@ const (
 type TeamProvisionStatusType string
 
 const (
-	// TeamKindTypeNone provisioning not started yet
-	TeamStatusNone TeamProvisionStatusType = ""
+	// TeamProvisionStatusNone provisioning not started yet
+	TeamProvisionStatusNone TeamProvisionStatusType = ""
 
-	// TeamKindTypePending specifies that the Team is being provisioned
-	TeamKindTypePending TeamProvisionStatusType = "Pending"
+	// TeamProvisionStatusPending specifies that the Team is being provisioned
+	TeamProvisionStatusPending TeamProvisionStatusType = "Pending"
 
-	// TeamKindTypeComplete specifies that the Team has been provisioned
-	TeamStatusComplete TeamProvisionStatusType = "Complete"
+	// TeamProvisionStatusComplete specifies that the Team has been provisioned
+	TeamProvisionStatusComplete TeamProvisionStatusType = "Complete"
+
+	// TeamProvisionStatusDeleting specifies that the Team is being deleted
+	TeamProvisionStatusDeleting TeamProvisionStatusType = "Deleting"
+
+	// TeamProvisionStatusError specifies that the Team provisioning failed with some error
+	TeamProvisionStatusError TeamProvisionStatusType = "Error"
 )

@@ -79,6 +79,7 @@ func NewCmdCreate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateIssue(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateJenkins(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateJHipster(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateLile(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateMicro(f, out, errOut))
 	cmd.AddCommand(NewCmdCreatePostPreviewJob(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateQuickstart(f, out, errOut))
@@ -88,7 +89,7 @@ func NewCmdCreate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateTerraform(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateToken(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateTracker(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateLile(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateUser(f, out, errOut))
 	return cmd
 }
 

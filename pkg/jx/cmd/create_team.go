@@ -3,35 +3,23 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
 	createTeamLong = templates.LongDesc(`
-		Creates an issue in a the git project of the current directory
+		Creates a Team
 `)
 
 	createTeamExample = templates.Examples(`
-		# Create an issue in the current project
-		jx create issue -t "something we should do"
-
-
-		# Create an issue with a title and a body
-		jx create issue -t "something we should do" --body "	
-		some more
-		text
-		goes
-		here
-		""
+		# Create a new pending Team which can then be provisioned
+		jx create team myname
 "
 	`)
 )
@@ -58,7 +46,7 @@ func NewCmdCreateTeam(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 	cmd := &cobra.Command{
 		Use:     "team",
-		Short:   "Create a new Team which is then provisioned by the team controller",
+		Short:   "Create a new Team which is then provisioned later on",
 		Aliases: []string{"env"},
 		Long:    createTeamLong,
 		Example: createTeamExample,
@@ -83,11 +71,7 @@ func (o *CreateTeamOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterTeamCRD(apisClient)
+	err = o.registerTeamCRD()
 	if err != nil {
 		return err
 	}
@@ -122,20 +106,8 @@ func (o *CreateTeamOptions) Run() error {
 		return fmt.Errorf("The Team %s already exists!", name)
 	}
 
-	// TODO configure?
-	kind := v1.TeamKindTypeCD
-
-	team := &v1.Team{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-		Spec: v1.TeamSpec{
-			Label:   strings.Title(name),
-			Members: o.Members,
-			Kind:    kind,
-		},
-	}
+	// TODO configure other properties?
+	team := kube.CreateTeam(ns, name, o.Members)
 	_, err = jxClient.JenkinsV1().Teams(ns).Create(team)
 	if err != nil {
 		return fmt.Errorf("Failed to create Team %s: %s", name, err)
