@@ -155,6 +155,10 @@ func (o *StepCreateBuildOptions) generateBuild(projectConfig *config.ProjectConf
 	// TODO load default steps from build pack?
 	defaultImage := ""
 
+	podTemplate, err := o.loadPodTemplate(projectConfig.BuildPack)
+	if err != nil {
+		return answer, err
+	}
 	for _, step := range build.Build.Steps {
 		step2 := step
 		if step2.Image == "" {
@@ -164,10 +168,6 @@ func (o *StepCreateBuildOptions) generateBuild(projectConfig *config.ProjectConf
 			buildPack := projectConfig.BuildPack
 			if buildPack == "" {
 				return answer, fmt.Errorf("No build pack defined in the configuration file: %s", config.ProjectConfigFileName)
-			}
-			podTemplate, err := o.loadPodTemplate(buildPack)
-			if err != nil {
-				return answer, err
 			}
 			containers := podTemplate.Spec.Containers
 			if len(containers) > 0 {
@@ -181,7 +181,7 @@ func (o *StepCreateBuildOptions) generateBuild(projectConfig *config.ProjectConf
 			defaultImage = step2.Image
 		}
 
-		err = o.addCommonSettings(&step2, projectConfig, build)
+		err = o.addCommonSettings(&step2, projectConfig, build, podTemplate)
 		if err != nil {
 			return answer, err
 		}
@@ -193,6 +193,9 @@ func (o *StepCreateBuildOptions) generateBuild(projectConfig *config.ProjectConf
 }
 
 func (o *StepCreateBuildOptions) loadPodTemplate(buildPack string) (*corev1.Pod, error) {
+	if buildPack == "" {
+		return nil, nil
+	}
 	answer := &corev1.Pod{}
 
 	kubeClient, ns, err := o.KubeClientAndDevNamespace()
@@ -216,11 +219,38 @@ func (o *StepCreateBuildOptions) loadPodTemplate(buildPack string) (*corev1.Pod,
 	return answer, err
 }
 
-func (o *StepCreateBuildOptions) addCommonSettings(container *corev1.Container, projectConfig *config.ProjectConfig, branchBuild *config.BranchBuild) error {
-	build := branchBuild.Build
-	for _, env := range build.Env {
+func (o *StepCreateBuildOptions) addCommonSettings(container *corev1.Container, projectConfig *config.ProjectConfig, branchBuild *config.BranchBuild, podTemplate *corev1.Pod) error {
+	build := &branchBuild.Build
+	for _, env := range branchBuild.Env {
 		if kube.GetEnvVar(container, env.Name) == nil {
 			container.Env = append(container.Env, env)
+		}
+	}
+	if podTemplate != nil {
+		containers := podTemplate.Spec.Containers
+		if len(containers) > 0 {
+			c := containers[0]
+			if !branchBuild.ExcludePodTemplateEnv {
+				for _, env := range c.Env {
+					if kube.GetEnvVar(container, env.Name) == nil {
+						container.Env = append(c.Env, env)
+					}
+				}
+			}
+			if !branchBuild.ExcludePodTemplateVolumes {
+				for _, v := range podTemplate.Spec.Volumes {
+					if kube.GetVolume(&build.Volumes, v.Name) == nil {
+						build.Volumes = append(build.Volumes, v)
+					}
+					for _, vm := range c.VolumeMounts {
+						if vm.Name == v.Name {
+							if kube.GetVolumeMount(&container.VolumeMounts, vm.Name) == nil {
+								container.VolumeMounts = append(container.VolumeMounts, vm)
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 	return nil

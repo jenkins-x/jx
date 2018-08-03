@@ -1,10 +1,12 @@
 buildPack: maven
 builds:
   - kind: release
+    excludePodTemplateEnv: true
+    excludePodTemplateVolumes: true
+    env:
+    - name: CHEESE
+      value: Edam
     build:
-      env:
-      - name: CHEESE
-        value: Edam
       steps:
         - name: run-tests
           args:

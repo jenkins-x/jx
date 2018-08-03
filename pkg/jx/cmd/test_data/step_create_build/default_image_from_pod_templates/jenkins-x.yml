@@ -1,6 +1,8 @@
 buildPack: maven
 builds:
   - kind: release
+    excludePodTemplateEnv: true
+    excludePodTemplateVolumes: true
     build:
       steps:
         - name: run-tests

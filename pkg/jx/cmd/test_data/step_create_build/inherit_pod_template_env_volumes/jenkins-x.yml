@@ -1,16 +1,19 @@
 buildPack: maven
 builds:
   - kind: release
-    excludePodTemplateEnv: true
-    excludePodTemplateVolumes: true
+    env:
+    - name: CHEESE
+      value: Edam
     build:
       steps:
         - name: run-tests
-          image: jenkinsxio/builder-maven:0.0.408
           args:
           - mvn
           - test
         - name: deploy
           args:
           - mvn
-          - test
+          - deploy
+          env:
+          - name: CHEESE
+            value: ShouldNotBeOverwritten
