@@ -1,0 +1,9 @@
+buildPack: maven
+builds:
+  - kind: release
+    build:
+      steps:
+        - name: run-tests
+          args:
+          - mvn
+          - test

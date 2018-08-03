@@ -130,6 +130,18 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 	return o.kubeClient, o.currentNamespace, nil
 }
 
+// KubeClientAndDevNamespace returns a kube client and the development namespace
+func (o *CommonOptions) KubeClientAndDevNamespace() (kubernetes.Interface, string, error) {
+	kubeClient, curNs, err := o.KubeClient()
+	if err != nil {
+		return nil, "", err
+	}
+	if o.devNamespace == "" {
+		o.devNamespace, _, err = kube.GetDevNamespace(kubeClient, curNs)
+	}
+	return kubeClient, o.devNamespace, err
+}
+
 func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	if o.Factory == nil {
 		return nil, "", errors.New("command factory is not initialized")

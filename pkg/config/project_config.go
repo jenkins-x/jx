@@ -24,6 +24,8 @@ type ProjectConfig struct {
 	Wiki                *WikiConfig               `yaml:"wiki,omitempty"`
 	Addons              []*AddonConfig            `yaml:"addons,omitempty"`
 	BuildPack           string                    `yaml:"buildPack,omitempty"`
+	BuildPackGitURL     string                    `yaml:"buildPackGitURL,omitempty"`
+	BuildPackGitURef    string                    `yaml:"buildPackGitRef,omitempty"`
 }
 
 type PreviewEnvironmentConfig struct {
@@ -56,8 +58,8 @@ type AddonConfig struct {
 }
 
 type BranchBuild struct {
-	BranchKind string `yaml:"branchKind,omitempty"`
-	Build      Build  `yaml:"version,omitempty"`
+	Kind  string `yaml:"kind,omitempty"`
+	Build Build  `yaml:"build,omitempty"`
 }
 
 type Build struct {

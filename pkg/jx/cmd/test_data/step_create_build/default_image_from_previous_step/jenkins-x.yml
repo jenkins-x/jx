@@ -1,0 +1,14 @@
+buildPack: maven
+builds:
+  - kind: release
+    build:
+      steps:
+        - name: run-tests
+          image: jenkinsxio/builder-maven:0.0.408
+          args:
+          - mvn
+          - test
+        - name: deploy
+          args:
+          - mvn
+          - test
