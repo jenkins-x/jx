@@ -1,0 +1,19 @@
+buildPack: maven
+builds:
+  - kind: release
+    build:
+      env:
+      - name: CHEESE
+        value: Edam
+      steps:
+        - name: run-tests
+          args:
+          - mvn
+          - test
+        - name: deploy
+          args:
+          - mvn
+          - deploy
+          env:
+          - name: CHEESE
+            value: ShouldNotBeOverwritten

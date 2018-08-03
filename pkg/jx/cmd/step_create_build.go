@@ -180,6 +180,12 @@ func (o *StepCreateBuildOptions) generateBuild(projectConfig *config.ProjectConf
 		if step2.Image != "" {
 			defaultImage = step2.Image
 		}
+
+		err = o.addCommonSettings(&step2, projectConfig, build)
+		if err != nil {
+			return answer, err
+		}
+
 		steps = append(steps, step2)
 	}
 	answer.Spec.Steps = steps
@@ -208,6 +214,16 @@ func (o *StepCreateBuildOptions) loadPodTemplate(buildPack string) (*corev1.Pod,
 	}
 	err = yaml.Unmarshal([]byte(podTemplateYaml), answer)
 	return answer, err
+}
+
+func (o *StepCreateBuildOptions) addCommonSettings(container *corev1.Container, projectConfig *config.ProjectConfig, branchBuild *config.BranchBuild) error {
+	build := branchBuild.Build
+	for _, env := range build.Env {
+		if kube.GetEnvVar(container, env.Name) == nil {
+			container.Env = append(container.Env, env)
+		}
+	}
+	return nil
 }
 
 // TODO replace with the actual knative build vendored ASAP!

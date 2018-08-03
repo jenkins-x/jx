@@ -19,3 +19,9 @@ i.e. a maven build pack pipeline will default the OOTB container image from Jenk
 
 * [jenkins-x.xml](default_image_from_pod_templates/jenkins-x.yml#L12) generates [build.yaml](default_image_from_pod_templates/expected-build-release.yml)
 
+### Define common environemnt variables
+
+Its very handy to be able to define common environment variables and have them added to each stem:
+
+* [jenkins-x.xml](add_common_envvars/jenkins-x.yml#L5-L7) generates [build.yaml](add_common_envvars/expected-build-release.yml)
+

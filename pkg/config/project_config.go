@@ -84,6 +84,13 @@ type Build struct {
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// List of sources to populate environment variables in all the steps if there is not already
+	// an environment variable defined on that step
+	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty" protobuf:"bytes,19,rep,name=envFrom"`
+
+	// List of environment variables to add to each step if there is not already a environemnt variable of that name
+	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,7,rep,name=env"`
 }
 
 // LoadProjectConfig loads the project configuration if there is a project configuration file
