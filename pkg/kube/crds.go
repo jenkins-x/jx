@@ -136,7 +136,26 @@ func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 		Singular:   "release",
 		ShortNames: []string{"rel"},
 	}
-	columns := []v1beta1.CustomResourceColumnDefinition{}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Name",
+			Type:        "String",
+			Description: "The name of the Release",
+			JSONPath:    ".spec.name",
+		},
+		{
+			Name:        "Version",
+			Type:        "String",
+			Description: "The version number of the Release",
+			JSONPath:    ".spec.version",
+		},
+		{
+			Name:        "Git URL",
+			Type:        "String",
+			Description: "The URL of the git repository",
+			JSONPath:    ".spec.gitHttpUrl",
+		},
+	}
 	return registerCRD(apiClient, name, names, columns)
 }
 
@@ -150,7 +169,47 @@ func RegisterUserCRD(apiClient apiextensionsclientset.Interface) error {
 		Singular:   "user",
 		ShortNames: []string{"usr"},
 	}
-	columns := []v1beta1.CustomResourceColumnDefinition{}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Name",
+			Type:        "String",
+			Description: "The name of the user",
+			JSONPath:    ".spec.name",
+		},
+		{
+			Name:        "Email",
+			Type:        "String",
+			Description: "The email address of the user",
+			JSONPath:    ".spec.email",
+		},
+	}
+	return registerCRD(apiClient, name, names, columns)
+}
+
+// RegisterTeamCRD ensures that the CRD is registered for Team
+func RegisterTeamCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "teams." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "Team",
+		ListKind:   "TeamList",
+		Plural:     "teams",
+		Singular:   "team",
+		ShortNames: []string{"tm"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Kind",
+			Type:        "String",
+			Description: "The kind of Team",
+			JSONPath:    ".spec.kind",
+		},
+		{
+			Name:        "Status",
+			Type:        "String",
+			Description: "The provision status of the Team",
+			JSONPath:    ".status.provisionStatus",
+		},
+	}
 	return registerCRD(apiClient, name, names, columns)
 }
 

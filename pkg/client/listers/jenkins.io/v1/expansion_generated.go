@@ -42,6 +42,14 @@ type ReleaseListerExpansion interface{}
 // ReleaseNamespaceLister.
 type ReleaseNamespaceListerExpansion interface{}
 
+// TeamListerExpansion allows custom methods to be added to
+// TeamLister.
+type TeamListerExpansion interface{}
+
+// TeamNamespaceListerExpansion allows custom methods to be added to
+// TeamNamespaceLister.
+type TeamNamespaceListerExpansion interface{}
+
 // UserListerExpansion allows custom methods to be added to
 // UserLister.
 type UserListerExpansion interface{}
