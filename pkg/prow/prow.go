@@ -2,6 +2,7 @@ package prow
 
 import (
 	"fmt"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/api/core/v1"
@@ -12,10 +13,13 @@ import (
 )
 
 const (
-	Hook                   = "hook"
-	DefaultProwReleaseName = "jx-prow"
-	ProwVersion            = "0.0.9"
-	ChartProw              = "jenkins-x/prow"
+	Hook                          = "hook"
+	DefaultProwReleaseName        = "jx-prow"
+	DefaultKnativeBuilReleaseName = "jx-knative-build"
+	ProwVersion                   = "0.0.11"
+	KnativeBuildVersion           = "0.0.2"
+	ChartProw                     = "jenkins-x/prow"
+	ChartKnativeBuild             = "jenkins-x/knative-build"
 )
 
 type prowOptions struct {
