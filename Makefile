@@ -49,7 +49,7 @@ build: $(GO_DEPENDENCIES)
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDFLAGS) -o build/$(NAME) cmd/jx/jx.go
 
 test: 
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(PACKAGE_DIRS) -test.v
 
 #	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jx/cmds
 
@@ -131,8 +131,8 @@ linux:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
 docker: linux
-	docker build --no-cache -t rawlingsj/jx:dev35 .
-	docker push rawlingsj/jx:dev35
+	docker build --no-cache -t rawlingsj/jx:dev135 .
+	docker push rawlingsj/jx:dev135
 
 docker-go: linux Dockerfile.builder-go
 	docker build --no-cache -t builder-go -f Dockerfile.builder-go .
@@ -140,8 +140,8 @@ docker-go: linux Dockerfile.builder-go
 docker-maven: linux Dockerfile.builder-maven
 	docker build --no-cache -t builder-maven -f Dockerfile.builder-maven .
 
-docker-pipeline: linux
-	docker build -t rawlingsj/builder-base:dev . -f Dockerfile-pipeline
+docker-base: linux
+	docker build -t rawlingsj/builder-base:dev16 . -f Dockerfile.builder-base
 
 docker-dev: build linux
 	docker images | grep -v REPOSITORY | awk '{print $$1}' | uniq -u | grep jenkinsxio | awk '{print $$1":latest"}' | xargs -L1 docker pull

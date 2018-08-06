@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"io"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -10,13 +9,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-)
-
-const (
-	defaultProwReleaseName = "prow"
-	prowVersion            = "0.0.9"
 )
 
 var (
@@ -36,12 +31,8 @@ var (
 // CreateAddonProwOptions the options for the create spring command
 type CreateAddonProwOptions struct {
 	CreateAddonOptions
-
-	Chart      string
-	HMACToken  string
-	OAUTHToken string
-	Username   string
-	Password   string
+	Password string
+	Chart    string
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
@@ -72,13 +63,12 @@ func NewCmdCreateAddonProw(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, "", defaultProwReleaseName)
+	options.addFlags(cmd, "", prow.DefaultProwReleaseName)
 
-	cmd.Flags().StringVarP(&options.Version, "version", "v", prowVersion, "The version of the prow addon to use")
-	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartProw, "The name of the chart to use")
-	cmd.Flags().StringVarP(&options.HMACToken, "hmac-token", "", "", "OPTIONAL: The hmac-token is the token that you give to GitHub for validating webhooks. Generate it using any reasonable randomness-generator, eg openssl rand -hex 20")
-	cmd.Flags().StringVarP(&options.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")
-	cmd.Flags().StringVarP(&options.Username, "username", "", "", "Overwrite cluster admin username")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", prow.ProwVersion, "The version of the prow addon to use")
+	cmd.Flags().StringVarP(&options.Prow.Chart, optionChart, "c", prow.ChartProw, "The name of the chart to use")
+	cmd.Flags().StringVarP(&options.Prow.HMACToken, "hmac-token", "", "", "OPTIONAL: The hmac-token is the token that you give to GitHub for validating webhooks. Generate it using any reasonable randomness-generator, eg openssl rand -hex 20")
+	cmd.Flags().StringVarP(&options.Prow.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")
 	cmd.Flags().StringVarP(&options.Password, "password", "", "", "Overwrite the default admin password used to login to the Deck UI")
 	return cmd
 }
@@ -87,9 +77,6 @@ func NewCmdCreateAddonProw(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 func (o *CreateAddonProwOptions) Run() error {
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
-	}
-	if o.Chart == "" {
-		return util.MissingOption(optionChart)
 	}
 
 	err := o.ensureHelm()
@@ -101,33 +88,12 @@ func (o *CreateAddonProwOptions) Run() error {
 		return err
 	}
 
-	if o.HMACToken == "" {
-		o.HMACToken, err = util.RandStringBytesMaskImprSrc(41)
-		if err != nil {
-			return fmt.Errorf("cannot create a random hmac token for Prow")
-		}
-	}
-
-	if o.OAUTHToken == "" {
-		authConfigSvc, err := o.CreateGitAuthConfigService()
-		if err != nil {
-			return err
-		}
-
-		config := authConfigSvc.Config()
-		server := config.GetOrCreateServer(config.CurrentServer)
-		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode)
-		if err != nil {
-			return err
-		}
-		o.OAUTHToken = userAuth.ApiToken
-	}
-
-	if o.Username == "" {
-		o.Username, err = o.GetClusterUserName()
-		if err != nil {
-			return err
-		}
+	o.Prow.Chart = o.Chart
+	o.Prow.Version = o.Version
+	o.Prow.SetValues = o.SetValues
+	err = o.installProw()
+	if err != nil {
+		return fmt.Errorf("failed to install prow: %v", err)
 	}
 
 	devNamespace, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
@@ -135,18 +101,11 @@ func (o *CreateAddonProwOptions) Run() error {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
-	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
-	setValues := strings.Split(o.SetValues, ",")
-	values = append(values, setValues...)
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
-	if err != nil {
-		return err
-	}
-
 	// create the ingress rule
 	err = o.expose(devNamespace, devNamespace, o.Password)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

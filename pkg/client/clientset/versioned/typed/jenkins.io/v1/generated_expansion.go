@@ -12,4 +12,6 @@ type PipelineActivityExpansion interface{}
 
 type ReleaseExpansion interface{}
 
+type TeamExpansion interface{}
+
 type UserExpansion interface{}

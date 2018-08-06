@@ -1105,6 +1105,66 @@ func (p *StopScreencastParams) Do(ctxt context.Context, h cdp.Executor) (err err
 	return h.Execute(ctxt, CommandStopScreencast, nil, nil)
 }
 
+// SetProduceCompilationCacheParams forces compilation cache to be generated
+// for every subresource script.
+type SetProduceCompilationCacheParams struct {
+	Enabled bool `json:"enabled"`
+}
+
+// SetProduceCompilationCache forces compilation cache to be generated for
+// every subresource script.
+//
+// parameters:
+//   enabled
+func SetProduceCompilationCache(enabled bool) *SetProduceCompilationCacheParams {
+	return &SetProduceCompilationCacheParams{
+		Enabled: enabled,
+	}
+}
+
+// Do executes Page.setProduceCompilationCache against the provided context.
+func (p *SetProduceCompilationCacheParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandSetProduceCompilationCache, p, nil)
+}
+
+// AddCompilationCacheParams seeds compilation cache for given url.
+// Compilation cache does not survive cross-process navigation.
+type AddCompilationCacheParams struct {
+	URL  string `json:"url"`
+	Data string `json:"data"` // Base64-encoded data
+}
+
+// AddCompilationCache seeds compilation cache for given url. Compilation
+// cache does not survive cross-process navigation.
+//
+// parameters:
+//   url
+//   data - Base64-encoded data
+func AddCompilationCache(url string, data string) *AddCompilationCacheParams {
+	return &AddCompilationCacheParams{
+		URL:  url,
+		Data: data,
+	}
+}
+
+// Do executes Page.addCompilationCache against the provided context.
+func (p *AddCompilationCacheParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandAddCompilationCache, p, nil)
+}
+
+// ClearCompilationCacheParams clears seeded compilation cache.
+type ClearCompilationCacheParams struct{}
+
+// ClearCompilationCache clears seeded compilation cache.
+func ClearCompilationCache() *ClearCompilationCacheParams {
+	return &ClearCompilationCacheParams{}
+}
+
+// Do executes Page.clearCompilationCache against the provided context.
+func (p *ClearCompilationCacheParams) Do(ctxt context.Context, h cdp.Executor) (err error) {
+	return h.Execute(ctxt, CommandClearCompilationCache, nil, nil)
+}
+
 // Command names.
 const (
 	CommandAddScriptToEvaluateOnNewDocument    = "Page.addScriptToEvaluateOnNewDocument"
@@ -1141,4 +1201,7 @@ const (
 	CommandClose                               = "Page.close"
 	CommandSetWebLifecycleState                = "Page.setWebLifecycleState"
 	CommandStopScreencast                      = "Page.stopScreencast"
+	CommandSetProduceCompilationCache          = "Page.setProduceCompilationCache"
+	CommandAddCompilationCache                 = "Page.addCompilationCache"
+	CommandClearCompilationCache               = "Page.clearCompilationCache"
 )

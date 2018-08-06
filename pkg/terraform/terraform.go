@@ -23,7 +23,7 @@ func Init(terraformDir string, serviceAccountPath string) error {
 	return nil
 }
 
-func Plan(terraformDir string, terraformVars string, serviceAccountPath string, stdout io.Writer, stderr io.Writer) error {
+func Plan(terraformDir string, terraformVars string, serviceAccountPath string) (string, error) {
 	cmd := util.Command{
 		Name: "terraform",
 		Args: []string{"plan",
@@ -31,14 +31,12 @@ func Plan(terraformDir string, terraformVars string, serviceAccountPath string, 
 			"-var",
 			fmt.Sprintf("credentials=%s", serviceAccountPath),
 			terraformDir},
-		Out: stdout,
-		Err: stderr,
 	}
-	_, err := cmd.RunWithoutRetry()
+	out, err := cmd.RunWithoutRetry()
 	if err != nil {
-		return err
+		return out, err
 	}
-	return nil
+	return out, nil
 }
 
 func Apply(terraformDir string, terraformVars string, serviceAccountPath string, stdout io.Writer, stderr io.Writer) error {

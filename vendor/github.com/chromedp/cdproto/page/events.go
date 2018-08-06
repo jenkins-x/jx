@@ -124,3 +124,10 @@ type EventWindowOpen struct {
 	WindowFeatures []string `json:"windowFeatures"` // An array of enabled window features.
 	UserGesture    bool     `json:"userGesture"`    // Whether or not it was triggered by user gesture.
 }
+
+// EventCompilationCacheProduced issued for every compilation cache
+// generated. Is only available if Page.setGenerateCompilationCache is enabled.
+type EventCompilationCacheProduced struct {
+	URL  string `json:"url"`
+	Data string `json:"data"` // Base64-encoded data
+}

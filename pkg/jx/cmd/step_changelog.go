@@ -41,6 +41,7 @@ type StepChangelogOptions struct {
 	CrdYamlFile         string
 	Dir                 string
 	Version             string
+	Build               string
 	Header              string
 	HeaderFile          string
 	Footer              string
@@ -164,6 +165,7 @@ func NewCmdStepChangelog(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 	cmd.Flags().StringVarP(&options.ReleaseYamlFile, "release-yaml-file", "", "release.yaml", "the name of the file to generate the Release YAML")
 	cmd.Flags().StringVarP(&options.CrdYamlFile, "crd-yaml-file", "", "release-crd.yaml", "the name of the file to generate the Release CustomResourceDefinition YAML")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to release")
+	cmd.Flags().StringVarP(&options.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The directory of the git repository. Defaults to the current working directory")
 	cmd.Flags().StringVarP(&options.OutputMarkdownFile, "output-markdown", "", "", "The file to generate for the changelog output if not updating a git provider release")
 	cmd.Flags().BoolVarP(&options.OverwriteCRD, "overwrite", "o", false, "overwrites the Release CRD YAML file if it exists")
@@ -414,33 +416,45 @@ func (o *StepChangelogOptions) Run() error {
 		}
 	}
 	releaseNotesURL := release.Spec.ReleaseNotesURL
-	if releaseNotesURL != "" {
-		pipeline := os.Getenv("JOB_NAME")
-		build := os.Getenv("BUILD_NUMBER")
-		if pipeline != "" && build != "" {
-			name := kube.ToValidName(pipeline + "-" + build)
-			// lets see if we can update the pipeline
-			activities := jxClient.JenkinsV1().PipelineActivities(devNs)
-			key := &kube.PromoteStepActivityKey{
-				PipelineActivityKey: kube.PipelineActivityKey{
-					Name:            name,
-					Pipeline:        pipeline,
-					Build:           build,
-					ReleaseNotesURL: releaseNotesURL,
-				},
-			}
-			a, err := key.GetOrCreate(activities)
-			if err == nil && a != nil && a.Spec.ReleaseNotesURL == "" {
-				_, err = activities.Update(a)
-				if err != nil {
-					log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
-				} else {
-					log.Infof("Updated PipelineActivities %s with release notes URL: %s\n", util.ColorInfo(name), util.ColorInfo(releaseNotesURL))
-				}
-			}
-		} else {
-			log.Infof("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the ReleaseNotesURL\n")
+	pipeline := ""
+	build := o.Build
+	pipeline, build = o.getPipelineName(gitInfo, pipeline, build)
+	if pipeline != "" && build != "" {
+		name := kube.ToValidName(pipeline + "-" + build)
+		// lets see if we can update the pipeline
+		activities := jxClient.JenkinsV1().PipelineActivities(devNs)
+		lastCommitSha := ""
+		lastCommitMessage := ""
+		lastCommitURL := ""
+		commits := release.Spec.Commits
+		if len(commits) > 0 {
+			lastCommit := commits[len(commits)-1]
+			lastCommitSha = lastCommit.SHA
+			lastCommitMessage = lastCommit.Message
+			lastCommitURL = lastCommit.URL
 		}
+		key := &kube.PromoteStepActivityKey{
+			PipelineActivityKey: kube.PipelineActivityKey{
+				Name:              name,
+				Pipeline:          pipeline,
+				Build:             build,
+				ReleaseNotesURL:   releaseNotesURL,
+				LastCommitSHA:     lastCommitSha,
+				LastCommitMessage: lastCommitMessage,
+				LastCommitURL:     lastCommitURL,
+			},
+		}
+		a, created, err := key.GetOrCreate(activities)
+		if err == nil && a != nil && !created {
+			_, err = activities.Update(a)
+			if err != nil {
+				log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+			} else {
+				log.Infof("Updated PipelineActivities %s with release notes URL: %s\n", util.ColorInfo(name), util.ColorInfo(releaseNotesURL))
+			}
+		}
+	} else {
+		log.Infof("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the ReleaseNotesURL\n")
 	}
 	return nil
 }

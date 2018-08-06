@@ -5,12 +5,14 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DeleteTeamOptions are the flags for delete commands
@@ -118,21 +120,63 @@ func (o *DeleteTeamOptions) Run() error {
 	}
 
 	for _, name := range names {
-		uninstall := &UninstallOptions{
-			CommonOptions: o.CommonOptions,
-			Namespace:     name,
-			Confirm:       true,
-		}
-		uninstall.BatchMode = true
-
-		o.changeNamespace(name)
-		err = uninstall.Run()
+		err = o.deleteTeam(name)
 		if err != nil {
-			log.Warnf("Failed to delete team %s\n", name)
+			log.Warnf("Failed to delete team %s: %s\n", name, err)
 		}
-		o.changeNamespace("default")
 	}
 	return nil
+}
+
+func (o *DeleteTeamOptions) deleteTeam(name string) error {
+	err := o.registerTeamCRD()
+	if err != nil {
+		return err
+	}
+
+	jxClient, ns, err := o.JXClientAndAdminNamespace()
+	if err != nil {
+		return err
+	}
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
+	uninstall := &UninstallOptions{
+		CommonOptions: o.CommonOptions,
+		Namespace:     name,
+		Confirm:       true,
+	}
+	uninstall.BatchMode = true
+
+	_, err = kubeClient.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+	if err != nil {
+		// we don't have the namespace so the team cannot have been provisioned yet
+		return kube.DeleteTeam(jxClient, ns, name)
+	}
+	o.changeNamespace(name)
+
+	err = o.ModifyTeam(name, func(team *v1.Team) error {
+		team.Status.ProvisionStatus = v1.TeamProvisionStatusDeleting
+		team.Status.Message = "Deleting resources"
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	err = uninstall.Run()
+	if err != nil {
+		o.ModifyTeam(name, func(team *v1.Team) error {
+			team.Status.ProvisionStatus = v1.TeamProvisionStatusError
+			team.Status.Message = fmt.Sprintf("Failed to delete team resources: %s", err)
+			return nil
+		})
+	} else {
+		err = kube.DeleteTeam(jxClient, ns, name)
+	}
+	o.changeNamespace("default")
+	return err
 }
 
 func (o *DeleteTeamOptions) changeNamespace(ns string) {

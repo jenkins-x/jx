@@ -55,6 +55,7 @@ type CommonOptions struct {
 	NoBrew              bool
 	InstallDependencies bool
 	ServiceAccount      string
+	Username            string
 
 	// common cached clients
 	kubeClient          kubernetes.Interface
@@ -65,6 +66,8 @@ type CommonOptions struct {
 	jenkinsClient       *gojenkins.Jenkins
 	git                 gits.Gitter
 	helm                helm.Helmer
+
+	Prow
 }
 
 type ServerFlags struct {
@@ -90,7 +93,7 @@ func (c *CommonOptions) CreateTable() table.Table {
 // Debugf outputs the given text to the console if verbose mode is enabled
 func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 	if c.Verbose {
-		log.Infof(format, a)
+		log.Infof(format, a...)
 	}
 }
 
@@ -142,6 +145,20 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 		}
 	}
 	return o.jxClient, o.currentNamespace, nil
+}
+
+func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string, error) {
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return nil, "", err
+	}
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return nil, "", err
+	}
+
+	ns, err := kube.GetAdminNamespace(kubeClient, devNs)
+	return jxClient, ns, err
 }
 
 func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, error) {

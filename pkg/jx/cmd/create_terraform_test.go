@@ -6,9 +6,10 @@ import (
 
 	"path"
 
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"path/filepath"
 )
 
 func TestValidateClusterDetails(t *testing.T) {

@@ -18,6 +18,8 @@ type Interface interface {
 	PipelineActivities() PipelineActivityInformer
 	// Releases returns a ReleaseInformer.
 	Releases() ReleaseInformer
+	// Teams returns a TeamInformer.
+	Teams() TeamInformer
 	// Users returns a UserInformer.
 	Users() UserInformer
 }
@@ -56,6 +58,11 @@ func (v *version) PipelineActivities() PipelineActivityInformer {
 // Releases returns a ReleaseInformer.
 func (v *version) Releases() ReleaseInformer {
 	return &releaseInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Teams returns a TeamInformer.
+func (v *version) Teams() TeamInformer {
+	return &teamInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Users returns a UserInformer.

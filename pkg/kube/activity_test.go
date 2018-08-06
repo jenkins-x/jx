@@ -82,7 +82,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	}
 
 	for i := 1; i < 3; i++ {
-		a, err := key.GetOrCreate(activities)
+		a, _, err := key.GetOrCreate(activities)
 		assert.Nil(t, err)
 		assert.Equal(t, expectedName, a.Name)
 		spec := &a.Spec

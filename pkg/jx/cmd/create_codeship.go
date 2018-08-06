@@ -18,10 +18,10 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"io/ioutil"
+	"os"
 	"path"
 	"strings"
-	"os"
-	)
+)
 
 type CreateCodeshipFlags struct {
 	OrganisationName        string
@@ -292,7 +292,7 @@ func (o *CreateCodeshipOptions) Run() error {
 		o.CreateTerraformOptions.Flags.OrganisationName = o.Flags.OrganisationName
 		o.CreateTerraformOptions.Flags.SkipTerraformApply = true
 		o.CreateTerraformOptions.Flags.GKEServiceAccount = o.Flags.GKEServiceAccount
-		o.CreateTerraformOptions.Flags.LocalRepository = dir
+		o.CreateTerraformOptions.Flags.LocalOrganisationRepository = dir
 
 		err = o.CreateTerraformOptions.Run()
 		if err != nil {
@@ -307,6 +307,7 @@ func (o *CreateCodeshipOptions) Run() error {
 	}
 
 	auth := codeship.NewBasicAuth(o.Flags.CodeshipUsername, o.Flags.CodeshipPassword)
+	//client, err := codeship.New(auth, codeship.Verbose(true))
 	client, err := codeship.New(auth)
 	if err != nil {
 		return err
@@ -329,6 +330,10 @@ func (o *CreateCodeshipOptions) Run() error {
 	serviceAccount := string(b)
 
 	if uuid == "" {
+		//m := make(map[string]interface{})
+		//m["type"] = "script_deployment"
+		//m["commands"] = []string{"./build.sh"}
+
 		createProjectRequest := codeship.ProjectCreateRequest{
 			Type:          codeship.ProjectTypeBasic,
 			RepositoryURL: fmt.Sprintf("git@github.com:%s/%s", owner, repoName),
@@ -344,12 +349,19 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "BUILD_NUMBER", Value: "1"},
 				{Name: "ENVIRONMENTS", Value: strings.Join(clusters, ",")},
 			},
+			//DeploymentPipelines: []codeship.DeploymentPipeline{
+			//	{
+			//		Branch: codeship.DeploymentBranch{ BranchName: "master", MatchMode: "exact"},
+			//		Config: m,
+			//		Position: 1,
+			//	},
+			//} ,
 		}
 
 		project, _, err := csOrg.CreateProject(ctx, createProjectRequest)
 
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create project, check CodeShip is configured to authenticate against your git provider https://app.codeship.com/authentications.  error: %v", err)
 		}
 
 		uuid = project.UUID
@@ -407,7 +419,7 @@ func ProjectExists(ctx context.Context, org *codeship.Organization, codeshipOrg 
 
 func jxVersion() string {
 	if version.Version == "1.0.1" {
-		return "1.3.132"
+		return "1.3.143"
 	}
 	return version.Version
 }

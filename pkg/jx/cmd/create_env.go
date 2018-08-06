@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -12,7 +13,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -45,6 +48,7 @@ type CreateEnvOptions struct {
 	HelmValuesConfig       config.HelmValuesConfig
 	PromotionStrategy      string
 	NoGitOps               bool
+	Prow                   bool
 	ForkEnvironmentGitRepo string
 	EnvJobCredentials      string
 	GitRepositoryOptions   gits.GitRepositoryOptions
@@ -97,6 +101,7 @@ func NewCmdCreateEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command 
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on the enivronment git repository")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
+	cmd.Flags().BoolVarP(&options.Prow, "prow", "", false, "Install and use Prow for environment promotion")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
@@ -110,7 +115,7 @@ func (o *CreateEnvOptions) Run() error {
 	if len(args) > 0 && o.Options.Name == "" {
 		o.Options.Name = args[0]
 	}
-	jxClient, currentNs, err := o.JXClient()
+	jxClient, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
@@ -141,6 +146,14 @@ func (o *CreateEnvOptions) Run() error {
 		return err
 	}
 
+	if o.Prow {
+		devEnv.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
+		devEnv, err = jxClient.JenkinsV1().Environments(ns).Update(devEnv)
+		if err != nil {
+			return err
+		}
+	}
+
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
 	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, &env, &o.Options, o.ForkEnvironmentGitRepo, ns,
@@ -152,6 +165,7 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
 	log.Infof("Created environment %s\n", util.ColorInfo(env.Name))
 
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, ns)
@@ -159,6 +173,16 @@ func (o *CreateEnvOptions) Run() error {
 		return err
 	}
 	gitURL := env.Spec.Source.URL
+	gitInfo, err := gits.ParseGitURL(gitURL)
+
+	if o.Prow {
+		repo := fmt.Sprintf("%s/environment-%s-%s", gitInfo.Organisation, o.Prefix, o.Options.Name)
+		err = prow.AddRepo(o.kubeClient, []string{repo}, devEnv.Spec.Namespace)
+		if err != nil {
+			return fmt.Errorf("failed to add repo %s to prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
+		}
+	}
+
 	if gitURL != "" {
 		if gitProvider == nil {
 			p, err := o.gitProviderForURL(gitURL, "user name to create the git repository")
@@ -167,7 +191,30 @@ func (o *CreateEnvOptions) Run() error {
 			}
 			gitProvider = p
 		}
-		return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
+		if o.Prow {
+			// register the webhook
+			baseURL, err := kube.GetServiceURLFromName(o.kubeClient, "hook", o.devNamespace)
+			if err != nil {
+				return err
+			}
+			webhookUrl := util.UrlJoin(baseURL, "hook")
+
+			hmacToken, err := o.kubeClient.CoreV1().Secrets(o.devNamespace).Get("hmac-token", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			webhook := &gits.GitWebHookArguments{
+				Owner:  gitInfo.Organisation,
+				Repo:   gitInfo,
+				URL:    webhookUrl,
+				Secret: string(hmacToken.Data["hmac"]),
+			}
+			return gitProvider.CreateWebHook(webhook)
+		} else {
+			return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
+		}
 	}
+
 	return nil
 }

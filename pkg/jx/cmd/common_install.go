@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -48,6 +49,15 @@ jenkinsLocationConfiguration.setAdminAddress(jenkinsParameters.email)
 jenkinsLocationConfiguration.save()
 `
 )
+
+type Prow struct {
+	Version     string
+	Chart       string
+	SetValues   string
+	ReleaseName string
+	HMACToken   string
+	OAUTHToken  string
+}
 
 func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 	// install package managers first
@@ -465,7 +475,7 @@ func (o *CommonOptions) installHelm() error {
 		return err
 	}
 	// TODO temporary hack while we are on the 2.10-rc version:
-	latestVersion := "2.10.0-rc.1"
+	latestVersion := "2.10.0-rc.2"
 	/*
 		latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
 		if err != nil {
@@ -971,18 +981,18 @@ func (o *CommonOptions) installEksCtl() error {
 }
 
 func (o *CommonOptions) installHeptioAuthenticatorAws() error {
-	url := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/heptio-authenticator-aws"
+	awsUrl := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/heptio-authenticator-aws"
 	fileName := "heptio-authenticator-aws"
 
 	if runtime.GOOS == "darwin" {
-		url = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/darwin/amd64/heptio-authenticator-aws"
+		awsUrl = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/darwin/amd64/heptio-authenticator-aws"
 	} else if runtime.GOOS == "windows" {
-		url = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/windows/amd64/heptio-authenticator-aws.exe"
+		awsUrl = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/windows/amd64/heptio-authenticator-aws.exe"
 		fileName = "heptio-authenticator-aws.exe"
 	}
 	binDir, err := util.BinaryLocation()
 	fullPath := filepath.Join(binDir, fileName)
-	err = o.downloadFile(url, fullPath)
+	err = o.downloadFile(awsUrl, fullPath)
 	if err != nil {
 		return err
 	}
@@ -1210,4 +1220,72 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 	username = context.AuthInfo
 
 	return username, nil
+}
+
+func (o *CommonOptions) installProw() error {
+
+	if o.ReleaseName == "" {
+		o.ReleaseName = prow.DefaultProwReleaseName
+	}
+
+	if o.Chart == "" {
+		o.Chart = prow.ChartProw
+	}
+
+	if o.Chart == "" {
+		o.Version = prow.ProwVersion
+	}
+
+	var err error
+	if o.HMACToken == "" {
+		// why 41?  seems all examples so far have a random token of 41 chars
+		o.HMACToken, err = util.RandStringBytesMaskImprSrc(41)
+		if err != nil {
+			return fmt.Errorf("cannot create a random hmac token for Prow")
+		}
+	}
+
+	if o.OAUTHToken == "" {
+		authConfigSvc, err := o.CreateGitAuthConfigService()
+		if err != nil {
+			return err
+		}
+
+		config := authConfigSvc.Config()
+		if "" == config.CurrentServer {
+			config.CurrentServer = "https://github.com"
+		}
+
+		server := config.GetOrCreateServer(config.CurrentServer)
+		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode)
+		if err != nil {
+			return err
+		}
+		o.OAUTHToken = userAuth.ApiToken
+	}
+
+	if o.Username == "" {
+		o.Username, err = o.GetClusterUserName()
+		if err != nil {
+			return err
+		}
+	}
+
+	devNamespace, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
+	if err != nil {
+		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
+	}
+
+	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
+	if err != nil {
+		return fmt.Errorf("failed to install prow: %v", err)
+	}
+	err = o.installChart(prow.DefaultKnativeBuilReleaseName, prow.ChartKnativeBuild, prow.KnativeBuildVersion, devNamespace, true, values)
+	if err != nil {
+		return fmt.Errorf("failed to install knative build: %v", err)
+	}
+	return nil
 }
