@@ -7,7 +7,7 @@ WATCH := $(shell command -v watch --help 2> /dev/null)
 RELEASE := jenkins-x
 
 setup:
-	helm repo add jenkins-x $(CHART_REPO)
+	helm repo add jenkins-x-api $(CHART_REPO)
 
 delete:
 	helm delete --purge $(RELEASE)
