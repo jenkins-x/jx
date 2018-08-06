@@ -41,6 +41,7 @@ func NewCmdStep(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 	cmd.AddCommand(NewCmdStepBlog(f, out, errOut))
 	cmd.AddCommand(NewCmdStepChangelog(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateBuild(f, out, errOut))
 	cmd.AddCommand(NewCmdStepEnvRoleBinding(f, out, errOut))
 	cmd.AddCommand(NewCmdStepGit(f, out, errOut))
 	cmd.AddCommand(NewCmdStepGpgCredentials(f, out, errOut))
@@ -52,6 +53,7 @@ func NewCmdStep(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdStepPR(f, out, errOut))
 	cmd.AddCommand(NewCmdStepPost(f, out, errOut))
 	cmd.AddCommand(NewCmdStepReport(f, out, errOut))
+	cmd.AddCommand(NewCmdStepRelease(f, out, errOut))
 	cmd.AddCommand(NewCmdStepSplitMonorepo(f, out, errOut))
 	cmd.AddCommand(NewCmdStepTag(f, out, errOut))
 	cmd.AddCommand(NewCmdStepValidate(f, out, errOut))

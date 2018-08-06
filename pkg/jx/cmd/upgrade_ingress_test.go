@@ -113,8 +113,17 @@ func TestCleanExistingExposecontrollerReources(t *testing.T) {
 	o := TestOptions{}
 	o.Setup()
 
-	err := o.cleanExposecontrollerReources("test")
+	cm := v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: exposecontroller,
+		},
+	}
+	_, err := o.kubeClient.CoreV1().ConfigMaps("test").Create(&cm)
 	assert.NoError(t, err)
+	o.cleanExposecontrollerReources("test")
+
+	_, err = o.kubeClient.CoreV1().ConfigMaps("test").Get(exposecontroller, metav1.GetOptions{})
+	assert.Error(t, err)
 }
 
 func TestCleanServiceAnnotations(t *testing.T) {

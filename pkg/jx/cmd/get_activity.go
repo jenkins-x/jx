@@ -98,7 +98,7 @@ func (o *GetActivityOptions) Run() error {
 	}
 	kube.SortEnvironments(envList.Items)
 
-	apisClient, err := f.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -272,7 +272,7 @@ func addStepRowItem(table *tbl.Table, step *v1.CoreActivityStep, indent string, 
 		if text == "" {
 			text = description
 		} else {
-			text += description
+			text += " " + description
 		}
 	}
 	textName := step.Name
@@ -286,7 +286,7 @@ func addStepRowItem(table *tbl.Table, step *v1.CoreActivityStep, indent string, 
 	table.AddRow(indent+textName,
 		timeToString(step.StartedTimestamp),
 		durationString(step.StartedTimestamp, step.CompletedTimestamp),
-		statusString(step.Status)+text)
+		statusString(step.Status)+" "+text)
 }
 
 func statusString(statusType v1.ActivityStatusType) string {

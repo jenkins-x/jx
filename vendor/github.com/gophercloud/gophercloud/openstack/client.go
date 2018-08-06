@@ -414,3 +414,9 @@ func NewKeyManagerV1(client *gophercloud.ProviderClient, eo gophercloud.Endpoint
 	sc.ResourceBase = sc.Endpoint + "v1/"
 	return sc, err
 }
+
+// NewContainerInfraV1 creates a ServiceClient that may be used with the v1 container infra management
+// package.
+func NewContainerInfraV1(client *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (*gophercloud.ServiceClient, error) {
+	return initClientOpts(client, eo, "container-infra")
+}

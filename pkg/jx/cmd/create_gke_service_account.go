@@ -68,7 +68,6 @@ func (options *CreateGkeServiceAccountOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.Name, "name", "n", "", "The name of the service account to create")
 	cmd.Flags().StringVarP(&options.Flags.Project, "project", "p", "", "The GCP project to create the service account in")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
-
 }
 
 // Run implements this command

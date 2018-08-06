@@ -20,8 +20,8 @@ var (
 `)
 
 	delete_jenkins_user_example = templates.Examples(`
-		# Deletes a git provider
-		jx delete git server MyProvider
+		# Deletes the current jenkins token
+		jx delete jenkins user admin
 	`)
 )
 

@@ -79,7 +79,7 @@ func RenameDir(src string, dst string, force bool) (err error) {
 }
 
 func RenameFile(src string, dst string) (err error) {
-	if (src == dst) {
+	if src == dst {
 		return nil
 	}
 	err = CopyFile(src, dst)

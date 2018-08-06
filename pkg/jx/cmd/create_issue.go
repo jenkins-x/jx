@@ -107,22 +107,6 @@ func (o *CreateIssueOptions) Run() error {
 	return nil
 }
 
-func (o *CreateIssueOptions) FindGitInfo(dir string) (*gits.GitRepositoryInfo, error) {
-	_, gitConf, err := o.Git().FindGitConfigDir(dir)
-	if err != nil {
-		return nil, fmt.Errorf("Could not find a .git directory: %s\n", err)
-	} else {
-		if gitConf == "" {
-			return nil, fmt.Errorf("No git conf dir found")
-		}
-		gitURL, err := o.Git().DiscoverUpstreamGitURL(gitConf)
-		if err != nil {
-			return nil, fmt.Errorf("Could not find the remote git source URL:  %s", err)
-		}
-		return gits.ParseGitURL(gitURL)
-	}
-}
-
 func (o *CreateIssueOptions) PopulateIssue(issue *gits.GitIssue) error {
 	title := o.Title
 	body := o.Body

@@ -12,13 +12,16 @@ import (
 )
 
 type PipelineActivityKey struct {
-	Name            string
-	Pipeline        string
-	Build           string
-	BuildURL        string
-	BuildLogsURL    string
-	ReleaseNotesURL string
-	GitInfo         *gits.GitRepositoryInfo
+	Name              string
+	Pipeline          string
+	Build             string
+	BuildURL          string
+	BuildLogsURL      string
+	ReleaseNotesURL   string
+	LastCommitSHA     string
+	LastCommitMessage string
+	LastCommitURL     string
+	GitInfo           *gits.GitRepositoryInfo
 }
 
 func (k *PipelineActivityKey) IsValid() bool {
@@ -36,7 +39,7 @@ type PromotePullRequestFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *
 type PromoteUpdateFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromoteUpdateStep) error
 
 // GetOrCreate gets or creates the pipeline activity
-func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, error) {
+func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, bool, error) {
 	name := k.Name
 	create := false
 	defaultActivity := &v1.PipelineActivity{
@@ -47,13 +50,14 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 	}
 	if activities == nil {
 		log.Warn("Warning: no PipelineActivities client available!")
-		return defaultActivity, nil
+		return defaultActivity, create, nil
 	}
 	a, err := activities.Get(name, metav1.GetOptions{})
 	if err != nil {
 		create = true
 		a = defaultActivity
 	}
+	oldSpec := a.Spec
 	spec := &a.Spec
 	if k.Pipeline != "" && spec.Pipeline == "" {
 		spec.Pipeline = k.Pipeline
@@ -70,6 +74,15 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 	if k.ReleaseNotesURL != "" && spec.ReleaseNotesURL == "" {
 		spec.ReleaseNotesURL = k.ReleaseNotesURL
 	}
+	if k.LastCommitSHA != "" && spec.LastCommitSHA == "" {
+		spec.LastCommitSHA = k.LastCommitSHA
+	}
+	if k.LastCommitMessage != "" && spec.LastCommitMessage == "" {
+		spec.LastCommitMessage = k.LastCommitMessage
+	}
+	if k.LastCommitURL != "" && spec.LastCommitURL == "" {
+		spec.LastCommitURL = k.LastCommitURL
+	}
 	gi := k.GitInfo
 	if gi != nil {
 		if gi.URL != "" && spec.GitURL == "" {
@@ -83,15 +96,20 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		}
 	}
 	if create {
-		return activities.Create(a)
+		answer, err := activities.Create(a)
+		return answer, true, err
 	} else {
-		return a, nil
+		if !reflect.DeepEqual(&a.Spec, &oldSpec) {
+			answer, err := activities.Update(a)
+			return answer, false, err
+		}
+		return a, false, nil
 	}
 }
 
 // GetOrCreatePreview gets or creates the Preview step for the key
 func (k *PromoteStepActivityKey) GetOrCreatePreview(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PreviewActivityStep, bool, error) {
-	a, err := k.GetOrCreate(activities)
+	a, _, err := k.GetOrCreate(activities)
 	if err != nil {
 		return nil, nil, nil, false, err
 	}
@@ -139,9 +157,31 @@ func (k *PromoteStepActivityKey) GetOrCreatePreview(activities typev1.PipelineAc
 	return a, &spec.Steps[len(spec.Steps)-1], preview, true, nil
 }
 
+// GetOrCreateStage gets or creates the step for the given name
+func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineActivityStep, *v1.StageActivityStep, bool) {
+	spec := &a.Spec
+	for _, step := range spec.Steps {
+		stage := step.Stage
+		if stage != nil && stage.Name == stageName {
+			return &step, stage, false
+		}
+	}
+
+	stage := &v1.StageActivityStep{
+		CoreActivityStep: v1.CoreActivityStep{
+			Name: stageName,
+		},
+	}
+	spec.Steps = append(spec.Steps, v1.PipelineActivityStep{
+		Kind:  v1.ActivityStepKindTypeStage,
+		Stage: stage,
+	})
+	return &spec.Steps[len(spec.Steps)-1], stage, true
+}
+
 // GetOrCreatePromote gets or creates the Promote step for the key
 func (k *PromoteStepActivityKey) GetOrCreatePromote(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, bool, error) {
-	a, err := k.GetOrCreate(activities)
+	a, _, err := k.GetOrCreate(activities)
 	if err != nil {
 		return nil, nil, nil, false, err
 	}

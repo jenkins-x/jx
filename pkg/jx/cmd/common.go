@@ -17,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"strconv"
 
@@ -54,6 +55,7 @@ type CommonOptions struct {
 	NoBrew              bool
 	InstallDependencies bool
 	ServiceAccount      string
+	Username            string
 
 	// common cached clients
 	kubeClient          kubernetes.Interface
@@ -64,6 +66,8 @@ type CommonOptions struct {
 	jenkinsClient       *gojenkins.Jenkins
 	git                 gits.Gitter
 	helm                helm.Helmer
+
+	Prow
 }
 
 type ServerFlags struct {
@@ -89,7 +93,7 @@ func (c *CommonOptions) CreateTable() table.Table {
 // Debugf outputs the given text to the console if verbose mode is enabled
 func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 	if c.Verbose {
-		log.Infof(format, a)
+		log.Infof(format, a...)
 	}
 }
 
@@ -126,6 +130,18 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 	return o.kubeClient, o.currentNamespace, nil
 }
 
+// KubeClientAndDevNamespace returns a kube client and the development namespace
+func (o *CommonOptions) KubeClientAndDevNamespace() (kubernetes.Interface, string, error) {
+	kubeClient, curNs, err := o.KubeClient()
+	if err != nil {
+		return nil, "", err
+	}
+	if o.devNamespace == "" {
+		o.devNamespace, _, err = kube.GetDevNamespace(kubeClient, curNs)
+	}
+	return kubeClient, o.devNamespace, err
+}
+
 func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	if o.Factory == nil {
 		return nil, "", errors.New("command factory is not initialized")
@@ -141,6 +157,20 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 		}
 	}
 	return o.jxClient, o.currentNamespace, nil
+}
+
+func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string, error) {
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return nil, "", err
+	}
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return nil, "", err
+	}
+
+	ns, err := kube.GetAdminNamespace(kubeClient, devNs)
+	return jxClient, ns, err
 }
 
 func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, error) {
@@ -644,6 +674,8 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig) error {
 
+	o.cleanExposecontrollerReources(targetNamespace)
+
 	exValues := []string{
 		"config.exposer=" + ic.Exposer,
 		"config.domain=" + ic.Domain,
@@ -664,6 +696,18 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
 	}
 	return o.helm.DeleteRelease(helmRelease, true)
+
+}
+
+func (o *CommonOptions) cleanExposecontrollerReources(ns string) {
+
+	// let's not error if nothing to cleanup
+	o.kubeClient.RbacV1().Roles(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
+	o.kubeClient.RbacV1().RoleBindings(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
+	o.kubeClient.RbacV1().ClusterRoleBindings().Delete(exposecontroller, &metav1.DeleteOptions{})
+	o.kubeClient.CoreV1().ConfigMaps(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
+	o.kubeClient.CoreV1().ServiceAccounts(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
+	o.kubeClient.BatchV1().Jobs(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
 
 }
 

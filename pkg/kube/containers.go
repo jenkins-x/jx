@@ -17,3 +17,26 @@ func GetEnvVar(container *corev1.Container, name string) *corev1.EnvVar {
 	}
 	return nil
 }
+
+func GetVolumeMount(volumenMounts *[]corev1.VolumeMount, name string) *corev1.VolumeMount {
+	if volumenMounts != nil {
+		for idx, v := range *volumenMounts {
+			if v.Name == name {
+				return &(*volumenMounts)[idx]
+			}
+		}
+	}
+	return nil
+}
+
+func GetVolume(volumes *[]corev1.Volume, name string) *corev1.Volume {
+	if volumes != nil {
+		for idx, v := range *volumes {
+			if v.Name == name {
+				return &(*volumes)[idx]
+			}
+		}
+	}
+	return nil
+
+}
