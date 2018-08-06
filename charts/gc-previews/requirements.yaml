@@ -1,0 +1,3 @@
+dependencies:
+- name: gc-previews
+  repository: file://../jx
