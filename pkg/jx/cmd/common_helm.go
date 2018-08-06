@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -76,11 +78,16 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName stri
 	}
 	if missing {
 		log.Infof("Adding missing helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
-		err = o.Helm().AddRepo(repoName, helmUrl)
-		if err == nil {
-			log.Infof("Successfully added Helm repository %s.\n", repoName)
+		err = o.retry(6, 10*time.Second, func() (err error) {
+			err = o.Helm().AddRepo(repoName, helmUrl)
+			if err == nil {
+				log.Infof("Successfully added Helm repository %s.\n", repoName)
+			}
+			return errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmUrl)
+		})
+		if err != nil {
+			return err
 		}
-		return errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmUrl)
 	}
 	return nil
 }
@@ -114,7 +121,7 @@ func (o *CommonOptions) installChartAt(dir string, releaseName string, chart str
 	}
 	o.Helm().SetCWD(dir)
 	return o.Helm().UpgradeChart(chart, releaseName, ns, &version, true,
-		&timeout, false, false, setValues, nil)
+		&timeout, true, false, setValues, nil)
 }
 
 // deleteChart deletes the given chart
@@ -129,6 +136,31 @@ func (o *CommonOptions) FindHelmChart() (string, error) {
 	}
 	o.Helm().SetCWD(dir)
 	return o.Helm().FindChart()
+}
+
+func (o *CommonOptions) DiscoverAppName() (string, error) {
+	answer := ""
+	chartFile, err := o.FindHelmChart()
+	if err != nil {
+		return answer, err
+	}
+	if chartFile != "" {
+		return helm.LoadChartName(chartFile)
+	}
+
+	gitInfo, err := o.Git().Info("")
+	if err != nil {
+		return answer, err
+	}
+
+	if gitInfo == nil {
+		return answer, fmt.Errorf("no git info found to discover app name from")
+	}
+	answer = gitInfo.Name
+
+	if answer == "" {
+	}
+	return answer, nil
 }
 
 func (o *CommonOptions) isHelmRepoMissing(helmUrlString string) (bool, error) {
@@ -191,7 +223,7 @@ func (o *CommonOptions) helmInit(dir string) error {
 		return errors.Wrap(err, "failed to read the helm version")
 	}
 	if o.Helm().HelmBinary() == "helm" {
-		return o.Helm().Init(true, "", "", false)
+		return o.Helm().Init(false, "", "", true)
 	} else {
 		return o.Helm().Init(false, "", "", false)
 	}
@@ -212,7 +244,7 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 	}
 
 	if o.Helm().HelmBinary() == "helm" {
-		err = o.Helm().Init(true, "", "", false)
+		err = o.Helm().Init(false, "", "", true)
 	} else {
 		err = o.Helm().Init(false, "", "", false)
 	}
@@ -260,4 +292,19 @@ func (o *CommonOptions) releaseChartMuseumUrl() string {
 		log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
 	}
 	return chartRepo
+}
+
+func (o *CommonOptions) ensureHelm() error {
+	_, err := o.Helm().Version(false)
+	if err == nil {
+		return nil
+	}
+	err = o.installHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to install helm")
+	}
+	initOpts := InitOptions{
+		CommonOptions: *o,
+	}
+	return initOpts.initHelm()
 }

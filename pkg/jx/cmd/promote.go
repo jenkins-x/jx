@@ -451,31 +451,6 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 	return targetNS, envResource, nil
 }
 
-func (o *PromoteOptions) DiscoverAppName() (string, error) {
-	answer := ""
-	chartFile, err := o.FindHelmChart()
-	if err != nil {
-		return answer, err
-	}
-	if chartFile != "" {
-		return helm.LoadChartName(chartFile)
-	}
-
-	gitInfo, err := o.Git().Info("")
-	if err != nil {
-		return answer, err
-	}
-
-	if gitInfo == nil {
-		return answer, fmt.Errorf("no git info found to discover app name from")
-	}
-	answer = gitInfo.Name
-
-	if answer == "" {
-	}
-	return answer, nil
-}
-
 func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releaseInfo *ReleaseInfo) error {
 	if o.TimeoutDuration == nil {
 		log.Infof("No --%s option specified on the 'jx promote' command so not waiting for the promotion to succeed\n", optionTimeout)
@@ -502,6 +477,7 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 	return nil
 }
 
+// TODO This could do with a refactor and some tests...
 func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment, releaseInfo *ReleaseInfo, end time.Time, duration time.Duration, promoteKey *kube.PromoteStepActivityKey) error {
 	pullRequestInfo := releaseInfo.PullRequestInfo
 	logMergeFailure := false
@@ -539,6 +515,8 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							return nil
 						}
 						promoteKey.OnPromotePullRequest(o.Activities, mergedPR)
+						// Returning here to fix bug with promotions never completing even though the app has been deployed...
+						return nil
 					}
 
 					promoteKey.OnPromoteUpdate(o.Activities, kube.StartPromotionUpdate)

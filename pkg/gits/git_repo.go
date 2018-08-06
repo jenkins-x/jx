@@ -36,8 +36,8 @@ func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 	return d.GitProvider.CreateRepository(d.Organisation, d.RepoName, d.PrivateRepo)
 }
 
-func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
-	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter) (*CreateRepoData, error) {
+func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
+	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, allowExistingRepo bool) (*CreateRepoData, error) {
 	config := authConfigSvc.Config()
 
 	var err error
@@ -71,13 +71,17 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 	}
 	fmt.Fprintf(out, "Using git provider %s\n", util.ColorInfo(server.Description()))
 	url := server.URL
+
 	if userAuth == nil {
 		if repoOptions.Username != "" {
 			userAuth = config.GetOrCreateUserAuth(url, repoOptions.Username)
 		} else {
 			if batchMode {
 				if len(server.Users) == 0 {
-					return nil, fmt.Errorf("Server %s has no user auths defined!", url)
+					server = config.GetOrCreateServer(repoOptions.ServerURL)
+					if len(server.Users) == 0 {
+						return nil, fmt.Errorf("Server %s has no user auths defined!", url)
+					}
 				}
 				var ua *auth.UserAuth
 				if server.CurrentUser != "" {
@@ -95,9 +99,11 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 			}
 		}
 	}
+
 	if userAuth.IsInvalid() && repoOptions.ApiToken != "" {
 		userAuth.ApiToken = repoOptions.ApiToken
 	}
+
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
 			git.PrintCreateRepositoryGenerateAccessToken(server, username, out)
@@ -163,6 +169,9 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 			if strings.TrimSpace(str) == "" {
 				return fmt.Errorf("Repository name is required")
 			}
+			if allowExistingRepo {
+				return nil
+			}
 			return provider.ValidateRepositoryName(owner, str)
 		}
 		err = survey.AskOne(prompt, &repoName, validator)
@@ -185,4 +194,9 @@ func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.Auth
 		User:         userAuth,
 		GitProvider:  provider,
 	}, err
+}
+
+func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
+	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter) (*CreateRepoData, error) {
+	return PickNewOrExistingGitRepository(out, batchMode, authConfigSvc, defaultRepoName, repoOptions, server, userAuth, git, false)
 }

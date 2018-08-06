@@ -24,8 +24,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/heptio/sonobuoy/pkg/config"
 	"github.com/pkg/errors"
 
@@ -34,10 +32,19 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-func (c *SonobuoyClient) RetrieveResults(cfg *RetrieveConfig) (io.Reader, error) {
+var tarCommand = []string{
+	"/usr/bin/env",
+	"bash",
+	"-c",
+	fmt.Sprintf("tar cf - %s/*.tar.gz", config.MasterResultsPath),
+}
+
+func (c *SonobuoyClient) RetrieveResults(cfg *RetrieveConfig) (io.Reader, <-chan error) {
+	ec := make(chan error, 1)
 	client, err := c.Client()
 	if err != nil {
-		return nil, err
+		ec <- err
+		return nil, ec
 	}
 	restClient := client.CoreV1().RESTClient()
 	req := restClient.Post().
@@ -48,34 +55,30 @@ func (c *SonobuoyClient) RetrieveResults(cfg *RetrieveConfig) (io.Reader, error)
 		Param("container", config.MasterContainerName)
 	req.VersionedParams(&corev1.PodExecOptions{
 		Container: config.MasterContainerName,
-		Command:   []string{"tar", "cf", "-", config.MasterResultsPath},
+		Command:   tarCommand,
 		Stdin:     false,
 		Stdout:    true,
-		Stderr:    true,
+		Stderr:    false,
 	}, scheme.ParameterCodec)
 	executor, err := remotecommand.NewSPDYExecutor(c.RestConfig, "POST", req.URL())
 	if err != nil {
-		return nil, err
+		ec <- err
+		return nil, ec
 	}
 	reader, writer := io.Pipe()
-	go func(writer *io.PipeWriter) {
+	go func(writer *io.PipeWriter, ec chan error) {
 		defer writer.Close()
+		defer close(ec)
 		err = executor.Stream(remotecommand.StreamOptions{
 			Stdout: writer,
-			Stderr: os.Stderr,
 			Tty:    false,
 		})
 		if err != nil {
-			// Since this function returns an io.Reader to the consumer and does
-			// not buffer the entire (potentially large) output, RetrieveResults
-			// has to return the reader first to be read from. This means we
-			// either lose this error (easy) or provide a significantly more
-			// complex error mechanism for the consumer (hard).
-			logrus.Error(err)
+			ec <- err
 		}
-	}(writer)
+	}(writer, ec)
 
-	return reader, nil
+	return reader, ec
 }
 
 /** Everything below this marker has been copy/pasta'd from k8s/k8s. The only modification is exporting UntarAll **/

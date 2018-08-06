@@ -14,12 +14,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
+	"github.com/jenkins-x/jx/pkg/jenkins"
 )
 
 const (
-	mavenKeepOldJenkinsfile = "maven-keep-old-jenkinsfile"
-	mavenCamel              = "maven-camel"
-	mavenSpringBoot         = "maven-springboot"
+	mavenKeepOldJenkinsfile = "maven_keep_old_jenkinsfile"
+	mavenOldJenkinsfile 	= "maven_old_jenkinsfile"
+	mavenCamel              = "maven_camel"
+	mavenSpringBoot         = "maven_springboot"
 	probePrefix             = "probePath:"
 )
 
@@ -38,16 +40,24 @@ func TestImportProjects(t *testing.T) {
 		if f.IsDir() {
 			name := f.Name()
 			srcDir := filepath.Join(testData, name)
-			testDir := filepath.Join(tempDir, name)
-			util.CopyDir(srcDir, testDir, true)
-
-			err = assertImport(t, testDir)
-			assert.NoError(t, err, "Importing dir %s from source %s", testDir, srcDir)
+			testImportProject(t, tempDir, name, srcDir, false)
+			testImportProject(t, tempDir, name, srcDir, true)
 		}
 	}
 }
 
-func assertImport(t *testing.T, testDir string) error {
+func testImportProject(t *testing.T, tempDir string, testcase string, srcDir string, withRename bool) {
+	testDirSuffix := "DefaultJenkinsfile"
+	if withRename {
+		testDirSuffix = "RenamedJenkinsfile"
+	}
+	testDir := filepath.Join(tempDir + "-" + testDirSuffix, testcase)
+	util.CopyDir(srcDir, testDir, true)
+	err := assertImport(t, testDir, testcase, withRename)
+	assert.NoError(t, err, "Importing dir %s from source %s", testDir, srcDir)
+}
+
+func assertImport(t *testing.T, testDir string, testcase string, withRename bool) error {
 	_, dirName := filepath.Split(testDir)
 	dirName = kube.ToValidName(dirName)
 	o := &ImportOptions{}
@@ -56,22 +66,30 @@ func assertImport(t *testing.T, testDir string) error {
 	o.DryRun = true
 	o.DisableMaven = true
 
-	if dirName == mavenKeepOldJenkinsfile {
+	if withRename {
+		o.Jenkinsfile = "Jenkinsfile-Renamed"
+	}
+
+	if testcase == mavenKeepOldJenkinsfile {
 		o.DisableJenkinsfileCheck = true
 	}
-	if dirName == mavenCamel || dirName == mavenSpringBoot {
+	if testcase == mavenCamel || dirName == mavenSpringBoot {
 		o.DisableMaven = tests.TestShouldDisableMaven()
 	}
 
 	err := o.Run()
 	assert.NoError(t, err, "Failed with %s", err)
 	if err == nil {
-		jenkinsfile := filepath.Join(testDir, "Jenkinsfile")
+		defaultJenkinsfile := filepath.Join(testDir, jenkins.DefaultJenkinsfile)
+		jenkinsfile := defaultJenkinsfile
+		if o.Jenkinsfile != "" && o.Jenkinsfile != jenkins.DefaultJenkinsfile {
+			jenkinsfile = filepath.Join(testDir, o.Jenkinsfile)
+		}
 		tests.AssertFileExists(t, jenkinsfile)
 		tests.AssertFileExists(t, filepath.Join(testDir, "Dockerfile"))
 		tests.AssertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
 
-		if dirName == mavenKeepOldJenkinsfile {
+		if testcase == mavenKeepOldJenkinsfile {
 			tests.AssertFileContains(t, jenkinsfile, "THIS IS OLD!")
 			tests.AssertFileDoesNotExist(t, jenkinsfile+jenkinsfileBackupSuffix)
 		} else {
@@ -83,18 +101,24 @@ func assertImport(t *testing.T, testDir string) error {
 			}
 
 			if !o.DisableMaven {
-				if dirName == mavenCamel {
+				if testcase == mavenCamel {
 					// should have modified it
 					assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/health")
 				}
-				if dirName == mavenSpringBoot {
+				if testcase == mavenSpringBoot {
 					// should have left it
 					assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/actuator/health")
 				}
 			}
 		}
-		if dirName == "maven-old-jenkinsfile" {
-			tests.AssertFileExists(t, jenkinsfile+jenkinsfileBackupSuffix)
+		if testcase == mavenOldJenkinsfile {
+			if withRename {
+				tests.AssertFileExists(t, defaultJenkinsfile)
+				tests.AssertFileContains(t, defaultJenkinsfile, "THIS IS OLD!")
+				tests.AssertFileDoesNotExist(t, defaultJenkinsfile+jenkinsfileBackupSuffix)
+			} else {
+				tests.AssertFileExists(t, defaultJenkinsfile+jenkinsfileBackupSuffix)
+			}
 		}
 	}
 	return err

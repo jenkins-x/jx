@@ -16,7 +16,7 @@ import (
 
 func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfigService) (*gojenkins.Jenkins, error) {
 	if url == "" {
-		return nil, errors.New("no Jenkins service be found in the development namespace!\nAre you sure you installed Jenkins X? Try: https://jenkins-x.io/getting-started/")
+		return nil, errors.New("no external Jenkins URL found in the development namespace!\nAre you sure you installed Jenkins X? Try: https://jenkins-x.io/getting-started/")
 	}
 	tokenUrl := JenkinsTokenURL(url)
 

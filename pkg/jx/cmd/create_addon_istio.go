@@ -5,11 +5,13 @@ import (
 	"io"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -106,7 +108,11 @@ func (o *CreateAddonIstioOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	_, _, err := o.KubeClient()
+	err := o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
+	}
+	_, _, err = o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -122,6 +128,8 @@ func (o *CreateAddonIstioOptions) Run() error {
 	if o.NoInjectorWebhook {
 		values = append(values, "sidecarInjectorWebhook.enabled=false")
 	}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
 	err = o.installChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return fmt.Errorf("istio deployment failed: %v", err)

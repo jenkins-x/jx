@@ -193,3 +193,16 @@ func GetDevPodNames(client kubernetes.Interface, ns string, username string) ([]
 	sort.Strings(names)
 	return names, m, nil
 }
+
+// GetPodRestars returns the number of restarts of a POD
+func GetPodRestarts(pod *v1.Pod) int32 {
+	var restarts int32
+	statuses := pod.Status.ContainerStatuses
+	if len(statuses) == 0 {
+		return restarts
+	}
+	for _, status := range statuses {
+		restarts += status.RestartCount
+	}
+	return restarts
+}

@@ -28,6 +28,8 @@ import (
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	//_ "github.com/Azure/draft/pkg/linguist"
+	"github.com/denormal/go-gitignore"
+	"time"
 )
 
 const (
@@ -412,7 +414,13 @@ func (o *ImportOptions) DraftCreate() error {
 	// https://github.com/Azure/draft/issues/476
 	dir := o.Dir
 
-	jenkinsfile := filepath.Join(dir, "Jenkinsfile")
+	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
+	jenkinsfile := defaultJenkinsfile
+	withRename := false
+	if o.Jenkinsfile != "" {
+		jenkinsfile = filepath.Join(dir, o.Jenkinsfile)
+		withRename = true
+	}
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
 	lpack := ""
@@ -487,13 +495,23 @@ func (o *ImportOptions) DraftCreate() error {
 			}
 		}
 	}
-	jenknisfileBackup := ""
+	jenkinsfileBackup := ""
 	if jenkinsfileExists && o.InitialisedGit && !o.DisableJenkinsfileCheck {
 		// lets copy the old Jenkinsfile in case we overwrite it
-		jenknisfileBackup = jenkinsfile + jenkinsfileBackupSuffix
-		err = util.RenameFile(jenkinsfile, jenknisfileBackup)
+		jenkinsfileBackup = jenkinsfile + jenkinsfileBackupSuffix
+		err = util.RenameFile(jenkinsfile, jenkinsfileBackup)
 		if err != nil {
 			return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
+		}
+	} else if withRename {
+		defaultJenkinsfileExists, err := util.FileExists(defaultJenkinsfile)
+		if defaultJenkinsfileExists && o.InitialisedGit && !o.DisableJenkinsfileCheck {
+			jenkinsfileBackup = defaultJenkinsfile + jenkinsfileBackupSuffix
+			err = util.RenameFile(defaultJenkinsfile, jenkinsfileBackup)
+			if err != nil {
+				return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
+			}
+
 		}
 	}
 
@@ -503,7 +521,23 @@ func (o *ImportOptions) DraftCreate() error {
 		log.Warnf("Failed to run draft create in %s due to %s", dir, err)
 	}
 
-	if jenknisfileBackup != "" {
+	unpackedDefaultJenkinsfile := defaultJenkinsfile
+	if unpackedDefaultJenkinsfile != jenkinsfile {
+		unpackedDefaultJenkinsfileExists := false
+		unpackedDefaultJenkinsfileExists, err = util.FileExists(unpackedDefaultJenkinsfile)
+		if unpackedDefaultJenkinsfileExists {
+			err = util.RenameFile(unpackedDefaultJenkinsfile, jenkinsfile)
+			if err != nil {
+				return fmt.Errorf("Failed to rename Jenkinsfile file from '%s' to '%s': %s", unpackedDefaultJenkinsfile, jenkinsfile, err)
+			}
+			if jenkinsfileBackup != "" {
+				err = util.RenameFile(jenkinsfileBackup, defaultJenkinsfile)
+				if err != nil {
+					return fmt.Errorf("Failed to rename Jenkinsfile backup file: %s", err)
+				}
+			}
+		}
+	} else if jenkinsfileBackup != "" {
 		// if there's no Jenkinsfile created then rename it back again!
 		jenkinsfileExists, err = util.FileExists(jenkinsfile)
 		if err != nil {
@@ -511,14 +545,14 @@ func (o *ImportOptions) DraftCreate() error {
 		} else {
 			if jenkinsfileExists {
 				if !o.InitialisedGit {
-					err = os.Remove(jenknisfileBackup)
+					err = os.Remove(jenkinsfileBackup)
 					if err != nil {
 						log.Warnf("Failed to remove Jenkinsfile backup %s", err)
 					}
 				}
 			} else {
 				// lets put the old one back again
-				err = util.RenameFile(jenknisfileBackup, jenkinsfile)
+				err = util.RenameFile(jenkinsfileBackup, jenkinsfile)
 				if err != nil {
 					return fmt.Errorf("Failed to rename Jenkinsfile backup file: %s", err)
 				}
@@ -571,15 +605,20 @@ func (o *ImportOptions) getOrganisationOrCurrentUser() string {
 
 func (o *ImportOptions) getCurrentUser() string {
 	//walk through every file in the given dir and update the placeholders
-	currentUser := o.GitServer.CurrentUser
-	if currentUser == "" {
-		if o.GitProvider != nil {
-			currentUser = o.GitProvider.CurrentUsername()
+	var currentUser string
+	if o.Organisation != "" {
+		return o.Organisation
+	}
+	if o.GitServer != nil {
+		currentUser = o.GitServer.CurrentUser
+		if currentUser == "" {
+			if o.GitProvider != nil {
+				currentUser = o.GitProvider.CurrentUsername()
+			}
 		}
+		log.Warn("No git server found!\n")
 	}
-	if currentUser == "" {
-		currentUser = o.Organisation
-	}
+
 	if currentUser == "" {
 		log.Warn("No username defined for the current git server!")
 		currentUser = o.DefaultOwner
@@ -876,11 +915,31 @@ func (o *ImportOptions) replacePlaceholders(gitServerName, gitOrg string) error 
 	log.Infof("replacing placeholders in directory %s\n", o.Dir)
 	log.Infof("app name: %s, git server: %s, org: %s\n", o.AppName, gitServerName, gitOrg)
 
+	ignore, err := gitignore.NewRepository(o.Dir)
+	if err != nil {
+		return err
+	}
+
 	if err := filepath.Walk(o.Dir, func(f string, fi os.FileInfo, err error) error {
-		if fi.IsDir() && (fi.Name() == ".git" || fi.Name() == "node_modules" || fi.Name() == "vendor" || fi.Name() == "target") {
-			return filepath.SkipDir
+		relPath, _ := filepath.Rel(o.Dir, f)
+		match := ignore.Relative(relPath, fi.IsDir())
+		matchIgnore := match != nil && match.Ignore() //Defaults to including if match == nil
+
+		if fi.IsDir() {
+			if matchIgnore || fi.Name() == ".git" {
+				log.Infof("skipping directory %q\n", f)
+				return filepath.SkipDir
+			}
+			return nil
 		}
-		if !fi.IsDir() {
+
+		// Dont process nor follow symlinks
+		if (fi.Mode() & os.ModeSymlink) == os.ModeSymlink {
+			log.Infof("skipping symlink file %q\n", f)
+			return nil
+		}
+
+		if !matchIgnore {
 			input, err := ioutil.ReadFile(f)
 			if err != nil {
 				log.Errorf("failed to read file %s: %v", f, err)
@@ -956,7 +1015,10 @@ func (o *ImportOptions) checkChartmuseumCredentialExists() error {
 		username := string(data["BASIC_AUTH_USER"])
 		password := string(data["BASIC_AUTH_PASS"])
 
-		err = o.Jenkins.CreateCredential(name, username, password)
+		err = o.retry(3, 10*time.Second, func() (err error) {
+			return o.Jenkins.CreateCredential(name, username, password)
+		})
+
 		if err != nil {
 			return fmt.Errorf("error creating jenkins credential %s %v", name, err)
 		}

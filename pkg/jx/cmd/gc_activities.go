@@ -1,18 +1,15 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
+	"sort"
+	"strconv"
+	"strings"
 
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"strconv"
-
-	"sort"
-
-	"fmt"
-
-	"strings"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -68,8 +65,16 @@ func NewCmdGCActivities(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 
 // Run implements this command
 func (o *GCActivitiesOptions) Run() error {
-	f := o.Factory
-	client, currentNs, err := f.CreateJXClient()
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterPipelineActivityCRD(apisClient)
+	if err != nil {
+		return err
+	}
+
+	client, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
@@ -139,6 +144,7 @@ func (o *GCActivitiesOptions) Run() error {
 		for i < len(builds)-o.RevisionHistoryLimit {
 			activityName := fmt.Sprintf("%s-%v", pipeline, builds[i])
 			activityName = strings.Replace(activityName, "/", "-", -1)
+			activityName = strings.Replace(activityName, "_", "-", -1)
 			activityName = strings.ToLower(activityName)
 
 			err = client.JenkinsV1().PipelineActivities(currentNs).Delete(activityName, metav1.NewDeleteOptions(0))

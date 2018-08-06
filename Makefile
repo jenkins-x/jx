@@ -92,7 +92,8 @@ release: check
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
 
-	docker build -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
+	docker system prune -f
+	docker build --ulimit nofile=90000:90000 -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
 	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
 
 	chmod +x build/darwin/$(NAME)
@@ -142,7 +143,17 @@ docker-maven: linux Dockerfile.builder-maven
 docker-pipeline: linux
 	docker build -t rawlingsj/builder-base:dev . -f Dockerfile-pipeline
 
-docker-dev: linux 
+docker-dev: build linux
+	docker images | grep -v REPOSITORY | awk '{print $$1}' | uniq -u | grep jenkinsxio | awk '{print $$1":latest"}' | xargs -L1 docker pull
+	docker build --no-cache -t $(DOCKER_HUB_USER)/jx:dev .
+	docker push $(DOCKER_HUB_USER)/jx:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-base:dev -f Dockerfile.builder-base .
+	docker push $(DOCKER_HUB_USER)/builder-base:dev
+	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-maven:dev -f Dockerfile.builder-maven .
+	docker push $(DOCKER_HUB_USER)/builder-maven:dev
+
+docker-dev-all: build linux
+	docker images | grep -v REPOSITORY | awk '{print $$1}' | uniq -u | grep jenkinsxio | awk '{print $$1":latest"}' | xargs -L1 docker pull
 	docker build --no-cache -t $(DOCKER_HUB_USER)/jx:dev .
 	docker push $(DOCKER_HUB_USER)/jx:dev
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-base:dev -f Dockerfile.builder-base .
@@ -220,14 +231,14 @@ tools.govet:
 		go get golang.org/x/tools/cmd/vet; \
 	fi
 
-GAS := $(GOPATH)/bin/gas
-$(GAS):
-	go get github.com/GoASTScanner/gas/cmd/gas/...
+GOSEC := $(GOPATH)/bin/gosec
+$(GOSEC):
+	go get github.com/securego/gosec/cmd/gosec/...
 
 .PHONY: sec
-sec: $(GAS)
+sec: $(GOSEC)
 	@echo "SECURITY"
 	@mkdir -p scanning
-	$(GAS) -fmt=yaml -out=scanning/results.yaml ./...
+	$(GOSEC) -fmt=yaml -out=scanning/results.yaml ./...
 
 
