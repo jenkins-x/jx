@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -52,4 +53,29 @@ func AssertFilesExist(t *testing.T, expected bool, paths ...string) {
 			AssertFileDoesNotExist(t, path)
 		}
 	}
+}
+
+func AssertEqualFileText(t *testing.T, expectedFile string, actualFile string) error {
+	expectedText, err := AssertLoadFileText(t, expectedFile)
+	if err != nil {
+		return err
+	}
+	actualText, err := AssertLoadFileText(t, actualFile)
+	if err != nil {
+		return err
+	}
+	assert.Equal(t, expectedText, actualText, "comparing text content of files %s and %s", expectedFile, actualFile)
+	return nil
+}
+
+func AssertLoadFileText(t *testing.T, fileName string) (string, error) {
+	if !AssertFileExists(t, fileName) {
+		return "", fmt.Errorf("File %s does not exist", fileName)
+	}
+	data, err := ioutil.ReadFile(fileName)
+	assert.NoError(t, err, "Failed loading data for file: %s", fileName)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

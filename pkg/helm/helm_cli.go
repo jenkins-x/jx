@@ -87,7 +87,7 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 		args = append(args, "--tiller-namespace", tillerNamespace)
 	}
 	if upgrade {
-		args = append(args, "--upgrade", "--wait")
+		args = append(args, "--upgrade", "--wait", "--force-upgrade")
 	}
 	return h.runHelm(args...)
 }
