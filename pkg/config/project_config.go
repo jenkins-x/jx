@@ -17,6 +17,9 @@ const (
 )
 
 type ProjectConfig struct {
+	// List of global environment variables to add to each branch build and each step
+	Env []corev1.EnvVar `yaml:"env,omitempty"`
+
 	Builds              []*BranchBuild            `yaml:"builds,omitempty"`
 	PreviewEnvironments *PreviewEnvironmentConfig `yaml:"previewEnvironments,omitempty"`
 	IssueTracker        *IssueTrackerConfig       `yaml:"issueTracker,omitempty"`
@@ -58,10 +61,15 @@ type AddonConfig struct {
 }
 
 type BranchBuild struct {
-	Kind  string `yaml:"kind,omitempty"`
-	Build Build  `yaml:"build,omitempty"`
+	Build Build `yaml:"build,omitempty"`
 
 	// Jenkins X extensions to standard knative builds:
+
+	// which kind of pipeline - like release, pullRequest, feature
+	Kind string `yaml:"kind,omitempty"`
+
+	// display name
+	Name string `yaml:"name,omitempty"`
 
 	// List of sources to populate environment variables in all the steps if there is not already
 	// an environment variable defined on that step
