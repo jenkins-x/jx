@@ -2,7 +2,7 @@ package util_test
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -14,18 +14,21 @@ func TestRunPass(t *testing.T) {
 
 	tmpFileName := "test_run_pass.txt"
 
-	gp := os.Getenv("GOPATH")
-	projectRoot := path.Join(gp, "src/github.com/jenkins-x/jx")
-	exPath := projectRoot + "/pkg/jx/cmd/test_data/scripts"
+	startPath, err := filepath.Abs("")
+	if err != nil {
+		panic(err)
+	}
+	exPath := startPath + "/test_data/scripts"
 	ex := "fail_iterator.sh"
 	args := []string{tmpFileName, "5"}
 
 	os.Create(exPath + "/" + tmpFileName)
 
 	cmd := util.Command{
-		Name: ex,
-		Dir:  exPath,
-		Args: args,
+		Name:    ex,
+		Dir:     exPath,
+		Args:    args,
+		Timeout: 15 * time.Second,
 	}
 
 	res, err := cmd.Run()
@@ -46,9 +49,11 @@ func TestRunPassFirstTime(t *testing.T) {
 
 	tmpFileName := "test_run_pass_first_time.txt"
 
-	gp := os.Getenv("GOPATH")
-	projectRoot := path.Join(gp, "src/github.com/jenkins-x/jx")
-	exPath := projectRoot + "/pkg/jx/cmd/test_data/scripts"
+	startPath, err := filepath.Abs("")
+	if err != nil {
+		panic(err)
+	}
+	exPath := startPath + "/test_data/scripts"
 	ex := "fail_iterator.sh"
 	args := []string{tmpFileName, "1"}
 
@@ -78,9 +83,11 @@ func TestRunFailWithTimeout(t *testing.T) {
 
 	tmpFileName := "test_run_fail_with_timeout.txt"
 
-	gp := os.Getenv("GOPATH")
-	projectRoot := path.Join(gp, "src/github.com/jenkins-x/jx")
-	exPath := projectRoot + "/pkg/jx/cmd/test_data/scripts"
+	startPath, err := filepath.Abs("")
+	if err != nil {
+		panic(err)
+	}
+	exPath := startPath + "/test_data/scripts"
 	ex := "fail_iterator.sh"
 	args := []string{tmpFileName, "100"}
 
@@ -90,7 +97,7 @@ func TestRunFailWithTimeout(t *testing.T) {
 		Name:    ex,
 		Dir:     exPath,
 		Args:    args,
-		Timeout: 3 * time.Second,
+		Timeout: 1 * time.Second,
 	}
 
 	res, err := cmd.Run()
@@ -105,9 +112,11 @@ func TestRunFailWithTimeout(t *testing.T) {
 }
 
 func TestRunThreadSafety(t *testing.T) {
-	gp := os.Getenv("GOPATH")
-	projectRoot := path.Join(gp, "src/github.com/jenkins-x/jx")
-	exPath := projectRoot + "/pkg/jx/cmd/test_data/scripts"
+	startPath, err := filepath.Abs("")
+	if err != nil {
+		panic(err)
+	}
+	exPath := startPath + "/test_data/scripts"
 	ex := "sleep.sh"
 	args := []string{"2"}
 
@@ -131,9 +140,11 @@ func TestRunWithoutRetry(t *testing.T) {
 
 	tmpFileName := "test_run_without_retry.txt"
 
-	gp := os.Getenv("GOPATH")
-	projectRoot := path.Join(gp, "src/github.com/jenkins-x/jx")
-	exPath := projectRoot + "/pkg/jx/cmd/test_data/scripts"
+	startPath, err := filepath.Abs("")
+	if err != nil {
+		panic(err)
+	}
+	exPath := startPath + "/test_data/scripts"
 	ex := "fail_iterator.sh"
 	args := []string{tmpFileName, "100"}
 
@@ -163,9 +174,11 @@ func TestRunVerbose(t *testing.T) {
 
 	tmpFileName := "test_run_verbose.txt"
 
-	gp := os.Getenv("GOPATH")
-	projectRoot := path.Join(gp, "src/github.com/jenkins-x/jx")
-	exPath := projectRoot + "/pkg/jx/cmd/test_data/scripts"
+	startPath, err := filepath.Abs("")
+	if err != nil {
+		panic(err)
+	}
+	exPath := startPath + "/test_data/scripts"
 	ex := "fail_iterator.sh"
 	args := []string{tmpFileName, "100"}
 
@@ -195,9 +208,11 @@ func TestRunQuiet(t *testing.T) {
 
 	tmpFileName := "test_run_quiet.txt"
 
-	gp := os.Getenv("GOPATH")
-	projectRoot := path.Join(gp, "src/github.com/jenkins-x/jx")
-	exPath := projectRoot + "/pkg/jx/cmd/test_data/scripts"
+	startPath, err := filepath.Abs("")
+	if err != nil {
+		panic(err)
+	}
+	exPath := startPath + "/test_data/scripts"
 	ex := "fail_iterator.sh"
 	args := []string{tmpFileName, "100"}
 
