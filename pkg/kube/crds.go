@@ -51,7 +51,7 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 		},
 		{
 			Name:        "Order",
-			Type:        "Integer",
+			Type:        "integer",
 			Description: "The order in which environments are automatically promoted",
 			JSONPath:    ".spec.order",
 		},
