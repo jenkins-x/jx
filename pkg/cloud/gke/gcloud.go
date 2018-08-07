@@ -37,6 +37,7 @@ func BucketExists(projectId string, bucketName string) (bool, error) {
 	}
 	output, err := cmd.RunWithoutRetry()
 	if err != nil {
+		log.Infof("Error checking bucket exists: %s, %s\n", output, err)
 		return false, err
 	}
 	return strings.Contains(output, fullBucketName), nil
@@ -57,8 +58,9 @@ func CreateBucket(projectId string, bucketName string, location string) error {
 		Name: "gsutil",
 		Args: args,
 	}
-	_, err := cmd.RunWithoutRetry()
+	output, err := cmd.RunWithoutRetry()
 	if err != nil {
+		log.Infof("Error creating bucket: %s, %s\n", output, err)
 		return err
 	}
 	return nil
