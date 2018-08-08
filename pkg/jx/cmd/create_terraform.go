@@ -588,6 +588,8 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) (
 		}
 
 		if !exists {
+			o.Debugf("cluster %s does not exist, creating...", c.Name())
+
 			os.MkdirAll(path, DefaultWritePermissions)
 
 			switch c.Provider() {
@@ -614,6 +616,7 @@ func (o *CreateTerraformOptions) createOrganisationFolderStructure(dir string) (
 			os.RemoveAll(filepath.Join(path, ".gitignore"))
 		} else {
 			// if the directory already exists, try to load its config
+			o.Debugf("cluster %s already exists, loading...", c.Name())
 
 			switch c.Provider() {
 			case "gke":
@@ -712,6 +715,8 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 	g.Organisation = o.Flags.OrganisationName
 
 	if g.ServiceAccount != "" {
+		o.Debugf("loading service account for cluster %s", g.Name())
+
 		err := gke.Login(g.ServiceAccount, false)
 		if err != nil {
 			return err
@@ -719,6 +724,8 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 	}
 
 	if g.ProjectId == "" {
+		o.Debugf("determining google project for cluster %s", g.Name())
+
 		projectId, err := o.getGoogleProjectId()
 		if err != nil {
 			return err
@@ -727,6 +734,8 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 	}
 
 	if !o.Flags.GKESkipEnableApis {
+		o.Debugf("enabling apis for %s", g.Name())
+
 		err := gke.EnableApis(g.ProjectId, "iam", "compute", "container")
 		if err != nil {
 			return err
@@ -734,11 +743,15 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 	}
 
 	if g.Name() == "" {
+		o.Debugf("generating a new name for cluster %s", g.Name())
+
 		g._Name = strings.ToLower(randomdata.SillyName())
 		fmt.Fprintf(o.Stdout(), "No cluster name provided so using a generated one: %s\n", util.ColorInfo(g.Name()))
 	}
 
 	if g.Zone == "" {
+		o.Debugf("getting available zones for cluster %s", g.Name())
+
 		availableZones, err := gke.GetGoogleZones()
 		if err != nil {
 			return err
@@ -843,6 +856,7 @@ func (o *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path string) e
 				return err
 			}
 
+			o.Debugf("attempting to enable apis")
 			err = gke.EnableApis(g.ProjectId, "iam", "compute", "container")
 			if err != nil {
 				return err
