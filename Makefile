@@ -113,6 +113,7 @@ release: check
 	updatebot push-version --kind brew jx $(VERSION)
 	updatebot push-version --kind docker JX_VERSION $(VERSION)
 	updatebot push-regex -r "\s*release = \"(.*)\"" -v $(VERSION) config.toml
+	updatebot push-regex -r "JX_VERSION=(.*)" -v $(VERSION) install-jx.sh
 	updatebot update-loop
 
 	echo "Updating the JX CLI reference docs"
