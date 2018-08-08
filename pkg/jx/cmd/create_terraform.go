@@ -752,7 +752,7 @@ func (o *CreateTerraformOptions) configureGKECluster(g *GKECluster, path string)
 	if g.Zone == "" {
 		o.Debugf("getting available zones for cluster %s", g.Name())
 
-		availableZones, err := gke.GetGoogleZones()
+		availableZones, err := gke.GetGoogleZones(g.ProjectId)
 		if err != nil {
 			return err
 		}

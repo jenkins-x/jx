@@ -169,7 +169,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	zone := o.Flags.Zone
 	if zone == "" {
-		availableZones, err := gke.GetGoogleZones()
+		availableZones, err := gke.GetGoogleZones(projectId)
 		if err != nil {
 			return err
 		}

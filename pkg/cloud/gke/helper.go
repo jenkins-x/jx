@@ -1,8 +1,7 @@
 package gke
 
 import (
-	"os/exec"
-	"sort"
+		"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -10,9 +9,21 @@ import (
 
 var PROJECT_LIST_HEADER = "PROJECT_ID"
 
-func GetGoogleZones() ([]string, error) {
+func GetGoogleZones(project string) ([]string, error) {
 	var zones []string
-	out, err := exec.Command("gcloud", "compute", "zones", "list").Output()
+	args := []string{"compute", "zones", "list"}
+
+	if "" != project {
+		args = append(args, "--project")
+		args = append(args, project)
+	}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args, 
+	}
+
+	out, err := cmd.RunWithoutRetry()
 	if err != nil {
 		return nil, err
 	}
