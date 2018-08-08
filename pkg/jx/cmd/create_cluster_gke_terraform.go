@@ -174,7 +174,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 
 	zone := o.Flags.Zone
 	if zone == "" {
-		availableZones, err := gke.GetGoogleZones()
+		availableZones, err := gke.GetGoogleZones(projectId)
 		if err != nil {
 			return err
 		}

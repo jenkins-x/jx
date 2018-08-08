@@ -6,3 +6,4 @@ github:
     - name: builder-base
     - name: jx-docs
     - name: jenkins-x-platform
+    - name: jx-tutorial
