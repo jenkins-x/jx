@@ -100,6 +100,11 @@ func (o *CreateSpringOptions) Run() error {
 		return fmt.Errorf("Failed to load Spring Boot model %s", err)
 	}
 
+	// always add in actuator as its required for health checking
+	if !util.Contains(o.SpringForm.Dependencies, "actuator") {
+		o.SpringForm.Dependencies = append(o.SpringForm.Dependencies, "actuator")
+	}
+
 	data := &o.SpringForm
 	err = model.CreateSurvey(&o.SpringForm, o.Advanced, o.BatchMode)
 	if err != nil {
