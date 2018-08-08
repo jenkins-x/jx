@@ -708,7 +708,7 @@ func (o *CommonOptions) installTerraform() error {
 	return os.Chmod(fullPath, 0755)
 }
 
-func (o *CommonOptions) getLatestJXVersion() (semver.Version, error) {
+func (o *CommonOptions) GetLatestJXVersion() (semver.Version, error) {
 	return util.GetLatestVersionFromGitHub("jenkins-x", "jx")
 }
 
