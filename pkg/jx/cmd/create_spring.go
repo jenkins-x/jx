@@ -104,6 +104,10 @@ func (o *CreateSpringOptions) Run() error {
 	if !util.Contains(o.SpringForm.Dependencies, "actuator") {
 		o.SpringForm.Dependencies = append(o.SpringForm.Dependencies, "actuator")
 	}
+	// always add web as the JVM tends to terminate if its not added
+	if !util.Contains(o.SpringForm.Dependencies, "web") {
+		o.SpringForm.Dependencies = append(o.SpringForm.Dependencies, "web")
+	}
 
 	data := &o.SpringForm
 	err = model.CreateSurvey(&o.SpringForm, o.Advanced, o.BatchMode)
