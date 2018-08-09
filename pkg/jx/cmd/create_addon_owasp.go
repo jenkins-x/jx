@@ -17,11 +17,11 @@ import (
 
 var (
 	createAddonOwaspLong = templates.LongDesc(`
-		Creates the Owasp dyanmic security testing addon
+		Creates the Owasp dynamic security testing addon
 `)
 
 	createAddonOwaspExample = templates.Examples(`
-		# Create the kubeless addon in the ` + defaultKubelessNamespace + ` namespace 
+		# Create the owasp addon
 		jx create addon owasp-zap
 	`)
 )
