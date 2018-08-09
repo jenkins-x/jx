@@ -105,8 +105,7 @@ release: check
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
 
 	##### overlayfs2 issue on gke: https://stackoverflow.com/questions/48673513/google-kubernetes-engine-errimagepull-too-many-links ######
-	docker system prune -f
-	docker image prune -a -f
+	docker system prune -a -f
 	#####
 	docker build --ulimit nofile=90000:90000 -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
 	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
