@@ -58,7 +58,7 @@ build: $(GO_DEPENDENCIES) version
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDFLAGS) -o build/$(NAME) cmd/jx/jx.go
 
 test: 
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(PACKAGE_DIRS) -test.v  && echo ALL TESTS PASSED!
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -failfast $(PACKAGE_DIRS) && echo ALL TESTS PASSED!
 
 docker-test:
 	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.10.3 sh -c "cd /go/src/github.com/jenkins-x/jx && make test"
