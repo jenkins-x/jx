@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -18,19 +19,21 @@ func GetConfigmapData(client kubernetes.Interface, name, ns string) (map[string]
 }
 
 func GetCurrentDomain(client kubernetes.Interface, ns string) (string, error) {
-	data, err := GetConfigmapData(client, ConfigMapExposecontroller, ns)
+	data, err := GetConfigmapData(client, ConfigMapIngressConfig, ns)
 	if err != nil {
-		data, err = GetConfigmapData(client, ConfigMapIngressConfig, ns)
+		data, err = GetConfigmapData(client, ConfigMapExposecontroller, ns)
 		if err != nil {
-			return "", err
+			return "", errors.Wrapf(err, "Failed to find ConfigMap in namespace %s for names % and %s", ns, ConfigMapExposecontroller, ConfigMapIngressConfig)
 		}
 	}
 	return extractDomainValue(data)
 }
 
 func extractDomainValue(data map[string]string) (string, error) {
-
-	//TODO change exposecontroller so it supports key/pair configmap as well as yaml file (for backwards compatibility)
+	answer := data["domain"]
+	if answer != "" {
+		return answer, nil
+	}
 	yaml := data["config.yml"]
 	values := strings.Split(yaml, "\n")
 	for _, line := range values {
@@ -39,6 +42,5 @@ func extractDomainValue(data map[string]string) (string, error) {
 			return strings.TrimSpace(pair[1]), nil
 		}
 	}
-
 	return "", fmt.Errorf("failed to find a domain in %s configmap", ConfigMapExposecontroller)
 }
