@@ -64,6 +64,9 @@ const (
 	// ConfigMapExposecontroller the name of the ConfigMap with the Exposecontroller configuration
 	ConfigMapExposecontroller = "exposecontroller"
 
+	// ConfigMapIngressConfig the new name of the ConfigMap with the Exposecontroller configuration
+	ConfigMapIngressConfig = "ingress-config"
+
 	// ConfigMapJenkinsX the name of the ConfigMap with the Jenkins configuration
 	ConfigMapJenkinsX = "jenkins"
 

@@ -8,10 +8,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	Exposecontroller = "exposecontroller"
-)
-
 func GetConfigmapData(client kubernetes.Interface, name, ns string) (map[string]string, error) {
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(name, meta_v1.GetOptions{})
 	if err != nil {
@@ -22,10 +18,12 @@ func GetConfigmapData(client kubernetes.Interface, name, ns string) (map[string]
 }
 
 func GetCurrentDomain(client kubernetes.Interface, ns string) (string, error) {
-
-	data, err := GetConfigmapData(client, Exposecontroller, ns)
+	data, err := GetConfigmapData(client, ConfigMapExposecontroller, ns)
 	if err != nil {
-		return "", err
+		data, err = GetConfigmapData(client, ConfigMapIngressConfig, ns)
+		if err != nil {
+			return "", err
+		}
 	}
 	return extractDomainValue(data)
 }
@@ -42,5 +40,5 @@ func extractDomainValue(data map[string]string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("failed to find a domain in %s configmap", Exposecontroller)
+	return "", fmt.Errorf("failed to find a domain in %s configmap", ConfigMapExposecontroller)
 }
