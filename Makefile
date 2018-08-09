@@ -38,7 +38,7 @@ check: fmt build test
 
 version:
 ifeq (,$(wildcard pkg/version/VERSION))
-TAG := $(shell git fetch --all -q && git describe --abbrev=0 --tags)
+TAG := $(shell git fetch --all -q 2>/dev/null && git describe --abbrev=0 --tags 2>/dev/null)
 ON_EXACT_TAG := $(shell git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null | sed -n 's/^\([^^~]\{1,\}\)\(\^0\)\{0,1\}$$/\1/p')
 VERSION := $(shell [ -z "$(ON_EXACT_TAG)" ] && echo "$(TAG)-dev+$(REV)" | sed 's/^v//' || echo "$(TAG)" | sed 's/^v//' )
 else
@@ -57,8 +57,18 @@ print-version: version
 build: $(GO_DEPENDENCIES) version
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDFLAGS) -o build/$(NAME) cmd/jx/jx.go
 
-test: 
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(PACKAGE_DIRS) -test.v  && echo ALL TESTS PASSED!
+get-test-deps:
+	@$(GO) get github.com/axw/gocov/gocov
+	@$(GO) get -u gopkg.in/matm/v1/gocov-html
+
+test:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast $(PACKAGE_DIRS) && echo ALL TESTS PASSED!
+
+test-report: get-test-deps test
+	@gocov convert cover.out | gocov report
+
+test-report-html: get-test-deps test
+	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 docker-test:
 	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.10.3 sh -c "cd /go/src/github.com/jenkins-x/jx && make test"
@@ -105,8 +115,7 @@ release: check
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
 
 	##### overlayfs2 issue on gke: https://stackoverflow.com/questions/48673513/google-kubernetes-engine-errimagepull-too-many-links ######
-	docker system prune -f
-	docker image prune -a -f
+	docker system prune -a -f
 	#####
 	docker build --ulimit nofile=90000:90000 -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
 	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
@@ -141,7 +150,7 @@ release: check
 		git push origin
 
 clean:
-	rm -rf build release
+	rm -rf build release cover.out cover.html
 
 linux: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
