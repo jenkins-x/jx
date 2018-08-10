@@ -25,7 +25,7 @@ func RegisterAwsCustomDomain(customDomain string, elbAddress string) error {
 	err = svc.ListHostedZonesPages(listZonesInput, func(page *route53.ListHostedZonesOutput, hasNext bool) bool {
 		if page != nil {
 			for _, r := range page.HostedZones {
-				if r != nil && r.Name != nil && *r.Name == customDomain {
+				if r != nil && r.Name != nil && (*r.Name == customDomain || *r.Name == customDomain+".") {
 					hostedZoneId = r.Id
 					return false
 				}
