@@ -708,7 +708,7 @@ func (o *CommonOptions) installTerraform() error {
 	return os.Chmod(fullPath, 0755)
 }
 
-func (o *CommonOptions) getLatestJXVersion() (semver.Version, error) {
+func (o *CommonOptions) GetLatestJXVersion() (semver.Version, error) {
 	return util.GetLatestVersionFromGitHub("jenkins-x", "jx")
 }
 
@@ -1199,7 +1199,7 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 	username, _ := o.getCommandOutput("", "gcloud", "config", "get-value", "core/account")
 
 	if username != "" {
-		return username, nil
+		return GetSafeUsername(username), nil
 	}
 
 	config, _, err := kube.LoadConfig()
@@ -1220,6 +1220,13 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 	username = context.AuthInfo
 
 	return username, nil
+}
+
+func GetSafeUsername(username string) string {
+	if strings.Contains(username, "Your active configuration is") {
+		return strings.Split(username, "\n")[1]
+	}
+	return username
 }
 
 func (o *CommonOptions) installProw() error {

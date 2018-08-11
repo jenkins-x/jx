@@ -33,37 +33,37 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
 			Name:        "Namespace",
-			Type:        "String",
+			Type:        "string",
 			Description: "The namespace used for the environment",
 			JSONPath:    ".spec.namespace",
 		},
 		{
 			Name:        "Kind",
-			Type:        "String",
+			Type:        "string",
 			Description: "The kind of environment",
 			JSONPath:    ".spec.kind",
 		},
 		{
 			Name:        "Promotion Strategy",
-			Type:        "String",
+			Type:        "string",
 			Description: "The strategy used for promoting to this environment",
 			JSONPath:    ".spec.oromotionStrategy",
 		},
 		{
 			Name:        "Order",
-			Type:        "Integer",
+			Type:        "integer",
 			Description: "The order in which environments are automatically promoted",
 			JSONPath:    ".spec.order",
 		},
 		{
 			Name:        "Git URL",
-			Type:        "String",
+			Type:        "string",
 			Description: "The git repository URL for the source of the environment configuration",
 			JSONPath:    ".spec.source.url",
 		},
 		{
 			Name:        "Git Branch",
-			Type:        "String",
+			Type:        "string",
 			Description: "The git branch for the source of the environment configuration",
 			JSONPath:    ".spec.source.ref",
 		},
@@ -112,13 +112,13 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
 			Name:        "Git URL",
-			Type:        "String",
+			Type:        "string",
 			Description: "The URL of the git repository",
 			JSONPath:    ".spec.gitUrl",
 		},
 		{
 			Name:        "Status",
-			Type:        "String",
+			Type:        "string",
 			Description: "The status of the pipeline",
 			JSONPath:    ".spec.status",
 		},
@@ -139,19 +139,19 @@ func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
 			Name:        "Name",
-			Type:        "String",
+			Type:        "string",
 			Description: "The name of the Release",
 			JSONPath:    ".spec.name",
 		},
 		{
 			Name:        "Version",
-			Type:        "String",
+			Type:        "string",
 			Description: "The version number of the Release",
 			JSONPath:    ".spec.version",
 		},
 		{
 			Name:        "Git URL",
-			Type:        "String",
+			Type:        "string",
 			Description: "The URL of the git repository",
 			JSONPath:    ".spec.gitHttpUrl",
 		},
@@ -172,13 +172,13 @@ func RegisterUserCRD(apiClient apiextensionsclientset.Interface) error {
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
 			Name:        "Name",
-			Type:        "String",
+			Type:        "string",
 			Description: "The name of the user",
 			JSONPath:    ".spec.name",
 		},
 		{
 			Name:        "Email",
-			Type:        "String",
+			Type:        "string",
 			Description: "The email address of the user",
 			JSONPath:    ".spec.email",
 		},
@@ -199,13 +199,13 @@ func RegisterTeamCRD(apiClient apiextensionsclientset.Interface) error {
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
 			Name:        "Kind",
-			Type:        "String",
+			Type:        "string",
 			Description: "The kind of Team",
 			JSONPath:    ".spec.kind",
 		},
 		{
 			Name:        "Status",
-			Type:        "String",
+			Type:        "string",
 			Description: "The provision status of the Team",
 			JSONPath:    ".status.provisionStatus",
 		},

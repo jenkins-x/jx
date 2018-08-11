@@ -37,6 +37,7 @@ func BucketExists(projectId string, bucketName string) (bool, error) {
 	}
 	output, err := cmd.RunWithoutRetry()
 	if err != nil {
+		log.Infof("Error checking bucket exists: %s, %s\n", output, err)
 		return false, err
 	}
 	return strings.Contains(output, fullBucketName), nil
@@ -57,8 +58,9 @@ func CreateBucket(projectId string, bucketName string, location string) error {
 		Name: "gsutil",
 		Args: args,
 	}
-	_, err := cmd.RunWithoutRetry()
+	output, err := cmd.RunWithoutRetry()
 	if err != nil {
+		log.Infof("Error creating bucket: %s, %s\n", output, err)
 		return err
 	}
 	return nil
@@ -178,9 +180,59 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 	return keyPath, nil
 }
 
+func GetEnabledApis(projectId string) ([]string,error) {
+	args := []string{"services", "list", "--enabled"}
+
+	if projectId != "" {
+		args = append(args, "--project")
+		args = append(args, projectId)
+	}
+
+	apis := []string{}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+
+	out, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return nil, err
+	}
+
+	lines := strings.Split(string(out), "\n")
+	for _, l := range lines {
+		if strings.Contains(l, "NAME") {
+			continue
+		}
+		fields := strings.Fields(l)
+		apis = append(apis, fields[0])
+	}
+
+	return apis, nil
+}
+
 func EnableApis(projectId string, apis ...string) error {
+	enabledApis, err := GetEnabledApis(projectId)
+	if err != nil {
+		return err
+	}
+
+	toEnableArray := []string{}
+
+	for _, toEnable := range apis {
+		fullName := fmt.Sprintf("%s.googleapis.com", toEnable)
+		if !util.Contains(enabledApis, fullName) {
+			toEnableArray = append(toEnableArray, toEnable)
+		}
+	}
+
+	if len(toEnableArray) == 0 {
+		log.Infof("No apis to enable\n")
+		return nil
+	}
 	args := []string{"services", "enable"}
-	args = append(args, apis...)
+	args = append(args, toEnableArray...)
 
 	if projectId != "" {
 		args = append(args, "--project")
@@ -193,7 +245,7 @@ func EnableApis(projectId string, apis ...string) error {
 		Name: "gcloud",
 		Args: args,
 	}
-	_, err := cmd.RunWithoutRetry()
+	_, err = cmd.RunWithoutRetry()
 	if err != nil {
 		return err
 	}

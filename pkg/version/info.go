@@ -41,6 +41,7 @@ var Map = map[string]string{
 }
 
 const (
+	// VersionPrefix string for setting pre-release etc
 	VersionPrefix = ""
 
 	// ExampleVersion shows an example version in the help
@@ -53,6 +54,7 @@ const (
 	TestVersion = "1.0.1"
 )
 
+// GetVersion gets the current version string
 func GetVersion() string {
 	v := Map["version"]
 	if v == "" {
@@ -61,6 +63,7 @@ func GetVersion() string {
 	return v
 }
 
+// GetSemverVersion returns a semver.Version struct representing the current version
 func GetSemverVersion() (semver.Version, error) {
 	return semver.Make(strings.TrimPrefix(GetVersion(), VersionPrefix))
 }

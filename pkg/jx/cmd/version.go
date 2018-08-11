@@ -152,13 +152,13 @@ func (o *VersionOptions) Run() error {
 	table.Render()
 
 	if !o.NoVersionCheck {
-		return o.versionCheck()
+		return o.VersionCheck()
 	}
 	return nil
 }
 
-func (o *VersionOptions) versionCheck() error {
-	newVersion, err := o.getLatestJXVersion()
+func (o *VersionOptions) VersionCheck() error {
+	newVersion, err := o.GetLatestJXVersion()
 	if err != nil {
 		return err
 	}
@@ -169,6 +169,12 @@ func (o *VersionOptions) versionCheck() error {
 	}
 
 	if newVersion.GT(currentVersion) {
+		// Do not ask to update if we are using a dev build...
+		for _, x := range currentVersion.Pre {
+			if x.VersionStr == "dev" {
+				return nil
+			}
+		}
 		app := util.ColorInfo("jx")
 		log.Warnf("\nA new %s version is available: %s\n", app, util.ColorInfo(newVersion.String()))
 
@@ -177,14 +183,14 @@ func (o *VersionOptions) versionCheck() error {
 		} else {
 			message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
 			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.") {
-				return o.upgradeCli()
+				return o.UpgradeCli()
 			}
 		}
 	}
 	return nil
 }
 
-func (o *VersionOptions) upgradeCli() error {
+func (o *VersionOptions) UpgradeCli() error {
 	options := &UpgradeCLIOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: o.CommonOptions,
