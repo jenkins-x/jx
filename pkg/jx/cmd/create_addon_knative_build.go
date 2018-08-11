@@ -67,6 +67,6 @@ func (o *CreateAddonKnativeBuildOptions) Run() error {
 	}
 
 	log.Infof("\nKnative Build installed\n")
-	log.Infof("To watch a build running use: %s\n", util.ColorInfo("jx logs -f build-name"))
+	log.Infof("To watch a build running use: %s\n", util.ColorInfo("jx logs -k"))
 	return nil
 }
