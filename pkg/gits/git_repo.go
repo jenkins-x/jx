@@ -54,7 +54,7 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 				currentServer := config.CurrentServer
 				if currentServer != "" {
 					for _, s := range config.Servers {
-						if s.Name == currentServer {
+						if s.Name == currentServer || s.URL == currentServer {
 							server = s
 							break
 						}
