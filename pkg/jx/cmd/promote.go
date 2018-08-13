@@ -54,6 +54,7 @@ type PromoteOptions struct {
 	Timeout             string
 	PullRequestPollTime string
 	Filter              string
+	Alias               string
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -97,6 +98,9 @@ var (
 		# e.g. to find a redis chart to install
 		jx promote -f redis
 
+		# To promote a postgres chart using an alias
+		jx promote -f postgres --alias mydb
+
 		# To create or update a Preview Environment please see the 'jx preview' command
 		jx preview
 	`)
@@ -137,6 +141,7 @@ func NewCmdPromote(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Application, optionApplication, "a", "", "The Application to promote")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "The search filter to find charts to promote")
+	cmd.Flags().StringVarP(&options.Alias, "alias", "", "", "The optional alias used in the 'requirements.yaml' file")
 	cmd.Flags().StringVarP(&options.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
@@ -434,7 +439,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 				return err
 			}
 		}
-		requirements.SetAppVersion(app, version, o.HelmRepositoryURL)
+		requirements.SetAppVersion(app, version, o.HelmRepositoryURL, o.Alias)
 		return nil
 	}
 	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
