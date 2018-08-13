@@ -22,6 +22,8 @@ type Interface interface {
 	Teams() TeamInformer
 	// Users returns a UserInformer.
 	Users() UserInformer
+	// Workflows returns a WorkflowInformer.
+	Workflows() WorkflowInformer
 }
 
 type version struct {
@@ -68,4 +70,9 @@ func (v *version) Teams() TeamInformer {
 // Users returns a UserInformer.
 func (v *version) Users() UserInformer {
 	return &userInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Workflows returns a WorkflowInformer.
+func (v *version) Workflows() WorkflowInformer {
+	return &workflowInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

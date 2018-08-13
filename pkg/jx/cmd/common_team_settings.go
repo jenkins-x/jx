@@ -138,6 +138,18 @@ func (o *CommonOptions) registerUserCRD() error {
 	return nil
 }
 
+func (o *CommonOptions) registerWorkflowCRD() error {
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterWorkflowCRD(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Workflow CRD")
+	}
+	return nil
+}
+
 // ModifyTeam lazily creates the team if it does not exist or updates it if it requires a change
 func (o *CommonOptions) ModifyTeam(teamName string, callback func(env *v1.Team) error) error {
 	err := o.registerTeamCRD()

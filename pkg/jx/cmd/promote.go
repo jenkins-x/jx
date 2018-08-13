@@ -53,6 +53,8 @@ type PromoteOptions struct {
 	NoMergePullRequest  bool
 	Timeout             string
 	PullRequestPollTime string
+	Filter              string
+	Alias               string
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -91,6 +93,13 @@ var (
 
 		# Promote a version of the myapp application to production
 		jx promote myapp --version 1.2.3 --env production
+
+		# To search for all the available charts for a given name use -f.
+		# e.g. to find a redis chart to install
+		jx promote -f redis
+
+		# To promote a postgres chart using an alias
+		jx promote -f postgres --alias mydb
 
 		# To create or update a Preview Environment please see the 'jx preview' command
 		jx preview
@@ -131,6 +140,8 @@ func NewCmdPromote(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Application, optionApplication, "a", "", "The Application to promote")
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "The search filter to find charts to promote")
+	cmd.Flags().StringVarP(&options.Alias, "alias", "", "", "The optional alias used in the 'requirements.yaml' file")
 	cmd.Flags().StringVarP(&options.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
@@ -148,8 +159,13 @@ func (o *PromoteOptions) Run() error {
 	if app == "" {
 		args := o.Args
 		if len(args) == 0 {
+			search := o.Filter
 			var err error
-			app, err = o.DiscoverAppName()
+			if search != "" {
+				app, err = o.SearchForChart(search)
+			} else {
+				app, err = o.DiscoverAppName()
+			}
 			if err != nil {
 				return err
 			}
@@ -158,6 +174,29 @@ func (o *PromoteOptions) Run() error {
 		}
 	}
 	o.Application = app
+
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+
+	if o.Environment == "" && !o.BatchMode {
+		names := []string{}
+		m, allEnvNames, err := kube.GetOrderedEnvironments(jxClient, ns)
+		if err != nil {
+			return err
+		}
+		for _, n := range allEnvNames {
+			env := m[n]
+			if env.Spec.Kind == v1.EnvironmentKindTypePermanent {
+				names = append(names, n)
+			}
+		}
+		o.Environment, err = kube.PickEnvironment(names, "")
+		if err != nil {
+			return err
+		}
+	}
 
 	if o.PullRequestPollTime != "" {
 		duration, err := time.ParseDuration(o.PullRequestPollTime)
@@ -199,10 +238,6 @@ func (o *PromoteOptions) Run() error {
 		return err
 	}
 
-	jxClient, ns, err := o.JXClient()
-	if err != nil {
-		return err
-	}
 	o.Activities = jxClient.JenkinsV1().PipelineActivities(ns)
 
 	releaseName := o.ReleaseName
@@ -218,7 +253,13 @@ func (o *PromoteOptions) Run() error {
 		if o.Environment == "" {
 			return util.MissingOption(optionEnvironment)
 		}
-		return fmt.Errorf("Could not find an Environment called %s", o.Environment)
+		env, err := jxClient.JenkinsV1().Environments(ns).Get(o.Environment, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if env == nil {
+			return fmt.Errorf("Could not find an Environment called %s", o.Environment)
+		}
 	}
 	releaseInfo, err := o.Promote(targetNS, env, true)
 	err = o.WaitForPromotion(targetNS, env, releaseInfo)
@@ -398,7 +439,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 				return err
 			}
 		}
-		requirements.SetAppVersion(app, version, o.HelmRepositoryURL)
+		requirements.SetAppVersion(app, version, o.HelmRepositoryURL, o.Alias)
 		return nil
 	}
 	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
@@ -944,4 +985,52 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		}
 	}
 	return nil
+}
+
+func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
+	answer := ""
+	charts, err := o.Helm().SearchCharts(filter)
+	if err != nil {
+		return answer, err
+	}
+	if len(charts) == 0 {
+		return answer, fmt.Errorf("No charts available for search filter: %s", filter)
+	}
+	m := map[string]*helm.ChartSummary{}
+	names := []string{}
+	for i, chart := range charts {
+		text := chart.Name
+		if chart.Description != "" {
+			text = fmt.Sprintf("%-36s: %s", chart.Name, chart.Description)
+		}
+		names = append(names, text)
+		m[text] = &charts[i]
+	}
+	name, err := util.PickName(names, "Pick chart to promote: ")
+	if err != nil {
+		return answer, err
+	}
+	chart := m[name]
+	chartName := chart.Name
+	// TODO now we split the chart into name and repo
+	parts := strings.Split(chartName, "/")
+	if len(parts) != 2 {
+		return answer, fmt.Errorf("Invalid chart name '%s' was expecting single / character separating repo name and chart name", chartName)
+	}
+	repoName := parts[0]
+	appName := parts[1]
+
+	repos, err := o.Helm().ListRepos()
+	if err != nil {
+		return answer, err
+	}
+
+	repoUrl := repos[repoName]
+	if repoUrl == "" {
+		return answer, fmt.Errorf("Failed to find helm chart repo URL for '%s' when possible values are %s", repoName, util.SortedMapKeys(repos))
+
+	}
+	o.Version = chart.ChartVersion
+	o.HelmRepositoryURL = repoUrl
+	return appName, nil
 }
