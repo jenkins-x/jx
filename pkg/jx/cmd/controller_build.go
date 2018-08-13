@@ -44,7 +44,7 @@ func NewCmdControllerBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	cmd := &cobra.Command{
 		Use:   "build",
-		Short: "Runs the buid controller",
+		Short: "Runs the build controller",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

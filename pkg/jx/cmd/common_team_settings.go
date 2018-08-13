@@ -138,6 +138,18 @@ func (o *CommonOptions) registerUserCRD() error {
 	return nil
 }
 
+func (o *CommonOptions) registerPipelineActivityCRD() error {
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterPipelineActivityCRD(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the PipelineActivity CRD")
+	}
+	return nil
+}
+
 func (o *CommonOptions) registerWorkflowCRD() error {
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
 	if err != nil {

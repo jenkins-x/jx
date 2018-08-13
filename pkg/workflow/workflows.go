@@ -55,13 +55,22 @@ func CreateWorkflow(ns string, name string, steps ...v1.WorkflowStep) *v1.Workfl
 }
 
 // CreateWorkflowPromoteStep creates a default Workflow promote step
-func CreateWorkflowPromoteStep(envName string, parallel bool) v1.WorkflowStep {
-	return v1.WorkflowStep{
+func CreateWorkflowPromoteStep(envName string, parallel bool, preconditionSteps ...v1.WorkflowStep) v1.WorkflowStep {
+	answer := v1.WorkflowStep{
 		Kind: v1.WorkflowStepKindTypePromote,
-		Name: "step-promote-" + envName,
 		Promote: &v1.PromoteWorkflowStep{
 			Environment: envName,
 			Parallel:    parallel,
 		},
 	}
+	for _, preconditionStep := range preconditionSteps {
+		promote := preconditionStep.Promote
+		if promote != nil {
+			envName := promote.Environment
+			if envName != "" {
+				answer.Preconditions.Environments = append(answer.Preconditions.Environments, envName)
+			}
+		}
+	}
+	return answer
 }

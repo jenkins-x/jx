@@ -39,6 +39,8 @@ type PipelineActivitySpec struct {
 	LastCommitSHA      string                 `json:"lastCommitSHA,omitempty" protobuf:"bytes,12,opt,name=lastCommitSHA"`
 	LastCommitMessage  string                 `json:"lastCommitMessage,omitempty" protobuf:"bytes,13,opt,name=lastCommitMessage"`
 	LastCommitURL      string                 `json:"lastCommitURL,omitempty" protobuf:"bytes,14,opt,name=lastCommitURL"`
+	Workflow           string                 `json:"workflow,omitempty" protobuf:"bytes,15,opt,name=workflow"`
+	WorkflowStatus     ActivityStatusType     `json:"workflowStatus,omitempty" protobuf:"bytes,4,opt,name=workflowStatus"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity
@@ -154,6 +156,11 @@ const (
 	// ActivityStatusTypeError there is some error with an activity
 	ActivityStatusTypeError ActivityStatusType = "Error"
 )
+
+// IsTerminated returns true if this activity has stopped executing
+func (s ActivityStatusType) IsTerminated() bool {
+	return s == ActivityStatusTypeSucceeded || s == ActivityStatusTypeFailed || s == ActivityStatusTypeError
+}
 
 func (s ActivityStatusType) String() string {
 	return string(s)
