@@ -29,10 +29,10 @@ local           http://127.0.0.1:8879/charts
 jenkins-x       https://chartmuseum.build.cd.jenkins-x.io
 	`
 const searchVersionOutput = `
-NAME                                    CHART VERSION   APP VERSION     DESCRIPTION
-jenkins-x/jenkins-x-platform            0.0.1481                        Jenkins X 
-jenkins-x/jenkins-x-platform            0.0.1480                        Jenkins X 
-jenkins-x/jenkins-x-platform            0.0.1479                        Jenkins X 
+NAME                            		CHART VERSION	APP VERSION		DESCRIPTION
+jenkins-x/jenkins-x-platform        	0.0.1481						Jenkins X 
+jenkins-x/jenkins-x-platform        	0.0.1480						Jenkins X 
+jenkins-x/jenkins-x-platform        	0.0.1479 						Jenkins X 
 `
 const listReleasesOutput = `
 NAME                            REVISION        UPDATED                         STATUS          CHART                           NAMESPACE
