@@ -38,14 +38,23 @@ var bitbucketRouter = util.Router{
 	"/repositories/test-user/test-repo/pullrequests": util.MethodMap{
 		"POST": "pullrequests.test-repo.json",
 	},
+	"/repositories/test-org/test-repo/pullrequests": util.MethodMap{
+		"POST": "pullrequests.test-org.test-repo.json",
+	},
 	"/repositories/test-user/test-repo/pullrequests/3/": util.MethodMap{
 		"GET": "pullrequests.test-repo-closed.json",
+	},
+	"/repositories/test-org/test-repo/pullrequests/4/": util.MethodMap{
+		"GET": "pullrequests.test-org.test-repo-closed.json",
 	},
 	"/repositories/test-user/test-repo/pullrequests/1/commits": util.MethodMap{
 		"GET": "pullrequests.test-user.test-repo.1.json",
 	},
 	"/repositories/test-user/test-repo/pullrequests/3/commits": util.MethodMap{
 		"GET": "pullrequests.test-repo.commits.json",
+	},
+	"/repositories/test-org/test-repo/pullrequests/4/commits": util.MethodMap{
+		"GET": "pullrequests.test-org.test-repo.commits.json",
 	},
 	"/repositories/test-user/test-repo/commit/5c8afc5/statuses": util.MethodMap{
 		"GET": "repos.test-repo.statuses.json",
@@ -197,6 +206,29 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreatePullRequest() {
 	suite.Require().NotNil(pr)
 	suite.Require().Nil(err)
 	suite.Require().Equal(*pr.State, "OPEN")
+	suite.Require().Equal(int(*pr.Number), 3)
+	suite.Require().Equal(pr.Owner, "test-user")
+	suite.Require().Equal(pr.Repo, "test-repo")
+	suite.Require().Equal(pr.Author.Login, "test-user")
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestCreateOrgPullRequest() {
+	args := GitPullRequestArguments{
+		GitRepositoryInfo: &GitRepositoryInfo{Name: "test-repo", Organisation: "test-org"},
+		Head:              "83777f6",
+		Base:              "77d0a923f297",
+		Title:             "Test Pull Request",
+	}
+
+	pr, err := suite.provider.CreatePullRequest(&args)
+
+	suite.Require().NotNil(pr)
+	suite.Require().Nil(err)
+	suite.Require().Equal(*pr.State, "OPEN")
+	suite.Require().Equal(int(*pr.Number), 4)
+	suite.Require().Equal(pr.Owner, "test-org")
+	suite.Require().Equal(pr.Repo, "test-repo")
+	suite.Require().Equal(pr.Author.Login, "test-user")
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestUpdatePullRequestStatus() {
@@ -204,6 +236,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestUpdatePullRequestStatus() {
 	state := "OPEN"
 
 	pr := &GitPullRequest{
+		Owner:  "test-user",
 		Repo:   "test-repo",
 		Number: &number,
 		State:  &state,
@@ -211,7 +244,35 @@ func (suite *BitbucketCloudProviderTestSuite) TestUpdatePullRequestStatus() {
 
 	err := suite.provider.UpdatePullRequestStatus(pr)
 
+	suite.Require().NotNil(pr)
 	suite.Require().Nil(err)
+	suite.Require().Equal(*pr.State, "DECLINED")
+	suite.Require().Equal(int(*pr.Number), 3)
+	suite.Require().Equal(pr.Owner, "test-user")
+	suite.Require().Equal(pr.Repo, "test-repo")
+	suite.Require().Equal(pr.Author.Login, "test-user")
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestUpdateOrgPullRequestStatus() {
+	number := 4
+	state := "OPEN"
+
+	pr := &GitPullRequest{
+		Owner:  "test-org",
+		Repo:   "test-repo",
+		Number: &number,
+		State:  &state,
+	}
+
+	err := suite.provider.UpdatePullRequestStatus(pr)
+
+	suite.Require().NotNil(pr)
+	suite.Require().Nil(err)
+	suite.Require().Equal(*pr.State, "DECLINED")
+	suite.Require().Equal(int(*pr.Number), 4)
+	suite.Require().Equal(pr.Owner, "test-org")
+	suite.Require().Equal(pr.Repo, "test-repo")
+	suite.Require().Equal(pr.Author.Login, "test-user")
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestGetPullRequest() {
