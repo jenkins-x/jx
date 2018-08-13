@@ -278,7 +278,7 @@ func (h *HelmCLI) SearchChartVersions(chart string) ([]string, error) {
 		return nil, errors.Wrapf(err, "failed to search chart '%s'", chart)
 	}
 	versions := []string{}
-	lines := strings.Split(output, "\n")
+	lines := strings.Split(strings.TrimSpace(output), "\n")
 	for _, line := range lines[1:] {
 		fields := strings.Fields(line)
 		if len(fields) > 1 {
