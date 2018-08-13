@@ -15,6 +15,7 @@ type PipelineActivityKey struct {
 	Name              string
 	Pipeline          string
 	Build             string
+	Version           string
 	BuildURL          string
 	BuildLogsURL      string
 	ReleaseNotesURL   string
@@ -82,6 +83,9 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 	}
 	if k.LastCommitURL != "" && spec.LastCommitURL == "" {
 		spec.LastCommitURL = k.LastCommitURL
+	}
+	if k.Version != "" && spec.Version == "" {
+		spec.Version = k.Version
 	}
 	gi := k.GitInfo
 	if gi != nil {
