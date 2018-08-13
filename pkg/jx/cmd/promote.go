@@ -989,7 +989,7 @@ func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 		return answer, err
 	}
 	if len(charts) == 0 {
-		return answer, fmt.Errorf("No charts available for search filter: ", filter)
+		return answer, fmt.Errorf("No charts available for search filter: %s", filter)
 	}
 	m := map[string]*helm.ChartSummary{}
 	names := []string{}
