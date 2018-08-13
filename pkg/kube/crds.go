@@ -213,6 +213,20 @@ func RegisterTeamCRD(apiClient apiextensionsclientset.Interface) error {
 	return registerCRD(apiClient, name, names, columns)
 }
 
+// RegisterWorkflowCRD ensures that the CRD is registered for Environments
+func RegisterWorkflowCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "workflows." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "Workflow",
+		ListKind:   "WorkflowList",
+		Plural:     "workflows",
+		Singular:   "workflow",
+		ShortNames: []string{"flow"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{}
+	return registerCRD(apiClient, name, names, columns)
+}
+
 func registerCRD(apiClient apiextensionsclientset.Interface, name string, names *v1beta1.CustomResourceDefinitionNames, columns []v1beta1.CustomResourceColumnDefinition) error {
 	crd := &v1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{

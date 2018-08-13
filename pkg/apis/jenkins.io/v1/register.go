@@ -53,6 +53,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&TeamList{},
 		&User{},
 		&UserList{},
+		&Workflow{},
+		&WorkflowList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

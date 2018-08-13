@@ -8,6 +8,13 @@ const (
 	V3         = 3
 )
 
+type ChartSummary struct {
+	Name         string
+	ChartVersion string
+	AppVersion   string
+	Description  string
+}
+
 // Helmer defines common helm actions used within Jenkins X
 type Helmer interface {
 	SetCWD(dir string)
@@ -34,4 +41,5 @@ type Helmer interface {
 	StatusReleases() (map[string]string, error)
 	Lint() (string, error)
 	Version(tls bool) (string, error)
+	SearchCharts(filter string) ([]ChartSummary, error)
 }
