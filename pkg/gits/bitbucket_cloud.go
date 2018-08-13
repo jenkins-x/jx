@@ -352,8 +352,9 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 
 	newPR := &GitPullRequest{
 		URL:    pr.Links.Html.Href,
-		Owner:  pr.Author.Username,
-		Repo:   pr.Destination.Repository.FullName,
+		Author: b.UserInfo(pr.Author.Username),
+		Owner:  strings.Split(pr.Destination.Repository.FullName, "/")[0],
+		Repo:   pr.Destination.Repository.Name,
 		Number: prID,
 		State:  &pr.State,
 	}
@@ -366,8 +367,8 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	prID := int32(*pr.Number)
 	bitbucketPR, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 		b.Context,
-		b.Username,
-		strings.TrimPrefix(pr.Repo, pr.Owner+"/"),
+		pr.Owner,
+		pr.Repo,
 		prID,
 	)
 
@@ -378,9 +379,7 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	pr.State = &bitbucketPR.State
 	pr.Title = bitbucketPR.Title
 	pr.Body = bitbucketPR.Summary.Raw
-	pr.Author = &GitUser{
-		Login: bitbucketPR.Author.Username,
-	}
+	pr.Author = b.UserInfo(bitbucketPR.Author.Username)
 
 	if bitbucketPR.MergeCommit != nil {
 		pr.MergeCommitSHA = &bitbucketPR.MergeCommit.Hash
@@ -394,9 +393,9 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 
 	commits, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdCommitsGet(
 		b.Context,
-		b.Username,
+		pr.Owner,
 		strconv.FormatInt(int64(prID), 10),
-		strings.TrimPrefix(pr.Repo, pr.Owner+"/"),
+		pr.Repo,
 	)
 
 	if err != nil {
@@ -448,8 +447,8 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepos
 
 	return &GitPullRequest{
 		URL:    pr.Links.Html.Href,
-		Owner:  pr.Author.Username,
-		Repo:   pr.Destination.Repository.FullName,
+		Owner:  strings.Split(pr.Destination.Repository.FullName, "/")[0],
+		Repo:   pr.Destination.Repository.Name,
 		Number: &number,
 		State:  &pr.State,
 		Author: author,
@@ -544,8 +543,8 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 	for {
 		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
 			b.Context,
-			b.Username,
-			strings.TrimPrefix(pr.Repo, pr.Owner+"/"),
+			pr.Owner,
+			pr.Repo,
 			pr.LastCommitSha,
 		)
 
@@ -580,7 +579,7 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
 			b.Context,
 			org,
-			strings.TrimPrefix(repo, org+"/"),
+			repo,
 			sha,
 		)
 
@@ -623,9 +622,9 @@ func (b *BitbucketCloudProvider) MergePullRequest(pr *GitPullRequest, message st
 
 	_, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdMergePost(
 		b.Context,
-		b.Username,
+		pr.Owner,
 		strconv.FormatInt(int64(*pr.Number), 10),
-		strings.TrimPrefix(pr.Repo, pr.Owner+"/"),
+		pr.Repo,
 		options,
 	)
 
