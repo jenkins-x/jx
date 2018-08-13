@@ -109,10 +109,10 @@ func (h *HelmCLI) ListRepos() (map[string]string, error) {
 		return nil, errors.Wrap(err, "failed to list repositories")
 	}
 	repos := map[string]string{}
-	lines := strings.Split(output, "\n")
+	lines := strings.Split(strings.TrimSpace(output), "\n")
 	for _, line := range lines[1:] {
 		line = strings.TrimSpace(line)
-		fields := strings.Split(line, "\t")
+		fields := strings.Fields(line)
 		if len(fields) > 1 {
 			repos[strings.TrimSpace(fields[0])] = fields[1]
 		} else if len(fields) > 0 {
