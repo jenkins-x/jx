@@ -298,6 +298,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestPullRequestCommits() {
 func (suite *BitbucketCloudProviderTestSuite) TestPullRequestLastCommitStatus() {
 
 	pr := &GitPullRequest{
+		Owner:         "test-user",
 		Repo:          "test-repo",
 		LastCommitSha: "5c8afc5",
 	}
@@ -328,7 +329,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestListCommitStatus() {
 	statuses, err := suite.provider.ListCommitStatus("test-user", "test-repo", "5c8afc5")
 	suite.testStatuses(statuses, err)
 
-	statuses, err = suite.provider.ListCommitStatus("test-user", "test-user/test-repo", "5c8afc5")
+	statuses, err = suite.provider.ListCommitStatus("test-user", "test-repo", "5c8afc5")
 	suite.testStatuses(statuses, err)
 }
 
@@ -336,6 +337,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestMergePullRequest() {
 
 	id := 1
 	pr := &GitPullRequest{
+		Owner:  "test-user",
 		Repo:   "test-repo",
 		Number: &id,
 	}
