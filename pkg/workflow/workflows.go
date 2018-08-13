@@ -17,13 +17,19 @@ func GetWorkflow(name string, jxClient versioned.Interface, ns string) (*v1.Work
 	if err == nil || name != DefaultWorkflowName {
 		return workflow, err
 	}
+	return CreateDefaultWorkflow(jxClient, ns)
+}
+
+// CreateDefaultWorkflow creates the default workflow if none is provided by just chaining the Auto enviornments together
+// sequentially
+func CreateDefaultWorkflow(jxClient versioned.Interface, ns string) (*v1.Workflow, error) {
 	m, names, err := kube.GetOrderedEnvironments(jxClient, ns)
 	if err != nil {
 		return nil, err
 	}
 
 	// lets create a default workflow
-	workflow = &v1.Workflow{
+	workflow := &v1.Workflow{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      DefaultWorkflowName,
 			Namespace: ns,

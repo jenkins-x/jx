@@ -2,13 +2,16 @@ package cmd
 
 import (
 	"io"
+	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -88,7 +91,7 @@ func (o *ControllerWorkflowOptions) Run() error {
 	log.Infof("Watching for PipelineActivity resources in namespace %s\n", util.ColorInfo(ns))
 	workflow := &v1.Workflow{}
 	activity := &v1.PipelineActivity{}
-	workflowListWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "pipelineactivities", ns, fields.Everything())
+	workflowListWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "workflows", ns, fields.Everything())
 	kube.SortListWatchByName(workflowListWatch)
 	_, workflowController := cache.NewInformer(
 		workflowListWatch,
@@ -197,20 +200,50 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 	workflowName := pipeline.Spec.Workflow
 	version := pipeline.Spec.Version
 	repoName := pipeline.Spec.GitRepository
+	pipelineName := pipeline.Spec.Pipeline
+	build := pipeline.Spec.Build
+
+	paths := strings.Split(pipelineName, "/")
+	branch := paths[len(paths)-1]
+	if repoName == "" && len(paths) > 1 {
+		repoName = paths[len(paths)-2]
+	}
+
 	log.Infof("Processing pipeline %s repo %s version %s with workflow %s and status %s\n", pipeline.Name, repoName, version, workflowName, string(pipeline.Spec.WorkflowStatus))
 
-	if workflowName != "" && repoName != "" && version != "" && !pipeline.Spec.WorkflowStatus.IsTerminated() {
-		workflow := o.workflowMap[workflowName]
+	if workflowName == "" {
+		workflowName = "default"
+	}
+	if repoName == "" || version == "" || build == "" || pipelineName == "" {
+		log.Infof("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
+		return
+	}
+	if !pipeline.Spec.WorkflowStatus.IsTerminated() {
+		flow := o.workflowMap[workflowName]
+		if flow == nil && workflowName == "default" {
+			var err error
+			flow, err = workflow.CreateDefaultWorkflow(jxClient, ns)
+			if err != nil {
+				log.Warnf("Cannot create default Workflow: %s\n", err)
+				return
+			}
 
-		if workflow == nil {
+		}
+
+		if flow == nil {
 			log.Warnf("Cannot process pipeline %s due to workflow name %s not existing\n", pipeline.Name, workflowName)
+			return
+		}
+
+		if !o.isReleaseBranch(branch) {
+			log.Infof("Ignoring branch %s\n", branch)
 			return
 		}
 
 		// lets walk the Workflow spec and see if we need to trigger any PRs or move the PipelineActivity forward
 		promoteStatusMap := createPromoteStatus(pipeline)
 
-		for _, step := range workflow.Spec.Steps {
+		for _, step := range flow.Spec.Steps {
 			promote := step.Promote
 			if promote != nil {
 				envName := promote.Environment
@@ -218,15 +251,18 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 					status := promoteStatusMap[envName]
 					if status == nil || status.PullRequest == nil || status.PullRequest.PullRequestURL == "" {
 						// can we generate a PR now?
-						if canExecuteStep(workflow, pipeline, &step, promoteStatusMap) {
+						if canExecuteStep(flow, pipeline, &step, promoteStatusMap) {
 							log.Infof("Creating PR for environment %s\n", envName)
 							po := &PromoteOptions{
-								Application: repoName,
-								Environment: envName,
-								Pipeline:    pipeline.Spec.Pipeline,
-								Build:       pipeline.Spec.Build,
-								Version:     version,
-								NoPoll:      true,
+								Application:       repoName,
+								Environment:       envName,
+								Pipeline:          pipelineName,
+								Build:             build,
+								Version:           version,
+								NoPoll:            true,
+								IgnoreLocalFiles:  true,
+								HelmRepositoryURL: helm.DefaultHelmRepositoryURL,
+								LocalHelmRepoName: kube.LocalHelmRepoName,
 							}
 							po.CommonOptions = o.CommonOptions
 							po.BatchMode = true
@@ -322,4 +358,10 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 			GitInfo:           gitInfo,
 		},
 	}
+}
+
+func (o *ControllerWorkflowOptions) isReleaseBranch(branchName string) bool {
+	// TODO look in TeamSettings for a list of allowed release branch patterns
+	return branchName == "master"
+
 }

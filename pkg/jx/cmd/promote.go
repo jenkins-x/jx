@@ -53,6 +53,7 @@ type PromoteOptions struct {
 	AllAutomatic        bool
 	NoMergePullRequest  bool
 	NoPoll              bool
+	IgnoreLocalFiles    bool
 	Timeout             string
 	PullRequestPollTime string
 	Filter              string
@@ -155,6 +156,7 @@ func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
 	cmd.Flags().BoolVarP(&options.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
 	cmd.Flags().BoolVarP(&options.NoPoll, "no-poll", "", false, "Disables polling for Pull Request or Pipeline status")
+	cmd.Flags().BoolVarP(&options.IgnoreLocalFiles, "ignore-local-file", "", false, "Ignores the local file system when deducing the git repository")
 }
 
 // Run implements this command
@@ -744,25 +746,29 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	build := o.Build
 	buildURL := os.Getenv("BUILD_URL")
 	buildLogsURL := os.Getenv("BUILD_LOG_URL")
-	gitInfo, err := o.Git().Info("")
 	releaseNotesURL := ""
-	releaseName := o.ReleaseName
-	if o.releaseResource == nil && releaseName != "" {
-		jxClient, _, err := o.JXClient()
-		if err == nil && jxClient != nil {
-			release, err := jxClient.JenkinsV1().Releases(env.Spec.Namespace).Get(releaseName, metav1.GetOptions{})
-			if err == nil && release != nil {
-				o.releaseResource = release
+	gitInfo := o.GitInfo
+	if !o.IgnoreLocalFiles {
+		var err error
+		gitInfo, err = o.Git().Info("")
+		releaseName := o.ReleaseName
+		if o.releaseResource == nil && releaseName != "" {
+			jxClient, _, err := o.JXClient()
+			if err == nil && jxClient != nil {
+				release, err := jxClient.JenkinsV1().Releases(env.Spec.Namespace).Get(releaseName, metav1.GetOptions{})
+				if err == nil && release != nil {
+					o.releaseResource = release
+				}
 			}
 		}
-	}
-	if o.releaseResource != nil {
-		releaseNotesURL = o.releaseResource.Spec.ReleaseNotesURL
-	}
-	if err != nil {
-		log.Warnf("Could not discover the git repository info %s\n", err)
-	} else {
-		o.GitInfo = gitInfo
+		if o.releaseResource != nil {
+			releaseNotesURL = o.releaseResource.Spec.ReleaseNotesURL
+		}
+		if err != nil {
+			log.Warnf("Could not discover the git repository info %s\n", err)
+		} else {
+			o.GitInfo = gitInfo
+		}
 	}
 	if pipeline == "" {
 		pipeline, build = o.getPipelineName(gitInfo, pipeline, build)
