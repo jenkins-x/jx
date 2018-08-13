@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func TestDefaultWorkflow(t *testing.T) {
+func TestGetWorkflow(t *testing.T) {
 	o := &GetWorkflowOptions{}
 
 	staging := kube.NewPermanentEnvironment("staging")
@@ -20,6 +20,7 @@ func TestDefaultWorkflow(t *testing.T) {
 	staging.Spec.Order = 100
 	production.Spec.Order = 200
 
+	myFlowName := "myflow"
 	ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
@@ -27,6 +28,12 @@ func TestDefaultWorkflow(t *testing.T) {
 			production,
 			kube.NewPreviewEnvironment("jx-jstrachan-demo96-pr-1"),
 			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
+			workflow.CreateWorkflow("jx", myFlowName,
+				workflow.CreateWorkflowPromoteStep("a", false),
+				workflow.CreateWorkflowPromoteStep("b", true),
+				workflow.CreateWorkflowPromoteStep("c", true),
+				workflow.CreateWorkflowPromoteStep("d", false),
+			),
 		},
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, ""),
@@ -49,6 +56,10 @@ func TestDefaultWorkflow(t *testing.T) {
 			}
 		}
 	}
+
+	o.Name = myFlowName
+	err = o.Run()
+	assert.NoError(t, err)
 }
 
 func assertPromoteStep(t *testing.T, step *v1.WorkflowStep, expectedEnvironment string, expectedParallel bool) {

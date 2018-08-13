@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -105,11 +106,37 @@ func (o *GetWorkflowOptions) getWorkflow(name string, jxClient versioned.Interfa
 	}
 
 	log.Infof("Workflow: %s\n", workflow.Name)
+	lines := []*StepSummary{}
+	var lastSummary *StepSummary
 	for _, step := range workflow.Spec.Steps {
 		promote := step.Promote
 		if promote != nil {
-			log.Infof("promote to %s\n", promote.Environment)
+			if !promote.Parallel {
+				lastSummary = nil
+			}
+			if lastSummary == nil {
+				lastSummary = &StepSummary{
+					Action: "promote",
+					// Resources: []string{},
+				}
+				lines = append(lines, lastSummary)
+			}
+			lastSummary.Resources = append(lastSummary.Resources, promote.Environment)
+			if !promote.Parallel {
+				lastSummary = nil
+			}
 		}
 	}
+	for i, summary := range lines {
+		if i > 0 {
+			log.Info("    |\n")
+		}
+		log.Infof("%s to %s\n", summary.Action, strings.Join(summary.Resources, " + "))
+	}
 	return nil
+}
+
+type StepSummary struct {
+	Action    string
+	Resources []string
 }
