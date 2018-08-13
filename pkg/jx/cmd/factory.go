@@ -250,7 +250,7 @@ func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.IsInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindAddon, f.IsInCDPIpeline())
 	}
 	return authConfigSvc, err
 }
