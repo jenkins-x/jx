@@ -442,7 +442,7 @@ func (o *StepChangelogOptions) Run() error {
 				LastCommitSHA:     lastCommitSha,
 				LastCommitMessage: lastCommitMessage,
 				LastCommitURL:     lastCommitURL,
-				Version:           version,
+				Version:           strings.TrimPrefix(version, "v"),
 			},
 		}
 		a, created, err := key.GetOrCreate(activities)
