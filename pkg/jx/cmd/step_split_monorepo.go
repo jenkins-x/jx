@@ -331,7 +331,7 @@ func (o *CommonOptions) createGitProviderForURLWithoutKind(gitUrl string) (gits.
 	if err != nil {
 		return nil, gitInfo, err
 	}
-	gitProvider, err := gits.CreateProviderForURL(authConfigSvc, gitKind, gitUrl, o.Git())
+	gitProvider, err := gits.CreateProviderForURL(authConfigSvc, gitKind, gitInfo.HostURL(), o.Git())
 	return gitProvider, gitInfo, err
 }
 

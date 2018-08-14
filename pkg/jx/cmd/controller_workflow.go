@@ -29,15 +29,21 @@ import (
 type ControllerWorkflowOptions struct {
 	ControllerOptions
 
-	Namespace          string
-	NoWatch            bool
-	NoMergePullRequest bool
-	LocalHelmRepoName  string
-	FakePullRequests   CreateEnvPullRequestFn
-	FakeGitProvider    *gits.FakeProvider
+	Namespace           string
+	NoWatch             bool
+	NoMergePullRequest  bool
+	Verbose             bool
+	LocalHelmRepoName   string
+	PullRequestPollTime string
 
-	workflowMap map[string]*v1.Workflow
-	pipelineMap map[string]*v1.PipelineActivity
+	// testing
+	FakePullRequests CreateEnvPullRequestFn
+	FakeGitProvider  *gits.FakeProvider
+
+	// calculated fields
+	PullRequestPollDuration *time.Duration
+	workflowMap             map[string]*v1.Workflow
+	pipelineMap             map[string]*v1.PipelineActivity
 }
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which
@@ -68,6 +74,7 @@ func NewCmdControllerWorkflow(f Factory, out io.Writer, errOut io.Writer) *cobra
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().BoolVarP(&options.NoWatch, "no-watch", "", false, "Disable watch so just performs any delta processes on pending workflows")
+	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	return cmd
 }
 
@@ -80,6 +87,14 @@ func (o *ControllerWorkflowOptions) Run() error {
 	err = o.registerWorkflowCRD()
 	if err != nil {
 		return err
+	}
+
+	if o.PullRequestPollTime != "" {
+		duration, err := time.ParseDuration(o.PullRequestPollTime)
+		if err != nil {
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
+		}
+		o.PullRequestPollDuration = &duration
 	}
 
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
@@ -142,6 +157,16 @@ func (o *ControllerWorkflowOptions) Run() error {
 	)
 
 	go pipelineController.Run(stop)
+
+	ticker := time.NewTicker(*o.PullRequestPollDuration)
+	go func() {
+		for t := range ticker.C {
+			if o.Verbose {
+				log.Infof("Polling to see if any PRs have merged: %v\n", t)
+			}
+			o.checkPullRequests(jxClient, ns)
+		}
+	}()
 
 	// Wait forever
 	select {}
@@ -215,13 +240,17 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 	pipelineName := pipeline.Spec.Pipeline
 	build := pipeline.Spec.Build
 
-	log.Infof("Processing pipeline %s repo %s version %s with workflow %s and status %s\n", pipeline.Name, repoName, version, workflowName, string(pipeline.Spec.WorkflowStatus))
+	if o.Verbose {
+		log.Infof("Processing pipeline %s repo %s version %s with workflow %s and status %s\n", pipeline.Name, repoName, version, workflowName, string(pipeline.Spec.WorkflowStatus))
+	}
 
 	if workflowName == "" {
 		workflowName = "default"
 	}
 	if repoName == "" || version == "" || build == "" || pipelineName == "" {
-		log.Infof("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
+		if o.Verbose {
+			log.Infof("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
+		}
 		o.removePipelineActivity(pipeline)
 		return
 	}
@@ -265,7 +294,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 					if status == nil || status.PullRequest == nil || status.PullRequest.PullRequestURL == "" {
 						// can we generate a PR now?
 						if canExecuteStep(flow, pipeline, &step, promoteStatusMap, envName) {
-							log.Infof("Creating PR for environment %s\n", envName)
+							log.Infof("Creating PR for environment %s from PipelineActivity %s\n", envName, pipeline.Name)
 							po := o.createPromoteOptions(repoName, envName, pipelineName, build, version)
 
 							err := po.Run()
@@ -311,6 +340,32 @@ func (o *ControllerWorkflowOptions) createPromoteOptionsFromActivity(pipeline *v
 	return o.createPromoteOptions(repoName, envName, pipelineName, build, version)
 }
 
+func (o *ControllerWorkflowOptions) createGitProviderForPR(prURL string) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
+	// lets remove the id
+	idx := strings.LastIndex(prURL, "/")
+	if idx <= 0 {
+		return nil, nil, fmt.Errorf("No / in URL: %s", prURL)
+	}
+	gitUrl := prURL[0:idx]
+	idx = strings.LastIndex(gitUrl, "/")
+	if idx <= 0 {
+		return nil, nil, fmt.Errorf("No / in URL: %s", gitUrl)
+	}
+	gitUrl = gitUrl[0:idx] + ".git"
+	if o.FakeGitProvider != nil {
+		gitInfo, err := gits.ParseGitURL(gitUrl)
+		if err != nil {
+			return nil, gitInfo, err
+		}
+		return o.FakeGitProvider, gitInfo, nil
+	}
+	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
+	if err != nil {
+		return answer, gitInfo, errors.Wrapf(err, "Failed for git URL %s", gitUrl)
+	}
+	return answer, gitInfo, nil
+}
+
 func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActivity) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
 	gitUrl := activity.Spec.GitURL
 	if gitUrl == "" {
@@ -344,17 +399,22 @@ func (o *ControllerWorkflowOptions) checkPullRequests(jxClient versioned.Interfa
 // checkPullRequest polls the pending PipelineActivity resources to see if the
 // PR has merged or the pipeline on master has completed
 func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
+	if !o.isReleaseBranch(activity.BranchName()) {
+		return
+	}
+
 	for _, step := range activity.Spec.Steps {
 		promote := step.Promote
-		if promote == nil {
+		if promote == nil || promote.Status.IsTerminated() {
 			continue
 		}
 		envName := promote.Environment
 		pullRequestStep := promote.PullRequest
-		if pullRequestStep == nil || pullRequestStep.PullRequestURL == "" || envName == "" {
+		prURL := pullRequestStep.PullRequestURL
+		if pullRequestStep == nil || prURL == "" || envName == "" {
 			continue
 		}
-		gitProvider, gitInfo, err := o.createGitProvider(activity)
+		gitProvider, gitInfo, err := o.createGitProviderForPR(prURL)
 		if err != nil {
 			log.Warnf("Failed to create git Provider: %s", err)
 			return
@@ -362,15 +422,17 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 		if gitProvider == nil || gitInfo == nil {
 			return
 		}
-		prNumber, err := pullRequestURLToNumber(pullRequestStep.PullRequestURL)
+		prNumber, err := pullRequestURLToNumber(prURL)
 		if err != nil {
 			log.Warnf("Failed to get PR number: %s", err)
 			return
 		}
 		pr, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNumber)
 		if err != nil {
-			log.Warnf("Failed to query the Pull Request status for repo %s PR %d: %s", gitInfo.HttpsURL(), prNumber, err)
+			log.Warnf("Failed to query the Pull Request status on pipeline %s for repo %s PR %d for PR %s: %s", activity.Name, gitInfo.HttpsURL(), prNumber, prURL, err)
 		} else {
+			log.Infof("Pipeline %s promote Environment %s has PR %d\n", activity.Name, envName, prURL)
+
 			po := o.createPromoteOptionsFromActivity(activity, envName)
 
 			if pr.Merged != nil && *pr.Merged {
@@ -436,13 +498,24 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 									}
 								}
 								if succeeded {
-									log.Infoln("Merge status checks all passed so the promotion worked!")
+									gitURL := activity.Spec.GitURL
+									if gitURL == "" {
+										log.Warnf("No git URL for PipelineActivity %s so cannotcomment on issues\n", activity.Name)
+										return
+									}
+									gitInfo, err := gits.ParseGitURL(gitURL)
+									if err != nil {
+										log.Warnf("Failed to parse git URL %s for PipelineActivity %s so cannot comment on issues: %s", gitURL, activity.Name, err)
+										return
+									}
+									po.GitInfo = gitInfo
 									err = po.commentOnIssues(ns, env, promoteKey)
-									if err == nil {
+									if err != nil {
 										log.Warnf("Failed to comment on issues: %s", err)
+										return
 									}
 									err = promoteKey.OnPromoteUpdate(activities, kube.CompletePromotionUpdate)
-									if err == nil {
+									if err != nil {
 										log.Warnf("Failed to update PipelineActivity on promotion completion: %s", err)
 									}
 									return
