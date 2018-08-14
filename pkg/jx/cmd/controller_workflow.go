@@ -32,8 +32,9 @@ type ControllerWorkflowOptions struct {
 	Namespace          string
 	NoWatch            bool
 	NoMergePullRequest bool
-	FakePullRequests   CreateEnvPullRequestFn
 	LocalHelmRepoName  string
+	FakePullRequests   CreateEnvPullRequestFn
+	FakeGitProvider    *gits.FakeProvider
 
 	workflowMap map[string]*v1.Workflow
 	pipelineMap map[string]*v1.PipelineActivity
@@ -168,7 +169,7 @@ func (o *ControllerWorkflowOptions) updatePipelinesWithoutWatching(jxClient vers
 func (o *ControllerWorkflowOptions) onWorkflowObj(obj interface{}, jxClient versioned.Interface, ns string) {
 	workflow, ok := obj.(*v1.Workflow)
 	if !ok {
-		log.Infof("Object is not a Workflow %#v\n", obj)
+		log.Warnf("Object is not a Workflow %#v\n", obj)
 		return
 	}
 	if workflow != nil {
@@ -179,7 +180,7 @@ func (o *ControllerWorkflowOptions) onWorkflowObj(obj interface{}, jxClient vers
 func (o *ControllerWorkflowOptions) deleteWorkflowObjb(obj interface{}, jxClient versioned.Interface, ns string) {
 	workflow, ok := obj.(*v1.Workflow)
 	if !ok {
-		log.Infof("Object is not a Workflow %#v\n", obj)
+		log.Warnf("Object is not a Workflow %#v\n", obj)
 		return
 	}
 	if workflow != nil {
@@ -198,7 +199,7 @@ func (o *ControllerWorkflowOptions) onWorkflowDelete(workflow *v1.Workflow, jxCl
 func (o *ControllerWorkflowOptions) onActivityObj(obj interface{}, jxClient versioned.Interface, ns string) {
 	pipeline, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		log.Infof("Object is not a PipelineActivity %#v\n", obj)
+		log.Warnf("Object is not a PipelineActivity %#v\n", obj)
 		return
 	}
 	if pipeline != nil {
@@ -263,7 +264,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 					status := promoteStatusMap[envName]
 					if status == nil || status.PullRequest == nil || status.PullRequest.PullRequestURL == "" {
 						// can we generate a PR now?
-						if canExecuteStep(flow, pipeline, &step, promoteStatusMap) {
+						if canExecuteStep(flow, pipeline, &step, promoteStatusMap, envName) {
 							log.Infof("Creating PR for environment %s\n", envName)
 							po := o.createPromoteOptions(repoName, envName, pipelineName, build, version)
 
@@ -315,6 +316,13 @@ func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActiv
 	if gitUrl == "" {
 		return nil, nil, fmt.Errorf("No GitURL for PipelineActivity %s", activity.Name)
 	}
+	if o.FakeGitProvider != nil {
+		gitInfo, err := gits.ParseGitURL(gitUrl)
+		if err != nil {
+			return nil, gitInfo, err
+		}
+		return o.FakeGitProvider, gitInfo, nil
+	}
 	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
 	if err != nil {
 		return answer, gitInfo, errors.Wrapf(err, "Failed for git URL %s", gitUrl)
@@ -322,6 +330,8 @@ func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActiv
 	return answer, gitInfo, nil
 }
 
+// checkPullRequests lets poll all the pending PipelineActivity resources to see if any of them
+// have PR has merged or the pipeline on master has completed
 func (o *ControllerWorkflowOptions) checkPullRequests(jxClient versioned.Interface, ns string) {
 	environments := jxClient.JenkinsV1().Environments(ns)
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
@@ -331,6 +341,8 @@ func (o *ControllerWorkflowOptions) checkPullRequests(jxClient versioned.Interfa
 	}
 }
 
+// checkPullRequest polls the pending PipelineActivity resources to see if the
+// PR has merged or the pipeline on master has completed
 func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
 	for _, step := range activity.Spec.Steps {
 		promote := step.Promote
@@ -352,11 +364,9 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 		}
 		prNumber, err := pullRequestURLToNumber(pullRequestStep.PullRequestURL)
 		if err != nil {
-			log.Warnf("Failed to create git Provider: %s", err)
+			log.Warnf("Failed to get PR number: %s", err)
 			return
 		}
-		log.Infof("Got PR %v\n", prNumber)
-
 		pr, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNumber)
 		if err != nil {
 			log.Warnf("Failed to query the Pull Request status for repo %s PR %d: %s", gitInfo.HttpsURL(), prNumber, err)
@@ -397,8 +407,6 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 										if urlStatusMap[url] != state {
 											urlStatusMap[url] = state
 											urlStatusTargetURLMap[url] = status.TargetURL
-											log.Infof("merge status: %s for URL %s with target: %s description: %s\n",
-												util.ColorInfo(state), util.ColorInfo(status.URL), util.ColorInfo(status.TargetURL), util.ColorInfo(status.Description))
 										}
 									}
 								}
@@ -431,7 +439,11 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 									log.Infoln("Merge status checks all passed so the promotion worked!")
 									err = po.commentOnIssues(ns, env, promoteKey)
 									if err == nil {
-										err = promoteKey.OnPromoteUpdate(activities, kube.CompletePromotionUpdate)
+										log.Warnf("Failed to comment on issues: %s", err)
+									}
+									err = promoteKey.OnPromoteUpdate(activities, kube.CompletePromotionUpdate)
+									if err == nil {
+										log.Warnf("Failed to update PipelineActivity on promotion completion: %s", err)
 									}
 									return
 								}
@@ -505,10 +517,15 @@ func (o *ControllerWorkflowOptions) createReleaseInfo(activity *v1.PipelineActiv
 	}
 }
 
-func canExecuteStep(workflow *v1.Workflow, activity *v1.PipelineActivity, step *v1.WorkflowStep, statusMap map[string]*v1.PromoteActivityStep) bool {
+func canExecuteStep(workflow *v1.Workflow, activity *v1.PipelineActivity, step *v1.WorkflowStep, statusMap map[string]*v1.PromoteActivityStep, promoteToEnv string) bool {
 	for _, envName := range step.Preconditions.Environments {
 		status := statusMap[envName]
-		if status == nil || status.Status != v1.ActivityStatusTypeSucceeded {
+		if status == nil {
+			log.Warnf("Cannot promote to Environment: %s as precondition Environment: %s as no status\n", promoteToEnv, envName)
+			return false
+		}
+		if status.Status != v1.ActivityStatusTypeSucceeded {
+			log.Warnf("Cannot promote to Environment: %s as precondition Environment: %s has status %s", promoteToEnv, envName, string(status.Status))
 			return false
 		}
 	}

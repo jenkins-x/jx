@@ -3,9 +3,12 @@ package cmd
 import (
 	"strconv"
 	"testing"
+	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -14,6 +17,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+)
+
+var (
+	testOrgName  = "jstrachan"
+	testRepoName = "myrepo"
+	testMergeSha = "dummyCommitSha"
 )
 
 func TestPullRequestNumber(t *testing.T) {
@@ -37,9 +46,26 @@ func TestPullRequestNumber(t *testing.T) {
 }
 
 func TestSequentialWorkflow(t *testing.T) {
+	pr1 := createFakePullRequest(1)
+	prMap := map[int]*gits.FakePullRequest{
+		1: pr1,
+	}
+	fakeRepo := &gits.FakeRepository{
+		GitRepo: &gits.GitRepository{
+			Name: testRepoName,
+		},
+		PullRequests: prMap,
+		Commits:      pr1.Commits,
+	}
+	fakeGitProvider := &gits.FakeProvider{
+		Repositories: map[string][]*gits.FakeRepository{
+			testOrgName: {fakeRepo},
+		},
+	}
 	o := &ControllerWorkflowOptions{
 		NoWatch:          true,
 		FakePullRequests: createFakePullRequests,
+		FakeGitProvider:  fakeGitProvider,
 	}
 
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/jstrachan/environment-jstrachan-test1-staging.git")
@@ -87,7 +113,7 @@ func TestSequentialWorkflow(t *testing.T) {
 		}
 	}
 
-	a, err := createTestPipelineActivity(jxClient, ns, "jstrachan", "myrepo", "master", "1", myFlowName)
+	a, err := createTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", myFlowName)
 	assert.NoError(t, err)
 	if err != nil {
 		return
@@ -98,48 +124,123 @@ func TestSequentialWorkflow(t *testing.T) {
 		return
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	activity, err := activities.Get(a.Name, metav1.GetOptions{})
-	if err != nil {
-		assert.NoError(t, err)
-		return
-	}
-	assertHasPullRequestForEnv(t, activity, "staging")
+	assertHasPullRequestForEnv(t, activities, a.Name, "staging")
 
 	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
 	err = o.Run()
-	assertHasNoPullRequestForEnv(t, activity, "production")
+	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
-	// TODO cannot yet fake the git provider / PR polling
-	// lets poll the fake PRs
-	/*
-		o.checkPullRequests(jxClient, ns)
+	// still no PR merged so cannot create a PR for production
+	o.checkPullRequests(jxClient, ns)
+	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
-			assertHasPullRequestForEnv(t, activity, "production")
-	*/
+	// no PR on prod until staging completed
+	setPullRequestMerged(pr1)
+	o.checkPullRequests(jxClient, ns)
+	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+
+	setPromoteComplete(pr1)
+	o.checkPullRequests(jxClient, ns)
+
+	// now lets run again due to change to the activity to detect the staging is complete
+	err = o.Run()
+	assertHasPullRequestForEnv(t, activities, a.Name, "production")
 }
 
-func assertHasPullRequestForEnv(t *testing.T, activity *v1.PipelineActivity, envName string) {
+func setPromoteComplete(pr *gits.FakePullRequest) {
+	l := len(pr.Commits)
+	if l > 0 {
+		pr.Commits[l-1].Status = gits.CommitSatusSuccess
+
+		log.Infof("PR %s has commit status success\n", pr.PullRequest.URL)
+	}
+}
+
+func setPullRequestMerged(pr *gits.FakePullRequest) {
+	sha := testMergeSha
+	merged := true
+	pr.PullRequest.MergeCommitSHA = &sha
+	pr.PullRequest.Merged = &merged
+
+	log.Infof("PR %s is now merged\n", pr.PullRequest.URL)
+}
+
+func setPullRequestClosed(pr *gits.FakePullRequest) {
+	now := time.Now()
+	pr.PullRequest.ClosedAt = &now
+
+	log.Infof("PR %s is now closed\n", pr.PullRequest.URL)
+}
+
+func createFakePullRequest(prNumber int) *gits.FakePullRequest {
+	return &gits.FakePullRequest{
+		PullRequest: &gits.GitPullRequest{
+			Number: &prNumber,
+			URL:    createFakePRURL(prNumber),
+			Owner:  testOrgName,
+			Repo:   testRepoName,
+		},
+		Commits: []*gits.FakeCommit{
+			{
+				Commit: &gits.GitCommit{
+					SHA:     testMergeSha,
+					Message: "dummy commit",
+				},
+				Status: gits.CommitStatusPending,
+			},
+		},
+		Comment: "comment for PR",
+	}
+}
+
+func assertHasPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string) {
+	activity, err := activities.Get(name, metav1.GetOptions{})
+	if err != nil {
+		assert.NoError(t, err, "Could not find PipelineActivity %s", name)
+		return
+	}
 	found := false
 	for _, step := range activity.Spec.Steps {
 		promote := step.Promote
 		if promote != nil {
 			if promote.Environment == envName {
+				failed := false
 				pullRequestStep := promote.PullRequest
 				if pullRequestStep == nil {
 					assert.Fail(t, "No PullRequest object on Promote step for Environment %s", envName)
+					failed = true
 				}
 				u := pullRequestStep.PullRequestURL
 				log.Infof("Found Promote PullRequest %s for Environment %s\n", u, envName)
 
-				assert.True(t, u != "", "No PullRequest URL on Promote step for Environment %s", envName)
+				if !assert.True(t, u != "", "No PullRequest URL on Promote step for Environment %s", envName) {
+					failed = true
+				}
+				if failed {
+					dumpFailedActivity(activity)
+				}
 				return
 			}
 		}
 	}
-	assert.True(t, found, "No Promote PullReqquest found for Environment %s", envName)
+	if !assert.True(t, found, "No Promote PullRequest found for Environment %s", envName) {
+		dumpFailedActivity(activity)
+	}
 }
 
-func assertHasNoPullRequestForEnv(t *testing.T, activity *v1.PipelineActivity, envName string) {
+func dumpFailedActivity(activity *v1.PipelineActivity) {
+	data, err := yaml.Marshal(activity)
+	if err == nil {
+		log.Warnf("YAML: %s\n", string(data))
+	}
+}
+
+func assertHasNoPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string) {
+	activity, err := activities.Get(name, metav1.GetOptions{})
+	if err != nil {
+		assert.NoError(t, err, "Could not find PipelineActivity %s", name)
+		return
+	}
 	for _, step := range activity.Spec.Steps {
 		promote := step.Promote
 		if promote != nil {
@@ -172,7 +273,6 @@ func createTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 }
 
 var fakePrCounter = 0
-var fakePRPrefix = "https://github.com/jstrachan/fake-project/pulls/"
 
 func createFakePullRequests(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
 	if pullRequestInfo == nil {
@@ -187,7 +287,11 @@ func createFakePullRequests(env *v1.Environment, modifyRequirementsFn ModifyRequ
 	pr := pullRequestInfo.PullRequest
 	if pr.URL == "" {
 		fakePrCounter++
-		pr.URL = fakePRPrefix + strconv.Itoa(fakePrCounter)
+		pr.URL = createFakePRURL(fakePrCounter)
 	}
 	return pullRequestInfo, nil
+}
+
+func createFakePRURL(i int) string {
+	return "https://github.com/" + testOrgName + "/" + testRepoName + "/pulls/" + strconv.Itoa(i)
 }

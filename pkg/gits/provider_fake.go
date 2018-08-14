@@ -21,6 +21,7 @@ const (
 	Gitea
 	BitbucketCloud
 	BitbucketServer
+	Gerrit
 )
 
 type CommitStatus string
@@ -295,10 +296,8 @@ func (f *FakeProvider) ListCommitStatus(org string, repoName string, sha string)
 				Description: commit.Commit.Message,
 			}
 			answer = append(answer, status)
-
 		}
 	}
-
 	return answer, nil
 }
 
@@ -341,6 +340,10 @@ func (f *FakeProvider) IsBitbucketCloud() bool {
 
 func (f *FakeProvider) IsBitbucketServer() bool {
 	return f.Type == BitbucketServer
+}
+
+func (f *FakeProvider) IsGerrit() bool {
+	return f.Type == Gerrit
 }
 
 func (f *FakeProvider) Kind() string {
