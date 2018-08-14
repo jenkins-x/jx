@@ -25,8 +25,9 @@ import (
 type ControllerWorkflowOptions struct {
 	ControllerOptions
 
-	Namespace string
-	NoWatch   bool
+	Namespace        string
+	NoWatch          bool
+	FakePullRequests CreateEnvPullRequestFn
 
 	workflowMap map[string]*v1.Workflow
 }
@@ -263,6 +264,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 								IgnoreLocalFiles:  true,
 								HelmRepositoryURL: helm.DefaultHelmRepositoryURL,
 								LocalHelmRepoName: kube.LocalHelmRepoName,
+								FakePullRequests:  o.FakePullRequests,
 							}
 							po.CommonOptions = o.CommonOptions
 							po.BatchMode = true

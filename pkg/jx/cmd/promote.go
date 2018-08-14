@@ -59,6 +59,9 @@ type PromoteOptions struct {
 	Filter              string
 	Alias               string
 
+	// for testing
+	FakePullRequests CreateEnvPullRequestFn
+
 	// calculated fields
 	TimeoutDuration         *time.Duration
 	PullRequestPollDuration *time.Duration
@@ -454,9 +457,15 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		requirements.SetAppVersion(app, version, o.HelmRepositoryURL, o.Alias)
 		return nil
 	}
-	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
-	releaseInfo.PullRequestInfo = info
-	return err
+	if o.FakePullRequests != nil {
+		info, err := o.FakePullRequests(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
+		releaseInfo.PullRequestInfo = info
+		return err
+	} else {
+		info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
+		releaseInfo.PullRequestInfo = info
+		return err
+	}
 }
 
 func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.Environment, error) {

@@ -20,6 +20,8 @@ import (
 // callback for modifying requirements
 type ModifyRequirementsFn func(requirements *helm.Requirements) error
 
+type CreateEnvPullRequestFn func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error)
+
 func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
 	var answer *ReleasePullRequestInfo
 	source := &env.Spec.Source
