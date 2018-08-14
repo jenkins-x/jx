@@ -43,6 +43,7 @@ type PromoteOptions struct {
 	Namespace           string
 	Environment         string
 	Application         string
+	Pipeline            string
 	Build               string
 	Version             string
 	ReleaseName         string
@@ -51,10 +52,15 @@ type PromoteOptions struct {
 	NoHelmUpdate        bool
 	AllAutomatic        bool
 	NoMergePullRequest  bool
+	NoPoll              bool
+	IgnoreLocalFiles    bool
 	Timeout             string
 	PullRequestPollTime string
 	Filter              string
 	Alias               string
+
+	// for testing
+	FakePullRequests CreateEnvPullRequestFn
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -142,6 +148,7 @@ func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Application, optionApplication, "a", "", "The Application to promote")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "The search filter to find charts to promote")
 	cmd.Flags().StringVarP(&options.Alias, "alias", "", "", "The optional alias used in the 'requirements.yaml' file")
+	cmd.Flags().StringVarP(&options.Pipeline, "pipeline", "", "", "The Pipeline string in the form 'folderName/repoName/branch' which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
 	cmd.Flags().StringVarP(&options.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The Version to promote")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
@@ -151,6 +158,8 @@ func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
 	cmd.Flags().BoolVarP(&options.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
+	cmd.Flags().BoolVarP(&options.NoPoll, "no-poll", "", false, "Disables polling for Pull Request or Pipeline status")
+	cmd.Flags().BoolVarP(&options.IgnoreLocalFiles, "ignore-local-file", "", false, "Ignores the local file system when deducing the git repository")
 }
 
 // Run implements this command
@@ -262,9 +271,14 @@ func (o *PromoteOptions) Run() error {
 		}
 	}
 	releaseInfo, err := o.Promote(targetNS, env, true)
-	err = o.WaitForPromotion(targetNS, env, releaseInfo)
 	if err != nil {
 		return err
+	}
+	if !o.NoPoll {
+		err = o.WaitForPromotion(targetNS, env, releaseInfo)
+		if err != nil {
+			return err
+		}
 	}
 	return err
 }
@@ -342,7 +356,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		Version:     version,
 	}
 
-	if warnIfAuto && env != nil && env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic {
+	if warnIfAuto && env != nil && env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic && !o.BatchMode {
 		log.Infof("%s", util.ColorWarning(fmt.Sprintf("WARNING: The Environment %s is setup to promote automatically as part of the CI/CD Pipelines.\n\n", env.Name)))
 
 		confirm := &survey.Confirm{
@@ -358,6 +372,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 			return releaseInfo, nil
 		}
 	}
+
 	promoteKey := o.createPromoteKey(env)
 	if env != nil {
 		source := &env.Spec.Source
@@ -442,9 +457,15 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		requirements.SetAppVersion(app, version, o.HelmRepositoryURL, o.Alias)
 		return nil
 	}
-	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
-	releaseInfo.PullRequestInfo = info
-	return err
+	if o.FakePullRequests != nil {
+		info, err := o.FakePullRequests(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
+		releaseInfo.PullRequestInfo = info
+		return err
+	} else {
+		info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
+		releaseInfo.PullRequestInfo = info
+		return err
+	}
 }
 
 func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.Environment, error) {
@@ -730,29 +751,33 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 }
 
 func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
-	pipeline := ""
+	pipeline := o.Pipeline
 	build := o.Build
 	buildURL := os.Getenv("BUILD_URL")
 	buildLogsURL := os.Getenv("BUILD_LOG_URL")
-	gitInfo, err := o.Git().Info("")
 	releaseNotesURL := ""
-	releaseName := o.ReleaseName
-	if o.releaseResource == nil && releaseName != "" {
-		jxClient, _, err := o.JXClient()
-		if err == nil && jxClient != nil {
-			release, err := jxClient.JenkinsV1().Releases(env.Spec.Namespace).Get(releaseName, metav1.GetOptions{})
-			if err == nil && release != nil {
-				o.releaseResource = release
+	gitInfo := o.GitInfo
+	if !o.IgnoreLocalFiles {
+		var err error
+		gitInfo, err = o.Git().Info("")
+		releaseName := o.ReleaseName
+		if o.releaseResource == nil && releaseName != "" {
+			jxClient, _, err := o.JXClient()
+			if err == nil && jxClient != nil {
+				release, err := jxClient.JenkinsV1().Releases(env.Spec.Namespace).Get(releaseName, metav1.GetOptions{})
+				if err == nil && release != nil {
+					o.releaseResource = release
+				}
 			}
 		}
-	}
-	if o.releaseResource != nil {
-		releaseNotesURL = o.releaseResource.Spec.ReleaseNotesURL
-	}
-	if err != nil {
-		log.Warnf("Could not discover the git repository info %s\n", err)
-	} else {
-		o.GitInfo = gitInfo
+		if o.releaseResource != nil {
+			releaseNotesURL = o.releaseResource.Spec.ReleaseNotesURL
+		}
+		if err != nil {
+			log.Warnf("Could not discover the git repository info %s\n", err)
+		} else {
+			o.GitInfo = gitInfo
+		}
 	}
 	if pipeline == "" {
 		pipeline, build = o.getPipelineName(gitInfo, pipeline, build)

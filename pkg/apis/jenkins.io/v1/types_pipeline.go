@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"strings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,6 +41,8 @@ type PipelineActivitySpec struct {
 	LastCommitSHA      string                 `json:"lastCommitSHA,omitempty" protobuf:"bytes,12,opt,name=lastCommitSHA"`
 	LastCommitMessage  string                 `json:"lastCommitMessage,omitempty" protobuf:"bytes,13,opt,name=lastCommitMessage"`
 	LastCommitURL      string                 `json:"lastCommitURL,omitempty" protobuf:"bytes,14,opt,name=lastCommitURL"`
+	Workflow           string                 `json:"workflow,omitempty" protobuf:"bytes,15,opt,name=workflow"`
+	WorkflowStatus     ActivityStatusType     `json:"workflowStatus,omitempty" protobuf:"bytes,4,opt,name=workflowStatus"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity
@@ -155,6 +159,34 @@ const (
 	ActivityStatusTypeError ActivityStatusType = "Error"
 )
 
+// IsTerminated returns true if this activity has stopped executing
+func (s ActivityStatusType) IsTerminated() bool {
+	return s == ActivityStatusTypeSucceeded || s == ActivityStatusTypeFailed || s == ActivityStatusTypeError
+}
+
 func (s ActivityStatusType) String() string {
 	return string(s)
+}
+
+// RepositoryName returns the repository name for the given pipeline
+func (p *PipelineActivity) RepositoryName() string {
+	repoName := p.Spec.GitRepository
+	pipelineName := p.Spec.Pipeline
+
+	paths := strings.Split(pipelineName, "/")
+	if repoName == "" && len(paths) > 1 {
+		repoName = paths[len(paths)-2]
+		p.Spec.GitRepository = repoName
+	}
+	return repoName
+}
+
+// BranchName returns the name of the branch for the pipeline
+func (p *PipelineActivity) BranchName() string {
+	pipelineName := p.Spec.Pipeline
+	if pipelineName == "" {
+		return ""
+	}
+	paths := strings.Split(pipelineName, "/")
+	return paths[len(paths)-1]
 }

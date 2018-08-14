@@ -825,6 +825,14 @@ func NewPermanentEnvironment(name string) *v1.Environment {
 	}
 }
 
+// NewPermanentEnvironment creates a new permanent environment for testing
+func NewPermanentEnvironmentWithGit(name string, gitUrl string) *v1.Environment {
+	env := NewPermanentEnvironment(name)
+	env.Spec.Source.URL = gitUrl
+	env.Spec.Source.Ref = "master"
+	return env
+}
+
 // NewPreviewEnvironment creates a new preview environment for testing
 func NewPreviewEnvironment(name string) *v1.Environment {
 	return &v1.Environment{

@@ -44,8 +44,8 @@ type PromoteWorkflowStep struct {
 
 // WorkflowPreconditions is the trigger to start a step
 type WorkflowPreconditions struct {
-	// the steps which need to be complete before this step can be triggered
-	Steps []string `json:"steps,omitempty" protobuf:"bytes,1,opt,name=steps"`
+	// the names of the environments which need to have promoted before this step can be triggered
+	Environments []string `json:"environments,omitempty" protobuf:"bytes,1,opt,name=environments"`
 }
 
 // WorkflowStatus is the status for an Environment resource
