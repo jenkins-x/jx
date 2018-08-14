@@ -123,7 +123,7 @@ func UnTargz(tarball, target string, onlyFiles []string) error {
 			}
 		}
 
-		if !inkey {
+		if !inkey && len(onlyFiles) > 0 {
 			continue
 		}
 

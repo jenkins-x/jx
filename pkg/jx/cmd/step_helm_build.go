@@ -4,14 +4,17 @@ import (
 	"io"
 
 	"fmt"
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // StepHelmBuildOptions contains the command line flags
 type StepHelmBuildOptions struct {
 	StepHelmOptions
+
+	recursive bool
 }
 
 var (
@@ -54,11 +57,13 @@ func NewCmdStepHelmBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 		},
 	}
 	options.addStepHelmFlags(cmd)
+
+	cmd.Flags().BoolVarP(&options.recursive, "recursive", "r", false, "Build recursively the dependent charts")
+
 	return cmd
 }
 
 func (o *StepHelmBuildOptions) Run() error {
-
 	_, _, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -78,6 +83,9 @@ func (o *StepHelmBuildOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("failed to clone pull request: %v", err)
 		}
+	}
+	if o.recursive {
+		return o.helmInitRecursiveDependencyBuild(dir, o.defaultReleaseCharts())
 	}
 	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
 	return err
