@@ -318,6 +318,23 @@ func (o *CommonOptions) createGitProviderForURL(gitKind string, gitUrl string) (
 	return gits.CreateProviderForURL(authConfigSvc, gitKind, gitUrl, o.Git())
 }
 
+func (o *CommonOptions) createGitProviderForURLWithoutKind(gitUrl string) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
+	gitInfo, err := gits.ParseGitURL(gitUrl)
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	gitProvider, err := gits.CreateProviderForURL(authConfigSvc, gitKind, gitUrl, o.Git())
+	return gitProvider, gitInfo, err
+}
+
 // generateFileIfMissing generates the given file from the source code if the file does not already exist
 func generateFileIfMissing(path string, text string) error {
 	exists, err := util.FileExists(path)

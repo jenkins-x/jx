@@ -16,6 +16,26 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+func TestPullRequestNumber(t *testing.T) {
+	failUrls := []string{"https://github.com/foo/bar/pulls"}
+	for _, u := range failUrls {
+		_, err := pullRequestURLToNumber(u)
+		assert.Errorf(t, err, "Expected error for pullRequestURLToNumber() with %s", u)
+	}
+
+	tests := map[string]int{
+		"https://github.com/foo/bar/pulls/12": 12,
+	}
+
+	for u, expected := range tests {
+		actual, err := pullRequestURLToNumber(u)
+		assert.NoError(t, err, "pullRequestURLToNumber() should not fail for %s", u)
+		if err == nil {
+			assert.Equal(t, expected, actual, "pullRequestURLToNumber() for %s", u)
+		}
+	}
+}
+
 func TestSequentialWorkflow(t *testing.T) {
 	o := &ControllerWorkflowOptions{
 		NoWatch:          true,
@@ -88,6 +108,14 @@ func TestSequentialWorkflow(t *testing.T) {
 	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
 	err = o.Run()
 	assertHasNoPullRequestForEnv(t, activity, "production")
+
+	// TODO cannot yet fake the git provider / PR polling
+	// lets poll the fake PRs
+	/*
+		o.checkPullRequests(jxClient, ns)
+
+			assertHasPullRequestForEnv(t, activity, "production")
+	*/
 }
 
 func assertHasPullRequestForEnv(t *testing.T, activity *v1.PipelineActivity, envName string) {
@@ -136,6 +164,7 @@ func createTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	version := "1.0.1"
 	a.Spec.GitOwner = folder
 	a.Spec.GitRepository = repo
+	a.Spec.GitURL = "https://github.com/" + folder + "/" + repo + ".git"
 	a.Spec.Version = version
 	a.Spec.Workflow = workflow
 	_, err = activities.Update(a)

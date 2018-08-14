@@ -1,17 +1,21 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/workflow"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,11 +29,14 @@ import (
 type ControllerWorkflowOptions struct {
 	ControllerOptions
 
-	Namespace        string
-	NoWatch          bool
-	FakePullRequests CreateEnvPullRequestFn
+	Namespace          string
+	NoWatch            bool
+	NoMergePullRequest bool
+	FakePullRequests   CreateEnvPullRequestFn
+	LocalHelmRepoName  string
 
 	workflowMap map[string]*v1.Workflow
+	pipelineMap map[string]*v1.PipelineActivity
 }
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which
@@ -58,6 +65,7 @@ func NewCmdControllerWorkflow(f Factory, out io.Writer, errOut io.Writer) *cobra
 	}
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
+	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().BoolVarP(&options.NoWatch, "no-watch", "", false, "Disable watch so just performs any delta processes on pending workflows")
 	return cmd
 }
@@ -84,6 +92,7 @@ func (o *ControllerWorkflowOptions) Run() error {
 	}
 
 	o.workflowMap = map[string]*v1.Workflow{}
+	o.pipelineMap = map[string]*v1.PipelineActivity{}
 
 	if o.NoWatch {
 		return o.updatePipelinesWithoutWatching(jxClient, ns)
@@ -200,15 +209,10 @@ func (o *ControllerWorkflowOptions) onActivityObj(obj interface{}, jxClient vers
 func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jxClient versioned.Interface, ns string) {
 	workflowName := pipeline.Spec.Workflow
 	version := pipeline.Spec.Version
-	repoName := pipeline.Spec.GitRepository
+	repoName := pipeline.RepositoryName()
+	branch := pipeline.BranchName()
 	pipelineName := pipeline.Spec.Pipeline
 	build := pipeline.Spec.Build
-
-	paths := strings.Split(pipelineName, "/")
-	branch := paths[len(paths)-1]
-	if repoName == "" && len(paths) > 1 {
-		repoName = paths[len(paths)-2]
-	}
 
 	log.Infof("Processing pipeline %s repo %s version %s with workflow %s and status %s\n", pipeline.Name, repoName, version, workflowName, string(pipeline.Spec.WorkflowStatus))
 
@@ -217,6 +221,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 	}
 	if repoName == "" || version == "" || build == "" || pipelineName == "" {
 		log.Infof("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
+		o.removePipelineActivity(pipeline)
 		return
 	}
 	if !pipeline.Spec.WorkflowStatus.IsTerminated() {
@@ -226,6 +231,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 			flow, err = workflow.CreateDefaultWorkflow(jxClient, ns)
 			if err != nil {
 				log.Warnf("Cannot create default Workflow: %s\n", err)
+				o.removePipelineActivity(pipeline)
 				return
 			}
 
@@ -233,13 +239,18 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 
 		if flow == nil {
 			log.Warnf("Cannot process pipeline %s due to workflow name %s not existing\n", pipeline.Name, workflowName)
+			o.removePipelineActivity(pipeline)
 			return
 		}
 
 		if !o.isReleaseBranch(branch) {
 			log.Infof("Ignoring branch %s\n", branch)
+			o.removePipelineActivity(pipeline)
 			return
 		}
+
+		// ensure the pipeline is in our map
+		o.pipelineMap[pipeline.Name] = pipeline
 
 		// lets walk the Workflow spec and see if we need to trigger any PRs or move the PipelineActivity forward
 		promoteStatusMap := createPromoteStatus(pipeline)
@@ -254,20 +265,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 						// can we generate a PR now?
 						if canExecuteStep(flow, pipeline, &step, promoteStatusMap) {
 							log.Infof("Creating PR for environment %s\n", envName)
-							po := &PromoteOptions{
-								Application:       repoName,
-								Environment:       envName,
-								Pipeline:          pipelineName,
-								Build:             build,
-								Version:           version,
-								NoPoll:            true,
-								IgnoreLocalFiles:  true,
-								HelmRepositoryURL: helm.DefaultHelmRepositoryURL,
-								LocalHelmRepoName: kube.LocalHelmRepoName,
-								FakePullRequests:  o.FakePullRequests,
-							}
-							po.CommonOptions = o.CommonOptions
-							po.BatchMode = true
+							po := o.createPromoteOptions(repoName, envName, pipelineName, build, version)
 
 							err := po.Run()
 							if err != nil {
@@ -278,6 +276,232 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 				}
 			}
 		}
+	}
+}
+
+func (o *ControllerWorkflowOptions) createPromoteOptions(repoName string, envName string, pipelineName string, build string, version string) *PromoteOptions {
+	po := &PromoteOptions{
+		Application:       repoName,
+		Environment:       envName,
+		Pipeline:          pipelineName,
+		Build:             build,
+		Version:           version,
+		NoPoll:            true,
+		IgnoreLocalFiles:  true,
+		HelmRepositoryURL: helm.DefaultHelmRepositoryURL,
+		LocalHelmRepoName: kube.LocalHelmRepoName,
+		FakePullRequests:  o.FakePullRequests,
+	}
+	po.CommonOptions = o.CommonOptions
+	po.BatchMode = true
+	return po
+}
+
+func (o *ControllerWorkflowOptions) createPromoteOptionsFromActivity(pipeline *v1.PipelineActivity, envName string) *PromoteOptions {
+	version := pipeline.Spec.Version
+	repoName := pipeline.Spec.GitRepository
+	pipelineName := pipeline.Spec.Pipeline
+	build := pipeline.Spec.Build
+
+	paths := strings.Split(pipelineName, "/")
+	if repoName == "" && len(paths) > 1 {
+		repoName = paths[len(paths)-2]
+	}
+	return o.createPromoteOptions(repoName, envName, pipelineName, build, version)
+}
+
+func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActivity) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
+	gitUrl := activity.Spec.GitURL
+	if gitUrl == "" {
+		return nil, nil, fmt.Errorf("No GitURL for PipelineActivity %s", activity.Name)
+	}
+	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
+	if err != nil {
+		return answer, gitInfo, errors.Wrapf(err, "Failed for git URL %s", gitUrl)
+	}
+	return answer, gitInfo, nil
+}
+
+func (o *ControllerWorkflowOptions) checkPullRequests(jxClient versioned.Interface, ns string) {
+	environments := jxClient.JenkinsV1().Environments(ns)
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+
+	for _, activity := range o.pipelineMap {
+		o.checkPullRequest(activity, activities, environments, ns)
+	}
+}
+
+func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
+	for _, step := range activity.Spec.Steps {
+		promote := step.Promote
+		if promote == nil {
+			continue
+		}
+		envName := promote.Environment
+		pullRequestStep := promote.PullRequest
+		if pullRequestStep == nil || pullRequestStep.PullRequestURL == "" || envName == "" {
+			continue
+		}
+		gitProvider, gitInfo, err := o.createGitProvider(activity)
+		if err != nil {
+			log.Warnf("Failed to create git Provider: %s", err)
+			return
+		}
+		if gitProvider == nil || gitInfo == nil {
+			return
+		}
+		prNumber, err := pullRequestURLToNumber(pullRequestStep.PullRequestURL)
+		if err != nil {
+			log.Warnf("Failed to create git Provider: %s", err)
+			return
+		}
+		log.Infof("Got PR %v\n", prNumber)
+
+		pr, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNumber)
+		if err != nil {
+			log.Warnf("Failed to query the Pull Request status for repo %s PR %d: %s", gitInfo.HttpsURL(), prNumber, err)
+		} else {
+			po := o.createPromoteOptionsFromActivity(activity, envName)
+
+			if pr.Merged != nil && *pr.Merged {
+				if pr.MergeCommitSHA != nil {
+					mergeSha := *pr.MergeCommitSHA
+					mergedPR := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromotePullRequestStep) error {
+						kube.CompletePromotionPullRequest(a, s, ps, p)
+						p.MergeCommitSHA = mergeSha
+						return nil
+					}
+					env, err := environments.Get(envName, metav1.GetOptions{})
+					if err != nil {
+						log.Warnf("Failed to find environment %s: %s\n", envName, err)
+						return
+					} else {
+						promoteKey := po.createPromoteKey(env)
+						promoteKey.OnPromotePullRequest(activities, mergedPR)
+						promoteKey.OnPromoteUpdate(activities, kube.StartPromotionUpdate)
+
+						statuses, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, mergeSha)
+						if err == nil {
+							urlStatusMap := map[string]string{}
+							urlStatusTargetURLMap := map[string]string{}
+							if len(statuses) > 0 {
+								for _, status := range statuses {
+									if status.IsFailed() {
+										log.Warnf("merge status: %s URL: %s description: %s\n",
+											status.State, status.TargetURL, status.Description)
+										return
+									}
+									url := status.URL
+									state := status.State
+									if urlStatusMap[url] == "" || urlStatusMap[url] != gitStatusSuccess {
+										if urlStatusMap[url] != state {
+											urlStatusMap[url] = state
+											urlStatusTargetURLMap[url] = status.TargetURL
+											log.Infof("merge status: %s for URL %s with target: %s description: %s\n",
+												util.ColorInfo(state), util.ColorInfo(status.URL), util.ColorInfo(status.TargetURL), util.ColorInfo(status.Description))
+										}
+									}
+								}
+								prStatuses := []v1.GitStatus{}
+								keys := util.SortedMapKeys(urlStatusMap)
+								for _, url := range keys {
+									state := urlStatusMap[url]
+									targetURL := urlStatusTargetURLMap[url]
+									if targetURL == "" {
+										targetURL = url
+									}
+									prStatuses = append(prStatuses, v1.GitStatus{
+										URL:    targetURL,
+										Status: state,
+									})
+								}
+								updateStatuses := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {
+									p.Statuses = prStatuses
+									return nil
+								}
+								promoteKey.OnPromoteUpdate(activities, updateStatuses)
+
+								succeeded := true
+								for _, v := range urlStatusMap {
+									if v != gitStatusSuccess {
+										succeeded = false
+									}
+								}
+								if succeeded {
+									log.Infoln("Merge status checks all passed so the promotion worked!")
+									err = po.commentOnIssues(ns, env, promoteKey)
+									if err == nil {
+										err = promoteKey.OnPromoteUpdate(activities, kube.CompletePromotionUpdate)
+									}
+									return
+								}
+							}
+						}
+					}
+				}
+			} else {
+				if pr.IsClosed() {
+					log.Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
+					// TODO should we mark the PipelineActivity as complete?
+					return
+				}
+
+				// lets try merge if the status is good
+				status, err := gitProvider.PullRequestLastCommitStatus(pr)
+				if err != nil {
+					log.Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
+					//return fmt.Errorf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
+				} else if status == "in-progress" {
+					log.Infoln("The build for the Pull Request last commit is currently in progress.")
+				} else {
+					if status == "success" {
+						if !o.NoMergePullRequest {
+							err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
+							if err != nil {
+								log.Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
+							}
+						}
+					} else if status == "error" || status == "failure" {
+						log.Warnf("Pull request %s last commit has status %s for ref %s", pr.URL, status, pr.LastCommitSha)
+						return
+					}
+				}
+			}
+			if pr.Mergeable != nil && !*pr.Mergeable {
+				log.Infoln("Rebasing PullRequest due to conflict")
+				env, err := environments.Get(envName, metav1.GetOptions{})
+				if err != nil {
+					log.Warnf("Failed to find environment %s: %s\n", envName, err)
+				} else {
+					releaseInfo := o.createReleaseInfo(activity, env)
+					if releaseInfo != nil {
+						err = po.PromoteViaPullRequest(env, releaseInfo)
+					}
+				}
+			}
+		}
+	}
+}
+
+func (o *ControllerWorkflowOptions) createReleaseInfo(activity *v1.PipelineActivity, env *v1.Environment) *ReleaseInfo {
+	spec := &activity.Spec
+	app := activity.RepositoryName()
+	if app == "" {
+		return nil
+	}
+	fullAppName := app
+	if o.LocalHelmRepoName != "" {
+		fullAppName = o.LocalHelmRepoName + "/" + app
+	}
+	releaseName := "" // TODO o.ReleaseName
+	if releaseName == "" {
+		releaseName = env.Spec.Namespace + "-" + app
+		o.ReleaseName = releaseName
+	}
+	return &ReleaseInfo{
+		ReleaseName: releaseName,
+		FullAppName: fullAppName,
+		Version:     spec.Version,
 	}
 }
 
@@ -362,8 +586,21 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 	}
 }
 
+func pullRequestURLToNumber(text string) (int, error) {
+	paths := strings.Split(strings.TrimSuffix(text, "/"), "/")
+	lastPath := paths[len(paths)-1]
+	prNumber, err := strconv.Atoi(lastPath)
+	if err != nil {
+		return 0, errors.Wrapf(err, "Failed to parse PR number from %s on URL %s", lastPath, text)
+	}
+	return prNumber, nil
+}
+
 func (o *ControllerWorkflowOptions) isReleaseBranch(branchName string) bool {
 	// TODO look in TeamSettings for a list of allowed release branch patterns
 	return branchName == "master"
+}
 
+func (o *ControllerWorkflowOptions) removePipelineActivity(activity *v1.PipelineActivity) {
+	delete(o.pipelineMap, activity.Name)
 }
