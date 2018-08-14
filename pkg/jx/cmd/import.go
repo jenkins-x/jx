@@ -616,9 +616,7 @@ func (o *ImportOptions) getCurrentUser() string {
 				currentUser = o.GitProvider.CurrentUsername()
 			}
 		}
-		log.Warn("No git server found!\n")
 	}
-
 	if currentUser == "" {
 		log.Warn("No username defined for the current git server!")
 		currentUser = o.DefaultOwner
