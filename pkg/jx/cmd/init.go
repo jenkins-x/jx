@@ -699,7 +699,11 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 	}
 	defaultDomain := address
 
-	if domain == "" && (provider == AWS || provider == EKS) {
+	if provider == AWS || provider == EKS {
+		if domain != "" {
+			err := amazon.RegisterAwsCustomDomain(domain, address)
+			return domain, err
+		}
 		log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your kubernetes cluster to ensure you can use all of your availability zones\n")
 		log.Infof("If you do not have a custom DNS name you can use yet you can register a new one here: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
 
