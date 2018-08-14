@@ -431,7 +431,7 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 		if err != nil {
 			log.Warnf("Failed to query the Pull Request status on pipeline %s for repo %s PR %d for PR %s: %s", activity.Name, gitInfo.HttpsURL(), prNumber, prURL, err)
 		} else {
-			log.Infof("Pipeline %s promote Environment %s has PR %d\n", activity.Name, envName, prURL)
+			log.Infof("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
 
 			po := o.createPromoteOptionsFromActivity(activity, envName)
 
