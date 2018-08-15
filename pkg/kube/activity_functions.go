@@ -48,6 +48,9 @@ func StartPromotionPullRequest(a *v1.PipelineActivity, s *v1.PipelineActivitySte
 			Time: time.Now(),
 		}
 	}
+	if a.Spec.Status == v1.ActivityStatusTypeNone {
+		a.Spec.Status = v1.ActivityStatusTypeRunning
+	}
 	if p.Status == v1.ActivityStatusTypeNone {
 		p.Status = v1.ActivityStatusTypeRunning
 	}
@@ -64,6 +67,9 @@ func StartPromotionUpdate(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps
 		p.StartedTimestamp = &metav1.Time{
 			Time: time.Now(),
 		}
+	}
+	if a.Spec.Status == v1.ActivityStatusTypeNone {
+		a.Spec.Status = v1.ActivityStatusTypeRunning
 	}
 	if p.Status == v1.ActivityStatusTypeNone {
 		p.Status = v1.ActivityStatusTypeRunning

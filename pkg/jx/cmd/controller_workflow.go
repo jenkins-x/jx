@@ -436,7 +436,9 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 			po := o.createPromoteOptionsFromActivity(activity, envName)
 
 			if pr.Merged != nil && *pr.Merged {
-				if pr.MergeCommitSHA != nil {
+				if pr.MergeCommitSHA == nil {
+					log.Warnf("Pipeline %s promote Environment %s has PR %s which is merged but there is no merge SHA\n", activity.Name, envName, prURL)
+				} else {
 					mergeSha := *pr.MergeCommitSHA
 					mergedPR := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromotePullRequestStep) error {
 						kube.CompletePromotionPullRequest(a, s, ps, p)
@@ -500,7 +502,7 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 								if succeeded {
 									gitURL := activity.Spec.GitURL
 									if gitURL == "" {
-										log.Warnf("No git URL for PipelineActivity %s so cannotcomment on issues\n", activity.Name)
+										log.Warnf("No git URL for PipelineActivity %s so cannot comment on issues\n", activity.Name)
 										return
 									}
 									gitInfo, err := gits.ParseGitURL(gitURL)
@@ -539,6 +541,8 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 				} else if status == "in-progress" {
 					log.Infoln("The build for the Pull Request last commit is currently in progress.")
 				} else {
+					log.Infof("Pipeline %s promote Environment %s has PR %s with status %s\n", activity.Name, envName, prURL, status)
+
 					if status == "success" {
 						if !o.NoMergePullRequest {
 							err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
