@@ -22,26 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
-func TestPullRequestNumber(t *testing.T) {
-	failUrls := []string{"https://github.com/foo/bar/pulls"}
-	for _, u := range failUrls {
-		_, err := pullRequestURLToNumber(u)
-		assert.Errorf(t, err, "Expected error for pullRequestURLToNumber() with %s", u)
-	}
-
-	tests := map[string]int{
-		"https://github.com/foo/bar/pulls/12": 12,
-	}
-
-	for u, expected := range tests {
-		actual, err := pullRequestURLToNumber(u)
-		assert.NoError(t, err, "pullRequestURLToNumber() should not fail for %s", u)
-		if err == nil {
-			assert.Equal(t, expected, actual, "pullRequestURLToNumber() for %s", u)
-		}
-	}
-}
-
 func TestSequentialWorkflow(t *testing.T) {
 	testOrgName := "jstrachan"
 	testRepoName := "myrepo"
@@ -160,6 +140,177 @@ func TestSequentialWorkflow(t *testing.T) {
 	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
 
 	assertAllPromoteStepsSuccessful(t, activities, a.Name)
+}
+
+// TestParallelWorkflow lets test promoting to A + B then when A + B is complete then C
+func TestParallelWorkflow(t *testing.T) {
+	testOrgName := "jstrachan"
+	testRepoName := "parallelrepo"
+
+	envNameA := "a"
+	envNameB := "b"
+	envNameC := "c"
+
+	envRepoNameA := "environment-" + envNameA
+	envRepoNameB := "environment-" + envNameB
+	envRepoNameC := "environment-" + envNameC
+
+	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
+	repoA := gits.NewFakeRepository(testOrgName, envRepoNameA)
+	repoB := gits.NewFakeRepository(testOrgName, envRepoNameB)
+	repoC := gits.NewFakeRepository(testOrgName, envRepoNameC)
+
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, repoA, repoB, repoC)
+
+	o := &ControllerWorkflowOptions{
+		NoWatch:          true,
+		FakePullRequests: NewCreateEnvPullRequestFn(fakeGitProvider),
+		FakeGitProvider:  fakeGitProvider,
+	}
+
+	envA := kube.NewPermanentEnvironmentWithGit(envNameA, "https://github.com/"+testOrgName+"/"+envRepoNameA+".git")
+	envB := kube.NewPermanentEnvironmentWithGit(envNameB, "https://github.com/"+testOrgName+"/"+envRepoNameB+".git")
+	envC := kube.NewPermanentEnvironmentWithGit(envNameC, "https://github.com/"+testOrgName+"/"+envRepoNameC+".git")
+
+	myFlowName := "myflow"
+
+	step1 := workflow.CreateWorkflowPromoteStep(envNameA, false)
+	step2 := workflow.CreateWorkflowPromoteStep(envNameB, false)
+	step3 := workflow.CreateWorkflowPromoteStep(envNameC, false, step1, step2)
+
+	ConfigureTestOptionsWithResources(&o.CommonOptions,
+		[]runtime.Object{},
+		[]runtime.Object{
+			envA,
+			envB,
+			envC,
+			kube.NewPreviewEnvironment("jx-jstrachan-demo96-pr-1"),
+			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
+			workflow.CreateWorkflow("jx", myFlowName,
+				step1,
+				step2,
+				step3,
+			),
+		},
+		gits.NewGitCLI(),
+		helm.NewHelmCLI("helm", helm.V2, ""),
+	)
+	o.git = &gits.GitFake{}
+
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	assert.NoError(t, err)
+	if err == nil {
+		workflow, err := workflow.GetWorkflow("", jxClient, ns)
+		assert.NoError(t, err)
+		if err == nil {
+			assert.Equal(t, "default", workflow.Name, "name")
+			spec := workflow.Spec
+			assert.Equal(t, 3, len(spec.Steps), "number of steps")
+			if len(spec.Steps) > 0 {
+				assertPromoteStep(t, &spec.Steps[0], envNameA, false)
+			}
+			if len(spec.Steps) > 1 {
+				assertPromoteStep(t, &spec.Steps[1], envNameB, false)
+			}
+			if len(spec.Steps) > 2 {
+				assertPromoteStep(t, &spec.Steps[2], envNameC, false)
+			}
+		}
+	}
+
+	a, err := createTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", myFlowName)
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+	err = o.Run()
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	assertHasPullRequestForEnv(t, activities, a.Name, envNameA)
+	assertHasPullRequestForEnv(t, activities, a.Name, envNameB)
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+
+	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
+	err = o.Run()
+	assertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+
+	// still no PR merged so cannot create a PR for C until A and B complete
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	assertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+
+	// test no PR on production until staging completed
+	if !assertSetPullRequestMerged(t, fakeGitProvider, repoA, 1) {
+		return
+	}
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	assertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+
+	if !assertSetPullRequestComplete(t, fakeGitProvider, repoA, 1) {
+		return
+	}
+
+	// now lets poll again due to change to the activity to detect the staging is complete
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+
+	assertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
+	assertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeRunning)
+	assertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+
+	if !assertSetPullRequestMerged(t, fakeGitProvider, repoB, 1) {
+		return
+	}
+	if !assertSetPullRequestComplete(t, fakeGitProvider, repoB, 1) {
+		return
+	}
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+
+	// C should have started now
+	assertHasPullRequestForEnv(t, activities, a.Name, envNameC)
+	assertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, envNameC, v1.ActivityStatusTypeRunning)
+
+	if !assertSetPullRequestMerged(t, fakeGitProvider, repoC, 1) {
+		return
+	}
+	if !assertSetPullRequestComplete(t, fakeGitProvider, repoC, 1) {
+		return
+	}
+
+	// should be complete now
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+
+	assertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, envNameC, v1.ActivityStatusTypeSucceeded)
+
+	assertAllPromoteStepsSuccessful(t, activities, a.Name)
+}
+
+func TestPullRequestNumber(t *testing.T) {
+	failUrls := []string{"https://github.com/foo/bar/pulls"}
+	for _, u := range failUrls {
+		_, err := pullRequestURLToNumber(u)
+		assert.Errorf(t, err, "Expected error for pullRequestURLToNumber() with %s", u)
+	}
+
+	tests := map[string]int{
+		"https://github.com/foo/bar/pulls/12": 12,
+	}
+
+	for u, expected := range tests {
+		actual, err := pullRequestURLToNumber(u)
+		assert.NoError(t, err, "pullRequestURLToNumber() should not fail for %s", u)
+		if err == nil {
+			assert.Equal(t, expected, actual, "pullRequestURLToNumber() for %s", u)
+		}
+	}
 }
 
 func pollGitStatusAndReactToPipelineChanges(t *testing.T, o *ControllerWorkflowOptions, jxClient versioned.Interface, ns string) error {
