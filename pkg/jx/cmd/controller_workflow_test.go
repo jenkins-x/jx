@@ -117,6 +117,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	assertHasPullRequestForEnv(t, activities, a.Name, "staging")
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
 	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
 	err = o.Run()
@@ -329,6 +330,18 @@ func assertAllPromoteStepsSuccessful(t *testing.T, activities typev1.PipelineAct
 		if promote != nil {
 			assert.Equal(t, string(v1.ActivityStatusTypeSucceeded), string(promote.Status), "PipelineActivity %s status for Promote to Environment %s", activity.Name, promote.Environment)
 		}
+	}
+}
+
+func assertWorkflowStatus(t *testing.T, activities typev1.PipelineActivityInterface, name string, status v1.ActivityStatusType) {
+	activity, err := activities.Get(name, metav1.GetOptions{})
+	if err != nil {
+		assert.NoError(t, err, "Could not find PipelineActivity %s", name)
+		return
+	}
+	if !assert.Equal(t, string(status), string(activity.Spec.Status), "PipelineActivity status for %s", activity.Name) ||
+		!assert.Equal(t, string(status), string(activity.Spec.WorkflowStatus), "PipelineActivity workflow status for %s", activity.Name) {
+		dumpFailedActivity(activity)
 	}
 }
 
