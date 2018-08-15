@@ -37,11 +37,16 @@ func CreateDefaultWorkflow(jxClient versioned.Interface, ns string) (*v1.Workflo
 		Spec: v1.WorkflowSpec{},
 	}
 	spec := &workflow.Spec
+	previousEnv := ""
 	for _, name := range names {
 		env := m[name]
 		if env != nil && env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic && env.Spec.Kind == v1.EnvironmentKindTypePermanent {
 			step := CreateWorkflowPromoteStep(name, false)
+			if previousEnv != "" {
+				step.Preconditions.Environments = []string{previousEnv}
+			}
 			spec.Steps = append(spec.Steps, step)
+			previousEnv = name
 		}
 	}
 	return workflow, nil
