@@ -34,7 +34,7 @@ pipeline {
                 branch 'PR-*'
             }
             steps {
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
+                dir ('/home/jenkins/jenkins-x/jx') {
                     checkout scm
                     container('go') {
                         sh "make linux"
@@ -87,14 +87,14 @@ pipeline {
                 branch 'master'
             }
             steps {
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
+                dir ('/home/jenkins/jenkins-x/jx') {
                     checkout scm
                     container('go') {
                         sh "echo \$(jx-release-version) > pkg/version/VERSION"
                         sh "make release"
                     }
                 }
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx/charts/jx') {
+                dir ('/home/jenkins/jenkins-x/jx/charts/jx') {
                     container('go') {
                         sh "helm init --client-only"
                         sh "make release"

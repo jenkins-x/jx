@@ -16,7 +16,7 @@
 
 SHELL := /bin/bash
 NAME := jx
-GO := GO15VENDOREXPERIMENT=1 go
+GO := go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 #ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
