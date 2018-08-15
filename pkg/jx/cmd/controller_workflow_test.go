@@ -47,8 +47,8 @@ func TestSequentialWorkflow(t *testing.T) {
 
 	myFlowName := "myflow"
 
-	step1 := workflow.CreateWorkflowPromoteStep("staging", false)
-	step2 := workflow.CreateWorkflowPromoteStep("production", false, step1)
+	step1 := workflow.CreateWorkflowPromoteStep("staging")
+	step2 := workflow.CreateWorkflowPromoteStep("production", step1)
 
 	ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{},
@@ -77,10 +77,10 @@ func TestSequentialWorkflow(t *testing.T) {
 			spec := workflow.Spec
 			assert.Equal(t, 2, len(spec.Steps), "number of steps")
 			if len(spec.Steps) > 0 {
-				assertPromoteStep(t, &spec.Steps[0], "staging", false)
+				assertPromoteStep(t, &spec.Steps[0], "staging")
 			}
 			if len(spec.Steps) > 1 {
-				assertPromoteStep(t, &spec.Steps[1], "production", false)
+				assertPromoteStep(t, &spec.Steps[1], "production")
 			}
 		}
 	}
@@ -174,9 +174,9 @@ func TestParallelWorkflow(t *testing.T) {
 
 	myFlowName := "myflow"
 
-	step1 := workflow.CreateWorkflowPromoteStep(envNameA, false)
-	step2 := workflow.CreateWorkflowPromoteStep(envNameB, false)
-	step3 := workflow.CreateWorkflowPromoteStep(envNameC, false, step1, step2)
+	step1 := workflow.CreateWorkflowPromoteStep(envNameA)
+	step2 := workflow.CreateWorkflowPromoteStep(envNameB)
+	step3 := workflow.CreateWorkflowPromoteStep(envNameC, step1, step2)
 
 	ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{},
@@ -207,13 +207,13 @@ func TestParallelWorkflow(t *testing.T) {
 			spec := workflow.Spec
 			assert.Equal(t, 3, len(spec.Steps), "number of steps")
 			if len(spec.Steps) > 0 {
-				assertPromoteStep(t, &spec.Steps[0], envNameA, false)
+				assertPromoteStep(t, &spec.Steps[0], envNameA)
 			}
 			if len(spec.Steps) > 1 {
-				assertPromoteStep(t, &spec.Steps[1], envNameB, false)
+				assertPromoteStep(t, &spec.Steps[1], envNameB)
 			}
 			if len(spec.Steps) > 2 {
-				assertPromoteStep(t, &spec.Steps[2], envNameC, false)
+				assertPromoteStep(t, &spec.Steps[2], envNameC)
 			}
 		}
 	}

@@ -41,7 +41,7 @@ func CreateDefaultWorkflow(jxClient versioned.Interface, ns string) (*v1.Workflo
 	for _, name := range names {
 		env := m[name]
 		if env != nil && env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic && env.Spec.Kind == v1.EnvironmentKindTypePermanent {
-			step := CreateWorkflowPromoteStep(name, false)
+			step := CreateWorkflowPromoteStep(name)
 			if previousEnv != "" {
 				step.Preconditions.Environments = []string{previousEnv}
 			}
@@ -66,12 +66,11 @@ func CreateWorkflow(ns string, name string, steps ...v1.WorkflowStep) *v1.Workfl
 }
 
 // CreateWorkflowPromoteStep creates a default Workflow promote step
-func CreateWorkflowPromoteStep(envName string, parallel bool, preconditionSteps ...v1.WorkflowStep) v1.WorkflowStep {
+func CreateWorkflowPromoteStep(envName string, preconditionSteps ...v1.WorkflowStep) v1.WorkflowStep {
 	answer := v1.WorkflowStep{
 		Kind: v1.WorkflowStepKindTypePromote,
 		Promote: &v1.PromoteWorkflowStep{
 			Environment: envName,
-			Parallel:    parallel,
 		},
 	}
 	for _, preconditionStep := range preconditionSteps {
