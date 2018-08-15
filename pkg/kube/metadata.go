@@ -1,5 +1,7 @@
 package kube
 
+import "k8s.io/test-infra/bazel-test-infra/bazel-out/host/bin/external/go_stdlib_darwin_amd64_pure/src/strconv"
+
 // MergeMaps merges all the maps together with the entries in the last map overwriting any earlier values
 //
 // so if you want to add some annotations to a resource you can do
@@ -12,4 +14,24 @@ func MergeMaps(maps ...map[string]string) map[string]string {
 		}
 	}
 	return answer
+}
+
+// IsResourceVersionNewer returns true if the first resource version is newer than the second
+func IsResourceVersionNewer(v1 string, v2 string) bool {
+	if v1 == v2 || v1 == "" {
+		return false
+	}
+	if v2 == "" {
+		return true
+	}
+	i1, e1 := strconv.Atoi(v1)
+	i2, e2 := strconv.Atoi(v2)
+
+	if e1 == nil && e2 != nil {
+		return true
+	}
+	if e1 != nil {
+		return false
+	}
+	return i1 > i2
 }

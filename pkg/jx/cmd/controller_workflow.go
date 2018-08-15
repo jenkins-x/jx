@@ -164,7 +164,8 @@ func (o *ControllerWorkflowOptions) Run() error {
 			if o.Verbose {
 				log.Infof("Polling to see if any PRs have merged: %v\n", t)
 			}
-			o.pollGitPipelineStatuses(jxClient, ns)
+			//o.pollGitPipelineStatuses(jxClient, ns)
+			o.reloadAndPollGitPipelineStatuses(jxClient, ns)
 		}
 	}()
 
@@ -228,6 +229,13 @@ func (o *ControllerWorkflowOptions) onActivityObj(obj interface{}, jxClient vers
 		return
 	}
 	if pipeline != nil {
+		activity, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(pipeline.Name, metav1.GetOptions{})
+		if err == nil {
+			if kube.IsResourceVersionNewer(activity.ResourceVersion, pipeline.ResourceVersion) {
+				log.Infof("onActivity %s using newer resourceVersion of PipelineActivity %s > %s\n", pipeline.Name, activity.ResourceVersion, pipeline.ResourceVersion)
+				pipeline = activity
+			}
+		}
 		o.onActivity(pipeline, jxClient, ns)
 	}
 }
@@ -296,7 +304,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 						allStepsComplete = false
 						// can we generate a PR now?
 						if canExecuteStep(flow, pipeline, &step, promoteStatusMap, envName) {
-							log.Infof("Creating PR for environment %s from PipelineActivity %s\n", envName, pipeline.Name)
+							log.Infof("Creating PR for environment %s from PipelineActivity %s as current status is %#v\n", envName, pipeline.Name, status)
 							po := o.createPromoteOptions(repoName, envName, pipelineName, build, version)
 
 							err := po.Run()
@@ -431,7 +439,8 @@ func (o *ControllerWorkflowOptions) reloadAndPollGitPipelineStatuses(jxClient ve
 // pollGitStatusforPipeline polls the pending PipelineActivity resources to see if the
 // PR has merged or the pipeline on master has completed
 func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
-	if !o.isReleaseBranch(activity.BranchName()) {
+	if !o.isReleaseBranch(activity.BranchName()) || activity.Spec.WorkflowStatus == v1.ActivityStatusTypeSucceeded {
+		o.removePipelineActivity(activity)
 		return
 	}
 
@@ -472,8 +481,9 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 		if err != nil {
 			log.Warnf("Failed to query the Pull Request status on pipeline %s for repo %s PR %d for PR %s: %s", activity.Name, gitInfo.HttpsURL(), prNumber, prURL, err)
 		} else {
-			log.Infof("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
-
+			if o.Verbose {
+				log.Infof("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
+			}
 			po := o.createPromoteOptionsFromActivity(activity, envName)
 
 			if pr.Merged != nil && *pr.Merged {
