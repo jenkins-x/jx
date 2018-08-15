@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,12 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-)
-
-var (
-	testOrgName  = "jstrachan"
-	testRepoName = "myrepo"
-	testMergeSha = "dummyCommitSha"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 func TestPullRequestNumber(t *testing.T) {
@@ -46,71 +43,25 @@ func TestPullRequestNumber(t *testing.T) {
 }
 
 func TestSequentialWorkflow(t *testing.T) {
-	prMap := map[int]*gits.FakePullRequest{}
+	testOrgName := "jstrachan"
+	testRepoName := "myrepo"
+	stagingRepoName := "environment-staging"
+	prodRepoName := "environment-production"
 
-	fakePrFn := func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
-		i, err := createFakePullRequests(env, modifyRequirementsFn, branchNameText, title, message, pullRequestInfo)
-		if err == nil {
-			if i.PullRequest == nil {
-				i.PullRequest = &gits.GitPullRequest{
-					Number: &fakePrCounter,
-					URL:    createFakePRURL(fakePrCounter),
-					Owner:  testOrgName,
-					Repo:   testRepoName,
-				}
-			}
-			pr := i.PullRequest
-			if pr != nil && pr.Number != nil {
-				n := *pr.Number
-				log.Infof("Creating fake PullRequest number %d at URL %s\n", n, pr.URL)
-				prMap[n] = &gits.FakePullRequest{
-					PullRequest: pr,
-					Commits: []*gits.FakeCommit{
-						{
-							Commit: &gits.GitCommit{
-								SHA:     testMergeSha,
-								Message: "dummy commit",
-							},
-							Status: gits.CommitStatusPending,
-						},
-					},
-					Comment: "comment for PR",
-				}
-			} else {
-				log.Warnf("Missing number for PR %s\n", pr.URL)
-			}
-		}
-		return i, err
-	}
+	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
+	stagingRepo := gits.NewFakeRepository(testOrgName, stagingRepoName)
+	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
 
-	fakeRepo := &gits.FakeRepository{
-		GitRepo: &gits.GitRepository{
-			Name: testRepoName,
-		},
-		PullRequests: prMap,
-		Commits: []*gits.FakeCommit{
-			{
-				Commit: &gits.GitCommit{
-					SHA:     testMergeSha,
-					Message: "dummy commit",
-				},
-				Status: gits.CommitStatusPending,
-			},
-		},
-	}
-	fakeGitProvider := &gits.FakeProvider{
-		Repositories: map[string][]*gits.FakeRepository{
-			testOrgName: {fakeRepo},
-		},
-	}
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
+
 	o := &ControllerWorkflowOptions{
 		NoWatch:          true,
-		FakePullRequests: fakePrFn,
+		FakePullRequests: NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
 	}
 
-	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/jstrachan/environment-jstrachan-test1-staging.git")
-	production := kube.NewPermanentEnvironmentWithGit("production", "https://github.com/jstrachan/environment-jstrachan-test1-production.git")
+	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/"+testOrgName+"/"+stagingRepoName+".git")
+	production := kube.NewPermanentEnvironmentWithGit("production", "https://github.com/"+testOrgName+"/"+prodRepoName+".git")
 	staging.Spec.Order = 100
 	production.Spec.Order = 200
 
@@ -172,80 +123,126 @@ func TestSequentialWorkflow(t *testing.T) {
 	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	// still no PR merged so cannot create a PR for production
-	o.checkPullRequests(jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
-	pr1 := prMap[1]
-	if !assert.NotNil(t, pr1, "Should have a Pull Request for 1") {
+	// test no PR on production until staging completed
+	if !assertSetPullRequestMerged(t, fakeGitProvider, stagingRepo, 1) {
 		return
 	}
 
-	// no PR on prod until staging completed
-	setPullRequestMerged(pr1)
-
-	// validate the fake git provider concurs
-	testGitInfo := &gits.GitRepositoryInfo{
-		Organisation: testOrgName,
-		Name:         testRepoName,
-	}
-	pr, err := fakeGitProvider.GetPullRequest(testOrgName, testGitInfo, *pr1.PullRequest.Number)
-	assert.NoError(t, err, "Finding PullRequest 1")
-	assert.True(t, pr.Merged != nil && *pr.Merged, "Fake PR 1 is merged")
-
-	o.checkPullRequests(jxClient, ns)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
-	pr1 = prMap[1]
-	setPromoteComplete(pr1, fakeRepo)
-
-	// validate the fake git provider concurs
-	statuses, err := fakeGitProvider.ListCommitStatus(testOrgName, testRepoName, *pr.MergeCommitSHA)
-	assert.NoError(t, err, "Finding PullRequest 1 commit status")
-	if assert.True(t, len(statuses) > 0, "PullRequest 1 statuses are not empty") {
-		lastStatus := statuses[len(statuses)-1]
-		assert.Equal(t, "success", lastStatus.State, "Last commit status of PullRequest 1 at %s", pr.URL)
+	if !assertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 1) {
+		return
 	}
 
-	o.checkPullRequests(jxClient, ns)
+	// now lets poll again due to change to the activity to detect the staging is complete
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	// now lets run again due to change to the activity to detect the staging is complete
-	err = o.Run()
 	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-
 	assertHasPullRequestForEnv(t, activities, a.Name, "production")
 	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
 	assertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
-	pr2 := prMap[2]
-	assert.NotNil(t, pr2, "No PullRequest 2 created")
+	if !assertSetPullRequestMerged(t, fakeGitProvider, prodRepo, 1) {
+		return
+	}
+	if !assertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
+		return
+	}
 
-	setPullRequestMerged(pr2)
-	setPromoteComplete(pr2, fakeRepo)
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
-	o.checkPullRequests(jxClient, ns)
-	err = o.Run()
+	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
 
 	// TODO
 	//assertAllPromoteStepsSuccessful(t, activities, a.Name)
 }
 
-func setPromoteComplete(pr *gits.FakePullRequest, repository *gits.FakeRepository) {
-	l := len(pr.Commits)
-	if l > 0 {
-		pr.Commits[l-1].Status = gits.CommitSatusSuccess
-
-		repository.Commits[len(repository.Commits)-1] = pr.Commits[l-1]
-		log.Infof("PR %s has commit status success\n", pr.PullRequest.URL)
-	}
+func pollGitStatusAndReactToPipelineChanges(t *testing.T, o *ControllerWorkflowOptions, jxClient versioned.Interface, ns string) error {
+	o.reloadAndPollGitPipelineStatuses(jxClient, ns)
+	err := o.Run()
+	assert.NoError(t, err, "Failed to react to PipelineActivity changes")
+	return err
 }
 
-func setPullRequestMerged(pr *gits.FakePullRequest) {
-	sha := testMergeSha
+func assertSetPullRequestMerged(t *testing.T, provider *gits.FakeProvider, repository *gits.FakeRepository, prNumber int) bool {
+	fakePR := repository.PullRequests[prNumber]
+	if !assert.NotNil(t, fakePR, "No PullRequest found on repository %s for number #%d", repository.String(), prNumber) {
+		return false
+	}
+	commitLen := len(fakePR.Commits)
+	if !assert.True(t, commitLen > 0, "PullRequest #%d on repository %s has no commits", prNumber, repository.String()) {
+		return false
+	}
+	lastFakeCommit := fakePR.Commits[commitLen-1].Commit
+	if !assert.NotNil(t, lastFakeCommit, "PullRequest #%d on repository %s last commit status has no commits", prNumber, repository.String()) {
+		return false
+	}
+	sha := lastFakeCommit.SHA
 	merged := true
-	pr.PullRequest.MergeCommitSHA = &sha
-	pr.PullRequest.Merged = &merged
+	fakePR.PullRequest.MergeCommitSHA = &sha
+	fakePR.PullRequest.Merged = &merged
 
-	log.Infof("PR %s is now merged\n", pr.PullRequest.URL)
+	log.Infof("PR %s is now merged\n", fakePR.PullRequest.URL)
+
+	// validate the fake git provider concurs
+	testGitInfo := &gits.GitRepositoryInfo{
+		Organisation: repository.Owner,
+		Name:         repository.Name(),
+	}
+	pr, err := provider.GetPullRequest(repository.Owner, testGitInfo, prNumber)
+	assert.NoError(t, err, "Finding PullRequest %d", prNumber)
+	return assert.True(t, pr.Merged != nil && *pr.Merged, "Fake PR %d is merged", prNumber)
+}
+
+func assertSetPullRequestComplete(t *testing.T, provider *gits.FakeProvider, repository *gits.FakeRepository, prNumber int) bool {
+	fakePR := repository.PullRequests[prNumber]
+	if !assert.NotNil(t, fakePR, "No PullRequest found on repository %s for number #%d", repository.String(), prNumber) {
+		return false
+	}
+
+	l := len(fakePR.Commits)
+	if l > 0 {
+		fakePR.Commits[l-1].Status = gits.CommitSatusSuccess
+
+		// ensure the commit is on the repo r
+		lastCommit := fakePR.Commits[l-1]
+		if len(repository.Commits) == 0 {
+			repository.Commits = append(repository.Commits, lastCommit)
+		} else {
+			repository.Commits[len(repository.Commits)-1] = lastCommit
+		}
+		log.Infof("PR %s has commit status success\n", fakePR.PullRequest.URL)
+	}
+
+	// validate the fake git provider concurs
+	repoOwner := repository.Owner
+	repoName := repository.Name()
+	testGitInfo := &gits.GitRepositoryInfo{
+		Organisation: repoOwner,
+		Name:         repoName,
+	}
+	pr, err := provider.GetPullRequest(repoOwner, testGitInfo, prNumber)
+	assert.NoError(t, err, "Finding PullRequest %d", prNumber)
+	if !assert.NotNil(t, pr, "Could not find PR %d", prNumber) {
+		return false
+	}
+	if !assert.NotNil(t, pr.MergeCommitSHA, "PR %d has no MergeCommitSHA", prNumber) {
+		return false
+	}
+
+	statuses, err := provider.ListCommitStatus(repoOwner, repoName, *pr.MergeCommitSHA)
+	assert.NoError(t, err, "Finding PullRequest %d commit status", prNumber)
+	if assert.True(t, len(statuses) > 0, "PullRequest %d statuses are empty", prNumber) {
+		lastStatus := statuses[len(statuses)-1]
+		return assert.Equal(t, "success", lastStatus.State, "Last commit status of PullRequest 1 at %s", pr.URL)
+	} else {
+		return false
+	}
 }
 
 func setPullRequestClosed(pr *gits.FakePullRequest) {
@@ -253,27 +250,6 @@ func setPullRequestClosed(pr *gits.FakePullRequest) {
 	pr.PullRequest.ClosedAt = &now
 
 	log.Infof("PR %s is now closed\n", pr.PullRequest.URL)
-}
-
-func createFakePullRequest(prNumber int) *gits.FakePullRequest {
-	return &gits.FakePullRequest{
-		PullRequest: &gits.GitPullRequest{
-			Number: &prNumber,
-			URL:    createFakePRURL(prNumber),
-			Owner:  testOrgName,
-			Repo:   testRepoName,
-		},
-		Commits: []*gits.FakeCommit{
-			{
-				Commit: &gits.GitCommit{
-					SHA:     testMergeSha,
-					Message: "dummy commit",
-				},
-				Status: gits.CommitStatusPending,
-			},
-		},
-		Comment: "comment for PR",
-	}
 }
 
 func assertHasPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string) {
@@ -400,9 +376,7 @@ func createTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	return a, err
 }
 
-var fakePrCounter = 0
-
-func createFakePullRequests(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
+func CreateFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
 	if pullRequestInfo == nil {
 		pullRequestInfo = &ReleasePullRequestInfo{}
 	}
@@ -412,23 +386,64 @@ func createFakePullRequests(env *v1.Environment, modifyRequirementsFn ModifyRequ
 	}
 	pr := pullRequestInfo.PullRequest
 	if pr.Number == nil {
-		fakePrCounter++
-		n := fakePrCounter
+		repository.PullRequestCounter++
+		n := repository.PullRequestCounter
 		pr.Number = &n
 	}
 	if pr.URL == "" {
-		pr.URL = createFakePRURL(*pr.Number)
+		n := *pr.Number
+		pr.URL = "https://github.com/" + repository.Owner + "/" + repository.Name() + "/pulls/" + strconv.Itoa(n)
 	}
 	if pr.Owner == "" {
-		pr.Owner = testOrgName
+		pr.Owner = repository.Owner
 	}
 	if pr.Repo == "" {
-		pr.Repo = testRepoName
+		pr.Repo = repository.Name()
 	}
+
 	log.Infof("Creating fake Pull Request for env %s branch %s title %s message %s with number %d and URL %s\n", env.Name, branchNameText, title, message, *pr.Number, pr.URL)
+
+	if pr != nil && pr.Number != nil {
+		n := *pr.Number
+		log.Infof("Creating fake PullRequest number %d at URL %s\n", n, pr.URL)
+
+		// lets add a pending commit too
+		commitSha := string(uuid.NewUUID())
+		commit := &gits.FakeCommit{
+			Commit: &gits.GitCommit{
+				SHA:     commitSha,
+				Message: "dummy commit " + commitSha,
+			},
+			Status: gits.CommitStatusPending,
+		}
+
+		repository.PullRequests[n] = &gits.FakePullRequest{
+			PullRequest: pr,
+			Commits:     []*gits.FakeCommit{commit},
+			Comment:     "comment for PR",
+		}
+		repository.Commits = append(repository.Commits, commit)
+	} else {
+		log.Warnf("Missing number for PR %s\n", pr.URL)
+	}
 	return pullRequestInfo, nil
 }
 
-func createFakePRURL(i int) string {
-	return "https://github.com/" + testOrgName + "/" + testRepoName + "/pulls/" + strconv.Itoa(i)
+func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) CreateEnvPullRequestFn {
+	fakePrFn := func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
+		envUrl := env.Spec.Source.URL
+		values := []string{}
+		for _, repos := range provider.Repositories {
+			for _, repo := range repos {
+				cloneUrl := repo.GitRepo.CloneURL
+				if cloneUrl == envUrl {
+					return CreateFakePullRequest(repo, env, modifyRequirementsFn, branchNameText, title, message, pullRequestInfo)
+				} else {
+					values = append(values, cloneUrl)
+				}
+			}
+		}
+		return nil, fmt.Errorf("Could not find repository for cloneURL %s values found %s", envUrl, strings.Join(values, ", "))
+	}
+	return fakePrFn
 }

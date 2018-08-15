@@ -164,7 +164,7 @@ func (o *ControllerWorkflowOptions) Run() error {
 			if o.Verbose {
 				log.Infof("Polling to see if any PRs have merged: %v\n", t)
 			}
-			o.checkPullRequests(jxClient, ns)
+			o.pollGitPipelineStatuses(jxClient, ns)
 		}
 	}()
 
@@ -385,33 +385,60 @@ func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActiv
 	return answer, gitInfo, nil
 }
 
-// checkPullRequests lets poll all the pending PipelineActivity resources to see if any of them
+// pollGitPipelineStatuses lets poll all the pending PipelineActivity resources to see if any of them
 // have PR has merged or the pipeline on master has completed
-func (o *ControllerWorkflowOptions) checkPullRequests(jxClient versioned.Interface, ns string) {
+func (o *ControllerWorkflowOptions) pollGitPipelineStatuses(jxClient versioned.Interface, ns string) {
 	environments := jxClient.JenkinsV1().Environments(ns)
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 
 	for _, activity := range o.pipelineMap {
-		o.checkPullRequest(activity, activities, environments, ns)
+		o.pollGitStatusforPipeline(activity, activities, environments, ns)
 	}
 }
 
-// checkPullRequest polls the pending PipelineActivity resources to see if the
+// reloadAndPollGitPipelineStatuses reloads all the current pending PipelineActivity objects and polls their Git
+// status to see if the workflows can progress.
+//
+// Note this method is only really for testing and simulation
+func (o *ControllerWorkflowOptions) reloadAndPollGitPipelineStatuses(jxClient versioned.Interface, ns string) {
+	environments := jxClient.JenkinsV1().Environments(ns)
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+
+	for name, _ := range o.pipelineMap {
+		latest, err := activities.Get(name, metav1.GetOptions{})
+		if err != nil {
+			log.Warnf("failed to get PipelineActivity %s: %s", name, err)
+		} else {
+			o.pollGitStatusforPipeline(latest, activities, environments, ns)
+		}
+	}
+}
+
+// pollGitStatusforPipeline polls the pending PipelineActivity resources to see if the
 // PR has merged or the pipeline on master has completed
-func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
+func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
 	if !o.isReleaseBranch(activity.BranchName()) {
 		return
 	}
 
 	for _, step := range activity.Spec.Steps {
 		promote := step.Promote
-		if promote == nil || promote.Status.IsTerminated() {
+		if promote == nil {
+			continue
+		}
+		if promote.Status.IsTerminated() {
+			log.Infof("Pipeline %s promote Environment %s ignored as status %s\n", activity.Name, promote.Environment, string(promote.Status))
 			continue
 		}
 		envName := promote.Environment
 		pullRequestStep := promote.PullRequest
+		if pullRequestStep == nil {
+			log.Infof("Pipeline %s promote Environment %s status ignored as no PullRequest\n", activity.Name, promote.Environment, string(promote.Status))
+			continue
+		}
 		prURL := pullRequestStep.PullRequestURL
-		if pullRequestStep == nil || prURL == "" || envName == "" {
+		if prURL == "" || envName == "" {
+			log.Infof("Pipeline %s promote Environment %s status ignored for PR %s\n", activity.Name, promote.Environment, string(promote.Status), prURL)
 			continue
 		}
 		gitProvider, gitInfo, err := o.createGitProviderForPR(prURL)
