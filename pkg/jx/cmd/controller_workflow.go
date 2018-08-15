@@ -285,6 +285,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		// lets walk the Workflow spec and see if we need to trigger any PRs or move the PipelineActivity forward
 		promoteStatusMap := createPromoteStatus(pipeline)
 
+		allStepsComplete := true
 		for _, step := range flow.Spec.Steps {
 			promote := step.Promote
 			if promote != nil {
@@ -292,6 +293,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 				if envName != "" {
 					status := promoteStatusMap[envName]
 					if status == nil || status.PullRequest == nil || status.PullRequest.PullRequestURL == "" {
+						allStepsComplete = false
 						// can we generate a PR now?
 						if canExecuteStep(flow, pipeline, &step, promoteStatusMap, envName) {
 							log.Infof("Creating PR for environment %s from PipelineActivity %s\n", envName, pipeline.Name)
@@ -303,8 +305,20 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 							}
 						}
 					}
+					if status != nil && status.Status != v1.ActivityStatusTypeSucceeded {
+						allStepsComplete = false
+					}
 				}
 			}
+		}
+		if allStepsComplete && (pipeline.Spec.Status != v1.ActivityStatusTypeSucceeded || pipeline.Spec.WorkflowStatus != v1.ActivityStatusTypeSucceeded) {
+			pipeline.Spec.Status = v1.ActivityStatusTypeSucceeded
+			pipeline.Spec.WorkflowStatus = v1.ActivityStatusTypeSucceeded
+			_, err := jxClient.JenkinsV1().PipelineActivities(ns).Update(pipeline)
+			if err != nil {
+				log.Warnf("Failed to update PipelineActivity %s due to being complete: %s", pipeline.Name, err)
+			}
+
 		}
 	}
 }

@@ -158,8 +158,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
 
-	// TODO
-	//assertAllPromoteStepsSuccessful(t, activities, a.Name)
+	assertAllPromoteStepsSuccessful(t, activities, a.Name)
 }
 
 func pollGitStatusAndReactToPipelineChanges(t *testing.T, o *ControllerWorkflowOptions, jxClient versioned.Interface, ns string) error {
@@ -324,6 +323,7 @@ func assertAllPromoteStepsSuccessful(t *testing.T, activities typev1.PipelineAct
 		return
 	}
 	assert.Equal(t, string(v1.ActivityStatusTypeSucceeded), string(activity.Spec.Status), "PipelineActivity status for %s", activity.Name)
+	assert.Equal(t, string(v1.ActivityStatusTypeSucceeded), string(activity.Spec.WorkflowStatus), "PipelineActivity workflow status for %s", activity.Name)
 	for _, step := range activity.Spec.Steps {
 		promote := step.Promote
 		if promote != nil {
