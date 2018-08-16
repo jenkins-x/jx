@@ -255,6 +255,119 @@ func TestWorkflowManualPromote(t *testing.T) {
 	assertAllPromoteStepsSuccessful(t, activities, a.Name)
 }
 
+func TestWorkflowManualPromote(t *testing.T) {
+	testOrgName := "jstrachan"
+	testRepoName := "manual"
+	stagingRepoName := "environment-staging"
+	prodRepoName := "environment-production"
+
+	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
+	stagingRepo := gits.NewFakeRepository(testOrgName, stagingRepoName)
+	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
+
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
+
+	o := &ControllerWorkflowOptions{
+		NoWatch:          true,
+		FakePullRequests: NewCreateEnvPullRequestFn(fakeGitProvider),
+		FakeGitProvider:  fakeGitProvider,
+	}
+
+	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/"+testOrgName+"/"+stagingRepoName+".git")
+	production := kube.NewPermanentEnvironmentWithGit("production", "https://github.com/"+testOrgName+"/"+prodRepoName+".git")
+	production.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
+
+	workflowName := ""
+
+	ConfigureTestOptionsWithResources(&o.CommonOptions,
+		[]runtime.Object{},
+		[]runtime.Object{
+			staging,
+			production,
+			kube.NewPreviewEnvironment("jx-jstrachan-demo96-pr-1"),
+			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
+		},
+		gits.NewGitCLI(),
+		helm.NewHelmCLI("helm", helm.V2, ""),
+	)
+	o.git = &gits.GitFake{}
+
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	assert.NoError(t, err)
+
+	a, err := createTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", workflowName)
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+	err = o.Run()
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	assertHasPullRequestForEnv(t, activities, a.Name, "staging")
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+
+	// lets make sure we don't create a PR for production as its manual
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+
+	if !assertSetPullRequestMerged(t, fakeGitProvider, stagingRepo, 1) {
+		return
+	}
+	if !assertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 1) {
+		return
+	}
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+
+	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	assertAllPromoteStepsSuccessful(t, activities, a.Name)
+
+	// TODO now lets do a manual promotion
+	version := a.Spec.Version
+	po := &PromoteOptions{
+		Application:       testRepoName,
+		Environment:       "production",
+		Pipeline:          a.Spec.Pipeline,
+		Build:             a.Spec.Build,
+		Version:           version,
+		NoPoll:            true,
+		IgnoreLocalFiles:  true,
+		HelmRepositoryURL: helm.DefaultHelmRepositoryURL,
+		LocalHelmRepoName: kube.LocalHelmRepoName,
+		FakePullRequests:  o.FakePullRequests,
+	}
+	po.CommonOptions = o.CommonOptions
+	po.BatchMode = true
+	log.Infof("Promoting to production version %s for app %s\n", version, testRepoName)
+	err = po.Run()
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+
+	assertHasPullRequestForEnv(t, activities, a.Name, "production")
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+
+	if !assertSetPullRequestMerged(t, fakeGitProvider, prodRepo, 1) {
+		return
+	}
+	if !assertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
+		return
+	}
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+
+	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
+	assertAllPromoteStepsSuccessful(t, activities, a.Name)
+}
+
 // TestParallelWorkflow lets test promoting to A + B then when A + B is complete then C
 func TestParallelWorkflow(t *testing.T) {
 	testOrgName := "jstrachan"
