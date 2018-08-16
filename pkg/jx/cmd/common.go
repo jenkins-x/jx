@@ -70,6 +70,18 @@ type CommonOptions struct {
 	Prow
 }
 
+// NewCommonOptions a helper method to create a new CommonOptions instance
+// pre configured in a specific devNamespace
+func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
+	return CommonOptions{
+		Factory:          factory,
+		Out:              os.Stdout,
+		Err:              os.Stderr,
+		currentNamespace: devNamespace,
+		devNamespace:     devNamespace,
+	}
+}
+
 type ServerFlags struct {
 	ServerName string
 	ServerURL  string
