@@ -781,8 +781,14 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	}
 	if pipeline == "" {
 		pipeline, build = o.getPipelineName(gitInfo, pipeline, build)
-	} else if build == "" {
+	}
+	if pipeline != "" && build == "" {
 		log.Warnf("No $BUILD_NUMBER environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
+		var err error
+		build, err = o.getLatestPipelineBuildByCRD(pipeline)
+		if err != nil {
+			log.Warnf("Could not discover the latest PipelineActivity build %s\n", err)
+		}
 	}
 	name := pipeline
 	if build != "" {
@@ -827,6 +833,38 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	}
 }
 
+// getLatestPipelineBuild returns the latest pipeline build
+func (o *CommonOptions) getLatestPipelineBuildByCRD(pipeline string) (string, error) {
+	// lets find the latest build number
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return "", err
+	}
+	pipelines, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	buildNumber := 0
+	for _, p := range pipelines.Items {
+		if p.Spec.Pipeline == pipeline {
+			b := p.Spec.Build
+			if b != "" {
+				n, err := strconv.Atoi(b)
+				if err == nil {
+					if n > buildNumber {
+						buildNumber = n
+					}
+				}
+			}
+		}
+	}
+	if buildNumber > 0 {
+		return strconv.Itoa(buildNumber), nil
+	}
+	return "1", nil
+}
+
 func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipeline string, build string) (string, string) {
 	if pipeline == "" {
 		pipeline = os.Getenv("JOB_NAME")
@@ -859,40 +897,6 @@ func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipelin
 	if pipeline == "" {
 		// lets try find
 		log.Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
-	} else {
-		if build == "" {
-			// lets find the latest build number
-			jxClient, ns, err := o.JXClientAndDevNamespace()
-			if err != nil {
-				log.Warnf("Could not create JXClient: %s\n", err)
-			} else {
-				pipelines, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
-				if err != nil {
-					log.Warnf("Could not list PipelineActivity in namespace %s: %s\n", ns, err)
-				} else {
-					buildNumber := 0
-					for _, p := range pipelines.Items {
-						if p.Spec.Pipeline == pipeline {
-							b := p.Spec.Build
-							if b != "" {
-								n, err := strconv.Atoi(b)
-								if err == nil {
-									if n > buildNumber {
-										buildNumber = n
-									}
-								}
-							}
-						}
-					}
-					if buildNumber > 0 {
-						build = strconv.Itoa(buildNumber)
-					}
-				}
-			}
-		}
-		if build == "" {
-			build = "1"
-		}
 	}
 	return pipeline, build
 }
