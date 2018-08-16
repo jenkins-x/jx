@@ -433,6 +433,9 @@ func (o *StepChangelogOptions) Run() error {
 			lastCommitMessage = lastCommit.Message
 			lastCommitURL = lastCommit.URL
 		}
+		cleanVersion := strings.TrimPrefix(version, "v")
+		log.Infof("Updating PipelineActivity %s with version %s\n", name, cleanVersion)
+
 		key := &kube.PromoteStepActivityKey{
 			PipelineActivityKey: kube.PipelineActivityKey{
 				Name:              name,
@@ -442,6 +445,7 @@ func (o *StepChangelogOptions) Run() error {
 				LastCommitSHA:     lastCommitSha,
 				LastCommitMessage: lastCommitMessage,
 				LastCommitURL:     lastCommitURL,
+				Version:           cleanVersion,
 			},
 		}
 		a, created, err := key.GetOrCreate(activities)

@@ -47,6 +47,7 @@ func NewCmdController(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 	}
 
 	cmd.AddCommand(NewCmdControllerBuild(f, out, errOut))
+	cmd.AddCommand(NewCmdControllerWorkflow(f, out, errOut))
 	return cmd
 }
 

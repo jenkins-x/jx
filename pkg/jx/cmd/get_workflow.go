@@ -111,7 +111,7 @@ func (o *GetWorkflowOptions) getWorkflow(name string, jxClient versioned.Interfa
 	for _, step := range workflow.Spec.Steps {
 		promote := step.Promote
 		if promote != nil {
-			if !promote.Parallel {
+			if len(step.Preconditions.Environments) > 0 {
 				lastSummary = nil
 			}
 			if lastSummary == nil {
@@ -122,7 +122,7 @@ func (o *GetWorkflowOptions) getWorkflow(name string, jxClient versioned.Interfa
 				lines = append(lines, lastSummary)
 			}
 			lastSummary.Resources = append(lastSummary.Resources, promote.Environment)
-			if !promote.Parallel {
+			if len(step.Preconditions.Environments) > 0 {
 				lastSummary = nil
 			}
 		}

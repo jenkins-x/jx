@@ -17,13 +17,19 @@ func GetWorkflow(name string, jxClient versioned.Interface, ns string) (*v1.Work
 	if err == nil || name != DefaultWorkflowName {
 		return workflow, err
 	}
+	return CreateDefaultWorkflow(jxClient, ns)
+}
+
+// CreateDefaultWorkflow creates the default workflow if none is provided by just chaining the Auto enviornments together
+// sequentially
+func CreateDefaultWorkflow(jxClient versioned.Interface, ns string) (*v1.Workflow, error) {
 	m, names, err := kube.GetOrderedEnvironments(jxClient, ns)
 	if err != nil {
 		return nil, err
 	}
 
 	// lets create a default workflow
-	workflow = &v1.Workflow{
+	workflow := &v1.Workflow{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      DefaultWorkflowName,
 			Namespace: ns,
@@ -31,11 +37,16 @@ func GetWorkflow(name string, jxClient versioned.Interface, ns string) (*v1.Work
 		Spec: v1.WorkflowSpec{},
 	}
 	spec := &workflow.Spec
+	previousEnv := ""
 	for _, name := range names {
 		env := m[name]
 		if env != nil && env.Spec.PromotionStrategy == v1.PromotionStrategyTypeAutomatic && env.Spec.Kind == v1.EnvironmentKindTypePermanent {
-			step := CreateWorkflowPromoteStep(name, false)
+			step := CreateWorkflowPromoteStep(name)
+			if previousEnv != "" {
+				step.Preconditions.Environments = []string{previousEnv}
+			}
 			spec.Steps = append(spec.Steps, step)
+			previousEnv = name
 		}
 	}
 	return workflow, nil
@@ -55,13 +66,21 @@ func CreateWorkflow(ns string, name string, steps ...v1.WorkflowStep) *v1.Workfl
 }
 
 // CreateWorkflowPromoteStep creates a default Workflow promote step
-func CreateWorkflowPromoteStep(envName string, parallel bool) v1.WorkflowStep {
-	return v1.WorkflowStep{
+func CreateWorkflowPromoteStep(envName string, preconditionSteps ...v1.WorkflowStep) v1.WorkflowStep {
+	answer := v1.WorkflowStep{
 		Kind: v1.WorkflowStepKindTypePromote,
-		Name: "step-promote-" + envName,
 		Promote: &v1.PromoteWorkflowStep{
 			Environment: envName,
-			Parallel:    parallel,
 		},
 	}
+	for _, preconditionStep := range preconditionSteps {
+		promote := preconditionStep.Promote
+		if promote != nil {
+			envName := promote.Environment
+			if envName != "" {
+				answer.Preconditions.Environments = append(answer.Preconditions.Environments, envName)
+			}
+		}
+	}
+	return answer
 }

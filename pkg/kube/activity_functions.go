@@ -48,7 +48,13 @@ func StartPromotionPullRequest(a *v1.PipelineActivity, s *v1.PipelineActivitySte
 			Time: time.Now(),
 		}
 	}
-	if p.Status == v1.ActivityStatusTypeNone {
+	if a.Spec.WorkflowStatus != v1.ActivityStatusTypeRunning {
+		a.Spec.WorkflowStatus = v1.ActivityStatusTypeRunning
+	}
+	if a.Spec.Status != v1.ActivityStatusTypeRunning {
+		a.Spec.Status = v1.ActivityStatusTypeRunning
+	}
+	if p.Status != v1.ActivityStatusTypeRunning {
 		p.Status = v1.ActivityStatusTypeRunning
 	}
 	return nil
@@ -65,7 +71,13 @@ func StartPromotionUpdate(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps
 			Time: time.Now(),
 		}
 	}
-	if p.Status == v1.ActivityStatusTypeNone {
+	if a.Spec.WorkflowStatus != v1.ActivityStatusTypeRunning {
+		a.Spec.WorkflowStatus = v1.ActivityStatusTypeRunning
+	}
+	if a.Spec.Status != v1.ActivityStatusTypeRunning {
+		a.Spec.Status = v1.ActivityStatusTypeRunning
+	}
+	if p.Status != v1.ActivityStatusTypeRunning {
 		p.Status = v1.ActivityStatusTypeRunning
 	}
 	return nil
