@@ -890,6 +890,9 @@ func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipelin
 				}
 			}
 		}
+		if build == "" {
+			build = "1"
+		}
 	}
 	return pipeline, build
 }
