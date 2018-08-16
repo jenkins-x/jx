@@ -326,7 +326,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	assertAllPromoteStepsSuccessful(t, activities, a.Name)
 
-	// TODO now lets do a manual promotion
+	// now lets do a manual promotion
 	version := a.Spec.Version
 	po := &PromoteOptions{
 		Application:       testRepoName,
