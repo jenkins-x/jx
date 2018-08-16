@@ -293,6 +293,140 @@ func TestParallelWorkflow(t *testing.T) {
 	assertAllPromoteStepsSuccessful(t, activities, a.Name)
 }
 
+// TestNewVersionWhileExistingWorkflow lets test that we create a new workflow and terminate
+// the old workflow if we find a new version
+func TestNewVersionWhileExistingWorkflow(t *testing.T) {
+	testOrgName := "jstrachan"
+	testRepoName := "myrepo"
+	stagingRepoName := "environment-staging"
+	prodRepoName := "environment-production"
+
+	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
+	stagingRepo := gits.NewFakeRepository(testOrgName, stagingRepoName)
+	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
+
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
+
+	o := &ControllerWorkflowOptions{
+		NoWatch:          true,
+		FakePullRequests: NewCreateEnvPullRequestFn(fakeGitProvider),
+		FakeGitProvider:  fakeGitProvider,
+	}
+
+	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/"+testOrgName+"/"+stagingRepoName+".git")
+	production := kube.NewPermanentEnvironmentWithGit("production", "https://github.com/"+testOrgName+"/"+prodRepoName+".git")
+	staging.Spec.Order = 100
+	production.Spec.Order = 200
+
+	myFlowName := "myflow"
+
+	step1 := workflow.CreateWorkflowPromoteStep("staging")
+	step2 := workflow.CreateWorkflowPromoteStep("production", step1)
+
+	ConfigureTestOptionsWithResources(&o.CommonOptions,
+		[]runtime.Object{},
+		[]runtime.Object{
+			staging,
+			production,
+			kube.NewPreviewEnvironment("jx-jstrachan-demo96-pr-1"),
+			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
+			workflow.CreateWorkflow("jx", myFlowName,
+				step1,
+				step2,
+			),
+		},
+		gits.NewGitCLI(),
+		helm.NewHelmCLI("helm", helm.V2, ""),
+	)
+	o.git = &gits.GitFake{}
+
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	assert.NoError(t, err)
+	if err == nil {
+		workflow, err := workflow.GetWorkflow("", jxClient, ns)
+		assert.NoError(t, err)
+		if err == nil {
+			assert.Equal(t, "default", workflow.Name, "name")
+			spec := workflow.Spec
+			assert.Equal(t, 2, len(spec.Steps), "number of steps")
+			if len(spec.Steps) > 0 {
+				assertPromoteStep(t, &spec.Steps[0], "staging")
+			}
+			if len(spec.Steps) > 1 {
+				assertPromoteStep(t, &spec.Steps[1], "production")
+			}
+		}
+	}
+
+	a, err := createTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", myFlowName)
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+	err = o.Run()
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	assertHasPullRequestForEnv(t, activities, a.Name, "staging")
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+
+	// lets trigger a new pipeline release which should close the old version
+	aOld := a
+	a, err = createTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "2", myFlowName)
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+
+	assertHasPullRequestForEnv(t, activities, a.Name, "staging")
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+
+	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+
+	assertWorkflowStatus(t, activities, aOld.Name, v1.ActivityStatusTypeAborted)
+
+	// still no PR merged so cannot create a PR for production
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+
+	// test no PR on production until staging completed
+	if !assertSetPullRequestMerged(t, fakeGitProvider, stagingRepo, 2) {
+		return
+	}
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
+
+	if !assertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 2) {
+		return
+	}
+
+	// now lets poll again due to change to the activity to detect the staging is complete
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+
+	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	assertHasPullRequestForEnv(t, activities, a.Name, "production")
+	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	assertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+
+	if !assertSetPullRequestMerged(t, fakeGitProvider, prodRepo, 1) {
+		return
+	}
+	if !assertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
+		return
+	}
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+
+	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
+
+	assertAllPromoteStepsSuccessful(t, activities, a.Name)
+
+}
+
 func TestPullRequestNumber(t *testing.T) {
 	failUrls := []string{"https://github.com/foo/bar/pulls"}
 	for _, u := range failUrls {
@@ -530,7 +664,7 @@ func createTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 		},
 	}
 	a, _, err := key.GetOrCreate(activities)
-	version := "1.0.1"
+	version := "1.0." + build
 	a.Spec.GitOwner = folder
 	a.Spec.GitRepository = repo
 	a.Spec.GitURL = "https://github.com/" + folder + "/" + repo + ".git"

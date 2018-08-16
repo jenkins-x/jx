@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -252,6 +253,8 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		log.Infof("Processing pipeline %s repo %s version %s with workflow %s and status %s\n", pipeline.Name, repoName, version, workflowName, string(pipeline.Spec.WorkflowStatus))
 	}
 
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+
 	if workflowName == "" {
 		workflowName = "default"
 	}
@@ -259,7 +262,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		if o.Verbose {
 			log.Infof("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
 		}
-		o.removePipelineActivity(pipeline)
+		o.removePipelineActivity(pipeline, activities)
 		return
 	}
 	if !pipeline.Spec.WorkflowStatus.IsTerminated() {
@@ -269,21 +272,24 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 			flow, err = workflow.CreateDefaultWorkflow(jxClient, ns)
 			if err != nil {
 				log.Warnf("Cannot create default Workflow: %s\n", err)
-				o.removePipelineActivity(pipeline)
+				o.removePipelineActivity(pipeline, activities)
 				return
 			}
-
 		}
 
 		if flow == nil {
 			log.Warnf("Cannot process pipeline %s due to workflow name %s not existing\n", pipeline.Name, workflowName)
-			o.removePipelineActivity(pipeline)
+			o.removePipelineActivity(pipeline, activities)
+			return
+		}
+
+		if !o.isNewestPipeline(pipeline, activities) {
 			return
 		}
 
 		if !o.isReleaseBranch(branch) {
 			log.Infof("Ignoring branch %s\n", branch)
-			o.removePipelineActivity(pipeline)
+			o.removePipelineActivity(pipeline, activities)
 			return
 		}
 
@@ -431,6 +437,7 @@ func (o *ControllerWorkflowOptions) reloadAndPollGitPipelineStatuses(jxClient ve
 		if err != nil {
 			log.Warnf("failed to get PipelineActivity %s: %s", name, err)
 		} else {
+			log.Infof("Polling git status of activity %s\n", latest)
 			o.pollGitStatusforPipeline(latest, activities, environments, ns)
 		}
 	}
@@ -440,7 +447,11 @@ func (o *ControllerWorkflowOptions) reloadAndPollGitPipelineStatuses(jxClient ve
 // PR has merged or the pipeline on master has completed
 func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
 	if !o.isReleaseBranch(activity.BranchName()) || activity.Spec.WorkflowStatus == v1.ActivityStatusTypeSucceeded {
-		o.removePipelineActivity(activity)
+		o.removePipelineActivity(activity, activities)
+		return
+	}
+
+	if !o.isNewestPipeline(activity, activities) {
 		return
 	}
 
@@ -746,6 +757,71 @@ func (o *ControllerWorkflowOptions) isReleaseBranch(branchName string) bool {
 	return branchName == "master"
 }
 
-func (o *ControllerWorkflowOptions) removePipelineActivity(activity *v1.PipelineActivity) {
+func setActivitySucceeded(activity *v1.PipelineActivity) bool {
+	activity.Spec.Status = v1.ActivityStatusTypeSucceeded
+	activity.Spec.WorkflowStatus = v1.ActivityStatusTypeSucceeded
+	return true
+}
+
+func setActivityAborted(activity *v1.PipelineActivity) bool {
+	activity.Spec.Status = v1.ActivityStatusTypeAborted
+	activity.Spec.WorkflowStatus = v1.ActivityStatusTypeAborted
+	activity.Spec.WorkflowMessage = "Due to newer pipeline"
+	return true
+}
+
+func (o *ControllerWorkflowOptions) removePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface) {
+	o.modifyAndRemovePipelineActivity(activity, activities, setActivitySucceeded)
+}
+
+func (o *ControllerWorkflowOptions) modifyAndRemovePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, callback func(activity *v1.PipelineActivity) bool) error {
+	err := modifyPipeline(activities, activity, callback)
 	delete(o.pipelineMap, activity.Name)
+	return err
+}
+
+func modifyPipeline(activities typev1.PipelineActivityInterface, activity *v1.PipelineActivity, callback func(activity *v1.PipelineActivity) bool) error {
+	old := activity
+	if callback(activity) {
+		if !reflect.DeepEqual(activity, &old) {
+			_, err := activities.Update(activity)
+			if err != nil {
+				log.Warnf("Failed to update PipelineActivity %s: %s\n", activity.Name, err)
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// isNewestPipeline returns true if this pipeline is the newest pipeline version for a repo
+func (o *ControllerWorkflowOptions) isNewestPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface) bool {
+	newest := true
+	deleteNames := []*v1.PipelineActivity{}
+	for _, act2 := range o.pipelineMap {
+		if activity.Spec.Pipeline == act2.Spec.Pipeline {
+			b1 := activity.Spec.Build
+			b2 := act2.Spec.Build
+			if b1 != b2 {
+				if kube.IsResourceVersionNewer(b2, b1) {
+					newest = false
+				} else if kube.IsResourceVersionNewer(b1, b2) {
+					deleteNames = append(deleteNames, act2)
+				}
+			}
+		}
+	}
+	for _, p := range deleteNames {
+		if o.Verbose {
+			log.Infof("Removing old Pipeline version %s\n", p.Name)
+		}
+		o.modifyAndRemovePipelineActivity(p, activities, setActivityAborted)
+	}
+	if !newest {
+		if o.Verbose {
+			log.Infof("Removing old Pipeline version %s\n", activity.Name)
+		}
+		o.modifyAndRemovePipelineActivity(activity, activities, setActivityAborted)
+	}
+	return newest
 }
