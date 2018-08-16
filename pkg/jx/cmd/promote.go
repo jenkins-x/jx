@@ -900,6 +900,37 @@ func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipelin
 	if pipeline == "" {
 		// lets try find
 		log.Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
+	} else {
+		if build == "" {
+			// lets find the latest build number
+			jxClient, ns, err := o.JXClientAndDevNamespace()
+			if err != nil {
+				log.Warnf("Could not create JXClient: %s\n", err)
+			} else {
+				pipelines, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
+				if err != nil {
+					log.Warnf("Could not list PipelineActivity in namespace %s: %s\n", ns, err)
+				} else {
+					buildNumber := 0
+					for _, p := range pipelines.Items {
+						if p.Spec.Pipeline == pipeline {
+							b := p.Spec.Build
+							if b != "" {
+								n, err := strconv.Atoi(b)
+								if err == nil {
+									if n > buildNumber {
+										buildNumber = n
+									}
+								}
+							}
+						}
+					}
+					if buildNumber > 0 {
+						build = strconv.Itoa(buildNumber)
+					}
+				}
+			}
+		}
 	}
 	return pipeline, build
 }
