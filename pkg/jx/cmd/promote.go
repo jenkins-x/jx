@@ -69,6 +69,7 @@ type PromoteOptions struct {
 	GitInfo                 *gits.GitRepositoryInfo
 	jenkinsURL              string
 	releaseResource         *v1.Release
+	ReleaseInfo             *ReleaseInfo
 }
 
 type ReleaseInfo struct {
@@ -274,6 +275,7 @@ func (o *PromoteOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	o.ReleaseInfo = releaseInfo
 	if !o.NoPoll {
 		err = o.WaitForPromotion(targetNS, env, releaseInfo)
 		if err != nil {
@@ -319,6 +321,7 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 			if err != nil {
 				return err
 			}
+			o.ReleaseInfo = releaseInfo
 			err = o.WaitForPromotion(ns, &env, releaseInfo)
 			if err != nil {
 				return err
@@ -781,8 +784,14 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	}
 	if pipeline == "" {
 		pipeline, build = o.getPipelineName(gitInfo, pipeline, build)
-	} else if build == "" {
+	}
+	if pipeline != "" && build == "" {
 		log.Warnf("No $BUILD_NUMBER environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
+		var err error
+		build, err = o.getLatestPipelineBuildByCRD(pipeline)
+		if err != nil {
+			log.Warnf("Could not discover the latest PipelineActivity build %s\n", err)
+		}
 	}
 	name := pipeline
 	if build != "" {
@@ -825,6 +834,38 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 		},
 		Environment: env.Name,
 	}
+}
+
+// getLatestPipelineBuild returns the latest pipeline build
+func (o *CommonOptions) getLatestPipelineBuildByCRD(pipeline string) (string, error) {
+	// lets find the latest build number
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return "", err
+	}
+	pipelines, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	buildNumber := 0
+	for _, p := range pipelines.Items {
+		if p.Spec.Pipeline == pipeline {
+			b := p.Spec.Build
+			if b != "" {
+				n, err := strconv.Atoi(b)
+				if err == nil {
+					if n > buildNumber {
+						buildNumber = n
+					}
+				}
+			}
+		}
+	}
+	if buildNumber > 0 {
+		return strconv.Itoa(buildNumber), nil
+	}
+	return "1", nil
 }
 
 func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipeline string, build string) (string, string) {
