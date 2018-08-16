@@ -1,6 +1,6 @@
 package kube
 
-import "k8s.io/test-infra/bazel-test-infra/bazel-out/host/bin/external/go_stdlib_darwin_amd64_pure/src/strconv"
+import "strconv"
 
 // MergeMaps merges all the maps together with the entries in the last map overwriting any earlier values
 //
