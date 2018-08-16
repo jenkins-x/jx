@@ -26,6 +26,7 @@ type StepEnvRoleBindingOptions struct {
 
 	Roles           map[string]*rbacv1.Role
 	EnvRoleBindings map[string]*v1.EnvironmentRoleBinding
+	Users           map[string]*v1.User
 }
 
 type StepEnvRoleBindingFlags struct {
@@ -97,7 +98,10 @@ func (o *StepEnvRoleBindingOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
+	err = kube.RegisterUserCRD(apiClient)
+	if err != nil {
+		return err
+	}
 	jxClient, ns, err := o.JXClient()
 	if err != nil {
 		return err
@@ -118,6 +122,10 @@ func (o *StepEnvRoleBindingOptions) Run() error {
 			return err
 		}
 		err = o.WatchEnvironments(kubeClient, jxClient, ns)
+		if err != nil {
+			return err
+		}
+		err = o.WatchUsers(jxClient, ns)
 		if err != nil {
 			return err
 		}
@@ -228,6 +236,31 @@ func (o *StepEnvRoleBindingOptions) WatchEnvironments(kubeClient kubernetes.Inte
 
 	// Wait forever
 	select {}
+}
+
+func (o *StepEnvRoleBindingOptions) WatchUsers(jxClient versioned.Interface, ns string) error {
+	user := &v1.User{}
+	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "users", ns, fields.Everything())
+	kube.SortListWatchByName(listWatch)
+	_, controller := cache.NewInformer(
+		listWatch,
+		user,
+		time.Minute*10,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				o.onUser(nil, obj)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				o.onUser(oldObj, newObj)
+			},
+			DeleteFunc: func(obj interface{}) {
+				o.onUser(obj, nil)
+			},
+		},
+	)
+	stop := make(chan struct{})
+	go controller.Run(stop)
+	return nil
 }
 
 func (o *StepEnvRoleBindingOptions) onEnvironment(kubeClient kubernetes.Interface, ns string, oldObj interface{}, newObj interface{}) {
@@ -395,5 +428,27 @@ func (o *StepEnvRoleBindingOptions) upsertRole(newRole *rbacv1.Role) {
 			o.Roles = map[string]*rbacv1.Role{}
 		}
 		o.Roles[newRole.Name] = newRole
+	}
+}
+
+func (o *StepEnvRoleBindingOptions) onUser(oldObj interface{}, newObj interface{}) {
+	oldUser := oldObj.(*v1.User)
+	newUser := newObj.(*v1.User)
+
+	if o.Users == nil {
+		o.Users = map[string]*v1.User{}
+	}
+	if oldUser != nil {
+		delete(o.Users, oldUser.Name)
+	}
+	o.upsertUser(newUser)
+}
+func (o *StepEnvRoleBindingOptions) upsertUser(newUser *v1.User) {
+	userSpec := newUser.Spec
+	if newUser != nil {
+		if o.Users == nil {
+			o.Users = map[string]*v1.User{}
+		}
+		o.Users[newUser.Name] = newUser
 	}
 }
