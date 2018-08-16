@@ -69,6 +69,7 @@ type PromoteOptions struct {
 	GitInfo                 *gits.GitRepositoryInfo
 	jenkinsURL              string
 	releaseResource         *v1.Release
+	ReleaseInfo             *ReleaseInfo
 }
 
 type ReleaseInfo struct {
@@ -274,6 +275,7 @@ func (o *PromoteOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	o.ReleaseInfo = releaseInfo
 	if !o.NoPoll {
 		err = o.WaitForPromotion(targetNS, env, releaseInfo)
 		if err != nil {
@@ -319,6 +321,7 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 			if err != nil {
 				return err
 			}
+			o.ReleaseInfo = releaseInfo
 			err = o.WaitForPromotion(ns, &env, releaseInfo)
 			if err != nil {
 				return err
