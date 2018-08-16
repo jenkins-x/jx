@@ -232,6 +232,7 @@ func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitR
 	cmd.Flags().StringVarP(&repositoryOptions.ServerURL, "git-provider-url", "", "", "The git server URL to create new git repositories inside")
 	cmd.Flags().StringVarP(&repositoryOptions.Username, "git-username", "", "", "The git username to use for creating new git repositories")
 	cmd.Flags().StringVarP(&repositoryOptions.ApiToken, "git-api-token", "", "", "The git API token to use for creating new git repositories")
+	cmd.Flags().BoolVarP(&repositoryOptions.Private, "git-private", "", false, "Create new git repositories as private")
 }
 
 func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, error) {
