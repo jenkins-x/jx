@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -164,7 +165,8 @@ func (o *ControllerWorkflowOptions) Run() error {
 			if o.Verbose {
 				log.Infof("Polling to see if any PRs have merged: %v\n", t)
 			}
-			o.checkPullRequests(jxClient, ns)
+			//o.pollGitPipelineStatuses(jxClient, ns)
+			o.reloadAndPollGitPipelineStatuses(jxClient, ns)
 		}
 	}()
 
@@ -228,6 +230,13 @@ func (o *ControllerWorkflowOptions) onActivityObj(obj interface{}, jxClient vers
 		return
 	}
 	if pipeline != nil {
+		activity, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(pipeline.Name, metav1.GetOptions{})
+		if err == nil {
+			if kube.IsResourceVersionNewer(activity.ResourceVersion, pipeline.ResourceVersion) {
+				log.Infof("onActivity %s using newer resourceVersion of PipelineActivity %s > %s\n", pipeline.Name, activity.ResourceVersion, pipeline.ResourceVersion)
+				pipeline = activity
+			}
+		}
 		o.onActivity(pipeline, jxClient, ns)
 	}
 }
@@ -244,6 +253,8 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		log.Infof("Processing pipeline %s repo %s version %s with workflow %s and status %s\n", pipeline.Name, repoName, version, workflowName, string(pipeline.Spec.WorkflowStatus))
 	}
 
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+
 	if workflowName == "" {
 		workflowName = "default"
 	}
@@ -251,7 +262,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		if o.Verbose {
 			log.Infof("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
 		}
-		o.removePipelineActivity(pipeline)
+		o.removePipelineActivity(pipeline, activities)
 		return
 	}
 	if !pipeline.Spec.WorkflowStatus.IsTerminated() {
@@ -261,21 +272,24 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 			flow, err = workflow.CreateDefaultWorkflow(jxClient, ns)
 			if err != nil {
 				log.Warnf("Cannot create default Workflow: %s\n", err)
-				o.removePipelineActivity(pipeline)
+				o.removePipelineActivity(pipeline, activities)
 				return
 			}
-
 		}
 
 		if flow == nil {
 			log.Warnf("Cannot process pipeline %s due to workflow name %s not existing\n", pipeline.Name, workflowName)
-			o.removePipelineActivity(pipeline)
+			o.removePipelineActivity(pipeline, activities)
+			return
+		}
+
+		if !o.isNewestPipeline(pipeline, activities) {
 			return
 		}
 
 		if !o.isReleaseBranch(branch) {
 			log.Infof("Ignoring branch %s\n", branch)
-			o.removePipelineActivity(pipeline)
+			o.removePipelineActivity(pipeline, activities)
 			return
 		}
 
@@ -285,6 +299,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		// lets walk the Workflow spec and see if we need to trigger any PRs or move the PipelineActivity forward
 		promoteStatusMap := createPromoteStatus(pipeline)
 
+		allStepsComplete := true
 		for _, step := range flow.Spec.Steps {
 			promote := step.Promote
 			if promote != nil {
@@ -292,9 +307,10 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 				if envName != "" {
 					status := promoteStatusMap[envName]
 					if status == nil || status.PullRequest == nil || status.PullRequest.PullRequestURL == "" {
+						allStepsComplete = false
 						// can we generate a PR now?
 						if canExecuteStep(flow, pipeline, &step, promoteStatusMap, envName) {
-							log.Infof("Creating PR for environment %s from PipelineActivity %s\n", envName, pipeline.Name)
+							log.Infof("Creating PR for environment %s from PipelineActivity %s as current status is %#v\n", envName, pipeline.Name, status)
 							po := o.createPromoteOptions(repoName, envName, pipelineName, build, version)
 
 							err := po.Run()
@@ -303,8 +319,20 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 							}
 						}
 					}
+					if status != nil && status.Status != v1.ActivityStatusTypeSucceeded {
+						allStepsComplete = false
+					}
 				}
 			}
+		}
+		if allStepsComplete && (pipeline.Spec.Status != v1.ActivityStatusTypeSucceeded || pipeline.Spec.WorkflowStatus != v1.ActivityStatusTypeSucceeded) {
+			pipeline.Spec.Status = v1.ActivityStatusTypeSucceeded
+			pipeline.Spec.WorkflowStatus = v1.ActivityStatusTypeSucceeded
+			_, err := jxClient.JenkinsV1().PipelineActivities(ns).Update(pipeline)
+			if err != nil {
+				log.Warnf("Failed to update PipelineActivity %s due to being complete: %s", pipeline.Name, err)
+			}
+
 		}
 	}
 }
@@ -385,33 +413,68 @@ func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActiv
 	return answer, gitInfo, nil
 }
 
-// checkPullRequests lets poll all the pending PipelineActivity resources to see if any of them
+// pollGitPipelineStatuses lets poll all the pending PipelineActivity resources to see if any of them
 // have PR has merged or the pipeline on master has completed
-func (o *ControllerWorkflowOptions) checkPullRequests(jxClient versioned.Interface, ns string) {
+func (o *ControllerWorkflowOptions) pollGitPipelineStatuses(jxClient versioned.Interface, ns string) {
 	environments := jxClient.JenkinsV1().Environments(ns)
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 
 	for _, activity := range o.pipelineMap {
-		o.checkPullRequest(activity, activities, environments, ns)
+		o.pollGitStatusforPipeline(activity, activities, environments, ns)
 	}
 }
 
-// checkPullRequest polls the pending PipelineActivity resources to see if the
+// reloadAndPollGitPipelineStatuses reloads all the current pending PipelineActivity objects and polls their Git
+// status to see if the workflows can progress.
+//
+// Note this method is only really for testing and simulation
+func (o *ControllerWorkflowOptions) reloadAndPollGitPipelineStatuses(jxClient versioned.Interface, ns string) {
+	environments := jxClient.JenkinsV1().Environments(ns)
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+
+	for name, _ := range o.pipelineMap {
+		latest, err := activities.Get(name, metav1.GetOptions{})
+		if err != nil {
+			log.Warnf("failed to get PipelineActivity %s: %s", name, err)
+		} else {
+			if o.Verbose {
+				log.Infof("Polling git status of activity %s\n", latest.Name)
+			}
+			o.pollGitStatusforPipeline(latest, activities, environments, ns)
+		}
+	}
+}
+
+// pollGitStatusforPipeline polls the pending PipelineActivity resources to see if the
 // PR has merged or the pipeline on master has completed
-func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
-	if !o.isReleaseBranch(activity.BranchName()) {
+func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
+	if !o.isReleaseBranch(activity.BranchName()) || activity.Spec.WorkflowStatus == v1.ActivityStatusTypeSucceeded {
+		o.removePipelineActivity(activity, activities)
+		return
+	}
+
+	if !o.isNewestPipeline(activity, activities) {
 		return
 	}
 
 	for _, step := range activity.Spec.Steps {
 		promote := step.Promote
-		if promote == nil || promote.Status.IsTerminated() {
+		if promote == nil {
+			continue
+		}
+		if promote.Status.IsTerminated() {
+			log.Infof("Pipeline %s promote Environment %s ignored as status %s\n", activity.Name, promote.Environment, string(promote.Status))
 			continue
 		}
 		envName := promote.Environment
 		pullRequestStep := promote.PullRequest
+		if pullRequestStep == nil {
+			log.Infof("Pipeline %s promote Environment %s status %s ignored as no PullRequest\n", activity.Name, promote.Environment, string(promote.Status))
+			continue
+		}
 		prURL := pullRequestStep.PullRequestURL
-		if pullRequestStep == nil || prURL == "" || envName == "" {
+		if prURL == "" || envName == "" {
+			log.Infof("Pipeline %s promote Environment %s status %s ignored for PR %s\n", activity.Name, promote.Environment, string(promote.Status), prURL)
 			continue
 		}
 		gitProvider, gitInfo, err := o.createGitProviderForPR(prURL)
@@ -431,12 +494,15 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 		if err != nil {
 			log.Warnf("Failed to query the Pull Request status on pipeline %s for repo %s PR %d for PR %s: %s", activity.Name, gitInfo.HttpsURL(), prNumber, prURL, err)
 		} else {
-			log.Infof("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
-
+			if o.Verbose {
+				log.Infof("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
+			}
 			po := o.createPromoteOptionsFromActivity(activity, envName)
 
 			if pr.Merged != nil && *pr.Merged {
-				if pr.MergeCommitSHA != nil {
+				if pr.MergeCommitSHA == nil {
+					log.Warnf("Pipeline %s promote Environment %s has PR %s which is merged but there is no merge SHA\n", activity.Name, envName, prURL)
+				} else {
 					mergeSha := *pr.MergeCommitSHA
 					mergedPR := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromotePullRequestStep) error {
 						kube.CompletePromotionPullRequest(a, s, ps, p)
@@ -500,7 +566,7 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 								if succeeded {
 									gitURL := activity.Spec.GitURL
 									if gitURL == "" {
-										log.Warnf("No git URL for PipelineActivity %s so cannotcomment on issues\n", activity.Name)
+										log.Warnf("No git URL for PipelineActivity %s so cannot comment on issues\n", activity.Name)
 										return
 									}
 									gitInfo, err := gits.ParseGitURL(gitURL)
@@ -539,6 +605,8 @@ func (o *ControllerWorkflowOptions) checkPullRequest(activity *v1.PipelineActivi
 				} else if status == "in-progress" {
 					log.Infoln("The build for the Pull Request last commit is currently in progress.")
 				} else {
+					log.Infof("Pipeline %s promote Environment %s has PR %s with status %s\n", activity.Name, envName, prURL, status)
+
 					if status == "success" {
 						if !o.NoMergePullRequest {
 							err = gitProvider.MergePullRequest(pr, "jx promote automatically merged promotion PR")
@@ -691,6 +759,71 @@ func (o *ControllerWorkflowOptions) isReleaseBranch(branchName string) bool {
 	return branchName == "master"
 }
 
-func (o *ControllerWorkflowOptions) removePipelineActivity(activity *v1.PipelineActivity) {
+func setActivitySucceeded(activity *v1.PipelineActivity) bool {
+	activity.Spec.Status = v1.ActivityStatusTypeSucceeded
+	activity.Spec.WorkflowStatus = v1.ActivityStatusTypeSucceeded
+	return true
+}
+
+func setActivityAborted(activity *v1.PipelineActivity) bool {
+	activity.Spec.Status = v1.ActivityStatusTypeAborted
+	activity.Spec.WorkflowStatus = v1.ActivityStatusTypeAborted
+	activity.Spec.WorkflowMessage = "Due to newer pipeline"
+	return true
+}
+
+func (o *ControllerWorkflowOptions) removePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface) {
+	o.modifyAndRemovePipelineActivity(activity, activities, setActivitySucceeded)
+}
+
+func (o *ControllerWorkflowOptions) modifyAndRemovePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, callback func(activity *v1.PipelineActivity) bool) error {
+	err := modifyPipeline(activities, activity, callback)
 	delete(o.pipelineMap, activity.Name)
+	return err
+}
+
+func modifyPipeline(activities typev1.PipelineActivityInterface, activity *v1.PipelineActivity, callback func(activity *v1.PipelineActivity) bool) error {
+	old := activity
+	if callback(activity) {
+		if !reflect.DeepEqual(activity, &old) {
+			_, err := activities.Update(activity)
+			if err != nil {
+				log.Warnf("Failed to update PipelineActivity %s: %s\n", activity.Name, err)
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// isNewestPipeline returns true if this pipeline is the newest pipeline version for a repo
+func (o *ControllerWorkflowOptions) isNewestPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface) bool {
+	newest := true
+	deleteNames := []*v1.PipelineActivity{}
+	for _, act2 := range o.pipelineMap {
+		if activity.Spec.Pipeline == act2.Spec.Pipeline {
+			b1 := activity.Spec.Build
+			b2 := act2.Spec.Build
+			if b1 != b2 {
+				if kube.IsResourceVersionNewer(b2, b1) {
+					newest = false
+				} else if kube.IsResourceVersionNewer(b1, b2) {
+					deleteNames = append(deleteNames, act2)
+				}
+			}
+		}
+	}
+	for _, p := range deleteNames {
+		if o.Verbose {
+			log.Infof("Removing old Pipeline version %s\n", p.Name)
+		}
+		o.modifyAndRemovePipelineActivity(p, activities, setActivityAborted)
+	}
+	if !newest {
+		if o.Verbose {
+			log.Infof("Removing old Pipeline version %s\n", activity.Name)
+		}
+		o.modifyAndRemovePipelineActivity(activity, activities, setActivityAborted)
+	}
+	return newest
 }
