@@ -438,7 +438,7 @@ func (o *ControllerWorkflowOptions) reloadAndPollGitPipelineStatuses(jxClient ve
 			log.Warnf("failed to get PipelineActivity %s: %s", name, err)
 		} else {
 			if o.Verbose {
-				log.Infof("Polling git status of activity %s\n", latest)
+				log.Infof("Polling git status of activity %s\n", latest.Name)
 			}
 			o.pollGitStatusforPipeline(latest, activities, environments, ns)
 		}
