@@ -59,7 +59,7 @@ func NewCmdGCActivities(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "", 5, "Minimum number of Activities per application to keep")
+	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "l", 5, "Minimum number of Activities per application to keep")
 	return cmd
 }
 
