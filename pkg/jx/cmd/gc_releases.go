@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -123,8 +124,7 @@ func (o *GCReleasesOptions) Run() error {
 	}
 
 	for _, releases := range pipelineReleases {
-		// TODO sort the releases
-		// sort.Ints(releases)
+		kube.SortReleases(releases)
 
 		// iterate over the build numbers and delete any while the activity is under the RevisionHistoryLimit
 		i := 0

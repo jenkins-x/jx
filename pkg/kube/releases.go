@@ -1,6 +1,9 @@
 package kube
 
 import (
+	"sort"
+
+	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
@@ -25,4 +28,39 @@ func GetOrCreateRelease(jxClient versioned.Interface, ns string, release *v1.Rel
 		return answer, errors.Wrapf(err, "Failed to create Release %s in namespace %s", name, ns)
 	}
 	return answer, nil
+}
+
+type ReleaseOrder []v1.Release
+
+func (a ReleaseOrder) Len() int      { return len(a) }
+func (a ReleaseOrder) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ReleaseOrder) Less(i, j int) bool {
+	r1 := a[i]
+	r2 := a[j]
+
+	// lets return newest releases first
+	v1 := r1.Spec.Version
+	v2 := r2.Spec.Version
+
+	if v1 == "" || v2 == "" {
+		return v1 > v2
+	}
+
+	sv1, err1 := semver.Parse(v1)
+	sv2, err2 := semver.Parse(v1)
+
+	if err1 != nil && err2 != nil {
+		return v1 > v2
+	}
+	if err1 != nil && err2 == nil {
+		return false
+	}
+	if err1 == nil && err2 != nil {
+		return true
+	}
+	return sv1.Compare(sv2) > 0
+}
+
+func SortReleases(releases []v1.Release) {
+	sort.Sort(ReleaseOrder(releases))
 }
