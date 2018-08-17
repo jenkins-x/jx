@@ -42,7 +42,8 @@ type PipelineActivitySpec struct {
 	LastCommitMessage  string                 `json:"lastCommitMessage,omitempty" protobuf:"bytes,13,opt,name=lastCommitMessage"`
 	LastCommitURL      string                 `json:"lastCommitURL,omitempty" protobuf:"bytes,14,opt,name=lastCommitURL"`
 	Workflow           string                 `json:"workflow,omitempty" protobuf:"bytes,15,opt,name=workflow"`
-	WorkflowStatus     ActivityStatusType     `json:"workflowStatus,omitempty" protobuf:"bytes,4,opt,name=workflowStatus"`
+	WorkflowStatus     ActivityStatusType     `json:"workflowStatus,omitempty" protobuf:"bytes,16,opt,name=workflowStatus"`
+	WorkflowMessage    string                 `json:"workflowMessage,omitempty" protobuf:"bytes,17,opt,name=workflowMessage"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity
@@ -157,6 +158,8 @@ const (
 	ActivityStatusTypeWaitingForApproval ActivityStatusType = "WaitingForApproval"
 	// ActivityStatusTypeError there is some error with an activity
 	ActivityStatusTypeError ActivityStatusType = "Error"
+	// ActivityStatusTypeAborted if the workflow was aborted
+	ActivityStatusTypeAborted ActivityStatusType = "Aborted"
 )
 
 // IsTerminated returns true if this activity has stopped executing

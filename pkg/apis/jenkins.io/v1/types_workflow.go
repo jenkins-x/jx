@@ -39,7 +39,6 @@ type WorkflowStep struct {
 // PromoteWorkflowStep is the step of promoting a version of an application to an environment
 type PromoteWorkflowStep struct {
 	Environment string `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
-	Parallel    bool   `json:"parallel,omitempty" protobuf:"bytes,2,opt,name=parallel"`
 }
 
 // WorkflowPreconditions is the trigger to start a step

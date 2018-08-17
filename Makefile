@@ -114,9 +114,6 @@ release: check
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
 
-	##### overlayfs2 issue on gke: https://stackoverflow.com/questions/48673513/google-kubernetes-engine-errimagepull-too-many-links ######
-	docker system prune -a -f
-	#####
 	docker build --ulimit nofile=90000:90000 -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
 	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
 
@@ -148,6 +145,10 @@ release: check
 		git add *; \
 		git commit --allow-empty -a -m "updated jx commands from $(VERSION)"; \
 		git push origin
+		
+	##### overlayfs2 issue on gke: https://stackoverflow.com/questions/48673513/google-kubernetes-engine-errimagepull-too-many-links ######
+	docker system prune -a -f
+	#####
 
 clean:
 	rm -rf build release cover.out cover.html

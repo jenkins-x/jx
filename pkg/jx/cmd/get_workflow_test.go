@@ -29,10 +29,10 @@ func TestGetWorkflow(t *testing.T) {
 			kube.NewPreviewEnvironment("jx-jstrachan-demo96-pr-1"),
 			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
 			workflow.CreateWorkflow("jx", myFlowName,
-				workflow.CreateWorkflowPromoteStep("a", false),
-				workflow.CreateWorkflowPromoteStep("b", true),
-				workflow.CreateWorkflowPromoteStep("c", true),
-				workflow.CreateWorkflowPromoteStep("d", false),
+				workflow.CreateWorkflowPromoteStep("a"),
+				workflow.CreateWorkflowPromoteStep("b"),
+				workflow.CreateWorkflowPromoteStep("c"),
+				workflow.CreateWorkflowPromoteStep("d"),
 			),
 		},
 		gits.NewGitCLI(),
@@ -49,10 +49,10 @@ func TestGetWorkflow(t *testing.T) {
 			spec := workflow.Spec
 			assert.Equal(t, 2, len(spec.Steps), "number of steps")
 			if len(spec.Steps) > 0 {
-				assertPromoteStep(t, &spec.Steps[0], "staging", false)
+				assertPromoteStep(t, &spec.Steps[0], "staging")
 			}
 			if len(spec.Steps) > 1 {
-				assertPromoteStep(t, &spec.Steps[1], "production", false)
+				assertPromoteStep(t, &spec.Steps[1], "production")
 			}
 		}
 	}
@@ -62,12 +62,11 @@ func TestGetWorkflow(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func assertPromoteStep(t *testing.T, step *v1.WorkflowStep, expectedEnvironment string, expectedParallel bool) {
+func assertPromoteStep(t *testing.T, step *v1.WorkflowStep, expectedEnvironment string) {
 	promote := step.Promote
 	assert.True(t, promote != nil, "step is a promote step")
 
 	if promote != nil {
 		assert.Equal(t, expectedEnvironment, promote.Environment, "environment name")
-		assert.Equal(t, expectedParallel, promote.Parallel, "parallel")
 	}
 }
