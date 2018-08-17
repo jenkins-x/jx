@@ -311,16 +311,15 @@ func (o *UpgradeIngressOptions) recreateIngressRules() error {
 }
 
 func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
-
 	if !o.SkipCertManager {
-		log.Infof("Looking for %s deployment in namespace %s\n", CertManagerDeployment, CertManagerNamespace)
-		_, err := kube.GetDeploymentPods(o.kubeClient, CertManagerDeployment, CertManagerNamespace)
-		if err != nil {
+		log.Infoln("Checking if cert-manager is installed in the cluster")
+		installed := kube.IsCertmanagerInstalled(o.kubeClient, o.devNamespace)
+		if !installed {
 			ok := util.Confirm("CertManager deployment not found, shall we install it now?", true, "CertManager automatically configures Ingress rules with TLS using signed certificates from LetsEncrypt")
 			if ok {
 
 				values := []string{"rbac.create=true", "ingressShim.extraArgs='{--default-issuer-name=letsencrypt-staging,--default-issuer-kind=Issuer}'"}
-				err = o.installChart("cert-manager", "stable/cert-manager", "", CertManagerNamespace, true, values)
+				err := o.installChart("cert-manager", "stable/cert-manager", "", CertManagerNamespace, true, values)
 				if err != nil {
 					return fmt.Errorf("CertManager deployment failed: %v", err)
 				}
@@ -331,7 +330,6 @@ func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
 				if err != nil {
 					return err
 				}
-
 			}
 		}
 	}
