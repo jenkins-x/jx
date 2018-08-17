@@ -1,7 +1,7 @@
 package gke
 
 import (
-		"sort"
+	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -20,7 +20,7 @@ func GetGoogleZones(project string) ([]string, error) {
 
 	cmd := util.Command{
 		Name: "gcloud",
-		Args: args, 
+		Args: args,
 	}
 
 	out, err := cmd.RunWithoutRetry()
