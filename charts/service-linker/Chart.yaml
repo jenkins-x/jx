@@ -4,5 +4,5 @@ icon: https://raw.githubusercontent.com/jenkins-x/jenkins-x-platform/master/imag
 maintainers:
 - name: Jenkins X Team
   email: jenkins-x@googlegroups.com
-name: step-link-services
+name: service-linker
 version: 0.0.1-SNAPSHOT
