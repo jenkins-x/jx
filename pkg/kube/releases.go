@@ -2,6 +2,7 @@ package kube
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -38,6 +39,12 @@ func (a ReleaseOrder) Less(i, j int) bool {
 	r1 := a[i]
 	r2 := a[j]
 
+	n1 := r1.Spec.Name
+	n2 := r2.Spec.Name
+	if n1 != n2 {
+		return n1 < n2
+	}
+
 	// lets return newest releases first
 	v1 := r1.Spec.Version
 	v2 := r2.Spec.Version
@@ -61,6 +68,24 @@ func (a ReleaseOrder) Less(i, j int) bool {
 	return sv1.Compare(sv2) > 0
 }
 
+// SortReleases sorts the releases in name order then latest version first
 func SortReleases(releases []v1.Release) {
 	sort.Sort(ReleaseOrder(releases))
+}
+
+// GetOrderedReleases returns the releases sorted in newest release first
+func GetOrderedReleases(jxClient versioned.Interface, ns string, filter string) ([]v1.Release, error) {
+	releaseInterface := jxClient.JenkinsV1().Releases(ns)
+	answer := []v1.Release{}
+	list, err := releaseInterface.List(metav1.ListOptions{})
+	if err != nil {
+		return answer, err
+	}
+	for _, release := range list.Items {
+		if filter == "" || strings.Index(release.Name, filter) >= 0 {
+			answer = append(answer, release)
+		}
+	}
+	SortReleases(answer)
+	return answer, nil
 }
