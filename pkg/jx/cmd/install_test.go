@@ -28,10 +28,8 @@ func TestGenerateProwSecret(t *testing.T) {
 func TestGetSafeUsername(t *testing.T) {
 	username := `Your active configuration is: [cloudshell-16392]
 tutorial@bamboo-depth-206411.iam.gserviceaccount.com`
-	assert.Equal(t, GetSafeUsername(username) , "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
+	assert.Equal(t, GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
 
 	username = `tutorial@bamboo-depth-206411.iam.gserviceaccount.com`
-	assert.Equal(t, GetSafeUsername(username) , "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
+	assert.Equal(t, GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
 }
-
-
