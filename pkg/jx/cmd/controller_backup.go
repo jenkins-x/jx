@@ -147,6 +147,33 @@ func (o *ControllerBackupOptions) Run() error {
 
 	go teamController.Run(stop)
 
+	_, userController := cache.NewInformer(
+		&cache.ListWatch{
+			ListFunc: func(lo meta_v1.ListOptions) (runtime.Object, error) {
+				return jxClient.JenkinsV1().Users(ns).List(lo)
+			},
+			WatchFunc: func(lo meta_v1.ListOptions) (watch.Interface, error) {
+				return jxClient.JenkinsV1().Users(ns).Watch(lo)
+			},
+		},
+		&v1.User{},
+		time.Minute*10,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				o.onUserChange(obj, ns, dir)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				o.onUserChange(newObj, ns, dir)
+			},
+			DeleteFunc: func(obj interface{}) {
+				//o.onEnvironmentChange(obj, jxClient, ns)
+			},
+		},
+	)
+
+	go userController.Run(stop)
+
+
 	// Wait forever
 	select {}
 }
