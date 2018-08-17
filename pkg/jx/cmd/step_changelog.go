@@ -418,9 +418,13 @@ func (o *StepChangelogOptions) Run() error {
 		}
 	}
 	if !o.NoReleaseInDev {
-		_, err := kube.GetOrCreateRelease(jxClient, devNs, release)
+		devRelese := *release
+		devRelese.Name = kube.ToValidName(release.Spec.GitRepository + "-" + release.Spec.Version)
+		_, err := kube.GetOrCreateRelease(jxClient, devNs, &devRelese)
 		if err != nil {
 			log.Warnf("%s", err)
+		} else {
+			log.Infof("Created Release %s resource in namespace %s\n", devRelese.Name, devNs)
 		}
 	}
 	releaseNotesURL := release.Spec.ReleaseNotesURL
