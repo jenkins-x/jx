@@ -404,6 +404,8 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		log.Infof("generated: %s\n", util.ColorInfo(releaseFile))
 	}
+	cleanVersion := strings.TrimPrefix(version, "v")
+	release.Spec.Version = cleanVersion
 	if o.GenerateCRD {
 		exists, err := util.FileExists(crdFile)
 		if err != nil {
@@ -457,7 +459,6 @@ func (o *StepChangelogOptions) Run() error {
 			lastCommitMessage = lastCommit.Message
 			lastCommitURL = lastCommit.URL
 		}
-		cleanVersion := strings.TrimPrefix(version, "v")
 		log.Infof("Updating PipelineActivity %s with version %s\n", name, cleanVersion)
 
 		key := &kube.PromoteStepActivityKey{
