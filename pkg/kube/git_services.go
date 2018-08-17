@@ -110,7 +110,7 @@ func getServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitSe
 			if !ok {
 				continue
 			}
-			if url == gitServiceURL {
+			if strings.TrimSuffix(url, "/") == strings.TrimSuffix(gitServiceURL, "/") {
 				labels := secret.GetLabels()
 				serviceKind, ok := labels[LabelServiceKind]
 				if !ok {
