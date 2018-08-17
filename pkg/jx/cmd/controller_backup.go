@@ -2,13 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
-		"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"github.com/ghodss/yaml"
 	"io"
 	"io/ioutil"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -91,14 +90,160 @@ func (o *ControllerBackupOptions) Run() error {
 		ns = devNs
 	}
 
+	dir, err := o.getOrCreateBackupRepository()
+
+	log.Infof("Watching for users/teams/environments in namespace %s\n", util.ColorInfo(ns))
+
+	_, environmentController := cache.NewInformer(
+		&cache.ListWatch{
+			ListFunc: func(lo meta_v1.ListOptions) (runtime.Object, error) {
+				return jxClient.JenkinsV1().Environments(ns).List(lo)
+			},
+			WatchFunc: func(lo meta_v1.ListOptions) (watch.Interface, error) {
+				return jxClient.JenkinsV1().Environments(ns).Watch(lo)
+			},
+		},
+		&v1.Environment{},
+		time.Minute*10,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				o.onEnvironmentChange(obj, ns, dir)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				o.onEnvironmentChange(newObj, ns, dir)
+			},
+			DeleteFunc: func(obj interface{}) {
+				//o.onEnvironmentChange(obj, jxClient, ns)
+			},
+		},
+	)
+
+	stop := make(chan struct{})
+	go environmentController.Run(stop)
+
+	_, teamController := cache.NewInformer(
+		&cache.ListWatch{
+			ListFunc: func(lo meta_v1.ListOptions) (runtime.Object, error) {
+				return jxClient.JenkinsV1().Teams(ns).List(lo)
+			},
+			WatchFunc: func(lo meta_v1.ListOptions) (watch.Interface, error) {
+				return jxClient.JenkinsV1().Teams(ns).Watch(lo)
+			},
+		},
+		&v1.Team{},
+		time.Minute*10,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				o.onTeamChange(obj, ns, dir)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				o.onTeamChange(newObj, ns, dir)
+			},
+			DeleteFunc: func(obj interface{}) {
+				//o.onEnvironmentChange(obj, jxClient, ns)
+			},
+		},
+	)
+
+	go teamController.Run(stop)
+
+	// Wait forever
+	select {}
+}
+
+func (o *ControllerBackupOptions) onEnvironmentChange(obj interface{}, ns string, dir string) {
+	env, ok := obj.(*v1.Environment)
+	if !ok {
+		log.Infof("Object is not a Environment %#v\n", obj)
+		return
+	}
+	o.writeResourceToBackupFile(env, "environment", env.ObjectMeta.Name, ns, dir)
+}
+
+func (o *ControllerBackupOptions) onTeamChange(obj interface{}, ns string, dir string) {
+	env, ok := obj.(*v1.Team)
+	if !ok {
+		log.Infof("Object is not a Team %#v\n", obj)
+		return
+	}
+	o.writeResourceToBackupFile(env, "team", env.ObjectMeta.Name, ns, dir)
+}
+
+func (o *ControllerBackupOptions) onUserChange(obj interface{}, ns string, dir string) {
+	env, ok := obj.(*v1.User)
+	if !ok {
+		log.Infof("Object is not a User %#v\n", obj)
+		return
+	}
+	o.writeResourceToBackupFile(env, "user", env.ObjectMeta.Name, ns, dir)
+}
+
+func (o *ControllerBackupOptions) writeResourceToBackupFile(obj interface{}, resource string, key string, ns string, dir string) {
+	out, err := yaml.Marshal(obj)
+	if err != nil {
+		log.Errorf("Unable to marshall %s %s\n", resource, err)
+		return
+	}
+
+	o.Debugf("Dumping %s with key %s...\n", util.ColorInfo(resource), util.ColorInfo(key))
+	o.Debugf("%s\n", string(out))
+
+	nsDir := path.Join(dir, fmt.Sprintf("%ss", resource), ns)
+	err = os.MkdirAll(nsDir, os.FileMode(0755))
+	if err != nil {
+		log.Errorf("Unable to create directory %s\n", err)
+		return
+	}
+
+	envFile := path.Join(nsDir, fmt.Sprintf("%s.yaml", key))
+	err = ioutil.WriteFile(envFile, out, 0644)
+	if err != nil {
+		log.Errorf("Unable to write file %s\n", err)
+		return
+	}
+
+	o.commitDirIfChanges(dir, fmt.Sprintf("Updating %s %s", resource, key))
+}
+
+func (o *ControllerBackupOptions) commitDirIfChanges(dir string, message string) {
+	changes, err := o.Git().HasChanges(dir)
+	if err != nil {
+		log.Errorf("Unable to determine changes %s\n", err)
+		return
+	}
+
+	if changes {
+		err = o.Git().Add(dir, "*")
+		if err != nil {
+			log.Errorf("Unable to add files %s\n", err)
+			return
+		}
+
+		err = o.Git().CommitDir(dir, message)
+		if err != nil {
+			log.Errorf("Unable to commit dir %s\n", err)
+			return
+		}
+
+		err = o.Git().PushMaster(dir)
+		if err != nil {
+			log.Errorf("Unable to push master %s\n", err)
+			return
+		}
+
+		fmt.Fprintf(o.Stdout(), "Pushed update '%s' git repository %s\n", util.ColorInfo(message), util.ColorInfo(dir))
+	}
+}
+
+func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) {
 	backupDir, err := util.BackupDir()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defaultRepoName := fmt.Sprintf("organisation-%s-backup", o.Organisation)
@@ -106,7 +251,7 @@ func (o *ControllerBackupOptions) Run() error {
 	details, err := gits.PickNewOrExistingGitRepository(o.Stdout(), o.BatchMode, authConfigSvc,
 		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git(), true)
 	if err != nil {
-		return err
+		return "", err
 	}
 	org := details.Organisation
 	repoName := details.RepoName
@@ -124,27 +269,27 @@ func (o *ControllerBackupOptions) Run() error {
 
 		repo, err = details.CreateRepository()
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		dir, err = util.CreateUniqueDirectory(backupDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		err = o.Git().Init(dir)
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		pushGitURL, err := o.Git().CreatePushURL(repo.CloneURL, details.User)
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		err = o.Git().SetRemoteURL(dir, "origin", pushGitURL)
 		if err != nil {
-			return err
+			return "", err
 		}
 	} else {
 		fmt.Fprintf(o.Stdout(), "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
@@ -152,7 +297,7 @@ func (o *ControllerBackupOptions) Run() error {
 		dir = path.Join(backupDir, details.RepoName)
 		localDirExists, err := util.FileExists(dir)
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		if localDirExists {
@@ -161,120 +306,27 @@ func (o *ControllerBackupOptions) Run() error {
 
 			err = o.Git().Pull(dir)
 			if err != nil {
-				return err
+				return "", err
 			}
 		} else {
 			fmt.Fprintf(o.Stdout(), "cloning repository locally\n")
 			err = os.MkdirAll(dir, os.FileMode(0755))
 			if err != nil {
-				return err
+				return "", err
 			}
 
 			// if remote repo does exist & local directory does not exist, clone locally
 			pushGitURL, err := o.Git().CreatePushURL(repo.CloneURL, details.User)
 			if err != nil {
-				return err
+				return "", err
 			}
 
 			err = o.Git().Clone(pushGitURL, dir)
 			if err != nil {
-				return err
+				return "", err
 			}
 		}
 	}
 
-	log.Infof("Watching for users/teams/environments in namespace %s\n", util.ColorInfo(ns))
-
-	_, environmentController := cache.NewInformer(
-		&cache.ListWatch{
-			ListFunc: func(lo meta_v1.ListOptions) (runtime.Object, error) {
-				return jxClient.JenkinsV1().Environments(ns).List(lo)
-			},
-			WatchFunc: func(lo meta_v1.ListOptions) (watch.Interface, error) {
-				return jxClient.JenkinsV1().Environments(ns).Watch(lo)
-			},
-		},
-		&v1.Environment{},
-		time.Minute*10,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				o.onEnvironmentChange(obj, jxClient, ns, dir)
-			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				o.onEnvironmentChange(newObj, jxClient, ns, dir)
-			},
-			DeleteFunc: func(obj interface{}) {
-				//o.onEnvironmentChange(obj, jxClient, ns)
-			},
-		},
-	)
-
-	stop := make(chan struct{})
-	go environmentController.Run(stop)
-
-	// Wait forever
-	select {}
-}
-
-func (o *ControllerBackupOptions) onEnvironmentChange(obj interface{}, jxClient versioned.Interface, ns string, dir string) {
-	env, ok := obj.(*v1.Environment)
-	if !ok {
-		log.Infof("Object is not a Environment %#v\n", obj)
-		return
-	}
-
-	out, err := yaml.Marshal(env)
-	if err != nil {
-		log.Infof("Unable to marshall environment %s\n", err)
-		return
-	}
-
-	o.Debugf("Dumping %s...\n", util.ColorInfo(env.ObjectMeta.Name))
-	o.Debugf("%s\n", string(out))
-
-	nsDir := path.Join(dir, "environments", ns)
-	err = os.MkdirAll(nsDir, os.FileMode(0755))
-	if err != nil {
-		log.Infof("Unable to create directory %s\n", err)
-		return
-	}
-
-	envFile := path.Join(nsDir, fmt.Sprintf("%s.yaml", env.ObjectMeta.Name))
-	err = ioutil.WriteFile(envFile, out, 0644)
-	if err != nil {
-		log.Infof("Unable to write file %s\n", err)
-		return
-	}
-
-	o.commitDirIfChanges(dir, fmt.Sprintf("Updating environment %s", env.ObjectMeta.Name))
-}
-
-func (o *ControllerBackupOptions) commitDirIfChanges(dir string, message string) {
-	changes, err := o.Git().HasChanges(dir)
-	if err != nil {
-		log.Infof("Unable to determine changes %s\n", err)
-		return
-	}
-
-	if changes {
-		err = o.Git().Add(dir, "*")
-		if err != nil {
-			log.Infof("Unable to add files %s\n", err)
-			return
-		}
-
-		err = o.Git().CommitDir(dir, message)
-		if err != nil {
-			log.Infof("Unable to commit dir %s\n", err)
-			return
-		}
-
-		err = o.Git().PushMaster(dir)
-		if err != nil {
-			log.Infof("Unable to push master %s\n", err)
-			return
-		}
-
-		fmt.Fprintf(o.Stdout(), "Pushed update '%s' git repository %s\n", util.ColorInfo(message), util.ColorInfo(dir))
-	}
+	return dir, nil
 }
