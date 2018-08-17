@@ -54,7 +54,7 @@ func NewCmdGCReleases(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "", 5, "Minimum number of Releases per application to keep")
+	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "l", 5, "Minimum number of Releases per application to keep")
 	return cmd
 }
 
@@ -103,19 +103,26 @@ func (o *GCReleasesOptions) Run() error {
 	pipelineReleases := make(map[string][]v1.Release)
 
 	for _, a := range releases.Items {
-		pipeline := a.Spec.GitOwner + "/" + a.Spec.GitRepository + "/master"
+		owner := a.Spec.GitOwner
+		repo := a.Spec.GitRepository
+		pipeline := owner + "/" + repo + "/master"
 		// if activity has no job in jenkins delete it
-		matched := false
-		for _, j := range jobNames {
-			if pipeline == j {
-				matched = true
-				break
+		matched := true
+		if owner != "" && repo != "" {
+			matched = false
+			for _, j := range jobNames {
+				if pipeline == j {
+					matched = true
+					break
+				}
 			}
 		}
 		if !matched {
 			err = releaseInterface.Delete(a.Name, metav1.NewDeleteOptions(0))
 			if err != nil {
 				return err
+			} else {
+				log.Infof("Deleting Release %s as it no longer has a pipeline for %s\n", a.Name, pipeline)
 			}
 		}
 
@@ -126,15 +133,15 @@ func (o *GCReleasesOptions) Run() error {
 	for _, releases := range pipelineReleases {
 		kube.SortReleases(releases)
 
-		// iterate over the build numbers and delete any while the activity is under the RevisionHistoryLimit
-		i := 0
-		for i < len(releases)-o.RevisionHistoryLimit {
+		// iterate over the old releases and remove them
+		for i := o.RevisionHistoryLimit + 1; i < len(releases); i++ {
 			name := releases[i].Name
 			err = releaseInterface.Delete(name, metav1.NewDeleteOptions(0))
 			if err != nil {
 				return fmt.Errorf("failed to delete Release %s in namespace %s: %v\n", name, ns, err)
+			} else {
+				log.Infof("Deleting old Release %s\n", name)
 			}
-			i++
 		}
 	}
 	return nil

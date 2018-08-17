@@ -1,4 +1,4 @@
-gc-previews:
+gc-releases:
   serviceaccount:
     enabled: true
   cronjob:
@@ -6,21 +6,21 @@ gc-previews:
     schedule: "0/30 */3 * * *"
   args:
   - "gc"
-  - "previews"
+  - "releases"
   role:
     enabled: true
     rules:
     - apiGroups:
       - jenkins.io
       resources:
-      - pipelineactivities
+      - releases
       verbs:
       - list
       - delete
     - apiGroups:
       - ""
       resources:
-      - secrets
       - services
       verbs:
+      - list
       - get

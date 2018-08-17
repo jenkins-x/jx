@@ -1,0 +1,3 @@
+dependencies:
+- name: controller-build
+  repository: file://../jx

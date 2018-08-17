@@ -1,12 +1,11 @@
-gc-previews:
+controller-workflow:
   serviceaccount:
     enabled: true
-  cronjob:
+  deployment:
     enabled: true
-    schedule: "0/30 */3 * * *"
   args:
-  - "gc"
-  - "previews"
+  - "controller"
+  - "workflow"
   role:
     enabled: true
     rules:
@@ -16,11 +15,22 @@ gc-previews:
       - pipelineactivities
       verbs:
       - list
-      - delete
+      - get
+      - watch
+      - create
+      - update
+    - apiGroups:
+      - jenkins.io
+      resources:
+      - workflows
+      verbs:
+      - list
+      - get
+      - watch
     - apiGroups:
       - ""
       resources:
-      - secrets
       - services
       verbs:
+      - list
       - get
