@@ -82,6 +82,19 @@ func OrganisationsDir() (string, error) {
 	return path, nil
 }
 
+func BackupDir() (string, error) {
+	h, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(h, "backup")
+	err = os.MkdirAll(path, DefaultWritePermissions)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func BinaryLocation() (string, error) {
 	h, err := ConfigDir()
 	if err != nil {
