@@ -433,7 +433,7 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		devRelease.ResourceVersion = ""
 		devRelease.Namespace = devNs
-		devRelease.Name = kube.ToValidName(appName + "-" + release.Spec.Version)
+		devRelease.Name = kube.ToValidName(appName + "-" + cleanVersion)
 		_, err := kube.GetOrCreateRelease(jxClient, devNs, &devRelease)
 		if err != nil {
 			log.Warnf("%s", err)
