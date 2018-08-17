@@ -54,7 +54,7 @@ func (a ReleaseOrder) Less(i, j int) bool {
 	}
 
 	sv1, err1 := semver.Parse(v1)
-	sv2, err2 := semver.Parse(v1)
+	sv2, err2 := semver.Parse(v2)
 
 	if err1 != nil && err2 != nil {
 		return v1 > v2
