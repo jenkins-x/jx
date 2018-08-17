@@ -325,13 +325,15 @@ func (o *StepChangelogOptions) Run() error {
 			DeletionTimestamp: &metav1.Time{},
 		},
 		Spec: v1.ReleaseSpec{
-			Name:         SpecName,
-			Version:      version,
-			GitHTTPURL:   gitInfo.HttpsURL(),
-			GitCloneURL:  gitInfo.HttpCloneURL(),
-			Commits:      []v1.CommitSummary{},
-			Issues:       []v1.IssueSummary{},
-			PullRequests: []v1.IssueSummary{},
+			Name:          SpecName,
+			Version:       version,
+			GitOwner:      gitInfo.Organisation,
+			GitRepository: gitInfo.Name,
+			GitHTTPURL:    gitInfo.HttpsURL(),
+			GitCloneURL:   gitInfo.HttpCloneURL(),
+			Commits:       []v1.CommitSummary{},
+			Issues:        []v1.IssueSummary{},
+			PullRequests:  []v1.IssueSummary{},
 		},
 	}
 
