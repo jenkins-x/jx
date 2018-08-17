@@ -15,7 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
-	)
+)
 
 const (
 	DefaultShell = "/bin/sh"

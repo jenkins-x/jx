@@ -51,6 +51,7 @@ type StepChangelogOptions struct {
 	GenerateCRD         bool
 	GenerateReleaseYaml bool
 	UpdateRelease       bool
+	NoReleaseInDev      bool
 	State               StepChangelogState
 }
 
@@ -172,6 +173,7 @@ func NewCmdStepChangelog(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 	cmd.Flags().BoolVarP(&options.GenerateCRD, "crd", "c", false, "Generate the CRD in the chart")
 	cmd.Flags().BoolVarP(&options.GenerateReleaseYaml, "generate-yaml", "y", true, "Generate the Release YAML in the local helm chart")
 	cmd.Flags().BoolVarP(&options.UpdateRelease, "update-release", "", true, "Should we update the release on the git repository with the changelog")
+	cmd.Flags().BoolVarP(&options.NoReleaseInDev, "no-dev-release", "", false, "Disables the generation of Release CRDs in the development namespace to track releases being performed")
 
 	cmd.Flags().StringVarP(&options.Header, "header", "", "", "The changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.HeaderFile, "header-file", "", "", "The file name of the changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
@@ -204,7 +206,7 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = kube.RegisterUserCRD(apisClient)
+	err = o.registerUserCRD()
 	if err != nil {
 		return err
 	}
@@ -323,13 +325,15 @@ func (o *StepChangelogOptions) Run() error {
 			DeletionTimestamp: &metav1.Time{},
 		},
 		Spec: v1.ReleaseSpec{
-			Name:         SpecName,
-			Version:      version,
-			GitHTTPURL:   gitInfo.HttpsURL(),
-			GitCloneURL:  gitInfo.HttpCloneURL(),
-			Commits:      []v1.CommitSummary{},
-			Issues:       []v1.IssueSummary{},
-			PullRequests: []v1.IssueSummary{},
+			Name:          SpecName,
+			Version:       version,
+			GitOwner:      gitInfo.Organisation,
+			GitRepository: gitInfo.Name,
+			GitHTTPURL:    gitInfo.HttpsURL(),
+			GitCloneURL:   gitInfo.HttpCloneURL(),
+			Commits:       []v1.CommitSummary{},
+			Issues:        []v1.IssueSummary{},
+			PullRequests:  []v1.IssueSummary{},
 		},
 	}
 
@@ -402,6 +406,8 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		log.Infof("generated: %s\n", util.ColorInfo(releaseFile))
 	}
+	cleanVersion := strings.TrimPrefix(version, "v")
+	release.Spec.Version = cleanVersion
 	if o.GenerateCRD {
 		exists, err := util.FileExists(crdFile)
 		if err != nil {
@@ -413,6 +419,29 @@ func (o *StepChangelogOptions) Run() error {
 				return fmt.Errorf("Failed to save Release CRD YAML file %s: %s", crdFile, err)
 			}
 			log.Infof("generated: %s\n", util.ColorInfo(crdFile))
+		}
+	}
+	if !o.NoReleaseInDev {
+		devRelease := *release
+		appName := ""
+		if gitInfo != nil {
+			appName = gitInfo.Name
+		}
+		if appName == "" {
+			appName = release.Spec.Name
+		}
+		if appName == "" {
+			appName = release.Spec.GitRepository
+		}
+		devRelease.ResourceVersion = ""
+		devRelease.Namespace = devNs
+		devRelease.Name = kube.ToValidName(appName + "-" + cleanVersion)
+		devRelease.Spec.Name = appName
+		_, err := kube.GetOrCreateRelease(jxClient, devNs, &devRelease)
+		if err != nil {
+			log.Warnf("%s", err)
+		} else {
+			log.Infof("Created Release %s resource in namespace %s\n", devRelease.Name, devNs)
 		}
 	}
 	releaseNotesURL := release.Spec.ReleaseNotesURL
@@ -433,7 +462,6 @@ func (o *StepChangelogOptions) Run() error {
 			lastCommitMessage = lastCommit.Message
 			lastCommitURL = lastCommit.URL
 		}
-		cleanVersion := strings.TrimPrefix(version, "v")
 		log.Infof("Updating PipelineActivity %s with version %s\n", name, cleanVersion)
 
 		key := &kube.PromoteStepActivityKey{

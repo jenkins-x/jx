@@ -180,7 +180,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 	return keyPath, nil
 }
 
-func GetEnabledApis(projectId string) ([]string,error) {
+func GetEnabledApis(projectId string) ([]string, error) {
 	args := []string{"services", "list", "--enabled"}
 
 	if projectId != "" {
