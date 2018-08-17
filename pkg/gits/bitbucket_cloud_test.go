@@ -410,7 +410,11 @@ func (suite *BitbucketCloudProviderTestSuite) TestUserInfo() {
 }
 
 func TestBitbucketCloudProviderTestSuite(t *testing.T) {
-	suite.Run(t, new(BitbucketCloudProviderTestSuite))
+	if testing.Short() {
+		t.Skip("skipping BitbucketCloudProviderTestSuite in short mode")
+	} else {
+		suite.Run(t, new(BitbucketCloudProviderTestSuite))
+	}
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TearDownSuite() {

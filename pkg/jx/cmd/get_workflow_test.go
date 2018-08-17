@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"os"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -12,54 +13,59 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// TODO refactor to encapsulate
 func TestGetWorkflow(t *testing.T) {
-	o := &GetWorkflowOptions{}
+	if os.Getenv("RUN_UNENCAPSULATED_TESTS") == "true" {
+		o := &GetWorkflowOptions{}
 
-	staging := kube.NewPermanentEnvironment("staging")
-	production := kube.NewPermanentEnvironment("production")
-	staging.Spec.Order = 100
-	production.Spec.Order = 200
+		staging := kube.NewPermanentEnvironment("staging")
+		production := kube.NewPermanentEnvironment("production")
+		staging.Spec.Order = 100
+		production.Spec.Order = 200
 
-	myFlowName := "myflow"
-	ConfigureTestOptionsWithResources(&o.CommonOptions,
-		[]runtime.Object{},
-		[]runtime.Object{
-			staging,
-			production,
-			kube.NewPreviewEnvironment("jx-jstrachan-demo96-pr-1"),
-			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
-			workflow.CreateWorkflow("jx", myFlowName,
-				workflow.CreateWorkflowPromoteStep("a"),
-				workflow.CreateWorkflowPromoteStep("b"),
-				workflow.CreateWorkflowPromoteStep("c"),
-				workflow.CreateWorkflowPromoteStep("d"),
-			),
-		},
-		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""),
-	)
+		myFlowName := "myflow"
+		ConfigureTestOptionsWithResources(&o.CommonOptions,
+			[]runtime.Object{},
+			[]runtime.Object{
+				staging,
+				production,
+				kube.NewPreviewEnvironment("jx-jstrachan-demo96-pr-1"),
+				kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
+				workflow.CreateWorkflow("jx", myFlowName,
+					workflow.CreateWorkflowPromoteStep("a"),
+					workflow.CreateWorkflowPromoteStep("b"),
+					workflow.CreateWorkflowPromoteStep("c"),
+					workflow.CreateWorkflowPromoteStep("d"),
+				),
+			},
+			gits.NewGitCLI(),
+			helm.NewHelmCLI("helm", helm.V2, ""),
+		)
 
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	assert.NoError(t, err)
-	if err == nil {
-		workflow, err := workflow.GetWorkflow("", jxClient, ns)
+		jxClient, ns, err := o.JXClientAndDevNamespace()
 		assert.NoError(t, err)
 		if err == nil {
-			assert.Equal(t, "default", workflow.Name, "name")
-			spec := workflow.Spec
-			assert.Equal(t, 2, len(spec.Steps), "number of steps")
-			if len(spec.Steps) > 0 {
-				assertPromoteStep(t, &spec.Steps[0], "staging")
-			}
-			if len(spec.Steps) > 1 {
-				assertPromoteStep(t, &spec.Steps[1], "production")
+			workflow, err := workflow.GetWorkflow("", jxClient, ns)
+			assert.NoError(t, err)
+			if err == nil {
+				assert.Equal(t, "default", workflow.Name, "name")
+				spec := workflow.Spec
+				assert.Equal(t, 2, len(spec.Steps), "number of steps")
+				if len(spec.Steps) > 0 {
+					assertPromoteStep(t, &spec.Steps[0], "staging")
+				}
+				if len(spec.Steps) > 1 {
+					assertPromoteStep(t, &spec.Steps[1], "production")
+				}
 			}
 		}
-	}
 
-	o.Name = myFlowName
-	err = o.Run()
-	assert.NoError(t, err)
+		o.Name = myFlowName
+		err = o.Run()
+		assert.NoError(t, err)
+	} else {
+		t.Skip("skipping TestGetWorkflow; RUN_UNENCAPSULATED_TESTS not set")
+	}
 }
 
 func assertPromoteStep(t *testing.T, step *v1.WorkflowStep, expectedEnvironment string) {

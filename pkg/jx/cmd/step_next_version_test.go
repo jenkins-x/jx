@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"testing"
-
 	"io/ioutil"
 	"os"
 	"path"
+	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -55,65 +54,73 @@ func TestChart(t *testing.T) {
 	assert.Equal(t, "0.0.1-SNAPSHOT", v, "error with getVersion for a pom.xml")
 }
 
+// TODO refactor to encapsulate
 func TestSetVersionJavascript(t *testing.T) {
-	f, err := ioutil.TempDir("", "test-set-version")
-	assert.NoError(t, err)
+	if os.Getenv("RUN_UNENCAPSULATED_TESTS") == "true" {
+		f, err := ioutil.TempDir("", "test-set-version")
+		assert.NoError(t, err)
 
-	testData := path.Join("test_data", "next_version", "javascript")
-	_, err = os.Stat(testData)
-	assert.NoError(t, err)
+		testData := path.Join("test_data", "next_version", "javascript")
+		_, err = os.Stat(testData)
+		assert.NoError(t, err)
 
-	err = util.CopyDir(testData, f, true)
-	assert.NoError(t, err)
+		err = util.CopyDir(testData, f, true)
+		assert.NoError(t, err)
 
-	git := gits.NewGitCLI()
-	err = git.Init(f)
-	assert.NoError(t, err)
+		git := gits.NewGitCLI()
+		err = git.Init(f)
+		assert.NoError(t, err)
 
-	o := StepNextVersionOptions{}
-	o.Out = tests.Output()
-	o.Dir = f
-	o.Filename = "package.json"
-	o.NewVersion = "1.2.3"
-	err = o.setVersion()
-	assert.NoError(t, err)
+		o := StepNextVersionOptions{}
+		o.Out = tests.Output()
+		o.Dir = f
+		o.Filename = "package.json"
+		o.NewVersion = "1.2.3"
+		err = o.setVersion()
+		assert.NoError(t, err)
 
-	// root file
-	updatedFile, err := util.LoadBytes(o.Dir, o.Filename)
-	testFile, err := util.LoadBytes(testData, "expected_package.json")
+		// root file
+		updatedFile, err := util.LoadBytes(o.Dir, o.Filename)
+		testFile, err := util.LoadBytes(testData, "expected_package.json")
 
-	assert.Equal(t, string(testFile), string(updatedFile), "replaced version")
-
+		assert.Equal(t, string(testFile), string(updatedFile), "replaced version")
+	} else {
+		t.Skip("skipping TestSetVersionJavascript; RUN_UNENCAPSULATED_TESTS not set")
+	}
 }
 
+// TODO refactor to encapsulate
 func TestSetVersionChart(t *testing.T) {
+	if os.Getenv("RUN_UNENCAPSULATED_TESTS") == "true" {
 
-	f, err := ioutil.TempDir("", "test-set-version")
-	assert.NoError(t, err)
+		f, err := ioutil.TempDir("", "test-set-version")
+		assert.NoError(t, err)
 
-	testData := path.Join("test_data", "next_version", "helm")
-	_, err = os.Stat(testData)
-	assert.NoError(t, err)
+		testData := path.Join("test_data", "next_version", "helm")
+		_, err = os.Stat(testData)
+		assert.NoError(t, err)
 
-	err = util.CopyDir(testData, f, true)
-	assert.NoError(t, err)
+		err = util.CopyDir(testData, f, true)
+		assert.NoError(t, err)
 
-	git := gits.NewGitCLI()
-	err = git.Init(f)
-	assert.NoError(t, err)
+		git := gits.NewGitCLI()
+		err = git.Init(f)
+		assert.NoError(t, err)
 
-	o := StepNextVersionOptions{}
-	o.Out = tests.Output()
-	o.Dir = f
-	o.Filename = "Chart.yaml"
-	o.NewVersion = "1.2.3"
-	err = o.setVersion()
-	assert.NoError(t, err)
+		o := StepNextVersionOptions{}
+		o.Out = tests.Output()
+		o.Dir = f
+		o.Filename = "Chart.yaml"
+		o.NewVersion = "1.2.3"
+		err = o.setVersion()
+		assert.NoError(t, err)
 
-	// root file
-	updatedFile, err := util.LoadBytes(o.Dir, o.Filename)
-	testFile, err := util.LoadBytes(testData, "expected_Chart.yaml")
+		// root file
+		updatedFile, err := util.LoadBytes(o.Dir, o.Filename)
+		testFile, err := util.LoadBytes(testData, "expected_Chart.yaml")
 
-	assert.Equal(t, string(testFile), string(updatedFile), "replaced version")
-
+		assert.Equal(t, string(testFile), string(updatedFile), "replaced version")
+	} else {
+		t.Skip("skipping TestSetVersionChart; RUN_UNENCAPSULATED_TESTS not set")
+	}
 }

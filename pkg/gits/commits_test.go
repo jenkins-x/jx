@@ -1,9 +1,10 @@
 package gits
 
 import (
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestParseCommits(t *testing.T) {
