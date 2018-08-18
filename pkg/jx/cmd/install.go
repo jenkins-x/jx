@@ -652,6 +652,7 @@ func (options *InstallOptions) Run() error {
 			}
 			options.CreateEnvOptions.Prow = options.Flags.Prow
 			options.CreateEnvOptions.GitRepositoryOptions.ServerURL = options.GitRepositoryOptions.ServerURL
+			options.CreateEnvOptions.GitRepositoryOptions.Private = options.GitRepositoryOptions.Private
 
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
