@@ -1,12 +1,11 @@
-gc-previews:
+controller-build:
   serviceaccount:
     enabled: true
-  cronjob:
+  deployment:
     enabled: true
-    schedule: "0/30 */3 * * *"
   args:
-  - "gc"
-  - "previews"
+  - "controller"
+  - "build"
   role:
     enabled: true
     rules:
@@ -16,11 +15,15 @@ gc-previews:
       - pipelineactivities
       verbs:
       - list
-      - delete
+      - get
+      - watch
+      - create
+      - update
     - apiGroups:
       - ""
       resources:
-      - secrets
-      - services
+      - pods
       verbs:
+      - list
+      - watch
       - get
