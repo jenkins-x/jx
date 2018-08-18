@@ -292,7 +292,13 @@ func (o *ImportOptions) Run() error {
 			o.Dir = dir
 		}
 	}
-	_, o.AppName = filepath.Split(o.Dir)
+	if o.AppName == "" {
+		dir, err := filepath.Abs(o.Dir)
+		if err != nil {
+			return err
+		}
+		_, o.AppName = filepath.Split(dir)
+	}
 	o.AppName = kube.ToValidName(strings.ToLower(o.AppName))
 
 	checkForJenkinsfile := o.Jenkinsfile == "" && !o.DisableJenkinsfileCheck
@@ -710,6 +716,9 @@ func (o *ImportOptions) DiscoverGit() error {
 			return err
 		}
 		if root != "" {
+			if root != o.Dir {
+				log.Infof("Importing from directory %s as we found a .git folder there\n", root)
+			}
 			o.Dir = root
 			o.GitConfDir = gitConf
 			return nil
@@ -1131,13 +1140,19 @@ func (o *ImportOptions) fixMaven() error {
 			return fmt.Errorf("Failed to update chart: %s output: %s", err, out)
 		}
 		if !o.DryRun {
-			err = o.Git().Add(dir, "charts")
+			exists, err := util.FileExists(filepath.Join(dir, "charts"))
 			if err != nil {
 				return err
 			}
-			err = o.Git().CommitIfChanges(dir, "fix:(chart) fix up the probe path")
-			if err != nil {
-				return err
+			if exists {
+				err = o.Git().Add(dir, "charts")
+				if err != nil {
+					return err
+				}
+				err = o.Git().CommitIfChanges(dir, "fix:(chart) fix up the probe path")
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
