@@ -141,7 +141,7 @@ func (o *CreateUserOptions) Run() error {
 	}
 	foundRole := 0
 	for _, envRoleBinding := range envRoleBindingsList.Items {
-		if util.StringMatchesPattern(o.Role, envRoleBinding.Spec.RoleRef.Name) {
+		if util.StringMatchesPattern(strings.Trim(o.Role, ""), strings.Trim(envRoleBinding.Spec.RoleRef.Name, "")) {
 			log.Infof("Role %s exists, binding user %s with role.\n", util.ColorInfo(o.Role), util.ColorInfo(login))
 			newSubject := rbacv1.Subject{
 				Name:      o.UserSpec.Name,
