@@ -141,3 +141,18 @@ func (o *DeleteUserOptions) deleteUser(name string) error {
 	}
 	return kube.DeleteUser(jxClient, ns, name)
 }
+func (o *DeleteUserOptions) deleteUserFromRoleBinding(name string, role string) error {
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	ns, err := kube.GetAdminNamespace(kubeClient, devNs)
+	if err != nil {
+		return err
+	}
+	return kube.DeleteUser(jxClient, ns, name)
+}

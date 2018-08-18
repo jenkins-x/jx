@@ -2,16 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	rbacv1 "k8s.io/api/rbac/v1"
-	"strings"
-
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"io"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 const (
@@ -134,17 +134,24 @@ func (o *CreateUserOptions) Run() error {
 	}
 	log.Infof("Created User: %s\n", util.ColorInfo(login))
 	log.Infof("Binding user %s with role: %s\n", util.ColorInfo(login), o.Role)
-	environmentRoleBinding := &v1.EnvironmentRoleBinding{}
-	if environmentRoleBinding != nil {
-		envSubjects := environmentRoleBinding.Spec.Subjects
-		newSubject := rbacv1.Subject{
-			Name:      o.UserSpec.Name,
-			Kind:      "User", //TODO: should the default be user? Should we also pass kind as part of user creation step?
-			Namespace: ns,
-		}
-		envSubjects = append(envSubjects, newSubject)
-	}
-	log.Infof("Binding user %s with role: %s complete\n", util.ColorInfo(login), o.Role)
 
-	return nil
+	envRoleBindingsList, err := jxClient.JenkinsV1().EnvironmentRoleBindings(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("Failed to retrieve environment role binding list for namespace %s: %s", ns, err)
+	}
+
+	for _, envRoleBinding := range envRoleBindingsList.Items {
+		if util.StringMatchesPattern(o.Role, envRoleBinding.Spec.RoleRef.Name) {
+			log.Infof("Role %s exists, binding user %s with role.\n", util.ColorInfo(o.Role), util.ColorInfo(login))
+			newSubject := rbacv1.Subject{
+				Name:      o.UserSpec.Name,
+				Kind:      "User", //TODO: should the default be user? Should we also pass kind as part of user creation step?
+				Namespace: ns,
+			}
+			envRoleBinding.Spec.Subjects = append(envRoleBinding.Spec.Subjects, newSubject)
+		} else {
+			log.Warnf("Role %s doesn't exist, will not bind user %s with role\n", util.ColorWarning(o.Role), util.ColorWarning(login))
+		}
+		return nil
+	}
 }
