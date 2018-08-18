@@ -474,14 +474,10 @@ func (o *CommonOptions) installHelm() error {
 	if err != nil || !flag {
 		return err
 	}
-	// TODO temporary hack while we are on the 2.10-rc version:
-	latestVersion := "2.10.0-rc.2"
-	/*
-		latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
-		if err != nil {
-			return err
-		}
-	*/
+	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
+	if err != nil {
+		return err
+	}
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
