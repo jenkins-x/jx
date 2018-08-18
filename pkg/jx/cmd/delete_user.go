@@ -156,21 +156,23 @@ func (o *DeleteUserOptions) deleteUserFromRoleBinding(name string, ns string) er
 	envRoleBindingsList, err := jxClient.JenkinsV1().EnvironmentRoleBindings(devNs).List(metav1.ListOptions{})
 	for _, envRoleBinding := range envRoleBindingsList.Items {
 		subjects := envRoleBinding.Spec.Subjects
-		filteredEnvRoleBinding := subjects[:0]
-		for _, subject := range subjects {
-			if util.StringMatchesPattern(strings.Trim(name, ""), strings.Trim(subject.Name, "")) {
-				subjectToDel := rbacv1.Subject{
-					Name:      name,
-					Namespace: ns,
+		if subjects != nil {
+			filteredEnvRoleBinding := subjects[:0]
+			for _, subject := range subjects {
+				if util.StringMatchesPattern(strings.Trim(name, ""), strings.Trim(subject.Name, "")) && util.StringMatchesPattern(strings.Trim(ns, ""), strings.Trim(subject.Namespace, "")) {
+					subjectToDel := rbacv1.Subject{
+						Name:      name,
+						Namespace: ns,
+					}
+					filteredEnvRoleBinding = append(filteredEnvRoleBinding, subjectToDel)
+					log.Infof("Found user %s to unbind from role\n", util.ColorInfo(name))
+					foundUser = 1
+					break
 				}
-				filteredEnvRoleBinding = append(filteredEnvRoleBinding, subjectToDel)
-				log.Infof("Found user %s to unbind from role\n", util.ColorInfo(name))
-				foundUser = 1
+			}
+			if foundUser == 1 {
 				break
 			}
-		}
-		if foundUser == 1 {
-			break
 		}
 	}
 	return nil
