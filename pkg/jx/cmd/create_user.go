@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -135,18 +134,15 @@ func (o *CreateUserOptions) Run() error {
 	}
 	log.Infof("Created User: %s\n", util.ColorInfo(login))
 	log.Infof("Binding user %s with role: %s\n", util.ColorInfo(login), o.Role)
-
-	roleBindings := kubeClient.RbacV1().RoleBindings(ns)
-	if roleBindings != nil {
-		roleBinding, _ := roleBindings.Get(o.Role, metav1.GetOptions{})
-		if roleBinding != nil {
-			newSubject := rbacv1.Subject{
-				Name:      o.UserSpec.Name,
-				Kind:      "User", //TODO: should the default be user? Should we also pass kind as part of user creation step?
-				Namespace: ns,
-			}
-			roleBinding.Subjects = append(roleBinding.Subjects, newSubject)
-		} //TODO: else: Should we create a new role if it doesn't already exist?
+	environmentRoleBinding := &v1.EnvironmentRoleBinding{}
+	if environmentRoleBinding != nil {
+		envSubjects := environmentRoleBinding.Spec.Subjects
+		newSubject := rbacv1.Subject{
+			Name:      o.UserSpec.Name,
+			Kind:      "User", //TODO: should the default be user? Should we also pass kind as part of user creation step?
+			Namespace: ns,
+		}
+		envSubjects = append(envSubjects, newSubject)
 	}
 	log.Infof("Binding user %s with role: %s complete\n", util.ColorInfo(login), o.Role)
 
