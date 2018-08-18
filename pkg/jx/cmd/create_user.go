@@ -139,7 +139,7 @@ func (o *CreateUserOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("Failed to retrieve environment role binding list for namespace %s: %s", ns, err)
 	}
-
+	foundRole := 0
 	for _, envRoleBinding := range envRoleBindingsList.Items {
 		if util.StringMatchesPattern(o.Role, envRoleBinding.Spec.RoleRef.Name) {
 			log.Infof("Role %s exists, binding user %s with role.\n", util.ColorInfo(o.Role), util.ColorInfo(login))
@@ -149,9 +149,14 @@ func (o *CreateUserOptions) Run() error {
 				Namespace: ns,
 			}
 			envRoleBinding.Spec.Subjects = append(envRoleBinding.Spec.Subjects, newSubject)
-		} else {
-			log.Warnf("Role %s doesn't exist, will not bind user %s with role\n", util.ColorWarning(o.Role), util.ColorWarning(login))
+			foundRole = 1
+			break
 		}
-		return nil
 	}
+	if foundRole == 0 {
+		log.Warnf("Role %s doesn't exist, will not bind user %s with role\n", util.ColorWarning(o.Role), util.ColorWarning(login))
+
+	}
+	return nil
+
 }

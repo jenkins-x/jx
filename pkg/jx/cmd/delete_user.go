@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -122,6 +123,11 @@ func (o *DeleteUserOptions) Run() error {
 		} else {
 			log.Infof("Deleted user %s\n", util.ColorInfo(name))
 		}
+		log.Infof("Attempting to unbind user %s from associated role\n", util.ColorInfo(name))
+		err = o.deleteUserFromRoleBinding(name)
+		if err != nil {
+			log.Warnf("Problem to unbind user %s from associated role\n", util.ColorWarning(name))
+		}
 	}
 	return nil
 }
@@ -141,6 +147,27 @@ func (o *DeleteUserOptions) deleteUser(name string) error {
 	}
 	return kube.DeleteUser(jxClient, ns, name)
 }
-func (o *DeleteUserOptions) deleteUserFromRoleBinding(name string, role string) error {
-
+func (o *DeleteUserOptions) deleteUserFromRoleBinding(name string) error {
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	foundUser := 0
+	envRoleBindingsList, err := jxClient.JenkinsV1().EnvironmentRoleBindings(devNs).List(metav1.ListOptions{})
+	for _, envRoleBinding := range envRoleBindingsList.Items {
+		filteredEnvRoleBinding := envRoleBindingsList.Items[:0]
+		subjects := envRoleBinding.Spec.Subjects
+		for _, subject := range subjects {
+			if util.StringMatchesPattern(name, subject.Name) {
+				filteredEnvRoleBinding = append(filteredEnvRoleBinding, envRoleBinding)
+				log.Infof("Found user %s to unbind from role\n", util.ColorInfo(name))
+				foundUser = 1
+				break
+			}
+		}
+		if foundUser == 1 {
+			break
+		}
+	}
+	return nil
 }
