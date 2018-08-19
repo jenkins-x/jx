@@ -18,6 +18,7 @@ const (
 	CertmanagerCertificateStaging = "letsencrypt-staging"
 	CertmanagerIssuerProd         = "letsencrypt-prod"
 	CertmanagerIssuerStaging      = "letsencrypt-staging"
+	CertmanagerIssuerTesting      = "letsencrypt-testing"
 )
 
 // RegisterEnvironmentCRD ensures that the CRD is registered for Environments
@@ -317,4 +318,29 @@ func CleanCertmanagerResources(c kubernetes.Interface, ns string, config Ingress
 	//}
 
 	return nil
+}
+
+func IsCertmanagerInstalled(c kubernetes.Interface, ns string) bool {
+	_, err := c.CoreV1().RESTClient().Get().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerTesting).DoRaw()
+	if err == nil {
+		// existing test issuer found
+		_, err := c.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerTesting).DoRaw()
+		if err != nil {
+			return false
+		}
+	}
+
+	// Try to create a cluster issuer just to test if cert-manager is installed in the cluster
+	json, err := yaml.YAMLToJSON([]byte(certmanager.Cert_manager_issuer_testing))
+	_, err = c.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Body(json).DoRaw()
+	if err != nil {
+		// Failed to create the test issuer, most likely no cert-manager is available
+		return false
+	}
+	_, err = c.CoreV1().RESTClient().Delete().RequestURI(fmt.Sprintf("/apis/certmanager.k8s.io/v1alpha1/namespaces/%s/issuers", ns)).Name(CertmanagerIssuerTesting).DoRaw()
+	if err != nil {
+		// cert-manager is there but somehow it failed to delete the fake issuer
+		return true
+	}
+	return true
 }

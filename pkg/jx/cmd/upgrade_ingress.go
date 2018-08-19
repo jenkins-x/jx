@@ -3,16 +3,17 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
+	"strings"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
-	"time"
 )
 
 var (
@@ -258,7 +259,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 		o.IngressConfig.TLS = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt")
 
 		if o.IngressConfig.TLS {
-			clusterIssuer, err := util.PickNameWithDefault([]string{"prod", "staging"}, "Use LetsEncrypt staging or production?  Warning if testing use staging else you may be rate limited:", "staging")
+			clusterIssuer, err := util.PickNameWithDefault([]string{"prod", "staging"}, "Use LetsEncrypt production or staging?  Warning staging issues a fake certificate:", "prod")
 			if err != nil {
 				return err
 			}
@@ -310,16 +311,15 @@ func (o *UpgradeIngressOptions) recreateIngressRules() error {
 }
 
 func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
-
 	if !o.SkipCertManager {
-		log.Infof("Looking for %s deployment in namespace %s\n", CertManagerDeployment, CertManagerNamespace)
-		_, err := kube.GetDeploymentPods(o.kubeClient, CertManagerDeployment, CertManagerNamespace)
-		if err != nil {
+		log.Infoln("Checking if cert-manager is installed in the cluster")
+		installed := kube.IsCertmanagerInstalled(o.kubeClient, o.devNamespace)
+		if !installed {
 			ok := util.Confirm("CertManager deployment not found, shall we install it now?", true, "CertManager automatically configures Ingress rules with TLS using signed certificates from LetsEncrypt")
 			if ok {
 
 				values := []string{"rbac.create=true", "ingressShim.extraArgs='{--default-issuer-name=letsencrypt-staging,--default-issuer-kind=Issuer}'"}
-				err = o.installChart("cert-manager", "stable/cert-manager", "", CertManagerNamespace, true, values)
+				err := o.installChart("cert-manager", "stable/cert-manager", "", CertManagerNamespace, true, values)
 				if err != nil {
 					return fmt.Errorf("CertManager deployment failed: %v", err)
 				}
@@ -330,7 +330,6 @@ func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
 				if err != nil {
 					return err
 				}
-
 			}
 		}
 	}

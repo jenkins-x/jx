@@ -54,4 +54,21 @@ spec:
     # Enable the HTTP-01 challenge provider
     http01: {}
 `
+	Cert_manager_issuer_testing = `
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Issuer
+metadata:
+  name: letsencrypt-testing
+spec:
+  acme:
+    # The ACME server URL
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    # Email address used for ACME registration
+    email: test@jenkins-x.io 
+    # Name of a secret used to store the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-testing
+    # Enable the HTTP-01 challenge provider
+    http01: {}
+`
 )
