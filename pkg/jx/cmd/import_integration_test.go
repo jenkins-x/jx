@@ -1,3 +1,5 @@
+// +build integration
+
 package cmd
 
 import (
@@ -25,29 +27,24 @@ const (
 	probePrefix             = "probePath:"
 )
 
-// TODO refactor to encapsulate
 func TestImportProjects(t *testing.T) {
-	if os.Getenv("RUN_UNENCAPSULATED_TESTS") == "true" {
-		tempDir, err := ioutil.TempDir("", "test-import-projects")
-		assert.NoError(t, err)
+	tempDir, err := ioutil.TempDir("", "test-import-projects")
+	assert.NoError(t, err)
 
-		testData := path.Join("test_data", "import_projects")
-		_, err = os.Stat(testData)
-		assert.NoError(t, err)
+	testData := path.Join("test_data", "import_projects")
+	_, err = os.Stat(testData)
+	assert.NoError(t, err)
 
-		files, err := ioutil.ReadDir(testData)
-		assert.NoError(t, err)
+	files, err := ioutil.ReadDir(testData)
+	assert.NoError(t, err)
 
-		for _, f := range files {
-			if f.IsDir() {
-				name := f.Name()
-				srcDir := filepath.Join(testData, name)
-				testImportProject(t, tempDir, name, srcDir, false)
-				testImportProject(t, tempDir, name, srcDir, true)
-			}
+	for _, f := range files {
+		if f.IsDir() {
+			name := f.Name()
+			srcDir := filepath.Join(testData, name)
+			testImportProject(t, tempDir, name, srcDir, false)
+			testImportProject(t, tempDir, name, srcDir, true)
 		}
-	} else {
-		t.Skip("skipping TestImportProjects; RUN_UNENCAPSULATED_TESTS not set")
 	}
 }
 

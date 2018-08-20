@@ -71,9 +71,9 @@ $ make build      # runs dep and builds `jx`  inside the build/
 ## Testing
 
 The jx test suite is divided into three sections:
- - The standard test suite
- - Slow tests
- - Unencapsulated tests
+ - The standard unit test suite
+ - Slow unit tests
+ - Integration tests
 
 To run the standard test suite:
 ```make test```
@@ -81,8 +81,8 @@ To run the standard test suite:
 To run the standard test suite including slow running tests:
 ```make test-slow```
 
-To run all tests including unencapsulated tests (not recommended):
-```make test-slow-unencapsulated```
+To run all tests including integration tests (NOTE These tests are not encapsulated):
+```make test-slow-integration```
 
 
 To get a nice HTML report on the tests:
@@ -90,7 +90,9 @@ To get a nice HTML report on the tests:
 
 ### Writing tests
 
-Standard tests should be issolated (see what is an unencapsulated test), and should contain the `t.Parallel()` directive in order to keep things nice and speedy.
+### Unit Tests
+
+Unit tests should be issolated (see what is an unencapsulated test), and should contain the `t.Parallel()` directive in order to keep things nice and speedy.
 
 If you add a slow running (more than a couple of seconds) test, it needs to be wrapped like so:
 ```
@@ -102,14 +104,20 @@ if testing.Short() {
 ```
 Slows tests can (and should) still include `t.Parallel()`
 
-Adding unencapsulated tests is not encouraged. If you absolutely must add a test that is not encapsulated, it needs to be wrapped like so:
+Best practice for unit tests is to define the testing package appending _test to the name of your package, e.g. `mypackage_test` and then import `mypackage` inside your tests.
+This encourages good package design and will enable you to define the exported package API in a composable way.
+
+### Integration Tests
+
+To add an integration test, create a separate file for your integration tests using the naming convention `mypackage_integration_test.go` Use the same package declaaration as your unit tests: `mypackage_test`. At the very top of the file before the package declaration add this custom build directive:
+
 ```
-if os.Getenv("RUN_UNENCAPSULATED_TESTS") == "true" {
-	// Unencapsulated test goes here...
-} else {
-	t.Skip("skipping an_unencapsulated_test; RUN_UNENCAPSULATED_TESTS not set")
-}
+// +build integration
+
 ```
+Note that there needs to be a blank line before you declare the package name. 
+
+This directive will ensure that integration tests are automatically separated from unit tests, and will not be run as part of the normal test suite.
 You should NOT add `t.Parallel()` to an unencapsulated test as it may cause intermittent failures.
 
 ### What is an unencapsulated test?
