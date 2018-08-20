@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"io"
+	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	batchv1 "k8s.io/api/batch/v1"
@@ -11,7 +14,7 @@ import (
 )
 
 const (
-	kubeHunterImage         = "cosmincojocar/kube-hunter:latest"
+	kubeHunterImage         = "cosmincojocar/kube-hunter:v20"
 	kubeHunterContainerName = "jx-kube-hunter"
 	kubeHunterNamespace     = "jx-kube-hunter"
 	kubeHunterJobName       = "jx-kube-hunter-job"
@@ -68,10 +71,15 @@ func (o *ScanClusterOptions) Run() error {
 
 	container := o.hunterContainer()
 	job := o.createScanJob(kubeHunterJobName, ns, container)
-
 	_, err = kubeClient.BatchV1().Jobs(ns).Create(job)
 	if err != nil {
 		return err
+	}
+
+	log.Info("Waiting for kube hunter job to complete the security scanning\n")
+	err = kube.WaitForJobToSucceeded(kubeClient, ns, kubeHunterJobName, 2*time.Minute)
+	if err != nil {
+		errors.Wrap(err, "waiting for kube hunter job to complete the scanning")
 	}
 	return nil
 }
