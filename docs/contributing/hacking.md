@@ -70,17 +70,51 @@ $ make build      # runs dep and builds `jx`  inside the build/
 
 ## Testing
 
-There's a handy script to output nice syntax highlighted output of test results via:
+The jx test suite is divided into three sections:
+ - The standard test suite
+ - Slow tests
+ - Unencapsulated tests
 
-```shell 
-./test.sh
+To run the standard test suite:
+```make test```
+
+To run the standard test suite including slow running tests:
+```make test-slow```
+
+To run all tests including unencapsulated tests (not recommended):
+```make test-slow-unencapsulated```
+
+
+To get a nice HTML report on the tests:
+```make test-report-html```
+
+### Writing tests
+
+Standard tests should be issolated (see what is an unencapsulated test), and should contain the `t.Parallel()` directive in order to keep things nice and speedy.
+
+If you add a slow running (more than a couple of seconds) test, it needs to be wrapped like so:
 ```
-
-Or you can use `make`
-
-```shell 
-make test
+if testing.Short() {
+	t.Skip("skipping a_long_running_test")
+} else {
+	// Slow test goes here...
+}
 ```
+Slows tests can (and should) still include `t.Parallel()`
+
+Adding unencapsulated tests is not encouraged. If you absolutely must add a test that is not encapsulated, it needs to be wrapped like so:
+```
+if os.Getenv("RUN_UNENCAPSULATED_TESTS") == "true" {
+	// Unencapsulated test goes here...
+} else {
+	t.Skip("skipping an_unencapsulated_test; RUN_UNENCAPSULATED_TESTS not set")
+}
+```
+You should NOT add `t.Parallel()` to an unencapsulated test as it may cause intermittent failures.
+
+### What is an unencapsulated test?
+A test is unencapsulated (not issolated) if it cannot be run (with repeatable success) without a certain surrounding state. Relying on external binaries that may not be present, writing or reading from the filesystem without care to specifically avoid collisions, or relying on other tests to run in a specific sequence for your test to pass are all examples of a test that you should carefully consider before committing. If you would like to easily check that your test is issolated before committing simply run: `make docker-test`, or if your test is marked as slow: `make docker-test-slow`. This will mount the jx project folder into a golang docker container that does not include any of your host machines environment. If your test passes here, then you can be happy that the test is encapsulated.
+
 
 ### Debug logging
 
