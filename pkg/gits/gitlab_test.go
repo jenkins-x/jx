@@ -115,8 +115,8 @@ func (suite *GitlabProviderSuite) TestListRepositories() {
 		testDescription  string
 		org              string
 		expectedRepoName string
-		expectedSshUrl   string
-		expectedHtmlUrl  string
+		expectedSSHURL   string
+		expectedHTMLURL  string
 	}{
 		{"List repositories for organization", gitlabOrgName, "orgproject", "git@gitlab.com:testorg/orgproject.git", "https://gitlab.com/testorg/orgproject"},
 		{"List repositories without organization", "", "userproject", "git@gitlab.com:testperson/userproject.git", "https://gitlab.com/testperson/userproject"},
@@ -127,9 +127,9 @@ func (suite *GitlabProviderSuite) TestListRepositories() {
 		require.Nil(err)
 		require.Len(repositories, 1)
 		require.Equal(s.expectedRepoName, repositories[0].Name)
-		require.Equal(s.expectedSshUrl, repositories[0].SSHURL)
-		require.Equal(s.expectedSshUrl, repositories[0].CloneURL)
-		require.Equal(s.expectedHtmlUrl, repositories[0].HTMLURL)
+		require.Equal(s.expectedSSHURL, repositories[0].SSHURL)
+		require.Equal(s.expectedSSHURL, repositories[0].CloneURL)
+		require.Equal(s.expectedHTMLURL, repositories[0].HTMLURL)
 	}
 }
 
@@ -145,5 +145,9 @@ func (suite *GitlabProviderSuite) TestGetRepository() {
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestGitlabProviderSuite(t *testing.T) {
-	suite.Run(t, new(GitlabProviderSuite))
+	if testing.Short() {
+		t.Skip("skipping TestGitlabProviderSuite in short mode")
+	} else {
+		suite.Run(t, new(GitlabProviderSuite))
+	}
 }

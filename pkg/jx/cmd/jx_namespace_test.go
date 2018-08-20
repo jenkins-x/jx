@@ -12,6 +12,7 @@ import (
 )
 
 func TestJXNamespace(t *testing.T) {
+	t.Parallel()
 	o := &CommonOptions{}
 	ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, ""))
 

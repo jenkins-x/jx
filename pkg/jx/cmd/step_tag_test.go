@@ -17,6 +17,7 @@ import (
 )
 
 func TestStepTagCharts(t *testing.T) {
+	t.Parallel()
 	f, err := ioutil.TempDir("", "test-step-tag-charts")
 	assert.NoError(t, err)
 

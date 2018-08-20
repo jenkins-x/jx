@@ -64,6 +64,7 @@ func (m *MockPipelineActivityInterface) Patch(name string, pt types.PatchType, d
 }
 
 func TestCreateOrUpdateActivities(t *testing.T) {
+	t.Parallel()
 	activities := &MockPipelineActivityInterface{
 		Activities: map[string]*v1.PipelineActivity{},
 	}

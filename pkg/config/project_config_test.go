@@ -12,6 +12,7 @@ import (
 )
 
 func TestProjectConfigMarshal(t *testing.T) {
+	t.Parallel()
 	projectConfig := &ProjectConfig{
 		Builds: []*BranchBuild{
 			{

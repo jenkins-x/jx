@@ -16,6 +16,7 @@ type gitTestData struct {
 }
 
 func TestAuthLoadFromPipelineGitCredentials(t *testing.T) {
+	t.Parallel()
 	testData := []gitTestData{
 		{
 			gits.KindGitHub, "GitHub", "https://github.com", "jstrachan", "loverlyLarger",

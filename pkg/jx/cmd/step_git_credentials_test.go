@@ -11,6 +11,7 @@ import (
 )
 
 func TestStepGitCredentials(t *testing.T) {
+	t.Parallel()
 	kind1 := gits.KindGitHub
 	scheme1 := "https://"
 	host1 := "github.com"

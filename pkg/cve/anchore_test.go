@@ -36,7 +36,11 @@ var router = util.Router{
 }
 
 func TestAnchoreProviderTestSuite(t *testing.T) {
-	suite.Run(t, new(AnchoreProviderTestSuite))
+	if testing.Short() {
+		t.Skip("skipping TestAnchoreProviderTestSuite in short mode")
+	} else {
+		suite.Run(t, new(AnchoreProviderTestSuite))
+	}
 }
 
 func (suite *AnchoreProviderTestSuite) SetupSuite() {

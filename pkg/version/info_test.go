@@ -9,12 +9,14 @@ import (
 )
 
 func TestGetVersison(t *testing.T) {
+	t.Parallel()
 	version.Map["version"] = "1.2.1"
 	result := version.GetVersion()
 	assert.Equal(t, "1.2.1", result)
 }
 
 func TestGetSemverVersisonWithStandardVersion(t *testing.T) {
+	t.Parallel()
 	version.Map["version"] = "1.2.1"
 	result, err := version.GetSemverVersion()
 	expectedResult := semver.Version{Major: 1, Minor: 2, Patch: 1}
@@ -23,6 +25,7 @@ func TestGetSemverVersisonWithStandardVersion(t *testing.T) {
 }
 
 func TestGetSemverVersisonWithNonStandardVersion(t *testing.T) {
+	t.Parallel()
 	version.Map["version"] = "1.3.153-dev+7a8285f4"
 	result, err := version.GetSemverVersion()
 

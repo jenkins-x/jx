@@ -1,11 +1,13 @@
 package kube
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestToValidName(t *testing.T) {
+	t.Parallel()
 	assertToValidName(t, "foo", "foo")
 	assertToValidName(t, "foo-bar", "foo-bar")
 	assertToValidName(t, "foo-bar-", "foo-bar")
@@ -15,6 +17,7 @@ func TestToValidName(t *testing.T) {
 }
 
 func TestToValidNameWithDots(t *testing.T) {
+	t.Parallel()
 	assertToValidNameWithDots(t, "foo-bar-0.1.0", "foo-bar-0.1.0")
 	assertToValidNameWithDots(t, "foo/bar_.123", "foo-bar-.123")
 }

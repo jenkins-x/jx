@@ -1,15 +1,16 @@
 package cmd
 
 import (
+	"io/ioutil"
+	"path/filepath"
+	"testing"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	testclient "k8s.io/client-go/kubernetes/fake"
-	"path/filepath"
-	"testing"
 )
 
 type TestOptions struct {
@@ -42,7 +43,7 @@ func (o *TestOptions) Setup() {
 }
 
 func TestAnnotateNoExisting(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
@@ -86,7 +87,7 @@ func TestAnnotateWithExistingAnnotations(t *testing.T) {
 }
 
 func TestAnnotateWithExistingCertManagerAnnotation(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
@@ -109,7 +110,7 @@ func TestAnnotateWithExistingCertManagerAnnotation(t *testing.T) {
 }
 
 func TestCleanExistingExposecontrollerReources(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
@@ -127,7 +128,7 @@ func TestCleanExistingExposecontrollerReources(t *testing.T) {
 }
 
 func TestCleanServiceAnnotations(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
@@ -146,6 +147,7 @@ func TestCleanServiceAnnotations(t *testing.T) {
 }
 
 func TestRealJenkinsService(t *testing.T) {
+	t.Parallel()
 	filename := filepath.Join(".", "test_data", "upgrade_ingress", "service.yaml")
 	serviceYaml, err := ioutil.ReadFile(filename)
 	assert.NoError(t, err)

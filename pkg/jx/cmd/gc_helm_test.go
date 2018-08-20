@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"bytes"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sort"
 	"testing"
 	"text/template"
+
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -59,6 +60,7 @@ type CMListConfig struct {
 }
 
 func TestGCHelmSortVersion(t *testing.T) {
+	t.Parallel()
 	test_versions := []string{"jx-production.v2", "jx-production.v3", "jx-production.v1"}
 	sort.Sort(ByVersion(test_versions))
 	assert.Equal(t, "jx-production.v1", test_versions[0])
@@ -67,6 +69,7 @@ func TestGCHelmSortVersion(t *testing.T) {
 }
 
 func TestGCHelmSortVersionComplex(t *testing.T) {
+	t.Parallel()
 	test_versions := []string{"jx-p.v3.complex.v2", "jx-p.v1.complex.v3", "jx-p.v2.complex.v1"}
 	sort.Sort(ByVersion(test_versions))
 	assert.Equal(t, "jx-p.v2.complex.v1", test_versions[0])
@@ -76,6 +79,7 @@ func TestGCHelmSortVersionComplex(t *testing.T) {
 }
 
 func TestGCHelmSortVersionMissing(t *testing.T) {
+	t.Parallel()
 	test_versions := []string{"aptly-broken3", "aptly-broken2", "aptly-broken1"}
 	sort.Sort(ByVersion(test_versions))
 	assert.Equal(t, "aptly-broken3", test_versions[0])
@@ -84,7 +88,7 @@ func TestGCHelmSortVersionMissing(t *testing.T) {
 }
 
 func TestGCHelmExtract(t *testing.T) {
-
+	t.Parallel()
 	var b bytes.Buffer
 	b.WriteString(createConfigMaps(t, "jx-staging", v_jx_staging))
 	b.WriteString(",")

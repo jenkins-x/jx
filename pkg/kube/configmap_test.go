@@ -8,6 +8,7 @@ import (
 )
 
 func TestExtractDomain(t *testing.T) {
+	t.Parallel()
 	values, err := util.LoadBytes("../test_data", "exposecontroller_data.txt")
 	assert.NoError(t, err)
 

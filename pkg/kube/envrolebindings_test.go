@@ -8,6 +8,7 @@ import (
 )
 
 func TestEnvironmentFilters(t *testing.T) {
+	t.Parallel()
 	environments := []*v1.Environment{
 		NewPermanentEnvironment("staging"),
 		NewPermanentEnvironment("production"),

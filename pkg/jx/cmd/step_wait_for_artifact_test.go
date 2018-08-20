@@ -7,6 +7,7 @@ import (
 )
 
 func TestStepWaitForArtifact(t *testing.T) {
+	t.Parallel()
 	options := &StepWaitForArtifactOptions{
 		RepoURL:    defaultMavenCentralRepo,
 		GroupId:    "io.jenkins.updatebot",

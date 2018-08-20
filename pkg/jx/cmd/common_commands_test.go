@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExecuteCommand(t *testing.T) {
+	t.Parallel()
 	o := CommonOptions{}
 	err := o.runCommand("echo", "foo")
 	assert.Nil(t, err)
@@ -14,6 +16,7 @@ func TestExecuteCommand(t *testing.T) {
 }
 
 func TestCommandError(t *testing.T) {
+	t.Parallel()
 	o := CommonOptions{}
 	err := o.runCommand("noSuchCommand")
 	assert.NotNil(t, err)
@@ -21,6 +24,7 @@ func TestCommandError(t *testing.T) {
 }
 
 func TestVerboseOutput(t *testing.T) {
+	t.Parallel()
 	out := new(bytes.Buffer)
 	o := CommonOptions{Verbose: true, Out: out}
 	o.runCommand("echo", "foo")
@@ -28,6 +32,7 @@ func TestVerboseOutput(t *testing.T) {
 }
 
 func TestNonVerboseOutput(t *testing.T) {
+	t.Parallel()
 	out := new(bytes.Buffer)
 	o := CommonOptions{Out: out}
 	o.runCommand("echo", "foo")

@@ -11,6 +11,7 @@ import (
 )
 
 func TestStepSplitMonorepo(t *testing.T) {
+	t.Parallel()
 	testData := filepath.Join("test_data", "split_monorepo")
 
 	tempDir, err := ioutil.TempDir("", "test_split_monorepo")

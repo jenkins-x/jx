@@ -9,6 +9,7 @@ import (
 )
 
 func TestAdminSecrets(t *testing.T) {
+	t.Parallel()
 
 	testFile, err := ioutil.ReadFile("admin_secrets_test.yaml")
 	assert.NoError(t, err)

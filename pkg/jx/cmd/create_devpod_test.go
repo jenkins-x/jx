@@ -8,6 +8,7 @@ import (
 )
 
 func TestFindDevPodLabel(t *testing.T) {
+	t.Parallel()
 	labels := []string{"go", "nodejs", "maven"}
 
 	fileToValues := map[string]string{

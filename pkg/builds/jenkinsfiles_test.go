@@ -12,6 +12,7 @@ import (
 )
 
 func TestJenkinsfileGenerator(t *testing.T) {
+	t.Parallel()
 	projectConfig := &config.ProjectConfig{
 		BuildPack: "maven",
 		Env: []corev1.EnvVar{

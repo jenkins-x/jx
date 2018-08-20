@@ -9,6 +9,7 @@ import (
 )
 
 func TestSortEnvironments(t *testing.T) {
+	t.Parallel()
 	environments := []v1.Environment{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -53,6 +54,7 @@ func TestSortEnvironments(t *testing.T) {
 }
 
 func TestSortEnvironments2(t *testing.T) {
+	t.Parallel()
 	environments := []v1.Environment{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -88,6 +90,7 @@ func TestSortEnvironments2(t *testing.T) {
 }
 
 func TestReplaceMakeVariable(t *testing.T) {
+	t.Parallel()
 	lines := []string{"FOO", "NAMESPACE:=\"abc\"", "BAR", "NAMESPACE := \"abc\""}
 
 	actual := append([]string{}, lines...)

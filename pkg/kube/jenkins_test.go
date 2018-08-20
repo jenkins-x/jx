@@ -12,6 +12,7 @@ import (
 )
 
 func TestAddGiteaServers(t *testing.T) {
+	t.Parallel()
 	cm := &corev1.ConfigMap{
 		Data: map[string]string{},
 	}
@@ -95,6 +96,7 @@ func TestAddGiteaServers(t *testing.T) {
 }
 
 func TestAddGitHuvServers(t *testing.T) {
+	t.Parallel()
 	key := githubConfigMapKey
 	kind := gits.KindGitHub
 
@@ -137,6 +139,7 @@ func TestAddGitHuvServers(t *testing.T) {
 }
 
 func TestAddBitBucketServerServers(t *testing.T) {
+	t.Parallel()
 	kind := gits.KindBitBucketServer
 	key := bitbucketConfigMapKey
 
@@ -178,6 +181,7 @@ func TestAddBitBucketServerServers(t *testing.T) {
 }
 
 func TestAddBitBucketCloudServers(t *testing.T) {
+	t.Parallel()
 	kind := gits.KindBitBucketCloud
 	key := bitbucketConfigMapKey
 

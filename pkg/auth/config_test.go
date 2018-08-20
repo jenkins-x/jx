@@ -19,6 +19,7 @@ const (
 )
 
 func TestAuthConfig(t *testing.T) {
+	t.Parallel()
 	dir, err := ioutil.TempDir("/tmp", "jx-test-jenkins-config-")
 	assertNoError(t, err)
 
@@ -130,16 +131,18 @@ func assertNoError(t *testing.T, err error) {
 }
 
 func TestAuthConfigGetsDefaultName(t *testing.T) {
+	t.Parallel()
 	c := &AuthConfig{}
 
-	expectedUrl := "https://foo.com"
-	server := c.GetOrCreateServer(expectedUrl)
+	expectedURL := "https://foo.com"
+	server := c.GetOrCreateServer(expectedURL)
 	assert.NotNil(t, server, "No server found!")
 	assert.True(t, server.Name != "", "Should have a server name!")
-	assert.Equal(t, expectedUrl, server.URL, "Server.URL")
+	assert.Equal(t, expectedURL, server.URL, "Server.URL")
 }
 
 func TestDeleteServer(t *testing.T) {
+	t.Parallel()
 	c := &AuthConfig{}
 	url := "https://foo.com"
 	server := c.GetOrCreateServer(url)
@@ -152,6 +155,7 @@ func TestDeleteServer(t *testing.T) {
 }
 
 func TestDeleteServer2(t *testing.T) {
+	t.Parallel()
 	c := &AuthConfig{}
 	url1 := "https://foo1.com"
 	server1 := c.GetOrCreateServer(url1)

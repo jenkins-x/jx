@@ -9,6 +9,7 @@ import (
 )
 
 func TestStepValidate(t *testing.T) {
+	t.Parallel()
 	AssertValidateWorks(t, &StepValidateOptions{})
 	AssertValidateWorks(t, &StepValidateOptions{MinimumJxVersion: "0.0.1"})
 

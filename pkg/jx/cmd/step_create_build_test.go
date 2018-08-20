@@ -101,6 +101,7 @@ spec:
 )
 
 func TestStepCreateBuild(t *testing.T) {
+	t.Parallel()
 	tempDir, err := ioutil.TempDir("", "test-step-create-build")
 	assert.NoError(t, err)
 

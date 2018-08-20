@@ -1,13 +1,14 @@
 package cmd
 
 import (
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"testing"
 )
 
 const (
@@ -19,6 +20,7 @@ const (
 )
 
 func TestServiceLinking(t *testing.T) {
+	t.Parallel()
 	o := StepLinkServicesOptions{
 		FromNamespace: fromNs,
 		Includes:      []string{serviceNameInFromNs},

@@ -303,7 +303,11 @@ func (suite *BitbucketServerProviderTestSuite) TestUserInfo() {
 }
 
 func TestBitbucketServerProviderTestSuite(t *testing.T) {
-	suite.Run(t, new(BitbucketServerProviderTestSuite))
+	if testing.Short() {
+		t.Skip("skipping TestBitbucketServerProviderTestSuite in short mode")
+	} else {
+		suite.Run(t, new(BitbucketServerProviderTestSuite))
+	}
 }
 
 func (suite *BitbucketServerProviderTestSuite) TearDownSuite() {

@@ -7,6 +7,7 @@ import (
 )
 
 func TestProjectHistory(t *testing.T) {
+	t.Parallel()
 	_, history, err := NewProjectHistoryService("test_data/projectHistory.yml")
 	assert.Equal(t, "Jan 2 2018", history.LastReportDate, "history.LastReportDate")
 

@@ -57,6 +57,7 @@ func checkArgs(cli *HelmCLI, expectedDir string, expectedName string, exptectedA
 	return nil
 }
 
+// TODO reafcator. setup function makes tests sequence dependent. Tests cannot be run with t.Parallel()
 func setup(output string) {
 	var r *util.Command // Has to be a pointer to because `RunWithoutRetry` has a pointer receiver
 	monkey.PatchInstanceMethod(reflect.TypeOf(r), "RunWithoutRetry", func(_ *util.Command) (string, error) {

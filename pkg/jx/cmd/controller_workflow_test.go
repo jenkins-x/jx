@@ -561,6 +561,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 }
 
 func TestPullRequestNumber(t *testing.T) {
+	t.Parallel()
 	failUrls := []string{"https://github.com/foo/bar/pulls"}
 	for _, u := range failUrls {
 		_, err := pullRequestURLToNumber(u)

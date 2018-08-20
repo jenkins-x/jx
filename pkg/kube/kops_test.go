@@ -1,12 +1,14 @@
 package kube
 
 import (
+	"testing"
+
 	"github.com/Jeffail/gabs"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestInsecureRegistry(t *testing.T) {
+	t.Parallel()
 	registry := "foo.bar.com"
 
 	nodeJson := "[\\n      {\\n        \\\"Effect\\\": \\\"Allow\\\",\\n        \\\"Action\\\": [\\\"ecr:InitiateLayerUpload\\\", \\\"ecr:UploadLayerPart\\\",\\\"ecr:CompleteLayerUpload\\\",\\\"ecr:PutImage\\\"],\\n        \\\"Resource\\\": [\\\"*\\\"]\\n      }\\n    ]"

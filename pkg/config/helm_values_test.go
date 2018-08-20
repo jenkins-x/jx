@@ -9,6 +9,7 @@ import (
 )
 
 func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
+	t.Parallel()
 
 	testFile, err := ioutil.ReadFile("helm_values_test.yaml")
 	assert.NoError(t, err)

@@ -7,10 +7,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	testclient "k8s.io/client-go/kubernetes/fake"
 
+	"testing"
+
 	"github.com/ghodss/yaml"
 	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/plugins"
-	"testing"
 )
 
 type TestOptions struct {
@@ -26,27 +27,25 @@ func (o *TestOptions) Setup() {
 }
 
 func TestProwConfig(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
 	err := o.addProwConfig()
 	assert.NoError(t, err)
-
 }
 
 func TestProwPlugins(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
 	err := o.addProwPlugins()
 	assert.NoError(t, err)
-
 }
 
 func TestMergeProwConfig(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
@@ -82,7 +81,7 @@ func TestMergeProwConfig(t *testing.T) {
 }
 
 func TestMergeProwPlugin(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
@@ -118,7 +117,7 @@ func TestMergeProwPlugin(t *testing.T) {
 }
 
 func TestAddProwPlugin(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
@@ -139,7 +138,7 @@ func TestAddProwPlugin(t *testing.T) {
 }
 
 func TestAddProwConfig(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
@@ -161,7 +160,7 @@ func TestAddProwConfig(t *testing.T) {
 
 // make sure that rerunning addProwConfig replaces any modified changes in the configmap
 func TestReplaceProwConfig(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 

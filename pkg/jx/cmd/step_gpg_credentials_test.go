@@ -12,6 +12,7 @@ import (
 )
 
 func TestStepGPGCredentials(t *testing.T) {
+	t.Parallel()
 	tempDir, err := ioutil.TempDir("", "test-step-gpg")
 	assert.NoError(t, err)
 

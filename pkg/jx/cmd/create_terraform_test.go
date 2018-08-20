@@ -14,6 +14,7 @@ import (
 )
 
 func TestValidateClusterDetails(t *testing.T) {
+	t.Parallel()
 	o := CreateTerraformOptions{
 		Flags: Flags{Cluster: []string{"foo=gke", "bar=gke"}},
 	}
@@ -22,6 +23,7 @@ func TestValidateClusterDetails(t *testing.T) {
 }
 
 func TestValidateClusterDetailsFail(t *testing.T) {
+	t.Parallel()
 	o := CreateTerraformOptions{
 		Flags: Flags{Cluster: []string{"foo=gke", "bar=aks"}},
 	}
@@ -112,6 +114,7 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 }
 
 func TestCanCreateTerraformVarsFile(t *testing.T) {
+	t.Parallel()
 	c := GKECluster{
 		ProjectId:     "project",
 		Zone:          "zone",
