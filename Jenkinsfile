@@ -38,7 +38,7 @@ pipeline {
                     checkout scm
                     container('go') {
                         sh "make linux"
-                        sh "make test"
+                        sh "make test-slow-unencapsulated"
                         sh "./build/linux/jx --help"
 
                         sh "docker build -t docker.io/$ORG/$APP_NAME:$PREVIEW_VERSION ."
