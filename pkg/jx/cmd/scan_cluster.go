@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	kubeHunterImage         = "cosmincojocar/kube-hunter:v20"
+	kubeHunterImage         = "cosmincojocar/kube-hunter:latest"
 	kubeHunterContainerName = "jx-kube-hunter"
 	kubeHunterNamespace     = "jx-kube-hunter"
 	kubeHunterJobName       = "jx-kube-hunter-job"
