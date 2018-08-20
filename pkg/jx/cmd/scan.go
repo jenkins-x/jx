@@ -45,6 +45,7 @@ func NewCmdScan(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	return cmd
 }
 
+// Run executes the scan commands
 func (o *ScanOptions) Run() error {
 	return o.Cmd.Help()
 }
