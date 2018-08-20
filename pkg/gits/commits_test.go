@@ -1,6 +1,7 @@
 package gits
 
 import (
+	"os"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -38,93 +39,95 @@ func assertParseCommit(t *testing.T, input string, expected *CommitInfo) {
 }
 
 func TestChangelogMarkdown(t *testing.T) {
-	t.Parallel()
-	releaseSpec := &v1.ReleaseSpec{
-		Commits: []v1.CommitSummary{
-			{
-				Message: "some commit 1\nfixes #123",
-				SHA:     "123",
-				Author: &v1.UserDetails{
-					Name:  "James Strachan",
-					Login: "jstrachan",
+	if os.Getenv("RUN_UNENCAPSULATED_TESTS") == "true" {
+		releaseSpec := &v1.ReleaseSpec{
+			Commits: []v1.CommitSummary{
+				{
+					Message: "some commit 1\nfixes #123",
+					SHA:     "123",
+					Author: &v1.UserDetails{
+						Name:  "James Strachan",
+						Login: "jstrachan",
+					},
+				},
+				{
+					Message: "some commit 2\nfixes #345",
+					SHA:     "456",
+					Author: &v1.UserDetails{
+						Name:  "James Rawlings",
+						Login: "rawlingsj",
+					},
 				},
 			},
-			{
-				Message: "some commit 2\nfixes #345",
-				SHA:     "456",
-				Author: &v1.UserDetails{
-					Name:  "James Rawlings",
-					Login: "rawlingsj",
-				},
-			},
-		},
-	}
-	gitInfo := &GitRepositoryInfo{
-		Host:         "github.com",
-		Organisation: "jstrachan",
-		Name:         "foo",
-	}
-	markdown, err := GenerateMarkdown(releaseSpec, gitInfo)
-	assert.Nil(t, err)
-	//t.Log("Generated => " + markdown)
+		}
+		gitInfo := &GitRepositoryInfo{
+			Host:         "github.com",
+			Organisation: "jstrachan",
+			Name:         "foo",
+		}
+		markdown, err := GenerateMarkdown(releaseSpec, gitInfo)
+		assert.Nil(t, err)
+		//t.Log("Generated => " + markdown)
 
-	expectedMarkdown := `## Changes
+		expectedMarkdown := `## Changes
 
 * some commit 1 ([jstrachan](https://github.com/jstrachan))
 * some commit 2 ([rawlingsj](https://github.com/rawlingsj))
 `
-	assert.Equal(t, expectedMarkdown, markdown)
-
+		assert.Equal(t, expectedMarkdown, markdown)
+	} else {
+		t.Skip("skipping TestChangelogMarkdown; RUN_UNENCAPSULATED_TESTS not set")
+	}
 }
 
 func TestChangelogMarkdownWithConventionalCommits(t *testing.T) {
-	t.Parallel()
-	releaseSpec := &v1.ReleaseSpec{
-		Commits: []v1.CommitSummary{
-			{
-				Message: "fix: some commit 1\nfixes #123",
-				SHA:     "123",
-				Author: &v1.UserDetails{
-					Name:  "James Strachan",
-					Login: "jstrachan",
+	if os.Getenv("RUN_UNENCAPSULATED_TESTS") == "true" {
+		releaseSpec := &v1.ReleaseSpec{
+			Commits: []v1.CommitSummary{
+				{
+					Message: "fix: some commit 1\nfixes #123",
+					SHA:     "123",
+					Author: &v1.UserDetails{
+						Name:  "James Strachan",
+						Login: "jstrachan",
+					},
+				},
+				{
+					Message: "feat: some commit 2\nfixes #345",
+					SHA:     "456",
+					Author: &v1.UserDetails{
+						Name:  "James Rawlings",
+						Login: "rawlingsj",
+					},
+				},
+				{
+					Message: "feat:(has actual feature name) some commit 3\nfixes #456",
+					SHA:     "567",
+					Author: &v1.UserDetails{
+						Name:  "James Rawlings",
+						Login: "rawlingsj",
+					},
+				},
+				{
+					Message: "bad comment 4",
+					SHA:     "678",
+					Author: &v1.UserDetails{
+						Name:  "James Rawlings",
+						Login: "rawlingsj",
+					},
 				},
 			},
-			{
-				Message: "feat: some commit 2\nfixes #345",
-				SHA:     "456",
-				Author: &v1.UserDetails{
-					Name:  "James Rawlings",
-					Login: "rawlingsj",
-				},
-			},
-			{
-				Message: "feat:(has actual feature name) some commit 3\nfixes #456",
-				SHA:     "567",
-				Author: &v1.UserDetails{
-					Name:  "James Rawlings",
-					Login: "rawlingsj",
-				},
-			},
-			{
-				Message: "bad comment 4",
-				SHA:     "678",
-				Author: &v1.UserDetails{
-					Name:  "James Rawlings",
-					Login: "rawlingsj",
-				},
-			},
-		},
-	}
-	gitInfo := &GitRepositoryInfo{
-		Host:         "github.com",
-		Organisation: "jstrachan",
-		Name:         "foo",
-	}
-	markdown, err := GenerateMarkdown(releaseSpec, gitInfo)
-	assert.Nil(t, err)
-	//t.Log("Generated => " + markdown)
+		}
+		gitInfo := &GitRepositoryInfo{
+			Host:         "github.com",
+			Organisation: "jstrachan",
+			Name:         "foo",
+		}
+		markdown, err := GenerateMarkdown(releaseSpec, gitInfo)
+		assert.Nil(t, err)
+		//t.Log("Generated => " + markdown)
 
-	expectedMarkdown := `## Changes
+		expectedMarkdown := `## Changes
 
 ### New Features
 
@@ -141,5 +144,8 @@ These commits did not use [Conventional Commits](https://conventionalcommits.org
 
 * bad comment 4 ([rawlingsj](https://github.com/rawlingsj))
 `
-	assert.Equal(t, expectedMarkdown, markdown)
+		assert.Equal(t, expectedMarkdown, markdown)
+	} else {
+		t.Skip("skipping TestChangelogMarkdownWithConventionalCommits; RUN_UNENCAPSULATED_TESTS not set")
+	}
 }
