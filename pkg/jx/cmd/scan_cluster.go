@@ -8,8 +8,10 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,6 +27,31 @@ const (
 // ScanClusterOptions the options for 'scan cluster' command
 type ScanClusterOptions struct {
 	ScanOptions
+}
+
+type node struct {
+	Type     string `json:"type" yaml:"type"`
+	Location string `json:"location" yaml:"location"`
+}
+
+type service struct {
+	Service     string `json:"service yaml:"service"`
+	Location    string `json:"location yaml:"location"`
+	Description string `json:"description yaml:"description"`
+}
+
+type vulnerability struct {
+	Vulnerability string `json:"vulnerability" yaml:"vulnerability"`
+	Location      string `json:"location yaml:"location"`
+	Category      string `json:"category yaml:"category"`
+	Description   string `json:"description" yaml:"description"`
+	Evidence      string `json:"evidence" yaml:"evidence"`
+}
+
+type scanResult struct {
+	Nodes           []node          `json:"nodes" yaml:"nodes"`
+	Services        []service       `json:"services yaml:"services"`
+	Vulnerabilities []vulnerability `json:"vulnerabilities" yaml:"vulnerabilities"`
 }
 
 // NewCmdScanCluster creates a command object for "scan cluster" command
@@ -81,7 +108,6 @@ func (o *ScanClusterOptions) Run() error {
 	}
 
 	// Wait for scanning to complete successfully
-	log.Info("Waiting for kube hunter job to complete the scanning...\n")
 	err = kube.WaitForJobToSucceeded(kubeClient, ns, kubeHunterJobName, 3*time.Minute)
 	if err != nil {
 		return errors.Wrap(err, "waiting for kube hunter job to complete the scanning")
@@ -89,14 +115,25 @@ func (o *ScanClusterOptions) Run() error {
 
 	result, err := o.retriveScanResult(ns)
 	if err != nil {
-		return errors.Wrap(err, "retrieving scan results")
+		return errors.Wrap(err, "retrieving scan result")
 	}
-	log.Info(result)
 
 	// Clean up the kube-hunter namespace
 	err = kubeClient.CoreV1().Namespaces().Delete(ns, &metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "cleaning up the scanning namespace '%s'", ns)
+	}
+
+	scanResult, err := o.parseResult(result)
+	if err != nil {
+		return errors.Wrap(err, "parsing the scan result")
+	}
+
+	o.printResult(scanResult)
+
+	foundVulns := len(scanResult.Vulnerabilities)
+	if foundVulns > 0 {
+		return fmt.Errorf("found '%d' vulnerabilities", foundVulns)
 	}
 
 	return nil
@@ -183,4 +220,49 @@ func (o *ScanClusterOptions) retriveScanResult(namespace string) (string, error)
 	}
 
 	return string(result), nil
+}
+
+func (o *ScanClusterOptions) parseResult(result string) (*scanResult, error) {
+	r := scanResult{}
+	err := yaml.Unmarshal([]byte(result), &r)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing the YAML result")
+	}
+	return &r, nil
+}
+
+func (o *ScanClusterOptions) printResult(result *scanResult) {
+	nodeTable := o.CreateTable()
+	nodeTable.SetColumnAlign(1, util.ALIGN_LEFT)
+	nodeTable.SetColumnAlign(2, util.ALIGN_LEFT)
+	nodeTable.AddRow("NODE", "LOCATION")
+	for _, n := range result.Nodes {
+		nodeTable.AddRow(n.Type, n.Location)
+	}
+	nodeTable.Render()
+	log.Blank()
+
+	serviceTable := o.CreateTable()
+	serviceTable.SetColumnAlign(1, util.ALIGN_LEFT)
+	serviceTable.SetColumnAlign(2, util.ALIGN_LEFT)
+	serviceTable.SetColumnAlign(3, util.ALIGN_LEFT)
+	serviceTable.AddRow("SERVICE", "LOCATION", "DESCRIPTION")
+	for _, s := range result.Services {
+		serviceTable.AddRow(s.Service, s.Location, s.Description)
+	}
+	serviceTable.Render()
+	log.Blank()
+
+	vulnTable := o.CreateTable()
+	vulnTable.SetColumnAlign(1, util.ALIGN_LEFT)
+	vulnTable.SetColumnAlign(2, util.ALIGN_LEFT)
+	vulnTable.SetColumnAlign(3, util.ALIGN_LEFT)
+	vulnTable.SetColumnAlign(4, util.ALIGN_LEFT)
+	vulnTable.SetColumnAlign(5, util.ALIGN_LEFT)
+	vulnTable.AddRow("VULNERABILITY", "LOCATION", "CATEGORY", "DESCRIPTION", "EVIDENCE")
+	for _, vuln := range result.Vulnerabilities {
+		vulnTable.AddRow(vuln.Vulnerability, vuln.Location, vuln.Category, vuln.Description, vuln.Evidence)
+	}
+	vulnTable.Render()
+	log.Blank()
 }
