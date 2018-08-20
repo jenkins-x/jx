@@ -14,6 +14,7 @@ type parseGitUrlData struct {
 }
 
 func TestParseGitURL(t *testing.T) {
+	t.Parallel()
 	testCases := []parseGitUrlData{
 		{
 			"git://host.xz/org/repo", "host.xz", "org", "repo",

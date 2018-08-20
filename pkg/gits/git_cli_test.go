@@ -12,6 +12,7 @@ type brancbNameData struct {
 }
 
 func Test(t *testing.T) {
+	t.Parallel()
 	testCases := []brancbNameData{
 		{
 			"testing-thingy", "testing-thingy",

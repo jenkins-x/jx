@@ -11,6 +11,7 @@ import (
 )
 
 func TestRunPass(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_pass.txt"
 
@@ -46,6 +47,7 @@ func TestRunPass(t *testing.T) {
 }
 
 func TestRunPassFirstTime(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_pass_first_time.txt"
 
@@ -80,6 +82,7 @@ func TestRunPassFirstTime(t *testing.T) {
 }
 
 func TestRunFailWithTimeout(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_fail_with_timeout.txt"
 
@@ -112,6 +115,7 @@ func TestRunFailWithTimeout(t *testing.T) {
 }
 
 func TestRunThreadSafety(t *testing.T) {
+	t.Parallel()
 	startPath, err := filepath.Abs("")
 	if err != nil {
 		panic(err)
@@ -137,6 +141,7 @@ func TestRunThreadSafety(t *testing.T) {
 }
 
 func TestRunWithoutRetry(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_without_retry.txt"
 
@@ -171,6 +176,7 @@ func TestRunWithoutRetry(t *testing.T) {
 }
 
 func TestRunVerbose(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_verbose.txt"
 
@@ -205,6 +211,7 @@ func TestRunVerbose(t *testing.T) {
 }
 
 func TestRunQuiet(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_quiet.txt"
 

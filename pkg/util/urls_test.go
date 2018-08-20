@@ -7,11 +7,13 @@ import (
 )
 
 func TestUrlJoin(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, "http://foo.bar/whatnot/thingy", UrlJoin("http://foo.bar", "whatnot", "thingy"))
 	assert.Equal(t, "http://foo.bar/whatnot/thingy/", UrlJoin("http://foo.bar/", "/whatnot/", "/thingy/"))
 }
 
 func TestUrlHostNameWithoutPort(t *testing.T) {
+	t.Parallel()
 	tests := map[string]string{
 		"hostname":                         "hostname",
 		"1.2.3.4":                          "1.2.3.4",

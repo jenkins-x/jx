@@ -25,6 +25,7 @@ func (l FakeOrgLister) ListOrganisations() ([]GitOrganisation, error) {
 }
 
 func Test_getOrganizations(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		testDescription string
 		orgLister       OrganisationLister

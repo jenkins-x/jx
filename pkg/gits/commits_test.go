@@ -8,6 +8,7 @@ import (
 )
 
 func TestParseCommits(t *testing.T) {
+	t.Parallel()
 	assertParseCommit(t, "something regular", &CommitInfo{
 		Message: "something regular",
 	})
@@ -37,6 +38,7 @@ func assertParseCommit(t *testing.T, input string, expected *CommitInfo) {
 }
 
 func TestChangelogMarkdown(t *testing.T) {
+	t.Parallel()
 	releaseSpec := &v1.ReleaseSpec{
 		Commits: []v1.CommitSummary{
 			{
@@ -76,6 +78,7 @@ func TestChangelogMarkdown(t *testing.T) {
 }
 
 func TestChangelogMarkdownWithConventionalCommits(t *testing.T) {
+	t.Parallel()
 	releaseSpec := &v1.ReleaseSpec{
 		Commits: []v1.CommitSummary{
 			{

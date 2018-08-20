@@ -1,9 +1,10 @@
 package util
 
 import (
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type testStringMatchesAnyData struct {
@@ -14,6 +15,7 @@ type testStringMatchesAnyData struct {
 }
 
 func TestStringMatchesAny(t *testing.T) {
+	t.Parallel()
 	testCases := []testStringMatchesAnyData{
 		{
 			"foo", []string{"foo"}, []string{"WIP-*"}, true,
@@ -41,6 +43,7 @@ func TestStringMatchesAny(t *testing.T) {
 }
 
 func TestStringMatches(t *testing.T) {
+	t.Parallel()
 	assertStringMatches(t, "foo", "*", true)
 	assertStringMatches(t, "foo", "fo*", true)
 	assertStringMatches(t, "bar", "fo*", false)
