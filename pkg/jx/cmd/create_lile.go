@@ -88,14 +88,14 @@ func (o CreateLileOptions) checkLileInstalled() error {
 			return err
 		}
 		if runtime.GOOS == "darwin" && !o.NoBrew {
-			err = o.runCommand("brew", "install", "protobuf")
+			err = o.RunCommand("brew", "install", "protobuf")
 			if err != nil {
 				return err
 			}
 		}
 
 		log.Infoln("Downloading and building lile - this can take a while...")
-		err = o.runCommand("go", "get", "-u", "github.com/lileio/lile/...")
+		err = o.RunCommand("go", "get", "-u", "github.com/lileio/lile/...")
 		if err == nil {
 			log.Infoln("Installed lile and its dependencies!")
 		}

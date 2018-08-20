@@ -1031,7 +1031,7 @@ func (options *CreateTerraformOptions) getGoogleProjectID() (string, error) {
 func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) error {
 	log.Infof("\n\nInstalling jx on cluster %s with context %s\n", util.ColorInfo(c.Name()), util.ColorInfo(c.Context()))
 
-	err := options.runCommand("kubectl", "config", "use-context", c.Context())
+	err := options.RunCommand("kubectl", "config", "use-context", c.Context())
 	if err != nil {
 		return err
 	}
@@ -1059,12 +1059,12 @@ func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) 
 				return err
 			}
 		}
-		err = options.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+		err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
 		if err != nil {
 			return err
 		}
 
-		err = options.runCommand("kubectl", "get", "ingress")
+		err = options.RunCommand("kubectl", "get", "ingress")
 		if err != nil {
 			return err
 		}

@@ -1,8 +1,9 @@
-package kube
+package kube_test
 
 import (
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,11 +24,11 @@ func TestToValidNameWithDots(t *testing.T) {
 }
 
 func assertToValidNameWithDots(t *testing.T, input string, expected string) {
-	actual := ToValidNameWithDots(input)
+	actual := kube.ToValidNameWithDots(input)
 	assert.Equal(t, expected, actual, "ToValidNameWithDots for input %s", input)
 }
 
 func assertToValidName(t *testing.T, input string, expected string) {
-	actual := ToValidName(input)
+	actual := kube.ToValidName(input)
 	assert.Equal(t, expected, actual, "ToValidName for input %s", input)
 }

@@ -1,6 +1,6 @@
 // +build integration
 
-package cmd
+package cmd_test
 
 import (
 	"fmt"
@@ -15,6 +15,7 @@ import (
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/workflow"
@@ -36,7 +37,7 @@ func TestSequentialWorkflow(t *testing.T) {
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
-	o := &ControllerWorkflowOptions{
+	o := &cmd.ControllerWorkflowOptions{
 		NoWatch:          true,
 		FakePullRequests: NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
@@ -52,7 +53,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	step1 := workflow.CreateWorkflowPromoteStep("staging")
 	step2 := workflow.CreateWorkflowPromoteStep("production", step1)
 
-	ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -67,7 +68,7 @@ func TestSequentialWorkflow(t *testing.T) {
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, ""),
 	)
-	o.git = &gits.GitFake{}
+	o.GitClient = &gits.GitFake{}
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -156,7 +157,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
-	o := &ControllerWorkflowOptions{
+	o := &cmd.ControllerWorkflowOptions{
 		NoWatch:          true,
 		FakePullRequests: NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
@@ -168,7 +169,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	workflowName := ""
 
-	ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -179,7 +180,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, ""),
 	)
-	o.git = &gits.GitFake{}
+	o.GitClient = &gits.GitFake{}
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -217,7 +218,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	// now lets do a manual promotion
 	version := a.Spec.Version
-	po := &PromoteOptions{
+	po := &cmd.PromoteOptions{
 		Application:       testRepoName,
 		Environment:       "production",
 		Pipeline:          a.Spec.Pipeline,
@@ -277,7 +278,7 @@ func TestParallelWorkflow(t *testing.T) {
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, repoA, repoB, repoC)
 
-	o := &ControllerWorkflowOptions{
+	o := &cmd.ControllerWorkflowOptions{
 		NoWatch:          true,
 		FakePullRequests: NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
@@ -293,7 +294,7 @@ func TestParallelWorkflow(t *testing.T) {
 	step2 := workflow.CreateWorkflowPromoteStep(envNameB)
 	step3 := workflow.CreateWorkflowPromoteStep(envNameC, step1, step2)
 
-	ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			envA,
@@ -310,7 +311,7 @@ func TestParallelWorkflow(t *testing.T) {
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, ""),
 	)
-	o.git = &gits.GitFake{}
+	o.GitClient = &gits.GitFake{}
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -422,7 +423,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
-	o := &ControllerWorkflowOptions{
+	o := &cmd.ControllerWorkflowOptions{
 		NoWatch:          true,
 		FakePullRequests: NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
@@ -438,7 +439,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	step1 := workflow.CreateWorkflowPromoteStep("staging")
 	step2 := workflow.CreateWorkflowPromoteStep("production", step1)
 
-	ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -453,7 +454,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, ""),
 	)
-	o.git = &gits.GitFake{}
+	o.GitClient = &gits.GitFake{}
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -544,7 +545,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 func TestPullRequestNumber(t *testing.T) {
 	failUrls := []string{"https://github.com/foo/bar/pulls"}
 	for _, u := range failUrls {
-		_, err := pullRequestURLToNumber(u)
+		_, err := cmd.PullRequestURLToNumber(u)
 		assert.Errorf(t, err, "Expected error for pullRequestURLToNumber() with %s", u)
 	}
 
@@ -553,7 +554,7 @@ func TestPullRequestNumber(t *testing.T) {
 	}
 
 	for u, expected := range tests {
-		actual, err := pullRequestURLToNumber(u)
+		actual, err := cmd.PullRequestURLToNumber(u)
 		assert.NoError(t, err, "pullRequestURLToNumber() should not fail for %s", u)
 		if err == nil {
 			assert.Equal(t, expected, actual, "pullRequestURLToNumber() for %s", u)
@@ -561,8 +562,8 @@ func TestPullRequestNumber(t *testing.T) {
 	}
 }
 
-func pollGitStatusAndReactToPipelineChanges(t *testing.T, o *ControllerWorkflowOptions, jxClient versioned.Interface, ns string) error {
-	o.reloadAndPollGitPipelineStatuses(jxClient, ns)
+func pollGitStatusAndReactToPipelineChanges(t *testing.T, o *cmd.ControllerWorkflowOptions, jxClient versioned.Interface, ns string) error {
+	o.ReloadAndPollGitPipelineStatuses(jxClient, ns)
 	err := o.Run()
 	assert.NoError(t, err, "Failed to react to PipelineActivity changes")
 	return err
@@ -787,9 +788,9 @@ func createTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	return a, err
 }
 
-func CreateFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
+func CreateFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn cmd.ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *cmd.ReleasePullRequestInfo) (*cmd.ReleasePullRequestInfo, error) {
 	if pullRequestInfo == nil {
-		pullRequestInfo = &ReleasePullRequestInfo{}
+		pullRequestInfo = &cmd.ReleasePullRequestInfo{}
 	}
 
 	if pullRequestInfo.PullRequest == nil {
@@ -840,8 +841,8 @@ func CreateFakePullRequest(repository *gits.FakeRepository, env *v1.Environment,
 	return pullRequestInfo, nil
 }
 
-func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) CreateEnvPullRequestFn {
-	fakePrFn := func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
+func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) cmd.CreateEnvPullRequestFn {
+	fakePrFn := func(env *v1.Environment, modifyRequirementsFn cmd.ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *cmd.ReleasePullRequestInfo) (*cmd.ReleasePullRequestInfo, error) {
 		envURL := env.Spec.Source.URL
 		values := []string{}
 		for _, repos := range provider.Repositories {

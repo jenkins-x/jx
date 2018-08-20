@@ -124,7 +124,7 @@ func (o *CreateGitUserOptions) Run() error {
 		command += " --admin"
 	}
 	// default to using the first pods found if more than one exists for the deployment
-	err = o.runCommand("kubectl", "exec", "-t", pods[0].Name, "--", "/bin/sh", "-c", command)
+	err = o.RunCommand("kubectl", "exec", "-t", pods[0].Name, "--", "/bin/sh", "-c", command)
 	if err != nil {
 		return nil
 	}

@@ -1,4 +1,4 @@
-package gits
+package gits_test
 
 import (
 	"net/http"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/suite"
 	bitbucket "github.com/wbrefvem/go-bitbucket"
@@ -20,7 +21,7 @@ type BitbucketCloudProviderTestSuite struct {
 	suite.Suite
 	mux      *http.ServeMux
 	server   *httptest.Server
-	provider *BitbucketCloudProvider
+	provider *gits.BitbucketCloudProvider
 }
 
 var bitbucketRouter = util.Router{
@@ -101,14 +102,14 @@ func (suite *BitbucketCloudProviderTestSuite) SetupSuite() {
 		ApiToken: "0123456789abdef",
 	}
 
-	git := NewGitCLI()
-	bp, err := NewBitbucketCloudProvider(&as, &ua, git)
+	git := gits.NewGitCLI()
+	bp, err := gits.NewBitbucketCloudProvider(&as, &ua, git)
 
 	suite.Require().NotNil(bp)
 	suite.Require().Nil(err)
 
 	var ok bool
-	suite.provider, ok = bp.(*BitbucketCloudProvider)
+	suite.provider, ok = bp.(*gits.BitbucketCloudProvider)
 	suite.Require().True(ok)
 	suite.Require().NotNil(suite.provider)
 
@@ -194,8 +195,8 @@ func (suite *BitbucketCloudProviderTestSuite) TestRenameRepository() {
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestCreatePullRequest() {
-	args := GitPullRequestArguments{
-		GitRepositoryInfo: &GitRepositoryInfo{Name: "test-repo", Organisation: "test-user"},
+	args := gits.GitPullRequestArguments{
+		GitRepositoryInfo: &gits.GitRepositoryInfo{Name: "test-repo", Organisation: "test-user"},
 		Head:              "83777f6",
 		Base:              "77d0a923f297",
 		Title:             "Test Pull Request",
@@ -213,8 +214,8 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreatePullRequest() {
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestCreateOrgPullRequest() {
-	args := GitPullRequestArguments{
-		GitRepositoryInfo: &GitRepositoryInfo{Name: "test-repo", Organisation: "test-org"},
+	args := gits.GitPullRequestArguments{
+		GitRepositoryInfo: &gits.GitRepositoryInfo{Name: "test-repo", Organisation: "test-org"},
 		Head:              "83777f6",
 		Base:              "77d0a923f297",
 		Title:             "Test Pull Request",
@@ -235,7 +236,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestUpdatePullRequestStatus() {
 	number := 3
 	state := "OPEN"
 
-	pr := &GitPullRequest{
+	pr := &gits.GitPullRequest{
 		Owner:  "test-user",
 		Repo:   "test-repo",
 		Number: &number,
@@ -257,7 +258,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestUpdateOrgPullRequestStatus() {
 	number := 4
 	state := "OPEN"
 
-	pr := &GitPullRequest{
+	pr := &gits.GitPullRequest{
 		Owner:  "test-org",
 		Repo:   "test-repo",
 		Number: &number,
@@ -279,7 +280,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestGetPullRequest() {
 
 	pr, err := suite.provider.GetPullRequest(
 		"test-user",
-		&GitRepositoryInfo{Name: "test-repo"},
+		&gits.GitRepositoryInfo{Name: "test-repo"},
 		3,
 	)
 
@@ -288,7 +289,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestGetPullRequest() {
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestPullRequestCommits() {
-	commits, err := suite.provider.GetPullRequestCommits("test-user", &GitRepositoryInfo{Name: "test-repo"}, 1)
+	commits, err := suite.provider.GetPullRequestCommits("test-user", &gits.GitRepositoryInfo{Name: "test-repo"}, 1)
 
 	suite.Require().Nil(err)
 	suite.Require().Equal(len(commits), 2)
@@ -297,7 +298,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestPullRequestCommits() {
 
 func (suite *BitbucketCloudProviderTestSuite) TestPullRequestLastCommitStatus() {
 
-	pr := &GitPullRequest{
+	pr := &gits.GitPullRequest{
 		Owner:         "test-user",
 		Repo:          "test-repo",
 		LastCommitSha: "5c8afc5",
@@ -309,7 +310,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestPullRequestLastCommitStatus() 
 	suite.Require().Equal(lastCommitStatus, "in-progress")
 }
 
-func (suite *BitbucketCloudProviderTestSuite) testStatuses(statuses []*GitRepoStatus, err error) {
+func (suite *BitbucketCloudProviderTestSuite) testStatuses(statuses []*gits.GitRepoStatus, err error) {
 	suite.Require().Nil(err)
 	suite.Require().NotNil(statuses)
 	suite.Require().Equal(len(statuses), 2)
@@ -336,7 +337,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestListCommitStatus() {
 func (suite *BitbucketCloudProviderTestSuite) TestMergePullRequest() {
 
 	id := 1
-	pr := &GitPullRequest{
+	pr := &gits.GitPullRequest{
 		Owner:  "test-user",
 		Repo:   "test-repo",
 		Number: &id,
@@ -348,8 +349,8 @@ func (suite *BitbucketCloudProviderTestSuite) TestMergePullRequest() {
 
 func (suite *BitbucketCloudProviderTestSuite) TestCreateWebHook() {
 
-	data := &GitWebHookArguments{
-		Repo: &GitRepositoryInfo{Name: "test-repo", Organisation: "test-user"},
+	data := &gits.GitWebHookArguments{
+		Repo: &gits.GitRepositoryInfo{Name: "test-repo", Organisation: "test-user"},
 		URL:  "https://my-jenkins.example.com/bitbucket-webhook/",
 	}
 	err := suite.provider.CreateWebHook(data)
@@ -378,7 +379,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestGetIssue() {
 
 func (suite *BitbucketCloudProviderTestSuite) TestCreateIssue() {
 
-	issueToCreate := &GitIssue{
+	issueToCreate := &gits.GitIssue{
 		Title: "This is a test issue",
 	}
 

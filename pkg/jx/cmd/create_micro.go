@@ -80,7 +80,7 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 			return err
 		}
 		if runtime.GOOS == "darwin" && !o.NoBrew {
-			err = o.runCommand("brew", "install", "protobuf")
+			err = o.RunCommand("brew", "install", "protobuf")
 			if err != nil {
 				return err
 			}
@@ -89,7 +89,7 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 		packages := []string{"github.com/golang/protobuf/proto", "github.com/golang/protobuf/protoc-gen-go", "github.com/micro/protoc-gen-micro"}
 		for _, p := range packages {
 			log.Infof("Installing %s\n", p)
-			err = o.runCommand("go", "get", "-u", p)
+			err = o.RunCommand("go", "get", "-u", p)
 			if err != nil {
 				return fmt.Errorf("Failed to install %s: %s", p, err)
 			}
@@ -97,7 +97,7 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 		log.Infoln("Installed micro dependencies")
 
 		log.Infoln("Downloading and building micro - this can take a minute or so...")
-		err = o.runCommand("go", "get", "-u", "github.com/micro/micro")
+		err = o.RunCommand("go", "get", "-u", "github.com/micro/micro")
 		if err == nil {
 			log.Infoln("Installed micro and its dependencies!")
 		}
@@ -107,7 +107,7 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 
 // GenerateMicro creates a fresh micro project by running micro on local shell
 func (o CreateMicroOptions) GenerateMicro(dir string) error {
-	return o.runCommand("micro", "new", dir)
+	return o.RunCommand("micro", "new", dir)
 }
 
 // Run implements the command

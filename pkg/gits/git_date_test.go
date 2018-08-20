@@ -1,4 +1,4 @@
-package gits
+package gits_test
 
 import (
 	"testing"

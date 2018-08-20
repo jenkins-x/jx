@@ -1,10 +1,11 @@
-package config
+package config_test
 
 import (
 	"testing"
 
 	"io/ioutil"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,8 +19,8 @@ func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
 	a["helm.sh/hook"] = "post-install,post-upgrade"
 	a["helm.sh/hook-delete-policy"] = "hook-succeeded"
 
-	values := HelmValuesConfig{
-		ExposeController: &ExposeController{},
+	values := config.HelmValuesConfig{
+		ExposeController: &config.ExposeController{},
 	}
 
 	values.ExposeController.Annotations = a

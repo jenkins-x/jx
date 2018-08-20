@@ -1,10 +1,11 @@
-package cmd
+package cmd_test
 
 import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +22,7 @@ const (
 
 func TestServiceLinking(t *testing.T) {
 	t.Parallel()
-	o := StepLinkServicesOptions{
+	o := cmd.StepLinkServicesOptions{
 		FromNamespace: fromNs,
 		Includes:      []string{serviceNameInFromNs},
 		Excludes:      []string{serviceNameDummyInFromNs},
@@ -55,14 +56,14 @@ func TestServiceLinking(t *testing.T) {
 		},
 	}
 
-	ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{fromNspc, toNspc, svcInFromNs, svcInToNs, svcDummyInFromNs},
 		nil,
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, ""))
 
 	err := o.Run()
-	serviceList, _ := o.kubeClient.CoreV1().Services(toNs).List(metav1.ListOptions{})
+	serviceList, _ := o.KubeClientCached.CoreV1().Services(toNs).List(metav1.ListOptions{})
 	serviceNames := []string{""}
 	for _, service := range serviceList.Items {
 		serviceNames = append(serviceNames, service.Name)

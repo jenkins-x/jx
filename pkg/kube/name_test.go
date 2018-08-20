@@ -1,8 +1,9 @@
-package kube
+package kube_test
 
 import (
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +18,7 @@ func TestGetName(t *testing.T) {
 			"app": "default-staging-my-spring-boot-demo2-my-spring-boot-demo2",
 		},
 	}
-	assert.Equal(t, "my-spring-boot-demo2", GetName(r), "Get name on first pod")
+	assert.Equal(t, "my-spring-boot-demo2", kube.GetName(r), "Get name on first pod")
 }
 
 func TestGetPodVersion(t *testing.T) {
@@ -41,5 +42,5 @@ func TestGetPodVersion(t *testing.T) {
 			},
 		},
 	}
-	assert.Equal(t, "1.2.3", GetPodVersion(r, ""), "Get version of the pod")
+	assert.Equal(t, "1.2.3", kube.GetPodVersion(r, ""), "Get version of the pod")
 }

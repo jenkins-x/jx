@@ -162,7 +162,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		}
 	}
 
-	err = o.runCommand("gcloud", "config", "set", "project", projectId)
+	err = o.RunCommand("gcloud", "config", "set", "project", projectId)
 	if err != nil {
 		return err
 	}
@@ -252,7 +252,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		}
 
 		keyPath = filepath.Join(clusterHome, fmt.Sprintf("%s.key.json", serviceAccount))
-		err = o.runCommand("gcloud", "auth", "activate-service-account", "--key-file", keyPath)
+		err = o.RunCommand("gcloud", "auth", "activate-service-account", "--key-file", keyPath)
 		if err != nil {
 			return err
 		}
@@ -294,7 +294,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	o.writeKeyValueIfNotExists(terraformVars, "monitoring_service", "monitoring.googleapis.com")
 
 	args := []string{"init", terraformDir}
-	err = o.runCommand("terraform", args...)
+	err = o.RunCommand("terraform", args...)
 	if err != nil {
 		return err
 	}
@@ -350,7 +350,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	labels += sep + fmt.Sprintf("created-with=terraform,created-on=%s", time.Now().Format("20060102150405"))
 	args = append(args, "--update-labels="+strings.ToLower(labels))
 
-	err = o.runCommand("gcloud", args...)
+	err = o.RunCommand("gcloud", args...)
 	if err != nil {
 		return err
 	}
@@ -382,12 +382,12 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		}
 	}
 
-	err = o.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+	err = o.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
 	if err != nil {
 		return err
 	}
 
-	err = o.runCommand("kubectl", "get", "ingress")
+	err = o.RunCommand("kubectl", "get", "ingress")
 	if err != nil {
 		return err
 	}

@@ -1,10 +1,11 @@
-package cmd
+package cmd_test
 
 import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ func TestStepSplitMonorepo(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "test_split_monorepo")
 	assert.NoError(t, err)
 
-	options := &StepSplitMonorepoOptions{
+	options := &cmd.StepSplitMonorepoOptions{
 		Organisation: "dummy",
 		Glob:         "*",
 		Dir:          testData,

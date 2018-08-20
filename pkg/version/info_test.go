@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetVersison(t *testing.T) {
+func TestGetVersion(t *testing.T) {
 	t.Parallel()
 	version.Map["version"] = "1.2.1"
 	result := version.GetVersion()

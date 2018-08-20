@@ -1,6 +1,6 @@
 // +build integration
 
-package cmd
+package cmd_test
 
 import (
 	"io/ioutil"
@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -62,8 +63,8 @@ func testImportProject(t *testing.T, tempDir string, testcase string, srcDir str
 func assertImport(t *testing.T, testDir string, testcase string, withRename bool) error {
 	_, dirName := filepath.Split(testDir)
 	dirName = kube.ToValidName(dirName)
-	o := &ImportOptions{}
-	ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName))
+	o := &cmd.ImportOptions{}
+	cmd.ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName))
 	o.Dir = testDir
 	o.DryRun = true
 	o.DisableMaven = true
@@ -93,7 +94,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 
 		if testcase == mavenKeepOldJenkinsfile {
 			tests.AssertFileContains(t, jenkinsfile, "THIS IS OLD!")
-			tests.AssertFileDoesNotExist(t, jenkinsfile+jenkinsfileBackupSuffix)
+			tests.AssertFileDoesNotExist(t, jenkinsfile+cmd.JenkinsfileBackupSuffix)
 		} else {
 			if strings.HasPrefix(dirName, "maven") {
 				tests.AssertFileContains(t, jenkinsfile, "mvn")
@@ -117,9 +118,9 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 			if withRename {
 				tests.AssertFileExists(t, defaultJenkinsfile)
 				tests.AssertFileContains(t, defaultJenkinsfile, "THIS IS OLD!")
-				tests.AssertFileDoesNotExist(t, defaultJenkinsfile+jenkinsfileBackupSuffix)
+				tests.AssertFileDoesNotExist(t, defaultJenkinsfile+cmd.JenkinsfileBackupSuffix)
 			} else {
-				tests.AssertFileExists(t, defaultJenkinsfile+jenkinsfileBackupSuffix)
+				tests.AssertFileExists(t, defaultJenkinsfile+cmd.JenkinsfileBackupSuffix)
 			}
 		}
 	}

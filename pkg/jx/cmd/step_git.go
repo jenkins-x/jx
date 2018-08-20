@@ -94,7 +94,7 @@ func (o *StepGitOptions) dropRepository(repoId string, message string) error {
 		return nil
 	}
 	log.Infof("Dropping nexus release repository %s\n", util.ColorInfo(repoId))
-	err := o.runCommand("mvn",
+	err := o.RunCommand("mvn",
 		"org.sonatype.plugins:nexus-staging-maven-plugin:1.6.5:rc-drop",
 		"-DserverId=oss-sonatype-staging",
 		"-DnexusUrl=https://oss.sonatype.org",
@@ -114,7 +114,7 @@ func (o *StepGitOptions) releaseRepository(repoId string) error {
 	}
 	log.Infof("Releasing nexus release repository %s\n", util.ColorInfo(repoId))
 	options := o
-	err := options.runCommand("mvn",
+	err := options.RunCommand("mvn",
 		"org.sonatype.plugins:nexus-staging-maven-plugin:1.6.5:rc-release",
 		"-DserverId=oss-sonatype-staging",
 		"-DnexusUrl=https://oss.sonatype.org",

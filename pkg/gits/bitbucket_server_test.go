@@ -1,4 +1,4 @@
-package gits
+package gits_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	bitbucket "github.com/gfleury/go-bitbucket-v1"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/suite"
 )
@@ -21,7 +22,7 @@ type BitbucketServerProviderTestSuite struct {
 	suite.Suite
 	mux      *http.ServeMux
 	server   *httptest.Server
-	provider *BitbucketServerProvider
+	provider *gits.BitbucketServerProvider
 }
 
 var bitbucketServerRouter = util.Router{
@@ -83,14 +84,14 @@ func (suite *BitbucketServerProviderTestSuite) SetupSuite() {
 		ApiToken: "0123456789abdef",
 	}
 
-	git := NewGitCLI()
-	bp, err := NewBitbucketServerProvider(&as, &ua, git)
+	git := gits.NewGitCLI()
+	bp, err := gits.NewBitbucketServerProvider(&as, &ua, git)
 
 	suite.Require().NotNil(bp)
 	suite.Require().Nil(err)
 
 	var ok bool
-	suite.provider, ok = bp.(*BitbucketServerProvider)
+	suite.provider, ok = bp.(*gits.BitbucketServerProvider)
 	suite.Require().True(ok)
 	suite.Require().NotNil(suite.provider)
 
@@ -173,8 +174,8 @@ func (suite *BitbucketServerProviderTestSuite) TestForkRepository() {
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestCreatePullRequest() {
-	args := GitPullRequestArguments{
-		GitRepositoryInfo: &GitRepositoryInfo{
+	args := gits.GitPullRequestArguments{
+		GitRepositoryInfo: &gits.GitRepositoryInfo{
 			Name:    "test-repo",
 			Project: "TEST-ORG",
 		},
@@ -195,7 +196,7 @@ func (suite *BitbucketServerProviderTestSuite) TestUpdatePullRequestStatus() {
 	number := 1
 	state := "CLOSED"
 
-	pr := &GitPullRequest{
+	pr := &gits.GitPullRequest{
 		URL:    "https://auth.example.com/projects/TEST-ORG/repos/test-repo",
 		Repo:   "test-repo",
 		Number: &number,
@@ -213,7 +214,7 @@ func (suite *BitbucketServerProviderTestSuite) TestGetPullRequest() {
 
 	pr, err := suite.provider.GetPullRequest(
 		"test-user",
-		&GitRepositoryInfo{Name: "test-repo", Project: "TEST-ORG"},
+		&gits.GitRepositoryInfo{Name: "test-repo", Project: "TEST-ORG"},
 		1,
 	)
 
@@ -222,7 +223,7 @@ func (suite *BitbucketServerProviderTestSuite) TestGetPullRequest() {
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestPullRequestCommits() {
-	commits, err := suite.provider.GetPullRequestCommits("test-user", &GitRepositoryInfo{
+	commits, err := suite.provider.GetPullRequestCommits("test-user", &gits.GitRepositoryInfo{
 		URL:     "https://auth.example.com/projects/TEST-ORG/repos/test-repo",
 		Name:    "test-repo",
 		Project: "TEST-ORG",
@@ -236,7 +237,7 @@ func (suite *BitbucketServerProviderTestSuite) TestPullRequestCommits() {
 
 func (suite *BitbucketServerProviderTestSuite) TestPullRequestLastCommitStatus() {
 	prNumber := 1
-	pr := &GitPullRequest{
+	pr := &gits.GitPullRequest{
 		URL:    "https://auth.example.com/projects/TEST-ORG/repos/test-repo/pull-requests/7/overview",
 		Repo:   "test-repo",
 		Number: &prNumber,
@@ -268,7 +269,7 @@ func (suite *BitbucketServerProviderTestSuite) TestListCommitStatuses() {
 func (suite *BitbucketServerProviderTestSuite) TestMergePullRequest() {
 
 	id := 1
-	pr := &GitPullRequest{
+	pr := &gits.GitPullRequest{
 		URL:    "https://auth.example.com/projects/TEST-ORG/repos/test-repo/pull-requests/1",
 		Repo:   "test-repo",
 		Number: &id,
@@ -280,8 +281,8 @@ func (suite *BitbucketServerProviderTestSuite) TestMergePullRequest() {
 
 func (suite *BitbucketServerProviderTestSuite) TestCreateWebHook() {
 
-	data := &GitWebHookArguments{
-		Repo:   &GitRepositoryInfo{URL: "https://auth.example.com/projects/TEST-ORG/repos/test-repo"},
+	data := &gits.GitWebHookArguments{
+		Repo:   &gits.GitRepositoryInfo{URL: "https://auth.example.com/projects/TEST-ORG/repos/test-repo"},
 		URL:    "https://my-jenkins.example.com/bitbucket-webhook/",
 		Secret: "someSecret",
 	}
@@ -294,7 +295,7 @@ func (suite *BitbucketServerProviderTestSuite) TestUserInfo() {
 
 	userInfo := suite.provider.UserInfo("test-user")
 
-	suite.Require().Equal(GitUser{
+	suite.Require().Equal(gits.GitUser{
 		Login: "test-user",
 		Name:  "Test User",
 		Email: "",

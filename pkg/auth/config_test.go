@@ -1,10 +1,11 @@
-package auth
+package auth_test
 
 import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +38,7 @@ func TestAuthConfig(t *testing.T) {
 	assert.Equal(t, 0, len(config.Servers), "Should have no servers in config but got %v", config)
 	assertNoAuth(t, config, url1, userDoesNotExist)
 
-	auth1 := UserAuth{
+	auth1 := auth.UserAuth{
 		Username: user1,
 		ApiToken: "someToken",
 	}
@@ -48,7 +49,7 @@ func TestAuthConfig(t *testing.T) {
 	assert.Equal(t, &auth1, config.FindUserAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
 	assert.Equal(t, &auth1, config.FindUserAuth(url1, ""), "loaded auth for server %s and no user", url1)
 
-	auth2 := UserAuth{
+	auth2 := auth.UserAuth{
 		Username: user2,
 		ApiToken: "anotherToken",
 	}
@@ -70,7 +71,7 @@ func TestAuthConfig(t *testing.T) {
 	assert.Equal(t, &auth1, config.FindUserAuth(url1, user1), "loaded auth for server %s and user %s", url1, user1)
 	assert.Equal(t, &auth2, config.FindUserAuth(url1, user2), "loaded auth for server %s and user %s", url1, user2)
 
-	auth3 := UserAuth{
+	auth3 := auth.UserAuth{
 		Username: user1,
 		ApiToken: "server2User1Token",
 	}
@@ -87,25 +88,25 @@ func TestAuthConfig(t *testing.T) {
 
 type ConfigTest struct {
 	t      *testing.T
-	svc    AuthConfigService
-	config *AuthConfig
+	svc    auth.AuthConfigService
+	config *auth.AuthConfig
 }
 
-func (c *ConfigTest) Load() *AuthConfig {
+func (c *ConfigTest) Load() *auth.AuthConfig {
 	config, err := c.svc.LoadConfig()
 	c.config = config
 	c.AssertNoError(err)
 	return c.config
 }
 
-func (c *ConfigTest) SetUserAuth(url string, auth UserAuth) *AuthConfig {
+func (c *ConfigTest) SetUserAuth(url string, auth auth.UserAuth) *auth.AuthConfig {
 	copy := auth
 	c.config.SetUserAuth(url, &copy)
 	c.SaveAndReload()
 	return c.config
 }
 
-func (c *ConfigTest) SaveAndReload() *AuthConfig {
+func (c *ConfigTest) SaveAndReload() *auth.AuthConfig {
 	err := c.svc.SaveConfig()
 	c.AssertNoError(err)
 	return c.Load()
@@ -117,7 +118,7 @@ func (c *ConfigTest) AssertNoError(err error) {
 	}
 }
 
-func assertNoAuth(t *testing.T, config *AuthConfig, url string, user string) {
+func assertNoAuth(t *testing.T, config *auth.AuthConfig, url string, user string) {
 	found := config.FindUserAuth(url, user)
 	if found != nil {
 		assert.Fail(t, "Found auth when not expecting it for server %s and user %s", url, user)
@@ -132,7 +133,7 @@ func assertNoError(t *testing.T, err error) {
 
 func TestAuthConfigGetsDefaultName(t *testing.T) {
 	t.Parallel()
-	c := &AuthConfig{}
+	c := &auth.AuthConfig{}
 
 	expectedURL := "https://foo.com"
 	server := c.GetOrCreateServer(expectedURL)
@@ -143,7 +144,7 @@ func TestAuthConfigGetsDefaultName(t *testing.T) {
 
 func TestDeleteServer(t *testing.T) {
 	t.Parallel()
-	c := &AuthConfig{}
+	c := &auth.AuthConfig{}
 	url := "https://foo.com"
 	server := c.GetOrCreateServer(url)
 	assert.NotNil(t, server, "Failed to add the server to the configuration")
@@ -156,7 +157,7 @@ func TestDeleteServer(t *testing.T) {
 
 func TestDeleteServer2(t *testing.T) {
 	t.Parallel()
-	c := &AuthConfig{}
+	c := &auth.AuthConfig{}
 	url1 := "https://foo1.com"
 	server1 := c.GetOrCreateServer(url1)
 	assert.NotNil(t, server1, "Failed to add the server to the configuration")

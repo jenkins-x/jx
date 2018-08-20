@@ -1,4 +1,4 @@
-package gits
+package gits_test
 
 import (
 	"testing"
@@ -10,6 +10,7 @@ import (
 	"net/url"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/suite"
 	gitlab "github.com/wbrefvem/go-gitlab"
@@ -30,7 +31,7 @@ type GitlabProviderSuite struct {
 	suite.Suite
 	mux      *http.ServeMux
 	server   *httptest.Server
-	provider *GitlabProvider
+	provider *gits.GitlabProvider
 }
 
 func (suite *GitlabProviderSuite) SetupSuite() {
@@ -47,7 +48,7 @@ func (suite *GitlabProviderSuite) TearDownSuite() {
 // setup sets up a test HTTP server along with a gitlab.Client that is
 // configured to talk to that test server.  Tests should register handlers on
 // mux which provide mock responses for the API method being tested.
-func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *GitlabProvider) {
+func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *gits.GitlabProvider) {
 	// mux is the HTTP request multiplexer used with the test server.
 	mux := http.NewServeMux()
 	configureGitlabMock(suite, mux)
@@ -64,10 +65,10 @@ func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *Gitla
 		ApiToken: "test",
 	}
 	// Gitlab provider that we want to test
-	git := NewGitCLI()
-	provider, _ := withGitlabClient(new(auth.AuthServer), userAuth, client, git)
+	git := gits.NewGitCLI()
+	provider, _ := gits.WithGitlabClient(new(auth.AuthServer), userAuth, client, git)
 
-	return mux, server, provider.(*GitlabProvider)
+	return mux, server, provider.(*gits.GitlabProvider)
 }
 
 func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {

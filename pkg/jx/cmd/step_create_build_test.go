@@ -1,4 +1,4 @@
-package cmd
+package cmd_test
 
 import (
 	"io/ioutil"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -140,8 +141,8 @@ func testStepCreateBuild(t *testing.T, tempDir string, testcase string, srcDir s
 	}
 	jxObjects := []runtime.Object{}
 
-	o := &StepCreateBuildOptions{}
-	ConfigureTestOptionsWithResources(&o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName))
+	o := &cmd.StepCreateBuildOptions{}
+	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName))
 	o.Dir = testDir
 
 	actualFile := filepath.Join(testDir, actualBuildFileName)

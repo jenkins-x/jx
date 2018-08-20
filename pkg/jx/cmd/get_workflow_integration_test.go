@@ -1,6 +1,6 @@
 // +build integration
 
-package cmd
+package cmd_test
 
 import (
 	"testing"
@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,7 @@ import (
 )
 
 func TestGetWorkflow(t *testing.T) {
-	o := &GetWorkflowOptions{}
+	o := &cmd.GetWorkflowOptions{}
 
 	staging := kube.NewPermanentEnvironment("staging")
 	production := kube.NewPermanentEnvironment("production")
@@ -23,7 +24,7 @@ func TestGetWorkflow(t *testing.T) {
 	production.Spec.Order = 200
 
 	myFlowName := "myflow"
-	ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,

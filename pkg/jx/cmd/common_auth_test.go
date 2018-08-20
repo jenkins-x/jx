@@ -1,10 +1,11 @@
-package cmd
+package cmd_test
 
 import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -34,12 +35,12 @@ func TestAuthLoadFromPipelineGitCredentials(t *testing.T) {
 		secretList.Items = append(secretList.Items, testkube.CreateTestPipelineGitSecret(td.Kind, td.Name, td.URL, td.User, td.Password))
 	}
 
-	o := &CommonOptions{}
-	ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, ""))
+	o := &cmd.CommonOptions{}
+	cmd.ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, ""))
 
 	fileName := "doesNotExist.yaml"
 
-	authConfSvc, err := o.createGitAuthConfigServiceFromSecrets(fileName, secretList, true)
+	authConfSvc, err := o.CreateGitAuthConfigServiceFromSecrets(fileName, secretList, true)
 	assert.Nil(t, err, "Could not load Git Auth Config Service: %s", err)
 
 	config := authConfSvc.Config()
