@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"bufio"
+	"fmt"
 	"io"
 	"time"
 
@@ -58,6 +60,7 @@ func (o *ScanClusterOptions) Run() error {
 		return errors.Wrap(err, "creating kube client")
 	}
 
+	// Create a dedicated namespace for kube-hunter scan
 	ns := kubeHunterNamespace
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -69,18 +72,33 @@ func (o *ScanClusterOptions) Run() error {
 		return errors.Wrapf(err, "creating namespace '%s'", ns)
 	}
 
+	// Start the kube-hunter scanning
 	container := o.hunterContainer()
 	job := o.createScanJob(kubeHunterJobName, ns, container)
-	_, err = kubeClient.BatchV1().Jobs(ns).Create(job)
+	job, err = kubeClient.BatchV1().Jobs(ns).Create(job)
 	if err != nil {
 		return err
 	}
 
-	log.Info("Waiting for kube hunter job to complete the security scanning\n")
-	err = kube.WaitForJobToSucceeded(kubeClient, ns, kubeHunterJobName, 2*time.Minute)
+	// Wait for scanning to complete successfully
+	log.Info("Waiting for kube hunter job to complete the scanning...\n")
+	err = kube.WaitForJobToSucceeded(kubeClient, ns, kubeHunterJobName, 3*time.Minute)
 	if err != nil {
-		errors.Wrap(err, "waiting for kube hunter job to complete the scanning")
+		return errors.Wrap(err, "waiting for kube hunter job to complete the scanning")
 	}
+
+	result, err := o.retriveScanResult(ns)
+	if err != nil {
+		return errors.Wrap(err, "retrieving scan results")
+	}
+	log.Info(result)
+
+	// Clean up the kube-hunter namespace
+	err = kubeClient.CoreV1().Namespaces().Delete(ns, &metav1.DeleteOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "cleaning up the scanning namespace '%s'", ns)
+	}
+
 	return nil
 }
 
@@ -119,4 +137,50 @@ func (o *ScanClusterOptions) createScanJob(name string, namespace string, contai
 			Template: podTmpl,
 		},
 	}
+}
+
+func (o *ScanClusterOptions) retriveScanResult(namespace string) (string, error) {
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return "", errors.Wrap(err, "creating kube client")
+	}
+
+	labels := map[string]string{"job-name": kubeHunterJobName}
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
+	podList, err := kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: selector.String()})
+	if err != nil {
+		return "", errors.Wrap(err, "listing the scan job PODs")
+	}
+	foundPods := len(podList.Items)
+	if foundPods != 1 {
+		return "", fmt.Errorf("one POD expected for security scan job '%s'. Found: %d PODs.", kubeHunterJobName, foundPods)
+	}
+
+	podName := podList.Items[0].Name
+	logOpts := &v1.PodLogOptions{
+		Container: kubeHunterContainerName,
+		Follow:    false,
+	}
+	req := kubeClient.CoreV1().Pods(namespace).GetLogs(podName, logOpts)
+	readCloser, err := req.Stream()
+	if err != nil {
+		return "", errors.Wrap(err, "creating the logs stream reader")
+	}
+	defer readCloser.Close()
+
+	var result []byte
+	reader := bufio.NewReader(readCloser)
+	for {
+		line, _, err := reader.ReadLine()
+		if err != nil && err != io.EOF {
+			return "", errors.Wrapf(err, "reading logs from POD  '%s'", podName)
+		}
+		if err == io.EOF {
+			break
+		}
+		line = append(line, '\n')
+		result = append(result, line...)
+	}
+
+	return string(result), nil
 }
