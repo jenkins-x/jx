@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -22,11 +23,15 @@ const (
 	kubeHunterContainerName = "jx-kube-hunter"
 	kubeHunterNamespace     = "jx-kube-hunter"
 	kubeHunterJobName       = "jx-kube-hunter-job"
+
+	outputFormatYAML = "yaml"
 )
 
 // ScanClusterOptions the options for 'scan cluster' command
 type ScanClusterOptions struct {
 	ScanOptions
+
+	Output string
 }
 
 type node struct {
@@ -76,6 +81,8 @@ func NewCmdScanCluster(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 			CheckErr(err)
 		},
 	}
+
+	cmd.Flags().StringVarP(&options.Output, "output", "o", "plain", "output format is one of: yaml|plain")
 
 	return cmd
 }
@@ -129,11 +136,15 @@ func (o *ScanClusterOptions) Run() error {
 		return errors.Wrap(err, "parsing the scan result")
 	}
 
-	o.printResult(scanResult)
+	err = o.printResult(scanResult)
+	if err != nil {
+		return errors.Wrap(err, "printing the result")
+	}
 
+	// Signal the error in the exit code if there are any vulnerabilities
 	foundVulns := len(scanResult.Vulnerabilities)
 	if foundVulns > 0 {
-		return fmt.Errorf("found '%d' vulnerabilities", foundVulns)
+		os.Exit(2)
 	}
 
 	return nil
@@ -231,38 +242,48 @@ func (o *ScanClusterOptions) parseResult(result string) (*scanResult, error) {
 	return &r, nil
 }
 
-func (o *ScanClusterOptions) printResult(result *scanResult) {
-	nodeTable := o.CreateTable()
-	nodeTable.SetColumnAlign(1, util.ALIGN_LEFT)
-	nodeTable.SetColumnAlign(2, util.ALIGN_LEFT)
-	nodeTable.AddRow("NODE", "LOCATION")
-	for _, n := range result.Nodes {
-		nodeTable.AddRow(n.Type, n.Location)
-	}
-	nodeTable.Render()
-	log.Blank()
+func (o *ScanClusterOptions) printResult(result *scanResult) error {
+	if o.Output == outputFormatYAML {
+		var output []byte
+		output, err := yaml.Marshal(result)
+		if err != nil {
+			return errors.Wrap(err, "converting scan result to YAML")
+		}
+		log.Info(string(output))
+	} else {
+		nodeTable := o.CreateTable()
+		nodeTable.SetColumnAlign(1, util.ALIGN_LEFT)
+		nodeTable.SetColumnAlign(2, util.ALIGN_LEFT)
+		nodeTable.AddRow("NODE", "LOCATION")
+		for _, n := range result.Nodes {
+			nodeTable.AddRow(n.Type, n.Location)
+		}
+		nodeTable.Render()
+		log.Blank()
 
-	serviceTable := o.CreateTable()
-	serviceTable.SetColumnAlign(1, util.ALIGN_LEFT)
-	serviceTable.SetColumnAlign(2, util.ALIGN_LEFT)
-	serviceTable.SetColumnAlign(3, util.ALIGN_LEFT)
-	serviceTable.AddRow("SERVICE", "LOCATION", "DESCRIPTION")
-	for _, s := range result.Services {
-		serviceTable.AddRow(s.Service, s.Location, s.Description)
-	}
-	serviceTable.Render()
-	log.Blank()
+		serviceTable := o.CreateTable()
+		serviceTable.SetColumnAlign(1, util.ALIGN_LEFT)
+		serviceTable.SetColumnAlign(2, util.ALIGN_LEFT)
+		serviceTable.SetColumnAlign(3, util.ALIGN_LEFT)
+		serviceTable.AddRow("SERVICE", "LOCATION", "DESCRIPTION")
+		for _, s := range result.Services {
+			serviceTable.AddRow(s.Service, s.Location, s.Description)
+		}
+		serviceTable.Render()
+		log.Blank()
 
-	vulnTable := o.CreateTable()
-	vulnTable.SetColumnAlign(1, util.ALIGN_LEFT)
-	vulnTable.SetColumnAlign(2, util.ALIGN_LEFT)
-	vulnTable.SetColumnAlign(3, util.ALIGN_LEFT)
-	vulnTable.SetColumnAlign(4, util.ALIGN_LEFT)
-	vulnTable.SetColumnAlign(5, util.ALIGN_LEFT)
-	vulnTable.AddRow("VULNERABILITY", "LOCATION", "CATEGORY", "DESCRIPTION", "EVIDENCE")
-	for _, vuln := range result.Vulnerabilities {
-		vulnTable.AddRow(vuln.Vulnerability, vuln.Location, vuln.Category, vuln.Description, vuln.Evidence)
+		vulnTable := o.CreateTable()
+		vulnTable.SetColumnAlign(1, util.ALIGN_LEFT)
+		vulnTable.SetColumnAlign(2, util.ALIGN_LEFT)
+		vulnTable.SetColumnAlign(3, util.ALIGN_LEFT)
+		vulnTable.SetColumnAlign(4, util.ALIGN_LEFT)
+		vulnTable.SetColumnAlign(5, util.ALIGN_LEFT)
+		vulnTable.AddRow("VULNERABILITY", "LOCATION", "CATEGORY", "DESCRIPTION", "EVIDENCE")
+		for _, vuln := range result.Vulnerabilities {
+			vulnTable.AddRow(vuln.Vulnerability, vuln.Location, vuln.Category, vuln.Description, vuln.Evidence)
+		}
+		vulnTable.Render()
+		log.Blank()
 	}
-	vulnTable.Render()
-	log.Blank()
+	return nil
 }
