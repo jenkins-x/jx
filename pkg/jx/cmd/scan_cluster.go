@@ -154,7 +154,7 @@ func (o *ScanClusterOptions) hunterContainer() *v1.Container {
 	return &v1.Container{
 		Name:            kubeHunterContainerName,
 		Image:           kubeHunterImage,
-		ImagePullPolicy: v1.PullIfNotPresent,
+		ImagePullPolicy: v1.PullAlways,
 		Command:         []string{"python", "kube-hunter.py"},
 		Args:            []string{"--pod", "--report=yaml", "--log=none"},
 	}
