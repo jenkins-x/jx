@@ -1,4 +1,4 @@
-package cmd
+package cmd_test
 
 import (
 	"path/filepath"
@@ -10,6 +10,7 @@ import (
 	"path"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,7 @@ import (
 )
 
 func TestStepTagCharts(t *testing.T) {
+	t.Parallel()
 	f, err := ioutil.TempDir("", "test-step-tag-charts")
 	assert.NoError(t, err)
 
@@ -34,12 +36,12 @@ func TestStepTagCharts(t *testing.T) {
 	chartFile := filepath.Join(chartsDir, "Chart.yaml")
 	valuesFile := filepath.Join(chartsDir, "values.yaml")
 
-	o := StepTagOptions{}
+	o := cmd.StepTagOptions{}
 	o.Out = tests.Output()
 	o.Flags.ChartsDir = chartsDir
 	o.Flags.Version = expectedVersion
 	o.Flags.ChartValueRepository = expectedImageName
-	o.git = &gits.GitFake{}
+	o.GitClient = &gits.GitFake{}
 	err = o.Run()
 	assert.NoError(t, err)
 
@@ -56,17 +58,17 @@ func TestStepTagCharts(t *testing.T) {
 	foundRepo := false
 	foundVersion := false
 	for _, line := range lines {
-		if strings.HasPrefix(line, valuesYamlRepositoryPrefix) {
-			value := strings.TrimSpace(strings.TrimPrefix(line, valuesYamlRepositoryPrefix))
+		if strings.HasPrefix(line, cmd.ValuesYamlRepositoryPrefix) {
+			value := strings.TrimSpace(strings.TrimPrefix(line, cmd.ValuesYamlRepositoryPrefix))
 			foundRepo = true
 			assert.Equal(t, expectedImageName, value, "versions.yaml repository: attribute")
-		} else if strings.HasPrefix(line, valuesYamlTagPrefix) {
+		} else if strings.HasPrefix(line, cmd.ValuesYamlTagPrefix) {
 			foundVersion = true
-			value := strings.TrimSpace(strings.TrimPrefix(line, valuesYamlTagPrefix))
+			value := strings.TrimSpace(strings.TrimPrefix(line, cmd.ValuesYamlTagPrefix))
 			assert.Equal(t, expectedVersion, value, "versions.yaml tag: attribute")
 		}
 	}
 
-	assert.True(t, foundRepo, "Failed to find tag '%s' in file %s", valuesYamlRepositoryPrefix, valuesFile)
-	assert.True(t, foundVersion, "Failed to find tag '%s' in file %s", valuesYamlTagPrefix, valuesFile)
+	assert.True(t, foundRepo, "Failed to find tag '%s' in file %s", cmd.ValuesYamlRepositoryPrefix, valuesFile)
+	assert.True(t, foundVersion, "Failed to find tag '%s' in file %s", cmd.ValuesYamlTagPrefix, valuesFile)
 }

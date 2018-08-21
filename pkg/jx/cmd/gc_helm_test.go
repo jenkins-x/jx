@@ -1,13 +1,15 @@
-package cmd
+package cmd_test
 
 import (
 	"bytes"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sort"
 	"testing"
 	"text/template"
 
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,16 +61,18 @@ type CMListConfig struct {
 }
 
 func TestGCHelmSortVersion(t *testing.T) {
+	t.Parallel()
 	test_versions := []string{"jx-production.v2", "jx-production.v3", "jx-production.v1"}
-	sort.Sort(ByVersion(test_versions))
+	sort.Sort(cmd.ByVersion(test_versions))
 	assert.Equal(t, "jx-production.v1", test_versions[0])
 	assert.Equal(t, "jx-production.v2", test_versions[1])
 	assert.Equal(t, "jx-production.v3", test_versions[2])
 }
 
 func TestGCHelmSortVersionComplex(t *testing.T) {
+	t.Parallel()
 	test_versions := []string{"jx-p.v3.complex.v2", "jx-p.v1.complex.v3", "jx-p.v2.complex.v1"}
-	sort.Sort(ByVersion(test_versions))
+	sort.Sort(cmd.ByVersion(test_versions))
 	assert.Equal(t, "jx-p.v2.complex.v1", test_versions[0])
 	assert.Equal(t, "jx-p.v3.complex.v2", test_versions[1])
 	assert.Equal(t, "jx-p.v1.complex.v3", test_versions[2])
@@ -76,15 +80,16 @@ func TestGCHelmSortVersionComplex(t *testing.T) {
 }
 
 func TestGCHelmSortVersionMissing(t *testing.T) {
+	t.Parallel()
 	test_versions := []string{"aptly-broken3", "aptly-broken2", "aptly-broken1"}
-	sort.Sort(ByVersion(test_versions))
+	sort.Sort(cmd.ByVersion(test_versions))
 	assert.Equal(t, "aptly-broken3", test_versions[0])
 	assert.Equal(t, "aptly-broken2", test_versions[1])
 	assert.Equal(t, "aptly-broken1", test_versions[2])
 }
 
 func TestGCHelmExtract(t *testing.T) {
-
+	t.Parallel()
 	var b bytes.Buffer
 	b.WriteString(createConfigMaps(t, "jx-staging", v_jx_staging))
 	b.WriteString(",")
@@ -93,42 +98,42 @@ func TestGCHelmExtract(t *testing.T) {
 	b.WriteString(createConfigMaps(t, "jx-production", v_jx_production))
 	configmaplist := createConfigMapList(t, b.String())
 
-	releases := extractReleases(configmaplist)
+	releases := cmd.ExtractReleases(configmaplist)
 
 	assert.Contains(t, releases, "jx-staging")
 	assert.Contains(t, releases, "jx-production")
 	assert.Contains(t, releases, "jenkins-x")
 
-	versions := extractVersions(configmaplist, "jx-production")
+	versions := cmd.ExtractVersions(configmaplist, "jx-production")
 	expected_versions := []string{"jx-production.v1", "jx-production.v2", "jx-production.v3"}
 	assert.Equal(t, expected_versions, versions)
 
-	to_delete := versionsToDelete(versions, 10)
+	to_delete := cmd.VersionsToDelete(versions, 10)
 	assert.Empty(t, to_delete)
 
-	versions = extractVersions(configmaplist, "jx-staging")
+	versions = cmd.ExtractVersions(configmaplist, "jx-staging")
 	expected_versions = []string{"jx-staging.v1", "jx-staging.v2", "jx-staging.v3", "jx-staging.v4", "jx-staging.v5", "jx-staging.v6", "jx-staging.v7", "jx-staging.v8", "jx-staging.v9", "jx-staging.v10", "jx-staging.v11", "jx-staging.v12", "jx-staging.v13", "jx-staging.v14", "jx-staging.v15", "jx-staging.v16", "jx-staging.v17", "jx-staging.v18", "jx-staging.v19", "jx-staging.v20", "jx-staging.v21", "jx-staging.v22", "jx-staging.v23", "jx-staging.v24", "jx-staging.v25", "jx-staging.v26", "jx-staging.v27"}
 	assert.Equal(t, expected_versions, versions)
 
-	to_delete = versionsToDelete(versions, 10)
+	to_delete = cmd.VersionsToDelete(versions, 10)
 	expected_to_delete := []string{"jx-staging.v1", "jx-staging.v2", "jx-staging.v3", "jx-staging.v4", "jx-staging.v5", "jx-staging.v6", "jx-staging.v7", "jx-staging.v8", "jx-staging.v9", "jx-staging.v10", "jx-staging.v11", "jx-staging.v12", "jx-staging.v13", "jx-staging.v14", "jx-staging.v15", "jx-staging.v16", "jx-staging.v17"}
 	assert.Equal(t, expected_to_delete, to_delete)
 
-	versions = extractVersions(configmaplist, "jenkins-x")
+	versions = cmd.ExtractVersions(configmaplist, "jenkins-x")
 	expected_versions = []string{"jenkins-x.v1", "jenkins-x.v2", "jenkins-x.v3", "jenkins-x.v4", "jenkins-x.v5", "jenkins-x.v6", "jenkins-x.v7", "jenkins-x.v8", "jenkins-x.v9", "jenkins-x.v10", "jenkins-x.v11", "jenkins-x.v12", "jenkins-x.v13", "jenkins-x.v14", "jenkins-x.v15", "jenkins-x.v16", "jenkins-x.v17", "jenkins-x.v18", "jenkins-x.v19", "jenkins-x.v20"}
 	assert.Equal(t, expected_versions, versions)
 
-	to_delete = versionsToDelete(versions, 10)
+	to_delete = cmd.VersionsToDelete(versions, 10)
 	expected_to_delete = []string{"jenkins-x.v1", "jenkins-x.v2", "jenkins-x.v3", "jenkins-x.v4", "jenkins-x.v5", "jenkins-x.v6", "jenkins-x.v7", "jenkins-x.v8", "jenkins-x.v9", "jenkins-x.v10"}
 	assert.Equal(t, expected_to_delete, to_delete)
 
-	versions = extractVersions(configmaplist, "flaming-flamingo")
+	versions = cmd.ExtractVersions(configmaplist, "flaming-flamingo")
 	assert.Empty(t, versions)
 
-	cm, err := extractConfigMap(configmaplist, "flaming-flamingo.v1")
+	cm, err := cmd.ExtractConfigMap(configmaplist, "flaming-flamingo.v1")
 	assert.NotNil(t, err)
 
-	cm, err = extractConfigMap(configmaplist, "jenkins-x.v1")
+	cm, err = cmd.ExtractConfigMap(configmaplist, "jenkins-x.v1")
 	assert.Nil(t, err)
 	assert.NotNil(t, cm)
 

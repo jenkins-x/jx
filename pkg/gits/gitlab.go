@@ -29,7 +29,7 @@ func NewGitlabProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter)
 			return nil, err
 		}
 	}
-	return withGitlabClient(server, user, c, git)
+	return WithGitlabClient(server, user, c, git)
 }
 
 func IsGitLabServerURL(u string) bool {
@@ -38,7 +38,7 @@ func IsGitLabServerURL(u string) bool {
 }
 
 // Used by unit tests to inject a mocked client
-func withGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitlab.Client, git Gitter) (GitProvider, error) {
+func WithGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitlab.Client, git Gitter) (GitProvider, error) {
 	provider := &GitlabProvider{
 		Server:   *server,
 		User:     *user,

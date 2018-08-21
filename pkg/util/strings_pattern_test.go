@@ -1,9 +1,11 @@
-package util
+package util_test
 
 import (
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/stretchr/testify/assert"
 )
 
 type testStringMatchesAnyData struct {
@@ -14,6 +16,7 @@ type testStringMatchesAnyData struct {
 }
 
 func TestStringMatchesAny(t *testing.T) {
+	t.Parallel()
 	testCases := []testStringMatchesAnyData{
 		{
 			"foo", []string{"foo"}, []string{"WIP-*"}, true,
@@ -35,18 +38,19 @@ func TestStringMatchesAny(t *testing.T) {
 		},
 	}
 	for _, data := range testCases {
-		actual := StringMatchesAny(data.input, data.includes, data.excludes)
+		actual := util.StringMatchesAny(data.input, data.includes, data.excludes)
 		assert.Equal(t, data.expected, actual, "for StringMatchesAny(%s, %s, %s)", data.input, strings.Join(data.includes, ", "), strings.Join(data.excludes, ", "))
 	}
 }
 
 func TestStringMatches(t *testing.T) {
+	t.Parallel()
 	assertStringMatches(t, "foo", "*", true)
 	assertStringMatches(t, "foo", "fo*", true)
 	assertStringMatches(t, "bar", "fo*", false)
 }
 
 func assertStringMatches(t *testing.T, text string, pattern string, expected bool) {
-	actual := StringMatchesPattern(text, pattern)
+	actual := util.StringMatchesPattern(text, pattern)
 	assert.Equal(t, expected, actual, "Failed to evaluate StringMatchesPattern(%s, %s)", text, pattern)
 }

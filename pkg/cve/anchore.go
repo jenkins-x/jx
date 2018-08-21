@@ -19,7 +19,7 @@ const (
 	getVulnerabilitiesByImageID     = "/images/by_id/%s/vuln/%s"
 	getVulnerabilitiesByImageDigest = "/images/%s"
 	vulnerabilityType               = "os"
-	getImages                       = "/images"
+	GetImages                       = "/images"
 )
 
 type result interface {
@@ -81,7 +81,7 @@ func (a AnchoreProvider) GetImageVulnerabilityTable(jxClient versioned.Interface
 		var vList VulnerabilityList
 		subPath := fmt.Sprintf(getVulnerabilitiesByImageID, query.ImageID, vulnerabilityType)
 
-		err = a.anchoreGet(subPath, &vList)
+		err = a.AnchoreGet(subPath, &vList)
 		if err != nil {
 			return fmt.Errorf("error getting vulnerabilities for image %s: %v", query.ImageID, err)
 		}
@@ -116,9 +116,9 @@ func (a AnchoreProvider) GetImageVulnerabilityTable(jxClient versioned.Interface
 		if query.ImageName != "" {
 
 			var images []Image
-			subPath := fmt.Sprintf(getImages)
+			subPath := fmt.Sprintf(GetImages)
 
-			err = a.anchoreGet(subPath, &images)
+			err = a.AnchoreGet(subPath, &images)
 			if err != nil {
 				return fmt.Errorf("error getting images %v", err)
 			}
@@ -151,7 +151,8 @@ func (a AnchoreProvider) GetImageVulnerabilityTable(jxClient versioned.Interface
 
 }
 
-func (a AnchoreProvider) anchoreGet(subPath string, rs result) error {
+// AnchoreGet get command
+func (a AnchoreProvider) AnchoreGet(subPath string, rs result) error {
 
 	url := fmt.Sprintf("%s%s", a.BaseURL, subPath)
 	req, err := http.NewRequest("GET", url, nil)
@@ -179,7 +180,7 @@ func (a AnchoreProvider) addVulnerabilitiesTableRows(table *table.Table, vList *
 	var image []Image
 	subPath := fmt.Sprintf(getVulnerabilitiesByImageDigest, vList.ImageDigest)
 
-	err := a.anchoreGet(subPath, &image)
+	err := a.AnchoreGet(subPath, &image)
 	if err != nil {
 		return fmt.Errorf("error getting image for image digest %s: %v", vList.ImageDigest, err)
 	}
@@ -204,7 +205,7 @@ func (a AnchoreProvider) getCVEsFromImageList(table *table.Table, vList *Vulnera
 	for _, imageID := range ids {
 		subPath := fmt.Sprintf(getVulnerabilitiesByImageID, imageID, vulnerabilityType)
 
-		err := a.anchoreGet(subPath, &vList)
+		err := a.AnchoreGet(subPath, &vList)
 		if err != nil {
 			return fmt.Errorf("error getting vulnerabilities for image %s: %v", imageID, err)
 		}

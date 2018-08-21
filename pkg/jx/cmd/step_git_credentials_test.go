@@ -1,9 +1,10 @@
-package cmd
+package cmd_test
 
 import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -11,6 +12,7 @@ import (
 )
 
 func TestStepGitCredentials(t *testing.T) {
+	t.Parallel()
 	kind1 := gits.KindGitHub
 	scheme1 := "https://"
 	host1 := "github.com"
@@ -33,9 +35,9 @@ func TestStepGitCredentials(t *testing.T) {
 		},
 	}
 
-	options := &StepGitCredentialsOptions{}
+	options := &cmd.StepGitCredentialsOptions{}
 
-	data := options.createGitCredentialsFromSecrets(secretList)
+	data := options.CreateGitCredentialsFromSecrets(secretList)
 	actual := string(data)
 
 	assert.Equal(t, expected, actual, "generated git credentials file")

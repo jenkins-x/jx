@@ -1,13 +1,15 @@
-package reports
+package reports_test
 
 import (
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/reports"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestProjectHistory(t *testing.T) {
-	_, history, err := NewProjectHistoryService("test_data/projectHistory.yml")
+	t.Parallel()
+	_, history, err := reports.NewProjectHistoryService("test_data/projectHistory.yml")
 	assert.Equal(t, "Jan 2 2018", history.LastReportDate, "history.LastReportDate")
 
 	assert.Nil(t, err, "Failed to create the ProjectHistoryService")

@@ -1,4 +1,6 @@
-package cmd
+// +build integration
+
+package cmd_test
 
 import (
 	"io/ioutil"
@@ -7,25 +9,26 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateQuckstartProjects(t *testing.T) {
+func TestCreateQuickstartProjects(t *testing.T) {
 	testDir, err := ioutil.TempDir("", "test-create-quickstart")
 	assert.NoError(t, err)
 
 	appName := "myvets"
 
-	o := &CreateQuickstartOptions{
+	o := &cmd.CreateQuickstartOptions{
 		GitHubOrganisations: []string{"petclinic-gcp"},
 		Filter: quickstarts.QuickstartFilter{
 			Text:        "petclinic-gcp/spring-petclinic-vets-service",
 			ProjectName: appName,
 		},
 	}
-	ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, testDir))
+	cmd.ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, testDir))
 	o.Dir = testDir
 	o.OutDir = testDir
 	o.DryRun = true

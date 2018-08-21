@@ -161,7 +161,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 	terraformVars := filepath.Join(terraformDir, "terraform.tfvars")
 
 	args := []string{"init", terraformDir}
-	err = o.runCommand("terraform", args...)
+	err = o.RunCommand("terraform", args...)
 	if err != nil {
 		return err
 	}

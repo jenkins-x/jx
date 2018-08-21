@@ -198,7 +198,7 @@ func (o *CommonOptions) tailLogs(ns string, pod string, containerName string) er
 	}
 	args = append(args, pod)
 	o.Verbose = true
-	return o.runCommand("kubectl", args...)
+	return o.RunCommand("kubectl", args...)
 
 }
 

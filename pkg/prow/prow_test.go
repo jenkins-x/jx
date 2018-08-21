@@ -1,52 +1,52 @@
-package prow
+package prow_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/stretchr/testify/assert"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	testclient "k8s.io/client-go/kubernetes/fake"
 
+	"testing"
+
 	"github.com/ghodss/yaml"
 	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/plugins"
-	"testing"
 )
 
 type TestOptions struct {
-	prowOptions
+	prow.Options
 }
 
 func (o *TestOptions) Setup() {
-	o.prowOptions = prowOptions{
-		kubeClient: testclient.NewSimpleClientset(),
-		repos:      []string{"test/repo"},
-		ns:         "test",
+	o.Options = prow.Options{
+		KubeClient: testclient.NewSimpleClientset(),
+		Repos:      []string{"test/repo"},
+		NS:         "test",
 	}
 }
 
 func TestProwConfig(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
-	err := o.addProwConfig()
+	err := o.AddProwConfig()
 	assert.NoError(t, err)
-
 }
 
 func TestProwPlugins(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
-	err := o.addProwPlugins()
+	err := o.AddProwPlugins()
 	assert.NoError(t, err)
-
 }
 
 func TestMergeProwConfig(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
@@ -66,13 +66,13 @@ func TestMergeProwConfig(t *testing.T) {
 		Data: data,
 	}
 
-	_, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Create(cm)
+	_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
 	assert.NoError(t, err)
 
-	err = o.addProwConfig()
+	err = o.AddProwConfig()
 	assert.NoError(t, err)
 
-	cm, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Get("config", metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("config", metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
@@ -82,7 +82,7 @@ func TestMergeProwConfig(t *testing.T) {
 }
 
 func TestMergeProwPlugin(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
@@ -102,13 +102,13 @@ func TestMergeProwPlugin(t *testing.T) {
 		Data: data,
 	}
 
-	_, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Create(cm)
+	_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
 	assert.NoError(t, err)
 
-	err = o.addProwPlugins()
+	err = o.AddProwPlugins()
 	assert.NoError(t, err)
 
-	cm, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Get("plugins", metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("plugins", metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	yaml.Unmarshal([]byte(cm.Data["plugins.yaml"]), &pluginConfig)
@@ -118,16 +118,16 @@ func TestMergeProwPlugin(t *testing.T) {
 }
 
 func TestAddProwPlugin(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
-	o.repos = append(o.repos, "test/repo2")
+	o.Repos = append(o.Repos, "test/repo2")
 
-	err := o.addProwPlugins()
+	err := o.AddProwPlugins()
 	assert.NoError(t, err)
 
-	cm, err := o.kubeClient.CoreV1().ConfigMaps(o.ns).Get("plugins", metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("plugins", metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	pluginConfig := &plugins.Configuration{}
@@ -139,16 +139,16 @@ func TestAddProwPlugin(t *testing.T) {
 }
 
 func TestAddProwConfig(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
-	o.repos = append(o.repos, "test/repo2")
+	o.Repos = append(o.Repos, "test/repo2")
 
-	err := o.addProwConfig()
+	err := o.AddProwConfig()
 	assert.NoError(t, err)
 
-	cm, err := o.kubeClient.CoreV1().ConfigMaps(o.ns).Get("config", metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("config", metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	prowConfig := &config.Config{}
@@ -161,15 +161,15 @@ func TestAddProwConfig(t *testing.T) {
 
 // make sure that rerunning addProwConfig replaces any modified changes in the configmap
 func TestReplaceProwConfig(t *testing.T) {
-
+	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
 
-	err := o.addProwConfig()
+	err := o.AddProwConfig()
 	assert.NoError(t, err)
 
 	// now modify the cm
-	cm, err := o.kubeClient.CoreV1().ConfigMaps(o.ns).Get("config", metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("config", metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	prowConfig := &config.Config{}
@@ -191,10 +191,10 @@ func TestReplaceProwConfig(t *testing.T) {
 		},
 	}
 
-	_, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Update(cm)
+	_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
 
 	// ensure the value was modified
-	cm, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Get("config", metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("config", metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
@@ -205,11 +205,11 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.Equal(t, "foo", p[0].Agent)
 
 	// generate the prow config again
-	err = o.addProwConfig()
+	err = o.AddProwConfig()
 	assert.NoError(t, err)
 
 	// assert value is reset
-	cm, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Get("config", metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("config", metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
