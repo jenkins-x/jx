@@ -1023,7 +1023,7 @@ func (options *InstallOptions) getBinaryRepositoryManager() (error, string) {
 func (options *InstallOptions) readArtifactoryDetails() error {
 	if options.Flags.ArtifactoryUrl == "" {
 		prompt := &survey.Input{
-			Message: "Artifactory server URL",
+			Message: "Artifactory server URL:",
 		}
 		if err := survey.AskOne(prompt, &options.Flags.ArtifactoryUrl, nil); err != nil {
 			return err
@@ -1031,7 +1031,7 @@ func (options *InstallOptions) readArtifactoryDetails() error {
 	}
 	if options.Flags.ArtifactoryUser == "" {
 		prompt := &survey.Input{
-			Message: "Artifactory server username",
+			Message: "Artifactory server username:",
 		}
 		if err := survey.AskOne(prompt, &options.Flags.ArtifactoryUser, nil); err != nil {
 			return err
@@ -1039,7 +1039,7 @@ func (options *InstallOptions) readArtifactoryDetails() error {
 	}
 	if options.Flags.ArtifactoryPassword == "" {
 		prompt := &survey.Password{
-			Message: "Artifactory server password",
+			Message: "Artifactory server password:",
 		}
 		if err := survey.AskOne(prompt, &options.Flags.ArtifactoryPassword, nil); err != nil {
 			return err
