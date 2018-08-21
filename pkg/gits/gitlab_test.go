@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/suite"
-	gitlab "github.com/wbrefvem/go-gitlab"
+	"github.com/xanzy/go-gitlab"
 )
 
 const (
