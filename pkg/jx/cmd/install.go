@@ -775,7 +775,11 @@ func LoadVersionFromCloudEnvironmentsDir(wrkDir string) (string, error) {
 
 // clones the jenkins-x cloud-environments repo to a local working dir
 func (o *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
-	wrkDir := filepath.Join(util.HomeDir(), ".jx", "cloud-environments")
+	configDir, err := util.ConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("error determining config dir %v", err)
+	}
+	wrkDir := filepath.Join(configDir, "cloud-environments")
 	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
 	if o.Flags.CloudEnvRepository == "" {
 		return wrkDir, fmt.Errorf("No cloud environment git URL")
@@ -789,7 +793,7 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 
 		return wrkDir, util.CopyDir(currentDir, wrkDir, true)
 	}
-	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
+	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           o.Flags.CloudEnvRepository,
 		ReferenceName: "refs/heads/master",
 		SingleBranch:  true,
