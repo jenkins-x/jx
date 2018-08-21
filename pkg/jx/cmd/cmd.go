@@ -100,6 +100,7 @@ func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 				NewCmdTeam(f, out, err),
 				NewCmdNamespace(f, out, err),
 				NewCmdPrompt(f, out, err),
+				NewCmdScan(f, out, err),
 				NewCmdShell(f, out, err),
 				NewCmdStatus(f, out, err),
 			},
