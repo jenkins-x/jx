@@ -76,9 +76,9 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 		}
 	}
 
-	o.kubeClient = fake.NewSimpleClientset(k8sObjects...)
+	o.KubeClientCached = fake.NewSimpleClientset(k8sObjects...)
 	o.jxClient = v1fake.NewSimpleClientset(jxObjects...)
 	o.apiExtensionsClient = apifake.NewSimpleClientset()
-	o.git = git
+	o.GitClient = git
 	o.helm = helm
 }

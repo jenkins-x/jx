@@ -94,7 +94,7 @@ func (o *GCHelmOptions) Run() error {
 		return nil
 	}
 
-	releases := extractReleases(cms)
+	releases := ExtractReleases(cms)
 	if o.Verbose {
 		log.Info(fmt.Sprintf("Found %d releases.\n", len(releases)))
 		log.Info(fmt.Sprintf("Releases: %v\n", releases))
@@ -104,12 +104,12 @@ func (o *GCHelmOptions) Run() error {
 		if o.Verbose {
 			log.Info(fmt.Sprintf("Checking %s. ", release))
 		}
-		versions := extractVersions(cms, release)
+		versions := ExtractVersions(cms, release)
 		if o.Verbose {
 			log.Info(fmt.Sprintf("Found %d.\n", len(versions)))
 			log.Info(fmt.Sprintf("%v\n", versions))
 		}
-		to_delete := versionsToDelete(versions, o.RevisionHistoryLimit)
+		to_delete := VersionsToDelete(versions, o.RevisionHistoryLimit)
 		if len(to_delete) > 0 {
 			if o.DryRun {
 				log.Infoln("Would delete:")
@@ -125,7 +125,7 @@ func (o *GCHelmOptions) Run() error {
 					}
 				}
 				for _, version := range to_delete {
-					cm, err1 := extractConfigMap(cms, version)
+					cm, err1 := ExtractConfigMap(cms, version)
 					if err1 == nil {
 						if o.NoBackup == false {
 							// Create backup for ConfigMap about to be deleted
@@ -172,8 +172,8 @@ func (o *GCHelmOptions) Run() error {
 	return nil
 }
 
-// Extract a set of releases from a list of ConfigMaps
-func extractReleases(cms *v1.ConfigMapList) []string {
+// ExtractReleases Extract a set of releases from a list of ConfigMaps
+func ExtractReleases(cms *v1.ConfigMapList) []string {
 	found := make(map[string]bool)
 	for _, cm := range cms.Items {
 		if cmname, ok := cm.Labels["NAME"]; ok {
@@ -192,8 +192,8 @@ func extractReleases(cms *v1.ConfigMapList) []string {
 	return releases
 }
 
-// Extract a set of versions of a named release from a list of ConfigMaps
-func extractVersions(cms *v1.ConfigMapList, release string) []string {
+// ExtractVersions Extract a set of versions of a named release from a list of ConfigMaps
+func ExtractVersions(cms *v1.ConfigMapList, release string) []string {
 	found := []string{}
 	for _, cm := range cms.Items {
 		if release == cm.Labels["NAME"] {
@@ -203,7 +203,8 @@ func extractVersions(cms *v1.ConfigMapList, release string) []string {
 	return found
 }
 
-func versionsToDelete(versions []string, desired int) []string {
+// VersionsToDelete returns a slice of strings
+func VersionsToDelete(versions []string, desired int) []string {
 	if desired >= len(versions) {
 		// nothing to delete
 		return []string{}
@@ -212,7 +213,8 @@ func versionsToDelete(versions []string, desired int) []string {
 	return versions[:len(versions)-desired]
 }
 
-func extractConfigMap(cms *v1.ConfigMapList, version string) (v1.ConfigMap, error) {
+// ExtractConfigMap extracts a configmap
+func ExtractConfigMap(cms *v1.ConfigMapList, version string) (v1.ConfigMap, error) {
 	for _, cm := range cms.Items {
 		if version == cm.Name {
 			return cm, nil

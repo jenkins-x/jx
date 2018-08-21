@@ -1,8 +1,10 @@
-package util
+package util_test
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/stretchr/testify/assert"
 )
 
 type regexSplitData struct {
@@ -21,7 +23,7 @@ func TestRegexpSplit(t *testing.T) {
 		},
 	}
 	for _, data := range testCases {
-		actual := RegexpSplit(data.input, data.separator)
+		actual := util.RegexpSplit(data.input, data.separator)
 		assert.Equal(t, data.expected, actual, "Split did not match for input %s with separator %s", data.input, data.separator)
 		//t.Logf("split %s with separator %s into %#v", data.input, data.separator, actual)
 	}
@@ -33,6 +35,6 @@ func TestStringIndices(t *testing.T) {
 }
 
 func assertStringIndices(t *testing.T, text string, sep string, expected []int) {
-	actual := StringIndexes(text, sep)
+	actual := util.StringIndexes(text, sep)
 	assert.Equal(t, expected, actual, "Failed to evaluate StringIndices(%s, %s)", text, sep)
 }

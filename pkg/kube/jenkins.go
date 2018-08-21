@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	bitbucketConfigMapKey = "com.cloudbees.jenkins.plugins.bitbucket.endpoints.BitbucketEndpointConfiguration.xml"
-	giteaConfigMapKey     = "org.jenkinsci.plugin.gitea.servers.GiteaServers.xml"
-	githubConfigMapKey    = "org.jenkinsci.plugins.github_branch_source.GitHubConfiguration.xml"
+	BitbucketConfigMapKey = "com.cloudbees.jenkins.plugins.bitbucket.endpoints.BitbucketEndpointConfiguration.xml"
+	GiteaConfigMapKey     = "org.jenkinsci.plugin.gitea.servers.GiteaServers.xml"
+	GithubConfigMapKey    = "org.jenkinsci.plugins.github_branch_source.GitHubConfiguration.xml"
 
 	bitbucketCloudElementName  = "com.cloudbees.jenkins.plugins.bitbucket.endpoints.BitbucketCloudEndpoint"
 	bitbucketServerElementName = "com.cloudbees.jenkins.plugins.bitbucket.endpoints.BitbucketServerEndpoint"
@@ -31,19 +31,19 @@ func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server *auth.AuthServer, user
 
 	switch server.Kind {
 	case gits.KindBitBucketCloud:
-		key = bitbucketConfigMapKey
+		key = BitbucketConfigMapKey
 		v1 = cm.Data[key]
 		v2, err = createBitbucketCloudConfig(v1, server, userAuth, credentials)
 	case gits.KindBitBucketServer:
-		key = bitbucketConfigMapKey
+		key = BitbucketConfigMapKey
 		v1 = cm.Data[key]
 		v2, err = createBitbucketServerConfig(v1, server, userAuth, credentials)
 	case gits.KindGitHub:
-		key = githubConfigMapKey
+		key = GithubConfigMapKey
 		v1 = cm.Data[key]
 		v2, err = createGitHubConfig(v1, server, userAuth, credentials)
 	case gits.KindGitea:
-		key = giteaConfigMapKey
+		key = GiteaConfigMapKey
 		v1 = cm.Data[key]
 		v2, err = createGiteaConfig(v1, server, userAuth, credentials)
 	}
@@ -57,7 +57,8 @@ func UpdateJenkinsGitServers(cm *corev1.ConfigMap, server *auth.AuthServer, user
 	return true, nil
 }
 
-func parseXml(xml string) (*etree.Document, string, error) {
+// ParseXml parses XML
+func ParseXml(xml string) (*etree.Document, string, error) {
 	prefix := ""
 	doc := etree.NewDocument()
 	parseXml := xml
@@ -77,7 +78,7 @@ func createGitHubConfig(xml string, server *auth.AuthServer, userAuth *auth.User
 		    <org.jenkinsci.plugins.github__branch__source.GitHubConfiguration plugin="github-branch-source@2.3.2"/>`
 	}
 	answer := xml
-	doc, prefix, err := parseXml(xml)
+	doc, prefix, err := ParseXml(xml)
 	if err != nil {
 		return answer, err
 	}
@@ -120,7 +121,7 @@ func createGiteaConfig(xml string, server *auth.AuthServer, userAuth *auth.UserA
 		    <org.jenkinsci.plugin.gitea.servers.GiteaServers plugin="gitea@1.0.5"/>`
 	}
 	answer := xml
-	doc, prefix, err := parseXml(xml)
+	doc, prefix, err := ParseXml(xml)
 	if err != nil {
 		return answer, err
 	}
@@ -166,7 +167,7 @@ func createBitbucketCloudConfig(xml string, server *auth.AuthServer, userAuth *a
 		xml = defaultBitbucketXml
 	}
 	answer := xml
-	doc, prefix, err := parseXml(xml)
+	doc, prefix, err := ParseXml(xml)
 	if err != nil {
 		return answer, err
 	}
@@ -212,7 +213,7 @@ func createBitbucketServerConfig(xml string, server *auth.AuthServer, userAuth *
 		xml = defaultBitbucketXml
 	}
 	answer := xml
-	doc, prefix, err := parseXml(xml)
+	doc, prefix, err := ParseXml(xml)
 	if err != nil {
 		return answer, err
 	}

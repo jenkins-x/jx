@@ -294,7 +294,7 @@ func ProviderAccessTokenURL(kind string, url string, username string) string {
 func PickOrganisation(orgLister OrganisationLister, userName string) (string, error) {
 	prompt := &survey.Select{
 		Message: "Which organisation do you want to use?",
-		Options: getOrganizations(orgLister, userName),
+		Options: GetOrganizations(orgLister, userName),
 		Default: userName,
 	}
 
@@ -309,7 +309,8 @@ func PickOrganisation(orgLister OrganisationLister, userName string) (string, er
 	return orgName, nil
 }
 
-func getOrganizations(orgLister OrganisationLister, userName string) []string {
+// GetOrganizations gets the organisation
+func GetOrganizations(orgLister OrganisationLister, userName string) []string {
 	// Always include the username as a pseudo organization
 	orgNames := []string{userName}
 

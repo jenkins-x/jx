@@ -1,4 +1,4 @@
-package gits
+package gits_test
 
 import (
 	"testing"
@@ -10,6 +10,7 @@ import (
 )
 
 func TestDateFormatAndParse(t *testing.T) {
+	t.Parallel()
 	now := time.Now()
 
 	expected := util.FormatDate(now)

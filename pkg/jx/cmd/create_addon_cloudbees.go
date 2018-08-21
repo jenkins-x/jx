@@ -168,7 +168,7 @@ To register to get your username/password to to: %s
 		return err
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}

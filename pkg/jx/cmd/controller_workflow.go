@@ -166,7 +166,7 @@ func (o *ControllerWorkflowOptions) Run() error {
 				log.Infof("Polling to see if any PRs have merged: %v\n", t)
 			}
 			//o.pollGitPipelineStatuses(jxClient, ns)
-			o.reloadAndPollGitPipelineStatuses(jxClient, ns)
+			o.ReloadAndPollGitPipelineStatuses(jxClient, ns)
 		}
 	}()
 
@@ -426,11 +426,11 @@ func (o *ControllerWorkflowOptions) pollGitPipelineStatuses(jxClient versioned.I
 	}
 }
 
-// reloadAndPollGitPipelineStatuses reloads all the current pending PipelineActivity objects and polls their Git
+// ReloadAndPollGitPipelineStatuses reloads all the current pending PipelineActivity objects and polls their Git
 // status to see if the workflows can progress.
 //
 // Note this method is only really for testing and simulation
-func (o *ControllerWorkflowOptions) reloadAndPollGitPipelineStatuses(jxClient versioned.Interface, ns string) {
+func (o *ControllerWorkflowOptions) ReloadAndPollGitPipelineStatuses(jxClient versioned.Interface, ns string) {
 	environments := jxClient.JenkinsV1().Environments(ns)
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 
@@ -487,7 +487,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 		if gitProvider == nil || gitInfo == nil {
 			return
 		}
-		prNumber, err := pullRequestURLToNumber(prURL)
+		prNumber, err := PullRequestURLToNumber(prURL)
 		if err != nil {
 			log.Warnf("Failed to get PR number: %s", err)
 			return
@@ -696,7 +696,7 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 	lastCommitSha := ""
 	lastCommitMessage := ""
 	lastCommitURL := ""
-	build := digitSuffix(buildName)
+	build := DigitSuffix(buildName)
 	if build == "" {
 		build = "1"
 	}
@@ -746,7 +746,8 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 	}
 }
 
-func pullRequestURLToNumber(text string) (int, error) {
+// PullRequestURLToNumber turns pull request URL to number
+func PullRequestURLToNumber(text string) (int, error) {
 	paths := strings.Split(strings.TrimSuffix(text, "/"), "/")
 	lastPath := paths[len(paths)-1]
 	prNumber, err := strconv.Atoi(lastPath)

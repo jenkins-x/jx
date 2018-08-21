@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TODO reafcator. setup function makes tests sequence dependent. Tests cannot be run with t.Parallel()
 func setup(latestJXVersion semver.Version) {
 	var o *cmd.CommonOptions
 	monkey.PatchInstanceMethod(reflect.TypeOf(o), "GetLatestJXVersion", func(*cmd.CommonOptions) (semver.Version, error) {

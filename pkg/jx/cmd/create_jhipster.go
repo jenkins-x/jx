@@ -81,7 +81,7 @@ func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 				return err
 			}
 		}
-		err = o.runCommand("yarn", "global", "add", "generator-jhipster")
+		err = o.RunCommand("yarn", "global", "add", "generator-jhipster")
 		if err != nil {
 			return err
 		}

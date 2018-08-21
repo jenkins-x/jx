@@ -101,7 +101,7 @@ func (o *StepGitCredentialsOptions) Run() error {
 }
 
 func (o *StepGitCredentialsOptions) createGitCredentialsFile(fileName string, secrets *corev1.SecretList) error {
-	data := o.createGitCredentialsFromSecrets(secrets)
+	data := o.CreateGitCredentialsFromSecrets(secrets)
 	err := ioutil.WriteFile(fileName, data, DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write to %s: %s", fileName, err)
@@ -110,7 +110,8 @@ func (o *StepGitCredentialsOptions) createGitCredentialsFile(fileName string, se
 	return nil
 }
 
-func (o *StepGitCredentialsOptions) createGitCredentialsFromSecrets(secretList *corev1.SecretList) []byte {
+// CreateGitCredentialsFromSecrets Creates git credentials from secrets
+func (o *StepGitCredentialsOptions) CreateGitCredentialsFromSecrets(secretList *corev1.SecretList) []byte {
 	var buffer bytes.Buffer
 	if secretList != nil {
 		for _, secret := range secretList.Items {
