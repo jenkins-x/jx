@@ -229,12 +229,11 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		survey.AskOne(prompt, &maxNumOfNodes, nil)
 	}
 
-	user, err := os_user.Current()
+	jxHome, err := util.ConfigDir()
 	if err != nil {
 		return err
 	}
 
-	jxHome := filepath.Join(user.HomeDir, ".jx")
 	clustersHome := filepath.Join(jxHome, "clusters")
 	clusterHome := filepath.Join(clustersHome, o.Flags.ClusterName)
 	os.MkdirAll(clusterHome, os.ModePerm)
@@ -271,6 +270,10 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		})
 	}
 
+	user, err := os_user.Current()
+	if err != nil {
+		return err
+	}
 	username := sanitizeLabel(user.Username)
 
 	// create .tfvars file in .jx folder
