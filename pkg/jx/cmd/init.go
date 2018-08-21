@@ -493,7 +493,7 @@ func (o *InitOptions) initIngress() error {
 		}
 
 		values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
-		valuesFiles := []string{}
+		valuesFiles := []string{"./myvalues.yaml"}
 		if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
 			// we can only enable one port for NLBs right now
 			enableHttp := "false"
