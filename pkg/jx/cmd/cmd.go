@@ -148,13 +148,13 @@ func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 
 	groups.Add(cmds)
 
+	filters := []string{"options"}
+	templates.ActsAsRootCommand(cmds, filters, groups...)
+
 	cmds.AddCommand(NewCmdVersion(f, out, err))
 	cmds.Version = version.GetVersion()
 	cmds.SetVersionTemplate("{{printf .Version}}\n")
-
-	filters := []string{"options"}
-
-	templates.ActsAsRootCommand(cmds, filters, groups...)
+	cmds.AddCommand(NewCmdOptions(out))
 
 	return cmds
 }
