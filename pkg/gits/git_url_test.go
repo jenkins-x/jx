@@ -1,12 +1,13 @@
-package gits
+package gits_test
 
 import (
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/stretchr/testify/assert"
 )
 
-type parseGitUrlData struct {
+type parseGitURLData struct {
 	url          string
 	host         string
 	organisation string
@@ -14,7 +15,8 @@ type parseGitUrlData struct {
 }
 
 func TestParseGitURL(t *testing.T) {
-	testCases := []parseGitUrlData{
+	t.Parallel()
+	testCases := []parseGitURLData{
 		{
 			"git://host.xz/org/repo", "host.xz", "org", "repo",
 		},
@@ -50,7 +52,7 @@ func TestParseGitURL(t *testing.T) {
 		},
 	}
 	for _, data := range testCases {
-		info, err := ParseGitURL(data.url)
+		info, err := gits.ParseGitURL(data.url)
 		assert.Nil(t, err)
 		assert.NotNil(t, info)
 		assert.Equal(t, data.host, info.Host, "Host does not match for input %s", data.url)

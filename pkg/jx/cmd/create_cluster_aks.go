@@ -188,7 +188,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 		if userName != "" && password != "" {
 			log.Info("Logging in to Azure using provider username and password...\n")
-			err = o.runCommand("az", "login", "-u", userName, "-p", password)
+			err = o.RunCommand("az", "login", "-u", userName, "-p", password)
 			if err != nil {
 				return err
 			}
@@ -204,12 +204,12 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	if !o.Flags.SkipProviderRegistration {
 		//register for Microsoft Compute and Containers
 
-		err = o.runCommand("az", "provider", "register", "-n", "Microsoft.Compute")
+		err = o.RunCommand("az", "provider", "register", "-n", "Microsoft.Compute")
 		if err != nil {
 			return err
 		}
 
-		err = o.runCommand("az", "provider", "register", "-n", "Microsoft.ContainerService")
+		err = o.RunCommand("az", "provider", "register", "-n", "Microsoft.ContainerService")
 		if err != nil {
 			return err
 		}
@@ -220,7 +220,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 		createGroup := []string{"group", "create", "-l", location, "-n", resourceName}
 
-		err = o.runCommand("az", createGroup...)
+		err = o.RunCommand("az", createGroup...)
 
 		if err != nil {
 			return err
@@ -256,7 +256,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	}
 
 	log.Infof("Creating cluster named %s in resource group %s...\n", clusterName, resourceName)
-	err = o.runCommand("az", createCluster...)
+	err = o.RunCommand("az", createCluster...)
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	getCredentials := []string{"aks", "get-credentials", "--resource-group", resourceName, "--name", clusterName}
 
-	err = o.runCommand("az", getCredentials...)
+	err = o.RunCommand("az", getCredentials...)
 	if err != nil {
 		return err
 	}

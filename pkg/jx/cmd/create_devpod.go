@@ -362,7 +362,7 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) stri
 		if err != nil {
 			log.Warnf("Could not find a Jenkinsfile at %s: %s\n", jenkinsfile, err)
 		} else if exists {
-			answer, err = findDevPodLabelFromJenkinsfile(jenkinsfile, labels)
+			answer, err = FindDevPodLabelFromJenkinsfile(jenkinsfile, labels)
 			if err != nil {
 				log.Warnf("Could not extract the pod template label from Jenkinsfile at %s: %s\n", jenkinsfile, err)
 			}
@@ -372,7 +372,8 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) stri
 	return answer
 }
 
-func findDevPodLabelFromJenkinsfile(filename string, labels []string) (string, error) {
+// FindDevPodLabelFromJenkinsfile finds pod labels from a Jenkinsfile
+func FindDevPodLabelFromJenkinsfile(filename string, labels []string) (string, error) {
 	answer := ""
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {

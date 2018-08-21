@@ -21,8 +21,6 @@ REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 #ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
-#PACKAGE_DIRS := pkg cmd
-PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/)
 PKGS := $(shell go list ./... | grep -v /vendor | grep -v generated)
 GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go pkg/*//*/*/*.go
 
@@ -62,7 +60,7 @@ get-test-deps:
 	@$(GO) get -u gopkg.in/matm/v1/gocov-html
 
 test:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast $(PACKAGE_DIRS) && echo ALL TESTS PASSED!
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast -short -parallel 12 ./...
 
 test-report: get-test-deps test
 	@gocov convert cover.out | gocov report
@@ -70,13 +68,50 @@ test-report: get-test-deps test
 test-report-html: get-test-deps test
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
+test-slow:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -parallel 12 -coverprofile=cover.out ./...
+
+test-slow-report: get-test-deps test-slow
+	@gocov convert cover.out | gocov report
+
+test-slow-report-html: get-test-deps test-slow
+	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+
+test-integration:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./...
+
+test-integration-report: get-test-deps test-integration
+	@gocov convert cover.out | gocov report
+
+test-integration-report-html: get-test-deps test-integration
+	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+
+test-slow-integration:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out ./...
+
+test-slow-integration-report: get-test-deps test-slow-integration
+	@gocov convert cover.out | gocov report
+
+test-slow-integration-report-html: get-test-deps test-slow-integration
+	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+
 docker-test:
-	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.10.3 sh -c "cd /go/src/github.com/jenkins-x/jx && make test"
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test"
+
+docker-test-slow:
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-slow"
+
+# EASY WAY TO TEST IF YOUR TEST SHOULD BE A UNIT OR INTEGRATION TEST
+docker-test-integration:
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-integration"
+
+# EASY WAY TO TEST IF YOUR SLOW TEST SHOULD BE A UNIT OR INTEGRATION TEST
+docker-test-slow-integration:
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-slow-integration"
 
 #	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jx/cmds
-
 test1:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v -run $(TEST) && echo TEST PASSED!
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test ./... -test.v -run $(TEST)
 
 testbin:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-test
@@ -90,7 +125,7 @@ install: $(GO_DEPENDENCIES) version
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) cmd/jx/jx.go
 
 fmt:
-	@FORMATTED=`$(GO) fmt $(PACKAGE_DIRS)`
+	@FORMATTED=`$(GO) fmt ./...`
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
 arm: version

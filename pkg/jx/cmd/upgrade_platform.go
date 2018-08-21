@@ -89,7 +89,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		version, err = loadVersionFromCloudEnvironmentsDir(wrkDir)
+		version, err = LoadVersionFromCloudEnvironmentsDir(wrkDir)
 		if err != nil {
 			return err
 		}

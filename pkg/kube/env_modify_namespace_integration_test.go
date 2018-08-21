@@ -1,4 +1,6 @@
-package kube
+// +build integration
+
+package kube_test
 
 import (
 	"io/ioutil"
@@ -8,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -40,10 +43,10 @@ func TestEnvModifyNamespace(t *testing.T) {
 
 	testNs := "jx-staging"
 
-	env := NewPermanentEnvironment("jx")
+	env := kube.NewPermanentEnvironment("jx")
 	env.Spec.Namespace = testNs
 
-	err = modifyNamespace(os.Stdout, tempDir, env, git)
+	err = kube.ModifyNamespace(os.Stdout, tempDir, env, git)
 	assert.NoError(t, err)
 
 	tests.AssertFileContains(t, filepath.Join(tempDir, "Makefile"), `NAMESPACE := "`+testNs+`"`)

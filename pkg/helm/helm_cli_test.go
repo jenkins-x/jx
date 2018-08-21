@@ -1,4 +1,4 @@
-package helm
+package helm_test
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/bouk/monkey"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -43,7 +44,7 @@ jxing                           1               Wed Jun  6 14:24:42 2018        
 vault-operator                  1               Mon Jun 25 16:09:28 2018        DEPLOYED        vault-operator-0.1.0            jx
 `
 
-func checkArgs(cli *HelmCLI, expectedDir string, expectedName string, exptectedArgs string) error {
+func checkArgs(cli *helm.HelmCLI, expectedDir string, expectedName string, exptectedArgs string) error {
 	if cli.Runner.Dir != expectedDir {
 		return fmt.Errorf("expected directory '%s', got: '%s'", expectedDir, cli.Runner.Dir)
 	}
@@ -57,6 +58,7 @@ func checkArgs(cli *HelmCLI, expectedDir string, expectedName string, exptectedA
 	return nil
 }
 
+// TODO reafcator. setup function makes tests sequence dependent. Tests cannot be run with t.Parallel()
 func setup(output string) {
 	var r *util.Command // Has to be a pointer to because `RunWithoutRetry` has a pointer receiver
 	monkey.PatchInstanceMethod(reflect.TypeOf(r), "RunWithoutRetry", func(_ *util.Command) (string, error) {
@@ -67,15 +69,15 @@ func setup(output string) {
 	})
 }
 
-func createHelm(expectedArgs string) (*HelmCLI, error) {
-	cli := NewHelmCLI(binary, V2, cwd, expectedArgs)
+func createHelm(expectedArgs string) (*helm.HelmCLI, error) {
+	cli := helm.NewHelmCLI(binary, helm.V2, cwd, expectedArgs)
 	err := checkArgs(cli, cwd, binary, expectedArgs)
 	return cli, err
 }
 
 func TestNewHelmCLI(t *testing.T) {
 	setup("")
-	cli := NewHelmCLI(binary, V2, cwd, "arg1 arg2 arg3", "and some", "more")
+	cli := helm.NewHelmCLI(binary, helm.V2, cwd, "arg1 arg2 arg3", "and some", "more")
 	assert.Equal(t, []string{"arg1", "arg2", "arg3", "and", "some", "more"}, cli.Runner.Args)
 
 	cli, _ = createHelm("arg1 arg2 arg3")
@@ -162,7 +164,7 @@ func TestRemoveRequirementsLock(t *testing.T) {
 	defer os.RemoveAll(dir)
 	path := filepath.Join(dir, "requirements.lock")
 	ioutil.WriteFile(path, []byte("test"), 0644)
-	helm := &HelmCLI{
+	helm := &helm.HelmCLI{
 		CWD: dir,
 	}
 	err = helm.RemoveRequirementsLock()
@@ -281,7 +283,7 @@ func TestFindChart(t *testing.T) {
 	defer os.RemoveAll(dir)
 	path := filepath.Join(dir, chartFile)
 	ioutil.WriteFile(path, []byte("test"), 0644)
-	helm := &HelmCLI{
+	helm := &helm.HelmCLI{
 		CWD: dir,
 	}
 	chartFile, err = helm.FindChart()

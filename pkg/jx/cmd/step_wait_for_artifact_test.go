@@ -1,14 +1,16 @@
-package cmd
+package cmd_test
 
 import (
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStepWaitForArtifact(t *testing.T) {
-	options := &StepWaitForArtifactOptions{
-		RepoURL:    defaultMavenCentralRepo,
+	t.Parallel()
+	options := &cmd.StepWaitForArtifactOptions{
+		RepoURL:    cmd.DefaultMavenCentralRepo,
 		GroupId:    "io.jenkins.updatebot",
 		ArtifactId: "updatebot-core",
 		Version:    "1.1.10",
@@ -18,8 +20,8 @@ func TestStepWaitForArtifact(t *testing.T) {
 	err := options.Run()
 	assert.NoError(t, err)
 
-	options = &StepWaitForArtifactOptions{
-		RepoURL:    defaultMavenCentralRepo,
+	options = &cmd.StepWaitForArtifactOptions{
+		RepoURL:    cmd.DefaultMavenCentralRepo,
 		GroupId:    "io.jenkins.updatebot",
 		ArtifactId: "does-not-exist",
 		Version:    "1.1.10",

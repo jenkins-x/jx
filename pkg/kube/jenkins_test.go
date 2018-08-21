@@ -1,4 +1,4 @@
-package kube
+package kube_test
 
 import (
 	"testing"
@@ -6,50 +6,52 @@ import (
 	"github.com/beevik/etree"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func TestAddGiteaServers(t *testing.T) {
+	t.Parallel()
 	cm := &corev1.ConfigMap{
 		Data: map[string]string{},
 	}
 
-	expectedGitUrl := "https://my.gitea.com"
+	expectedGitURL := "https://my.gitea.com"
 	expectedGitName := "mygitea"
 	expectedCredentials := "my-credential-name"
 	server := &auth.AuthServer{
 		Kind: gits.KindGitea,
 		Name: expectedGitName,
-		URL:  expectedGitUrl,
+		URL:  expectedGitURL,
 	}
 	userAuth := &auth.UserAuth{
 		Username: "dummy",
 	}
 
-	updated, err := UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
-	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
-	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitUrl)
+	updated, err := kube.UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitURL)
+	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitURL)
 
 	for k, v := range cm.Data {
 		tests.Debugf("Updated the ConfigMap: %s = %s\n", k, v)
 	}
 
-	doc, _, err := parseXml(cm.Data[giteaConfigMapKey])
-	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
-	assertElementValues(t, doc, "//serverUrl", expectedGitUrl)
+	doc, _, err := kube.ParseXml(cm.Data[kube.GiteaConfigMapKey])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitURL)
+	assertElementValues(t, doc, "//serverUrl", expectedGitURL)
 
-	updated, err = UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
-	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
-	assert.False(t, updated, "Should not have updated the ConfigMap for server %s", expectedGitUrl)
+	updated, err = kube.UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitURL)
+	assert.False(t, updated, "Should not have updated the ConfigMap for server %s", expectedGitURL)
 
-	doc, _, err = parseXml(cm.Data[giteaConfigMapKey])
-	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
-	assertElementValues(t, doc, "//serverUrl", expectedGitUrl)
+	doc, _, err = kube.ParseXml(cm.Data[kube.GiteaConfigMapKey])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitURL)
+	assertElementValues(t, doc, "//serverUrl", expectedGitURL)
 
 	// lets add an extra service to an existing one
-	cm.Data[giteaConfigMapKey] = `<?xml version='1.1' encoding='UTF-8'?>
+	cm.Data[kube.GiteaConfigMapKey] = `<?xml version='1.1' encoding='UTF-8'?>
 <org.jenkinsci.plugin.gitea.servers.GiteaServers plugin="gitea@1.0.5">
   <servers>
     <org.jenkinsci.plugin.gitea.servers.GiteaServer>
@@ -61,22 +63,22 @@ func TestAddGiteaServers(t *testing.T) {
   </servers>
 </org.jenkinsci.plugin.gitea.servers.GiteaServers>
 `
-	updated, err = UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
-	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
-	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitUrl)
+	updated, err = kube.UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitURL)
+	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitURL)
 
-	doc, _, err = parseXml(cm.Data[giteaConfigMapKey])
-	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
-	assertElementValues(t, doc, "//serverUrl", "http://gitea.changeme.com", expectedGitUrl)
+	doc, _, err = kube.ParseXml(cm.Data[kube.GiteaConfigMapKey])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitURL)
+	assertElementValues(t, doc, "//serverUrl", "http://gitea.changeme.com", expectedGitURL)
 
 	// lets modify an existing credentials value
 	// lets add an extra service to an existing one
-	cm.Data[giteaConfigMapKey] = `<?xml version='1.1' encoding='UTF-8'?>
+	cm.Data[kube.GiteaConfigMapKey] = `<?xml version='1.1' encoding='UTF-8'?>
 <org.jenkinsci.plugin.gitea.servers.GiteaServers plugin="gitea@1.0.5">
   <servers>
     <org.jenkinsci.plugin.gitea.servers.GiteaServer>
       <displayName>gitea</displayName>
-      <serverUrl>` + expectedGitUrl + `</serverUrl>
+      <serverUrl>` + expectedGitURL + `</serverUrl>
       <manageHooks>true</manageHooks>
       <credentialsId>jenkins-x-gitea</credentialsId>
     </org.jenkinsci.plugin.gitea.servers.GiteaServer>
@@ -84,18 +86,19 @@ func TestAddGiteaServers(t *testing.T) {
 </org.jenkinsci.plugin.gitea.servers.GiteaServers>
 `
 
-	updated, err = UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
-	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
-	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitUrl)
+	updated, err = kube.UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitURL)
+	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitURL)
 
-	doc, _, err = parseXml(cm.Data[giteaConfigMapKey])
-	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
-	assertElementValues(t, doc, "//serverUrl", expectedGitUrl)
+	doc, _, err = kube.ParseXml(cm.Data[kube.GiteaConfigMapKey])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitURL)
+	assertElementValues(t, doc, "//serverUrl", expectedGitURL)
 	assertElementValues(t, doc, "//credentialsId", expectedCredentials)
 }
 
 func TestAddGitHuvServers(t *testing.T) {
-	key := githubConfigMapKey
+	t.Parallel()
+	key := kube.GithubConfigMapKey
 	kind := gits.KindGitHub
 
 	cm := &corev1.ConfigMap{
@@ -103,7 +106,7 @@ func TestAddGitHuvServers(t *testing.T) {
 	}
 
 	expectedGitHostURL := "https://github.bees.com"
-	expectedGitUrl := expectedGitHostURL + "/api/v3/"
+	expectedGitURL := expectedGitHostURL + "/api/v3/"
 	expectedGitName := "GHE"
 	expectedCredentials := "my-credential-name"
 	server := &auth.AuthServer{
@@ -115,106 +118,108 @@ func TestAddGitHuvServers(t *testing.T) {
 		Username: "dummy",
 	}
 
-	updated, err := UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
-	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
-	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitUrl)
+	updated, err := kube.UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitURL)
+	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitURL)
 
 	for k, v := range cm.Data {
 		tests.Debugf("Updated the ConfigMap: %s = %s\n", k, v)
 	}
 
-	doc, _, err := parseXml(cm.Data[key])
-	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
-	assertElementValues(t, doc, "//apiUri", expectedGitUrl)
+	doc, _, err := kube.ParseXml(cm.Data[key])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitURL)
+	assertElementValues(t, doc, "//apiUri", expectedGitURL)
 
-	updated, err = UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
-	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
-	assert.False(t, updated, "Should not have updated the ConfigMap for server %s", expectedGitUrl)
+	updated, err = kube.UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitURL)
+	assert.False(t, updated, "Should not have updated the ConfigMap for server %s", expectedGitURL)
 
-	doc, _, err = parseXml(cm.Data[key])
-	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
-	assertElementValues(t, doc, "//apiUri", expectedGitUrl)
+	doc, _, err = kube.ParseXml(cm.Data[key])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitURL)
+	assertElementValues(t, doc, "//apiUri", expectedGitURL)
 }
 
 func TestAddBitBucketServerServers(t *testing.T) {
+	t.Parallel()
 	kind := gits.KindBitBucketServer
-	key := bitbucketConfigMapKey
+	key := kube.BitbucketConfigMapKey
 
 	cm := &corev1.ConfigMap{
 		Data: map[string]string{},
 	}
 
-	expectedGitUrl := "https://my.bitbucket.com"
+	expectedGitURL := "https://my.bitbucket.com"
 	expectedGitName := "mybitbucket"
 	expectedCredentials := "my-credential-name"
 	server := &auth.AuthServer{
 		Kind: kind,
 		Name: expectedGitName,
-		URL:  expectedGitUrl,
+		URL:  expectedGitURL,
 	}
 	userAuth := &auth.UserAuth{
 		Username: "dummy",
 	}
 
-	updated, err := UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
-	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
-	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitUrl)
+	updated, err := kube.UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitURL)
+	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitURL)
 
 	for k, v := range cm.Data {
 		tests.Debugf("Updated the ConfigMap: %s = %s\n", k, v)
 	}
 
-	doc, _, err := parseXml(cm.Data[key])
-	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
-	assertElementValues(t, doc, "//serverUrl", expectedGitUrl)
+	doc, _, err := kube.ParseXml(cm.Data[key])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitURL)
+	assertElementValues(t, doc, "//serverUrl", expectedGitURL)
 
-	updated, err = UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
-	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
-	assert.False(t, updated, "Should not have updated the ConfigMap for server %s", expectedGitUrl)
+	updated, err = kube.UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitURL)
+	assert.False(t, updated, "Should not have updated the ConfigMap for server %s", expectedGitURL)
 
-	doc, _, err = parseXml(cm.Data[key])
-	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
-	assertElementValues(t, doc, "//serverUrl", expectedGitUrl)
+	doc, _, err = kube.ParseXml(cm.Data[key])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitURL)
+	assertElementValues(t, doc, "//serverUrl", expectedGitURL)
 }
 
 func TestAddBitBucketCloudServers(t *testing.T) {
+	t.Parallel()
 	kind := gits.KindBitBucketCloud
-	key := bitbucketConfigMapKey
+	key := kube.BitbucketConfigMapKey
 
 	cm := &corev1.ConfigMap{
 		Data: map[string]string{},
 	}
 
-	expectedGitUrl := gits.BitbucketCloudURL
+	expectedGitURL := gits.BitbucketCloudURL
 	expectedGitName := "mybitbucket"
 	expectedCredentials := "my-credential-name"
 	server := &auth.AuthServer{
 		Kind: kind,
 		Name: expectedGitName,
-		URL:  expectedGitUrl,
+		URL:  expectedGitURL,
 	}
 	userAuth := &auth.UserAuth{
 		Username: "dummy",
 	}
 
-	updated, err := UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
-	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
-	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitUrl)
+	updated, err := kube.UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitURL)
+	assert.True(t, updated, "Should have updated the ConfigMap for server %s", expectedGitURL)
 
 	for k, v := range cm.Data {
 		tests.Debugf("Updated the ConfigMap: %s = %s\n", k, v)
 	}
 
-	doc, _, err := parseXml(cm.Data[key])
-	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
+	doc, _, err := kube.ParseXml(cm.Data[key])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitURL)
 	assertElementValues(t, doc, "//credentialsId", expectedCredentials)
 
-	updated, err = UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
-	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitUrl)
-	assert.False(t, updated, "Should not have updated the ConfigMap for server %s", expectedGitUrl)
+	updated, err = kube.UpdateJenkinsGitServers(cm, server, userAuth, expectedCredentials)
+	assert.Nil(t, err, "Failed to update the ConfigMap for server %s", expectedGitURL)
+	assert.False(t, updated, "Should not have updated the ConfigMap for server %s", expectedGitURL)
 
-	doc, _, err = parseXml(cm.Data[key])
-	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitUrl)
+	doc, _, err = kube.ParseXml(cm.Data[key])
+	assert.Nil(t, err, "Failed to parse resulting xml for server %s", expectedGitURL)
 	assertElementValues(t, doc, "//credentialsId", expectedCredentials)
 }
 

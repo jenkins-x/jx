@@ -1,14 +1,16 @@
-package kube
+package kube_test
 
 import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestSortEnvironments(t *testing.T) {
+	t.Parallel()
 	environments := []v1.Environment{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -44,7 +46,7 @@ func TestSortEnvironments(t *testing.T) {
 		},
 	}
 
-	SortEnvironments(environments)
+	kube.SortEnvironments(environments)
 
 	assert.Equal(t, "z", environments[0].Name, "Environment 0")
 	assert.Equal(t, "c", environments[1].Name, "Environment 1")
@@ -53,6 +55,7 @@ func TestSortEnvironments(t *testing.T) {
 }
 
 func TestSortEnvironments2(t *testing.T) {
+	t.Parallel()
 	environments := []v1.Environment{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -80,7 +83,7 @@ func TestSortEnvironments2(t *testing.T) {
 		},
 	}
 
-	SortEnvironments(environments)
+	kube.SortEnvironments(environments)
 
 	assert.Equal(t, "dev", environments[0].Name, "Environment 0")
 	assert.Equal(t, "staging", environments[1].Name, "Environment 1")
@@ -88,11 +91,12 @@ func TestSortEnvironments2(t *testing.T) {
 }
 
 func TestReplaceMakeVariable(t *testing.T) {
+	t.Parallel()
 	lines := []string{"FOO", "NAMESPACE:=\"abc\"", "BAR", "NAMESPACE := \"abc\""}
 
 	actual := append([]string{}, lines...)
 	expectedValue := "\"changed\""
-	replaceMakeVariable(actual, "NAMESPACE", expectedValue)
+	kube.ReplaceMakeVariable(actual, "NAMESPACE", expectedValue)
 
 	assert.Equal(t, "FOO", actual[0], "line 0")
 	assert.Equal(t, "NAMESPACE := "+expectedValue, actual[1], "line 1")
