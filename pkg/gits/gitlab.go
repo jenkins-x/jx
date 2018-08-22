@@ -86,7 +86,7 @@ func fromGitlabProject(p *gitlab.Project) *GitRepository {
 		Name:     p.Name,
 		HTMLURL:  p.WebURL,
 		SSHURL:   p.SSHURLToRepo,
-		CloneURL: p.SSHURLToRepo,
+		CloneURL: p.HTTPURLToRepo,
 		Fork:     p.ForkedFromProject != nil,
 	}
 }
