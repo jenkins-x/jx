@@ -60,7 +60,7 @@ func NewCmdUpgradeCLI(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 // Run implements the command
 func (o *UpgradeCLIOptions) Run() error {
-	newVersion, err := o.getLatestJXVersion()
+	newVersion, err := o.GetLatestJXVersion()
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (o *UpgradeCLIOptions) Run() error {
 	}
 
 	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.runCommand("brew", "upgrade", "jx")
+		return o.RunCommand("brew", "upgrade", "jx")
 	} else {
 		return o.installJx(true, newVersion.String())
 	}

@@ -177,7 +177,7 @@ func (o *CreateEnvOptions) Run() error {
 
 	if o.Prow {
 		repo := fmt.Sprintf("%s/environment-%s-%s", gitInfo.Organisation, o.Prefix, o.Options.Name)
-		err = prow.AddRepo(o.kubeClient, []string{repo}, devEnv.Spec.Namespace)
+		err = prow.AddRepo(o.KubeClientCached, []string{repo}, devEnv.Spec.Namespace)
 		if err != nil {
 			return fmt.Errorf("failed to add repo %s to prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
 		}
@@ -193,13 +193,13 @@ func (o *CreateEnvOptions) Run() error {
 		}
 		if o.Prow {
 			// register the webhook
-			baseURL, err := kube.GetServiceURLFromName(o.kubeClient, "hook", o.devNamespace)
+			baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", o.devNamespace)
 			if err != nil {
 				return err
 			}
 			webhookUrl := util.UrlJoin(baseURL, "hook")
 
-			hmacToken, err := o.kubeClient.CoreV1().Secrets(o.devNamespace).Get("hmac-token", metav1.GetOptions{})
+			hmacToken, err := o.KubeClientCached.CoreV1().Secrets(o.devNamespace).Get("hmac-token", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}

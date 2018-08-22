@@ -218,7 +218,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		args = append(args, "--kubernetes-version", kubernetesVersion)
 	}
 	o.Out.Write([]byte("Creating Minikube cluster...\n"))
-	err := o.runCommand("minikube", args...)
+	err := o.RunCommand("minikube", args...)
 	if err != nil {
 		return err
 	} else {
@@ -226,7 +226,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	}
 
 	err = o.retry(3, 10*time.Second, func() (err error) {
-		err = o.runCommand("kubectl", "create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
+		err = o.RunCommand("kubectl", "create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
 		return
 	})
 	if err != nil {
@@ -258,12 +258,12 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		}
 	}
 
-	err = o.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+	err = o.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
 	if err != nil {
 		return err
 	}
 
-	err = o.runCommand("kubectl", "get", "ingress")
+	err = o.RunCommand("kubectl", "get", "ingress")
 	if err != nil {
 		return err
 	}

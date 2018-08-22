@@ -1,8 +1,9 @@
-package kube
+package kube_test
 
 import (
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -10,7 +11,7 @@ import (
 )
 
 const serviceURL = "https://github.beescloud.com"
-const secretName = SecretJenkinsPipelineGitCredentials + "github-ghe"
+const secretName = kube.SecretJenkinsPipelineGitCredentials + "github-ghe"
 const serviceKind = "github"
 
 func createSecret(secretName string, labels map[string]string, annotations map[string]string) *v1.Secret {
@@ -25,6 +26,7 @@ func createSecret(secretName string, labels map[string]string, annotations map[s
 }
 
 func TestGitServiceKindFromSecrets(t *testing.T) {
+	t.Parallel()
 	secret := createSecret(secretName,
 		map[string]string{
 			"jenkins.io/service-kind": serviceKind,
@@ -34,13 +36,14 @@ func TestGitServiceKindFromSecrets(t *testing.T) {
 		})
 	kubeClient := fake.NewSimpleClientset(secret)
 
-	foundServiceKind, err := getServiceKindFromSecrets(kubeClient, "", serviceURL)
+	foundServiceKind, err := kube.GetServiceKindFromSecrets(kubeClient, "", serviceURL)
 
 	assert.NoError(t, err, "should find a service kind without any error")
 	assert.Equal(t, serviceKind, foundServiceKind, "should find a service kind equal with '%s'", serviceKind)
 }
 
 func TestGitServiceKindFromSecretsWithoutURL(t *testing.T) {
+	t.Parallel()
 	secret := createSecret(secretName,
 		map[string]string{
 			"jenkins.io/service-kind": serviceKind,
@@ -48,13 +51,14 @@ func TestGitServiceKindFromSecretsWithoutURL(t *testing.T) {
 		nil)
 
 	kubeClient := fake.NewSimpleClientset(secret)
-	foundServiceKind, err := getServiceKindFromSecrets(kubeClient, "", serviceURL)
+	foundServiceKind, err := kube.GetServiceKindFromSecrets(kubeClient, "", serviceURL)
 
 	assert.Error(t, err, "should not found a service kind")
 	assert.Equal(t, "", foundServiceKind, "should return no service kind")
 }
 
 func TestGitServiceKindFromSecretsWithoutKindLabel(t *testing.T) {
+	t.Parallel()
 	secret := createSecret(secretName,
 		map[string]string{
 			"jenkins.io/service-kind": "test",
@@ -64,7 +68,7 @@ func TestGitServiceKindFromSecretsWithoutKindLabel(t *testing.T) {
 		})
 	kubeClient := fake.NewSimpleClientset(secret)
 
-	foundServiceKind, err := getServiceKindFromSecrets(kubeClient, "", serviceURL)
+	foundServiceKind, err := kube.GetServiceKindFromSecrets(kubeClient, "", serviceURL)
 
 	assert.Error(t, err, "should not found a service kind")
 	assert.Equal(t, "", foundServiceKind, "should return no service kind")

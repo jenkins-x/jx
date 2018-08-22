@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -19,6 +18,8 @@ import (
 
 // callback for modifying requirements
 type ModifyRequirementsFn func(requirements *helm.Requirements) error
+
+type CreateEnvPullRequestFn func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error)
 
 func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
 	var answer *ReleasePullRequestInfo
@@ -90,7 +91,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	if err != nil {
 		return answer, fmt.Errorf("Failed to load remote branch names: %s", err)
 	}
-	log.Infof("Found remote branch names %s\n", strings.Join(branchNames, ", "))
+	//log.Infof("Found remote branch names %s\n", strings.Join(branchNames, ", "))
 	if util.StringArrayIndex(branchNames, branchName) >= 0 {
 		// lets append a UUID as the branch name already exists
 		branchName += "-" + string(uuid.NewUUID())

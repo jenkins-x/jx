@@ -229,7 +229,7 @@ func (o *CommonOptions) helmInit(dir string) error {
 	}
 }
 
-func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[string]string) (string, error) {
+func (o *CommonOptions) helmInitDependency(dir string, chartRepos map[string]string) (string, error) {
 	o.Helm().SetCWD(dir)
 	err := o.Helm().RemoveRequirementsLock()
 	if err != nil {
@@ -259,6 +259,14 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 			errors.Wrap(err, "failed to add chart repositories")
 	}
 
+	return o.Helm().HelmBinary(), nil
+}
+
+func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[string]string) (string, error) {
+	helmBin, err := o.helmInitDependency(dir, chartRepos)
+	if err != nil {
+		return helmBin, err
+	}
 	// TODO due to this issue: https://github.com/kubernetes/helm/issues/4230
 	// lets stick with helm2 for this step
 	//
@@ -276,6 +284,82 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 		return helmBinary, errors.Wrapf(err, "failed to lint the chart '%s'", dir)
 	}
 	return helmBinary, nil
+}
+
+func (o *CommonOptions) helmInitRecursiveDependencyBuild(dir string, chartRepos map[string]string) error {
+	_, err := o.helmInitDependency(dir, chartRepos)
+	if err != nil {
+		return errors.Wrap(err, "initializing helm")
+	}
+
+	helmBinary := o.Helm().HelmBinary()
+	o.Helm().SetHelmBinary("helm")
+	o.Helm().SetCWD(dir)
+	err = o.Helm().BuildDependency()
+	if err != nil {
+		return errors.Wrapf(err, "failed to build the dependencies of chart '%s'", dir)
+	}
+
+	reqFilePath := filepath.Join(dir, "requirements.yaml")
+	reqs, err := helm.LoadRequirementsFile(reqFilePath)
+	if err != nil {
+		return errors.Wrap(err, "loading the requirements file")
+	}
+
+	type chartDep struct {
+		path string
+		deps []*helm.Dependency
+	}
+
+	baseChartPath := filepath.Join(dir, "charts")
+	depQueue := []chartDep{{
+		path: baseChartPath,
+		deps: reqs.Dependencies,
+	}}
+
+	for {
+		if len(depQueue) == 0 {
+			break
+		}
+		currChartDep := depQueue[0]
+		depQueue = depQueue[1:]
+		for _, dep := range currChartDep.deps {
+			chartArchive := filepath.Join(currChartDep.path, fmt.Sprintf("%s-%s.tgz", dep.Name, dep.Version))
+			chartPath := filepath.Join(currChartDep.path, dep.Name)
+			err := os.MkdirAll(chartPath, os.ModePerm)
+			if err != nil {
+				return errors.Wrap(err, "creating directory")
+			}
+			err = util.UnTargz(chartArchive, chartPath, []string{})
+			if err != nil {
+				return errors.Wrap(err, "extracting chart")
+			}
+			o.Helm().SetCWD(chartPath)
+			err = o.Helm().BuildDependency()
+			if err != nil {
+				return errors.Wrap(err, "building helm dependency")
+			}
+			chartReqFile := filepath.Join(chartPath, "requirements.yaml")
+			reqs, err := helm.LoadRequirementsFile(chartReqFile)
+			if err != nil {
+				return errors.Wrap(err, "loading the requirements file")
+			}
+			if len(reqs.Dependencies) > 0 {
+				depQueue = append(depQueue, chartDep{
+					path: filepath.Join(chartPath, "charts"),
+					deps: reqs.Dependencies,
+				})
+			}
+		}
+	}
+
+	o.Helm().SetHelmBinary(helmBinary)
+	_, err = o.Helm().Lint()
+	if err != nil {
+		return errors.Wrapf(err, "linting the chart '%s'", dir)
+	}
+
+	return nil
 }
 
 func (o *CommonOptions) defaultReleaseCharts() map[string]string {

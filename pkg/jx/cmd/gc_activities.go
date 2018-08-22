@@ -59,7 +59,7 @@ func NewCmdGCActivities(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "", 5, "Minimum number of Activities per application to keep")
+	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "l", 5, "Minimum number of Activities per application to keep")
 	return cmd
 }
 
@@ -103,7 +103,7 @@ func (o *GCActivitiesOptions) Run() error {
 	}
 	var jobNames []string
 	for _, j := range jobs {
-		err = o.getAllPipelineJobNames(&jobNames, j.Name)
+		err = o.getAllPipelineJobNames(o.jclient, &jobNames, j.Name)
 		if err != nil {
 			return err
 		}
@@ -156,25 +156,5 @@ func (o *GCActivitiesOptions) Run() error {
 		}
 	}
 
-	return nil
-}
-func (o *GCActivitiesOptions) getAllPipelineJobNames(jobNames *[]string, jobName string) error {
-
-	job, err := o.jclient.GetJob(jobName)
-	if err != nil {
-		return err
-	}
-
-	if len(job.Jobs) == 0 {
-
-		*jobNames = append(*jobNames, job.FullName)
-	}
-
-	for _, j := range job.Jobs {
-		err = o.getAllPipelineJobNames(jobNames, job.FullName+"/"+j.Name)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }

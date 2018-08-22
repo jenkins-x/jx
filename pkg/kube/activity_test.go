@@ -1,4 +1,4 @@
-package kube
+package kube_test
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,9 +41,8 @@ func (m *MockPipelineActivityInterface) Get(name string, options meta_v1.GetOpti
 	a, ok := m.Activities[name]
 	if ok {
 		return a, nil
-	} else {
-		return nil, fmt.Errorf("No such PipelineActivity %s", name)
 	}
+	return nil, fmt.Errorf("No such PipelineActivity %s", name)
 }
 
 func (m *MockPipelineActivityInterface) List(opts meta_v1.ListOptions) (*v1.PipelineActivityList, error) {
@@ -64,6 +64,7 @@ func (m *MockPipelineActivityInterface) Patch(name string, pt types.PatchType, d
 }
 
 func TestCreateOrUpdateActivities(t *testing.T) {
+	t.Parallel()
 	activities := &MockPipelineActivityInterface{
 		Activities: map[string]*v1.PipelineActivity{},
 	}
@@ -75,7 +76,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		expectedEnvironment = "staging"
 	)
 
-	key := PipelineActivityKey{
+	key := kube.PipelineActivityKey{
 		Name:     expectedName,
 		Pipeline: expectedPipeline,
 		Build:    expectedBuild,
@@ -91,7 +92,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	}
 
 	// lazy add a PromotePullRequest
-	promoteKey := PromoteStepActivityKey{
+	promoteKey := kube.PromoteStepActivityKey{
 		PipelineActivityKey: key,
 		Environment:         expectedEnvironment,
 	}
@@ -113,7 +114,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	promoteStarted := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {
 		assert.NotNil(t, a)
 		assert.NotNil(t, p)
-		CompletePromotionUpdate(a, s, ps, p)
+		kube.CompletePromotionUpdate(a, s, ps, p)
 		return nil
 	}
 

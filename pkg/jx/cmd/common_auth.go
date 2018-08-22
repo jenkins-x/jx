@@ -15,7 +15,7 @@ import (
 func (o *CommonOptions) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfigService, error) {
 	if dryRun {
 		fileName := GitAuthConfigFile
-		return o.createGitAuthConfigServiceFromSecrets(fileName, nil, false)
+		return o.CreateGitAuthConfigServiceFromSecrets(fileName, nil, false)
 	}
 	return o.CreateGitAuthConfigService()
 }
@@ -38,10 +38,11 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.AuthConfigService, er
 	}
 
 	fileName := GitAuthConfigFile
-	return o.createGitAuthConfigServiceFromSecrets(fileName, secrets, o.Factory.IsInCDPIpeline())
+	return o.CreateGitAuthConfigServiceFromSecrets(fileName, secrets, o.Factory.IsInCDPIpeline())
 }
 
-func (o *CommonOptions) createGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.AuthConfigService, error) {
+// CreateGitAuthConfigServiceFromSecrets Creates a git auth config service from secrets
+func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.AuthConfigService, error) {
 	authConfigSvc, err := o.Factory.CreateAuthConfigService(fileName)
 	if err != nil {
 		return authConfigSvc, err

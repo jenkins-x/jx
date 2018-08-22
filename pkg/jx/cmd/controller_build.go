@@ -44,7 +44,7 @@ func NewCmdControllerBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	cmd := &cobra.Command{
 		Use:   "build",
-		Short: "Runs the buid controller",
+		Short: "Runs the build controller",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -153,11 +153,11 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 	lastCommitSha := ""
 	lastCommitMessage := ""
 	lastCommitURL := ""
-	build := digitSuffix(buildName)
+	build := DigitSuffix(buildName)
 	if build == "" {
 		build = "1"
 	}
-	gitUrl := ""
+	gitURL := ""
 	for _, initContainer := range pod.Spec.InitContainers {
 		if initContainer.Name == "build-step-git-source" {
 			args := initContainer.Args
@@ -167,7 +167,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 
 				switch key {
 				case "-url":
-					gitUrl = value
+					gitURL = value
 				case "-revision":
 					branch = value
 				}
@@ -175,15 +175,15 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 			break
 		}
 	}
-	if gitUrl == "" {
+	if gitURL == "" {
 		return nil
 	}
 	if branch == "" {
 		branch = "master"
 	}
-	gitInfo, err := gits.ParseGitURL(gitUrl)
+	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		log.Warnf("Failed to parse git URL %s: %s", gitUrl, err)
+		log.Warnf("Failed to parse git URL %s: %s", gitURL, err)
 		return nil
 	}
 	org := gitInfo.Organisation
@@ -311,7 +311,8 @@ func createStepDescription(initContainerName string, pod *corev1.Pod) string {
 	return ""
 }
 
-func digitSuffix(text string) string {
+// DigitSuffix outputs digital suffix
+func DigitSuffix(text string) string {
 	answer := ""
 	for {
 		l := len(text)
@@ -322,9 +323,8 @@ func digitSuffix(text string) string {
 		for _, rune := range lastChar {
 			if !unicode.IsDigit(rune) {
 				return answer
-			} else {
-				break
 			}
+			break
 		}
 		answer = lastChar + answer
 		text = text[0 : l-1]

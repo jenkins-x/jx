@@ -1,4 +1,4 @@
-package gits
+package gits_test
 
 import (
 	"testing"
@@ -7,30 +7,25 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/suite"
-	gitlab "github.com/wbrefvem/go-gitlab"
+	"github.com/xanzy/go-gitlab"
 )
 
 const (
-	gitlabUserName = "testperson"
-	gitlabOrgName  = "testorg"
+	gitlabUserName    = "testperson"
+	gitlabOrgName     = "testorg"
+	gitlabProjectName = "test-project"
 )
-
-var gitlabRouter = util.Router{
-	"/api/v4/projects/testperson%2Ftest-project": util.MethodMap{
-		"GET": "project.json",
-	},
-}
 
 type GitlabProviderSuite struct {
 	suite.Suite
 	mux      *http.ServeMux
 	server   *httptest.Server
-	provider *GitlabProvider
+	provider *gits.GitlabProvider
 }
 
 func (suite *GitlabProviderSuite) SetupSuite() {
@@ -47,7 +42,7 @@ func (suite *GitlabProviderSuite) TearDownSuite() {
 // setup sets up a test HTTP server along with a gitlab.Client that is
 // configured to talk to that test server.  Tests should register handlers on
 // mux which provide mock responses for the API method being tested.
-func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *GitlabProvider) {
+func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *gits.GitlabProvider) {
 	// mux is the HTTP request multiplexer used with the test server.
 	mux := http.NewServeMux()
 	configureGitlabMock(suite, mux)
@@ -63,11 +58,16 @@ func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *Gitla
 		Username: gitlabUserName,
 		ApiToken: "test",
 	}
-	// Gitlab provider that we want to test
-	git := NewGitCLI()
-	provider, _ := withGitlabClient(new(auth.AuthServer), userAuth, client, git)
 
-	return mux, server, provider.(*GitlabProvider)
+	authServer := &auth.AuthServer{
+		URL:   server.URL,
+		Users: []*auth.UserAuth{userAuth},
+	}
+	// Gitlab provider that we want to test
+	git := gits.NewGitCLI()
+	provider, _ := gits.WithGitlabClient(authServer, userAuth, client, git)
+
+	return mux, server, provider.(*gits.GitlabProvider)
 }
 
 func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
@@ -92,13 +92,15 @@ func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
 		w.Write(src)
 	})
 
+	projectId := fmt.Sprintf("%s/%s", gitlabUserName, gitlabProjectName)
+	gitlabRouter := util.Router{
+		fmt.Sprintf("/api/v4/projects/%s", projectId): util.MethodMap{
+			"GET": "project.json",
+		},
+	}
 	for path, methodMap := range gitlabRouter {
 		mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/gitlab", methodMap))
 	}
-
-	suite.T().Logf("Escape encoded: %v", url.QueryEscape("testperson%2Ftest-project"))
-	suite.T().Logf("Escape unencoded: %v", url.QueryEscape("testperson/test-project"))
-
 }
 
 func (suite *GitlabProviderSuite) TestListOrganizations() {
@@ -115,8 +117,8 @@ func (suite *GitlabProviderSuite) TestListRepositories() {
 		testDescription  string
 		org              string
 		expectedRepoName string
-		expectedSshUrl   string
-		expectedHtmlUrl  string
+		expectedSSHURL   string
+		expectedHTMLURL  string
 	}{
 		{"List repositories for organization", gitlabOrgName, "orgproject", "git@gitlab.com:testorg/orgproject.git", "https://gitlab.com/testorg/orgproject"},
 		{"List repositories without organization", "", "userproject", "git@gitlab.com:testperson/userproject.git", "https://gitlab.com/testperson/userproject"},
@@ -127,23 +129,27 @@ func (suite *GitlabProviderSuite) TestListRepositories() {
 		require.Nil(err)
 		require.Len(repositories, 1)
 		require.Equal(s.expectedRepoName, repositories[0].Name)
-		require.Equal(s.expectedSshUrl, repositories[0].SSHURL)
-		require.Equal(s.expectedSshUrl, repositories[0].CloneURL)
-		require.Equal(s.expectedHtmlUrl, repositories[0].HTMLURL)
+		require.Equal(s.expectedSSHURL, repositories[0].SSHURL)
+		require.Equal(s.expectedSSHURL, repositories[0].CloneURL)
+		require.Equal(s.expectedHTMLURL, repositories[0].HTMLURL)
 	}
 }
 
 func (suite *GitlabProviderSuite) TestGetRepository() {
-	repo, err := suite.provider.GetRepository("testperson", "test-project")
+	repo, err := suite.provider.GetRepository(gitlabUserName, gitlabProjectName)
 
 	suite.Require().Nil(err)
 	suite.Require().NotNil(repo)
 
-	suite.Require().Equal(repo.Name, "test-project")
+	suite.Require().Equal(gitlabProjectName, repo.Name)
 }
 
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestGitlabProviderSuite(t *testing.T) {
-	suite.Run(t, new(GitlabProviderSuite))
+	if testing.Short() {
+		t.Skip("skipping TestGitlabProviderSuite in short mode")
+	} else {
+		suite.Run(t, new(GitlabProviderSuite))
+	}
 }

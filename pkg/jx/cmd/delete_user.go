@@ -2,15 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"strings"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"io"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // DeleteUserOptions are the flags for delete commands
@@ -122,6 +123,11 @@ func (o *DeleteUserOptions) Run() error {
 		} else {
 			log.Infof("Deleted user %s\n", util.ColorInfo(name))
 		}
+		log.Infof("Attempting to unbind user %s from associated role\n", util.ColorInfo(name))
+		err = o.deleteUserFromRoleBinding(name, ns)
+		if err != nil {
+			log.Warnf("Problem to unbind user %s from associated role\n", util.ColorWarning(name))
+		}
 	}
 	return nil
 }
@@ -140,4 +146,34 @@ func (o *DeleteUserOptions) deleteUser(name string) error {
 		return err
 	}
 	return kube.DeleteUser(jxClient, ns, name)
+}
+func (o *DeleteUserOptions) deleteUserFromRoleBinding(name string, ns string) error {
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	foundUser := 0
+	envRoleBindingsList, err := jxClient.JenkinsV1().EnvironmentRoleBindings(devNs).List(metav1.ListOptions{})
+	for _, envRoleBinding := range envRoleBindingsList.Items {
+		subjects := envRoleBinding.Spec.Subjects
+		if subjects != nil {
+			filteredEnvRoleBinding := subjects[:0]
+			for _, subject := range subjects {
+				if util.StringMatchesPattern(strings.Trim(name, ""), strings.Trim(subject.Name, "")) && util.StringMatchesPattern(strings.Trim(ns, ""), strings.Trim(subject.Namespace, "")) {
+					subjectToDel := rbacv1.Subject{
+						Name:      name,
+						Namespace: ns,
+					}
+					filteredEnvRoleBinding = append(filteredEnvRoleBinding, subjectToDel)
+					log.Infof("Found user %s to unbind from role\n", util.ColorInfo(name))
+					foundUser = 1
+					break
+				}
+			}
+			if foundUser == 1 {
+				break
+			}
+		}
+	}
+	return nil
 }

@@ -113,7 +113,7 @@ func (o *StepHelmOptions) dropRepository(repoId string, message string) error {
 		return nil
 	}
 	log.Infof("Dropping helm release repository %s\n", util.ColorInfo(repoId))
-	err := o.runCommand("mvn",
+	err := o.RunCommand("mvn",
 		"org.sonatype.plugins:helm-staging-maven-plugin:1.6.5:rc-drop",
 		"-DserverId=oss-sonatype-staging",
 		"-DhelmUrl=https://oss.sonatype.org",
@@ -133,7 +133,7 @@ func (o *StepHelmOptions) releaseRepository(repoId string) error {
 	}
 	log.Infof("Releasing helm release repository %s\n", util.ColorInfo(repoId))
 	options := o
-	err := options.runCommand("mvn",
+	err := options.RunCommand("mvn",
 		"org.sonatype.plugins:helm-staging-maven-plugin:1.6.5:rc-release",
 		"-DserverId=oss-sonatype-staging",
 		"-DhelmUrl=https://oss.sonatype.org",
@@ -178,7 +178,7 @@ func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string,
 		gitURL = fmt.Sprintf("git@%s:%s/%s.git", gitProvider, org, repo)
 	}
 
-	err = o.runCommand("git", "clone", gitURL)
+	err = o.RunCommand("git", "clone", gitURL)
 	if err != nil {
 		return "", err
 	}
@@ -203,7 +203,7 @@ func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string,
 		return "", err
 	}
 
-	err = o.runCommand("cd", repo)
+	err = o.RunCommand("cd", repo)
 	if err != nil {
 		return "", err
 	}

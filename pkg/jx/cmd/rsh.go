@@ -29,6 +29,7 @@ type RshOptions struct {
 	Namespace  string
 	Pod        string
 	Executable string
+	ExecCmd    string
 	DevPod     bool
 
 	stopCh chan struct{}
@@ -49,6 +50,9 @@ var (
 
 		# To connect to one of your DevPods use:
 		jx rsh -d
+
+		# To execute something in the remote shell (like classic rsh or ssh commands)
+		jx rsh -e 'do something'
 `)
 )
 
@@ -78,6 +82,8 @@ func NewCmdRsh(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Namespace, "pod", "p", "", "the pod name to use")
 	cmd.Flags().StringVarP(&options.Executable, "shell", "s", "", "Path to the shell command")
 	cmd.Flags().BoolVarP(&options.DevPod, "devpod", "d", false, "Connect to a DevPod")
+	cmd.Flags().StringVarP(&options.ExecCmd, "execute", "e", "bash", "Execute this command on the remote container")
+
 	return cmd
 }
 
@@ -161,16 +167,32 @@ func (o *RshOptions) Run() error {
 				workingDir = pod.Annotations[kube.AnnotationWorkingDir]
 			}
 			if workingDir != "" {
-				commandArguments = []string{"--", "/bin/sh", "-c", "mkdir -p " + workingDir + "\ncd " + workingDir + "\nbash"}
+				commandArguments = []string{"--", "/bin/sh", "-c", "mkdir -p " + workingDir + "\ncd " + workingDir + "\n" + o.ExecCmd}
 			} else {
-				commandArguments = []string{"--", "/bin/sh", "-c", "bash"}
+				commandArguments = []string{"--", "/bin/sh", "-c", o.ExecCmd}
 			}
 		} else {
 			bash, err := o.detectBash(ns, name, o.Container)
 			if err != nil {
-				commandArguments = []string{DefaultShell}
+				if o.ExecCmd != "" {
+					if o.ExecCmd == "bash" {
+						commandArguments = []string{DefaultShell}
+					} else {
+						commandArguments = []string{DefaultShell, "-c", o.ExecCmd}
+					}
+				} else {
+					commandArguments = []string{DefaultShell}
+				}
 			} else {
-				commandArguments = []string{bash}
+				if o.ExecCmd != "" {
+					if o.ExecCmd == "bash" {
+						commandArguments = []string{bash}
+					} else {
+						commandArguments = []string{"--", bash, "-c", o.ExecCmd}
+					}
+				} else {
+					commandArguments = []string{bash}
+				}
 			}
 		}
 	}

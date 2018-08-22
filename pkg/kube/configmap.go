@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-)
-
-const (
-	Exposecontroller = "exposecontroller"
 )
 
 func GetConfigmapData(client kubernetes.Interface, name, ns string) (map[string]string, error) {
@@ -22,17 +19,22 @@ func GetConfigmapData(client kubernetes.Interface, name, ns string) (map[string]
 }
 
 func GetCurrentDomain(client kubernetes.Interface, ns string) (string, error) {
-
-	data, err := GetConfigmapData(client, Exposecontroller, ns)
+	data, err := GetConfigmapData(client, ConfigMapIngressConfig, ns)
 	if err != nil {
-		return "", err
+		data, err = GetConfigmapData(client, ConfigMapExposecontroller, ns)
+		if err != nil {
+			return "", errors.Wrapf(err, "Failed to find ConfigMap in namespace %s for names %s and %s", ns, ConfigMapExposecontroller, ConfigMapIngressConfig)
+		}
 	}
-	return extractDomainValue(data)
+	return ExtractDomainValue(data)
 }
 
-func extractDomainValue(data map[string]string) (string, error) {
-
-	//TODO change exposecontroller so it supports key/pair configmap as well as yaml file (for backwards compatibility)
+// ExtractDomainValue returns the domain value
+func ExtractDomainValue(data map[string]string) (string, error) {
+	answer := data["domain"]
+	if answer != "" {
+		return answer, nil
+	}
 	yaml := data["config.yml"]
 	values := strings.Split(yaml, "\n")
 	for _, line := range values {
@@ -41,6 +43,5 @@ func extractDomainValue(data map[string]string) (string, error) {
 			return strings.TrimSpace(pair[1]), nil
 		}
 	}
-
-	return "", fmt.Errorf("failed to find a domain in %s configmap", Exposecontroller)
+	return "", fmt.Errorf("failed to find a domain in %s configmap", ConfigMapExposecontroller)
 }

@@ -1,11 +1,13 @@
 package gke
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetRegionFromZone(t *testing.T) {
+	t.Parallel()
 	r := GetRegionFromZone("europe-west1-b")
 	assert.Equal(t, r, "europe-west1")
 

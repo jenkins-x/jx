@@ -87,7 +87,7 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 		args = append(args, "--tiller-namespace", tillerNamespace)
 	}
 	if upgrade {
-		args = append(args, "--upgrade", "--wait")
+		args = append(args, "--upgrade", "--wait", "--force-upgrade")
 	}
 	return h.runHelm(args...)
 }
@@ -109,17 +109,48 @@ func (h *HelmCLI) ListRepos() (map[string]string, error) {
 		return nil, errors.Wrap(err, "failed to list repositories")
 	}
 	repos := map[string]string{}
-	lines := strings.Split(output, "\n")
-	for _, line := range lines[2:] {
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	for _, line := range lines[1:] {
 		line = strings.TrimSpace(line)
 		fields := strings.Fields(line)
 		if len(fields) > 1 {
-			repos[fields[0]] = fields[1]
+			repos[strings.TrimSpace(fields[0])] = fields[1]
 		} else if len(fields) > 0 {
 			repos[fields[0]] = ""
 		}
 	}
 	return repos, nil
+}
+
+// SearchCharts searches for all the charts matching the given filter
+func (h *HelmCLI) SearchCharts(filter string) ([]ChartSummary, error) {
+	answer := []ChartSummary{}
+	output, err := h.runHelmWithOutput("search", filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to search charts")
+	}
+	lines := strings.Split(output, "\n")
+	for _, line := range lines[1:] {
+		line = strings.TrimSpace(line)
+		fields := strings.Split(line, "\t")
+		chart := ChartSummary{}
+		l := len(fields)
+		if l == 0 {
+			continue
+		}
+		chart.Name = strings.TrimSpace(fields[0])
+		if l > 1 {
+			chart.ChartVersion = strings.TrimSpace(fields[1])
+		}
+		if l > 2 {
+			chart.AppVersion = strings.TrimSpace(fields[2])
+		}
+		if l > 3 {
+			chart.Description = strings.TrimSpace(fields[3])
+		}
+		answer = append(answer, chart)
+	}
+	return answer, nil
 }
 
 // IsRepoMissing checks if the repository with the given URL is missing from helm
@@ -247,8 +278,8 @@ func (h *HelmCLI) SearchChartVersions(chart string) ([]string, error) {
 		return nil, errors.Wrapf(err, "failed to search chart '%s'", chart)
 	}
 	versions := []string{}
-	lines := strings.Split(output, "\n")
-	for _, line := range lines[2:] {
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	for _, line := range lines[1:] {
 		fields := strings.Fields(line)
 		if len(fields) > 1 {
 			v := fields[1]
@@ -305,7 +336,7 @@ func (h *HelmCLI) StatusReleases() (map[string]string, error) {
 	}
 	lines := strings.Split(output, "\n")
 	statusMap := map[string]string{}
-	for _, line := range lines[2:] {
+	for _, line := range lines[1:] {
 		fields := strings.Split(line, "\t")
 		if len(fields) > 3 {
 			release := strings.TrimSpace(fields[0])

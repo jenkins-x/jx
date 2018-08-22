@@ -89,7 +89,7 @@ func GetGitServiceKind(jxClient versioned.Interface, kubeClient kubernetes.Inter
 		return answer, nil
 	}
 
-	answer, err := getServiceKindFromSecrets(kubeClient, devNs, gitServiceURL)
+	answer, err := GetServiceKindFromSecrets(kubeClient, devNs, gitServiceURL)
 	if err == nil && answer != "" {
 		return answer, nil
 	}
@@ -97,7 +97,8 @@ func GetGitServiceKind(jxClient versioned.Interface, kubeClient kubernetes.Inter
 	return getServiceKindFromGitServices(jxClient, devNs, gitServiceURL)
 }
 
-func getServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitServiceURL string) (string, error) {
+// GetServiceKindFromSecrets gets the kind of service from secrets
+func GetServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitServiceURL string) (string, error) {
 	secretList, err := kubeClient.CoreV1().Secrets(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list the secrets")
@@ -110,7 +111,7 @@ func getServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitSe
 			if !ok {
 				continue
 			}
-			if url == gitServiceURL {
+			if strings.TrimSuffix(url, "/") == strings.TrimSuffix(gitServiceURL, "/") {
 				labels := secret.GetLabels()
 				serviceKind, ok := labels[LabelServiceKind]
 				if !ok {

@@ -246,12 +246,12 @@ func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name s
 		// ignore results as we may not have a spec yet for this name
 		log.Infof("Removing old ksync %s\n", n)
 
-		o.runCommand("ksync", "delete", n)
+		o.RunCommand("ksync", "delete", n)
 	}
 
 	time.Sleep(1 * time.Second)
 
-	return o.runCommand("ksync", "create", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, remoteDir)
+	return o.RunCommand("ksync", "create", "--name", name, "-l", "jenkins.io/devpod="+name, reload, "-n", ns, dir, remoteDir)
 }
 
 func (o *SyncOptions) killWatchProcess(cmd *exec.Cmd) {

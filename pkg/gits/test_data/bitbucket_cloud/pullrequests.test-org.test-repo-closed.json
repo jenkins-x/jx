@@ -1,0 +1,148 @@
+{
+    "merge_commit": null,
+    "description": "",
+    "links": {
+        "decline": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/pullrequests/4/decline"
+        },
+        "commits": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/pullrequests/4/commits"
+        },
+        "self": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/pullrequests/4"
+        },
+        "comments": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/pullrequests/4/comments"
+        },
+        "merge": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/pullrequests/4/merge"
+        },
+        "html": {
+            "href": "https://bitbucket.org/test-org/test-repo/pull-requests/3"
+        },
+        "activity": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/pullrequests/4/activity"
+        },
+        "diff": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/pullrequests/4/diff"
+        },
+        "approve": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/pullrequests/4/approve"
+        },
+        "statuses": {
+            "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/pullrequests/4/statuses"
+        }
+    },
+    "title": "Update to fork",
+    "close_source_branch": false,
+    "reviewers": [],
+    "destination": {
+        "commit": {
+            "hash": "77d0a923f297",
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/commit/77d0a923f297"
+                }
+            }
+        },
+        "repository": {
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/test-org/test-repo"
+                },
+                "avatar": {
+                    "href": "https://bitbucket.org/test-org/test-repo/avatar/32/"
+                }
+            },
+            "type": "repository",
+            "name": "test-repo",
+            "full_name": "test-org/test-repo",
+            "uuid": "{6b96c974-39f0-40cd-a56f-e1efe5095aba}"
+        },
+        "branch": {
+            "name": "master"
+        }
+    },
+    "state": "DECLINED",
+    "closed_by": {
+        "username": "test-user",
+        "display_name": "Test User",
+        "type": "user",
+        "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/users/test-user"
+            },
+            "html": {
+                "href": "https://bitbucket.org/test-user/"
+            },
+            "avatar": {
+                "href": "https://bitbucket.org/account/test-user/avatar/32/"
+            }
+        }
+    },
+    "summary": {
+        "raw": "",
+        "markup": "markdown",
+        "html": "",
+        "type": "rendered"
+    },
+    "source": {
+        "commit": {
+            "hash": "398444de8758",
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo-fork/commit/398444de8758"
+                }
+            }
+        },
+        "repository": {
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/test-org/test-repo-fork"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/test-org/test-repo-fork"
+                },
+                "avatar": {
+                    "href": "https://bitbucket.org/test-org/test-repo-fork/avatar/32/"
+                }
+            },
+            "type": "repository",
+            "name": "test-repo-fork",
+            "full_name": "test-org/test-repo-fork",
+            "uuid": "{7ade3f8c-5aad-4f1e-8a08-74e7cad03339}"
+        },
+        "branch": {
+            "name": "master"
+        }
+    },
+    "comment_count": 0,
+    "author": {
+        "username": "test-user",
+        "display_name": "Test User",
+        "type": "user",
+        "uuid": "{0a3c1273-f935-421f-848c-c21435948831}",
+        "links": {
+            "self": {
+                "href": "https://api.bitbucket.org/2.0/users/test-user"
+            },
+            "html": {
+                "href": "https://bitbucket.org/test-user/"
+            },
+            "avatar": {
+                "href": "https://bitbucket.org/account/test-user/avatar/32/"
+            }
+        }
+    },
+    "created_on": "2018-03-26T02:18:12.382035+00:00",
+    "participants": [],
+    "reason": "",
+    "updated_on": "2018-03-26T02:30:36.968080+00:00",
+    "type": "pullrequest",
+    "id": 4,
+    "task_count": 0
+}

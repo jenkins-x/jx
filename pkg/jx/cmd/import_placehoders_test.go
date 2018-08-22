@@ -1,4 +1,4 @@
-package cmd
+package cmd_test
 
 import (
 	"io/ioutil"
@@ -6,6 +6,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -22,12 +23,12 @@ func TestReplacePlaceholders(t *testing.T) {
 	util.CopyDir(testData, f, true)
 
 	assert.NoError(t, err)
-	o := ImportOptions{}
+	o := cmd.ImportOptions{}
 	o.Out = tests.Output()
 	o.Dir = f
 	o.AppName = "bar"
 
-	o.replacePlaceholders("github.com", "foo")
+	o.ReplacePlaceholders("github.com", "foo")
 
 	// root file
 	testFile, err := util.LoadBytes(f, "file.txt")

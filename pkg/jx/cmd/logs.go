@@ -5,7 +5,10 @@ import (
 	"io"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -26,6 +29,7 @@ type LogsOptions struct {
 	Filter          string
 	Label           string
 	EditEnvironment bool
+	KNativeBuild    bool
 }
 
 var (
@@ -40,6 +44,9 @@ var (
 
 		# Tails the log of the container foo in the latest pod in deployment myapp
 		jx logs myapp -c foo
+
+		# Tails the log of the latest knative build pod
+		jx logs -k
 `)
 )
 
@@ -69,6 +76,7 @@ func NewCmdLogs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Environment, "env", "e", "", "the Environment to look for the Deployment. Defaults to the current environment")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters the available deployments if no deployment argument is provided")
 	cmd.Flags().StringVarP(&options.Label, "label", "l", "", "The label to filter the pods if no deployment argument is provided")
+	cmd.Flags().BoolVarP(&options.KNativeBuild, "knative-build", "k", false, "View the logs of the latest knative build pod")
 	cmd.Flags().BoolVarP(&options.EditEnvironment, "edit", "d", false, "Use my Edit Environment to look for the Deployment pods")
 	return cmd
 }
@@ -117,7 +125,7 @@ func (o *LogsOptions) Run() error {
 	}
 	name := ""
 	if len(args) == 0 {
-		if o.Label == "" {
+		if o.Label == "" && !o.KNativeBuild {
 			n, err := util.PickName(names, "Pick Deployment:")
 			if err != nil {
 				return err
@@ -133,12 +141,26 @@ func (o *LogsOptions) Run() error {
 
 	for {
 		pod := ""
-		if o.Label != "" {
+		if o.KNativeBuild {
+			r, err := labels.NewRequirement(builds.LabelBuildName, selection.Exists, nil)
+			if err != nil {
+				return err
+			}
+			selector := labels.NewSelector().Add(*r)
+			pod, err = o.waitForReadyPodForSelector(client, ns, selector, false)
+			if err != nil {
+				return err
+			}
+			if pod == "" {
+				return fmt.Errorf("No pod found for namespace %s with selector %s", ns, o.Label)
+			}
+
+		} else if o.Label != "" {
 			selector, err := parseSelector(o.Label)
 			if err != nil {
 				return err
 			}
-			pod, err = o.waitForReadyPodForSelector(client, ns, selector, false)
+			pod, err = o.waitForReadyPodForSelectorLabels(client, ns, selector, false)
 			if err != nil {
 				return err
 			}
@@ -176,7 +198,7 @@ func (o *CommonOptions) tailLogs(ns string, pod string, containerName string) er
 	}
 	args = append(args, pod)
 	o.Verbose = true
-	return o.runCommand("kubectl", args...)
+	return o.RunCommand("kubectl", args...)
 
 }
 
@@ -194,16 +216,20 @@ func (o *CommonOptions) waitForReadyPodForDeployment(c kubernetes.Interface, ns 
 	if labels == nil {
 		return "", fmt.Errorf("No MatchLabels defined on the Selector of Deployment %s in namespace %s", name, ns)
 	}
-	return o.waitForReadyPodForSelector(c, ns, labels, readyOnly)
+	return o.waitForReadyPodForSelectorLabels(c, ns, labels, readyOnly)
 }
 
-func (o *CommonOptions) waitForReadyPodForSelector(c kubernetes.Interface, ns string, labels map[string]string, readyOnly bool) (string, error) {
+func (o *CommonOptions) waitForReadyPodForSelectorLabels(c kubernetes.Interface, ns string, labels map[string]string, readyOnly bool) (string, error) {
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return "", err
 	}
+	return o.waitForReadyPodForSelector(c, ns, selector, readyOnly)
+}
+
+func (o *CommonOptions) waitForReadyPodForSelector(c kubernetes.Interface, ns string, selector labels.Selector, readyOnly bool) (string, error) {
+	log.Warnf("Waiting for a running pod in namespace %s with labels %v\n", ns, selector.String())
 	lastPod := ""
-	log.Warnf("Waiting for a running pod in namespace %s with labels %v\n", ns, labels)
 	for {
 		pods, err := c.CoreV1().Pods(ns).List(metav1.ListOptions{
 			LabelSelector: selector.String(),

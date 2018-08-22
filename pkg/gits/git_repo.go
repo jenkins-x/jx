@@ -24,6 +24,7 @@ type GitRepositoryOptions struct {
 	Username  string
 	ApiToken  string
 	Owner     string
+	Private   bool
 }
 
 // GetRepository returns the repository if it already exists
@@ -54,7 +55,7 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 				currentServer := config.CurrentServer
 				if currentServer != "" {
 					for _, s := range config.Servers {
-						if s.Name == currentServer {
+						if s.Name == currentServer || s.URL == currentServer {
 							server = s
 							break
 						}
@@ -181,13 +182,12 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 	}
 	fullName := git.RepoName(owner, repoName)
 	fmt.Fprintf(out, "\n\nCreating repository %s\n", util.ColorInfo(fullName))
-	privateRepo := false
 
 	return &CreateRepoData{
 		Organisation: owner,
 		RepoName:     repoName,
 		FullName:     fullName,
-		PrivateRepo:  privateRepo,
+		PrivateRepo:  repoOptions.Private,
 		User:         userAuth,
 		GitProvider:  provider,
 	}, err
