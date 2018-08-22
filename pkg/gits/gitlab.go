@@ -3,6 +3,7 @@ package gits
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,10 +70,15 @@ func (g *GitlabProvider) ListReleases(org string, name string) ([]*GitRelease, e
 }
 
 func getRepositories(g *gitlab.Client, username string, org string) ([]*gitlab.Project, *gitlab.Response, error) {
-	if org == "" {
-		return g.Projects.ListUserProjects(username, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
+	if org != "" {
+		projects, resp, err := g.Groups.ListGroupProjects(org, nil)
+		if err != nil {
+			return g.Projects.ListUserProjects(org, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
+		}
+		return projects, resp, err
+
 	}
-	return g.Groups.ListGroupProjects(org, nil)
+	return g.Projects.ListUserProjects(username, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
 }
 
 func fromGitlabProject(p *gitlab.Project) *GitRepository {
@@ -136,10 +142,27 @@ func (g *GitlabProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return organizations, nil
 }
 
-func (g *GitlabProvider) DeleteRepository(org, name string) error {
-	pid := projectId(org, g.Username, name)
+func (g *GitlabProvider) getProjectId(org, name string) (string, error) {
+	repos, _, err := getRepositories(g.Client, g.Username, org)
+	if err != nil {
+		return "", err
+	}
 
-	_, err := g.Client.Projects.DeleteProject(pid)
+	for _, repo := range repos {
+		if repo.Name == name {
+			return strconv.Itoa(repo.ID), nil
+		}
+	}
+	return "", fmt.Errorf("no repository found with name %s", name)
+}
+
+func (g *GitlabProvider) DeleteRepository(org, name string) error {
+	pid, err := g.getProjectId(org, name)
+	if err != nil {
+		return err
+	}
+
+	_, err = g.Client.Projects.DeleteProject(pid)
 	if err != nil {
 		return fmt.Errorf("failed to delete repository %s due to: %s", pid, err)
 	}
