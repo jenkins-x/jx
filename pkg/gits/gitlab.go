@@ -199,18 +199,10 @@ func (g *GitlabProvider) RenameRepository(org, name, newName string) (*GitReposi
 
 func (g *GitlabProvider) ValidateRepositoryName(org, name string) error {
 	pid, err := g.projectId(org, g.Username, name)
-	if err != nil {
-		return err
-	}
-	_, r, err := g.Client.Projects.GetProject(pid)
-
 	if err == nil {
 		return fmt.Errorf("repository %s already exists", pid)
 	}
-	if r != nil && r.StatusCode == 404 {
-		return nil
-	}
-	return err
+	return nil
 }
 
 func (g *GitlabProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
