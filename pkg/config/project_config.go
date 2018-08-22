@@ -29,6 +29,7 @@ type ProjectConfig struct {
 	BuildPack           string                    `yaml:"buildPack,omitempty"`
 	BuildPackGitURL     string                    `yaml:"buildPackGitURL,omitempty"`
 	BuildPackGitURef    string                    `yaml:"buildPackGitRef,omitempty"`
+	Workflow            string                    `yaml:"workflow,omitempty"`
 }
 
 type PreviewEnvironmentConfig struct {

@@ -72,7 +72,7 @@ func (a DepSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a DepSorter) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
 // SetAppVersion sets the version of the app to use
-func (r *Requirements) SetAppVersion(app string, version string, repository string) {
+func (r *Requirements) SetAppVersion(app string, version string, repository string, alias string) {
 	if r.Dependencies == nil {
 		r.Dependencies = []*Dependency{}
 	}
@@ -80,6 +80,7 @@ func (r *Requirements) SetAppVersion(app string, version string, repository stri
 		if dep != nil && dep.Name == app {
 			dep.Version = version
 			dep.Repository = repository
+			dep.Alias = alias
 			return
 		}
 	}
@@ -87,6 +88,7 @@ func (r *Requirements) SetAppVersion(app string, version string, repository stri
 		Name:       app,
 		Version:    version,
 		Repository: repository,
+		Alias:      alias,
 	})
 	sort.Sort(DepSorter(r.Dependencies))
 }

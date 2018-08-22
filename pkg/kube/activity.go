@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -15,6 +16,7 @@ type PipelineActivityKey struct {
 	Name              string
 	Pipeline          string
 	Build             string
+	Version           string
 	BuildURL          string
 	BuildLogsURL      string
 	ReleaseNotesURL   string
@@ -82,6 +84,9 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 	}
 	if k.LastCommitURL != "" && spec.LastCommitURL == "" {
 		spec.LastCommitURL = k.LastCommitURL
+	}
+	if k.Version != "" && spec.Version == "" {
+		spec.Version = k.Version
 	}
 	gi := k.GitInfo
 	if gi != nil {
@@ -311,7 +316,7 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActiv
 	if err != nil {
 		return err
 	}
-	p1 := *p
+	p1 := asYaml(a)
 	if k.ApplicationURL != "" {
 		ps.ApplicationURL = k.ApplicationURL
 	}
@@ -322,12 +327,21 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActiv
 	if k.ApplicationURL != "" {
 		ps.ApplicationURL = k.ApplicationURL
 	}
-	p2 := *p
+	p2 := asYaml(a)
 
-	if added || !reflect.DeepEqual(p1, p2) {
+	if added || p1 == "" || p1 != p2 {
 		_, err = activities.Update(a)
 	}
 	return err
+}
+
+func asYaml(activity *v1.PipelineActivity) string {
+	data, err := yaml.Marshal(activity)
+	if err == nil {
+		return string(data)
+	}
+	log.Warnf("Failed to marshal PipelineActivity to YAML %s: %s", activity.Name, err)
+	return ""
 }
 
 func (k *PromoteStepActivityKey) matchesPreview(step *v1.PipelineActivityStep) bool {

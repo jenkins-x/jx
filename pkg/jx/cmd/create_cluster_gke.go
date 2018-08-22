@@ -169,7 +169,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	zone := o.Flags.Zone
 	if zone == "" {
-		availableZones, err := gke.GetGoogleZones()
+		availableZones, err := gke.GetGoogleZones(projectId)
 		if err != nil {
 			return err
 		}
@@ -278,7 +278,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	log.Info("Creating cluster...\n")
-	err = o.runCommand("gcloud", args...)
+	err = o.RunCommand("gcloud", args...)
 	if err != nil {
 		return err
 	}
@@ -290,7 +290,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	err = o.runCommand("gcloud", "container", "clusters", "get-credentials", o.Flags.ClusterName, "--zone", zone, "--project", projectId)
+	err = o.RunCommand("gcloud", "container", "clusters", "get-credentials", o.Flags.ClusterName, "--zone", zone, "--project", projectId)
 	if err != nil {
 		return err
 	}
@@ -308,12 +308,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	err = o.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+	err = o.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
 	if err != nil {
 		return err
 	}
 
-	err = o.runCommand("kubectl", "get", "ingress")
+	err = o.RunCommand("kubectl", "get", "ingress")
 	if err != nil {
 		return err
 	}

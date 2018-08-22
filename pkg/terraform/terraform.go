@@ -11,6 +11,7 @@ import (
 )
 
 func Init(terraformDir string, serviceAccountPath string) error {
+	fmt.Println("Initialising Terraform")
 	os.Setenv("GOOGLE_CREDENTIALS", serviceAccountPath)
 	cmd := util.Command{
 		Name: "terraform",
@@ -24,6 +25,7 @@ func Init(terraformDir string, serviceAccountPath string) error {
 }
 
 func Plan(terraformDir string, terraformVars string, serviceAccountPath string) (string, error) {
+	fmt.Println("Showing Terraform Plan")
 	cmd := util.Command{
 		Name: "terraform",
 		Args: []string{"plan",
@@ -40,6 +42,7 @@ func Plan(terraformDir string, terraformVars string, serviceAccountPath string) 
 }
 
 func Apply(terraformDir string, terraformVars string, serviceAccountPath string, stdout io.Writer, stderr io.Writer) error {
+	fmt.Println("Applying Terraform")
 	cmd := util.Command{
 		Name: "terraform",
 		Args: []string{"apply", "-auto-approve",

@@ -152,7 +152,7 @@ func (o *CommonOptions) installBrew() error {
 	if runtime.GOOS != "darwin" {
 		return nil
 	}
-	return o.runCommand("/usr/bin/ruby", "-e", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)")
+	return o.RunCommand("/usr/bin/ruby", "-e", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)")
 }
 
 func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileName string, download bool, err error) {
@@ -208,7 +208,7 @@ func (o *CommonOptions) installBrewIfRequired() error {
 
 func (o *CommonOptions) installKubectl() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.runCommand("brew", "install", "kubectl")
+		return o.RunCommand("brew", "install", "kubectl")
 	}
 	binDir, err := util.BinaryLocation()
 	if err != nil {
@@ -395,7 +395,7 @@ func (o *CommonOptions) installXhyve() error {
 	info, err := o.getCommandOutput("", "brew", "info", "docker-machine-driver-xhyve")
 
 	if err != nil || strings.Contains(info, "Not installed") {
-		err = o.runCommand("brew", "install", "docker-machine-driver-xhyve")
+		err = o.RunCommand("brew", "install", "docker-machine-driver-xhyve")
 		if err != nil {
 			return err
 		}
@@ -406,12 +406,12 @@ func (o *CommonOptions) installXhyve() error {
 		}
 
 		file := brewPrefix + "/opt/docker-machine-driver-xhyve/bin/docker-machine-driver-xhyve"
-		err = o.runCommand("sudo", "chown", "root:wheel", file)
+		err = o.RunCommand("sudo", "chown", "root:wheel", file)
 		if err != nil {
 			return err
 		}
 
-		err = o.runCommand("sudo", "chmod", "u+s", file)
+		err = o.RunCommand("sudo", "chmod", "u+s", file)
 		if err != nil {
 			return err
 		}
@@ -437,11 +437,11 @@ func (o *CommonOptions) installhyperv() error {
 
 		if util.Confirm(message, true, "Please indicate if you would like to restart your computer.") {
 
-			err = o.runCommand("powershell", "Enable-WindowsOptionalFeature", "-Online", "-FeatureName", "Microsoft-Hyper-V", "-All", "-NoRestart")
+			err = o.RunCommand("powershell", "Enable-WindowsOptionalFeature", "-Online", "-FeatureName", "Microsoft-Hyper-V", "-All", "-NoRestart")
 			if err != nil {
 				return err
 			}
-			err = o.runCommand("powershell", "Restart-Computer")
+			err = o.RunCommand("powershell", "Restart-Computer")
 			if err != nil {
 				return err
 			}
@@ -474,14 +474,10 @@ func (o *CommonOptions) installHelm() error {
 	if err != nil || !flag {
 		return err
 	}
-	// TODO temporary hack while we are on the 2.10-rc version:
-	latestVersion := "2.10.0-rc.2"
-	/*
-		latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
-		if err != nil {
-			return err
-		}
-	*/
+	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
+	if err != nil {
+		return err
+	}
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
@@ -673,7 +669,7 @@ func (o *CommonOptions) installMavenIfRequired() error {
 
 func (o *CommonOptions) installTerraform() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.runCommand("brew", "install", "terraform")
+		return o.RunCommand("brew", "install", "terraform")
 	}
 
 	binDir, err := util.BinaryLocation()
@@ -708,7 +704,7 @@ func (o *CommonOptions) installTerraform() error {
 	return os.Chmod(fullPath, 0755)
 }
 
-func (o *CommonOptions) getLatestJXVersion() (semver.Version, error) {
+func (o *CommonOptions) GetLatestJXVersion() (semver.Version, error) {
 	return util.GetLatestVersionFromGitHub("jenkins-x", "jx")
 }
 
@@ -774,9 +770,9 @@ func (o *CommonOptions) installKSync() (bool, error) {
 func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		if upgrade {
-			return o.runCommand("brew", "upgrade", "jx")
+			return o.RunCommand("brew", "upgrade", "jx")
 		} else {
-			return o.runCommand("brew", "install", "jx")
+			return o.RunCommand("brew", "install", "jx")
 		}
 	}
 	binDir, err := util.BinaryLocation()
@@ -818,7 +814,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 
 func (o *CommonOptions) installMinikube() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.runCommand("brew", "cask", "install", "minikube")
+		return o.RunCommand("brew", "cask", "install", "minikube")
 	}
 
 	binDir, err := util.BinaryLocation()
@@ -849,7 +845,7 @@ func (o *CommonOptions) installMinikube() error {
 
 func (o *CommonOptions) installMinishift() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.runCommand("brew", "cask", "install", "minishift")
+		return o.RunCommand("brew", "cask", "install", "minishift")
 	}
 
 	binDir, err := util.BinaryLocation()
@@ -883,23 +879,23 @@ func (o *CommonOptions) installGcloud() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
 		return errors.New("please install missing gloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
 	}
-	err := o.runCommand("brew", "tap", "caskroom/cask")
+	err := o.RunCommand("brew", "tap", "caskroom/cask")
 	if err != nil {
 		return err
 	}
 
-	return o.runCommand("brew", "cask", "install", "google-cloud-sdk")
+	return o.RunCommand("brew", "cask", "install", "google-cloud-sdk")
 }
 
 func (o *CommonOptions) installAzureCli() error {
-	return o.runCommand("brew", "install", "azure-cli")
+	return o.RunCommand("brew", "install", "azure-cli")
 }
 
 func (o *CommonOptions) installOciCli() error {
 	var err error
 	filePath := "./install.sh"
 	log.Info("Installing OCI CLI...\n")
-	err = o.runCommand("curl", "-LO", "https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh")
+	err = o.RunCommand("curl", "-LO", "https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh")
 
 	if err != nil {
 		return err
@@ -1171,7 +1167,7 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 	// loop over each namespace and update the Jenkins URL if a Jenkins service is found
 	for _, n := range namespaces {
-		externalURL, err := kube.GetServiceURLFromName(o.kubeClient, "jenkins", n)
+		externalURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "jenkins", n)
 		if err != nil {
 			// skip namespace if no Jenkins service found
 			continue
@@ -1179,7 +1175,7 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 		log.Infof("Updating Jenkins with new external URL details %s\n", externalURL)
 
-		jenkins, err := o.Factory.CreateJenkinsClient(o.kubeClient, n)
+		jenkins, err := o.Factory.CreateJenkinsClient(o.KubeClientCached, n)
 
 		if err != nil {
 			return err
@@ -1199,7 +1195,7 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 	username, _ := o.getCommandOutput("", "gcloud", "config", "get-value", "core/account")
 
 	if username != "" {
-		return username, nil
+		return GetSafeUsername(username), nil
 	}
 
 	config, _, err := kube.LoadConfig()
@@ -1220,6 +1216,13 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 	username = context.AuthInfo
 
 	return username, nil
+}
+
+func GetSafeUsername(username string) string {
+	if strings.Contains(username, "Your active configuration is") {
+		return strings.Split(username, "\n")[1]
+	}
+	return username
 }
 
 func (o *CommonOptions) installProw() error {
@@ -1271,7 +1274,7 @@ func (o *CommonOptions) installProw() error {
 		}
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}

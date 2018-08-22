@@ -17,26 +17,15 @@
 SHELL := /bin/bash
 NAME := jx
 GO := GO15VENDOREXPERIMENT=1 go
-VERSION := $(shell cat pkg/version/VERSION)
+REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 #ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
-#PACKAGE_DIRS := pkg cmd
-PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/)
 PKGS := $(shell go list ./... | grep -v /vendor | grep -v generated)
-
-
 GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go pkg/*//*/*/*.go
 
-REV        := $(shell git rev-parse --short HEAD 2> /dev/null  || echo 'unknown')
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
-BUILDFLAGS := -ldflags \
-  " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
-		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
-		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
-		-X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)'\
-		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'"
 CGO_ENABLED = 0
 
 VENDOR_DIR=vendor
@@ -45,16 +34,84 @@ all: build
 
 check: fmt build test
 
-build: $(GO_DEPENDENCIES)
+version:
+ifeq (,$(wildcard pkg/version/VERSION))
+TAG := $(shell git fetch --all -q 2>/dev/null && git describe --abbrev=0 --tags 2>/dev/null)
+ON_EXACT_TAG := $(shell git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null | sed -n 's/^\([^^~]\{1,\}\)\(\^0\)\{0,1\}$$/\1/p')
+VERSION := $(shell [ -z "$(ON_EXACT_TAG)" ] && echo "$(TAG)-dev+$(REV)" | sed 's/^v//' || echo "$(TAG)" | sed 's/^v//' )
+else
+VERSION := $(shell cat pkg/version/VERSION)
+endif
+BUILDFLAGS := -ldflags \
+  " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
+		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
+		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
+		-X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)'\
+		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'"
+
+print-version: version
+	@echo $(VERSION)
+
+build: $(GO_DEPENDENCIES) version
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDFLAGS) -o build/$(NAME) cmd/jx/jx.go
 
-test: 
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(PACKAGE_DIRS) -test.v  && echo ALL TESTS PASSED!
+get-test-deps:
+	@$(GO) get github.com/axw/gocov/gocov
+	@$(GO) get -u gopkg.in/matm/v1/gocov-html
+
+test:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast -short -parallel 12 ./...
+
+test-report: get-test-deps test
+	@gocov convert cover.out | gocov report
+
+test-report-html: get-test-deps test
+	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+
+test-slow:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -parallel 12 -coverprofile=cover.out ./...
+
+test-slow-report: get-test-deps test-slow
+	@gocov convert cover.out | gocov report
+
+test-slow-report-html: get-test-deps test-slow
+	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+
+test-integration:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./...
+
+test-integration-report: get-test-deps test-integration
+	@gocov convert cover.out | gocov report
+
+test-integration-report-html: get-test-deps test-integration
+	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+
+test-slow-integration:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out ./...
+
+test-slow-integration-report: get-test-deps test-slow-integration
+	@gocov convert cover.out | gocov report
+
+test-slow-integration-report-html: get-test-deps test-slow-integration
+	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+
+docker-test:
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test"
+
+docker-test-slow:
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-slow"
+
+# EASY WAY TO TEST IF YOUR TEST SHOULD BE A UNIT OR INTEGRATION TEST
+docker-test-integration:
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-integration"
+
+# EASY WAY TO TEST IF YOUR SLOW TEST SHOULD BE A UNIT OR INTEGRATION TEST
+docker-test-slow-integration:
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-slow-integration"
 
 #	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jx/cmds
-
 test1:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test $(PACKAGE_DIRS) -test.v -run $(TEST) && echo TEST PASSED!
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test ./... -test.v -run $(TEST)
 
 testbin:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-test
@@ -64,17 +121,17 @@ debugtest1: testbin
 
 full: $(PKGS)
 
-install: $(GO_DEPENDENCIES)
+install: $(GO_DEPENDENCIES) version
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) cmd/jx/jx.go
 
 fmt:
-	@FORMATTED=`$(GO) fmt $(PACKAGE_DIRS)`
+	@FORMATTED=`$(GO) fmt ./...`
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
-arm:
+arm: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/$(NAME)-arm cmd/jx/jx.go
 
-win:
+win: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME).exe cmd/jx/jx.go
 
 bootstrap: vendoring
@@ -92,7 +149,6 @@ release: check
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
 
-	docker system prune -f
 	docker build --ulimit nofile=90000:90000 -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
 	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
 
@@ -113,6 +169,7 @@ release: check
 	updatebot push-version --kind brew jx $(VERSION)
 	updatebot push-version --kind docker JX_VERSION $(VERSION)
 	updatebot push-regex -r "\s*release = \"(.*)\"" -v $(VERSION) config.toml
+	updatebot push-regex -r "JX_VERSION=(.*)" -v $(VERSION) install-jx.sh
 	updatebot update-loop
 
 	echo "Updating the JX CLI reference docs"
@@ -123,11 +180,15 @@ release: check
 		git add *; \
 		git commit --allow-empty -a -m "updated jx commands from $(VERSION)"; \
 		git push origin
+		
+	##### overlayfs2 issue on gke: https://stackoverflow.com/questions/48673513/google-kubernetes-engine-errimagepull-too-many-links ######
+	docker system prune -a -f
+	#####
 
 clean:
-	rm -rf build release
+	rm -rf build release cover.out cover.html
 
-linux:
+linux: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
 docker: linux

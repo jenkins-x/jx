@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -21,6 +22,7 @@ const (
 	Gitea
 	BitbucketCloud
 	BitbucketServer
+	Gerrit
 )
 
 type CommitStatus string
@@ -49,12 +51,14 @@ type FakeIssue struct {
 }
 
 type FakeRepository struct {
-	GitRepo      *GitRepository
-	PullRequests map[int]*FakePullRequest
-	Issues       map[int]*FakeIssue
-	Commits      []*FakeCommit
-	issueCount   int
-	Releases     map[string]*GitRelease
+	Owner              string
+	GitRepo            *GitRepository
+	PullRequests       map[int]*FakePullRequest
+	Issues             map[int]*FakeIssue
+	Commits            []*FakeCommit
+	issueCount         int
+	Releases           map[string]*GitRelease
+	PullRequestCounter int
 }
 
 type FakeProvider struct {
@@ -295,10 +299,8 @@ func (f *FakeProvider) ListCommitStatus(org string, repoName string, sha string)
 				Description: commit.Commit.Message,
 			}
 			answer = append(answer, status)
-
 		}
 	}
-
 	return answer, nil
 }
 
@@ -341,6 +343,10 @@ func (f *FakeProvider) IsBitbucketCloud() bool {
 
 func (f *FakeProvider) IsBitbucketServer() bool {
 	return f.Type == BitbucketServer
+}
+
+func (f *FakeProvider) IsGerrit() bool {
+	return f.Type == Gerrit
 }
 
 func (f *FakeProvider) Kind() string {
@@ -547,4 +553,42 @@ func (f *FakeProvider) UserInfo(username string) *GitUser {
 		}
 	}
 	return nil
+}
+
+func (r *FakeRepository) String() string {
+	return r.Owner + "/" + r.Name()
+}
+
+func (r *FakeRepository) Name() string {
+	return r.GitRepo.Name
+}
+
+// NewFakeRepository creates a new fake repository
+func NewFakeRepository(owner string, repoName string) *FakeRepository {
+	return &FakeRepository{
+		Owner: owner,
+		GitRepo: &GitRepository{
+			Name:     repoName,
+			CloneURL: "https://github.com/" + owner + "/" + repoName + ".git",
+			HTMLURL:  "https://github.com/" + owner + "/" + repoName,
+		},
+		PullRequests: map[int]*FakePullRequest{},
+		Commits:      []*FakeCommit{},
+	}
+}
+
+// NewFakeRepository creates a new fake repository
+func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
+	provider := &FakeProvider{
+		Repositories: map[string][]*FakeRepository{},
+	}
+	for _, repo := range repositories {
+		owner := repo.Owner
+		if owner == "" {
+			log.Warnf("Missing owner for Repository %s\n", repo.Name())
+		}
+		s := append(provider.Repositories[owner], repo)
+		provider.Repositories[owner] = s
+	}
+	return provider
 }
