@@ -222,7 +222,7 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create the kube client")
 	}
-	options.kubeClient = client
+	options.KubeClientCached = client
 
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
@@ -251,7 +251,7 @@ func (options *InstallOptions) Run() error {
 		return fmt.Errorf("Failed to ensure the namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ns, err)
 	}
 
-	err = options.runCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+	err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
 	}
@@ -446,7 +446,7 @@ func (options *InstallOptions) Run() error {
 			Name: JXInstallConfig,
 		},
 	}
-	secretResources := options.kubeClient.CoreV1().Secrets(ns)
+	secretResources := options.KubeClientCached.CoreV1().Secrets(ns)
 	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
 	if oldSecret == nil || err != nil {
 		_, err = secretResources.Create(jxSecrets)
@@ -478,7 +478,7 @@ func (options *InstallOptions) Run() error {
 
 	version := options.Flags.Version
 	if version == "" {
-		version, err = loadVersionFromCloudEnvironmentsDir(wrkDir)
+		version, err = LoadVersionFromCloudEnvironmentsDir(wrkDir)
 		if err != nil {
 			return errors.Wrap(err, "failed to load version from cloud environments dir")
 		}
@@ -564,7 +564,7 @@ func (options *InstallOptions) Run() error {
 		Exposer: exposeController.Config.Exposer,
 	}
 	// save details to a configmap
-	err = kube.SaveIngressConfig(options.kubeClient, ns, ic)
+	err = kube.SaveIngressConfig(options.KubeClientCached, ns, ic)
 	if err != nil {
 		return err
 	}
@@ -712,20 +712,20 @@ func isOpenShiftProvider(provider string) bool {
 
 func (o *InstallOptions) enableOpenShiftSCC(ns string) error {
 	log.Infof("Enabling anyui for the Jenkins service account in namespace %s\n", ns)
-	err := o.runCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":jenkins")
+	err := o.RunCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":jenkins")
 	if err != nil {
 		return err
 	}
-	err = o.runCommand("oc", "adm", "policy", "add-scc-to-user", "hostaccess", "system:serviceaccount:"+ns+":jenkins")
+	err = o.RunCommand("oc", "adm", "policy", "add-scc-to-user", "hostaccess", "system:serviceaccount:"+ns+":jenkins")
 	if err != nil {
 		return err
 	}
-	err = o.runCommand("oc", "adm", "policy", "add-scc-to-user", "privileged", "system:serviceaccount:"+ns+":jenkins")
+	err = o.RunCommand("oc", "adm", "policy", "add-scc-to-user", "privileged", "system:serviceaccount:"+ns+":jenkins")
 	if err != nil {
 		return err
 	}
 	// try fix monocular
-	return o.runCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":default")
+	return o.RunCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":default")
 }
 
 func (options *InstallOptions) logAdminPassword() {
@@ -741,7 +741,8 @@ func (options *InstallOptions) logAdminPassword() {
 	log.Infof(astrix, fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
 }
 
-func loadVersionFromCloudEnvironmentsDir(wrkDir string) (string, error) {
+// LoadVersionFromCloudEnvironmentsDir loads a version from the cloud environments directory
+func LoadVersionFromCloudEnvironmentsDir(wrkDir string) (string, error) {
 	version := ""
 	path := filepath.Join(wrkDir, "Makefile")
 	exists, err := util.FileExists(path)
@@ -774,7 +775,11 @@ func loadVersionFromCloudEnvironmentsDir(wrkDir string) (string, error) {
 
 // clones the jenkins-x cloud-environments repo to a local working dir
 func (o *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
-	wrkDir := filepath.Join(util.HomeDir(), ".jx", "cloud-environments")
+	configDir, err := util.ConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("error determining config dir %v", err)
+	}
+	wrkDir := filepath.Join(configDir, "cloud-environments")
 	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
 	if o.Flags.CloudEnvRepository == "" {
 		return wrkDir, fmt.Errorf("No cloud environment git URL")
@@ -788,7 +793,7 @@ func (o *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 
 		return wrkDir, util.CopyDir(currentDir, wrkDir, true)
 	}
-	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
+	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           o.Flags.CloudEnvRepository,
 		ReferenceName: "refs/heads/master",
 		SingleBranch:  true,
@@ -946,7 +951,8 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 	var server *auth.AuthServer
 	gitProvider := o.GitRepositoryOptions.ServerURL
 	if gitProvider != "" {
-		server = config.GetOrCreateServer(gitProvider)
+		kind := gits.SaasGitKind(gitProvider)
+		server = config.GetOrCreateServerName(gitProvider, "", kind)
 	} else {
 		server, err = config.PickServer("Which git provider?", o.BatchMode)
 		if err != nil {

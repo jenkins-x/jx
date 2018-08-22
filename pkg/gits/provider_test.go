@@ -1,9 +1,11 @@
-package gits
+package gits_test
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/stretchr/testify/assert"
 )
 
 type FakeOrgLister struct {
@@ -11,22 +13,23 @@ type FakeOrgLister struct {
 	fail     bool
 }
 
-func (l FakeOrgLister) ListOrganisations() ([]GitOrganisation, error) {
+func (l FakeOrgLister) ListOrganisations() ([]gits.GitOrganisation, error) {
 	if l.fail {
 		return nil, errors.New("fail")
 	}
 
-	orgs := make([]GitOrganisation, len(l.orgNames))
+	orgs := make([]gits.GitOrganisation, len(l.orgNames))
 	for _, v := range l.orgNames {
-		orgs = append(orgs, GitOrganisation{v})
+		orgs = append(orgs, gits.GitOrganisation{Login: v})
 	}
 	return orgs, nil
 }
 
 func Test_getOrganizations(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		testDescription string
-		orgLister       OrganisationLister
+		orgLister       gits.OrganisationLister
 		userName        string
 		want            []string
 	}{
@@ -37,7 +40,7 @@ func Test_getOrganizations(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.testDescription, func(t *testing.T) {
-			result := getOrganizations(tt.orgLister, tt.userName)
+			result := gits.GetOrganizations(tt.orgLister, tt.userName)
 			assert.Equal(t, tt.want, result)
 		})
 	}

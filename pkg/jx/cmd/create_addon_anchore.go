@@ -107,7 +107,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return err
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -124,14 +124,14 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 
 	log.Info("waiting for anchore deployment to be ready, this can take a few minutes\n")
 
-	err = kube.WaitForDeploymentToBeReady(o.kubeClient, anchoreDeploymentName, o.Namespace, 10*time.Minute)
+	err = kube.WaitForDeploymentToBeReady(o.KubeClientCached, anchoreDeploymentName, o.Namespace, 10*time.Minute)
 	if err != nil {
 		return err
 	}
 
 	anchoreServiceName := kube.AddonServices[defaultAnchoreName]
 	// annotate the anchore engine service so exposecontroller can create an ingress rule
-	svc, err := o.kubeClient.CoreV1().Services(o.Namespace).Get(anchoreServiceName, meta_v1.GetOptions{})
+	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(anchoreServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get Service %s: %v", anchoreServiceName, err)
 	}
@@ -141,7 +141,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 
 	if svc.Annotations[kube.AnnotationExpose] == "" {
 		svc.Annotations[kube.AnnotationExpose] = "true"
-		svc, err = o.kubeClient.CoreV1().Services(o.Namespace).Update(svc)
+		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
 		if err != nil {
 			return fmt.Errorf("failed to update service %s/%s", o.Namespace, anchoreServiceName)
 		}
@@ -154,7 +154,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	}
 
 	// get the external anchore service URL
-	ing, err := kube.GetServiceURLFromName(o.kubeClient, anchoreServiceName, o.Namespace)
+	ing, err := kube.GetServiceURLFromName(o.KubeClientCached, anchoreServiceName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get external URL for service %s: %v", anchoreServiceName, err)
 	}
@@ -177,10 +177,10 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
 	}
 
-	_, err = o.kubeClient.CoreV1().Services(o.currentNamespace).Get(anchoreServiceName, meta_v1.GetOptions{})
+	_, err = o.KubeClientCached.CoreV1().Services(o.currentNamespace).Get(anchoreServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		// create a service link
-		err = kube.CreateServiceLink(o.kubeClient, o.currentNamespace, o.Namespace, anchoreServiceName, ing)
+		err = kube.CreateServiceLink(o.KubeClientCached, o.currentNamespace, o.Namespace, anchoreServiceName, ing)
 		if err != nil {
 			return fmt.Errorf("failed creating a service link for %s in target namespace %s", anchoreServiceName, o.Namespace)
 		}

@@ -3,12 +3,13 @@ package gits
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/wbrefvem/go-gitlab"
+	"github.com/xanzy/go-gitlab"
 )
 
 type GitlabProvider struct {
@@ -29,7 +30,7 @@ func NewGitlabProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter)
 			return nil, err
 		}
 	}
-	return withGitlabClient(server, user, c, git)
+	return WithGitlabClient(server, user, c, git)
 }
 
 func IsGitLabServerURL(u string) bool {
@@ -38,7 +39,7 @@ func IsGitLabServerURL(u string) bool {
 }
 
 // Used by unit tests to inject a mocked client
-func withGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitlab.Client, git Gitter) (GitProvider, error) {
+func WithGitlabClient(server *auth.AuthServer, user *auth.UserAuth, client *gitlab.Client, git Gitter) (GitProvider, error) {
 	provider := &GitlabProvider{
 		Server:   *server,
 		User:     *user,
@@ -69,10 +70,15 @@ func (g *GitlabProvider) ListReleases(org string, name string) ([]*GitRelease, e
 }
 
 func getRepositories(g *gitlab.Client, username string, org string) ([]*gitlab.Project, *gitlab.Response, error) {
-	if org == "" {
-		return g.Projects.ListUserProjects(username, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
+	if org != "" {
+		projects, resp, err := g.Groups.ListGroupProjects(org, nil)
+		if err != nil {
+			return g.Projects.ListUserProjects(org, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
+		}
+		return projects, resp, err
+
 	}
-	return g.Groups.ListGroupProjects(org, nil)
+	return g.Projects.ListUserProjects(username, &gitlab.ListProjectsOptions{Owned: gitlab.Bool(true)})
 }
 
 func fromGitlabProject(p *gitlab.Project) *GitRepository {
@@ -118,7 +124,7 @@ func (g *GitlabProvider) GetRepository(org, name string) (*GitRepository, error)
 	pid := projectId(org, g.Username, name)
 	project, response, err := g.Client.Projects.GetProject(pid)
 	if err != nil {
-		return nil, fmt.Errorf("%v", response.Request.URL)
+		return nil, fmt.Errorf("request: %s failed due to: %s", response.Request.URL, err)
 	}
 	return fromGitlabProject(project), nil
 }
@@ -136,10 +142,27 @@ func (g *GitlabProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return organizations, nil
 }
 
-func (g *GitlabProvider) DeleteRepository(org, name string) error {
-	pid := projectId(org, g.Username, name)
+func (g *GitlabProvider) getProjectId(org, name string) (string, error) {
+	repos, _, err := getRepositories(g.Client, g.Username, org)
+	if err != nil {
+		return "", err
+	}
 
-	_, err := g.Client.Projects.DeleteProject(pid)
+	for _, repo := range repos {
+		if repo.Name == name {
+			return strconv.Itoa(repo.ID), nil
+		}
+	}
+	return "", fmt.Errorf("no repository found with name %s", name)
+}
+
+func (g *GitlabProvider) DeleteRepository(org, name string) error {
+	pid, err := g.getProjectId(org, name)
+	if err != nil {
+		return err
+	}
+
+	_, err = g.Client.Projects.DeleteProject(pid)
 	if err != nil {
 		return fmt.Errorf("failed to delete repository %s due to: %s", pid, err)
 	}

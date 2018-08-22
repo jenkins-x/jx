@@ -1,4 +1,4 @@
-package cve
+package cve_test
 
 import (
 	"os"
@@ -11,6 +11,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/cve"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/suite"
@@ -20,7 +21,7 @@ type AnchoreProviderTestSuite struct {
 	suite.Suite
 	mux      *http.ServeMux
 	server   *httptest.Server
-	provider *AnchoreProvider
+	provider *cve.AnchoreProvider
 }
 
 var router = util.Router{
@@ -36,7 +37,11 @@ var router = util.Router{
 }
 
 func TestAnchoreProviderTestSuite(t *testing.T) {
-	suite.Run(t, new(AnchoreProviderTestSuite))
+	if testing.Short() {
+		t.Skip("skipping TestAnchoreProviderTestSuite in short mode")
+	} else {
+		suite.Run(t, new(AnchoreProviderTestSuite))
+	}
 }
 
 func (suite *AnchoreProviderTestSuite) SetupSuite() {
@@ -60,12 +65,12 @@ func (suite *AnchoreProviderTestSuite) SetupSuite() {
 		ApiToken: "admin",
 	}
 
-	a, err := NewAnchoreProvider(&as, &ua)
+	a, err := cve.NewAnchoreProvider(&as, &ua)
 	suite.Require().NotNil(a)
 	suite.Require().Nil(err)
 
 	var ok bool
-	suite.provider, ok = a.(*AnchoreProvider)
+	suite.provider, ok = a.(*cve.AnchoreProvider)
 	suite.Require().True(ok)
 	suite.Require().NotNil(suite.provider)
 
@@ -73,11 +78,11 @@ func (suite *AnchoreProviderTestSuite) SetupSuite() {
 
 func (suite *AnchoreProviderTestSuite) TestUnmarshallImages() {
 
-	var images []Image
+	var images []cve.Image
 
-	subPath := fmt.Sprintf(getImages)
+	subPath := fmt.Sprintf(cve.GetImages)
 
-	err := suite.provider.anchoreGet(subPath, &images)
+	err := suite.provider.AnchoreGet(subPath, &images)
 	suite.Require().NoError(err)
 
 	suite.Require().NotEmpty(images)
@@ -100,7 +105,7 @@ func (suite *AnchoreProviderTestSuite) TestGetImageVulnerabilityTable() {
 
 	vTable := table.CreateTable(os.Stdout)
 
-	query := CVEQuery{
+	query := cve.CVEQuery{
 		ImageID: "07b67913cd8c1ffc961c402b58c4e539ee6aaeae0b08969fc653267f4b975503",
 	}
 

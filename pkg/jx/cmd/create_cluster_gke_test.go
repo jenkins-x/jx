@@ -1,11 +1,13 @@
 package cmd
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_sanitizeLabel(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		username string

@@ -168,13 +168,13 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	// now lets create a secret for it so we can perform incluster interactions with Jenkins
-	s, err := o.kubeClient.CoreV1().Secrets(o.currentNamespace).Get(kube.SecretJenkins, metav1.GetOptions{})
+	s, err := o.KubeClientCached.CoreV1().Secrets(o.currentNamespace).Get(kube.SecretJenkins, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	s.Data[kube.JenkinsAdminApiToken] = []byte(userAuth.ApiToken)
 
-	_, err = o.kubeClient.CoreV1().Secrets(o.currentNamespace).Update(s)
+	_, err = o.KubeClientCached.CoreV1().Secrets(o.currentNamespace).Update(s)
 	if err != nil {
 		return err
 	}

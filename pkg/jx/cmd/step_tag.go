@@ -21,8 +21,8 @@ const (
 
 	defaultVersionFile = "VERSION"
 
-	valuesYamlRepositoryPrefix = "  repository:"
-	valuesYamlTagPrefix        = "  tag:"
+	ValuesYamlRepositoryPrefix = "  repository:"
+	ValuesYamlTagPrefix        = "  tag:"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -186,12 +186,12 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 	}
 	updated := false
 	for idx, line := range lines {
-		if chartValueRepository != "" && strings.HasPrefix(line, valuesYamlRepositoryPrefix) {
+		if chartValueRepository != "" && strings.HasPrefix(line, ValuesYamlRepositoryPrefix) {
 			updated = true
-			lines[idx] = valuesYamlRepositoryPrefix + " " + chartValueRepository
-		} else if strings.HasPrefix(line, valuesYamlTagPrefix) {
+			lines[idx] = ValuesYamlRepositoryPrefix + " " + chartValueRepository
+		} else if strings.HasPrefix(line, ValuesYamlTagPrefix) {
 			updated = true
-			lines[idx] = valuesYamlTagPrefix + " " + version
+			lines[idx] = ValuesYamlTagPrefix + " " + version
 		}
 	}
 	if updated {

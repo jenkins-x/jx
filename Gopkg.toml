@@ -107,7 +107,7 @@ required = [
 
 [[constraint]]
   branch = "master"
-  name = "github.com/wbrefvem/go-gitlab"
+  name = "github.com/xanzy/go-gitlab"
 
 [[constraint]]
   name = "gopkg.in/AlecAivazis/survey.v1"

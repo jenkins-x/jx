@@ -11,6 +11,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
+// TODO Refactor to use util.Run or util.RunWithoutRetry?
+
 func (o *CommonOptions) runCommandFromDir(dir, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	if dir != "" {
@@ -26,7 +28,8 @@ func (o *CommonOptions) runCommandFromDir(dir, name string, args ...string) erro
 	return err
 }
 
-func (o *CommonOptions) runCommand(name string, args ...string) error {
+// RunCommand runs a command
+func (o *CommonOptions) RunCommand(name string, args ...string) error {
 	e := exec.Command(name, args...)
 	if o.Verbose {
 		e.Stdout = o.Out
