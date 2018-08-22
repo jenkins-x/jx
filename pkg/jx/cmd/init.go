@@ -461,7 +461,7 @@ func (o *InitOptions) initIngress() error {
 			log.Success("nginx ingress controller already enabled")
 			return nil
 		}
-		err = o.runCommand("minikube", "addons", "enable", "ingress")
+		err = o.RunCommand("minikube", "addons", "enable", "ingress")
 		if err != nil {
 			return err
 		}

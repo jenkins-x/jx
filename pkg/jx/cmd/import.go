@@ -27,9 +27,11 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	//_ "github.com/Azure/draft/pkg/linguist"
-	"github.com/denormal/go-gitignore"
 	"time"
+
+	"github.com/denormal/go-gitignore"
 )
 
 const (
@@ -37,7 +39,7 @@ const (
 	PlaceHolderGitProvider = "REPLACE_ME_GIT_PROVIDER"
 	PlaceHolderOrg         = "REPLACE_ME_ORG"
 
-	jenkinsfileBackupSuffix = ".backup"
+	JenkinsfileBackupSuffix = ".backup"
 
 	minimumMavenDeployVersion = "2.8.2"
 
@@ -504,7 +506,7 @@ func (o *ImportOptions) DraftCreate() error {
 	jenkinsfileBackup := ""
 	if jenkinsfileExists && o.InitialisedGit && !o.DisableJenkinsfileCheck {
 		// lets copy the old Jenkinsfile in case we overwrite it
-		jenkinsfileBackup = jenkinsfile + jenkinsfileBackupSuffix
+		jenkinsfileBackup = jenkinsfile + JenkinsfileBackupSuffix
 		err = util.RenameFile(jenkinsfile, jenkinsfileBackup)
 		if err != nil {
 			return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
@@ -512,7 +514,7 @@ func (o *ImportOptions) DraftCreate() error {
 	} else if withRename {
 		defaultJenkinsfileExists, err := util.FileExists(defaultJenkinsfile)
 		if defaultJenkinsfileExists && o.InitialisedGit && !o.DisableJenkinsfileCheck {
-			jenkinsfileBackup = defaultJenkinsfile + jenkinsfileBackupSuffix
+			jenkinsfileBackup = defaultJenkinsfile + JenkinsfileBackupSuffix
 			err = util.RenameFile(defaultJenkinsfile, jenkinsfileBackup)
 			if err != nil {
 				return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
@@ -585,7 +587,7 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 
 	org := o.getOrganisationOrCurrentUser()
-	err = o.replacePlaceholders(gitServerName, org)
+	err = o.ReplacePlaceholders(gitServerName, org)
 	if err != nil {
 		return err
 	}
@@ -917,7 +919,8 @@ func (o *ImportOptions) ensureDockerRepositoryExists() error {
 	return nil
 }
 
-func (o *ImportOptions) replacePlaceholders(gitServerName, gitOrg string) error {
+// ReplacePlaceholders replaces git server name and git org placeholders
+func (o *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg string) error {
 	gitOrg = kube.ToValidName(strings.ToLower(gitOrg))
 	log.Infof("replacing placeholders in directory %s\n", o.Dir)
 	log.Infof("app name: %s, git server: %s, org: %s\n", o.AppName, gitServerName, gitOrg)
@@ -1013,7 +1016,7 @@ func (o *ImportOptions) checkChartmuseumCredentialExists() error {
 	_, err := o.Jenkins.GetCredential(name)
 
 	if err != nil {
-		secret, err := o.kubeClient.CoreV1().Secrets(o.currentNamespace).Get(name, metav1.GetOptions{})
+		secret, err := o.KubeClientCached.CoreV1().Secrets(o.currentNamespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("error getting %s secret %v", name, err)
 		}

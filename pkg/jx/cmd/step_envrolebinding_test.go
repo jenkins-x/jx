@@ -1,4 +1,4 @@
-package cmd
+package cmd_test
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,8 @@ import (
 )
 
 func TestEnvironmentRoleBinding(t *testing.T) {
-	o := &StepEnvRoleBindingOptions{}
+	t.Parallel()
+	o := &cmd.StepEnvRoleBindingOptions{}
 	roleBindingName := "env-role-bindings"
 	roleName := "myrole"
 
@@ -59,7 +61,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 		},
 	}
 
-	ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{
 			role,
 		},

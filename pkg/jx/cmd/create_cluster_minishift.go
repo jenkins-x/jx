@@ -200,13 +200,13 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	}
 
 	log.Info("Installing default addons ...\n")
-	err = o.runCommand("minishift", "addons", "install", "--defaults")
+	err = o.RunCommand("minishift", "addons", "install", "--defaults")
 	if err != nil {
 		return err
 	}
 
 	log.Info("Enabling admin user...\n")
-	err = o.runCommand("minishift", "addons", "enable", "admin-user")
+	err = o.RunCommand("minishift", "addons", "enable", "admin-user")
 	if err != nil {
 		return err
 	}
@@ -218,7 +218,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	}
 
 	log.Info("Creating cluster...\n")
-	err = o.runCommand("minishift", args...)
+	err = o.RunCommand("minishift", args...)
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	}
 	o.InstallOptions.Flags.Domain = ip + ".nip.io"
 
-	err = o.runCommand("oc", "login", "-u", "admin", "-p", "admin", "--insecure-skip-tls-verify=true")
+	err = o.RunCommand("oc", "login", "-u", "admin", "-p", "admin", "--insecure-skip-tls-verify=true")
 	if err != nil {
 		return err
 	}

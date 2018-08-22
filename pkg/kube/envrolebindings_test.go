@@ -1,18 +1,20 @@
-package kube
+package kube_test
 
 import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEnvironmentFilters(t *testing.T) {
+	t.Parallel()
 	environments := []*v1.Environment{
-		NewPermanentEnvironment("staging"),
-		NewPermanentEnvironment("production"),
-		NewPreviewEnvironment("jstrachan-demo96-pr-1"),
-		NewPreviewEnvironment("jstrachan-another-pr-3"),
+		kube.NewPermanentEnvironment("staging"),
+		kube.NewPermanentEnvironment("production"),
+		kube.NewPreviewEnvironment("jstrachan-demo96-pr-1"),
+		kube.NewPreviewEnvironment("jstrachan-another-pr-3"),
 	}
 
 	assertEnvironmentsFilter(t, environments,
@@ -54,7 +56,7 @@ func TestEnvironmentFilters(t *testing.T) {
 func assertEnvironmentsFilter(t *testing.T, environments []*v1.Environment, filters []v1.EnvironmentFilter, expectedNames ...string) {
 	actual := []string{}
 	for _, env := range environments {
-		if EnvironmentMatchesAny(env, filters) {
+		if kube.EnvironmentMatchesAny(env, filters) {
 			actual = append(actual, env.Name)
 		}
 	}

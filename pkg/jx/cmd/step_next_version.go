@@ -100,7 +100,7 @@ func (o *StepNextVersionOptions) Run() error {
 
 	// if filename flag set and recognised then update version, commit
 	if o.Filename != "" {
-		err = o.setVersion()
+		err = o.SetVersion()
 		if err != nil {
 			return err
 		}
@@ -122,8 +122,8 @@ func (o *StepNextVersionOptions) Run() error {
 	return nil
 }
 
-// gets the version from a source file
-func (o *StepNextVersionOptions) getVersion() (string, error) {
+// GetVersion gets the version from a source file
+func (o *StepNextVersionOptions) GetVersion() (string, error) {
 	if o.UseGitTagOnly {
 		return "", nil
 	}
@@ -302,7 +302,7 @@ func (o *StepNextVersionOptions) getNewVersionFromTag() (string, error) {
 	patchVersion := sv.Patch + 1
 
 	// check if major or minor version has been changed
-	baseVersion, err := o.getVersion()
+	baseVersion, err := o.GetVersion()
 	if err != nil {
 		return "", err
 	}
@@ -337,7 +337,8 @@ func (o *StepNextVersionOptions) getNewVersionFromTag() (string, error) {
 	return fmt.Sprintf("%d.%d.%d", majorVersion, minorVersion, patchVersion), nil
 }
 
-func (o *StepNextVersionOptions) setVersion() error {
+// SetVersion Sets the version...
+func (o *StepNextVersionOptions) SetVersion() error {
 	var err error
 	var matchField string
 	var regex *regexp.Regexp

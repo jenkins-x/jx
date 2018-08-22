@@ -80,7 +80,7 @@ func (o *UpgradeCLIOptions) Run() error {
 	}
 
 	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.runCommand("brew", "upgrade", "jx")
+		return o.RunCommand("brew", "upgrade", "jx")
 	} else {
 		return o.installJx(true, newVersion.String())
 	}

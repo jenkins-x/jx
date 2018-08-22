@@ -26,10 +26,11 @@ func GetCurrentDomain(client kubernetes.Interface, ns string) (string, error) {
 			return "", errors.Wrapf(err, "Failed to find ConfigMap in namespace %s for names %s and %s", ns, ConfigMapExposecontroller, ConfigMapIngressConfig)
 		}
 	}
-	return extractDomainValue(data)
+	return ExtractDomainValue(data)
 }
 
-func extractDomainValue(data map[string]string) (string, error) {
+// ExtractDomainValue returns the domain value
+func ExtractDomainValue(data map[string]string) (string, error) {
 	answer := data["domain"]
 	if answer != "" {
 		return answer, nil

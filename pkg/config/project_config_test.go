@@ -1,8 +1,9 @@
-package config
+package config_test
 
 import (
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"gopkg.in/yaml.v2"
@@ -12,11 +13,12 @@ import (
 )
 
 func TestProjectConfigMarshal(t *testing.T) {
-	projectConfig := &ProjectConfig{
-		Builds: []*BranchBuild{
+	t.Parallel()
+	projectConfig := &config.ProjectConfig{
+		Builds: []*config.BranchBuild{
 			{
 				Kind: "release",
-				Build: Build{
+				Build: config.Build{
 					Steps: []corev1.Container{
 						{
 							Args: []string{"mvn", "test"},
@@ -37,7 +39,7 @@ func TestProjectConfigMarshal(t *testing.T) {
 		log.Infof("Generated YAML: %s\n", text)
 	}
 
-	copy := &ProjectConfig{}
+	copy := &config.ProjectConfig{}
 
 	err = yaml.Unmarshal(data, copy)
 	assert.NoError(t, err)
