@@ -233,17 +233,26 @@ func (g *GitlabProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 }
 
 func fromMergeRequest(mr *gitlab.MergeRequest, owner, repo string) *GitPullRequest {
+	merged := false
+	if mr.MergedAt != nil {
+		merged = true
+	}
 	return &GitPullRequest{
 		Author: &GitUser{
 			Login: mr.Author.Username,
 		},
-		URL:    mr.WebURL,
-		Owner:  owner,
-		Repo:   repo,
-		Number: &mr.IID,
-		State:  &mr.State,
-		Title:  mr.Title,
-		Body:   mr.Description,
+		URL:            mr.WebURL,
+		Owner:          owner,
+		Repo:           repo,
+		Number:         &mr.IID,
+		State:          &mr.State,
+		Title:          mr.Title,
+		Body:           mr.Description,
+		MergeCommitSHA: &mr.MergeCommitSHA,
+		Merged:         &merged,
+		LastCommitSha:  mr.SHA,
+		MergedAt:       mr.MergedAt,
+		ClosedAt:       mr.ClosedAt,
 	}
 }
 
