@@ -951,7 +951,8 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 	var server *auth.AuthServer
 	gitProvider := o.GitRepositoryOptions.ServerURL
 	if gitProvider != "" {
-		server = config.GetOrCreateServer(gitProvider)
+		kind := gits.SaasGitKind(gitProvider)
+		server = config.GetOrCreateServerName(gitProvider, "", kind)
 	} else {
 		server, err = config.PickServer("Which git provider?", o.BatchMode)
 		if err != nil {
