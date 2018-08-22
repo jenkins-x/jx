@@ -109,10 +109,6 @@ func (g *GitlabProvider) CreateRepository(org string, name string, private bool)
 	return fromGitlabProject(project), nil
 }
 
-func projectId(org, username, repoName string) string {
-	return fmt.Sprintf("%s/%s", owner(org, username), repoName)
-}
-
 func owner(org, username string) string {
 	if org == "" {
 		return username
@@ -121,7 +117,10 @@ func owner(org, username string) string {
 }
 
 func (g *GitlabProvider) GetRepository(org, name string) (*GitRepository, error) {
-	pid := projectId(org, g.Username, name)
+	pid, err := g.projectId(org, g.Username, name)
+	if err != nil {
+		return nil, err
+	}
 	project, response, err := g.Client.Projects.GetProject(pid)
 	if err != nil {
 		return nil, fmt.Errorf("request: %s failed due to: %s", response.Request.URL, err)
@@ -142,8 +141,8 @@ func (g *GitlabProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return organizations, nil
 }
 
-func (g *GitlabProvider) getProjectId(org, name string) (string, error) {
-	repos, _, err := getRepositories(g.Client, g.Username, org)
+func (g *GitlabProvider) projectId(org, username, name string) (string, error) {
+	repos, _, err := getRepositories(g.Client, username, org)
 	if err != nil {
 		return "", err
 	}
@@ -157,7 +156,7 @@ func (g *GitlabProvider) getProjectId(org, name string) (string, error) {
 }
 
 func (g *GitlabProvider) DeleteRepository(org, name string) error {
-	pid, err := g.getProjectId(org, name)
+	pid, err := g.projectId(org, g.Username, name)
 	if err != nil {
 		return err
 	}
@@ -170,7 +169,10 @@ func (g *GitlabProvider) DeleteRepository(org, name string) error {
 }
 
 func (g *GitlabProvider) ForkRepository(originalOrg, name, destinationOrg string) (*GitRepository, error) {
-	pid := projectId(originalOrg, g.Username, name)
+	pid, err := g.projectId(originalOrg, g.Username, name)
+	if err != nil {
+		return nil, err
+	}
 	project, _, err := g.Client.Projects.ForkProject(pid)
 	if err != nil {
 		return nil, err
@@ -180,7 +182,10 @@ func (g *GitlabProvider) ForkRepository(originalOrg, name, destinationOrg string
 }
 
 func (g *GitlabProvider) RenameRepository(org, name, newName string) (*GitRepository, error) {
-	pid := projectId(org, g.Username, name)
+	pid, err := g.projectId(org, g.Username, name)
+	if err != nil {
+		return nil, err
+	}
 	options := &gitlab.EditProjectOptions{
 		Name: &newName,
 	}
@@ -193,7 +198,10 @@ func (g *GitlabProvider) RenameRepository(org, name, newName string) (*GitReposi
 }
 
 func (g *GitlabProvider) ValidateRepositoryName(org, name string) error {
-	pid := projectId(org, g.Username, name)
+	pid, err := g.projectId(org, g.Username, name)
+	if err != nil {
+		return err
+	}
 	_, r, err := g.Client.Projects.GetProject(pid)
 
 	if err == nil {
@@ -220,7 +228,10 @@ func (g *GitlabProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 		TargetBranch: &base,
 	}
 
-	pid := projectId(owner, g.Username, repo)
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return nil, err
+	}
 	mr, _, err := g.Client.MergeRequests.CreateMergeRequest(pid, o)
 	if err != nil {
 		return nil, err
@@ -248,7 +259,10 @@ func (g *GitlabProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	owner := pr.Owner
 	repo := pr.Repo
 
-	pid := projectId(owner, g.Username, repo)
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return err
+	}
 	mr, _, err := g.Client.MergeRequests.GetMergeRequest(pid, *pr.Number)
 	if err != nil {
 		return err
@@ -276,7 +290,10 @@ func (p *GitlabProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, n
 
 func (p *GitlabProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
 	repo := repository.Name
-	pid := projectId(owner, p.Username, repo)
+	pid, err := p.projectId(owner, p.Username, repo)
+	if err != nil {
+		return nil, err
+	}
 	commits, _, err := p.Client.MergeRequests.GetMergeRequestCommits(pid, number, nil)
 
 	if err != nil {
@@ -311,7 +328,10 @@ func (g *GitlabProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string
 		return "", fmt.Errorf("missing String for LastCommitSha %#v", pr)
 	}
 
-	pid := projectId(owner, g.Username, repo)
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return "", err
+	}
 	c, _, err := g.Client.Commits.GetCommitStatuses(pid, ref, nil)
 	if err != nil {
 		return "", err
@@ -326,7 +346,10 @@ func (g *GitlabProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string
 }
 
 func (g *GitlabProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
-	pid := projectId(org, g.Username, repo)
+	pid, err := g.projectId(org, g.Username, repo)
+	if err != nil {
+		return nil, err
+	}
 	c, _, err := g.Client.Commits.GetCommitStatuses(pid, sha, nil)
 	if err != nil {
 		return nil, err
@@ -351,23 +374,29 @@ func fromCommitStatus(status *gitlab.CommitStatus) *GitRepoStatus {
 }
 
 func (g *GitlabProvider) MergePullRequest(pr *GitPullRequest, message string) error {
-	pid := projectId(pr.Owner, g.Username, pr.Repo)
+	pid, err := g.projectId(pr.Owner, g.Username, pr.Repo)
+	if err != nil {
+		return err
+	}
 
 	opt := &gitlab.AcceptMergeRequestOptions{MergeCommitMessage: &message}
 
-	_, _, err := g.Client.MergeRequests.AcceptMergeRequest(pid, *pr.Number, opt)
+	_, _, err = g.Client.MergeRequests.AcceptMergeRequest(pid, *pr.Number, opt)
 	return err
 }
 
 func (g *GitlabProvider) CreateWebHook(data *GitWebHookArguments) error {
-	pid := projectId(data.Owner, g.Username, data.Repo.Name)
+	pid, err := g.projectId(data.Owner, g.Username, data.Repo.Name)
+	if err != nil {
+		return nil
+	}
 
 	opt := &gitlab.AddProjectHookOptions{
 		URL:   &data.URL,
 		Token: &data.Secret,
 	}
 
-	_, _, err := g.Client.Projects.AddProjectHook(pid, opt)
+	_, _, err = g.Client.Projects.AddProjectHook(pid, opt)
 	return err
 }
 
@@ -387,7 +416,10 @@ func (g *GitlabProvider) SearchIssuesClosedSince(org string, repo string, t time
 }
 
 func (g *GitlabProvider) searchIssuesWithOptions(org string, repo string, opt *gitlab.ListProjectIssuesOptions) ([]*GitIssue, error) {
-	pid := projectId(org, g.Username, repo)
+	pid, err := g.projectId(org, g.Username, repo)
+	if err != nil {
+		return nil, err
+	}
 	issues, _, err := g.Client.Issues.ListProjectIssues(pid, opt)
 	if err != nil {
 		return nil, err
@@ -397,7 +429,10 @@ func (g *GitlabProvider) searchIssuesWithOptions(org string, repo string, opt *g
 
 func (g *GitlabProvider) GetIssue(org, repo string, number int) (*GitIssue, error) {
 	owner := owner(org, g.Username)
-	pid := projectId(org, g.Username, repo)
+	pid, err := g.projectId(org, g.Username, repo)
+	if err != nil {
+		return nil, err
+	}
 
 	issue, _, err := g.Client.Issues.GetIssue(pid, number)
 	if err != nil {
@@ -421,7 +456,10 @@ func (g *GitlabProvider) CreateIssue(owner string, repo string, issue *GitIssue)
 		Labels:      labels,
 	}
 
-	pid := projectId(owner, g.Username, repo)
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return nil, err
+	}
 	gitlabIssue, _, err := g.Client.Issues.CreateIssue(pid, opt)
 	if err != nil {
 		return nil, err
@@ -465,16 +503,22 @@ func (g *GitlabProvider) AddPRComment(pr *GitPullRequest, comment string) error 
 
 	opt := &gitlab.CreateMergeRequestNoteOptions{Body: &comment}
 
-	pid := projectId(owner, g.Username, repo)
-	_, _, err := g.Client.Notes.CreateMergeRequestNote(pid, *pr.Number, opt)
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return nil
+	}
+	_, _, err = g.Client.Notes.CreateMergeRequestNote(pid, *pr.Number, opt)
 	return err
 }
 
 func (g *GitlabProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
 	opt := &gitlab.CreateIssueNoteOptions{Body: &comment}
 
-	pid := projectId(owner, g.Username, repo)
-	_, _, err := g.Client.Notes.CreateIssueNote(pid, number, opt)
+	pid, err := g.projectId(owner, g.Username, repo)
+	if err != nil {
+		return err
+	}
+	_, _, err = g.Client.Notes.CreateIssueNote(pid, number, opt)
 	return err
 }
 
