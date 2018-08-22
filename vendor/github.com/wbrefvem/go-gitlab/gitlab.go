@@ -186,19 +186,6 @@ var notificationLevelTypes = map[string]NotificationLevelValue{
 	"custom":        CustomNotificationLevel,
 }
 
-// OrderByValue represent in which order to sort the item
-type OrderByValue string
-
-// These constants represent all valid order by values.
-const (
-	OrderByCreatedAt OrderByValue = "created_at"
-	OrderByID        OrderByValue = "id"
-	OrderByIID       OrderByValue = "iid"
-	OrderByRef       OrderByValue = "ref"
-	OrderByStatus    OrderByValue = "status"
-	OrderByUserID    OrderByValue = "user_id"
-)
-
 // VisibilityValue represents a visibility level within GitLab.
 //
 // GitLab API docs: https://docs.gitlab.com/ce/api/
@@ -298,11 +285,14 @@ type Client struct {
 	Features              *FeaturesService
 	GitIgnoreTemplates    *GitIgnoreTemplatesService
 	Groups                *GroupsService
+	GroupIssueBoards      *GroupIssueBoardsService
 	GroupMembers          *GroupMembersService
 	GroupMilestones       *GroupMilestonesService
+	GroupVariables        *GroupVariablesService
 	Issues                *IssuesService
 	IssueLinks            *IssueLinksService
 	Jobs                  *JobsService
+	Keys                  *KeysService
 	Boards                *IssueBoardsService
 	Labels                *LabelsService
 	MergeRequests         *MergeRequestsService
@@ -318,6 +308,7 @@ type Client struct {
 	Projects              *ProjectsService
 	ProjectMembers        *ProjectMembersService
 	ProjectSnippets       *ProjectSnippetsService
+	ProjectVariables      *ProjectVariablesService
 	ProtectedBranches     *ProtectedBranchesService
 	Repositories          *RepositoriesService
 	RepositoryFiles       *RepositoryFilesService
@@ -428,11 +419,14 @@ func newClient(httpClient *http.Client) *Client {
 	c.Features = &FeaturesService{client: c}
 	c.GitIgnoreTemplates = &GitIgnoreTemplatesService{client: c}
 	c.Groups = &GroupsService{client: c}
+	c.GroupIssueBoards = &GroupIssueBoardsService{client: c}
 	c.GroupMembers = &GroupMembersService{client: c}
 	c.GroupMilestones = &GroupMilestonesService{client: c}
+	c.GroupVariables = &GroupVariablesService{client: c}
 	c.Issues = &IssuesService{client: c, timeStats: timeStats}
 	c.IssueLinks = &IssueLinksService{client: c}
 	c.Jobs = &JobsService{client: c}
+	c.Keys = &KeysService{client: c}
 	c.Boards = &IssueBoardsService{client: c}
 	c.Labels = &LabelsService{client: c}
 	c.MergeRequests = &MergeRequestsService{client: c, timeStats: timeStats}
@@ -448,6 +442,7 @@ func newClient(httpClient *http.Client) *Client {
 	c.Projects = &ProjectsService{client: c}
 	c.ProjectMembers = &ProjectMembersService{client: c}
 	c.ProjectSnippets = &ProjectSnippetsService{client: c}
+	c.ProjectVariables = &ProjectVariablesService{client: c}
 	c.ProtectedBranches = &ProtectedBranchesService{client: c}
 	c.Repositories = &RepositoriesService{client: c}
 	c.RepositoryFiles = &RepositoryFilesService{client: c}
@@ -828,14 +823,6 @@ func BuildState(v BuildStateValue) *BuildStateValue {
 // to store v and returns a pointer to it.
 func NotificationLevel(v NotificationLevelValue) *NotificationLevelValue {
 	p := new(NotificationLevelValue)
-	*p = v
-	return p
-}
-
-// OrderBy is a helper routine that allocates a new OrderByValue
-// to store v and returns a pointer to it.
-func OrderBy(v OrderByValue) *OrderByValue {
-	p := new(OrderByValue)
 	*p = v
 	return p
 }
