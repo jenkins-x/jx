@@ -2,16 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"strings"
-
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"io"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 const (
@@ -42,7 +42,7 @@ var (
 // CreateUserOptions the options for the create spring command
 type CreateUserOptions struct {
 	CreateOptions
-
+	Role     string
 	UserSpec v1.UserDetails
 }
 
@@ -75,6 +75,7 @@ func NewCmdCreateUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 	cmd.Flags().StringVarP(&options.UserSpec.Login, optionLogin, "l", "", "The user login name")
 	cmd.Flags().StringVarP(&options.UserSpec.Name, "name", "n", "", "The textual full name of the user")
 	cmd.Flags().StringVarP(&options.UserSpec.Email, "email", "e", "", "The users email address")
+	cmd.Flags().StringVarP(&options.Role, "role", "r", "", "The user's role")
 
 	options.addCommonFlags(cmd)
 	return cmd
@@ -132,5 +133,30 @@ func (o *CreateUserOptions) Run() error {
 		return fmt.Errorf("Failed to create User %s: %s", login, err)
 	}
 	log.Infof("Created User: %s\n", util.ColorInfo(login))
+	log.Infof("Binding user %s with role: %s\n", util.ColorInfo(login), o.Role)
+
+	envRoleBindingsList, err := jxClient.JenkinsV1().EnvironmentRoleBindings(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("Failed to retrieve environment role binding list for namespace %s: %s", ns, err)
+	}
+	foundRole := 0
+	for _, envRoleBinding := range envRoleBindingsList.Items {
+		if util.StringMatchesPattern(strings.Trim(o.Role, ""), strings.Trim(envRoleBinding.Spec.RoleRef.Name, "")) {
+			log.Infof("Role %s exists, binding user %s with role.\n", util.ColorInfo(o.Role), util.ColorInfo(login))
+			newSubject := rbacv1.Subject{
+				Name:      o.UserSpec.Name,
+				Kind:      "User", //TODO: should the default be user? Should we also pass kind as part of user creation step?
+				Namespace: ns,
+			}
+			envRoleBinding.Spec.Subjects = append(envRoleBinding.Spec.Subjects, newSubject)
+			foundRole = 1
+			break
+		}
+	}
+	if foundRole == 0 {
+		log.Warnf("Role %s doesn't exist, will not bind user %s with role\n", util.ColorWarning(o.Role), util.ColorWarning(login))
+
+	}
 	return nil
+
 }
