@@ -9,7 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/wbrefvem/go-gitlab"
+	"github.com/xanzy/go-gitlab"
 )
 
 type GitlabProvider struct {
@@ -124,7 +124,7 @@ func (g *GitlabProvider) GetRepository(org, name string) (*GitRepository, error)
 	pid := projectId(org, g.Username, name)
 	project, response, err := g.Client.Projects.GetProject(pid)
 	if err != nil {
-		return nil, fmt.Errorf("%v", response.Request.URL)
+		return nil, fmt.Errorf("request: %s failed due to: %s", response.Request.URL, err)
 	}
 	return fromGitlabProject(project), nil
 }

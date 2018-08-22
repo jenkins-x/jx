@@ -7,25 +7,19 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/suite"
-	gitlab "github.com/wbrefvem/go-gitlab"
+	"github.com/xanzy/go-gitlab"
 )
 
 const (
-	gitlabUserName = "testperson"
-	gitlabOrgName  = "testorg"
+	gitlabUserName    = "testperson"
+	gitlabOrgName     = "testorg"
+	gitlabProjectName = "test-project"
 )
-
-var gitlabRouter = util.Router{
-	"/api/v4/projects/testperson%2Ftest-project": util.MethodMap{
-		"GET": "project.json",
-	},
-}
 
 type GitlabProviderSuite struct {
 	suite.Suite
@@ -64,9 +58,14 @@ func setup(suite *GitlabProviderSuite) (*http.ServeMux, *httptest.Server, *gits.
 		Username: gitlabUserName,
 		ApiToken: "test",
 	}
+
+	authServer := &auth.AuthServer{
+		URL:   server.URL,
+		Users: []*auth.UserAuth{userAuth},
+	}
 	// Gitlab provider that we want to test
 	git := gits.NewGitCLI()
-	provider, _ := gits.WithGitlabClient(new(auth.AuthServer), userAuth, client, git)
+	provider, _ := gits.WithGitlabClient(authServer, userAuth, client, git)
 
 	return mux, server, provider.(*gits.GitlabProvider)
 }
@@ -93,13 +92,15 @@ func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
 		w.Write(src)
 	})
 
+	projectId := fmt.Sprintf("%s/%s", gitlabUserName, gitlabProjectName)
+	gitlabRouter := util.Router{
+		fmt.Sprintf("/api/v4/projects/%s", projectId): util.MethodMap{
+			"GET": "project.json",
+		},
+	}
 	for path, methodMap := range gitlabRouter {
 		mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/gitlab", methodMap))
 	}
-
-	suite.T().Logf("Escape encoded: %v", url.QueryEscape("testperson%2Ftest-project"))
-	suite.T().Logf("Escape unencoded: %v", url.QueryEscape("testperson/test-project"))
-
 }
 
 func (suite *GitlabProviderSuite) TestListOrganizations() {
@@ -135,12 +136,12 @@ func (suite *GitlabProviderSuite) TestListRepositories() {
 }
 
 func (suite *GitlabProviderSuite) TestGetRepository() {
-	repo, err := suite.provider.GetRepository("testperson", "test-project")
+	repo, err := suite.provider.GetRepository(gitlabUserName, gitlabProjectName)
 
 	suite.Require().Nil(err)
 	suite.Require().NotNil(repo)
 
-	suite.Require().Equal(repo.Name, "test-project")
+	suite.Require().Equal(gitlabProjectName, repo.Name)
 }
 
 // In order for 'go test' to run this suite, we need to create
