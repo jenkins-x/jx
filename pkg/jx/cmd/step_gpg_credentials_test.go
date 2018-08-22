@@ -1,10 +1,11 @@
-package cmd
+package cmd_test
 
 import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -12,6 +13,7 @@ import (
 )
 
 func TestStepGPGCredentials(t *testing.T) {
+	t.Parallel()
 	tempDir, err := ioutil.TempDir("", "test-step-gpg")
 	assert.NoError(t, err)
 
@@ -25,7 +27,7 @@ func TestStepGPGCredentials(t *testing.T) {
 		},
 	}
 
-	options := &StepGpgCredentialsOptions{
+	options := &cmd.StepGpgCredentialsOptions{
 		OutputDir: tempDir,
 	}
 

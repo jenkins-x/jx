@@ -146,7 +146,7 @@ func (o *MetricsOptions) Run() error {
 		args = []string{"top", "pod", pod, "--namespace", ns}
 	}
 
-	err = o.runCommand("kubectl", args...)
+	err = o.RunCommand("kubectl", args...)
 	if err != nil {
 		return err
 	}

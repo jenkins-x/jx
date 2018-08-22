@@ -22,10 +22,11 @@ const (
 	ChartKnativeBuild             = "jenkins-x/knative-build"
 )
 
-type prowOptions struct {
-	kubeClient kubernetes.Interface
-	repos      []string
-	ns         string
+// Options for prow
+type Options struct {
+	KubeClient kubernetes.Interface
+	Repos      []string
+	NS         string
 }
 
 func AddRepo(kubeClient kubernetes.Interface, repos []string, ns string) error {
@@ -33,18 +34,18 @@ func AddRepo(kubeClient kubernetes.Interface, repos []string, ns string) error {
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
 	}
-	o := prowOptions{
-		kubeClient: kubeClient,
-		repos:      repos,
-		ns:         ns,
+	o := Options{
+		KubeClient: kubeClient,
+		Repos:      repos,
+		NS:         ns,
 	}
 
-	err := o.addProwConfig()
+	err := o.AddProwConfig()
 	if err != nil {
 		return err
 	}
 
-	return o.addProwPlugins()
+	return o.AddProwPlugins()
 }
 
 // create git repo?
@@ -52,7 +53,7 @@ func AddRepo(kubeClient kubernetes.Interface, repos []string, ns string) error {
 // should we get the existing CM and do a diff?
 // should we just be using git for config and use prow to auto update via gitops?
 
-func (o *prowOptions) createPreSubmit() config.Presubmit {
+func (o *Options) createPreSubmit() config.Presubmit {
 	ps := config.Presubmit{}
 
 	ps.Name = "promotion-gate"
@@ -86,7 +87,7 @@ func (o *prowOptions) createPreSubmit() config.Presubmit {
 
 	return ps
 }
-func (o *prowOptions) createPostSubmit() config.Postsubmit {
+func (o *Options) createPostSubmit() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Name = "test-postsubmits"
 
@@ -115,7 +116,7 @@ func (o *prowOptions) createPostSubmit() config.Postsubmit {
 
 	return ps
 }
-func (o *prowOptions) createTide() config.Tide {
+func (o *Options) createTide() config.Tide {
 	// todo get the real URL, though we need to handle the multi cluster usecase where dev namespace may be another cluster, so pass it in as an arg?
 	t := config.Tide{
 		TargetURL: "https://tide.foo.bar",
@@ -123,7 +124,7 @@ func (o *prowOptions) createTide() config.Tide {
 
 	var qs []config.TideQuery
 
-	for _, r := range o.repos {
+	for _, r := range o.Repos {
 		q := config.TideQuery{
 			Repos:         []string{r},
 			Labels:        []string{"lgtm", "approved"},
@@ -163,13 +164,15 @@ func (o *prowOptions) createTide() config.Tide {
 
 	return t
 }
-func (o *prowOptions) addProwConfig() error {
+
+// AddProwConfig adds config to prow
+func (o *Options) AddProwConfig() error {
 
 	preSubmit := o.createPreSubmit()
 	postSubmit := o.createPostSubmit()
 	tide := o.createTide()
 
-	cm, err := o.kubeClient.CoreV1().ConfigMaps(o.ns).Get("config", metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("config", metav1.GetOptions{})
 	create := true
 	prowConfig := &config.Config{}
 	if err != nil {
@@ -190,7 +193,7 @@ func (o *prowOptions) addProwConfig() error {
 		}
 	}
 
-	for _, r := range o.repos {
+	for _, r := range o.Repos {
 		prowConfig.Presubmits[r] = []config.Presubmit{preSubmit}
 		prowConfig.Postsubmits[r] = []config.Postsubmit{postSubmit}
 	}
@@ -212,18 +215,20 @@ func (o *prowOptions) addProwConfig() error {
 	}
 
 	if create {
-		_, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Create(cm)
+		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
 	} else {
-		_, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Update(cm)
+		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
 	}
 
 	return err
 }
-func (o *prowOptions) addProwPlugins() error {
+
+// AddProwPlugins adds plugins to prow
+func (o *Options) AddProwPlugins() error {
 
 	pluginsList := []string{"approve", "assign", "blunderbuss", "help", "hold", "lgtm", "lifecycle", "size", "trigger", "wip"}
 
-	cm, err := o.kubeClient.CoreV1().ConfigMaps(o.ns).Get("plugins", metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("plugins", metav1.GetOptions{})
 	create := true
 	pluginConfig := &plugins.Configuration{}
 	if err != nil {
@@ -249,7 +254,7 @@ func (o *prowOptions) addProwPlugins() error {
 	}
 
 	// add or overwrite
-	for _, r := range o.repos {
+	for _, r := range o.Repos {
 		pluginConfig.Plugins[r] = pluginsList
 
 		a := plugins.Approve{
@@ -274,9 +279,9 @@ func (o *prowOptions) addProwPlugins() error {
 		},
 	}
 	if create {
-		_, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Create(cm)
+		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
 	} else {
-		_, err = o.kubeClient.CoreV1().ConfigMaps(o.ns).Update(cm)
+		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
 	}
 
 	return err

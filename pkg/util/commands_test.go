@@ -11,6 +11,7 @@ import (
 )
 
 func TestRunPass(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_pass.txt"
 
@@ -20,7 +21,7 @@ func TestRunPass(t *testing.T) {
 	}
 	exPath := startPath + "/test_data/scripts"
 	ex := "fail_iterator.sh"
-	args := []string{tmpFileName, "5"}
+	args := []string{tmpFileName, "3"}
 
 	os.Create(exPath + "/" + tmpFileName)
 
@@ -35,8 +36,8 @@ func TestRunPass(t *testing.T) {
 
 	assert.NoError(t, err, "Run should exit without failure")
 	assert.Equal(t, "PASS", res)
-	assert.Equal(t, 4, len(cmd.Errors))
-	assert.Equal(t, 5, cmd.Attempts())
+	assert.Equal(t, 2, len(cmd.Errors))
+	assert.Equal(t, 3, cmd.Attempts())
 	assert.Equal(t, true, cmd.DidError())
 	assert.Equal(t, false, cmd.DidFail())
 	assert.NotEqual(t, nil, cmd.Error())
@@ -46,6 +47,7 @@ func TestRunPass(t *testing.T) {
 }
 
 func TestRunPassFirstTime(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_pass_first_time.txt"
 
@@ -80,6 +82,7 @@ func TestRunPassFirstTime(t *testing.T) {
 }
 
 func TestRunFailWithTimeout(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_fail_with_timeout.txt"
 
@@ -112,31 +115,33 @@ func TestRunFailWithTimeout(t *testing.T) {
 }
 
 func TestRunThreadSafety(t *testing.T) {
+	t.Parallel()
 	startPath, err := filepath.Abs("")
 	if err != nil {
 		panic(err)
 	}
 	exPath := startPath + "/test_data/scripts"
 	ex := "sleep.sh"
-	args := []string{"2"}
+	args := []string{"0.2"}
 
 	cmd := util.Command{
 		Name:    ex,
 		Dir:     exPath,
 		Args:    args,
-		Timeout: 1 * time.Second,
+		Timeout: 10000000 * time.Nanosecond,
 	}
 
 	res, err := cmd.Run()
 
 	assert.NoError(t, err, "Run should exit without failure")
-	assert.Equal(t, "2", res)
+	assert.Equal(t, "0.2", res)
 	assert.Equal(t, false, cmd.DidError())
 	assert.Equal(t, false, cmd.DidFail())
 	assert.Equal(t, 1, cmd.Attempts())
 }
 
 func TestRunWithoutRetry(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_without_retry.txt"
 
@@ -171,6 +176,7 @@ func TestRunWithoutRetry(t *testing.T) {
 }
 
 func TestRunVerbose(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_verbose.txt"
 
@@ -205,6 +211,7 @@ func TestRunVerbose(t *testing.T) {
 }
 
 func TestRunQuiet(t *testing.T) {
+	t.Parallel()
 
 	tmpFileName := "test_run_quiet.txt"
 

@@ -19,7 +19,7 @@ const (
 	optionArtifact          = "artifact"
 	optionVersion           = "version"
 	optionPollTime          = "poll-time"
-	defaultMavenCentralRepo = "http://central.maven.org/maven2/"
+	DefaultMavenCentralRepo = "http://central.maven.org/maven2/"
 )
 
 // StepWaitForArtifactOptions contains the command line flags
@@ -79,7 +79,7 @@ func NewCmdStepWaitForArtifact(f Factory, out io.Writer, errOut io.Writer) *cobr
 		},
 	}
 	cmd.Flags().StringVarP(&options.ArtifactURL, "artifact-url", "", "", "The full URL of the artifact to wait for. If not specified it is calculated from the repository URL, group, artifact and version")
-	cmd.Flags().StringVarP(&options.RepoURL, optionRepo, "r", defaultMavenCentralRepo, "The URL of the maven style repository to query for the artifact")
+	cmd.Flags().StringVarP(&options.RepoURL, optionRepo, "r", DefaultMavenCentralRepo, "The URL of the maven style repository to query for the artifact")
 	cmd.Flags().StringVarP(&options.GroupId, optionGroup, "g", "", "The group ID of the artifact to search for")
 	cmd.Flags().StringVarP(&options.ArtifactId, optionArtifact, "a", "", "The artifact ID of the artifact to search for")
 	cmd.Flags().StringVarP(&options.Version, optionVersion, "v", "", "The version of the artifact to search for")
