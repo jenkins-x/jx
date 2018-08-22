@@ -1062,12 +1062,12 @@ func (options *InstallOptions) createArtifactorySecret() error {
 			Name: kube.SecretJenkinsArtifactoryCredentials,
 		},
 	}
-	_, err := options.kubeClient.CoreV1().Secrets(options.Flags.Namespace).Create(artifactorySecret)
+	_, err := options.KubeClientCached.CoreV1().Secrets(options.Flags.Namespace).Create(artifactorySecret)
 	return err
 }
 
 func (options *InstallOptions) deleteArtifactorySecret() error {
-	return options.kubeClient.CoreV1().Secrets(options.Flags.Namespace).Delete(kube.SecretJenkinsArtifactoryCredentials, &metav1.DeleteOptions{})
+	return options.KubeClientCached.CoreV1().Secrets(options.Flags.Namespace).Delete(kube.SecretJenkinsArtifactoryCredentials, &metav1.DeleteOptions{})
 }
 
 func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
