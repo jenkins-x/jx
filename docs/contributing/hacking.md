@@ -1,3 +1,4 @@
+
 # Hacking on JX
 
 This guide is for developers who want to improve the jenkins-x jx CLI. These instructions will help you set up a
@@ -122,6 +123,76 @@ You should NOT add `t.Parallel()` to an unencapsulated test as it may cause inte
 
 ### What is an unencapsulated test?
 A test is unencapsulated (not issolated) if it cannot be run (with repeatable success) without a certain surrounding state. Relying on external binaries that may not be present, writing or reading from the filesystem without care to specifically avoid collisions, or relying on other tests to run in a specific sequence for your test to pass are all examples of a test that you should carefully consider before committing. If you would like to easily check that your test is issolated before committing simply run: `make docker-test`, or if your test is marked as slow: `make docker-test-slow`. This will mount the jx project folder into a golang docker container that does not include any of your host machines environment. If your test passes here, then you can be happy that the test is encapsulated.
+
+### Mocking / Stubbing
+Mocking or stubbing methods in your unit tests will get you a long way towards test isolation. Coupled with the use of interface based APIs you should be able to make your methods easily testable and useful to other packages that may need to import them.
+https://github.com/petergtz/pegomock Is our current mocking library of choice, mainly because it is very easy to use and doesn't require you to write your own mocks (Yay!)
+We place all interfaces for each package in a file called `interface.go` in the relevant folder. So you can find all interfaces for `github.com/jenkins-x/jx/pkg/util` in `github.com/jenkins-x/jx/pkg/util/interface.go` 
+Generating/Regenerating a mock for a given interface is easy, just go to the `interface.go` file that corresponds with the interface you would like to mock and add a comment directly above your interface definition that will look something like this:
+```
+// CommandInterface defines the interface for a Command
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/util CommandInterface -o mocks/command_interface.go
+type CommandInterface interface {
+	DidError() bool
+	DidFail() bool
+	Error() error
+	Run() (string, error)
+	RunWithoutRetry() (string, error)
+	SetName(string)
+	SetDir(string)
+	SetArgs([]string)
+	SetTimeout(time.Duration)
+	SetExponentialBackOff(*backoff.ExponentialBackOff)
+}
+```
+In the example you can see that we pass the generator to use: `pegomock generate` the package path name: `github.com/jenkins-x/jx/pkg/util` the name of the interface: `CommandInterface` and finally an output directive to write the generated file to a mock subfolder. To keep things nice and tidy it's best to write each mocked interface to a separate file in this folder. So in this case: `-o mocks/command_interface.go`
+
+Now simply run:
+```
+go generate ./...
+```
+or
+```
+make generate
+```
+
+You now have a mock to test your new interface!
+The new mock can now be imported into your test file and used for easy mocking/stubbing.
+Here's an example:
+```
+package util_test
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/jenkins-x/jx/pkg/util"
+	mocks "github.com/jenkins-x/jx/pkg/util/mocks"
+	. "github.com/petergtz/pegomock"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestJXBinaryLocationSuccess(t *testing.T) {
+	t.Parallel()
+	commandInterface := mocks.NewMockCommandInterface()
+	When(commandInterface.RunWithoutRetry()).ThenReturn("/test/something/bin/jx", nil)
+
+	res, err := util.JXBinaryLocation(commandInterface)
+	assert.Equal(t, "/test/something/bin", res)
+	assert.NoError(t, err, "Should not error")
+}
+```
+Here we're importing the mock we need in our import declaration:
+```
+mocks "github.com/jenkins-x/jx/pkg/util/mocks"
+```
+Then inside the test we're instantiating `NewMockCommandInterface` which was automatically generated for us by pegomock.
+
+Next we're stubbing something that we don't actually want to run when we execute our test. In this case we don't want to make a call to an external binary as that could break our tests isolation. We're using some handy matchers which are provided by pegomock, and importing using a `.` import to keep the syntax neat (You probably shouldn't do this outside of tests):
+```
+When(commandInterface.RunWithoutRetry()).ThenReturn("/test/something/bin/jx", nil)
+```
+Now when we can setup our  test using the mock interface and make assertions as normal.
 
 
 ### Debug logging

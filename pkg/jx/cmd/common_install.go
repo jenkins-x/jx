@@ -135,7 +135,7 @@ func binaryShouldBeInstalled(d string) string {
 				return ""
 			}
 		}
-		binDir, err := util.BinaryLocation()
+		binDir, err := util.JXBinLocation()
 		if err == nil {
 			exists, err := util.FileExists(filepath.Join(binDir, d))
 			if err == nil && exists {
@@ -195,7 +195,7 @@ func (o *CommonOptions) installBrewIfRequired() error {
 		return nil
 	}
 
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (o *CommonOptions) installKubectl() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		return o.RunCommand("brew", "install", "kubectl")
 	}
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
@@ -243,7 +243,7 @@ func (o *CommonOptions) installOc() error {
 	sha := "191fece"
 	latestVersion := "3.9.0"
 
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
@@ -465,7 +465,7 @@ func (o *CommonOptions) installHelm() error {
 		}
 	*/
 
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
@@ -501,7 +501,7 @@ func (o *CommonOptions) installHelm() error {
 }
 
 func (o *CommonOptions) installHelm3() error {
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
@@ -672,7 +672,7 @@ func (o *CommonOptions) installTerraform() error {
 		return o.RunCommand("brew", "install", "terraform")
 	}
 
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
@@ -709,7 +709,7 @@ func (o *CommonOptions) GetLatestJXVersion() (semver.Version, error) {
 }
 
 func (o *CommonOptions) installKops() error {
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
@@ -737,7 +737,7 @@ func (o *CommonOptions) installKops() error {
 }
 
 func (o *CommonOptions) installKSync() (bool, error) {
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return false, err
 	}
@@ -775,9 +775,14 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 			return o.RunCommand("brew", "install", "jx")
 		}
 	}
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
+	}
+	// Check for jx binary in non standard path and install there instead if found...
+	nonStandardBinDir, err := util.JXBinaryLocation(&util.Command{})
+	if err == nil && binDir != nonStandardBinDir {
+		binDir = nonStandardBinDir
 	}
 	binary := "jx"
 	fileName := binary
@@ -817,7 +822,7 @@ func (o *CommonOptions) installMinikube() error {
 		return o.RunCommand("brew", "cask", "install", "minikube")
 	}
 
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
@@ -848,7 +853,7 @@ func (o *CommonOptions) installMinishift() error {
 		return o.RunCommand("brew", "cask", "install", "minishift")
 	}
 
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	binary := "minishift"
 	if err != nil {
 		return err
@@ -916,7 +921,7 @@ func (o *CommonOptions) installAws() error {
 }
 
 func (o *CommonOptions) installEksCtl() error {
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	binary := "eksctl"
 	if err != nil {
 		return err
@@ -986,7 +991,7 @@ func (o *CommonOptions) installHeptioAuthenticatorAws() error {
 		awsUrl = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/windows/amd64/heptio-authenticator-aws.exe"
 		fileName = "heptio-authenticator-aws.exe"
 	}
-	binDir, err := util.BinaryLocation()
+	binDir, err := util.JXBinLocation()
 	fullPath := filepath.Join(binDir, fileName)
 	err = o.downloadFile(awsUrl, fullPath)
 	if err != nil {
