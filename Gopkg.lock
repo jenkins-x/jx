@@ -900,27 +900,10 @@
   revision = "27c6c0db883c8ad9910a61155fd00e210f195ef9"
 
 [[projects]]
-<<<<<<< HEAD
   branch = "master"
-  name = "github.com/wbrefvem/go-gitlab"
-  packages = ["."]
-  revision = "636305533ccf8d395b457da2fc113535ca027d1c"
-=======
-  digest = "1:40e43eac731a97a044d982f76c03829e1eb0a6f871ba07a10df198c7ea5765b5"
-  name = "github.com/wbrefvem/go-gitlab"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "d760a66e91a4212eef40a57567787a5163a8f74c"
-  version = "v0.8.1"
-
-[[projects]]
-  branch = "master"
-  digest = "1:0cf984a33be3935ec196b5cdbfbb9260dfa11c9d786e6bc6c9deb30a4688be4c"
   name = "github.com/xanzy/go-gitlab"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "f3bc634ab936f7e4ee5e21334ccfdfeb5601d477"
->>>>>>> fix: update the gitlab go library to fix the webhook
 
 [[projects]]
   name = "github.com/xanzy/ssh-agent"
@@ -1534,6 +1517,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3bdcbee06dc8379520661d966c4f5a86568acedb14f3e6cd596364f5292c670a"
+  inputs-digest = "261d9f37235576d7e7c4f21d1bb9094df9fd23de780c528ea3c22f7a165c854b"
   solver-name = "gps-cdcl"
   solver-version = 1
