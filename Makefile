@@ -182,7 +182,8 @@ release: check
 		git push origin
 		
 	##### overlayfs2 issue on gke: https://stackoverflow.com/questions/48673513/google-kubernetes-engine-errimagepull-too-many-links ######
-	docker system prune -a -f
+	## NOTE: -a flag seems to intermittently break releases. It only prunes inactive containers so this could point to another issue. 
+	docker system prune -f
 	#####
 
 clean:
