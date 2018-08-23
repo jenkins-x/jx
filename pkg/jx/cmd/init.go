@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -493,7 +494,11 @@ func (o *InitOptions) initIngress() error {
 		}
 
 		values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
-		valuesFiles := []string{"./myvalues.yaml"}
+		valuesFiles := []string{}
+		err = helm.AppendMyValues(valuesFiles)
+		if err != nil {
+			return err
+		}
 		if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
 			// we can only enable one port for NLBs right now
 			enableHttp := "false"
