@@ -242,6 +242,10 @@ docker-dev-all: build linux
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-ruby:dev -f Dockerfile.builder-ruby .
 	docker push $(DOCKER_HUB_USER)/builder-ruby:dev
 
+# Generate go code using generate directives in files. Mocks etc...
+generate:
+	$(GO) generate ./...
+
 .PHONY: release clean arm
 
 preview:

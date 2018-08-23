@@ -25,12 +25,11 @@ func TestRunPass(t *testing.T) {
 
 	os.Create(exPath + "/" + tmpFileName)
 
-	cmd := util.Command{
-		Name:    ex,
-		Dir:     exPath,
-		Args:    args,
-		Timeout: 15 * time.Second,
-	}
+	cmd := util.Command{}
+	cmd.SetName(ex)
+	cmd.SetDir(exPath)
+	cmd.SetArgs(args)
+	cmd.SetTimeout(15 * time.Second)
 
 	res, err := cmd.Run()
 
