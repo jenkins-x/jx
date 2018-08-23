@@ -7,7 +7,7 @@ import (
 )
 
 // CommandInterface defines the interface for a Command
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/util CommandInterface -o mocks/command_interface.go -p util_mock_test
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/util CommandInterface -o mocks/command_interface.go
 type CommandInterface interface {
 	DidError() bool
 	DidFail() bool
