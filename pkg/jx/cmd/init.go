@@ -12,11 +12,12 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -497,7 +498,7 @@ func (o *InitOptions) initIngress() error {
 		valuesFiles := []string{}
 		err = helm.AppendMyValues(valuesFiles)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to append the myvalues.yaml file")
 		}
 		if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
 			// we can only enable one port for NLBs right now
