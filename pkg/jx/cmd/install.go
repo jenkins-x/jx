@@ -21,6 +21,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -519,34 +520,12 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to update the helm repo")
 	}
 
-	valueFiles := []string{"./myvalues.yaml", "./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName}
+	valueFiles := []string{"./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName}
 
-	// Overwrite the values with the content of myvaules.yaml files from the current folder if exists, otherwise
-	// from ~/.jx folder also only if is present
-	curDir, err := os.Getwd()
+	err = helm.AppendMyValues(valueFiles)
 	if err != nil {
-		return errors.Wrap(err, "failed to get the current working directory")
+		return err
 	}
-	myValuesFile := filepath.Join(curDir, "myvalues.yaml")
-	exists, err := util.FileExists(myValuesFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to check if the myvaules.yaml file exists in the current directory")
-	}
-	if exists {
-		valueFiles = append(valueFiles, myValuesFile)
-		log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
-	} else {
-		myValuesFile = filepath.Join(dir, "myvalues.yaml")
-		exists, err = util.FileExists(myValuesFile)
-		if err != nil {
-			return errors.Wrap(err, "failed to check if the myvaules.yaml file exists in the .jx directory")
-		}
-		if exists {
-			valueFiles = append(valueFiles, myValuesFile)
-			log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
-		}
-	}
-
 	options.currentNamespace = ns
 	if options.Flags.Prow {
 		// install prow into the new env

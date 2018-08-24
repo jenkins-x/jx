@@ -19,6 +19,7 @@ const (
 	gitlabUserName    = "testperson"
 	gitlabOrgName     = "testorg"
 	gitlabProjectName = "test-project"
+	gitlabProjectID   = "5690870"
 )
 
 type GitlabProviderSuite struct {
@@ -92,9 +93,8 @@ func configureGitlabMock(suite *GitlabProviderSuite, mux *http.ServeMux) {
 		w.Write(src)
 	})
 
-	projectId := fmt.Sprintf("%s/%s", gitlabUserName, gitlabProjectName)
 	gitlabRouter := util.Router{
-		fmt.Sprintf("/api/v4/projects/%s", projectId): util.MethodMap{
+		fmt.Sprintf("/api/v4/projects/%s", gitlabProjectID): util.MethodMap{
 			"GET": "project.json",
 		},
 	}
@@ -118,19 +118,29 @@ func (suite *GitlabProviderSuite) TestListRepositories() {
 		org              string
 		expectedRepoName string
 		expectedSSHURL   string
+		expectedHTTPSURL string
 		expectedHTMLURL  string
 	}{
-		{"List repositories for organization", gitlabOrgName, "orgproject", "git@gitlab.com:testorg/orgproject.git", "https://gitlab.com/testorg/orgproject"},
-		{"List repositories without organization", "", "userproject", "git@gitlab.com:testperson/userproject.git", "https://gitlab.com/testperson/userproject"},
+		{"List repositories for organization",
+			gitlabOrgName,
+			"orgproject",
+			"git@gitlab.com:testorg/orgproject.git",
+			"https://gitlab.com/testorg/orgproject.git",
+			"https://gitlab.com/testorg/orgproject"},
+		{"List repositories without organization",
+			"", "userproject",
+			"git@gitlab.com:testperson/userproject.git",
+			"https://gitlab.com/testperson/userproject.git",
+			"https://gitlab.com/testperson/userproject"},
 	}
 
 	for _, s := range scenarios {
 		repositories, err := suite.provider.ListRepositories(s.org)
 		require.Nil(err)
-		require.Len(repositories, 1)
+		require.Len(repositories, 2)
 		require.Equal(s.expectedRepoName, repositories[0].Name)
 		require.Equal(s.expectedSSHURL, repositories[0].SSHURL)
-		require.Equal(s.expectedSSHURL, repositories[0].CloneURL)
+		require.Equal(s.expectedHTTPSURL, repositories[0].CloneURL)
 		require.Equal(s.expectedHTMLURL, repositories[0].HTMLURL)
 	}
 }

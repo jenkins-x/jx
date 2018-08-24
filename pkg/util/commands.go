@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"io"
+
 	"github.com/cenkalti/backoff"
 	"github.com/pkg/errors"
-	"io"
 )
 
 // Command is a struct containing the details of an external command to be executed
@@ -24,14 +25,29 @@ type Command struct {
 	Err                io.Writer
 }
 
-// CommandInterface defines the interface for a Command
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/util CommandInterface
-type CommandInterface interface {
-	DidError() bool
-	DidFail() bool
-	Error() error
-	Run() (string, error)
-	RunWithoutRetry() (string, error)
+// SetName Setter method for Name to enable use of interface instead of Command struct
+func (c *Command) SetName(name string) {
+	c.Name = name
+}
+
+// SetDir Setter method for Dir to enable use of interface instead of Command struct
+func (c *Command) SetDir(dir string) {
+	c.Dir = dir
+}
+
+// SetArgs Setter method for Args to enable use of interface instead of Command struct
+func (c *Command) SetArgs(args []string) {
+	c.Args = args
+}
+
+// SetTimeout Setter method for Timeout to enable use of interface instead of Command struct
+func (c *Command) SetTimeout(timeout time.Duration) {
+	c.Timeout = timeout
+}
+
+// SetExponentialBackOff Setter method for ExponentialBackOff to enable use of interface instead of Command struct
+func (c *Command) SetExponentialBackOff(backoff *backoff.ExponentialBackOff) {
+	c.ExponentialBackOff = backoff
 }
 
 // Attempts The number of times the command has been executed
@@ -145,7 +161,7 @@ func (c *Command) run() (string, error) {
 // PathWithBinary Sets the $PATH variable. Accepts an optional slice of strings containing paths to add to $PATH
 func PathWithBinary(paths ...string) string {
 	path := os.Getenv("PATH")
-	binDir, _ := BinaryLocation()
+	binDir, _ := JXBinLocation()
 	answer := path + string(os.PathListSeparator) + binDir
 	mvnBinDir, _ := MavenBinaryLocation()
 	if mvnBinDir != "" {
