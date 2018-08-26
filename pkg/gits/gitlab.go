@@ -392,8 +392,10 @@ func (g *GitlabProvider) CreateWebHook(data *GitWebHookArguments) error {
 		return nil
 	}
 
+	owner := owner(g.Username, data.Owner)
+	webhookURL := util.UrlJoin(data.URL, owner, data.Repo.Name)
 	opt := &gitlab.AddProjectHookOptions{
-		URL:   &data.URL,
+		URL:   &webhookURL,
 		Token: &data.Secret,
 	}
 
@@ -552,7 +554,7 @@ func (g *GitlabProvider) Kind() string {
 }
 
 func (g *GitlabProvider) JenkinsWebHookPath(gitURL string, secret string) string {
-	return "/gitlab/notify_commit"
+	return "/project"
 }
 
 func (g *GitlabProvider) Label() string {
