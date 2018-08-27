@@ -19,7 +19,6 @@ type GCOptions struct {
 const (
 	valid_gc_resources = `Valid resource types include:
 
-    * previews
     * activities
 	* helm
 	* previews

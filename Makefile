@@ -182,7 +182,8 @@ release: check
 		git push origin
 		
 	##### overlayfs2 issue on gke: https://stackoverflow.com/questions/48673513/google-kubernetes-engine-errimagepull-too-many-links ######
-	docker system prune -a -f
+	## NOTE: -a flag seems to intermittently break releases. It only prunes inactive containers so this could point to another issue. 
+	docker system prune -f
 	#####
 
 clean:
@@ -241,6 +242,10 @@ docker-dev-all: build linux
 	docker push $(DOCKER_HUB_USER)/builder-python2:dev
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-ruby:dev -f Dockerfile.builder-ruby .
 	docker push $(DOCKER_HUB_USER)/builder-ruby:dev
+
+# Generate go code using generate directives in files. Mocks etc...
+generate:
+	$(GO) generate ./...
 
 .PHONY: release clean arm
 

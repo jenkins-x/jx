@@ -121,7 +121,7 @@
   version = "v1.5.0"
 
 [[projects]]
-  digest = "1:ea3f797d2bb9f86c0f4975654bb7385389aa71d5cec796de72fff8ff407e7d39"
+  digest = "1:28061299f3ae32309ff7233463b119d4a0c6c7301c7c278fafb68b68aa98aedb"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -163,8 +163,8 @@
     "service/sts",
   ]
   pruneopts = "NUT"
-  revision = "bc3f534c19ffdf835e524e11f0f825b3eaf541c3"
-  version = "v1.14.31"
+  revision = "66974140c322f22c1daaf95a18930ea6a9e4d21e"
+  version = "v1.15.16"
 
 [[projects]]
   digest = "1:f4298c81d8a94ab68d9e387eaf6e653387df5da17702f06c6d8718a7a8e549d0"
@@ -845,6 +845,14 @@
   version = "v1.6.0"
 
 [[projects]]
+  digest = "1:fa4386968d0ba5116a73a9b166c76bdf340317f56f19dd0c7b64376d434b786c"
+  name = "github.com/onsi/gomega"
+  packages = ["format"]
+  pruneopts = "NUT"
+  revision = "b6ea1ea48f981d0f615a154a45eabb9dd466556d"
+  version = "v1.4.1"
+
+[[projects]]
   digest = "1:cce3a18fb0b96b5015cd8ca03a57d20a662679de03c4dc4b6ff5f17ea2050fa6"
   name = "github.com/pborman/uuid"
   packages = ["."]
@@ -883,6 +891,17 @@
   pruneopts = "NUT"
   revision = "5f041e8faa004a95c88a202771f4cc3e991971e6"
   version = "v2.0.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:501b4f26b548f076b4951bef5a579e424fc4d47dbd48b6e27a41dbe937b68af6"
+  name = "github.com/petergtz/pegomock"
+  packages = [
+    ".",
+    "internal/verify",
+  ]
+  pruneopts = "NUT"
+  revision = "278dd9bee02596f5347dcffe7736d1ff1794223c"
 
 [[projects]]
   branch = "master"
@@ -1125,11 +1144,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cce44e69aeb4940e6afe41f6418ef78a1974dbfe64f6581744a0b7d72cfbe848"
-  name = "github.com/wbrefvem/go-gitlab"
+  digest = "1:0cf984a33be3935ec196b5cdbfbb9260dfa11c9d786e6bc6c9deb30a4688be4c"
+  name = "github.com/xanzy/go-gitlab"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "ecc4c5b8455a01dc64009b828cd19db9db3f3590"
+  revision = "f3bc634ab936f7e4ee5e21334ccfdfeb5601d477"
 
 [[projects]]
   digest = "1:3148cb3478c26a92b4c1a18abb9428234b281e278af6267840721a24b6cbc6a3"
@@ -1854,6 +1873,7 @@
     "github.com/nlopes/slack",
     "github.com/onsi/ginkgo/reporters",
     "github.com/pborman/uuid",
+    "github.com/petergtz/pegomock",
     "github.com/pkg/browser",
     "github.com/pkg/errors",
     "github.com/russross/blackfriday",
@@ -1863,7 +1883,7 @@
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/suite",
     "github.com/wbrefvem/go-bitbucket",
-    "github.com/wbrefvem/go-gitlab",
+    "github.com/xanzy/go-gitlab",
     "golang.org/x/oauth2",
     "golang.org/x/sync/errgroup",
     "gopkg.in/AlecAivazis/survey.v1",
@@ -1888,6 +1908,7 @@
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/runtime/serializer",
+    "k8s.io/apimachinery/pkg/selection",
     "k8s.io/apimachinery/pkg/types",
     "k8s.io/apimachinery/pkg/util/errors",
     "k8s.io/apimachinery/pkg/util/uuid",
