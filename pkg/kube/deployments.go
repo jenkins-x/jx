@@ -43,6 +43,19 @@ func GetDeploymentNames(client kubernetes.Interface, ns string, filter string) (
 	return names, nil
 }
 
+func GetDeploymentByRepo(client kubernetes.Interface, ns string, repoName string) (*v1beta1.Deployment, error) {
+	deps, err := client.AppsV1beta1().Deployments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, d := range deps.Items {
+		if strings.HasPrefix(d.Name, repoName) {
+			return &d, nil
+		}
+	}
+	return nil, fmt.Errorf("no deployment found for repository name '%s'", repoName)
+}
+
 func IsDeploymentRunning(client kubernetes.Interface, name, namespace string) (bool, error) {
 	options := metav1.GetOptions{}
 
