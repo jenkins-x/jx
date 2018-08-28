@@ -1,20 +1,29 @@
 package cmd
 
 import (
-	"io"
-
-	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	b64 "encoding/base64"
+	"encoding/json"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"io"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	username = "user"
 	host     = "host"
 )
+
+type Config struct {
+	Auths map[string]*Auth `json:"auths,omitempty"`
+}
+
+type Auth struct {
+	Auth  string `json:"auth,omitempty"`
+	Email string `json:"email,omitempty"`
+}
 
 var (
 	createDockerAuthLong = templates.LongDesc(`
@@ -91,6 +100,29 @@ func (o *CreateDockerAuthOptions) Run() error {
 	if err != nil {
 		return nil
 	}
-	secretFromConfig.Data["config.json"] = ""
+	dockerConfig := &Config{}
+	err = json.Unmarshal(secretFromConfig.Data["config.json"], dockerConfig)
+	if err != nil {
+		return err
+	}
+	foundAuth := false
+	for k, v := range dockerConfig.Auths {
+		if util.StringMatchesPattern(k, o.Host) {
+			v.Auth = b64.StdEncoding.EncodeToString([]byte(o.User + ":" + o.Secret))
+			foundAuth = true
+			break
+		}
+	}
+	if foundAuth != true {
+		newConfigData := &Auth{}
+		newConfigData.Auth = b64.StdEncoding.EncodeToString([]byte(o.User + ":" + o.Secret))
+		newConfigData.Email = "someEmailId" //TODO:Populate the correct email Id
+		dockerConfig.Auths[o.Host] = newConfigData
+	}
+	secretFromConfig.Data["config.json"], err = json.Marshal(dockerConfig)
+	if err != nil {
+		return err
+	}
+	kubeClient.CoreV1().Secrets(currentNs).Update(secretFromConfig)
 	return nil
 }
