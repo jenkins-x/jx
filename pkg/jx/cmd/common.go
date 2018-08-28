@@ -44,18 +44,19 @@ const (
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory             Factory
-	Out                 io.Writer
-	Err                 io.Writer
-	Cmd                 *cobra.Command
-	Args                []string
-	BatchMode           bool
-	Verbose             bool
-	Headless            bool
-	NoBrew              bool
-	InstallDependencies bool
-	ServiceAccount      string
-	Username            string
+	Factory              Factory
+	Out                  io.Writer
+	Err                  io.Writer
+	Cmd                  *cobra.Command
+	Args                 []string
+	BatchMode            bool
+	Verbose              bool
+	Headless             bool
+	NoBrew               bool
+	InstallDependencies  bool
+	SkipAuthSecretsMerge bool
+	ServiceAccount       string
+	Username             string
 
 	// common cached clients
 	KubeClientCached    kubernetes.Interface
@@ -115,6 +116,7 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
 	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install or upgrade command line dependencies")
 	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")
+	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, "skip-auth-secrets-merge", "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
 	options.Cmd = cmd
 }
 
