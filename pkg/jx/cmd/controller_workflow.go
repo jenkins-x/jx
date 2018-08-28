@@ -81,7 +81,7 @@ func NewCmdControllerWorkflow(f Factory, out io.Writer, errOut io.Writer) *cobra
 
 // Run implements this command
 func (o *ControllerWorkflowOptions) Run() error {
-	err := o.registerWorkflowCRD()
+	err := o.registerPipelineActivityCRD()
 	if err != nil {
 		return err
 	}

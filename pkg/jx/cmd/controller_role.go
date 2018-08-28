@@ -18,23 +18,23 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-// StepEnvRoleBindingOptions the command line options
-type StepEnvRoleBindingOptions struct {
-	StepOptions
+// ControllerRoleOptions the command line options
+type ControllerRoleOptions struct {
+	ControllerOptions
 
-	Watch bool
+	NoWatch bool
 
 	Roles           map[string]*rbacv1.Role
 	EnvRoleBindings map[string]*v1.EnvironmentRoleBinding
 }
 
-type StepEnvRoleBindingFlags struct {
+type ControllerRoleFlags struct {
 	Version string
 }
 
 var (
-	stepEnvRoleBindingLong = templates.LongDesc(`
-		Mirrors EnvironmentRoleBinding resources to Roles and RoleBindings in all matching Environment namespaces. 
+	controllerRoleLong = templates.LongDesc(`
+		Controller which replicas Role and EnvironmentRoleBinding resources to Roles and RoleBindings in all matching Environment namespaces. 
 
 		RBAC in Kubernetes is either global with ClusterRoles or is namespace based with Roles per Namespace.
 
@@ -46,20 +46,20 @@ var (
 
 `)
 
-	stepEnvRoleBindingExample = templates.Examples(`
+	controllerRoleExample = templates.Examples(`
+		# watch for changes in Role and EnvironmentRoleBindings in the dev namespace
+		# and update the Role + RoleBinding resources in each environment namespace 
+		jx controller role
 
 		# update the current RoleBinding resources in each environment based on the current EnvironmentRoleBindings
-		jx step envrolebinding
+		jx controller role --no-watch
 
-		# watch for changes in Environments and EnvironmentRoleBindings
-		# and update the RoleBinding resources in each environment namespace 
-		jx step envrolebinding -w
 `)
 )
 
-func NewCmdStepEnvRoleBinding(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := StepEnvRoleBindingOptions{
-		StepOptions: StepOptions{
+func NewCmdControllerRole(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	options := ControllerRoleOptions{
+		ControllerOptions: ControllerOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
 				Out:     out,
@@ -68,10 +68,10 @@ func NewCmdStepEnvRoleBinding(f Factory, out io.Writer, errOut io.Writer) *cobra
 		},
 	}
 	cmd := &cobra.Command{
-		Use:     "envrolebinding",
-		Short:   "Mirrors EnvironmentRoleBinding resources to Roles and RoleBindings in all matching Environment namespaces",
-		Long:    stepEnvRoleBindingLong,
-		Example: stepEnvRoleBindingExample,
+		Use:     "role",
+		Short:   "Controller which mirrors Role & EnvironmentRoleBinding resources to Roles and RoleBindings in all matching Environment namespaces",
+		Long:    controllerRoleLong,
+		Example: controllerRoleExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -80,11 +80,11 @@ func NewCmdStepEnvRoleBinding(f Factory, out io.Writer, errOut io.Writer) *cobra
 		},
 	}
 
-	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "Whether to watch the Environments and EnvironmentRoleBindings for changes")
+	cmd.Flags().BoolVarP(&options.NoWatch, "no-watch", "n", false, "To disable watching of the resources - to enable one-shot mode")
 	return cmd
 }
 
-func (o *StepEnvRoleBindingOptions) Run() error {
+func (o *ControllerRoleOptions) Run() error {
 	apiClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (o *StepEnvRoleBindingOptions) Run() error {
 		return err
 	}
 
-	if o.Watch {
+	if !o.NoWatch {
 		err = o.WatchRoles(kubeClient, ns)
 		if err != nil {
 			return err
@@ -150,9 +150,9 @@ func (o *StepEnvRoleBindingOptions) Run() error {
 	return nil
 }
 
-func (o *StepEnvRoleBindingOptions) WatchRoles(kubeClient kubernetes.Interface, ns string) error {
+func (o *ControllerRoleOptions) WatchRoles(kubeClient kubernetes.Interface, ns string) error {
 	role := &rbacv1.Role{}
-	listWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "roles", ns, fields.Everything())
+	listWatch := cache.NewListWatchFromClient(kubeClient.RbacV1().RESTClient(), "roles", ns, fields.Everything())
 	kube.SortListWatchByName(listWatch)
 	_, controller := cache.NewInformer(
 		listWatch,
@@ -176,7 +176,7 @@ func (o *StepEnvRoleBindingOptions) WatchRoles(kubeClient kubernetes.Interface, 
 	return nil
 }
 
-func (o *StepEnvRoleBindingOptions) WatchEnvironmentRoleBindings(jxClient versioned.Interface, ns string) error {
+func (o *ControllerRoleOptions) WatchEnvironmentRoleBindings(jxClient versioned.Interface, ns string) error {
 	environmentRoleBinding := &v1.EnvironmentRoleBinding{}
 	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "environmentrolebindings", ns, fields.Everything())
 	kube.SortListWatchByName(listWatch)
@@ -202,7 +202,7 @@ func (o *StepEnvRoleBindingOptions) WatchEnvironmentRoleBindings(jxClient versio
 	return nil
 }
 
-func (o *StepEnvRoleBindingOptions) WatchEnvironments(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string) error {
+func (o *ControllerRoleOptions) WatchEnvironments(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string) error {
 	environment := &v1.Environment{}
 	listWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "environments", ns, fields.Everything())
 	kube.SortListWatchByName(listWatch)
@@ -230,15 +230,19 @@ func (o *StepEnvRoleBindingOptions) WatchEnvironments(kubeClient kubernetes.Inte
 	select {}
 }
 
-func (o *StepEnvRoleBindingOptions) onEnvironment(kubeClient kubernetes.Interface, ns string, oldObj interface{}, newObj interface{}) {
-	oldEnv := oldObj.(*v1.Environment)
-	newEnv := newObj.(*v1.Environment)
-
-	if oldEnv != nil {
-		if newEnv == nil || newEnv.Spec.Namespace != oldEnv.Spec.Namespace {
-			err := o.removeEnvironment(kubeClient, ns, oldEnv)
-			if err != nil {
-				log.Warnf("Failed to remove role bindings for environment %s: %s", oldEnv.Name, err)
+func (o *ControllerRoleOptions) onEnvironment(kubeClient kubernetes.Interface, ns string, oldObj interface{}, newObj interface{}) {
+	var newEnv *v1.Environment
+	if newObj != nil {
+		newEnv = newObj.(*v1.Environment)
+	}
+	if oldObj != nil {
+		oldEnv := oldObj.(*v1.Environment)
+		if oldEnv != nil {
+			if newEnv == nil || newEnv.Spec.Namespace != oldEnv.Spec.Namespace {
+				err := o.removeEnvironment(kubeClient, ns, oldEnv)
+				if err != nil {
+					log.Warnf("Failed to remove role bindings for environment %s: %s", oldEnv.Name, err)
+				}
 			}
 		}
 	}
@@ -250,7 +254,7 @@ func (o *StepEnvRoleBindingOptions) onEnvironment(kubeClient kubernetes.Interfac
 	}
 }
 
-func (o *StepEnvRoleBindingOptions) upsertEnvironment(kubeClient kubernetes.Interface, curNs string, env *v1.Environment) error {
+func (o *ControllerRoleOptions) upsertEnvironment(kubeClient kubernetes.Interface, curNs string, env *v1.Environment) error {
 	var answer error
 	ns := env.Spec.Namespace
 	if ns != "" {
@@ -341,7 +345,7 @@ func (o *StepEnvRoleBindingOptions) upsertEnvironment(kubeClient kubernetes.Inte
 	return answer
 }
 
-func (o *StepEnvRoleBindingOptions) removeEnvironment(kubeClient kubernetes.Interface, curNs string, env *v1.Environment) error {
+func (o *ControllerRoleOptions) removeEnvironment(kubeClient kubernetes.Interface, curNs string, env *v1.Environment) error {
 	ns := env.Spec.Namespace
 	if ns != "" {
 		for _, binding := range o.EnvRoleBindings {
@@ -354,20 +358,23 @@ func (o *StepEnvRoleBindingOptions) removeEnvironment(kubeClient kubernetes.Inte
 	return nil
 }
 
-func (o *StepEnvRoleBindingOptions) onEnvironmentRoleBinding(oldObj interface{}, newObj interface{}) {
-	oldEnv := oldObj.(*v1.EnvironmentRoleBinding)
-	newEnv := newObj.(*v1.EnvironmentRoleBinding)
-
+func (o *ControllerRoleOptions) onEnvironmentRoleBinding(oldObj interface{}, newObj interface{}) {
 	if o.EnvRoleBindings == nil {
 		o.EnvRoleBindings = map[string]*v1.EnvironmentRoleBinding{}
 	}
-	if oldEnv != nil {
-		delete(o.EnvRoleBindings, oldEnv.Name)
+	if oldObj != nil {
+		oldEnv := oldObj.(*v1.EnvironmentRoleBinding)
+		if oldEnv != nil {
+			delete(o.EnvRoleBindings, oldEnv.Name)
+		}
 	}
-	o.upsertEnvironmentRoleBinding(newEnv)
+	if newObj != nil {
+		newEnv := newObj.(*v1.EnvironmentRoleBinding)
+		o.upsertEnvironmentRoleBinding(newEnv)
+	}
 }
 
-func (o *StepEnvRoleBindingOptions) upsertEnvironmentRoleBinding(newEnv *v1.EnvironmentRoleBinding) {
+func (o *ControllerRoleOptions) upsertEnvironmentRoleBinding(newEnv *v1.EnvironmentRoleBinding) {
 	if newEnv != nil {
 		if o.EnvRoleBindings == nil {
 			o.EnvRoleBindings = map[string]*v1.EnvironmentRoleBinding{}
@@ -376,20 +383,23 @@ func (o *StepEnvRoleBindingOptions) upsertEnvironmentRoleBinding(newEnv *v1.Envi
 	}
 }
 
-func (o *StepEnvRoleBindingOptions) onRole(oldObj interface{}, newObj interface{}) {
-	oldRole := oldObj.(*rbacv1.Role)
-	newRole := newObj.(*rbacv1.Role)
-
+func (o *ControllerRoleOptions) onRole(oldObj interface{}, newObj interface{}) {
 	if o.Roles == nil {
 		o.Roles = map[string]*rbacv1.Role{}
 	}
-	if oldRole != nil {
-		delete(o.Roles, oldRole.Name)
+	if oldObj != nil {
+		oldRole := oldObj.(*rbacv1.Role)
+		if oldRole != nil {
+			delete(o.Roles, oldRole.Name)
+		}
 	}
-	o.upsertRole(newRole)
+	if newObj != nil {
+		newRole := newObj.(*rbacv1.Role)
+		o.upsertRole(newRole)
+	}
 }
 
-func (o *StepEnvRoleBindingOptions) upsertRole(newRole *rbacv1.Role) {
+func (o *ControllerRoleOptions) upsertRole(newRole *rbacv1.Role) {
 	if newRole != nil {
 		if o.Roles == nil {
 			o.Roles = map[string]*rbacv1.Role{}
