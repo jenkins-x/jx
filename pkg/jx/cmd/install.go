@@ -630,8 +630,7 @@ func (options *InstallOptions) Run() error {
 				options.CreateEnvOptions.BatchMode = options.BatchMode
 			}
 			options.CreateEnvOptions.Prow = options.Flags.Prow
-			options.CreateEnvOptions.GitRepositoryOptions.ServerURL = options.GitRepositoryOptions.ServerURL
-			options.CreateEnvOptions.GitRepositoryOptions.Private = options.GitRepositoryOptions.Private
+			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
 
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
