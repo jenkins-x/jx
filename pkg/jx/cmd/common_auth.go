@@ -21,20 +21,24 @@ func (o *CommonOptions) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.Auth
 }
 
 func (o *CommonOptions) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
-	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
-	if err != nil {
+	var secrets *corev1.SecretList
+	var err error
+	if !o.SkipAuthSecretsMerge {
+		secrets, err = o.LoadPipelineSecrets(kube.ValueKindGit, "")
+		if err != nil {
 
-		kubeConfig, _, configLoadErr := kube.LoadConfig()
-		if configLoadErr != nil {
-			log.Warnf("WARNING: Could not load config: %s", configLoadErr)
+			kubeConfig, _, configLoadErr := kube.LoadConfig()
+			if configLoadErr != nil {
+				log.Warnf("WARNING: Could not load config: %s", configLoadErr)
+			}
+
+			ns := kube.CurrentNamespace(kubeConfig)
+			if ns == "" {
+				log.Warnf("WARNING: Could not get the current namespace")
+			}
+
+			log.Warnf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
 		}
-
-		ns := kube.CurrentNamespace(kubeConfig)
-		if ns == "" {
-			log.Warnf("WARNING: Could not get the current namespace")
-		}
-
-		log.Warnf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
 	}
 
 	fileName := GitAuthConfigFile

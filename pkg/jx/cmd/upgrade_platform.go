@@ -2,9 +2,8 @@ package cmd
 
 import (
 	"io"
-	"os"
-	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -98,33 +97,10 @@ func (o *UpgradePlatformOptions) Run() error {
 		log.Infof("Upgrading to version %s\n", util.ColorInfo(version))
 	}
 
-	dir, err := util.ConfigDir()
-	if err != nil {
-		return errors.Wrap(err, "failed to create a temporary config dir for git credentials")
-	}
 	valueFiles := []string{}
-	curDir, err := os.Getwd()
+	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
-		return errors.Wrap(err, "failed to get the current working directory")
-	}
-	myValuesFile := filepath.Join(curDir, "myvalues.yaml")
-	exists, err := util.FileExists(myValuesFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to check if the myvaules.yaml file exists in the current directory")
-	}
-	if exists {
-		valueFiles = append(valueFiles, myValuesFile)
-		log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
-	} else {
-		myValuesFile = filepath.Join(dir, "myvalues.yaml")
-		exists, err = util.FileExists(myValuesFile)
-		if err != nil {
-			return errors.Wrap(err, "failed to check if the myvaules.yaml file exists in the .jx directory")
-		}
-		if exists {
-			valueFiles = append(valueFiles, myValuesFile)
-			log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
-		}
+		return errors.Wrap(err, "failed to append the myvalues.yaml file")
 	}
 
 	values := []string{}
