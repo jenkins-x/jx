@@ -3,11 +3,14 @@ package helm
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"k8s.io/helm/pkg/chartutil"
 )
 
@@ -199,4 +202,37 @@ func LoadChartNameAndVersion(chartFile string) (string, string, error) {
 		return "", "", err
 	}
 	return chart.Name, chart.Version, nil
+}
+
+func AppendMyValues(valueFiles []string) ([]string, error) {
+	// Overwrite the values with the content of myvalues.yaml files from the current folder if exists, otherwise
+	// from ~/.jx folder also only if it's present
+	curDir, err := os.Getwd()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get the current working directory")
+	}
+	myValuesFile := filepath.Join(curDir, "myvalues.yaml")
+	exists, err := util.FileExists(myValuesFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if the myvaules.yaml file exists in the current directory")
+	}
+	if exists {
+		valueFiles = append(valueFiles, myValuesFile)
+		log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
+	} else {
+		configDir, err := util.ConfigDir()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read the config directory")
+		}
+		myValuesFile = filepath.Join(configDir, "myvalues.yaml")
+		exists, err = util.FileExists(myValuesFile)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check if the myvaules.yaml file exists in the .jx directory")
+		}
+		if exists {
+			valueFiles = append(valueFiles, myValuesFile)
+			log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
+		}
+	}
+	return valueFiles, nil
 }

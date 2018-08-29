@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const appLabel = "app"
@@ -71,22 +72,41 @@ func (o *StepVerifyOptions) Run() error {
 	// Wait for the given time to exceed before starting the verification
 	time.Sleep(time.Duration(o.After) * time.Second)
 
-	activity, err := o.detectPipelineActivity()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to detect the pipeline activity")
+		return errors.Wrap(err, "failed to create the api extensions client")
+	}
+	err = kube.RegisterPipelineActivityCRD(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the pipeline activity CRD")
 	}
 
-	app, ns, err := o.determineAppAndNamespace(activity)
+	err = kube.RegisterEnvironmentCRD(apisClient)
 	if err != nil {
-		return errors.Wrap(err, "failed to determine the application name and namespace from pipeline activity")
+		return errors.Wrap(err, "failed to register the environment CRD")
 	}
 
-	log.Infof("Verifying if app '%s' is running in namespace '%s'", app, ns)
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to get the jx client")
+	}
 
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to get the Kube client")
 	}
+
+	activity, err := o.detectPipelineActivity(jxClient, devNs)
+	if err != nil {
+		return errors.Wrap(err, "failed to detect the pipeline activity")
+	}
+
+	app, ns, err := o.determineAppAndNamespace(kubeClient, jxClient, devNs, activity)
+	if err != nil {
+		return errors.Wrap(err, "failed to determine the application name and namespace from pipeline activity")
+	}
+
+	log.Infof("Verifying if app '%s' is running in namespace '%s'", app, ns)
 
 	pods, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -144,28 +164,14 @@ func (o *StepVerifyOptions) Run() error {
 	return nil
 }
 
-func (o *StepVerifyOptions) detectPipelineActivity() (*v1.PipelineActivity, error) {
+func (o *StepVerifyOptions) detectPipelineActivity(jxClient versioned.Interface, namespace string) (*v1.PipelineActivity, error) {
 	pipeline := os.Getenv("JOB_NAME")
 	build := os.Getenv("BUILD_NUMBER")
 	if pipeline == "" || build == "" {
 		return nil, errors.New("JOB_NAME or BUILD_NUMBER environment variables not set")
 	}
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create the api extensions client")
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to register the pipeline activity CRD")
-	}
-
-	jxClient, devNs, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get the jx client")
-	}
-
 	name := kube.ToValidName(pipeline + "-" + build)
-	activities := jxClient.JenkinsV1().PipelineActivities(devNs)
+	activities := jxClient.JenkinsV1().PipelineActivities(namespace)
 	activity, err := activities.Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get the activity with name '%s'", name)
@@ -173,18 +179,21 @@ func (o *StepVerifyOptions) detectPipelineActivity() (*v1.PipelineActivity, erro
 	return activity, nil
 }
 
-func (o *StepVerifyOptions) determineAppAndNamespace(activity *v1.PipelineActivity) (string, string, error) {
+func (o *StepVerifyOptions) determineAppAndNamespace(kubeClient kubernetes.Interface, jxClient versioned.Interface,
+	namesapce string, activity *v1.PipelineActivity) (string, string, error) {
 	for _, step := range activity.Spec.Steps {
 		if step.Kind == v1.ActivityStepKindTypePreview {
 			preview := step.Preview
 			if preview == nil {
 				return "", "", fmt.Errorf("empty preview step in pipeline activity '%s'", activity.Name)
 			}
-			applicationURL := preview.ApplicationURL
-			if applicationURL == "" {
-				return "", "", fmt.Errorf("empty application URL in pipeline activity '%s'", activity.Name)
+			env, err := kube.GetEnvironmentsByPrURL(jxClient, namesapce, preview.PullRequestURL)
+			if err != nil {
+				return "", "", errors.Wrapf(err, "searching environment by PR URL '%s'", preview.PullRequestURL)
 			}
-			return o.parseApplicationURL(applicationURL)
+			envNs := env.Spec.Namespace
+			appName := fmt.Sprintf("%s-preview", envNs)
+			return appName, envNs, nil
 		}
 
 		if step.Kind == v1.ActivityStepKindTypePromote {
@@ -192,24 +201,20 @@ func (o *StepVerifyOptions) determineAppAndNamespace(activity *v1.PipelineActivi
 			if promote == nil {
 				return "", "", fmt.Errorf("empty promote step in pipeline activity '%s'", activity.Name)
 			}
-			applicationURL := promote.ApplicationURL
-			if applicationURL == "" {
-				return "", "", fmt.Errorf("empty application URL in pipeline activity '%s'", activity.Name)
+			env, err := kube.GetEnvironment(jxClient, namesapce, promote.Environment)
+			if err != nil {
+				return "", "", errors.Wrapf(err, "search environment by name '%s'", promote.Environment)
 			}
-			return o.parseApplicationURL(applicationURL)
+			envNs := env.Spec.Namespace
+			repoName := activity.Spec.GitRepository
+			deployment, err := kube.GetDeploymentByRepo(kubeClient, envNs, repoName)
+			if err != nil {
+				return "", "", errors.Wrapf(err, "searching deployment by repo name '%s' in namespace '%s'", repoName, envNs)
+			}
+			return deployment.GetName(), envNs, nil
 		}
 	}
 	return "", "", fmt.Errorf("could not determine the application name and namespace from activity '%s'", activity.Name)
-}
-
-func (o *StepVerifyOptions) parseApplicationURL(applicationURL string) (string, string, error) {
-	applicationURL = strings.TrimPrefix(applicationURL, "https://")
-	applicationURL = strings.TrimPrefix(applicationURL, "http://")
-	parts := strings.Split(applicationURL, ".")
-	if len(parts) < 2 {
-		return "", "", fmt.Errorf("cannot parse the application name and namespace from URL '%s'", applicationURL)
-	}
-	return parts[0], parts[1], nil
 }
 
 func (o *StepVerifyOptions) updatePipelineActivity(activity *v1.PipelineActivity, status v1.ActivityStatusType) error {

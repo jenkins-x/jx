@@ -17,7 +17,9 @@ import (
 
 func TestEnvironmentRoleBinding(t *testing.T) {
 	t.Parallel()
-	o := &cmd.StepEnvRoleBindingOptions{}
+	o := &cmd.ControllerRoleOptions{
+		NoWatch: true,
+	}
 	roleBindingName := "env-role-bindings"
 	roleName := "myrole"
 
