@@ -92,12 +92,16 @@ pipeline {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
                     checkout scm
                     container('go') {
+                        sh "git config --global credential.helper store"
+                        sh "jx step git credentials"
                         sh "echo \$(jx-release-version) > pkg/version/VERSION"
                         sh "make release"
                     }
                 }
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx/charts/jx') {
                     container('go') {
+                        sh "git config --global credential.helper store"
+                        sh "jx step git credentials"
                         sh "helm init --client-only"
                         sh "make release"
                     }
