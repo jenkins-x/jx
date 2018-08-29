@@ -32,7 +32,7 @@ var (
 
 	createDockerAuthExample = templates.Examples(`
 		# Create/update docker auth entry in the config.json file
-		jx create auth --host "angoothachap.private.docker.registry" --user "angoothachap" --secret "AngoothachapDockerHubToken" 
+		jx create auth --host "angoothachap.private.docker.registry" --user "angoothachap" --secret "AngoothachapDockerHubToken" --email "angoothachap@gmail.com"
 	`)
 )
 
@@ -43,6 +43,7 @@ type CreateDockerAuthOptions struct {
 	Host   string
 	User   string
 	Secret string
+	Email  string
 }
 
 // NewCmdCreateIssue creates a command object for the "create" command
@@ -73,6 +74,7 @@ func NewCmdCreateDockerAuth(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	cmd.Flags().StringVarP(&options.Host, host, "h", "", "The docker host")
 	cmd.Flags().StringVarP(&options.User, username, "u", "", "The title of the issue to create")
 	cmd.Flags().StringVarP(&options.Secret, "secret", "s", "", "The secret to associate auth component of config.json")
+	cmd.Flags().StringVarP(&options.Secret, "email", "e", "", "The email to associate auth component of config.json")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -87,6 +89,13 @@ func (o *CreateDockerAuthOptions) Run() error {
 	}
 	secret := o.Secret
 	if secret == "" {
+		prompt := &survey.Password{
+			Message: "Please provide secret for the host: " + o.Host + "  and user: " + o.User,
+		}
+		survey.AskOne(prompt, &secret, nil)
+	}
+	email := o.Email
+	if email == "" {
 		prompt := &survey.Input{
 			Message: "Please provide secret for the host: " + o.Host + "  and user: " + o.User,
 		}
@@ -109,6 +118,7 @@ func (o *CreateDockerAuthOptions) Run() error {
 	for k, v := range dockerConfig.Auths {
 		if util.StringMatchesPattern(k, o.Host) {
 			v.Auth = b64.StdEncoding.EncodeToString([]byte(o.User + ":" + o.Secret))
+			v.Email = email
 			foundAuth = true
 			break
 		}
@@ -116,7 +126,7 @@ func (o *CreateDockerAuthOptions) Run() error {
 	if foundAuth != true {
 		newConfigData := &Auth{}
 		newConfigData.Auth = b64.StdEncoding.EncodeToString([]byte(o.User + ":" + o.Secret))
-		newConfigData.Email = "someEmailId" //TODO:Populate the correct email Id
+		newConfigData.Email = email
 		dockerConfig.Auths[o.Host] = newConfigData
 	}
 	secretFromConfig.Data["config.json"], err = json.Marshal(dockerConfig)
