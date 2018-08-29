@@ -97,7 +97,7 @@ func (o *CreateDockerAuthOptions) Run() error {
 	email := o.Email
 	if email == "" {
 		prompt := &survey.Input{
-			Message: "Please provide secret for the host: " + o.Host + "  and user: " + o.User,
+			Message: "Please provide email ID for the host: " + o.Host + "  and user: " + o.User,
 		}
 		survey.AskOne(prompt, &secret, nil)
 	}
