@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/runner"
@@ -141,7 +143,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		log.Infof("using url %s\n", tokenUrl)
 	}
 	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
-		err := o.tryFindAPITokenFromBrowser(tokenUrl, userAuth)
+		err = o.tryFindAPITokenFromBrowser(tokenUrl, userAuth)
 		if err != nil {
 			log.Warnf("unable to automatically find API token with chromedp using URL %s\n", tokenUrl)
 		}
@@ -247,28 +249,30 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, u
 	// disable screenshots to try and reduce errors when running headless
 	//o.captureScreenshot(ctxt, c, "screenshot-jenkins-api-token.png", "main-panel", chromedp.ByID)
 
-	getAPITokenButtonSelector := "//button[normalize-space(text())='Show API Token...']"
-	nodeSlice = []*cdp.Node{}
+	newAPITokenButtonSelector := "//button[normalize-space(text())='Add new Token']"
+	generateAPITokenButtonSelector := "//button[normalize-space(text())='Generate']"
+	apiTokenValueSelector := "body"
 
+	var html string
 	log.Infoln("Getting the API Token...")
 	err = c.Run(ctxt, chromedp.Tasks{
 		chromedp.Sleep(2 * time.Second),
-		chromedp.WaitVisible(getAPITokenButtonSelector),
-		chromedp.Click(getAPITokenButtonSelector),
-		//chromedp.WaitVisible("apiToken", chromedp.ByID),
-		chromedp.Nodes("apiToken", &nodeSlice, chromedp.ByID),
+		chromedp.WaitVisible(newAPITokenButtonSelector),
+		chromedp.Click(newAPITokenButtonSelector),
+		chromedp.WaitVisible(generateAPITokenButtonSelector),
+		chromedp.Click(generateAPITokenButtonSelector),
+		chromedp.Sleep(2 * time.Second),
+		chromedp.InnerHTML(apiTokenValueSelector, &html, chromedp.ByQuery),
 	})
 	if err != nil {
 		return err
 	}
-	token := ""
-	for _, node := range nodeSlice {
-		text := node.AttributeValue("value")
-		if text != "" && token == "" {
-			token = text
-			break
-		}
+
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+	if err != nil {
+		return err
 	}
+	token := doc.Find(".new-token-value").Text()
 	log.Infoln("Found API Token")
 	if token != "" {
 		userAuth.ApiToken = token
