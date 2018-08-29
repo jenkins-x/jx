@@ -810,6 +810,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
+	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(binDir + "/jx"))
 	err = os.Remove(tarFile)
 	if err != nil {
 		return err

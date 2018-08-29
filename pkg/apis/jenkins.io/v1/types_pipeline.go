@@ -164,7 +164,7 @@ const (
 
 // IsTerminated returns true if this activity has stopped executing
 func (s ActivityStatusType) IsTerminated() bool {
-	return s == ActivityStatusTypeSucceeded || s == ActivityStatusTypeFailed || s == ActivityStatusTypeError
+	return s == ActivityStatusTypeSucceeded || s == ActivityStatusTypeFailed || s == ActivityStatusTypeError || s == ActivityStatusTypeAborted
 }
 
 func (s ActivityStatusType) String() string {
