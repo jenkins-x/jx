@@ -32,7 +32,7 @@ var (
 
 	createDockerAuthExample = templates.Examples(`
 		# Create/update docker auth entry in the config.json file
-		jx create auth --host "angoothachap.private.docker.registry" --user "angoothachap" --secret "AngoothachapDockerHubToken" --email "angoothachap@gmail.com"
+		jx create auth --host "angoothachap.private.docker.registry" --user "angoothachap" --secret "AngoothachapDockerHubToken" --email "fakeemail@gmail.com"
 	`)
 )
 
