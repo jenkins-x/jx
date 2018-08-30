@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -311,29 +310,8 @@ func (o *UpgradeIngressOptions) recreateIngressRules() error {
 }
 
 func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
-
 	if !o.SkipCertManager {
-		log.Infof("Looking for %s deployment in namespace %s\n", CertManagerDeployment, CertManagerNamespace)
-		_, err := kube.GetDeploymentPods(o.KubeClientCached, CertManagerDeployment, CertManagerNamespace)
-		if err != nil {
-			ok := util.Confirm("CertManager deployment not found, shall we install it now?", true, "CertManager automatically configures Ingress rules with TLS using signed certificates from LetsEncrypt")
-			if ok {
-
-				values := []string{"rbac.create=true", "ingressShim.extraArgs='{--default-issuer-name=letsencrypt-staging,--default-issuer-kind=Issuer}'"}
-				err = o.installChart("cert-manager", "stable/cert-manager", "", CertManagerNamespace, true, values)
-				if err != nil {
-					return fmt.Errorf("CertManager deployment failed: %v", err)
-				}
-
-				log.Info("waiting for CertManager deployment to be ready, this can take a few minutes\n")
-
-				err = kube.WaitForDeploymentToBeReady(o.KubeClientCached, CertManagerDeployment, CertManagerNamespace, 10*time.Minute)
-				if err != nil {
-					return err
-				}
-
-			}
-		}
+		return o.ensureCertmanager()
 	}
 	return nil
 }
