@@ -108,6 +108,9 @@ type GitProvider interface {
 	// ServerURL returns the git server URL
 	ServerURL() string
 
+	// BranchArchiveURL returns a URL to the ZIP archive for the git branch
+	BranchArchiveURL(org string, name string, branch string) string
+
 	// Returns the current username
 	CurrentUsername() string
 
