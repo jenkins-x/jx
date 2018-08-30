@@ -32,12 +32,15 @@ var (
 
 const (
 	defaultSSONamesapce   = "jx"
-	defaultSSOReleaseName = "sso"
+	defaultSSOReleaseName = "jx"
 	repoName              = "jenkinsxio"
 	repoURL               = "https://chartmuseum.jx.cd.jenkins-x.io"
 	dexChart              = "jenkinsxio/dex"
 	dexServiceName        = "dex"
 	dexChartVersion       = ""
+	operatorChart         = "jenkinsxio/sso-operator"
+	operatorChartVersion  = ""
+	operatorServiceName   = "sso-operator"
 	githubNewOAuthAppURL  = "https://github.com/settings/applications/new"
 )
 
@@ -148,6 +151,13 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "installing dex")
 	}
 
+	log.Infof("Installing %s...\n", util.ColorInfo("sso-operator"))
+	dexGrpcService := fmt.Sprintf("%s.%s", dexServiceName, o.Namespace)
+	err = o.installSSOOperator(dexGrpcService)
+	if err != nil {
+		return errors.Wrap(err, "installing sso-operator")
+	}
+
 	log.Infof("Exposing services with %s enabled...\n", util.ColorInfo("TLS"))
 	return o.exposeSSO()
 }
@@ -198,7 +208,18 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	return o.installChart(o.ReleaseName, dexChart, dexChartVersion, o.Namespace, true, values)
+	releaseName := o.ReleaseName + "-sso-" + dexServiceName
+	return o.installChart(releaseName, dexChart, dexChartVersion, o.Namespace, true, values)
+}
+
+func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error {
+	values := []string{
+		"dex.grpcHost=" + dexGrpcService,
+	}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
+	releaseName := o.ReleaseName + "-" + operatorServiceName
+	return o.installChart(releaseName, operatorChart, operatorChartVersion, o.Namespace, true, values)
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {
