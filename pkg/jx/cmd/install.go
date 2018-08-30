@@ -729,7 +729,7 @@ func (o *InstallOptions) enableOpenShiftRegistryPermissions(ns string, helmConfi
 	if err != nil {
 		return err
 	}
-	helmConfig.PipelineSecrets.DockerConfig = `{"auths": {"` + dockerRegistry + `": {"auth": "` + base64.StdEncoding.EncodeToString([]byte(registryToken)) + `"}}}`
+	helmConfig.PipelineSecrets.DockerConfig = `{"auths": {"` + dockerRegistry + `": {"auth": "` + base64.StdEncoding.EncodeToString([]byte("serviceaccount:"+registryToken)) + `"}}}`
 	return nil
 }
 
