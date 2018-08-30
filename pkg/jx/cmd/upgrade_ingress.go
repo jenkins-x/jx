@@ -70,10 +70,15 @@ func NewCmdUpgradeIngress(f Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Cluster, "cluster", "", false, "Enable cluster wide Ingress upgrade")
-	cmd.Flags().StringArrayVarP(&options.Namespaces, "namespaces", "", []string{}, "Namespaces to upgrade")
-	cmd.Flags().BoolVarP(&options.SkipCertManager, "skip-certmanager", "", false, "Skips certmanager installation")
+	options.addFlags(cmd)
+
 	return cmd
+}
+
+func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(&o.Cluster, "cluster", "", false, "Enable cluster wide Ingress upgrade")
+	cmd.Flags().StringArrayVarP(&o.Namespaces, "namespaces", "", []string{}, "Namespaces to upgrade")
+	cmd.Flags().BoolVarP(&o.SkipCertManager, "skip-certmanager", "", false, "Skips certmanager installation")
 }
 
 // Run implements the command

@@ -44,18 +44,25 @@ const (
 // CreateAddonSSOptions the options for the create sso addon
 type CreateAddonSSOOptions struct {
 	CreateAddonOptions
+	UpgradeIngressOptions UpgradeIngressOptions
 }
 
 // NewCmdCreateAddonSSO creates a command object for the "create sso" command
 func NewCmdCreateAddonSSO(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+	commonOptions := CommonOptions{
+		Factory: f,
+		Out:     out,
+		Err:     errOut,
+	}
 	options := &CreateAddonSSOOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOptions,
+			},
+		},
+		UpgradeIngressOptions: UpgradeIngressOptions{
+			CreateOptions: CreateOptions{
+				CommonOptions: commonOptions,
 			},
 		},
 	}
@@ -75,6 +82,7 @@ func NewCmdCreateAddonSSO(f Factory, out io.Writer, errOut io.Writer) *cobra.Com
 
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseName)
+	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
 
@@ -86,24 +94,26 @@ func (o *CreateAddonSSOOptions) Run() error {
 	}
 	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
-		return errors.Wrap(err, "retrieveing the development namesapce")
+		return errors.Wrap(err, "retrieving the development namesapce")
 	}
 
 	err = o.ensureCertmanager()
 	if err != nil {
-		return errors.Wrap(err, "ensureing cert-manager is installed")
+		return errors.Wrap(err, "ensuring cert-manager is installed")
 	}
+
+	log.Infof("Installing %s...\n", util.ColorInfo("dex identity provider"))
 
 	ingressConfig, err := kube.GetIngressConfig(o.KubeClientCached, o.devNamespace)
 	if err != nil {
-		return errors.Wrap(err, "retrieveing existing ingress configuration")
+		return errors.Wrap(err, "retrieving existing ingress configuration")
 	}
 	domain, err := util.PickValue("Domain:", ingressConfig.Domain, true)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Cofiguring %s connector\n", util.ColorInfo("GitHub"))
+	log.Infof("Configuring %s connector\n", util.ColorInfo("GitHub"))
 
 	log.Infof("Please go to %s and create a new OAuth application with %s callback\n",
 		util.ColorInfo(githubNewOAuthAppURL), util.ColorInfo(o.dexCallback(domain)))
@@ -133,7 +143,13 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "adding dex chart helm repository")
 	}
 
-	return o.installDex(o.dexDomain(domain), clientID, clientSecret, authorizedOrgs)
+	err = o.installDex(o.dexDomain(domain), clientID, clientSecret, authorizedOrgs)
+	if err != nil {
+		return errors.Wrap(err, "installing dex")
+	}
+
+	log.Infof("Exposing SSO services with %s enabled...\n", util.ColorInfo("TLS"))
+	return o.exposeSSO()
 }
 
 func (o *CreateAddonSSOOptions) dexDomain(domain string) string {
@@ -183,4 +199,11 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	return o.installChart(o.ReleaseName, dexChart, dexChartVersion, o.Namespace, true, values)
+}
+
+func (o *CreateAddonSSOOptions) exposeSSO() error {
+	options := &o.UpgradeIngressOptions
+	options.Namespaces = []string{o.Namespace}
+	options.SkipCertManager = true
+	return options.Run()
 }
