@@ -96,18 +96,18 @@ test-slow-integration-report-html: get-test-deps test-slow-integration
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 docker-test:
-	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test"
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test"
 
 docker-test-slow:
-	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-slow"
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-slow"
 
 # EASY WAY TO TEST IF YOUR TEST SHOULD BE A UNIT OR INTEGRATION TEST
 docker-test-integration:
-	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-integration"
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-integration"
 
 # EASY WAY TO TEST IF YOUR SLOW TEST SHOULD BE A UNIT OR INTEGRATION TEST
 docker-test-slow-integration:
-	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11rc1 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-slow-integration"
+	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test-slow-integration"
 
 #	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jx/cmds
 test1:
