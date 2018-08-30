@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -380,6 +381,9 @@ func (options *InstallOptions) Run() error {
 			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
 		}
 		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
+		if isOpenShiftProvider(options.Flags.Provider) && dockerRegistry == "docker-registry.default.svc:5000" {
+			options.enableOpenShiftRegistryPermissions(ns, helmConfig, dockerRegistry)
+		}
 	}
 
 	// lets add any GitHub Enterprise servers
@@ -704,6 +708,29 @@ func (o *InstallOptions) enableOpenShiftSCC(ns string) error {
 	}
 	// try fix monocular
 	return o.RunCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":default")
+}
+
+func (o *InstallOptions) enableOpenShiftRegistryPermissions(ns string, helmConfig *config.HelmValuesConfig, dockerRegistry string) error {
+	log.Infof("Enabling permissions for Openshift registry in namespace %s\n", ns)
+	// Open the registry so any authenticated user can pull images from the jx namespace
+	err := o.RunCommand("oc", "adm", "policy", "add-role-to-group", "system:image-puller", "system:authenticated", "-n", ns)
+	if err != nil {
+		return err
+	}
+	err = o.ensureServiceAccount(ns, "jenkins-x-registry")
+	if err != nil {
+		return err
+	}
+	err = o.RunCommand("oc", "adm", "policy", "add-cluster-role-to-user", "registry-admin", "system:serviceaccount:"+ns+":jenkins-x-registry")
+	if err != nil {
+		return err
+	}
+	registryToken, err := o.getCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins-x-registry", "-n", ns)
+	if err != nil {
+		return err
+	}
+	helmConfig.PipelineSecrets.DockerConfig = `{"auths": {"` + dockerRegistry + `": {"auth": "` + base64.StdEncoding.EncodeToString([]byte(registryToken)) + `"}}}`
+	return nil
 }
 
 func (options *InstallOptions) logAdminPassword() {
@@ -1067,6 +1094,9 @@ func (o *InstallOptions) dockerRegistryValue() (string, error) {
 	}
 	if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
 		return amazon.GetContainerRegistryHost()
+	}
+	if o.Flags.Provider == OPENSHIFT || o.Flags.Provider == MINISHIFT {
+		return "docker-registry.default.svc:5000", nil
 	}
 	return "", nil
 }
