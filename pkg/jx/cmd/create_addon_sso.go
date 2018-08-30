@@ -148,7 +148,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "installing dex")
 	}
 
-	log.Infof("Exposing SSO services with %s enabled...\n", util.ColorInfo("TLS"))
+	log.Infof("Exposing services with %s enabled...\n", util.ColorInfo("TLS"))
 	return o.exposeSSO()
 }
 
@@ -179,7 +179,7 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 	orgs := gits.GetOrganizations(provider, userAuth.Username)
 	sort.Strings(orgs)
 	promt := &survey.MultiSelect{
-		Message: "Authorized GitHub Organizations:",
+		Message: "Authorize access to all users from GitHub organizations:",
 		Options: orgs,
 	}
 
