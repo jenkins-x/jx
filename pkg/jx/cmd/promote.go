@@ -53,6 +53,7 @@ type PromoteOptions struct {
 	AllAutomatic        bool
 	NoMergePullRequest  bool
 	NoPoll              bool
+	NoWaitAfterMerge    bool
 	IgnoreLocalFiles    bool
 	Timeout             string
 	PullRequestPollTime string
@@ -160,6 +161,7 @@ func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
 	cmd.Flags().BoolVarP(&options.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
 	cmd.Flags().BoolVarP(&options.NoPoll, "no-poll", "", false, "Disables polling for Pull Request or Pipeline status")
+	cmd.Flags().BoolVarP(&options.NoWaitAfterMerge, "no-wait", "", false, "Disables waiting for completing promotion after the Pull request is merged")
 	cmd.Flags().BoolVarP(&options.IgnoreLocalFiles, "ignore-local-file", "", false, "Ignores the local file system when deducing the git repository")
 }
 
@@ -582,6 +584,11 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							return nil
 						}
 						promoteKey.OnPromotePullRequest(o.Activities, mergedPR)
+
+						if o.NoWaitAfterMerge {
+							log.Infof("Pull requests are merged, No wait on promotion to complete")
+							return err
+						}
 					}
 
 					promoteKey.OnPromoteUpdate(o.Activities, kube.StartPromotionUpdate)
