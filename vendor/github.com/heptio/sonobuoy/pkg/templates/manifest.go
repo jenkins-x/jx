@@ -97,6 +97,8 @@ data:
       - mountPath: /tmp/results
         name: results
         readOnly: false
+      tolerations:
+        - operator: "Exists"
   systemd-logs.yaml: |
     sonobuoy-config:
       driver: DaemonSet
