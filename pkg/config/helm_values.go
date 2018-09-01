@@ -50,10 +50,15 @@ type JenkinsGithubServersValuesConfig struct {
 	Url  string `yaml:"Url,omitempty"`
 }
 
+type JenkinsPipelineSecretsValuesConfig struct {
+	DockerConfig string `yaml:"DockerConfig,flow,omitempty"`
+}
+
 type HelmValuesConfig struct {
-	ExposeController *ExposeController   `yaml:"expose,omitempty"`
-	Jenkins          JenkinsValuesConfig `yaml:"jenkins,omitempty"`
-	Prow             ProwValuesConfig    `yaml:"prow,omitempty"`
+	ExposeController *ExposeController                  `yaml:"expose,omitempty"`
+	Jenkins          JenkinsValuesConfig                `yaml:"jenkins,omitempty"`
+	Prow             ProwValuesConfig                   `yaml:"prow,omitempty"`
+	PipelineSecrets  JenkinsPipelineSecretsValuesConfig `yaml:"PipelineSecrets,omitempty"`
 }
 
 type HelmValuesConfigService struct {
