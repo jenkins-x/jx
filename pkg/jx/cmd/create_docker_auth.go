@@ -32,11 +32,11 @@ var (
 
 	createDockerAuthExample = templates.Examples(`
 		# Create/update docker auth entry in the config.json file
-		jx create auth --host "angoothachap.private.docker.registry" --user "angoothachap" --secret "AngoothachapDockerHubToken" --email "fakeemail@gmail.com"
+		jx create auth --host "foo.private.docker.registry" --user "foo" --secret "FooDockerHubToken" --email "fakeemail@gmail.com"
 	`)
 )
 
-// CreateIssueOptions the options for the create spring command
+// CreateDockerAuthOptions the options for the create docker auth command
 type CreateDockerAuthOptions struct {
 	CreateOptions
 
@@ -72,7 +72,7 @@ func NewCmdCreateDockerAuth(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	}
 
 	cmd.Flags().StringVarP(&options.Host, host, "h", "", "The docker host")
-	cmd.Flags().StringVarP(&options.User, username, "u", "", "The title of the issue to create")
+	cmd.Flags().StringVarP(&options.User, username, "u", "", "The user to associate auth component of config.json")
 	cmd.Flags().StringVarP(&options.Secret, "secret", "s", "", "The secret to associate auth component of config.json")
 	cmd.Flags().StringVarP(&options.Secret, "email", "e", "", "The email to associate auth component of config.json")
 	options.addCommonFlags(cmd)
