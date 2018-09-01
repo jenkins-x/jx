@@ -565,6 +565,10 @@ func (p *GitlabProvider) ServerURL() string {
 	return p.Server.URL
 }
 
+func (p *GitlabProvider) BranchArchiveURL(org string, name string, branch string) string {
+	return util.UrlJoin(p.ServerURL(), org, name, "-/archive", branch, name+"-"+branch+".zip")
+}
+
 func (p *GitlabProvider) CurrentUsername() string {
 	return p.Username
 }

@@ -630,6 +630,10 @@ func (p *GiteaProvider) ServerURL() string {
 	return p.Server.URL
 }
 
+func (p *GiteaProvider) BranchArchiveURL(org string, name string, branch string) string {
+	return util.UrlJoin(p.ServerURL(), org, name, "archive", branch+".zip")
+}
+
 func (p *GiteaProvider) UserAuth() auth.UserAuth {
 	return p.User
 }

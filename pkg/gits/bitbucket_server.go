@@ -780,6 +780,10 @@ func (b *BitbucketServerProvider) ServerURL() string {
 	return b.Server.URL
 }
 
+func (b *BitbucketServerProvider) BranchArchiveURL(org string, name string, branch string) string {
+	return util.UrlJoin(b.ServerURL(), "rest/api/1.0/projects", org, "repos", name, "archive?format=zip&at="+branch)
+}
+
 func (b *BitbucketServerProvider) CurrentUsername() string {
 	return b.Username
 }
@@ -810,7 +814,7 @@ func (b *BitbucketServerProvider) UpdateRelease(owner string, repo string, tag s
 	return nil
 }
 
-func (p *BitbucketServerProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
+func (b *BitbucketServerProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	answer := []*GitRelease{}
 	log.Warn("Bitbucket Server doesn't support releases")
 	return answer, nil
