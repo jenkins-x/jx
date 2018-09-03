@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"time"
 	"golang.org/x/build/kubernetes/api"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // ControllerTeamOptions are the flags for the commands
@@ -107,6 +108,20 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}) {
 		return
 	}
 
-	log.Infof("Found Team %#v\n", team)
+	log.Infof("Found Team %s\n", util.ColorInfo(team.Name))
+
+	o.InstallOptions.BatchMode = true
+	o.InstallOptions.Flags.Provider = "gke"
+	o.InstallOptions.Flags.NoDefaultEnvironments = true
+	o.InstallOptions.Flags.Prow = true
+	o.InstallOptions.Flags.Namespace = team.Namespace
+
+	// call jx install
+	installOpts := &o.InstallOptions
+
+	err := installOpts.Run()
+	if err != nil {
+		log.Errorf("Unable to install jx for %s: %s", util.ColorInfo(team.Name), err)
+	}
 }
 
