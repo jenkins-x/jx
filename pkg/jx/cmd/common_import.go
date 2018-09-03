@@ -100,7 +100,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		}
 
 		if credentials == "" {
-			fmt.Errorf("Failed to find the created pipeline secret for the server %s", server.URL)
+			return fmt.Errorf("Failed to find the created pipeline secret for the server %s", server.URL)
 		} else {
 			createCredential = false
 		}
