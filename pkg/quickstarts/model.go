@@ -16,7 +16,7 @@ const (
 
 // GitQuickstart returns a github based quickstart
 func GitQuickstart(provider gits.GitProvider, owner string, repo string, language string, framework string, tags ...string) *Quickstart {
-	u := util.UrlJoin(provider.ServerURL(), owner, repo+"/archive/master.zip")
+	u := provider.BranchArchiveURL(owner, repo, "master")
 	return &Quickstart{
 		ID:             owner + "/" + repo,
 		Owner:          owner,

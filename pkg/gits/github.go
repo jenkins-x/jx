@@ -867,6 +867,10 @@ func (p *GitHubProvider) ServerURL() string {
 	return p.Server.URL
 }
 
+func (p *GitHubProvider) BranchArchiveURL(org string, name string, branch string) string {
+	return util.UrlJoin(p.ServerURL(), org, name, "archive", branch+".zip")
+}
+
 func (p *GitHubProvider) CurrentUsername() string {
 	return p.Username
 }

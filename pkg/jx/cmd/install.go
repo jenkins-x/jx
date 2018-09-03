@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -379,6 +381,9 @@ func (options *InstallOptions) Run() error {
 			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
 		}
 		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
+		if isOpenShiftProvider(options.Flags.Provider) && dockerRegistry == "docker-registry.default.svc:5000" {
+			options.enableOpenShiftRegistryPermissions(ns, helmConfig, dockerRegistry)
+		}
 	}
 
 	// lets add any GitHub Enterprise servers
@@ -489,32 +494,10 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to update the helm repo")
 	}
 
-	valueFiles := []string{"./myvalues.yaml", "./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName}
-
-	// Overwrite the values with the content of myvaules.yaml files from the current folder if exists, otherwise
-	// from ~/.jx folder also only if is present
-	curDir, err := os.Getwd()
+	valueFiles := []string{"./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName}
+	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
-		return errors.Wrap(err, "failed to get the current working directory")
-	}
-	myValuesFile := filepath.Join(curDir, "myvalues.yaml")
-	exists, err := util.FileExists(myValuesFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to check if the myvaules.yaml file exists in the current directory")
-	}
-	if exists {
-		valueFiles = append(valueFiles, myValuesFile)
-		log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
-	} else {
-		myValuesFile = filepath.Join(dir, "myvalues.yaml")
-		exists, err = util.FileExists(myValuesFile)
-		if err != nil {
-			return errors.Wrap(err, "failed to check if the myvaules.yaml file exists in the .jx directory")
-		}
-		if exists {
-			valueFiles = append(valueFiles, myValuesFile)
-			log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
-		}
+		return errors.Wrap(err, "failed to append the myvalues.yaml file")
 	}
 
 	options.currentNamespace = ns
@@ -651,8 +634,7 @@ func (options *InstallOptions) Run() error {
 				options.CreateEnvOptions.BatchMode = options.BatchMode
 			}
 			options.CreateEnvOptions.Prow = options.Flags.Prow
-			options.CreateEnvOptions.GitRepositoryOptions.ServerURL = options.GitRepositoryOptions.ServerURL
-			options.CreateEnvOptions.GitRepositoryOptions.Private = options.GitRepositoryOptions.Private
+			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
 
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
@@ -726,6 +708,29 @@ func (o *InstallOptions) enableOpenShiftSCC(ns string) error {
 	}
 	// try fix monocular
 	return o.RunCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":default")
+}
+
+func (o *InstallOptions) enableOpenShiftRegistryPermissions(ns string, helmConfig *config.HelmValuesConfig, dockerRegistry string) error {
+	log.Infof("Enabling permissions for Openshift registry in namespace %s\n", ns)
+	// Open the registry so any authenticated user can pull images from the jx namespace
+	err := o.RunCommand("oc", "adm", "policy", "add-role-to-group", "system:image-puller", "system:authenticated", "-n", ns)
+	if err != nil {
+		return err
+	}
+	err = o.ensureServiceAccount(ns, "jenkins-x-registry")
+	if err != nil {
+		return err
+	}
+	err = o.RunCommand("oc", "adm", "policy", "add-cluster-role-to-user", "registry-admin", "system:serviceaccount:"+ns+":jenkins-x-registry")
+	if err != nil {
+		return err
+	}
+	registryToken, err := o.getCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins-x-registry", "-n", ns)
+	if err != nil {
+		return err
+	}
+	helmConfig.PipelineSecrets.DockerConfig = `{"auths": {"` + dockerRegistry + `": {"auth": "` + base64.StdEncoding.EncodeToString([]byte("serviceaccount:"+registryToken)) + `"}}}`
+	return nil
 }
 
 func (options *InstallOptions) logAdminPassword() {
@@ -1089,6 +1094,9 @@ func (o *InstallOptions) dockerRegistryValue() (string, error) {
 	}
 	if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
 		return amazon.GetContainerRegistryHost()
+	}
+	if o.Flags.Provider == OPENSHIFT || o.Flags.Provider == MINISHIFT {
+		return "docker-registry.default.svc:5000", nil
 	}
 	return "", nil
 }

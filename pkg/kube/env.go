@@ -703,6 +703,34 @@ func GetEnvironments(jxClient versioned.Interface, ns string) (map[string]*v1.En
 	return m, envNames, nil
 }
 
+// GetEnvironment find an environment by name
+func GetEnvironment(jxClient versioned.Interface, ns string, name string) (*v1.Environment, error) {
+	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, env := range envs.Items {
+		if env.GetName() == name {
+			return &env, nil
+		}
+	}
+	return nil, fmt.Errorf("no environment with name '%s' found", name)
+}
+
+// GetEnvironmentsByPrURL find an environment by a pull request URL
+func GetEnvironmentsByPrURL(jxClient versioned.Interface, ns string, prURL string) (*v1.Environment, error) {
+	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, env := range envs.Items {
+		if env.Spec.PullRequestURL == prURL {
+			return &env, nil
+		}
+	}
+	return nil, fmt.Errorf("no environment found for PR '%s'", prURL)
+}
+
 // GetEnvironments returns the namespace name for a given environment
 func GetEnvironmentNamespace(jxClient versioned.Interface, ns, environment string) (string, error) {
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(environment, metav1.GetOptions{})

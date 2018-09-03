@@ -830,6 +830,10 @@ func (b *BitbucketCloudProvider) ServerURL() string {
 	return b.Server.URL
 }
 
+func (b *BitbucketCloudProvider) BranchArchiveURL(org string, name string, branch string) string {
+	return util.UrlJoin(b.ServerURL(), org, name, "get", branch+".zip")
+}
+
 func (p *BitbucketCloudProvider) CurrentUsername() string {
 	return p.Username
 }

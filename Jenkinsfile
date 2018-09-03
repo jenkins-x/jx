@@ -43,6 +43,8 @@ pipeline {
 
                         sh "docker build -t docker.io/$ORG/$APP_NAME:$PREVIEW_VERSION ."
 
+                        sh "jx step git credentials"
+
                         sh "make preview"
 
                         // lets create a team for this PR and run the BDD tests
@@ -61,7 +63,7 @@ pipeline {
 
                         sh "cp ./build/linux/jx /usr/bin"
 
-                        sh "jx install --namespace ${TEAM} --helm3 --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW"
+                        sh "jx install --namespace ${TEAM} --helm3 --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW --skip-auth-secrets-merge"
 
                         // lets test we have the jenkins token setup
                         sh "jx get pipeline"
@@ -90,12 +92,16 @@ pipeline {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
                     checkout scm
                     container('go') {
+                        sh "git config --global credential.helper store"
+                        sh "jx step git credentials"
                         sh "echo \$(jx-release-version) > pkg/version/VERSION"
                         sh "make release"
                     }
                 }
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx/charts/jx') {
                     container('go') {
+                        sh "git config --global credential.helper store"
+                        sh "jx step git credentials"
                         sh "helm init --client-only"
                         sh "make release"
                     }

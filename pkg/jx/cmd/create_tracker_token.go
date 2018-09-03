@@ -156,7 +156,7 @@ func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *
 	labels := map[string]string{
 		kube.LabelCredentialsType: kube.ValueCredentialTypeUsernamePassword,
 		kube.LabelCreatedBy:       kube.ValueCreatedByJX,
-		kube.LabelKind:            kube.ValueKindChat,
+		kube.LabelKind:            kube.ValueKindIssue,
 		kube.LabelServiceKind:     server.Kind,
 	}
 	annotations := map[string]string{

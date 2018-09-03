@@ -22,7 +22,7 @@ import (
 
 var daemonSetTemplate = templates.NewTemplate("daemonTemplate", `
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   annotations:
@@ -86,11 +86,7 @@ spec:
       hostNetwork: true
       hostPID: true
       tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/master
-        operator: Exists
-      - key: CriticalAddonsOnly
-        operator: Exists
+      - operator: Exists
       volumes:
       - emptyDir: {}
         name: results

@@ -287,7 +287,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 func (o *CreateClusterAWSOptions) waitForClusterJson(clusterName string) (string, error) {
 	jsonOutput := ""
 	f := func() error {
-		text, err := o.getCommandOutput("", "kops", "get", "cluster", clusterName, "-ojson")
+		text, err := o.getCommandOutput("", "kops", "get", "cluster", "--name", clusterName, "-o", "json")
 		if err != nil {
 			return err
 		}

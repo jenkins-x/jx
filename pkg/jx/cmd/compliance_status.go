@@ -64,7 +64,7 @@ func (o *ComplianceStatusOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve the status")
 	}
-	log.Info(hummanReadableStatus(status.Status))
+	log.Infoln(hummanReadableStatus(status.Status))
 	return nil
 }
 

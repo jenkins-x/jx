@@ -2,12 +2,11 @@ package auth
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"net/url"
 	"sort"
 	"strings"
-
-	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 func (c *AuthConfig) FindUserAuths(serverURL string) []*UserAuth {
@@ -247,6 +246,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 		return c.GetOrCreateUserAuth(url, username), nil
 	}
 	if len(userAuths) > 1 {
+
 		usernames := []string{}
 		m := map[string]*UserAuth{}
 		for _, ua := range userAuths {
