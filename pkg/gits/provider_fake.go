@@ -538,6 +538,10 @@ func (f *FakeProvider) ServerURL() string {
 	return f.Server.URL
 }
 
+func (f *FakeProvider) BranchArchiveURL(org string, name string, branch string) string {
+	return util.UrlJoin(f.ServerURL(), org, name, "archive", branch+".zip")
+}
+
 func (f *FakeProvider) CurrentUsername() string {
 	return f.User.Username
 }

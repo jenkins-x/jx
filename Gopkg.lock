@@ -616,7 +616,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5f61e597263e107de9d237f94ed013455acd48d99d662141329f562a5c3a93f5"
+  digest = "1:edca24b46dde248d71ba416f5ff61e878c1c827bbb0ce9e6eced84aac7201c6c"
   name = "github.com/heptio/sonobuoy"
   packages = [
     "pkg/backplane/ca",
@@ -640,7 +640,7 @@
     "pkg/templates",
   ]
   pruneopts = "NUT"
-  revision = "093f4a7fc64edd1c3d1d0b56ba304bf3a050910d"
+  revision = "1063612447506c1f190a11e9c25601cc7243de6c"
 
 [[projects]]
   digest = "1:65300ccc4bcb38b107b868155c303312978981e56bca707c81efec57575b5e06"

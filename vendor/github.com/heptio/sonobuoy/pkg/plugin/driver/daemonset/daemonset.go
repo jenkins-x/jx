@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"time"
 
-	appsv1beta2 "k8s.io/api/apps/v1beta2"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kuberuntime "k8s.io/apimachinery/pkg/runtime"
@@ -95,7 +95,7 @@ func (p *Plugin) FillTemplate(hostname string, cert *tls.Certificate) ([]byte, e
 
 // Run dispatches worker pods according to the DaemonSet's configuration.
 func (p *Plugin) Run(kubeclient kubernetes.Interface, hostname string, cert *tls.Certificate) error {
-	var daemonSet appsv1beta2.DaemonSet
+	var daemonSet appsv1.DaemonSet
 
 	b, err := p.FillTemplate(hostname, cert)
 	if err != nil {
@@ -115,7 +115,7 @@ func (p *Plugin) Run(kubeclient kubernetes.Interface, hostname string, cert *tls
 	}
 
 	// TODO(EKF): Move to v1 in 1.11
-	if _, err := kubeclient.AppsV1beta2().DaemonSets(p.Namespace).Create(&daemonSet); err != nil {
+	if _, err := kubeclient.AppsV1().DaemonSets(p.Namespace).Create(&daemonSet); err != nil {
 		return errors.Wrapf(err, "could not create DaemonSet for daemonset plugin %v", p.GetName())
 	}
 
@@ -136,7 +136,7 @@ func (p *Plugin) Cleanup(kubeclient kubernetes.Interface) {
 
 	// Delete the DaemonSet created by this plugin
 	// TODO(EKF): Move to v1 in 1.11
-	err := kubeclient.AppsV1beta2().DaemonSets(p.Namespace).DeleteCollection(
+	err := kubeclient.AppsV1().DaemonSets(p.Namespace).DeleteCollection(
 		&deleteOptions,
 		listOptions,
 	)
@@ -152,9 +152,9 @@ func (p *Plugin) listOptions() metav1.ListOptions {
 }
 
 // findDaemonSet gets the daemonset that we created, using a kubernetes label search.
-func (p *Plugin) findDaemonSet(kubeclient kubernetes.Interface) (*appsv1beta2.DaemonSet, error) {
+func (p *Plugin) findDaemonSet(kubeclient kubernetes.Interface) (*appsv1.DaemonSet, error) {
 	// TODO(EKF): Move to v1 in 1.11
-	dsets, err := kubeclient.AppsV1beta2().DaemonSets(p.Namespace).List(p.listOptions())
+	dsets, err := kubeclient.AppsV1().DaemonSets(p.Namespace).List(p.listOptions())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
