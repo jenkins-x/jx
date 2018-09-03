@@ -35,9 +35,10 @@ import (
 )
 
 const (
-	PlaceHolderAppName     = "REPLACE_ME_APP_NAME"
-	PlaceHolderGitProvider = "REPLACE_ME_GIT_PROVIDER"
-	PlaceHolderOrg         = "REPLACE_ME_ORG"
+	PlaceHolderAppName       = "REPLACE_ME_APP_NAME"
+	PlaceHolderGitProvider   = "REPLACE_ME_GIT_PROVIDER"
+	PlaceHolderOrg           = "REPLACE_ME_ORG"
+	PlaceHolderDockerRepoOrg = "REPLACE_ME_DOCKER_REPO_ORG"
 
 	JenkinsfileBackupSuffix = ".backup"
 
@@ -920,10 +921,10 @@ func (o *ImportOptions) ensureDockerRepositoryExists() error {
 }
 
 // ReplacePlaceholders replaces git server name and git org placeholders
-func (o *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg string) error {
+func (o *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerRepositoryOrg string) error {
 	gitOrg = kube.ToValidName(strings.ToLower(gitOrg))
 	log.Infof("replacing placeholders in directory %s\n", o.Dir)
-	log.Infof("app name: %s, git server: %s, org: %s\n", o.AppName, gitServerName, gitOrg)
+	log.Infof("app name: %s, git server: %s, org: %s, docker repository org: %s\n", o.AppName, gitServerName, gitOrg, dockerRepositoryOrg)
 
 	ignore, err := gitignore.NewRepository(o.Dir)
 	if err != nil {
