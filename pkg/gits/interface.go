@@ -1,0 +1,184 @@
+package gits
+
+import (
+	"io"
+	"time"
+
+	"github.com/jenkins-x/jx/pkg/auth"
+	gitcfg "gopkg.in/src-d/go-git.v4/config"
+)
+
+type OrganisationLister interface {
+	ListOrganisations() ([]GitOrganisation, error)
+}
+
+type GitProvider interface {
+	OrganisationLister
+
+	ListRepositories(org string) ([]*GitRepository, error)
+
+	CreateRepository(org string, name string, private bool) (*GitRepository, error)
+
+	GetRepository(org string, name string) (*GitRepository, error)
+
+	DeleteRepository(org string, name string) error
+
+	ForkRepository(originalOrg string, name string, destinationOrg string) (*GitRepository, error)
+
+	RenameRepository(org string, name string, newName string) (*GitRepository, error)
+
+	ValidateRepositoryName(org string, name string) error
+
+	CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error)
+
+	UpdatePullRequestStatus(pr *GitPullRequest) error
+
+	GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error)
+
+	GetPullRequestCommits(owner string, repo *GitRepositoryInfo, number int) ([]*GitCommit, error)
+
+	PullRequestLastCommitStatus(pr *GitPullRequest) (string, error)
+
+	ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error)
+
+	MergePullRequest(pr *GitPullRequest, message string) error
+
+	CreateWebHook(data *GitWebHookArguments) error
+
+	IsGitHub() bool
+
+	IsGitea() bool
+
+	IsBitbucketCloud() bool
+
+	IsBitbucketServer() bool
+
+	IsGerrit() bool
+
+	Kind() string
+
+	GetIssue(org string, name string, number int) (*GitIssue, error)
+
+	IssueURL(org string, name string, number int, isPull bool) string
+
+	SearchIssues(org string, name string, query string) ([]*GitIssue, error)
+
+	SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error)
+
+	CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error)
+
+	HasIssues() bool
+
+	AddPRComment(pr *GitPullRequest, comment string) error
+
+	CreateIssueComment(owner string, repo string, number int, comment string) error
+
+	UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error
+
+	ListReleases(org string, name string) ([]*GitRelease, error)
+
+	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
+	//
+
+	// e.g. for GitHub its /github-webhook/
+	// other examples include:
+	//
+	// * gitlab: /gitlab/notify_commit
+	// https://github.com/elvanja/jenkins-gitlab-hook-plugin#notify-commit-hook
+	//
+	// * git plugin
+	// /git/notifyCommit?url=
+	// http://kohsuke.org/2011/12/01/polling-must-die-triggering-jenkins-builds-from-a-git-hook/
+	//
+	// * gitea
+	// /gitea-webhook/post
+	//
+	// * generic webhook
+	// /generic-webhook-trigger/invoke?token=abc123
+	// https://wiki.jenkins.io/display/JENKINS/Generic+Webhook+Trigger+Plugin
+
+	JenkinsWebHookPath(gitURL string, secret string) string
+
+	// Label returns the git service label or name
+	Label() string
+
+	// ServerURL returns the git server URL
+	ServerURL() string
+
+	// BranchArchiveURL returns a URL to the ZIP archive for the git branch
+	BranchArchiveURL(org string, name string, branch string) string
+
+	// Returns the current username
+	CurrentUsername() string
+
+	// Returns the current user auth
+	UserAuth() auth.UserAuth
+
+	// Returns user info, if possible
+	UserInfo(username string) *GitUser
+}
+
+// Gitter defines common git actions used by Jenkins X
+type Gitter interface {
+	FindGitConfigDir(dir string) (string, string, error)
+	ToGitLabels(names []string) []GitLabel
+	PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer)
+
+	Status(dir string) error
+	Server(dir string) (string, error)
+	Info(dir string) (*GitRepositoryInfo, error)
+	IsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error)
+	Version() (string, error)
+	RepoName(org, repoName string) string
+
+	Username(dir string) (string, error)
+	SetUsername(dir string, username string) error
+	Email(dir string) (string, error)
+	SetEmail(dir string, email string) error
+	GetAuthorEmailForCommit(dir string, sha string) (string, error)
+
+	Init(dir string) error
+	Clone(url string, directory string) error
+	Push(dir string) error
+	PushMaster(dir string) error
+	PushTag(dir string, tag string) error
+	CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error)
+	ForcePushBranch(dir string, localBranch string, remoteBranch string) error
+	CloneOrPull(url string, directory string) error
+	Pull(dir string) error
+	PullUpstream(dir string) error
+
+	AddRemote(dir string, name string, url string) error
+	SetRemoteURL(dir string, name string, gitURL string) error
+	UpdateRemote(dir, url string) error
+	DiscoverRemoteGitURL(gitConf string) (string, error)
+	DiscoverUpstreamGitURL(gitConf string) (string, error)
+	RemoteBranches(dir string) ([]string, error)
+	RemoteBranchNames(dir string, prefix string) ([]string, error)
+	GetRemoteUrl(config *gitcfg.Config, name string) string
+
+	Branch(dir string) (string, error)
+	CreateBranch(dir string, branch string) error
+	CheckoutRemoteBranch(dir string, branch string) error
+	Checkout(dir string, branch string) error
+	ConvertToValidBranchName(name string) string
+
+	Stash(dir string) error
+
+	Remove(dir, fileName string) error
+	Add(dir string, args ...string) error
+
+	CommitIfChanges(dir string, message string) error
+	CommitDir(dir string, message string) error
+	AddCommmit(dir string, msg string) error
+	HasChanges(dir string) (bool, error)
+
+	GetPreviousGitTagSHA(dir string) (string, error)
+	GetCurrentGitTagSHA(dir string) (string, error)
+	FetchTags(dir string) error
+	Tags(dir string) ([]string, error)
+	CreateTag(dir string, tag string, msg string) error
+
+	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
+	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
+}
