@@ -56,6 +56,7 @@ func NewCmdCreateAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.AddCommand(NewCmdCreateAddonOwasp(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonProw(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonSSO(f, out, errOut))
 
 	options.addFlags(cmd, "", "")
 	return cmd
