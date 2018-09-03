@@ -56,8 +56,7 @@ const (
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
 	* minishift (single-node OpenShift cluster inside a VM on your laptop)
 	* openshift for installing on 3.9.x or later clusters of OpenShift
-    * coming soon:
-        eks (Amazon Elastic Container Service - https://aws.amazon.com/eks)    `
+`
 )
 
 type CreateClusterFlags struct {
