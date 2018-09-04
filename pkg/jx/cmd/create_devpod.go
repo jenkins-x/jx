@@ -59,6 +59,7 @@ type CreateDevPodOptions struct {
 	Dir        string
 	Reuse      bool
 	Sync       bool
+	Ports      []int
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -93,6 +94,7 @@ func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1", "The request CPU of the dev pod")
 	cmd.Flags().BoolVarP(&options.Reuse, "reuse", "", false, "Reuse and existing DevPod for this folder and label if one exists")
 	cmd.Flags().BoolVarP(&options.Sync, "sync", "", false, "Also synchronise the local file system into the DevPod")
+	cmd.Flags().IntSliceVarP(&options.Ports, "ports", "p", []int{}, "Container ports exposed by the DevPod")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -229,6 +231,15 @@ func (o *CreateDevPodOptions) Run() error {
 			Value: editEnv.Spec.Namespace,
 		})
 	}
+	// Assign the container the ports provided as input
+	for _, port := range o.Ports {
+		cp := corev1.ContainerPort{
+			Name:          fmt.Sprintf("port-%d", port),
+			ContainerPort: int32(port),
+		}
+		container1.Ports = append(container1.Ports, cp)
+	}
+
 	podResources := client.CoreV1().Pods(ns)
 
 	create := true
