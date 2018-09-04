@@ -1,3 +1,4 @@
 dependencies:
-- name: controller-build
+- name: jx
   repository: file://../jx
+  version: 1.0.0

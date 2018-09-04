@@ -16,12 +16,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
-// callback for modifying requirements
+// ModifyRequirementsFn callback for modifying requirements
 type ModifyRequirementsFn func(requirements *helm.Requirements) error
+
+// ConfigureGitFolderFn callback to optionally configure git before its used for creating commits and PRs
+type ConfigureGitFolderFn func(dir string, gitInfo *gits.GitRepositoryInfo, gitAdapter gits.Gitter) error
 
 type CreateEnvPullRequestFn func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error)
 
-func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
+func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo, configGitFn ConfigureGitFolderFn) (*ReleasePullRequestInfo, error) {
 	var answer *ReleasePullRequestInfo
 	source := &env.Spec.Source
 	gitURL := source.URL
@@ -52,6 +55,12 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	}
 
 	if exists {
+		if configGitFn != nil {
+			err = configGitFn(dir, gitInfo, o.Git())
+			if err != nil {
+				return answer, err
+			}
+		}
 		// lets check the git remote URL is setup correctly
 		err = o.Git().SetRemoteURL(dir, "origin", gitURL)
 		if err != nil {
@@ -77,6 +86,12 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		err = o.Git().Clone(gitURL, dir)
 		if err != nil {
 			return answer, err
+		}
+		if configGitFn != nil {
+			err = configGitFn(dir, gitInfo, o.Git())
+			if err != nil {
+				return answer, err
+			}
 		}
 		if base != "master" {
 			err = o.Git().Checkout(dir, base)
