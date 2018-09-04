@@ -619,10 +619,8 @@ func (o *InitOptions) ingressNamespace() string {
 // validateGit validates that git is configured correctly
 func (o *InitOptions) validateGit() error {
 	// lets ignore errors which indicate no value set
-	//userName, _ := o.Git().Username("")
-	//userEmail, _ := o.Git().Email("")
-	userName := ""
-	userEmail := ""
+	userName, _ := o.Git().Username("")
+	userEmail, _ := o.Git().Email("")
 	var err error
 	if userName == "" {
 		if !o.BatchMode {

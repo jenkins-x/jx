@@ -528,12 +528,17 @@ func (g *GitCLI) Version() (string, error) {
 
 // Username return the username from the git configuration
 func (g *GitCLI) Username(dir string) (string, error) {
-	return g.gitCmdWithOutput("", "config", "--global", "--get", "user.name")
+	return g.gitCmdWithOutput(dir, "config", "--global", "--get", "user.name")
 }
 
 // SetUsername sets the username in the git configuration
 func (g *GitCLI) SetUsername(dir string, username string) error {
-	return g.gitCmd(dir, "config", "--global", "--add", "user.name", username)
+	// Will return status 1 silently if the user is not set.
+	_, err := g.gitCmdWithOutput(dir, "config", "--global", "--get", "user.name")
+	if err != nil {
+		return g.gitCmd(dir, "config", "--global", "--add", "user.name", username)
+	}
+	return nil
 }
 
 // Email returns the email from the git configuration
@@ -543,7 +548,12 @@ func (g *GitCLI) Email(dir string) (string, error) {
 
 // SetEmail sets the given email in the git configuration
 func (g *GitCLI) SetEmail(dir string, email string) error {
-	return g.gitCmd(dir, "config", "--global", "--add", "user.email", email)
+	// Will return status 1 silently if the email is not set.
+	_, err := g.gitCmdWithOutput(dir, "config", "--global", "--get", "user.email")
+	if err != nil {
+		return g.gitCmd(dir, "config", "--global", "--add", "user.email", email)
+	}
+	return nil
 }
 
 // CreateBranch creates a branch with the given name in the git repository from the given directory
