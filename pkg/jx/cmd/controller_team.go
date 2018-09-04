@@ -13,6 +13,9 @@ import (
 	"time"
 	"golang.org/x/build/kubernetes/api"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"k8s.io/client-go/kubernetes"
 )
 
 // ControllerTeamOptions are the flags for the commands
@@ -67,6 +70,11 @@ func (o *ControllerTeamOptions) Run() error {
 		return err
 	}
 
+	client, _, err := o.ControllerOptions.KubeClient()
+	if err != nil {
+		return err
+	}
+
 	log.Infof("Watching for teams in all namespaces\n")
 
 	stop := make(chan struct{})
@@ -84,13 +92,13 @@ func (o *ControllerTeamOptions) Run() error {
 		time.Minute*30,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				o.onTeamChange(obj)
+				o.onTeamChange(obj, client, jxClient, "add")
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				o.onTeamChange(newObj)
+				o.onTeamChange(newObj, client, jxClient, "update")
 			},
 			DeleteFunc: func(obj interface{}) {
-				//o.onEnvironmentChange(obj, jxClient, ns)
+				// do nothing
 			},
 		},
 	)
@@ -101,25 +109,35 @@ func (o *ControllerTeamOptions) Run() error {
 	select {}
 }
 
-func (o *ControllerTeamOptions) onTeamChange(obj interface{}) {
+func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface, kind string) {
 	team, ok := obj.(*v1.Team)
 	if !ok {
 		log.Infof("Object is not a Team %#v\n", obj)
 		return
 	}
 
-	log.Infof("Found Team %s\n", util.ColorInfo(team.Name))
+	log.Infof("Found Team %s - %s\n", util.ColorInfo(team.Name), util.ColorInfo(kind))
+
+	// ensure that the namespace exists
+	err := kube.EnsureNamespaceCreated( kubeClient, team.Name, nil, nil)
+	if err != nil {
+		log.Errorf("Unable to create namespace %s: %s", util.ColorInfo(team.Name), err)
+		return
+	}
 
 	o.InstallOptions.BatchMode = true
 	o.InstallOptions.Flags.Provider = "gke"
 	o.InstallOptions.Flags.NoDefaultEnvironments = true
 	o.InstallOptions.Flags.Prow = true
-	o.InstallOptions.Flags.Namespace = team.Namespace
+	o.InstallOptions.Flags.Namespace = team.Name
+	o.InstallOptions.Flags.DefaultEnvironmentPrefix = team.Name
+	o.InstallOptions.InitOptions.Flags.Helm3 = true
+	o.InstallOptions.CommonOptions.InstallDependencies = true
 
 	// call jx install
 	installOpts := &o.InstallOptions
 
-	err := installOpts.Run()
+	err = installOpts.Run()
 	if err != nil {
 		log.Errorf("Unable to install jx for %s: %s", util.ColorInfo(team.Name), err)
 	}

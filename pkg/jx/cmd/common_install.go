@@ -1295,7 +1295,7 @@ func (o *CommonOptions) installProw() error {
 
 	log.Infof("Installing prow into namespace %s\n" , util.ColorInfo(devNamespace))
 
-	err = o.installChart(prow.DefaultKnativeBuilReleaseName, prow.ChartKnativeBuild, prow.KnativeBuildVersion, devNamespace, true, values)
+	err = o.installChart(prow.DefaultKnativeBuildReleaseName, prow.ChartKnativeBuild, prow.KnativeBuildVersion, devNamespace, true, values)
 	if err != nil {
 		return fmt.Errorf("failed to install knative build: %v", err)
 	}
