@@ -174,6 +174,10 @@ func (o *ControllerWorkflowOptions) Run() error {
 	select {}
 }
 
+func (o *ControllerWorkflowOptions) PipelineMap() map[string]*v1.PipelineActivity {
+	return o.pipelineMap
+}
+
 func (o *ControllerWorkflowOptions) updatePipelinesWithoutWatching(jxClient versioned.Interface, ns string) error {
 	workflows, err := jxClient.JenkinsV1().Workflows(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -188,6 +192,7 @@ func (o *ControllerWorkflowOptions) updatePipelinesWithoutWatching(jxClient vers
 		return err
 	}
 	for _, pipeline := range pipelines.Items {
+		o.pipelineMap[pipeline.Name] = &pipeline
 		o.onActivity(&pipeline, jxClient, ns)
 	}
 	return nil
@@ -450,7 +455,7 @@ func (o *ControllerWorkflowOptions) ReloadAndPollGitPipelineStatuses(jxClient ve
 // pollGitStatusforPipeline polls the pending PipelineActivity resources to see if the
 // PR has merged or the pipeline on master has completed
 func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, environments typev1.EnvironmentInterface, ns string) {
-	if !o.isReleaseBranch(activity.BranchName()) || activity.Spec.WorkflowStatus == v1.ActivityStatusTypeSucceeded {
+	if !o.isReleaseBranch(activity.BranchName()) {
 		o.removePipelineActivity(activity, activities)
 		return
 	}
@@ -465,7 +470,9 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 			continue
 		}
 		if promote.Status.IsTerminated() {
-			log.Infof("Pipeline %s promote Environment %s ignored as status %s\n", activity.Name, promote.Environment, string(promote.Status))
+			if o.Verbose {
+				log.Infof("Pipeline %s promote Environment %s ignored as status %s\n", activity.Name, promote.Environment, string(promote.Status))
+			}
 			continue
 		}
 		envName := promote.Environment

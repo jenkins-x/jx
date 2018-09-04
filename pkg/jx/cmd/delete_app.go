@@ -52,6 +52,9 @@ type DeleteAppOptions struct {
 	// calculated fields
 	TimeoutDuration         *time.Duration
 	PullRequestPollDuration *time.Duration
+
+	// allow git to be configured externally before a PR is created
+	ConfigureGitCallback ConfigureGitFolderFn
 }
 
 // NewCmdDeleteApp creates a command object for this command
@@ -225,7 +228,7 @@ func (o *DeleteAppOptions) deleteAppFromEnvironment(env *v1.Environment, appName
 		requirements.RemoveApp(appName)
 		return nil
 	}
-	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchName, title, message, nil)
+	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchName, title, message, nil, o.ConfigureGitCallback)
 	if err != nil {
 		return err
 	}
