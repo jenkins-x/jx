@@ -212,6 +212,8 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+
 	assertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	assertAllPromoteStepsSuccessful(t, activities, a.Name)
@@ -241,21 +243,60 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	assertHasPullRequestForEnv(t, activities, a.Name, "production")
 	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	assertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+
 	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	assertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	assertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
 	if !assertSetPullRequestMerged(t, fakeGitProvider, prodRepo, 1) {
 		return
 	}
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	assertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+
+	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
+	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
+	assertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+	assertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
+
 	if !assertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
 		return
 	}
 
 	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
-
 	assertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	assertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
 	assertAllPromoteStepsSuccessful(t, activities, a.Name)
+}
+
+func dumpActivity(t *testing.T, activities typev1.PipelineActivityInterface, name string) *v1.PipelineActivity {
+	activity, err := activities.Get(name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	if err != nil {
+		return nil
+	}
+	assert.NotNil(t, activity, "No PipelineActivity found for name %s", name)
+	if activity != nil {
+		dumpFailedActivity(activity)
+	}
+	return activity
 }
 
 // TestParallelWorkflow lets test promoting to A + B then when A + B is complete then C
@@ -560,6 +601,14 @@ func TestPullRequestNumber(t *testing.T) {
 			assert.Equal(t, expected, actual, "pullRequestURLToNumber() for %s", u)
 		}
 	}
+}
+
+func dumpPipelineMap(o *cmd.ControllerWorkflowOptions) {
+	log.Infof("Dumping PipelineMap {\n")
+	for k, v := range o.PipelineMap() {
+		log.Infof("    Pipeline %s %s\n", k, v.Name)
+	}
+	log.Infof("}\n")
 }
 
 func pollGitStatusAndReactToPipelineChanges(t *testing.T, o *cmd.ControllerWorkflowOptions, jxClient versioned.Interface, ns string) error {
