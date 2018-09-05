@@ -13,13 +13,13 @@ import (
 )
 
 const (
-	Hook                          = "hook"
-	DefaultProwReleaseName        = "jx-prow"
-	DefaultKnativeBuilReleaseName = "jx-knative-build"
-	ProwVersion                   = "0.0.11"
-	KnativeBuildVersion           = "0.0.2"
-	ChartProw                     = "jenkins-x/prow"
-	ChartKnativeBuild             = "jenkins-x/knative-build"
+	Hook                           = "hook"
+	DefaultProwReleaseName         = "jx-prow"
+	DefaultKnativeBuildReleaseName = "jx-knative-build"
+	ProwVersion                    = "0.0.16"
+	KnativeBuildVersion            = "0.0.4"
+	ChartProw                      = "jenkins-x/prow"
+	ChartKnativeBuild              = "jenkins-x/knative-build"
 )
 
 // Options for prow

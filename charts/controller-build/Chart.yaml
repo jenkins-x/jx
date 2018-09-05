@@ -5,4 +5,4 @@ maintainers:
 - name: Jenkins X Team
   email: jenkins-x@googlegroups.com
 name: controller-build
-version: 0.0.1-SNAPSHOT
+version: 1.0.0

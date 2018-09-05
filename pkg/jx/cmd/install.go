@@ -410,8 +410,9 @@ func (options *InstallOptions) Run() error {
 
 	// run  helm install setting the token and domain values
 	if options.Flags.Provider == "" {
-		return fmt.Errorf("No kubernetes provider found to match cloud-environment with")
+		return fmt.Errorf("no kubernetes provider found to match cloud-environment with")
 	}
+
 	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(options.Flags.Provider)))
 	if _, err := os.Stat(wrkDir); os.IsNotExist(err) {
 		return fmt.Errorf("cloud environment dir %s not found", makefileDir)
@@ -517,6 +518,9 @@ func (options *InstallOptions) Run() error {
 	options.Helm().SetCWD(makefileDir)
 	jxChart := "jenkins-x/jenkins-x-platform"
 	jxRelName := "jenkins-x"
+
+	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
+
 	if !options.Flags.InstallOnly {
 		err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil, valueFiles)
 	} else {
