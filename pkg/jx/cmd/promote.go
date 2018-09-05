@@ -60,6 +60,9 @@ type PromoteOptions struct {
 	Filter              string
 	Alias               string
 
+	// allow git to be configured externally before a PR is created
+	ConfigureGitCallback ConfigureGitFolderFn
+
 	// for testing
 	FakePullRequests CreateEnvPullRequestFn
 
@@ -467,7 +470,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		releaseInfo.PullRequestInfo = info
 		return err
 	} else {
-		info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
+		info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo, o.ConfigureGitCallback)
 		releaseInfo.PullRequestInfo = info
 		return err
 	}

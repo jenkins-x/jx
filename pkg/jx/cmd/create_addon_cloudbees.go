@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -41,6 +43,7 @@ var (
 // CreateAddonCloudBeesOptions the options for the create spring command
 type CreateAddonCloudBeesOptions struct {
 	CreateAddonOptions
+	Sso bool
 }
 
 // NewCmdCreateAddonCloudBees creates a command object for the "create" command
@@ -71,6 +74,7 @@ func NewCmdCreateAddonCloudBees(f Factory, out io.Writer, errOut io.Writer) *cob
 		},
 	}
 
+	cmd.Flags().BoolVarP(&options.Sso, "sso", "", false, "Enable single sign-on")
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName)
 	return cmd
@@ -155,6 +159,51 @@ To register to get your username/password to to: %s
 		err := o.addHelmRepoIfMissing(fmt.Sprintf(cdxRepoUrl, username, password), cdxRepoName)
 		if err != nil {
 			return err
+		}
+	}
+
+	if o.Sso {
+		log.Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
+		o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+		if err != nil {
+			return errors.Wrap(err, "retrieving the development namesapce")
+		}
+		ingressConfig, err := kube.GetIngressConfig(o.KubeClientCached, o.devNamespace)
+		if err != nil {
+			return errors.Wrap(err, "retrieving existing ingress configuration")
+		}
+		domain, err := util.PickValue("Domain:", ingressConfig.Domain, true)
+		if err != nil {
+			return errors.Wrap(err, "reading domain")
+		}
+
+		dexURL, err := util.PickValue("Dex URL:", "", true)
+		if err != nil {
+			return errors.Wrap(err, "reading dex URL")
+		}
+
+		err = o.ensureCertmanager()
+		if err != nil {
+			return errors.Wrap(err, "ensuring cert-manager is installed")
+		}
+
+		ingressConfig.TLS = true
+		ingressConfig.Issuer = kube.CertmanagerIssuerProd
+		err = kube.CleanCertmanagerResources(o.KubeClientCached, o.Namespace, ingressConfig)
+		if err != nil {
+			return errors.Wrap(err, "creating cert-manager issuer")
+		}
+
+		values := []string{
+			"sso.create=true",
+			"sso.oidcIssuerUrl=" + dexURL,
+			"sso.domain=" + domain,
+			"sso.certIssuerName=" + ingressConfig.Issuer,
+		}
+		if len(o.SetValues) > 0 {
+			o.SetValues = o.SetValues + "," + strings.Join(values, ",")
+		} else {
+			o.SetValues = strings.Join(values, ",")
 		}
 	}
 
