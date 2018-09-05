@@ -262,9 +262,6 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 
-	if workflowName == "" {
-		workflowName = "default"
-	}
 	if repoName == "" || version == "" || build == "" || pipelineName == "" {
 		if o.Verbose {
 			log.Infof("Ignoring missing data for pipeline: %s repo: %s version: %s status: %s\n", pipeline.Name, repoName, version, string(pipeline.Spec.WorkflowStatus))
@@ -272,6 +269,12 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		o.removePipelineActivity(pipeline, activities)
 		return
 	}
+
+	if workflowName == "" {
+		o.removePipelineActivity(pipeline, activities)
+		return
+	}
+
 	if !pipeline.Spec.WorkflowStatus.IsTerminated() {
 		flow := o.workflowMap[workflowName]
 		if flow == nil && workflowName == "default" {
@@ -285,7 +288,6 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		}
 
 		if flow == nil {
-			log.Warnf("Cannot process pipeline %s due to workflow name %s not existing\n", pipeline.Name, workflowName)
 			o.removePipelineActivity(pipeline, activities)
 			return
 		}
