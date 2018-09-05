@@ -11,12 +11,11 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"time"
-	"golang.org/x/build/kubernetes/api"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
-)
+	)
 
 // ControllerTeamOptions are the flags for the commands
 type ControllerTeamOptions struct {
@@ -82,10 +81,10 @@ func (o *ControllerTeamOptions) Run() error {
 	_, teamController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo meta_v1.ListOptions) (runtime.Object, error) {
-				return jxClient.JenkinsV1().Teams(api.NamespaceAll).List(lo)
+				return jxClient.JenkinsV1().Teams("").List(lo)
 			},
 			WatchFunc: func(lo meta_v1.ListOptions) (watch.Interface, error) {
-				return jxClient.JenkinsV1().Teams(api.NamespaceAll).Watch(lo)
+				return jxClient.JenkinsV1().Teams("").Watch(lo)
 			},
 		},
 		&v1.Team{},
