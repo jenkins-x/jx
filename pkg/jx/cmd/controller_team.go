@@ -2,20 +2,20 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"io"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"time"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"k8s.io/client-go/kubernetes"
-	)
+)
 
 // ControllerTeamOptions are the flags for the commands
 type ControllerTeamOptions struct {
@@ -125,12 +125,12 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			return nil
 		})
 		if err != nil {
-			log.Errorf("Unable to update team %s: %s", util.ColorInfo(team.Name), err)
+			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(team.Name), v1.TeamProvisionStatusPending, err)
 			return
 		}
 
 		// ensure that the namespace exists
-		err = kube.EnsureNamespaceCreated( kubeClient, team.Name, nil, nil)
+		err = kube.EnsureNamespaceCreated(kubeClient, team.Name, nil, nil)
 		if err != nil {
 			log.Errorf("Unable to create namespace %s: %s", util.ColorInfo(team.Name), err)
 			return
@@ -157,7 +157,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 				return nil
 			})
 			if err != nil {
-				log.Errorf("Unable to update team %s: %s", util.ColorInfo(team.Name), err)
+				log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(team.Name), v1.TeamProvisionStatusError, err)
 				return
 			}
 			return
@@ -169,7 +169,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			return nil
 		})
 		if err != nil {
-			log.Errorf("Unable to update team %s: %s", util.ColorInfo(team.Name), err)
+			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(team.Name), v1.TeamProvisionStatusComplete, err)
 			return
 		}
 	}
