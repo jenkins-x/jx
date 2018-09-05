@@ -957,7 +957,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 		if strings.Contains(plan, "forces new resource") {
 			fmt.Fprintf(options.Stdout(), "%s\n", util.ColorError("It looks like this plan is destructive, aborting."))
 			fmt.Fprintf(options.Stdout(), "Use --ignore-terraform-warnings to override\n")
-			return errors.New("Aborting destructive plan")
+			return errors.New("aborting destructive plan")
 		}
 	}
 
@@ -1078,8 +1078,9 @@ func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) 
 		}
 
 		return err
+	} else {
+		log.Info("Skipping installing jx as it appears to be already installed\n")
 	}
-	log.Info("Skipping installing jx as it appears to be already installed\n")
 
 	return nil
 }
