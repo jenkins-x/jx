@@ -106,6 +106,13 @@ pipeline {
                         sh "make release"
                     }
                 }
+                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
+                    checkout scm
+                    container('go') {
+                        sh "updatebot push-version --kind helm jx `cat pkg/version/VERSION`"
+                       	sh "updatebot update-loop"
+                    }
+                }
             }
         }
     }

@@ -173,7 +173,6 @@ func (o *ControllerBackupOptions) Run() error {
 
 	go userController.Run(stop)
 
-
 	// Wait forever
 	select {}
 }

@@ -80,6 +80,9 @@ test-slow-report-html: get-test-deps test-slow
 test-integration:
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./...
 
+test-integration1:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./... -run $(TEST)
+
 test-integration-report: get-test-deps test-integration
 	@gocov convert cover.out | gocov report
 
@@ -118,6 +121,12 @@ testbin:
 
 debugtest1: testbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-test -- -test.run $(TEST)
+
+inttestbin:
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -tags=integration -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-inttest
+
+debuginttest1: inttestbin
+	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-inttest -- -test.run $(TEST)
 
 full: $(PKGS)
 
@@ -170,7 +179,6 @@ release: check
 	updatebot push-version --kind docker JX_VERSION $(VERSION)
 	updatebot push-regex -r "\s*release = \"(.*)\"" -v $(VERSION) config.toml
 	updatebot push-regex -r "JX_VERSION=(.*)" -v $(VERSION) install-jx.sh
-	updatebot update-loop
 
 	echo "Updating the JX CLI reference docs"
 	git clone https://github.com/jenkins-x/jx-docs.git

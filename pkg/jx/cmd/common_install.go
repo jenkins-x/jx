@@ -810,7 +810,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(binDir + "/jx"))
+	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(binDir+"/jx"))
 	err = os.Remove(tarFile)
 	if err != nil {
 		return err
@@ -1241,7 +1241,7 @@ func (o *CommonOptions) installProw() error {
 		o.Chart = prow.ChartProw
 	}
 
-	if o.Chart == "" {
+	if o.Version == "" {
 		o.Version = prow.ProwVersion
 	}
 
@@ -1288,11 +1288,15 @@ func (o *CommonOptions) installProw() error {
 	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
+
 	err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
 	if err != nil {
 		return fmt.Errorf("failed to install prow: %v", err)
 	}
-	err = o.installChart(prow.DefaultKnativeBuilReleaseName, prow.ChartKnativeBuild, prow.KnativeBuildVersion, devNamespace, true, values)
+
+	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+
+	err = o.installChart(prow.DefaultKnativeBuildReleaseName, prow.ChartKnativeBuild, prow.KnativeBuildVersion, devNamespace, true, values)
 	if err != nil {
 		return fmt.Errorf("failed to install knative build: %v", err)
 	}

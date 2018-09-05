@@ -71,6 +71,7 @@ func NewCmdCreate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateCodeship(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateCluster(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateDevPod(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateDockerAuth(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateDocs(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateEtcHosts(f, out, errOut))

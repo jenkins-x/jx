@@ -158,6 +158,10 @@ func (p *GerritProvider) ServerURL() string {
 	return ""
 }
 
+func (p *GerritProvider) BranchArchiveURL(org string, name string, branch string) string {
+	return ""
+}
+
 func (p *GerritProvider) CurrentUsername() string {
 	return ""
 }

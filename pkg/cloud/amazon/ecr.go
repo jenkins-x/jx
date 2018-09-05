@@ -37,7 +37,10 @@ func GetAccountIDAndRegion() (string, string, error) {
 func NewAwsSession() (*session.Session, string, error) {
 	region := os.Getenv("AWS_REGION")
 	if region == "" {
-		region = "us-west-2"
+		region = os.Getenv("AWS_DEFAULT_REGION")
+		if region == "" {
+			region = "us-west-2"
+		}
 	}
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(region)},
