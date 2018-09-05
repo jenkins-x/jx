@@ -559,5 +559,4 @@ func (g *GitCLI) SetEmail(dir string, email string) error {
 // CreateBranch creates a branch with the given name in the git repository from the given directory
 func (g *GitCLI) CreateBranch(dir string, branch string) error {
 	return g.gitCmd(dir, "branch", branch)
-
 }

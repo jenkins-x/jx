@@ -4,6 +4,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
@@ -116,6 +117,12 @@ type GitProvider interface {
 
 	// Returns user info, if possible
 	UserInfo(username string) *GitUser
+
+	AddCollaborator(string, string) error
+	// TODO Refactor to remove bespoke types when we implement another provider
+	ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error)
+	// TODO Refactor to remove bespoke types when we implement another provider
+	AcceptInvitation(int64) (*github.Response, error)
 }
 
 // Gitter defines common git actions used by Jenkins X

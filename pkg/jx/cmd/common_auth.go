@@ -68,6 +68,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 	if len(config.Servers) == 0 {
 		// if in cluster then there's no user configfile, so check for env vars first
 		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
+
 		if !userAuth.IsInvalid() {
 			// if no config file is being used lets grab the git server from the current directory
 			server, err := o.Git().Server("")

@@ -235,13 +235,11 @@ func (o *ImportOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		updated := false
 		if server.Kind == "" {
 			server.Kind, err = o.GitServerHostURLKind(server.URL)
 			if err != nil {
 				return err
 			}
-			updated = true
 		}
 		if userAuth.IsInvalid() {
 			f := func(username string) error {
@@ -253,23 +251,14 @@ func (o *ImportOptions) Run() error {
 				return err
 			}
 
-			o.Credentials, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
-			if err != nil {
-				return err
-			}
-
-			updated = true
-
 			// TODO lets verify the auth works?
 			if userAuth.IsInvalid() {
-				return fmt.Errorf("You did not properly define the user authentication!")
+				return fmt.Errorf("Authentication has failed for user %v. Please check the user's access credentials and try again.\n", userAuth.Username)
 			}
 		}
-		if updated {
-			err = authConfigSvc.SaveUserAuth(server.URL, userAuth)
-			if err != nil {
-				return fmt.Errorf("Failed to store git auth configuration %s", err)
-			}
+		err = authConfigSvc.SaveUserAuth(server.URL, userAuth)
+		if err != nil {
+			return fmt.Errorf("Failed to store git auth configuration %s", err)
 		}
 
 		o.GitServer = server
@@ -680,6 +669,37 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 		return err
 	}
 	log.Infof("Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+
+	// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
+	config := authConfigSvc.Config()
+	if config.PipeLineUsername != o.GitUserAuth.Username && config.CurrentServer == config.PipeLineServer {
+		// Make the invitation
+		err := o.GitProvider.AddCollaborator(config.PipeLineUsername, details.RepoName)
+		if err != nil {
+			return err
+		}
+
+		// Create a new provider for the pipeline user
+		pipelineUserAuth := config.FindUserAuth(config.CurrentServer, config.PipeLineUsername)
+		pipelineServerAuth := config.GetServer(config.CurrentServer)
+		pipelineUserProvider, err := gits.CreateProvider(pipelineServerAuth, pipelineUserAuth, o.Git())
+		if err != nil {
+			return err
+		}
+		// Get all invitations for the pipeline user
+		invites, _, err := pipelineUserProvider.ListInvitations()
+		if err != nil {
+			return err
+		}
+		for _, x := range invites {
+			// Accept all invitations for the pipeline user
+			_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
