@@ -91,13 +91,13 @@ func (o *ControllerTeamOptions) Run() error {
 		time.Minute*30,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				o.onTeamChange(obj, client, jxClient, "add")
+				o.onTeamChange(obj, client, jxClient)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				o.onTeamChange(newObj, client, jxClient, "update")
+				o.onTeamChange(newObj, client, jxClient)
 			},
 			DeleteFunc: func(obj interface{}) {
-				// do nothing
+				// do nothing, already handled by 'jx delete team'
 			},
 		},
 	)
@@ -108,37 +108,69 @@ func (o *ControllerTeamOptions) Run() error {
 	select {}
 }
 
-func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface, kind string) {
+func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface) {
 	team, ok := obj.(*v1.Team)
 	if !ok {
 		log.Infof("Object is not a Team %#v\n", obj)
 		return
 	}
 
-	log.Infof("Found Team %s - %s\n", util.ColorInfo(team.Name), util.ColorInfo(kind))
+	log.Infof("Adding / Updating Team %s, Namespace %s, Status '%s'\n", util.ColorInfo(team.Name), util.ColorInfo(team.Namespace), util.ColorInfo(team.Status.ProvisionStatus))
 
-	// ensure that the namespace exists
-	err := kube.EnsureNamespaceCreated( kubeClient, team.Name, nil, nil)
-	if err != nil {
-		log.Errorf("Unable to create namespace %s: %s", util.ColorInfo(team.Name), err)
-		return
-	}
+	if v1.TeamProvisionStatusNone == team.Status.ProvisionStatus {
+		// update first
+		err := o.ControllerOptions.ModifyTeam(team.Name, func(team *v1.Team) error {
+			team.Status.ProvisionStatus = v1.TeamProvisionStatusPending
+			team.Status.Message = "Installing resources"
+			return nil
+		})
+		if err != nil {
+			log.Errorf("Unable to update team %s: %s", util.ColorInfo(team.Name), err)
+			return
+		}
 
-	o.InstallOptions.BatchMode = true
-	o.InstallOptions.Flags.Provider = "gke"
-	o.InstallOptions.Flags.NoDefaultEnvironments = true
-	o.InstallOptions.Flags.Prow = true
-	o.InstallOptions.Flags.Namespace = team.Name
-	o.InstallOptions.Flags.DefaultEnvironmentPrefix = team.Name
-	o.InstallOptions.InitOptions.Flags.Helm3 = true
-	o.InstallOptions.CommonOptions.InstallDependencies = true
+		// ensure that the namespace exists
+		err = kube.EnsureNamespaceCreated( kubeClient, team.Name, nil, nil)
+		if err != nil {
+			log.Errorf("Unable to create namespace %s: %s", util.ColorInfo(team.Name), err)
+			return
+		}
 
-	// call jx install
-	installOpts := &o.InstallOptions
+		o.InstallOptions.BatchMode = true
+		o.InstallOptions.Flags.Provider = "gke"
+		o.InstallOptions.Flags.NoDefaultEnvironments = true
+		o.InstallOptions.Flags.Prow = true
+		o.InstallOptions.Flags.Namespace = team.Name
+		o.InstallOptions.Flags.DefaultEnvironmentPrefix = team.Name
+		o.InstallOptions.InitOptions.Flags.Helm3 = true
+		o.InstallOptions.CommonOptions.InstallDependencies = true
 
-	err = installOpts.Run()
-	if err != nil {
-		log.Errorf("Unable to install jx for %s: %s", util.ColorInfo(team.Name), err)
+		// call jx install
+		installOpts := &o.InstallOptions
+
+		err = installOpts.Run()
+		if err != nil {
+			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(team.Name), err)
+			err = o.ControllerOptions.ModifyTeam(team.Name, func(team *v1.Team) error {
+				team.Status.ProvisionStatus = v1.TeamProvisionStatusError
+				team.Status.Message = err.Error()
+				return nil
+			})
+			if err != nil {
+				log.Errorf("Unable to update team %s: %s", util.ColorInfo(team.Name), err)
+				return
+			}
+			return
+		}
+
+		err = o.ControllerOptions.ModifyTeam(team.Name, func(team *v1.Team) error {
+			team.Status.ProvisionStatus = v1.TeamProvisionStatusComplete
+			team.Status.Message = "Installation complete"
+			return nil
+		})
+		if err != nil {
+			log.Errorf("Unable to update team %s: %s", util.ColorInfo(team.Name), err)
+			return
+		}
 	}
 }
-
