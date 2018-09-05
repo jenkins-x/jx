@@ -912,7 +912,7 @@
   branch = "master"
   name = "github.com/wbrefvem/go-bitbucket"
   packages = ["."]
-  revision = "27c6c0db883c8ad9910a61155fd00e210f195ef9"
+  revision = "f14ad200310707479f18aa24e078f8c5b5887c85"
 
 [[projects]]
   branch = "master"
