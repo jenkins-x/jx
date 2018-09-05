@@ -167,7 +167,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 	production := kube.NewPermanentEnvironmentWithGit("production", "https://github.com/"+testOrgName+"/"+prodRepoName+".git")
 	production.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
 
-	workflowName := ""
+	workflowName := "default"
 
 	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{},
