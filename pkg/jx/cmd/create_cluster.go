@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io"
 	"sort"
 	"strings"
@@ -15,9 +16,10 @@ type KubernetesProvider string
 // CreateClusterOptions the flags for running create cluster
 type CreateClusterOptions struct {
 	CreateOptions
-	InstallOptions InstallOptions
-	Flags          InitFlags
-	Provider       string
+	InstallOptions   InstallOptions
+	Flags            InitFlags
+	Provider         string
+	SkipInstallation bool
 }
 
 const (
@@ -147,6 +149,10 @@ func createCreateClusterOptions(f Factory, out io.Writer, errOut io.Writer, clou
 }
 
 func (o *CreateClusterOptions) initAndInstall(provider string) error {
+	if o.SkipInstallation {
+		log.Infof("%s cluster created. Skipping Jenkins X installation.\n", o.Provider)
+		return nil
+	}
 	// call jx init
 	o.InstallOptions.BatchMode = o.BatchMode
 	o.InstallOptions.Flags.Provider = provider
@@ -167,4 +173,5 @@ func (o *CreateClusterOptions) Run() error {
 
 func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	o.InstallOptions.addInstallFlags(cmd, true)
+	cmd.Flags().BoolVarP(&o.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
 }
