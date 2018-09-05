@@ -214,7 +214,7 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 
 func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
 	if o.jenkinsClient == nil {
-		kubeClient, ns, err := o.KubeClient()
+		kubeClient, ns, err := o.KubeClientAndDevNamespace()
 		if err != nil {
 			return nil, err
 		}

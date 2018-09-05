@@ -399,6 +399,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 					return nil
 				}
 				err = promoteKey.OnPromotePullRequest(o.Activities, startPromotePR)
+				if err != nil {
+					log.Warnf("Failed to update PipelineActivity: %s\n", err)
+				}
 				// lets sleep a little before we try poll for the PR status
 				time.Sleep(waitAfterPullRequestCreated)
 			}
@@ -922,7 +925,7 @@ func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipelin
 		p, b, err := o.getLatestPipelineBuild(pipeline)
 		if err != nil {
 			log.Warnf("Failed to try detect the current Jenkins pipeline for %s due to %s\n", pipeline, err)
-			pipeline = ""
+			build = "1"
 		} else {
 			pipeline = p
 			build = b
