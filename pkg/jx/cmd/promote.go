@@ -925,7 +925,7 @@ func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipelin
 		p, b, err := o.getLatestPipelineBuild(pipeline)
 		if err != nil {
 			log.Warnf("Failed to try detect the current Jenkins pipeline for %s due to %s\n", pipeline, err)
-			pipeline = ""
+			build = "1"
 		} else {
 			pipeline = p
 			build = b
