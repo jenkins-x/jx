@@ -28,10 +28,10 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
+	kubev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	kubev1 	"k8s.io/api/core/v1"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of

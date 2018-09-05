@@ -5,15 +5,15 @@ import (
 
 	"fmt"
 
-		"os"
+	"os"
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // CreateClusterOptions the flags for running create cluster
