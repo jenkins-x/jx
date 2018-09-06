@@ -52,7 +52,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 				}
 				config := authConfigSvc.Config()
 				server := config.GetOrCreateServer(it.URL)
-				userAuth, err := config.PickServerUserAuth(server, "user to access the issue tracker", o.BatchMode)
+				userAuth, err := config.PickServerUserAuth(server, "user to access the issue tracker", o.BatchMode, "")
 				if err != nil {
 					return nil, err
 				}

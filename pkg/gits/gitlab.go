@@ -7,7 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/xanzy/go-gitlab"
 )
@@ -601,6 +603,21 @@ func (g *GitlabProvider) UpdateRelease(owner string, repo string, tag string, re
 
 func (p *GitlabProvider) IssueURL(org string, name string, number int, isPull bool) string {
 	return ""
+}
+
+func (p *GitlabProvider) AddCollaborator(user string, repo string) error {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab. Please add user: %v as a collaborator to this project.\n", user)
+	return nil
+}
+
+func (p *GitlabProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
+	return []*github.RepositoryInvitation{}, &github.Response{}, nil
+}
+
+func (p *GitlabProvider) AcceptInvitation(ID int64) (*github.Response, error) {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
+	return &github.Response{}, nil
 }
 
 // GitlabAccessTokenURL returns the URL to click on to generate a personal access token for the git provider
