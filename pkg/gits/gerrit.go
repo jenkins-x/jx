@@ -5,7 +5,9 @@ import (
 	"time"
 
 	gerrit "github.com/andygrunwald/go-gerrit"
+	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 type GerritProvider struct {
@@ -172,4 +174,19 @@ func (p *GerritProvider) UserAuth() auth.UserAuth {
 
 func (p *GerritProvider) UserInfo(username string) *GitUser {
 	return nil
+}
+
+func (p *GerritProvider) AddCollaborator(user string, repo string) error {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit. Please add user: %v as a collaborator to this project.\n", user)
+	return nil
+}
+
+func (p *GerritProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.\n")
+	return []*github.RepositoryInvitation{}, &github.Response{}, nil
+}
+
+func (p *GerritProvider) AcceptInvitation(ID int64) (*github.Response, error) {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.\n")
+	return &github.Response{}, nil
 }

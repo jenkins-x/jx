@@ -65,7 +65,7 @@ required = [
   version = "1.0.0"
 
 [[constraint]]
-  branch = "master"
+	version = "v18.0.0"
   name = "github.com/google/go-github"
 
 [[constraint]]

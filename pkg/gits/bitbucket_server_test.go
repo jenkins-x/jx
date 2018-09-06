@@ -303,6 +303,24 @@ func (suite *BitbucketServerProviderTestSuite) TestUserInfo() {
 	}, *userInfo)
 }
 
+func (suite *BitbucketServerProviderTestSuite) TestAddCollaborator() {
+	err := suite.provider.AddCollaborator("derek", "repo")
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketServerProviderTestSuite) TestListInvitations() {
+	invites, res, err := suite.provider.ListInvitations()
+	suite.Require().NotNil(invites)
+	suite.Require().NotNil(res)
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketServerProviderTestSuite) TestAcceptInvitations() {
+	res, err := suite.provider.AcceptInvitation(1)
+	suite.Require().NotNil(res)
+	suite.Require().Nil(err)
+}
+
 func TestBitbucketServerProviderTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping TestBitbucketServerProviderTestSuite in short mode")
