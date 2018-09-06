@@ -292,7 +292,7 @@ func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigSe
 	if server.Kind == "" {
 		server.Kind = gitKind
 	}
-	userAuth, err := config.PickServerUserAuth(server, message, batchMode)
+	userAuth, err := config.PickServerUserAuth(server, message, batchMode, "")
 	if err != nil {
 		return nil, err
 	}

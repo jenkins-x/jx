@@ -230,8 +230,9 @@ func (o *ImportOptions) Run() error {
 				return err
 			}
 		}
-		o.Debugf("Found git server %s %s\n", server.URL, server.Kind)
-		userAuth, err = config.PickServerUserAuth(server, "git user name:", o.BatchMode)
+		// Get the org in case there is more than one user auth on the server and batchMode is true
+		org := o.getOrganisationOrCurrentUser()
+		userAuth, err = config.PickServerUserAuth(server, "git user name:", o.BatchMode, org)
 		if err != nil {
 			return err
 		}
