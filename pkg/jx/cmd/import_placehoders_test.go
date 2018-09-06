@@ -28,20 +28,20 @@ func TestReplacePlaceholders(t *testing.T) {
 	o.Dir = f
 	o.AppName = "bar"
 
-	o.ReplacePlaceholders("github.com", "foo")
+	o.ReplacePlaceholders("github.com", "foo", "registry-org")
 
 	// root file
 	testFile, err := util.LoadBytes(f, "file.txt")
-	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
+	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar/registry-org", string(testFile), "replaced placeholder")
 
 	// dir1
 	testDir1 := path.Join(f, "dir1")
 	testFile, err = util.LoadBytes(testDir1, "file.txt")
-	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
+	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar/registry-org", string(testFile), "replaced placeholder")
 
 	// dir2
 	testDir2 := path.Join(f, "dir2")
 	testFile, err = util.LoadBytes(testDir2, "file.txt")
-	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar", string(testFile), "replaced placeholder")
+	assert.Equal(t, "/home/jenkins/go/src/github.com/foo/bar/registry-org", string(testFile), "replaced placeholder")
 
 }
