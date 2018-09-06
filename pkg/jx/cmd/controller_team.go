@@ -139,7 +139,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		o.InstallOptions.BatchMode = true
 		o.InstallOptions.Flags.Provider = "gke"
 		o.InstallOptions.Flags.NoDefaultEnvironments = true
-		o.InstallOptions.Flags.Prow = false
+		o.InstallOptions.Flags.Prow = true
 		o.InstallOptions.Flags.Namespace = team.Name
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = team.Name
 		o.InstallOptions.InitOptions.Flags.Helm3 = true
