@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -165,8 +164,8 @@ func (o *StepVerifyOptions) Run() error {
 }
 
 func (o *StepVerifyOptions) detectPipelineActivity(jxClient versioned.Interface, namespace string) (*v1.PipelineActivity, error) {
-	pipeline := os.Getenv("JOB_NAME")
-	build := os.Getenv("BUILD_NUMBER")
+	pipeline := o.getJobName()
+	build := o.getBuildNumber()
 	if pipeline == "" || build == "" {
 		return nil, errors.New("JOB_NAME or BUILD_NUMBER environment variables not set")
 	}

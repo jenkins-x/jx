@@ -150,6 +150,18 @@ func (o *CommonOptions) registerUserCRD() error {
 	return nil
 }
 
+func (o *CommonOptions) registerEnvironmentRoleBindingCRD() error {
+	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterEnvironmentRoleBindingCRD(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the User CRD")
+	}
+	return nil
+}
+
 func (o *CommonOptions) registerPipelineActivityCRD() error {
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
 	if err != nil {

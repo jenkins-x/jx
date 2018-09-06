@@ -154,6 +154,24 @@ func (suite *GitlabProviderSuite) TestGetRepository() {
 	suite.Require().Equal(gitlabProjectName, repo.Name)
 }
 
+func (suite *GitlabProviderSuite) TestAddCollaborator() {
+	err := suite.provider.AddCollaborator("derek", "repo")
+	suite.Require().Nil(err)
+}
+
+func (suite *GitlabProviderSuite) TestListInvitations() {
+	invites, res, err := suite.provider.ListInvitations()
+	suite.Require().NotNil(invites)
+	suite.Require().NotNil(res)
+	suite.Require().Nil(err)
+}
+
+func (suite *GitlabProviderSuite) TestAcceptInvitations() {
+	res, err := suite.provider.AcceptInvitation(1)
+	suite.Require().NotNil(res)
+	suite.Require().Nil(err)
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestGitlabProviderSuite(t *testing.T) {

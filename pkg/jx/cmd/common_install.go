@@ -1266,7 +1266,7 @@ func (o *CommonOptions) installProw() error {
 		}
 
 		server := config.GetOrCreateServer(config.CurrentServer)
-		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode)
+		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode, "")
 		if err != nil {
 			return err
 		}

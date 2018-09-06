@@ -895,6 +895,24 @@ func (p *GitHubProvider) UserInfo(username string) *GitUser {
 	}
 }
 
+func (p *GitHubProvider) AddCollaborator(user string, repo string) error {
+	log.Infof("Automatically adding the pipeline user: %v as a collaborator.\n", user)
+	_, err := p.Client.Repositories.AddCollaborator(p.Context, p.Username, repo, user, &github.RepositoryAddCollaboratorOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *GitHubProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
+	return p.Client.Users.ListInvitations(p.Context, &github.ListOptions{})
+}
+
+func (p *GitHubProvider) AcceptInvitation(ID int64) (*github.Response, error) {
+	log.Infof("Automatically accepted invitation: %v for the pipeline user.\n", ID)
+	return p.Client.Users.AcceptInvitation(p.Context, ID)
+}
+
 func asBool(b *bool) bool {
 	if b != nil {
 		return *b

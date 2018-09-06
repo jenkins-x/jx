@@ -992,7 +992,7 @@ func (o *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
 	if message == "" {
 		message = fmt.Sprintf("%s username for CI/CD pipelines:", server.Label())
 	}
-	userAuth, err = config.PickServerUserAuth(server, message, o.BatchMode)
+	userAuth, err = config.PickServerUserAuth(server, message, o.BatchMode, "")
 	if err != nil {
 		return userAuth, err
 	}

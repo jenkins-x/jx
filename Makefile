@@ -213,27 +213,26 @@ docker-maven: linux Dockerfile.builder-maven
 docker-base: linux
 	docker build -t rawlingsj/builder-base:dev16 . -f Dockerfile.builder-base
 
-docker-dev: build linux
+docker-pull:
 	docker images | grep -v REPOSITORY | awk '{print $$1}' | uniq -u | grep jenkinsxio | awk '{print $$1":latest"}' | xargs -L1 docker pull
+
+docker-build-and-push:
 	docker build --no-cache -t $(DOCKER_HUB_USER)/jx:dev .
 	docker push $(DOCKER_HUB_USER)/jx:dev
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-base:dev -f Dockerfile.builder-base .
 	docker push $(DOCKER_HUB_USER)/builder-base:dev
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-maven:dev -f Dockerfile.builder-maven .
 	docker push $(DOCKER_HUB_USER)/builder-maven:dev
-
-docker-dev-all: build linux
-	docker images | grep -v REPOSITORY | awk '{print $$1}' | uniq -u | grep jenkinsxio | awk '{print $$1":latest"}' | xargs -L1 docker pull
-	docker build --no-cache -t $(DOCKER_HUB_USER)/jx:dev .
-	docker push $(DOCKER_HUB_USER)/jx:dev
-	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-base:dev -f Dockerfile.builder-base .
-	docker push $(DOCKER_HUB_USER)/builder-base:dev
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-go:dev -f Dockerfile.builder-go .
 	docker push $(DOCKER_HUB_USER)/builder-go:dev
+
+docker-dev: build linux docker-pull docker-build-and-push
+
+docker-dev-no-pull: build linux docker-build-and-push
+
+docker-dev-all: build linux docker-pull docker-build-and-push
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-gradle:dev -f Dockerfile.builder-gradle .
 	docker push $(DOCKER_HUB_USER)/builder-gradle:dev
-	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-maven:dev -f Dockerfile.builder-maven .
-	docker push $(DOCKER_HUB_USER)/builder-maven:dev
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-rust:dev -f Dockerfile.builder-rust .
 	docker push $(DOCKER_HUB_USER)/builder-rust:dev
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-scala:dev -f Dockerfile.builder-scala .
