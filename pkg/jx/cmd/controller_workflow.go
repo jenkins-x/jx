@@ -774,6 +774,10 @@ func (o *ControllerWorkflowOptions) isReleaseBranch(branchName string) bool {
 	return branchName == "master"
 }
 
+func noopCallback(activity *v1.PipelineActivity) bool {
+	return true
+}
+
 func setActivitySucceeded(activity *v1.PipelineActivity) bool {
 	activity.Spec.Status = v1.ActivityStatusTypeSucceeded
 	activity.Spec.WorkflowStatus = v1.ActivityStatusTypeSucceeded
@@ -788,7 +792,7 @@ func setActivityAborted(activity *v1.PipelineActivity) bool {
 }
 
 func (o *ControllerWorkflowOptions) removePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface) {
-	o.modifyAndRemovePipelineActivity(activity, activities, setActivitySucceeded)
+	o.modifyAndRemovePipelineActivity(activity, activities, noopCallback)
 }
 
 // removePipelineActivityIfNoManual only remove the PipelineActivity if there is not any pending Promote
