@@ -279,12 +279,16 @@ func (g *GitCLI) Server(dir string) (string, error) {
 // Info returns the git info of the repository at the given directory
 func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
 	text, err := g.gitCmdWithOutput(dir, "status")
+	var rUrl string
 	if err != nil && strings.Contains(text, "Not a git repository") {
-		return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
+		rUrl = os.Getenv("SOURCE_URL")
+		if rUrl == "" {
+			return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
+		}
+	} else {
+		text, err = g.gitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
+		rUrl = strings.TrimSpace(text)
 	}
-
-	text, err = g.gitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
-	rUrl := strings.TrimSpace(text)
 
 	repo, err := ParseGitURL(rUrl)
 	if err != nil {
