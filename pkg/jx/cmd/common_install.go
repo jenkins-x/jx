@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	jxVersionPkg "github.com/jenkins-x/jx/pkg/version"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -806,7 +807,28 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	configDir, err := util.ConfigDir()
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, configDir, []string{binary, fileName})
+	if err != nil {
+		return err
+	}
+	versionedBinary := fmt.Sprintf("%s/%s-%s", configDir, fileName, version)
+	err = os.Rename(configDir+"/jx", versionedBinary)
+	if err != nil {
+		return err
+	}
+	err = os.Chmod(versionedBinary, 0755)
+	if err != nil {
+		return err
+	}
+	err = os.Remove(binDir+"/jx")
+	if err != nil {
+		return err
+	}
+	err = os.Symlink(versionedBinary, binDir+"/jx")
 	if err != nil {
 		return err
 	}
@@ -815,7 +837,22 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	return os.Chmod(fullPath, 0755)
+
+	// Clean old versions of jx binaries
+	files, err := ioutil.ReadDir(configDir)
+	if err != nil {
+		return err
+	}
+	for _, f := range files {
+		if strings.HasPrefix(f.Name(), "jx-") && f.Name() != "jx-" + jxVersionPkg.GetVersion() && f.Name() != "jx-" + version {
+			err = os.Remove(configDir + "/" + f.Name())
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (o *CommonOptions) installMinikube() error {
