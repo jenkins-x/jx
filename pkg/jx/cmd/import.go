@@ -35,10 +35,10 @@ import (
 )
 
 const (
-	PlaceHolderAppName       = "REPLACE_ME_APP_NAME"
-	PlaceHolderGitProvider   = "REPLACE_ME_GIT_PROVIDER"
-	PlaceHolderOrg           = "REPLACE_ME_ORG"
-	PlaceHolderDockerRepoOrg = "REPLACE_ME_DOCKER_REPO_ORG"
+	PlaceHolderAppName           = "REPLACE_ME_APP_NAME"
+	PlaceHolderGitProvider       = "REPLACE_ME_GIT_PROVIDER"
+	PlaceHolderOrg               = "REPLACE_ME_ORG"
+	PlaceHolderDockerRegistryOrg = "REPLACE_ME_DOCKER_REGISTRY_ORG"
 
 	JenkinsfileBackupSuffix = ".backup"
 
@@ -81,6 +81,7 @@ type ImportOptions struct {
 	ListDraftPacks          bool
 	DraftPack               string
 	DefaultOwner            string
+	DockerRegistryOrg       string
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
@@ -176,6 +177,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.ListDraftPacks, "list-packs", "", false, "list available draft packs")
 	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
 	cmd.Flags().StringVarP(&options.DefaultOwner, "default-owner", "", "someone", "The default user/organisation used if no user is found for the current git repository being imported")
+	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the git provider organisation will be used")
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -588,7 +590,8 @@ func (o *ImportOptions) DraftCreate() error {
 	}
 
 	org := o.getOrganisationOrCurrentUser()
-	err = o.ReplacePlaceholders(gitServerName, org)
+	dockerRegistryOrg := o.getDockerRegistryOrg()
+	err = o.ReplacePlaceholders(gitServerName, org, dockerRegistryOrg)
 	if err != nil {
 		return err
 	}
@@ -601,6 +604,14 @@ func (o *ImportOptions) DraftCreate() error {
 		return err
 	}
 	return nil
+}
+
+func (o *ImportOptions) getDockerRegistryOrg() string {
+	dockerRegistryOrg := o.DockerRegistryOrg
+	if dockerRegistryOrg == "" {
+		dockerRegistryOrg = o.getOrganisationOrCurrentUser()
+	}
+	return dockerRegistryOrg
 }
 
 func (o *ImportOptions) getOrganisationOrCurrentUser() string {
@@ -920,11 +931,11 @@ func (o *ImportOptions) ensureDockerRepositoryExists() error {
 	return nil
 }
 
-// ReplacePlaceholders replaces git server name and git org placeholders
-func (o *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerRepositoryOrg string) error {
+// ReplacePlaceholders replaces git server name, git org, and docker registry org placeholders
+func (o *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerRegistryOrg string) error {
 	gitOrg = kube.ToValidName(strings.ToLower(gitOrg))
 	log.Infof("replacing placeholders in directory %s\n", o.Dir)
-	log.Infof("app name: %s, git server: %s, org: %s, docker repository org: %s\n", o.AppName, gitServerName, gitOrg, dockerRepositoryOrg)
+	log.Infof("app name: %s, git server: %s, org: %s, docker registry org: %s\n", o.AppName, gitServerName, gitOrg, dockerRegistryOrg)
 
 	ignore, err := gitignore.NewRepository(o.Dir)
 	if err != nil {
@@ -963,6 +974,7 @@ func (o *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerReposit
 				line = strings.Replace(line, PlaceHolderAppName, strings.ToLower(o.AppName), -1)
 				line = strings.Replace(line, PlaceHolderGitProvider, strings.ToLower(gitServerName), -1)
 				line = strings.Replace(line, PlaceHolderOrg, strings.ToLower(gitOrg), -1)
+				line = strings.Replace(line, PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg), -1)
 				lines[i] = line
 			}
 			output := strings.Join(lines, "\n")

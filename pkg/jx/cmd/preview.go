@@ -44,6 +44,7 @@ const (
 	JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT = "JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT"
 	ORG                                    = "ORG"
 	APP_NAME                               = "APP_NAME"
+	DOCKER_REGISTRY_ORG                    = "DOCKER_REGISTRY_ORG"
 	PREVIEW_VERSION                        = "PREVIEW_VERSION"
 
 	optionPostPreviewJobTimeout  = "post-preview-job-timeout"
@@ -796,7 +797,12 @@ func getImageName() (string, error) {
 		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
 	}
 
-	return fmt.Sprintf("%s/%s/%s", containerRegistry, organisation, app), nil
+	dockerRegistryOrg := os.Getenv(DOCKER_REGISTRY_ORG)
+	if dockerRegistryOrg == "" {
+		dockerRegistryOrg = organisation
+	}
+
+	return fmt.Sprintf("%s/%s/%s", containerRegistry, dockerRegistryOrg, app), nil
 }
 
 func getImageTag() (string, error) {
