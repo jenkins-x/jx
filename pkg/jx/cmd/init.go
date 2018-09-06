@@ -238,7 +238,10 @@ func (o *InitOptions) initHelm() error {
 	var err error
 
 	if o.Flags.Helm3 {
+		log.Infof("Using %s\n" ,util.ColorInfo("helm3"))
 		o.Flags.SkipTiller = true
+	} else {
+		log.Infof("Using %s\n" ,util.ColorInfo("helm2"))
 	}
 
 	if !o.Flags.SkipTiller {
@@ -535,6 +538,7 @@ controller:
 
 		i := 0
 		for {
+			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
 			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values, valuesFiles)
 			if err != nil {
 				if i >= 3 {
