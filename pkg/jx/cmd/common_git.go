@@ -119,8 +119,6 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 	}
 	if create {
 		_, err = secrets.Create(secret)
-	} else {
-		_, err = secrets.Update(secret)
 	}
 	if err != nil {
 		return name, fmt.Errorf("Failed to %s secret %s due to %s", operation, secret.Name, err)

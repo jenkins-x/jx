@@ -137,8 +137,8 @@
     "service/s3",
     "service/sts"
   ]
-  revision = "04abd557eeaab3cfdded45467eea00fc03db9cb9"
-  version = "v1.15.26"
+  revision = "80ad2657c5ff975b642b1febb11c3fcfd747c057"
+  version = "v1.15.28"
 
 [[projects]]
   name = "github.com/beevik/etree"
@@ -384,10 +384,12 @@
   revision = "e89373fe6b4a7413d7acd6da1725b83ef713e6e4"
 
 [[projects]]
-  branch = "master"
+  digest = "1:4be3c01ef56542da4f1268c52a8b88bae5309ec3dade7755e250bc933e13ac70"
   name = "github.com/google/go-github"
   packages = ["github"]
-  revision = "e1be32f26e66c63933619603172ead18ebf4f79d"
+  pruneopts = "NUT"
+  revision = "08dbadce1a0514f79ea9a9aa91b2f12ba656d5a7"
+  version = "v18.0.0"
 
 [[projects]]
   branch = "master"

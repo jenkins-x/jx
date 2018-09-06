@@ -1,0 +1,3 @@
+FROM jenkinsxio/jenkins-maven:dev_2
+
+COPY build/linux/jx /usr/bin/jx

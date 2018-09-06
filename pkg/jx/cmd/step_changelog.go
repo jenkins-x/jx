@@ -185,7 +185,7 @@ func NewCmdStepChangelog(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 
 func (o *StepChangelogOptions) Run() error {
 	// lets enable batch mode if we detect we are inside a pipeline
-	if !o.BatchMode && os.Getenv("BUILD_NUMBER") != "" {
+	if !o.BatchMode && o.getBuildNumber() != "" {
 		log.Infoln("Using batch mode as inside a pipeline")
 		o.BatchMode = true
 	}

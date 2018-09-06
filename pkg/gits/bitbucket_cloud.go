@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -866,6 +867,21 @@ func (p *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRe
 	answer := []*GitRelease{}
 	log.Warn("Bitbucket Cloud doesn't support releases")
 	return answer, nil
+}
+
+func (b *BitbucketCloudProvider) AddCollaborator(user string, repo string) error {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.\n", user)
+	return nil
+}
+
+func (b *BitbucketCloudProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
+	return []*github.RepositoryInvitation{}, &github.Response{}, nil
+}
+
+func (b *BitbucketCloudProvider) AcceptInvitation(ID int64) (*github.Response, error) {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
+	return &github.Response{}, nil
 }
 
 func BitBucketCloudAccessTokenURL(url string, username string) string {

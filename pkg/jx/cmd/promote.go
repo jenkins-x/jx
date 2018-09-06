@@ -883,10 +883,10 @@ func (o *CommonOptions) getLatestPipelineBuildByCRD(pipeline string) (string, er
 
 func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipeline string, build string, appName string) (string, string) {
 	if pipeline == "" {
-		pipeline = os.Getenv("JOB_NAME")
+		pipeline = o.getJobName()
 	}
 	if build == "" {
-		build = os.Getenv("BUILD_NUMBER")
+		build = o.getBuildNumber()
 	}
 	if gitInfo != nil && pipeline == "" {
 		// lets default the pipeline name from the git repo
