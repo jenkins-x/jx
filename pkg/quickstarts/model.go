@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	// JenkinsXQuickstartsOwner default quickstart owner
 	JenkinsXQuickstartsOwner = "jenkins-x-quickstarts"
 )
 
@@ -37,7 +38,8 @@ func toGitHubQuickstart(provider gits.GitProvider, owner string, repo *gits.GitR
 	return GitQuickstart(provider, owner, repo.Name, language, framework, tags...)
 }
 
-func (m *QuickstartModel) LoadGithubQuickstarts(provider gits.GitProvider, owner string, includes []string, excludes []string) error {
+// LoadGithubQuickstarts Loads quickstarts from github
+func (model *QuickstartModel) LoadGithubQuickstarts(provider gits.GitProvider, owner string, includes []string, excludes []string) error {
 	repos, err := provider.ListRepositories(owner)
 	if err != nil {
 		return err
@@ -45,12 +47,13 @@ func (m *QuickstartModel) LoadGithubQuickstarts(provider gits.GitProvider, owner
 	for _, repo := range repos {
 		name := repo.Name
 		if util.StringMatchesAny(name, includes, excludes) {
-			m.Add(toGitHubQuickstart(provider, owner, repo))
+			model.Add(toGitHubQuickstart(provider, owner, repo))
 		}
 	}
 	return nil
 }
 
+// NewQuickstartModel creates a new quickstart model
 func NewQuickstartModel() *QuickstartModel {
 	return &QuickstartModel{
 		Quickstarts: map[string]*Quickstart{},
@@ -58,11 +61,11 @@ func NewQuickstartModel() *QuickstartModel {
 }
 
 // Add adds the given quickstart to this mode. Returns true if it was added
-func (m *QuickstartModel) Add(q *Quickstart) bool {
+func (model *QuickstartModel) Add(q *Quickstart) bool {
 	if q != nil {
 		id := q.ID
 		if id != "" {
-			m.Quickstarts[id] = q
+			model.Quickstarts[id] = q
 			return true
 		}
 	}
@@ -144,6 +147,10 @@ func (model *QuickstartModel) Filter(filter *QuickstartFilter) []*Quickstart {
 	answer := []*Quickstart{}
 	for _, q := range model.Quickstarts {
 		if filter.Matches(q) {
+			// If the filter matches a quickstart name exactly, return only that quickstart
+			if q.Name == filter.Text {
+				return []*Quickstart{q}
+			}
 			answer = append(answer, q)
 		}
 	}

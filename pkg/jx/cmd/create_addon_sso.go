@@ -177,7 +177,7 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 	}
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(gits.GitHubURL)
-	userAuth, err := config.PickServerUserAuth(server, "git user name", true)
+	userAuth, err := config.PickServerUserAuth(server, "git user name", true, "")
 	if err != nil {
 		return nil, err
 	}

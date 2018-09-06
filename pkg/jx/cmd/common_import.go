@@ -86,7 +86,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 				u = gitInfo.Host
 			}
 		}
-		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", batchMode)
+		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", batchMode, "")
 		if err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		}
 
 		if credentials == "" {
-			fmt.Errorf("Failed to find the created pipeline secret for the server %s", server.URL)
+			return fmt.Errorf("Failed to find the created pipeline secret for the server %s", server.URL)
 		} else {
 			createCredential = false
 		}
@@ -119,7 +119,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 					u = gitInfo.Host
 				}
 			}
-			user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", batchMode)
+			user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", batchMode, "")
 			if err != nil {
 				return err
 			}

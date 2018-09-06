@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.gitea.io/sdk/gitea"
+	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -657,4 +658,19 @@ func (p *GiteaProvider) UserInfo(username string) *GitUser {
 		// TODO figure the Gitea user url
 		URL: p.Server.URL + "/" + username,
 	}
+}
+
+func (p *GiteaProvider) AddCollaborator(user string, repo string) error {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitea. Please add user: %v as a collaborator to this project.\n", user)
+	return nil
+}
+
+func (p *GiteaProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitea.\n")
+	return []*github.RepositoryInvitation{}, &github.Response{}, nil
+}
+
+func (p *GiteaProvider) AcceptInvitation(ID int64) (*github.Response, error) {
+	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitea.\n")
+	return &github.Response{}, nil
 }
