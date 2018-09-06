@@ -72,6 +72,8 @@ func NewCmdControllerWorkflow(f Factory, out io.Writer, errOut io.Writer) *cobra
 		Aliases: []string{"workflows"},
 	}
 
+	options.addCommonFlags(cmd)
+
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().BoolVarP(&options.NoWatch, "no-watch", "", false, "Disable watch so just performs any delta processes on pending workflows")
@@ -271,7 +273,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 	}
 
 	if workflowName == "" {
-		o.removePipelineActivity(pipeline, activities)
+		o.removePipelineActivityIfNoManual(pipeline, activities)
 		return
 	}
 
@@ -288,7 +290,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		}
 
 		if flow == nil {
-			o.removePipelineActivity(pipeline, activities)
+			o.removePipelineActivityIfNoManual(pipeline, activities)
 			return
 		}
 
@@ -441,15 +443,15 @@ func (o *ControllerWorkflowOptions) ReloadAndPollGitPipelineStatuses(jxClient ve
 	environments := jxClient.JenkinsV1().Environments(ns)
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 
-	for name, _ := range o.pipelineMap {
-		latest, err := activities.Get(name, metav1.GetOptions{})
-		if err != nil {
-			log.Warnf("failed to get PipelineActivity %s: %s", name, err)
-		} else {
+	pipelines, err := activities.List(metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("failed to list PipelineActivity resources: %s", err)
+	} else {
+		for _, pipeline := range pipelines.Items {
 			if o.Verbose {
-				log.Infof("Polling git status of activity %s\n", latest.Name)
+				log.Infof("Polling git status of activity %s\n", pipeline.Name)
 			}
-			o.pollGitStatusforPipeline(latest, activities, environments, ns)
+			o.pollGitStatusforPipeline(&pipeline, activities, environments, ns)
 		}
 	}
 }
@@ -462,6 +464,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 		return
 	}
 
+	// TODO should be is newest pipeline for this environment promote...
 	if !o.isNewestPipeline(activity, activities) {
 		return
 	}
@@ -786,6 +789,19 @@ func setActivityAborted(activity *v1.PipelineActivity) bool {
 
 func (o *ControllerWorkflowOptions) removePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface) {
 	o.modifyAndRemovePipelineActivity(activity, activities, setActivitySucceeded)
+}
+
+// removePipelineActivityIfNoManual only remove the PipelineActivity if there is not any pending Promote
+func (o *ControllerWorkflowOptions) removePipelineActivityIfNoManual(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface) {
+	for _, step := range activity.Spec.Steps {
+		promote := step.Promote
+		if promote != nil {
+			if promote.Status == v1.ActivityStatusTypePending || promote.Status == v1.ActivityStatusTypeRunning {
+				return
+			}
+		}
+	}
+	o.removePipelineActivity(activity, activities)
 }
 
 func (o *ControllerWorkflowOptions) modifyAndRemovePipelineActivity(activity *v1.PipelineActivity, activities typev1.PipelineActivityInterface, callback func(activity *v1.PipelineActivity) bool) error {
