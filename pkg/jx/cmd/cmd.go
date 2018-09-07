@@ -109,11 +109,17 @@ func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 			Message: "Working with Applications:",
 			Commands: []*cobra.Command{
 				NewCmdConsole(f, out, err),
-				NewCmdCloudBees(f, out, err),
 				NewCmdLogs(f, out, err),
 				NewCmdOpen(f, out, err),
 				NewCmdRsh(f, out, err),
 				NewCmdSync(f, out, err),
+			},
+		},
+		{
+			Message: "Working with CloudBees application:",
+			Commands: []*cobra.Command{
+				NewCmdCloudBees(f, out, err),
+				NewCmdLogin(f, out, err),
 			},
 		},
 		{
