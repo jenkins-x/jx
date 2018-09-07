@@ -14,7 +14,7 @@ else ifeq ($(OS),Linux)
 	sed -i -e "s/repository: .*/repository: $(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST):$(JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT)\/jenkins-x-bot\/controller-backup/" values.yaml
 	sed -i -e "s/tag: .*/tag: $(PREVIEW_VERSION)/" values.yaml
 else
-	echo "platfrom $(OS) not supported to release from"
+	echo "platform $(OS) not supported to release from"
 	exit -1
 endif
 	echo "  version: $(PREVIEW_VERSION)" >> requirements.yaml
