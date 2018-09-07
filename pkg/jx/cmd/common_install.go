@@ -807,6 +807,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
+	os.Remove(binDir + "/jx")
 	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
 	if err != nil {
 		return err
