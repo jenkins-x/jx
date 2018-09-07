@@ -431,7 +431,7 @@ func (f *factory) CreateTable(out io.Writer) table.Table {
 func (f *factory) IsInCDPIpeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
-	return os.Getenv("BUILD_NUMBER") != ""
+	return os.Getenv("BUILD_NUMBER") != "" || os.Getenv("JX_BUILD_NUMBER") != ""
 }
 
 // function to tell if we are running incluster
