@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/pkg/errors"
 
@@ -699,18 +700,32 @@ func (o *ImportOptions) CreateNewRemoteRepository() error {
 		if err != nil {
 			return err
 		}
+
 		// Get all invitations for the pipeline user
-		invites, _, err := pipelineUserProvider.ListInvitations()
-		if err != nil {
-			return err
-		}
-		for _, x := range invites {
-			// Accept all invitations for the pipeline user
-			_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+		// Wrapped in retry to not immediately fail the quickstart creation if APIs are flaky.
+		f := func() error {
+			invites, _, err := pipelineUserProvider.ListInvitations()
 			if err != nil {
 				return err
 			}
+			for _, x := range invites {
+				// Accept all invitations for the pipeline user
+				_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
 		}
+		exponentialBackOff := backoff.NewExponentialBackOff()
+		timeout := 20 * time.Second
+		exponentialBackOff.MaxElapsedTime = timeout
+		exponentialBackOff.Reset()
+		err = backoff.Retry(f, exponentialBackOff)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil

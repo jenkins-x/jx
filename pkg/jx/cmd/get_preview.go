@@ -2,14 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"os"
-
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -78,7 +76,7 @@ func (o *GetPreviewOptions) Run() error {
 }
 
 func (o *GetPreviewOptions) CurrentPreviewUrl() error {
-	pipeline := os.Getenv("JOB_NAME")
+	pipeline := o.getJobName()
 	if pipeline == "" {
 		return fmt.Errorf("No $JOB_NAME defined for the current pipeline job to use")
 	}

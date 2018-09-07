@@ -110,7 +110,7 @@ func NewCmdPreview(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	//addCreateAppFlags(cmd, &options.CreateOptions)
 
 	options.addPreviewOptions(cmd)
-
+	options.addCommonFlags(cmd)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
 	options.PromoteOptions.addPromoteOptions(cmd)
 
@@ -190,6 +190,9 @@ func (o *PreviewOptions) Run() error {
 	o.devNamespace = ns
 
 	err = o.defaultValues(ns, true)
+	if err != nil {
+		return err
+	}
 
 	// we need pull request info to include
 	authConfigSvc, err := o.CreateGitAuthConfigService()
@@ -478,8 +481,8 @@ func (o *PreviewOptions) Run() error {
 		comment += fmt.Sprintf(" [here](%s) ", url)
 	}
 
-	pipeline := os.Getenv("JOB_NAME")
-	build := os.Getenv("BUILD_NUMBER")
+	pipeline := o.getJobName()
+	build := o.getBuildNumber()
 
 	if url != "" || o.PullRequestURL != "" {
 		if pipeline != "" && build != "" {
@@ -675,35 +678,37 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 
 	// fill in default values
 	if o.SourceURL == "" {
-		// lets discover the git dir
-		if o.Dir == "" {
-			dir, err := os.Getwd()
-			if err != nil {
-				return err
-			}
-			o.Dir = dir
-		}
-		root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
-		if err != nil {
-			log.Warnf("Could not find a .git directory: %s\n", err)
-		} else {
-			if root != "" {
-				o.Dir = root
-				o.SourceURL, err = o.discoverGitURL(gitConf)
+		o.SourceURL = os.Getenv("SOURCE_URL")
+		if o.SourceURL == "" {
+			// lets discover the git dir
+			if o.Dir == "" {
+				dir, err := os.Getwd()
 				if err != nil {
-					log.Warnf("Could not find the remote git source URL:  %s\n", err)
-				} else {
-					if o.SourceRef == "" {
-						o.SourceRef, err = o.Git().Branch(root)
-						if err != nil {
-							log.Warnf("Could not find the remote git source ref:  %s\n", err)
-						}
+					return err
+				}
+				o.Dir = dir
+			}
+			root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
+			if err != nil {
+				log.Warnf("Could not find a .git directory: %s\n", err)
+			} else {
+				if root != "" {
+					o.Dir = root
+					o.SourceURL, err = o.discoverGitURL(gitConf)
+					if err != nil {
+						log.Warnf("Could not find the remote git source URL:  %s\n", err)
+					} else {
+						if o.SourceRef == "" {
+							o.SourceRef, err = o.Git().Branch(root)
+							if err != nil {
+								log.Warnf("Could not find the remote git source ref:  %s\n", err)
+							}
 
+						}
 					}
 				}
 			}
 		}
-
 	}
 
 	if o.SourceURL == "" {
@@ -713,6 +718,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	if o.PullRequest == "" {
 		o.PullRequest = os.Getenv("BRANCH_NAME")
 	}
+
 	o.PullRequestName = strings.TrimPrefix(o.PullRequest, "PR-")
 
 	if o.SourceURL != "" {

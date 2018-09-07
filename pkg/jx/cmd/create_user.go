@@ -87,6 +87,10 @@ func (o *CreateUserOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	err = o.registerEnvironmentRoleBindingCRD()
+	if err != nil {
+		return err
+	}
 
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
