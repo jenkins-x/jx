@@ -82,6 +82,8 @@ const (
 	AdminSecretsFile      = "adminSecrets.yaml"
 	ExtraValuesFile       = "extraValues.yaml"
 	JXInstallConfig       = "jx-install-config"
+	cloudEnvValuesFile    = "myvalues.yaml"
+	cloudEnvSecretsFile   = "secrets.yaml"
 	defaultInstallTimeout = "6000"
 )
 
@@ -496,7 +498,9 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to update the helm repo")
 	}
 
-	valueFiles := []string{"./secrets.yaml", secretsFileName, adminSecretsFileName, configFileName}
+	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, cloudEnvValuesFile)
+	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, cloudEnvSecretsFile)
+	valueFiles := []string{cloudEnvironmentValuesLocation, cloudEnvironmentSecretsLocation, secretsFileName, adminSecretsFileName, configFileName}
 	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
 		return errors.Wrap(err, "failed to append the myvalues.yaml file")
