@@ -44,7 +44,7 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 		return fmt.Errorf("Unable to get or create user, nil or missing email")
 	}
 
-	log.Error("CreateOrUpdateUser: " + u.Login + " <" + u.Email + ">\n")
+	log.Infof("CreateOrUpdateUser: %s <%s>\n", u.Login, u.Email)
 
 	id := EmailToK8sId(u.Email)
 

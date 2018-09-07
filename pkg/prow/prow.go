@@ -16,8 +16,8 @@ const (
 	Hook                           = "hook"
 	DefaultProwReleaseName         = "jx-prow"
 	DefaultKnativeBuildReleaseName = "jx-knative-build"
-	ProwVersion                    = "0.0.16"
-	KnativeBuildVersion            = "0.0.4"
+	ProwVersion                    = "0.0.23"
+	KnativeBuildVersion            = "0.0.6"
 	ChartProw                      = "jenkins-x/prow"
 	ChartKnativeBuild              = "jenkins-x/knative-build"
 )

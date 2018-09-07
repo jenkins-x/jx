@@ -410,6 +410,24 @@ func (suite *BitbucketCloudProviderTestSuite) TestUserInfo() {
 	suite.Require().Equal("test-user", user.Login)
 }
 
+func (suite *BitbucketCloudProviderTestSuite) TestAddCollaborator() {
+	err := suite.provider.AddCollaborator("derek", "repo")
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestListInvitations() {
+	invites, res, err := suite.provider.ListInvitations()
+	suite.Require().NotNil(invites)
+	suite.Require().NotNil(res)
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketCloudProviderTestSuite) TestAcceptInvitations() {
+	res, err := suite.provider.AcceptInvitation(1)
+	suite.Require().NotNil(res)
+	suite.Require().Nil(err)
+}
+
 func TestBitbucketCloudProviderTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping BitbucketCloudProviderTestSuite in short mode")

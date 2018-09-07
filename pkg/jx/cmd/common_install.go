@@ -23,6 +23,7 @@ import (
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"time"
 )
 
 var (
@@ -1267,7 +1268,7 @@ func (o *CommonOptions) installProw() error {
 		}
 
 		server := config.GetOrCreateServer(config.CurrentServer)
-		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode)
+		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode, "")
 		if err != nil {
 			return err
 		}
@@ -1290,16 +1291,25 @@ func (o *CommonOptions) installProw() error {
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
+	err = o.retry(2, time.Second, func() (err error) {
+		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
+		return nil
+	})
+
 	if err != nil {
 		return fmt.Errorf("failed to install prow: %v", err)
 	}
 
 	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
 
-	err = o.installChart(prow.DefaultKnativeBuildReleaseName, prow.ChartKnativeBuild, prow.KnativeBuildVersion, devNamespace, true, values)
+	err = o.retry(2, time.Second, func() (err error) {
+		err = o.installChart(prow.DefaultKnativeBuildReleaseName, prow.ChartKnativeBuild, prow.KnativeBuildVersion, devNamespace, true, values)
+		return nil
+	})
+
 	if err != nil {
 		return fmt.Errorf("failed to install knative build: %v", err)
 	}
+	
 	return nil
 }
