@@ -55,6 +55,7 @@ func NewCmdUpgradeCLI(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 		},
 	}
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific version to upgrade to")
+	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	return cmd
 }
 

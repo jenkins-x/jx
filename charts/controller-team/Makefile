@@ -1,6 +1,6 @@
 OS := $(shell uname)
 
-gc-releases:
+build:
 	helm init --client-only
 	helm repo add chartmuseum http://jenkins-x-chartmuseum:8080
 	helm repo add chartmuseum https://chartmuseum.build.cd.jenkins-x.io
@@ -11,7 +11,7 @@ ifeq ($(OS),Darwin)
 else ifeq ($(OS),Linux)
 	sed -i -e "s/version:.*/version: $(PREVIEW_VERSION)/" Chart.yaml
 	sed -i -e "s/version:.*/version: $(PREVIEW_VERSION)/" ../*/Chart.yaml
-	sed -i -e "s/repository: .*/repository: $(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST):$(JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT)\/jenkins-x-bot\/gc-releases/" values.yaml
+	sed -i -e "s/repository: .*/repository: $(JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST):$(JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT)\/jenkins-x-bot\/controller-team/" values.yaml
 	sed -i -e "s/tag: .*/tag: $(PREVIEW_VERSION)/" values.yaml
 else
 	echo "platform $(OS) not supported to release from"
