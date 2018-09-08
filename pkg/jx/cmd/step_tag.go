@@ -205,10 +205,13 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 
 func (o *StepTagOptions) defaultChartValueRepository() string {
 	dockerRegistry := os.Getenv("DOCKER_REGISTRY")
-	organsation := os.Getenv("ORG")
+	dockerRegistryOrg := os.Getenv("DOCKER_REGISTRY_ORG")
+	if dockerRegistryOrg == "" {
+		dockerRegistryOrg = os.Getenv("ORG")
+	}
 	appName := os.Getenv("APP_NAME")
-	if dockerRegistry != "" && organsation != "" && appName != "" {
-		return dockerRegistry + "/" + organsation + "/" + appName
+	if dockerRegistry != "" && dockerRegistryOrg != "" && appName != "" {
+		return dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
 	}
 	return ""
 }
