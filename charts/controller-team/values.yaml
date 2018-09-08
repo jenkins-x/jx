@@ -1,0 +1,25 @@
+controller-team:
+  serviceaccount:
+    enabled: true
+  deployment:
+    enabled: true
+  args:
+  - "controller"
+  - "team"
+  role:
+    enabled: true
+    rules:
+    - apiGroups:
+      - jenkins.io
+      resources:
+      - environments
+      - environmentrolebindings
+      - gitservices
+      - pipelineactivities
+      - teams
+      - users
+      - releases
+      verbs:
+      - list
+      - get
+      - watch

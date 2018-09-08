@@ -97,8 +97,10 @@ var (
 		For more documentation see: [https://jenkins-x.io/getting-started/install-on-cluster/](https://jenkins-x.io/getting-started/install-on-cluster/)
 
 		The current requirements are:
-		* RBAC is enabled on the cluster
-		* insecure docker registry is enabled for docker registries running locally inside kubernetes on the service IP range. See the above documentation for more detail 
+
+		*RBAC is enabled on the cluster
+
+		*Insecure docker registry is enabled for docker registries running locally inside kubernetes on the service IP range. See the above documentation for more detail
 
 `)
 
@@ -137,7 +139,7 @@ func NewCmdInstall(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	options.addCommonFlags(cmd)
 	options.addInstallFlags(cmd, false)
 
-	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
+	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 	return cmd
 }
 
@@ -204,7 +206,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
-	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install comand to fail if there is already an installation. Otherwise lets update the installation")
+	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install command to fail if there is already an installation. Otherwise lets update the installation")
 	cmd.Flags().StringVarP(&flags.DockerRegistry, "docker-registry", "", "", "The Docker Registry host or host:port which is used when tagging and pushing images. If not specified it defaults to the internal registry unless there is a better provider default (e.g. ECR on AWS/EKS)")
 	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
@@ -720,7 +722,7 @@ func isOpenShiftProvider(provider string) bool {
 }
 
 func (o *InstallOptions) enableOpenShiftSCC(ns string) error {
-	log.Infof("Enabling anyui for the Jenkins service account in namespace %s\n", ns)
+	log.Infof("Enabling anyuid for the Jenkins service account in namespace %s\n", ns)
 	err := o.RunCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":jenkins")
 	if err != nil {
 		return err
@@ -738,7 +740,7 @@ func (o *InstallOptions) enableOpenShiftSCC(ns string) error {
 }
 
 func (o *InstallOptions) enableOpenShiftRegistryPermissions(ns string, helmConfig *config.HelmValuesConfig, dockerRegistry string) error {
-	log.Infof("Enabling permissions for Openshift registry in namespace %s\n", ns)
+	log.Infof("Enabling permissions for OpenShift registry in namespace %s\n", ns)
 	// Open the registry so any authenticated user can pull images from the jx namespace
 	err := o.RunCommand("oc", "adm", "policy", "add-role-to-group", "system:image-puller", "system:authenticated", "-n", ns)
 	if err != nil {
