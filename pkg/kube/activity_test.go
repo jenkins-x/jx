@@ -2,10 +2,12 @@ package kube_test
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,6 +63,36 @@ func (m *MockPipelineActivityInterface) Watch(opts meta_v1.ListOptions) (watch.I
 
 func (m *MockPipelineActivityInterface) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.PipelineActivity, err error) {
 	return nil, fmt.Errorf("TODO")
+}
+
+func TestGenerateBuildNumber(t *testing.T) {
+	options := &cmd.CommonOptions{}
+	cmd.ConfigureTestOptions(options, options.Git(), options.Helm())
+
+	jxClient, ns, err := options.JXClientAndDevNamespace()
+	assert.NoError(t, err, "Creating JX client")
+	if err != nil {
+		return
+	}
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	org := "jstrachan"
+	repo := "cheese"
+	branch := "master"
+
+	results := []string{}
+	expected := []string{}
+	for i := 1; i < 4; i++ {
+		buildNumberText := strconv.Itoa(i)
+		build, activity, err := kube.GenerateBuildNumber(activities, org, repo, branch)
+		if assert.NoError(t, err, "GenerateBuildNumber %d", i) {
+			if assert.NotNil(t, activity, "No PipelineActivity returned!") {
+				results = append(results, build)
+				assert.Equal(t, buildNumberText, activity.Spec.Build, "Build number for PipelineActivity %s", activity.Name)
+			}
+		}
+		expected = append(expected, buildNumberText)
+	}
+	assert.Equal(t, expected, results, "generated build numbers")
 }
 
 func TestCreateOrUpdateActivities(t *testing.T) {
