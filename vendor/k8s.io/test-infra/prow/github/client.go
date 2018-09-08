@@ -34,7 +34,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/shurcooL/githubv4"
+	githubql "github.com/shurcooL/githubv4"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 
@@ -63,11 +63,11 @@ type Client struct {
 
 	gqlc     gqlClient
 	client   httpClient
-	token    string
 	bases    []string
 	dry      bool
 	fake     bool
 	throttle throttler
+	getToken func() []byte
 
 	mut     sync.Mutex // protects botName and email
 	botName string
@@ -85,6 +85,14 @@ var (
 const (
 	acceptNone = ""
 )
+
+// Force the compiler to check if the TokenSource is implementing correctly.
+// Tokensource is needed to dynamically update the token in the GraphQL client.
+var _ oauth2.TokenSource = &reloadingTokenSource{}
+
+type reloadingTokenSource struct {
+	getToken func() []byte
+}
 
 // Interface for how prow interacts with the http client, which we may throttle.
 type httpClient interface {
@@ -186,40 +194,40 @@ func (c *Client) Throttle(hourlyTokens, burst int) {
 }
 
 // NewClient creates a new fully operational GitHub client.
-// 'token' is the GitHub access token to use.
+// 'getToken' is a generator for the GitHub access token to use.
 // 'bases' is a variadic slice of endpoints to use in order of preference.
 //   An endpoint is used when all preceding endpoints have returned a conn err.
 //   This should be used when using the ghproxy GitHub proxy cache to allow
 //   this client to bypass the cache if it is temporarily unavailable.
-func NewClient(token string, bases ...string) *Client {
+func NewClient(getToken func() []byte, bases ...string) *Client {
 	return &Client{
-		logger: logrus.WithField("client", "github"),
-		time:   &standardTime{},
-		gqlc:   githubv4.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))),
-		client: &http.Client{},
-		token:  token,
-		bases:  bases,
-		dry:    false,
+		logger:   logrus.WithField("client", "github"),
+		time:     &standardTime{},
+		gqlc:     githubql.NewClient(&http.Client{Transport: &oauth2.Transport{Source: newReloadingTokenSource(getToken)}}),
+		client:   &http.Client{},
+		bases:    bases,
+		getToken: getToken,
+		dry:      false,
 	}
 }
 
 // NewDryRunClient creates a new client that will not perform mutating actions
 // such as setting statuses or commenting, but it will still query GitHub and
 // use up API tokens.
-// 'token' is the GitHub access token to use.
+// 'getToken' is a generator the GitHub access token to use.
 // 'bases' is a variadic slice of endpoints to use in order of preference.
 //   An endpoint is used when all preceding endpoints have returned a conn err.
 //   This should be used when using the ghproxy GitHub proxy cache to allow
 //   this client to bypass the cache if it is temporarily unavailable.
-func NewDryRunClient(token string, bases ...string) *Client {
+func NewDryRunClient(getToken func() []byte, bases ...string) *Client {
 	return &Client{
-		logger: logrus.WithField("client", "github"),
-		time:   &standardTime{},
-		gqlc:   githubv4.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))),
-		client: &http.Client{},
-		token:  token,
-		bases:  bases,
-		dry:    true,
+		logger:   logrus.WithField("client", "github"),
+		time:     &standardTime{},
+		gqlc:     githubql.NewClient(&http.Client{Transport: &oauth2.Transport{Source: newReloadingTokenSource(getToken)}}),
+		client:   &http.Client{},
+		bases:    bases,
+		getToken: getToken,
+		dry:      true,
 	}
 }
 
@@ -253,12 +261,28 @@ type request struct {
 }
 
 type requestError struct {
-	ClientError
+	ClientError error
 	ErrorString string
 }
 
 func (r requestError) Error() string {
 	return r.ErrorString
+}
+
+func (r requestError) ErrorMessages() []string {
+	clientErr, isClientError := r.ClientError.(ClientError)
+	if isClientError {
+		errors := []string{}
+		for _, subErr := range clientErr.Errors {
+			errors = append(errors, subErr.Message)
+		}
+		return errors
+	}
+	alternativeClientErr, isAlternativeClientError := r.ClientError.(AlternativeClientError)
+	if isAlternativeClientError {
+		return alternativeClientErr.Errors
+	}
+	return []string{}
 }
 
 // Make a request with retries. If ret is not nil, unmarshal the response body
@@ -299,16 +323,13 @@ func (c *Client) requestRaw(r *request) (int, []byte, error) {
 		}
 	}
 	if !okCode {
-		clientError := ClientError{}
-		if err := json.Unmarshal(b, &clientError); err != nil {
-			return resp.StatusCode, b, err
-		}
-		return resp.StatusCode, b, requestError{
+		clientError := unmarshalClientError(b)
+		err = requestError{
 			ClientError: clientError,
 			ErrorString: fmt.Sprintf("status code %d not one of %v, body: %s", resp.StatusCode, r.exitCodes, string(b)),
 		}
 	}
-	return resp.StatusCode, b, nil
+	return resp.StatusCode, b, err
 }
 
 // Retry on transport failures. Retries on 500s, retries after sleep on
@@ -391,7 +412,7 @@ func (c *Client) doRequest(method, path, accept string, body interface{}) (*http
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Token "+c.token)
+	req.Header.Set("Authorization", "Token "+string(c.getToken()))
 	if accept == acceptNone {
 		req.Header.Add("Accept", "application/vnd.github.v3+json")
 	} else {
@@ -1544,11 +1565,11 @@ var _ error = (*StateCannotBeChanged)(nil)
 // convert to a StateCannotBeChanged if appropriate or else return the original error
 func stateCannotBeChangedOrOriginalError(err error) error {
 	requestErr, ok := err.(requestError)
-	if ok && len(requestErr.Errors) > 0 {
-		for _, subErr := range requestErr.Errors {
-			if strings.Contains(subErr.Message, stateCannotBeChangedMessagePrefix) {
+	if ok {
+		for _, errorMsg := range requestErr.ErrorMessages() {
+			if strings.Contains(errorMsg, stateCannotBeChangedMessagePrefix) {
 				return StateCannotBeChanged{
-					Message: subErr.Message,
+					Message: errorMsg,
 				}
 			}
 		}
@@ -1691,7 +1712,7 @@ func (c *Client) GetFile(org, repo, filepath, commit string) ([]byte, error) {
 	return decoded, nil
 }
 
-// Query runs a GraphQL query using shurcooL/githubv4's client.
+// Query runs a GraphQL query using shurcooL/githubql's client.
 func (c *Client) Query(ctx context.Context, q interface{}, vars map[string]interface{}) error {
 	// Don't log query here because Query is typically called multiple times to get all pages.
 	// Instead log once per search and include total search cost.
@@ -2145,4 +2166,18 @@ func (c *Client) ListMilestones(org, repo string) ([]Milestone, error) {
 		return nil, err
 	}
 	return milestones, nil
+}
+
+// newReloadingTokenSource creates a reloadingTokenSource.
+func newReloadingTokenSource(getToken func() []byte) *reloadingTokenSource {
+	return &reloadingTokenSource{
+		getToken: getToken,
+	}
+}
+
+// Token is an implementation for oauth2.TokenSource interface.
+func (s *reloadingTokenSource) Token() (*oauth2.Token, error) {
+	return &oauth2.Token{
+		AccessToken: string(s.getToken()),
+	}, nil
 }

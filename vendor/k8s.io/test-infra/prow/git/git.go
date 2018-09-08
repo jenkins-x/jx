@@ -42,8 +42,9 @@ type Client struct {
 	credLock sync.RWMutex
 	// user is used when pushing or pulling code if specified.
 	user string
-	// pass is used when pushing or pulling code if specified.
-	pass string
+
+	// needed to generate the token.
+	tokenGenerator func() []byte
 
 	// dir is the location of the git cache.
 	dir string
@@ -95,17 +96,17 @@ func (c *Client) SetRemote(remote string) {
 
 // SetCredentials sets credentials in the client to be used for pushing to
 // or pulling from remote repositories.
-func (c *Client) SetCredentials(user, pass string) {
+func (c *Client) SetCredentials(user string, tokenGenerator func() []byte) {
 	c.credLock.Lock()
 	defer c.credLock.Unlock()
 	c.user = user
-	c.pass = pass
+	c.tokenGenerator = tokenGenerator
 }
 
 func (c *Client) getCredentials() (string, string) {
 	c.credLock.RLock()
 	defer c.credLock.RUnlock()
-	return c.user, c.pass
+	return c.user, string(c.tokenGenerator())
 }
 
 func (c *Client) lockRepo(repo string) {

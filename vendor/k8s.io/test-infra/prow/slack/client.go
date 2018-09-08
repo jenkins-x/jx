@@ -37,8 +37,8 @@ type Client struct {
 	// If logger is non-nil, log all method calls with it.
 	logger Logger
 
-	token string
-	fake  bool
+	tokenGenerator func() []byte
+	fake           bool
 }
 
 const (
@@ -49,10 +49,10 @@ const (
 )
 
 // NewClient creates a slack client with an API token.
-func NewClient(token string) *Client {
+func NewClient(tokenGenerator func() []byte) *Client {
 	return &Client{
-		logger: logrus.WithField("client", "slack"),
-		token:  token,
+		logger:         logrus.WithField("client", "slack"),
+		tokenGenerator: tokenGenerator,
 	}
 }
 
@@ -78,7 +78,7 @@ func (sl *Client) urlValues() *url.Values {
 	uv := url.Values{}
 	uv.Add("username", botName)
 	uv.Add("icon_emoji", botIconEmoji)
-	uv.Add("token", sl.token)
+	uv.Add("token", string(sl.tokenGenerator()))
 	return &uv
 }
 

@@ -63,10 +63,10 @@ var (
 func (o Options) Run() int {
 	code, err := o.ExecuteProcess()
 	if err != nil {
-		logrus.WithError(err).Error("Error executing test process: %v.", err)
+		logrus.WithError(err).Error("Error executing test process")
 	}
 	if err := o.mark(code); err != nil {
-		logrus.WithError(err).Error("Error writing exit code to marker file: %v.", err)
+		logrus.WithError(err).Error("Error writing exit code to marker file")
 		return InternalErrorCode
 	}
 	return code

@@ -97,6 +97,11 @@ type Tide struct {
 	// Leave this blank to disable this feature and save 1 API token per sync loop.
 	BlockerLabel string `json:"blocker_label,omitempty"`
 
+	// SquashLabel is an optional label that is used to identify PRs that should
+	// always be squash merged.
+	// Leave this blank to disable this feature.
+	SquashLabel string `json:"squash_label,omitempty"`
+
 	// MaxGoroutines is the maximum number of goroutines spawned inside the
 	// controller to handle org/repo:branch pools. Defaults to 20. Needs to be a
 	// positive number.

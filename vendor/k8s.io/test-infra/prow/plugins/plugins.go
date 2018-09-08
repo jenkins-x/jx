@@ -161,20 +161,23 @@ type Configuration struct {
 	Owners Owners `json:"owners,omitempty"`
 
 	// Built-in plugins specific configuration.
-	Triggers      []Trigger            `json:"triggers,omitempty"`
-	Heart         Heart                `json:"heart,omitempty"`
-	RepoMilestone map[string]Milestone `json:"repo_milestone,omitempty"`
-	Slack         Slack                `json:"slack,omitempty"`
-	ConfigUpdater ConfigUpdater        `json:"config_updater,omitempty"`
-	Blockades     []Blockade           `json:"blockades,omitempty"`
-	Approve       []Approve            `json:"approve,omitempty"`
-	Blunderbuss   Blunderbuss          `json:"blunderbuss,omitempty"`
-	RequireSIG    RequireSIG           `json:"requiresig,omitempty"`
-	SigMention    SigMention           `json:"sigmention,omitempty"`
-	Cat           Cat                  `json:"cat,omitempty"`
-	Label         *Label               `json:"label,omitempty"`
-	Lgtm          []Lgtm               `json:"lgtm,omitempty"`
-	Welcome       Welcome              `json:"welcome,omitempty"`
+	Approve              []Approve              `json:"approve,omitempty"`
+	Blockades            []Blockade             `json:"blockades,omitempty"`
+	Blunderbuss          Blunderbuss            `json:"blunderbuss,omitempty"`
+	Cat                  Cat                    `json:"cat,omitempty"`
+	CherryPickUnapproved CherryPickUnapproved   `json:"cherry_pick_unapproved,omitempty"`
+	ConfigUpdater        ConfigUpdater          `json:"config_updater,omitempty"`
+	Heart                Heart                  `json:"heart,omitempty"`
+	Label                *Label                 `json:"label,omitempty"`
+	Lgtm                 []Lgtm                 `json:"lgtm,omitempty"`
+	RepoMilestone        map[string]Milestone   `json:"repo_milestone,omitempty"`
+	RequireMatchingLabel []RequireMatchingLabel `json:"require_matching_label,omitempty"`
+	RequireSIG           RequireSIG             `json:"requiresig,omitempty"`
+	Slack                Slack                  `json:"slack,omitempty"`
+	SigMention           SigMention             `json:"sigmention,omitempty"`
+	Size                 *Size                  `json:"size,omitempty"`
+	Triggers             []Trigger              `json:"triggers,omitempty"`
+	Welcome              Welcome                `json:"welcome,omitempty"`
 }
 
 // ExternalPlugin holds configuration for registering an external
@@ -283,6 +286,16 @@ type SigMention struct {
 	// Compiles into Re during config load.
 	Regexp string         `json:"regexp,omitempty"`
 	Re     *regexp.Regexp `json:"-"`
+}
+
+// Size specifies configuration for the size plugin, defining lower bounds (in # lines changed) for each size label.
+// XS is assumed to be zero.
+type Size struct {
+	S   int `json:"s"`
+	M   int `json:"m"`
+	L   int `json:"l"`
+	Xl  int `json:"xl"`
+	Xxl int `json:"xxl"`
 }
 
 /*
@@ -448,6 +461,124 @@ type Welcome struct {
 	MessageTemplate string `json:"message_template,omitempty"`
 }
 
+// CherryPickUnapproved is the config for the cherrypick-unapproved plugin.
+type CherryPickUnapproved struct {
+	// BranchRegexp is the regular expression for branch names such that
+	// the plugin treats only PRs against these branch names as cherrypick PRs.
+	// Compiles into BranchRe during config load.
+	BranchRegexp string         `json:"branchregexp,omitempty"`
+	BranchRe     *regexp.Regexp `json:"-"`
+	// Comment is the comment added by the plugin while adding the
+	// `do-not-merge/cherry-pick-not-approved` label.
+	Comment string `json:"comment,omitempty"`
+}
+
+// RequireMatchingLabel is the config for the require-matching-label plugin.
+type RequireMatchingLabel struct {
+	// Org is the GitHub organization that this config applies to.
+	Org string `json:"org,omitempty"`
+	// Repo is the GitHub repository within Org that this config applies to.
+	// This fields may be omitted to apply this config across all repos in Org.
+	Repo string `json:"repo,omitempty"`
+	// Branch is the branch ref of PRs that this config applies to.
+	// This field is only valid if `prs: true` and may be omitted to apply this
+	// config across all branches in the repo or org.
+	Branch string `json:"branch,omitempty"`
+	// PRs is a bool indicating if this config applies to PRs.
+	PRs bool `json:"prs,omitempty"`
+	// Issues is a bool indicating if this config applies to issues.
+	Issues bool `json:"issues,omitempty"`
+
+	// Regexp is the string specifying the regular expression used to look for
+	// matching labels.
+	Regexp string `json:"regexp,omitempty"`
+	// Re is the compiled version of Regexp. It should not be specified in config.
+	Re *regexp.Regexp `json:"-"`
+
+	// MissingLabel is the label to apply if an issue does not have any label
+	// matching the Regexp.
+	MissingLabel string `json:"missing_label,omitempty"`
+	// MissingComment is the comment to post when we add the MissingLabel to an
+	// issue. This is typically used to explain why MissingLabel was added and
+	// how to move forward.
+	// This field is optional. If unspecified, no comment is created when labeling.
+	MissingComment string `json:"missing_comment,omitempty"`
+
+	// GracePeriod is the amount of time to wait before processing newly opened
+	// or reopened issues and PRs. This delay allows other automation to apply
+	// labels before we look for matching labels.
+	// Defaults to '5s'.
+	GracePeriod         string        `json:"grace_period,omitempty"`
+	GracePeriodDuration time.Duration `json:"-"`
+}
+
+// validate checks the following properties:
+// - Org, Regexp, MissingLabel, and GracePeriod must be non-empty.
+// - Repo does not contain a '/' (should use Org+Repo).
+// - At least one of PRs or Issues must be true.
+// - Branch only specified if 'prs: true'
+// - MissingLabel must not match Regexp.
+func (r RequireMatchingLabel) validate() error {
+	if r.Org == "" {
+		return errors.New("must specify 'org'")
+	}
+	if strings.Contains(r.Repo, "/") {
+		return errors.New("'repo' may not contain '/'; specify the organization with 'org'")
+	}
+	if r.Regexp == "" {
+		return errors.New("must specify 'regexp'")
+	}
+	if r.MissingLabel == "" {
+		return errors.New("must specify 'missing_label'")
+	}
+	if r.GracePeriod == "" {
+		return errors.New("must specify 'grace_period'")
+	}
+	if !r.PRs && !r.Issues {
+		return errors.New("must specify 'prs: true' and/or 'issues: true'")
+	}
+	if !r.PRs && r.Branch != "" {
+		return errors.New("branch cannot be specified without `prs: true'")
+	}
+	if r.Re.MatchString(r.MissingLabel) {
+		return errors.New("'regexp' must not match 'missing_label'")
+	}
+	return nil
+}
+
+// Describe generates a human readable description of the behavior that this
+// configuration specifies.
+func (r RequireMatchingLabel) Describe() string {
+	str := &strings.Builder{}
+	fmt.Fprintf(str, "Applies the '%s' label ", r.MissingLabel)
+	if r.MissingComment == "" {
+		fmt.Fprint(str, "to ")
+	} else {
+		fmt.Fprint(str, "and comments on ")
+	}
+
+	if r.Issues {
+		fmt.Fprint(str, "Issues ")
+		if r.PRs {
+			fmt.Fprint(str, "and ")
+		}
+	}
+	if r.PRs {
+		if r.Branch != "" {
+			fmt.Fprintf(str, "'%s' branch ", r.Branch)
+		}
+		fmt.Fprint(str, "PRs ")
+	}
+
+	if r.Repo == "" {
+		fmt.Fprintf(str, "in the '%s' GitHub org ", r.Org)
+	} else {
+		fmt.Fprintf(str, "in the '%s/%s' GitHub repo ", r.Org, r.Repo)
+	}
+	fmt.Fprintf(str, "that have no labels matching the regular expression '%s'.", r.Regexp)
+	return str.String()
+}
+
 // TriggerFor finds the Trigger for a repo, if one exists
 // a trigger can be listed for the repo itself or for the
 // owning organization
@@ -509,6 +640,22 @@ func (c *Configuration) setDefaults() {
 	if c.Owners.LabelsBlackList == nil {
 		c.Owners.LabelsBlackList = []string{"approved", "lgtm"}
 	}
+	if c.CherryPickUnapproved.BranchRegexp == "" {
+		c.CherryPickUnapproved.BranchRegexp = `^release-.*$`
+	}
+	if c.CherryPickUnapproved.Comment == "" {
+		c.CherryPickUnapproved.Comment = `This PR is not for the master branch but does not have the ` + "`cherry-pick-approved`" + `  label. Adding the ` + "`do-not-merge/cherry-pick-not-approved`" + `  label.
+
+To approve the cherry-pick, please assign the patch release manager for the release branch by writing ` + "`/assign @username`" + ` in a comment when ready.
+
+The list of patch release managers for each release can be found [here](https://git.k8s.io/sig-release/release-managers.md).`
+	}
+
+	for i, rml := range c.RequireMatchingLabel {
+		if rml.GracePeriod == "" {
+			c.RequireMatchingLabel[i].GracePeriod = "5s"
+		}
+	}
 }
 
 // Load attempts to load config from the path. It returns an error if either
@@ -529,6 +676,11 @@ func (pa *PluginAgent) Load(path string) error {
 
 	// Defaulting should run before validation.
 	np.setDefaults()
+	// Regexp compilation should run after defaulting, but before validation.
+	if err := compileRegexpsAndDurations(np); err != nil {
+		return err
+	}
+
 	if err := validatePlugins(np.Plugins); err != nil {
 		return err
 	}
@@ -541,11 +693,12 @@ func (pa *PluginAgent) Load(path string) error {
 	if err := validateConfigUpdater(&np.ConfigUpdater); err != nil {
 		return err
 	}
-	// regexp compilation should run after defaulting
-	if err := compileRegexps(np); err != nil {
+	if err := validateSizes(np.Size); err != nil {
 		return err
 	}
-
+	if err := validateRequireMatchingLabel(np.RequireMatchingLabel); err != nil {
+		return err
+	}
 	pa.Set(np)
 	return nil
 }
@@ -579,6 +732,18 @@ func validatePlugins(plugins map[string][]string) error {
 	if len(errors) > 0 {
 		return fmt.Errorf("invalid plugin configuration:\n\t%v", strings.Join(errors, "\n\t"))
 	}
+	return nil
+}
+
+func validateSizes(size *Size) error {
+	if size == nil {
+		return nil
+	}
+
+	if size.S > size.M || size.M > size.L || size.L > size.Xl || size.Xl > size.Xxl {
+		return errors.New("invalid size plugin configuration - one of the smaller sizes is bigger than a larger one")
+	}
+
 	return nil
 }
 
@@ -664,12 +829,43 @@ func validateConfigUpdater(updater *ConfigUpdater) error {
 	return nil
 }
 
-func compileRegexps(pc *Configuration) error {
+func validateRequireMatchingLabel(rs []RequireMatchingLabel) error {
+	for i, r := range rs {
+		if err := r.validate(); err != nil {
+			return fmt.Errorf("error validating require_matching_label config #%d: %v", i, err)
+		}
+	}
+	return nil
+}
+
+func compileRegexpsAndDurations(pc *Configuration) error {
 	cRe, err := regexp.Compile(pc.SigMention.Regexp)
 	if err != nil {
 		return err
 	}
 	pc.SigMention.Re = cRe
+
+	branchRe, err := regexp.Compile(pc.CherryPickUnapproved.BranchRegexp)
+	if err != nil {
+		return err
+	}
+	pc.CherryPickUnapproved.BranchRe = branchRe
+
+	rs := pc.RequireMatchingLabel
+	for i := range rs {
+		re, err := regexp.Compile(rs[i].Regexp)
+		if err != nil {
+			return fmt.Errorf("failed to compile label regexp: %q, error: %v", rs[i].Regexp, err)
+		}
+		rs[i].Re = re
+
+		var dur time.Duration
+		dur, err = time.ParseDuration(rs[i].GracePeriod)
+		if err != nil {
+			return fmt.Errorf("failed to compile grace period duration: %q, error: %v", rs[i].GracePeriod, err)
+		}
+		rs[i].GracePeriodDuration = dur
+	}
 	return nil
 }
 

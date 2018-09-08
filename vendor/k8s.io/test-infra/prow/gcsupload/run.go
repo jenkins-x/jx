@@ -61,17 +61,7 @@ func (o Options) Run(spec *downwardapi.JobSpec, extra map[string]gcs.UploadFunc)
 }
 
 func (o Options) assembleTargets(spec *downwardapi.JobSpec, extra map[string]gcs.UploadFunc) map[string]gcs.UploadFunc {
-	builder := builderForStrategy(o.PathStrategy, o.DefaultOrg, o.DefaultRepo)
-	jobBasePath := gcs.PathForSpec(spec, builder)
-	if o.PathPrefix != "" {
-		jobBasePath = path.Join(o.PathPrefix, jobBasePath)
-	}
-	var gcsPath string
-	if o.SubDir == "" {
-		gcsPath = jobBasePath
-	} else {
-		gcsPath = path.Join(jobBasePath, o.SubDir)
-	}
+	jobBasePath, gcsPath, builder := PathsForJob(o.GCSConfiguration, spec, o.SubDir)
 
 	uploadTargets := map[string]gcs.UploadFunc{}
 
@@ -111,6 +101,27 @@ func (o Options) assembleTargets(spec *downwardapi.JobSpec, extra map[string]gcs
 	}
 
 	return uploadTargets
+}
+
+// PathsForJob determines the following for a job:
+//  - path in GCS under the bucket where job artifacts will be uploaded for:
+//     - the job
+//     - this specific run of the job (if any subdir is present)
+// The builder for the job is also returned for use in other path resolution.
+func PathsForJob(options *kube.GCSConfiguration, spec *downwardapi.JobSpec, subdir string) (string, string, gcs.RepoPathBuilder) {
+	builder := builderForStrategy(options.PathStrategy, options.DefaultOrg, options.DefaultRepo)
+	jobBasePath := gcs.PathForSpec(spec, builder)
+	if options.PathPrefix != "" {
+		jobBasePath = path.Join(options.PathPrefix, jobBasePath)
+	}
+	var gcsPath string
+	if subdir == "" {
+		gcsPath = jobBasePath
+	} else {
+		gcsPath = path.Join(jobBasePath, subdir)
+	}
+
+	return jobBasePath, gcsPath, builder
 }
 
 func builderForStrategy(strategy, defaultOrg, defaultRepo string) gcs.RepoPathBuilder {

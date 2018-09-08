@@ -123,19 +123,19 @@ required = [
 
 [[constraint]]
   name = "k8s.io/api"
-  branch = "release-1.11"
+  version = "kubernetes-1.11.0"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
-  branch = "release-1.11"
+  version = "kubernetes-1.11.0"
 
 [[constraint]]
   name = "k8s.io/code-generator"
-  branch = "release-1.11"
+  version = "kubernetes-1.11.0"
 
 [[constraint]]
   name = "k8s.io/client-go"
-  branch = "release-8.0"
+  version = "kubernetes-1.11.0"
 
 [[constraint]]
   name = "k8s.io/helm"
@@ -147,7 +147,8 @@ required = [
 
 [[constraint]]
   name = "github.com/heptio/sonobuoy"
-  branch = "master"
+  branch = "kubernetes-1.11.0"
+  source = "https://github.com/jenkins-x/sonobuoy.git"
 
 [[constraint]]
   name = "github.com/alexflint/go-filemutex"
@@ -156,12 +157,12 @@ required = [
 
 [[constraint]]
   name = "k8s.io/test-infra"
-  branch = "release-1.11"
+  branch = "rebase3"
   source = "https://github.com/jenkins-x/test-infra.git"
 
-[[constraint]]
-  name = "github.com/knative/build"
-  branch = "master"
+# [[constraint]]
+#   name = "github.com/knative/build"
+#   branch = "master"
 
 [prune]
   non-go = true
