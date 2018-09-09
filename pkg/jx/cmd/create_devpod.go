@@ -18,8 +18,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/client-go/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -283,6 +285,12 @@ func (o *CreateDevPodOptions) Run() error {
 		log.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
 	}
 
+	// TODO we only need to do this if we have created a new Service then update the exposecontroller stuff...
+	err = o.updateExposeController(client, ns, ns)
+	if err != nil {
+		return err
+	}
+
 	err = kube.WaitForPodNameToBeReady(client, ns, name, time.Hour)
 	if err != nil {
 		return err
@@ -381,6 +389,15 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) stri
 		}
 	}
 	return answer
+}
+
+// updateExposeController lets update the exposecontroller to expose any new Service resources created for this devpod
+func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface, devNs string, ns string) error {
+	ingressConfig, err := kube.GetIngressConfig(client, devNs)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to load ingress-config in namespace %s", devNs)
+	}
+	return o.runExposecontroller(ns, ns, ingressConfig)
 }
 
 // FindDevPodLabelFromJenkinsfile finds pod labels from a Jenkinsfile
