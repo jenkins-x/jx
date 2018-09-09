@@ -785,7 +785,11 @@ func (o *CommonOptions) getJobName() string {
 }
 
 func (o *CommonOptions) getBuildNumber() string {
-	buildNumber := os.Getenv("BUILD_NUMBER")
+	buildNumber := os.Getenv("JX_BUILD_NUMBER")
+	if buildNumber != "" {
+		return buildNumber
+	}
+	buildNumber = os.Getenv("BUILD_NUMBER")
 	if buildNumber != "" {
 		return buildNumber
 	}

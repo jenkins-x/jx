@@ -1,7 +1,9 @@
 package kube
 
 import (
+	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/ghodss/yaml"
@@ -40,6 +42,60 @@ type PromoteStepActivityKey struct {
 type PromotePullRequestFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromotePullRequestStep) error
 type PromoteUpdateFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromoteUpdateStep) error
 
+// GenerateBuildNumber generates a new build number for the given pipeline
+func GenerateBuildNumber(activities typev1.PipelineActivityInterface, owner string, repository string, branch string) (string, *v1.PipelineActivity, error) {
+	pipelineName := owner + "/" + repository + "/" + branch
+	namePrefix := owner + "-" + repository + "-" + branch
+
+	attempts := 100
+	for i := 0; i < attempts; i++ {
+		buildCounter := 0
+		pipelines, err := activities.List(metav1.ListOptions{})
+		if err != nil {
+			return "", nil, err
+		}
+
+		for _, pipeline := range pipelines.Items {
+			if pipeline.Spec.Pipeline == pipelineName {
+				b := pipeline.Spec.Build
+				if b != "" {
+					bi, err := strconv.Atoi(b)
+					if err == nil {
+						if bi > buildCounter {
+							buildCounter = bi
+						}
+					}
+				}
+			}
+		}
+		buildCounter++
+		build := strconv.Itoa(buildCounter)
+		name := namePrefix + "-" + build
+
+		k := &PipelineActivityKey{
+			Name:     name,
+			Pipeline: pipelineName,
+			Build:    build,
+		}
+		a := &v1.PipelineActivity{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+			Spec: v1.PipelineActivitySpec{},
+		}
+		spec := &a.Spec
+		updateActivitySpec(k, spec)
+
+		answer, err := activities.Create(a)
+		if err == nil {
+			return build, answer, nil
+		}
+		time.Sleep(time.Second)
+	}
+	return "", nil, fmt.Errorf("Failed after %d attempts to create a new build number for pipeline %s", attempts, pipelineName)
+
+}
+
 // GetOrCreate gets or creates the pipeline activity
 func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, bool, error) {
 	name := k.Name
@@ -61,6 +117,20 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 	}
 	oldSpec := a.Spec
 	spec := &a.Spec
+	updateActivitySpec(k, spec)
+	if create {
+		answer, err := activities.Create(a)
+		return answer, true, err
+	} else {
+		if !reflect.DeepEqual(&a.Spec, &oldSpec) {
+			answer, err := activities.Update(a)
+			return answer, false, err
+		}
+		return a, false, nil
+	}
+}
+
+func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {
 	if k.Pipeline != "" && spec.Pipeline == "" {
 		spec.Pipeline = k.Pipeline
 	}
@@ -99,16 +169,6 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		if gi.Name != "" && spec.GitRepository == "" {
 			spec.GitRepository = gi.Name
 		}
-	}
-	if create {
-		answer, err := activities.Create(a)
-		return answer, true, err
-	} else {
-		if !reflect.DeepEqual(&a.Spec, &oldSpec) {
-			answer, err := activities.Update(a)
-			return answer, false, err
-		}
-		return a, false, nil
 	}
 }
 
