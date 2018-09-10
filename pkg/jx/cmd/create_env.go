@@ -15,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -174,10 +173,12 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	gitURL := env.Spec.Source.URL
 	gitInfo, err := gits.ParseGitURL(gitURL)
-
+	if err != nil {
+		return err
+	}
 	if o.Prow {
 		repo := fmt.Sprintf("%s/environment-%s-%s", gitInfo.Organisation, o.Prefix, o.Options.Name)
-		err = prow.AddRepo(o.KubeClientCached, []string{repo}, devEnv.Spec.Namespace)
+		err = prow.AddEnvironment(o.KubeClientCached, []string{repo}, devEnv.Spec.Namespace)
 		if err != nil {
 			return fmt.Errorf("failed to add repo %s to prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
 		}
@@ -193,24 +194,7 @@ func (o *CreateEnvOptions) Run() error {
 		}
 		if o.Prow {
 			// register the webhook
-			baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", o.devNamespace)
-			if err != nil {
-				return err
-			}
-			webhookUrl := util.UrlJoin(baseURL, "hook")
-
-			hmacToken, err := o.KubeClientCached.CoreV1().Secrets(o.devNamespace).Get("hmac-token", metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-
-			webhook := &gits.GitWebHookArguments{
-				Owner:  gitInfo.Organisation,
-				Repo:   gitInfo,
-				URL:    webhookUrl,
-				Secret: string(hmacToken.Data["hmac"]),
-			}
-			return gitProvider.CreateWebHook(webhook)
+			return o.createWebhookProw(gitURL, gitProvider)
 		} else {
 			return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 		}

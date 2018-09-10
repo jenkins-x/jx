@@ -15,6 +15,8 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	filemutex "github.com/alexflint/go-filemutex"
 	"github.com/blang/semver"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
@@ -23,6 +25,7 @@ import (
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 )
 
@@ -1316,6 +1319,43 @@ func (o *CommonOptions) installProw() error {
 	if err != nil {
 		return fmt.Errorf("failed to install knative build: %v", err)
 	}
-	
+
 	return nil
+}
+
+func (o *CommonOptions) createWebhookProw(gitURL string, gitProvider gits.GitProvider) error {
+	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	if err != nil {
+		return err
+	}
+	gitInfo, err := gits.ParseGitURL(gitURL)
+	if err != nil {
+		return err
+	}
+	baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+	if err != nil {
+		return err
+	}
+	webhookUrl := util.UrlJoin(baseURL, "hook")
+
+	hmacToken, err := o.KubeClientCached.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	webhook := &gits.GitWebHookArguments{
+		Owner:  gitInfo.Organisation,
+		Repo:   gitInfo,
+		URL:    webhookUrl,
+		Secret: string(hmacToken.Data["hmac"]),
+	}
+	return gitProvider.CreateWebHook(webhook)
+}
+
+func (o *CommonOptions) isProw() (bool, error) {
+	env, err := kube.GetEnvironment(o.jxClient, o.currentNamespace, "dev")
+	if err != nil {
+		return false, err
+	}
+
+	return env.Spec.TeamSettings.PromotionEngine == jenkinsv1.PromotionEngineProw, nil
 }

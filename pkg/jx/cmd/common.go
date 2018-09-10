@@ -770,16 +770,17 @@ func (o *CommonOptions) copyCertmanagerResources(targetNamespace string, ic kube
 }
 
 func (o *CommonOptions) getJobName() string {
-	job := os.Getenv("JOB_NAME")
-	if job != "" {
-		return job
-	}
 	owner := os.Getenv("REPO_OWNER")
 	repo := os.Getenv("REPO_NAME")
 	branch := os.Getenv("BRANCH_NAME")
 
 	if owner != "" && repo != "" && branch != "" {
 		return fmt.Sprintf("%s/%s/%s", owner, repo, branch)
+	}
+
+	job := os.Getenv("JOB_NAME")
+	if job != "" {
+		return job
 	}
 	return ""
 }

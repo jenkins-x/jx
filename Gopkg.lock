@@ -1510,7 +1510,7 @@
   revision = "b11cf31b380ba10a99b7c0b900f6a71f1045db45"
 
 [[projects]]
-  branch = "rebase3"
+  branch = "build_id"
   name = "k8s.io/test-infra"
   packages = [
     "prow/apis/prowjobs",
@@ -1538,12 +1538,12 @@
     "prow/slack",
     "testgrid/util/gcs"
   ]
-  revision = "2cd7c1817946dc315080975c926671f5535d7307"
+  revision = "544470bf291b172c6d833531cd293d95155ac808"
   source = "https://github.com/jenkins-x/test-infra.git"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d8f1d012150cc7581395c8d40f631c5ea79bcc7525ff735b904e9ba1acae73c0"
+  inputs-digest = "e582158a9e8e071f70dc0026aaaf76a4124c0fc652b759eb2a36f99ba5e24f49"
   solver-name = "gps-cdcl"
   solver-version = 1

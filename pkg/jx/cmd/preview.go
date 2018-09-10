@@ -218,6 +218,9 @@ func (o *PreviewOptions) Run() error {
 		}
 
 		gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind, o.Git())
+		if err != nil {
+			return fmt.Errorf("cannot create git provider %v", err)
+		}
 
 		if prNum > 0 {
 			pullRequest, err := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)

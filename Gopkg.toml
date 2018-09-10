@@ -157,12 +157,12 @@ required = [
 
 [[constraint]]
   name = "k8s.io/test-infra"
-  branch = "rebase3"
+  branch = "build_id"
   source = "https://github.com/jenkins-x/test-infra.git"
 
-# [[constraint]]
-#   name = "github.com/knative/build"
-#   branch = "master"
+[[constraint]]
+  name = "github.com/knative/build"
+  branch = "master"
 
 [prune]
   non-go = true
