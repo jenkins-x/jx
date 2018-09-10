@@ -28,7 +28,6 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
-	kubev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -678,24 +677,6 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to register the local helm repo '%s'", options.Flags.LocalHelmRepoName)
 		}
-	}
-
-	if options.Flags.Provider == EKS {
-		kubeClient, currentNs, err := options.KubeClient()
-		if err != nil {
-			return err
-		}
-		err = kubeClient.CoreV1().Secrets(currentNs).Delete("jenkins-docker-cfg", &metav1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
-		_, err = kubeClient.CoreV1().Secrets(currentNs).Create(&kubev1.Secret{
-			Type:       kubev1.SecretTypeOpaque,
-			StringData: map[string]string{"config.json": `{"credsStore": "ecr-login"}`},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "jenkins-docker-cfg",
-			},
-		})
 	}
 
 	log.Success("\nJenkins X installation completed successfully\n")
