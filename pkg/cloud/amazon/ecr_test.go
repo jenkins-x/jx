@@ -1,14 +1,15 @@
 package amazon_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateNewSessionWithDefaultRegion(t *testing.T) {
-	t.Parallel()
+	// TODO Refactor for encapsulation
 	os.Setenv("AWS_REGION", "")
 	os.Setenv("AWS_DEFAULT_REGION", "")
 	_, region, err := amazon.NewAwsSession()
@@ -17,7 +18,7 @@ func TestCreateNewSessionWithDefaultRegion(t *testing.T) {
 }
 
 func TestCreateNewSessionWithRegionFromAwsRegion(t *testing.T) {
-	t.Parallel()
+	// TODO Refactor for encapsulation
 	os.Setenv("AWS_REGION", "us-east-1")
 	os.Setenv("AWS_DEFAULT_REGION", "")
 	_, region, err := amazon.NewAwsSession()

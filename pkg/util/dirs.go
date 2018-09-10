@@ -112,6 +112,10 @@ func JXBinLocation() (string, error) {
 
 // JXBinaryLocation Returns the path to the currently installed JX binary.
 func JXBinaryLocation(commandInterface CommandInterface) (string, error) {
+	jxBinaryFromEnv, found := os.LookupEnv("JX_BINARY")
+	if found {
+		return strings.TrimSuffix(jxBinaryFromEnv, "/jx"), nil
+	}
 	commandInterface.SetName("which")
 	commandInterface.SetArgs([]string{"jx"})
 	out, err := commandInterface.RunWithoutRetry()

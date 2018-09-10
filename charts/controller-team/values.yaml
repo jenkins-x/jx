@@ -6,19 +6,14 @@ controller-team:
   args:
   - "controller"
   - "team"
+  - "--install-dependencies"
   role:
     enabled: true
     rules:
     - apiGroups:
       - jenkins.io
       resources:
-      - environments
-      - environmentrolebindings
-      - gitservices
-      - pipelineactivities
       - teams
-      - users
-      - releases
       verbs:
       - list
       - get

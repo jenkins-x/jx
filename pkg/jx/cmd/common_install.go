@@ -796,11 +796,14 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	}
 	org := "jenkins-x"
 	repo := "jx"
-	latestVersion, err := util.GetLatestVersionFromGitHub(org, repo)
-	if err != nil {
-		return err
+	if version == "" {
+		latestVersion, err := util.GetLatestVersionFromGitHub(org, repo)
+		if err != nil {
+			return err
+		}
+		version = fmt.Sprintf("%s", latestVersion)
 	}
-	clientURL := fmt.Sprintf("https://github.com/"+org+"/"+repo+"/releases/download/v%s/"+binary+"-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	clientURL := fmt.Sprintf("https://github.com/"+org+"/"+repo+"/releases/download/v%s/"+binary+"-%s-%s.tar.gz", version, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
 	err = o.downloadFile(clientURL, tarFile)
