@@ -9,8 +9,10 @@ import (
 )
 
 const (
+	// DefaultNamespace the standard namespace for Jenkins X
 	DefaultNamespace = "jx"
 
+	// PodNamespaceFile the file path and name for pod namespace
 	PodNamespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
@@ -73,4 +75,15 @@ func Server(config *api.Config, context *api.Context) string {
 		}
 	}
 	return ""
+}
+
+// CertificateAuthorityData returns the certificate authority data for the given context
+func CertificateAuthorityData(config *api.Config, context *api.Context) []byte {
+	if context != nil && config != nil && config.Clusters != nil {
+		cluster := config.Clusters[context.Cluster]
+		if cluster != nil {
+			return cluster.CertificateAuthorityData
+		}
+	}
+	return []byte{}
 }
