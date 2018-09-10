@@ -1,6 +1,9 @@
 package cmd_test
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -13,4 +16,48 @@ const ssoCookie = "ZW1haWw6Y29zbWluLmNvam9jYXJAZ214LmNoIHVzZXI6fGJiZW9heG1ycFdWM
 func TestExtractSsoCookie(t *testing.T) {
 	extratedCookie := cmd.ExtractSsoCookie(text)
 	assert.Equal(t, ssoCookie, extratedCookie)
+}
+
+func newTestServer(fn func(http.ResponseWriter, *http.Request)) *httptest.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc(cmd.UserOnboardingEndpoint, fn)
+	server := httptest.NewServer(mux)
+	return server
+}
+
+func TestOnboardUser(t *testing.T) {
+	login := cmd.Login{
+		Data: cmd.UserLoginInfo{
+			Ca:     "test",
+			Login:  "test",
+			Server: "test",
+			Token:  "test",
+		},
+	}
+	cookie := "test"
+	server := newTestServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			w.WriteHeader(404)
+		}
+		providedCookie, err := r.Cookie(cmd.SsoCookieName)
+		assert.NoError(t, err, "sso cookie should be present in request")
+		assert.Equal(t, cookie, providedCookie.Value)
+		output, err := json.Marshal(&login)
+		assert.NoError(t, err)
+		w.WriteHeader(http.StatusCreated)
+		w.Write(output)
+	})
+	defer server.Close()
+
+	cmd := &cmd.LoginOptions{
+		URL: server.URL,
+	}
+	userInfoLogin, err := cmd.OnboardUser(cookie)
+	assert.NoError(t, err)
+	assert.NotNil(t, userInfoLogin)
+	assert.Equal(t, login.Data, *userInfoLogin)
+
+	userInfoLogin, err = cmd.OnboardUser("")
+	assert.Error(t, err)
+	assert.Nil(t, userInfoLogin)
 }

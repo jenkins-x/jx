@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -19,10 +20,28 @@ import (
 )
 
 const (
-	ssoCookieName      = "sso-cb-cdx"
-	onboardingEndpoint = "/api/v1/users/loggedin"
+	UserOnboardingEndpoint = "/api/v1/users"
+	SsoCookieName          = "sso-cb-cdx"
 )
 
+// Login holds the login information
+type Login struct {
+	Data UserLoginInfo `form:"data,omitempty" json:"data,omitempty" yaml:"data,omitempty" xml:"data,omitempty"`
+}
+
+// UserLoginInfo user login information
+type UserLoginInfo struct {
+	// The kubernetes api server public CA data
+	Ca string `form:"ca,omitempty" json:"ca,omitempty" yaml:"ca,omitempty" xml:"ca,omitempty"`
+	// The login username of the user
+	Login string `form:"login,omitempty" json:"login,omitempty" yaml:"login,omitempty" xml:"login,omitempty"`
+	// The kubernetes api server address
+	Server string `form:"server,omitempty" json:"server,omitempty" yaml:"server,omitempty" xml:"server,omitempty"`
+	// The login token of the user
+	Token string `form:"token,omitempty" json:"token,omitempty" yaml:"token,omitempty" xml:"token,omitempty"`
+}
+
+// LoginOptions options for login command
 type LoginOptions struct {
 	CommonOptions
 
@@ -75,12 +94,12 @@ func (o *LoginOptions) Run() error {
 		return errors.New("failed to log into the CloudBees application")
 	}
 
-	resp, err := o.onboardUser(cookie)
+	userLoginInfo, err := o.OnboardUser(cookie)
 	if err != nil {
 		return errors.Wrap(err, "onboarding user")
 	}
 
-	fmt.Println(*resp)
+	fmt.Printf("%v\n", *userLoginInfo)
 	return nil
 }
 
@@ -125,7 +144,7 @@ func (o *LoginOptions) Login() (string, error) {
 		return "", errors.Wrap(err, "reading the netlog file")
 	}
 	cookie := ""
-	pattern := fmt.Sprintf("%s=", ssoCookieName)
+	pattern := fmt.Sprintf("%s=", SsoCookieName)
 	for line := range t.Lines {
 		if strings.Contains(line.Text, pattern) {
 			fmt.Println(line.Text)
@@ -147,14 +166,17 @@ func (o *LoginOptions) Login() (string, error) {
 	return cookie, nil
 }
 
-func (o *LoginOptions) onboardUser(cookie string) (*string, error) {
+func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 	client := http.Client{}
-	req, err := http.NewRequest("GET", o.onboardingURL(), nil)
+	req, err := http.NewRequest("POST", o.onboardingURL(), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "building onboarding request")
 	}
 	req.Header.Add("Accept", "application/json")
-	ssoCookie := http.Cookie{Name: ssoCookieName, Value: cookie}
+	if cookie == "" {
+		return nil, errors.New("empty SSO cookie")
+	}
+	ssoCookie := http.Cookie{Name: SsoCookieName, Value: cookie}
 	req.AddCookie(&ssoCookie)
 	resp, err := client.Do(req)
 	if err != nil {
@@ -162,7 +184,7 @@ func (o *LoginOptions) onboardUser(cookie string) (*string, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("user onboarding status code: %d", resp.StatusCode)
 	}
 
@@ -171,8 +193,12 @@ func (o *LoginOptions) onboardUser(cookie string) (*string, error) {
 		return nil, errors.Wrap(err, "reading user onboarding information from response body")
 	}
 
-	userInfo := string(body)
-	return &userInfo, nil
+	login := &Login{}
+	if err := json.Unmarshal(body, login); err != nil {
+		return nil, errors.Wrap(err, "parsing the login information from response")
+	}
+
+	return &login.Data, nil
 }
 
 func (o *LoginOptions) onboardingURL() string {
@@ -180,11 +206,11 @@ func (o *LoginOptions) onboardingURL() string {
 	if strings.HasPrefix(url, "/") {
 		url = strings.TrimPrefix(url, "/")
 	}
-	return url + onboardingEndpoint
+	return url + UserOnboardingEndpoint
 }
 
 func ExtractSsoCookie(text string) string {
-	cookiePattern := fmt.Sprintf("%s=", ssoCookieName)
+	cookiePattern := fmt.Sprintf("%s=", SsoCookieName)
 	start := strings.Index(text, cookiePattern)
 	if start < 0 {
 		return ""
