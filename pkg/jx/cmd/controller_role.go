@@ -10,12 +10,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"strings"
 )
 
 // ControllerRoleOptions the command line options
@@ -31,6 +33,10 @@ type ControllerRoleOptions struct {
 type ControllerRoleFlags struct {
 	Version string
 }
+
+const roleKindToWatch = "environmentRole"
+const labelKey = "jenkins.io"
+const labelValue = "kind=environmentRole"
 
 var (
 	controllerRoleLong = templates.LongDesc(`
@@ -147,6 +153,7 @@ func (o *ControllerRoleOptions) Run() error {
 			return err
 		}
 	}
+	o.upsertRoleIntoEnvRole(ns)
 	return nil
 }
 
@@ -405,5 +412,42 @@ func (o *ControllerRoleOptions) upsertRole(newRole *rbacv1.Role) {
 			o.Roles = map[string]*rbacv1.Role{}
 		}
 		o.Roles[newRole.Name] = newRole
+
+	}
+}
+func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string) {
+	foundRole := 0
+	for _, roleValue := range o.Roles {
+		for labelK, labelV := range roleValue.Labels {
+			if labelK == labelKey && labelV == labelValue {
+				for _, envRoleValue := range o.EnvRoleBindings {
+					if util.StringMatchesPattern(strings.Trim(roleValue.GetName(), ""), strings.Trim(envRoleValue.Spec.RoleRef.Name, "")) {
+						foundRole = 1
+						break
+					}
+				}
+				if foundRole == 0 {
+					log.Infof("Environment binding doesn't exist for role %s , creating it.\n", util.ColorInfo(roleValue.GetName()))
+					newSubject := rbacv1.Subject{
+						Name:      roleValue.GetName(),
+						Kind:      roleKindToWatch,
+						Namespace: ns,
+					}
+					newEnvRoleBinding := &v1.EnvironmentRoleBinding{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      roleValue.GetName(),
+							Namespace: ns,
+						},
+						Spec: v1.EnvironmentRoleBindingSpec{
+							Subjects: []rbacv1.Subject{
+								newSubject,
+							},
+						},
+					}
+					o.EnvRoleBindings[roleValue.GetName()] = newEnvRoleBinding
+				}
+			}
+		}
+
 	}
 }
