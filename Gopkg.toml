@@ -202,3 +202,8 @@ required = [
   name = "github.com/bouk/monkey"
   branch = "master"
   source = "github.com/i0n/monkey"
+
+[[constraint]]
+  name = "github.com/hpcloud/tail"
+  branch = "master"
+  source = "github.com/ccojocar/tail"
