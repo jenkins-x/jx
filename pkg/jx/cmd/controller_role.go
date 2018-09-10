@@ -34,9 +34,9 @@ type ControllerRoleFlags struct {
 	Version string
 }
 
-const roleKindToWatch = "environmentRole"
-const labelKey = "jenkins.io"
-const labelValue = "kind=environmentRole"
+const blankSting = ""
+const labelKey = "jenkins.io/kind"
+const labelValue = "=environmentRole"
 
 var (
 	controllerRoleLong = templates.LongDesc(`
@@ -153,7 +153,7 @@ func (o *ControllerRoleOptions) Run() error {
 			return err
 		}
 	}
-	o.upsertRoleIntoEnvRole(ns)
+	o.upsertRoleIntoEnvRole(ns, jxClient)
 	return nil
 }
 
@@ -415,13 +415,13 @@ func (o *ControllerRoleOptions) upsertRole(newRole *rbacv1.Role) {
 
 	}
 }
-func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string) {
+func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string, jxClient versioned.Interface) {
 	foundRole := 0
 	for _, roleValue := range o.Roles {
 		for labelK, labelV := range roleValue.Labels {
 			if labelK == labelKey && labelV == labelValue {
 				for _, envRoleValue := range o.EnvRoleBindings {
-					if util.StringMatchesPattern(strings.Trim(roleValue.GetName(), ""), strings.Trim(envRoleValue.Spec.RoleRef.Name, "")) {
+					if util.StringMatchesPattern(strings.Trim(roleValue.GetName(), blankSting), strings.Trim(envRoleValue.Spec.RoleRef.Name, blankSting)) {
 						foundRole = 1
 						break
 					}
@@ -430,7 +430,7 @@ func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string) {
 					log.Infof("Environment binding doesn't exist for role %s , creating it.\n", util.ColorInfo(roleValue.GetName()))
 					newSubject := rbacv1.Subject{
 						Name:      roleValue.GetName(),
-						Kind:      roleKindToWatch,
+						Kind:      labelValue,
 						Namespace: ns,
 					}
 					newEnvRoleBinding := &v1.EnvironmentRoleBinding{
@@ -444,7 +444,7 @@ func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string) {
 							},
 						},
 					}
-					o.EnvRoleBindings[roleValue.GetName()] = newEnvRoleBinding
+					jxClient.JenkinsV1().EnvironmentRoleBindings(ns).Create(newEnvRoleBinding)
 				}
 			}
 		}
