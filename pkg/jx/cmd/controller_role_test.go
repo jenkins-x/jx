@@ -125,10 +125,8 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 					jxClient, ns, err := o.JXClient()
 					if err == nil {
 						envRoleBindings, err := jxClient.JenkinsV1().EnvironmentRoleBindings(ns).Get(roleNameWithLabel, metav1.GetOptions{})
-						if err == nil {
-							if util.StringMatchesPattern(envRoleBindings.Name, roleNameWithLabel) {
-								assert.Equal(t, roleWithLabel, envRoleBindings.Labels[roleNameWithLabel])
-							}
+						if err != nil {
+							assert.NotNil(t, envRoleBindings, "Role:"+roleNameWithLabel+" didn't get added to environment role bindings")
 						}
 					}
 				}
