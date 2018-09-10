@@ -557,8 +557,32 @@ func (options *InstallOptions) Run() error {
 		TLS:     tls,
 		Exposer: exposeController.Config.Exposer,
 	}
-	// save details to a configmap
-	err = kube.SaveIngressConfig(options.KubeClientCached, ns, ic)
+	// save ingress config details to a configmap
+	_, err = kube.SaveAsConfigMap(options.KubeClientCached, kube.IngressConfigConfigmap, ns, ic)
+	if err != nil {
+		return err
+	}
+
+	// save cluster config CA and server url to a configmap
+	kubeConfig, _, err := kube.LoadConfig()
+	if err != nil {
+		return err
+	}
+
+	var jxInstallConfig *kube.JXInstallConfig
+	if kubeConfig != nil {
+		kubeConfigContext := kube.CurrentContext(kubeConfig)
+		if kubeConfigContext != nil {
+			server := kube.Server(kubeConfig, kubeConfigContext)
+			certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
+			jxInstallConfig = &kube.JXInstallConfig{
+				Server: server,
+				CA:     certificateAuthorityData,
+			}
+		}
+	}
+
+	_, err = kube.SaveAsConfigMap(options.KubeClientCached, kube.ConfigMapNameJXInstallConfig, ns, jxInstallConfig)
 	if err != nil {
 		return err
 	}

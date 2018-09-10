@@ -3,10 +3,10 @@ package kube
 import (
 	"fmt"
 
-	"k8s.io/api/core/v1"
+	"strconv"
+
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"strconv"
 )
 
 const (
@@ -19,11 +19,11 @@ const (
 )
 
 type IngressConfig struct {
-	Email   string
-	Domain  string
-	Issuer  string
-	Exposer string
-	TLS     bool
+	Email   string `structs:"email" yaml:"email" json:"email"`
+	Domain  string `structs:"domain" yaml:"domain" json:"domain"`
+	Issuer  string `structs:"issuer" yaml:"issuer" json:"issuer"`
+	Exposer string `structs:"exposer" yaml:"exposer" json:"exposer"`
+	TLS     bool   `structs:"tls" yaml:"tls" json:"tls"`
 }
 
 func GetIngress(client kubernetes.Interface, ns, name string) (string, error) {
@@ -41,39 +41,6 @@ func GetIngress(client kubernetes.Interface, ns, name string) (string, error) {
 		return ing.Spec.Rules[0].Host, nil
 	}
 	return "", fmt.Errorf("no hostname found for ingress rule %s", name)
-}
-
-func SaveIngressConfig(c kubernetes.Interface, ns string, ic IngressConfig) error {
-	config := map[string]string{}
-
-	config[Domain] = ic.Domain
-	config[Email] = ic.Email
-	config[Issuer] = ic.Issuer
-	config[Exposer] = ic.Exposer
-	config[TLS] = strconv.FormatBool(ic.TLS)
-
-	cm, err := c.CoreV1().ConfigMaps(ns).Get(IngressConfigConfigmap, meta_v1.GetOptions{})
-	if err != nil {
-		cm := &v1.ConfigMap{
-			Data: config,
-			ObjectMeta: meta_v1.ObjectMeta{
-				Name: IngressConfigConfigmap,
-			},
-		}
-		_, err := c.CoreV1().ConfigMaps(ns).Create(cm)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	// replace configmap values if it already exists
-	cm.Data = config
-	_, err = c.CoreV1().ConfigMaps(ns).Update(cm)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func GetIngressConfig(c kubernetes.Interface, ns string) (IngressConfig, error) {

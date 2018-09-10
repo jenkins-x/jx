@@ -110,7 +110,7 @@ func (o *UpgradeIngressOptions) Run() error {
 	util.Confirm(fmt.Sprintf("Using  config values %v, ok?", o.IngressConfig), true, "")
 
 	// save details to a configmap
-	err = kube.SaveIngressConfig(o.KubeClientCached, o.devNamespace, o.IngressConfig)
+	_, err = kube.SaveAsConfigMap(o.KubeClientCached, kube.ConfigMapIngressConfig, o.devNamespace, o.IngressConfig)
 	if err != nil {
 		return err
 	}

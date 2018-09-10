@@ -76,6 +76,9 @@ const (
 	// ConfigMapJenkinsDockerRegistry is the ConfigMap containing the Docker Registry configuration
 	ConfigMapJenkinsDockerRegistry = "jenkins-x-docker-registry"
 
+	// ConfigMapNameJXInstallConfig is the ConfigMap containing the jx installation's CA and server url. Used by jx login
+	ConfigMapNameJXInstallConfig = "jx-install-config"
+
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
 
