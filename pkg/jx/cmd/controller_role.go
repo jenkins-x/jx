@@ -36,7 +36,7 @@ type ControllerRoleFlags struct {
 
 const blankSting = ""
 const labelKey = "jenkins.io/kind"
-const labelValue = "=environmentRole"
+const labelValue = "environmentRole"
 
 var (
 	controllerRoleLong = templates.LongDesc(`
@@ -419,7 +419,7 @@ func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string, jxClient versio
 	foundRole := 0
 	for _, roleValue := range o.Roles {
 		for labelK, labelV := range roleValue.Labels {
-			if labelK == labelKey && labelV == labelValue {
+			if util.StringMatchesPattern(labelK, labelKey) && util.StringMatchesPattern(labelV, labelValue) {
 				for _, envRoleValue := range o.EnvRoleBindings {
 					if util.StringMatchesPattern(strings.Trim(roleValue.GetName(), blankSting), strings.Trim(envRoleValue.Spec.RoleRef.Name, blankSting)) {
 						foundRole = 1
