@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -86,4 +87,35 @@ func CertificateAuthorityData(config *api.Config, context *api.Context) []byte {
 		}
 	}
 	return []byte{}
+}
+
+// UpdateConfig defines new config entries for jx
+func UpdateConfig(server string, caData string, user string, token string) error {
+	config, po, err := LoadConfig()
+	if err != nil {
+		return errors.Wrap(err, "loading existing config")
+	}
+
+	clusterName := "jx-cluster"
+	cluster := &api.Cluster{
+		Server: server,
+		CertificateAuthorityData: []byte(caData),
+	}
+
+	authInfo := &api.AuthInfo{
+		Token: token,
+	}
+
+	ctxName := fmt.Sprintf("jx-cluster-%s-ctx", user)
+	ctx := &api.Context{
+		Cluster:  clusterName,
+		AuthInfo: user,
+	}
+
+	config.Clusters[clusterName] = cluster
+	config.AuthInfos[user] = authInfo
+	config.Contexts[ctxName] = ctx
+	config.CurrentContext = ctxName
+
+	return clientcmd.ModifyConfig(po, *config, false)
 }

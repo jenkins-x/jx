@@ -15,6 +15,7 @@ import (
 	"github.com/chromedp/chromedp/runner"
 	"github.com/hpcloud/tail"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -99,8 +100,7 @@ func (o *LoginOptions) Run() error {
 		return errors.Wrap(err, "onboarding user")
 	}
 
-	fmt.Printf("%v\n", *userLoginInfo)
-	return nil
+	return kube.UpdateConfig(userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
 }
 
 func (o *LoginOptions) Login() (string, error) {
