@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,11 +23,28 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 	}
 	roleBindingName := "env-role-bindings"
 	roleName := "myrole"
-
+	roleNameWithLabel := "myroleWithLabel"
 	role := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      roleName,
 			Namespace: "jx",
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs:     []string{"get", "watch", "list"},
+				APIGroups: []string{""},
+				Resources: []string{"configmaps", "pods", "services"},
+			},
+		},
+	}
+
+	label := make(map[string]string)
+	label["jenkins.io/kind"] = "environmentRole"
+	roleWithLabel := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      roleNameWithLabel,
+			Namespace: "jx",
+			Labels:    label,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -66,6 +84,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{
 			role,
+			roleWithLabel,
 		},
 		[]runtime.Object{
 			kube.NewPermanentEnvironment("staging"),
@@ -102,6 +121,16 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 					assert.Equal(t, role.Rules, r.Rules,
 						"Role.Rules for name %s in namespace %s", roleBindingName, ns)
 				}
+				if util.StringMatchesPattern(ns, "jx") {
+					jxClient, ns, err := o.JXClient()
+					if err == nil {
+						envRoleBindings, err := jxClient.JenkinsV1().EnvironmentRoleBindings(ns).Get(roleNameWithLabel, metav1.GetOptions{})
+						if err != nil {
+							assert.NotNil(t, envRoleBindings, "Role:"+roleNameWithLabel+" didn't get added to environment role bindings")
+						}
+					}
+				}
+
 			}
 			if tests.IsDebugLog() {
 				namespaces, err := kubeClient.CoreV1().Namespaces().List(metav1.ListOptions{})
