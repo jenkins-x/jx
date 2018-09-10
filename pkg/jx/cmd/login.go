@@ -22,7 +22,7 @@ import (
 
 const (
 	UserOnboardingEndpoint = "/api/v1/users"
-	SsoCookieName          = "sso-cb-cdx"
+	SsoCookieName          = "sso-cdx"
 )
 
 // Login holds the login information
