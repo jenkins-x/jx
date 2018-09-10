@@ -71,7 +71,7 @@ func NewCmdCreateDockerAuth(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Host, host, "h", "", "The docker host")
+	cmd.Flags().StringVarP(&options.Host, host, "t", "", "The docker host")
 	cmd.Flags().StringVarP(&options.User, username, "u", "", "The user to associate auth component of config.json")
 	cmd.Flags().StringVarP(&options.Secret, "secret", "s", "", "The secret to associate auth component of config.json")
 	cmd.Flags().StringVarP(&options.Secret, "email", "e", "", "The email to associate auth component of config.json")
