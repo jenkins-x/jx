@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"strings"
 
@@ -90,7 +91,7 @@ func (o *EditUserRoleOptions) Run() error {
 	}
 
 	// TODO should use the admin namespace?
-	_, names, err := kube.GetUsers(jxClient, ns)
+	users, names, err := kube.GetUsers(jxClient, ns)
 	if err != nil {
 		return err
 	}
@@ -114,6 +115,11 @@ func (o *EditUserRoleOptions) Run() error {
 			return util.MissingOption(optionLogin)
 		}
 	}
+	user := users[name]
+	if user == nil {
+		return fmt.Errorf("Could not find user %s", name)
+	}
+	userKind := user.SubjectKind()
 
 	roles, roleNames, err := kube.GetTeamRoles(kubeClient, ns)
 	if err != nil {
@@ -136,7 +142,6 @@ func (o *EditUserRoleOptions) Run() error {
 	rolesText := strings.Join(userRoles, ", ")
 	log.Infof("updating user %s for roles %s\n", name, rolesText)
 
-	userKind := "User"
 	err = kube.UpdateUserRoles(kubeClient, jxClient, ns, userKind, name, userRoles, roles)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to update user roles for user %s kind %s and roles %s", name, userKind, rolesText)

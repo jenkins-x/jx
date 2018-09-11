@@ -56,7 +56,7 @@ func GetEnvironmentRoles(jxClient versioned.Interface, ns string) (map[string]*v
 
 // UpdateUserRoles updates the EnvironmentRoleBinding values based on the given userRoles
 // userKind is "User" or "ServiceAccount"
-func GetUserRoles(jxClient versioned.Interface, ns string, userKind string, userName string, userRoles []string, roles map[string]*rbacv1.Role) ([]string, error) {
+func GetUserRoles(jxClient versioned.Interface, ns string, userKind string, userName string) ([]string, error) {
 	envRoles, _, err := GetEnvironmentRoles(jxClient, ns)
 
 	currentRoles := userRolesFor(userKind, userName, envRoles)
@@ -144,9 +144,16 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 					Namespace: ns,
 				}
 				envRole.Spec.Subjects = append(envRole.Spec.Subjects, newSubject)
-				_, err = envRoleInterface.Update(envRole)
-				if err != nil {
-					return errors.Wrapf(err, "Failed to add User %s kind %s as a Subject of EnvironmentRoleBinding %s: %s", userName, userKind, name, err)
+				if envRole.ResourceVersion == "" {
+					_, err = envRoleInterface.Create(envRole)
+					if err != nil {
+						return errors.Wrapf(err, "Failed to create EnvironmentRoleBinding %s with Subject User %s kind %s: %s", name, userName, userKind, err)
+					}
+				} else {
+					_, err = envRoleInterface.Update(envRole)
+					if err != nil {
+						return errors.Wrapf(err, "Failed to add User %s kind %s as a Subject of EnvironmentRoleBinding %s: %s", userName, userKind, name, err)
+					}
 				}
 			}
 		}
