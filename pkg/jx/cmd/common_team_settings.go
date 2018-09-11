@@ -72,19 +72,19 @@ func (o *CommonOptions) TeamBranchPatterns() (*BranchPatterns, error) {
 	}, nil
 }
 
-// TeamHelmBin returns the helm binary used for a team
-func (o *CommonOptions) TeamHelmBin() (string, error) {
+// TeamHelmBin returns the helm binary used for a team and whether a remote tiller is disabled
+func (o *CommonOptions) TeamHelmBin() (string, bool, error) {
 	helmBin := defaultHelmBin
 	teamSettings, err := o.TeamSettings()
 	if err != nil {
-		return helmBin, err
+		return helmBin, false, err
 	}
 
 	helmBin = teamSettings.HelmBinary
 	if helmBin == "" {
 		helmBin = defaultHelmBin
 	}
-	return helmBin, nil
+	return helmBin, teamSettings.NoTiller, nil
 }
 
 // ModifyDevEnvironment modifies the development environment settings

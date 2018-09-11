@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ghodss/yaml"
@@ -41,6 +42,49 @@ type PromoteStepActivityKey struct {
 
 type PromotePullRequestFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromotePullRequestStep) error
 type PromoteUpdateFn func(*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromoteUpdateStep) error
+
+type PipelineDetails struct {
+	GitOwner      string
+	GitRepository string
+	BranchName    string
+	Pipeline      string
+	Build         string
+}
+
+// CreatePipelineDetails creates a PipelineDetails object populated from the activity
+func CreatePipelineDetails(activity *v1.PipelineActivity) *PipelineDetails {
+	spec := &activity.Spec
+	repoOwner := spec.GitOwner
+	repoName := spec.GitRepository
+	buildNumber := spec.Build
+	branchName := ""
+	pipeline := spec.Pipeline
+	if pipeline != "" {
+		paths := strings.Split(pipeline, "/")
+		if len(paths) > 2 {
+			if repoOwner == "" {
+				repoOwner = paths[0]
+			}
+			if repoName == "" {
+				repoName = paths[1]
+			}
+			branchName = paths[2]
+		}
+	}
+	if branchName == "" {
+		branchName = "master"
+	}
+	if pipeline == "" && (repoName != "" && repoOwner != "") {
+		pipeline = repoOwner + "/" + repoName + "/" + branchName
+	}
+	return &PipelineDetails{
+		GitOwner:      repoOwner,
+		GitRepository: repoName,
+		BranchName:    branchName,
+		Pipeline:      pipeline,
+		Build:         buildNumber,
+	}
+}
 
 // GenerateBuildNumber generates a new build number for the given pipeline
 func GenerateBuildNumber(activities typev1.PipelineActivityInterface, owner string, repository string, branch string) (string, *v1.PipelineActivity, error) {

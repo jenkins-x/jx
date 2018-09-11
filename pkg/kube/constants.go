@@ -85,6 +85,9 @@ const (
 	// DeploymentExposecontrollerService the name of the Deployment for the Exposecontroller Service
 	DeploymentExposecontrollerService = "exposecontroller-service"
 
+	// DeploymentProwBuild the name of the Deployment for the Prow webhook engine
+	DeploymentProwBuild = "prow-build"
+
 	DefaultEnvironmentGitRepoURL = "https://github.com/jenkins-x/default-environment-charts.git"
 
 	DefaultOrganisationGitRepoURL = "https://github.com/jenkins-x/default-organisation.git"

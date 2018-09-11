@@ -73,6 +73,25 @@ func EnsureDevEnvironmentSetup(jxClient versioned.Interface, ns string) (*v1.Env
 	return env, nil
 }
 
+// GetEnrichedDevEnvironment lazily creates the dev namespace if it does not already exist and
+// auto-detects the webhook engine if its not specified
+func GetEnrichedDevEnvironment(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string) (*v1.Environment, error) {
+	env, err := EnsureDevEnvironmentSetup(jxClient, ns)
+	if err != nil {
+		return env, err
+	}
+	if env.Spec.WebHookEngine == v1.WebHookEngineNone {
+		// lets try determine if its Jenkins or not via the deployments
+		deploy, err := kubeClient.AppsV1beta1().Deployments(ns).Get(DeploymentProwBuild, metav1.GetOptions{})
+		if err == nil && deploy != nil {
+			env.Spec.WebHookEngine = v1.WebHookEngineProw
+		} else {
+			env.Spec.WebHookEngine = v1.WebHookEngineJenkins
+		}
+	}
+	return env, nil
+}
+
 // EnsureEditEnvironmentSetup ensures that the Environment is created in the given namespace
 func EnsureEditEnvironmentSetup(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string, username string) (*v1.Environment, error) {
 	// lets ensure there is a dev Environment setup so that we can easily switch between all the environments
