@@ -112,6 +112,13 @@ func (o *DeleteDevPodOptions) Run() error {
 		if err != nil {
 			return err
 		}
+		// Also delete Theia
+
+		theiaServiceName := name + "-theia"
+		err = client.CoreV1().Services(ns).Delete(theiaServiceName, &metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
 	}
 	log.Infof("Deleted DevPods %s\n", util.ColorInfo(deletePods))
 	return nil

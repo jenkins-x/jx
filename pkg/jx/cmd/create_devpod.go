@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -240,6 +241,91 @@ func (o *CreateDevPodOptions) Run() error {
 			ContainerPort: int32(port),
 		}
 		container1.Ports = append(container1.Ports, cp)
+	}
+
+	// TODO Also delete the service
+
+	cpuLimit, _ := resource.ParseQuantity("400m")
+	cpuRequest, _ := resource.ParseQuantity( "200m")
+	memoryLimit, _ := resource.ParseQuantity("256Mi")
+	memoryRequest, _ := resource.ParseQuantity("128Mi")
+
+	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+		Name: "project",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+
+	container1.VolumeMounts = append(container1.VolumeMounts, corev1.VolumeMount{
+		Name: "project",
+		MountPath: "/home/jenkins/project",
+	})
+
+
+	// Add Theia
+	theiaContainer := corev1.Container {
+		Name: "theia",
+		Image: "theiaide/theia:latest",
+		Ports: []corev1.ContainerPort{
+			corev1.ContainerPort{
+				ContainerPort: 3000,
+			},
+		},
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				"cpu": cpuLimit,
+				"memory": memoryLimit,
+			},
+			Requests: corev1.ResourceList{
+				"cpu":    cpuRequest,
+				"memory": memoryRequest,
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount {
+			corev1.VolumeMount{
+				Name: "project",
+				MountPath: "/home/project",
+			},
+		},
+		LivenessProbe: &corev1.Probe {
+			InitialDelaySeconds: 60,
+			PeriodSeconds: 10,
+			Handler: corev1.Handler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Port: intstr.FromInt(3000),
+				},
+			},
+		},
+	}
+
+	pod.Spec.Containers = append(pod.Spec.Containers, theiaContainer)
+
+	theiaServiceName := pod.Name + "-theia"
+	theiaService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta {
+			Annotations: map[string]string {
+				"fabric8.io/expose": "true",
+			},
+			Name: theiaServiceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				corev1.ServicePort{
+					Name: theiaServiceName,
+					Port: 80,
+					TargetPort: intstr.FromInt(3000),
+				},
+			},
+			Selector: map[string]string {
+				"jenkins.io/devpod": pod.Name,
+			},
+		},
+	}
+
+	_, err = client.CoreV1().Services(curNs).Create(&theiaService)
+	if err != nil {
+		return err
 	}
 
 	podResources := client.CoreV1().Pods(ns)
