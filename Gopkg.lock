@@ -663,6 +663,20 @@
   source = "https://github.com/jenkins-x/sonobuoy.git"
 
 [[projects]]
+  branch = "master"
+  digest = "1:1ebcd0aef6d4512ef3e56932606daec583ea39f2b756111f64d50179ef032130"
+  name = "github.com/hpcloud/tail"
+  packages = [
+    ".",
+    "ratelimiter",
+    "util",
+    "watch",
+    "winfile",
+  ]
+  pruneopts = "NUT"
+  revision = "07ce09a4c64a2606b7cd2db4a3f45d37fab32367"
+  source = "github.com/ccojocar/tail"
+
   digest = "1:65300ccc4bcb38b107b868155c303312978981e56bca707c81efec57575b5e06"
   name = "github.com/imdario/mergo"
   packages = ["."]
@@ -1540,6 +1554,13 @@
   revision = "3bd5e82b2512d85becae9677fa06b5a973fd4cfb"
   version = "v4.5.0"
 
+  branch = "v1"
+  digest = "1:8fb1ccb16a6cfecbfdfeb84d8ea1cc7afa8f9ef16526bc2326f72d993e32cef1"
+  name = "gopkg.in/tomb.v1"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "dd632973f1e7218eb1089048e0798ec9ae7dceb8"
+
 [[projects]]
   digest = "1:b233ad4ec87ac916e7bf5e678e98a2cb9e8b52f6de6ad3e11834fc7a71b8e3bf"
   name = "gopkg.in/warnings.v0"
@@ -1923,6 +1944,7 @@
     "github.com/heptio/sonobuoy/pkg/config",
     "github.com/heptio/sonobuoy/pkg/dynamic",
     "github.com/heptio/sonobuoy/pkg/plugin/aggregation",
+    "github.com/hpcloud/tail",
     "github.com/jenkins-x/chyle/chyle/git",
     "github.com/jenkins-x/draft-repo/pkg/draft/pack",
     "github.com/jenkins-x/golang-jenkins",
@@ -1967,6 +1989,7 @@
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/runtime/serializer",
+    "k8s.io/apimachinery/pkg/selection",
     "k8s.io/apimachinery/pkg/types",
     "k8s.io/apimachinery/pkg/util/errors",
     "k8s.io/apimachinery/pkg/util/uuid",
