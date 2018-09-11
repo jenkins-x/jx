@@ -259,9 +259,10 @@ func (o *CreateDevPodOptions) Run() error {
 
 	container1.VolumeMounts = append(container1.VolumeMounts, corev1.VolumeMount{
 		Name: "project",
-		MountPath: "/home/jenkins/project",
+		MountPath: "/workspace",
 	})
 
+	// TODO switch devpod to /workspace
 
 	// Add Theia
 	theiaContainer := corev1.Container {
@@ -285,7 +286,7 @@ func (o *CreateDevPodOptions) Run() error {
 		VolumeMounts: []corev1.VolumeMount {
 			corev1.VolumeMount{
 				Name: "project",
-				MountPath: "/home/project",
+				MountPath: "/workspace",
 			},
 		},
 		LivenessProbe: &corev1.Probe {
@@ -300,6 +301,7 @@ func (o *CreateDevPodOptions) Run() error {
 		SecurityContext: &corev1.SecurityContext {
 			RunAsUser: func(i int64) *int64 { return &i }(0),
 		},
+		Command: []string {"yarn", "theia", "start", "/workspace", "--hostname=0.0.0.0"},
 	}
 
 	pod.Spec.Containers = append(pod.Spec.Containers, theiaContainer)
