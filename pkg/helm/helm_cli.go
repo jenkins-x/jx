@@ -360,6 +360,11 @@ func (h *HelmCLI) Lint() (string, error) {
 	return h.runHelmWithOutput("lint")
 }
 
+// Env returns the environment variables for the helmer
+func (h *HelmCLI) Env() map[string]string {
+	return h.Runner.Env
+}
+
 // Version executes the helm version command and returns its output
 func (h *HelmCLI) Version(tls bool) (string, error) {
 	args := []string{}
