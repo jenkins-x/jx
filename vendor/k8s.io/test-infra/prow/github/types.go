@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"strings"
 	"time"
+
+	"k8s.io/test-infra/prow/errorutil"
 )
 
 const (
@@ -68,6 +70,23 @@ const (
 	MergeSquash PullRequestMergeType = "squash"
 )
 
+func unmarshalClientError(b []byte) error {
+	var errors []error
+	clientError := ClientError{}
+	err := json.Unmarshal(b, &clientError)
+	if err == nil {
+		return clientError
+	}
+	errors = append(errors, err)
+	alternativeClientError := AlternativeClientError{}
+	err = json.Unmarshal(b, &alternativeClientError)
+	if err == nil {
+		return alternativeClientError
+	}
+	errors = append(errors, err)
+	return errorutil.NewAggregate(errors...)
+}
+
 // ClientError represents https://developer.github.com/v3/#client-errors
 type ClientError struct {
 	Message string `json:"message"`
@@ -77,6 +96,22 @@ type ClientError struct {
 		Code     string `json:"code"`
 		Message  string `json:"message,omitempty"`
 	} `json:"errors,omitempty"`
+}
+
+func (r ClientError) Error() string {
+	return r.Message
+}
+
+// AlternativeClientError represents an alternative format for https://developer.github.com/v3/#client-errors
+// This is probably a GitHub bug, as documentation_url should appear only in custom errors
+type AlternativeClientError struct {
+	Message          string   `json:"message"`
+	Errors           []string `json:"errors,omitempty"`
+	DocumentationURL string   `json:"documentation_url,omitempty"`
+}
+
+func (r AlternativeClientError) Error() string {
+	return r.Message
 }
 
 // Reaction holds the type of emotional reaction.
@@ -214,14 +249,15 @@ const (
 
 // PullRequestChange contains information about what a PR changed.
 type PullRequestChange struct {
-	SHA       string `json:"sha"`
-	Filename  string `json:"filename"`
-	Status    string `json:"status"`
-	Additions int    `json:"additions"`
-	Deletions int    `json:"deletions"`
-	Changes   int    `json:"changes"`
-	Patch     string `json:"patch"`
-	BlobURL   string `json:"blob_url"`
+	SHA              string `json:"sha"`
+	Filename         string `json:"filename"`
+	Status           string `json:"status"`
+	Additions        int    `json:"additions"`
+	Deletions        int    `json:"deletions"`
+	Changes          int    `json:"changes"`
+	Patch            string `json:"patch"`
+	BlobURL          string `json:"blob_url"`
+	PreviousFilename string `json:"previous_filename"`
 }
 
 // Repo contains general repository information.
@@ -437,6 +473,7 @@ type PushEvent struct {
 	Before  string   `json:"before"`
 	After   string   `json:"after"`
 	Compare string   `json:"compare"`
+	Size    int      `json:"size"`
 	Commits []Commit `json:"commits"`
 	// Pusher is the user that pushed the commit, valid in a webhook event.
 	Pusher User `json:"pusher"`
@@ -659,7 +696,8 @@ type TeamMembership struct {
 // OrgInvitation contains Login and other details about the invitation.
 type OrgInvitation struct {
 	TeamMember
-	Inviter TeamMember `json:"login"`
+	Email   string     `json:"email"`
+	Inviter TeamMember `json:"inviter"`
 }
 
 // GenericCommentEventAction coerces multiple actions into its generic equivalent.

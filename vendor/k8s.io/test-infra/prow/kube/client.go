@@ -27,6 +27,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -589,6 +590,22 @@ func (c *Client) GetLog(pod string) ([]byte, error) {
 	c.log("GetLog", pod)
 	return c.requestRetry(&request{
 		path: fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/log", c.namespace, pod),
+	})
+}
+
+// GetLogTail returns the last n bytes of the log of the specified container in the specified pod,
+// in the client's default namespace.
+//
+// Analogous to kubectl logs pod --tail -1 --limit-bytes n -c container
+func (c *Client) GetLogTail(pod, container string, n int64) ([]byte, error) {
+	c.log("GetLogTail", pod, n)
+	return c.requestRetry(&request{
+		path: fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/log", c.namespace, pod),
+		query: map[string]string{ // Because we want last n bytes, we fetch all lines and then limit to n bytes
+			"tailLines":  "-1",
+			"container":  container,
+			"limitBytes": strconv.FormatInt(n, 10),
+		},
 	})
 }
 

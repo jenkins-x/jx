@@ -23,7 +23,7 @@ debug
 
 .vscode/
 
-build/
+/build/
 release/
 scanning/
 .updatebot-repos/
@@ -33,3 +33,5 @@ myvalues.yml
 
 # vim swap files
 *.swp
+
+

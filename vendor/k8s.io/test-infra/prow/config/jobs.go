@@ -25,6 +25,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/test-infra/prow/kube"
+
+	buildv1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 )
 
 // Preset is intended to match the k8s' PodPreset feature, and may be removed
@@ -76,36 +78,52 @@ func mergePreset(preset Preset, labels map[string]string, pod *v1.PodSpec) error
 	return nil
 }
 
-// Presubmit is the job-specific trigger info.
+// Presubmit runs on PRs.
 type Presubmit struct {
-	// eg kubernetes-pull-build-test-e2e-gce
+	// The name of the job.
+	// e.g. pull-test-infra-bazel-build
 	Name string `json:"name"`
-	// Labels are added in prowjobs created for this job.
-	Labels map[string]string `json:"labels"`
-	// Run for every PR, or only when a comment triggers it.
+	// Labels are added to prowjobs and pods created for this job.
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// AlwaysRun automatically for every PR, or only when a comment triggers it.
 	AlwaysRun bool `json:"always_run"`
-	// Run if the PR modifies a file that matches this regex.
-	RunIfChanged string `json:"run_if_changed"`
-	// Context line for GitHub status.
+	// RunIfChanged automatically run if the PR modifies a file that matches this regex.
+	RunIfChanged string `json:"run_if_changed,omitempty"`
+
+	// Context is the name of the GitHub status context for the job.
 	Context string `json:"context"`
-	// eg @k8s-bot e2e test this
+	// Optional indicates that the job's status context should not be required for merge.
+	Optional bool `json:"optional,omitempty"`
+	// SkipReport skips commenting and setting status on GitHub.
+	SkipReport bool `json:"skip_report,omitempty"`
+
+	// Trigger is the regular expression to trigger the job.
+	// e.g. `@k8s-bot e2e test this`
+	// RerunCommand must also be specified if this field is specified.
+	// (Default: `(?m)^/test (?:.*? )?<job name>(?: .*?)?$`)
 	Trigger string `json:"trigger"`
-	// Valid rerun command to give users. Must match Trigger.
+	// The RerunCommand to give users. Must match Trigger.
+	// Trigger must also be specified if this field is specified.
+	// (Default: `/test <job name>`)
 	RerunCommand string `json:"rerun_command"`
-	// Whether or not to skip commenting and setting status on GitHub.
-	SkipReport bool `json:"skip_report"`
-	// Maximum number of this job running concurrently, 0 implies no limit.
-	MaxConcurrency int `json:"max_concurrency"`
+
+	// MaximumConcurrency of this job, 0 implies no limit.
+	MaxConcurrency int `json:"max_concurrency,omitempty"`
 	// Agent that will take care of running this job.
 	Agent string `json:"agent"`
-	// Cluster is the alias of the cluster to run this job in. (Default: kube.DefaultClusterAlias)
-	Cluster string `json:"cluster"`
-	// Kubernetes pod spec.
+	// Cluster is the alias of the cluster to run this job in.
+	// (Default: kube.DefaultClusterAlias)
+	Cluster string `json:"cluster,omitempty"`
+
+	// Spec is the Kubernetes pod spec used if Agent is Kubernetes.
 	Spec *v1.PodSpec `json:"spec,omitempty"`
-	// Run these jobs after successfully running this one.
-	RunAfterSuccess []Presubmit `json:"run_after_success"`
-	// Consider job optional for branch protection.
-	Optional bool `json:"optional,omitempty"`
+
+	// knative build spec.
+	BuildSpec *buildv1alpha1.BuildSpec `json:"build_spec,omitempty"`
+
+	// RunAfterSuccess is a list of jobs to run after successfully running this one.
+	RunAfterSuccess []Presubmit `json:"run_after_success,omitempty"`
 
 	Brancher
 
@@ -120,35 +138,39 @@ type Presubmit struct {
 type Postsubmit struct {
 	Name string `json:"name"`
 	// Labels are added in prowjobs created for this job.
-	Labels map[string]string `json:"labels"`
+	Labels map[string]string `json:"labels,omitempty"`
 	// Agent that will take care of running this job.
 	Agent string `json:"agent"`
 	// Cluster is the alias of the cluster to run this job in. (Default: kube.DefaultClusterAlias)
-	Cluster string `json:"cluster"`
+	Cluster string `json:"cluster,omitempty"`
 	// Kubernetes pod spec.
 	Spec *v1.PodSpec `json:"spec,omitempty"`
+	// knative build spec.
+	BuildSpec *buildv1alpha1.BuildSpec `json:"build_spec,omitempty"`
 	// Maximum number of this job running concurrently, 0 implies no limit.
-	MaxConcurrency int `json:"max_concurrency"`
+	MaxConcurrency int `json:"max_concurrency,omitempty"`
 
 	Brancher
 
 	UtilityConfig
 
 	// Run these jobs after successfully running this one.
-	RunAfterSuccess []Postsubmit `json:"run_after_success"`
+	RunAfterSuccess []Postsubmit `json:"run_after_success,omitempty"`
 }
 
 // Periodic runs on a timer.
 type Periodic struct {
 	Name string `json:"name"`
 	// Labels are added in prowjobs created for this job.
-	Labels map[string]string `json:"labels"`
+	Labels map[string]string `json:"labels,omitempty"`
 	// Agent that will take care of running this job.
 	Agent string `json:"agent"`
 	// Cluster is the alias of the cluster to run this job in. (Default: kube.DefaultClusterAlias)
-	Cluster string `json:"cluster"`
+	Cluster string `json:"cluster,omitempty"`
 	// Kubernetes pod spec.
 	Spec *v1.PodSpec `json:"spec,omitempty"`
+	// knative build spec.
+	BuildSpec *buildv1alpha1.BuildSpec `json:"build_spec,omitempty"`
 	// (deprecated)Interval to wait between two runs of the job.
 	Interval string `json:"interval"`
 	// Cron representation of job trigger time
@@ -156,7 +178,7 @@ type Periodic struct {
 	// Tags for config entries
 	Tags []string `json:"tags,omitempty"`
 	// Run these jobs after successfully running this one.
-	RunAfterSuccess []Periodic `json:"run_after_success"`
+	RunAfterSuccess []Periodic `json:"run_after_success,omitempty"`
 
 	UtilityConfig
 
@@ -177,9 +199,9 @@ func (p *Periodic) GetInterval() time.Duration {
 // branches. An empty brancher runs against all branches.
 type Brancher struct {
 	// Do not run against these branches. Default is no branches.
-	SkipBranches []string `json:"skip_branches"`
+	SkipBranches []string `json:"skip_branches,omitempty"`
 	// Only run against these branches. Default is all branches.
-	Branches []string `json:"branches"`
+	Branches []string `json:"branches,omitempty"`
 
 	// We'll set these when we load it.
 	re     *regexp.Regexp

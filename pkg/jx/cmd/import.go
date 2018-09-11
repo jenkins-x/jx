@@ -33,6 +33,7 @@ import (
 	"time"
 
 	"github.com/denormal/go-gitignore"
+	"github.com/jenkins-x/jx/pkg/prow"
 )
 
 const (
@@ -201,15 +202,37 @@ func (o *ImportOptions) Run() error {
 	o.Factory.SetBatch(o.BatchMode)
 
 	var err error
+	isProw := false
 	if !o.DryRun {
-		o.Jenkins, err = o.JenkinsClient()
+		_, _, err = o.KubeClient()
 		if err != nil {
 			return err
 		}
 
-		_, _, err = o.KubeClient()
+		_, _, err = o.JXClient()
 		if err != nil {
 			return err
+		}
+
+		apisClient, err := o.CreateApiExtensionsClient()
+		if err != nil {
+			return err
+		}
+		err = kube.RegisterEnvironmentCRD(apisClient)
+		if err != nil {
+			return err
+		}
+
+		isProw, err = o.isProw()
+		if err != nil {
+			return err
+		}
+
+		if !isProw {
+			o.Jenkins, err = o.JenkinsClient()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -360,12 +383,14 @@ func (o *ImportOptions) Run() error {
 		return nil
 	}
 
-	err = o.checkChartmuseumCredentialExists()
-	if err != nil {
-		return err
+	if !isProw {
+		err = o.checkChartmuseumCredentialExists()
+		if err != nil {
+			return err
+		}
 	}
 
-	return o.DoImport()
+	return o.doImport()
 }
 
 func (o *ImportOptions) ImportProjectsFromGitHub() error {
@@ -801,7 +826,7 @@ func (o *ImportOptions) DiscoverGit() error {
 	if err != nil {
 		return err
 	}
-	o.GitConfDir = filepath.Join(dir, ".git/config")
+	o.GitConfDir = filepath.Join(dir, ".git", "config")
 	err = o.DefaultGitIgnore()
 	if err != nil {
 		return err
@@ -897,14 +922,7 @@ func (o *ImportOptions) DiscoverRemoteGitURL() error {
 	return nil
 }
 
-func (o *ImportOptions) DoImport() error {
-	if o.Jenkins == nil {
-		jclient, err := o.JenkinsClient()
-		if err != nil {
-			return err
-		}
-		o.Jenkins = jclient
-	}
+func (o *ImportOptions) doImport() error {
 	gitURL := o.RepoURL
 	gitProvider := o.GitProvider
 	if gitProvider == nil {
@@ -923,12 +941,35 @@ func (o *ImportOptions) DoImport() error {
 	if jenkinsfile == "" {
 		jenkinsfile = jenkins.DefaultJenkinsfile
 	}
+
 	err = o.ensureDockerRepositoryExists()
 	if err != nil {
 		return err
 	}
 
+	isProw, err := o.isProw()
+	if err != nil {
+		return err
+	}
+	if isProw {
+		// register the webhook
+		err = o.createWebhookProw(gitURL, gitProvider)
+		if err != nil {
+			return err
+		}
+		return o.addProwConfig(gitURL)
+	}
+
 	return o.ImportProject(gitURL, o.Dir, jenkinsfile, o.BranchPattern, o.Credentials, false, gitProvider, authConfigSvc, false, o.BatchMode)
+}
+
+func (o *ImportOptions) addProwConfig(gitURL string) error {
+	gitInfo, err := gits.ParseGitURL(gitURL)
+	if err != nil {
+		return err
+	}
+	repo := gitInfo.Organisation + "/" + gitInfo.Name
+	return prow.AddApplication(o.KubeClientCached, []string{repo}, o.currentNamespace)
 }
 
 // ensureDockerRepositoryExists for some kinds of container registry we need to pre-initialise its use such as for ECR

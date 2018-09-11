@@ -15,12 +15,15 @@ limitations under the License.
 */
 
 // Package config knows how to read and parse config.yaml.
+// It also implements an agent to read the secrets.
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -34,6 +37,7 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	"k8s.io/test-infra/prow/config/org"
 	"k8s.io/test-infra/prow/github"
@@ -166,6 +170,9 @@ type Plank struct {
 	// DefaultDecorationConfig are defaults for shared fields for ProwJobs
 	// that request to have their PodSpecs decorated
 	DefaultDecorationConfig *kube.DecorationConfig `json:"default_decoration_config,omitempty"`
+	// JobURLPrefix is the host and path prefix under
+	// which job details will be viewable
+	JobURLPrefix string `json:"job_url_prefix,omitempty"`
 }
 
 // Gerrit is config for the gerrit controller.
@@ -213,8 +220,26 @@ type Sinker struct {
 	MaxPodAge time.Duration `json:"-"`
 }
 
+// Spyglass holds config for Spyglass
+type Spyglass struct {
+	// Viewers is a map of Regexp strings to viewer names that defines which sets
+	// of artifacts need to be consumed by which viewers. The keys are compiled
+	// and stored in RegexCache at load time.
+	Viewers map[string][]string `json:"viewers,omitempty"`
+	// RegexCache is a map of viewer regexp strings to their compiled equivalents.
+	RegexCache map[string]*regexp.Regexp `json:"-"`
+	// SizeLimit is the max size artifact in bytes that Spyglass will attempt to
+	// read in entirety. This will only affect viewers attempting to use
+	// artifact.ReadAll(). To exclude outlier artifacts, set this limit to
+	// expected file size + variance. To include all artifacts with high
+	// probability, use 2*maximum observed artifact size.
+	SizeLimit int64 `json:"size_limit,omitempty"`
+}
+
 // Deck holds config for deck.
 type Deck struct {
+	// Spyglass specifies which viewers wil be used for which artifacts when viewing a job in Deck
+	Spyglass Spyglass `json:"spyglass,omitempty"`
 	// TideUpdatePeriodString compiles into TideUpdatePeriod at load time.
 	TideUpdatePeriodString string `json:"tide_update_period,omitempty"`
 	// TideUpdatePeriod specifies how often Deck will fetch status from Tide. Defaults to 10s.
@@ -273,6 +298,9 @@ func Load(prowConfig, jobConfig string) (c *Config, err error) {
 		return nil, err
 	}
 	if err := c.finalizeJobConfig(); err != nil {
+		return nil, err
+	}
+	if err := c.validateComponentConfig(); err != nil {
 		return nil, err
 	}
 	if err := c.validateJobConfig(); err != nil {
@@ -343,7 +371,7 @@ func loadConfig(prowConfig, jobConfig string) (*Config, error) {
 			return nil
 		}
 
-		if filepath.Ext(path) != ".yaml" {
+		if filepath.Ext(path) != ".yaml" && filepath.Ext(path) != ".yml" {
 			return nil
 		}
 
@@ -369,6 +397,29 @@ func loadConfig(prowConfig, jobConfig string) (*Config, error) {
 	}
 
 	return &nc, nil
+}
+
+// LoadSecrets loads multiple paths of secrets and add them in a map.
+func LoadSecrets(paths []string) (map[string][]byte, error) {
+	secretsMap := make(map[string][]byte, len(paths))
+
+	for _, path := range paths {
+		secretValue, err := LoadSingleSecret(path)
+		if err != nil {
+			return nil, err
+		}
+		secretsMap[path] = secretValue
+	}
+	return secretsMap, nil
+}
+
+// LoadSingleSecret reads and returns the value of a single file.
+func LoadSingleSecret(path string) ([]byte, error) {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("error reading %s: %v", path, err)
+	}
+	return bytes.TrimSpace(b), nil
 }
 
 // yamlToConfig converts a yaml file into a Config object
@@ -490,17 +541,21 @@ func (c *Config) finalizeJobConfig() error {
 		}
 	}
 
-	// Ensure that regexes are valid.
+	// Ensure that regexes are valid and set defaults.
 	for _, vs := range c.Presubmits {
+		defaultPresubmitFields(vs)
 		if err := SetPresubmitRegexes(vs); err != nil {
 			return fmt.Errorf("could not set regex: %v", err)
 		}
 	}
 	for _, js := range c.Postsubmits {
+		defaultPostsubmitFields(js)
 		if err := SetPostsubmitRegexes(js); err != nil {
 			return fmt.Errorf("could not set regex: %v", err)
 		}
 	}
+
+	defaultPeriodicFields(c.Periodics)
 
 	for _, v := range c.AllPresubmits(nil) {
 		if err := resolvePresets(v.Name, v.Labels, v.Spec, c.Presets); err != nil {
@@ -520,6 +575,14 @@ func (c *Config) finalizeJobConfig() error {
 		}
 	}
 
+	return nil
+}
+
+// validateComponentConfig validates the infrastructure component configuration
+func (c *Config) validateComponentConfig() error {
+	if _, err := url.Parse(c.Plank.JobURLPrefix); c.Plank.JobURLPrefix != "" && err != nil {
+		return fmt.Errorf("plank declares an invalid job URL prefix %q: %v", c.Plank.JobURLPrefix, err)
+	}
 	return nil
 }
 
@@ -708,6 +771,21 @@ func parseProwConfig(c *Config) error {
 		c.Deck.TideUpdatePeriod = period
 	}
 
+	if c.Deck.Spyglass.SizeLimit == 0 {
+		c.Deck.Spyglass.SizeLimit = 100e6
+	} else if c.Deck.Spyglass.SizeLimit <= 0 {
+		return fmt.Errorf("invalid value for deck.spyglass.size_limit, must be >=0")
+	}
+
+	c.Deck.Spyglass.RegexCache = make(map[string]*regexp.Regexp)
+	for k := range c.Deck.Spyglass.Viewers {
+		r, err := regexp.Compile(k)
+		if err != nil {
+			return fmt.Errorf("cannot compile regexp %s, err: %v", k, err)
+		}
+		c.Deck.Spyglass.RegexCache[k] = r
+	}
+
 	if c.PushGateway.IntervalString == "" {
 		c.PushGateway.Interval = time.Minute
 	} else {
@@ -868,6 +946,12 @@ func validateLabels(name string, labels map[string]string) error {
 				return fmt.Errorf("job %s attempted to set Prow-controlled label %s to %s", name, label, labels[label])
 			}
 		}
+		if errs := validation.IsQualifiedName(label); len(errs) != 0 {
+			return fmt.Errorf("job %s sets an invalid label key %s: %v", name, label, errs)
+		}
+		if errs := validation.IsValidLabelValue(labels[label]); len(errs) != 0 {
+			return fmt.Errorf("job %s sets an invalid label value %s for key %s: %v", name, labels[label], label, errs)
+		}
 	}
 	return nil
 }
@@ -891,9 +975,9 @@ func validateAgent(name, agent string, spec *v1.PodSpec, config *kube.Decoration
 		}
 	}
 	// Ensure agent is a known value.
-	if agent != string(kube.KubernetesAgent) && agent != string(kube.JenkinsAgent) {
-		return fmt.Errorf("job %s has invalid agent (%s), it needs to be one of the following: %s %s",
-			name, agent, kube.KubernetesAgent, kube.JenkinsAgent)
+	if agent != string(kube.KubernetesAgent) && agent != string(kube.JenkinsAgent) && agent != string(kube.BuildAgent) {
+		return fmt.Errorf("job %s has invalid agent (%s), it needs to be one of the following: %s %s %s",
+			name, agent, kube.KubernetesAgent, kube.JenkinsAgent, kube.BuildAgent)
 	}
 	return nil
 }
@@ -990,6 +1074,55 @@ func ValidateController(c *Controller) error {
 	return nil
 }
 
+// DefaultTriggerFor returns the default regexp string used to match comments
+// that should trigger the job with this name.
+func DefaultTriggerFor(name string) string {
+	return fmt.Sprintf(`(?m)^/test( | .* )%s,?($|\s.*)`, name)
+}
+
+// DefaultRerunCommandFor returns the default rerun command for the job with
+// this name.
+func DefaultRerunCommandFor(name string) string {
+	return fmt.Sprintf("/test %s", name)
+}
+
+func defaultPresubmitFields(js []Presubmit) {
+	for i := range js {
+		if js[i].Context == "" {
+			js[i].Context = js[i].Name
+		}
+		if js[i].Agent == "" {
+			js[i].Agent = string(kube.KubernetesAgent)
+		}
+		// Default the values of Trigger and RerunCommand if both fields are
+		// specified. Otherwise let validation fail as both or neither should have
+		// been specified.
+		if js[i].Trigger == "" && js[i].RerunCommand == "" {
+			js[i].Trigger = DefaultTriggerFor(js[i].Name)
+			js[i].RerunCommand = DefaultRerunCommandFor(js[i].Name)
+		}
+		defaultPresubmitFields(js[i].RunAfterSuccess)
+	}
+}
+
+func defaultPostsubmitFields(js []Postsubmit) {
+	for i := range js {
+		if js[i].Agent == "" {
+			js[i].Agent = string(kube.KubernetesAgent)
+		}
+		defaultPostsubmitFields(js[i].RunAfterSuccess)
+	}
+}
+
+func defaultPeriodicFields(js []Periodic) {
+	for i := range js {
+		if js[i].Agent == "" {
+			js[i].Agent = string(kube.KubernetesAgent)
+		}
+		defaultPeriodicFields(js[i].RunAfterSuccess)
+	}
+}
+
 // SetPresubmitRegexes compiles and validates all the regular expressions for
 // the provided presubmits.
 func SetPresubmitRegexes(js []Presubmit) error {
@@ -1001,9 +1134,6 @@ func SetPresubmitRegexes(js []Presubmit) error {
 		}
 		if !js[i].re.MatchString(j.RerunCommand) {
 			return fmt.Errorf("for job %s, rerun command \"%s\" does not match trigger \"%s\"", j.Name, j.RerunCommand, j.Trigger)
-		}
-		if err := SetPresubmitRegexes(j.RunAfterSuccess); err != nil {
-			return err
 		}
 		if j.RunIfChanged != "" {
 			re, err := regexp.Compile(j.RunIfChanged)
@@ -1017,6 +1147,10 @@ func SetPresubmitRegexes(js []Presubmit) error {
 			return fmt.Errorf("could not set branch regexes for %s: %v", j.Name, err)
 		}
 		js[i].Brancher = b
+
+		if err := SetPresubmitRegexes(j.RunAfterSuccess); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -40,10 +40,10 @@ func ImageTooBig(url string) (bool, error) {
 	// try to get the image size from Content-Length header
 	resp, err := http.Head(url)
 	if err != nil {
-		return true, fmt.Errorf("error getting size of image, cannot get headers for %s: %s", url, err)
+		return true, fmt.Errorf("HEAD error: %v", err)
 	}
-	if resp.StatusCode != http.StatusOK {
-		return true, fmt.Errorf("error getting size of image %s: %s", url, resp.Status)
+	if sc := resp.StatusCode; sc != http.StatusOK {
+		return true, fmt.Errorf("failing %d response", sc)
 	}
 	size, _ := strconv.Atoi(resp.Header.Get("Content-Length"))
 	if size > limit {

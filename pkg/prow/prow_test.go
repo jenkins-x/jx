@@ -27,10 +27,11 @@ func (o *TestOptions) Setup() {
 	}
 }
 
-func TestProwConfig(t *testing.T) {
+func TestProwConfigEnvironment(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
+	o.Kind = prow.Environment
 
 	err := o.AddProwConfig()
 	assert.NoError(t, err)
@@ -40,15 +41,17 @@ func TestProwPlugins(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
+	o.Kind = prow.Environment
 
 	err := o.AddProwPlugins()
 	assert.NoError(t, err)
 }
 
-func TestMergeProwConfig(t *testing.T) {
+func TestMergeProwConfigEnvironment(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
+	o.Kind = prow.Environment
 
 	prowConfig := &config.Config{}
 	prowConfig.LogLevel = "debug"
@@ -85,6 +88,7 @@ func TestMergeProwPlugin(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
+	o.Kind = prow.Environment
 
 	pluginConfig := &plugins.Configuration{}
 	pluginConfig.Welcome = plugins.Welcome{MessageTemplate: "okey dokey"}
@@ -121,6 +125,7 @@ func TestAddProwPlugin(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
+	o.Kind = prow.Environment
 
 	o.Repos = append(o.Repos, "test/repo2")
 
@@ -142,6 +147,7 @@ func TestAddProwConfig(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
+	o.Kind = prow.Environment
 
 	o.Repos = append(o.Repos, "test/repo2")
 
@@ -164,6 +170,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
+	o.Kind = prow.Environment
 
 	err := o.AddProwConfig()
 	assert.NoError(t, err)
@@ -217,5 +224,5 @@ func TestReplaceProwConfig(t *testing.T) {
 	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
 
 	p = prowConfig.Presubmits["test/repo"]
-	assert.Equal(t, "kubernetes", p[0].Agent)
+	assert.Equal(t, "knative-build", p[0].Agent)
 }
