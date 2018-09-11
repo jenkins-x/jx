@@ -6,9 +6,9 @@ import (
 	"github.com/cenkalti/backoff"
 )
 
-// CommandInterface defines the interface for a Command
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/util CommandInterface -o mocks/command_interface.go
-type CommandInterface interface {
+// Commander defines the interface for a Command
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/util Commander -o mocks/commander.go
+type Commander interface {
 	DidError() bool
 	DidFail() bool
 	Error() error
