@@ -380,37 +380,39 @@ func (o *CreateDevPodOptions) Run() error {
 
 	// Create a service for every port we expose
 
-	var servicePorts []corev1.ServicePort
-	for _, port := range exposeServicePorts {
-		portName := fmt.Sprintf("%s-%d", pod.Name, port)
-		servicePorts = append(servicePorts, corev1.ServicePort{
-						Name: portName,
-						Port: int32(port),
-						TargetPort: intstr.FromInt(port),
-		})
-	}
+	if len(exposeServicePorts) > 0 {
+		var servicePorts []corev1.ServicePort
+		for _, port := range exposeServicePorts {
+			portName := fmt.Sprintf("%s-%d", pod.Name, port)
+			servicePorts = append(servicePorts, corev1.ServicePort{
+				Name:       portName,
+				Port:       int32(port),
+				TargetPort: intstr.FromInt(port),
+			})
+		}
 
-	service := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta {
-			Annotations: map[string]string {
-				"fabric8.io/expose": "true",
+		service := corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					"fabric8.io/expose": "true",
+				},
+				Name: pod.Name,
+				OwnerReferences: []metav1.OwnerReference{
+					ownerRef(pod),
+				},
 			},
-			Name: pod.Name,
-			OwnerReferences: []metav1.OwnerReference {
-				ownerRef(pod),
+			Spec: corev1.ServiceSpec{
+				Ports: servicePorts,
+				Selector: map[string]string{
+					"jenkins.io/devpod": pod.Name,
+				},
 			},
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: servicePorts,
-			Selector: map[string]string{
-				"jenkins.io/devpod": pod.Name,
-			},
-		},
-	}
-	_, err = client.CoreV1().Services(curNs).Create(&service)
+		}
+		_, err = client.CoreV1().Services(curNs).Create(&service)
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	// Create a service for theia
@@ -443,8 +445,6 @@ func (o *CreateDevPodOptions) Run() error {
 		return err
 	}
 
-
-	// TODO we only need to do this if we have created a new Service then update the exposecontroller stuff...
 	err = o.updateExposeController(client, ns, ns)
 	if err != nil {
 		return err
@@ -469,7 +469,9 @@ func (o *CreateDevPodOptions) Run() error {
 	log.Infof("Pod %s is now ready!\n", util.ColorInfo(name))
 	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod --reuse"))
 	log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
-	log.Infof("Ports %v are open on host %s\n", exposeServicePorts, util.ColorInfo(exposePortsServiceHost))
+	if len(exposeServicePorts) > 0 {
+		log.Infof("Ports %v are open on host %s\n", exposeServicePorts, util.ColorInfo(exposePortsServiceHost))
+	}
 
 	if o.Sync {
 		syncOptions := &SyncOptions{
