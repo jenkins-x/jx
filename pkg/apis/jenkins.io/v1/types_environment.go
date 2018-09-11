@@ -35,6 +35,7 @@ type EnvironmentSpec struct {
 	PullRequestURL    string                `json:"pullRequestURL,omitempty" protobuf:"bytes,8,opt,name=pullRequestURL"`
 	TeamSettings      TeamSettings          `json:"teamSettings,omitempty" protobuf:"bytes,9,opt,name=teamSettings"`
 	PreviewGitSpec    PreviewGitSpec        `json:"previewGitInfo,omitempty" protobuf:"bytes,10,opt,name=previewGitInfo"`
+	WebHookEngine     WebHookEngineType     `json:"webHookEngine,omitempty" protobuf:"bytes,11,opt,name=webHookEngine"`
 }
 
 // EnvironmentStatus is the status for an Environment resource
@@ -67,9 +68,6 @@ const (
 // EnvironmentKindType is the kind of an environment
 type EnvironmentKindType string
 
-// PromotionEngineType is the type of promotion implementation the team uses
-type PromotionEngineType string
-
 const (
 	// EnvironmentKindTypePermanent specifies that the environment is a regular permanent one
 	EnvironmentKindTypePermanent EnvironmentKindType = "Permanent"
@@ -81,9 +79,23 @@ const (
 	EnvironmentKindTypeEdit EnvironmentKindType = "Edit"
 	// EnvironmentKindTypeDevelopment specifies that an environment is a development environment; for developer tools like Jenkins, Nexus etc
 	EnvironmentKindTypeDevelopment EnvironmentKindType = "Development"
+)
 
+// PromotionEngineType is the type of promotion implementation the team uses
+type PromotionEngineType string
+
+const (
 	PromotionEngineJenkins PromotionEngineType = "Jenkins"
 	PromotionEngineProw    PromotionEngineType = "Prow"
+)
+
+// WebHookEngineType is the type of webhook processing implementation the team uses
+type WebHookEngineType string
+
+const (
+	WebHookEngineNone    WebHookEngineType = ""
+	WebHookEngineJenkins WebHookEngineType = "Jenkins"
+	WebHookEngineProw    WebHookEngineType = "Prow"
 )
 
 // IsPermanent returns true if this environment is permanent
