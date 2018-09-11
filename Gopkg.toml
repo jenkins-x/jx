@@ -164,6 +164,10 @@ required = [
   name = "github.com/knative/build"
   branch = "master"
 
+[[constraint]]
+  name = "github.com/shirou/gopsutil"
+  branch = "master"
+
 [prune]
   non-go = true
   go-tests = true
