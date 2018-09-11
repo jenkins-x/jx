@@ -63,6 +63,7 @@ type CreateDevPodOptions struct {
 	Reuse      bool
 	Sync       bool
 	Ports      []int
+	AutoExpose bool
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -98,6 +99,7 @@ func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	cmd.Flags().BoolVarP(&options.Reuse, "reuse", "", false, "Reuse and existing DevPod for this folder and label if one exists")
 	cmd.Flags().BoolVarP(&options.Sync, "sync", "", false, "Also synchronise the local file system into the DevPod")
 	cmd.Flags().IntSliceVarP(&options.Ports, "ports", "p", []int{}, "Container ports exposed by the DevPod")
+	cmd.Flags().BoolVarP(&options.AutoExpose, "auto-expose", "", true, "Automatically expose useful ports as services such as the debug port, as well as any ports specified using --ports")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -235,6 +237,8 @@ func (o *CreateDevPodOptions) Run() error {
 		})
 	}
 	// Assign the container the ports provided as input
+	var exposeServicePorts [] int
+
 	for _, port := range o.Ports {
 		cp := corev1.ContainerPort{
 			Name:          fmt.Sprintf("port-%d", port),
@@ -243,7 +247,23 @@ func (o *CreateDevPodOptions) Run() error {
 		container1.Ports = append(container1.Ports, cp)
 	}
 
-	// TODO Also delete the service
+	// Assign the container the ports provided automatically
+	if o.AutoExpose {
+		exposeServicePorts = o.Ports
+		if portsStr, ok := pod.Annotations["jenkins-x.io/devpodPorts"]; ok {
+			ports := strings.Split(portsStr, ", ")
+			for _, portStr := range ports {
+				port, _ := strconv.Atoi(portStr)
+				exposeServicePorts = append(exposeServicePorts, port)
+				cp := corev1.ContainerPort{
+					Name:          fmt.Sprintf("port-%d", port),
+					ContainerPort: int32(port),
+				}
+				container1.Ports = append(container1.Ports, cp)
+			}
+		}
+	}
+
 
 	cpuLimit, _ := resource.ParseQuantity("400m")
 	cpuRequest, _ := resource.ParseQuantity( "200m")
@@ -306,33 +326,6 @@ func (o *CreateDevPodOptions) Run() error {
 
 	pod.Spec.Containers = append(pod.Spec.Containers, theiaContainer)
 
-	theiaServiceName := pod.Name + "-theia"
-	theiaService := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta {
-			Annotations: map[string]string {
-				"fabric8.io/expose": "true",
-			},
-			Name: theiaServiceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				corev1.ServicePort{
-					Name: theiaServiceName,
-					Port: 80,
-					TargetPort: intstr.FromInt(3000),
-				},
-			},
-			Selector: map[string]string {
-				"jenkins.io/devpod": pod.Name,
-			},
-		},
-	}
-
-	_, err = client.CoreV1().Services(curNs).Create(&theiaService)
-	if err != nil {
-		return err
-	}
-
 	podResources := client.CoreV1().Pods(ns)
 
 	create := true
@@ -376,6 +369,81 @@ func (o *CreateDevPodOptions) Run() error {
 		log.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
 	}
 
+	// Create services
+
+	// Get the pod UID
+	pod, err = client.CoreV1().Pods(curNs).Get(pod.Name, metav1.GetOptions{})
+	if (err != nil) {
+		return err
+	}
+
+
+	// Create a service for every port we expose
+
+	var servicePorts []corev1.ServicePort
+	for _, port := range exposeServicePorts {
+		portName := fmt.Sprintf("%s-%d", pod.Name, port)
+		servicePorts = append(servicePorts, corev1.ServicePort{
+						Name: portName,
+						Port: int32(port),
+						TargetPort: intstr.FromInt(port),
+		})
+	}
+
+	service := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta {
+			Annotations: map[string]string {
+				"fabric8.io/expose": "true",
+			},
+			Name: pod.Name,
+			OwnerReferences: []metav1.OwnerReference {
+				ownerRef(pod),
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: servicePorts,
+			Selector: map[string]string{
+				"jenkins.io/devpod": pod.Name,
+			},
+		},
+	}
+	_, err = client.CoreV1().Services(curNs).Create(&service)
+
+	if err != nil {
+		return err
+	}
+
+	// Create a service for theia
+	theiaServiceName := pod.Name + "-theia"
+	theiaService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta {
+			Annotations: map[string]string {
+				"fabric8.io/expose": "true",
+			},
+			Name: theiaServiceName,
+			OwnerReferences: []metav1.OwnerReference {
+				ownerRef(pod),
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				corev1.ServicePort{
+					Name: theiaServiceName,
+					Port: 80,
+					TargetPort: intstr.FromInt(3000),
+				},
+			},
+			Selector: map[string]string {
+				"jenkins.io/devpod": pod.Name,
+			},
+		},
+	}
+	_, err = client.CoreV1().Services(curNs).Create(&theiaService)
+	if err != nil {
+		return err
+	}
+
+
 	// TODO we only need to do this if we have created a new Service then update the exposecontroller stuff...
 	err = o.updateExposeController(client, ns, ns)
 	if err != nil {
@@ -387,8 +455,21 @@ func (o *CreateDevPodOptions) Run() error {
 		return err
 	}
 
+	exposePortsServiceHost, err := kube.FindServiceHostname(client, curNs, pod.Name)
+	if err != nil {
+		return err
+	}
+
+	theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
+	if err != nil {
+		return err
+	}
+
+
 	log.Infof("Pod %s is now ready!\n", util.ColorInfo(name))
 	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod --reuse"))
+	log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
+	log.Infof("Ports %v are open on host %s\n", exposeServicePorts, util.ColorInfo(exposePortsServiceHost))
 
 	if o.Sync {
 		syncOptions := &SyncOptions{
@@ -538,5 +619,16 @@ func uniquePodName(names []string, prefix string) string {
 			return name
 		}
 		count++
+	}
+}
+
+func ownerRef(pod *corev1.Pod) metav1.OwnerReference {
+	controller := true
+	return metav1.OwnerReference{
+		APIVersion: "v1",
+		Kind:       "Service",
+		Name:       pod.Name,
+		UID: pod.UID,
+		Controller: &controller,
 	}
 }
