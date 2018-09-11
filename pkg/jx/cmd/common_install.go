@@ -11,9 +11,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/Pallinder/go-randomdata"
-	filemutex "github.com/alexflint/go-filemutex"
+	"github.com/alexflint/go-filemutex"
 	"github.com/blang/semver"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -24,6 +25,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
+	"github.com/shirou/gopsutil/process"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
@@ -83,6 +85,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installGcloud()
 		case "helm":
 			err = o.installHelm()
+		case "tiller":
+			err = o.installTiller()
 		case "helm3":
 			err = o.installHelm3()
 		case "hyperkit":
@@ -502,6 +506,141 @@ func (o *CommonOptions) installHelm() error {
 		return err
 	}
 	return o.installHelmSecretsPlugin(fullPath, true)
+}
+
+func (o *CommonOptions) installTiller() error {
+	binDir, err := util.JXBinLocation()
+	if err != nil {
+		return err
+	}
+	binary := "tiller"
+	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	if err != nil || !flag {
+		return err
+	}
+	// TODO workaround until 2.11.x GA is released
+	latestVersion := "2.11.0-rc.2"
+	/*
+		latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
+			if err != nil {
+				return err
+			}
+	*/
+	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	helmFullPath := filepath.Join(binDir, "helm")
+	tarFile := fullPath + ".tgz"
+	err = o.downloadFile(clientURL, tarFile)
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName, "helm"})
+	if err != nil {
+		return err
+	}
+	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	err = os.Chmod(fullPath, 0755)
+	if err != nil {
+		return err
+	}
+	err = o.startLocalTillerIfNotRunning()
+	if err != nil {
+		return err
+	}
+	return o.installHelmSecretsPlugin(helmFullPath, true)
+}
+
+func (o *CommonOptions) startLocalTillerIfNotRunning() error {
+	return o.startLocalTiller(true)
+}
+
+func (o *CommonOptions) restartLocalTiller() error {
+	log.Info("checking if we need to kill a local tiller process\n")
+	o.killProcesses("tiller")
+	return o.startLocalTiller(false)
+}
+
+func (o *CommonOptions) startLocalTiller(lazy bool) error {
+	tillerAddress := o.tillerAddress()
+	tillerArgs := os.Getenv("TILLER_ARGS")
+	args := []string{"-listen", tillerAddress, "-alsologtostderr"}
+	if tillerArgs != "" {
+		args = append(args, tillerArgs)
+	}
+	logsDir, err := util.LogsDir()
+	if err != nil {
+		return err
+	}
+	logFile := filepath.Join(logsDir, "tiller.log")
+	f, err := os.Create(logFile)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to create tiller log file %s: %s", logFile, err)
+	}
+	err = o.runCommandBackground("tiller", f, !lazy, args...)
+	if err == nil {
+		log.Infof("running tiller locally and logging to file: %s\n", util.ColorInfo(logFile))
+	} else if lazy {
+		// lets assume its because the process is already running so lets ignore
+		return nil
+	}
+	return err
+}
+
+func (o *CommonOptions) killProcesses(binary string) error {
+	processes, err := process.Processes()
+	if err != nil {
+		return err
+	}
+	m := map[int32]bool{}
+	_, err = o.killProcessesTree(binary, processes, m)
+	return err
+}
+
+func (o *CommonOptions) killProcessesTree(binary string, processes []*process.Process, m map[int32]bool) (bool, error) {
+	var answer error
+	done := false
+	for _, p := range processes {
+		pid := p.Pid
+		if pid > 0 && !m[pid] {
+			m[pid] = true
+			exe, err := p.Name()
+			if err == nil && exe != "" {
+				_, name := filepath.Split(exe)
+				// if windows lets remove .exe
+				name = strings.TrimSuffix(name, ".exe")
+				if name == binary {
+					log.Infof("killing %s process with pid %d\n", binary, int(pid))
+					err = p.Terminate()
+					if err != nil {
+						log.Warnf("Failed to terminate process with pid %d: %s", int(pid), err)
+					} else {
+						log.Infof("killed %s process with pid %d\n", binary, int(pid))
+					}
+					return true, err
+				}
+			}
+			children, err := p.Children()
+			if err == nil {
+				done, err = o.killProcessesTree(binary, children, m)
+				if done {
+					return done, err
+				}
+			}
+		}
+	}
+	return done, answer
+}
+
+// tillerAddress returns the address that tiller is listening on
+func (o *CommonOptions) tillerAddress() string {
+	tillerAddress := os.Getenv("TILLER_ADDR")
+	if tillerAddress == "" {
+		tillerAddress = ":44134"
+	}
+	return tillerAddress
 }
 
 func (o *CommonOptions) installHelm3() error {
@@ -1319,7 +1458,7 @@ func (o *CommonOptions) installProw() error {
 	if err != nil {
 		return fmt.Errorf("failed to install knative build: %v", err)
 	}
-
+	
 	return nil
 }
 

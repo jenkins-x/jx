@@ -142,6 +142,7 @@ type TeamSettings struct {
 	HelmBinary          string               `json:"helmBinary,omitempty" protobuf:"bytes,8,opt,name=helmBinary"`
 	PostPreviewJobs     []batchv1.Job        `json:"postPreviewJobs,omitempty" protobuf:"bytes,9,opt,name=postPreviewJobs"`
 	PromotionEngine     PromotionEngineType  `json:"promotionEngine,omitempty" protobuf:"bytes,10,opt,name=promotionEngine"`
+	NoTiller            bool                 `json:"noTiller,omitempty" protobuf:"bytes,11,opt,name=noTiller"`
 }
 
 // QuickStartLocation

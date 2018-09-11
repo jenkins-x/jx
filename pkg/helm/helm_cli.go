@@ -9,7 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	)
+)
 
 // HelmCLI implements common helm actions based on helm CLI
 type HelmCLI struct {
@@ -41,6 +41,14 @@ func NewHelmCLI(binary string, version Version, cwd string, args ...string) *Hel
 		Runner:     runner,
 	}
 	return cli
+}
+
+// SetHost is used to point at a locally running tiller
+func (h *HelmCLI) SetHost(tillerAddress string) {
+	if h.Runner.Env == nil {
+		h.Runner.Env = map[string]string{}
+	}
+	h.Runner.Env["HELM_HOST"] = tillerAddress
 }
 
 // SetCWD configures the common working directory of helm CLI

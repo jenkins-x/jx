@@ -236,7 +236,13 @@ func (options *InstallOptions) Run() error {
 	// configure the helm binary
 	options.Helm().SetHelmBinary(helmBinary)
 
-	err = options.installRequirements(options.Flags.Provider, helmBinary)
+	dependencies := []string{}
+	if !initOpts.Flags.Tiller {
+		dependencies = append(dependencies, "tiller")
+		options.Helm().SetHost(options.tillerAddress())
+	}
+	dependencies = append(dependencies, helmBinary)
+	err = options.installRequirements(options.Flags.Provider, dependencies...)
 	if err != nil {
 		return errors.Wrap(err, "failed to install the platform requirements")
 	}
@@ -333,6 +339,14 @@ func (options *InstallOptions) Run() error {
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
 		}
+	}
+
+	if !initOpts.Flags.Tiller {
+		err = options.restartLocalTiller()
+		if err != nil {
+			return err
+		}
+		initOpts.helm = options.helm
 	}
 
 	err = initOpts.Run()
@@ -592,6 +606,17 @@ func (options *InstallOptions) Run() error {
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 
+	if !initOpts.Flags.Tiller {
+		callback := func(env *v1.Environment) error {
+			env.Spec.TeamSettings.NoTiller = true
+			log.Info("Disabling the server side use of tiller in the TeamSettings\n")
+			return nil
+		}
+		err = options.ModifyDevEnvironment(callback)
+		if err != nil {
+			return err
+		}
+	}
 	if helmBinary != "helm" {
 		// default apps to use helm3 too
 		helmOptions := EditHelmBinOptions{}
