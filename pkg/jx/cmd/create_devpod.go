@@ -297,6 +297,9 @@ func (o *CreateDevPodOptions) Run() error {
 				},
 			},
 		},
+		SecurityContext: &corev1.SecurityContext {
+			RunAsUser: func(i int64) *int64 { return &i }(0),
+		},
 	}
 
 	pod.Spec.Containers = append(pod.Spec.Containers, theiaContainer)
