@@ -1458,7 +1458,7 @@ func (o *CommonOptions) installProw() error {
 	if err != nil {
 		return fmt.Errorf("failed to install knative build: %v", err)
 	}
-	
+
 	return nil
 }
 
