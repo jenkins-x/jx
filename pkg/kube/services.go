@@ -94,6 +94,28 @@ func FindServiceURL(client kubernetes.Interface, namespace string, name string) 
 	return "", nil
 }
 
+func FindServiceHostname(client kubernetes.Interface, namespace string, name string) (string, error) {
+	// lets try find the service via Ingress
+	ing, err := client.ExtensionsV1beta1().Ingresses(namespace).Get(name, meta_v1.GetOptions{})
+	if ing != nil && err == nil {
+		if len(ing.Spec.Rules) > 0 {
+			rule := ing.Spec.Rules[0]
+			hostname := rule.Host
+			for _, tls := range ing.Spec.TLS {
+				for _, h := range tls.Hosts {
+					if h != "" {
+						return h, nil
+					}
+				}
+			}
+			if hostname != "" {
+				return hostname, nil
+			}
+		}
+	}
+	return "", nil
+}
+
 // FindService looks up a service by name across all namespaces
 func FindService(client kubernetes.Interface, name string) (*v1.Service, error) {
 	nsl, err := client.CoreV1().Namespaces().List(meta_v1.ListOptions{})
