@@ -96,6 +96,14 @@
   revision = "15df0648130a623e418886f81b2aaecd0a00547b"
 
 [[projects]]
+  digest = "1:3ccf8ba7afe02fd470c4f07d6eea4d0e6875da3d129f95b925f2003ce5dd2024"
+  name = "github.com/StackExchange/wmi"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "5d049714c4a64225c3c79a7cf7d02f7fb5b96338"
+  version = "1.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:046e66b3a306f92975836c054c6f9511c26fbb828203524f7ab627ac026a1521"
   name = "github.com/alexflint/go-filemutex"
@@ -407,6 +415,17 @@
   version = "v1.38.1"
 
 [[projects]]
+  digest = "1:cb4e216bd9f58866f42dc65893455b24f879b026fdaa1ecc3aafff625fdb5a66"
+  name = "github.com/go-ole/go-ole"
+  packages = [
+    ".",
+    "oleutil",
+  ]
+  pruneopts = "NUT"
+  revision = "a41e3c4b706f6ae8dfbff342b06e40fa4d2d0506"
+  version = "v1.2.1"
+
+[[projects]]
   digest = "1:6a7159c5f8f8826207545407a458b43ab6599c1c8a2271465c2e979ecea1dcd4"
   name = "github.com/gobwas/glob"
   packages = [
@@ -658,7 +677,6 @@
   revision = "07ce09a4c64a2606b7cd2db4a3f45d37fab32367"
   source = "github.com/ccojocar/tail"
 
-[[projects]]
   digest = "1:65300ccc4bcb38b107b868155c303312978981e56bca707c81efec57575b5e06"
   name = "github.com/imdario/mergo"
   packages = ["."]
@@ -1026,6 +1044,29 @@
   pruneopts = "NUT"
   revision = "1744e2970ca51c86172c8190fadad617561ed6e7"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:32e93d87b8a16e5d8268281aa887165d320eec7b57eb5376b5e6e388419abc9e"
+  name = "github.com/shirou/gopsutil"
+  packages = [
+    "cpu",
+    "host",
+    "internal/common",
+    "mem",
+    "net",
+    "process",
+  ]
+  pruneopts = "NUT"
+  revision = "eb1f1ab16f2ef35f23024e10888dfdb5c17fcb92"
+
+[[projects]]
+  branch = "master"
+  digest = "1:869e13958e05ca96407cecebea71a60310256aba8f70244d05a06ce09e3f60ba"
+  name = "github.com/shirou/w32"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "bb4de0191aa41b5507caa14b0650cdbddcd9280b"
 
 [[projects]]
   branch = "master"
@@ -1513,7 +1554,6 @@
   revision = "3bd5e82b2512d85becae9677fa06b5a973fd4cfb"
   version = "v4.5.0"
 
-[[projects]]
   branch = "v1"
   digest = "1:8fb1ccb16a6cfecbfdfeb84d8ea1cc7afa8f9ef16526bc2326f72d993e32cef1"
   name = "gopkg.in/tomb.v1"
@@ -1917,6 +1957,7 @@
     "github.com/pkg/browser",
     "github.com/pkg/errors",
     "github.com/russross/blackfriday",
+    "github.com/shirou/gopsutil/process",
     "github.com/spf13/cobra",
     "github.com/spf13/cobra/doc",
     "github.com/spf13/pflag",

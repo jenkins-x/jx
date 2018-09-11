@@ -42,4 +42,5 @@ type Helmer interface {
 	Lint() (string, error)
 	Version(tls bool) (string, error)
 	SearchCharts(filter string) ([]ChartSummary, error)
+	SetHost(host string)
 }

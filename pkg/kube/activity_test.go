@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -29,17 +29,17 @@ func (m *MockPipelineActivityInterface) Update(p *v1.PipelineActivity) (*v1.Pipe
 	return p, nil
 }
 
-func (m *MockPipelineActivityInterface) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (m *MockPipelineActivityInterface) Delete(name string, options *metav1.DeleteOptions) error {
 	delete(m.Activities, name)
 	return nil
 }
 
-func (m *MockPipelineActivityInterface) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (m *MockPipelineActivityInterface) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	m.Activities = map[string]*v1.PipelineActivity{}
 	return nil
 }
 
-func (m *MockPipelineActivityInterface) Get(name string, options meta_v1.GetOptions) (*v1.PipelineActivity, error) {
+func (m *MockPipelineActivityInterface) Get(name string, options metav1.GetOptions) (*v1.PipelineActivity, error) {
 	a, ok := m.Activities[name]
 	if ok {
 		return a, nil
@@ -47,7 +47,7 @@ func (m *MockPipelineActivityInterface) Get(name string, options meta_v1.GetOpti
 	return nil, fmt.Errorf("No such PipelineActivity %s", name)
 }
 
-func (m *MockPipelineActivityInterface) List(opts meta_v1.ListOptions) (*v1.PipelineActivityList, error) {
+func (m *MockPipelineActivityInterface) List(opts metav1.ListOptions) (*v1.PipelineActivityList, error) {
 	items := []v1.PipelineActivity{}
 	for _, p := range m.Activities {
 		items = append(items, *p)
@@ -57,7 +57,7 @@ func (m *MockPipelineActivityInterface) List(opts meta_v1.ListOptions) (*v1.Pipe
 	}, nil
 }
 
-func (m *MockPipelineActivityInterface) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (m *MockPipelineActivityInterface) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	return nil, fmt.Errorf("TODO")
 }
 
@@ -133,7 +133,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		assert.NotNil(t, a)
 		assert.NotNil(t, p)
 		if p.StartedTimestamp == nil {
-			p.StartedTimestamp = &meta_v1.Time{
+			p.StartedTimestamp = &metav1.Time{
 				Time: time.Now(),
 			}
 		}
@@ -189,4 +189,45 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	assert.Equal(t, v1.ActivityStatusTypeSucceeded, promote.Status, "promote status")
 
 	//tests.Debugf("Has Promote %#v\n", promote)
+}
+
+func TestCreatePipelineDetails(t *testing.T) {
+	expectedGitOwner := "jstrachan"
+	expectedGitRepo := "myapp"
+	expectedBranch := "master"
+	expectedPipeline := expectedGitOwner + "/" + expectedGitRepo + "/" + expectedBranch
+	expectedBuild := "3"
+
+	pipelines := []*v1.PipelineActivity{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "a1",
+			},
+			Spec: v1.PipelineActivitySpec{
+				Pipeline: expectedPipeline,
+				Build:    expectedBuild,
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "a2",
+			},
+			Spec: v1.PipelineActivitySpec{
+				GitOwner:      expectedGitOwner,
+				GitRepository: expectedGitRepo,
+				Build:         expectedBuild,
+			},
+		},
+	}
+	for _, pipeline := range pipelines {
+		d1 := kube.CreatePipelineDetails(pipeline)
+		name := pipeline.Name
+		if assert.NotNil(t, d1, "%s did not create a PipelineDetails", name) {
+			assert.Equal(t, expectedGitOwner, d1.GitOwner, "%s GitOwner", name)
+			assert.Equal(t, expectedGitRepo, d1.GitRepository, "%s GitRepository", name)
+			assert.Equal(t, expectedBranch, d1.BranchName, "%s BranchName", name)
+			assert.Equal(t, expectedPipeline, d1.Pipeline, "%s Pipeline", name)
+			assert.Equal(t, expectedBuild, d1.Build, "%s Build", name)
+		}
+	}
 }

@@ -246,11 +246,15 @@ func (o *CommonOptions) Git() gits.Gitter {
 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
-		helmBinary, err := o.TeamHelmBin()
+		helmBinary, noTiller, err := o.TeamHelmBin()
 		if err != nil {
 			helmBinary = defaultHelmBin
 		}
 		o.helm = helm.NewHelmCLI(helmBinary, helm.V2, "")
+		if noTiller {
+			o.helm.SetHost(o.tillerAddress())
+			o.startLocalTillerIfNotRunning()
+		}
 	}
 	return o.helm
 }

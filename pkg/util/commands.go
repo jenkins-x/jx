@@ -1,12 +1,11 @@
 package util
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
-
-	"io"
 
 	"github.com/cenkalti/backoff"
 	"github.com/pkg/errors"
@@ -23,6 +22,7 @@ type Command struct {
 	Timeout            time.Duration
 	Out                io.Writer
 	Err                io.Writer
+	Env                map[string]string
 }
 
 // SetName Setter method for Name to enable use of interface instead of Command struct
@@ -126,6 +126,24 @@ func (c *Command) run() (string, error) {
 	e := exec.Command(c.Name, c.Args...)
 	if c.Dir != "" {
 		e.Dir = c.Dir
+	}
+	if len(c.Env) > 0 {
+		m := map[string]string{}
+		environ := os.Environ()
+		for _, kv := range environ {
+			paths := strings.SplitN(kv, "=", 2)
+			if len(paths) == 2 {
+				m[paths[0]] = paths[1]
+			}
+		}
+		for k, v := range c.Env {
+			m[k] = v
+		}
+		envVars := []string{}
+		for k, v := range m {
+			envVars = append(envVars, k+"="+v)
+		}
+		e.Env = envVars
 	}
 
 	if c.Out != nil {

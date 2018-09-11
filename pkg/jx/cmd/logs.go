@@ -6,14 +6,12 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/builds"
-	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -142,19 +140,10 @@ func (o *LogsOptions) Run() error {
 	for {
 		pod := ""
 		if o.KNativeBuild {
-			r, err := labels.NewRequirement(builds.LabelBuildName, selection.Exists, nil)
-			if err != nil {
-				return err
-			}
-			selector := labels.NewSelector().Add(*r)
-			pod, err = o.waitForReadyPodForSelector(client, ns, selector, false)
-			if err != nil {
-				return err
-			}
+			pod, err = o.waitForReadyKnativeBuildPod(client, ns, false)
 			if pod == "" {
-				return fmt.Errorf("No pod found for namespace %s with selector %s", ns, o.Label)
+				return fmt.Errorf("No knative build pod found for namespace %s", ns)
 			}
-
 		} else if o.Label != "" {
 			selector, err := parseSelector(o.Label)
 			if err != nil {
@@ -225,6 +214,59 @@ func (o *CommonOptions) waitForReadyPodForSelectorLabels(c kubernetes.Interface,
 		return "", err
 	}
 	return o.waitForReadyPodForSelector(c, ns, selector, readyOnly)
+}
+
+func (o *CommonOptions) waitForReadyKnativeBuildPod(c kubernetes.Interface, ns string, readyOnly bool) (string, error) {
+	log.Warnf("Waiting for a running knative build pod in namespace %s\n", ns)
+	lastPod := ""
+	for {
+		pods, err := builds.GetBuildPods(c, ns)
+		if err != nil {
+			return "", err
+		}
+		name := ""
+		loggedInitContainerIdx := -1
+		var latestPod *corev1.Pod
+		lastTime := time.Time{}
+		for _, pod := range pods {
+			phase := pod.Status.Phase
+			if phase == corev1.PodRunning || phase == corev1.PodPending {
+				if !readyOnly {
+					created := pod.CreationTimestamp
+					if name == "" || created.After(lastTime) {
+						lastTime = created.Time
+						name = pod.Name
+						latestPod = pod
+					}
+				}
+			}
+		}
+		if latestPod != nil && name != "" {
+			if name != lastPod {
+				lastPod = name
+				loggedInitContainerIdx = -1
+				log.Warnf("Found newest pod: %s\n", name)
+			}
+			if kube.IsPodReady(latestPod) {
+				return name, nil
+			}
+
+			initContainers := latestPod.Status.InitContainerStatuses
+			for idx, ic := range initContainers {
+				if isContainerStarted(&ic.State) && idx > loggedInitContainerIdx {
+					loggedInitContainerIdx = idx
+					containerName := ic.Name
+					log.Warnf("Init container on pod: %s is: %s\n", name, containerName)
+					err = o.tailLogs(ns, name, containerName)
+					if err != nil {
+						break
+					}
+				}
+			}
+		}
+		// TODO replace with a watch flavour
+		time.Sleep(time.Second)
+	}
 }
 
 func (o *CommonOptions) waitForReadyPodForSelector(c kubernetes.Interface, ns string, selector labels.Selector, readyOnly bool) (string, error) {

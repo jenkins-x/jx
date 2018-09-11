@@ -27,12 +27,12 @@ type Auth struct {
 
 var (
 	createDockerAuthLong = templates.LongDesc(`
-		Creates/updates an entry for secret in the config.json for a given user, host
+		Creates/updates an entry for secret in the Docker config.json for a given user, host
 `)
 
 	createDockerAuthExample = templates.Examples(`
 		# Create/update docker auth entry in the config.json file
-		jx create auth --host "foo.private.docker.registry" --user "foo" --secret "FooDockerHubToken" --email "fakeemail@gmail.com"
+		jx create docker auth --host "foo.private.docker.registry" --user "foo" --secret "FooDockerHubToken" --email "fakeemail@gmail.com"
 	`)
 )
 

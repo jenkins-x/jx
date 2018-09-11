@@ -64,7 +64,7 @@ func NewCmdGetHelmBin(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 // Run implements this command
 func (o *GetHelmBinOptions) Run() error {
-	helm, err := o.TeamHelmBin()
+	helm, _, err := o.TeamHelmBin()
 	if err != nil {
 		return err
 	}

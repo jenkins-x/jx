@@ -74,7 +74,7 @@ func (o *CloudBeesOptions) Run() error {
 	}
 
 	if url == "" {
-		url, err = kube.GetServiceURLFromName(client, fmt.Sprintf("sso-%s" , kube.ServiceCloudBees), defaultCloudBeesNamespace)
+		url, err = kube.GetServiceURLFromName(client, fmt.Sprintf("sso-%s", kube.ServiceCloudBees), defaultCloudBeesNamespace)
 		if err != nil {
 			return fmt.Errorf("%s\n\nDid you install the CloudBees addon via: %s\n\nFor more information see: %s", err, util.ColorInfo("jx create addon cloudbees"), util.ColorInfo("https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x"))
 		}
