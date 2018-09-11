@@ -84,6 +84,7 @@ func NewCmdGet(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdGetQuickstartLocation(f, out, errOut))
 	cmd.AddCommand(NewCmdGetRelease(f, out, errOut))
 	cmd.AddCommand(NewCmdGetTeam(f, out, errOut))
+	cmd.AddCommand(NewCmdGetTeamRole(f, out, errOut))
 	cmd.AddCommand(NewCmdGetToken(f, out, errOut))
 	cmd.AddCommand(NewCmdGetTracker(f, out, errOut))
 	cmd.AddCommand(NewCmdGetURL(f, out, errOut))
