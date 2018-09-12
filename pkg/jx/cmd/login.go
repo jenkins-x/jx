@@ -16,6 +16,8 @@ import (
 	"github.com/hpcloud/tail"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	jxlog "github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -92,7 +94,15 @@ func (o *LoginOptions) Run() error {
 		return errors.Wrap(err, "loging into the CloudBees application")
 	}
 
-	return kube.UpdateConfig(userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
+	err = kube.UpdateConfig(userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
+	if err != nil {
+		return errors.Wrap(err, "updating the ~/kube/config file")
+	}
+
+	jxlog.Infof("You are %s. You credentials are stored in %s file.\n",
+		util.ColorInfo("successfully logged in"), util.ColorInfo("~/.kube/config"))
+
+	return nil
 }
 
 func (o *LoginOptions) Login() (*UserLoginInfo, error) {
