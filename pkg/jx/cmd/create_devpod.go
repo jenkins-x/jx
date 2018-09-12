@@ -541,6 +541,12 @@ func (o *CreateDevPodOptions) Run() error {
 		if err != nil {
 			return err
 		}
+		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
+		pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
+		pod, err = client.CoreV1().Pods(curNs).Update(pod)
+		if err != nil {
+			return err
+		}
 		log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
 		o.Results.TheaServiceURL = theiaServiceURL
 	}
