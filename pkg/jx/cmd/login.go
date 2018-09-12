@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -87,33 +88,30 @@ func NewCmdLogin(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 }
 
 func (o *LoginOptions) Run() error {
-	cookie, err := o.Login()
+	userLoginInfo, err := o.Login()
 	if err != nil {
 		return errors.Wrap(err, "loging into the CloudBees application")
 	}
-	if cookie == "" {
-		return errors.New("failed to log into the CloudBees application")
-	}
 
-	userLoginInfo, err := o.OnboardUser(cookie)
+	userLoginInfo, err = o.decode(userLoginInfo)
 	if err != nil {
-		return errors.Wrap(err, "onboarding user")
+		return errors.Wrap(err, "decoding user login information")
 	}
 
 	return kube.UpdateConfig(userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
 }
 
-func (o *LoginOptions) Login() (string, error) {
+func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 	url := o.URL
 	if url == "" {
-		return "", errors.New("please povide the URL of the CloudBees application in '--url' option")
+		return nil, errors.New("please povide the URL of the CloudBees application in '--url' option")
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	userDataDir, err := ioutil.TempDir("/tmp", "jx-login-chrome-userdata-dir")
 	if err != nil {
-		return "", errors.Wrap(err, "creating the chrome user data dir")
+		return nil, errors.Wrap(err, "creating the chrome user data dir")
 	}
 	defer os.RemoveAll(userDataDir)
 
@@ -129,41 +127,49 @@ func (o *LoginOptions) Login() (string, error) {
 
 	r, err := runner.New(options)
 	if err != nil {
-		return "", errors.Wrap(err, "creating chrome runner")
+		return nil, errors.Wrap(err, "creating chrome runner")
 	}
 
 	err = r.Start(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "starting chrome")
+		return nil, errors.Wrap(err, "starting chrome")
 	}
 
 	t, err := tail.TailFile(netLogFile, tail.Config{
 		Follow: true,
 		Logger: log.New(ioutil.Discard, "", log.LstdFlags)})
 	if err != nil {
-		return "", errors.Wrap(err, "reading the netlog file")
+		return nil, errors.Wrap(err, "reading the netlog file")
 	}
 	cookie := ""
 	pattern := fmt.Sprintf("%s=", SsoCookieName)
 	for line := range t.Lines {
 		if strings.Contains(line.Text, pattern) {
-			fmt.Println(line.Text)
 			cookie = ExtractSsoCookie(line.Text)
 			break
 		}
 	}
 
+	if cookie == "" {
+		return nil, errors.New("failed to log into the CloudBees application")
+	}
+
+	userLoginInfo, err := o.OnboardUser(cookie)
+	if err != nil {
+		return nil, errors.Wrap(err, "onboarding user")
+	}
+
 	err = r.Shutdown(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "shutting down Chrome")
+		return nil, errors.Wrap(err, "shutting down Chrome")
 	}
 
 	err = r.Wait()
 	if err != nil {
-		return "", errors.Wrap(err, "waiting for Chrome  to exit")
+		return nil, errors.Wrap(err, "waiting for Chrome  to exit")
 	}
 
-	return cookie, nil
+	return userLoginInfo, nil
 }
 
 func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
@@ -184,13 +190,13 @@ func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("user onboarding status code: %d", resp.StatusCode)
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading user onboarding information from response body")
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("user onboarding status code: %d, error: %s", resp.StatusCode, string(body))
 	}
 
 	login := &Login{}
@@ -207,6 +213,15 @@ func (o *LoginOptions) onboardingURL() string {
 		url = strings.TrimPrefix(url, "/")
 	}
 	return url + UserOnboardingEndpoint
+}
+
+func (o *LoginOptions) decode(userLoginInfo *UserLoginInfo) (*UserLoginInfo, error) {
+	ca, err := base64.StdEncoding.DecodeString(userLoginInfo.Ca)
+	if err != nil {
+		return nil, errors.Wrap(err, "decoding server CA certificate")
+	}
+	userLoginInfo.Ca = string(ca)
+	return userLoginInfo, nil
 }
 
 func ExtractSsoCookie(text string) string {
