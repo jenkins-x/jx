@@ -258,13 +258,13 @@ func (o *CreateDevPodOptions) Run() error {
 		container1.VolumeMounts = append(container1.VolumeMounts, workspaceVolumeMount)
 
 		cpuLimit, _ := resource.ParseQuantity("400m")
-		cpuRequest, _ := resource.ParseQuantity( "200m")
+		cpuRequest, _ := resource.ParseQuantity("200m")
 		memoryLimit, _ := resource.ParseQuantity("1Gi")
 		memoryRequest, _ := resource.ParseQuantity("128Mi")
 
 		// Add Theia - note Theia won't work in --sync mode as we can't share a volume
-		theiaContainer := corev1.Container {
-			Name: "theia",
+		theiaContainer := corev1.Container{
+			Name:  "theia",
 			Image: "theiaide/theia-full:latest",
 			Ports: []corev1.ContainerPort{
 				corev1.ContainerPort{
