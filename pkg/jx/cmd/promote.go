@@ -937,6 +937,20 @@ func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipelin
 func (o *CommonOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
 	log.Infof("pipeline %s\n", pipeline)
 	build := ""
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return pipeline, build, err
+	}
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return pipeline, build, err
+	}
+	devEnv, err := kube.GetEnrichedDevEnvironment(kubeClient, jxClient, ns)
+	webhookEngine := devEnv.Spec.WebHookEngine
+	if webhookEngine == v1.WebHookEngineProw {
+		return pipeline, build, nil
+	}
+
 	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return pipeline, build, err
