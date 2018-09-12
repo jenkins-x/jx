@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -64,7 +65,7 @@ type CreateDevPodOptions struct {
 	Sync       bool
 	Ports      []int
 	AutoExpose bool
-	Persist bool
+	Persist    bool
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -109,7 +110,7 @@ func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 // Run implements this command
 func (o *CreateDevPodOptions) Run() error {
 
-	addedServices :=false
+	addedServices := false
 
 	if o.Persist && o.Sync {
 		return errors.New("Cannot specify --persist and --sync")
@@ -215,7 +216,7 @@ func (o *CreateDevPodOptions) Run() error {
 	var workspaceVolume corev1.Volume
 	workspaceClaimName := fmt.Sprintf("%s-pvc", pod.Name)
 	workspaceVolumeMount := corev1.VolumeMount{
-		Name: workspaceVolumeName,
+		Name:      workspaceVolumeName,
 		MountPath: "/workspace",
 	}
 	if o.Persist {
@@ -241,13 +242,13 @@ func (o *CreateDevPodOptions) Run() error {
 		container1.VolumeMounts = append(container1.VolumeMounts, workspaceVolumeMount)
 
 		cpuLimit, _ := resource.ParseQuantity("400m")
-		cpuRequest, _ := resource.ParseQuantity( "200m")
+		cpuRequest, _ := resource.ParseQuantity("200m")
 		memoryLimit, _ := resource.ParseQuantity("256Mi")
 		memoryRequest, _ := resource.ParseQuantity("128Mi")
 
 		// Add Theia - note Theia won't work in --sync mode as we can't share a volume
-		theiaContainer := corev1.Container {
-			Name: "theia",
+		theiaContainer := corev1.Container{
+			Name:  "theia",
 			Image: "theiaide/theia:latest",
 			Ports: []corev1.ContainerPort{
 				corev1.ContainerPort{
@@ -256,7 +257,7 @@ func (o *CreateDevPodOptions) Run() error {
 			},
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
-					"cpu": cpuLimit,
+					"cpu":    cpuLimit,
 					"memory": memoryLimit,
 				},
 				Requests: corev1.ResourceList{
@@ -264,22 +265,22 @@ func (o *CreateDevPodOptions) Run() error {
 					"memory": memoryRequest,
 				},
 			},
-			VolumeMounts: []corev1.VolumeMount {
+			VolumeMounts: []corev1.VolumeMount{
 				workspaceVolumeMount,
 			},
-			LivenessProbe: &corev1.Probe {
+			LivenessProbe: &corev1.Probe{
 				InitialDelaySeconds: 60,
-				PeriodSeconds: 10,
+				PeriodSeconds:       10,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Port: intstr.FromInt(3000),
 					},
 				},
 			},
-			SecurityContext: &corev1.SecurityContext {
+			SecurityContext: &corev1.SecurityContext{
 				RunAsUser: func(i int64) *int64 { return &i }(0),
 			},
-			Command: []string {"yarn", "theia", "start", "/workspace", "--hostname=0.0.0.0"},
+			Command: []string{"yarn", "theia", "start", "/workspace", "--hostname=0.0.0.0"},
 		}
 
 		pod.Spec.Containers = append(pod.Spec.Containers, theiaContainer)
@@ -322,7 +323,7 @@ func (o *CreateDevPodOptions) Run() error {
 		})
 	}
 	// Assign the container the ports provided as input
-	var exposeServicePorts [] int
+	var exposeServicePorts []int
 
 	for _, port := range o.Ports {
 		cp := corev1.ContainerPort{
@@ -372,8 +373,8 @@ func (o *CreateDevPodOptions) Run() error {
 			ann := p.Annotations
 			if ann != nil && ann[kube.AnnotationLocalDir] == dir && p.DeletionTimestamp == nil {
 				create = false
-				name = p.Name
-				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
+				pod = &p
+				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
 				break
 			}
 		}
@@ -389,12 +390,12 @@ func (o *CreateDevPodOptions) Run() error {
 				return fmt.Errorf("Failed to create pod %s", err)
 			}
 		}
-		log.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
+		log.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
 	}
 
 	// Get the pod UID
 	pod, err = client.CoreV1().Pods(curNs).Get(pod.Name, metav1.GetOptions{})
-	if (err != nil) {
+	if err != nil {
 		return err
 	}
 
@@ -404,12 +405,12 @@ func (o *CreateDevPodOptions) Run() error {
 		pvc := corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: workspaceClaimName,
-				OwnerReferences: []metav1.OwnerReference {
+				OwnerReferences: []metav1.OwnerReference{
 					ownerRef(pod),
 				},
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{
-				AccessModes: []corev1.PersistentVolumeAccessMode {
+				AccessModes: []corev1.PersistentVolumeAccessMode{
 					corev1.ReadWriteOnce,
 				},
 				Resources: corev1.ResourceRequirements{
@@ -458,13 +459,14 @@ func (o *CreateDevPodOptions) Run() error {
 				},
 			},
 		}
-		_, err = client.CoreV1().Services(curNs).Create(&service)
-
+		_, err := client.CoreV1().Services(curNs).Get(service.Name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			_, err = client.CoreV1().Services(curNs).Create(&service)
+			if err != nil {
+				return err
+			}
+			addedServices = true
 		}
-
-		addedServices = true
 	}
 
 	theiaServiceName := pod.Name + "-theia"
@@ -509,7 +511,7 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	err = kube.WaitForPodNameToBeReady(client, ns, name, time.Hour)
+	err = kube.WaitForPodNameToBeReady(client, ns, pod.Name, time.Hour)
 	if err != nil {
 		return err
 	}
@@ -519,10 +521,7 @@ func (o *CreateDevPodOptions) Run() error {
 		return err
 	}
 
-
-
-
-	log.Infof("Pod %s is now ready!\n", util.ColorInfo(name))
+	log.Infof("Pod %s is now ready!\n", util.ColorInfo(pod.Name))
 	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod --reuse"))
 
 	if !o.Sync {
@@ -540,11 +539,11 @@ func (o *CreateDevPodOptions) Run() error {
 		syncOptions := &SyncOptions{
 			CommonOptions: o.CommonOptions,
 			Namespace:     ns,
-			Pod:           name,
+			Pod:           pod.Name,
 			Daemon:        true,
 			Dir:           dir,
 		}
-		err = syncOptions.CreateKsync(client, ns, name, dir, workingDir, userName)
+		err = syncOptions.CreateKsync(client, ns, pod.Name, dir, workingDir, userName)
 		if err != nil {
 			return err
 		}
@@ -552,7 +551,7 @@ func (o *CreateDevPodOptions) Run() error {
 	options := &RshOptions{
 		CommonOptions: o.CommonOptions,
 		Namespace:     ns,
-		Pod:           name,
+		Pod:           pod.Name,
 		DevPod:        true,
 	}
 	options.Args = []string{}
@@ -693,7 +692,7 @@ func ownerRef(pod *corev1.Pod) metav1.OwnerReference {
 		APIVersion: "v1",
 		Kind:       "Service",
 		Name:       pod.Name,
-		UID: pod.UID,
+		UID:        pod.UID,
 		Controller: &controller,
 	}
 }
