@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -91,11 +90,6 @@ func (o *LoginOptions) Run() error {
 	userLoginInfo, err := o.Login()
 	if err != nil {
 		return errors.Wrap(err, "loging into the CloudBees application")
-	}
-
-	userLoginInfo, err = o.decode(userLoginInfo)
-	if err != nil {
-		return errors.Wrap(err, "decoding user login information")
 	}
 
 	return kube.UpdateConfig(userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
@@ -213,15 +207,6 @@ func (o *LoginOptions) onboardingURL() string {
 		url = strings.TrimPrefix(url, "/")
 	}
 	return url + UserOnboardingEndpoint
-}
-
-func (o *LoginOptions) decode(userLoginInfo *UserLoginInfo) (*UserLoginInfo, error) {
-	ca, err := base64.StdEncoding.DecodeString(userLoginInfo.Ca)
-	if err != nil {
-		return nil, errors.Wrap(err, "decoding server CA certificate")
-	}
-	userLoginInfo.Ca = string(ca)
-	return userLoginInfo, nil
 }
 
 func ExtractSsoCookie(text string) string {
