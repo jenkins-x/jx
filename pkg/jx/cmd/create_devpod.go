@@ -56,6 +56,7 @@ var (
 type CreateDevPodResults struct {
 	TheaServiceURL string
 	ExposeHost     string
+	PodName        string
 }
 
 // CreateDevPodOptions the options for the create spring command
@@ -74,6 +75,7 @@ type CreateDevPodOptions struct {
 	Persist    bool
 	ImportUrl  string
 	Import     bool
+	ShellCmd   string
 
 	Results CreateDevPodResults
 }
@@ -115,6 +117,7 @@ func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	cmd.Flags().BoolVarP(&options.Persist, "persist", "", false, "Persist changes made to the DevPod. Cannot be used with --sync")
 	cmd.Flags().StringVarP(&options.ImportUrl, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
+	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -199,6 +202,7 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	name = uniquePodName(names, name)
+	o.Results.PodName = name
 
 	pod.Name = name
 	pod.Labels[kube.LabelPodTemplate] = label
@@ -327,7 +331,9 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 	pod.Annotations[kube.AnnotationWorkingDir] = workingDir
-	pod.Annotations[kube.AnnotationLocalDir] = dir
+	if o.Sync {
+		pod.Annotations[kube.AnnotationLocalDir] = dir
+	}
 	container1.Env = append(container1.Env, corev1.EnvVar{
 		Name:  "WORK_DIR",
 		Value: workingDir,
@@ -389,13 +395,16 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 		for _, p := range podsList.Items {
 			ann := p.Annotations
-			if ann != nil && ann[kube.AnnotationLocalDir] == dir && p.DeletionTimestamp == nil {
+			// ann[kube.AnnotationLocalDir] is populated for sync or empty when not syncing
+			//if (ann != nil && ann[kube.AnnotationLocalDir] == dir) || (ann == nil || ann[kube.AnnotationLocalDir] == "") && p.DeletionTimestamp == nil {
+			if (ann != nil && ann[kube.AnnotationLocalDir] == dir) || (ann == nil || ann[kube.AnnotationLocalDir] == "") && p.DeletionTimestamp == nil {
 				create = false
 				pod = &p
 				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
 				break
 			}
 		}
+		log.Infof("Could not find a pod with labels %#v so creating a new pod\n", matchLabels)
 	}
 
 	theiaServiceName := name + "-theia"
@@ -541,6 +550,12 @@ func (o *CreateDevPodOptions) Run() error {
 		if err != nil {
 			return err
 		}
+		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
+		pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
+		pod, err = client.CoreV1().Pods(curNs).Update(pod)
+		if err != nil {
+			return err
+		}
 		log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
 		o.Results.TheaServiceURL = theiaServiceURL
 	}
@@ -603,7 +618,12 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 	}
-	rshExec = append(rshExec, defaultRshCommand)
+	shellCommand := o.ShellCmd
+	if shellCommand == "" {
+		shellCommand = defaultRshCommand
+	}
+
+	rshExec = append(rshExec, shellCommand)
 
 	options := &RshOptions{
 		CommonOptions: o.CommonOptions,
