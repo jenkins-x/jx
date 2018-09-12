@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,6 +16,8 @@ import (
 	"github.com/hpcloud/tail"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	jxlog "github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -93,12 +94,15 @@ func (o *LoginOptions) Run() error {
 		return errors.Wrap(err, "loging into the CloudBees application")
 	}
 
-	userLoginInfo, err = o.decode(userLoginInfo)
+	err = kube.UpdateConfig(userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
 	if err != nil {
-		return errors.Wrap(err, "decoding user login information")
+		return errors.Wrap(err, "updating the ~/kube/config file")
 	}
 
-	return kube.UpdateConfig(userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
+	jxlog.Infof("You are %s. You credentials are stored in %s file.\n",
+		util.ColorInfo("successfully logged in"), util.ColorInfo("~/.kube/config"))
+
+	return nil
 }
 
 func (o *LoginOptions) Login() (*UserLoginInfo, error) {
@@ -213,15 +217,6 @@ func (o *LoginOptions) onboardingURL() string {
 		url = strings.TrimPrefix(url, "/")
 	}
 	return url + UserOnboardingEndpoint
-}
-
-func (o *LoginOptions) decode(userLoginInfo *UserLoginInfo) (*UserLoginInfo, error) {
-	ca, err := base64.StdEncoding.DecodeString(userLoginInfo.Ca)
-	if err != nil {
-		return nil, errors.Wrap(err, "decoding server CA certificate")
-	}
-	userLoginInfo.Ca = string(ca)
-	return userLoginInfo, nil
 }
 
 func ExtractSsoCookie(text string) string {
