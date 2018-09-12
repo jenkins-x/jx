@@ -60,11 +60,11 @@ func (o *GetTeamRoleOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	teams, names, err := kube.GetTeamRoles(kubeClient, ns)
+	teamRoles, names, err := kube.GetTeamRoles(kubeClient, ns)
 	if err != nil {
 		return err
 	}
-	if len(teams) == 0 {
+	if len(teamRoles) == 0 {
 		log.Info(`
 There are no Team roles defined so far!
 `)
@@ -72,9 +72,19 @@ There are no Team roles defined so far!
 	}
 
 	table := o.CreateTable()
-	table.AddRow("NAME")
+	table.AddRow("NAME", "TITLE", "DESCRIPTION")
 	for _, name := range names {
-		table.AddRow(name)
+		title := ""
+		description := ""
+		teamRole := teamRoles[name]
+		if teamRole != nil {
+			ann := teamRole.Annotations
+			if ann != nil {
+				title = ann[kube.AnnotationTitle]
+				description = ann[kube.AnnotationDescription]
+			}
+		}
+		table.AddRow(name, title, description)
 	}
 	table.Render()
 	return nil

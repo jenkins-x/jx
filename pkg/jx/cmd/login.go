@@ -16,6 +16,8 @@ import (
 	"github.com/hpcloud/tail"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	jxlog "github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -87,33 +89,33 @@ func NewCmdLogin(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 }
 
 func (o *LoginOptions) Run() error {
-	cookie, err := o.Login()
+	userLoginInfo, err := o.Login()
 	if err != nil {
 		return errors.Wrap(err, "loging into the CloudBees application")
 	}
-	if cookie == "" {
-		return errors.New("failed to log into the CloudBees application")
-	}
 
-	userLoginInfo, err := o.OnboardUser(cookie)
+	err = kube.UpdateConfig(userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
 	if err != nil {
-		return errors.Wrap(err, "onboarding user")
+		return errors.Wrap(err, "updating the ~/kube/config file")
 	}
 
-	return kube.UpdateConfig(userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
+	jxlog.Infof("You are %s. You credentials are stored in %s file.\n",
+		util.ColorInfo("successfully logged in"), util.ColorInfo("~/.kube/config"))
+
+	return nil
 }
 
-func (o *LoginOptions) Login() (string, error) {
+func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 	url := o.URL
 	if url == "" {
-		return "", errors.New("please povide the URL of the CloudBees application in '--url' option")
+		return nil, errors.New("please povide the URL of the CloudBees application in '--url' option")
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	userDataDir, err := ioutil.TempDir("/tmp", "jx-login-chrome-userdata-dir")
 	if err != nil {
-		return "", errors.Wrap(err, "creating the chrome user data dir")
+		return nil, errors.Wrap(err, "creating the chrome user data dir")
 	}
 	defer os.RemoveAll(userDataDir)
 
@@ -129,41 +131,49 @@ func (o *LoginOptions) Login() (string, error) {
 
 	r, err := runner.New(options)
 	if err != nil {
-		return "", errors.Wrap(err, "creating chrome runner")
+		return nil, errors.Wrap(err, "creating chrome runner")
 	}
 
 	err = r.Start(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "starting chrome")
+		return nil, errors.Wrap(err, "starting chrome")
 	}
 
 	t, err := tail.TailFile(netLogFile, tail.Config{
 		Follow: true,
 		Logger: log.New(ioutil.Discard, "", log.LstdFlags)})
 	if err != nil {
-		return "", errors.Wrap(err, "reading the netlog file")
+		return nil, errors.Wrap(err, "reading the netlog file")
 	}
 	cookie := ""
 	pattern := fmt.Sprintf("%s=", SsoCookieName)
 	for line := range t.Lines {
 		if strings.Contains(line.Text, pattern) {
-			fmt.Println(line.Text)
 			cookie = ExtractSsoCookie(line.Text)
 			break
 		}
 	}
 
+	if cookie == "" {
+		return nil, errors.New("failed to log into the CloudBees application")
+	}
+
+	userLoginInfo, err := o.OnboardUser(cookie)
+	if err != nil {
+		return nil, errors.Wrap(err, "onboarding user")
+	}
+
 	err = r.Shutdown(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "shutting down Chrome")
+		return nil, errors.Wrap(err, "shutting down Chrome")
 	}
 
 	err = r.Wait()
 	if err != nil {
-		return "", errors.Wrap(err, "waiting for Chrome  to exit")
+		return nil, errors.Wrap(err, "waiting for Chrome  to exit")
 	}
 
-	return cookie, nil
+	return userLoginInfo, nil
 }
 
 func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
@@ -184,13 +194,13 @@ func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("user onboarding status code: %d", resp.StatusCode)
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading user onboarding information from response body")
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("user onboarding status code: %d, error: %s", resp.StatusCode, string(body))
 	}
 
 	login := &Login{}
