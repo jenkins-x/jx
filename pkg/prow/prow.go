@@ -108,6 +108,7 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Name = "promotion"
 	ps.Agent = "knative-build"
+	ps.Branches = []string{"master"}
 
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
@@ -133,6 +134,7 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 
 func (o *Options) createPostSubmitMavenApplication() config.Postsubmit {
 	ps := config.Postsubmit{}
+	ps.Branches = []string{"master"}
 	ps.Name = "release"
 	ps.Agent = "knative-build"
 
@@ -177,12 +179,11 @@ func (o *Options) createPostSubmitMavenApplication() config.Postsubmit {
 func (o *Options) createPreSubmitMavenApplication() config.Presubmit {
 	ps := config.Presubmit{}
 
-	ps.Branches = []string{"master"}
 	ps.Context = "jenkins-engine-ci"
 	ps.Name = "jenkins-engine-ci"
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
-	ps.AlwaysRun = true
+	ps.AlwaysRun = false
 	ps.SkipReport = false
 	ps.Agent = "knative-build"
 
