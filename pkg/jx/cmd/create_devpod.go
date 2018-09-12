@@ -251,8 +251,8 @@ func (o *CreateDevPodOptions) Run() error {
 
 		cpuLimit, _ := resource.ParseQuantity("400m")
 		cpuRequest, _ := resource.ParseQuantity( "200m")
-		memoryLimit, _ := resource.ParseQuantity("128Mi")
-		memoryRequest, _ := resource.ParseQuantity("1G")
+		memoryLimit, _ := resource.ParseQuantity("1Gi")
+		memoryRequest, _ := resource.ParseQuantity("128Mi")
 
 		// Add Theia - note Theia won't work in --sync mode as we can't share a volume
 		theiaContainer := corev1.Container {
