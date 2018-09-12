@@ -193,6 +193,28 @@ func (o *CreateEnvOptions) Run() error {
 			gitProvider = p
 		}
 		if o.Prow {
+			config := authConfigSvc.Config()
+			u := gitInfo.HostURL()
+			server := config.GetOrCreateServer(u)
+			if len(server.Users) == 0 {
+				// lets check if the host was used in `~/.jx/gitAuth.yaml` instead of URL
+				s2 := config.GetOrCreateServer(gitInfo.Host)
+				if s2 != nil && len(s2.Users) > 0 {
+					server = s2
+					u = gitInfo.Host
+				}
+			}
+			user, err := config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "")
+			if err != nil {
+				return err
+			}
+			if user.Username == "" {
+				return fmt.Errorf("Could find a username for git server %s", u)
+			}
+			_, err = o.updatePipelineGitCredentialsSecret(server, user)
+			if err != nil {
+				return err
+			}
 			// register the webhook
 			return o.createWebhookProw(gitURL, gitProvider)
 		} else {

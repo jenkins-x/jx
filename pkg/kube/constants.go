@@ -113,6 +113,9 @@ const (
 	// ValueKindCVE an addon auth PipelineEvent
 	ValueKindPipelineEvent = "PipelineEvent"
 
+	// ValueKindEnvironmentRole to indicate a Role which maps to an EnvironmentRoleBinding
+	ValueKindEnvironmentRole = "EnvironmentRole"
+
 	// ValueKindCVE an addon auth PipelineEvent
 	ValueKindRelease = "Release"
 

@@ -39,7 +39,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 	}
 
 	label := make(map[string]string)
-	label["jenkins.io/kind"] = "environmentRole"
+	label[kube.LabelKind] = kube.ValueKindEnvironmentRole
 	roleWithLabel := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      roleNameWithLabel,
