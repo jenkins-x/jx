@@ -143,14 +143,22 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 					Kind:      userKind,
 					Namespace: ns,
 				}
-				envRole.Spec.Subjects = append(envRole.Spec.Subjects, newSubject)
-				if envRole.ResourceVersion == "" {
-					_, err = envRoleInterface.Create(envRole)
+				newEnvRole, err := envRoleInterface.Get(envRole.Name, metav1.GetOptions{})
+				create := false
+				if err != nil {
+					create = true
+					newEnvRole = envRole
+				} else {
+					newEnvRole.Spec = envRole.Spec
+				}
+				newEnvRole.Spec.Subjects = append(newEnvRole.Spec.Subjects, newSubject)
+				if create {
+					_, err = envRoleInterface.Create(newEnvRole)
 					if err != nil {
 						return errors.Wrapf(err, "Failed to create EnvironmentRoleBinding %s with Subject User %s kind %s: %s", name, userName, userKind, err)
 					}
 				} else {
-					_, err = envRoleInterface.Update(envRole)
+					_, err = envRoleInterface.Update(newEnvRole)
 					if err != nil {
 						return errors.Wrapf(err, "Failed to add User %s kind %s as a Subject of EnvironmentRoleBinding %s: %s", userName, userKind, name, err)
 					}
