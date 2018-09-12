@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -16,6 +17,8 @@ import (
 
 type ContextOptions struct {
 	CommonOptions
+
+	Filter string
 }
 
 var (
@@ -56,6 +59,7 @@ func NewCmdContext(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 			CheckErr(err)
 		},
 	}
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filter the list of contexts to switch between using the given text")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -73,7 +77,9 @@ func (o *ContextOptions) Run() error {
 	contextNames := []string{}
 	for k, v := range config.Contexts {
 		if k != "" && v != nil {
-			contextNames = append(contextNames, k)
+			if o.Filter == "" || strings.Index(k, o.Filter) >= 0 {
+				contextNames = append(contextNames, k)
+			}
 		}
 	}
 	sort.Strings(contextNames)
@@ -107,7 +113,7 @@ func (o *ContextOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to update the kube config %s", err)
 		}
-		fmt.Fprintf(o.Out, "Now using namespace '%s' on server '%s'.\n", info(ctx.Namespace), info(kube.Server(config, ctx)))
+		fmt.Fprintf(o.Out, "Now using namespace '%s' from context named '%s' on server '%s'.\n", info(ctx.Namespace), info(newConfig.CurrentContext), info(kube.Server(config, ctx)))
 	} else {
 		ns := kube.CurrentNamespace(config)
 		server := kube.CurrentServer(config)
