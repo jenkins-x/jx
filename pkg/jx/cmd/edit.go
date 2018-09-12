@@ -49,12 +49,13 @@ func NewCmdEdit(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		SuggestFor: []string{"list", "ps"},
 	}
 
-	cmd.AddCommand(NewCmdEditAddon(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateBranchPattern(f, out, errOut))
+	cmd.AddCommand(NewCmdEditAddon(f, out, errOut))
 	cmd.AddCommand(NewCmdEditBuildpack(f, out, errOut))
 	cmd.AddCommand(NewCmdEditConfig(f, out, errOut))
 	cmd.AddCommand(NewCmdEditEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdEditHelmBin(f, out, errOut))
+	cmd.AddCommand(NewCmdEditUserRole(f, out, errOut))
 	return cmd
 }
 

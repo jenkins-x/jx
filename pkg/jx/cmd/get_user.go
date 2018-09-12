@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -80,12 +81,18 @@ There are no Users yet. Try create one via: jx create user
 	}
 
 	table := o.CreateTable()
-	table.AddRow("LOGIN", "NAME", "EMAIL", "URL")
+	table.AddRow("LOGIN", "NAME", "EMAIL", "URL", "ROLES")
 	for _, name := range names {
 		user := users[name]
 		if user != nil {
 			spec := &user.Spec
-			table.AddRow(user.Name, spec.Name, spec.Email, spec.URL)
+			userKind := user.SubjectKind()
+			userName := user.Name
+			roleNames, err := kube.GetUserRoles(jxClient, ns, userKind, userName)
+			if err != nil {
+				log.Warnf("Failed to find User roles in namespace %s for User %s kind %s: %s\n", ns, userName, userKind, err)
+			}
+			table.AddRow(userName, spec.Name, spec.Email, spec.URL, strings.Join(roleNames, ", "))
 		}
 	}
 	table.Render()

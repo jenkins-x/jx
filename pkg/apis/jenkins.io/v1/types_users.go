@@ -44,3 +44,11 @@ type UserDetails struct {
 	ServiceAccount    string       `json:"serviceAccount,omitempty"  protobuf:"bytes,7,opt,name=serviceAccount"`
 	SlackUser         string       `json:"slackUser,omitempty"  protobuf:"bytes,8,opt,name=slackUser"`
 }
+
+// UserKind returns the subject kind of user - either "User" or "ServiceAccount"
+func (u *User) SubjectKind() string {
+	if u.Spec.ServiceAccount != "" {
+		return "ServiceAccount"
+	}
+	return "User"
+}
