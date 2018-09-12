@@ -54,6 +54,7 @@ func NewCmdStepHelm(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 	cmd.AddCommand(NewCmdStepHelmApply(f, out, errOut))
 	cmd.AddCommand(NewCmdStepHelmBuild(f, out, errOut))
+	cmd.AddCommand(NewCmdStepHelmEnv(f, out, errOut))
 	cmd.AddCommand(NewCmdStepHelmRelease(f, out, errOut))
 	return cmd
 }

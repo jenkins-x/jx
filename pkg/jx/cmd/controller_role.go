@@ -35,8 +35,6 @@ type ControllerRoleFlags struct {
 }
 
 const blankSting = ""
-const labelKey = "jenkins.io/kind"
-const labelValue = "environmentRole"
 
 var (
 	controllerRoleLong = templates.LongDesc(`
@@ -419,7 +417,7 @@ func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string, jxClient versio
 	foundRole := 0
 	for _, roleValue := range o.Roles {
 		for labelK, labelV := range roleValue.Labels {
-			if util.StringMatchesPattern(labelK, labelKey) && util.StringMatchesPattern(labelV, labelValue) {
+			if util.StringMatchesPattern(labelK, kube.LabelKind) && util.StringMatchesPattern(labelV, kube.ValueKindEnvironmentRole) {
 				for _, envRoleValue := range o.EnvRoleBindings {
 					if util.StringMatchesPattern(strings.Trim(roleValue.GetName(), blankSting), strings.Trim(envRoleValue.Spec.RoleRef.Name, blankSting)) {
 						foundRole = 1
@@ -430,7 +428,7 @@ func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string, jxClient versio
 					log.Infof("Environment binding doesn't exist for role %s , creating it.\n", util.ColorInfo(roleValue.GetName()))
 					newSubject := rbacv1.Subject{
 						Name:      roleValue.GetName(),
-						Kind:      labelValue,
+						Kind:      kube.ValueKindEnvironmentRole,
 						Namespace: ns,
 					}
 					newEnvRoleBinding := &v1.EnvironmentRoleBinding{

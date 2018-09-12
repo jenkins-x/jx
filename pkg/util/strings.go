@@ -128,3 +128,22 @@ func RandStringBytesMaskImprSrc(n int) (string, error) {
 
 	return hex.EncodeToString(b)[:n], nil
 }
+
+// DiffSlices compares the two slices and returns an array of items to delete from the old slice and a slice of
+// new values to add to
+func DiffSlices(oldSlice []string, newSlice []string) ([]string, []string) {
+	toDelete := []string{}
+	toInsert := []string{}
+
+	for _, name := range oldSlice {
+		if StringArrayIndex(newSlice, name) < 0 {
+			toDelete = append(toInsert, name)
+		}
+	}
+	for _, name := range newSlice {
+		if StringArrayIndex(oldSlice, name) < 0 {
+			toInsert = append(toInsert, name)
+		}
+	}
+	return toDelete, toInsert
+}
