@@ -92,6 +92,12 @@ const (
 
 	DefaultOrganisationGitRepoURL = "https://github.com/jenkins-x/default-organisation.git"
 
+	// AnnotationTitle the human readable name of a resource which can include mixed case, spaces and punctuation
+	AnnotationTitle = "title"
+
+	// AnnotationDescription the tooltip / texual description of an resource
+	AnnotationDescription = "description"
+
 	// LabelKind to indicate the kind of auth, such as Git or Issue
 	LabelKind = "jenkins.io/kind"
 
