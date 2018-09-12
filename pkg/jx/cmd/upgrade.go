@@ -51,6 +51,7 @@ func NewCmdUpgrade(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdUpgradeCLI(f, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeBinaries(f, out, errOut))
 	cmd.AddCommand(NewCmdUpgradeCluster(f, out, errOut))
 	cmd.AddCommand(NewCmdUpgradeIngress(f, out, errOut))
 	cmd.AddCommand(NewCmdUpgradePlatform(f, out, errOut))
