@@ -52,6 +52,12 @@ var (
 	`)
 )
 
+// CreateDevPodResults the results of running the command
+type CreateDevPodResults struct {
+	TheaServiceURL string
+	ExposeHost     string
+}
+
 // CreateDevPodOptions the options for the create spring command
 type CreateDevPodOptions struct {
 	CreateOptions
@@ -68,6 +74,8 @@ type CreateDevPodOptions struct {
 	Persist    bool
 	ImportUrl  string
 	Import     bool
+
+	Results CreateDevPodResults
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -250,13 +258,13 @@ func (o *CreateDevPodOptions) Run() error {
 		container1.VolumeMounts = append(container1.VolumeMounts, workspaceVolumeMount)
 
 		cpuLimit, _ := resource.ParseQuantity("400m")
-		cpuRequest, _ := resource.ParseQuantity( "200m")
+		cpuRequest, _ := resource.ParseQuantity("200m")
 		memoryLimit, _ := resource.ParseQuantity("1Gi")
 		memoryRequest, _ := resource.ParseQuantity("128Mi")
 
 		// Add Theia - note Theia won't work in --sync mode as we can't share a volume
-		theiaContainer := corev1.Container {
-			Name: "theia",
+		theiaContainer := corev1.Container{
+			Name:  "theia",
 			Image: "theiaide/theia-full:latest",
 			Ports: []corev1.ContainerPort{
 				corev1.ContainerPort{
@@ -406,7 +414,7 @@ func (o *CreateDevPodOptions) Run() error {
 
 		// Get the pod UID
 		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
-		if (err != nil) {
+		if err != nil {
 			return err
 		}
 
@@ -533,7 +541,14 @@ func (o *CreateDevPodOptions) Run() error {
 		if err != nil {
 			return err
 		}
+		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
+		pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
+		pod, err = client.CoreV1().Pods(curNs).Update(pod)
+		if err != nil {
+			return err
+		}
 		log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
+		o.Results.TheaServiceURL = theiaServiceURL
 	}
 
 	exposePortsServiceHost, err := kube.FindServiceHostname(client, curNs, name)
@@ -541,11 +556,12 @@ func (o *CreateDevPodOptions) Run() error {
 		return err
 	}
 	if exposePortsServiceHost != "" {
-		exposePortsService, err := client.CoreV1().Services(curNs).Get(name, metav1.GetOptions{ })
+		exposePortsService, err := client.CoreV1().Services(curNs).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 		log.Infof("Ports %v are open on host %s\n", util.ColorInfo(exposePortsService.Spec.Ports), util.ColorInfo(exposePortsServiceHost))
+		o.Results.ExposeHost = exposePortsServiceHost
 	}
 
 	if o.Sync {
@@ -587,7 +603,7 @@ func (o *CreateDevPodOptions) Run() error {
 				importUrl = o.ImportUrl
 			}
 			if importUrl != "" {
-				dir :=regexp.MustCompile(`(?m)^.*/(.*)\.git$`).FindStringSubmatch(importUrl)[1]
+				dir := regexp.MustCompile(`(?m)^.*/(.*)\.git$`).FindStringSubmatch(importUrl)[1]
 				rshExec = append(rshExec, fmt.Sprintf("if ! [ -d \"%s\" ]; then git clone %s; fi", dir, importUrl))
 				rshExec = append(rshExec, fmt.Sprintf("cd %s", dir))
 			}

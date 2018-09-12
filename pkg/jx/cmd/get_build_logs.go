@@ -260,17 +260,21 @@ type BuildParams struct {
 
 // DefaultValuesFromEnvVars defaults values from the environment variables
 func (p *BuildParams) DefaultValuesFromEnvVars(envVars []corev1.EnvVar) {
-	for _, env := range envVars {
-		value := env.Value
-		switch env.Name {
-		case "BRANCH_NAME":
-			p.BranchName = value
-		case "REPO_NAME":
-			p.GitRepository = value
-		case "REPO_OWNER":
-			p.GitOwner = value
-		case "JX_BUILD_NUMBER", "BUILD_NUMBER", "BUILD_ID":
-			p.BuildNumber = value
+	for _, buildNumberKey := range []string{"JX_BUILD_NUMBER", "BUILD_NUMBER", "BUILD_ID"} {
+		for _, env := range envVars {
+			value := env.Value
+			switch env.Name {
+			case "BRANCH_NAME":
+				p.BranchName = value
+			case "REPO_NAME":
+				p.GitRepository = value
+			case "REPO_OWNER":
+				p.GitOwner = value
+			case buildNumberKey:
+				if p.BuildNumber == "" {
+					p.BuildNumber = value
+				}
+			}
 		}
 	}
 }
