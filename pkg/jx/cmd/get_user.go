@@ -64,6 +64,10 @@ func (o *GetUserOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	err = o.registerEnvironmentRoleBindingCRD()
+	if err != nil {
+		return err
+	}
 	jxClient, ns, err := o.JXClientAndAdminNamespace()
 	if err != nil {
 		return err
