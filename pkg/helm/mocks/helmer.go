@@ -62,6 +62,21 @@ func (mock *MockHelmer) DeleteRelease(_param0 string, _param1 bool) error {
 	return ret0
 }
 
+func (mock *MockHelmer) Env() map[string]string {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockHelmer().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("Env", params, []reflect.Type{reflect.TypeOf((*map[string]string)(nil)).Elem()})
+	var ret0 map[string]string
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(map[string]string)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockHelmer) FindChart() (string, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockHelmer().")
@@ -301,6 +316,14 @@ func (mock *MockHelmer) SetHelmBinary(_param0 string) {
 	pegomock.GetGenericMockFrom(mock).Invoke("SetHelmBinary", params, []reflect.Type{})
 }
 
+func (mock *MockHelmer) SetHost(_param0 string) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockHelmer().")
+	}
+	params := []pegomock.Param{_param0}
+	pegomock.GetGenericMockFrom(mock).Invoke("SetHost", params, []reflect.Type{})
+}
+
 func (mock *MockHelmer) StatusRelease(_param0 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockHelmer().")
@@ -479,6 +502,23 @@ func (c *Helmer_DeleteRelease_OngoingVerification) GetAllCapturedArguments() (_p
 		}
 	}
 	return
+}
+
+func (verifier *VerifierHelmer) Env() *Helmer_Env_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Env", params)
+	return &Helmer_Env_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Helmer_Env_OngoingVerification struct {
+	mock              *MockHelmer
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Helmer_Env_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *Helmer_Env_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierHelmer) FindChart() *Helmer_FindChart_OngoingVerification {
@@ -842,6 +882,33 @@ func (c *Helmer_SetHelmBinary_OngoingVerification) GetCapturedArguments() string
 }
 
 func (c *Helmer_SetHelmBinary_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierHelmer) SetHost(_param0 string) *Helmer_SetHost_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetHost", params)
+	return &Helmer_SetHost_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Helmer_SetHost_OngoingVerification struct {
+	mock              *MockHelmer
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Helmer_SetHost_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Helmer_SetHost_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
