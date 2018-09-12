@@ -66,6 +66,8 @@ type CreateDevPodOptions struct {
 	Ports      []int
 	AutoExpose bool
 	Persist    bool
+	ImportUrl  string
+	Import     bool
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -98,11 +100,13 @@ func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	cmd.Flags().StringVarP(&options.Suffix, "suffix", "s", "", "The suffix to append the pod name")
 	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the dev pod")
 	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1", "The request CPU of the dev pod")
-	cmd.Flags().BoolVarP(&options.Reuse, "reuse", "", false, "Reuse and existing DevPod for this folder and label if one exists")
+	cmd.Flags().BoolVarP(&options.Reuse, "reuse", "", true, "Reuse an existing DevPod if a suitable one exists. The DevPod will be selected based on the label (or current working directory)")
 	cmd.Flags().BoolVarP(&options.Sync, "sync", "", false, "Also synchronise the local file system into the DevPod")
 	cmd.Flags().IntSliceVarP(&options.Ports, "ports", "p", []int{}, "Container ports exposed by the DevPod")
 	cmd.Flags().BoolVarP(&options.AutoExpose, "auto-expose", "", true, "Automatically expose useful ports as services such as the debug port, as well as any ports specified using --ports")
-	cmd.Flags().BoolVarP(&options.Persist, "persist", "", false, "Persist changes made to the devpod. Cannot be used with --sync")
+	cmd.Flags().BoolVarP(&options.Persist, "persist", "", false, "Persist changes made to the DevPod. Cannot be used with --sync")
+	cmd.Flags().StringVarP(&options.ImportUrl, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
+	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -114,6 +118,10 @@ func (o *CreateDevPodOptions) Run() error {
 
 	if o.Persist && o.Sync {
 		return errors.New("Cannot specify --persist and --sync")
+	}
+
+	if o.ImportUrl != "" && o.Sync {
+		return errors.New("Cannot specify --import-url && --sync")
 	}
 
 	client, curNs, err := o.KubeClient()
@@ -242,14 +250,14 @@ func (o *CreateDevPodOptions) Run() error {
 		container1.VolumeMounts = append(container1.VolumeMounts, workspaceVolumeMount)
 
 		cpuLimit, _ := resource.ParseQuantity("400m")
-		cpuRequest, _ := resource.ParseQuantity("200m")
-		memoryLimit, _ := resource.ParseQuantity("256Mi")
-		memoryRequest, _ := resource.ParseQuantity("128Mi")
+		cpuRequest, _ := resource.ParseQuantity( "200m")
+		memoryLimit, _ := resource.ParseQuantity("128Mi")
+		memoryRequest, _ := resource.ParseQuantity("1G")
 
 		// Add Theia - note Theia won't work in --sync mode as we can't share a volume
-		theiaContainer := corev1.Container{
-			Name:  "theia",
-			Image: "theiaide/theia:latest",
+		theiaContainer := corev1.Container {
+			Name: "theia",
+			Image: "theiaide/theia-full:latest",
 			Ports: []corev1.ContainerPort{
 				corev1.ContainerPort{
 					ContainerPort: 3000,
@@ -299,12 +307,14 @@ func (o *CreateDevPodOptions) Run() error {
 	if workingDir == "" {
 		workingDir = "/workspace"
 
-		// lets check for gopath stuff
-		gopath := os.Getenv("GOPATH")
-		if gopath != "" {
-			rel, err := filepath.Rel(gopath, dir)
-			if err == nil && rel != "" {
-				workingDir = filepath.Join(devPodGoPath, rel)
+		if o.Sync {
+			// lets check for gopath stuff if we are in --sync mode so that we sync into gopath
+			gopath := os.Getenv("GOPATH")
+			if gopath != "" {
+				rel, err := filepath.Rel(gopath, dir)
+				if err == nil && rel != "" {
+					workingDir = filepath.Join(devPodGoPath, rel)
+				}
 			}
 		}
 	}
@@ -380,6 +390,7 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
+	theiaServiceName := name + "-theia"
 	if create {
 		log.Infof("Creating a dev pod of label: %s\n", util.ColorInfo(label))
 		_, err = podResources.Create(pod)
@@ -390,149 +401,151 @@ func (o *CreateDevPodOptions) Run() error {
 				return fmt.Errorf("Failed to create pod %s", err)
 			}
 		}
-		log.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
-	}
 
-	// Get the pod UID
-	pod, err = client.CoreV1().Pods(curNs).Get(pod.Name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
+		log.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
 
-	// Create PVC if needed
-	if o.Persist {
-		storageRequest, _ := resource.ParseQuantity("2Gi")
-		pvc := corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: workspaceClaimName,
-				OwnerReferences: []metav1.OwnerReference{
-					ownerRef(pod),
-				},
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				AccessModes: []corev1.PersistentVolumeAccessMode{
-					corev1.ReadWriteOnce,
-				},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						"storage": storageRequest,
-					},
-				},
-			},
-		}
-		_, err = client.CoreV1().PersistentVolumeClaims(curNs).Create(&pvc)
-
-		if err != nil {
+		// Get the pod UID
+		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
+		if (err != nil) {
 			return err
 		}
-	}
 
-	// Create services
+		// Create PVC if needed
+		if o.Persist {
+			storageRequest, _ := resource.ParseQuantity("2Gi")
+			pvc := corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: workspaceClaimName,
+					OwnerReferences: []metav1.OwnerReference{
+						ownerRef(pod),
+					},
+				},
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{
+						corev1.ReadWriteOnce,
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							"storage": storageRequest,
+						},
+					},
+				},
+			}
+			_, err = client.CoreV1().PersistentVolumeClaims(curNs).Create(&pvc)
 
-	// Create a service for every port we expose
-
-	if len(exposeServicePorts) > 0 {
-		var servicePorts []corev1.ServicePort
-		for _, port := range exposeServicePorts {
-			portName := fmt.Sprintf("%s-%d", pod.Name, port)
-			servicePorts = append(servicePorts, corev1.ServicePort{
-				Name:       portName,
-				Port:       int32(port),
-				TargetPort: intstr.FromInt(port),
-			})
+			if err != nil {
+				return err
+			}
 		}
 
-		service := corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					"fabric8.io/expose": "true",
+		// Create services
+
+		// Create a service for every port we expose
+
+		if len(exposeServicePorts) > 0 {
+			var servicePorts []corev1.ServicePort
+			for _, port := range exposeServicePorts {
+				portName := fmt.Sprintf("%s-%d", pod.Name, port)
+				servicePorts = append(servicePorts, corev1.ServicePort{
+					Name:       portName,
+					Port:       int32(port),
+					TargetPort: intstr.FromInt(port),
+				})
+			}
+
+			service := corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"fabric8.io/expose": "true",
+					},
+					Name: pod.Name,
+					OwnerReferences: []metav1.OwnerReference{
+						ownerRef(pod),
+					},
 				},
-				Name: pod.Name,
-				OwnerReferences: []metav1.OwnerReference{
-					ownerRef(pod),
+				Spec: corev1.ServiceSpec{
+					Ports: servicePorts,
+					Selector: map[string]string{
+						"jenkins.io/devpod": pod.Name,
+					},
 				},
-			},
-			Spec: corev1.ServiceSpec{
-				Ports: servicePorts,
-				Selector: map[string]string{
-					"jenkins.io/devpod": pod.Name,
-				},
-			},
-		}
-		_, err := client.CoreV1().Services(curNs).Get(service.Name, metav1.GetOptions{})
-		if err != nil {
+			}
 			_, err = client.CoreV1().Services(curNs).Create(&service)
+
 			if err != nil {
 				return err
 			}
 			addedServices = true
 		}
-	}
+		if !o.Sync {
 
-	theiaServiceName := pod.Name + "-theia"
-	if !o.Sync {
-
-		// Create a service for theia
-		theiaService := corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					"fabric8.io/expose": "true",
-				},
-				Name: theiaServiceName,
-				OwnerReferences: []metav1.OwnerReference{
-					ownerRef(pod),
-				},
-			},
-			Spec: corev1.ServiceSpec{
-				Ports: []corev1.ServicePort{
-					corev1.ServicePort{
-						Name:       theiaServiceName,
-						Port:       80,
-						TargetPort: intstr.FromInt(3000),
+			// Create a service for theia
+			theiaService := corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"fabric8.io/expose": "true",
+					},
+					Name: theiaServiceName,
+					OwnerReferences: []metav1.OwnerReference{
+						ownerRef(pod),
 					},
 				},
-				Selector: map[string]string{
-					"jenkins.io/devpod": pod.Name,
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						corev1.ServicePort{
+							Name:       theiaServiceName,
+							Port:       80,
+							TargetPort: intstr.FromInt(3000),
+						},
+					},
+					Selector: map[string]string{
+						"jenkins.io/devpod": pod.Name,
+					},
 				},
-			},
+			}
+			_, err = client.CoreV1().Services(curNs).Create(&theiaService)
+			if err != nil {
+				return err
+			}
+			addedServices = true
 		}
-		_, err = client.CoreV1().Services(curNs).Create(&theiaService)
+
+		if addedServices {
+			err = o.updateExposeController(client, ns, ns)
+
+			if err != nil {
+				return err
+			}
+		}
+
+		err = kube.WaitForPodNameToBeReady(client, ns, name, time.Hour)
 		if err != nil {
 			return err
 		}
-		addedServices = true
-	}
 
-	if addedServices {
-		err = o.updateExposeController(client, ns, ns)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	err = kube.WaitForPodNameToBeReady(client, ns, pod.Name, time.Hour)
-	if err != nil {
-		return err
-	}
-
-	exposePortsServiceHost, err := kube.FindServiceHostname(client, curNs, pod.Name)
-	if err != nil {
-		return err
 	}
 
 	log.Infof("Pod %s is now ready!\n", util.ColorInfo(pod.Name))
 	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod --reuse"))
 
-	if !o.Sync {
-		theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
+	theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
+	if theiaServiceURL != "" {
 		if err != nil {
 			return err
 		}
 		log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
 	}
-	if len(exposeServicePorts) > 0 {
-		log.Infof("Ports %v are open on host %s\n", exposeServicePorts, util.ColorInfo(exposePortsServiceHost))
+
+	exposePortsServiceHost, err := kube.FindServiceHostname(client, curNs, name)
+	if err != nil {
+		return err
+	}
+	if exposePortsServiceHost != "" {
+		exposePortsService, err := client.CoreV1().Services(curNs).Get(name, metav1.GetOptions{ })
+		if err != nil {
+			return err
+		}
+		log.Infof("Ports %v are open on host %s\n", util.ColorInfo(exposePortsService.Spec.Ports), util.ColorInfo(exposePortsServiceHost))
 	}
 
 	if o.Sync {
@@ -548,11 +561,46 @@ func (o *CreateDevPodOptions) Run() error {
 			return err
 		}
 	}
+
+	var rshExec []string
+	if create {
+		//  Let install bash-completion to make life better
+		log.Infof("Installing Bash Completion into DevPod\n")
+		rshExec = append(rshExec, "yum install -q -y bash-completion bash-completion-extra")
+	}
+	if !o.Sync {
+		// Try to clone the right git repo into the DevPod
+
+		// First configure git credentials
+		rshExec = append(rshExec, "jx step git credentials", "git config --global credential.helper store")
+
+		// We only honor --import if --sync is not specified
+		if o.Import {
+			var importUrl string
+			if o.ImportUrl == "" {
+				gitInfo, err := o.FindGitInfo(dir)
+				if err != nil {
+					return err
+				}
+				importUrl = gitInfo.HttpCloneURL()
+			} else {
+				importUrl = o.ImportUrl
+			}
+			if importUrl != "" {
+				dir :=regexp.MustCompile(`(?m)^.*/(.*)\.git$`).FindStringSubmatch(importUrl)[1]
+				rshExec = append(rshExec, fmt.Sprintf("if ! [ -d \"%s\" ]; then git clone %s; fi", dir, importUrl))
+				rshExec = append(rshExec, fmt.Sprintf("cd %s", dir))
+			}
+		}
+	}
+	rshExec = append(rshExec, defaultRshCommand)
+
 	options := &RshOptions{
 		CommonOptions: o.CommonOptions,
 		Namespace:     ns,
 		Pod:           pod.Name,
 		DevPod:        true,
+		ExecCmd:       strings.Join(rshExec, " && "),
 	}
 	options.Args = []string{}
 	return options.Run()
