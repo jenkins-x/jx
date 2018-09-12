@@ -52,6 +52,12 @@ var (
 	`)
 )
 
+// CreateDevPodResults the results of running the command
+type CreateDevPodResults struct {
+	TheaServiceURL string
+	ExposeHost     string
+}
+
 // CreateDevPodOptions the options for the create spring command
 type CreateDevPodOptions struct {
 	CreateOptions
@@ -68,6 +74,8 @@ type CreateDevPodOptions struct {
 	Persist    bool
 	ImportUrl  string
 	Import     bool
+
+	Results CreateDevPodResults
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
@@ -406,7 +414,7 @@ func (o *CreateDevPodOptions) Run() error {
 
 		// Get the pod UID
 		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
-		if (err != nil) {
+		if err != nil {
 			return err
 		}
 
@@ -534,6 +542,7 @@ func (o *CreateDevPodOptions) Run() error {
 			return err
 		}
 		log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
+		o.Results.TheaServiceURL = theiaServiceURL
 	}
 
 	exposePortsServiceHost, err := kube.FindServiceHostname(client, curNs, name)
@@ -541,11 +550,12 @@ func (o *CreateDevPodOptions) Run() error {
 		return err
 	}
 	if exposePortsServiceHost != "" {
-		exposePortsService, err := client.CoreV1().Services(curNs).Get(name, metav1.GetOptions{ })
+		exposePortsService, err := client.CoreV1().Services(curNs).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 		log.Infof("Ports %v are open on host %s\n", util.ColorInfo(exposePortsService.Spec.Ports), util.ColorInfo(exposePortsServiceHost))
+		o.Results.ExposeHost = exposePortsServiceHost
 	}
 
 	if o.Sync {
@@ -587,7 +597,7 @@ func (o *CreateDevPodOptions) Run() error {
 				importUrl = o.ImportUrl
 			}
 			if importUrl != "" {
-				dir :=regexp.MustCompile(`(?m)^.*/(.*)\.git$`).FindStringSubmatch(importUrl)[1]
+				dir := regexp.MustCompile(`(?m)^.*/(.*)\.git$`).FindStringSubmatch(importUrl)[1]
 				rshExec = append(rshExec, fmt.Sprintf("if ! [ -d \"%s\" ]; then git clone %s; fi", dir, importUrl))
 				rshExec = append(rshExec, fmt.Sprintf("cd %s", dir))
 			}
