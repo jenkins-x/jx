@@ -331,7 +331,9 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 	pod.Annotations[kube.AnnotationWorkingDir] = workingDir
-	pod.Annotations[kube.AnnotationLocalDir] = dir
+	if o.Sync {
+		pod.Annotations[kube.AnnotationLocalDir] = dir
+	}
 	container1.Env = append(container1.Env, corev1.EnvVar{
 		Name:  "WORK_DIR",
 		Value: workingDir,
@@ -393,13 +395,16 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 		for _, p := range podsList.Items {
 			ann := p.Annotations
-			if ann != nil && ann[kube.AnnotationLocalDir] == dir && p.DeletionTimestamp == nil {
+			// ann[kube.AnnotationLocalDir] is populated for sync or empty when not syncing
+			//if (ann != nil && ann[kube.AnnotationLocalDir] == dir) || (ann == nil || ann[kube.AnnotationLocalDir] == "") && p.DeletionTimestamp == nil {
+			if (ann != nil && ann[kube.AnnotationLocalDir] == dir) || (ann == nil || ann[kube.AnnotationLocalDir] == "") && p.DeletionTimestamp == nil {
 				create = false
 				pod = &p
 				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
 				break
 			}
 		}
+		log.Infof("Could not find a pod with labels %#v so creating a new pod\n", matchLabels)
 	}
 
 	theiaServiceName := name + "-theia"
