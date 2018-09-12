@@ -61,13 +61,19 @@ func TestServiceLinking(t *testing.T) {
 		nil,
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, ""))
-
+	serviceListFromNsBeforeStepLink, _ := o.KubeClientCached.CoreV1().Services(fromNs).List(metav1.ListOptions{})
+	assert.EqualValues(t, len(serviceListFromNsBeforeStepLink.Items), 2)
+	serviceListToNsBeforeStepLink, _ := o.KubeClientCached.CoreV1().Services(toNs).List(metav1.ListOptions{})
+	assert.EqualValues(t, len(serviceListToNsBeforeStepLink.Items), 1)
 	err := o.Run()
 	serviceList, _ := o.KubeClientCached.CoreV1().Services(toNs).List(metav1.ListOptions{})
 	serviceNames := []string{""}
 	for _, service := range serviceList.Items {
 		serviceNames = append(serviceNames, service.Name)
 	}
+	serviceListToNsAfterStepLink, _ := o.KubeClientCached.CoreV1().Services(toNs).List(metav1.ListOptions{})
+	assert.EqualValues(t, len(serviceListToNsAfterStepLink.Items), 2)
+
 	assert.Contains(t, serviceNames, serviceNameInFromNs) //Check if service that was in include list got added
 	assert.EqualValues(t, len(serviceNames), 3)           //Check if service that was in exclude list didn't get added
 	assert.NoError(t, err)
