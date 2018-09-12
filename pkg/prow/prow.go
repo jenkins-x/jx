@@ -141,9 +141,13 @@ func (o *Options) createPostSubmitMavenApplication() config.Postsubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/jenkins-maven:dev_12",
+				Image: "jenkinsxio/jenkins-maven:latest",
 				Env: []v1.EnvVar{
-					{Name: "BRANCH_NAME", Value: "master"},
+					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
+					{Name: "GIT_AUTHOR_EMAIL", Value: "jenkins-x@googlegroups.com"},
+					{Name: "GIT_AUTHOR_NAME", Value: "jenkins-x-bot"},
+					{Name: "GIT_COMMITTER_NAME", Value: "jenkins-x-bot"},
+					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
 					{Name: "DOCKER_CONFIG", Value: "/home/jenkins/.docker/"},
 					{Name: "DOCKER_REGISTRY", ValueFrom: &v1.EnvVarSource{
 
@@ -190,7 +194,7 @@ func (o *Options) createPreSubmitMavenApplication() config.Presubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/jenkins-maven:dev_12",
+				Image: "jenkinsxio/jenkins-maven:latest",
 				Env: []v1.EnvVar{
 					{Name: "DOCKER_CONFIG", Value: "/home/jenkins/.docker/"},
 					{Name: "DOCKER_REGISTRY", ValueFrom: &v1.EnvVarSource{
