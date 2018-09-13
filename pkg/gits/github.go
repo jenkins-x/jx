@@ -320,7 +320,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Config: config,
 		Events: []string{"*"},
 	}
-	log.Infof("Creating github webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
+	log.Infof("Creating github webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
 	_, _, err = p.Client.Repositories.CreateHook(p.Context, owner, repo, hook)
 	return err
 }

@@ -225,7 +225,7 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Events: []string{"create", "push", "pull_request"},
 		Active: true,
 	}
-	log.Infof("Creating github webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
+	log.Infof("Creating gitea webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
 	_, err = p.Client.CreateRepoHook(owner, repo, hook)
 	if err != nil {
 		return fmt.Errorf("Failed to create webhook for %s/%s with %#v due to: %s", owner, repo, hook, err)
