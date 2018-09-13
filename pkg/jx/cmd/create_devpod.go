@@ -559,7 +559,6 @@ func (o *CreateDevPodOptions) Run() error {
 	if theiaServiceURL != "" {
 		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
 		pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
-		//pod.Annotations["jenkins-x.io/devpod/theia-url"] = theiaServiceURL
 		pod, err = client.CoreV1().Pods(curNs).Update(pod)
 		if err != nil {
 			return err
