@@ -102,6 +102,12 @@ func (o *LoginOptions) Run() error {
 	jxlog.Infof("You are %s. You credentials are stored in %s file.\n",
 		util.ColorInfo("successfully logged in"), util.ColorInfo("~/.kube/config"))
 
+	teamOptions := TeamOptions{}
+	err = teamOptions.Run()
+	if err != nil {
+		return errors.Wrap(err, "switching team")
+	}
+
 	return nil
 }
 
