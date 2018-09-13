@@ -34,6 +34,7 @@ import (
 
 	"github.com/denormal/go-gitignore"
 	"github.com/jenkins-x/jx/pkg/prow"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -366,11 +367,6 @@ func (options *ImportOptions) Run() error {
 		return err
 	}
 
-	err = options.CreateProwOwnersFile()
-	if err != nil {
-		return err
-	}
-
 	err = options.fixMaven()
 	if err != nil {
 		return err
@@ -627,6 +623,13 @@ func (options *ImportOptions) DraftCreate() error {
 	if err != nil {
 		return err
 	}
+
+	// Create prow owners file
+	err = options.CreateProwOwnersFile()
+	if err != nil {
+		return err
+	}
+
 	err = options.Git().Add(dir, "*")
 	if err != nil {
 		return err
@@ -1213,9 +1216,35 @@ func (options *ImportOptions) fixDockerIgnoreFile() error {
 	return nil
 }
 
-// CreateProwOwnersFile creates an OWNERS file in the root of the project assigning the current git user as an approver and a reviewer
+// CreateProwOwnersFile creates an OWNERS file in the root of the project assigning the current git user as an approver and a reviewer. If the file already exists, does nothing.
 func (options *ImportOptions) CreateProwOwnersFile() error {
-	return nil
+	filename := filepath.Join(options.Dir, "OWNERS")
+	exists, err := util.FileExists(filename)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	if options.GitUserAuth != nil && options.GitUserAuth.Username != "" {
+		data := struct {
+			Approvers []string `yaml:"approvers"`
+			Reviewers []string `yaml:"reviewers"`
+		}{
+			[]string{options.GitUserAuth.Username},
+			[]string{options.GitUserAuth.Username},
+		}
+		yaml, err := yaml.Marshal(&data)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filename, []byte(yaml), 0644)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return errors.New("GitUserAuth.Username not set")
 }
 
 func (options *ImportOptions) fixMaven() error {
