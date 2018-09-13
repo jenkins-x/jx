@@ -233,10 +233,10 @@ func registerCRD(apiClient apiextensionsclientset.Interface, name string, names 
 			Name: name,
 		},
 		Spec: v1beta1.CustomResourceDefinitionSpec{
-			Group:   jenkinsio.GroupName,
-			Version: jenkinsio.Version,
-			Scope:   v1beta1.NamespaceScoped,
-			Names:   *names,
+			Group:                    jenkinsio.GroupName,
+			Version:                  jenkinsio.Version,
+			Scope:                    v1beta1.NamespaceScoped,
+			Names:                    *names,
 			AdditionalPrinterColumns: columns,
 		},
 	}

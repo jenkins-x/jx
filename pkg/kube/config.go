@@ -98,7 +98,7 @@ func UpdateConfig(server string, caData string, user string, token string) error
 
 	clusterName := "jx-cluster"
 	cluster := &api.Cluster{
-		Server: server,
+		Server:                   server,
 		CertificateAuthorityData: []byte(caData),
 	}
 
