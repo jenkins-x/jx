@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/plugins"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
@@ -35,9 +35,10 @@ type Options struct {
 	Repos      []string
 	NS         string
 	Kind       Kind
+	DraftPack  string
 }
 
-func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind) error {
+func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, draftPack string) error {
 
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
@@ -47,6 +48,7 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind) 
 		Repos:      repos,
 		NS:         ns,
 		Kind:       kind,
+		DraftPack:  draftPack,
 	}
 
 	err := o.AddProwConfig()
@@ -58,11 +60,11 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind) 
 }
 
 func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns string) error {
-	return add(kubeClient, repos, ns, Environment)
+	return add(kubeClient, repos, ns, Environment, "")
 }
 
-func AddApplication(kubeClient kubernetes.Interface, repos []string, ns string) error {
-	return add(kubeClient, repos, ns, Application)
+func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPack string) error {
+	return add(kubeClient, repos, ns, Application, draftPack)
 }
 
 // create git repo?
@@ -82,8 +84,8 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/builder-base:latest",
-				Args:  []string{"jx", "step", "helm", "build"},
+				Image: "jenkinsxio/builder-base:0.0.547",
+				Args:  []string{"jx", "step", "helm", "build", "-d", "env"},
 				Env: []v1.EnvVar{
 					{Name: "DEPLOY_NAMESPACE", Value: "jx-staging"},
 					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
@@ -114,8 +116,8 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/builder-base:latest",
-				Args:  []string{"jx", "step", "helm", "apply"},
+				Image: "jenkinsxio/builder-base:0.0.547",
+				Args:  []string{"jx", "step", "helm", "apply", "-d", "env"},
 				Env: []v1.EnvVar{
 					{Name: "DEPLOY_NAMESPACE", Value: "jx-staging"},
 					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
@@ -133,16 +135,19 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	return ps
 }
 
-func (o *Options) createPostSubmitMavenApplication() config.Postsubmit {
+func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Branches = []string{"master"}
 	ps.Name = "release"
 	ps.Agent = "knative-build"
 
+	image := fmt.Sprintf("jenkinsxio/jenkins-%s:dev_14", o.DraftPack)
+	log.Infof("generating prow config, using Jenkins image %s\n", image)
+
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/jenkins-maven:latest",
+				Image: image,
 				Env: []v1.EnvVar{
 					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
 					{Name: "GIT_AUTHOR_EMAIL", Value: "jenkins-x@googlegroups.com"},
@@ -161,19 +166,19 @@ func (o *Options) createPostSubmitMavenApplication() config.Postsubmit {
 					}},
 				},
 				VolumeMounts: []v1.VolumeMount{
-					v1.VolumeMount{Name: "jenkins-docker-cfg", MountPath: "/home/jenkins/.docker"},
-					v1.VolumeMount{Name: "docker-sock-volume", MountPath: "/var/run/docker.sock"},
-					v1.VolumeMount{Name: "jenkins-maven-settings", MountPath: "/root/.m2/"},
-					v1.VolumeMount{Name: "jenkins-release-gpg", MountPath: "/home/jenkins/.gnupg"},
+					{Name: "jenkins-docker-cfg", MountPath: "/home/jenkins/.docker"},
+					{Name: "docker-sock-volume", MountPath: "/var/run/docker.sock"},
+					{Name: "jenkins-maven-settings", MountPath: "/root/.m2/"},
+					{Name: "jenkins-release-gpg", MountPath: "/home/jenkins/.gnupg"},
 				},
 			},
 		},
 		ServiceAccountName: "jenkins",
 		Volumes: []v1.Volume{
-			v1.Volume{Name: "jenkins-docker-cfg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-docker-cfg"}}},
-			v1.Volume{Name: "docker-sock-volume", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
-			v1.Volume{Name: "jenkins-maven-settings", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-maven-settings"}}},
-			v1.Volume{Name: "jenkins-release-gpg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-release-gpg"}}},
+			{Name: "jenkins-docker-cfg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-docker-cfg"}}},
+			{Name: "docker-sock-volume", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
+			{Name: "jenkins-maven-settings", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-maven-settings"}}},
+			{Name: "jenkins-release-gpg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-release-gpg"}}},
 		},
 	}
 
@@ -181,7 +186,7 @@ func (o *Options) createPostSubmitMavenApplication() config.Postsubmit {
 	return ps
 }
 
-func (o *Options) createPreSubmitMavenApplication() config.Presubmit {
+func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps := config.Presubmit{}
 
 	ps.Context = "jenkins-engine-ci"
@@ -192,10 +197,13 @@ func (o *Options) createPreSubmitMavenApplication() config.Presubmit {
 	ps.SkipReport = false
 	ps.Agent = "knative-build"
 
+	image := fmt.Sprintf("jenkinsxio/jenkins-%s:dev_14", o.DraftPack)
+	log.Infof("generating prow config, using Jenkins image %s\n", image)
+
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/jenkins-maven:latest",
+				Image: image,
 				Env: []v1.EnvVar{
 					{Name: "DOCKER_CONFIG", Value: "/home/jenkins/.docker/"},
 					{Name: "DOCKER_REGISTRY", ValueFrom: &v1.EnvVarSource{
@@ -209,19 +217,19 @@ func (o *Options) createPreSubmitMavenApplication() config.Presubmit {
 					}},
 				},
 				VolumeMounts: []v1.VolumeMount{
-					v1.VolumeMount{Name: "jenkins-docker-cfg", MountPath: "/home/jenkins/.docker"},
-					v1.VolumeMount{Name: "docker-sock-volume", MountPath: "/var/run/docker.sock"},
-					v1.VolumeMount{Name: "jenkins-maven-settings", MountPath: "/root/.m2/"},
-					v1.VolumeMount{Name: "jenkins-release-gpg", MountPath: "/home/jenkins/.gnupg"},
+					{Name: "jenkins-docker-cfg", MountPath: "/home/jenkins/.docker"},
+					{Name: "docker-sock-volume", MountPath: "/var/run/docker.sock"},
+					{Name: "jenkins-maven-settings", MountPath: "/root/.m2/"},
+					{Name: "jenkins-release-gpg", MountPath: "/home/jenkins/.gnupg"},
 				},
 			},
 		},
 		ServiceAccountName: "jenkins",
 		Volumes: []v1.Volume{
-			v1.Volume{Name: "jenkins-docker-cfg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-docker-cfg"}}},
-			v1.Volume{Name: "docker-sock-volume", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
-			v1.Volume{Name: "jenkins-maven-settings", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-maven-settings"}}},
-			v1.Volume{Name: "jenkins-release-gpg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-release-gpg"}}},
+			{Name: "jenkins-docker-cfg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-docker-cfg"}}},
+			{Name: "docker-sock-volume", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
+			{Name: "jenkins-maven-settings", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-maven-settings"}}},
+			{Name: "jenkins-release-gpg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-release-gpg"}}},
 		},
 	}
 
@@ -293,8 +301,8 @@ func (o *Options) AddProwConfig() error {
 
 	switch o.Kind {
 	case Application:
-		preSubmit = o.createPreSubmitMavenApplication()
-		postSubmit = o.createPostSubmitMavenApplication()
+		preSubmit = o.createPreSubmitApplication()
+		postSubmit = o.createPostSubmitApplication()
 	case Environment:
 		preSubmit = o.createPreSubmitEnvironment()
 		postSubmit = o.createPostSubmitEnvironment()
@@ -426,16 +434,4 @@ func (o *Options) AddProwPlugins() error {
 	}
 
 	return err
-}
-
-func IsProwInstalled(kubeClient kubernetes.Interface, ns string) (bool, error) {
-
-	podCount, err := kube.DeploymentPodCount(kubeClient, Hook, ns)
-	if err != nil {
-		return false, fmt.Errorf("failed when looking for hook deployment: %v", err)
-	}
-	if podCount == 0 {
-		return false, nil
-	}
-	return true, nil
 }
