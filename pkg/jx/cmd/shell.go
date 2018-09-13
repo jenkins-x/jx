@@ -36,6 +36,8 @@ fi
 
 type ShellOptions struct {
 	CommonOptions
+
+	Filter string
 }
 
 var (
@@ -74,6 +76,7 @@ func NewCmdShell(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 			CheckErr(err)
 		},
 	}
+	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filter the list of contexts to switch between using the given text")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -91,7 +94,9 @@ func (o *ShellOptions) Run() error {
 	contextNames := []string{}
 	for k, v := range config.Contexts {
 		if k != "" && v != nil {
-			contextNames = append(contextNames, k)
+			if o.Filter == "" || strings.Index(k, o.Filter) >= 0 {
+				contextNames = append(contextNames, k)
+			}
 		}
 	}
 	sort.Strings(contextNames)

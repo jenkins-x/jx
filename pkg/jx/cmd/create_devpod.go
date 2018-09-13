@@ -76,6 +76,7 @@ type CreateDevPodOptions struct {
 	ImportUrl  string
 	Import     bool
 	ShellCmd   string
+	Username   string
 
 	Results CreateDevPodResults
 }
@@ -118,6 +119,7 @@ func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	cmd.Flags().StringVarP(&options.ImportUrl, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
 	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
+	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -140,10 +142,6 @@ func (o *CreateDevPodOptions) Run() error {
 		return err
 	}
 	ns, _, err := kube.GetDevNamespace(client, curNs)
-	if err != nil {
-		return err
-	}
-	u, err := user.Current()
 	if err != nil {
 		return err
 	}
@@ -191,7 +189,10 @@ func (o *CreateDevPodOptions) Run() error {
 		pod.Annotations = map[string]string{}
 	}
 
-	userName := u.Username
+	userName, err := o.getUsername()
+	if err != nil {
+		return err
+	}
 	name := kube.ToValidName(userName + "-" + label)
 	if o.Suffix != "" {
 		name += "-" + o.Suffix
@@ -395,16 +396,21 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 		for _, p := range podsList.Items {
 			ann := p.Annotations
-			// ann[kube.AnnotationLocalDir] is populated for sync or empty when not syncing
-			//if (ann != nil && ann[kube.AnnotationLocalDir] == dir) || (ann == nil || ann[kube.AnnotationLocalDir] == "") && p.DeletionTimestamp == nil {
-			if (ann != nil && ann[kube.AnnotationLocalDir] == dir) || (ann == nil || ann[kube.AnnotationLocalDir] == "") && p.DeletionTimestamp == nil {
+			if ann == nil {
+				ann = map[string]string{}
+			}
+			// if syncing only match DevPods using the same local dir otherwise ignore any devpods with a local dir sync
+			matchDir := dir
+			if !o.Sync {
+				matchDir = ""
+			}
+			if p.DeletionTimestamp == nil && ann[kube.AnnotationLocalDir] == matchDir {
 				create = false
 				pod = &p
 				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
 				break
 			}
 		}
-		log.Infof("Could not find a pod with labels %#v so creating a new pod\n", matchLabels)
 	}
 
 	theiaServiceName := name + "-theia"
@@ -591,7 +597,7 @@ func (o *CreateDevPodOptions) Run() error {
 	if create {
 		//  Let install bash-completion to make life better
 		log.Infof("Installing Bash Completion into DevPod\n")
-		rshExec = append(rshExec, "yum install -q -y bash-completion bash-completion-extra", "mkdir -p ~/.jx", "jx completion bash > ~/.jx/bash",  "echo \"source ~/.jx/bash\" >> ~/.bashrc")
+		rshExec = append(rshExec, "yum install -q -y bash-completion bash-completion-extra", "mkdir -p ~/.jx", "jx completion bash > ~/.jx/bash", "echo \"source ~/.jx/bash\" >> ~/.bashrc")
 	}
 	if !o.Sync {
 		// Try to clone the right git repo into the DevPod
@@ -656,11 +662,11 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if err != nil {
 		return env, err
 	}
-	u, err := user.Current()
+	userName, err := o.getUsername()
 	if err != nil {
 		return env, err
 	}
-	env, err = kube.EnsureEditEnvironmentSetup(kubeClient, jxClient, ns, u.Username)
+	env, err = kube.EnsureEditEnvironmentSetup(kubeClient, jxClient, ns, userName)
 	if err != nil {
 		return env, err
 	}
@@ -712,6 +718,18 @@ func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface
 		return errors.Wrapf(err, "Failed to load ingress-config in namespace %s", devNs)
 	}
 	return o.runExposecontroller(ns, ns, ingressConfig)
+}
+
+func (o *CreateDevPodOptions) getUsername() (string, error) {
+	userName := o.Username
+	if userName == "" {
+		u, err := user.Current()
+		if err != nil {
+			return userName, errors.Wrap(err, "Could not find the current user name. Please pass it in explicitly via the argument '--username'")
+		}
+		userName = u.Username
+	}
+	return userName, nil
 }
 
 // FindDevPodLabelFromJenkinsfile finds pod labels from a Jenkinsfile
