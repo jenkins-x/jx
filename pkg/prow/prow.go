@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/plugins"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
@@ -231,7 +232,7 @@ func (o *Options) createPreSubmitMavenApplication() config.Presubmit {
 	return ps
 }
 
-func (o *Options) createTide() config.Tide {
+func (o *Options) createTide(existingRepos []string) config.Tide {
 	// todo get the real URL, though we need to handle the multi cluster usecase where dev namespace may be another cluster, so pass it in as an arg?
 	t := config.Tide{
 		TargetURL: "https://tide.foo.bar",
@@ -240,8 +241,13 @@ func (o *Options) createTide() config.Tide {
 	var qs []config.TideQuery
 
 	for _, r := range o.Repos {
+		repos := existingRepos
+		if !util.Contains(repos, r) {
+			repos = append(repos, r)
+		}
+
 		q := config.TideQuery{
-			Repos:         []string{r},
+			Repos:         repos,
 			Labels:        []string{"approved"},
 			MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
 		}
@@ -284,17 +290,14 @@ func (o *Options) createTide() config.Tide {
 func (o *Options) AddProwConfig() error {
 	var preSubmit config.Presubmit
 	var postSubmit config.Postsubmit
-	var tide config.Tide
 
 	switch o.Kind {
 	case Application:
 		preSubmit = o.createPreSubmitMavenApplication()
 		postSubmit = o.createPostSubmitMavenApplication()
-		tide = o.createTide()
 	case Environment:
 		preSubmit = o.createPreSubmitEnvironment()
 		postSubmit = o.createPostSubmitEnvironment()
-		tide = o.createTide()
 	default:
 		return fmt.Errorf("unknown prow config kind %s", o.Kind)
 	}
@@ -302,11 +305,13 @@ func (o *Options) AddProwConfig() error {
 	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("config", metav1.GetOptions{})
 	create := true
 	prowConfig := &config.Config{}
+	// config doesn't exist, creating
 	if err != nil {
 		prowConfig.Presubmits = make(map[string][]config.Presubmit)
 		prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
-
+		prowConfig.Tide = o.createTide([]string{})
 	} else {
+		// config exists, updating
 		create = false
 		err = yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
 		if err != nil {
@@ -318,14 +323,19 @@ func (o *Options) AddProwConfig() error {
 		if len(prowConfig.Postsubmits) == 0 {
 			prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
 		}
+
+		if len(prowConfig.Tide.Queries) > 0 {
+			repos := prowConfig.Tide.Queries[0].Repos
+			prowConfig.Tide = o.createTide(repos)
+		} else {
+			prowConfig.Tide = o.createTide([]string{})
+		}
 	}
 
 	for _, r := range o.Repos {
 		prowConfig.Presubmits[r] = []config.Presubmit{preSubmit}
 		prowConfig.Postsubmits[r] = []config.Postsubmit{postSubmit}
 	}
-
-	prowConfig.Tide = tide
 
 	configYAML, err := yaml.Marshal(prowConfig)
 	if err != nil {
