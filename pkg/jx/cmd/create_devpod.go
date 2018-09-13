@@ -189,13 +189,9 @@ func (o *CreateDevPodOptions) Run() error {
 		pod.Annotations = map[string]string{}
 	}
 
-	userName := o.Username
-	if userName == "" {
-		u, err := user.Current()
-		if err != nil {
-			return errors.Wrap(err, "Could not find the current user name. Please pass it in explicitly via the argument '--username'")
-		}
-		userName = u.Username
+	userName, err := o.getUsername()
+	if err != nil {
+		return err
 	}
 	name := kube.ToValidName(userName + "-" + label)
 	if o.Suffix != "" {
@@ -400,16 +396,21 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 		for _, p := range podsList.Items {
 			ann := p.Annotations
-			// ann[kube.AnnotationLocalDir] is populated for sync or empty when not syncing
-			//if (ann != nil && ann[kube.AnnotationLocalDir] == dir) || (ann == nil || ann[kube.AnnotationLocalDir] == "") && p.DeletionTimestamp == nil {
-			if (ann != nil && ann[kube.AnnotationLocalDir] == dir) || (ann == nil || ann[kube.AnnotationLocalDir] == "") && p.DeletionTimestamp == nil {
+			if ann == nil {
+				ann = map[string]string{}
+			}
+			// if syncing only match DevPods using the same local dir otherwise ignore any devpods with a local dir sync
+			matchDir := dir
+			if !o.Sync {
+				matchDir = ""
+			}
+			if p.DeletionTimestamp == nil && ann[kube.AnnotationLocalDir] == matchDir {
 				create = false
 				pod = &p
 				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
 				break
 			}
 		}
-		log.Infof("Could not find a pod with labels %#v so creating a new pod\n", matchLabels)
 	}
 
 	theiaServiceName := name + "-theia"
@@ -661,11 +662,11 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if err != nil {
 		return env, err
 	}
-	u, err := user.Current()
+	userName, err := o.getUsername()
 	if err != nil {
 		return env, err
 	}
-	env, err = kube.EnsureEditEnvironmentSetup(kubeClient, jxClient, ns, u.Username)
+	env, err = kube.EnsureEditEnvironmentSetup(kubeClient, jxClient, ns, userName)
 	if err != nil {
 		return env, err
 	}
@@ -717,6 +718,18 @@ func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface
 		return errors.Wrapf(err, "Failed to load ingress-config in namespace %s", devNs)
 	}
 	return o.runExposecontroller(ns, ns, ingressConfig)
+}
+
+func (o *CreateDevPodOptions) getUsername() (string, error) {
+	userName := o.Username
+	if userName == "" {
+		u, err := user.Current()
+		if err != nil {
+			return userName, errors.Wrap(err, "Could not find the current user name. Please pass it in explicitly via the argument '--username'")
+		}
+		userName = u.Username
+	}
+	return userName, nil
 }
 
 // FindDevPodLabelFromJenkinsfile finds pod labels from a Jenkinsfile
