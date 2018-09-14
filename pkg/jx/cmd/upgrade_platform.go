@@ -50,7 +50,7 @@ func NewCmdUpgradePlatform(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd := &cobra.Command{
 		Use:     "platform",
 		Short:   "Upgrades the Jenkins X platform if there is a new release available",
-		Aliases: []string{"token"},
+		Aliases: []string{"install"},
 		Long:    upgrade_platform_long,
 		Example: upgrade_platform_example,
 		Run: func(cmd *cobra.Command, args []string) {
