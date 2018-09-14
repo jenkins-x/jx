@@ -74,11 +74,17 @@ func NewCmdUpgradePlatform(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 // Run implements the command
 func (o *UpgradePlatformOptions) Run() error {
-	ns := o.Namespace
 	version := o.Version
 	err := o.Helm().UpdateRepo()
 	if err != nil {
 		return err
+	}
+	ns := o.Namespace
+	if ns == "" {
+		_, ns, err = o.JXClientAndDevNamespace()
+		if err != nil {
+			return err
+		}
 	}
 	if version == "" {
 		io := &InstallOptions{}
