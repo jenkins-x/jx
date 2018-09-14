@@ -5,13 +5,13 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+		build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/plugins"
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
@@ -240,31 +240,54 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	return ps
 }
 
-func (o *Options) createTide(existingRepos []string) config.Tide {
+func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
+	switch o.Kind {
+	case Application:
+		for index, q := range t.Queries {
+			if util.Contains(q.Labels, "approved") {
+				repos := t.Queries[index].Repos
+				if !util.Contains(repos, repo) {
+					repos = append(repos, repo)
+					t.Queries[index].Repos = repos
+				}
+			}
+		}
+	case Environment:
+		for index, q := range t.Queries {
+			if !util.Contains(q.Labels, "approved") {
+				repos := t.Queries[index].Repos
+				if !util.Contains(repos, repo) {
+					repos = append(repos, repo)
+					t.Queries[index].Repos = repos
+				}
+			}
+		}
+	default:
+		return fmt.Errorf("unknown prow config kind %s", o.Kind)
+	}
+	return nil
+}
+
+func (o *Options) createTide() config.Tide {
 	// todo get the real URL, though we need to handle the multi cluster usecase where dev namespace may be another cluster, so pass it in as an arg?
 	t := config.Tide{
 		TargetURL: "https://tide.foo.bar",
 	}
 
 	var qs []config.TideQuery
-
-	for _, r := range o.Repos {
-		repos := existingRepos
-		if !util.Contains(repos, r) {
-			repos = append(repos, r)
-		}
-
-		q := config.TideQuery{
-			Repos:         repos,
-			Labels:        []string{"approved"},
-			MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
-		}
-		qs = append(qs, q)
+	q := config.TideQuery{
+		Repos:         []string{},
+		Labels:        []string{"approved"},
+		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
 	}
-
-	queries := qs
-
-	t.Queries = queries
+	qs = append(qs, q)
+	q = config.TideQuery{
+		Repos:         []string{},
+		Labels:        []string{},
+		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
+	}
+	qs = append(qs, q)
+	t.Queries = qs
 
 	// todo JR not sure if we need the contexts if we add the branch protection plugin
 	//orgPolicies := make(map[string]config.TideOrgContextPolicy)
@@ -317,7 +340,7 @@ func (o *Options) AddProwConfig() error {
 	if err != nil {
 		prowConfig.Presubmits = make(map[string][]config.Presubmit)
 		prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
-		prowConfig.Tide = o.createTide([]string{})
+		prowConfig.Tide = o.createTide()
 	} else {
 		// config exists, updating
 		create = false
@@ -331,13 +354,10 @@ func (o *Options) AddProwConfig() error {
 		if len(prowConfig.Postsubmits) == 0 {
 			prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
 		}
+	}
 
-		if len(prowConfig.Tide.Queries) > 0 {
-			repos := prowConfig.Tide.Queries[0].Repos
-			prowConfig.Tide = o.createTide(repos)
-		} else {
-			prowConfig.Tide = o.createTide([]string{})
-		}
+	for _,r := range o.Repos {
+		o.addRepoToTideConfig(&prowConfig.Tide, r, o.Kind)
 	}
 
 	for _, r := range o.Repos {
