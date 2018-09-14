@@ -90,7 +90,7 @@ func CertificateAuthorityData(config *api.Config, context *api.Context) []byte {
 }
 
 // UpdateConfig defines new config entries for jx
-func UpdateConfig(server string, caData string, user string, token string) error {
+func UpdateConfig(namespace string, server string, caData string, user string, token string) error {
 	config, po, err := LoadConfig()
 	if err != nil {
 		return errors.Wrap(err, "loading existing config")
@@ -108,8 +108,9 @@ func UpdateConfig(server string, caData string, user string, token string) error
 
 	ctxName := fmt.Sprintf("jx-cluster-%s-ctx", user)
 	ctx := &api.Context{
-		Cluster:  clusterName,
-		AuthInfo: user,
+		Cluster:   clusterName,
+		AuthInfo:  user,
+		Namespace: namespace,
 	}
 
 	config.Clusters[clusterName] = cluster
