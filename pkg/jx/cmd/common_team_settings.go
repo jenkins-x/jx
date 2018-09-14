@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os/user"
 	"reflect"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -294,4 +295,15 @@ func (o *CommonOptions) ModifyUser(userName string, callback func(env *v1.User) 
 		}
 	}
 	return nil
+}
+
+func (o *CommonOptions) getUsername(userName string) (string, error) {
+	if userName == "" {
+		u, err := user.Current()
+		if err != nil {
+			return userName, errors.Wrap(err, "Could not find the current user name. Please pass it in explicitly via the argument '--username'")
+		}
+		userName = u.Username
+	}
+	return userName, nil
 }

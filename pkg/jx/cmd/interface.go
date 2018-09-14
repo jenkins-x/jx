@@ -24,6 +24,10 @@ import (
 // Factory is the interface defined for jx interactions via the cli
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/jx/cmd Factory -o mocks/factory.go
 type Factory interface {
+	WithBearerToken(token string) Factory
+
+	ImpersonateUser(user string) Factory
+
 	CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (*gojenkins.Jenkins, error)
 
 	GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error)
@@ -55,8 +59,6 @@ type Factory interface {
 	CreateTable(out io.Writer) table.Table
 
 	SetBatch(batch bool)
-
-	ImpersonateUser(user string) Factory
 
 	IsInCluster() bool
 

@@ -385,6 +385,21 @@ func (mock *MockFactory) SetBatch(_param0 bool) {
 	pegomock.GetGenericMockFrom(mock).Invoke("SetBatch", params, []reflect.Type{})
 }
 
+func (mock *MockFactory) WithBearerToken(_param0 string) cmd.Factory {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("WithBearerToken", params, []reflect.Type{reflect.TypeOf((*cmd.Factory)(nil)).Elem()})
+	var ret0 cmd.Factory
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(cmd.Factory)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockFactory) VerifyWasCalledOnce() *VerifierFactory {
 	return &VerifierFactory{mock, pegomock.Times(1), nil}
 }
@@ -872,6 +887,33 @@ func (c *Factory_SetBatch_OngoingVerification) GetAllCapturedArguments() (_param
 		_param0 = make([]bool, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(bool)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierFactory) WithBearerToken(_param0 string) *Factory_WithBearerToken_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "WithBearerToken", params)
+	return &Factory_WithBearerToken_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Factory_WithBearerToken_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Factory_WithBearerToken_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Factory_WithBearerToken_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
 		}
 	}
 	return
