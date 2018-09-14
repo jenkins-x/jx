@@ -13,7 +13,7 @@ import (
 	"github.com/ghodss/yaml"
 	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/plugins"
-)
+	)
 
 type TestOptions struct {
 	prow.Options
@@ -180,8 +180,10 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	prowConfig := &config.Config{}
-
 	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
+
+	assert.Equal(t,0, len(prowConfig.Tide.Queries[0].Repos))
+	assert.Equal(t,1, len(prowConfig.Tide.Queries[1].Repos))
 
 	p := prowConfig.Presubmits["test/repo"]
 	p[0].Agent = "foo"
@@ -205,7 +207,6 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
-
 	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
 
 	p = prowConfig.Presubmits["test/repo"]
@@ -220,9 +221,43 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
-
 	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
+
+	assert.Equal(t,0, len(prowConfig.Tide.Queries[0].Repos))
+	assert.Equal(t,1, len(prowConfig.Tide.Queries[1].Repos))
 
 	p = prowConfig.Presubmits["test/repo"]
 	assert.Equal(t, "knative-build", p[0].Agent)
+
+	// add test/repo2
+	o.Options.Repos = []string{"test/repo2"}
+	o.Kind = prow.Application
+
+	err = o.AddProwConfig()
+	assert.NoError(t, err)
+
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("config", metav1.GetOptions{})
+	assert.NoError(t, err)
+
+	prowConfig = &config.Config{}
+	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
+
+	assert.Equal(t, 1, len(prowConfig.Tide.Queries[0].Repos))
+	assert.Equal(t,1, len(prowConfig.Tide.Queries[1].Repos))
+
+	// add test/repo3
+	o.Options.Repos = []string{"test/repo3"}
+	o.Kind = prow.Application
+
+	err = o.AddProwConfig()
+	assert.NoError(t, err)
+
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("config", metav1.GetOptions{})
+	assert.NoError(t, err)
+
+	prowConfig = &config.Config{}
+	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
+
+	assert.Equal(t,2, len(prowConfig.Tide.Queries[0].Repos))
+	assert.Equal(t,1, len(prowConfig.Tide.Queries[1].Repos))
 }

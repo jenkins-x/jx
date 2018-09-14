@@ -9,10 +9,14 @@ import (
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
+// OrganisationLister returns a slice of GitOrganisation
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationLister -o mocks/organisation_lister.go
 type OrganisationLister interface {
 	ListOrganisations() ([]GitOrganisation, error)
 }
 
+// GitProvider is the interface for abstracting use of different git provider APIs
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits GitProvider -o mocks/git_provider.go
 type GitProvider interface {
 	OrganisationLister
 
@@ -125,7 +129,8 @@ type GitProvider interface {
 	AcceptInvitation(int64) (*github.Response, error)
 }
 
-// Gitter defines common git actions used by Jenkins X
+// Gitter defines common git actions used by Jenkins X via git cli
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go
 type Gitter interface {
 	FindGitConfigDir(dir string) (string, string, error)
 	ToGitLabels(names []string) []GitLabel
