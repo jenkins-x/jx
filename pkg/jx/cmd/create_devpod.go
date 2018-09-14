@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -189,7 +188,7 @@ func (o *CreateDevPodOptions) Run() error {
 		pod.Annotations = map[string]string{}
 	}
 
-	userName, err := o.getUsername()
+	userName, err := o.getUsername(o.Username)
 	if err != nil {
 		return err
 	}
@@ -407,6 +406,7 @@ func (o *CreateDevPodOptions) Run() error {
 			if p.DeletionTimestamp == nil && ann[kube.AnnotationLocalDir] == matchDir {
 				create = false
 				pod = &p
+				name = pod.Name
 				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
 				break
 			}
@@ -549,13 +549,13 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	log.Infof("Pod %s is now ready!\n", util.ColorInfo(pod.Name))
-	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod --reuse"))
+	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
 
 	theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
+	if err != nil {
+		return err
+	}
 	if theiaServiceURL != "" {
-		if err != nil {
-			return err
-		}
 		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
 		pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
 		pod, err = client.CoreV1().Pods(curNs).Update(pod)
@@ -564,6 +564,8 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 		log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
 		o.Results.TheaServiceURL = theiaServiceURL
+	} else {
+		log.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
 	}
 
 	exposePortsServiceHost, err := kube.FindServiceHostname(client, curNs, name)
@@ -637,6 +639,7 @@ func (o *CreateDevPodOptions) Run() error {
 		Pod:           pod.Name,
 		DevPod:        true,
 		ExecCmd:       strings.Join(rshExec, " && "),
+		Username:      userName,
 	}
 	options.Args = []string{}
 	return options.Run()
@@ -662,7 +665,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if err != nil {
 		return env, err
 	}
-	userName, err := o.getUsername()
+	userName, err := o.getUsername(o.Username)
 	if err != nil {
 		return env, err
 	}
@@ -718,18 +721,6 @@ func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface
 		return errors.Wrapf(err, "Failed to load ingress-config in namespace %s", devNs)
 	}
 	return o.runExposecontroller(ns, ns, ingressConfig)
-}
-
-func (o *CreateDevPodOptions) getUsername() (string, error) {
-	userName := o.Username
-	if userName == "" {
-		u, err := user.Current()
-		if err != nil {
-			return userName, errors.Wrap(err, "Could not find the current user name. Please pass it in explicitly via the argument '--username'")
-		}
-		userName = u.Username
-	}
-	return userName, nil
 }
 
 // FindDevPodLabelFromJenkinsfile finds pod labels from a Jenkinsfile

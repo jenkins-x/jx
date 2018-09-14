@@ -197,7 +197,7 @@ func (o *DeleteAppOptions) deleteApp(jenkinsClient *gojenkins.Jenkins, name stri
 	for _, envName := range envNames {
 		// TODO filter on environment names?
 		env := envMap[envName]
-		if env != nil {
+		if env != nil && env.Spec.Kind == v1.EnvironmentKindTypePermanent {
 			err = o.deleteAppFromEnvironment(env, appName, u.Username)
 			if err != nil {
 				return err
