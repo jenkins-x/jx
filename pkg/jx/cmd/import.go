@@ -522,6 +522,8 @@ func (options *ImportOptions) DraftCreate() error {
 		}
 	}
 	log.Success("selected pack: " + lpack + "\n")
+	options.DraftPack = filepath.Base(lpack)
+
 	chartsDir := filepath.Join(dir, "charts")
 	jenkinsfileExists, err := util.FileExists(jenkinsfile)
 	exists, err := util.FileExists(chartsDir)
@@ -990,7 +992,10 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 		return err
 	}
 	repo := gitInfo.Organisation + "/" + gitInfo.Name
-	return prow.AddApplication(options.KubeClientCached, []string{repo}, options.currentNamespace)
+	return prow.AddApplication(options.KubeClientCached, []string{repo}, options.currentNamespace, options.DraftPack)
+
+	// todo lets create a knative build to auto optionally auto trigger initial release
+
 }
 
 // ensureDockerRepositoryExists for some kinds of container registry we need to pre-initialise its use such as for ECR
