@@ -22,7 +22,7 @@ const (
 	KnativeBuildVersion            = "0.0.6"
 	ChartProw                      = "jenkins-x/prow"
 	ChartKnativeBuild              = "jenkins-x/knative-build"
-	JenkinsMasterTag               = "dev_gevans_15"
+	JenkinsMasterTag               = "dev_17"
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"
