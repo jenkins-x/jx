@@ -177,7 +177,13 @@ func (o *CreateClusterAWSOptions) Run() error {
 	state := flags.State
 	if state == "" {
 		kopsState := os.Getenv("KOPS_STATE_STORE")
-		if kopsState == "" {
+		if kopsState != "" {
+			if strings.Contains(kopsState, "://") {
+				state = kopsState
+			} else {
+				state = "s3://" + kopsState
+			}
+		} else {
 			bucketName := "kops-state-" + accountId + "-" + string(uuid.NewUUID())
 			log.Infof("Creating S3 bucket %s to store kops state\n", util.ColorInfo(bucketName))
 

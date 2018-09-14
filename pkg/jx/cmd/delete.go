@@ -66,6 +66,7 @@ func NewCmdDelete(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdDeleteTeam(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteTracker(f, out, errOut))
 	cmd.AddCommand(NewCmdDeleteUser(f, out, errOut))
+	cmd.AddCommand(NewCmdDeleteAws(f, out, errOut))
 	return cmd
 }
 

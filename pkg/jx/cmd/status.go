@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"io"
-
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -77,7 +76,7 @@ func (o *StatusOptions) Run() error {
 		return err
 	}
 
-	deployList, err := client.ExtensionsV1beta1().Deployments(namespace).List(metav1.ListOptions{})
+	deployList, err := client.AppsV1().Deployments(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		log.Error("Failed to get deployed  status " + err.Error() + " \n")
 		return err

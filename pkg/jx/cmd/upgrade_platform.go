@@ -50,7 +50,7 @@ func NewCmdUpgradePlatform(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	cmd := &cobra.Command{
 		Use:     "platform",
 		Short:   "Upgrades the Jenkins X platform if there is a new release available",
-		Aliases: []string{"token"},
+		Aliases: []string{"install"},
 		Long:    upgrade_platform_long,
 		Example: upgrade_platform_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -74,11 +74,17 @@ func NewCmdUpgradePlatform(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 // Run implements the command
 func (o *UpgradePlatformOptions) Run() error {
-	ns := o.Namespace
 	version := o.Version
 	err := o.Helm().UpdateRepo()
 	if err != nil {
 		return err
+	}
+	ns := o.Namespace
+	if ns == "" {
+		_, ns, err = o.JXClientAndDevNamespace()
+		if err != nil {
+			return err
+		}
 	}
 	if version == "" {
 		io := &InstallOptions{}

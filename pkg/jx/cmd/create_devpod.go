@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -56,6 +55,7 @@ var (
 type CreateDevPodResults struct {
 	TheaServiceURL string
 	ExposeHost     string
+	PodName        string
 }
 
 // CreateDevPodOptions the options for the create spring command
@@ -74,6 +74,8 @@ type CreateDevPodOptions struct {
 	Persist    bool
 	ImportUrl  string
 	Import     bool
+	ShellCmd   string
+	Username   string
 
 	Results CreateDevPodResults
 }
@@ -115,6 +117,8 @@ func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	cmd.Flags().BoolVarP(&options.Persist, "persist", "", false, "Persist changes made to the DevPod. Cannot be used with --sync")
 	cmd.Flags().StringVarP(&options.ImportUrl, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
+	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
+	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -137,10 +141,6 @@ func (o *CreateDevPodOptions) Run() error {
 		return err
 	}
 	ns, _, err := kube.GetDevNamespace(client, curNs)
-	if err != nil {
-		return err
-	}
-	u, err := user.Current()
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,10 @@ func (o *CreateDevPodOptions) Run() error {
 		pod.Annotations = map[string]string{}
 	}
 
-	userName := u.Username
+	userName, err := o.getUsername(o.Username)
+	if err != nil {
+		return err
+	}
 	name := kube.ToValidName(userName + "-" + label)
 	if o.Suffix != "" {
 		name += "-" + o.Suffix
@@ -199,6 +202,7 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	name = uniquePodName(names, name)
+	o.Results.PodName = name
 
 	pod.Name = name
 	pod.Labels[kube.LabelPodTemplate] = label
@@ -327,7 +331,9 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 	pod.Annotations[kube.AnnotationWorkingDir] = workingDir
-	pod.Annotations[kube.AnnotationLocalDir] = dir
+	if o.Sync {
+		pod.Annotations[kube.AnnotationLocalDir] = dir
+	}
 	container1.Env = append(container1.Env, corev1.EnvVar{
 		Name:  "WORK_DIR",
 		Value: workingDir,
@@ -389,9 +395,18 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 		for _, p := range podsList.Items {
 			ann := p.Annotations
-			if ann != nil && ann[kube.AnnotationLocalDir] == dir && p.DeletionTimestamp == nil {
+			if ann == nil {
+				ann = map[string]string{}
+			}
+			// if syncing only match DevPods using the same local dir otherwise ignore any devpods with a local dir sync
+			matchDir := dir
+			if !o.Sync {
+				matchDir = ""
+			}
+			if p.DeletionTimestamp == nil && ann[kube.AnnotationLocalDir] == matchDir {
 				create = false
 				pod = &p
+				name = pod.Name
 				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
 				break
 			}
@@ -534,15 +549,23 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	log.Infof("Pod %s is now ready!\n", util.ColorInfo(pod.Name))
-	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod --reuse"))
+	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
 
 	theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
+	if err != nil {
+		return err
+	}
 	if theiaServiceURL != "" {
+		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
+		pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
+		pod, err = client.CoreV1().Pods(curNs).Update(pod)
 		if err != nil {
 			return err
 		}
 		log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
 		o.Results.TheaServiceURL = theiaServiceURL
+	} else {
+		log.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
 	}
 
 	exposePortsServiceHost, err := kube.FindServiceHostname(client, curNs, name)
@@ -576,7 +599,7 @@ func (o *CreateDevPodOptions) Run() error {
 	if create {
 		//  Let install bash-completion to make life better
 		log.Infof("Installing Bash Completion into DevPod\n")
-		rshExec = append(rshExec, "yum install -q -y bash-completion bash-completion-extra")
+		rshExec = append(rshExec, "yum install -q -y bash-completion bash-completion-extra", "mkdir -p ~/.jx", "jx completion bash > ~/.jx/bash", "echo \"source ~/.jx/bash\" >> ~/.bashrc")
 	}
 	if !o.Sync {
 		// Try to clone the right git repo into the DevPod
@@ -603,7 +626,12 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 	}
-	rshExec = append(rshExec, defaultRshCommand)
+	shellCommand := o.ShellCmd
+	if shellCommand == "" {
+		shellCommand = defaultRshCommand
+	}
+
+	rshExec = append(rshExec, shellCommand)
 
 	options := &RshOptions{
 		CommonOptions: o.CommonOptions,
@@ -611,6 +639,7 @@ func (o *CreateDevPodOptions) Run() error {
 		Pod:           pod.Name,
 		DevPod:        true,
 		ExecCmd:       strings.Join(rshExec, " && "),
+		Username:      userName,
 	}
 	options.Args = []string{}
 	return options.Run()
@@ -636,11 +665,11 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if err != nil {
 		return env, err
 	}
-	u, err := user.Current()
+	userName, err := o.getUsername(o.Username)
 	if err != nil {
 		return env, err
 	}
-	env, err = kube.EnsureEditEnvironmentSetup(kubeClient, jxClient, ns, u.Username)
+	env, err = kube.EnsureEditEnvironmentSetup(kubeClient, jxClient, ns, userName)
 	if err != nil {
 		return env, err
 	}

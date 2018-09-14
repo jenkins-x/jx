@@ -44,52 +44,11 @@ const (
 	ChartmuseumAuthConfigFile = "chartmuseumAuth.yaml"
 )
 
-type Factory interface {
-	CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (*gojenkins.Jenkins, error)
-
-	GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error)
-
-	CreateAuthConfigService(fileName string) (auth.AuthConfigService, error)
-
-	CreateJenkinsAuthConfigService(kubernetes.Interface, string) (auth.AuthConfigService, error)
-
-	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
-
-	CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
-
-	CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
-
-	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
-
-	CreateClient() (kubernetes.Interface, string, error)
-
-	CreateKubeConfig() (*rest.Config, error)
-
-	CreateJXClient() (versioned.Interface, string, error)
-
-	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
-
-	CreateMetricsClient() (*metricsclient.Clientset, error)
-
-	CreateComplianceClient() (*client.SonobuoyClient, error)
-
-	CreateTable(out io.Writer) table.Table
-
-	SetBatch(batch bool)
-
-	ImpersonateUser(user string) Factory
-
-	IsInCluster() bool
-
-	IsInCDPIpeline() bool
-
-	AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error
-}
-
 type factory struct {
 	Batch bool
 
 	impersonateUser string
+	bearerToken     string
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -107,6 +66,13 @@ func (f *factory) SetBatch(batch bool) {
 func (f *factory) ImpersonateUser(user string) Factory {
 	copy := *f
 	copy.impersonateUser = user
+	return &copy
+}
+
+// WithBearerToken returns a new factory with bearer token
+func (f *factory) WithBearerToken(token string) Factory {
+	copy := *f
+	copy.bearerToken = token
 	return &copy
 }
 
@@ -406,6 +372,12 @@ func (f *factory) CreateKubeConfig() (*rest.Config, error) {
 			return nil, err
 		}
 	}
+
+	if config != nil && f.bearerToken != "" {
+		config.BearerToken = f.bearerToken
+		return config, nil
+	}
+
 	user := f.getImpersonateUser()
 	if config != nil && user != "" && config.Impersonate.UserName == "" {
 		config.Impersonate.UserName = user

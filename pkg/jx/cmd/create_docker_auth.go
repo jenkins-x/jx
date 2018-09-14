@@ -127,6 +127,9 @@ func (o *CreateDockerAuthOptions) Run() error {
 		newConfigData := &Auth{}
 		newConfigData.Auth = b64.StdEncoding.EncodeToString([]byte(o.User + ":" + o.Secret))
 		newConfigData.Email = email
+		if dockerConfig.Auths == nil {
+			dockerConfig.Auths = map[string]*Auth{}
+		}
 		dockerConfig.Auths[o.Host] = newConfigData
 	}
 	secretFromConfig.Data["config.json"], err = json.Marshal(dockerConfig)
