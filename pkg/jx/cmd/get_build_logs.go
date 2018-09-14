@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -45,13 +46,15 @@ var (
 )
 
 // NewCmdGetBuildLogs creates the command
-func NewCmdGetBuildLogs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}
@@ -119,7 +122,7 @@ func (o *GetBuildLogsOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName)
+		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -186,7 +189,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	}
 
 	if len(args) == 0 {
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName)
+		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

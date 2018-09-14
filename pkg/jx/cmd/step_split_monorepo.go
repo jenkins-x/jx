@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -48,11 +49,12 @@ type StepSplitMonorepoOptions struct {
 }
 
 // NewCmdStepSplitMonorepo Creates a new Command object
-func NewCmdStepSplitMonorepo(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepSplitMonorepo(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepSplitMonorepoOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

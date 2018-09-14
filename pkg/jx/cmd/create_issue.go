@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
 
@@ -49,13 +50,15 @@ type CreateIssueOptions struct {
 }
 
 // NewCmdCreateIssue creates a command object for the "create" command
-func NewCmdCreateIssue(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateIssue(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateIssueOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}
@@ -115,7 +118,7 @@ func (o *CreateIssueOptions) PopulateIssue(issue *gits.GitIssue) error {
 		if o.BatchMode {
 			return util.MissingOption(optionTitle)
 		}
-		title, err = util.PickValue("Issue title:", "", true)
+		title, err = util.PickValue("Issue title:", "", true, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

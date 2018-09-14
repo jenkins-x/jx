@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"fmt"
@@ -21,10 +22,11 @@ type DeleteAddonOptions struct {
 
 // NewCmdDeleteAddon creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteAddonOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -42,8 +44,8 @@ func NewCmdDeleteAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 		SuggestFor: []string{"remove", "rm"},
 	}
 
-	cmd.AddCommand(NewCmdDeleteAddonCloudBees(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteAddonGitea(f, out, errOut))
+	cmd.AddCommand(NewCmdDeleteAddonCloudBees(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteAddonGitea(f, in, out, errOut))
 	options.addFlags(cmd)
 	return cmd
 }

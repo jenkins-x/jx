@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -42,13 +43,15 @@ type CreatePostPreviewJobOptions struct {
 }
 
 // NewCmdCreatePostPreviewJob creates a command object for the "create" command
-func NewCmdCreatePostPreviewJob(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreatePostPreviewJob(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreatePostPreviewJobOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}

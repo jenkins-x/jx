@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"io"
 	"reflect"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // TODO reafcator. setup function makes tests sequence dependent. Tests cannot be run with t.Parallel()
@@ -22,7 +24,7 @@ func setup(latestJXVersion semver.Version) {
 	monkey.Patch(util.ColorInfo, func(input ...interface{}) string {
 		return "ColourInfo"
 	})
-	monkey.Patch(util.Confirm, func(message string, b bool, m string) bool {
+	monkey.Patch(util.Confirm, func(message string, b bool, m string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) bool {
 		return true
 	})
 	var v *cmd.VersionOptions

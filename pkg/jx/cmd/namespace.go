@@ -15,6 +15,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -40,10 +41,11 @@ var (
 		jx ns cheese`)
 )
 
-func NewCmdNamespace(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &NamespaceOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -152,6 +154,8 @@ func (o *NamespaceOptions) PickNamespace(names []string, defaultNamespace string
 		Options: names,
 		Default: defaultNamespace,
 	}
-	err := survey.AskOne(prompt, &name, nil)
+
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+	err := survey.AskOne(prompt, &name, nil, surveyOpts)
 	return name, err
 }

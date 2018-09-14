@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
@@ -55,11 +56,12 @@ type CreateGitTokenOptions struct {
 }
 
 // NewCmdCreateGitToken creates a command
-func NewCmdCreateGitToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGitToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateGitTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -138,7 +140,7 @@ func (o *CreateGitTokenOptions) Run() error {
 			return nil
 		}
 
-		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f)
+		err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

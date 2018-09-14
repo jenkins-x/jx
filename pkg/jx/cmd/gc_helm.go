@@ -12,6 +12,7 @@ import (
 	"strconv"
 
 	"github.com/ghodss/yaml"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
@@ -45,10 +46,11 @@ var (
 )
 
 // NewCmdGCHelm  a command object for the "garbage collect" command
-func NewCmdGCHelm(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGCHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GCHelmOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},

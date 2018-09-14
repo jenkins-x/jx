@@ -16,7 +16,7 @@ import (
 	kube_mocks "k8s.io/client-go/kubernetes/fake"
 )
 
-func TestRun(t *testing.T) {
+func TestStatusRun(t *testing.T) {
 	t.Parallel()
 
 	// Create a fake node

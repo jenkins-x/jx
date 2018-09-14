@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,11 +39,12 @@ type StepReleaseOptions struct {
 }
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepRelease(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepReleaseOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

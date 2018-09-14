@@ -5,6 +5,7 @@ import (
 
 	"github.com/heptio/sonobuoy/pkg/buildinfo"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // TODO change the name of the namespace to something more jx specific (e.g. jx-compliance), but
@@ -24,10 +25,11 @@ type ComplianceOptions struct {
 
 // NewCompliance creates a command object for the generic "compliance" action, which
 // executes the compliance tests against a Kubernetes cluster
-func NewCompliance(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCompliance(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ComplianceOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -44,11 +46,11 @@ func NewCompliance(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(NewCmdComplianceStatus(f, out, errOut))
-	cmd.AddCommand(NewCmdComplianceResults(f, out, errOut))
-	cmd.AddCommand(NewCmdComplianceRun(f, out, errOut))
-	cmd.AddCommand(NewCmdComplianceDelete(f, out, errOut))
-	cmd.AddCommand(NewCmdComplianceLogs(f, out, errOut))
+	cmd.AddCommand(NewCmdComplianceStatus(f, in, out, errOut))
+	cmd.AddCommand(NewCmdComplianceResults(f, in, out, errOut))
+	cmd.AddCommand(NewCmdComplianceRun(f, in, out, errOut))
+	cmd.AddCommand(NewCmdComplianceDelete(f, in, out, errOut))
+	cmd.AddCommand(NewCmdComplianceLogs(f, in, out, errOut))
 
 	return cmd
 }

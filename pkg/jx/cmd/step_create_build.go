@@ -11,6 +11,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -47,11 +48,12 @@ type StepCreateBuildOptions struct {
 }
 
 // NewCmdCreateBuild Creates a new Command object
-func NewCmdCreateBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepCreateBuildOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/fatih/color"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -56,12 +57,14 @@ var (
 )
 
 // NewCmdPrompt creates the new command for: jx get prompt
-func NewCmdPrompt(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdPrompt(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &PromptOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{

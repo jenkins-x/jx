@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"io"
-
 	"fmt"
+	"io"
 
 	"os"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -45,8 +45,8 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdUpdateClusterGKETerraform(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := createUpdateClusterGKETerraformOptions(f, out, errOut, GKE)
+func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := createUpdateClusterGKETerraformOptions(f, in, out, errOut, GKE)
 
 	cmd := &cobra.Command{
 		Use:     "terraform",
@@ -70,9 +70,10 @@ func NewCmdUpdateClusterGKETerraform(f Factory, out io.Writer, errOut io.Writer)
 	return cmd
 }
 
-func createUpdateClusterGKETerraformOptions(f Factory, out io.Writer, errOut io.Writer, cloudProvider string) UpdateClusterGKETerraformOptions {
+func createUpdateClusterGKETerraformOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) UpdateClusterGKETerraformOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
+		In:      in,
 		Out:     out,
 		Err:     errOut,
 	}
@@ -103,12 +104,13 @@ func (o *UpdateClusterGKETerraformOptions) Run() error {
 }
 
 func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if !o.BatchMode {
 		confirm := false
 		prompt := &survey.Confirm{
 			Message: "Updating a GKE cluster with terraform is an experimental feature in jx.  Would you like to continue?",
 		}
-		survey.AskOne(prompt, &confirm, nil)
+		survey.AskOne(prompt, &confirm, nil, surveyOpts)
 
 		if !confirm {
 			// exit at this point
@@ -181,7 +183,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		prompt := &survey.Confirm{
 			Message: "Would you like to apply this plan",
 		}
-		survey.AskOne(prompt, &confirm, nil)
+		survey.AskOne(prompt, &confirm, nil, surveyOpts)
 
 		if !confirm {
 			// exit at this point
