@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -189,7 +188,7 @@ func (o *CreateDevPodOptions) Run() error {
 		pod.Annotations = map[string]string{}
 	}
 
-	userName, err := o.getUsername()
+	userName, err := o.getUsername(o.Username)
 	if err != nil {
 		return err
 	}
@@ -640,6 +639,7 @@ func (o *CreateDevPodOptions) Run() error {
 		Pod:           pod.Name,
 		DevPod:        true,
 		ExecCmd:       strings.Join(rshExec, " && "),
+		Username:      userName,
 	}
 	options.Args = []string{}
 	return options.Run()
@@ -665,7 +665,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if err != nil {
 		return env, err
 	}
-	userName, err := o.getUsername()
+	userName, err := o.getUsername(o.Username)
 	if err != nil {
 		return env, err
 	}
@@ -721,18 +721,6 @@ func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface
 		return errors.Wrapf(err, "Failed to load ingress-config in namespace %s", devNs)
 	}
 	return o.runExposecontroller(ns, ns, ingressConfig)
-}
-
-func (o *CreateDevPodOptions) getUsername() (string, error) {
-	userName := o.Username
-	if userName == "" {
-		u, err := user.Current()
-		if err != nil {
-			return userName, errors.Wrap(err, "Could not find the current user name. Please pass it in explicitly via the argument '--username'")
-		}
-		userName = u.Username
-	}
-	return userName, nil
 }
 
 // FindDevPodLabelFromJenkinsfile finds pod labels from a Jenkinsfile

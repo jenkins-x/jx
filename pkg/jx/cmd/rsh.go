@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -33,6 +32,7 @@ type RshOptions struct {
 	Executable string
 	ExecCmd    string
 	DevPod     bool
+	Username   string
 
 	stopCh chan struct{}
 }
@@ -85,6 +85,7 @@ func NewCmdRsh(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Executable, "shell", "s", "", "Path to the shell command")
 	cmd.Flags().BoolVarP(&options.DevPod, "devpod", "d", false, "Connect to a DevPod")
 	cmd.Flags().StringVarP(&options.ExecCmd, "execute", "e", defaultRshCommand, "Execute this command on the remote container")
+	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
 
 	return cmd
 }
@@ -111,11 +112,11 @@ func (o *RshOptions) Run() error {
 	pods := map[string]*corev1.Pod{}
 	if o.DevPod {
 		podsName = "DevPods"
-		u, err := user.Current()
+		userName, err := o.getUsername(o.Username)
 		if err != nil {
 			return err
 		}
-		names, pods, err = kube.GetDevPodNames(client, ns, u.Username)
+		names, pods, err = kube.GetDevPodNames(client, ns, userName)
 		if err != nil {
 			return err
 		}
