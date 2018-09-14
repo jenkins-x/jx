@@ -5,13 +5,13 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
-		build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	"github.com/jenkins-x/jx/pkg/util"
+	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/test-infra/prow/config"
 	"k8s.io/test-infra/prow/plugins"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
@@ -22,6 +22,7 @@ const (
 	KnativeBuildVersion            = "0.0.6"
 	ChartProw                      = "jenkins-x/prow"
 	ChartKnativeBuild              = "jenkins-x/knative-build"
+	JenkinsMasterTag               = "dev_gevans_15"
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"
@@ -31,24 +32,26 @@ type Kind string
 
 // Options for prow
 type Options struct {
-	KubeClient kubernetes.Interface
-	Repos      []string
-	NS         string
-	Kind       Kind
-	DraftPack  string
+	KubeClient           kubernetes.Interface
+	Repos                []string
+	NS                   string
+	Kind                 Kind
+	DraftPack            string
+	EnvironmentNamespace string
 }
 
-func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, draftPack string) error {
+func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, draftPack, environmentNamespace string) error {
 
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
 	}
 	o := Options{
-		KubeClient: kubeClient,
-		Repos:      repos,
-		NS:         ns,
-		Kind:       kind,
-		DraftPack:  draftPack,
+		KubeClient:           kubeClient,
+		Repos:                repos,
+		NS:                   ns,
+		Kind:                 kind,
+		DraftPack:            draftPack,
+		EnvironmentNamespace: environmentNamespace,
 	}
 
 	err := o.AddProwConfig()
@@ -59,12 +62,12 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, 
 	return o.AddProwPlugins()
 }
 
-func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns string) error {
-	return add(kubeClient, repos, ns, Environment, "")
+func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string) error {
+	return add(kubeClient, repos, ns, Environment, "", environmentNamespace)
 }
 
 func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPack string) error {
-	return add(kubeClient, repos, ns, Application, draftPack)
+	return add(kubeClient, repos, ns, Application, draftPack, "")
 }
 
 // create git repo?
@@ -84,10 +87,11 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/builder-base:0.0.547",
-				Args:  []string{"jx", "step", "helm", "build", "-d", "env"},
+				Image:      "jenkinsxio/builder-base:0.0.547",
+				Args:       []string{"jx", "step", "helm", "build"},
+				WorkingDir: "/workspace/env",
 				Env: []v1.EnvVar{
-					{Name: "DEPLOY_NAMESPACE", Value: "jx-staging"},
+					{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
 					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
 					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
 					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
@@ -116,8 +120,9 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/builder-base:0.0.547",
-				Args:  []string{"jx", "step", "helm", "apply", "-d", "env"},
+				Image:      "jenkinsxio/builder-base:0.0.547",
+				Args:       []string{"jx", "step", "helm", "apply"},
+				WorkingDir: "/workspace/env",
 				Env: []v1.EnvVar{
 					{Name: "DEPLOY_NAMESPACE", Value: "jx-staging"},
 					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
@@ -141,7 +146,7 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps.Name = "release"
 	ps.Agent = "knative-build"
 
-	image := fmt.Sprintf("jenkinsxio/jenkins-%s:dev_14", o.DraftPack)
+	image := fmt.Sprintf("jenkinsxio/jenkins-%s:%s", o.DraftPack, JenkinsMasterTag)
 	log.Infof("generating prow config, using Jenkins image %s\n", image)
 
 	spec := &build.BuildSpec{
@@ -197,7 +202,7 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.SkipReport = false
 	ps.Agent = "knative-build"
 
-	image := fmt.Sprintf("jenkinsxio/jenkins-%s:dev_14", o.DraftPack)
+	image := fmt.Sprintf("jenkinsxio/jenkins-%s:%s", o.DraftPack, JenkinsMasterTag)
 	log.Infof("generating prow config, using Jenkins image %s\n", image)
 
 	spec := &build.BuildSpec{
@@ -356,7 +361,7 @@ func (o *Options) AddProwConfig() error {
 		}
 	}
 
-	for _,r := range o.Repos {
+	for _, r := range o.Repos {
 		o.addRepoToTideConfig(&prowConfig.Tide, r, o.Kind)
 	}
 
