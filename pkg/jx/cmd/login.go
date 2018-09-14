@@ -23,6 +23,7 @@ import (
 )
 
 const (
+	defaultNamespace       = "jx"
 	UserOnboardingEndpoint = "/api/v1/users"
 	SsoCookieName          = "sso-cdx"
 )
@@ -94,7 +95,7 @@ func (o *LoginOptions) Run() error {
 		return errors.Wrap(err, "loging into the CloudBees application")
 	}
 
-	err = kube.UpdateConfig(userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
+	err = kube.UpdateConfig(defaultNamespace, userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
 	if err != nil {
 		return errors.Wrap(err, "updating the ~/kube/config file")
 	}
