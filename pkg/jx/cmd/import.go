@@ -992,10 +992,16 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 		return err
 	}
 	repo := gitInfo.Organisation + "/" + gitInfo.Name
-	return prow.AddApplication(options.KubeClientCached, []string{repo}, options.currentNamespace, options.DraftPack)
+	err = prow.AddApplication(options.KubeClientCached, []string{repo}, options.currentNamespace, options.DraftPack)
+	if err != nil {
+		return err
+	}
 
 	// todo lets create a knative build to auto optionally auto trigger initial release
 
+	options.logImportedProject(false, gitInfo)
+
+	return nil
 }
 
 // ensureDockerRepositoryExists for some kinds of container registry we need to pre-initialise its use such as for ECR

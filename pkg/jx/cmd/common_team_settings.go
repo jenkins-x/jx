@@ -17,8 +17,9 @@ type BranchPatterns struct {
 }
 
 const (
-	defaultBuildPackRef = "2.1"
-	defaultHelmBin      = "helm"
+	defaultBuildPackRef     = "2.1"
+	defaultProwBuildPackRef = "prow"
+	defaultHelmBin          = "helm"
 )
 
 // TeamSettings returns the team settings
