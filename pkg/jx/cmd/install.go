@@ -607,6 +607,25 @@ func (options *InstallOptions) Run() error {
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 
+	if options.Flags.Prow {
+		callback := func(env *v1.Environment) error {
+			env.Spec.WebHookEngine = v1.WebHookEngineProw
+			settings := &env.Spec.TeamSettings
+			settings.PromotionEngine = v1.PromotionEngineProw
+			if settings.BuildPackURL == "" {
+				settings.BuildPackURL = JenkinsBuildPackURL
+			}
+			if settings.BuildPackRef == "" || settings.BuildPackRef == defaultBuildPackRef {
+				settings.BuildPackRef = defaultProwBuildPackRef
+			}
+			log.Info("Configuring the TeamSettings for Prow\n")
+			return nil
+		}
+		err = options.ModifyDevEnvironment(callback)
+		if err != nil {
+			return err
+		}
+	}
 	if !initOpts.Flags.Tiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.NoTiller = true
