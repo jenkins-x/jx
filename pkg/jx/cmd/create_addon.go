@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CreateAddonOptions the options for the create spring command
@@ -58,7 +59,7 @@ func NewCmdCreateAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd.AddCommand(NewCmdCreateAddonProw(f, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonSSO(f, out, errOut))
 
-	options.addFlags(cmd, "", "")
+	options.addFlags(cmd, kube.DefaultNamespace, "")
 	return cmd
 }
 
@@ -100,5 +101,32 @@ func (o *CreateAddonOptions) CreateAddon(addon string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to install chart %s: %s", chart, err)
 	}
-	return nil
+	return o.ExposeAddon(addon)
+}
+
+func (o *CreateAddonOptions) ExposeAddon(addon string) error {
+	service, ok := kube.AddonServices[addon]
+	if !ok {
+		return nil
+	}
+	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(service, meta_v1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "getting the addon service: %s", service)
+	}
+
+	if svc.Annotations == nil {
+		svc.Annotations = map[string]string{}
+	}
+	if svc.Annotations[kube.AnnotationExpose] == "" {
+		svc.Annotations[kube.AnnotationExpose] = "true"
+		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
+		if err != nil {
+			return errors.Wrap(err, "updating the service annotations")
+		}
+	}
+	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "retrieving the dev namespace")
+	}
+	return o.expose(devNamespace, o.Namespace, "")
 }
