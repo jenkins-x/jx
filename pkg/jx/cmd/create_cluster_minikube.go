@@ -30,6 +30,7 @@ type CreateClusterMinikubeOptions struct {
 type CreateClusterMinikubeFlags struct {
 	Memory              string
 	CPU                 string
+	DiskSize            string
 	Driver              string
 	HyperVVirtualSwitch string
 	Namespace           string
@@ -77,6 +78,7 @@ func NewCmdCreateClusterMinikube(f Factory, out io.Writer, errOut io.Writer) *co
 
 	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "", fmt.Sprintf("Amount of RAM allocated to the minikube VM in MB. Defaults to %s MB.", MinikubeDefaultMemory))
 	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "", fmt.Sprintf("Number of CPUs allocated to the minikube VM. Defaults to %s.", MinikubeDefaultCpu))
+	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "s", "", fmt.Sprintf("Total amount of storage allocated to the minikube VM. Defaults to %s", MinikubeDefaultDiskSize))
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [hyperkit hyperv kvm kvm2 virtualbox vmwarefusion xhyve]")
 	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with minikube")
 	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "", "", "kubernetes version")
@@ -158,6 +160,14 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	}
 	showPromptIfOptionNotSet(&cpu, prompt)
 
+	disksize := o.Flags.DiskSize
+	prompt = &survey.Input{
+		Message: "disk-size (MB)",
+		Default: MinikubeDefaultDiskSize,
+		Help:    "Total amount of storage allocated to the minikube VM in MB",
+	}
+	showPromptIfOptionNotSet(&disksize, prompt)
+
 	vmDriverValue := o.Flags.Driver
 
 	defaultDriver := ""
@@ -208,7 +218,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		}
 	}
 
-	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", vmDriverValue, "--bootstrapper=kubeadm"}
+	args := []string{"start", "--memory", mem, "--cpus", cpu, "--disk-size", disksize, "--vm-driver", vmDriverValue, "--bootstrapper=kubeadm"}
 	hyperVVirtualSwitch := o.Flags.HyperVVirtualSwitch
 	if hyperVVirtualSwitch != "" {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
