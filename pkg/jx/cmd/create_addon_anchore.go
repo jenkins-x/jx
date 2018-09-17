@@ -129,26 +129,12 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return err
 	}
 
-	anchoreServiceName := kube.AddonServices[defaultAnchoreName]
-	// annotate the anchore engine service so exposecontroller can create an ingress rule
-	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(anchoreServiceName, meta_v1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to get Service %s: %v", anchoreServiceName, err)
-	}
-	if svc.Annotations == nil {
-		svc.Annotations = map[string]string{}
+	anchoreServiceName, ok := kube.AddonServices[defaultAnchoreName]
+	if !ok {
+		return errors.New("no service name defined for anchore chart")
 	}
 
-	if svc.Annotations[kube.AnnotationExpose] == "" {
-		svc.Annotations[kube.AnnotationExpose] = "true"
-		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
-		if err != nil {
-			return fmt.Errorf("failed to update service %s/%s", o.Namespace, anchoreServiceName)
-		}
-	}
-
-	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, "")
+	err = o.CreateAddonOptions.ExposeAddon(defaultAnchoreName)
 	if err != nil {
 		return err
 	}

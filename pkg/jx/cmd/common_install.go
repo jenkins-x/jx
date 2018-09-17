@@ -1487,7 +1487,7 @@ func (o *CommonOptions) installProw() error {
 	values = append(values, setValues...)
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
+		err = o.installChart(o.ReleaseName, o.Chart, "", devNamespace, true, values)
 		return nil
 	})
 
@@ -1498,7 +1498,7 @@ func (o *CommonOptions) installProw() error {
 	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(prow.DefaultKnativeBuildReleaseName, prow.ChartKnativeBuild, prow.KnativeBuildVersion, devNamespace, true, values)
+		err = o.installChart(prow.DefaultKnativeBuildReleaseName, prow.ChartKnativeBuild, "", devNamespace, true, values)
 		return nil
 	})
 

@@ -177,18 +177,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 				return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
 			}
 			log.Infof("Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
-			log.Blank()
-			if !isEnvironment {
-				log.Infof("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
-				log.Infof("Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
-				log.Infof("Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
-				log.Infof("You can list the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
-				log.Infof("When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
-				log.Blank()
-				log.Infof("For more help on available commands see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/browsing/"))
-				log.Blank()
-			}
-			log.Info(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary images get downloaded!\n\n"))
+			o.logImportedProject(isEnvironment, gitInfo)
 
 			params := url.Values{}
 			err = jenk.Build(job, params)
@@ -211,6 +200,21 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		URL:   webhookUrl,
 	}
 	return gitProvider.CreateWebHook(webhook)
+}
+
+func (o *CommonOptions) logImportedProject(isEnvironment bool, gitInfo *gits.GitRepositoryInfo) {
+	log.Blank()
+	if !isEnvironment {
+		log.Infof("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))
+		log.Infof("Browse the pipeline log via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get build logs %s", gitInfo.PipelinePath())))
+		log.Infof("Open the Jenkins console via    %s\n", util.ColorInfo("jx console"))
+		log.Infof("You can list the pipelines via: %s\n", util.ColorInfo("jx get pipelines"))
+		log.Infof("When the pipeline is complete:  %s\n", util.ColorInfo("jx get applications"))
+		log.Blank()
+		log.Infof("For more help on available commands see: %s\n", util.ColorInfo("https://jenkins-x.io/developing/browsing/"))
+		log.Blank()
+	}
+	log.Info(util.ColorStatus("Note that your first pipeline may take a few minutes to start while the necessary images get downloaded!\n\n"))
 }
 
 // findGitCredentials finds the credential name from the pipeline git Secrets
