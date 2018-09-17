@@ -194,15 +194,6 @@ func (a *RepositoriesApiService) RepositoriesUsernameGet(ctx context.Context, us
 	return successPayload, localVarHttpResponse, err
 }
 
-// RepositoriesPageGet is used to get the next or previous page of repositories
-func (a *RepositoriesApiService) RepositoriesPageGet(ctx context.Context, pageURL string) (PaginatedRepositories, *http.Response, error) {
-	var successPayload PaginatedRepositories
-
-	localVarHttpResponse, err := a.client.PageGet(ctx, pageURL, &successPayload)
-
-	return successPayload, localVarHttpResponse, err
-}
-
 /* RepositoriesApiService
 Returns the specified build status for a commit.
 * @param ctx context.Context for authentication, logging, tracing, etc.
