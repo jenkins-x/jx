@@ -205,7 +205,7 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 	if err != nil {
 		return err
 	}
-	binariesConfiguration := configDir + "/binaries.yml"
+	binariesConfiguration := filepath.Join(configDir, "/binaries.yml")
 	if _, err := os.Stat(binariesConfiguration); err == nil {
 		binariesBytes, err := ioutil.ReadFile(binariesConfiguration)
 		if err != nil {
