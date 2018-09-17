@@ -222,5 +222,6 @@ var (
 	AddonServices = map[string]string{
 		"anchore":         "anchore-anchore-engine",
 		"pipeline-events": "jx-pipeline-events-elasticsearch-client",
+		"grafana":         "grafana",
 	}
 )
