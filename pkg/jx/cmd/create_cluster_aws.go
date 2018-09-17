@@ -177,7 +177,13 @@ func (o *CreateClusterAWSOptions) Run() error {
 	state := flags.State
 	if state == "" {
 		kopsState := os.Getenv("KOPS_STATE_STORE")
-		if kopsState == "" {
+		if kopsState != "" {
+			if strings.Contains(kopsState, "://") {
+				state = kopsState
+			} else {
+				state = "s3://" + kopsState
+			}
+		} else {
 			bucketName := "kops-state-" + accountId + "-" + string(uuid.NewUUID())
 			log.Infof("Creating S3 bucket %s to store kops state\n", util.ColorInfo(bucketName))
 
@@ -199,6 +205,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			log.Infof("To work more easily with kops on the command line you may wish to run the following: %s\n", util.ColorInfo("export KOPS_STATE_STORE="+state))
 		}
 	}
+	o.Flags.State = state
 
 	name := flags.ClusterName
 	if name == "" {
@@ -222,9 +229,6 @@ func (o *CreateClusterAWSOptions) Run() error {
 	if flags.MasterSize != "" {
 		args = append(args, "--master-size", flags.MasterSize)
 	}
-	if state != "" {
-		args = append(args, "--state", state)
-	}
 
 	auth := "RBAC"
 	if !flags.UseRBAC {
@@ -238,8 +242,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 
 	// TODO allow add custom args?
 	log.Info("Creating cluster...\n")
-	log.Infof("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
-	err = o.runCommandVerbose("kops", args...)
+	err = o.runKops(args...)
 	if err != nil {
 		return err
 	}
@@ -287,7 +290,11 @@ func (o *CreateClusterAWSOptions) Run() error {
 func (o *CreateClusterAWSOptions) waitForClusterJson(clusterName string) (string, error) {
 	jsonOutput := ""
 	f := func() error {
-		text, err := o.getCommandOutput("", "kops", "get", "cluster", "--name", clusterName, "-o", "json")
+		args := []string{"get", "cluster", "--name", clusterName, "-o", "json"}
+		if o.Flags.State != "" {
+			args = append(args, "--state", o.Flags.State)
+		}
+		text, err := o.getCommandOutput("", "kops", args...)
 		if err != nil {
 			return err
 		}
@@ -328,23 +335,31 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 	}
 
 	log.Infof("Updating Cluster configuration to enable insecure docker registries %s\n", util.ColorInfo(insecureRegistries))
-	err = o.runCommandVerbose("kops", "replace", "-f", fileName)
+	err = o.runKops("replace", "-f", fileName)
 	if err != nil {
 		return err
 	}
 
 	log.Infoln("Updating the cluster")
-	err = o.runCommandVerbose("kops", "update", "cluster", "--yes")
+	err = o.runKops("update", "cluster", "--yes")
 	if err != nil {
 		return err
 	}
 
 	log.Infoln("Rolling update the cluster")
-	err = o.runCommandVerbose("kops", "rolling-update", "cluster", "--cloudonly", "--yes")
+	err = o.runKops("rolling-update", "cluster", "--cloudonly", "--yes")
 	if err != nil {
 		// lets not fail to install if the rolling upgrade fails
 		log.Warnf("Failed to perform rolling upgrade: %s\n", err)
 		//return err
 	}
 	return nil
+}
+
+func (o *CreateClusterAWSOptions) runKops(args ...string) error {
+	if o.Flags.State != "" {
+		args = append(args, "--state", o.Flags.State)
+	}
+	log.Infof("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
+	return o.runKops("update", "cluster", "--yes")
 }

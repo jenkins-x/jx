@@ -74,6 +74,11 @@ func (o *GCActivitiesOptions) Run() error {
 		return err
 	}
 
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
 	client, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -92,38 +97,47 @@ func (o *GCActivitiesOptions) Run() error {
 		return nil
 	}
 
-	o.jclient, err = o.JenkinsClient()
+	prowEnabled, err := kube.IsProwEnabled(kubeClient, currentNs)
 	if err != nil {
 		return err
 	}
 
-	jobs, err := o.jclient.GetJobs()
-	if err != nil {
-		return err
-	}
 	var jobNames []string
-	for _, j := range jobs {
-		err = o.getAllPipelineJobNames(o.jclient, &jobNames, j.Name)
+	if !prowEnabled {
+		o.jclient, err = o.JenkinsClient()
 		if err != nil {
 			return err
+		}
+
+		jobs, err := o.jclient.GetJobs()
+		if err != nil {
+			return err
+		}
+		for _, j := range jobs {
+			err = o.getAllPipelineJobNames(o.jclient, &jobNames, j.Name)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	activityBuilds := make(map[string][]int)
 
 	for _, a := range activities.Items {
-		// if activity has no job in jenkins delete it
-		matched := false
-		for _, j := range jobNames {
-			if a.Spec.Pipeline == j {
-				matched = true
-				break
+		if !prowEnabled {
+			// if activity has no job in jenkins delete it
+			matched := false
+			for _, j := range jobNames {
+				if a.Spec.Pipeline == j {
+					matched = true
+					break
+				}
 			}
-		}
-		if !matched {
-			err = client.JenkinsV1().PipelineActivities(currentNs).Delete(a.Name, metav1.NewDeleteOptions(0))
-			if err != nil {
-				return err
+			if !matched {
+				err = client.JenkinsV1().PipelineActivities(currentNs).Delete(a.Name, metav1.NewDeleteOptions(0))
+				if err != nil {
+					return err
+				}
 			}
 		}
 

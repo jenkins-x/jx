@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,6 +22,7 @@ const (
 	KnativeBuildVersion            = "0.0.6"
 	ChartProw                      = "jenkins-x/prow"
 	ChartKnativeBuild              = "jenkins-x/knative-build"
+	JenkinsMasterTag               = "dev_17"
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"
@@ -30,22 +32,26 @@ type Kind string
 
 // Options for prow
 type Options struct {
-	KubeClient kubernetes.Interface
-	Repos      []string
-	NS         string
-	Kind       Kind
+	KubeClient           kubernetes.Interface
+	Repos                []string
+	NS                   string
+	Kind                 Kind
+	DraftPack            string
+	EnvironmentNamespace string
 }
 
-func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind) error {
+func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, draftPack, environmentNamespace string) error {
 
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
 	}
 	o := Options{
-		KubeClient: kubeClient,
-		Repos:      repos,
-		NS:         ns,
-		Kind:       kind,
+		KubeClient:           kubeClient,
+		Repos:                repos,
+		NS:                   ns,
+		Kind:                 kind,
+		DraftPack:            draftPack,
+		EnvironmentNamespace: environmentNamespace,
 	}
 
 	err := o.AddProwConfig()
@@ -56,12 +62,12 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind) 
 	return o.AddProwPlugins()
 }
 
-func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns string) error {
-	return add(kubeClient, repos, ns, Environment)
+func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string) error {
+	return add(kubeClient, repos, ns, Environment, "", environmentNamespace)
 }
 
-func AddApplication(kubeClient kubernetes.Interface, repos []string, ns string) error {
-	return add(kubeClient, repos, ns, Application)
+func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPack string) error {
+	return add(kubeClient, repos, ns, Application, draftPack, "")
 }
 
 // create git repo?
@@ -81,10 +87,11 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/builder-base:latest",
-				Args:  []string{"jx", "step", "helm", "build"},
+				Image:      "jenkinsxio/builder-base:0.0.547",
+				Args:       []string{"jx", "step", "helm", "build"},
+				WorkingDir: "/workspace/env",
 				Env: []v1.EnvVar{
-					{Name: "DEPLOY_NAMESPACE", Value: "jx-staging"},
+					{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
 					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
 					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
 					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
@@ -108,12 +115,14 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Name = "promotion"
 	ps.Agent = "knative-build"
+	ps.Branches = []string{"master"}
 
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/builder-base:latest",
-				Args:  []string{"jx", "step", "helm", "apply"},
+				Image:      "jenkinsxio/builder-base:0.0.547",
+				Args:       []string{"jx", "step", "helm", "apply"},
+				WorkingDir: "/workspace/env",
 				Env: []v1.EnvVar{
 					{Name: "DEPLOY_NAMESPACE", Value: "jx-staging"},
 					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
@@ -131,17 +140,25 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	return ps
 }
 
-func (o *Options) createPostSubmitMavenApplication() config.Postsubmit {
+func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps := config.Postsubmit{}
+	ps.Branches = []string{"master"}
 	ps.Name = "release"
 	ps.Agent = "knative-build"
+
+	image := fmt.Sprintf("jenkinsxio/jenkins-%s:%s", o.DraftPack, JenkinsMasterTag)
+	log.Infof("generating prow config, using Jenkins image %s\n", image)
 
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/jenkins-maven:dev_12",
+				Image: image,
 				Env: []v1.EnvVar{
-					{Name: "BRANCH_NAME", Value: "master"},
+					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
+					{Name: "GIT_AUTHOR_EMAIL", Value: "jenkins-x@googlegroups.com"},
+					{Name: "GIT_AUTHOR_NAME", Value: "jenkins-x-bot"},
+					{Name: "GIT_COMMITTER_NAME", Value: "jenkins-x-bot"},
+					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
 					{Name: "DOCKER_CONFIG", Value: "/home/jenkins/.docker/"},
 					{Name: "DOCKER_REGISTRY", ValueFrom: &v1.EnvVarSource{
 
@@ -154,19 +171,19 @@ func (o *Options) createPostSubmitMavenApplication() config.Postsubmit {
 					}},
 				},
 				VolumeMounts: []v1.VolumeMount{
-					v1.VolumeMount{Name: "jenkins-docker-cfg", MountPath: "/home/jenkins/.docker"},
-					v1.VolumeMount{Name: "docker-sock-volume", MountPath: "/var/run/docker.sock"},
-					v1.VolumeMount{Name: "jenkins-maven-settings", MountPath: "/root/.m2/"},
-					v1.VolumeMount{Name: "jenkins-release-gpg", MountPath: "/home/jenkins/.gnupg"},
+					{Name: "jenkins-docker-cfg", MountPath: "/home/jenkins/.docker"},
+					{Name: "docker-sock-volume", MountPath: "/var/run/docker.sock"},
+					{Name: "jenkins-maven-settings", MountPath: "/root/.m2/"},
+					{Name: "jenkins-release-gpg", MountPath: "/home/jenkins/.gnupg"},
 				},
 			},
 		},
 		ServiceAccountName: "jenkins",
 		Volumes: []v1.Volume{
-			v1.Volume{Name: "jenkins-docker-cfg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-docker-cfg"}}},
-			v1.Volume{Name: "docker-sock-volume", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
-			v1.Volume{Name: "jenkins-maven-settings", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-maven-settings"}}},
-			v1.Volume{Name: "jenkins-release-gpg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-release-gpg"}}},
+			{Name: "jenkins-docker-cfg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-docker-cfg"}}},
+			{Name: "docker-sock-volume", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
+			{Name: "jenkins-maven-settings", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-maven-settings"}}},
+			{Name: "jenkins-release-gpg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-release-gpg"}}},
 		},
 	}
 
@@ -174,22 +191,24 @@ func (o *Options) createPostSubmitMavenApplication() config.Postsubmit {
 	return ps
 }
 
-func (o *Options) createPreSubmitMavenApplication() config.Presubmit {
+func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps := config.Presubmit{}
 
-	ps.Branches = []string{"master"}
 	ps.Context = "jenkins-engine-ci"
 	ps.Name = "jenkins-engine-ci"
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
-	ps.AlwaysRun = true
+	ps.AlwaysRun = false
 	ps.SkipReport = false
 	ps.Agent = "knative-build"
+
+	image := fmt.Sprintf("jenkinsxio/jenkins-%s:%s", o.DraftPack, JenkinsMasterTag)
+	log.Infof("generating prow config, using Jenkins image %s\n", image)
 
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image: "jenkinsxio/jenkins-maven:dev_12",
+				Image: image,
 				Env: []v1.EnvVar{
 					{Name: "DOCKER_CONFIG", Value: "/home/jenkins/.docker/"},
 					{Name: "DOCKER_REGISTRY", ValueFrom: &v1.EnvVarSource{
@@ -203,19 +222,19 @@ func (o *Options) createPreSubmitMavenApplication() config.Presubmit {
 					}},
 				},
 				VolumeMounts: []v1.VolumeMount{
-					v1.VolumeMount{Name: "jenkins-docker-cfg", MountPath: "/home/jenkins/.docker"},
-					v1.VolumeMount{Name: "docker-sock-volume", MountPath: "/var/run/docker.sock"},
-					v1.VolumeMount{Name: "jenkins-maven-settings", MountPath: "/root/.m2/"},
-					v1.VolumeMount{Name: "jenkins-release-gpg", MountPath: "/home/jenkins/.gnupg"},
+					{Name: "jenkins-docker-cfg", MountPath: "/home/jenkins/.docker"},
+					{Name: "docker-sock-volume", MountPath: "/var/run/docker.sock"},
+					{Name: "jenkins-maven-settings", MountPath: "/root/.m2/"},
+					{Name: "jenkins-release-gpg", MountPath: "/home/jenkins/.gnupg"},
 				},
 			},
 		},
 		ServiceAccountName: "jenkins",
 		Volumes: []v1.Volume{
-			v1.Volume{Name: "jenkins-docker-cfg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-docker-cfg"}}},
-			v1.Volume{Name: "docker-sock-volume", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
-			v1.Volume{Name: "jenkins-maven-settings", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-maven-settings"}}},
-			v1.Volume{Name: "jenkins-release-gpg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-release-gpg"}}},
+			{Name: "jenkins-docker-cfg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-docker-cfg"}}},
+			{Name: "docker-sock-volume", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
+			{Name: "jenkins-maven-settings", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-maven-settings"}}},
+			{Name: "jenkins-release-gpg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-release-gpg"}}},
 		},
 	}
 
@@ -224,6 +243,34 @@ func (o *Options) createPreSubmitMavenApplication() config.Presubmit {
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
 
 	return ps
+}
+
+func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
+	switch o.Kind {
+	case Application:
+		for index, q := range t.Queries {
+			if util.Contains(q.Labels, "approved") {
+				repos := t.Queries[index].Repos
+				if !util.Contains(repos, repo) {
+					repos = append(repos, repo)
+					t.Queries[index].Repos = repos
+				}
+			}
+		}
+	case Environment:
+		for index, q := range t.Queries {
+			if !util.Contains(q.Labels, "approved") {
+				repos := t.Queries[index].Repos
+				if !util.Contains(repos, repo) {
+					repos = append(repos, repo)
+					t.Queries[index].Repos = repos
+				}
+			}
+		}
+	default:
+		return fmt.Errorf("unknown prow config kind %s", o.Kind)
+	}
+	return nil
 }
 
 func (o *Options) createTide() config.Tide {
@@ -233,19 +280,19 @@ func (o *Options) createTide() config.Tide {
 	}
 
 	var qs []config.TideQuery
-
-	for _, r := range o.Repos {
-		q := config.TideQuery{
-			Repos:         []string{r},
-			Labels:        []string{"approved"},
-			MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
-		}
-		qs = append(qs, q)
+	q := config.TideQuery{
+		Repos:         []string{},
+		Labels:        []string{"approved"},
+		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
 	}
-
-	queries := qs
-
-	t.Queries = queries
+	qs = append(qs, q)
+	q = config.TideQuery{
+		Repos:         []string{},
+		Labels:        []string{},
+		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
+	}
+	qs = append(qs, q)
+	t.Queries = qs
 
 	// todo JR not sure if we need the contexts if we add the branch protection plugin
 	//orgPolicies := make(map[string]config.TideOrgContextPolicy)
@@ -279,17 +326,14 @@ func (o *Options) createTide() config.Tide {
 func (o *Options) AddProwConfig() error {
 	var preSubmit config.Presubmit
 	var postSubmit config.Postsubmit
-	var tide config.Tide
 
 	switch o.Kind {
 	case Application:
-		preSubmit = o.createPreSubmitMavenApplication()
-		postSubmit = o.createPostSubmitMavenApplication()
-		tide = o.createTide()
+		preSubmit = o.createPreSubmitApplication()
+		postSubmit = o.createPostSubmitApplication()
 	case Environment:
 		preSubmit = o.createPreSubmitEnvironment()
 		postSubmit = o.createPostSubmitEnvironment()
-		tide = o.createTide()
 	default:
 		return fmt.Errorf("unknown prow config kind %s", o.Kind)
 	}
@@ -297,11 +341,13 @@ func (o *Options) AddProwConfig() error {
 	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("config", metav1.GetOptions{})
 	create := true
 	prowConfig := &config.Config{}
+	// config doesn't exist, creating
 	if err != nil {
 		prowConfig.Presubmits = make(map[string][]config.Presubmit)
 		prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
-
+		prowConfig.Tide = o.createTide()
 	} else {
+		// config exists, updating
 		create = false
 		err = yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
 		if err != nil {
@@ -316,11 +362,13 @@ func (o *Options) AddProwConfig() error {
 	}
 
 	for _, r := range o.Repos {
+		o.addRepoToTideConfig(&prowConfig.Tide, r, o.Kind)
+	}
+
+	for _, r := range o.Repos {
 		prowConfig.Presubmits[r] = []config.Presubmit{preSubmit}
 		prowConfig.Postsubmits[r] = []config.Postsubmit{postSubmit}
 	}
-
-	prowConfig.Tide = tide
 
 	configYAML, err := yaml.Marshal(prowConfig)
 	if err != nil {
@@ -411,16 +459,4 @@ func (o *Options) AddProwPlugins() error {
 	}
 
 	return err
-}
-
-func IsProwInstalled(kubeClient kubernetes.Interface, ns string) (bool, error) {
-
-	podCount, err := kube.DeploymentPodCount(kubeClient, Hook, ns)
-	if err != nil {
-		return false, fmt.Errorf("failed when looking for hook deployment: %v", err)
-	}
-	if podCount == 0 {
-		return false, nil
-	}
-	return true, nil
 }
