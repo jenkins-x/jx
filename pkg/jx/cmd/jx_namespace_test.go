@@ -15,7 +15,7 @@ import (
 func TestJXNamespace(t *testing.T) {
 	t.Parallel()
 	o := &cmd.CommonOptions{}
-	cmd.ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, ""))
+	cmd.ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, "", true))
 
 	kubeClient, ns, err := o.KubeClient()
 	assert.NoError(t, err, "Failed to create kube client")

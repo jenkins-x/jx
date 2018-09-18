@@ -251,6 +251,7 @@ func (o *InitOptions) initHelm() error {
 	}
 
 	if !o.Flags.SkipTiller {
+		log.Infof("Configuring %s\n", util.ColorInfo("tiller"))
 		client, curNs, err := o.KubeClient()
 		if err != nil {
 			return err
@@ -369,6 +370,8 @@ func (o *InitOptions) initHelm() error {
 		if err != nil {
 			return err
 		}
+	} else {
+		log.Infof("Skipping %s\n", util.ColorInfo("tiller"))
 	}
 
 	if o.Flags.Helm3 {

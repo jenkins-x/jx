@@ -39,7 +39,7 @@ func TestGetWorkflow(t *testing.T) {
 			),
 		},
 		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""),
+		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
