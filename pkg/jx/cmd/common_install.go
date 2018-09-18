@@ -148,7 +148,6 @@ func binaryShouldBeInstalled(d string) string {
 				return ""
 			}
 		}
-		log.Infof("%s not found\n", d)
 		return d
 	}
 	return ""
