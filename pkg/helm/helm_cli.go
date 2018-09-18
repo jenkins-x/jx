@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // HelmCLI implements common helm actions based on helm CLI
@@ -17,11 +18,12 @@ type HelmCLI struct {
 	BinVersion Version
 	CWD        string
 	Runner     *util.Command
+	Debug bool
 }
 
 // NewHelmCLI creates a new HelmCLI instance configured to used the provided helm CLI in
 // the given current working directory
-func NewHelmCLI(binary string, version Version, cwd string, args ...string) *HelmCLI {
+func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...string) *HelmCLI {
 	a := []string{}
 	for _, x := range args {
 		y := strings.Split(x, " ")
@@ -47,6 +49,9 @@ func NewHelmCLI(binary string, version Version, cwd string, args ...string) *Hel
 func (h *HelmCLI) SetHost(tillerAddress string) {
 	if h.Runner.Env == nil {
 		h.Runner.Env = map[string]string{}
+	}
+	if h.Debug {
+		log.Infof("Setting tiller address to %s\n", util.ColorInfo(tillerAddress))
 	}
 	h.Runner.Env["HELM_HOST"] = tillerAddress
 }
@@ -97,6 +102,11 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 	if upgrade {
 		args = append(args, "--upgrade", "--wait", "--force-upgrade")
 	}
+
+	if h.Debug {
+		log.Infof("Initialising Helm '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+	}
+
 	return h.runHelm(args...)
 }
 
@@ -229,6 +239,11 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	for _, valueFile := range valueFiles {
 		args = append(args, "--values", valueFile)
 	}
+
+	if h.Debug {
+		log.Infof("Installing Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+	}
+
 	return h.runHelm(args...)
 }
 
@@ -260,6 +275,11 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 		args = append(args, "--values", valueFile)
 	}
 	args = append(args, releaseName, chart)
+
+	if h.Debug {
+		log.Infof("Upgrading Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+	}
+
 	return h.runHelm(args...)
 }
 
