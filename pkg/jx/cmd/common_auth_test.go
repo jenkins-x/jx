@@ -36,7 +36,7 @@ func TestAuthLoadFromPipelineGitCredentials(t *testing.T) {
 	}
 
 	o := &cmd.CommonOptions{}
-	cmd.ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, ""))
+	cmd.ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, "", true))
 
 	fileName := "doesNotExist.yaml"
 
