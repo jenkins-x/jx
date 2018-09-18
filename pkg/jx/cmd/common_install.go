@@ -186,6 +186,35 @@ func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileNam
 	return
 }
 
+func (o *CommonOptions) UninstallBinary(binDir string, name string) error {
+	fileName := name
+	if runtime.GOOS == "windows" {
+		fileName += ".exe"
+	}
+	// try to remove the binary from all paths
+	var err error
+	for {
+		path, err := exec.LookPath(fileName)
+		if err == nil {
+			err := os.Remove(path)
+			if err != nil {
+				return err
+			}
+		} else {
+			break
+		}
+	}
+	path := filepath.Join(binDir, fileName)
+	exists, err := util.FileExists(path)
+	if err != nil {
+		return nil
+	}
+	if exists {
+		return os.Remove(path)
+	}
+	return nil
+}
+
 func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
 	log.Infof("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
 	err := util.DownloadFile(fullPath, clientURL)
@@ -512,9 +541,9 @@ func (o *CommonOptions) installTiller() error {
 		return err
 	}
 	binary := "tiller"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
-	if err != nil || !flag {
-		return err
+	fileName := binary
+	if runtime.GOOS == "windows" {
+		fileName += ".exe"
 	}
 	// TODO workaround until 2.11.x GA is released
 	latestVersion := "2.11.0-rc.3"
