@@ -66,7 +66,7 @@ func TestSequentialWorkflow(t *testing.T) {
 			),
 		},
 		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""),
+		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 	o.GitClient = &gits.GitFake{}
 
@@ -178,7 +178,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
 		},
 		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""),
+		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 	o.GitClient = &gits.GitFake{}
 
@@ -350,7 +350,7 @@ func TestParallelWorkflow(t *testing.T) {
 			),
 		},
 		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""),
+		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 	o.GitClient = &gits.GitFake{}
 
@@ -493,7 +493,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 			),
 		},
 		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""),
+		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 	o.GitClient = &gits.GitFake{}
 

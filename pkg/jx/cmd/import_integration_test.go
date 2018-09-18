@@ -64,7 +64,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	_, dirName := filepath.Split(testDir)
 	dirName = kube.ToValidName(dirName)
 	o := &cmd.ImportOptions{}
-	cmd.ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName))
+	cmd.ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName, true))
 	o.Dir = testDir
 	o.DryRun = true
 	o.DisableMaven = true
