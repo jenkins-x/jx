@@ -70,14 +70,14 @@ func setup(output string) {
 }
 
 func createHelm(expectedArgs string) (*helm.HelmCLI, error) {
-	cli := helm.NewHelmCLI(binary, helm.V2, cwd, expectedArgs)
+	cli := helm.NewHelmCLI(binary, helm.V2, cwd, true, expectedArgs)
 	err := checkArgs(cli, cwd, binary, expectedArgs)
 	return cli, err
 }
 
 func TestNewHelmCLI(t *testing.T) {
 	setup("")
-	cli := helm.NewHelmCLI(binary, helm.V2, cwd, "arg1 arg2 arg3", "and some", "more")
+	cli := helm.NewHelmCLI(binary, helm.V2, cwd, true,"arg1 arg2 arg3", "and some", "more")
 	assert.Equal(t, []string{"arg1", "arg2", "arg3", "and", "some", "more"}, cli.Runner.Args)
 
 	cli, _ = createHelm("arg1 arg2 arg3")
