@@ -551,21 +551,23 @@ func (o *CreateDevPodOptions) Run() error {
 	log.Infof("Pod %s is now ready!\n", util.ColorInfo(pod.Name))
 	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
 
-	theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
-	if err != nil {
-		return err
-	}
-	if theiaServiceURL != "" {
-		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
-		pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
-		pod, err = client.CoreV1().Pods(curNs).Update(pod)
+	if !o.Sync {
+		theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
 		if err != nil {
 			return err
 		}
-		log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
-		o.Results.TheaServiceURL = theiaServiceURL
-	} else {
-		log.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
+		if theiaServiceURL != "" {
+			pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
+			pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
+			pod, err = client.CoreV1().Pods(curNs).Update(pod)
+			if err != nil {
+				return err
+			}
+			log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
+			o.Results.TheaServiceURL = theiaServiceURL
+		} else {
+			log.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
+		}
 	}
 
 	exposePortsServiceHost, err := kube.FindServiceHostname(client, curNs, name)
