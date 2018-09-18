@@ -62,20 +62,21 @@ type CreateDevPodResults struct {
 type CreateDevPodOptions struct {
 	CreateOptions
 
-	Label      string
-	Suffix     string
-	WorkingDir string
-	RequestCpu string
-	Dir        string
-	Reuse      bool
-	Sync       bool
-	Ports      []int
-	AutoExpose bool
-	Persist    bool
-	ImportUrl  string
-	Import     bool
-	ShellCmd   string
-	Username   string
+	Label          string
+	Suffix         string
+	WorkingDir     string
+	RequestCpu     string
+	Dir            string
+	Reuse          bool
+	Sync           bool
+	Ports          []int
+	AutoExpose     bool
+	Persist        bool
+	ImportUrl      string
+	Import         bool
+	ShellCmd       string
+	Username       string
+	DockerRegistry string
 
 	Results CreateDevPodResults
 }
@@ -119,6 +120,8 @@ func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
 	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
 	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
+	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
+
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -339,6 +342,14 @@ func (o *CreateDevPodOptions) Run() error {
 		Value: workingDir,
 	})
 	container1.Stdin = true
+
+	// If a Docker registry override was passed in, set it as an env var.
+	if o.DockerRegistry != "" {
+		container1.Env = append(container1.Env, corev1.EnvVar{
+			Name:  "DOCKER_REGISTRY",
+			Value: o.DockerRegistry,
+		})
+	}
 
 	if editEnv != nil {
 		container1.Env = append(container1.Env, corev1.EnvVar{
