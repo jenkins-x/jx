@@ -517,7 +517,7 @@ func (o *CommonOptions) installTiller() error {
 		return err
 	}
 	// TODO workaround until 2.11.x GA is released
-	latestVersion := "2.11.0-rc.2"
+	latestVersion := "2.11.0-rc.3"
 	/*
 		latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
 			if err != nil {
