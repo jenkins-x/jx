@@ -250,7 +250,7 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		if err != nil {
 			helmBinary = defaultHelmBin
 		}
-		log.Infof("Using helmBinary %s, with local tiller %s\n", util.ColorInfo(helmBinary), util.ColorInfo(noTiller))
+		log.Infof("Using helmBinary %s, with noTiller %s\n", util.ColorInfo(helmBinary), util.ColorInfo(noTiller))
 		o.helm = helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
 		if noTiller {
 			o.helm.SetHost(o.tillerAddress())
