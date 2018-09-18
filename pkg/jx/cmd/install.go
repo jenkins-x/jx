@@ -261,6 +261,25 @@ func (options *InstallOptions) Run() error {
 				return errors.Wrap(err, "uninstalling existing tiller binary")
 			}
 		}
+
+		_, install, err = options.shouldInstallBinary(binDir, helmBinary)
+		if !install && err == nil {
+			confirm := &survey.Confirm{
+				Message: "Uninstalling  existing helm binary:",
+				Default: true,
+			}
+			flag := true
+			err = survey.AskOne(confirm, &flag, nil)
+			if err != nil || flag == false {
+				return errors.New("Existing helm must be uninstalled first in order to use the jx in tiller less mode")
+			}
+			// Uninstall helm and tiller first to avoid using some older version
+			err = options.UninstallBinary(binDir, helmBinary)
+			if err != nil {
+				return errors.Wrap(err, "uninstalling existing helm binary")
+			}
+		}
+
 		dependencies = append(dependencies, "tiller")
 		options.Helm().SetHost(options.tillerAddress())
 	}
