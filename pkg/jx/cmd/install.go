@@ -709,6 +709,9 @@ func (options *InstallOptions) Run() error {
 			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
 			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
 			options.CreateEnvOptions.Prow = options.Flags.Prow
+			if options.BatchMode {
+				options.CreateEnvOptions.BatchMode = options.BatchMode
+			}
 
 			options.CreateEnvOptions.Options.Name = "staging"
 			options.CreateEnvOptions.Options.Spec.Label = "Staging"
