@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -10,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
@@ -116,7 +119,7 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 		case "aws":
 			err = o.installAws()
 		case "eksctl":
-			err = o.installEksCtl()
+			err = o.installEksCtl(false)
 		case "heptio-authenticator-aws":
 			err = o.installHeptioAuthenticatorAws()
 		default:
@@ -223,6 +226,106 @@ func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
 	log.Infof("Downloaded %s\n", util.ColorInfo(fullPath))
 	return nil
 }
+
+func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization string, downloadUrlTemplate string, version string, skipPathScan bool) error {
+	binaries := map[string]string{}
+	configDir, err := util.ConfigDir()
+	if err != nil {
+		return err
+	}
+	binariesConfiguration := filepath.Join(configDir, "/binaries.yml")
+	if _, err := os.Stat(binariesConfiguration); err == nil {
+		binariesBytes, err := ioutil.ReadFile(binariesConfiguration)
+		if err != nil {
+			return err
+		}
+		yaml.Unmarshal(binariesBytes, &binaries)
+		if binaries[binary] == version {
+			return nil
+		}
+	}
+
+	urlTemplate, err := template.New(binary).Parse(downloadUrlTemplate)
+	if err != nil {
+		return err
+	}
+	binDir, err := util.JXBinLocation()
+	if err != nil {
+		return err
+	}
+	fileName := binary
+	if !skipPathScan {
+		installFilename, flag, err := o.shouldInstallBinary(binDir, binary)
+		fileName = installFilename
+		if err != nil || !flag {
+			return err
+		}
+	}
+	if version == "" {
+		version, err = util.GetLatestVersionStringFromGitHub(gitHubOrganization, binary)
+		if err != nil {
+			return err
+		}
+	}
+	extension := "tar.gz"
+	if runtime.GOOS == "windows" {
+		extension = "zip"
+	}
+	clientUrlBuffer := bytes.NewBufferString("")
+	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": version, "os" : runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
+	fullPath := filepath.Join(binDir, fileName)
+	tarFile := fullPath + "." + extension
+	err = o.downloadFile(clientUrlBuffer.String(), tarFile)
+	if err != nil {
+		return err
+	}
+	if extension == "zip" {
+		zipDir := filepath.Join(binDir, binary + "-tmp-"+uuid.NewUUID().String())
+		err = os.MkdirAll(zipDir, DefaultWritePermissions)
+		if err != nil {
+			return err
+		}
+		err = util.Unzip(tarFile, zipDir)
+		if err != nil {
+			return err
+		}
+		f := filepath.Join(zipDir, fileName)
+		exists, err := util.FileExists(f)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return fmt.Errorf("Could not find file %s inside the downloaded file!", f)
+		}
+		err = os.Rename(f, fullPath)
+		if err != nil {
+			return err
+		}
+		err = os.RemoveAll(zipDir)
+	} else {
+		err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	}
+	if err != nil {
+		return err
+	}
+	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+
+	binaries[binary] = version
+	binariesBytes, err := yaml.Marshal(binaries)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(binariesConfiguration, binariesBytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	return os.Chmod(fullPath, 0755)
+}
+
 
 func (o *CommonOptions) installBrewIfRequired() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
@@ -1097,65 +1200,11 @@ func (o *CommonOptions) installAws() error {
 	return nil
 }
 
-func (o *CommonOptions) installEksCtl() error {
-	binDir, err := util.JXBinLocation()
-	binary := "eksctl"
-	if err != nil {
-		return err
-	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
-	if err != nil || !flag {
-		return err
-	}
-	latestVersion, err := util.GetLatestVersionStringFromGitHub("weaveworks", binary)
-	if err != nil {
-		return err
-	}
-	extension := "tar.gz"
-	if runtime.GOOS == "windows" {
-		extension = "zip"
-	}
-	clientURL := fmt.Sprintf("https://github.com/weaveworks/eksctl/releases/download/%s/eksctl_%s_%s.%s", latestVersion, strings.Title(runtime.GOOS), runtime.GOARCH, extension)
-	fullPath := filepath.Join(binDir, fileName)
-	tarFile := fullPath + "." + extension
-	err = o.downloadFile(clientURL, tarFile)
-	if err != nil {
-		return err
-	}
-	if extension == "zip" {
-		zipDir := filepath.Join(binDir, "eksctl-tmp-"+uuid.NewUUID().String())
-		err = os.MkdirAll(zipDir, DefaultWritePermissions)
-		if err != nil {
-			return err
-		}
-		err = util.Unzip(tarFile, zipDir)
-		if err != nil {
-			return err
-		}
-		f := filepath.Join(zipDir, fileName)
-		exists, err := util.FileExists(f)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return fmt.Errorf("Could not find file %s inside the downloaded eksctl.zip!", f)
-		}
-		err = os.Rename(f, fullPath)
-		if err != nil {
-			return err
-		}
-		err = os.RemoveAll(zipDir)
-	} else {
-		err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
-	}
-	if err != nil {
-		return err
-	}
-	err = os.Remove(tarFile)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(fullPath, 0755)
+func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
+	return o.installOrUpdateBinary("eksctl",
+		 "weaveworks",
+		"https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
+		"0.1.1", skipPathScan)
 }
 
 func (o *CommonOptions) installHeptioAuthenticatorAws() error {
