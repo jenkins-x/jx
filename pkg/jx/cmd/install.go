@@ -704,17 +704,18 @@ func (options *InstallOptions) Run() error {
 			}
 
 			log.Info("Creating default staging and production environments\n")
-			options.CreateEnvOptions.Options.Name = "staging"
-			options.CreateEnvOptions.Options.Spec.Label = "Staging"
-			options.CreateEnvOptions.Options.Spec.Order = 100
+			// Common CreateEnv Options
+			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
 			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
 			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
+			options.CreateEnvOptions.Prow = options.Flags.Prow
 			if options.BatchMode {
 				options.CreateEnvOptions.BatchMode = options.BatchMode
 			}
-			options.CreateEnvOptions.Prow = options.Flags.Prow
-			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
 
+			options.CreateEnvOptions.Options.Name = "staging"
+			options.CreateEnvOptions.Options.Spec.Label = "Staging"
+			options.CreateEnvOptions.Options.Spec.Order = 100
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
 				return errors.Wrap(err, "failed to create staging environment")
@@ -724,10 +725,6 @@ func (options *InstallOptions) Run() error {
 			options.CreateEnvOptions.Options.Spec.Order = 200
 			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
 			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
-			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
-			if options.BatchMode {
-				options.CreateEnvOptions.BatchMode = options.BatchMode
-			}
 
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
