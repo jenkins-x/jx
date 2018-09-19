@@ -970,7 +970,7 @@
   branch = "master"
   name = "github.com/wbrefvem/go-bitbucket"
   packages = ["."]
-  revision = "f14ad200310707479f18aa24e078f8c5b5887c85"
+  revision = "1c96061fe622327222f81923e37a44f1a2da6382"
 
 [[projects]]
   branch = "master"
@@ -1598,6 +1598,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c5431f694c834c9b533db7deac2c2208c92d611d116f9c6785beaa2fdf40721b"
+  inputs-digest = "6aa570c0d977e9503458b3c8204ae838a72cd9ee0d22288ed38ba5b7a565b75c"
   solver-name = "gps-cdcl"
   solver-version = 1
