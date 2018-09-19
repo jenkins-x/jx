@@ -33,6 +33,7 @@ type CreateClusterAKSFlags struct {
 	PathToPublicKey           string
 	ClientSecret              string
 	ServicePrincipal          string
+	Subscription              string
 	SkipLogin                 bool
 	SkipProviderRegistration  bool
 	SkipResourceGroupCreation bool
@@ -97,6 +98,7 @@ func NewCmdCreateClusterAKS(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "path-To-public-rsa-key", "k", "", "Path to public RSA key")
 	cmd.Flags().StringVarP(&options.Flags.ClientSecret, "client-secret", "", "", "Azure AD client secret to use an existing SP")
 	cmd.Flags().StringVarP(&options.Flags.ServicePrincipal, "service-principal", "", "", "Azure AD service principal to use an existing SP")
+	cmd.Flags().StringVarP(&options.Flags.Subscription, "subscription", "", "", "Azure subscription to be used if not default one")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip login if already logged in using `az login`")
 	cmd.Flags().BoolVarP(&options.Flags.SkipProviderRegistration, "skip-provider-registration", "", false, "Skip provider registration")
 	cmd.Flags().BoolVarP(&options.Flags.SkipResourceGroupCreation, "skip-resource-group-creation", "", false, "Skip resource group creation")
@@ -234,6 +236,16 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		}
 	}
 
+	subscription := o.Flags.Subscription
+
+	if subscription != "" {
+		log.Info("Changing subscription...\n")
+		err = o.runCommandVerbose("az", "account", "set", "--subscription", subscription)
+
+		if err != nil {
+			return err
+		}
+	}
 	createCluster := []string{"aks", "create", "-g", resourceName, "-n", clusterName}
 
 	if o.Flags.KubeVersion != "" {
