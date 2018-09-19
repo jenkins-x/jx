@@ -28,7 +28,7 @@ func TestCreateQuickstartProjects(t *testing.T) {
 			ProjectName: appName,
 		},
 	}
-	cmd.ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, testDir))
+	cmd.ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, testDir, true))
 	o.Dir = testDir
 	o.OutDir = testDir
 	o.DryRun = true

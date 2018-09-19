@@ -60,7 +60,7 @@ func TestServiceLinking(t *testing.T) {
 		[]runtime.Object{fromNspc, toNspc, svcInFromNs, svcInToNs, svcDummyInFromNs},
 		nil,
 		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""))
+		helm.NewHelmCLI("helm", helm.V2, "", true))
 	serviceListFromNsBeforeStepLink, _ := o.KubeClientCached.CoreV1().Services(fromNs).List(metav1.ListOptions{})
 	assert.EqualValues(t, len(serviceListFromNsBeforeStepLink.Items), 2)
 	serviceListToNsBeforeStepLink, _ := o.KubeClientCached.CoreV1().Services(toNs).List(metav1.ListOptions{})
