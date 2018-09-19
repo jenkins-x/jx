@@ -306,7 +306,10 @@ func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig
 				return model, err
 			}
 			o.Debugf("Searching for repositories in git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
-			model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
+			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
+			if err != nil {
+				o.Debugf("Quickstart load error: %s\n", err.Error())
+			}
 		}
 	}
 	return model, nil
