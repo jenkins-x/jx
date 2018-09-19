@@ -631,6 +631,10 @@ func (options *ImportOptions) DraftCreate() error {
 	if err != nil {
 		return err
 	}
+	err = options.CreateProwOwnersAliasesFile()
+	if err != nil {
+		return err
+	}
 
 	err = options.Git().Add(dir, "*")
 	if err != nil {
@@ -1254,6 +1258,39 @@ func (options *ImportOptions) CreateProwOwnersFile() error {
 			return err
 		}
 		return nil
+	}
+	return errors.New("GitUserAuth.Username not set")
+}
+
+// CreateProwOwnersAliasesFile creates an OWNERS_ALIASES file in the root of the project assigning the current git user as an approver and a reviewer.
+func (options *ImportOptions) CreateProwOwnersAliasesFile() error {
+	filename := filepath.Join(options.Dir, "OWNERS_ALIASES")
+	exists, err := util.FileExists(filename)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	if options.GitUserAuth == nil {
+		return errors.New("option GitUserAuth not set")
+	}
+	gitUser := options.GitUserAuth.Username
+	if gitUser != "" {
+		data := struct {
+			Aliases       []string `yaml:"aliases"`
+			BestApprovers []string `yaml:"best-approvers"`
+			BestReviewers []string `yaml:"best-reviewers"`
+		}{
+			[]string{gitUser},
+			[]string{gitUser},
+			[]string{gitUser},
+		}
+		yaml, err := yaml.Marshal(&data)
+		if err != nil {
+			return err
+		}
+		return ioutil.WriteFile(filename, []byte(yaml), 0644)
 	}
 	return errors.New("GitUserAuth.Username not set")
 }
