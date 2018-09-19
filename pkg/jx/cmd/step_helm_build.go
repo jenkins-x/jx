@@ -56,7 +56,9 @@ func NewCmdStepHelmBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 			CheckErr(err)
 		},
 	}
+	
 	options.addStepHelmFlags(cmd)
+	options.addCommonFlags(cmd)
 
 	cmd.Flags().BoolVarP(&options.recursive, "recursive", "r", false, "Build recursively the dependent charts")
 
