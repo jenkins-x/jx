@@ -330,7 +330,7 @@ func (o *CreateDevPodOptions) Run() error {
 		workingDir = "/workspace"
 
 		if o.Sync {
-			// lets check for gopath stuff if we are in --sync mode so that we sync into gopath
+			// lets check for GOPATH stuff if we are in --sync mode so that we sync into gopath
 			gopath := os.Getenv("GOPATH")
 			if gopath != "" {
 				rel, err := filepath.Rel(gopath, dir)
