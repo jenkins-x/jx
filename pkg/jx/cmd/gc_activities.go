@@ -100,7 +100,10 @@ func (o *GCActivitiesOptions) Run() error {
 		return nil
 	}
 
-	prowEnabled, _ := kube.IsProwEnabled(kubeClient, currentNs)
+	prowEnabled, err := kube.IsProwEnabled(kubeClient, currentNs)
+	if err != nil {
+		return err
+	}
 
 	var jobNames []string
 	if !prowEnabled {
