@@ -2,12 +2,14 @@ package quickstarts
 
 import (
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -73,7 +75,8 @@ func (model *QuickstartModel) Add(q *Quickstart) bool {
 }
 
 // CreateSurvey creates a survey to query pick a quickstart
-func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode bool) (*QuickstartForm, error) {
+func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*QuickstartForm, error) {
+	surveyOpts := survey.WithStdio(in, out, errOut)
 	language := filter.Language
 	if language != "" {
 		languages := model.Languages()
@@ -109,7 +112,7 @@ func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode b
 			Message: "select the quickstart you wish to create",
 			Options: names,
 		}
-		err := survey.AskOne(prompt, &answer, survey.Required)
+		err := survey.AskOne(prompt, &answer, survey.Required, surveyOpts)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +130,7 @@ func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode b
 			name = q.Name
 		}
 		var err error
-		name, err = util.PickValue("Project name", name, true)
+		name, err = util.PickValue("Project name", name, true, in, out, errOut)
 		if err != nil {
 			return nil, err
 		}

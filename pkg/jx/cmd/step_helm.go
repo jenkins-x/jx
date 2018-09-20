@@ -8,10 +8,12 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
+
+	"os"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"os"
 )
 
 const (
@@ -31,11 +33,12 @@ type StepHelmOptions struct {
 }
 
 // NewCmdStepHelm Steps a command object for the "step" command
-func NewCmdStepHelm(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepHelmOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -52,10 +55,10 @@ func NewCmdStepHelm(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdStepHelmApply(f, out, errOut))
-	cmd.AddCommand(NewCmdStepHelmBuild(f, out, errOut))
-	cmd.AddCommand(NewCmdStepHelmEnv(f, out, errOut))
-	cmd.AddCommand(NewCmdStepHelmRelease(f, out, errOut))
+	cmd.AddCommand(NewCmdStepHelmApply(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepHelmBuild(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepHelmEnv(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepHelmRelease(f, in, out, errOut))
 	return cmd
 }
 

@@ -265,7 +265,7 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		if o.BatchMode {
 			return "", fmt.Errorf("No git server kind could be found for URL %s\nPlease try specify it via: jx create git server someKind %s", hostURL, hostURL)
 		}
-		kind, err = util.PickName(gits.KindGits, fmt.Sprintf("Pick what kind of git server is: %s", hostURL))
+		kind, err = util.PickName(gits.KindGits, fmt.Sprintf("Pick what kind of git server is: %s", hostURL), o.In, o.Out, o.Err)
 		if err != nil {
 			return "", err
 		}
@@ -290,7 +290,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git())
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
 }
 
 // gitProviderForURL returns a GitProvider for the given git server URL

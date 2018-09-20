@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -42,11 +43,12 @@ type CreateTokenAddonOptions struct {
 }
 
 // NewCmdCreateTokenAddon creates a command
-func NewCmdCreateTokenAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateTokenAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateTokenAddonOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -125,7 +127,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 				return nil
 			}
 
-			err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f)
+			err = config.EditUserAuth(server.Label(), userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

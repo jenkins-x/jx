@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -39,10 +40,11 @@ var (
 
 // NewCmdGet creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdGet(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -62,34 +64,34 @@ func NewCmdGet(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		SuggestFor: []string{"list", "ps"},
 	}
 
-	cmd.AddCommand(NewCmdGetActivity(f, out, errOut))
-	cmd.AddCommand(NewCmdGetAddon(f, out, errOut))
-	cmd.AddCommand(NewCmdGetApplications(f, out, errOut))
-	cmd.AddCommand(NewCmdGetAWSInfo(f, out, errOut))
-	cmd.AddCommand(NewCmdGetBranchPattern(f, out, errOut))
-	cmd.AddCommand(NewCmdGetBuild(f, out, errOut))
-	cmd.AddCommand(NewCmdGetBuildPack(f, out, errOut))
-	cmd.AddCommand(NewCmdGetChat(f, out, errOut))
-	cmd.AddCommand(NewCmdGetConfig(f, out, errOut))
-	cmd.AddCommand(NewCmdGetCVE(f, out, errOut))
-	cmd.AddCommand(NewCmdGetDevPod(f, out, errOut))
-	cmd.AddCommand(NewCmdGetEnv(f, out, errOut))
-	cmd.AddCommand(NewCmdGetGit(f, out, errOut))
-	cmd.AddCommand(NewCmdGetHelmBin(f, out, errOut))
-	cmd.AddCommand(NewCmdGetIssue(f, out, errOut))
-	cmd.AddCommand(NewCmdGetIssues(f, out, errOut))
-	cmd.AddCommand(NewCmdGetPipeline(f, out, errOut))
-	cmd.AddCommand(NewCmdGetPostPreviewJob(f, out, errOut))
-	cmd.AddCommand(NewCmdGetPreview(f, out, errOut))
-	cmd.AddCommand(NewCmdGetQuickstartLocation(f, out, errOut))
-	cmd.AddCommand(NewCmdGetRelease(f, out, errOut))
-	cmd.AddCommand(NewCmdGetTeam(f, out, errOut))
-	cmd.AddCommand(NewCmdGetTeamRole(f, out, errOut))
-	cmd.AddCommand(NewCmdGetToken(f, out, errOut))
-	cmd.AddCommand(NewCmdGetTracker(f, out, errOut))
-	cmd.AddCommand(NewCmdGetURL(f, out, errOut))
-	cmd.AddCommand(NewCmdGetUser(f, out, errOut))
-	cmd.AddCommand(NewCmdGetWorkflow(f, out, errOut))
+	cmd.AddCommand(NewCmdGetActivity(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetAddon(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetApplications(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetAWSInfo(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetBranchPattern(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetBuild(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetBuildPack(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetChat(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetConfig(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetCVE(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetDevPod(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetEnv(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetGit(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetHelmBin(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetIssue(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetIssues(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetPipeline(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetPostPreviewJob(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetPreview(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetQuickstartLocation(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetRelease(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetTeam(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetTeamRole(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetToken(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetTracker(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetURL(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetUser(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetWorkflow(f, in, out, errOut))
 	return cmd
 }
 

@@ -572,7 +572,7 @@ func (o *CommonOptions) installhyperv() error {
 
 		message := fmt.Sprintf("Would you like to restart your computer?")
 
-		if util.Confirm(message, true, "Please indicate if you would like to restart your computer.") {
+		if util.Confirm(message, true, "Please indicate if you would like to restart your computer.", o.In, o.Out, o.Err) {
 
 			err = o.RunCommand("powershell", "Enable-WindowsOptionalFeature", "-Online", "-FeatureName", "Microsoft-Hyper-V", "-All", "-NoRestart")
 			if err != nil {
@@ -1227,6 +1227,7 @@ func (o *CommonOptions) installHeptioAuthenticatorAws() error {
 }
 
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if p == "" {
 		// lets detect minikube
 		currentContext, err := o.getCommandOutput("", "kubectl", "config", "current-context")
@@ -1248,7 +1249,7 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 			Help:    "Cloud service providing the kubernetes cluster, local VM (minikube), Google (GKE), Oracle (OKE), Azure (AKS)",
 		}
 
-		survey.AskOne(prompt, &p, nil)
+		survey.AskOne(prompt, &p, nil, surveyOpts)
 	}
 	return p, nil
 }
@@ -1277,6 +1278,7 @@ func (o *CommonOptions) getClusterDependencies(deps []string) []string {
 }
 
 func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string) error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	// get base list of required dependencies and add provider specific ones
 	deps := o.getClusterDependencies(providerSpecificDeps)
 
@@ -1298,7 +1300,7 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 			Options: deps,
 			Default: deps,
 		}
-		survey.AskOne(prompt, &install, nil)
+		survey.AskOne(prompt, &install, nil, surveyOpts)
 	}
 
 	return o.doInstallMissingDependencies(install)
@@ -1406,7 +1408,7 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 		log.Infof("Updating Jenkins with new external URL details %s\n", externalURL)
 
-		jenkins, err := o.Factory.CreateJenkinsClient(o.KubeClientCached, n)
+		jenkins, err := o.Factory.CreateJenkinsClient(o.KubeClientCached, n, o.In, o.Out, o.Err)
 
 		if err != nil {
 			return err
@@ -1491,7 +1493,7 @@ func (o *CommonOptions) installProw() error {
 		}
 
 		server := config.GetOrCreateServer(config.CurrentServer)
-		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode, "")
+		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

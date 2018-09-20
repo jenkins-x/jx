@@ -89,6 +89,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:f0c7fea921b32478b4c6507421489eda0ff94a2ed853b3517529fa32145f7d85"
+  name = "github.com/Netflix/go-expect"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "124a3727487432bebd525aeb4be3e88b003033d7"
+
+[[projects]]
+  branch = "master"
   digest = "1:2b8081e47e5a4673ad1217bf551f5e007a0059231c6bc32dfc5a77bb970a23da"
   name = "github.com/Pallinder/go-randomdata"
   packages = ["."]
@@ -665,6 +673,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:9d85bdcf641984b3a570b191d0679f9c95f06ca707fa21386459edf883d77b86"
+  name = "github.com/hinshun/vt10x"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d55458df857cfff952e4bf72ce1b567c5a4e141c"
+
+[[projects]]
+  branch = "master"
   digest = "1:1ebcd0aef6d4512ef3e56932606daec583ea39f2b756111f64d50179ef032130"
   name = "github.com/hpcloud/tail"
   packages = [
@@ -729,11 +745,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ccbc66086c63de1d2e23eec87a223a12e3771c6ea7d109092798c88644da1a7b"
+  digest = "1:c04a61a6b0d4061ca09a83b53d084129e2f49472e80113375a01c078f2ee3cad"
   name = "github.com/jenkins-x/golang-jenkins"
-  packages = ["."]
+  packages = [
+    ".",
+    "mocks",
+  ]
   pruneopts = "NUT"
-  revision = "b5ec7e72291c19eeb6a0916609eb359897f6cdf8"
+  revision = "65b83ad42314967aecff2cc8a7e75703e91b59b2"
 
 [[projects]]
   digest = "1:ac6d01547ec4f7f673311b4663909269bfb8249952de3279799289467837c3cc"
@@ -749,6 +768,14 @@
   pruneopts = "NUT"
   revision = "ab8a2e0c74be9d3be70b3184d9acc634935ded82"
   version = "1.1.4"
+
+[[projects]]
+  branch = "master"
+  digest = "1:cf68a79fd02ab0f6942b9567d03d054b6568212fcc22de2a4afdefd096923749"
+  name = "github.com/kballard/go-shellquote"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "95032a82bc518f77982ea72343cc1ade730072f0"
 
 [[projects]]
   digest = "1:8021af4dcbd531ae89433c8c3a6520e51064114aaf8eb1724c3cf911c497c9ba"
@@ -784,6 +811,14 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "0218e141a794643e8c0fa283b9cd076fc0df662d"
+
+[[projects]]
+  digest = "1:bc691028377c246d0c85e723d0ea726f899b2b53d5bc72542b74fe9054d447f2"
+  name = "github.com/kr/pty"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "fa756f09eeb418bf1cc6268c66ceaad9bb98f598"
+  version = "v1.1.2"
 
 [[projects]]
   digest = "1:d244f8666a838fe6ad70ec8fe77f50ebc29fdc3331a2729ba5886bef8435d10d"
@@ -1466,7 +1501,7 @@
   version = "v1.13.0"
 
 [[projects]]
-  digest = "1:4f2ba88e9e13f86fd2b37a7c2ef01d1ff69dbf1e3bbe0d01fe2cb010bdb13b85"
+  digest = "1:41147ed90b063df283fc4c694cc3f9fb4524a4b1a16d065237b928ee127647e5"
   name = "gopkg.in/AlecAivazis/survey.v1"
   packages = [
     ".",
@@ -1474,8 +1509,8 @@
     "terminal",
   ]
   pruneopts = "NUT"
-  revision = "17861e192dc11fd2f5081df1932c94cce262fa1e"
-  version = "v1.6.1"
+  revision = "f30c5d1830c892f533140f29a1de89141dc217f5"
+  version = "v1.6.2"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
@@ -1906,6 +1941,124 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6aa570c0d977e9503458b3c8204ae838a72cd9ee0d22288ed38ba5b7a565b75c"
+  input-imports = [
+    "code.gitea.io/sdk/gitea",
+    "github.com/Azure/draft/pkg/draft/draftpath",
+    "github.com/Azure/draft/pkg/draft/pack/repo",
+    "github.com/Azure/draft/pkg/linguist",
+    "github.com/Jeffail/gabs",
+    "github.com/MakeNowJust/heredoc",
+    "github.com/Netflix/go-expect",
+    "github.com/Pallinder/go-randomdata",
+    "github.com/alexflint/go-filemutex",
+    "github.com/andygrunwald/go-gerrit",
+    "github.com/andygrunwald/go-jira",
+    "github.com/aws/aws-sdk-go/aws",
+    "github.com/aws/aws-sdk-go/aws/awserr",
+    "github.com/aws/aws-sdk-go/aws/session",
+    "github.com/aws/aws-sdk-go/service/ec2",
+    "github.com/aws/aws-sdk-go/service/ecr",
+    "github.com/aws/aws-sdk-go/service/elbv2",
+    "github.com/aws/aws-sdk-go/service/route53",
+    "github.com/aws/aws-sdk-go/service/s3",
+    "github.com/aws/aws-sdk-go/service/sts",
+    "github.com/beevik/etree",
+    "github.com/blang/semver",
+    "github.com/bouk/monkey",
+    "github.com/cenkalti/backoff",
+    "github.com/chromedp/cdproto/cdp",
+    "github.com/chromedp/chromedp",
+    "github.com/chromedp/chromedp/runner",
+    "github.com/codeship/codeship-go",
+    "github.com/denormal/go-gitignore",
+    "github.com/fatih/color",
+    "github.com/fatih/structs",
+    "github.com/gfleury/go-bitbucket-v1",
+    "github.com/ghodss/yaml",
+    "github.com/golang/glog",
+    "github.com/google/go-github/github",
+    "github.com/hashicorp/go-version",
+    "github.com/heptio/sonobuoy/pkg/buildinfo",
+    "github.com/heptio/sonobuoy/pkg/client",
+    "github.com/heptio/sonobuoy/pkg/client/results",
+    "github.com/heptio/sonobuoy/pkg/config",
+    "github.com/heptio/sonobuoy/pkg/dynamic",
+    "github.com/heptio/sonobuoy/pkg/plugin/aggregation",
+    "github.com/hinshun/vt10x",
+    "github.com/hpcloud/tail",
+    "github.com/jenkins-x/chyle/chyle/git",
+    "github.com/jenkins-x/draft-repo/pkg/draft/pack",
+    "github.com/jenkins-x/golang-jenkins",
+    "github.com/jenkins-x/golang-jenkins/mocks",
+    "github.com/knative/build/pkg/apis/build/v1alpha1",
+    "github.com/mitchellh/mapstructure",
+    "github.com/nlopes/slack",
+    "github.com/onsi/ginkgo/reporters",
+    "github.com/pborman/uuid",
+    "github.com/petergtz/pegomock",
+    "github.com/pkg/browser",
+    "github.com/pkg/errors",
+    "github.com/russross/blackfriday",
+    "github.com/shirou/gopsutil/process",
+    "github.com/spf13/cobra",
+    "github.com/spf13/cobra/doc",
+    "github.com/spf13/pflag",
+    "github.com/stretchr/testify/assert",
+    "github.com/stretchr/testify/suite",
+    "github.com/wbrefvem/go-bitbucket",
+    "github.com/xanzy/go-gitlab",
+    "golang.org/x/oauth2",
+    "golang.org/x/sync/errgroup",
+    "gopkg.in/AlecAivazis/survey.v1",
+    "gopkg.in/AlecAivazis/survey.v1/core",
+    "gopkg.in/AlecAivazis/survey.v1/terminal",
+    "gopkg.in/src-d/go-git.v4",
+    "gopkg.in/src-d/go-git.v4/config",
+    "gopkg.in/src-d/go-git.v4/plumbing/object",
+    "gopkg.in/yaml.v2",
+    "k8s.io/api/apps/v1",
+    "k8s.io/api/apps/v1beta1",
+    "k8s.io/api/batch/v1",
+    "k8s.io/api/core/v1",
+    "k8s.io/api/rbac/v1",
+    "k8s.io/api/storage/v1",
+    "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
+    "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset",
+    "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake",
+    "k8s.io/apimachinery/pkg/api/errors",
+    "k8s.io/apimachinery/pkg/api/meta",
+    "k8s.io/apimachinery/pkg/api/resource",
+    "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/apimachinery/pkg/fields",
+    "k8s.io/apimachinery/pkg/labels",
+    "k8s.io/apimachinery/pkg/runtime",
+    "k8s.io/apimachinery/pkg/runtime/schema",
+    "k8s.io/apimachinery/pkg/runtime/serializer",
+    "k8s.io/apimachinery/pkg/types",
+    "k8s.io/apimachinery/pkg/util/errors",
+    "k8s.io/apimachinery/pkg/util/intstr",
+    "k8s.io/apimachinery/pkg/util/uuid",
+    "k8s.io/apimachinery/pkg/util/validation",
+    "k8s.io/apimachinery/pkg/util/wait",
+    "k8s.io/apimachinery/pkg/watch",
+    "k8s.io/client-go/discovery",
+    "k8s.io/client-go/discovery/fake",
+    "k8s.io/client-go/kubernetes",
+    "k8s.io/client-go/kubernetes/fake",
+    "k8s.io/client-go/kubernetes/scheme",
+    "k8s.io/client-go/plugin/pkg/client/auth",
+    "k8s.io/client-go/rest",
+    "k8s.io/client-go/testing",
+    "k8s.io/client-go/tools/cache",
+    "k8s.io/client-go/tools/clientcmd",
+    "k8s.io/client-go/tools/clientcmd/api",
+    "k8s.io/client-go/util/flowcontrol",
+    "k8s.io/code-generator/cmd/client-gen",
+    "k8s.io/helm/pkg/chartutil",
+    "k8s.io/metrics/pkg/apis/metrics/v1beta1",
+    "k8s.io/metrics/pkg/client/clientset_generated/clientset",
+    "k8s.io/test-infra/prow/config",
+    "k8s.io/test-infra/prow/plugins",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

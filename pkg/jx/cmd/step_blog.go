@@ -23,6 +23,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/reports"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -74,11 +75,12 @@ type StepBlogState struct {
 }
 
 // NewCmdStepBlog Creates a new Command object
-func NewCmdStepBlog(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepBlog(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepBlogOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

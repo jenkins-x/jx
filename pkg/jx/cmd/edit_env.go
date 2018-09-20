@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -47,7 +48,7 @@ type EditEnvOptions struct {
 }
 
 // NewCmdEditEnv creates a command object for the "create" command
-func NewCmdEditEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEditEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &EditEnvOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
@@ -55,6 +56,7 @@ func NewCmdEditEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -137,7 +139,7 @@ func (o *EditEnvOptions) Run() error {
 	} else {
 		name = o.Options.Name
 		if name == "" {
-			name, err = kube.PickEnvironment(envNames, currentEnv)
+			name, err = kube.PickEnvironment(envNames, currentEnv, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -154,8 +156,8 @@ func (o *EditEnvOptions) Run() error {
 		return err
 	}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, env, &o.Options, o.ForkEnvironmentGitRepo,
-		ns, jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git())
+	gitProvider, err := kube.CreateEnvironmentSurvey(o.BatchMode, authConfigSvc, devEnv, env, &o.Options, o.ForkEnvironmentGitRepo,
+		ns, jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git(), o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}

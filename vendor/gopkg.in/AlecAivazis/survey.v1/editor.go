@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"runtime"
 
+	shellquote "github.com/kballard/go-shellquote"
 	"gopkg.in/AlecAivazis/survey.v1/core"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -152,8 +153,14 @@ func (e *Editor) Prompt() (interface{}, error) {
 
 	stdio := e.Stdio()
 
+	args, err := shellquote.Split(editor)
+	if err != nil {
+		return "", err
+	}
+	args = append(args, f.Name())
+
 	// open the editor
-	cmd := exec.Command(editor, f.Name())
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdin = stdio.In
 	cmd.Stdout = stdio.Out
 	cmd.Stderr = stdio.Err
