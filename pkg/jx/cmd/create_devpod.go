@@ -321,6 +321,11 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	workingDir := o.WorkingDir
+	//Set the devpods gopath properly
+	container1.Env = append(container1.Env, corev1.EnvVar{
+		Name:  "GOPATH",
+		Value: devPodGoPath,
+	})
 	if workingDir == "" {
 		workingDir = "/workspace"
 
