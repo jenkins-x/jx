@@ -62,6 +62,7 @@ func NewCmdGCActivities(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 	}
 	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "l", 5, "Minimum number of Activities per application to keep")
+	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -99,10 +100,7 @@ func (o *GCActivitiesOptions) Run() error {
 		return nil
 	}
 
-	prowEnabled, err := kube.IsProwEnabled(kubeClient, currentNs)
-	if err != nil {
-		return err
-	}
+	prowEnabled, _ := kube.IsProwEnabled(kubeClient, currentNs)
 
 	var jobNames []string
 	if !prowEnabled {
