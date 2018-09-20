@@ -2,11 +2,11 @@ package gojenkins
 
 import (
 	"fmt"
-	"net/url"
-	"net/http"
-	"strconv"
-	"io/ioutil"
 	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 )
 

@@ -4,6 +4,7 @@ package cmd_test
 
 import (
 	"io/ioutil"
+	"os"
 	"path"
 	"testing"
 
@@ -38,6 +39,9 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 		CreateOptions: cmd.CreateOptions{
 			CommonOptions: cmd.CommonOptions{
 				BatchMode: true,
+				In:        os.Stdin,
+				Out:       os.Stdout,
+				Err:       os.Stdout,
 			},
 		},
 		Clusters: clusterArray,

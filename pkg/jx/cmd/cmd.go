@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"io"
-
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 )
 
 // NewJXCommand creates the `jx` command and its nested children.
-func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
+func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, err io.Writer) *cobra.Command {
 	cmds := &cobra.Command{
 		Use:   "jx",
 		Short: "jx is a command line tool for working with Jenkins X",
@@ -34,24 +34,24 @@ func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 		*/
 	}
 
-	createCommands := NewCmdCreate(f, out, err)
-	deleteCommands := NewCmdDelete(f, out, err)
-	getCommands := NewCmdGet(f, out, err)
-	editCommands := NewCmdEdit(f, out, err)
-	updateCommands := NewCmdUpdate(f, out, err)
+	createCommands := NewCmdCreate(f, in, out, err)
+	deleteCommands := NewCmdDelete(f, in, out, err)
+	getCommands := NewCmdGet(f, in, out, err)
+	editCommands := NewCmdEdit(f, in, out, err)
+	updateCommands := NewCmdUpdate(f, in, out, err)
 
 	installCommands := []*cobra.Command{
-		NewCmdInstall(f, out, err),
-		NewCmdUninstall(f, out, err),
-		NewCmdUpgrade(f, out, err),
+		NewCmdInstall(f, in, out, err),
+		NewCmdUninstall(f, in, out, err),
+		NewCmdUpgrade(f, in, out, err),
 	}
 	installCommands = append(installCommands, findCommands("cluster", createCommands, deleteCommands)...)
 	installCommands = append(installCommands, findCommands("cluster", updateCommands)...)
 	installCommands = append(installCommands, findCommands("jenkins token", createCommands, deleteCommands)...)
-	installCommands = append(installCommands, NewCmdInit(f, out, err))
+	installCommands = append(installCommands, NewCmdInit(f, in, out, err))
 
 	addProjectCommands := []*cobra.Command{
-		NewCmdImport(f, out, err),
+		NewCmdImport(f, in, out, err),
 	}
 	addProjectCommands = append(addProjectCommands, findCommands("create archetype", createCommands, deleteCommands)...)
 	addProjectCommands = append(addProjectCommands, findCommands("create spring", createCommands, deleteCommands)...)
@@ -62,14 +62,14 @@ func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 	gitCommands := []*cobra.Command{}
 	gitCommands = append(gitCommands, findCommands("git server", createCommands, deleteCommands)...)
 	gitCommands = append(gitCommands, findCommands("git token", createCommands, deleteCommands)...)
-	gitCommands = append(gitCommands, NewCmdRepo(f, out, err))
+	gitCommands = append(gitCommands, NewCmdRepo(f, in, out, err))
 
 	addonCommands := []*cobra.Command{}
 	addonCommands = append(addonCommands, findCommands("addon", createCommands, deleteCommands)...)
 
 	environmentsCommands := []*cobra.Command{
-		NewCmdPreview(f, out, err),
-		NewCmdPromote(f, out, err),
+		NewCmdPreview(f, in, out, err),
+		NewCmdPromote(f, in, out, err),
 	}
 	environmentsCommands = append(environmentsCommands, findCommands("environment", createCommands, deleteCommands, editCommands, getCommands)...)
 
@@ -93,33 +93,33 @@ func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 		{
 			Message: "Working with Kubernetes:",
 			Commands: []*cobra.Command{
-				NewCompliance(f, out, err),
-				NewCmdCompletion(f, out),
-				NewCmdContext(f, out, err),
-				NewCmdEnvironment(f, out, err),
-				NewCmdTeam(f, out, err),
-				NewCmdNamespace(f, out, err),
-				NewCmdPrompt(f, out, err),
-				NewCmdScan(f, out, err),
-				NewCmdShell(f, out, err),
-				NewCmdStatus(f, out, err),
+				NewCompliance(f, in, out, err),
+				NewCmdCompletion(f, in, out, err),
+				NewCmdContext(f, in, out, err),
+				NewCmdEnvironment(f, in, out, err),
+				NewCmdTeam(f, in, out, err),
+				NewCmdNamespace(f, in, out, err),
+				NewCmdPrompt(f, in, out, err),
+				NewCmdScan(f, in, out, err),
+				NewCmdShell(f, in, out, err),
+				NewCmdStatus(f, in, out, err),
 			},
 		},
 		{
 			Message: "Working with Applications:",
 			Commands: []*cobra.Command{
-				NewCmdConsole(f, out, err),
-				NewCmdLogs(f, out, err),
-				NewCmdOpen(f, out, err),
-				NewCmdRsh(f, out, err),
-				NewCmdSync(f, out, err),
+				NewCmdConsole(f, in, out, err),
+				NewCmdLogs(f, in, out, err),
+				NewCmdOpen(f, in, out, err),
+				NewCmdRsh(f, in, out, err),
+				NewCmdSync(f, in, out, err),
 			},
 		},
 		{
 			Message: "Working with CloudBees application:",
 			Commands: []*cobra.Command{
-				NewCmdCloudBees(f, out, err),
-				NewCmdLogin(f, out, err),
+				NewCmdCloudBees(f, in, out, err),
+				NewCmdLogin(f, in, out, err),
 			},
 		},
 		{
@@ -134,21 +134,21 @@ func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 				createCommands,
 				updateCommands,
 				deleteCommands,
-				NewCmdStart(f, out, err),
-				NewCmdStop(f, out, err),
+				NewCmdStart(f, in, out, err),
+				NewCmdStop(f, in, out, err),
 			},
 		},
 		{
 			Message: "Jenkins X Pipeline Commands:",
 			Commands: []*cobra.Command{
-				NewCmdStep(f, out, err),
+				NewCmdStep(f, in, out, err),
 			},
 		},
 		{
 			Message: "Jenkins X services:",
 			Commands: []*cobra.Command{
-				NewCmdController(f, out, err),
-				NewCmdGC(f, out, err),
+				NewCmdController(f, in, out, err),
+				NewCmdGC(f, in, out, err),
 			},
 		},
 	}
@@ -158,7 +158,7 @@ func NewJXCommand(f Factory, in io.Reader, out, err io.Writer) *cobra.Command {
 	filters := []string{"options"}
 	templates.ActsAsRootCommand(cmds, filters, groups...)
 
-	cmds.AddCommand(NewCmdVersion(f, out, err))
+	cmds.AddCommand(NewCmdVersion(f, in, out, err))
 	cmds.Version = version.GetVersion()
 	cmds.SetVersionTemplate("{{printf .Version}}\n")
 	cmds.AddCommand(NewCmdOptions(out))

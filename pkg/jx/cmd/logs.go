@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 
@@ -48,12 +49,14 @@ var (
 `)
 )
 
-func NewCmdLogs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdLogs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &LogsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{
@@ -124,7 +127,7 @@ func (o *LogsOptions) Run() error {
 	name := ""
 	if len(args) == 0 {
 		if o.Label == "" && !o.KNativeBuild {
-			n, err := util.PickName(names, "Pick Deployment:")
+			n, err := util.PickName(names, "Pick Deployment:", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

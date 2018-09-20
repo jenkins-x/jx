@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -36,11 +37,12 @@ type UpgradePlatformOptions struct {
 }
 
 // NewCmdUpgradePlatform defines the command
-func NewCmdUpgradePlatform(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradePlatformOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

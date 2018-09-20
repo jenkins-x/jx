@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
@@ -42,10 +43,11 @@ var (
 )
 
 // NewCmdCreate creates a command object for the "create" command
-func NewCmdCreate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreate(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -63,34 +65,34 @@ func NewCmdCreate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateAddon(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateArchetype(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateBranchPattern(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateCamel(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateChat(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateCodeship(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateCluster(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateDevPod(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateDockerAuth(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateDocs(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateEnv(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateEtcHosts(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateGkeServiceAccount(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateGit(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateIssue(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateJenkins(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateJHipster(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateLile(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateMicro(f, out, errOut))
-	cmd.AddCommand(NewCmdCreatePostPreviewJob(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateQuickstart(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateQuickstartLocation(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateSpring(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateTeam(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateTerraform(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateToken(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateTracker(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateUser(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddon(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateArchetype(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateBranchPattern(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateCamel(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateChat(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateCodeship(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateCluster(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateDevPod(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateDockerAuth(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateDocs(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateEnv(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateEtcHosts(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateGkeServiceAccount(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateGit(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateIssue(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateJenkins(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateJHipster(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateLile(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateMicro(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreatePostPreviewJob(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateQuickstart(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateQuickstartLocation(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateSpring(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateTeam(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateTerraform(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateToken(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateTracker(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateUser(f, in, out, errOut))
 	return cmd
 }
 

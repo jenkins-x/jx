@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -27,12 +28,14 @@ type ComplianceDeleteOptions struct {
 
 // NewCmdComplianceDeletecreates a command object for the "compliance delete" action, which
 // delete the Kubernetes resources allocated by the compliance tests
-func NewCmdComplianceDelete(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ComplianceDeleteOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 

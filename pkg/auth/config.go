@@ -2,12 +2,14 @@ package auth
 
 import (
 	"fmt"
+	"io"
 	"net/url"
 	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 func (c *AuthConfig) FindUserAuths(serverURL string) []*UserAuth {
@@ -179,7 +181,7 @@ func urlHostName(rawUrl string) string {
 	return strings.TrimSuffix(rawUrl, "/")
 }
 
-func (c *AuthConfig) PickServer(message string, batchMode bool) (*AuthServer, error) {
+func (c *AuthConfig) PickServer(message string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*AuthServer, error) {
 	if c.Servers == nil || len(c.Servers) == 0 {
 		return nil, fmt.Errorf("No servers available!")
 	}
@@ -199,7 +201,8 @@ func (c *AuthConfig) PickServer(message string, batchMode bool) (*AuthServer, er
 				Message: message,
 				Options: urls,
 			}
-			err := survey.AskOne(prompt, &url, survey.Required)
+			surveyOpts := survey.WithStdio(in, out, outErr)
+			err := survey.AskOne(prompt, &url, survey.Required, surveyOpts)
 			if err != nil {
 				return nil, err
 			}
@@ -213,9 +216,11 @@ func (c *AuthConfig) PickServer(message string, batchMode bool) (*AuthServer, er
 	return nil, fmt.Errorf("Could not find server for URL %s", url)
 }
 
-func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batchMode bool, org string) (*UserAuth, error) {
+// PickServerAuth Pick the servers auth
+func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batchMode bool, org string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*UserAuth, error) {
 	url := server.URL
 	userAuths := c.FindUserAuths(url)
+	surveyOpts := survey.WithStdio(in, out, errOut)
 	if len(userAuths) == 1 {
 
 		auth := userAuths[0]
@@ -227,7 +232,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 			Default: true,
 		}
 		flag := false
-		err := survey.AskOne(confirm, &flag, nil)
+		err := survey.AskOne(confirm, &flag, nil, surveyOpts)
 		if err != nil {
 			return auth, err
 		}
@@ -240,7 +245,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 			Message: message,
 		}
 		username := ""
-		err = survey.AskOne(prompt, &username, nil)
+		err = survey.AskOne(prompt, &username, nil, surveyOpts)
 		if err != nil {
 			return auth, err
 		}
@@ -270,7 +275,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 			Message: message,
 			Options: usernames,
 		}
-		err := survey.AskOne(prompt, &username, survey.Required)
+		err := survey.AskOne(prompt, &username, survey.Required, surveyOpts)
 		if err != nil {
 			return &UserAuth{}, err
 		}
@@ -286,7 +291,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 type PrintUserFn func(username string) error
 
 // EditUserAuth Lets the user input/edit the user auth
-func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser, batchMode bool, fn PrintUserFn) error {
+func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser, batchMode bool, fn PrintUserFn, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) error {
 	// default the user name if its empty
 	defaultUsername := config.DefaultUsername
 	if defaultUsername == "" {
@@ -308,7 +313,7 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 	var err error
 
 	if editUser || auth.Username == "" {
-		auth.Username, err = util.PickValue(serverLabel+" user name:", auth.Username, true)
+		auth.Username, err = util.PickValue(serverLabel+" user name:", auth.Username, true, in, out, outErr)
 		if err != nil {
 			return err
 		}
@@ -319,7 +324,7 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 			return err
 		}
 	}
-	auth.ApiToken, err = util.PickPassword("API Token:")
+	auth.ApiToken, err = util.PickPassword("API Token:", in, out, outErr)
 	return err
 }
 
@@ -348,7 +353,7 @@ func (config *AuthConfig) GetServerURLs() []string {
 }
 
 // PickOrCreateServer picks the server to use defaulting to the current server
-func (config *AuthConfig) PickOrCreateServer(defaultServerURL string, message string, batchMode bool) (*AuthServer, error) {
+func (config *AuthConfig) PickOrCreateServer(defaultServerURL string, message string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*AuthServer, error) {
 	servers := config.Servers
 	if len(servers) == 1 {
 		return servers[0], nil
@@ -374,7 +379,7 @@ func (config *AuthConfig) PickOrCreateServer(defaultServerURL string, message st
 		}
 		return config.GetOrCreateServer(defaultValue), nil
 	}
-	name, err := util.PickRequiredNameWithDefault(names, message, defaultValue)
+	name, err := util.PickRequiredNameWithDefault(names, message, defaultValue, in, out, outErr)
 	if err != nil {
 		return nil, err
 	}

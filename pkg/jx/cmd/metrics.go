@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type MetricsOptions struct {
@@ -38,10 +39,11 @@ var (
 `)
 )
 
-func NewCmdMetrics(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdMetrics(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &MetricsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -92,7 +94,7 @@ func (o *MetricsOptions) Run() error {
 			if len(names) == 0 {
 				return fmt.Errorf("There are no Deployments running")
 			}
-			n, err := util.PickName(names, "Pick Deployment:")
+			n, err := util.PickName(names, "Pick Deployment:", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

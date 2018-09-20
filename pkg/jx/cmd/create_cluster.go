@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
 	"io"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/log"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
@@ -105,8 +107,8 @@ func KubernetesProviderOptions() string {
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateCluster(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := createCreateClusterOptions(f, out, errOut, "")
+func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := createCreateClusterOptions(f, in, out, errOut, "")
 
 	cmd := &cobra.Command{
 		Use:     "cluster [kubernetes provider]",
@@ -121,29 +123,31 @@ func NewCmdCreateCluster(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateClusterAKS(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterAWS(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterEKS(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterGKE(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterMinikube(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterMinishift(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterOKE(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterAKS(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterAWS(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterEKS(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterGKE(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterMinikube(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterMinishift(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterOKE(f, in, out, errOut))
 
 	return cmd
 }
 
-func createCreateClusterOptions(f Factory, out io.Writer, errOut io.Writer, cloudProvider string) CreateClusterOptions {
+func createCreateClusterOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) CreateClusterOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
-		Out:     out,
-		Err:     errOut,
+		In:      in,
+
+		Out: out,
+		Err: errOut,
 	}
 	options := CreateClusterOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOptions,
 		},
 		Provider:       cloudProvider,
-		InstallOptions: createInstallOptions(f, out, errOut),
+		InstallOptions: CreateInstallOptions(f, in, out, errOut),
 	}
 	return options
 }

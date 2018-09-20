@@ -2,14 +2,16 @@ package util
 
 import (
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-func PickValue(message string, defaultValue string, required bool) (string, error) {
+func PickValue(message string, defaultValue string, required bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	answer := ""
 	prompt := &survey.Input{
 		Message: message,
@@ -19,27 +21,29 @@ func PickValue(message string, defaultValue string, required bool) (string, erro
 	if !required {
 		validator = nil
 	}
-	err := survey.AskOne(prompt, &answer, validator)
+	surveyOpts := survey.WithStdio(in, out, outErr)
+	err := survey.AskOne(prompt, &answer, validator, surveyOpts)
 	if err != nil {
 		return "", err
 	}
 	return answer, nil
 }
 
-func PickPassword(message string) (string, error) {
+func PickPassword(message string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	answer := ""
 	prompt := &survey.Password{
 		Message: message,
 	}
 	validator := survey.Required
-	err := survey.AskOne(prompt, &answer, validator)
+	surveyOpts := survey.WithStdio(in, out, outErr)
+	err := survey.AskOne(prompt, &answer, validator, surveyOpts)
 	if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(answer), nil
 }
 
-func PickNameWithDefault(names []string, message string, defaultValue string) (string, error) {
+func PickNameWithDefault(names []string, message string, defaultValue string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	name := ""
 	if len(names) == 0 {
 		return "", nil
@@ -51,7 +55,8 @@ func PickNameWithDefault(names []string, message string, defaultValue string) (s
 			Options: names,
 			Default: defaultValue,
 		}
-		err := survey.AskOne(prompt, &name, nil)
+		surveyOpts := survey.WithStdio(in, out, outErr)
+		err := survey.AskOne(prompt, &name, nil, surveyOpts)
 		if err != nil {
 			return "", err
 		}
@@ -59,7 +64,7 @@ func PickNameWithDefault(names []string, message string, defaultValue string) (s
 	return name, nil
 }
 
-func PickRequiredNameWithDefault(names []string, message string, defaultValue string) (string, error) {
+func PickRequiredNameWithDefault(names []string, message string, defaultValue string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	name := ""
 	if len(names) == 0 {
 		return "", nil
@@ -71,7 +76,8 @@ func PickRequiredNameWithDefault(names []string, message string, defaultValue st
 			Options: names,
 			Default: defaultValue,
 		}
-		err := survey.AskOne(prompt, &name, survey.Required)
+		surveyOpts := survey.WithStdio(in, out, outErr)
+		err := survey.AskOne(prompt, &name, survey.Required, surveyOpts)
 		if err != nil {
 			return "", err
 		}
@@ -79,11 +85,11 @@ func PickRequiredNameWithDefault(names []string, message string, defaultValue st
 	return name, nil
 }
 
-func PickName(names []string, message string) (string, error) {
-	return PickNameWithDefault(names, message, "")
+func PickName(names []string, message string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
+	return PickNameWithDefault(names, message, "", in, out, outErr)
 }
 
-func PickNames(names []string, message string) ([]string, error) {
+func PickNames(names []string, message string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
 	picked := []string{}
 	if len(names) == 0 {
 		return picked, nil
@@ -94,7 +100,8 @@ func PickNames(names []string, message string) ([]string, error) {
 			Message: message,
 			Options: names,
 		}
-		err := survey.AskOne(prompt, &picked, nil)
+		surveyOpts := survey.WithStdio(in, out, outErr)
+		err := survey.AskOne(prompt, &picked, nil, surveyOpts)
 		if err != nil {
 			return picked, err
 		}
@@ -103,7 +110,7 @@ func PickNames(names []string, message string) ([]string, error) {
 }
 
 // SelectNamesWithFilter selects from a list of names with a given filter. Optionally selecting them all
-func SelectNamesWithFilter(names []string, message string, selectAll bool, filter string) ([]string, error) {
+func SelectNamesWithFilter(names []string, message string, selectAll bool, filter string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
 	filtered := []string{}
 	for _, name := range names {
 		if filter == "" || strings.Index(name, filter) >= 0 {
@@ -113,14 +120,14 @@ func SelectNamesWithFilter(names []string, message string, selectAll bool, filte
 	if len(filtered) == 0 {
 		return nil, fmt.Errorf("No names match filter: %s", filter)
 	}
-	return SelectNames(filtered, message, selectAll)
+	return SelectNames(filtered, message, selectAll, in, out, outErr)
 }
 
 // SelectNames select which names from the list should be chosen
-func SelectNames(names []string, message string, selectAll bool) ([]string, error) {
+func SelectNames(names []string, message string, selectAll bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
 	answer := []string{}
 	if len(names) == 0 {
-		return answer, fmt.Errorf("No names to choose from!")
+		return answer, fmt.Errorf("No names to choose from")
 	}
 	sort.Strings(names)
 
@@ -131,19 +138,21 @@ func SelectNames(names []string, message string, selectAll bool) ([]string, erro
 	if selectAll {
 		prompt.Default = names
 	}
-	err := survey.AskOne(prompt, &answer, nil)
+	surveyOpts := survey.WithStdio(in, out, outErr)
+	err := survey.AskOne(prompt, &answer, nil, surveyOpts)
 	return answer, err
 }
 
 // Confirm prompts the user to confirm something
-func Confirm(message string, defaultValue bool, help string) bool {
+func Confirm(message string, defaultValue bool, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) bool {
 	answer := defaultValue
 	prompt := &survey.Confirm{
 		Message: message,
 		Default: defaultValue,
 		Help:    help,
 	}
-	survey.AskOne(prompt, &answer, nil)
+	surveyOpts := survey.WithStdio(in, out, outErr)
+	survey.AskOne(prompt, &answer, nil, surveyOpts)
 	log.Blank()
 	return answer
 }

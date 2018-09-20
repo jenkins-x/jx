@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -46,11 +47,12 @@ type DeleteRepoOptions struct {
 }
 
 // NewCmdDeleteRepo creates a command object for the "delete repo" command
-func NewCmdDeleteRepo(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteRepo(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteRepoOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -84,6 +86,7 @@ func NewCmdDeleteRepo(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 // Run implements the command
 func (o *DeleteRepoOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
@@ -96,7 +99,7 @@ func (o *DeleteRepoOptions) Run() error {
 		if o.GitHost != "" {
 			server = config.GetOrCreateServer(o.GitHost)
 		} else {
-			server, err = config.PickServer("Pick the git server to search for repositories", o.BatchMode)
+			server, err = config.PickServer("Pick the git server to search for repositories", o.BatchMode, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -105,7 +108,7 @@ func (o *DeleteRepoOptions) Run() error {
 	if server == nil {
 		return fmt.Errorf("No git server provided")
 	}
-	userAuth, err := config.PickServerUserAuth(server, "git user name", o.BatchMode, "")
+	userAuth, err := config.PickServerUserAuth(server, "git user name", o.BatchMode, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -116,7 +119,7 @@ func (o *DeleteRepoOptions) Run() error {
 	username := userAuth.Username
 	org := o.Organisation
 	if org == "" {
-		org, err = gits.PickOrganisation(provider, username)
+		org, err = gits.PickOrganisation(provider, username, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -128,7 +131,7 @@ func (o *DeleteRepoOptions) Run() error {
 
 	names := o.Repositories
 	if len(names) == 0 {
-		repos, err := gits.PickRepositories(provider, org, "Which repositories do you want to delete:", o.SelectAll, o.SelectFilter)
+		repos, err := gits.PickRepositories(provider, org, "Which repositories do you want to delete:", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -147,7 +150,7 @@ func (o *DeleteRepoOptions) Run() error {
 			Message: "Are you sure you want to delete these all these repositories?",
 			Default: false,
 		}
-		err = survey.AskOne(prompt, &flag, nil)
+		err = survey.AskOne(prompt, &flag, nil, surveyOpts)
 		if err != nil {
 			return err
 		}

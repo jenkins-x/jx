@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
@@ -33,11 +34,12 @@ type EditBuildpackOptions struct {
 }
 
 // NewCmdEditBuildpack creates a command object for the "create" command
-func NewCmdEditBuildpack(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEditBuildpack(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &EditBuildpackOptions{
 		EditOptions: EditOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -74,13 +76,13 @@ func (o *EditBuildpackOptions) Run() error {
 			return err
 		}
 		if buildPackURL == "" {
-			buildPackURL, err = util.PickValue("Build pack git clone URL:", teamSettings.BuildPackURL, true)
+			buildPackURL, err = util.PickValue("Build pack git clone URL:", teamSettings.BuildPackURL, true, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
 		}
 		if BuildPackRef == "" {
-			BuildPackRef, err = util.PickValue("Build pack git ref:", teamSettings.BuildPackRef, true)
+			BuildPackRef, err = util.PickValue("Build pack git ref:", teamSettings.BuildPackRef, true, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

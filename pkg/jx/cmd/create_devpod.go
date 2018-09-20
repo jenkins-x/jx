@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/ghodss/yaml"
@@ -54,7 +55,7 @@ var (
 // CreateDevPodResults the results of running the command
 type CreateDevPodResults struct {
 	TheaServiceURL string
-	ExposeHost     string
+	ExposePortURLs []string
 	PodName        string
 }
 
@@ -82,11 +83,12 @@ type CreateDevPodOptions struct {
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
-func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateDevPodOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -164,7 +166,7 @@ func (o *CreateDevPodOptions) Run() error {
 		label = o.guessDevPodLabel(dir, labels)
 	}
 	if label == "" {
-		label, err = util.PickName(labels, "Pick which kind of dev pod you wish to create: ")
+		label, err = util.PickName(labels, "Pick which kind of dev pod you wish to create: ", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -319,11 +321,16 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	workingDir := o.WorkingDir
+	//Set the devpods gopath properly
+	container1.Env = append(container1.Env, corev1.EnvVar{
+		Name:  "GOPATH",
+		Value: devPodGoPath,
+	})
 	if workingDir == "" {
 		workingDir = "/workspace"
 
 		if o.Sync {
-			// lets check for gopath stuff if we are in --sync mode so that we sync into gopath
+			// lets check for GOPATH stuff if we are in --sync mode so that we sync into gopath
 			gopath := os.Getenv("GOPATH")
 			if gopath != "" {
 				rel, err := filepath.Rel(gopath, dir)
@@ -485,29 +492,28 @@ func (o *CreateDevPodOptions) Run() error {
 					Port:       int32(port),
 					TargetPort: intstr.FromInt(port),
 				})
-			}
+				service := corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							"fabric8.io/expose": "true",
+						},
+						Name: fmt.Sprintf("%s-port-%d", pod.Name, port),
+						OwnerReferences: []metav1.OwnerReference{
+							ownerRef(pod),
+						},
+					},
+					Spec: corev1.ServiceSpec{
+						Ports: servicePorts,
+						Selector: map[string]string{
+							"jenkins.io/devpod": pod.Name,
+						},
+					},
+				}
+				_, err = client.CoreV1().Services(curNs).Create(&service)
 
-			service := corev1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"fabric8.io/expose": "true",
-					},
-					Name: pod.Name,
-					OwnerReferences: []metav1.OwnerReference{
-						ownerRef(pod),
-					},
-				},
-				Spec: corev1.ServiceSpec{
-					Ports: servicePorts,
-					Selector: map[string]string{
-						"jenkins.io/devpod": pod.Name,
-					},
-				},
-			}
-			_, err = client.CoreV1().Services(curNs).Create(&service)
-
-			if err != nil {
-				return err
+				if err != nil {
+					return err
+				}
 			}
 			addedServices = true
 		}
@@ -581,17 +587,21 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	exposePortsServiceHost, err := kube.FindServiceHostname(client, curNs, name)
+	exposePortServices, err := kube.GetServiceNames(client, curNs, fmt.Sprintf("%s-port-", pod.Name))
 	if err != nil {
 		return err
 	}
-	if exposePortsServiceHost != "" {
-		exposePortsService, err := client.CoreV1().Services(curNs).Get(name, metav1.GetOptions{})
+	var exposePortURLs []string
+	for _, svcName := range exposePortServices {
+		u, err := kube.GetServiceURLFromName(client, svcName, curNs)
 		if err != nil {
 			return err
 		}
-		log.Infof("Ports %v are open on host %s\n", util.ColorInfo(exposePortsService.Spec.Ports), util.ColorInfo(exposePortsServiceHost))
-		o.Results.ExposeHost = exposePortsServiceHost
+		exposePortURLs = append(exposePortURLs, u)
+	}
+	if len(exposePortURLs) > 0 {
+		log.Infof("Port 80 is open on %s and forwarded to the devpod\n", util.ColorInfo(exposePortURLs))
+		o.Results.ExposePortURLs = exposePortURLs
 	}
 
 	if o.Sync {

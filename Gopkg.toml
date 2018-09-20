@@ -111,7 +111,7 @@ required = [
 
 [[constraint]]
   name = "gopkg.in/AlecAivazis/survey.v1"
-  version = "1.5.2"
+  version = "v1.6.2"
 
 [[constraint]]
   name = "gopkg.in/src-d/go-git.v4"
@@ -211,3 +211,11 @@ required = [
   name = "github.com/hpcloud/tail"
   branch = "master"
   source = "github.com/ccojocar/tail"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/Netflix/go-expect"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/hinshun/vt10x"

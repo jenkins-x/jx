@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // UpgradeOptions are the flags for delete commands
@@ -27,10 +28,11 @@ var (
 )
 
 // NewCmdUpgrade creates the command
-func NewCmdUpgrade(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgrade(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeOptions{
 		CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -50,12 +52,12 @@ func NewCmdUpgrade(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		SuggestFor: []string{"remove", "rm"},
 	}
 
-	cmd.AddCommand(NewCmdUpgradeAddons(f, out, errOut))
-	cmd.AddCommand(NewCmdUpgradeCLI(f, out, errOut))
-	cmd.AddCommand(NewCmdUpgradeBinaries(f, out, errOut))
-	cmd.AddCommand(NewCmdUpgradeCluster(f, out, errOut))
-	cmd.AddCommand(NewCmdUpgradeIngress(f, out, errOut))
-	cmd.AddCommand(NewCmdUpgradePlatform(f, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeAddons(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeCLI(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeBinaries(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeCluster(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeIngress(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpgradePlatform(f, in, out, errOut))
 	return cmd
 }
 

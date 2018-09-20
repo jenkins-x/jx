@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -58,7 +59,7 @@ var (
 `)
 )
 
-func NewCmdStepNextVersion(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepNextVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepNextVersionOptions{}
 	cmd := &cobra.Command{
 		Use:     "next-version",
