@@ -17,7 +17,7 @@ func TestAdminSecrets(t *testing.T) {
 
 	service := config.AdminSecretsService{}
 	service.Flags.DefaultAdminPassword = "mysecret"
-	err = service.NewAdminSecretsConfig()
+	err = service.NewAdminSecretsConfig(false)
 	assert.NoError(t, err)
 
 	s, err := service.Secrets.String()

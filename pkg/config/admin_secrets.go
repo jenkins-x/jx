@@ -13,7 +13,67 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const defaultMavenSettings = `<settings>
+const artifactorySettingsXml = `<settings>
+    <!-- sets the local maven repository outside of the ~/.m2 folder for easier mounting of secrets and repo -->
+    <localRepository>${user.home}/.mvnrepository</localRepository>
+    <!-- lets disable the download progress indicator that fills up logs -->
+    <interactiveMode>false</interactiveMode>
+    <mirrors>
+        <mirror>
+            <id>artifactory-releases</id>
+            <mirrorOf>external:*</mirrorOf>
+            <url>%s/libs-release</url>
+        </mirror>
+        <mirror>
+            <id>artifactory-snapshots</id>
+            <mirrorOf>external:*</mirrorOf>
+            <url>%s/libs-snapshot</url>
+        </mirror>
+    </mirrors>
+    <servers>
+        <server>
+            <id>artifactory-releases</id>
+            <username>%s</username>
+            <password>%s</password>
+        </server>
+        <server>
+            <id>artifactory-snapshots</id>
+            <username>%s</username>
+            <password>%s</password>
+        </server>
+    </servers>
+    <profiles>
+        <profile>
+            <id>artifactory</id>
+            <properties>
+                <altDeploymentRepository>artifactory-snapshots::default::%s/libs-snapshot-local</altDeploymentRepository>
+                <altReleaseDeploymentRepository>artifactory-releases::default::%s/libs-release-local</altReleaseDeploymentRepository>
+                <altSnapshotDeploymentRepository>artifactory-snapshots::default::%s/libs-snapshot-local</altSnapshotDeploymentRepository>
+            </properties>
+            <repositories>
+                <repository>
+                    <snapshots/>
+                    <id>artifactory-snapshots</id>
+                    <url>%s/libs-snapshots</url>
+                </repository>
+            </repositories>
+        </profile>
+        <profile>
+            <id>release</id>
+            <properties>
+                <gpg.executable>gpg</gpg.executable>
+                <gpg.passphrase>mysecretpassphrase</gpg.passphrase>
+            </properties>
+        </profile>
+    </profiles>
+    <activeProfiles>
+        <!--make the profile active all the time -->
+        <activeProfile>artifactory</activeProfile>
+    </activeProfiles>
+</settings>
+`
+
+const nexusSettingsXml = `<settings>
       <!-- sets the local maven repository outside of the ~/.m2 folder for easier mounting of secrets and repo -->
       <localRepository>${user.home}/.mvnrepository</localRepository>
       <!-- lets disable the download progress indicator that fills up logs -->
@@ -111,11 +171,17 @@ type AdminSecretsService struct {
 
 type AdminSecretsFlags struct {
 	DefaultAdminPassword string
+	ArtifactoryUrl       string
+	ArtifactoryUsername  string
+	ArtifactoryPassword  string
 }
 
 func (s *AdminSecretsService) AddAdminSecretsValues(cmd *cobra.Command) {
 
 	cmd.Flags().StringVarP(&s.Flags.DefaultAdminPassword, "default-admin-password", "", "", "the default admin password to access Jenkins, Kubernetes Dashboard, Chartmuseum and Nexus")
+	cmd.Flags().StringVar(&s.Flags.ArtifactoryUrl, "artifactory-url", "", "Artifactory server URL")
+	cmd.Flags().StringVar(&s.Flags.ArtifactoryUsername, "artifactory-user", "", "Artifactory server username")
+	cmd.Flags().StringVar(&s.Flags.ArtifactoryPassword, "artifactory-password", "", "Artifactory server password")
 
 	if s.Flags.DefaultAdminPassword == "" {
 		s.Flags.DefaultAdminPassword = strings.ToLower(randomdata.SillyName())
@@ -131,7 +197,7 @@ func (c AdminSecretsConfig) String() (string, error) {
 	return string(b), nil
 }
 
-func (s *AdminSecretsService) NewAdminSecretsConfig() error {
+func (s *AdminSecretsService) NewAdminSecretsConfig(useArtifactory bool) error {
 	s.Secrets = AdminSecretsConfig{
 		ChartMuseum:     &ChartMuseum{},
 		Grafana:         &Grafana{},
@@ -146,7 +212,15 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	s.Secrets.Grafana.GrafanaSecret.User = "admin"
 	s.Secrets.Grafana.GrafanaSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Nexus.DefaultAdminPassword = s.Flags.DefaultAdminPassword
-	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword)
+	if useArtifactory {
+		artifactoryUrl := s.Flags.ArtifactoryUrl
+		artifactoryUser := s.Flags.ArtifactoryUsername
+		artifactoryPass := s.Flags.ArtifactoryPassword
+		s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(artifactorySettingsXml,
+			artifactoryUrl, artifactoryUrl, artifactoryUser, artifactoryPass, artifactoryUser, artifactoryPass, artifactoryUrl, artifactoryUrl, artifactoryUrl, artifactoryUrl)
+	} else {
+		s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(nexusSettingsXml, s.Flags.DefaultAdminPassword)
+	}
 	hash := HashSha(s.Flags.DefaultAdminPassword)
 
 	s.Secrets.IngressBasicAuth = fmt.Sprintf("admin:{SHA}%s", hash)

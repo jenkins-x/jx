@@ -29,6 +29,10 @@ type ProwValuesConfig struct {
 	OAUTHtoken string `yaml:"oauthToken,omitempty"`
 }
 
+type NexusValuesConfig struct {
+	Enabled *bool `yaml:"enabled,omitempty"`
+}
+
 type JenkinsServersValuesConfig struct {
 	Gitea  []JenkinsGiteaServersValuesConfig  `yaml:"Gitea,omitempty"`
 	GHE    []JenkinsGithubServersValuesConfig `yaml:"GHE,omitempty"`
@@ -59,6 +63,7 @@ type HelmValuesConfig struct {
 	Jenkins          JenkinsValuesConfig                `yaml:"jenkins,omitempty"`
 	Prow             ProwValuesConfig                   `yaml:"prow,omitempty"`
 	PipelineSecrets  JenkinsPipelineSecretsValuesConfig `yaml:"PipelineSecrets,omitempty"`
+	Nexus            NexusValuesConfig                  `yaml:"nexus,omitempty"`
 }
 
 type HelmValuesConfigService struct {

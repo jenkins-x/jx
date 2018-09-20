@@ -66,6 +66,7 @@ type InstallFlags struct {
 	EnvironmentGitOwner      string
 	Version                  string
 	Prow                     bool
+	BinaryRepositoryManager  string
 }
 
 // Secrets struct for secrets
@@ -212,6 +213,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable prow")
+	cmd.Flags().StringVar(&flags.BinaryRepositoryManager, "binary-repository-manager", "", "Binary repository manager to resolve dependencies and for uploading builds. Choose between Artifactory and Nexus")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -373,16 +375,6 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to read the git secrets from configuration")
 	}
 
-	err = options.AdminSecretsService.NewAdminSecretsConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the admin secret config service")
-	}
-
-	adminSecrets, err := options.AdminSecretsService.Secrets.String()
-	if err != nil {
-		return errors.Wrap(err, "failed to read the admin secrets")
-	}
-
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	if helmConfig.ExposeController.Config.Domain == "" {
 		helmConfig.ExposeController.Config.Domain = options.InitOptions.Flags.Domain
@@ -403,6 +395,29 @@ func (options *InstallOptions) Run() error {
 		if isOpenShiftProvider(options.Flags.Provider) && dockerRegistry == "docker-registry.default.svc:5000" {
 			options.enableOpenShiftRegistryPermissions(ns, helmConfig, dockerRegistry)
 		}
+	}
+
+	err, binaryRepositoryManager := options.getBinaryRepositoryManager()
+	if err != nil {
+		return err
+	}
+	if binaryRepositoryManager == ArtifactoryRepoMgr {
+		err = options.readArtifactoryDetails()
+		if err != nil {
+			return err
+		}
+		enableNexus := false
+		helmConfig.Nexus.Enabled = &enableNexus
+	}
+
+	err = options.AdminSecretsService.NewAdminSecretsConfig(binaryRepositoryManager == ArtifactoryRepoMgr)
+	if err != nil {
+		return errors.Wrap(err, "failed to create the admin secret config service")
+	}
+
+	adminSecrets, err := options.AdminSecretsService.Secrets.String()
+	if err != nil {
+		return errors.Wrap(err, "failed to read the admin secrets")
 	}
 
 	// lets add any GitHub Enterprise servers
@@ -1178,4 +1193,56 @@ func (options *InstallOptions) dockerRegistryValue() (string, error) {
 		return "docker-registry.default.svc:5000", nil
 	}
 	return "", nil
+}
+
+func (options *InstallOptions) getBinaryRepositoryManager() (error, string) {
+	binaryRepositoryManager := options.Flags.BinaryRepositoryManager
+	if binaryRepositoryManager != "" {
+		binaryRepositoryManager = strings.TrimSpace(binaryRepositoryManager)
+		return nil, strings.Title(binaryRepositoryManager)
+	}
+	// configure Nexus by default in headless mode
+	if options.Headless {
+		binaryRepositoryManager = NexusRepoMgr
+	}
+	if options.AdminSecretsService.Flags.ArtifactoryUrl != "" {
+		return nil, ArtifactoryRepoMgr
+	}
+	binaryRepositoryManagers := []string{NexusRepoMgr, ArtifactoryRepoMgr}
+	prompts := &survey.Select{
+		Message: "Select binary repository manager:",
+		Options: binaryRepositoryManagers,
+		Default: NexusRepoMgr,
+		Help:    "Binary repository manager to resolve dependencies and for uploading builds",
+	}
+	err := survey.AskOne(prompts, &binaryRepositoryManager, nil)
+	return err, binaryRepositoryManager
+}
+
+func (options *InstallOptions) readArtifactoryDetails() error {
+	if options.AdminSecretsService.Flags.ArtifactoryUrl == "" {
+		prompt := &survey.Input{
+			Message: "Artifactory server URL:",
+		}
+		if err := survey.AskOne(prompt, &options.AdminSecretsService.Flags.ArtifactoryUrl, nil); err != nil {
+			return err
+		}
+	}
+	if options.AdminSecretsService.Flags.ArtifactoryUsername == "" {
+		prompt := &survey.Input{
+			Message: "Artifactory server username:",
+		}
+		if err := survey.AskOne(prompt, &options.AdminSecretsService.Flags.ArtifactoryUsername, nil); err != nil {
+			return err
+		}
+	}
+	if options.AdminSecretsService.Flags.ArtifactoryPassword == "" {
+		prompt := &survey.Password{
+			Message: "Artifactory server password:",
+		}
+		if err := survey.AskOne(prompt, &options.AdminSecretsService.Flags.ArtifactoryPassword, nil); err != nil {
+			return err
+		}
+	}
+	return nil
 }
