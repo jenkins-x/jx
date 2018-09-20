@@ -17,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -56,9 +57,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterMinikube(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterMinikube(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinikubeOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, MINIKUBE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, MINIKUBE),
 	}
 	cmd := &cobra.Command{
 		Use:     "minikube",
@@ -150,7 +151,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		Default: MinikubeDefaultMemory,
 		Help:    "Amount of RAM allocated to the minikube VM in MB",
 	}
-	showPromptIfOptionNotSet(&mem, prompt)
+	showPromptIfOptionNotSet(&mem, prompt, o.In, o.Out, o.Err)
 
 	cpu := o.Flags.CPU
 	prompt = &survey.Input{
@@ -158,7 +159,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		Default: MinikubeDefaultCpu,
 		Help:    "Number of CPUs allocated to the minikube VM",
 	}
-	showPromptIfOptionNotSet(&cpu, prompt)
+	showPromptIfOptionNotSet(&cpu, prompt, o.In, o.Out, o.Err)
 
 	disksize := o.Flags.DiskSize
 	prompt = &survey.Input{
@@ -166,7 +167,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		Default: MinikubeDefaultDiskSize,
 		Help:    "Total amount of storage allocated to the minikube VM in MB",
 	}
-	showPromptIfOptionNotSet(&disksize, prompt)
+	showPromptIfOptionNotSet(&disksize, prompt, o.In, o.Out, o.Err)
 
 	vmDriverValue := o.Flags.Driver
 
@@ -208,7 +209,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		Help:    "VM driver, defaults to recommended native virtualisation",
 	}
 
-	showPromptIfOptionNotSet(&vmDriverValue, prompts)
+	showPromptIfOptionNotSet(&vmDriverValue, prompts, o.In, o.Out, o.Err)
 
 	if vmDriverValue != "none" {
 		err := o.doInstallMissingDependencies([]string{vmDriverValue})
@@ -281,9 +282,10 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	return nil
 }
 
-func showPromptIfOptionNotSet(option *string, p survey.Prompt) error {
+func showPromptIfOptionNotSet(option *string, p survey.Prompt, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) error {
+	surveyOpts := survey.WithStdio(in, out, errOut)
 	if *option == "" {
-		err := survey.AskOne(p, option, nil)
+		err := survey.AskOne(p, option, nil, surveyOpts)
 		if err != nil {
 			return err
 		}

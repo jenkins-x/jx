@@ -26,6 +26,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -95,7 +96,7 @@ type ImportOptions struct {
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
-	Jenkins               *gojenkins.Jenkins
+	Jenkins               gojenkins.JenkinsClient
 	GitConfDir            string
 	GitServer             *auth.AuthServer
 	GitUserAuth           *auth.UserAuth
@@ -139,10 +140,11 @@ var (
 )
 
 // NewCmdImport the cobra command for jx import
-func NewCmdImport(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdImport(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ImportOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -262,14 +264,14 @@ func (options *ImportOptions) Run() error {
 			serverURL := gitInfo.HostURLWithoutUser()
 			server = config.GetOrCreateServer(serverURL)
 		} else {
-			server, err = config.PickOrCreateServer(gits.GitHubURL, "Which git service do you wish to use", options.BatchMode)
+			server, err = config.PickOrCreateServer(gits.GitHubURL, "Which git service do you wish to use", options.BatchMode, options.In, options.Out, options.Err)
 			if err != nil {
 				return err
 			}
 		}
 		// Get the org in case there is more than one user auth on the server and batchMode is true
 		org := options.getOrganisationOrCurrentUser()
-		userAuth, err = config.PickServerUserAuth(server, "git user name:", options.BatchMode, org)
+		userAuth, err = config.PickServerUserAuth(server, "git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
 		if err != nil {
 			return err
 		}
@@ -284,7 +286,7 @@ func (options *ImportOptions) Run() error {
 				options.Git().PrintCreateRepositoryGenerateAccessToken(server, username, options.Out)
 				return nil
 			}
-			err = config.EditUserAuth(server.Label(), userAuth, userAuth.Username, true, options.BatchMode, f)
+			err = config.EditUserAuth(server.Label(), userAuth, userAuth.Username, true, options.BatchMode, f, options.In, options.Out, options.Err)
 			if err != nil {
 				return err
 			}
@@ -405,7 +407,7 @@ func (options *ImportOptions) Run() error {
 
 // ImportProjectsFromGitHub import projects from github
 func (options *ImportOptions) ImportProjectsFromGitHub() error {
-	repos, err := gits.PickRepositories(options.GitProvider, options.Organisation, "Which repositories do you want to import", options.SelectAll, options.SelectFilter)
+	repos, err := gits.PickRepositories(options.GitProvider, options.Organisation, "Which repositories do you want to import", options.SelectAll, options.SelectFilter, options.In, options.Out, options.Err)
 	if err != nil {
 		return err
 	}
@@ -705,8 +707,8 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	if options.Organisation != "" {
 		options.GitRepositoryOptions.Owner = options.Organisation
 	}
-	details, err := gits.PickNewGitRepository(options.Out, options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
-		options.GitServer, options.GitUserAuth, options.Git())
+	details, err := gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
+		options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
 	if err != nil {
 		return err
 	}
@@ -808,6 +810,7 @@ func (options *ImportOptions) CloneRepository() error {
 
 // DiscoverGit checks if there is a git clone or prompts the user to import it
 func (options *ImportOptions) DiscoverGit() error {
+	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 	if !options.DisableDotGitSearch {
 		root, gitConf, err := options.Git().FindGitConfigDir(options.Dir)
 		if err != nil {
@@ -836,7 +839,7 @@ func (options *ImportOptions) DiscoverGit() error {
 			Message: "Would you like to initialise git now?",
 			Default: true,
 		}
-		err := survey.AskOne(prompt, &flag, nil)
+		err := survey.AskOne(prompt, &flag, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -877,7 +880,7 @@ func (options *ImportOptions) DiscoverGit() error {
 				Message: "Commit message: ",
 				Default: "Initial import",
 			}
-			err = survey.AskOne(messagePrompt, &message, nil)
+			err = survey.AskOne(messagePrompt, &message, nil, surveyOpts)
 			if err != nil {
 				return err
 			}

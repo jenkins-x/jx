@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type CreateRepoData struct {
@@ -37,9 +38,10 @@ func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 	return d.GitProvider.CreateRepository(d.Organisation, d.RepoName, d.PrivateRepo)
 }
 
-func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
-	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, allowExistingRepo bool) (*CreateRepoData, error) {
+func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
+	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, allowExistingRepo bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*CreateRepoData, error) {
 	config := authConfigSvc.Config()
+	surveyOpts := survey.WithStdio(in, out, errOut)
 
 	var err error
 	if server == nil {
@@ -62,7 +64,7 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 					}
 				}
 			} else {
-				server, err = config.PickServer("Which git service?", batchMode)
+				server, err = config.PickServer("Which git service?", batchMode, in, out, errOut)
 				if err != nil {
 					return nil, err
 				}
@@ -79,7 +81,7 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 		} else {
 			if batchMode {
 				if len(server.Users) == 0 {
-					return nil, fmt.Errorf("Server %s has no user auths defined!", url)
+					return nil, fmt.Errorf("Server %s has no user auths defined", url)
 				}
 				var ua *auth.UserAuth
 				if server.CurrentUser != "" {
@@ -90,7 +92,7 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 				}
 				userAuth = ua
 			} else {
-				userAuth, err = config.PickServerUserAuth(server, "git user name?", batchMode, "")
+				userAuth, err = config.PickServerUserAuth(server, "git user name?", batchMode, "", in, out, errOut)
 				if err != nil {
 					return nil, err
 				}
@@ -110,7 +112,7 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, true, batchMode, f)
+		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, true, batchMode, f, in, out, errOut)
 		if err != nil {
 			return nil, err
 		}
@@ -122,7 +124,7 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 			return nil, fmt.Errorf("Failed to store git auth configuration %s", err)
 		}
 		if userAuth.IsInvalid() {
-			return nil, fmt.Errorf("You did not properly define the user authentication!")
+			return nil, fmt.Errorf("You did not properly define the user authentication")
 		}
 	}
 
@@ -138,7 +140,7 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 		if batchMode {
 			owner = gitUsername
 		} else {
-			org, err := PickOrganisation(provider, gitUsername)
+			org, err := PickOrganisation(provider, gitUsername, in, out, errOut)
 			if err != nil {
 				return nil, err
 			}
@@ -162,7 +164,7 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 		validator := func(val interface{}) error {
 			str, ok := val.(string)
 			if !ok {
-				return fmt.Errorf("Expected string value!")
+				return fmt.Errorf("Expected string value")
 			}
 			if strings.TrimSpace(str) == "" {
 				return fmt.Errorf("Repository name is required")
@@ -172,12 +174,12 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 			}
 			return provider.ValidateRepositoryName(owner, str)
 		}
-		err = survey.AskOne(prompt, &repoName, validator)
+		err = survey.AskOne(prompt, &repoName, validator, surveyOpts)
 		if err != nil {
 			return nil, err
 		}
 		if repoName == "" {
-			return nil, fmt.Errorf("No repository name specified!")
+			return nil, fmt.Errorf("No repository name specified")
 		}
 	}
 	fullName := git.RepoName(owner, repoName)
@@ -193,7 +195,7 @@ func PickNewOrExistingGitRepository(out io.Writer, batchMode bool, authConfigSvc
 	}, err
 }
 
-func PickNewGitRepository(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
-	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter) (*CreateRepoData, error) {
-	return PickNewOrExistingGitRepository(out, batchMode, authConfigSvc, defaultRepoName, repoOptions, server, userAuth, git, false)
+func PickNewGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
+	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*CreateRepoData, error) {
+	return PickNewOrExistingGitRepository(batchMode, authConfigSvc, defaultRepoName, repoOptions, server, userAuth, git, false, in, out, outErr)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -35,10 +36,11 @@ type ComplianceLogsOptions struct {
 
 // NewCmdComplianceLogs creates a command object for the "compliance logs" action, which
 // prints the logs of compliance tests
-func NewCmdComplianceLogs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceLogs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ComplianceLogsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},

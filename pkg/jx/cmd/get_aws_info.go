@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetAWSInfoOptions containers the CLI options
@@ -27,11 +28,12 @@ var (
 )
 
 // NewCmdGetAWSInfo creates the new command for: jx get env
-func NewCmdGetAWSInfo(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetAWSInfo(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetAWSInfoOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

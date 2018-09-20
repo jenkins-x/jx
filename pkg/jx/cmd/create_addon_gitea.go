@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -46,12 +47,13 @@ type CreateAddonGiteaOptions struct {
 }
 
 // NewCmdCreateAddonGitea creates a command object for the "create" command
-func NewCmdCreateAddonGitea(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonGitea(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonGiteaOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -89,6 +91,7 @@ func NewCmdCreateAddonGitea(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 // Run implements the command
 func (o *CreateAddonGiteaOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
 	}
@@ -116,7 +119,7 @@ func (o *CreateAddonGiteaOptions) Run() error {
 				prompt := &survey.Input{
 					Message: "Enter the user name to create in gitea: ",
 				}
-				err = survey.AskOne(prompt, &o.Username, nil)
+				err = survey.AskOne(prompt, &o.Username, nil, surveyOpts)
 				if err != nil {
 					return err
 				}
@@ -126,7 +129,7 @@ func (o *CreateAddonGiteaOptions) Run() error {
 					prompt := &survey.Password{
 						Message: "Enter the password for the new user in gitea: ",
 					}
-					err = survey.AskOne(prompt, &o.Password, nil)
+					err = survey.AskOne(prompt, &o.Password, nil, surveyOpts)
 					if err != nil {
 						return err
 					}
@@ -136,7 +139,7 @@ func (o *CreateAddonGiteaOptions) Run() error {
 						prompt := &survey.Input{
 							Message: "Enter the email address of the user to create in gitea: ",
 						}
-						err = survey.AskOne(prompt, &o.Email, nil)
+						err = survey.AskOne(prompt, &o.Email, nil, surveyOpts)
 						if err != nil {
 							return err
 						}

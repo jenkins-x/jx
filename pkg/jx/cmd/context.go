@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -38,12 +39,14 @@ var (
 		jx ctx minikube`)
 )
 
-func NewCmdContext(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdContext(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ContextOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{
@@ -123,6 +126,7 @@ func (o *ContextOptions) Run() error {
 }
 
 func (o *ContextOptions) PickContext(names []string, defaultValue string) (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if len(names) == 0 {
 		return "", nil
 	}
@@ -135,6 +139,6 @@ func (o *ContextOptions) PickContext(names []string, defaultValue string) (strin
 		Options: names,
 		Default: defaultValue,
 	}
-	err := survey.AskOne(prompt, &name, nil)
+	err := survey.AskOne(prompt, &name, nil, surveyOpts)
 	return name, err
 }

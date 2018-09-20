@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -40,12 +41,13 @@ type CreateAddonAmbassadorOptions struct {
 }
 
 // NewCmdCreateAddonAmbassador creates a command object for the "create" command
-func NewCmdCreateAddonAmbassador(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonAmbassador(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonAmbassadorOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},

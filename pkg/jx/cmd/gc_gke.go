@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"encoding/json"
 
@@ -26,7 +27,7 @@ type GCGKEOptions struct {
 	CommonOptions
 
 	RevisionHistoryLimit int
-	jclient              *gojenkins.Jenkins
+	jclient              gojenkins.JenkinsClient
 }
 
 var (
@@ -54,10 +55,11 @@ type Rule struct {
 }
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCGKE(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGCGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GCGKEOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},

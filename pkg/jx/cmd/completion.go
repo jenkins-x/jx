@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const boilerPlate = ""
@@ -47,11 +48,12 @@ var (
 	}
 )
 
-func NewCmdCompletion(f Factory, out io.Writer) *cobra.Command {
+func NewCmdCompletion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CommonOptions{
 		Factory: f,
+		In:      in,
 		Out:     out,
-		Err:     out,
+		Err:     errOut,
 	}
 
 	shells := []string{}
@@ -76,6 +78,7 @@ func NewCmdCompletion(f Factory, out io.Writer) *cobra.Command {
 }
 
 func (o *CommonOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	shells := []string{}
 	for s := range completion_shells {
 		shells = append(shells, s)
@@ -90,7 +93,7 @@ func (o *CommonOptions) Run() error {
 			PageSize: len(shells),
 			Help:     "The name of the shell",
 		}
-		err := survey.AskOne(prompts, &ShellName, nil)
+		err := survey.AskOne(prompts, &ShellName, nil, surveyOpts)
 		if err != nil {
 			return err
 		}

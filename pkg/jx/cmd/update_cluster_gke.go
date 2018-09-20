@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -26,8 +27,8 @@ var (
 `)
 )
 
-func NewCmdUpdateClusterGKE(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := createUpdateClusterGKEOptions(f, out, errOut, GKE)
+func NewCmdUpdateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := createUpdateClusterGKEOptions(f, in, out, errOut, GKE)
 
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -42,14 +43,15 @@ func NewCmdUpdateClusterGKE(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 		},
 	}
 
-	cmd.AddCommand(NewCmdUpdateClusterGKETerraform(f, out, errOut))
+	cmd.AddCommand(NewCmdUpdateClusterGKETerraform(f, in, out, errOut))
 
 	return cmd
 }
 
-func createUpdateClusterGKEOptions(f Factory, out io.Writer, errOut io.Writer, cloudProvider string) UpdateClusterGKEOptions {
+func createUpdateClusterGKEOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) UpdateClusterGKEOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
+		In:      in,
 		Out:     out,
 		Err:     errOut,
 	}

@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"io"
-
 	"fmt"
+	"io"
 
 	"os"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepPostBuildOptions contains the command line flags
@@ -49,11 +49,12 @@ podAnnotations:
   jenkins-x.io/cve-image-id: %s
 `
 
-func NewCmdStepPostBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepPostBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepPostBuildOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

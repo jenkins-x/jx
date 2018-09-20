@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -18,10 +19,11 @@ type StepPostOptions struct {
 var ()
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPost(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepPost(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepPostOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -38,7 +40,7 @@ func NewCmdStepPost(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(NewCmdStepPostBuild(f, out, errOut))
+	cmd.AddCommand(NewCmdStepPostBuild(f, in, out, errOut))
 
 	return cmd
 }

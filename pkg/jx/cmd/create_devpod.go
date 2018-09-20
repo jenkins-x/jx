@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/ghodss/yaml"
@@ -82,11 +83,12 @@ type CreateDevPodOptions struct {
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
-func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateDevPodOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -164,7 +166,7 @@ func (o *CreateDevPodOptions) Run() error {
 		label = o.guessDevPodLabel(dir, labels)
 	}
 	if label == "" {
-		label, err = util.PickName(labels, "Pick which kind of dev pod you wish to create: ")
+		label, err = util.PickName(labels, "Pick which kind of dev pod you wish to create: ", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,12 +32,14 @@ var (
 		jx uninstall`)
 )
 
-func NewCmdUninstall(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUninstall(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UninstallOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{
@@ -58,6 +61,7 @@ func NewCmdUninstall(f Factory, out io.Writer, errOut io.Writer) *cobra.Command 
 }
 
 func (o *UninstallOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	config, _, err := kube.LoadConfig()
 	if err != nil {
 		return err
@@ -81,7 +85,7 @@ func (o *UninstallOptions) Run() error {
 			Default: false,
 		}
 		flag := false
-		err = survey.AskOne(confirm, &flag, nil)
+		err = survey.AskOne(confirm, &flag, nil, surveyOpts)
 		if err != nil {
 			return err
 		}

@@ -2,8 +2,9 @@ package table
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 type Table struct {

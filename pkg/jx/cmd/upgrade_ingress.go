@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,11 +47,12 @@ type UpgradeIngressOptions struct {
 }
 
 // NewCmdUpgradeIngress defines the command
-func NewCmdUpgradeIngress(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeIngressOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -107,7 +109,7 @@ func (o *UpgradeIngressOptions) Run() error {
 	}
 
 	// confirm values
-	util.Confirm(fmt.Sprintf("Using  config values %v, ok?", o.IngressConfig), true, "")
+	util.Confirm(fmt.Sprintf("Using  config values %v, ok?", o.IngressConfig), true, "", o.In, o.Out, o.Err)
 
 	// save details to a configmap
 	_, err = kube.SaveAsConfigMap(o.KubeClientCached, kube.ConfigMapIngressConfig, o.devNamespace, o.IngressConfig)
@@ -167,6 +169,7 @@ func (o *UpgradeIngressOptions) Run() error {
 }
 
 func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	existingIngressNames := map[string]string{}
 	var confirmMessage string
 	if o.Cluster {
@@ -224,7 +227,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 		Default: true,
 	}
 	flag := true
-	err := survey.AskOne(confirm, &flag, nil)
+	err := survey.AskOne(confirm, &flag, nil, surveyOpts)
 	if err != nil {
 		return existingIngressNames, err
 	}
@@ -248,22 +251,22 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 		// carry on as it just means we dont have any defaults
 	}
 
-	o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer)
+	o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer, o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
 
-	o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true)
+	o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true, o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
 
 	if !strings.HasSuffix(o.IngressConfig.Domain, "nip.io") {
 
-		o.IngressConfig.TLS = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt")
+		o.IngressConfig.TLS = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt", o.In, o.Out, o.Err)
 
 		if o.IngressConfig.TLS {
-			clusterIssuer, err := util.PickNameWithDefault([]string{"prod", "staging"}, "Use LetsEncrypt staging or production?  Warning if testing use staging else you may be rate limited:", "staging")
+			clusterIssuer, err := util.PickNameWithDefault([]string{"prod", "staging"}, "Use LetsEncrypt staging or production?  Warning if testing use staging else you may be rate limited:", "staging", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -278,7 +281,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 				o.IngressConfig.Email = strings.TrimSpace(email1)
 			}
 
-			o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true)
+			o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

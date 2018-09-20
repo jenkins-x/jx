@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"testing"
 
+	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,16 +26,34 @@ func TestCommandError(t *testing.T) {
 
 func TestVerboseOutput(t *testing.T) {
 	t.Parallel()
-	out := new(bytes.Buffer)
+	buf := new(bytes.Buffer)
+	c, err := expect.NewConsole(expect.WithStdout(buf))
+	assert.NoError(t, err, "Should not error")
+	defer c.Close()
+	out := c.Tty()
 	o := cmd.CommonOptions{Verbose: true, Out: out}
-	o.RunCommand("echo", "foo")
-	assert.Equal(t, out.String(), "foo\n")
+	donec := make(chan struct{})
+	go func() {
+		defer close(donec)
+		c.ExpectEOF()
+	}()
+
+	commandResult := o.RunCommand("echo", "foo")
+
+	// Close the slave end of the pty, and read the remaining bytes from the master end.
+	out.Close()
+	<-donec
+
+	assert.NoError(t, commandResult, "Should not error")
+	assert.Equal(t, "foo\r", expect.StripTrailingEmptyLines(buf.String()))
 }
 
 func TestNonVerboseOutput(t *testing.T) {
 	t.Parallel()
-	out := new(bytes.Buffer)
-	o := cmd.CommonOptions{Out: out}
-	o.RunCommand("echo", "foo")
-	assert.Empty(t, out.String())
+	c, state, term := tests.NewTerminal(t)
+	defer c.Close()
+	o := cmd.CommonOptions{Out: term.Out}
+	err := o.RunCommand("echo", "foo")
+	assert.NoError(t, err, "Should not error")
+	assert.Empty(t, expect.StripTrailingEmptyLines(state.String()))
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
@@ -25,7 +24,7 @@ func ConfigureTestOptions(o *CommonOptions, git gits.Gitter, helm helm.Helmer) {
 // using fake APIs to k8s cluster
 func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object,
 	jxObjects []runtime.Object, git gits.Gitter, helm helm.Helmer) {
-	o.Out = tests.Output()
+	//o.Out = tests.Output()
 	o.BatchMode = true
 	o.Factory = NewFactory()
 	o.currentNamespace = "jx"

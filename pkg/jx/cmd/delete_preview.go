@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // DeletePreviewOptions are the flags for delete commands
@@ -17,12 +18,13 @@ type DeletePreviewOptions struct {
 }
 
 // NewCmdDeletePreview creates a command object
-func NewCmdDeletePreview(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeletePreview(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeletePreviewOptions{
 		PreviewOptions: PreviewOptions{
 			PromoteOptions: PromoteOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -69,12 +71,12 @@ func (o *DeletePreviewOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			selected, err := util.PickNames(names, "Pick preview environments to delete: ")
+			selected, err := util.PickNames(names, "Pick preview environments to delete: ", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
 			deletePreviews := strings.Join(selected, ", ")
-			if !util.Confirm("You are about to delete the Preview environments: "+deletePreviews, false, "The list of Preview Enviroments to be deleted") {
+			if !util.Confirm("You are about to delete the Preview environments: "+deletePreviews, false, "The list of Preview Enviroments to be deleted", o.In, o.Out, o.Err) {
 				return nil
 			}
 
@@ -90,7 +92,7 @@ func (o *DeletePreviewOptions) Run() error {
 	}
 
 	if o.Name == "" {
-		return fmt.Errorf("Could not default the preview environment name!")
+		return fmt.Errorf("Could not default the preview environment name")
 	}
 	return o.deletePreview(o.Name)
 }

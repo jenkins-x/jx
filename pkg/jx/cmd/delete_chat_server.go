@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -30,10 +31,11 @@ type DeleteChatServerOptions struct {
 }
 
 // NewCmdDeleteChatServer defines the command
-func NewCmdDeleteChatServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteChatServer(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteChatServerOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},

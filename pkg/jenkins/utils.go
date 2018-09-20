@@ -12,9 +12,10 @@ import (
 	jenkauth "github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfigService) (*gojenkins.Jenkins, error) {
+func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfigService, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (gojenkins.JenkinsClient, error) {
 	if url == "" {
 		return nil, errors.New("no external Jenkins URL found in the development namespace!\nAre you sure you installed Jenkins X? Try: https://jenkins-x.io/getting-started/")
 	}
@@ -40,7 +41,7 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 		a := config.FindUserAuth(url, username)
 		if a != nil {
 			if a.IsInvalid() {
-				auth, err = EditUserAuth(url, configService, config, a, tokenUrl, batch)
+				auth, err = EditUserAuth(url, configService, config, a, tokenUrl, batch, in, out, outErr)
 				if err != nil {
 					return nil, err
 				}
@@ -49,7 +50,7 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 			}
 		} else {
 			// lets create a new Auth
-			auth, err = EditUserAuth(url, configService, config, &auth, tokenUrl, batch)
+			auth, err = EditUserAuth(url, configService, config, &auth, tokenUrl, batch, in, out, outErr)
 			if err != nil {
 				return nil, err
 			}
@@ -98,7 +99,7 @@ func JenkinsTokenURL(url string) string {
 	return tokenUrl
 }
 
-func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool) (jenkauth.UserAuth, error) {
+func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (jenkauth.UserAuth, error) {
 
 	log.Infof("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
 
@@ -110,7 +111,7 @@ func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config 
 
 	defaultUsername := "admin"
 
-	err := config.EditUserAuth("Jenkins", auth, defaultUsername, true, batchMode, f)
+	err := config.EditUserAuth("Jenkins", auth, defaultUsername, true, batchMode, f, in, out, outErr)
 	if err != nil {
 		return *auth, err
 	}
@@ -124,7 +125,7 @@ func IsMultiBranchProject(job *gojenkins.Job) bool {
 }
 
 // LoadAllJenkinsJobs Loads all the jobs in full from the Jenkins client
-func LoadAllJenkinsJobs(jenkinsClient *gojenkins.Jenkins) ([]*gojenkins.Job, error) {
+func LoadAllJenkinsJobs(jenkinsClient gojenkins.JenkinsClient) ([]*gojenkins.Job, error) {
 	answer := []*gojenkins.Job{}
 	jobs, err := jenkinsClient.GetJobs()
 	if err != nil {
@@ -141,7 +142,7 @@ func LoadAllJenkinsJobs(jenkinsClient *gojenkins.Jenkins) ([]*gojenkins.Job, err
 	return answer, nil
 }
 
-func loadChildJobs(jenkinsClient *gojenkins.Jenkins, name string) ([]*gojenkins.Job, error) {
+func loadChildJobs(jenkinsClient gojenkins.JenkinsClient, name string) ([]*gojenkins.Job, error) {
 	answer := []*gojenkins.Job{}
 	job, err := jenkinsClient.GetJob(name)
 	if err != nil {
