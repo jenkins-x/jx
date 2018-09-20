@@ -26,13 +26,14 @@ const (
 type RshOptions struct {
 	CommonOptions
 
-	Container  string
-	Namespace  string
-	Pod        string
-	Executable string
-	ExecCmd    string
-	DevPod     bool
-	Username   string
+	Container   string
+	Namespace   string
+	Pod         string
+	Executable  string
+	ExecCmd     string
+	DevPod      bool
+	Username    string
+	Environment string
 
 	stopCh chan struct{}
 }
@@ -86,6 +87,7 @@ func NewCmdRsh(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.DevPod, "devpod", "d", false, "Connect to a DevPod")
 	cmd.Flags().StringVarP(&options.ExecCmd, "execute", "e", defaultRshCommand, "Execute this command on the remote container")
 	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
+	cmd.Flags().StringVarP(&options.Environment, "environment", "", "", "The environment in which to look for the Deployment. Defaults to the current environment")
 
 	return cmd
 }
@@ -101,6 +103,13 @@ func (o *RshOptions) Run() error {
 	ns := o.Namespace
 	if ns == "" {
 		ns = curNs
+	}
+
+	if o.Environment != "" {
+		ns, err = o.findEnvironmentNamespace(o.Environment)
+		if err != nil {
+			return err
+		}
 	}
 
 	if o.ExecCmd == "" {
