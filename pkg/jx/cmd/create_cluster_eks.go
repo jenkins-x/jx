@@ -22,6 +22,7 @@ type CreateClusterEKSOptions struct {
 
 type CreateClusterEKSFlags struct {
 	ClusterName         string
+	NodeType           string
 	NodeCount           int
 	NodesMin            int
 	NodesMax            int
@@ -73,6 +74,7 @@ func NewCmdCreateClusterEKS(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster.")
+	cmd.Flags().StringVarP(&options.Flags.NodeType, "node-type", "", "m5.large", "node instance type")
 	cmd.Flags().IntVarP(&options.Flags.NodeCount, optionNodes, "o", -1, "number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.NodesMin, "nodes-min", "", -1, "minimum number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.NodesMax, "nodes-max", "", -1, "maximum number of nodes")
@@ -131,6 +133,7 @@ func (o *CreateClusterEKSOptions) Run() error {
 	if flags.SshPublicKey != "" {
 		args = append(args, "--ssh-public-key", flags.SshPublicKey)
 	}
+	args = append(args, "--node-type", flags.NodeType)
 	if flags.NodeCount >= 0 {
 		args = append(args, "--nodes", strconv.Itoa(flags.NodeCount))
 	}
