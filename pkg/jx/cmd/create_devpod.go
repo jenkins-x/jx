@@ -154,6 +154,15 @@ func (o *CreateDevPodOptions) Run() error {
 		return err
 	}
 
+	devpodConfigYml, err := client.CoreV1().ConfigMaps(curNs).Get("jenkins-x-devpod-config", metav1.GetOptions{})
+	versions := &map[string]string{}
+	if devpodConfigYml != nil {
+		err = yaml.Unmarshal([]byte(devpodConfigYml.Data["versions"]), versions)
+		if err != nil {
+			return fmt.Errorf("Failed to parse versions from DevPod ConfigMap %s: %s", devpodConfigYml, err)
+		}
+	}
+
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsPodTemplates, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("Failed to find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsPodTemplates, ns, err)
@@ -272,9 +281,14 @@ func (o *CreateDevPodOptions) Run() error {
 		memoryRequest, _ := resource.ParseQuantity("128Mi")
 
 		// Add Theia - note Theia won't work in --sync mode as we can't share a volume
+
+		theiaVersion := "latest"
+		if val, ok := (*versions)["theia"]; ok {
+			theiaVersion = val
+		}
 		theiaContainer := corev1.Container{
 			Name:  "theia",
-			Image: "theiaide/theia-full:latest",
+			Image: fmt.Sprintf("theiaide/theia-full:%s", theiaVersion),
 			Ports: []corev1.ContainerPort{
 				corev1.ContainerPort{
 					ContainerPort: 3000,
