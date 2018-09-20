@@ -4,7 +4,9 @@ import (
 	"io"
 
 	"github.com/heptio/sonobuoy/pkg/client"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/table"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -22,13 +24,13 @@ import (
 )
 
 // Factory is the interface defined for jx interactions via the cli
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/jx/cmd Factory -o mocks/factory.go
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/jx/cmd Factory -o mocks/factory.go --generate-matchers
 type Factory interface {
 	WithBearerToken(token string) Factory
 
 	ImpersonateUser(user string) Factory
 
-	CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (*gojenkins.Jenkins, error)
+	CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error)
 
 	GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error)
 
@@ -45,6 +47,8 @@ type Factory interface {
 	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
 
 	CreateClient() (kubernetes.Interface, string, error)
+
+	CreateGitProvider(string, string, auth.AuthConfigService, string, bool, gits.Gitter, terminal.FileReader, terminal.FileWriter, io.Writer) (gits.GitProvider, error)
 
 	CreateKubeConfig() (*rest.Config, error)
 

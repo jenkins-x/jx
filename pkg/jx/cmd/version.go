@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -25,10 +26,11 @@ type VersionOptions struct {
 	NoVersionCheck bool
 }
 
-func NewCmdVersion(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &VersionOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -182,7 +184,7 @@ func (o *VersionOptions) VersionCheck() error {
 			log.Warnf("To upgrade to this new version use: %s\n", util.ColorInfo("jx upgrade cli"))
 		} else {
 			message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
-			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.") {
+			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
 				return o.UpgradeCli()
 			}
 		}

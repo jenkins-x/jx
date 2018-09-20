@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterMinishiftOptions the flags for running create cluster
@@ -50,9 +51,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterMinishift(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterMinishift(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinishiftOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, MINISHIFT),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, MINISHIFT),
 	}
 	cmd := &cobra.Command{
 		Use:     "minishift",
@@ -133,13 +134,14 @@ func (o *CreateClusterMinishiftOptions) isExistingMinishiftRunning() bool {
 }
 
 func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	mem := o.Flags.Memory
 	prompt := &survey.Input{
 		Message: "memory (MB)",
 		Default: mem,
 		Help:    "Amount of RAM allocated to the minishift VM in MB",
 	}
-	survey.AskOne(prompt, &mem, nil)
+	survey.AskOne(prompt, &mem, nil, surveyOpts)
 
 	cpu := o.Flags.CPU
 	prompt = &survey.Input{
@@ -147,7 +149,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		Default: cpu,
 		Help:    "Number of CPUs allocated to the minishift VM",
 	}
-	survey.AskOne(prompt, &cpu, nil)
+	survey.AskOne(prompt, &cpu, nil, surveyOpts)
 
 	vmDriverValue := o.Flags.Driver
 
@@ -186,7 +188,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		Help:    "VM driver, defaults to recommended native virtualisation",
 	}
 
-	err := survey.AskOne(prompts, &driver, nil)
+	err := survey.AskOne(prompts, &driver, nil, surveyOpts)
 	if err != nil {
 		return err
 	}

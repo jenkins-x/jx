@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -40,12 +41,14 @@ var (
 
 // NewCmdDeleteTeam creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteTeam(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteTeamOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 
@@ -72,6 +75,7 @@ func NewCmdDeleteTeam(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 // Run implements this command
 func (o *DeleteTeamOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -91,7 +95,7 @@ func (o *DeleteTeamOptions) Run() error {
 		if o.BatchMode {
 			return fmt.Errorf("Missing team name argument")
 		}
-		names, err = util.SelectNamesWithFilter(teamNames, "Which teams do you want to delete: ", o.SelectAll, o.SelectFilter)
+		names, err = util.SelectNamesWithFilter(teamNames, "Which teams do you want to delete: ", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -110,7 +114,7 @@ func (o *DeleteTeamOptions) Run() error {
 			Message: "Are you sure you want to delete these all these teams?",
 			Default: false,
 		}
-		err = survey.AskOne(prompt, &flag, nil)
+		err = survey.AskOne(prompt, &flag, nil, surveyOpts)
 		if err != nil {
 			return err
 		}

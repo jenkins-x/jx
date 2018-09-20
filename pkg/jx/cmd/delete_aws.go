@@ -2,26 +2,29 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"io"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
-	"github.com/spf13/cobra"
 	"github.com/aws/aws-sdk-go/service/elbv2"
+	"github.com/spf13/cobra"
 )
 
 type DeleteAwsOptions struct {
 	CommonOptions
 
-	VpcId string
+	VpcId  string
 	Region string
 }
 
-func NewCmdDeleteAws(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAws(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteAwsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -48,7 +51,7 @@ func (o *DeleteAwsOptions) Run() error {
 	svc := ec2.New(session.New(&aws.Config{Region: aws.String(o.Region)}))
 
 	// Delete elastic load balancers assigned to VPC
-	elbSvc :=  elbv2.New(session.New(&aws.Config{Region: aws.String(o.Region)}))
+	elbSvc := elbv2.New(session.New(&aws.Config{Region: aws.String(o.Region)}))
 	loadBalancers, err := elbSvc.DescribeLoadBalancers(&elbv2.DescribeLoadBalancersInput{})
 	if err != nil {
 		return err
@@ -56,7 +59,7 @@ func (o *DeleteAwsOptions) Run() error {
 	for _, loadBalancer := range loadBalancers.LoadBalancers {
 		if *loadBalancer.VpcId == vpcid {
 			fmt.Printf("Deleting load balancer %s...\n", *loadBalancer.LoadBalancerName)
-			_, err =  elbSvc.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{LoadBalancerArn: loadBalancer.LoadBalancerArn})
+			_, err = elbSvc.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{LoadBalancerArn: loadBalancer.LoadBalancerArn})
 			if err != nil {
 				return err
 			}

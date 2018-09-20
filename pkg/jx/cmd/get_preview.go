@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"io"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,14 +36,16 @@ var (
 )
 
 // NewCmdGetPreview creates the new command for: jx get env
-func NewCmdGetPreview(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetPreviewOptions{
 		GetEnvOptions: GetEnvOptions{
 			GetOptions: GetOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
-					Out:     out,
-					Err:     errOut,
+					In:      in,
+
+					Out: out,
+					Err: errOut,
 				},
 			},
 		},

@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"io"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -42,11 +44,12 @@ type StepLinkServicesOptions struct {
 }
 
 // NewCmdStepLinkServices Creates a new Command object
-func NewCmdStepLinkServices(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepLinkServices(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepLinkServicesOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

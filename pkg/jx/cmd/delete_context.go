@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -39,11 +40,12 @@ type DeleteContextOptions struct {
 }
 
 // NewCmdDeleteContext creates a command object for the "delete repo" command
-func NewCmdDeleteContext(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteContext(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteContextOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -72,6 +74,7 @@ func NewCmdDeleteContext(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 
 // Run implements the command
 func (o *DeleteContextOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	config, po, err := kube.LoadConfig()
 	if err != nil {
 		return err
@@ -100,7 +103,7 @@ func (o *DeleteContextOptions) Run() error {
 		return util.InvalidArg(args[1], allNames)
 	}
 
-	selected, err := util.SelectNamesWithFilter(names, "Select the Kubernetes Contexts to delete: ", o.SelectAll, o.SelectFilter)
+	selected, err := util.SelectNamesWithFilter(names, "Select the Kubernetes Contexts to delete: ", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -113,7 +116,7 @@ func (o *DeleteContextOptions) Run() error {
 		Message: "Are you sure you want to delete these these Kubernetes Contexts?",
 		Default: false,
 	}
-	err = survey.AskOne(prompt, &flag, nil)
+	err = survey.AskOne(prompt, &flag, nil, surveyOpts)
 	if err != nil {
 		return err
 	}

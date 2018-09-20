@@ -14,6 +14,7 @@ import (
 	tbl "github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
@@ -50,10 +51,11 @@ var (
 )
 
 // NewCmdGetActivity creates the new command for: jx get version
-func NewCmdGetActivity(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetActivity(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetActivityOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},

@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetHelmBinOptions containers the CLI options
@@ -34,11 +35,12 @@ var (
 )
 
 // NewCmdGetHelmBin creates the new command for: jx get env
-func NewCmdGetHelmBin(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetHelmBin(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetHelmBinOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

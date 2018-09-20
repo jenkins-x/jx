@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
@@ -30,10 +31,11 @@ var (
 )
 
 // NewCmdUpdate creates a command object for the "update" command
-func NewCmdUpdate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpdate(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpdateOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -51,7 +53,7 @@ func NewCmdUpdate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(NewCmdUpdateCluster(f, out, errOut))
+	cmd.AddCommand(NewCmdUpdateCluster(f, in, out, errOut))
 
 	return cmd
 }

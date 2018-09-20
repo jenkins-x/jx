@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetReleaseOptions containers the CLI options
@@ -34,13 +35,15 @@ var (
 )
 
 // NewCmdGetRelease creates the new command for: jx get env
-func NewCmdGetRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetRelease(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetReleaseOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}

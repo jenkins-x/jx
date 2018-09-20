@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -30,10 +31,11 @@ type DeleteTrackerServerOptions struct {
 }
 
 // NewCmdDeleteTrackerServer defines the command
-func NewCmdDeleteTrackerServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTrackerServer(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteTrackerServerOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},

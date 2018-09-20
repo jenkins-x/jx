@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"time"
 
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -12,12 +14,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"strings"
 )
 
 // ControllerRoleOptions the command line options
@@ -61,11 +63,12 @@ var (
 `)
 )
 
-func NewCmdControllerRole(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdControllerRole(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := ControllerRoleOptions{
 		ControllerOptions: ControllerOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

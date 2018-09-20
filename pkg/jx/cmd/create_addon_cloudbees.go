@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,12 +48,13 @@ type CreateAddonCloudBeesOptions struct {
 }
 
 // NewCmdCreateAddonCloudBees creates a command object for the "create" command
-func NewCmdCreateAddonCloudBees(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonCloudBeesOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -82,6 +84,7 @@ func NewCmdCreateAddonCloudBees(f Factory, out io.Writer, errOut io.Writer) *cob
 
 // Run implements the command
 func (o *CreateAddonCloudBeesOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	c, _, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -98,7 +101,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 			Default: false,
 			Help:    "a cluster admin role provides full privileges and therefore this action should not be run on anything other than a demo cluster that can be recreated",
 		}
-		survey.AskOne(prompt, &ok, nil)
+		survey.AskOne(prompt, &ok, nil, surveyOpts)
 
 		if !ok {
 			log.Info("aborting the cdx addon\n")
@@ -147,14 +150,14 @@ To register to get your username/password to to: %s
 			Message: "CloudBees Preview username",
 			Help:    "CloudBees is in private preview which requires a username / password for installation",
 		}
-		survey.AskOne(prompt, &username, nil)
+		survey.AskOne(prompt, &username, nil, surveyOpts)
 
 		password := ""
 		passPrompt := &survey.Password{
 			Message: "CloudBees Preview password",
 			Help:    "CloudBees is in private preview which requires a username / password for installation",
 		}
-		survey.AskOne(passPrompt, &password, nil)
+		survey.AskOne(passPrompt, &password, nil, surveyOpts)
 
 		err := o.addHelmRepoIfMissing(fmt.Sprintf(cdxRepoUrl, username, password), cdxRepoName)
 		if err != nil {
@@ -172,12 +175,12 @@ To register to get your username/password to to: %s
 		if err != nil {
 			return errors.Wrap(err, "retrieving existing ingress configuration")
 		}
-		domain, err := util.PickValue("Domain:", ingressConfig.Domain, true)
+		domain, err := util.PickValue("Domain:", ingressConfig.Domain, true, o.In, o.Out, o.Err)
 		if err != nil {
 			return errors.Wrap(err, "reading domain")
 		}
 
-		dexURL, err := util.PickValue("Dex URL:", "", true)
+		dexURL, err := util.PickValue("Dex URL:", "", true, o.In, o.Out, o.Err)
 		if err != nil {
 			return errors.Wrap(err, "reading dex URL")
 		}

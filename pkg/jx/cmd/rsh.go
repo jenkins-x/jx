@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -59,12 +60,14 @@ var (
 `)
 )
 
-func NewCmdRsh(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdRsh(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &RshOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{
@@ -145,7 +148,7 @@ func (o *RshOptions) Run() error {
 	name := o.Pod
 	if len(args) == 0 {
 		if util.StringArrayIndex(names, name) < 0 {
-			n, err := util.PickName(names, "Pick Pod:")
+			n, err := util.PickName(names, "Pick Pod:", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -161,7 +164,7 @@ func (o *RshOptions) Run() error {
 					filteredNames = append(filteredNames, n)
 				}
 			}
-			n, err := util.PickName(filteredNames, "Pick Pod:")
+			n, err := util.PickName(filteredNames, "Pick Pod:", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -39,12 +40,13 @@ type CreateJHipsterOptions struct {
 }
 
 // NewCmdCreateJHipster creates a command object for the "create" command
-func NewCmdCreateJHipster(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateJHipster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateJHipsterOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -115,7 +117,7 @@ func (o *CreateJHipsterOptions) Run() error {
 		if o.BatchMode {
 			return util.MissingOption(optionOutputDir)
 		}
-		dir, err = util.PickValue("Pick the name of the new project:", "myhipster", true)
+		dir, err = util.PickValue("Pick the name of the new project:", "myhipster", true, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

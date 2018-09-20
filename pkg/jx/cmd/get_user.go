@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetUserOptions containers the CLI options
@@ -29,11 +30,12 @@ var (
 )
 
 // NewCmdGetUser creates the new command for: jx get env
-func NewCmdGetUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetUserOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
