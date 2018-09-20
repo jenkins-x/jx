@@ -81,7 +81,10 @@ func GetEnrichedDevEnvironment(kubeClient kubernetes.Interface, jxClient version
 		return env, err
 	}
 	if env.Spec.WebHookEngine == v1.WebHookEngineNone {
-		prowEnabled, _ := IsProwEnabled(kubeClient, ns)
+		prowEnabled, err := IsProwEnabled(kubeClient, ns)
+		if err != nil {
+			return env, err
+		}
 		if prowEnabled {
 			env.Spec.WebHookEngine = v1.WebHookEngineProw
 		} else {
@@ -94,8 +97,18 @@ func GetEnrichedDevEnvironment(kubeClient kubernetes.Interface, jxClient version
 // IsProwEnabled returns true if prow is enabled in the given development namespace
 func IsProwEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
 	// lets try determine if its Jenkins or not via the deployments
-	deploy, err := kubeClient.AppsV1beta1().Deployments(ns).Get(DeploymentProwBuild, metav1.GetOptions{})
-	return deploy != nil, err
+	_, err := kubeClient.AppsV1beta1().Deployments(ns).Get(DeploymentProwBuild, metav1.GetOptions{})
+	if err != nil {
+		if isProwBuildNotFoundError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func isProwBuildNotFoundError(err error) bool {
+	return err.Error() == `deployments.apps "prow-build" not found`
 }
 
 // EnsureEditEnvironmentSetup ensures that the Environment is created in the given namespace
