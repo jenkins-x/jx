@@ -46,7 +46,7 @@ func NewCmdDeleteEnv(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	cmd := &cobra.Command{
 		Use:     "environment",
-		Short:   "Deletes one or more environments",
+		Short:   "Deletes one or more Environments",
 		Aliases: []string{"env"},
 		Long:    delete_env_long,
 		Example: delete_env_example,
