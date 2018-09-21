@@ -15,13 +15,15 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	defaultCloudBeesReleaseName = "cb"
 	defaultCloudBeesNamespace   = "jx"
 	cdxRepoName                 = "cb"
+	cbServiceName               = "cb-cdx"
 	cdxRepoUrl                  = "https://%s:%s@chartmuseum.jx.charts-demo.cloudbees.com"
 	serviceaccountsClusterAdmin = "serviceaccounts-cluster-admin"
 )
@@ -44,7 +46,9 @@ var (
 // CreateAddonCloudBeesOptions the options for the create spring command
 type CreateAddonCloudBeesOptions struct {
 	CreateAddonOptions
-	Sso bool
+	Sso      bool
+	Basic    bool
+	Password string
 }
 
 // NewCmdCreateAddonCloudBees creates a command object for the "create" command
@@ -77,6 +81,8 @@ func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 	}
 
 	cmd.Flags().BoolVarP(&options.Sso, "sso", "", false, "Enable single sign-on")
+	cmd.Flags().BoolVarP(&options.Basic, "basic", "", false, "Enable basic auth")
+	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access UI when using basic auth.  Defaults to default Jenkins X admin password.")
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName)
 	return cmd
@@ -84,6 +90,11 @@ func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 
 // Run implements the command
 func (o *CreateAddonCloudBeesOptions) Run() error {
+
+	if o.Sso == false && o.Basic == false {
+		return fmt.Errorf("please use --sso or --basic flag")
+	}
+
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	c, _, err := o.KubeClient()
 	if err != nil {
@@ -201,12 +212,47 @@ To register to get your username/password to to: %s
 			"sso.create=true",
 			"sso.oidcIssuerUrl=" + dexURL,
 			"sso.domain=" + domain,
-			"sso.certIssuerName=" + ingressConfig.Issuer,
-		}
+			"sso.certIssuerName=" + ingressConfig.Issuer}
+
 		if len(o.SetValues) > 0 {
 			o.SetValues = o.SetValues + "," + strings.Join(values, ",")
 		} else {
 			o.SetValues = strings.Join(values, ",")
+		}
+
+	} else if o.Basic {
+		devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+		if err != nil {
+			return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
+		}
+
+		if o.Password == "" {
+			o.Password, err = o.getDefaultAdminPassword(devNamespace)
+			if err != nil {
+				return err
+			}
+		}
+
+		o.SetValues = strings.Join([]string{"sso.disable=true"}, ",")
+
+		svc, err := c.CoreV1().Services(o.currentNamespace).Get(cbServiceName, meta_v1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		annotationsUpdated := false
+		if svc.Annotations[kube.AnnotationExpose] == "" {
+			svc.Annotations[kube.AnnotationExpose] = "true"
+			annotationsUpdated = true
+		}
+		if svc.Annotations[kube.AnnotationIngress] == "" {
+			svc.Annotations[kube.AnnotationIngress] = "nginx.ingress.kubernetes.io/auth-type: basic\nnginx.ingress.kubernetes.io/auth-secret: jx-basic-auth"
+			annotationsUpdated = true
+		}
+		if annotationsUpdated {
+			svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
+			if err != nil {
+				return fmt.Errorf("failed to update service %s/%s", o.Namespace, cbServiceName)
+			}
 		}
 	}
 
@@ -229,7 +275,7 @@ To register to get your username/password to to: %s
 	log.Infof("target namespace %s\n", o.Namespace)
 
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, "")
+	err = o.expose(devNamespace, o.Namespace, o.Password)
 	if err != nil {
 		return err
 	}
