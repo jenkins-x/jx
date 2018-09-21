@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // HelmCLI implements common helm actions based on helm CLI
@@ -18,7 +18,7 @@ type HelmCLI struct {
 	BinVersion Version
 	CWD        string
 	Runner     *util.Command
-	Debug bool
+	Debug      bool
 }
 
 // NewHelmCLI creates a new HelmCLI instance configured to used the provided helm CLI in

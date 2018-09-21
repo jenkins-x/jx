@@ -124,7 +124,7 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 		case "heptio-authenticator-aws":
 			err = o.installHeptioAuthenticatorAws()
 		case "icp":
-			err = o.loginToICP()
+			err = o.installIntoICP()
 		default:
 			return fmt.Errorf("unknown dependency to install %s\n", i)
 		}
@@ -1230,7 +1230,15 @@ func (o *CommonOptions) installHeptioAuthenticatorAws() error {
 
 /* A user should have configured their kubectl client to point to an existing ICP cluster at this point */
 
-func (o *CommonOptions) loginToICP() error {
+func (o *CommonOptions) installIntoICP() error {
+	/* TODO make this scriptable too with default values or from a parameter */
+	log.Infof("Installing into IBM Cloud Private: ensure your kube context is already configured to point to the cluster jx will be installed into")
+
+	log.Infof("You must have Helm 2.10 or later on your path and this user must be able to create namespaces, and set up a tiller, somewhere other than default and kube-system respectively")
+
+	// todo figure these out programatically, set defaults or make it noddy to configure, perhaps leveraging cloudctl
+	log.Infof("This command should be done with --docker-registry=mycluster.icp:8500 --namespace jx --skip-ingress --external-ip=9.something --domain=9.something.nip.io")
+
 	/* We want cloudctl, which is going to be at an endpoint such as
 	   cloudctl-darwin-amd64-3.1.0-715 at https://9.20.201.31:8443/api/cli/cloudctl-darwin-amd64
 	   This is downloaded from the ICP master node, e.g.
@@ -1265,9 +1273,29 @@ func (o *CommonOptions) loginToICP() error {
 		return err
 	}
 
-	// cloudctl login sets a user's kubectl context to point to the cluster
-	// but crucially we'll also have the neccessary files we need to talk to ICP's tiller securely
-	return o.RunCommand(fullPath, "login -a", icpDashURL, "-u", username, "-p", password, "--skip-ssl-validation")
+	err = o.RunCommand(fullPath, "login -a", icpDashURL, "-u", username, "-p", password, "--skip-ssl-validation")
+	if err != nil {
+		return err
+	}
+
+	/* We don't need to set up a tiller here ourselves in this method because it's done as part of the jx install
+	 it is important that for ICP we use our own namespace
+	 this relies on the pods with jx in using this fix too
+
+		The domain should also be figured out programatically. We can do this from kubectl We need to skip ingress and use domain for it to work on ICP.
+		For example:
+	    jx install --provider=kubernetes \
+	    --skip-ingress \
+	    --external-ip=10.20.30.40 \
+	    --domain=10.20.30.40.nip.io
+	*/
+
+	// No problems so far? Great, just return nil and a positive message
+	log.Info("No errors reported: cloudctl downloaded, logged in successfully to the cluster")
+	// Todo set up a cloud environment? It's a different repo https://github.com/jenkins-x/cloud-environments
+	// ./pkg/jx/cmd/install.go:        DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
+	// ./pkg/jx/cmd/install.go: // clones the jenkins-x cloud-environments repo to a local working dir
+	return nil
 }
 
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
