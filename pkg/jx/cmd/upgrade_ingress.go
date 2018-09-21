@@ -255,7 +255,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 	}
 
 	if len(existingIngressNames) == 0 {
-		return existingIngressNames, errors.New("No ingress rules found")
+		return existingIngressNames, nil
 	}
 
 	confirm := &survey.Confirm{
