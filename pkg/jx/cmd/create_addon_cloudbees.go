@@ -191,7 +191,7 @@ To register to get your username/password to to: %s
 			return errors.Wrap(err, "reading domain")
 		}
 
-		dexURL, err := util.PickValue("Dex URL:", "", true, o.In, o.Out, o.Err)
+		dexURL, err := util.PickValue("Dex URL:", fmt.Sprintf("https://dex.sso.%s/", ingressConfig.Domain), true, o.In, o.Out, o.Err)
 		if err != nil {
 			return errors.Wrap(err, "reading dex URL")
 		}
