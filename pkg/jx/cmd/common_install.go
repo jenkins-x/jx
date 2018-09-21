@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/alexflint/go-filemutex"
@@ -122,6 +123,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installEksCtl(false)
 		case "heptio-authenticator-aws":
 			err = o.installHeptioAuthenticatorAws()
+		case "icp":
+			err = o.loginToICP()
 		default:
 			return fmt.Errorf("unknown dependency to install %s\n", i)
 		}
@@ -272,7 +275,7 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 		extension = "zip"
 	}
 	clientUrlBuffer := bytes.NewBufferString("")
-	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": version, "os" : runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
+	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": version, "os": runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + "." + extension
 	err = o.downloadFile(clientUrlBuffer.String(), tarFile)
@@ -280,7 +283,7 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 		return err
 	}
 	if extension == "zip" {
-		zipDir := filepath.Join(binDir, binary + "-tmp-"+uuid.NewUUID().String())
+		zipDir := filepath.Join(binDir, binary+"-tmp-"+uuid.NewUUID().String())
 		err = os.MkdirAll(zipDir, DefaultWritePermissions)
 		if err != nil {
 			return err
@@ -325,7 +328,6 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 
 	return os.Chmod(fullPath, 0755)
 }
-
 
 func (o *CommonOptions) installBrewIfRequired() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
@@ -1202,7 +1204,7 @@ func (o *CommonOptions) installAws() error {
 
 func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
 	return o.installOrUpdateBinary("eksctl",
-		 "weaveworks",
+		"weaveworks",
 		"https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
 		"0.1.1", skipPathScan)
 }
@@ -1224,6 +1226,48 @@ func (o *CommonOptions) installHeptioAuthenticatorAws() error {
 		return err
 	}
 	return os.Chmod(fullPath, 0755)
+}
+
+/* A user should have configured their kubectl client to point to an existing ICP cluster at this point */
+
+func (o *CommonOptions) loginToICP() error {
+	/* We want cloudctl, which is going to be at an endpoint such as
+	   cloudctl-darwin-amd64-3.1.0-715 at https://9.20.201.31:8443/api/cli/cloudctl-darwin-amd64
+	   This is downloaded from the ICP master node, e.g.
+	     users-mbp:jx jxuser$ kubectl cluster-info
+	     Kubernetes master is running at https://9.20.201.31:8001
+	*/
+
+	icpDashURL := ""
+	promptIP := &survey.Input{Message: "ICP master IP address"}
+	survey.AskOne(promptIP, &icpDashURL, nil)
+
+	username := ""
+	promptUser := &survey.Input{Message: "ICP username"}
+	survey.AskOne(promptUser, &username, nil)
+
+	password := ""
+	promptPass := &survey.Input{Message: "ICP password"}
+	survey.AskOne(promptPass, &password, nil)
+
+	fileName := fmt.Sprintf("cloudctl-%s-amd64", runtime.GOOS)
+	cloudctlURL := fmt.Sprintf("%s/api/cli/%s", icpDashURL, fileName)
+	binDir, err := util.JXBinLocation()
+	fullPath := filepath.Join(binDir, fileName)
+	err = o.downloadFile(cloudctlURL, fullPath)
+
+	if err != nil {
+		return err
+	}
+
+	err = os.Chmod(fullPath, 0755)
+	if err != nil {
+		return err
+	}
+
+	// cloudctl login sets a user's kubectl context to point to the cluster
+	// but crucially we'll also have the neccessary files we need to talk to ICP's tiller securely
+	return o.RunCommand(fullPath, "login -a", icpDashURL, "-u", username, "-p", password, "--skip-ssl-validation")
 }
 
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
@@ -1292,7 +1336,7 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 		install = append(install, deps...)
 	} else {
 		if o.BatchMode {
-			return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
+			return errors.New(fmt.Sprintf("run without batch mode or manually install missing dependencies %v\n", deps))
 		}
 
 		prompt := &survey.MultiSelect{
@@ -1320,6 +1364,8 @@ func (o *CommonOptions) installRequirements(cloudProvider string, extraDependenc
 		deps = o.addRequiredBinary("oci", deps)
 	case MINIKUBE:
 		deps = o.addRequiredBinary("minikube", deps)
+	case ICP:
+		deps = o.addRequiredBinary("cloudctl", deps)
 	}
 
 	for _, dep := range extraDependencies {
