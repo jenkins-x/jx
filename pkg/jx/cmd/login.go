@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -49,7 +50,8 @@ type UserLoginInfo struct {
 type LoginOptions struct {
 	CommonOptions
 
-	URL string
+	URL  string
+	Team string
 }
 
 var (
@@ -60,15 +62,21 @@ var (
 
 	login_example = templates.Examples(`
 		# Onboard into CloudBees application
-		jx login`)
+		jx login -u https://cloudbees-app-url 
+	
+		# Onboard into CloudBees application and switched to team 'cheese'
+		jx login -u https://cloudbees-app-url -t cheese
+		`)
 )
 
-func NewCmdLogin(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdLogin(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &LoginOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{
@@ -85,6 +93,7 @@ func NewCmdLogin(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.URL, "url", "u", "", "The URL of the CloudBees application")
+	cmd.Flags().StringVarP(&options.Team, "team", "t", "", "The team to use upon login")
 
 	return cmd
 }
@@ -103,7 +112,10 @@ func (o *LoginOptions) Run() error {
 	jxlog.Infof("You are %s. You credentials are stored in %s file.\n",
 		util.ColorInfo("successfully logged in"), util.ColorInfo("~/.kube/config"))
 
-	teamOptions := TeamOptions{}
+	teamOptions := TeamOptions{
+		CommonOptions: o.CommonOptions,
+	}
+	teamOptions.Args = []string{o.Team}
 	err = teamOptions.Run()
 	if err != nil {
 		return errors.Wrap(err, "switching team")

@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -33,11 +34,12 @@ type UpgradeClusterOptions struct {
 }
 
 // NewCmdUpgradeCluster defines the command
-func NewCmdUpgradeCluster(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeClusterOptions{
 		UpgradeOptions: UpgradeOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -63,11 +65,12 @@ func NewCmdUpgradeCluster(f Factory, out io.Writer, errOut io.Writer) *cobra.Com
 
 // Run implements the command
 func (o *UpgradeClusterOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	confirm := false
 	prompt := &survey.Confirm{
 		Message: "Upgrading a GKE cluster is an experimental feature in jx.  Would you like to continue?",
 	}
-	survey.AskOne(prompt, &confirm, nil)
+	survey.AskOne(prompt, &confirm, nil, surveyOpts)
 
 	if !confirm {
 		// exit at this point
@@ -106,6 +109,7 @@ func (o *UpgradeClusterOptions) Run() error {
 }
 
 func (o *UpgradeClusterOptions) getClusterName() (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	selectedClusterName := o.ClusterName
 	if selectedClusterName != "" {
 		return selectedClusterName, nil
@@ -138,7 +142,7 @@ func (o *UpgradeClusterOptions) getClusterName() (string, error) {
 			Help:    "Select a GKE cluster to upgrade",
 		}
 
-		err := survey.AskOne(prompts, &selectedClusterName, nil)
+		err := survey.AskOne(prompts, &selectedClusterName, nil, surveyOpts)
 		if err != nil {
 			return "", err
 		}
@@ -152,6 +156,7 @@ func (o *UpgradeClusterOptions) getClusterName() (string, error) {
 }
 
 func (o *UpgradeClusterOptions) getVersion() (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	selectedVersion := o.Version
 	if selectedVersion != "" {
 		return selectedVersion, nil
@@ -179,7 +184,7 @@ func (o *UpgradeClusterOptions) getVersion() (string, error) {
 		Help:    "Select a GKE cluster version to upgrade to",
 	}
 
-	err = survey.AskOne(prompts, &selectedVersion, nil)
+	err = survey.AskOne(prompts, &selectedVersion, nil, surveyOpts)
 	if err != nil {
 		return "", err
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -39,10 +40,11 @@ type DeleteDevPodOptions struct {
 
 // NewCmdDeleteDevPod creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteDevPodOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -94,14 +96,14 @@ func (o *DeleteDevPodOptions) Run() error {
 	}
 
 	if len(args) == 0 {
-		args, err = util.PickNames(names, "Pick DevPod:")
+		args, err = util.PickNames(names, "Pick DevPod:", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
 	}
 	deletePods := strings.Join(args, ", ")
 
-	if !util.Confirm("You are about to delete the DevPods: "+deletePods, false, "The list of DevPods names to be deleted") {
+	if !util.Confirm("You are about to delete the DevPods: "+deletePods, false, "The list of DevPods names to be deleted", o.In, o.Out, o.Err) {
 		return nil
 	}
 	for _, name := range args {

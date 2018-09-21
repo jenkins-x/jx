@@ -11,7 +11,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/helm/pkg/chartutil"
@@ -37,7 +36,7 @@ func TestStepTagCharts(t *testing.T) {
 	valuesFile := filepath.Join(chartsDir, "values.yaml")
 
 	o := cmd.StepTagOptions{}
-	o.Out = tests.Output()
+	//o.Out = tests.Output()
 	o.Flags.ChartsDir = chartsDir
 	o.Flags.Version = expectedVersion
 	o.Flags.ChartValueRepository = expectedImageName

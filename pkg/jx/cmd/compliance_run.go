@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/api/core/v1"
 )
 
@@ -29,10 +30,11 @@ type ComplianceRunOptions struct {
 
 // NewCmdComplianceRun creates a command object for the "compliance run" action, which
 // starts the E2E compliance tests
-func NewCmdComplianceRun(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceRun(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ComplianceRunOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},

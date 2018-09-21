@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -44,13 +45,15 @@ var (
 )
 
 // NewCmdStartPipeline creates the command
-func NewCmdStartPipeline(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStartPipeline(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StartPipelineOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}
@@ -96,7 +99,7 @@ func (o *StartPipelineOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to start: ", defaultName)
+		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to start: ", defaultName, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

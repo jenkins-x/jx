@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,7 +23,7 @@ func TestReplacePlaceholders(t *testing.T) {
 
 	assert.NoError(t, err)
 	o := cmd.ImportOptions{}
-	o.Out = tests.Output()
+	//o.Out = tests.Output()
 	o.Dir = f
 	o.AppName = "bar"
 

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"io"
-
 	"strings"
 
 	"fmt"
@@ -20,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -76,9 +76,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterGKE(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKEOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, GKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -111,7 +111,7 @@ func NewCmdCreateClusterGKE(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 
-	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, in, out, errOut))
 
 	return cmd
 }
@@ -132,6 +132,7 @@ func (o *CreateClusterGKEOptions) Run() error {
 }
 
 func (o *CreateClusterGKEOptions) createClusterGKE() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	var err error
 	if !o.Flags.SkipLogin {
 		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
@@ -180,7 +181,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			Help:     "The compute zone (e.g. us-central1-a) for the cluster",
 		}
 
-		err = survey.AskOne(prompts, &zone, nil)
+		err = survey.AskOne(prompts, &zone, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -196,7 +197,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			Default:  "n1-standard-2",
 		}
 
-		err := survey.AskOne(prompts, &machineType, nil)
+		err := survey.AskOne(prompts, &machineType, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -210,7 +211,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			Help:    "We recommend a minimum of 3 for Jenkins X,  the minimum number of nodes to be created in each of the cluster's zones",
 		}
 
-		survey.AskOne(prompt, &minNumOfNodes, nil)
+		survey.AskOne(prompt, &minNumOfNodes, nil, surveyOpts)
 	}
 
 	maxNumOfNodes := o.Flags.MaxNumOfNodes
@@ -221,7 +222,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			Help:    "We recommend at least 5 for Jenkins X,  the maximum number of nodes to be created in each of the cluster's zones",
 		}
 
-		survey.AskOne(prompt, &maxNumOfNodes, nil)
+		survey.AskOne(prompt, &maxNumOfNodes, nil, surveyOpts)
 	}
 
 	// mandatory flags are machine type, num-nodes, zone,
@@ -327,6 +328,7 @@ func sanitizeLabel(username string) string {
 
 // asks to chose from existing projects or optionally creates one if none exist
 func (o *CreateClusterGKEOptions) getGoogleProjectId() (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	out, err := o.getCommandOutput("", "gcloud", "projects", "list")
 	if err != nil {
 		return "", err
@@ -349,7 +351,7 @@ func (o *CreateClusterGKEOptions) getGoogleProjectId() (string, error) {
 			Default: true,
 		}
 		flag := true
-		err = survey.AskOne(confirm, &flag, nil)
+		err = survey.AskOne(confirm, &flag, nil, surveyOpts)
 		if err != nil {
 			return "", err
 		}
@@ -370,7 +372,7 @@ func (o *CreateClusterGKEOptions) getGoogleProjectId() (string, error) {
 			Help:    "Select a Google Project to create the cluster in",
 		}
 
-		err := survey.AskOne(prompts, &projectId, nil)
+		err := survey.AskOne(prompts, &projectId, nil, surveyOpts)
 		if err != nil {
 			return "", err
 		}

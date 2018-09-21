@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"io"
-
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -39,11 +39,12 @@ type CreateEtcHostsOptions struct {
 }
 
 // NewCmdCreateEtcHosts creates a command object for the "create" command
-func NewCmdCreateEtcHosts(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateEtcHosts(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateEtcHostsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

@@ -4,8 +4,10 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -56,7 +58,7 @@ type CreateEnvOptions struct {
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
-func NewCmdCreateEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateEnvOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
@@ -64,6 +66,7 @@ func NewCmdCreateEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command 
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -114,6 +117,7 @@ func (o *CreateEnvOptions) Run() error {
 	if len(args) > 0 && o.Options.Name == "" {
 		o.Options.Name = args[0]
 	}
+	//_, currentNs, err := o.JXClientAndDevNamespace()
 	jxClient, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -128,19 +132,23 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
 
+	//_, _, err = kube.GetDevNamespace(kubeClient, currentNs)
 	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
 		return err
 	}
+	_, err = util.EnvironmentsDir()
 	envDir, err := util.EnvironmentsDir()
 	if err != nil {
 		return err
 	}
+	//_, err = o.CreateGitAuthConfigService()
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
 	devEnv, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
+	//_, err = kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
 		return err
 	}
@@ -155,8 +163,8 @@ func (o *CreateEnvOptions) Run() error {
 
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, &env, &o.Options, o.ForkEnvironmentGitRepo, ns,
-		jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git())
+	gitProvider, err := kube.CreateEnvironmentSurvey(o.BatchMode, authConfigSvc, devEnv, &env, &o.Options, o.ForkEnvironmentGitRepo, ns,
+		jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git(), o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -186,7 +194,16 @@ func (o *CreateEnvOptions) Run() error {
 
 	if gitURL != "" {
 		if gitProvider == nil {
-			p, err := o.gitProviderForURL(gitURL, "user name to create the git repository")
+			authConfigSvc, err := o.CreateGitAuthConfigService()
+			if err != nil {
+				return err
+			}
+			gitKind, err := o.GitServerKind(gitInfo)
+			if err != nil {
+				return err
+			}
+			message := "user name to create the git repository"
+			p, err := o.CreateOptions.CommonOptions.Factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -204,7 +221,7 @@ func (o *CreateEnvOptions) Run() error {
 					u = gitInfo.Host
 				}
 			}
-			user, err := config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "")
+			user, err := config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -217,9 +234,8 @@ func (o *CreateEnvOptions) Run() error {
 			}
 			// register the webhook
 			return o.createWebhookProw(gitURL, gitProvider)
-		} else {
-			return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 		}
+		return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 	}
 
 	return nil

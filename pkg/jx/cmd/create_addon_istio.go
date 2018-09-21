@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -48,12 +49,13 @@ type CreateAddonIstioOptions struct {
 }
 
 // NewCmdCreateAddonIstio creates a command object for the "create" command
-func NewCmdCreateAddonIstio(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonIstio(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonIstioOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},

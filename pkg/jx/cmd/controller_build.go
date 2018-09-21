@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -31,11 +32,12 @@ type ControllerBuildOptions struct {
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ControllerBuildOptions{
 		ControllerOptions: ControllerOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
