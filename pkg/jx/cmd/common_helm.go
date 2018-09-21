@@ -94,12 +94,27 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName stri
 
 // installChart installs the given chart
 func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
-	return o.installChartAt("", releaseName, chart, version, ns, helmUpdate, setValues)
+	return o.installChartOptions(InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues})
 }
 
 // installChartAt installs the given chart
 func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
-	if helmUpdate {
+	return o.installChartOptions(InstallChartOptions{ Dir: dir, ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues})
+}
+
+type InstallChartOptions struct {
+	Dir         string
+	ReleaseName string
+	Chart       string
+	Version     string
+	Ns          string
+	HelmUpdate  bool
+	SetValues   []string
+	ValueFiles  []string
+}
+
+func (o *CommonOptions) installChartOptions(options InstallChartOptions) error {
+	if options.HelmUpdate {
 		log.Infoln("Updating Helm repository...")
 		err := o.Helm().UpdateRepo()
 		if err != nil {
@@ -107,21 +122,21 @@ func (o *CommonOptions) installChartAt(dir string, releaseName string, chart str
 		}
 		log.Infoln("Helm repository update done.")
 	}
-	if ns != "" {
+	if options.Ns != "" {
 		kubeClient, _, err := o.KubeClient()
 		if err != nil {
 			return errors.Wrap(err, "failed to create the kube client")
 		}
 		annotations := map[string]string{"jenkins-x.io/created-by": "Jenkins X"}
-		kube.EnsureNamespaceCreated(kubeClient, ns, nil, annotations)
+		kube.EnsureNamespaceCreated(kubeClient, options.Ns, nil, annotations)
 	}
 	timeout, err := strconv.Atoi(defaultInstallTimeout)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert the timeout to an int")
 	}
-	o.Helm().SetCWD(dir)
-	return o.Helm().UpgradeChart(chart, releaseName, ns, &version, true,
-		&timeout, true, false, setValues, nil)
+	o.Helm().SetCWD(options.Dir)
+	return o.Helm().UpgradeChart(options.Chart, options.ReleaseName, options.Ns, &options.Version, true,
+		&timeout, true, false, options.SetValues, options.ValueFiles)
 }
 
 // deleteChart deletes the given chart
