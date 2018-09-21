@@ -254,6 +254,10 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 		o.TargetNamespaces = append(o.TargetNamespaces, o.currentNamespace)
 	}
 
+	if len(existingIngressNames) == 0 {
+		return existingIngressNames, errors.New("No ingress rules found")
+	}
+
 	confirm := &survey.Confirm{
 		Message: confirmMessage,
 		Default: true,
