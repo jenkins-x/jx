@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -46,10 +47,11 @@ type DeleteQuickstartLocationOptions struct {
 }
 
 // NewCmdDeleteQuickstartLocation defines the command
-func NewCmdDeleteQuickstartLocation(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteQuickstartLocation(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteQuickstartLocationOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -109,7 +111,7 @@ func (o *DeleteQuickstartLocationOptions) Run() error {
 				names = append(names, key)
 			}
 
-			name, err := util.PickName(names, "Pick the quickstart git owner to remove from the team settings: ")
+			name, err := util.PickName(names, "Pick the quickstart git owner to remove from the team settings: ", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

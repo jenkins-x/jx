@@ -2,6 +2,7 @@ package gits
 
 import (
 	"fmt"
+	"io"
 	"net/url"
 	"sort"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type GitOrganisation struct {
@@ -184,7 +186,7 @@ func ProviderAccessTokenURL(kind string, url string, username string) string {
 }
 
 // PickOrganisation picks an organisations login if there is one available
-func PickOrganisation(orgLister OrganisationLister, userName string) (string, error) {
+func PickOrganisation(orgLister OrganisationLister, userName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
 	prompt := &survey.Select{
 		Message: "Which organisation do you want to use?",
 		Options: GetOrganizations(orgLister, userName),
@@ -192,7 +194,8 @@ func PickOrganisation(orgLister OrganisationLister, userName string) (string, er
 	}
 
 	orgName := ""
-	err := survey.AskOne(prompt, &orgName, nil)
+	surveyOpts := survey.WithStdio(in, out, errOut)
+	err := survey.AskOne(prompt, &orgName, nil, surveyOpts)
 	if err != nil {
 		return "", err
 	}
@@ -217,7 +220,7 @@ func GetOrganizations(orgLister OrganisationLister, userName string) []string {
 	return orgNames
 }
 
-func PickRepositories(provider GitProvider, owner string, message string, selectAll bool, filter string) ([]*GitRepository, error) {
+func PickRepositories(provider GitProvider, owner string, message string, selectAll bool, filter string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) ([]*GitRepository, error) {
 	answer := []*GitRepository{}
 	repos, err := provider.ListRepositories(owner)
 	if err != nil {
@@ -246,7 +249,8 @@ func PickRepositories(provider GitProvider, owner string, message string, select
 		prompt.Default = allRepoNames
 	}
 	repoNames := []string{}
-	err = survey.AskOne(prompt, &repoNames, nil)
+	surveyOpts := survey.WithStdio(in, out, errOut)
+	err = survey.AskOne(prompt, &repoNames, nil, surveyOpts)
 
 	for _, n := range repoNames {
 		repo := repoMap[n]
@@ -285,14 +289,14 @@ func (s *GitRepoStatus) IsFailed() bool {
 	return s.State == "error" || s.State == "failure"
 }
 
-func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string, batchMode bool, gitKind string, git Gitter) (GitProvider, error) {
+func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string, batchMode bool, gitKind string, git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	hostUrl := i.HostURLWithoutUser()
 	server := config.GetOrCreateServer(hostUrl)
 	if server.Kind == "" {
 		server.Kind = gitKind
 	}
-	userAuth, err := config.PickServerUserAuth(server, message, batchMode, "")
+	userAuth, err := config.PickServerUserAuth(server, message, batchMode, "", in, out, errOut)
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -39,12 +40,13 @@ type CreateAddonKubelessOptions struct {
 }
 
 // NewCmdCreateAddonKubeless creates a command object for the "create" command
-func NewCmdCreateAddonKubeless(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonKubeless(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonKubelessOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},

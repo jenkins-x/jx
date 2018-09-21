@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -118,10 +119,11 @@ var (
 )
 
 // NewCmdPromote creates the new command for: jx get prompt
-func NewCmdPromote(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdPromote(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &PromoteOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -207,7 +209,7 @@ func (o *PromoteOptions) Run() error {
 				names = append(names, n)
 			}
 		}
-		o.Environment, err = kube.PickEnvironment(names, "")
+		o.Environment, err = kube.PickEnvironment(names, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -337,6 +339,7 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 }
 
 func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAuto bool) (*ReleaseInfo, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	app := o.Application
 	if app == "" {
 		log.Warnf("No application name could be detected so cannot promote via Helm. If the detection of the helm chart name is not working consider adding it with the --%s argument on the 'jx promomote' command\n", optionApplication)
@@ -372,7 +375,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 			Default: false,
 		}
 		flag := false
-		err := survey.AskOne(confirm, &flag, nil)
+		err := survey.AskOne(confirm, &flag, nil, surveyOpts)
 		if err != nil {
 			return releaseInfo, err
 		}
@@ -1012,7 +1015,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind, o.Git())
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to comment on issues", o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -1119,7 +1122,7 @@ func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 		names = append(names, text)
 		m[text] = &charts[i]
 	}
-	name, err := util.PickName(names, "Pick chart to promote: ")
+	name, err := util.PickName(names, "Pick chart to promote: ", o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}

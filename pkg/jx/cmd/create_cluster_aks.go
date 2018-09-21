@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -67,9 +68,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterAKS(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterAKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aks",
@@ -129,6 +130,7 @@ func (o *CreateClusterAKSOptions) Run() error {
 }
 
 func (o *CreateClusterAKSOptions) createClusterAKS() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 
 	resourceName := o.Flags.ResourceName
 	if resourceName == "" {
@@ -151,7 +153,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 			PageSize: 10,
 			Help:     "location to run cluster",
 		}
-		err := survey.AskOne(prompt, &location, nil)
+		err := survey.AskOne(prompt, &location, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -167,7 +169,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 			Default:  "Standard_D2s_v3",
 		}
 
-		err := survey.AskOne(prompts, &nodeVMSize, nil)
+		err := survey.AskOne(prompts, &nodeVMSize, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -180,7 +182,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 			Default: "3",
 			Help:    "We recommend a minimum of 3 nodes for Jenkins X",
 		}
-		survey.AskOne(prompt, &nodeCount, nil)
+		survey.AskOne(prompt, &nodeCount, nil, surveyOpts)
 	}
 
 	pathToPublicKey := o.Flags.PathToPublicKey

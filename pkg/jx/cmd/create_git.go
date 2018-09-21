@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateGitOptions the options for the create spring command
@@ -12,11 +13,12 @@ type CreateGitOptions struct {
 }
 
 // NewCmdCreateGit creates a command object for the "create" command
-func NewCmdCreateGit(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateGitOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -35,9 +37,9 @@ func NewCmdCreateGit(f Factory, out io.Writer, errOut io.Writer) *cobra.Command 
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateGitServer(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateGitToken(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateGitUser(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateGitServer(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateGitToken(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateGitUser(f, in, out, errOut))
 	return cmd
 }
 

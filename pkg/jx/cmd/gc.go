@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
@@ -47,10 +48,11 @@ var (
 
 // NewCmdGC creates a command object for the generic "gc" action, which
 // retrieves one or more resources from a server.
-func NewCmdGC(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGC(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GCOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -69,11 +71,11 @@ func NewCmdGC(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(NewCmdGCActivities(f, out, errOut))
-	cmd.AddCommand(NewCmdGCPreviews(f, out, errOut))
-	cmd.AddCommand(NewCmdGCGKE(f, out, errOut))
-	cmd.AddCommand(NewCmdGCHelm(f, out, errOut))
-	cmd.AddCommand(NewCmdGCReleases(f, out, errOut))
+	cmd.AddCommand(NewCmdGCActivities(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGCPreviews(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGCGKE(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGCHelm(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGCReleases(f, in, out, errOut))
 
 	return cmd
 }

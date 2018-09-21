@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepHelmEnvOptions contains the command line flags
@@ -29,12 +30,13 @@ var (
 `)
 )
 
-func NewCmdStepHelmEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepHelmEnvOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},

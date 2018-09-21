@@ -19,6 +19,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -55,10 +56,11 @@ var (
 `)
 )
 
-func NewCmdShell(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdShell(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ShellOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -164,6 +166,7 @@ func (o *ShellOptions) Run() error {
 }
 
 func (o *ShellOptions) PickContext(names []string, defaultValue string) (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if len(names) == 0 {
 		return "", nil
 	}
@@ -176,7 +179,7 @@ func (o *ShellOptions) PickContext(names []string, defaultValue string) (string,
 		Options: names,
 		Default: defaultValue,
 	}
-	err := survey.AskOne(prompt, &name, nil)
+	err := survey.AskOne(prompt, &name, nil, surveyOpts)
 	return name, err
 }
 

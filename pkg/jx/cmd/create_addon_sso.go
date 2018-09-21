@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -51,9 +52,10 @@ type CreateAddonSSOOptions struct {
 }
 
 // NewCmdCreateAddonSSO creates a command object for the "create sso" command
-func NewCmdCreateAddonSSO(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	commonOptions := CommonOptions{
 		Factory: f,
+		In:      in,
 		Out:     out,
 		Err:     errOut,
 	}
@@ -111,7 +113,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing ingress configuration")
 	}
-	domain, err := util.PickValue("Domain:", ingressConfig.Domain, true)
+	domain, err := util.PickValue("Domain:", ingressConfig.Domain, true, o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -123,11 +125,11 @@ func (o *CreateAddonSSOOptions) Run() error {
 	log.Infof("Then copy the %s and %s so that you can pate them into the form bellow:\n",
 		util.ColorInfo("Client ID"), util.ColorInfo("Client Secret"))
 
-	clientID, err := util.PickValue("Client ID:", "", true)
+	clientID, err := util.PickValue("Client ID:", "", true, o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
-	clientSecret, err := util.PickPassword("Client Secret:")
+	clientSecret, err := util.PickPassword("Client Secret:", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -171,13 +173,14 @@ func (o *CreateAddonSSOOptions) dexCallback(domain string) string {
 }
 
 func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(gits.GitHubURL)
-	userAuth, err := config.PickServerUserAuth(server, "git user name", true, "")
+	userAuth, err := config.PickServerUserAuth(server, "git user name", true, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +197,7 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 	}
 
 	authorizedOrgs := []string{}
-	err = survey.AskOne(promt, &authorizedOrgs, nil)
+	err = survey.AskOne(promt, &authorizedOrgs, nil, surveyOpts)
 	return authorizedOrgs, err
 }
 

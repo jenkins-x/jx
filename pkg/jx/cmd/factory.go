@@ -10,10 +10,12 @@ import (
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/dynamic"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/pkg/errors"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -77,7 +79,7 @@ func (f *factory) WithBearerToken(token string) Factory {
 }
 
 // CreateJenkinsClient creates a new jenkins client
-func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string) (*gojenkins.Jenkins, error) {
+func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
 
 	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns)
 	if err != nil {
@@ -87,7 +89,7 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 	if err != nil {
 		return nil, fmt.Errorf("%s. Try switching to the Development Tools environment via: jx env dev", err)
 	}
-	return jenkins.GetJenkinsClient(url, f.Batch, &svc)
+	return jenkins.GetJenkinsClient(url, f.Batch, &svc, in, out, errOut)
 }
 
 func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error) {
@@ -316,7 +318,7 @@ func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
 		return nil, "", err
 	}
 	if client == nil {
-		return nil, "", fmt.Errorf("Failed to create Kubernetes Client!")
+		return nil, "", fmt.Errorf("Failed to create Kubernetes Client")
 	}
 	ns := ""
 	config, _, err := kube.LoadConfig()
@@ -326,6 +328,14 @@ func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
 	ns = kube.CurrentNamespace(config)
 	// TODO allow namsepace to be specified as a CLI argument!
 	return client, ns, nil
+}
+
+func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.AuthConfigService, gitKind string, batchMode bool, gitter gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
+	gitInfo, err := gits.ParseGitURL(gitURL)
+	if err != nil {
+		return nil, err
+	}
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, batchMode, gitKind, gitter, in, out, errOut)
 }
 
 var kubeConfigCache *string
@@ -345,13 +355,13 @@ func createKubeConfig() *string {
 }
 
 func (f *factory) CreateKubeConfig() (*rest.Config, error) {
-	masterUrl := ""
+	masterURL := ""
 	kubeConfigEnv := os.Getenv("KUBECONFIG")
 	if kubeConfigEnv != "" {
 		pathList := filepath.SplitList(kubeConfigEnv)
 		return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 			&clientcmd.ClientConfigLoadingRules{Precedence: pathList},
-			&clientcmd.ConfigOverrides{ClusterInfo: clientcmdapi.Cluster{Server: masterUrl}}).ClientConfig()
+			&clientcmd.ConfigOverrides{ClusterInfo: clientcmdapi.Cluster{Server: masterURL}}).ClientConfig()
 	}
 	kubeconfig := createKubeConfig()
 	var config *rest.Config
@@ -360,7 +370,7 @@ func (f *factory) CreateKubeConfig() (*rest.Config, error) {
 		exists, err := util.FileExists(*kubeconfig)
 		if err == nil && exists {
 			// use the current context in kubeconfig
-			config, err = clientcmd.BuildConfigFromFlags(masterUrl, *kubeconfig)
+			config, err = clientcmd.BuildConfigFromFlags(masterURL, *kubeconfig)
 			if err != nil {
 				return nil, err
 			}
@@ -395,7 +405,7 @@ func (f *factory) getImpersonateUser() string {
 }
 
 func (f *factory) CreateTable(out io.Writer) table.Table {
-	return table.CreateTable(os.Stdout)
+	return table.CreateTable(out)
 }
 
 // IsInCDPIpeline we should only load the git / issue tracker API tokens if the current pod

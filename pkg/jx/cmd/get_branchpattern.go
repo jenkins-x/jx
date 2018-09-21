@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetBranchPatternOptions containers the CLI options
@@ -38,11 +39,12 @@ var (
 )
 
 // NewCmdGetBranchPattern creates the new command for: jx get env
-func NewCmdGetBranchPattern(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetBranchPattern(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetBranchPatternOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

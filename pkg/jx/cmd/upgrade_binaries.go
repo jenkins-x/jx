@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"io"
+	"io/ioutil"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"io"
-	"io/ioutil"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -23,11 +25,12 @@ type UpgradeBinariesOptions struct {
 	CreateOptions
 }
 
-func NewCmdUpgradeBinaries(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeBinaries(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeBinariesOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

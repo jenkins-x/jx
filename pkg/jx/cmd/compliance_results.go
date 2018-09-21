@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -38,12 +39,14 @@ type ComplianceResultsOptions struct {
 
 // NewCmdComplianceResults creates a command object for the "compliance results" action, which
 // shows the results of E2E compliance tests
-func NewCmdComplianceResults(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceResults(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ComplianceResultsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 
