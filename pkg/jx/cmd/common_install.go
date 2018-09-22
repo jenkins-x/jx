@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/alexflint/go-filemutex"
@@ -272,7 +273,7 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 		extension = "zip"
 	}
 	clientUrlBuffer := bytes.NewBufferString("")
-	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": version, "os" : runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
+	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": version, "os": runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + "." + extension
 	err = o.downloadFile(clientUrlBuffer.String(), tarFile)
@@ -280,7 +281,7 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 		return err
 	}
 	if extension == "zip" {
-		zipDir := filepath.Join(binDir, binary + "-tmp-"+uuid.NewUUID().String())
+		zipDir := filepath.Join(binDir, binary+"-tmp-"+uuid.NewUUID().String())
 		err = os.MkdirAll(zipDir, DefaultWritePermissions)
 		if err != nil {
 			return err
@@ -325,7 +326,6 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 
 	return os.Chmod(fullPath, 0755)
 }
-
 
 func (o *CommonOptions) installBrewIfRequired() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
@@ -1202,7 +1202,7 @@ func (o *CommonOptions) installAws() error {
 
 func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
 	return o.installOrUpdateBinary("eksctl",
-		 "weaveworks",
+		"weaveworks",
 		"https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
 		"0.1.1", skipPathScan)
 }
@@ -1466,10 +1466,6 @@ func (o *CommonOptions) installProw() error {
 
 	if o.Chart == "" {
 		o.Chart = prow.ChartProw
-	}
-
-	if o.Version == "" {
-		o.Version = prow.ProwVersion
 	}
 
 	var err error
