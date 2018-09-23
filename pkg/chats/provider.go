@@ -25,7 +25,7 @@ func (m *ChannelMetrics) ToMarkdown() string {
 	return util.MarkdownLink(m.Name, m.URL)
 }
 
-// CreateChatProvider creates a new chat provider if one is availabe for the given kind
+// CreateChatProvider creates a new chat provider if one is available for the given kind
 func CreateChatProvider(kind string, server *auth.AuthServer, userAuth *auth.UserAuth, batchMode bool) (ChatProvider, error) {
 	switch kind {
 	case Slack:
