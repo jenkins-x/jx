@@ -5,6 +5,6 @@ const (
 
 	MinikubeDefaultMemory = "4096"
 
-	ArtifactoryRepoMgr = "Artifactory"
+	ArtifactoryRepoMgr = "External Artifactory"
 	NexusRepoMgr       = "Nexus"
 )
