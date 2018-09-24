@@ -33,6 +33,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const eksctlVersion = "0.1.1"
+
 var (
 	groovy = `
 // imports
@@ -1201,10 +1203,14 @@ func (o *CommonOptions) installAws() error {
 }
 
 func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
+	return o.installEksCtlWithVersion(eksctlVersion, skipPathScan)
+}
+
+func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bool) error {
 	return o.installOrUpdateBinary("eksctl",
 		"weaveworks",
 		"https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
-		"0.1.1", skipPathScan)
+		version, skipPathScan)
 }
 
 func (o *CommonOptions) installHeptioAuthenticatorAws() error {
