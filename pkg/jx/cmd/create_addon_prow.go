@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
 
@@ -31,19 +32,22 @@ var (
 // CreateAddonProwOptions the options for the create spring command
 type CreateAddonProwOptions struct {
 	CreateAddonOptions
-	Password string
-	Chart    string
+	Password    string
+	Chart       string
+	ProwVersion string
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
-func NewCmdCreateAddonProw(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonProwOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
-					Out:     out,
-					Err:     errOut,
+					In:      in,
+
+					Out: out,
+					Err: errOut,
 				},
 			},
 		},
@@ -65,7 +69,7 @@ func NewCmdCreateAddonProw(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd, "", prow.DefaultProwReleaseName)
 
-	cmd.Flags().StringVarP(&options.Version, "version", "v", prow.ProwVersion, "The version of the prow addon to use")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", options.ProwVersion, "The version of the prow addon to use")
 	cmd.Flags().StringVarP(&options.Prow.Chart, optionChart, "c", prow.ChartProw, "The name of the chart to use")
 	cmd.Flags().StringVarP(&options.Prow.HMACToken, "hmac-token", "", "", "OPTIONAL: The hmac-token is the token that you give to GitHub for validating webhooks. Generate it using any reasonable randomness-generator, eg openssl rand -hex 20")
 	cmd.Flags().StringVarP(&options.Prow.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")

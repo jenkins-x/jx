@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateJenkinsOptions the options for the create spring command
@@ -12,11 +13,12 @@ type CreateJenkinsOptions struct {
 }
 
 // NewCmdCreateJenkins creates a command object for the "create" command
-func NewCmdCreateJenkins(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateJenkins(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateJenkinsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -34,7 +36,7 @@ func NewCmdCreateJenkins(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateJenkinsUser(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateJenkinsUser(f, in, out, errOut))
 	return cmd
 }
 

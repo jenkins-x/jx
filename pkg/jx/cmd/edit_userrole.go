@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -38,11 +39,12 @@ type EditUserRoleOptions struct {
 }
 
 // NewCmdEditUserRole creates a command object for the "create" command
-func NewCmdEditUserRole(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEditUserRole(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &EditUserRoleOptions{
 		EditOptions: EditOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -107,7 +109,7 @@ func (o *EditUserRoleOptions) Run() error {
 		if o.BatchMode {
 			return util.MissingOption(optionLogin)
 		}
-		name, err = util.PickName(names, "Pick the user to edit")
+		name, err = util.PickName(names, "Pick the user to edit", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -133,7 +135,7 @@ func (o *EditUserRoleOptions) Run() error {
 
 	userRoles := o.Roles
 	if !o.BatchMode && len(userRoles) == 0 {
-		userRoles, err = util.PickNames(roleNames, "Roles for user: "+name)
+		userRoles, err = util.PickNames(roleNames, "Roles for user: "+name, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -51,11 +52,12 @@ type CreateJenkinsUserOptions struct {
 }
 
 // NewCmdCreateJenkinsUser creates a command
-func NewCmdCreateJenkinsUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateJenkinsUserOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -152,7 +154,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 			return nil
 		}
 
-		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode, f)
+		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -82,12 +83,14 @@ var (
 
 // NewCmdInit creates a command object for the generic "init" action, which
 // primes a kubernetes cluster so it's ready for jenkins x to be installed
-func NewCmdInit(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdInit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &InitOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 
@@ -251,6 +254,7 @@ func (o *InitOptions) initHelm() error {
 	}
 
 	if !o.Flags.SkipTiller {
+		log.Infof("Configuring %s\n", util.ColorInfo("tiller"))
 		client, curNs, err := o.KubeClient()
 		if err != nil {
 			return err
@@ -369,6 +373,8 @@ func (o *InitOptions) initHelm() error {
 		if err != nil {
 			return err
 		}
+	} else {
+		log.Infof("Skipping %s\n", util.ColorInfo("tiller"))
 	}
 
 	if o.Flags.Helm3 {
@@ -428,6 +434,7 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 }
 
 func (o *InitOptions) initIngress() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	client, _, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -496,7 +503,7 @@ func (o *InitOptions) initIngress() error {
 				Default: true,
 				Help:    "An ingress controller works with an external loadbalancer so you can access Jenkins X and your applications",
 			}
-			survey.AskOne(prompt, &installIngressController, nil)
+			survey.AskOne(prompt, &installIngressController, nil, surveyOpts)
 		}
 
 		if !installIngressController {
@@ -634,7 +641,7 @@ func (o *InitOptions) validateGit() error {
 	var err error
 	if userName == "" {
 		if !o.BatchMode {
-			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true)
+			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -649,7 +656,7 @@ func (o *InitOptions) validateGit() error {
 	}
 	if userEmail == "" {
 		if !o.BatchMode {
-			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true)
+			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -678,6 +685,7 @@ func (o *InitOptions) HelmBinary() string {
 }
 
 func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, provider string, ingressNamespace string, ingressService string, externalIP string) (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	address := externalIP
 	if address == "" {
 		if provider == MINIKUBE {
@@ -725,13 +733,13 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 
 		for {
 			if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
-				"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.") {
+				"When using AWS we need to use a wildcard DNS alias to point at the ELB host name so you can access services inside Jenkins X and in your Environments.", o.In, o.Out, o.Err) {
 				customDomain := ""
 				prompt := &survey.Input{
 					Message: "Your custom DNS name: ",
 					Help:    "Enter your custom domain that we can use to setup a Route 53 ALIAS record to point at the ELB host: " + address,
 				}
-				survey.AskOne(prompt, &customDomain, nil)
+				survey.AskOne(prompt, &customDomain, nil, surveyOpts)
 				if customDomain != "" {
 					err := amazon.RegisterAwsCustomDomain(customDomain, address)
 					return customDomain, err
@@ -750,7 +758,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 
 			addressIP := ""
 			if util.Confirm("Would you like wait and resolve this address to an IP address and use it for the domain?", true,
-				"Should we convert "+address+" to an IP address so we can access resources externally") {
+				"Should we convert "+address+" to an IP address so we can access resources externally", o.In, o.Out, o.Err) {
 
 				log.Infof("Waiting for %s to be resolvable to an IP address...\n", util.ColorInfo(address))
 				f := func() error {
@@ -798,7 +806,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 				Default: defaultDomain,
 				Help:    "Enter your custom domain that is used to generate Ingress rules, defaults to the magic dns nip.io",
 			}
-			survey.AskOne(prompt, &domain, survey.Required)
+			survey.AskOne(prompt, &domain, survey.Required, surveyOpts)
 		}
 		if domain == "" {
 			domain = defaultDomain

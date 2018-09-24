@@ -26,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -119,9 +120,9 @@ var (
 
 // NewCmdInstall creates a command object for the generic "install" action, which
 // installs the jenkins-x platform on a kubernetes cluster.
-func NewCmdInstall(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdInstall(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 
-	options := createInstallOptions(f, out, errOut)
+	options := CreateInstallOptions(f, in, out, errOut)
 
 	cmd := &cobra.Command{
 		Use:     "install [flags]",
@@ -144,9 +145,11 @@ func NewCmdInstall(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	return cmd
 }
 
-func createInstallOptions(f Factory, out io.Writer, errOut io.Writer) InstallOptions {
+// CreateInstallOptions creates the options for jx install
+func CreateInstallOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) InstallOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
+		In:      in,
 		Out:     out,
 		Err:     errOut,
 	}
@@ -156,6 +159,7 @@ func createInstallOptions(f Factory, out io.Writer, errOut io.Writer) InstallOpt
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory:  f,
+					In:       in,
 					Out:      out,
 					Err:      errOut,
 					Headless: true,
@@ -179,6 +183,7 @@ func createInstallOptions(f Factory, out io.Writer, errOut io.Writer) InstallOpt
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory:   f,
+					In:        in,
 					Out:       out,
 					Err:       errOut,
 					Headless:  true,
@@ -240,6 +245,46 @@ func (options *InstallOptions) Run() error {
 
 	dependencies := []string{}
 	if !initOpts.Flags.Tiller {
+		binDir, err := util.JXBinLocation()
+		if err != nil {
+			return errors.Wrap(err, "reading jx bin location")
+		}
+		_, install, err := options.shouldInstallBinary(binDir, "tiller")
+		if !install && err == nil {
+			confirm := &survey.Confirm{
+				Message: "Uninstalling  existing tiller binary:",
+				Default: true,
+			}
+			flag := true
+			err = survey.AskOne(confirm, &flag, nil)
+			if err != nil || flag == false {
+				return errors.New("Existing tiller must be uninstalled first in order to use the jx in tiller less mode")
+			}
+			// Uninstall helm and tiller first to avoid using some older version
+			err = options.UninstallBinary(binDir, "tiller")
+			if err != nil {
+				return errors.Wrap(err, "uninstalling existing tiller binary")
+			}
+		}
+
+		_, install, err = options.shouldInstallBinary(binDir, helmBinary)
+		if !install && err == nil {
+			confirm := &survey.Confirm{
+				Message: "Uninstalling  existing helm binary:",
+				Default: true,
+			}
+			flag := true
+			err = survey.AskOne(confirm, &flag, nil)
+			if err != nil || flag == false {
+				return errors.New("Existing helm must be uninstalled first in order to use the jx in tiller less mode")
+			}
+			// Uninstall helm and tiller first to avoid using some older version
+			err = options.UninstallBinary(binDir, helmBinary)
+			if err != nil {
+				return errors.Wrap(err, "uninstalling existing helm binary")
+			}
+		}
+
 		dependencies = append(dependencies, "tiller")
 		options.Helm().SetHost(options.tillerAddress())
 	}
@@ -704,17 +749,18 @@ func (options *InstallOptions) Run() error {
 			}
 
 			log.Info("Creating default staging and production environments\n")
-			options.CreateEnvOptions.Options.Name = "staging"
-			options.CreateEnvOptions.Options.Spec.Label = "Staging"
-			options.CreateEnvOptions.Options.Spec.Order = 100
+			// Common CreateEnv Options
+			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
 			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
 			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
+			options.CreateEnvOptions.Prow = options.Flags.Prow
 			if options.BatchMode {
 				options.CreateEnvOptions.BatchMode = options.BatchMode
 			}
-			options.CreateEnvOptions.Prow = options.Flags.Prow
-			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
 
+			options.CreateEnvOptions.Options.Name = "staging"
+			options.CreateEnvOptions.Options.Spec.Label = "Staging"
+			options.CreateEnvOptions.Options.Spec.Order = 100
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
 				return errors.Wrap(err, "failed to create staging environment")
@@ -724,10 +770,6 @@ func (options *InstallOptions) Run() error {
 			options.CreateEnvOptions.Options.Spec.Order = 200
 			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
 			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
-			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
-			if options.BatchMode {
-				options.CreateEnvOptions.BatchMode = options.BatchMode
-			}
 
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
@@ -859,6 +901,7 @@ func LoadVersionFromCloudEnvironmentsDir(wrkDir string) (string, error) {
 
 // clones the jenkins-x cloud-environments repo to a local working dir
 func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
+	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 	configDir, err := util.ConfigDir()
 	if err != nil {
 		return "", fmt.Errorf("error determining config dir %v", err)
@@ -893,7 +936,7 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 					Message: "A local Jenkins X cloud environments repository already exists, recreate with latest?",
 					Default: true,
 				}
-				err := survey.AskOne(confirm, &flag, nil)
+				err := survey.AskOne(confirm, &flag, nil, surveyOpts)
 				if err != nil {
 					return wrkDir, err
 				}
@@ -1038,7 +1081,7 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 		kind := gits.SaasGitKind(gitProvider)
 		server = config.GetOrCreateServerName(gitProvider, "", kind)
 	} else {
-		server, err = config.PickServer("Which git provider?", options.BatchMode)
+		server, err = config.PickServer("Which git provider?", options.BatchMode, options.In, options.Out, options.Err)
 		if err != nil {
 			return userAuth, err
 		}
@@ -1048,7 +1091,7 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 	if message == "" {
 		message = fmt.Sprintf("%s username for CI/CD pipelines:", server.Label())
 	}
-	userAuth, err = config.PickServerUserAuth(server, message, options.BatchMode, "")
+	userAuth, err = config.PickServerUserAuth(server, message, options.BatchMode, "", options.In, options.Out, options.Err)
 	if err != nil {
 		return userAuth, err
 	}
@@ -1060,7 +1103,7 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 
 		// TODO could we guess this based on the users ~/.git for github?
 		defaultUserName := ""
-		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false, options.BatchMode, f)
+		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false, options.BatchMode, f, options.In, options.Out, options.Err)
 		if err != nil {
 			return userAuth, err
 		}

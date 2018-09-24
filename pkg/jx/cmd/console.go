@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -38,12 +39,13 @@ var (
 		jx console --classic`)
 )
 
-func NewCmdConsole(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdConsole(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ConsoleOptions{
 		GetURLOptions: GetURLOptions{
 			GetOptions: GetOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},

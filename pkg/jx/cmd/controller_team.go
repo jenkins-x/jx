@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"io"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -8,13 +11,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"io"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"time"
 )
 
 // ControllerTeamOptions are the flags for the commands
@@ -27,16 +29,17 @@ type ControllerTeamOptions struct {
 
 // NewCmdControllerTeam creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerTeam(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdControllerTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ControllerTeamOptions{
 		ControllerOptions: ControllerOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
 		},
-		InstallOptions: createInstallOptions(f, out, errOut),
+		InstallOptions: CreateInstallOptions(f, in, out, errOut),
 	}
 
 	cmd := &cobra.Command{
@@ -139,10 +142,8 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		o.InstallOptions.BatchMode = true
 		o.InstallOptions.Flags.Provider = "gke"
 		o.InstallOptions.Flags.NoDefaultEnvironments = true
-		o.InstallOptions.Flags.Prow = true
 		o.InstallOptions.Flags.Namespace = team.Name
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = team.Name
-		o.InstallOptions.InitOptions.Flags.Helm3 = true
 		o.InstallOptions.CommonOptions.InstallDependencies = true
 
 		// call jx install

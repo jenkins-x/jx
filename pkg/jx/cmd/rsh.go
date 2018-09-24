@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -26,13 +27,14 @@ const (
 type RshOptions struct {
 	CommonOptions
 
-	Container  string
-	Namespace  string
-	Pod        string
-	Executable string
-	ExecCmd    string
-	DevPod     bool
-	Username   string
+	Container   string
+	Namespace   string
+	Pod         string
+	Executable  string
+	ExecCmd     string
+	DevPod      bool
+	Username    string
+	Environment string
 
 	stopCh chan struct{}
 }
@@ -58,12 +60,14 @@ var (
 `)
 )
 
-func NewCmdRsh(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdRsh(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &RshOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{
@@ -86,6 +90,7 @@ func NewCmdRsh(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.DevPod, "devpod", "d", false, "Connect to a DevPod")
 	cmd.Flags().StringVarP(&options.ExecCmd, "execute", "e", defaultRshCommand, "Execute this command on the remote container")
 	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
+	cmd.Flags().StringVarP(&options.Environment, "environment", "", "", "The environment in which to look for the Deployment. Defaults to the current environment")
 
 	return cmd
 }
@@ -101,6 +106,13 @@ func (o *RshOptions) Run() error {
 	ns := o.Namespace
 	if ns == "" {
 		ns = curNs
+	}
+
+	if o.Environment != "" {
+		ns, err = o.findEnvironmentNamespace(o.Environment)
+		if err != nil {
+			return err
+		}
 	}
 
 	if o.ExecCmd == "" {
@@ -136,7 +148,7 @@ func (o *RshOptions) Run() error {
 	name := o.Pod
 	if len(args) == 0 {
 		if util.StringArrayIndex(names, name) < 0 {
-			n, err := util.PickName(names, "Pick Pod:")
+			n, err := util.PickName(names, "Pick Pod:", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -152,7 +164,7 @@ func (o *RshOptions) Run() error {
 					filteredNames = append(filteredNames, n)
 				}
 			}
-			n, err := util.PickName(filteredNames, "Pick Pod:")
+			n, err := util.PickName(filteredNames, "Pick Pod:", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

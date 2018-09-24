@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterEKSOptions contains the CLI flags
@@ -53,9 +54,9 @@ var (
 )
 
 // NewCmdCreateClusterEKS creates the command
-func NewCmdCreateClusterEKS(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterEKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "eks",

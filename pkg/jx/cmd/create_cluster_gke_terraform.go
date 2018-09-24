@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"io"
-
 	"strings"
 
 	"fmt"
@@ -24,6 +23,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -80,9 +80,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterGKETerraform(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKETerraformOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, GKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "terraform",
@@ -136,12 +136,13 @@ func (o *CreateClusterGKETerraformOptions) Run() error {
 }
 
 func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if !o.BatchMode {
 		confirm := false
 		prompt := &survey.Confirm{
 			Message: "Creating a GKE cluster with terraform is an experimental feature in jx.  Would you like to continue?",
 		}
-		survey.AskOne(prompt, &confirm, nil)
+		survey.AskOne(prompt, &confirm, nil, surveyOpts)
 
 		if !confirm {
 			// exit at this point
@@ -185,7 +186,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 			Help:     "The compute zone (e.g. us-central1-a) for the cluster",
 		}
 
-		err = survey.AskOne(prompts, &zone, nil)
+		err = survey.AskOne(prompts, &zone, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -201,7 +202,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 			Default:  "n1-standard-2",
 		}
 
-		err := survey.AskOne(prompts, &machineType, nil)
+		err := survey.AskOne(prompts, &machineType, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -215,7 +216,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 			Help:    "We recommend a minimum of 3 for Jenkins X,  the minimum number of nodes to be created in each of the cluster's zones",
 		}
 
-		survey.AskOne(prompt, &minNumOfNodes, nil)
+		survey.AskOne(prompt, &minNumOfNodes, nil, surveyOpts)
 	}
 
 	maxNumOfNodes := o.Flags.MaxNumOfNodes
@@ -226,7 +227,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 			Help:    "We recommend at least 5 for Jenkins X,  the maximum number of nodes to be created in each of the cluster's zones",
 		}
 
-		survey.AskOne(prompt, &maxNumOfNodes, nil)
+		survey.AskOne(prompt, &maxNumOfNodes, nil, surveyOpts)
 	}
 
 	jxHome, err := util.ConfigDir()
@@ -399,6 +400,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 
 // asks to chose from existing projects or optionally creates one if none exist
 func (o *CreateClusterGKETerraformOptions) getGoogleProjectId() (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	existingProjects, err := gke.GetGoogleProjects()
 	if err != nil {
 		return "", err
@@ -411,7 +413,7 @@ func (o *CreateClusterGKETerraformOptions) getGoogleProjectId() (string, error) 
 			Default: true,
 		}
 		flag := true
-		err = survey.AskOne(confirm, &flag, nil)
+		err = survey.AskOne(confirm, &flag, nil, surveyOpts)
 		if err != nil {
 			return "", err
 		}
@@ -432,7 +434,7 @@ func (o *CreateClusterGKETerraformOptions) getGoogleProjectId() (string, error) 
 			Help:    "Select a Google Project to create the cluster in",
 		}
 
-		err := survey.AskOne(prompts, &projectId, nil)
+		err := survey.AskOne(prompts, &projectId, nil, surveyOpts)
 		if err != nil {
 			return "", err
 		}

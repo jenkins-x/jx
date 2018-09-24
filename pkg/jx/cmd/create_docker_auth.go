@@ -3,11 +3,13 @@ package cmd
 import (
 	b64 "encoding/base64"
 	"encoding/json"
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"io"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,13 +49,15 @@ type CreateDockerAuthOptions struct {
 }
 
 // NewCmdCreateIssue creates a command object for the "create" command
-func NewCmdCreateDockerAuth(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDockerAuth(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateDockerAuthOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}
@@ -81,6 +85,7 @@ func NewCmdCreateDockerAuth(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 // Run implements the command
 func (o *CreateDockerAuthOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if o.Host == "" {
 		return util.MissingOption(host)
 	}
@@ -92,14 +97,14 @@ func (o *CreateDockerAuthOptions) Run() error {
 		prompt := &survey.Password{
 			Message: "Please provide secret for the host: " + o.Host + "  and user: " + o.User,
 		}
-		survey.AskOne(prompt, &secret, nil)
+		survey.AskOne(prompt, &secret, nil, surveyOpts)
 	}
 	email := o.Email
 	if email == "" {
 		prompt := &survey.Input{
 			Message: "Please provide email ID for the host: " + o.Host + "  and user: " + o.User,
 		}
-		survey.AskOne(prompt, &secret, nil)
+		survey.AskOne(prompt, &email, nil, surveyOpts)
 	}
 	kubeClient, currentNs, err := o.KubeClient()
 	if err != nil {

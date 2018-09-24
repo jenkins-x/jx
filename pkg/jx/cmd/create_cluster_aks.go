@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -33,6 +34,7 @@ type CreateClusterAKSFlags struct {
 	PathToPublicKey           string
 	ClientSecret              string
 	ServicePrincipal          string
+	Subscription              string
 	SkipLogin                 bool
 	SkipProviderRegistration  bool
 	SkipResourceGroupCreation bool
@@ -66,9 +68,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterAKS(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterAKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aks",
@@ -97,6 +99,7 @@ func NewCmdCreateClusterAKS(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	cmd.Flags().StringVarP(&options.Flags.PathToPublicKey, "path-To-public-rsa-key", "k", "", "Path to public RSA key")
 	cmd.Flags().StringVarP(&options.Flags.ClientSecret, "client-secret", "", "", "Azure AD client secret to use an existing SP")
 	cmd.Flags().StringVarP(&options.Flags.ServicePrincipal, "service-principal", "", "", "Azure AD service principal to use an existing SP")
+	cmd.Flags().StringVarP(&options.Flags.Subscription, "subscription", "", "", "Azure subscription to be used if not default one")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip login if already logged in using `az login`")
 	cmd.Flags().BoolVarP(&options.Flags.SkipProviderRegistration, "skip-provider-registration", "", false, "Skip provider registration")
 	cmd.Flags().BoolVarP(&options.Flags.SkipResourceGroupCreation, "skip-resource-group-creation", "", false, "Skip resource group creation")
@@ -127,6 +130,7 @@ func (o *CreateClusterAKSOptions) Run() error {
 }
 
 func (o *CreateClusterAKSOptions) createClusterAKS() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 
 	resourceName := o.Flags.ResourceName
 	if resourceName == "" {
@@ -149,7 +153,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 			PageSize: 10,
 			Help:     "location to run cluster",
 		}
-		err := survey.AskOne(prompt, &location, nil)
+		err := survey.AskOne(prompt, &location, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -165,7 +169,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 			Default:  "Standard_D2s_v3",
 		}
 
-		err := survey.AskOne(prompts, &nodeVMSize, nil)
+		err := survey.AskOne(prompts, &nodeVMSize, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -178,7 +182,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 			Default: "3",
 			Help:    "We recommend a minimum of 3 nodes for Jenkins X",
 		}
-		survey.AskOne(prompt, &nodeCount, nil)
+		survey.AskOne(prompt, &nodeCount, nil, surveyOpts)
 	}
 
 	pathToPublicKey := o.Flags.PathToPublicKey
@@ -234,6 +238,16 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		}
 	}
 
+	subscription := o.Flags.Subscription
+
+	if subscription != "" {
+		log.Info("Changing subscription...\n")
+		err = o.runCommandVerbose("az", "account", "set", "--subscription", subscription)
+
+		if err != nil {
+			return err
+		}
+	}
 	createCluster := []string{"aks", "create", "-g", resourceName, "-n", clusterName}
 
 	if o.Flags.KubeVersion != "" {

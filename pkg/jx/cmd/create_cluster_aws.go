@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
@@ -68,9 +69,9 @@ var (
 )
 
 // NewCmdCreateClusterAWS creates the command
-func NewCmdCreateClusterAWS(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAWSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aws",
@@ -103,6 +104,7 @@ func NewCmdCreateClusterAWS(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 // Run runs the command
 func (o *CreateClusterAWSOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	var deps []string
 	d := binaryShouldBeInstalled("kops")
 	if d != "" {
@@ -122,7 +124,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			Default: "3",
 			Help:    "number of nodes",
 		}
-		survey.AskOne(prompt, &flags.NodeCount, nil)
+		survey.AskOne(prompt, &flags.NodeCount, nil, surveyOpts)
 	}
 
 	/*
@@ -133,7 +135,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 				Default: kubeVersion,
 				Help:    "The release version of kubernetes to install in the cluster",
 			}
-			survey.AskOne(prompt, &kubeVersion, nil)
+			survey.AskOne(prompt, &kubeVersion, nil, surveyOpts)
 		}
 	*/
 
@@ -147,7 +149,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			}
 			c := len(availabilityZones)
 			if c > 0 {
-				zones, err = util.PickNameWithDefault(availabilityZones, "Pick availability zone: ", availabilityZones[c-1])
+				zones, err = util.PickNameWithDefault(availabilityZones, "Pick availability zone: ", availabilityZones[c-1], o.In, o.Out, o.Err)
 				if err != nil {
 					return err
 				}
@@ -161,7 +163,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 				Default: "",
 				Help:    "The AWS Availability Zones to use for the Kubernetes cluster",
 			}
-			err = survey.AskOne(prompt, &zones, survey.Required)
+			err = survey.AskOne(prompt, &zones, survey.Required, surveyOpts)
 			if err != nil {
 				return err
 			}

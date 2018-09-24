@@ -61,9 +61,16 @@ func (b *BitbucketCloudProvider) ListOrganisations() ([]GitOrganisation, error) 
 
 	teams := []GitOrganisation{}
 
+	var results bitbucket.PaginatedTeams
+	var err error
+
 	// Pagination is gross.
 	for {
-		results, _, err := b.Client.TeamsApi.TeamsGet(b.Context, map[string]interface{}{"role": "member"})
+		if results.Next == "" {
+			results, _, err = b.Client.TeamsApi.TeamsGet(b.Context, map[string]interface{}{"role": "member"})
+		} else {
+			results, _, err = b.Client.PagingApi.TeamsPageGet(b.Context, results.Next)
+		}
 
 		if err != nil {
 			return nil, err
@@ -116,8 +123,15 @@ func (b *BitbucketCloudProvider) ListRepositories(org string) ([]*GitRepository,
 
 	repos := []*GitRepository{}
 
+	var results bitbucket.PaginatedRepositories
+	var err error
+
 	for {
-		results, _, err := b.Client.RepositoriesApi.RepositoriesUsernameGet(b.Context, org, nil)
+		if results.Next == "" {
+			results, _, err = b.Client.RepositoriesApi.RepositoriesUsernameGet(b.Context, org, nil)
+		} else {
+			results, _, err = b.Client.PagingApi.RepositoriesPageGet(b.Context, results.Next)
+		}
 
 		if err != nil {
 			return nil, err
@@ -541,13 +555,20 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 
 	latestCommitStatus := bitbucket.Commitstatus{}
 
+	var result bitbucket.PaginatedCommitstatuses
+	var err error
+
 	for {
-		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
-			b.Context,
-			pr.Owner,
-			pr.Repo,
-			pr.LastCommitSha,
-		)
+		if result.Next == "" {
+			result, _, err = b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
+				b.Context,
+				pr.Owner,
+				pr.Repo,
+				pr.LastCommitSha,
+			)
+		} else {
+			result, _, err = b.Client.PagingApi.CommitstatusesPageGet(b.Context, result.Next)
+		}
 
 		if err != nil {
 			return "", err
@@ -576,13 +597,20 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 
 	statuses := []*GitRepoStatus{}
 
+	var result bitbucket.PaginatedCommitstatuses
+	var err error
+
 	for {
-		result, _, err := b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
-			b.Context,
-			org,
-			repo,
-			sha,
-		)
+		if result.Next == "" {
+			result, _, err = b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
+				b.Context,
+				org,
+				repo,
+				sha,
+			)
+		} else {
+			result, _, err = b.Client.PagingApi.CommitstatusesPageGet(b.Context, result.Next)
+		}
 
 		if err != nil {
 			return nil, err
@@ -710,8 +738,15 @@ func (b *BitbucketCloudProvider) SearchIssues(org string, name string, query str
 
 	gitIssues := []*GitIssue{}
 
+	var issues bitbucket.PaginatedIssues
+	var err error
+
 	for {
-		issues, _, err := b.Client.IssueTrackerApi.RepositoriesUsernameRepoSlugIssuesGet(b.Context, org, name)
+		if issues.Next == "" {
+			issues, _, err = b.Client.IssueTrackerApi.RepositoriesUsernameRepoSlugIssuesGet(b.Context, org, name)
+		} else {
+			issues, _, err = b.Client.PagingApi.IssuesPageGet(b.Context, issues.Next)
+		}
 
 		if err != nil {
 			return nil, err

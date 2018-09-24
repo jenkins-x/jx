@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,10 +34,11 @@ type DeleteEnvOptions struct {
 }
 
 // NewCmdDeleteEnv creates a command object for the "delete repo" command
-func NewCmdDeleteEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteEnvOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -44,7 +46,7 @@ func NewCmdDeleteEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command 
 
 	cmd := &cobra.Command{
 		Use:     "environment",
-		Short:   "Deletes one or more environments",
+		Short:   "Deletes one or more Environments",
 		Aliases: []string{"env"},
 		Long:    delete_env_long,
 		Example: delete_env_example,
@@ -101,7 +103,7 @@ func (o *DeleteEnvOptions) Run() error {
 			}
 		}
 	} else {
-		name, err = kube.PickEnvironment(envNames, currentEnv)
+		name, err = kube.PickEnvironment(envNames, currentEnv, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"io"
-
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepHelmBuildOptions contains the command line flags
@@ -31,12 +31,13 @@ var (
 `)
 )
 
-func NewCmdStepHelmBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepHelmBuildOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -56,7 +57,9 @@ func NewCmdStepHelmBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 			CheckErr(err)
 		},
 	}
+	
 	options.addStepHelmFlags(cmd)
+	options.addCommonFlags(cmd)
 
 	cmd.Flags().BoolVarP(&options.recursive, "recursive", "r", false, "Build recursively the dependent charts")
 

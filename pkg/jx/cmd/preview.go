@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,7 +82,7 @@ type PreviewOptions struct {
 }
 
 // NewCmdPreview creates a command object for the "create" command
-func NewCmdPreview(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &PreviewOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
@@ -89,6 +90,7 @@ func NewCmdPreview(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		PromoteOptions: PromoteOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

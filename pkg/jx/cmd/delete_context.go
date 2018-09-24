@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -34,16 +35,19 @@ var (
 type DeleteContextOptions struct {
 	CreateOptions
 
-	SelectAll    bool
-	SelectFilter string
+	SelectAll      bool
+	SelectFilter   string
+	DeleteAuthInfo bool
+	DeleteCluster  bool
 }
 
 // NewCmdDeleteContext creates a command object for the "delete repo" command
-func NewCmdDeleteContext(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteContext(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteContextOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -67,11 +71,15 @@ func NewCmdDeleteContext(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Selects all the matched contexts")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filter the list of contexts to those containing this text")
+	cmd.Flags().BoolVarP(&options.DeleteAuthInfo, "delete-user", "", false, "Also delete the user config associated to the context")
+	cmd.Flags().BoolVarP(&options.DeleteCluster, "delete-cluster", "", false, "Also delete the cluster config associated to the context")
+	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	return cmd
 }
 
 // Run implements the command
 func (o *DeleteContextOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	config, po, err := kube.LoadConfig()
 	if err != nil {
 		return err
@@ -100,7 +108,7 @@ func (o *DeleteContextOptions) Run() error {
 		return util.InvalidArg(args[1], allNames)
 	}
 
-	selected, err := util.SelectNamesWithFilter(names, "Select the Kubernetes Contexts to delete: ", o.SelectAll, o.SelectFilter)
+	selected, err := util.SelectNamesWithFilter(names, "Select the Kubernetes Contexts to delete: ", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -113,7 +121,7 @@ func (o *DeleteContextOptions) Run() error {
 		Message: "Are you sure you want to delete these these Kubernetes Contexts?",
 		Default: false,
 	}
-	err = survey.AskOne(prompt, &flag, nil)
+	err = survey.AskOne(prompt, &flag, nil, surveyOpts)
 	if err != nil {
 		return err
 	}
@@ -123,6 +131,18 @@ func (o *DeleteContextOptions) Run() error {
 
 	newConfig := *config
 	for _, name := range selected {
+		a := newConfig.Contexts[name].AuthInfo
+		if o.DeleteAuthInfo && a != "" {
+			o.Debugf("Deleting user %s for context %s\n", util.ColorInfo(a), util.ColorInfo(name))
+			delete(newConfig.AuthInfos, a)
+		}
+		c := newConfig.Contexts[name].Cluster
+		if o.DeleteCluster && c != "" {
+			o.Debugf("Deleting cluster %s for context %s\n", util.ColorInfo(c), util.ColorInfo(name))
+			delete(newConfig.Clusters, c)
+		}
+
+		o.Debugf("Deleting context %s\n", util.ColorInfo(name))
 		delete(newConfig.Contexts, name)
 	}
 	err = clientcmd.ModifyConfig(po, newConfig, false)
