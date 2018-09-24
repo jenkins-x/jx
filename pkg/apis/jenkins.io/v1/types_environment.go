@@ -181,7 +181,7 @@ type UserSpec struct {
 // +k8s:openapi-gen=true
 
 // EnvironmentRoleBinding is like a vanilla RoleBinding but applies to a set of Namespaces based on an Environment filter
-// so that roles can be bound to multiple namespaces easil.
+// so that roles can be bound to multiple namespaces easily.
 //
 // For example to specify the binding of roles on all Preview environments or on all permanent environments.
 type EnvironmentRoleBinding struct {
