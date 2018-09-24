@@ -12,7 +12,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const LabelReleaseChartName = "jenkins.io/chart"
+const (
+	// LabelReleaseChartName stores the name of a chart being installed
+	LabelReleaseChartName = "jenkins.io/chart"
+
+	// LabelReleaseChartVersion stores the version of a chart installation in a label
+	LabelReleaseChartVersion = "jenkins.io/version"
+)
 
 // HelmTemplate implements common helm actions but purely as client side operations
 // delegating a separate Helmer such as HelmCLI for the client side operations
@@ -151,12 +157,12 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	chartName, err := h.getChartName()
+	chartName, versionText, err := h.getChartNameAndVersion(version)
 	if err != nil {
 		return err
 	}
 
-	err = h.addLabelsToFiles(chartName, version)
+	err = h.addLabelsToFiles(chartName, versionText)
 	if err != nil {
 		return err
 	}
@@ -169,7 +175,12 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	}
 
 	err = h.runKubectl(args...)
-	return err
+	if err != nil {
+		return err
+	}
+
+	wait := true
+	return h.deleteOldResources(ns, chartName, versionText, wait)
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
@@ -185,12 +196,12 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	chartName, err := h.getChartName()
+	chartName, versionText, err := h.getChartNameAndVersion(version)
 	if err != nil {
 		return err
 	}
 
-	err = h.addLabelsToFiles(chartName, version)
+	err = h.addLabelsToFiles(chartName, versionText)
 	if err != nil {
 		return err
 	}
@@ -210,9 +221,16 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	// TODO delete old versions without the current version label
+	return h.deleteOldResources(ns, chartName, versionText, wait)
+}
 
-	return nil
+func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionText string, wait bool) error {
+	args := []string{"delete", "--all", "--namespace", ns, "-l", LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText}
+	if wait {
+		args = append(args, "--wait")
+	}
+	return h.runKubectl(args...)
+
 }
 
 // DeleteRelease removes the given release
@@ -265,7 +283,7 @@ func (h *HelmTemplate) clearOutputDir() error {
 	return nil
 }
 
-func (h *HelmTemplate) addLabelsToFiles(chart string, version *string) error {
+func (h *HelmTemplate) addLabelsToFiles(chart string, version string) error {
 	dir, err := h.getOutputDir()
 	if err != nil {
 		return err
@@ -273,7 +291,7 @@ func (h *HelmTemplate) addLabelsToFiles(chart string, version *string) error {
 	return addLabelsToChartYaml(dir, chart, version)
 }
 
-func addLabelsToChartYaml(dir string, chart string, version *string) error {
+func addLabelsToChartYaml(dir string, chart string, version string) error {
 	return filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
 		ext := filepath.Ext(path)
 		if ext == ".yaml" {
@@ -292,6 +310,11 @@ func addLabelsToChartYaml(dir string, chart string, version *string) error {
 			if err != nil {
 				return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
 			}
+			err = setYamlValue(&m, version, "metadata", "labels", LabelReleaseChartVersion)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
+			}
+
 			data, err = yaml.Marshal(&m)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to marshal YAML of file %s", file)
@@ -334,7 +357,15 @@ func setYamlValue(mapSlice *yaml.MapSlice, value string, keys ...string) error {
 							(*m)[i].Value = m2
 							m = m2
 						} else {
-							return fmt.Errorf("Could not convert key %s value %#v to a yaml.MapSlice", k, value)
+							v2, ok := value.(*yaml.MapSlice)
+							if ok {
+								m2 := &yaml.MapSlice{}
+								*m2 = append(*m2, *v2...)
+								(*m)[i].Value = m2
+								m = m2
+							} else {
+								return fmt.Errorf("Could not convert key %s value %#v to a yaml.MapSlice", k, value)
+							}
 						}
 					}
 				}
@@ -374,15 +405,20 @@ func (h *HelmTemplate) runKubectlWithOutput(args ...string) (string, error) {
 	return h.Runner.RunWithoutRetry()
 }
 
-// getChartName returns the chart name for the current chart folder
-func (h *HelmTemplate) getChartName() (string, error) {
+// getChartNameAndVersion returns the chart name and version for the current chart folder
+func (h *HelmTemplate) getChartNameAndVersion(version *string) (string, string, error) {
+	versionText := ""
 	file := filepath.Join(h.Runner.Dir, "Chart.yaml")
 	exists, err := util.FileExists(file)
 	if err != nil {
-		return "", err
+		return "", versionText, err
 	}
 	if !exists {
-		return "", fmt.Errorf("No file %s found!", file)
+		return "", versionText, fmt.Errorf("No file %s found!", file)
 	}
-	return LoadChartName(file)
+	chartName, versionText, err := LoadChartNameAndVersion(file)
+	if version != nil && *version != "" {
+		versionText = *version
+	}
+	return chartName, versionText, err
 }

@@ -27,8 +27,9 @@ func TestAddYamlLabels(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedChartName := "cheese"
+	expectedChartVersion := "1.2.3"
 
-	err = addLabelsToChartYaml(f, expectedChartName, nil)
+	err = addLabelsToChartYaml(f, expectedChartName, expectedChartVersion)
 	assert.NoError(t, err, "Failed to add labels to YAML")
 
 	err = filepath.Walk(f, func(path string, f os.FileInfo, err error) error {
@@ -49,6 +50,10 @@ func TestAddYamlLabels(t *testing.T) {
 						actual := labels[key]
 						assert.Equal(t, expectedChartName, actual, "Failed to find label %s on Service YAML %s", key, path)
 						//log.Infof("Found label %s = %s for file %s\n", key, actual, path)
+
+						key = LabelReleaseChartVersion
+						actual = labels[key]
+						assert.Equal(t, expectedChartVersion, actual, "Failed to find label %s on Service YAML %s", key, path)
 					}
 				}
 			}
