@@ -9,7 +9,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
+
+const LabelReleaseChartName = "jenkins.io/chart"
 
 // HelmTemplate implements common helm actions but purely as client side operations
 // delegating a separate Helmer such as HelmCLI for the client side operations
@@ -148,11 +151,19 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	// TODO now add labels via kustomize?
+	chartName, err := h.getChartName()
+	if err != nil {
+		return err
+	}
+
+	err = h.addLabelsToFiles(chartName, version)
+	if err != nil {
+		return err
+	}
 
 	log.Infof("Generated chart %s to dir %s\n", chart, h.OutputDir)
 
-	args := []string{"apply", "--recursive", "-f", h.OutputDir, "--wait"}
+	args := []string{"apply", "--recursive", "-f", h.OutputDir, "--wait", "-l", LabelReleaseChartName + "=" + chartName}
 	if ns != "" {
 		args = append(args, "--namespace", ns)
 	}
@@ -174,11 +185,19 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	// TODO now add labels via kustomize?
+	chartName, err := h.getChartName()
+	if err != nil {
+		return err
+	}
+
+	err = h.addLabelsToFiles(chartName, version)
+	if err != nil {
+		return err
+	}
 
 	log.Infof("Generated chart %s to dir %s\n", chart, h.OutputDir)
 
-	args := []string{"apply", "--recursive", "-f", h.OutputDir}
+	args := []string{"apply", "--recursive", "-f", h.OutputDir, "-l", LabelReleaseChartName + "=" + chartName}
 	if ns != "" {
 		args = append(args, "--namespace", ns)
 	}
@@ -215,19 +234,24 @@ func (h *HelmTemplate) StatusReleases() (map[string]string, error) {
 	return statusMap, nil
 }
 
-// clearOutputDir removes all files in the helm output dir
-func (h *HelmTemplate) clearOutputDir() error {
+func (h *HelmTemplate) getOutputDir() (string, error) {
 	if h.OutputDir == "" {
 		d, err := ioutil.TempDir("", "helm-template-output-")
 		if err != nil {
-			return errors.Wrap(err, "Failed to create temporary directory for helm template output")
+			return "", errors.Wrap(err, "Failed to create temporary directory for helm template output")
 		}
 		h.OutputDir = d
 	}
 	dir := h.OutputDir
 	if dir == "" {
-		return fmt.Errorf("No OutputDir specifeid for HelmTemplate")
+		return dir, fmt.Errorf("No OutputDir specifeid for HelmTemplate")
 	}
+	return dir, nil
+}
+
+// clearOutputDir removes all files in the helm output dir
+func (h *HelmTemplate) clearOutputDir() error {
+	dir, err := h.getOutputDir()
 	files, err := filepath.Glob(filepath.Join(dir, "*"))
 	if err != nil {
 		return err
@@ -236,6 +260,100 @@ func (h *HelmTemplate) clearOutputDir() error {
 		err = os.RemoveAll(file)
 		if err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func (h *HelmTemplate) addLabelsToFiles(chart string, version *string) error {
+	dir, err := h.getOutputDir()
+	if err != nil {
+		return err
+	}
+	return addLabelsToChartYaml(dir, chart, version)
+}
+
+func addLabelsToChartYaml(dir string, chart string, version *string) error {
+	return filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+		ext := filepath.Ext(path)
+		if ext == ".yaml" {
+			file := path
+			log.Infof("Processing file %s\n", file)
+			data, err := ioutil.ReadFile(file)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to load file %s", file)
+			}
+			m := yaml.MapSlice{}
+			err = yaml.Unmarshal(data, &m)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to parse YAML of file %s", file)
+			}
+			err = setYamlValue(&m, chart, "metadata", "labels", LabelReleaseChartName)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
+			}
+			data, err = yaml.Marshal(&m)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to marshal YAML of file %s", file)
+			}
+			err = ioutil.WriteFile(file, data, util.DefaultWritePermissions)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to write YAML file %s", file)
+			}
+		}
+		return nil
+	})
+}
+
+// setYamlValue navigates through the YAML object structure lazily creating or inserting new values
+func setYamlValue(mapSlice *yaml.MapSlice, value string, keys ...string) error {
+	if mapSlice == nil {
+		return fmt.Errorf("No map input!")
+	}
+	m := mapSlice
+	lastIdx := len(keys) - 1
+	for idx, k := range keys {
+		last := idx >= lastIdx
+		found := false
+		for i, mi := range *m {
+			if mi.Key == k {
+				found = true
+				if last {
+					(*m)[i].Value = value
+				} else {
+					value := (*m)[i].Value
+					if value == nil {
+						v := &yaml.MapSlice{}
+						(*m)[i].Value = v
+						m = v
+					} else {
+						v, ok := value.(yaml.MapSlice)
+						if ok {
+							m2 := &yaml.MapSlice{}
+							*m2 = append(*m2, v...)
+							(*m)[i].Value = m2
+							m = m2
+						} else {
+							return fmt.Errorf("Could not convert key %s value %#v to a yaml.MapSlice", k, value)
+						}
+					}
+				}
+			}
+		}
+		if !found {
+			if last {
+				*m = append(*m, yaml.MapItem{
+					Key:   k,
+					Value: value,
+				})
+			} else {
+				m2 := &yaml.MapSlice{}
+				*m = append(*m, yaml.MapItem{
+					Key:   k,
+					Value: m2,
+				})
+				m = m2
+			}
 		}
 	}
 	return nil
@@ -254,4 +372,17 @@ func (h *HelmTemplate) runKubectlWithOutput(args ...string) (string, error) {
 	h.Runner.Name = h.Binary
 	h.Runner.Args = args
 	return h.Runner.RunWithoutRetry()
+}
+
+// getChartName returns the chart name for the current chart folder
+func (h *HelmTemplate) getChartName() (string, error) {
+	file := filepath.Join(h.Runner.Dir, "Chart.yaml")
+	exists, err := util.FileExists(file)
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		return "", fmt.Errorf("No file %s found!", file)
+	}
+	return LoadChartName(file)
 }
