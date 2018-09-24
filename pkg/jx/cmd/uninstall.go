@@ -22,6 +22,7 @@ type UninstallOptions struct {
 
 	Namespace string
 	Confirm   bool
+	KeepEnvironments bool
 }
 
 var (
@@ -57,6 +58,7 @@ func NewCmdUninstall(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The team namespace to uninstall. Defaults to the current namespace.")
 	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
+	cmd.Flags().BoolVarP(&options.KeepEnvironments, "keep-environments", "", false, "Don't delete environments. Uninstall Jenkins X only.")
 	return cmd
 }
 
@@ -103,15 +105,17 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		log.Warnf("Failed to find Environments. Probably not installed yet?. Error: %s\n", err)
 	}
-	for _, env := range envNames {
-		release := namespace + "-" + env
-		err := o.Helm().StatusRelease(release)
-		if err != nil {
-			continue
-		}
-		err = o.Helm().DeleteRelease(release, true)
-		if err != nil {
-			log.Warnf("Failed to uninstall environment chart %s: %s\n", release, err)
+	if !o.KeepEnvironments {
+		for _, env := range envNames {
+			release := namespace + "-" + env
+			err := o.Helm().StatusRelease(release)
+			if err != nil {
+				continue
+			}
+			err = o.Helm().DeleteRelease(release, true)
+			if err != nil {
+				log.Warnf("Failed to uninstall environment chart %s: %s\n", release, err)
+			}
 		}
 	}
 	o.Helm().DeleteRelease("jx-prow", true)
@@ -145,15 +149,17 @@ func (o *UninstallOptions) cleanupNamesapces(namespace string, envNames []string
 	if err != nil {
 		return errors.Wrap(err, "failed to delete team namespace namespace")
 	}
-	for _, env := range envNames {
-		envNamespace := namespace + "-" + env
-		_, err := client.CoreV1().Namespaces().Get(envNamespace, meta_v1.GetOptions{})
-		if err != nil {
-			continue
-		}
-		err = o.deleteNamespace(envNamespace)
-		if err != nil {
-			return errors.Wrap(err, "failed to delete environment namespace")
+	if !o.KeepEnvironments {
+		for _, env := range envNames {
+			envNamespace := namespace + "-" + env
+			_, err := client.CoreV1().Namespaces().Get(envNamespace, meta_v1.GetOptions{})
+			if err != nil {
+				continue
+			}
+			err = o.deleteNamespace(envNamespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to delete environment namespace")
+			}
 		}
 	}
 	return nil
