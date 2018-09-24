@@ -196,6 +196,9 @@ To register to get your username/password to to: %s
 			return errors.Wrap(err, "reading dex URL")
 		}
 
+		// Strip the trailing slash automatically
+		dexURL = strings.TrimSuffix(dexURL, "/")
+
 		err = o.ensureCertmanager()
 		if err != nil {
 			return errors.Wrap(err, "ensuring cert-manager is installed")
