@@ -130,7 +130,7 @@ func NewCmdPromote(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	}
 	cmd := &cobra.Command{
 		Use:     "promote [application]",
-		Short:   "Promotes a version of an application to an environment",
+		Short:   "Promotes a version of an application to an Environment",
 		Long:    promote_long,
 		Example: promote_example,
 		Run: func(cmd *cobra.Command, args []string) {

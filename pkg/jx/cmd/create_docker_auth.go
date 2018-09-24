@@ -104,7 +104,7 @@ func (o *CreateDockerAuthOptions) Run() error {
 		prompt := &survey.Input{
 			Message: "Please provide email ID for the host: " + o.Host + "  and user: " + o.User,
 		}
-		survey.AskOne(prompt, &secret, nil, surveyOpts)
+		survey.AskOne(prompt, &email, nil, surveyOpts)
 	}
 	kubeClient, currentNs, err := o.KubeClient()
 	if err != nil {

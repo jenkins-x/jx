@@ -266,7 +266,12 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 		o.IngressConfig.TLS = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt", o.In, o.Out, o.Err)
 
 		if o.IngressConfig.TLS {
-			clusterIssuer, err := util.PickNameWithDefault([]string{"prod", "staging"}, "Use LetsEncrypt staging or production?  Warning if testing use staging else you may be rate limited:", "staging", o.In, o.Out, o.Err)
+			log.Infof("If testing LetsEncrypt you should use staging as you may be rate limited using production.")
+			clusterIssuer, err := util.PickNameWithDefault([]string{"staging", "production"}, "Use LetsEncrypt staging or production?", "production", o.In, o.Out, o.Err)
+			// if the cluster issuer is production the string needed by letsencrypt is prod
+			if clusterIssuer == "production" {
+				clusterIssuer = "prod"
+			}
 			if err != nil {
 				return err
 			}
