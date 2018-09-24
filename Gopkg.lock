@@ -113,28 +113,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d043e5ae59276188d876090c261c311e146792c0908e08e67e766b1020a72d00"
-  name = "github.com/PuerkitoBio/goquery"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "dc2ec5c7ca4d9aae063b79b9f581dd3ea6afd2b2"
-
-[[projects]]
-  branch = "master"
   digest = "1:046e66b3a306f92975836c054c6f9511c26fbb828203524f7ab627ac026a1521"
   name = "github.com/alexflint/go-filemutex"
   packages = ["."]
   pruneopts = "NUT"
   revision = "d358565f3c3f5334209f1e80693e4f621650c489"
   source = "https://github.com/i0n/go-filemutex.git"
-
-[[projects]]
-  digest = "1:fc86904a62ac4bfff8cfbe94f42231ce3d8cea8fe2506d5293eaef468f8eaecf"
-  name = "github.com/andybalholm/cascadia"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "901648c87902174f774fac311d7f176f8647bdaa"
-  version = "v1.0.0"
 
 [[projects]]
   digest = "1:843e2c7759bf0105806f70e262e7573fbda644e76222cb7eb148e3ac82a4ec5e"
@@ -1341,13 +1325,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8318f69a2a91cd6c9cdf6f0ec16c7ee765b5742a9bf051948021204280eed428"
+  digest = "1:416fe347569c8eaa3b91c877f8d1107ea4a23bbfff11c17b656cae327ced21a3"
   name = "golang.org/x/net"
   packages = [
     "context",
     "context/ctxhttp",
-    "html",
-    "html/atom",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -1968,7 +1950,6 @@
     "github.com/MakeNowJust/heredoc",
     "github.com/Netflix/go-expect",
     "github.com/Pallinder/go-randomdata",
-    "github.com/PuerkitoBio/goquery",
     "github.com/alexflint/go-filemutex",
     "github.com/andygrunwald/go-gerrit",
     "github.com/andygrunwald/go-jira",

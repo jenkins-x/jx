@@ -218,7 +218,3 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/hinshun/vt10x"
-
-[[constraint]]
-  name = "github.com/PuerkitoBio/goquery"
-  branch = "master"
