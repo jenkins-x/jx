@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // HelmCLI implements common helm actions based on helm CLI
@@ -18,10 +18,10 @@ type HelmCLI struct {
 	BinVersion Version
 	CWD        string
 	Runner     *util.Command
-	Debug bool
+	Debug      bool
 }
 
-// NewHelmCLI creates a new HelmCLI instance configured to used the provided helm CLI in
+// NewHelmCLI creates a new HelmCLI instance configured to use the provided helm CLI in
 // the given current working directory
 func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...string) *HelmCLI {
 	a := []string{}
@@ -247,6 +247,27 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	return h.runHelm(args...)
 }
 
+// Template generates the YAML from the chart template to the given directory
+func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir string, upgrade bool,
+	values []string, valueFiles []string) error {
+	args := []string{"template", "--name", releaseName, "--namespace", ns, chart, "--output-dir", outDir, "--debug"}
+	if upgrade {
+		args = append(args, "--is-upgrade")
+	}
+	for _, value := range values {
+		args = append(args, "--set", value)
+	}
+	for _, valueFile := range valueFiles {
+		args = append(args, "--values", valueFile)
+	}
+
+	if h.Debug {
+		log.Infof("Generating Chart Template '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+	}
+
+	return h.runHelm(args...)
+}
+
 // UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
 	timeout *int, force bool, wait bool, values []string, valueFiles []string) error {
@@ -389,11 +410,16 @@ func (h *HelmCLI) Env() map[string]string {
 
 // Version executes the helm version command and returns its output
 func (h *HelmCLI) Version(tls bool) (string, error) {
-	args := []string{}
-	args = append(args, "version", "--short")
+	return h.VersionWithArgs(tls)
+}
+
+// Version executes the helm version command and returns its output
+func (h *HelmCLI) VersionWithArgs(tls bool, extraArgs ...string) (string, error) {
+	args := []string{"version", "--short"}
 	if tls {
 		args = append(args, "--tls")
 	}
+	args = append(args, extraArgs...)
 	return h.runHelmWithOutput(args...)
 }
 

@@ -52,6 +52,7 @@ type InitFlags struct {
 	Helm3                      bool
 	HelmBin                    string
 	RecreateExistingDraftRepos bool
+	HelmTemplate               bool
 	Tiller                     bool
 	GlobalTiller               bool
 	SkipIngress                bool
@@ -131,6 +132,7 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
 	cmd.Flags().BoolVarP(&options.Flags.GlobalTiller, "global-tiller", "", true, "Whether or not to use a cluster global tiller")
 	cmd.Flags().BoolVarP(&options.Flags.Tiller, "tiller", "", true, "Whether or not to use tiller at all. If no tiller is enabled then its ran as a local process instead")
+	cmd.Flags().BoolVarP(&options.Flags.HelmTemplate, "helm-template", "", false, "If enabled we use helm template mode to generate the YAML then we use 'kubectl apply' to install it to avoid using server side tiller")
 	cmd.Flags().BoolVarP(&options.Flags.SkipIngress, "skip-ingress", "", false, "Dont install an ingress controller")
 	cmd.Flags().BoolVarP(&options.Flags.SkipTiller, "skip-tiller", "", false, "Don't install a Helms Tiller service")
 	cmd.Flags().BoolVarP(&options.Flags.Helm3, "helm3", "", false, "Use helm3 to install Jenkins X which does not use Tiller")
@@ -139,7 +141,7 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 
 func (o *InitOptions) Run() error {
 	var err error
-	if !o.Flags.Tiller {
+	if !o.Flags.Tiller || o.Flags.HelmTemplate {
 		o.Flags.HelmClient = true
 		o.Flags.SkipTiller = true
 		o.Flags.GlobalTiller = false
