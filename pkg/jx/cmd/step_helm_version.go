@@ -27,8 +27,8 @@ var (
 `)
 
 	StepHelmVersionExample = templates.Examples(`
-		# output the helm environment variables that should be set to use helm directly
-		jx step helm env
+		# updates the current helm Chart.yaml to the latest build number version
+		jx step helm version
 
 `)
 )

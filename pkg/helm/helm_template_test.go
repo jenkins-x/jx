@@ -46,7 +46,7 @@ func TestAddYamlLabels(t *testing.T) {
 					labels := svc.Labels
 					assert.NotNil(t, labels, "No labels on Service %s", path)
 					if labels != nil {
-						key := LabelReleaseChartName
+						key := LabelReleaseName
 						actual := labels[key]
 						assert.Equal(t, expectedChartName, actual, "Failed to find label %s on Service YAML %s", key, path)
 						//log.Infof("Found label %s = %s for file %s\n", key, actual, path)
