@@ -2,7 +2,6 @@ package amazon
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -35,17 +34,11 @@ func GetAccountIDAndRegion() (string, string, error) {
 }
 
 func NewAwsSession() (*session.Session, string, error) {
-	region := os.Getenv("AWS_REGION")
-	if region == "" {
-		region = os.Getenv("AWS_DEFAULT_REGION")
-		if region == "" {
-			region = "us-west-2"
-		}
+	config := aws.Config{
+		Region: aws.String(ResolveRegion()),
 	}
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(region)},
-	)
-	return sess, region, err
+	sess, err := session.NewSession(&config)
+	return sess, *config.Region, err
 }
 
 // GetContainerRegistryHost
