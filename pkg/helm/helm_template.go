@@ -229,8 +229,17 @@ func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionTe
 	if wait {
 		args = append(args, "--wait")
 	}
-	return h.runKubectl(args...)
+	err = h.runKubectl(args...)
+	if err != nil {
+		return err
+	}
 
+	// now lets delete resource CRDs
+	args = []string{"delete", "release", "--ignore-not-found", "--namespace", ns, "-l", LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText}
+	if wait {
+		args = append(args, "--wait")
+	}
+	return h.runKubectl(args...)
 }
 
 // DeleteRelease removes the given release
