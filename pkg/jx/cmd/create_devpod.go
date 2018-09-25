@@ -79,6 +79,8 @@ type CreateDevPodOptions struct {
 	Username       string
 	DockerRegistry string
 
+	GitCredentials StepGitCredentialsOptions
+
 	Results CreateDevPodResults
 }
 
@@ -91,6 +93,16 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 				In:      in,
 				Out:     out,
 				Err:     errOut,
+			},
+		},
+		GitCredentials: StepGitCredentialsOptions{
+			StepOptions: StepOptions{
+				CommonOptions: CommonOptions{
+					Factory: f,
+					In:      in,
+					Out:     out,
+					Err:     errOut,
+				},
 			},
 		},
 	}
@@ -637,6 +649,46 @@ func (o *CreateDevPodOptions) Run() error {
 		//  Let install bash-completion to make life better
 		log.Infof("Installing Bash Completion into DevPod\n")
 		rshExec = append(rshExec, "yum install -q -y bash-completion bash-completion-extra", "mkdir -p ~/.jx", "jx completion bash > ~/.jx/bash", "echo \"source ~/.jx/bash\" >> ~/.bashrc")
+
+		// Add Git Secrets to Theia container
+		secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
+		if err != nil {
+			return err
+		}
+		gitCredentials := o.GitCredentials.CreateGitCredentialsFromSecrets(secrets)
+		theiaRshExec := []string{
+			fmt.Sprintf("echo \"%s\" >> ~/.git-credentials", string(gitCredentials)),
+			"git config --global credential.helper store",
+		}
+
+		// Configure remote username and email for git
+		username, _ := o.Git().Username("")
+		email, _ := o.Git().Email("")
+
+		if username != "" {
+			theiaRshExec = append(theiaRshExec, fmt.Sprintf("git config --global user.name \"%s\"", username))
+		}
+		if email != "" {
+			theiaRshExec = append(theiaRshExec, fmt.Sprintf("git config --global user.email \"%s\"", email))
+		}
+
+		// remove annoying warning
+		theiaRshExec = append(theiaRshExec, " git config --global push.default simple")
+
+		options := &RshOptions{
+			CommonOptions: o.CommonOptions,
+			Namespace:     ns,
+			Pod:           pod.Name,
+			DevPod:        true,
+			ExecCmd:       strings.Join(theiaRshExec, "&&"),
+			Username:      userName,
+			Container:     "theia",
+		}
+		options.Args = []string{}
+		err = options.Run()
+		if err != nil {
+			return err
+		}
 	}
 	if !o.Sync {
 		// Try to clone the right git repo into the DevPod

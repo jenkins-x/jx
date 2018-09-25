@@ -90,7 +90,12 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
-	helmBinary, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	if err != nil {
+		return err
+	}
+
+	helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 	if err != nil {
 		return err
 	}
@@ -105,9 +110,8 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	releaseName := o.ReleaseName
 	if releaseName == "" {
-		if helmBinary == "helm" {
-			releaseName = ns
-		} else {
+		releaseName = ns
+		if helmBinary != "helm" || noTiller || helmTemplate {
 			releaseName = "jx"
 		}
 	}

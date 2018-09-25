@@ -66,7 +66,7 @@ func NewCmdGetHelmBin(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements this command
 func (o *GetHelmBinOptions) Run() error {
-	helm, _, err := o.TeamHelmBin()
+	helm, _, _, err := o.TeamHelmBin()
 	if err != nil {
 		return err
 	}
