@@ -229,7 +229,7 @@ func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionTe
 	if wait {
 		args = append(args, "--wait")
 	}
-	err = h.runKubectl(args...)
+	err := h.runKubectl(args...)
 	if err != nil {
 		return err
 	}
