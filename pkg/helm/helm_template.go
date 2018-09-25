@@ -225,7 +225,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 }
 
 func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionText string, wait bool) error {
-	args := []string{"delete", "--all", "--ignore-not-found", "--namespace", ns, "-l", LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText}
+	args := []string{"delete", "all", "--ignore-not-found", "--namespace", ns, "-l", LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText}
 	if wait {
 		args = append(args, "--wait")
 	}
