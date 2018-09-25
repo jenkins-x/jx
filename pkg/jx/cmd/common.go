@@ -689,7 +689,7 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	return o.runExposecontroller(devNamespace, targetNamespace, ic)
 }
 
-func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig) error {
+func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 
 	o.CleanExposecontrollerReources(targetNamespace)
 
@@ -701,6 +701,18 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 
 	if !ic.TLS && ic.Issuer != "" {
 		exValues = append(exValues, "config.http=true")
+	}
+
+	if len(services) > 0 {
+		serviceCfg := "config.extravalues='services: ["
+		for i, service := range services {
+			if i > 0 {
+				serviceCfg += ","
+			}
+			serviceCfg += service
+		}
+		serviceCfg += "]''"
+		exValues = append(exValues, serviceCfg)
 	}
 
 	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
