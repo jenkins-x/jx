@@ -875,7 +875,7 @@ func (options *InstallOptions) logAdminPassword() {
 	********************************************************
 	
 	`
-	log.Infof(astrix, fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
+	log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
 }
 
 // LoadVersionFromCloudEnvironmentsDir loads a version from the cloud environments directory
