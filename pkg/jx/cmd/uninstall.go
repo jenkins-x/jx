@@ -20,8 +20,8 @@ import (
 type UninstallOptions struct {
 	CommonOptions
 
-	Namespace string
-	Confirm   bool
+	Namespace        string
+	Confirm          bool
 	KeepEnvironments bool
 }
 
@@ -108,18 +108,18 @@ func (o *UninstallOptions) Run() error {
 	if !o.KeepEnvironments {
 		for _, env := range envNames {
 			release := namespace + "-" + env
-			err := o.Helm().StatusRelease(release)
+			err := o.Helm().StatusRelease(namespace, release)
 			if err != nil {
 				continue
 			}
-			err = o.Helm().DeleteRelease(release, true)
+			err = o.Helm().DeleteRelease(namespace, release, true)
 			if err != nil {
 				log.Warnf("Failed to uninstall environment chart %s: %s\n", release, err)
 			}
 		}
 	}
-	o.Helm().DeleteRelease("jx-prow", true)
-	err = o.Helm().DeleteRelease("jenkins-x", true)
+	o.Helm().DeleteRelease(namespace, "jx-prow", true)
+	err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
 	if err != nil {
 		errc := o.cleanupNamesapces(namespace, envNames)
 		if errc != nil {
