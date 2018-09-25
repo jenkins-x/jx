@@ -2,13 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"os"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
 
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/spf13/cobra"
@@ -51,13 +50,7 @@ func (o *DeleteAwsOptions) Run() error {
 
 	region := o.Region
 	if region == "" {
-		region := os.Getenv("AWS_REGION")
-		if region == "" {
-			region = os.Getenv("AWS_DEFAULT_REGION")
-			if region == "" {
-				region = "us-west-2"
-			}
-		}
+		region = amazon.ResolveRegion()
 	}
 	svc := ec2.New(session.New(&aws.Config{Region: aws.String(region)}))
 
