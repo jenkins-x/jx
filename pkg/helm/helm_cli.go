@@ -264,8 +264,11 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 	if h.Debug {
 		log.Infof("Generating Chart Template '%s'\n", util.ColorInfo(strings.Join(args, " ")))
 	}
-
-	return h.runHelm(args...)
+	err := h.runHelm(args...)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to run helm %s", strings.Join(args, " "))
+	}
+	return err
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags

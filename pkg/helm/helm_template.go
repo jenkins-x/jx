@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -23,21 +24,23 @@ const (
 // HelmTemplate implements common helm actions but purely as client side operations
 // delegating a separate Helmer such as HelmCLI for the client side operations
 type HelmTemplate struct {
-	Client    *HelmCLI
-	OutputDir string
-	CWD       string
-	Binary    string
-	Runner    *util.Command
+	Client          *HelmCLI
+	OutputDir       string
+	CWD             string
+	Binary          string
+	Runner          *util.Command
+	KubectlValidate bool
 }
 
 // NewHelmTemplate creates a new HelmTemplate instance configured to the given client side Helmer
 func NewHelmTemplate(client *HelmCLI, workDir string) *HelmTemplate {
 	cli := &HelmTemplate{
-		Client:    client,
-		OutputDir: workDir,
-		Runner:    client.Runner,
-		Binary:    "kubectl",
-		CWD:       client.CWD,
+		Client:          client,
+		OutputDir:       workDir,
+		Runner:          client.Runner,
+		Binary:          "kubectl",
+		CWD:             client.CWD,
+		KubectlValidate: false,
 	}
 	return cli
 }
@@ -152,12 +155,16 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	if err != nil {
 		return err
 	}
-	err = h.Client.Template(chart, releaseName, ns, h.OutputDir, false, values, valueFiles)
+	chartDir, err := h.chartNameToFolder(chart)
+	if err != nil {
+		return err
+	}
+	err = h.Client.Template(chartDir, releaseName, ns, h.OutputDir, false, values, valueFiles)
 	if err != nil {
 		return err
 	}
 
-	_, versionText, err := h.getChartNameAndVersion(version)
+	_, versionText, err := h.getChartNameAndVersion(chartDir, version)
 	if err != nil {
 		return err
 	}
@@ -167,19 +174,12 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	log.Infof("Applying generated chart %s YAML in dir %s via kubectl\n", chart, h.OutputDir)
+	wait := true
 
-	args := []string{"apply", "--recursive", "-f", h.OutputDir, "--wait", "-l", LabelReleaseName + "=" + releaseName}
-	if ns != "" {
-		args = append(args, "--namespace", ns)
-	}
-
-	err = h.runKubectl(args...)
+	err = h.kubectlApply(ns, chart, releaseName, false, true)
 	if err != nil {
 		return err
 	}
-
-	wait := true
 	return h.deleteOldResources(ns, releaseName, versionText, wait)
 }
 
@@ -191,12 +191,16 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	if err != nil {
 		return err
 	}
-	err = h.Client.Template(chart, releaseName, ns, h.OutputDir, false, values, valueFiles)
+	chartDir, err := h.chartNameToFolder(chart)
+	if err != nil {
+		return err
+	}
+	err = h.Client.Template(chartDir, releaseName, ns, h.OutputDir, false, values, valueFiles)
 	if err != nil {
 		return err
 	}
 
-	chartName, versionText, err := h.getChartNameAndVersion(version)
+	_, versionText, err := h.getChartNameAndVersion(chartDir, version)
 	if err != nil {
 		return err
 	}
@@ -206,22 +210,32 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	log.Infof("Applying generated chart %s YAML in dir %s via kubectl\n", chart, h.OutputDir)
-
-	args := []string{"apply", "--recursive", "-f", h.OutputDir, "-l", LabelReleaseName + "=" + chartName}
-	if ns != "" {
-		args = append(args, "--namespace", ns)
-	}
-	if wait {
-		args = append(args, "--wait")
-	}
-
-	err = h.runKubectl(args...)
+	err = h.kubectlApply(ns, chart, releaseName, wait, false)
 	if err != nil {
 		return err
 	}
 
 	return h.deleteOldResources(ns, releaseName, versionText, wait)
+}
+
+func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string, wait bool, create bool) error {
+	log.Infof("Applying generated chart %s YAML via kubectl in dir: %s\n", chart, h.OutputDir)
+
+	command := "apply"
+	if create {
+		command = "create"
+	}
+	args := []string{command, "--recursive", "-f", h.OutputDir, "-l", LabelReleaseName + "=" + releaseName}
+	if ns != "" {
+		args = append(args, "--namespace", ns)
+	}
+	if wait && !create {
+		args = append(args, "--wait")
+	}
+	if !h.KubectlValidate {
+		args = append(args, "--validate=false")
+	}
+	return h.runKubectl(args...)
 }
 
 func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, versionText string, wait bool) error {
@@ -247,7 +261,9 @@ func (h *HelmTemplate) deleteResourcesBySelector(ns string, selector string, wai
 	if wait {
 		args = append(args, "--wait")
 	}
-	return h.runKubectl(args...)
+	// lets ignore failures - probably due to CRD not yet existing
+	h.runKubectl(args...)
+	return nil
 }
 
 // DeleteRelease removes the given release
@@ -301,6 +317,40 @@ func (h *HelmTemplate) clearOutputDir() error {
 		}
 	}
 	return nil
+}
+
+func (h *HelmTemplate) chartNameToFolder(chart string) (string, error) {
+	exists, err := util.FileExists(chart)
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		return chart, nil
+	}
+	safeChartName := strings.Replace(chart, string(os.PathSeparator), "-", -1)
+	dir, err := ioutil.TempDir("", safeChartName)
+	if err != nil {
+		return "", err
+	}
+
+	err = h.Client.runHelm("fetch", "-d", dir, "--untar", chart)
+	if err != nil {
+		return "", err
+	}
+	answer := dir
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return "", err
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			answer = filepath.Join(dir, f.Name())
+			break
+		}
+	}
+	log.Infof("Fetched chart %s to dir %s\n", chart, answer)
+	return answer, nil
 }
 
 func (h *HelmTemplate) addLabelsToFiles(chart string, version string) error {
@@ -425,9 +475,12 @@ func (h *HelmTemplate) runKubectlWithOutput(args ...string) (string, error) {
 }
 
 // getChartNameAndVersion returns the chart name and version for the current chart folder
-func (h *HelmTemplate) getChartNameAndVersion(version *string) (string, string, error) {
+func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) (string, string, error) {
 	versionText := ""
-	file := filepath.Join(h.Runner.Dir, "Chart.yaml")
+	file := filepath.Join(chartDir, "Chart.yaml")
+	if !filepath.IsAbs(chartDir) {
+		file = filepath.Join(h.Runner.Dir, file)
+	}
 	exists, err := util.FileExists(file)
 	if err != nil {
 		return "", versionText, err

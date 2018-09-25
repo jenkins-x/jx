@@ -242,6 +242,20 @@ func (options *InstallOptions) Run() error {
 
 	// configure the helm binary
 	options.Helm().SetHelmBinary(helmBinary)
+	if initOpts.Flags.HelmTemplate {
+		helmer := options.Helm()
+		helmCli, ok := helmer.(*helm.HelmCLI)
+		if ok && helmCli != nil {
+			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD)
+		} else {
+			helmTemplate, ok := helmer.(*helm.HelmTemplate)
+			if ok {
+				options.helm = helmTemplate
+			} else {
+				log.Warnf("Helm facade is not a *helm.HelmCLI or *helm.HelmTemplate: %#v\n", helmer)
+			}
+		}
+	}
 
 	dependencies := []string{}
 	if !initOpts.Flags.Tiller {
@@ -385,6 +399,19 @@ func (options *InstallOptions) Run() error {
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
 		}
+	}
+
+	if initOpts.Flags.HelmTemplate {
+		callback := func(env *v1.Environment) error {
+			env.Spec.TeamSettings.HelmTemplate = true
+			log.Info("Enabling helm template mode in the TeamSettings\n")
+			return nil
+		}
+		err = options.ModifyDevEnvironment(callback)
+		if err != nil {
+			return err
+		}
+		initOpts.helm = nil
 	}
 
 	if !initOpts.Flags.Tiller {
@@ -664,17 +691,6 @@ func (options *InstallOptions) Run() error {
 				settings.BuildPackRef = defaultProwBuildPackRef
 			}
 			log.Info("Configuring the TeamSettings for Prow\n")
-			return nil
-		}
-		err = options.ModifyDevEnvironment(callback)
-		if err != nil {
-			return err
-		}
-	}
-	if initOpts.Flags.HelmTemplate {
-		callback := func(env *v1.Environment) error {
-			env.Spec.TeamSettings.HelmTemplate = true
-			log.Info("Emabling helm template mode in the TeamSettings\n")
 			return nil
 		}
 		err = options.ModifyDevEnvironment(callback)
