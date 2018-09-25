@@ -59,6 +59,7 @@ func NewCmdStepHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 	cmd.AddCommand(NewCmdStepHelmBuild(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepHelmEnv(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepHelmRelease(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepHelmVersion(f, in, out, errOut))
 	return cmd
 }
 
