@@ -242,7 +242,7 @@ To register to get your username/password to to: %s
 			}
 		}
 
-		o.SetValues = strings.Join([]string{"sso.disable=true"}, ",")
+		o.SetValues = strings.Join([]string{"sso.create=false"}, ",")
 
 		svc, err := c.CoreV1().Services(o.currentNamespace).Get(cbServiceName, metav1.GetOptions{})
 		if err != nil {
