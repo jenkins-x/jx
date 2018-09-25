@@ -711,7 +711,7 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	if err != nil {
 		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
 	}
-	return o.helm.DeleteRelease(helmRelease, true)
+	return o.helm.DeleteRelease(targetNamespace, helmRelease, true)
 
 }
 

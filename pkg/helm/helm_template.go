@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	// LabelReleaseChartName stores the name of a chart being installed
-	LabelReleaseChartName = "jenkins.io/chart"
+	// LabelReleaseName stores the chart release name
+	LabelReleaseName = "jenkins.io/chart-release"
 
 	// LabelReleaseChartVersion stores the version of a chart installation in a label
 	LabelReleaseChartVersion = "jenkins.io/version"
@@ -157,19 +157,19 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	chartName, versionText, err := h.getChartNameAndVersion(version)
+	_, versionText, err := h.getChartNameAndVersion(version)
 	if err != nil {
 		return err
 	}
 
-	err = h.addLabelsToFiles(chartName, versionText)
+	err = h.addLabelsToFiles(releaseName, versionText)
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Applying generated chart %s YAML in dir %s via kubectl\n", chart, h.OutputDir)
 
-	args := []string{"apply", "--recursive", "-f", h.OutputDir, "--wait", "-l", LabelReleaseChartName + "=" + chartName}
+	args := []string{"apply", "--recursive", "-f", h.OutputDir, "--wait", "-l", LabelReleaseName + "=" + releaseName}
 	if ns != "" {
 		args = append(args, "--namespace", ns)
 	}
@@ -180,7 +180,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	}
 
 	wait := true
-	return h.deleteOldResources(ns, chartName, versionText, wait)
+	return h.deleteOldResources(ns, releaseName, versionText, wait)
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
@@ -201,14 +201,14 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	err = h.addLabelsToFiles(chartName, versionText)
+	err = h.addLabelsToFiles(releaseName, versionText)
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Applying generated chart %s YAML in dir %s via kubectl\n", chart, h.OutputDir)
 
-	args := []string{"apply", "--recursive", "-f", h.OutputDir, "-l", LabelReleaseChartName + "=" + chartName}
+	args := []string{"apply", "--recursive", "-f", h.OutputDir, "-l", LabelReleaseName + "=" + chartName}
 	if ns != "" {
 		args = append(args, "--namespace", ns)
 	}
@@ -221,14 +221,18 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	return h.deleteOldResources(ns, chartName, versionText, wait)
+	return h.deleteOldResources(ns, releaseName, versionText, wait)
 }
 
-func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionText string, wait bool) error {
-	selector := LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText
+func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, versionText string, wait bool) error {
+	selector := LabelReleaseName + "=" + releaseName + "," + LabelReleaseChartVersion + "!=" + versionText
 
 	log.Infof("Removing kubernetes resources from older releases using selector: %s\n", util.ColorInfo(selector))
 
+	return h.deleteResourcesBySelector(ns, selector, wait)
+}
+
+func (h *HelmTemplate) deleteResourcesBySelector(ns string, selector string, wait bool) error {
 	args := []string{"delete", "all", "--ignore-not-found", "--namespace", ns, "-l", selector}
 	if wait {
 		args = append(args, "--wait")
@@ -247,19 +251,22 @@ func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionTe
 }
 
 // DeleteRelease removes the given release
-func (h *HelmTemplate) DeleteRelease(releaseName string, purge bool) error {
-	// TODO delete all resource with the jenkins chart label
-	return nil
+func (h *HelmTemplate) DeleteRelease(ns string, releaseName string, purge bool) error {
+	selector := LabelReleaseName + "=" + releaseName
+
+	log.Infof("Removing release %s using selector: %s\n", util.ColorInfo(releaseName), util.ColorInfo(selector))
+
+	return h.deleteResourcesBySelector(ns, selector, true)
 }
 
 // StatusRelease returns the output of the helm status command for a given release
-func (h *HelmTemplate) StatusRelease(releaseName string) error {
+func (h *HelmTemplate) StatusRelease(ns string, releaseName string) error {
 	// TODO
 	return nil
 }
 
 // StatusReleases returns the status of all installed releases
-func (h *HelmTemplate) StatusReleases() (map[string]string, error) {
+func (h *HelmTemplate) StatusReleases(ns string) (map[string]string, error) {
 	statusMap := map[string]string{}
 	// TODO
 	return statusMap, nil
@@ -318,7 +325,7 @@ func addLabelsToChartYaml(dir string, chart string, version string) error {
 			if err != nil {
 				return errors.Wrapf(err, "Failed to parse YAML of file %s", file)
 			}
-			err = setYamlValue(&m, chart, "metadata", "labels", LabelReleaseChartName)
+			err = setYamlValue(&m, chart, "metadata", "labels", LabelReleaseName)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
 			}

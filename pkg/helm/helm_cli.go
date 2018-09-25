@@ -305,7 +305,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 }
 
 // DeleteRelease removes the given release
-func (h *HelmCLI) DeleteRelease(releaseName string, purge bool) error {
+func (h *HelmCLI) DeleteRelease(ns string, releaseName string, purge bool) error {
 	args := []string{}
 	args = append(args, "delete")
 	if purge {
@@ -375,12 +375,12 @@ func (h *HelmCLI) FindChart() (string, error) {
 }
 
 // StatusRelease returns the output of the helm status command for a given release
-func (h *HelmCLI) StatusRelease(releaseName string) error {
+func (h *HelmCLI) StatusRelease(ns string, releaseName string) error {
 	return h.runHelm("status", releaseName)
 }
 
 // StatusReleases returns the status of all installed releases
-func (h *HelmCLI) StatusReleases() (map[string]string, error) {
+func (h *HelmCLI) StatusReleases(ns string) (map[string]string, error) {
 	output, err := h.ListCharts()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list the installed chart releases")
