@@ -671,6 +671,17 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
+	if initOpts.Flags.HelmTemplate {
+		callback := func(env *v1.Environment) error {
+			env.Spec.TeamSettings.HelmTemplate = true
+			log.Info("Emabling helm template mode in the TeamSettings\n")
+			return nil
+		}
+		err = options.ModifyDevEnvironment(callback)
+		if err != nil {
+			return err
+		}
+	}
 	if !initOpts.Flags.Tiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.NoTiller = true
