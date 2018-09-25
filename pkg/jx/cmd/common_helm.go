@@ -239,12 +239,12 @@ func (o *CommonOptions) helmInit(dir string) error {
 	}
 	if o.Helm().HelmBinary() == "helm" {
 		// need to check the tiller settings at this point
-		_, noTiller, err := o.TeamHelmBin()
+		_, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
 			return errors.Wrap(err, "failed to access team settings")
 		}
 
-		if noTiller {
+		if noTiller || helmTemplate {
 			return o.Helm().Init(true, "", "", false)
 		} else {
 			return o.Helm().Init(false, "", "", true)
@@ -270,13 +270,13 @@ func (o *CommonOptions) helmInitDependency(dir string, chartRepos map[string]str
 
 	if o.Helm().HelmBinary() == "helm" {
 		// need to check the tiller settings at this point
-		_, noTiller, err := o.TeamHelmBin()
+		_, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
 			return o.Helm().HelmBinary(),
 				errors.Wrap(err, "failed to access team settings")
 		}
 
-		if noTiller {
+		if noTiller || helmTemplate {
 			err = o.Helm().Init(true, "", "", false)
 		} else {
 			err = o.Helm().Init(false, "", "", true)
