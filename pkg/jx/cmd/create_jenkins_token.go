@@ -154,7 +154,8 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		newTokenUrl := jenkins.JenkinsNewTokenURL(server.URL)
 		err = o.tryFindAPITokenFromBrowser(tokenUrl, newTokenUrl, userAuth)
 		if err != nil {
-			log.Warnf("unable to automatically find API token with chromedp using URL %s\n", tokenUrl)
+			log.Warnf("Unable to automatically find API token with chromedp using URL %s\n", tokenUrl)
+			log.Warnf("Error: %v\n", err)
 		}
 	}
 
@@ -204,7 +205,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, n
 	if o.Timeout != "" {
 		duration, err := time.ParseDuration(o.Timeout)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "parsing the timeout value")
 		}
 		ctx, cancel = context.WithTimeout(context.Background(), duration)
 	} else {
@@ -221,20 +222,20 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, n
 
 	c, err := o.createChromeClientWithNetLog(ctx, userDataDir, netLogFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating the chrome client")
 	}
 
 	err = c.Run(ctx, chromedp.Tasks{
 		chromedp.Navigate(tokenUrl),
 	})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "navigating to token URL '%s'", tokenUrl)
 	}
 
 	nodeSlice := []*cdp.Node{}
 	err = c.Run(ctx, chromedp.Nodes("//input", &nodeSlice))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "serching the login form")
 	}
 
 	login := false
@@ -255,7 +256,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, n
 			chromedp.SendKeys(passwordInputSelector, o.Password+"\n"),
 		})
 		if err != nil {
-			return err
+			return errors.Wrap(err, "filling up the login form")
 		}
 	}
 
@@ -276,7 +277,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, n
 	}
 
 	if cookie == "" {
-		return errors.New("failed to log into Jenkins")
+		return errors.New("No Jenkins cookie found")
 	}
 
 	token, err := o.generateNewApiToken(newTokenUrl, cookie)
@@ -290,7 +291,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, n
 
 	err = c.Shutdown(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "shutting down the chrome client")
 	}
 
 	return nil
