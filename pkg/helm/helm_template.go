@@ -167,7 +167,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	log.Infof("Generated chart %s to dir %s\n", chart, h.OutputDir)
+	log.Infof("Applying generated chart %s YAML in dir %s via kubectl\n", chart, h.OutputDir)
 
 	args := []string{"apply", "--recursive", "-f", h.OutputDir, "--wait", "-l", LabelReleaseChartName + "=" + chartName}
 	if ns != "" {
@@ -206,7 +206,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	log.Infof("Generated chart %s to dir %s\n", chart, h.OutputDir)
+	log.Infof("Applying generated chart %s YAML in dir %s via kubectl\n", chart, h.OutputDir)
 
 	args := []string{"apply", "--recursive", "-f", h.OutputDir, "-l", LabelReleaseChartName + "=" + chartName}
 	if ns != "" {
@@ -225,7 +225,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 }
 
 func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionText string, wait bool) error {
-	args := []string{"delete", "--all", "--namespace", ns, "-l", LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText}
+	args := []string{"delete", "--all", "--ignore-not-found", "--namespace", ns, "-l", LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText}
 	if wait {
 		args = append(args, "--wait")
 	}
@@ -296,7 +296,6 @@ func addLabelsToChartYaml(dir string, chart string, version string) error {
 		ext := filepath.Ext(path)
 		if ext == ".yaml" {
 			file := path
-			log.Infof("Processing file %s\n", file)
 			data, err := ioutil.ReadFile(file)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to load file %s", file)
