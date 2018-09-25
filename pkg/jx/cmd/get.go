@@ -75,6 +75,7 @@ func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 	cmd.AddCommand(NewCmdGetConfig(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetCVE(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetDevPod(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetEks(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetEnv(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetGit(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetHelmBin(f, in, out, errOut))
