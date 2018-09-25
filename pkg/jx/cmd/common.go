@@ -243,7 +243,8 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
 		o.helm = helmCLI
 		if helmTemplate {
-			o.helm = helm.NewHelmTemplate(helmCLI, "")
+			kubeClient, _, _ := o.KubeClient()
+			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient)
 		} else {
 			o.helm = helmCLI
 		}

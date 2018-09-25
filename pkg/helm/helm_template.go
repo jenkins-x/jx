@@ -11,6 +11,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -30,10 +32,11 @@ type HelmTemplate struct {
 	Binary          string
 	Runner          *util.Command
 	KubectlValidate bool
+	KubeClient      kubernetes.Interface
 }
 
 // NewHelmTemplate creates a new HelmTemplate instance configured to the given client side Helmer
-func NewHelmTemplate(client *HelmCLI, workDir string) *HelmTemplate {
+func NewHelmTemplate(client *HelmCLI, workDir string, kubeClient kubernetes.Interface) *HelmTemplate {
 	cli := &HelmTemplate{
 		Client:          client,
 		OutputDir:       workDir,
@@ -41,6 +44,7 @@ func NewHelmTemplate(client *HelmCLI, workDir string) *HelmTemplate {
 		Binary:          "kubectl",
 		CWD:             client.CWD,
 		KubectlValidate: false,
+		KubeClient:      kubeClient,
 	}
 	return cli
 }
@@ -284,7 +288,22 @@ func (h *HelmTemplate) StatusRelease(ns string, releaseName string) error {
 // StatusReleases returns the status of all installed releases
 func (h *HelmTemplate) StatusReleases(ns string) (map[string]string, error) {
 	statusMap := map[string]string{}
-	// TODO
+	if h.KubeClient == nil {
+		return statusMap, fmt.Errorf("No KubeClient configured!")
+	}
+	deployList, err := h.KubeClient.AppsV1beta1().Deployments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return statusMap, errors.Wrapf(err, "Failed to list Deployments in namespace %s", ns)
+	}
+	for _, deploy := range deployList.Items {
+		labels := deploy.Labels
+		if labels != nil {
+			release := labels[LabelReleaseName]
+			if release != "" {
+				statusMap[release] = "DEPLOYED"
+			}
+		}
+	}
 	return statusMap, nil
 }
 

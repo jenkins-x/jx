@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,6 +27,9 @@ func TestStepValidate(t *testing.T) {
 
 func AssertValidateWorks(t *testing.T, options *cmd.StepValidateOptions) error {
 	//options.Out = tests.Output()
+	if options.Factory == nil {
+		options.Factory = cmd_mocks.NewMockFactory()
+	}
 	err := options.Run()
 	assert.NoError(t, err, "Command failed: %#v", options)
 	return err
@@ -33,6 +37,9 @@ func AssertValidateWorks(t *testing.T, options *cmd.StepValidateOptions) error {
 
 func AssertValidateFails(t *testing.T, options *cmd.StepValidateOptions) error {
 	//options.Out = tests.Output()
+	if options.Factory == nil {
+		options.Factory = cmd_mocks.NewMockFactory()
+	}
 	err := options.Run()
 	assert.NotNil(t, err, "Command should have failed: %#v", options)
 	return err
