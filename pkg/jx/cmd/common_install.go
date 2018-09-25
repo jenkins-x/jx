@@ -1238,7 +1238,7 @@ func (o *CommonOptions) installIntoICP() error {
 
 	// todo figure these out programatically, set defaults or make it noddy to configure, perhaps leveraging cloudctl
 	log.Infof("This command should be done with --docker-registry=mycluster.icp:8500 --namespace jx --skip-ingress --external-ip=9.something --domain=9.something.nip.io")
-
+	// e.g. build/jx install --provider=ibm-cloud-private --namespace gwas --tiller-namespacegwas --docker-registry=mycluster.icp:8500 --skip-ingress --external-ip=9.20.201.31 --domain=9.20.201.31.nip.io
 	/* We want cloudctl, which is going to be at an endpoint such as
 	   cloudctl-darwin-amd64-3.1.0-715 at https://9.20.201.31:8443/api/cli/cloudctl-darwin-amd64
 	   This is downloaded from the ICP master node, e.g.

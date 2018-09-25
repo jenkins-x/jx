@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jxpv1
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    server: 10.100.0.133
+    path: "/shared/1"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jxpv2
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    server: 10.100.0.133placeme
+    path: "/shared/2"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jxpv3
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    server: 10.100.0.133
+    path: "/shared/3"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jxpv4
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    server: 10.100.0.133
+    path: "/shared/4"
