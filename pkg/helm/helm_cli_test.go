@@ -77,7 +77,7 @@ func createHelm(expectedArgs string) (*helm.HelmCLI, error) {
 
 func TestNewHelmCLI(t *testing.T) {
 	setup("")
-	cli := helm.NewHelmCLI(binary, helm.V2, cwd, true,"arg1 arg2 arg3", "and some", "more")
+	cli := helm.NewHelmCLI(binary, helm.V2, cwd, true, "arg1 arg2 arg3", "and some", "more")
 	assert.Equal(t, []string{"arg1", "arg2", "arg3", "and", "some", "more"}, cli.Runner.Args)
 
 	cli, _ = createHelm("arg1 arg2 arg3")
@@ -211,7 +211,8 @@ func TestDeleteRelaese(t *testing.T) {
 	expectedArgs := fmt.Sprintf("delete --purge %s", releaseName)
 	helm, err := createHelm(expectedArgs)
 	assert.NoError(t, err, "should create helm without any error")
-	err = helm.DeleteRelease(releaseName, true)
+	ns := "default"
+	err = helm.DeleteRelease(ns, releaseName, true)
 	assert.NoError(t, err, "should delete helm chart release without any error")
 }
 
@@ -220,7 +221,8 @@ func TestStatusRelease(t *testing.T) {
 	expectedArgs := fmt.Sprintf("status %s", releaseName)
 	helm, err := createHelm(expectedArgs)
 	assert.NoError(t, err, "should create helm without any error")
-	err = helm.StatusRelease(releaseName)
+	ns := "default"
+	err = helm.StatusRelease(ns, releaseName)
 	assert.NoError(t, err, "should get the status of a helm chart release without any error")
 }
 
@@ -235,7 +237,8 @@ func TestStatusReleases(t *testing.T) {
 		"vault-operator": "DEPLOYED",
 	}
 	helm, _ := createHelm(expectedArgs)
-	statusMap, err := helm.StatusReleases()
+	ns := "default"
+	statusMap, err := helm.StatusReleases(ns)
 	assert.NoError(t, err, "should list the release statuses without any error")
 	for release, status := range statusMap {
 		assert.Equal(t, expectedSatusMap[release], status, "expected status '%s', got '%s'", expectedSatusMap[release], status)

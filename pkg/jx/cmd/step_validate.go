@@ -120,7 +120,12 @@ func (o *StepValidateOptions) verifyAddons() []error {
 	if len(config.Addons) == 0 {
 		return errs
 	}
-	statusMap, err := o.Helm().StatusReleases()
+	_, ns, err := o.KubeClient()
+	if err != nil {
+		errs = append(errs, err)
+		return errs
+	}
+	statusMap, err := o.Helm().StatusReleases(ns)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("Failed to load addons statuses: %s", err))
 		return errs

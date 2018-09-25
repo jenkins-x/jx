@@ -141,7 +141,12 @@ func (o *CommonOptions) installChartOptions(options InstallChartOptions) error {
 
 // deleteChart deletes the given chart
 func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {
-	return o.Helm().DeleteRelease(releaseName, purge)
+	_, ns, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
+	return o.Helm().DeleteRelease(ns, releaseName, purge)
 }
 
 func (o *CommonOptions) FindHelmChart() (string, error) {

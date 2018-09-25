@@ -16,7 +16,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -222,8 +222,14 @@ To register to get your username/password to to: %s
 		} else {
 			o.SetValues = strings.Join(values, ",")
 		}
+	}
 
-	} else if o.Basic {
+	err = o.CreateAddon("cb")
+	if err != nil {
+		return err
+	}
+
+	if o.Basic {
 		devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 		if err != nil {
 			return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
@@ -238,7 +244,7 @@ To register to get your username/password to to: %s
 
 		o.SetValues = strings.Join([]string{"sso.create=false"}, ",")
 
-		svc, err := c.CoreV1().Services(o.currentNamespace).Get(cbServiceName, meta_v1.GetOptions{})
+		svc, err := c.CoreV1().Services(o.currentNamespace).Get(cbServiceName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -257,11 +263,6 @@ To register to get your username/password to to: %s
 				return fmt.Errorf("failed to update service %s/%s", o.Namespace, cbServiceName)
 			}
 		}
-	}
-
-	err = o.CreateAddon("cb")
-	if err != nil {
-		return err
 	}
 
 	_, _, err = o.KubeClient()
