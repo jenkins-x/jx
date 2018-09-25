@@ -225,7 +225,11 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 }
 
 func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionText string, wait bool) error {
-	args := []string{"delete", "all", "--ignore-not-found", "--namespace", ns, "-l", LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText}
+	selector := LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText
+
+	log.Infof("Removing kubernetes resources from older releases using selector: %s\n", util.ColorInfo(selector))
+
+	args := []string{"delete", "all", "--ignore-not-found", "--namespace", ns, "-l", selector}
 	if wait {
 		args = append(args, "--wait")
 	}
@@ -235,7 +239,7 @@ func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionTe
 	}
 
 	// now lets delete resource CRDs
-	args = []string{"delete", "release", "--ignore-not-found", "--namespace", ns, "-l", LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText}
+	args = []string{"delete", "release", "--ignore-not-found", "--namespace", ns, "-l", selector}
 	if wait {
 		args = append(args, "--wait")
 	}
