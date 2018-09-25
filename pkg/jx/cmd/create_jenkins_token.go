@@ -148,7 +148,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 
 	tokenUrl := jenkins.JenkinsTokenURL(server.URL)
 	if o.Verbose {
-		log.Infof("using url %s\n", tokenUrl)
+		log.Infof("Using url %s\n", tokenUrl)
 	}
 	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
 		newTokenUrl := jenkins.JenkinsNewTokenURL(server.URL)
