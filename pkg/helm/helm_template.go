@@ -375,6 +375,18 @@ func addLabelsToChartYaml(dir string, chart string, version string) error {
 			if err != nil {
 				return errors.Wrapf(err, "Failed to parse YAML of file %s", file)
 			}
+			helmHook := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook")
+			if strings.HasSuffix(helmHook, "-delete") {
+				// lets remove any pre/post delete hooks...
+				err = os.Remove(path)
+				if err != nil {
+					log.Warnf("Failed to remove helm hook template %s: %s", path, err)
+				} else {
+					log.Infof("Ignored helm delete hook file %s\n", path)
+				}
+				return nil
+			}
+
 			err = setYamlValue(&m, chart, "metadata", "labels", LabelReleaseName)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
@@ -395,6 +407,60 @@ func addLabelsToChartYaml(dir string, chart string, version string) error {
 		}
 		return nil
 	})
+}
+
+func getYamlValueString(mapSlice *yaml.MapSlice, keys ...string) string {
+	value := getYamlValue(mapSlice, keys...)
+	answer, ok := value.(string)
+	if ok {
+		return answer
+	}
+	return ""
+}
+
+func getYamlValue(mapSlice *yaml.MapSlice, keys ...string) interface{} {
+	if mapSlice == nil {
+		return nil
+	}
+	if mapSlice == nil {
+		return fmt.Errorf("No map input!")
+	}
+	m := mapSlice
+	lastIdx := len(keys) - 1
+	for idx, k := range keys {
+		last := idx >= lastIdx
+		found := false
+		for _, mi := range *m {
+			if mi.Key == k {
+				found = true
+				if last {
+					return mi.Value
+				} else {
+					value := mi.Value
+					if value == nil {
+						return nil
+					} else {
+						v, ok := value.(yaml.MapSlice)
+						if ok {
+							m = &v
+						} else {
+							v2, ok := value.(*yaml.MapSlice)
+							if ok {
+								m = v2
+							} else {
+								return nil
+							}
+						}
+					}
+				}
+			}
+		}
+		if !found {
+			return nil
+		}
+	}
+	return nil
+
 }
 
 // setYamlValue navigates through the YAML object structure lazily creating or inserting new values
