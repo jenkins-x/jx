@@ -52,7 +52,7 @@ const CLUSTER_LIST_HEADER = "PROJECT_ID"
 
 var (
 	createClusterGKELong = templates.LongDesc(`
-		This command creates a new kubernetes cluster on GKE, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster on GKE, installing required local dependencies and provisions the
 		Jenkins X platform
 
 		You can see a demo of this command here: [https://jenkins-x.io/demos/create_cluster_gke/](https://jenkins-x.io/demos/create_cluster_gke/)
@@ -75,14 +75,14 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKEOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "gke",
-		Short:   "Create a new kubernetes cluster on GKE: Runs on Google Cloud",
+		Short:   "Create a new Kubernetes cluster on GKE: Runs on Google Cloud",
 		Long:    createClusterGKELong,
 		Example: createClusterGKEExample,
 		Run: func(cmd *cobra.Command, args []string) {

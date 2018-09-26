@@ -81,7 +81,7 @@ func NewCmdStepPostBuild(f Factory, in terminal.FileReader, out terminal.FileWri
 func (o *StepPostBuildOptions) Run() error {
 	_, _, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("error connecting to kubernetes cluster: %v", err)
+		return fmt.Errorf("error connecting to Kubernetes cluster: %v", err)
 	}
 
 	// let's try and add image to CVE provider

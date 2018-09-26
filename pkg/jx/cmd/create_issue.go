@@ -77,7 +77,7 @@ func NewCmdCreateIssue(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory used to detect the git repository. Defaults to the current directory")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory used to detect the Git repository. Defaults to the current directory")
 	cmd.Flags().StringVarP(&options.Title, optionTitle, "t", "", "The title of the issue to create")
 	cmd.Flags().StringVarP(&options.Body, "body", "", "", "The body of the issue")
 	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the issue")

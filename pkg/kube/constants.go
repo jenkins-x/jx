@@ -37,7 +37,7 @@ const (
 	// ServiceChartMuseum the service name of the Helm Chart Museum service
 	ServiceChartMuseum = "jenkins-x-chartmuseum"
 
-	// ServiceKubernetesDashboard the kubernetes dashboard
+	// ServiceKubernetesDashboard the Kubernetes dashboard
 	ServiceKubernetesDashboard = "jenkins-x-kubernetes-dashboard"
 
 	// SecretJenkinsGitCredentials the git credentials secret
@@ -179,7 +179,7 @@ const (
 	// AnnotationIngress tells exposecontroller to annotate generated ingress rule with values
 	AnnotationIngress = "fabric8.io/ingress.annotations"
 
-	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike kubernetes resources)
+	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike Kubernetes resources)
 	AnnotationName = "jenkins.io/name"
 
 	// AnnotationCredentialsDescription the description text for a Credential on a Secret

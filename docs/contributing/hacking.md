@@ -264,6 +264,6 @@ Then you can change your `jx someArgs` CLI to `jxDebug someArgs` then debug it!
 [go]: https://golang.org/
 [Homebrew]: https://brew.sh/
 [Kubernetes]: https://github.com/kubernetes/kubernetes
-[minikube]: https://github.com/kubernetes/minikube
+[Minikube]: https://github.com/kubernetes/minikube
 [upstream]: https://help.github.com/articles/fork-a-repo/
 [upx]: https://upx.github.io

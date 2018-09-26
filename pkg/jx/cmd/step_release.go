@@ -53,7 +53,7 @@ func NewCmdStepRelease(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:   "release",
-		Short: "performs a release on the current git repository",
+		Short: "performs a release on the current Git repository",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -99,7 +99,7 @@ func (o *StepReleaseOptions) Run() error {
 	}
 	err = stepGitCredentialsOptions.Run()
 	if err != nil {
-		return fmt.Errorf("Failed to setup git credentials: %s", err)
+		return fmt.Errorf("Failed to setup Git credentials: %s", err)
 	}
 	dir := o.Dir
 	gitUser, err := o.Git().Username(dir)

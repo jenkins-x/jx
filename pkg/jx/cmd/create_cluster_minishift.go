@@ -34,7 +34,7 @@ type CreateClusterMinishiftFlags struct {
 
 var (
 	createClusterMinishiftLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster, installing required local dependencies and provisions the
 		Jenkins X platform
 
 		Minishift is a tool that makes it easy to run OpenShift locally. Minishift runs a single-node OpenShift
@@ -50,7 +50,7 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterMinishift(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinishiftOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, MINISHIFT),

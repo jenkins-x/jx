@@ -24,7 +24,7 @@ Its common to use lots of steps in a pipeline using the same image. So make thin
 
 ### Defaulting images from the build packs
 
-Rather than maintaining the image and version for each build pileline in each git repository you can share the default for your Jenkins X installation version.
+Rather than maintaining the image and version for each build pipeline in each Git repository you can share the default for your Jenkins X installation version.
 
 i.e. a maven build pack pipeline will default the OOTB container image from Jenkins X.
 
