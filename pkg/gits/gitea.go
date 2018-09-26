@@ -660,7 +660,7 @@ func (p *GiteaProvider) UserInfo(username string) *GitUser {
 	}
 }
 
-func (p *GiteaProvider) AddCollaborator(user string, repo string) error {
+func (p *GiteaProvider) AddCollaborator(user string, organisation string, repo string) error {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitea. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }
