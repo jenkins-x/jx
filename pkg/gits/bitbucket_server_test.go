@@ -304,7 +304,7 @@ func (suite *BitbucketServerProviderTestSuite) TestUserInfo() {
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestAddCollaborator() {
-	err := suite.provider.AddCollaborator("derek", "repo")
+	err := suite.provider.AddCollaborator("derek", orgname, "repo")
 	suite.Require().Nil(err)
 }
 
