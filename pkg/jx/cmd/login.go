@@ -197,7 +197,7 @@ func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 
 func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 	client := http.Client{}
-	req, err := http.NewRequest("POST", o.onboardingURL(), nil)
+	req, err := http.NewRequest(http.MethodPost, o.onboardingURL(), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "building onboarding request")
 	}
@@ -207,6 +207,7 @@ func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 	}
 	ssoCookie := http.Cookie{Name: SsoCookieName, Value: cookie}
 	req.AddCookie(&ssoCookie)
+	fmt.Printf("req: %v\n", req)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "executing onboarding request")
@@ -232,8 +233,8 @@ func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 
 func (o *LoginOptions) onboardingURL() string {
 	url := o.URL
-	if strings.HasPrefix(url, "/") {
-		url = strings.TrimPrefix(url, "/")
+	if strings.HasSuffix(url, "/") {
+		url = strings.TrimSuffix(url, "/")
 	}
 	return url + UserOnboardingEndpoint
 }

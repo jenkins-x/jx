@@ -33,6 +33,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const eksctlVersion = "0.1.1"
+
 var (
 	groovy = `
 // imports
@@ -123,6 +125,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installEksCtl(false)
 		case "heptio-authenticator-aws":
 			err = o.installHeptioAuthenticatorAws()
+		case "kustomize":
+			err = o.installKustomize()
 		default:
 			return fmt.Errorf("unknown dependency to install %s\n", i)
 		}
@@ -362,6 +366,38 @@ func (o *CommonOptions) installKubectl() error {
 	}
 
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/%s/%s/%s", latestVersion, runtime.GOOS, runtime.GOARCH, fileName)
+	fullPath := filepath.Join(binDir, fileName)
+	tmpFile := fullPath + ".tmp"
+	err = o.downloadFile(clientURL, tmpFile)
+	if err != nil {
+		return err
+	}
+	err = util.RenameFile(tmpFile, fullPath)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
+
+func (o *CommonOptions) installKustomize() error {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.RunCommand("brew", "install", "kustomize")
+	}
+	binDir, err := util.JXBinLocation()
+	if err != nil {
+		return err
+	}
+	fileName, flag, err := o.shouldInstallBinary(binDir, "kustomize")
+	if err != nil || !flag {
+		return err
+	}
+
+	latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes-sigs", "kustomize")
+	if err != nil {
+		return fmt.Errorf("unable to get latest version for github.com/%s/%s %v", "kubernetes-sigs", "kustomize", err)
+	}
+
+	clientURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kustomize/releases/download/v%v/kustomize_%s_%s_%s", latestVersion,latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
 	err = o.downloadFile(clientURL, tmpFile)
@@ -1201,10 +1237,14 @@ func (o *CommonOptions) installAws() error {
 }
 
 func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
+	return o.installEksCtlWithVersion(eksctlVersion, skipPathScan)
+}
+
+func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bool) error {
 	return o.installOrUpdateBinary("eksctl",
 		"weaveworks",
 		"https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
-		"0.1.1", skipPathScan)
+		version, skipPathScan)
 }
 
 func (o *CommonOptions) installHeptioAuthenticatorAws() error {

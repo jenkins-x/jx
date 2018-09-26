@@ -73,7 +73,11 @@ func (o *GetAddonOptions) Run() error {
 			addonEnabled[addon.Name] = true
 		}
 	}
-	statusMap, err := o.Helm().StatusReleases()
+	_, ns, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	statusMap, err := o.Helm().StatusReleases(ns)
 	if err != nil {
 		log.Warnf("Failed to find helm installs: %s\n", err)
 	}

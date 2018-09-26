@@ -93,7 +93,7 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "aws1", "The name of this cluster.")
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, optionNodes, "o", "", "node count")
 	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "", "kubernetes version")
-	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability zones. Defaults to $AWS_AVAILABILITY_ZONES")
+	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability Zones. Defaults to $AWS_AVAILABILITY_ZONES")
 	cmd.Flags().StringVarP(&options.Flags.InsecureDockerRegistry, "insecure-registry", "", "100.64.0.0/10", "The insecure docker registries to allow")
 	cmd.Flags().StringVarP(&options.Flags.TerraformDirectory, "terraform", "t", "", "The directory to save terraform configuration.")
 	cmd.Flags().StringVarP(&options.Flags.NodeSize, "node-size", "", "", "The size of a node in the kops created cluster.")
@@ -149,7 +149,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			}
 			c := len(availabilityZones)
 			if c > 0 {
-				zones, err = util.PickNameWithDefault(availabilityZones, "Pick availability zone: ", availabilityZones[c-1], o.In, o.Out, o.Err)
+				zones, err = util.PickNameWithDefault(availabilityZones, "Pick Availability Zone: ", availabilityZones[c-1], o.In, o.Out, o.Err)
 				if err != nil {
 					return err
 				}
@@ -159,7 +159,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			log.Warnf("No AWS_AVAILABILITY_ZONES environment variable is defined or %s option!\n", optionZones)
 
 			prompt := &survey.Input{
-				Message: "Availability zones",
+				Message: "Availability Zones",
 				Default: "",
 				Help:    "The AWS Availability Zones to use for the Kubernetes cluster",
 			}
@@ -170,7 +170,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 		}
 	}
 	if zones == "" {
-		return fmt.Errorf("No Availility zones provided!")
+		return fmt.Errorf("No Availability Zones provided!")
 	}
 	accountId, _, err := amazon.GetAccountIDAndRegion()
 	if err != nil {
