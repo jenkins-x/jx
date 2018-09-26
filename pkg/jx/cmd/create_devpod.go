@@ -769,7 +769,14 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if !flag || err != nil {
 		log.Infof("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
-		err = o.installChart(releaseName, kube.ChartExposecontrollerService, "", editNs, true, nil)
+		err = o.installChartOptions(InstallChartOptions{
+			ReleaseName: releaseName,
+			Chart: kube.ChartExposecontrollerService,
+			Version: "",
+			Ns: editNs,
+			HelmUpdate: true,
+			SetValues: nil,
+		})
 	}
 	return env, err
 }
