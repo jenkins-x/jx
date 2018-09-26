@@ -25,7 +25,7 @@ var (
 `)
 
 	StepPreBuildExample = templates.Examples(`
-		jx step post build ${DOCKER_REGISTRY}/someorg/myapp
+		jx step pre build ${DOCKER_REGISTRY}/someorg/myapp
 `)
 )
 
