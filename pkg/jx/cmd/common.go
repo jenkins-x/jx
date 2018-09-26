@@ -243,7 +243,8 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
 		o.helm = helmCLI
 		if helmTemplate {
-			o.helm = helm.NewHelmTemplate(helmCLI, "")
+			kubeClient, _, _ := o.KubeClient()
+			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient)
 		} else {
 			o.helm = helmCLI
 		}
@@ -264,11 +265,11 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the git server to add a user")
-	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the Git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the Git server to add a user")
 }
 
-// findGitServer finds the git server from the given flags or returns an error
+// findGitServer finds the Git server from the given flags or returns an error
 func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
 	return o.findServer(config, serverFlags, "git", "Try creating one via: jx create git server", false)
 }
@@ -688,7 +689,7 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	return o.runExposecontroller(devNamespace, targetNamespace, ic)
 }
 
-func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig) error {
+func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 
 	o.CleanExposecontrollerReources(targetNamespace)
 
@@ -702,8 +703,27 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 		exValues = append(exValues, "config.http=true")
 	}
 
+	if len(services) > 0 {
+		serviceCfg := "config.extravalues='services: ["
+		for i, service := range services {
+			if i > 0 {
+				serviceCfg += ","
+			}
+			serviceCfg += service
+		}
+		serviceCfg += "]''"
+		exValues = append(exValues, serviceCfg)
+	}
+
 	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
-	err := o.installChart(helmRelease, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
+	err := o.installChartOptions(InstallChartOptions{
+		ReleaseName: helmRelease,
+		Chart: exposecontrollerChart,
+		Version: exposecontrollerVersion,
+		Ns: targetNamespace,
+		HelmUpdate: true,
+		SetValues: exValues,
+	})
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}
@@ -711,7 +731,7 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	if err != nil {
 		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
 	}
-	return o.helm.DeleteRelease(helmRelease, true)
+	return o.helm.DeleteRelease(targetNamespace, helmRelease, true)
 
 }
 

@@ -35,12 +35,12 @@ type GetBuildLogsOptions struct {
 
 var (
 	get_build_log_long = templates.LongDesc(`
-		Display the git server URLs.
+		Display the Git server URLs.
 
 `)
 
 	get_build_log_example = templates.Examples(`
-		# List all registered git server URLs
+		# List all registered Git server URLs
 		jx get git
 	`)
 )

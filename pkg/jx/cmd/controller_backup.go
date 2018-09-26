@@ -260,7 +260,7 @@ func (o *ControllerBackupOptions) commitDirIfChanges(dir string, message string)
 			return
 		}
 
-		fmt.Fprintf(o.Out, "Pushed update '%s' git repository %s\n", util.ColorInfo(message), util.ColorInfo(dir))
+		fmt.Fprintf(o.Out, "Pushed update '%s' Git repository %s\n", util.ColorInfo(message), util.ColorInfo(dir))
 	}
 }
 
@@ -294,7 +294,7 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 	var dir string
 
 	if !remoteRepoExists {
-		fmt.Fprintf(o.Out, "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(o.Out, "Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		repo, err = details.CreateRepository()
 		if err != nil {
@@ -321,7 +321,7 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 			return "", err
 		}
 	} else {
-		fmt.Fprintf(o.Out, "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(o.Out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		dir = path.Join(backupDir, details.RepoName)
 		localDirExists, err := util.FileExists(dir)

@@ -560,7 +560,7 @@ func (f *FakeProvider) UserInfo(username string) *GitUser {
 	return nil
 }
 
-func (f *FakeProvider) AddCollaborator(user string, repo string) error {
+func (f *FakeProvider) AddCollaborator(user string, organisation string, repo string) error {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }

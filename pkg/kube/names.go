@@ -5,12 +5,12 @@ import (
 	"strings"
 )
 
-// ToValidName converts the given string into a valid kubernetes resource name
+// ToValidName converts the given string into a valid Kubernetes resource name
 func ToValidName(name string) string {
 	return toValidName(name, false)
 }
 
-// ToValidNameWithDots converts the given string into a valid kubernetes resource name
+// ToValidNameWithDots converts the given string into a valid Kubernetes resource name
 func ToValidNameWithDots(name string) string {
 	return toValidName(name, true)
 }

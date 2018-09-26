@@ -58,6 +58,7 @@ func NewCmdStepHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 	cmd.AddCommand(NewCmdStepHelmApply(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepHelmBuild(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepHelmEnv(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepHelmInstall(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepHelmRelease(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepHelmVersion(f, in, out, errOut))
 	return cmd
@@ -70,7 +71,7 @@ func (o *StepHelmOptions) Run() error {
 
 func (o *StepHelmOptions) addStepHelmFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Dir, "dir", "d", ".", "The directory containing the helm chart to apply")
-	cmd.Flags().BoolVarP(&o.https, "clone-https", "", true, "Clone the environment git repo over https rather than ssh which uses `git@foo/bar.git`")
+	cmd.Flags().BoolVarP(&o.https, "clone-https", "", true, "Clone the environment Git repo over https rather than ssh which uses `git@foo/bar.git`")
 	cmd.Flags().StringVarP(&o.GitProvider, "git-provider", "", "github.com", "The Git provider for the environment Git repository")
 }
 
@@ -163,7 +164,7 @@ func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string,
 
 	err := gitOpts.Run()
 	if err != nil {
-		return "", fmt.Errorf("failed to create git credentials file: %v", err)
+		return "", fmt.Errorf("failed to create Git credentials file: %v", err)
 	}
 
 	org := os.Getenv(REPO_OWNER)

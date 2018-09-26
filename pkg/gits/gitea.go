@@ -225,7 +225,7 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Events: []string{"create", "push", "pull_request"},
 		Active: true,
 	}
-	log.Infof("Creating github webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
+	log.Infof("Creating GitHub webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
 	_, err = p.Client.CreateRepoHook(owner, repo, hook)
 	if err != nil {
 		return fmt.Errorf("Failed to create webhook for %s/%s with %#v due to: %s", owner, repo, hook, err)
@@ -660,7 +660,7 @@ func (p *GiteaProvider) UserInfo(username string) *GitUser {
 	}
 }
 
-func (p *GiteaProvider) AddCollaborator(user string, repo string) error {
+func (p *GiteaProvider) AddCollaborator(user string, organisation string, repo string) error {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitea. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }

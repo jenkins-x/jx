@@ -20,7 +20,7 @@ var (
 	create_archetype_long = templates.LongDesc(`
 		Creates a new Maven project using an Archetype
 
-		You then get the option to import the generated source code into a git repository and Jenkins for CI/CD
+		You then get the option to import the generated source code into a Git repository and Jenkins for CI/CD
 
 `)
 

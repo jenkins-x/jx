@@ -904,7 +904,7 @@ func (p *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRe
 	return answer, nil
 }
 
-func (b *BitbucketCloudProvider) AddCollaborator(user string, repo string) error {
+func (b *BitbucketCloudProvider) AddCollaborator(user string, organisation string, repo string) error {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }

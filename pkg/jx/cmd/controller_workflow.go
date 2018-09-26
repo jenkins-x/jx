@@ -760,7 +760,7 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 	}
 }
 
-// PullRequestURLToNumber turns pull request URL to number
+// PullRequestURLToNumber turns Pull Request URL to number
 func PullRequestURLToNumber(text string) (int, error) {
 	paths := strings.Split(strings.TrimSuffix(text, "/"), "/")
 	lastPath := paths[len(paths)-1]

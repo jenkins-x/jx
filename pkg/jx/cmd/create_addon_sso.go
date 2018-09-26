@@ -95,7 +95,7 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 func (o *CreateAddonSSOOptions) Run() error {
 	_, _, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
+		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
 	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
@@ -190,6 +190,9 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 	}
 
 	orgs := gits.GetOrganizations(provider, userAuth.Username)
+	if len(orgs) == 0 {
+		return nil, fmt.Errorf("user %s is not member of any GitHub organizations", userAuth.Username)
+	}
 	sort.Strings(orgs)
 	promt := &survey.MultiSelect{
 		Message: "Select GitHub organizations to authorize users from:",

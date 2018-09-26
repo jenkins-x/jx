@@ -16,12 +16,12 @@ type GetGitOptions struct {
 
 var (
 	get_git_long = templates.LongDesc(`
-		Display the git server URLs.
+		Display the Git server URLs.
 
 `)
 
 	get_git_example = templates.Examples(`
-		# List all registered git server URLs
+		# List all registered Git server URLs
 		jx get git
 	`)
 )
@@ -41,7 +41,7 @@ func NewCmdGetGit(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 	cmd := &cobra.Command{
 		Use:     "git [flags]",
-		Short:   "Display the current registered git service URLs",
+		Short:   "Display the current registered Git service URLs",
 		Long:    get_git_long,
 		Example: get_git_example,
 		Aliases: []string{"gitserver"},

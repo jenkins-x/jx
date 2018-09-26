@@ -65,7 +65,7 @@ func (g *GitCLI) Clone(url string, dir string) error {
 	return g.gitCmd(dir, "clone", url, ".")
 }
 
-// Pull pulls the git repository in the given directory
+// Pull pulls the Git repository in the given directory
 func (g *GitCLI) Pull(dir string) error {
 	return g.gitCmd(dir, "pull")
 }
@@ -148,17 +148,17 @@ func (g *GitCLI) Checkout(dir string, branch string) error {
 	return g.gitCmd(dir, "checkout", branch)
 }
 
-// Init inits a git repository into the given directory
+// Init inits a Git repository into the given directory
 func (g *GitCLI) Init(dir string) error {
 	return g.gitCmd(dir, "init")
 }
 
-// Remove removes the given file from a git repository located at the given directory
+// Remove removes the given file from a Git repository located at the given directory
 func (g *GitCLI) Remove(dir, fileName string) error {
 	return g.gitCmd(dir, "rm", "-r", fileName)
 }
 
-// Status returns the status of the git repository at the given directory
+// Status returns the status of the Git repository at the given directory
 func (g *GitCLI) Status(dir string) error {
 	return g.gitCmd(dir, "status")
 }
@@ -245,7 +245,7 @@ func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
 	return cmd.RunWithoutRetry()
 }
 
-// CreatePushURL creates the git repository URL with the username and password encoded for HTTPS based URLs
+// CreatePushURL creates the Git repository URL with the username and password encoded for HTTPS based URLs
 func (g *GitCLI) CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
 	u, err := url.Parse(cloneURL)
 	if err != nil {
@@ -267,7 +267,7 @@ func (g *GitCLI) RepoName(org, repoName string) string {
 	return repoName
 }
 
-// Server returns the git server of the repository at the given directory
+// Server returns the Git server of the repository at the given directory
 func (g *GitCLI) Server(dir string) (string, error) {
 	repo, err := g.Info(dir)
 	if err != nil {
@@ -280,7 +280,7 @@ func (g *GitCLI) Server(dir string) (string, error) {
 func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
 	text, err := g.gitCmdWithOutput(dir, "status")
 	var rUrl string
-	if err != nil && strings.Contains(text, "Not a git repository") {
+	if err != nil && strings.Contains(text, "Not a Git repository") {
 		rUrl = os.Getenv("SOURCE_URL")
 		if rUrl == "" {
 			return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
@@ -490,7 +490,7 @@ func (g *GitCLI) CreateTag(dir string, tag string, msg string) error {
 	return g.gitCmd("", "tag", "-fa", tag, "-m", msg)
 }
 
-// PrintCreateRepositoryGenerateAccessToken prints the access token URL of a git repository
+// PrintCreateRepositoryGenerateAccessToken prints the access token URL of a Git repository
 func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
 	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL, username)
 
@@ -560,7 +560,7 @@ func (g *GitCLI) SetEmail(dir string, email string) error {
 	return nil
 }
 
-// CreateBranch creates a branch with the given name in the git repository from the given directory
+// CreateBranch creates a branch with the given name in the Git repository from the given directory
 func (g *GitCLI) CreateBranch(dir string, branch string) error {
 	return g.gitCmd(dir, "branch", branch)
 }

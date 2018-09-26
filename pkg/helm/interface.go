@@ -18,13 +18,13 @@ type Helmer interface {
 		values []string, valueFiles []string) error
 	UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
 		timeout *int, force bool, wait bool, values []string, valueFiles []string) error
-	DeleteRelease(releaseName string, purge bool) error
+	DeleteRelease(ns string, releaseName string, purge bool) error
 	ListCharts() (string, error)
 	SearchChartVersions(chart string) ([]string, error)
 	FindChart() (string, error)
 	PackageChart() error
-	StatusRelease(releaseName string) error
-	StatusReleases() (map[string]string, error)
+	StatusRelease(ns string, releaseName string) error
+	StatusReleases(ns string) (map[string]string, error)
 	Lint() (string, error)
 	Version(tls bool) (string, error)
 	SearchCharts(filter string) ([]ChartSummary, error)

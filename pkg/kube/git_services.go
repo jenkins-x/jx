@@ -115,14 +115,14 @@ func GetServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitSe
 				labels := secret.GetLabels()
 				serviceKind, ok := labels[LabelServiceKind]
 				if !ok {
-					return "", fmt.Errorf("no service kind label found on secret '%s' for git service '%s'",
+					return "", fmt.Errorf("no service kind label found on secret '%s' for Git service '%s'",
 						secret.GetName(), gitServiceURL)
 				}
 				return serviceKind, nil
 			}
 		}
 	}
-	return "", fmt.Errorf("no secret found with configuration for '%s' git service", gitServiceURL)
+	return "", fmt.Errorf("no secret found with configuration for '%s' Git service", gitServiceURL)
 }
 
 func getServiceKindFromGitServices(jxClient versioned.Interface, ns string, gitServiceURL string) (string, error) {
@@ -135,5 +135,5 @@ func getServiceKindFromGitServices(jxClient versioned.Interface, ns string, gitS
 			}
 		}
 	}
-	return "", fmt.Errorf("no git service resource found with URL '%s'", gitServiceURL)
+	return "", fmt.Errorf("no Git service resource found with URL '%s'", gitServiceURL)
 }

@@ -23,7 +23,7 @@ var (
 	}
 
 	getBuildPackLong = templates.LongDesc(`
-		Display the teams build pack git repository and references used for the current Team used on creating and importing projects
+		Display the teams build pack Git repository and references used for the current Team used on creating and importing projects
 
 		For more documentation see: [https://jenkins-x.io/architecture/build-packs/](https://jenkins-x.io/architecture/build-packs/)
 `)
@@ -49,7 +49,7 @@ func NewCmdGetBuildPack(f Factory, in terminal.FileReader, out terminal.FileWrit
 	}
 	cmd := &cobra.Command{
 		Use:     buildPack,
-		Short:   "Display the teams build pack git repository and references used for the current Team used on creating and importing projects",
+		Short:   "Display the teams build pack Git repository and references used for the current Team used on creating and importing projects",
 		Aliases: buildPacksAliases,
 		Long:    getBuildPackLong,
 		Example: getBuildPackExample,

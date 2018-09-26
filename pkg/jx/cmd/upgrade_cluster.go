@@ -16,7 +16,7 @@ import (
 
 var (
 	upgradeClusterLong = templates.LongDesc(`
-		Upgrades the Jenkins X kubernetes master to the specified version
+		Upgrades the Jenkins X Kubernetes master to the specified version
 `)
 
 	upgradeClusterExample = templates.Examples(`
@@ -48,7 +48,7 @@ func NewCmdUpgradeCluster(f Factory, in terminal.FileReader, out terminal.FileWr
 
 	cmd := &cobra.Command{
 		Use:     "cluster",
-		Short:   "Upgrades the kubernetes master to the specified version",
+		Short:   "Upgrades the Kubernetes master to the specified version",
 		Long:    upgradeClusterLong,
 		Example: upgradeClusterExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -200,7 +200,7 @@ func (o *UpgradeClusterOptions) validateGCloudIsAvailable() error {
 	return nil
 }
 
-// internal type to help unmarshal kubernetes upgrade versions
+// internal type to help unmarshal Kubernetes upgrade versions
 type serverConfig struct {
 	ValidMasterVersions []string `json:"validMasterVersions"`
 }
