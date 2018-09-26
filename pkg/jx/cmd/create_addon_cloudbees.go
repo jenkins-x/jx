@@ -222,6 +222,9 @@ To register to get your username/password to to: %s
 		} else {
 			o.SetValues = strings.Join(values, ",")
 		}
+	} else {
+		// Disable SSO for basic auth
+		o.SetValues = strings.Join([]string{"sso.create=false"}, ",")
 	}
 
 	err = o.CreateAddon("cb")
@@ -242,8 +245,6 @@ To register to get your username/password to to: %s
 			}
 		}
 
-		o.SetValues = strings.Join([]string{"sso.create=false"}, ",")
-
 		svc, err := c.CoreV1().Services(o.currentNamespace).Get(cbServiceName, metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -263,25 +264,19 @@ To register to get your username/password to to: %s
 				return fmt.Errorf("failed to update service %s/%s", o.Namespace, cbServiceName)
 			}
 		}
-	}
+		_, _, err = o.KubeClient()
+		if err != nil {
+			return err
+		}
 
-	_, _, err = o.KubeClient()
-	if err != nil {
-		return err
-	}
+		log.Infof("using exposecontroller config from dev namespace %s\n", devNamespace)
+		log.Infof("target namespace %s\n", o.Namespace)
 
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
-	if err != nil {
-		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
-	}
-
-	log.Infof("using exposecontroller config from dev namespace %s\n", devNamespace)
-	log.Infof("target namespace %s\n", o.Namespace)
-
-	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, o.Password)
-	if err != nil {
-		return err
+		// create the ingress rule
+		err = o.expose(devNamespace, o.Namespace, o.Password)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

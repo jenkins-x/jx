@@ -122,7 +122,7 @@ type GitProvider interface {
 	// Returns user info, if possible
 	UserInfo(username string) *GitUser
 
-	AddCollaborator(string, string) error
+	AddCollaborator(string, string, string) error
 	// TODO Refactor to remove bespoke types when we implement another provider
 	ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error)
 	// TODO Refactor to remove bespoke types when we implement another provider
