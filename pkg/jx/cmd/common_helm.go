@@ -77,7 +77,7 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName stri
 		return errors.Wrapf(err, "failed to check if the repository with URL '%s' is missing", helmUrl)
 	}
 	if missing {
-		log.Infof("Adding missing helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
+		log.Infof("Adding missing Helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
 		err = o.retry(6, 10*time.Second, func() (err error) {
 			err = o.Helm().AddRepo(repoName, helmUrl)
 			if err == nil {
@@ -141,7 +141,12 @@ func (o *CommonOptions) installChartOptions(options InstallChartOptions) error {
 
 // deleteChart deletes the given chart
 func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {
-	return o.Helm().DeleteRelease(releaseName, purge)
+	_, ns, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
+	return o.Helm().DeleteRelease(ns, releaseName, purge)
 }
 
 func (o *CommonOptions) FindHelmChart() (string, error) {
@@ -194,7 +199,7 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 				repoCounter++
 				err = o.addHelmBinaryRepoIfMissing(url, name)
 				if err != nil {
-					return errors.Wrapf(err, "failed to add the helm repository with name '%s' and URL '%s'", name, url)
+					return errors.Wrapf(err, "failed to add the Helm repository with name '%s' and URL '%s'", name, url)
 				}
 			}
 		}
@@ -208,7 +213,7 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 	if exists {
 		requirements, err := helm.LoadRequirementsFile(reqfile)
 		if err != nil {
-			return errors.Wrap(err, "failed to load the helm requirements file")
+			return errors.Wrap(err, "failed to load the Helm requirements file")
 		}
 		if requirements != nil {
 			for _, dep := range requirements.Dependencies {
@@ -218,7 +223,7 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 					// TODO we could provide some mechanism to customise the names of repos somehow?
 					err = o.addHelmBinaryRepoIfMissing(repo, "repo"+strconv.Itoa(repoCounter))
 					if err != nil {
-						return errors.Wrapf(err, "failed to add helm repository '%s'", repo)
+						return errors.Wrapf(err, "failed to add Helm repository '%s'", repo)
 					}
 				}
 			}
@@ -235,7 +240,7 @@ func (o *CommonOptions) helmInit(dir string) error {
 	o.Helm().SetCWD(dir)
 	_, err := o.Helm().Version(false)
 	if err != nil {
-		return errors.Wrap(err, "failed to read the helm version")
+		return errors.Wrap(err, "failed to read the Helm version")
 	}
 	if o.Helm().HelmBinary() == "helm" {
 		// need to check the tiller settings at this point
@@ -265,7 +270,7 @@ func (o *CommonOptions) helmInitDependency(dir string, chartRepos map[string]str
 	_, err = o.Helm().Version(false)
 	if err != nil {
 		return o.Helm().HelmBinary(),
-			errors.Wrap(err, "failed to read the helm version")
+			errors.Wrap(err, "failed to read the Helm version")
 	}
 
 	if o.Helm().HelmBinary() == "helm" {
@@ -287,7 +292,7 @@ func (o *CommonOptions) helmInitDependency(dir string, chartRepos map[string]str
 
 	if err != nil {
 		return o.Helm().HelmBinary(),
-			errors.Wrap(err, "failed to initialize helm")
+			errors.Wrap(err, "failed to initialize Helm")
 	}
 	err = o.addChartRepos(dir, o.Helm().HelmBinary(), chartRepos)
 	if err != nil {
@@ -325,7 +330,7 @@ func (o *CommonOptions) helmInitDependencyBuild(dir string, chartRepos map[strin
 func (o *CommonOptions) helmInitRecursiveDependencyBuild(dir string, chartRepos map[string]string) error {
 	_, err := o.helmInitDependency(dir, chartRepos)
 	if err != nil {
-		return errors.Wrap(err, "initializing helm")
+		return errors.Wrap(err, "initializing Helm")
 	}
 
 	helmBinary := o.Helm().HelmBinary()
@@ -373,7 +378,7 @@ func (o *CommonOptions) helmInitRecursiveDependencyBuild(dir string, chartRepos 
 			o.Helm().SetCWD(chartPath)
 			err = o.Helm().BuildDependency()
 			if err != nil {
-				return errors.Wrap(err, "building helm dependency")
+				return errors.Wrap(err, "building Helm dependency")
 			}
 			chartReqFile := filepath.Join(chartPath, "requirements.yaml")
 			reqs, err := helm.LoadRequirementsFile(chartReqFile)

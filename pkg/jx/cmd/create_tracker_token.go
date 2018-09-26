@@ -135,7 +135,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 		log.Warnf("Failed to update pipeline issue tracker credentials secret: %v\n", err)
 	}
 
-	log.Infof("Created user %s API Token for git server %s at %s\n",
+	log.Infof("Created user %s API Token for Git server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

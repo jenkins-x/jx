@@ -605,7 +605,7 @@ func (p *GitlabProvider) IssueURL(org string, name string, number int, isPull bo
 	return ""
 }
 
-func (p *GitlabProvider) AddCollaborator(user string, repo string) error {
+func (p *GitlabProvider) AddCollaborator(user string, organisation string, repo string) error {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }
@@ -620,7 +620,7 @@ func (p *GitlabProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	return &github.Response{}, nil
 }
 
-// GitlabAccessTokenURL returns the URL to click on to generate a personal access token for the git provider
+// GitlabAccessTokenURL returns the URL to click on to generate a personal access token for the Git provider
 func GitlabAccessTokenURL(url string) string {
 	return util.UrlJoin(url, "/profile/personal_access_tokens")
 }

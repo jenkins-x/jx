@@ -35,6 +35,18 @@ type CreateClusterAKSFlags struct {
 	ClientSecret              string
 	ServicePrincipal          string
 	Subscription              string
+	AADClientAppID            string
+	AADServerAppID            string
+	AADServerAppSecret        string
+	AADTenantID               string
+	AdminUsername             string
+	DNSNamePrefix             string
+	DNSServiceIP              string
+	DockerBridgeAddress       string
+	PodCIDR                   string
+	ServiceCIDR               string
+	VnetSubnetID              string
+	WorkspaceResourceID       string
 	SkipLogin                 bool
 	SkipProviderRegistration  bool
 	SkipResourceGroupCreation bool
@@ -43,7 +55,7 @@ type CreateClusterAKSFlags struct {
 
 var (
 	createClusterAKSLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster on AKS, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster on AKS, installing required local dependencies and provisions the
 		Jenkins X platform
 
 		Azure Container Service (AKS) manages your hosted Kubernetes environment, making it quick and easy to deploy and
@@ -67,14 +79,14 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterAKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAKSOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aks",
-		Short:   "Create a new kubernetes cluster on AKS: Runs on Azure",
+		Short:   "Create a new Kubernetes cluster on AKS: Runs on Azure",
 		Long:    createClusterAKSLong,
 		Example: createClusterAKSExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -100,6 +112,18 @@ func NewCmdCreateClusterAKS(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Flags.ClientSecret, "client-secret", "", "", "Azure AD client secret to use an existing SP")
 	cmd.Flags().StringVarP(&options.Flags.ServicePrincipal, "service-principal", "", "", "Azure AD service principal to use an existing SP")
 	cmd.Flags().StringVarP(&options.Flags.Subscription, "subscription", "", "", "Azure subscription to be used if not default one")
+	cmd.Flags().StringVarP(&options.Flags.AADClientAppID, "aad-client-app-id", "", "", "The ID of an Azure Active Directory client application")
+	cmd.Flags().StringVarP(&options.Flags.AADServerAppID, "aad-server-app-id", "", "", "The ID of an Azure Active Directory server application")
+	cmd.Flags().StringVarP(&options.Flags.AADServerAppSecret, "aad-server-app-secret", "", "", "The secret of an Azure Active Directory server application")
+	cmd.Flags().StringVarP(&options.Flags.AADTenantID, "aad-tenant-id", "", "", "The ID of an Azure Active Directory tenant")
+	cmd.Flags().StringVarP(&options.Flags.AdminUsername, "admin-username", "", "", "User account to create on node VMs for SSH access")
+	cmd.Flags().StringVarP(&options.Flags.DNSNamePrefix, "dns-name-prefix", "", "", "Prefix for hostnames that are created")
+	cmd.Flags().StringVarP(&options.Flags.DNSServiceIP, "dns-service-ip", "", "", "IP address assigned to the Kubernetes DNS service")
+	cmd.Flags().StringVarP(&options.Flags.DockerBridgeAddress, "docker-bridge-address", "", "", "An IP address and netmask assigned to the Docker bridge")
+	cmd.Flags().StringVarP(&options.Flags.PodCIDR, "pod-cidr", "", "", "A CIDR notation IP range from which to assign pod IPs")
+	cmd.Flags().StringVarP(&options.Flags.ServiceCIDR, "service-cidr", "", "", "A CIDR notation IP range from which to assign service cluster IPs")
+	cmd.Flags().StringVarP(&options.Flags.VnetSubnetID, "vnet-subnet-id", "", "", "The ID of a subnet in an existing VNet into which to deploy the cluster")
+	cmd.Flags().StringVarP(&options.Flags.WorkspaceResourceID, "workspace-resource-id", "", "", "The resource ID of an existing Log Analytics Workspace")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip login if already logged in using `az login`")
 	cmd.Flags().BoolVarP(&options.Flags.SkipProviderRegistration, "skip-provider-registration", "", false, "Skip provider registration")
 	cmd.Flags().BoolVarP(&options.Flags.SkipResourceGroupCreation, "skip-resource-group-creation", "", false, "Skip resource group creation")
@@ -190,9 +214,6 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	userName := o.Flags.UserName
 	password := o.Flags.Password
 
-	clientSecret := o.Flags.ClientSecret
-	servicePrincipal := o.Flags.ServicePrincipal
-
 	var err error
 	if !o.Flags.SkipLogin {
 		//First login
@@ -272,12 +293,60 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		createCluster = append(createCluster, "--generate-ssh-keys")
 	}
 
-	if clientSecret != "" {
-		createCluster = append(createCluster, "--client-secret", clientSecret)
+	if o.Flags.ClientSecret != "" {
+		createCluster = append(createCluster, "--client-secret", o.Flags.ClientSecret)
 	}
 
-	if servicePrincipal != "" {
-		createCluster = append(createCluster, "--service-principal", servicePrincipal)
+	if o.Flags.ServicePrincipal != "" {
+		createCluster = append(createCluster, "--service-principal", o.Flags.ServicePrincipal)
+	}
+
+	if o.Flags.AADClientAppID != "" {
+		createCluster = append(createCluster, "--aad-client-app-id", o.Flags.AADClientAppID)
+	}
+
+	if o.Flags.AADServerAppID != "" {
+		createCluster = append(createCluster, "--aad-server-app-id", o.Flags.AADServerAppID)
+	}
+
+	if o.Flags.AADServerAppSecret != "" {
+		createCluster = append(createCluster, "--aad-server-app-secret", o.Flags.AADServerAppSecret)
+	}
+
+	if o.Flags.AADTenantID != "" {
+		createCluster = append(createCluster, "--aad-tenant-id", o.Flags.AADTenantID)
+	}
+
+	if o.Flags.AdminUsername != "" {
+		createCluster = append(createCluster, "--admin-username", o.Flags.AdminUsername)
+	}
+
+	if o.Flags.DNSNamePrefix != "" {
+		createCluster = append(createCluster, "--dns-name-prefix", o.Flags.DNSNamePrefix)
+	}
+
+	if o.Flags.DNSServiceIP != "" {
+		createCluster = append(createCluster, "--dns-service-ip", o.Flags.DNSServiceIP)
+	}
+
+	if o.Flags.DockerBridgeAddress != "" {
+		createCluster = append(createCluster, "--docker-bridge-address", o.Flags.DockerBridgeAddress)
+	}
+
+	if o.Flags.PodCIDR != "" {
+		createCluster = append(createCluster, "--pod-cidr", o.Flags.PodCIDR)
+	}
+
+	if o.Flags.ServiceCIDR != "" {
+		createCluster = append(createCluster, "--service-cidr", o.Flags.ServiceCIDR)
+	}
+
+	if o.Flags.VnetSubnetID != "" {
+		createCluster = append(createCluster, "--vnet-subnet-id", o.Flags.VnetSubnetID)
+	}
+
+	if o.Flags.WorkspaceResourceID != "" {
+		createCluster = append(createCluster, "--workspace-resource-id", o.Flags.WorkspaceResourceID)
 	}
 
 	if o.Flags.Tags != "" {

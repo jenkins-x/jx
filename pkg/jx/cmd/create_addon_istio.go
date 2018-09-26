@@ -25,7 +25,7 @@ const (
 
 var (
 	createAddonIstioLong = templates.LongDesc(`
-		Creates the istio addon for service mesh on kubernetes
+		Creates the istio addon for service mesh on Kubernetes
 `)
 
 	createAddonIstioExample = templates.Examples(`
@@ -112,7 +112,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 	}
 	err := o.ensureHelm()
 	if err != nil {
-		return errors.Wrap(err, "failed to ensure that helm is present")
+		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
 	_, _, err = o.KubeClient()
 	if err != nil {

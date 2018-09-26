@@ -5,16 +5,19 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
-	// LabelReleaseChartName stores the name of a chart being installed
-	LabelReleaseChartName = "jenkins.io/chart"
+	// LabelReleaseName stores the chart release name
+	LabelReleaseName = "jenkins.io/chart-release"
 
 	// LabelReleaseChartVersion stores the version of a chart installation in a label
 	LabelReleaseChartVersion = "jenkins.io/version"
@@ -23,21 +26,25 @@ const (
 // HelmTemplate implements common helm actions but purely as client side operations
 // delegating a separate Helmer such as HelmCLI for the client side operations
 type HelmTemplate struct {
-	Client    *HelmCLI
-	OutputDir string
-	CWD       string
-	Binary    string
-	Runner    *util.Command
+	Client          *HelmCLI
+	OutputDir       string
+	CWD             string
+	Binary          string
+	Runner          *util.Command
+	KubectlValidate bool
+	KubeClient      kubernetes.Interface
 }
 
 // NewHelmTemplate creates a new HelmTemplate instance configured to the given client side Helmer
-func NewHelmTemplate(client *HelmCLI, workDir string) *HelmTemplate {
+func NewHelmTemplate(client *HelmCLI, workDir string, kubeClient kubernetes.Interface) *HelmTemplate {
 	cli := &HelmTemplate{
-		Client:    client,
-		OutputDir: workDir,
-		Runner:    client.Runner,
-		Binary:    "kubectl",
-		CWD:       client.CWD,
+		Client:          client,
+		OutputDir:       workDir,
+		Runner:          client.Runner,
+		Binary:          "kubectl",
+		CWD:             client.CWD,
+		KubectlValidate: false,
+		KubeClient:      kubeClient,
 	}
 	return cli
 }
@@ -152,35 +159,32 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	if err != nil {
 		return err
 	}
-	err = h.Client.Template(chart, releaseName, ns, h.OutputDir, false, values, valueFiles)
+	chartDir, err := h.chartNameToFolder(chart)
+	if err != nil {
+		return err
+	}
+	err = h.Client.Template(chartDir, releaseName, ns, h.OutputDir, false, values, valueFiles)
 	if err != nil {
 		return err
 	}
 
-	chartName, versionText, err := h.getChartNameAndVersion(version)
+	_, versionText, err := h.getChartNameAndVersion(chartDir, version)
 	if err != nil {
 		return err
 	}
 
-	err = h.addLabelsToFiles(chartName, versionText)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Applying generated chart %s YAML in dir %s via kubectl\n", chart, h.OutputDir)
-
-	args := []string{"apply", "--recursive", "-f", h.OutputDir, "--wait", "-l", LabelReleaseChartName + "=" + chartName}
-	if ns != "" {
-		args = append(args, "--namespace", ns)
-	}
-
-	err = h.runKubectl(args...)
+	err = h.addLabelsToFiles(releaseName, versionText)
 	if err != nil {
 		return err
 	}
 
 	wait := true
-	return h.deleteOldResources(ns, chartName, versionText, wait)
+
+	err = h.kubectlApply(ns, chart, releaseName, false, true)
+	if err != nil {
+		return err
+	}
+	return h.deleteOldResources(ns, releaseName, versionText, wait)
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
@@ -191,44 +195,62 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	if err != nil {
 		return err
 	}
-	err = h.Client.Template(chart, releaseName, ns, h.OutputDir, false, values, valueFiles)
+	chartDir, err := h.chartNameToFolder(chart)
+	if err != nil {
+		return err
+	}
+	err = h.Client.Template(chartDir, releaseName, ns, h.OutputDir, false, values, valueFiles)
 	if err != nil {
 		return err
 	}
 
-	chartName, versionText, err := h.getChartNameAndVersion(version)
+	_, versionText, err := h.getChartNameAndVersion(chartDir, version)
 	if err != nil {
 		return err
 	}
 
-	err = h.addLabelsToFiles(chartName, versionText)
+	err = h.addLabelsToFiles(releaseName, versionText)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Applying generated chart %s YAML in dir %s via kubectl\n", chart, h.OutputDir)
+	err = h.kubectlApply(ns, chart, releaseName, wait, false)
+	if err != nil {
+		return err
+	}
 
-	args := []string{"apply", "--recursive", "-f", h.OutputDir, "-l", LabelReleaseChartName + "=" + chartName}
+	return h.deleteOldResources(ns, releaseName, versionText, wait)
+}
+
+func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string, wait bool, create bool) error {
+	log.Infof("Applying generated chart %s YAML via kubectl in dir: %s\n", chart, h.OutputDir)
+
+	command := "apply"
+	if create {
+		command = "create"
+	}
+	args := []string{command, "--recursive", "-f", h.OutputDir, "-l", LabelReleaseName + "=" + releaseName}
 	if ns != "" {
 		args = append(args, "--namespace", ns)
 	}
-	if wait {
+	if wait && !create {
 		args = append(args, "--wait")
 	}
-
-	err = h.runKubectl(args...)
-	if err != nil {
-		return err
+	if !h.KubectlValidate {
+		args = append(args, "--validate=false")
 	}
-
-	return h.deleteOldResources(ns, chartName, versionText, wait)
+	return h.runKubectl(args...)
 }
 
-func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionText string, wait bool) error {
-	selector := LabelReleaseChartName + "=" + chartName + "," + LabelReleaseChartVersion + "!=" + versionText
+func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, versionText string, wait bool) error {
+	selector := LabelReleaseName + "=" + releaseName + "," + LabelReleaseChartVersion + "!=" + versionText
 
-	log.Infof("Removing kubernetes resources from older releases using selector: %s\n", util.ColorInfo(selector))
+	log.Infof("Removing Kubernetes resources from older releases using selector: %s\n", util.ColorInfo(selector))
 
+	return h.deleteResourcesBySelector(ns, selector, wait)
+}
+
+func (h *HelmTemplate) deleteResourcesBySelector(ns string, selector string, wait bool) error {
 	args := []string{"delete", "all", "--ignore-not-found", "--namespace", ns, "-l", selector}
 	if wait {
 		args = append(args, "--wait")
@@ -243,25 +265,45 @@ func (h *HelmTemplate) deleteOldResources(ns string, chartName string, versionTe
 	if wait {
 		args = append(args, "--wait")
 	}
-	return h.runKubectl(args...)
-}
-
-// DeleteRelease removes the given release
-func (h *HelmTemplate) DeleteRelease(releaseName string, purge bool) error {
-	// TODO delete all resource with the jenkins chart label
+	// lets ignore failures - probably due to CRD not yet existing
+	h.runKubectl(args...)
 	return nil
 }
 
+// DeleteRelease removes the given release
+func (h *HelmTemplate) DeleteRelease(ns string, releaseName string, purge bool) error {
+	selector := LabelReleaseName + "=" + releaseName
+
+	log.Infof("Removing release %s using selector: %s\n", util.ColorInfo(releaseName), util.ColorInfo(selector))
+
+	return h.deleteResourcesBySelector(ns, selector, true)
+}
+
 // StatusRelease returns the output of the helm status command for a given release
-func (h *HelmTemplate) StatusRelease(releaseName string) error {
+func (h *HelmTemplate) StatusRelease(ns string, releaseName string) error {
 	// TODO
 	return nil
 }
 
 // StatusReleases returns the status of all installed releases
-func (h *HelmTemplate) StatusReleases() (map[string]string, error) {
+func (h *HelmTemplate) StatusReleases(ns string) (map[string]string, error) {
 	statusMap := map[string]string{}
-	// TODO
+	if h.KubeClient == nil {
+		return statusMap, fmt.Errorf("No KubeClient configured!")
+	}
+	deployList, err := h.KubeClient.AppsV1beta1().Deployments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return statusMap, errors.Wrapf(err, "Failed to list Deployments in namespace %s", ns)
+	}
+	for _, deploy := range deployList.Items {
+		labels := deploy.Labels
+		if labels != nil {
+			release := labels[LabelReleaseName]
+			if release != "" {
+				statusMap[release] = "DEPLOYED"
+			}
+		}
+	}
 	return statusMap, nil
 }
 
@@ -296,6 +338,40 @@ func (h *HelmTemplate) clearOutputDir() error {
 	return nil
 }
 
+func (h *HelmTemplate) chartNameToFolder(chart string) (string, error) {
+	exists, err := util.FileExists(chart)
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		return chart, nil
+	}
+	safeChartName := strings.Replace(chart, string(os.PathSeparator), "-", -1)
+	dir, err := ioutil.TempDir("", safeChartName)
+	if err != nil {
+		return "", err
+	}
+
+	err = h.Client.runHelm("fetch", "-d", dir, "--untar", chart)
+	if err != nil {
+		return "", err
+	}
+	answer := dir
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return "", err
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			answer = filepath.Join(dir, f.Name())
+			break
+		}
+	}
+	log.Infof("Fetched chart %s to dir %s\n", chart, answer)
+	return answer, nil
+}
+
 func (h *HelmTemplate) addLabelsToFiles(chart string, version string) error {
 	dir, err := h.getOutputDir()
 	if err != nil {
@@ -318,7 +394,19 @@ func addLabelsToChartYaml(dir string, chart string, version string) error {
 			if err != nil {
 				return errors.Wrapf(err, "Failed to parse YAML of file %s", file)
 			}
-			err = setYamlValue(&m, chart, "metadata", "labels", LabelReleaseChartName)
+			helmHook := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook")
+			if strings.HasSuffix(helmHook, "-delete") {
+				// lets remove any pre/post delete hooks...
+				err = os.Remove(path)
+				if err != nil {
+					log.Warnf("Failed to remove helm hook template %s: %s", path, err)
+				} else {
+					log.Infof("Ignored helm delete hook file %s\n", path)
+				}
+				return nil
+			}
+
+			err = setYamlValue(&m, chart, "metadata", "labels", LabelReleaseName)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
 			}
@@ -338,6 +426,60 @@ func addLabelsToChartYaml(dir string, chart string, version string) error {
 		}
 		return nil
 	})
+}
+
+func getYamlValueString(mapSlice *yaml.MapSlice, keys ...string) string {
+	value := getYamlValue(mapSlice, keys...)
+	answer, ok := value.(string)
+	if ok {
+		return answer
+	}
+	return ""
+}
+
+func getYamlValue(mapSlice *yaml.MapSlice, keys ...string) interface{} {
+	if mapSlice == nil {
+		return nil
+	}
+	if mapSlice == nil {
+		return fmt.Errorf("No map input!")
+	}
+	m := mapSlice
+	lastIdx := len(keys) - 1
+	for idx, k := range keys {
+		last := idx >= lastIdx
+		found := false
+		for _, mi := range *m {
+			if mi.Key == k {
+				found = true
+				if last {
+					return mi.Value
+				} else {
+					value := mi.Value
+					if value == nil {
+						return nil
+					} else {
+						v, ok := value.(yaml.MapSlice)
+						if ok {
+							m = &v
+						} else {
+							v2, ok := value.(*yaml.MapSlice)
+							if ok {
+								m = v2
+							} else {
+								return nil
+							}
+						}
+					}
+				}
+			}
+		}
+		if !found {
+			return nil
+		}
+	}
+	return nil
+
 }
 
 // setYamlValue navigates through the YAML object structure lazily creating or inserting new values
@@ -418,9 +560,12 @@ func (h *HelmTemplate) runKubectlWithOutput(args ...string) (string, error) {
 }
 
 // getChartNameAndVersion returns the chart name and version for the current chart folder
-func (h *HelmTemplate) getChartNameAndVersion(version *string) (string, string, error) {
+func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) (string, string, error) {
 	versionText := ""
-	file := filepath.Join(h.Runner.Dir, "Chart.yaml")
+	file := filepath.Join(chartDir, "Chart.yaml")
+	if !filepath.IsAbs(chartDir) {
+		file = filepath.Join(h.Runner.Dir, file)
+	}
 	exists, err := util.FileExists(file)
 	if err != nil {
 		return "", versionText, err

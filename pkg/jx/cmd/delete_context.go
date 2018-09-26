@@ -18,7 +18,7 @@ import (
 
 var (
 	delete_context_long = templates.LongDesc(`
-		Deletes one or more kubernetes contexts.
+		Deletes one or more Kubernetes contexts.
 `)
 
 	delete_context_example = templates.Examples(`
@@ -56,7 +56,7 @@ func NewCmdDeleteContext(f Factory, in terminal.FileReader, out terminal.FileWri
 
 	cmd := &cobra.Command{
 		Use:     "contexts",
-		Short:   "Deletes one or more kubernetes contexts",
+		Short:   "Deletes one or more Kubernetes contexts",
 		Aliases: []string{"context", "ctx"},
 		Long:    delete_context_long,
 		Example: delete_context_example,
@@ -86,7 +86,7 @@ func (o *DeleteContextOptions) Run() error {
 	}
 
 	if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
-		return fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
+		return fmt.Errorf("No Kubernetes contexts available! Try create or connect to cluster?")
 	}
 
 	names := []string{}
@@ -150,7 +150,7 @@ func (o *DeleteContextOptions) Run() error {
 		return fmt.Errorf("Failed to update the kube config %s", err)
 	}
 
-	log.Infof("Deleted kubernetes contexts: %s\n", util.ColorInfo(strings.Join(selected, ", ")))
+	log.Infof("Deleted Kubernetes contexts: %s\n", util.ColorInfo(strings.Join(selected, ", ")))
 	return nil
 }
 

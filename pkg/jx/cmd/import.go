@@ -107,7 +107,7 @@ type ImportOptions struct {
 
 var (
 	importLong = templates.LongDesc(`
-		Imports a local folder or git repository into Jenkins X.
+		Imports a local folder or Git repository into Jenkins X.
 
 		If you specify no other options or arguments then the current directory is imported.
 	    Or you can use '--dir' to specify a directory to import.
@@ -125,16 +125,16 @@ var (
 		# Import a different folder
 		jx import /foo/bar
 
-		# Import a git repository from a URL
+		# Import a Git repository from a URL
 		jx import --url https://github.com/jenkins-x/spring-boot-web-example.git
 
-        # Select a number of repositories from a github organisation
+        # Select a number of repositories from a GitHub organisation
 		jx import --github --org myname 
 
-        # Import all repositories from a github organisation selecting ones to not import
+        # Import all repositories from a GitHub organisation selecting ones to not import
 		jx import --github --org myname --all 
 
-        # Import all repositories from a github organisation which contain the text foo
+        # Import all repositories from a GitHub organisation which contain the text foo
 		jx import --github --org myname --all --filter foo 
 		`)
 )
@@ -151,7 +151,7 @@ func NewCmdImport(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	}
 	cmd := &cobra.Command{
 		Use:     "import",
-		Short:   "Imports a local project or git repository into Jenkins",
+		Short:   "Imports a local project or Git repository into Jenkins",
 		Long:    importLong,
 		Example: importExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -163,8 +163,8 @@ func NewCmdImport(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	}
 	cmd.Flags().StringVarP(&options.RepoURL, "url", "u", "", "The git clone URL to clone into the current directory and then import")
 	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wish to pick the repositories from GitHub to import")
-	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a git provider this defaults to selecting them all")
-	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a git provider this filters the list of repositories")
+	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a Git provider this defaults to selecting them all")
+	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a Git provider this filters the list of repositories")
 
 	options.addImportFlags(cmd, false)
 
@@ -178,8 +178,8 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 		}
 		return text
 	}
-	cmd.Flags().StringVarP(&options.Organisation, "org", "", "", "Specify the git provider organisation to import the project into (if it is not already in one)")
-	cmd.Flags().StringVarP(&options.Repository, "name", "", notCreateProject("n"), "Specify the git repository name to import the project into (if it is not already in one)")
+	cmd.Flags().StringVarP(&options.Organisation, "org", "", "", "Specify the Git provider organisation to import the project into (if it is not already in one)")
+	cmd.Flags().StringVarP(&options.Repository, "name", "", notCreateProject("n"), "Specify the Git repository name to import the project into (if it is not already in one)")
 	cmd.Flags().StringVarP(&options.Credentials, "credentials", notCreateProject("c"), "", "The Jenkins credentials name used by the job")
 	cmd.Flags().StringVarP(&options.Jenkinsfile, "jenkinsfile", notCreateProject("j"), "", "The name of the Jenkinsfile to use. If not specified then 'Jenkinsfile' will be used")
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Performs local changes to the repo but skips the import into Jenkins X")
@@ -189,8 +189,8 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on")
 	cmd.Flags().BoolVarP(&options.ListDraftPacks, "list-packs", "", false, "list available draft packs")
 	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
-	cmd.Flags().StringVarP(&options.DefaultOwner, "default-owner", "", "someone", "The default user/organisation used if no user is found for the current git repository being imported")
-	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the git provider organisation will be used")
+	cmd.Flags().StringVarP(&options.DefaultOwner, "default-owner", "", "someone", "The default user/organisation used if no user is found for the current Git repository being imported")
+	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the Git provider organisation will be used")
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -264,7 +264,7 @@ func (options *ImportOptions) Run() error {
 			serverURL := gitInfo.HostURLWithoutUser()
 			server = config.GetOrCreateServer(serverURL)
 		} else {
-			server, err = config.PickOrCreateServer(gits.GitHubURL, "Which git service do you wish to use", options.BatchMode, options.In, options.Out, options.Err)
+			server, err = config.PickOrCreateServer(gits.GitHubURL, "Which Git service do you wish to use", options.BatchMode, options.In, options.Out, options.Err)
 			if err != nil {
 				return err
 			}
@@ -337,7 +337,7 @@ func (options *ImportOptions) Run() error {
 
 	if options.RepoURL != "" {
 		if shouldClone {
-			// lets make sure there's a .git at the end for github URLs
+			// lets make sure there's a .git at the end for GitHub URLs
 			err = options.CloneRepository()
 			if err != nil {
 				return err
@@ -464,6 +464,7 @@ func (options *ImportOptions) DraftCreate() error {
 	}
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
+	jenkinsPluginsName := filepath.Join(dir, "plugins.txt")
 	lpack := ""
 	customDraftPack := options.DraftPack
 	if len(customDraftPack) == 0 {
@@ -514,6 +515,8 @@ func (options *ImportOptions) DraftCreate() error {
 			}
 		} else if exists, err := util.FileExists(gradleName); err == nil && exists {
 			lpack = filepath.Join(packsDir, "gradle")
+		} else if exists, err := util.FileExists(jenkinsPluginsName); err == nil && exists {
+			lpack = filepath.Join(packsDir, "jenkins")
 		} else {
 			// pack detection time
 			lpack, err = jxdraft.DoPackDetection(draftHome, options.Out, dir)
@@ -681,7 +684,7 @@ func (options *ImportOptions) getCurrentUser() string {
 		}
 	}
 	if currentUser == "" {
-		log.Warn("No username defined for the current git server!")
+		log.Warn("No username defined for the current Git server!")
 		currentUser = options.DefaultOwner
 	}
 	return currentUser
@@ -735,48 +738,55 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+	log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 	// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
 	config := authConfigSvc.Config()
 	if config.PipeLineUsername != options.GitUserAuth.Username && config.CurrentServer == config.PipeLineServer {
 		// Make the invitation
-		err := options.GitProvider.AddCollaborator(config.PipeLineUsername, details.RepoName)
+		err := options.GitProvider.AddCollaborator(config.PipeLineUsername, details.Organisation, details.RepoName)
 		if err != nil {
 			return err
 		}
 
+		// If repo is put in an organisation that the pipeline user is not part of an invitation needs to be accepted.
 		// Create a new provider for the pipeline user
 		pipelineUserAuth := config.FindUserAuth(config.CurrentServer, config.PipeLineUsername)
-		pipelineServerAuth := config.GetServer(config.CurrentServer)
-		pipelineUserProvider, err := gits.CreateProvider(pipelineServerAuth, pipelineUserAuth, options.Git())
-		if err != nil {
-			return err
-		}
-
-		// Get all invitations for the pipeline user
-		// Wrapped in retry to not immediately fail the quickstart creation if APIs are flaky.
-		f := func() error {
-			invites, _, err := pipelineUserProvider.ListInvitations()
+		if pipelineUserAuth == nil {
+			log.Warnf("Pipeline git user credentials not found. %s will need to accept the invitation to collaborate\n"+
+				"on %s if %s is not part of %s.\n\n",
+				config.PipeLineUsername, details.RepoName, config.PipeLineUsername, details.Organisation)
+		} else {
+			pipelineServerAuth := config.GetServer(config.CurrentServer)
+			pipelineUserProvider, err := gits.CreateProvider(pipelineServerAuth, pipelineUserAuth, options.Git())
 			if err != nil {
 				return err
 			}
-			for _, x := range invites {
-				// Accept all invitations for the pipeline user
-				_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+
+			// Get all invitations for the pipeline user
+			// Wrapped in retry to not immediately fail the quickstart creation if APIs are flaky.
+			f := func() error {
+				invites, _, err := pipelineUserProvider.ListInvitations()
 				if err != nil {
 					return err
 				}
+				for _, x := range invites {
+					// Accept all invitations for the pipeline user
+					_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+					if err != nil {
+						return err
+					}
+				}
+				return nil
 			}
-			return nil
-		}
-		exponentialBackOff := backoff.NewExponentialBackOff()
-		timeout := 20 * time.Second
-		exponentialBackOff.MaxElapsedTime = timeout
-		exponentialBackOff.Reset()
-		err = backoff.Retry(f, exponentialBackOff)
-		if err != nil {
-			return err
+			exponentialBackOff := backoff.NewExponentialBackOff()
+			timeout := 20 * time.Second
+			exponentialBackOff.MaxElapsedTime = timeout
+			exponentialBackOff.Reset()
+			err = backoff.Retry(f, exponentialBackOff)
+			if err != nil {
+				return err
+			}
 		}
 
 	}
@@ -788,7 +798,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 func (options *ImportOptions) CloneRepository() error {
 	url := options.RepoURL
 	if url == "" {
-		return fmt.Errorf("no git repository URL defined")
+		return fmt.Errorf("no Git repository URL defined")
 	}
 	gitInfo, err := gits.ParseGitURL(url)
 	if err != nil {
@@ -835,7 +845,7 @@ func (options *ImportOptions) DiscoverGit() error {
 		return fmt.Errorf("no directory specified")
 	}
 
-	// lets prompt the user to initialise the git repository
+	// lets prompt the user to initialise the Git repository
 	if !options.BatchMode {
 		log.Infof("The directory %s is not yet using git\n", util.ColorInfo(dir))
 		flag := false
@@ -1047,7 +1057,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 	return nil
 }
 
-// ReplacePlaceholders replaces git server name, git org, and docker registry org placeholders
+// ReplacePlaceholders replaces Git server name, git org, and docker registry org placeholders
 func (options *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerRegistryOrg string) error {
 	gitOrg = kube.ToValidName(strings.ToLower(gitOrg))
 	log.Infof("replacing placeholders in directory %s\n", options.Dir)
@@ -1071,7 +1081,7 @@ func (options *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerR
 			return nil
 		}
 
-		// Dont process nor follow symlinks
+		// Don't process nor follow symlinks
 		if (fi.Mode() & os.ModeSymlink) == os.ModeSymlink {
 			log.Infof("skipping symlink file %q\n", f)
 			return nil
