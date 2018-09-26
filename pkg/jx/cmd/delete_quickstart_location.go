@@ -29,7 +29,7 @@ var (
 		# Pick a quickstart location to delete for your team using an abbreviation
 		jx delete qsloc
 	
-		# Delete a github organisation 'myorg' for your team
+		# Delete a GitHub organisation 'myorg' for your team
 		jx delete qsloc --owner myorg
 		
 		# Delete a specific location for your team
@@ -70,8 +70,8 @@ func NewCmdDeleteQuickstartLocation(f Factory, in terminal.FileReader, out termi
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.GitUrl, optionGitUrl, "u", gits.GitHubURL, "The URL of the git service")
-	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The owner is the user or organisation of the git provider")
+	cmd.Flags().StringVarP(&options.GitUrl, optionGitUrl, "u", gits.GitHubURL, "The URL of the Git service")
+	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The owner is the user or organisation of the Git provider")
 
 	options.addCommonFlags(cmd)
 	return cmd

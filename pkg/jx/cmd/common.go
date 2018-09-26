@@ -265,11 +265,11 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the git server to add a user")
-	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the Git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the Git server to add a user")
 }
 
-// findGitServer finds the git server from the given flags or returns an error
+// findGitServer finds the Git server from the given flags or returns an error
 func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
 	return o.findServer(config, serverFlags, "git", "Try creating one via: jx create git server", false)
 }

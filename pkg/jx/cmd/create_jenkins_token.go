@@ -98,7 +98,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 	kubeClient, ns, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("error connecting to kubernetes cluster: %v", err)
+		return fmt.Errorf("error connecting to Kubernetes cluster: %v", err)
 	}
 
 	authConfigSvc, err := o.Factory.CreateJenkinsAuthConfigService(kubeClient, ns)

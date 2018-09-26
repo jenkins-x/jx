@@ -83,16 +83,16 @@ func (o *VersionOptions) Run() error {
 		}
 	}
 
-	// kubernetes version
+	// Kubernetes version
 	client, _, err := o.KubeClient()
 	if err != nil {
-		log.Warnf("Failed to connect to kubernetes: %s\n", err)
+		log.Warnf("Failed to connect to Kubernetes: %s\n", err)
 	} else {
 		serverVersion, err := client.Discovery().ServerVersion()
 		if err != nil {
-			log.Warnf("Failed to get kubernetes server version: %s\n", err)
+			log.Warnf("Failed to get Kubernetes server version: %s\n", err)
 		} else if serverVersion != nil {
-			table.AddRow("kubernetes cluster", info(serverVersion.String()))
+			table.AddRow("Kubernetes cluster", info(serverVersion.String()))
 		}
 	}
 

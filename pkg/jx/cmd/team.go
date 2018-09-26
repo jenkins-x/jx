@@ -51,7 +51,7 @@ func NewCmdTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 	cmd := &cobra.Command{
 		Use:     "team",
 		Aliases: []string{"env"},
-		Short:   "View or change the current team in the current kubernetes cluster",
+		Short:   "View or change the current team in the current Kubernetes cluster",
 		Long:    teamLong,
 		Example: teamExample,
 		Run: func(cmd *cobra.Command, args []string) {

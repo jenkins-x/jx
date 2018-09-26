@@ -20,7 +20,7 @@ const (
 
 var (
 	createAddonKubelessLong = templates.LongDesc(`
-		Creates the kubeless addon for serverless on kubernetes
+		Creates the kubeless addon for serverless on Kubernetes
 `)
 
 	createAddonKubelessExample = templates.Examples(`
@@ -56,7 +56,7 @@ func NewCmdCreateAddonKubeless(f Factory, in terminal.FileReader, out terminal.F
 
 	cmd := &cobra.Command{
 		Use:     "kubeless",
-		Short:   "Create a kubeless addon for hosting git repositories",
+		Short:   "Create a kubeless addon for hosting Git repositories",
 		Aliases: []string{"env"},
 		Long:    createAddonKubelessLong,
 		Example: createAddonKubelessExample,
@@ -86,7 +86,7 @@ func (o *CreateAddonKubelessOptions) Run() error {
 	}
 	err := o.ensureHelm()
 	if err != nil {
-		return errors.Wrap(err, "failed to ensure that helm is present")
+		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
 	values := []string{"rbac.create=true"}
 	setValues := strings.Split(o.SetValues, ",")

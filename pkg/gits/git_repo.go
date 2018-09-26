@@ -50,7 +50,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.AuthConfi
 		} else {
 			if batchMode {
 				if len(config.Servers) == 0 {
-					return nil, fmt.Errorf("No git servers are configured!")
+					return nil, fmt.Errorf("No Git servers are configured!")
 				}
 				// lets assume the first for now
 				server = config.Servers[0]
@@ -64,7 +64,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.AuthConfi
 					}
 				}
 			} else {
-				server, err = config.PickServer("Which git service?", batchMode, in, out, errOut)
+				server, err = config.PickServer("Which Git service?", batchMode, in, out, errOut)
 				if err != nil {
 					return nil, err
 				}
@@ -72,7 +72,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.AuthConfi
 			repoOptions.ServerURL = server.URL
 		}
 	}
-	fmt.Fprintf(out, "Using git provider %s\n", util.ColorInfo(server.Description()))
+	fmt.Fprintf(out, "Using Git provider %s\n", util.ColorInfo(server.Description()))
 	url := server.URL
 
 	if userAuth == nil {

@@ -167,7 +167,7 @@ func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
 	cmd.Flags().BoolVarP(&options.NoPoll, "no-poll", "", false, "Disables polling for Pull Request or Pipeline status")
 	cmd.Flags().BoolVarP(&options.NoWaitAfterMerge, "no-wait", "", false, "Disables waiting for completing promotion after the Pull request is merged")
-	cmd.Flags().BoolVarP(&options.IgnoreLocalFiles, "ignore-local-file", "", false, "Ignores the local file system when deducing the git repository")
+	cmd.Flags().BoolVarP(&options.IgnoreLocalFiles, "ignore-local-file", "", false, "Ignores the local file system when deducing the Git repository")
 }
 
 // Run implements this command
@@ -792,7 +792,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 			releaseNotesURL = o.releaseResource.Spec.ReleaseNotesURL
 		}
 		if err != nil {
-			log.Warnf("Could not discover the git repository info %s\n", err)
+			log.Warnf("Could not discover the Git repository info %s\n", err)
 		} else {
 			o.GitInfo = gitInfo
 		}
@@ -891,7 +891,7 @@ func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipelin
 		build = o.getBuildNumber()
 	}
 	if gitInfo != nil && pipeline == "" {
-		// lets default the pipeline name from the git repo
+		// lets default the pipeline name from the Git repo
 		branch, err := o.Git().Branch(".")
 		if err != nil {
 			log.Warnf("Could not find the branch name: %s\n", err)
