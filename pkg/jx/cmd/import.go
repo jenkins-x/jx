@@ -465,6 +465,7 @@ func (options *ImportOptions) DraftCreate() error {
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
 	jenkinsPluginsName := filepath.Join(dir, "plugins.txt")
+	packagerConfigName := filepath.Join(dir, "packager-config.yml")
 	lpack := ""
 	customDraftPack := options.DraftPack
 	if len(customDraftPack) == 0 {
@@ -517,6 +518,8 @@ func (options *ImportOptions) DraftCreate() error {
 			lpack = filepath.Join(packsDir, "gradle")
 		} else if exists, err := util.FileExists(jenkinsPluginsName); err == nil && exists {
 			lpack = filepath.Join(packsDir, "jenkins")
+		} else if exists, err := util.FileExists(packagerConfigName); err == nil && exists {
+			lpack = filepath.Join(packsDir, "cwp")
 		} else {
 			// pack detection time
 			lpack, err = jxdraft.DoPackDetection(draftHome, options.Out, dir)
