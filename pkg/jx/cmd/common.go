@@ -716,7 +716,14 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	}
 
 	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
-	err := o.installChart(helmRelease, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
+	err := o.installChartOptions(InstallChartOptions{
+		ReleaseName: helmRelease,
+		Chart: exposecontrollerChart,
+		Version: exposecontrollerVersion,
+		Ns: targetNamespace,
+		HelmUpdate: true,
+		SetValues: exValues,
+	})
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}
