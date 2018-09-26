@@ -94,7 +94,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 			addonEnabled[addon.Name] = true
 		}
 	}
-	statusMap, err := o.Helm().StatusReleases()
+	statusMap, err := o.Helm().StatusReleases(ns)
 	if err != nil {
 		log.Warnf("Failed to find helm installs: %s\n", err)
 	}
