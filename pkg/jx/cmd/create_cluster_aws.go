@@ -172,7 +172,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	if zones == "" {
 		return fmt.Errorf("No Availability Zones provided!")
 	}
-	accountId, _, err := amazon.GetAccountIDAndRegion()
+	accountId, defaultRegion, err := amazon.GetAccountIDAndRegion()
 	if err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			bucketName := "kops-state-" + accountId + "-" + string(uuid.NewUUID())
 			log.Infof("Creating S3 bucket %s to store kops state\n", util.ColorInfo(bucketName))
 
-			location, err := amazon.CreateS3Bucket(bucketName, "us-west-1")
+			location, err := amazon.CreateS3Bucket(bucketName, defaultRegion)
 			if err != nil {
 				return err
 			}
