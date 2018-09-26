@@ -207,7 +207,6 @@ func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 	}
 	ssoCookie := http.Cookie{Name: SsoCookieName, Value: cookie}
 	req.AddCookie(&ssoCookie)
-	fmt.Printf("req: %v\n", req)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "executing onboarding request")
