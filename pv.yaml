@@ -9,7 +9,7 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Recycle
   nfs:
-    server: 10.100.0.133
+    server: 10.100.0.133 # go on the server and ensure these four directories all exist
     path: "/shared/1"
 ---
 apiVersion: v1
@@ -23,7 +23,7 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Recycle
   nfs:
-    server: 10.100.0.133placeme
+    server: 10.100.0.133
     path: "/shared/2"
 ---
 apiVersion: v1
