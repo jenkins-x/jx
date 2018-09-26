@@ -93,7 +93,7 @@ func (o *CommonOptions) TeamHelmBin() (string, bool, bool, error) {
 func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) error) error {
 	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to create the api extensions client")
+		return errors.Wrap(err, "failed to create the API extensions client")
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
 

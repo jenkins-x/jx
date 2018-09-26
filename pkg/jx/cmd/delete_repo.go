@@ -108,7 +108,7 @@ func (o *DeleteRepoOptions) Run() error {
 	if server == nil {
 		return fmt.Errorf("No Git server provided")
 	}
-	userAuth, err := config.PickServerUserAuth(server, "git user name", o.BatchMode, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, "Git user name", o.BatchMode, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}

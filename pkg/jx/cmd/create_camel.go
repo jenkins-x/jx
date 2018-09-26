@@ -11,17 +11,17 @@ import (
 
 var (
 	createCamelLong = templates.LongDesc(`
-		Creates a new Apache Camel application using Spring Boot and then optionally setups CI/CD pipelines and GitOps promotion.
+		Creates a new Apache Camel application using Spring Boot and then optionally sets up CI/CD pipelines and GitOps promotion.
 
-		For more documentation about camel see: [https://camel.apache.org/](https://camel.apache.org/)
+		For more documentation about Camel see: [https://camel.apache.org/](https://camel.apache.org/)
 
 	`)
 
 	createCamelExample = templates.Examples(`
-		# Create a camel application and be prompted for the folder name
+		# Create a Camel application and be prompted for the folder name
 		jx create camel 
 
-		# Create a camel application called awesome
+		# Create a Camel application called awesome
 		jx create camel -a awesome
 	`)
 )
@@ -51,7 +51,7 @@ func NewCmdCreateCamel(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:     "camel",
-		Short:   "Create a new camel based application and import the generated code into git and Jenkins for CI/CD",
+		Short:   "Create a new Camel based application and import the generated code into Git and Jenkins for CI/CD",
 		Long:    createCamelLong,
 		Example: createCamelExample,
 		Run: func(cmd *cobra.Command, args []string) {

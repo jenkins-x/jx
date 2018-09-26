@@ -60,7 +60,7 @@ func NewCmdEditBuildpack(f Factory, in terminal.FileReader, out terminal.FileWri
 		},
 	}
 	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
-	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The git reference (branch,tag,sha) in the Git repository touse")
+	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository touse")
 	options.addCommonFlags(cmd)
 	return cmd
 }

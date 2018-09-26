@@ -47,7 +47,7 @@ func NewCmdDeleteTrackerToken(f Factory, in terminal.FileReader, out terminal.Fi
 
 	cmd := &cobra.Command{
 		Use:     "token",
-		Short:   "Deletes one or more api tokens for a user on an issue tracker server",
+		Short:   "Deletes one or more API tokens for a user on an issue tracker server",
 		Aliases: []string{"api-token"},
 		Long:    deleteTrackerTokenLong,
 		Example: deleteTrackerTokenExample,

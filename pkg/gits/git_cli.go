@@ -292,7 +292,7 @@ func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
 
 	repo, err := ParseGitURL(rUrl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse git URL %s due to %s", rUrl, err)
+		return nil, fmt.Errorf("failed to parse Git URL %s due to %s", rUrl, err)
 	}
 	return repo, err
 }

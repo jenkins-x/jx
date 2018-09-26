@@ -71,7 +71,7 @@ func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	cmd := &cobra.Command{
 		Use:     "application",
-		Short:   "Deletes one or many applications from Jenkins",
+		Short:   "Deletes one or more applications from Jenkins",
 		Long:    deleteAppLong,
 		Example: deleteAppExample,
 		Aliases: []string{"applications", "app", "apps"},

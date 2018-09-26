@@ -132,7 +132,7 @@ func (o *CreateCodeshipOptions) validate() error {
 
 	// TODO we should only do this if a GKE cluster has been specified
 	if o.Flags.GKEServiceAccount == "" {
-		return errors.New("No gke service account has been set")
+		return errors.New("No GKE service account has been set")
 	}
 	return nil
 }

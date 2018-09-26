@@ -116,7 +116,7 @@ func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 }
 
 func (o *CreateClusterGKETerraformOptions) addAuthFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&o.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
+	cmd.Flags().BoolVarP(&o.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	cmd.Flags().StringVarP(&o.ServiceAccount, "service-account", "", "", "Use a service account to login to GCE")
 }
 

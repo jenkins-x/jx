@@ -46,7 +46,7 @@ func NewCmdDeleteTokenAddon(f Factory, in terminal.FileReader, out terminal.File
 
 	cmd := &cobra.Command{
 		Use:     "addon",
-		Short:   "Deletes one or more api tokens for a user on an issue addon server",
+		Short:   "Deletes one or more API tokens for a user on an issue addon server",
 		Long:    deleteTokenAddonLong,
 		Example: deleteTokenAddonExample,
 		Run: func(cmd *cobra.Command, args []string) {

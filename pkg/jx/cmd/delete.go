@@ -16,7 +16,7 @@ type DeleteOptions struct {
 
 var (
 	delete_long = templates.LongDesc(`
-		Deletes one or many resources.
+		Deletes one or more resources.
 
 `)
 
@@ -40,7 +40,7 @@ func NewCmdDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 	cmd := &cobra.Command{
 		Use:     "delete TYPE [flags]",
-		Short:   "Deletes one or many resources",
+		Short:   "Deletes one or more resources",
 		Long:    delete_long,
 		Example: delete_example,
 		Run: func(cmd *cobra.Command, args []string) {

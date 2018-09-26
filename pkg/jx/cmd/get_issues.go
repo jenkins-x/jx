@@ -20,7 +20,7 @@ type GetIssuesOptions struct {
 
 var (
 	GetIssuesLong = templates.LongDesc(`
-		Display one or many issues for a project.
+		Display one or more issues for a project.
 
 `)
 
@@ -46,7 +46,7 @@ func NewCmdGetIssues(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	cmd := &cobra.Command{
 		Use:     "issues [flags]",
-		Short:   "Display one or many issues",
+		Short:   "Display one or more issues",
 		Long:    GetIssuesLong,
 		Example: GetIssuesExample,
 		Aliases: []string{"jira"},

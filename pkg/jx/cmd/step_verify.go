@@ -75,7 +75,7 @@ func (o *StepVerifyOptions) Run() error {
 
 	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to create the api extensions client")
+		return errors.Wrap(err, "failed to create the API extensions client")
 	}
 	err = kube.RegisterPipelineActivityCRD(apisClient)
 	if err != nil {
@@ -181,14 +181,14 @@ func (o *StepVerifyOptions) detectPipelineActivity(jxClient versioned.Interface,
 }
 
 func (o *StepVerifyOptions) determineAppAndNamespace(kubeClient kubernetes.Interface, jxClient versioned.Interface,
-	namesapce string, activity *v1.PipelineActivity) (string, string, error) {
+	namespace string, activity *v1.PipelineActivity) (string, string, error) {
 	for _, step := range activity.Spec.Steps {
 		if step.Kind == v1.ActivityStepKindTypePreview {
 			preview := step.Preview
 			if preview == nil {
 				return "", "", fmt.Errorf("empty preview step in pipeline activity '%s'", activity.Name)
 			}
-			env, err := kube.GetEnvironmentsByPrURL(jxClient, namesapce, preview.PullRequestURL)
+			env, err := kube.GetEnvironmentsByPrURL(jxClient, namespace, preview.PullRequestURL)
 			if err != nil {
 				return "", "", errors.Wrapf(err, "searching environment by PR URL '%s'", preview.PullRequestURL)
 			}
@@ -202,7 +202,7 @@ func (o *StepVerifyOptions) determineAppAndNamespace(kubeClient kubernetes.Inter
 			if promote == nil {
 				return "", "", fmt.Errorf("empty promote step in pipeline activity '%s'", activity.Name)
 			}
-			env, err := kube.GetEnvironment(jxClient, namesapce, promote.Environment)
+			env, err := kube.GetEnvironment(jxClient, namespace, promote.Environment)
 			if err != nil {
 				return "", "", errors.Wrapf(err, "search environment by name '%s'", promote.Environment)
 			}
@@ -221,7 +221,7 @@ func (o *StepVerifyOptions) determineAppAndNamespace(kubeClient kubernetes.Inter
 func (o *StepVerifyOptions) updatePipelineActivity(activity *v1.PipelineActivity, status v1.ActivityStatusType) error {
 	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to create the api extensions client")
+		return errors.Wrap(err, "failed to create the API extensions client")
 	}
 	err = kube.RegisterPipelineActivityCRD(apisClient)
 	if err != nil {
