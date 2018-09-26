@@ -6,7 +6,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -15,7 +14,8 @@ import (
 
 // GetAccountID returns the current account ID
 func GetAccountIDAndRegion() (string, string, error) {
-	sess, region, err := NewAwsSession()
+	sess, err := NewAwsSessionWithoutOptions()
+	region := *sess.Config.Region
 	if err != nil {
 		return "", region, err
 	}
@@ -31,14 +31,6 @@ func GetAccountIDAndRegion() (string, string, error) {
 		return *result.Account, region, nil
 	}
 	return "", region, fmt.Errorf("Could not find the AWS Account ID!")
-}
-
-func NewAwsSession() (*session.Session, string, error) {
-	config := aws.Config{
-		Region: aws.String(ResolveRegion()),
-	}
-	sess, err := session.NewSession(&config)
-	return sess, *config.Region, err
 }
 
 // GetContainerRegistryHost
@@ -63,7 +55,7 @@ func LazyCreateRegistry(orgName string, appName string) error {
 	}
 	repoName = strings.ToLower(repoName)
 	log.Infof("Let's ensure that we have an ECR repository for the docker image %s\n", util.ColorInfo(repoName))
-	sess, _, err := NewAwsSession()
+	sess, err := NewAwsSessionWithoutOptions()
 	if err != nil {
 		return err
 	}
