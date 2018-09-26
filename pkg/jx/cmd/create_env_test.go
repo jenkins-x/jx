@@ -67,9 +67,9 @@ func TestCreateEnvRun(t *testing.T) {
 		cmd_mock_matchers.AnyIoWriter(),
 	)).ThenReturn(gitProviderInterface, nil)
 
-	// mock kubernetes interface
+	// mock Kubernetes interface
 	kubernetesInterface := kube_mocks.NewSimpleClientset(namespace, exposeControllerConfigMap, jenkinsConfigMap)
-	// Override CreateClient to return mock kubernetes interface
+	// Override CreateClient to return mock Kubernetes interface
 	When(factory.CreateClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
 	//When(kubernetesInterface.CoreV1().Namespaces().Update(namespace)).ThenReturn(namespace, nil)
 

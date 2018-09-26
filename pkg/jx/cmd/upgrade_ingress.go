@@ -91,7 +91,7 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	_, _, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
+		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
 
 	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)

@@ -11,11 +11,11 @@ import (
 
 var (
 	delete_addon_gitea_long = templates.LongDesc(`
-		Deletes the gitea addon
+		Deletes the Gitea addon
 `)
 
 	delete_addon_gitea_example = templates.Examples(`
-		# Deletes the gitea addon
+		# Deletes the Gitea addon
 		jx delete addon gitea
 	`)
 )
@@ -42,7 +42,7 @@ func NewCmdDeleteAddonGitea(f Factory, in terminal.FileReader, out terminal.File
 
 	cmd := &cobra.Command{
 		Use:     "gitea",
-		Short:   "Deletes the gitea addon",
+		Short:   "Deletes the Gitea addon",
 		Long:    delete_addon_gitea_long,
 		Example: delete_addon_gitea_example,
 		Run: func(cmd *cobra.Command, args []string) {

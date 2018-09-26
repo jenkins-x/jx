@@ -97,9 +97,9 @@ func TestStatusRun(t *testing.T) {
 
 	// mock factory
 	factory := cmd_mocks.NewMockFactory()
-	// mock kubernetes interface
+	// mock Kubernetes interface
 	kubernetesInterface := kube_mocks.NewSimpleClientset(node, deployment, service)
-	// Override CreateClient to return mock kubernetes interface
+	// Override CreateClient to return mock Kubernetes interface
 	When(factory.CreateClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
 
 	// Setup options

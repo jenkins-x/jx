@@ -22,15 +22,15 @@ type RepoOptions struct {
 
 var (
 	repoLong = templates.LongDesc(`
-		Opens the web page for the current git repository in a browser
+		Opens the web page for the current Git repository in a browser
 
 		You can use the '--url' argument to just display the URL without opening it`)
 
 	repoExample = templates.Examples(`
-		# Open the git repository in a browser
+		# Open the Git repository in a browser
 		jx repo 
 
-		# Print the URL of the git repository
+		# Print the URL of the Git repository
 		jx repo -u
 `)
 )
@@ -48,7 +48,7 @@ func NewCmdRepo(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 	cmd := &cobra.Command{
 		Use:     "repository",
 		Aliases: []string{"repo"},
-		Short:   "Opens the web page for the current git repository in a browser",
+		Short:   "Opens the web page for the current Git repository in a browser",
 		Long:    repoLong,
 		Example: repoExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -69,12 +69,12 @@ func (o *RepoOptions) Run() error {
 		return err
 	}
 	if provider == nil {
-		return fmt.Errorf("No git provider could be found. Are you in a directory containing a `.git/config` file?")
+		return fmt.Errorf("No Git provider could be found. Are you in a directory containing a `.git/config` file?")
 	}
 
 	fullURL := gitInfo.HttpsURL()
 	if fullURL == "" {
-		return fmt.Errorf("Could not find URL from git repository %s", gitInfo.URL)
+		return fmt.Errorf("Could not find URL from Git repository %s", gitInfo.URL)
 	}
 	log.Infof("repository: %s\n", util.ColorInfo(fullURL))
 	if !o.OnlyViewURL {

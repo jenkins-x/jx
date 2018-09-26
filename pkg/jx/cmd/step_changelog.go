@@ -95,7 +95,7 @@ spec:
 var (
 	GitAccessDescription = `
 
-By default jx commands look for a file '~/.jx/gitAuth.yaml' to find the API tokens for git servers. You can use 'jx create git token' to create a git token.
+By default jx commands look for a file '~/.jx/gitAuth.yaml' to find the API tokens for Git servers. You can use 'jx create git token' to create a Git token.
 
 Alternatively if you are running this command inside a CI server you can use environment variables to specify the username and API token.
 e.g. define environment variables GIT_USERNAME and GIT_API_TOKEN
@@ -169,12 +169,12 @@ func NewCmdStepChangelog(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().StringVarP(&options.CrdYamlFile, "crd-yaml-file", "", "release-crd.yaml", "the name of the file to generate the Release CustomResourceDefinition YAML")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to release")
 	cmd.Flags().StringVarP(&options.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
-	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The directory of the git repository. Defaults to the current working directory")
-	cmd.Flags().StringVarP(&options.OutputMarkdownFile, "output-markdown", "", "", "The file to generate for the changelog output if not updating a git provider release")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The directory of the Git repository. Defaults to the current working directory")
+	cmd.Flags().StringVarP(&options.OutputMarkdownFile, "output-markdown", "", "", "The file to generate for the changelog output if not updating a Git provider release")
 	cmd.Flags().BoolVarP(&options.OverwriteCRD, "overwrite", "o", false, "overwrites the Release CRD YAML file if it exists")
 	cmd.Flags().BoolVarP(&options.GenerateCRD, "crd", "c", false, "Generate the CRD in the chart")
 	cmd.Flags().BoolVarP(&options.GenerateReleaseYaml, "generate-yaml", "y", true, "Generate the Release YAML in the local helm chart")
-	cmd.Flags().BoolVarP(&options.UpdateRelease, "update-release", "", true, "Should we update the release on the git repository with the changelog")
+	cmd.Flags().BoolVarP(&options.UpdateRelease, "update-release", "", true, "Should we update the release on the Git repository with the changelog")
 	cmd.Flags().BoolVarP(&options.NoReleaseInDev, "no-dev-release", "", false, "Disables the generation of Release CRDs in the development namespace to track releases being performed")
 
 	cmd.Flags().StringVarP(&options.Header, "header", "", "", "The changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")

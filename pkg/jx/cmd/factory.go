@@ -93,7 +93,7 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 }
 
 func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error) {
-	// lets find the kubernetes service
+	// lets find the Kubernetes service
 	client, ns, err := f.CreateClient()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create the kube client")

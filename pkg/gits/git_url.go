@@ -162,7 +162,7 @@ func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error)
 	return info, fmt.Errorf("Invalid path %s could not determine organisation and repository name", path)
 }
 
-// SaasGitKind returns the kind for SaaS git providers or "" if the URL could not be deduced
+// SaasGitKind returns the kind for SaaS Git providers or "" if the URL could not be deduced
 func SaasGitKind(gitServiceUrl string) string {
 	switch gitServiceUrl {
 	case "http://github.com":

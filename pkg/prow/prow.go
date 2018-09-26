@@ -69,7 +69,7 @@ func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPa
 	return add(kubeClient, repos, ns, Application, draftPack, "")
 }
 
-// create git repo?
+// create Git repo?
 // get config and update / overwrite repos?
 // should we get the existing CM and do a diff?
 // should we just be using git for config and use prow to auto update via gitops?
