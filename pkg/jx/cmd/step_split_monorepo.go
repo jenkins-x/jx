@@ -24,14 +24,14 @@ var (
 	stepSplitMonorepoOptions = []string{optionMinJxVersion}
 
 	stepSplitMonorepoLong = templates.LongDesc(`
-		Mirrors the code from a monorepo into separate microservice style git repositories so its easier to do finer grained releases.
+		Mirrors the code from a monorepo into separate microservice style Git repositories so its easier to do finer grained releases.
 
-		If you have lots of apps in folders in a monorepo then this comamnd can run on that repo to mirror changes into a number of microsevice based repositories which can each then get auto-imported into Jenkins X
+		If you have lots of apps in folders in a monorepo then this command can run on that repo to mirror changes into a number of microservice based repositories which can each then get auto-imported into Jenkins X
 
 `)
 
 	stepSplitMonorepoExample = templates.Examples(`
-		# Split the current folder up into separate git repositories 
+		# Split the current folder up into separate Git repositories 
 		jx step split monorepo -o mygithuborg
 			`)
 )
@@ -63,7 +63,7 @@ func NewCmdStepSplitMonorepo(f Factory, in terminal.FileReader, out terminal.Fil
 
 	cmd := &cobra.Command{
 		Use:     "split monorepo",
-		Short:   "Mirrors the code from a monorepo into separate microservice style git repositories so its easier to do finer grained releases",
+		Short:   "Mirrors the code from a monorepo into separate microservice style Git repositories so its easier to do finer grained releases",
 		Long:    stepSplitMonorepoLong,
 		Example: stepSplitMonorepoExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -74,10 +74,10 @@ func NewCmdStepSplitMonorepo(f Factory, in terminal.FileReader, out terminal.Fil
 		},
 	}
 	cmd.Flags().StringVarP(&options.Glob, "glob", "g", "*", "The glob pattern to find folders to mirror to separate repositories")
-	cmd.Flags().StringVarP(&options.Organisation, optionOrganisation, "o", "", "The github organisation to split the repositories into")
-	cmd.Flags().StringVarP(&options.Dir, "source-dir", "s", "", "The source directory to look inside for the folders to move into separate git repositories")
+	cmd.Flags().StringVarP(&options.Organisation, optionOrganisation, "o", "", "The GitHub organisation to split the repositories into")
+	cmd.Flags().StringVarP(&options.Dir, "source-dir", "s", "", "The source directory to look inside for the folders to move into separate Git repositories")
 	cmd.Flags().StringVarP(&options.OutputDir, optionOutputDir, "d", "generated", "The output directory where new projects are created")
-	cmd.Flags().StringVarP(&options.KubernetesDir, "kubernetes-folder", "", defaultKubernetesDir, "The folder containing all the kubernetes YAML for each app")
+	cmd.Flags().StringVarP(&options.KubernetesDir, "kubernetes-folder", "", defaultKubernetesDir, "The folder containing all the Kubernetes YAML for each app")
 	cmd.Flags().BoolVarP(&options.NoGit, "no-git", "", false, "If enabled then don't try to clone/create the separate repositories in github")
 	return cmd
 }
@@ -188,7 +188,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 						if err != nil {
 							return err
 						}
-						log.Infof("Created git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+						log.Infof("Created Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 						userAuth := gitProvider.UserAuth()
 						gitUrl, err = o.Git().CreatePushURL(repo.CloneURL, &userAuth)
@@ -216,14 +216,14 @@ func (o *StepSplitMonorepoOptions) Run() error {
 					if err != nil {
 						return err
 					}
-					log.Infof("Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+					log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 				}
 			}
 		}
 	}
 	if kubeDir != "" {
 
-		// now lets copy any kubernetes YAML into helm charts in the apps
+		// now lets copy any Kubernetes YAML into helm charts in the apps
 		matches, err = filepath.Glob(filepath.Join(dir, kubeDir, "*"))
 		if err != nil {
 			return err

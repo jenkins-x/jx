@@ -29,13 +29,13 @@ var (
 `)
 
 	createQuickstartLocationExample = templates.Examples(`
-		# Create a quickstart location using a github repository organisation 
+		# Create a quickstart location using a GitHub repository organisation 
 		jx create quickstartlocation --owner my-quickstarts
 
-		# Create a quickstart location using a github repository organisation via an abbreviation
+		# Create a quickstart location using a GitHub repository organisation via an abbreviation
 		jx create qsloc --owner my-quickstarts
 
-		# Create a quickstart location for your git repo and organisation 
+		# Create a quickstart location for your Git repo and organisation 
 		jx create quickstartlocation --url https://mygit.server.com --owner my-quickstarts
 
 	`)
@@ -80,9 +80,9 @@ func NewCmdCreateQuickstartLocation(f Factory, in terminal.FileReader, out termi
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.GitUrl, optionGitUrl, "u", gits.GitHubURL, "The URL of the git service")
-	cmd.Flags().StringVarP(&options.GitKind, optionGitKind, "k", "", "The kind of git service at the URL")
-	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The owner is the user or organisation of the git provider used to find repositories")
+	cmd.Flags().StringVarP(&options.GitUrl, optionGitUrl, "u", gits.GitHubURL, "The URL of the Git service")
+	cmd.Flags().StringVarP(&options.GitKind, optionGitKind, "k", "", "The kind of Git service at the URL")
+	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The owner is the user or organisation of the Git provider used to find repositories")
 	cmd.Flags().StringArrayVarP(&options.Includes, "includes", "i", []string{"*"}, "The patterns to include repositories")
 	cmd.Flags().StringArrayVarP(&options.Excludes, "excludes", "x", []string{"WIP-*"}, "The patterns to exclude repositories")
 

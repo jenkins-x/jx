@@ -46,7 +46,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		log.Infof("Querying if the repo is a fork at %s with kind %s\n", gitProvider.ServerURL(), gitProvider.Kind())
 		fork, err := o.Git().IsFork(gitProvider, gitInfo, dir)
 		if err != nil {
-			return fmt.Errorf("No branch pattern specified and could not determine if the git repository is a fork: %s", err)
+			return fmt.Errorf("No branch pattern specified and could not determine if the Git repository is a fork: %s", err)
 		}
 		if fork {
 			// lets figure out which branches to enable for a fork
@@ -74,7 +74,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		}
 	}
 	if credentials == "" {
-		// TODO lets prompt the user to add a new credential for the git provider...
+		// TODO lets prompt the user to add a new credential for the Git provider...
 		config := authConfigSvc.Config()
 		u := gitInfo.HostURL()
 		server := config.GetOrCreateServer(u)
@@ -91,7 +91,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			return err
 		}
 		if user.Username == "" {
-			return fmt.Errorf("Could find a username for git server %s", u)
+			return fmt.Errorf("Could find a username for Git server %s", u)
 		}
 
 		credentials, err = o.updatePipelineGitCredentialsSecret(server, user)
@@ -124,7 +124,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 				return err
 			}
 			if user.Username == "" {
-				return fmt.Errorf("Could find a username for git server %s", u)
+				return fmt.Errorf("Could find a username for Git server %s", u)
 			}
 			err = jenk.CreateCredential(credentials, user.Username, user.ApiToken)
 

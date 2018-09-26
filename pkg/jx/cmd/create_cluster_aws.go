@@ -46,7 +46,7 @@ type CreateClusterAWSFlags struct {
 
 var (
 	createClusterAWSLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster on Amazon Web Service (AWS) using kops, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster on Amazon Web Service (AWS) using kops, installing required local dependencies and provisions the
 		Jenkins X platform
 
 		AWS manages your hosted Kubernetes environment via kops, making it quick and easy to deploy and
@@ -57,7 +57,7 @@ var (
 `)
 
 	createClusterAWSExample = templates.Examples(`
-        # to create a new kubernetes cluster with Jenkins X in your default zones (from $AWS_AVAILABILITY_ZONES)
+        # to create a new Kubernetes cluster with Jenkins X in your default zones (from $AWS_AVAILABILITY_ZONES)
 		jx create cluster aws
 
 		# to specify the zones
@@ -75,7 +75,7 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 	}
 	cmd := &cobra.Command{
 		Use:     "aws",
-		Short:   "Create a new kubernetes cluster on AWS with kops",
+		Short:   "Create a new Kubernetes cluster on AWS with kops",
 		Long:    createClusterAWSLong,
 		Example: createClusterAWSExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -95,7 +95,7 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Flags.KubeVersion, optionKubernetesVersion, "v", "", "kubernetes version")
 	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability Zones. Defaults to $AWS_AVAILABILITY_ZONES")
 	cmd.Flags().StringVarP(&options.Flags.InsecureDockerRegistry, "insecure-registry", "", "100.64.0.0/10", "The insecure docker registries to allow")
-	cmd.Flags().StringVarP(&options.Flags.TerraformDirectory, "terraform", "t", "", "The directory to save terraform configuration.")
+	cmd.Flags().StringVarP(&options.Flags.TerraformDirectory, "terraform", "t", "", "The directory to save Terraform configuration.")
 	cmd.Flags().StringVarP(&options.Flags.NodeSize, "node-size", "", "", "The size of a node in the kops created cluster.")
 	cmd.Flags().StringVarP(&options.Flags.MasterSize, "master-size", "", "", "The size of a master in the kops created cluster.")
 	cmd.Flags().StringVarP(&options.Flags.State, "state", "", "", "The S3 bucket used to store the state of the cluster.")
@@ -133,7 +133,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			prompt := &survey.Input{
 				Message: "Kubernetes version",
 				Default: kubeVersion,
-				Help:    "The release version of kubernetes to install in the cluster",
+				Help:    "The release version of Kubernetes to install in the cluster",
 			}
 			survey.AskOne(prompt, &kubeVersion, nil, surveyOpts)
 		}
@@ -270,7 +270,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 		log.Infoln("Cluster configuration updated")
 	}
 
-	log.Infoln("Waiting for the kubernetes cluster to be ready so we can continue...")
+	log.Infoln("Waiting for the Kubernetes cluster to be ready so we can continue...")
 	err = o.waitForClusterToComeUp()
 	if err != nil {
 		return fmt.Errorf("Failed to wait for Kubernetes cluster to start: %s\n", err)

@@ -43,7 +43,7 @@ type CreateClusterAKSFlags struct {
 
 var (
 	createClusterAKSLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster on AKS, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster on AKS, installing required local dependencies and provisions the
 		Jenkins X platform
 
 		Azure Container Service (AKS) manages your hosted Kubernetes environment, making it quick and easy to deploy and
@@ -67,14 +67,14 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterAKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAKSOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aks",
-		Short:   "Create a new kubernetes cluster on AKS: Runs on Azure",
+		Short:   "Create a new Kubernetes cluster on AKS: Runs on Azure",
 		Long:    createClusterAKSLong,
 		Example: createClusterAKSExample,
 		Run: func(cmd *cobra.Command, args []string) {

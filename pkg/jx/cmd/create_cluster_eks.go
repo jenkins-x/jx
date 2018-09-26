@@ -37,15 +37,15 @@ type CreateClusterEKSFlags struct {
 
 var (
 	createClusterEKSLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster on Amazon Web Services (AWS) using EKS, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster on Amazon Web Services (AWS) using EKS, installing required local dependencies and provisions the
 		Jenkins X platform
 
-		EKS is a managed kubernetes service on AWS.
+		EKS is a managed Kubernetes service on AWS.
 
 `)
 
 	createClusterEKSExample = templates.Examples(`
-        # to create a new kubernetes cluster with Jenkins X in your default zones (from $EKS_AVAILABILITY_ZONES)
+        # to create a new Kubernetes cluster with Jenkins X in your default zones (from $EKS_AVAILABILITY_ZONES)
 		jx create cluster eks
 
 		# to specify the zones
@@ -60,7 +60,7 @@ func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.File
 	}
 	cmd := &cobra.Command{
 		Use:     "eks",
-		Short:   "Create a new kubernetes cluster on AWS using EKS",
+		Short:   "Create a new Kubernetes cluster on AWS using EKS",
 		Long:    createClusterEKSLong,
 		Example: createClusterEKSExample,
 		Run: func(cmd *cobra.Command, args []string) {

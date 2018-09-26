@@ -49,7 +49,7 @@ var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETE
 const (
 	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
 
-	valid_providers = `Valid kubernetes providers include:
+	valid_providers = `Valid Kubernetes providers include:
 
     * aks (Azure Container Service - https://docs.microsoft.com/en-us/azure/aks)
     * aws (Amazon Web Services via kops - https://github.com/aws-samples/aws-workshop-for-kubernetes/blob/master/readme.adoc)
@@ -68,7 +68,7 @@ type CreateClusterFlags struct {
 
 var (
 	createClusterLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster, installing required local dependencies and provisions the Jenkins X platform
+		This command creates a new Kubernetes cluster, installing required local dependencies and provisions the Jenkins X platform
 
 		You can see a demo of this command here: [https://jenkins-x.io/demos/create_cluster/](https://jenkins-x.io/demos/create_cluster/)
 
@@ -76,12 +76,12 @@ var (
 
 		Depending on which cloud provider your cluster is created on possible dependencies that will be installed are:
 
-		- kubectl (CLI to interact with kubernetes clusters)
-		- helm (package manager for kubernetes)
-		- draft (CLI that makes it easy to build applications that run on kubernetes)
+		- kubectl (CLI to interact with Kubernetes clusters)
+		- helm (package manager for Kubernetes)
+		- draft (CLI that makes it easy to build applications that run on Kubernetes)
 		- minikube (single-node Kubernetes cluster inside a VM on your laptop )
 		- minishift (single-node OpenShift cluster inside a VM on your laptop)
-		- virtualisation drivers (to run minikube in a VM)
+		- virtualisation drivers (to run Minikube in a VM)
 		- gcloud (Google Cloud CLI)
 		- oci (Oracle Cloud Infrastructure CLI)
 		- az (Azure CLI)
@@ -97,7 +97,7 @@ var (
 `)
 )
 
-// KubernetesProviderOptions returns all the kubernetes providers as a string
+// KubernetesProviderOptions returns all the Kubernetes providers as a string
 func KubernetesProviderOptions() string {
 	values := []string{}
 	values = append(values, KUBERNETES_PROVIDERS...)
@@ -106,13 +106,13 @@ func KubernetesProviderOptions() string {
 }
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := createCreateClusterOptions(f, in, out, errOut, "")
 
 	cmd := &cobra.Command{
 		Use:     "cluster [kubernetes provider]",
-		Short:   "Create a new kubernetes cluster",
+		Short:   "Create a new Kubernetes cluster",
 		Long:    fmt.Sprintf(createClusterLong, valid_providers),
 		Example: createClusterExample,
 		Run: func(cmd2 *cobra.Command, args []string) {

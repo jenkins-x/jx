@@ -36,11 +36,11 @@ type Login struct {
 
 // UserLoginInfo user login information
 type UserLoginInfo struct {
-	// The kubernetes api server public CA data
+	// The Kubernetes api server public CA data
 	Ca string `form:"ca,omitempty" json:"ca,omitempty" yaml:"ca,omitempty" xml:"ca,omitempty"`
 	// The login username of the user
 	Login string `form:"login,omitempty" json:"login,omitempty" yaml:"login,omitempty" xml:"login,omitempty"`
-	// The kubernetes api server address
+	// The Kubernetes api server address
 	Server string `form:"server,omitempty" json:"server,omitempty" yaml:"server,omitempty" xml:"server,omitempty"`
 	// The login token of the user
 	Token string `form:"token,omitempty" json:"token,omitempty" yaml:"token,omitempty" xml:"token,omitempty"`

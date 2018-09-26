@@ -56,9 +56,9 @@ func TestImportProject(t *testing.T) {
 		c.ExpectEOF()
 	}()
 
-	// mock kubernetes interface
+	// mock Kubernetes interface
 	kubernetesInterface := kube_mocks.NewSimpleClientset(namespace, jenkinsConfigMap)
-	// Override CreateClient to return mock kubernetes interface
+	// Override CreateClient to return mock Kubernetes interface
 	When(factory.CreateClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
 
 	// mock apiExtensions interface

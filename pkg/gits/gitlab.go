@@ -620,7 +620,7 @@ func (p *GitlabProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	return &github.Response{}, nil
 }
 
-// GitlabAccessTokenURL returns the URL to click on to generate a personal access token for the git provider
+// GitlabAccessTokenURL returns the URL to click on to generate a personal access token for the Git provider
 func GitlabAccessTokenURL(url string) string {
 	return util.UrlJoin(url, "/profile/personal_access_tokens")
 }

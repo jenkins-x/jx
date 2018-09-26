@@ -245,7 +245,7 @@ func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string,
 func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, versionText string, wait bool) error {
 	selector := LabelReleaseName + "=" + releaseName + "," + LabelReleaseChartVersion + "!=" + versionText
 
-	log.Infof("Removing kubernetes resources from older releases using selector: %s\n", util.ColorInfo(selector))
+	log.Infof("Removing Kubernetes resources from older releases using selector: %s\n", util.ColorInfo(selector))
 
 	return h.deleteResourcesBySelector(ns, selector, wait)
 }

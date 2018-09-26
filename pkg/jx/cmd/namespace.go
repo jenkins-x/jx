@@ -24,7 +24,7 @@ type NamespaceOptions struct {
 }
 
 const (
-	noContextDefinedError = "There is no context defined in your kubernetes configuration"
+	noContextDefinedError = "There is no context defined in your Kubernetes configuration"
 )
 
 var (
@@ -53,7 +53,7 @@ func NewCmdNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	cmd := &cobra.Command{
 		Use:     "namespace",
 		Aliases: []string{"ns"},
-		Short:   "View or change the current namespace context in the current kubernetes cluster",
+		Short:   "View or change the current namespace context in the current Kubernetes cluster",
 		Long:    namespace_long,
 		Example: namespace_example,
 		Run: func(cmd *cobra.Command, args []string) {

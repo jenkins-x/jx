@@ -32,7 +32,7 @@ type UpdateClusterGKETerraformFlags struct {
 var (
 	updateClusterGKETerraformLong = templates.LongDesc(`
 
-		Command re-applies the terraform plan in ~/.jx/clusters/<cluster>/terraform against the specified cluster
+		Command re-applies the Terraform plan in ~/.jx/clusters/<cluster>/terraform against the specified cluster
 
 `)
 
@@ -44,13 +44,13 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := createUpdateClusterGKETerraformOptions(f, in, out, errOut, GKE)
 
 	cmd := &cobra.Command{
 		Use:     "terraform",
-		Short:   "Updates an existing kubernetes cluster on GKE using Terraform: Runs on Google Cloud",
+		Short:   "Updates an existing Kubernetes cluster on GKE using Terraform: Runs on Google Cloud",
 		Long:    updateClusterGKETerraformLong,
 		Example: updateClusterGKETerraformExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -108,7 +108,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 	if !o.BatchMode {
 		confirm := false
 		prompt := &survey.Confirm{
-			Message: "Updating a GKE cluster with terraform is an experimental feature in jx.  Would you like to continue?",
+			Message: "Updating a GKE cluster with Terraform is an experimental feature in jx.  Would you like to continue?",
 		}
 		survey.AskOne(prompt, &confirm, nil, surveyOpts)
 
@@ -153,7 +153,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 
 	terraformDir := filepath.Join(clusterHome, "terraform")
 	if _, err := os.Stat(terraformDir); os.IsNotExist(err) {
-		log.Infof("Unable to find terraform plan dir %s\n", terraformDir)
+		log.Infof("Unable to find Terraform plan dir %s\n", terraformDir)
 		return nil
 	}
 
