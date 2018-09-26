@@ -185,7 +185,6 @@ required = [
     non-go = false
     go-tests = false
 
-
 [[constraint]]
   name = "github.com/andygrunwald/go-gerrit"
   version = "0.5.2"

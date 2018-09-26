@@ -323,7 +323,7 @@ func (o *StepChangelogOptions) Run() error {
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
 			},
-			ResourceVersion:   "1",
+			//ResourceVersion:   "1",
 			DeletionTimestamp: &metav1.Time{},
 		},
 		Spec: v1.ReleaseSpec{

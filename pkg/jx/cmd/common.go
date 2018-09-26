@@ -229,12 +229,25 @@ func (o *CommonOptions) Git() gits.Gitter {
 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
-		helmBinary, noTiller, err := o.TeamHelmBin()
+		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
 			helmBinary = defaultHelmBin
 		}
-		log.Infof("Using helmBinary %s, with noTiller %s\n", util.ColorInfo(helmBinary), util.ColorInfo(noTiller))
-		o.helm = helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
+		featureFlag := "none"
+		if helmTemplate {
+			featureFlag = "template-mode"
+		} else if noTiller {
+			featureFlag = "no-tiller-server"
+		}
+		log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+		helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
+		o.helm = helmCLI
+		if helmTemplate {
+			kubeClient, _, _ := o.KubeClient()
+			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient)
+		} else {
+			o.helm = helmCLI
+		}
 		if noTiller {
 			o.helm.SetHost(o.tillerAddress())
 			o.startLocalTillerIfNotRunning()
@@ -676,7 +689,7 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	return o.runExposecontroller(devNamespace, targetNamespace, ic)
 }
 
-func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig) error {
+func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 
 	o.CleanExposecontrollerReources(targetNamespace)
 
@@ -690,8 +703,27 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 		exValues = append(exValues, "config.http=true")
 	}
 
+	if len(services) > 0 {
+		serviceCfg := "config.extravalues='services: ["
+		for i, service := range services {
+			if i > 0 {
+				serviceCfg += ","
+			}
+			serviceCfg += service
+		}
+		serviceCfg += "]''"
+		exValues = append(exValues, serviceCfg)
+	}
+
 	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
-	err := o.installChart(helmRelease, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
+	err := o.installChartOptions(InstallChartOptions{
+		ReleaseName: helmRelease,
+		Chart: exposecontrollerChart,
+		Version: exposecontrollerVersion,
+		Ns: targetNamespace,
+		HelmUpdate: true,
+		SetValues: exValues,
+	})
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}
@@ -699,7 +731,7 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	if err != nil {
 		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
 	}
-	return o.helm.DeleteRelease(helmRelease, true)
+	return o.helm.DeleteRelease(targetNamespace, helmRelease, true)
 
 }
 

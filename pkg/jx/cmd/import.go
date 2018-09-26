@@ -464,6 +464,7 @@ func (options *ImportOptions) DraftCreate() error {
 	}
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
+	jenkinsPluginsName := filepath.Join(dir, "plugins.txt")
 	lpack := ""
 	customDraftPack := options.DraftPack
 	if len(customDraftPack) == 0 {
@@ -514,6 +515,8 @@ func (options *ImportOptions) DraftCreate() error {
 			}
 		} else if exists, err := util.FileExists(gradleName); err == nil && exists {
 			lpack = filepath.Join(packsDir, "gradle")
+		} else if exists, err := util.FileExists(jenkinsPluginsName); err == nil && exists {
+			lpack = filepath.Join(packsDir, "jenkins")
 		} else {
 			// pack detection time
 			lpack, err = jxdraft.DoPackDetection(draftHome, options.Out, dir)
@@ -630,6 +633,10 @@ func (options *ImportOptions) DraftCreate() error {
 
 	// Create prow owners file
 	err = options.CreateProwOwnersFile()
+	if err != nil {
+		return err
+	}
+	err = options.CreateProwOwnersAliasesFile()
 	if err != nil {
 		return err
 	}
@@ -1257,6 +1264,39 @@ func (options *ImportOptions) CreateProwOwnersFile() error {
 			return err
 		}
 		return nil
+	}
+	return errors.New("GitUserAuth.Username not set")
+}
+
+// CreateProwOwnersAliasesFile creates an OWNERS_ALIASES file in the root of the project assigning the current git user as an approver and a reviewer.
+func (options *ImportOptions) CreateProwOwnersAliasesFile() error {
+	filename := filepath.Join(options.Dir, "OWNERS_ALIASES")
+	exists, err := util.FileExists(filename)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	if options.GitUserAuth == nil {
+		return errors.New("option GitUserAuth not set")
+	}
+	gitUser := options.GitUserAuth.Username
+	if gitUser != "" {
+		data := struct {
+			Aliases       []string `yaml:"aliases"`
+			BestApprovers []string `yaml:"best-approvers"`
+			BestReviewers []string `yaml:"best-reviewers"`
+		}{
+			[]string{gitUser},
+			[]string{gitUser},
+			[]string{gitUser},
+		}
+		yaml, err := yaml.Marshal(&data)
+		if err != nil {
+			return err
+		}
+		return ioutil.WriteFile(filename, []byte(yaml), 0644)
 	}
 	return errors.New("GitUserAuth.Username not set")
 }

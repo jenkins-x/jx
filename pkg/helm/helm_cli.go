@@ -21,7 +21,7 @@ type HelmCLI struct {
 	Debug      bool
 }
 
-// NewHelmCLI creates a new HelmCLI instance configured to used the provided helm CLI in
+// NewHelmCLI creates a new HelmCLI instance configured to use the provided helm CLI in
 // the given current working directory
 func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...string) *HelmCLI {
 	a := []string{}
@@ -247,6 +247,30 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	return h.runHelm(args...)
 }
 
+// Template generates the YAML from the chart template to the given directory
+func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir string, upgrade bool,
+	values []string, valueFiles []string) error {
+	args := []string{"template", "--name", releaseName, "--namespace", ns, chart, "--output-dir", outDir, "--debug"}
+	if upgrade {
+		args = append(args, "--is-upgrade")
+	}
+	for _, value := range values {
+		args = append(args, "--set", value)
+	}
+	for _, valueFile := range valueFiles {
+		args = append(args, "--values", valueFile)
+	}
+
+	if h.Debug {
+		log.Infof("Generating Chart Template '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+	}
+	err := h.runHelm(args...)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to run helm %s", strings.Join(args, " "))
+	}
+	return err
+}
+
 // UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
 	timeout *int, force bool, wait bool, values []string, valueFiles []string) error {
@@ -284,7 +308,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 }
 
 // DeleteRelease removes the given release
-func (h *HelmCLI) DeleteRelease(releaseName string, purge bool) error {
+func (h *HelmCLI) DeleteRelease(ns string, releaseName string, purge bool) error {
 	args := []string{}
 	args = append(args, "delete")
 	if purge {
@@ -354,12 +378,12 @@ func (h *HelmCLI) FindChart() (string, error) {
 }
 
 // StatusRelease returns the output of the helm status command for a given release
-func (h *HelmCLI) StatusRelease(releaseName string) error {
+func (h *HelmCLI) StatusRelease(ns string, releaseName string) error {
 	return h.runHelm("status", releaseName)
 }
 
 // StatusReleases returns the status of all installed releases
-func (h *HelmCLI) StatusReleases() (map[string]string, error) {
+func (h *HelmCLI) StatusReleases(ns string) (map[string]string, error) {
 	output, err := h.ListCharts()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list the installed chart releases")
@@ -389,11 +413,16 @@ func (h *HelmCLI) Env() map[string]string {
 
 // Version executes the helm version command and returns its output
 func (h *HelmCLI) Version(tls bool) (string, error) {
-	args := []string{}
-	args = append(args, "version", "--short")
+	return h.VersionWithArgs(tls)
+}
+
+// Version executes the helm version command and returns its output
+func (h *HelmCLI) VersionWithArgs(tls bool, extraArgs ...string) (string, error) {
+	args := []string{"version", "--short"}
 	if tls {
 		args = append(args, "--tls")
 	}
+	args = append(args, extraArgs...)
 	return h.runHelmWithOutput(args...)
 }
 

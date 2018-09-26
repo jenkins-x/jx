@@ -120,9 +120,9 @@ func (o *CreateAddonSSOOptions) Run() error {
 
 	log.Infof("Configuring %s connector\n", util.ColorInfo("GitHub"))
 
-	log.Infof("Please go to %s and create a new OAuth application with %s callback\n",
+	log.Infof("Please go to %s and create a new OAuth application with an Authorization Callback URL of %s.\nChoose a suitable Application name and Homepage URL.\n",
 		util.ColorInfo(githubNewOAuthAppURL), util.ColorInfo(o.dexCallback(domain)))
-	log.Infof("Then copy the %s and %s so that you can pate them into the form bellow:\n",
+	log.Infof("Copy the %s and the %s and paste them into the form below:\n",
 		util.ColorInfo("Client ID"), util.ColorInfo("Client Secret"))
 
 	clientID, err := util.PickValue("Client ID:", "", true, o.In, o.Out, o.Err)
@@ -190,9 +190,12 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 	}
 
 	orgs := gits.GetOrganizations(provider, userAuth.Username)
+	if len(orgs) == 0 {
+		return nil, fmt.Errorf("user %s is not member of any GitHub organizations", userAuth.Username)
+	}
 	sort.Strings(orgs)
 	promt := &survey.MultiSelect{
-		Message: "Authorize access to all users from GitHub organizations:",
+		Message: "Select GitHub organizations to authorize users from:",
 		Options: orgs,
 	}
 

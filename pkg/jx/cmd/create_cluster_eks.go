@@ -23,6 +23,7 @@ type CreateClusterEKSOptions struct {
 
 type CreateClusterEKSFlags struct {
 	ClusterName         string
+	NodeType           string
 	NodeCount           int
 	NodesMin            int
 	NodesMax            int
@@ -74,13 +75,14 @@ func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.File
 	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster.")
+	cmd.Flags().StringVarP(&options.Flags.NodeType, "node-type", "", "m5.large", "node instance type")
 	cmd.Flags().IntVarP(&options.Flags.NodeCount, optionNodes, "o", -1, "number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.NodesMin, "nodes-min", "", -1, "minimum number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.NodesMax, "nodes-max", "", -1, "maximum number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.Verbose, "log-level", "", -1, "set log level, use 0 to silence, 4 for debugging and 5 for debugging with AWS debug logging (default 3)")
 	cmd.Flags().DurationVarP(&options.Flags.AWSOperationTimeout, "aws-api-timeout", "", 20*time.Minute, "Duration of AWS API timeout")
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "us-west-2", "The region to use.")
-	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability zones. Auto-select if not specified. If provided, this overrides the $EKS_AVAILABILITY_ZONES environment variable")
+	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability Zones. Auto-select if not specified. If provided, this overrides the $EKS_AVAILABILITY_ZONES environment variable")
 	cmd.Flags().StringVarP(&options.Flags.Profile, "profile", "p", "", "AWS profile to use. If provided, this overrides the AWS_PROFILE environment variable")
 	cmd.Flags().StringVarP(&options.Flags.SshPublicKey, "ssh-public-key", "", "", "SSH public key to use for nodes (import from local path, or use existing EC2 key pair) (default \"~/.ssh/id_rsa.pub\")")
 	return cmd
@@ -132,6 +134,7 @@ func (o *CreateClusterEKSOptions) Run() error {
 	if flags.SshPublicKey != "" {
 		args = append(args, "--ssh-public-key", flags.SshPublicKey)
 	}
+	args = append(args, "--node-type", flags.NodeType)
 	if flags.NodeCount >= 0 {
 		args = append(args, "--nodes", strconv.Itoa(flags.NodeCount))
 	}

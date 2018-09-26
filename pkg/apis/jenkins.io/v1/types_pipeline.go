@@ -70,7 +70,7 @@ type StageActivityStep struct {
 	Steps []CoreActivityStep `json:"steps,omitempty" protobuf:"bytes,1,opt,name=steps"`
 }
 
-// PreviewActivityStep is the step of creating a preview environment as part of a Pull Request pipeine
+// PreviewActivityStep is the step of creating a preview environment as part of a Pull Request pipeline
 type PreviewActivityStep struct {
 	CoreActivityStep
 

@@ -84,6 +84,12 @@ clusterrole:
     - get
     - delete
     - list
+  - apiGroups:
+    - ""
+    resources:
+    - deployments
+    verbs:
+    - get
 
 activeDeadlineSeconds: 300
 backoffLimit: 5
