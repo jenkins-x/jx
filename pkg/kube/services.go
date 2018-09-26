@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -255,13 +256,20 @@ func IsServicePresent(c kubernetes.Interface, name, ns string) (bool, error) {
 	return true, nil
 }
 
-func AnnotateNamespaceServicesWithCertManager(c kubernetes.Interface, ns, issuer string) error {
+func AnnotateNamespaceServicesWithCertManager(c kubernetes.Interface, ns, issuer string, services ...string) error {
 	svcList, err := GetServices(c, ns)
 	if err != nil {
 		return err
 	}
 
 	for _, s := range svcList {
+		// annotate only the services present in the list, if the list is empty annotate all services
+		if len(services) > 0 {
+			i := util.StringArrayIndex(services, s.GetName())
+			if i < 0 {
+				continue
+			}
+		}
 		if s.Annotations[ExposeAnnotation] == "true" && s.Annotations[JenkinsXSkipTLSAnnotation] != "true" {
 			existingAnnotations, _ := s.Annotations[ExposeIngressAnnotation]
 			// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
@@ -279,12 +287,20 @@ func AnnotateNamespaceServicesWithCertManager(c kubernetes.Interface, ns, issuer
 	return nil
 }
 
-func CleanServiceAnnotations(c kubernetes.Interface, ns string) error {
+func CleanServiceAnnotations(c kubernetes.Interface, ns string, services ...string) error {
 	svcList, err := GetServices(c, ns)
 	if err != nil {
 		return err
 	}
 	for _, s := range svcList {
+		// clear the annotations only for the services provided in the list if the list
+		// is not empty, otherwise clear the annotations of all services
+		if len(services) > 0 {
+			i := util.StringArrayIndex(services, s.GetName())
+			if i < 0 {
+				continue
+			}
+		}
 		if s.Annotations[ExposeAnnotation] == "true" && s.Annotations[JenkinsXSkipTLSAnnotation] != "true" {
 			// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
 			annotationsForIngress, _ := s.Annotations[ExposeIngressAnnotation]
