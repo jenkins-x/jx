@@ -26,3 +26,14 @@ func TestResolvingRegionFromAwsDefaultRegionEnv(t *testing.T) {
 	region := amazon.ResolveRegion()
 	assert.Equal(t, "us-east-1", region)
 }
+
+func TestReturnOption(t *testing.T) {
+	region := amazon.ResolveRegionIfOptionEmpty("someRegion")
+	assert.Equal(t, "someRegion", region)
+}
+
+func TestResolveIfOptionEmpty(t *testing.T) {
+	os.Setenv("AWS_REGION", "us-east-1")
+	region := amazon.ResolveRegionIfOptionEmpty("")
+	assert.Equal(t, "us-east-1", region)
+}

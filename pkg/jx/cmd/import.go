@@ -464,6 +464,7 @@ func (options *ImportOptions) DraftCreate() error {
 	}
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
+	jenkinsPluginsName := filepath.Join(dir, "plugins.txt")
 	lpack := ""
 	customDraftPack := options.DraftPack
 	if len(customDraftPack) == 0 {
@@ -514,6 +515,8 @@ func (options *ImportOptions) DraftCreate() error {
 			}
 		} else if exists, err := util.FileExists(gradleName); err == nil && exists {
 			lpack = filepath.Join(packsDir, "gradle")
+		} else if exists, err := util.FileExists(jenkinsPluginsName); err == nil && exists {
+			lpack = filepath.Join(packsDir, "jenkins")
 		} else {
 			// pack detection time
 			lpack, err = jxdraft.DoPackDetection(draftHome, options.Out, dir)
@@ -741,42 +744,49 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	config := authConfigSvc.Config()
 	if config.PipeLineUsername != options.GitUserAuth.Username && config.CurrentServer == config.PipeLineServer {
 		// Make the invitation
-		err := options.GitProvider.AddCollaborator(config.PipeLineUsername, details.RepoName)
+		err := options.GitProvider.AddCollaborator(config.PipeLineUsername, details.Organisation, details.RepoName)
 		if err != nil {
 			return err
 		}
 
+		// If repo is put in an organisation that the pipeline user is not part of an invitation needs to be accepted.
 		// Create a new provider for the pipeline user
 		pipelineUserAuth := config.FindUserAuth(config.CurrentServer, config.PipeLineUsername)
-		pipelineServerAuth := config.GetServer(config.CurrentServer)
-		pipelineUserProvider, err := gits.CreateProvider(pipelineServerAuth, pipelineUserAuth, options.Git())
-		if err != nil {
-			return err
-		}
-
-		// Get all invitations for the pipeline user
-		// Wrapped in retry to not immediately fail the quickstart creation if APIs are flaky.
-		f := func() error {
-			invites, _, err := pipelineUserProvider.ListInvitations()
+		if pipelineUserAuth == nil {
+			log.Warnf("Pipeline git user credentials not found. %s will need to accept the invitation to collaborate\n"+
+				"on %s if %s is not part of %s.\n\n",
+				config.PipeLineUsername, details.RepoName, config.PipeLineUsername, details.Organisation)
+		} else {
+			pipelineServerAuth := config.GetServer(config.CurrentServer)
+			pipelineUserProvider, err := gits.CreateProvider(pipelineServerAuth, pipelineUserAuth, options.Git())
 			if err != nil {
 				return err
 			}
-			for _, x := range invites {
-				// Accept all invitations for the pipeline user
-				_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+
+			// Get all invitations for the pipeline user
+			// Wrapped in retry to not immediately fail the quickstart creation if APIs are flaky.
+			f := func() error {
+				invites, _, err := pipelineUserProvider.ListInvitations()
 				if err != nil {
 					return err
 				}
+				for _, x := range invites {
+					// Accept all invitations for the pipeline user
+					_, err = pipelineUserProvider.AcceptInvitation(*x.ID)
+					if err != nil {
+						return err
+					}
+				}
+				return nil
 			}
-			return nil
-		}
-		exponentialBackOff := backoff.NewExponentialBackOff()
-		timeout := 20 * time.Second
-		exponentialBackOff.MaxElapsedTime = timeout
-		exponentialBackOff.Reset()
-		err = backoff.Retry(f, exponentialBackOff)
-		if err != nil {
-			return err
+			exponentialBackOff := backoff.NewExponentialBackOff()
+			timeout := 20 * time.Second
+			exponentialBackOff.MaxElapsedTime = timeout
+			exponentialBackOff.Reset()
+			err = backoff.Retry(f, exponentialBackOff)
+			if err != nil {
+				return err
+			}
 		}
 
 	}
