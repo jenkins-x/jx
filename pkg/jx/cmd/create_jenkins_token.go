@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	golog "log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,9 +14,9 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/runner"
-	"github.com/hpcloud/tail"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -30,7 +29,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const JenkinsCookieName = "JSESSIONID"
+const (
+	JenkinsCookieName = "JSESSIONID"
+)
 
 var (
 	create_jenkins_user_long = templates.LongDesc(`
@@ -248,45 +249,41 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, n
 		}
 	}
 
+	headerId := "header"
 	if login {
-		log.Infoln("Logging in...")
+		log.Infoln("Generating the API token...")
 		err = c.Run(ctx, chromedp.Tasks{
 			chromedp.WaitVisible(userNameInputName, chromedp.ByID),
 			chromedp.SendKeys(userNameInputName, userAuth.Username, chromedp.ByID),
 			chromedp.SendKeys(passwordInputSelector, o.Password+"\n"),
+			chromedp.WaitVisible(headerId, chromedp.ByID),
+			chromedp.ActionFunc(func(ctxt context.Context, h cdp.Executor) error {
+				cookies, err := network.GetCookies().Do(ctxt, h)
+				if err != nil {
+					return err
+				}
+				for _, cookie := range cookies {
+					if strings.HasPrefix(cookie.Name, JenkinsCookieName) {
+						jenkinsCookie := cookie.Name + "=" + cookie.Value
+						token, err := o.generateNewApiToken(newTokenUrl, jenkinsCookie)
+						if err != nil {
+							return errors.Wrap(err, "generating the API token")
+						}
+						if token != "" {
+							userAuth.ApiToken = token
+							return nil
+						} else {
+							return errors.New("received an empty API token")
+						}
+					}
+				}
+
+				return errors.New("no Jenkins cookie found after login")
+			}),
 		})
 		if err != nil {
-			return errors.Wrap(err, "filling up the login form")
+			return errors.Wrap(err, "generating the API token")
 		}
-	}
-
-	t, err := tail.TailFile(netLogFile, tail.Config{
-		Follow: true,
-		Logger: golog.New(ioutil.Discard, "", golog.LstdFlags)})
-	if err != nil {
-		return errors.Wrap(err, "reading the netlog file")
-	}
-
-	cookie := ""
-	for line := range t.Lines {
-		if strings.Contains(line.Text, JenkinsCookieName) &&
-			strings.Contains(line.Text, "GET /me/configure") {
-			cookie = o.extractJenkinsCookie(line.Text)
-			break
-		}
-	}
-
-	if cookie == "" {
-		return errors.New("No Jenkins cookie found")
-	}
-
-	token, err := o.generateNewApiToken(newTokenUrl, cookie)
-	if err != nil {
-		return errors.Wrap(err, "generating the API token")
-	}
-
-	if token != "" {
-		userAuth.ApiToken = token
 	}
 
 	err = c.Shutdown(ctx)
