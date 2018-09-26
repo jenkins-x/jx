@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"io"
 	"os"
 	"strconv"
@@ -81,7 +82,7 @@ func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().IntVarP(&options.Flags.NodesMax, "nodes-max", "", -1, "maximum number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.Verbose, "log-level", "", -1, "set log level, use 0 to silence, 4 for debugging and 5 for debugging with AWS debug logging (default 3)")
 	cmd.Flags().DurationVarP(&options.Flags.AWSOperationTimeout, "aws-api-timeout", "", 20*time.Minute, "Duration of AWS API timeout")
-	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "us-west-2", "The region to use.")
+	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "The region to use. Default: us-west-2")
 	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability Zones. Auto-select if not specified. If provided, this overrides the $EKS_AVAILABILITY_ZONES environment variable")
 	cmd.Flags().StringVarP(&options.Flags.Profile, "profile", "p", "", "AWS profile to use. If provided, this overrides the AWS_PROFILE environment variable")
 	cmd.Flags().StringVarP(&options.Flags.SshPublicKey, "ssh-public-key", "", "", "SSH public key to use for nodes (import from local path, or use existing EC2 key pair) (default \"~/.ssh/id_rsa.pub\")")
@@ -123,7 +124,7 @@ func (o *CreateClusterEKSOptions) Run() error {
 		args = append(args, "--name", flags.ClusterName)
 	}
 	if flags.Region != "" {
-		args = append(args, "--region", flags.Region)
+		args = append(args, "--region", amazon.ResolveRegionIfOptionEmpty(flags.Region))
 	}
 	if zones != "" {
 		args = append(args, "--zones", zones)

@@ -14,3 +14,10 @@ func ResolveRegion() string {
 	}
 	return region
 }
+
+func ResolveRegionIfOptionEmpty(regionOption string) string {
+	if regionOption != "" {
+		return regionOption
+	}
+	return ResolveRegion()
+}
