@@ -190,6 +190,9 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 	}
 
 	orgs := gits.GetOrganizations(provider, userAuth.Username)
+	if len(orgs) == 0 {
+		return nil, fmt.Errorf("user %s is not member of any GitHub organizations", userAuth.Username)
+	}
 	sort.Strings(orgs)
 	promt := &survey.MultiSelect{
 		Message: "Select GitHub organizations to authorize users from:",
