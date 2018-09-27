@@ -242,8 +242,8 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	helmPrePhase := "pre-update"
-	helmPostPhase := "post-update"
+	helmPrePhase := "pre-upgrade"
+	helmPostPhase := "post-upgrade"
 	create := false
 
 	err = h.runHooks(helmHooks, helmPrePhase, ns, chart, releaseName, wait, create)
@@ -290,14 +290,14 @@ func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string,
 	return h.runKubectl(args...)
 }
 
-func (h *HelmTemplate) kubectlApplyFile(ns string, chart string, releaseName string, wait bool, create bool, file string) error {
-	log.Infof("Applying generated chart %s YAML via kubectl in file: %s\n", chart, file)
+func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, file string) error {
+	log.Infof("Applying Helm hook %s YAML via kubectl in file: %s\n", helmHook, file)
 
 	command := "apply"
 	if create {
 		command = "create"
 	}
-	args := []string{command, "--recursive", "-f", file, "-l", LabelReleaseName + "=" + releaseName}
+	args := []string{command, "-f", file}
 	if ns != "" {
 		args = append(args, "--namespace", ns)
 	}
@@ -312,7 +312,7 @@ func (h *HelmTemplate) kubectlApplyFile(ns string, chart string, releaseName str
 
 func (h *HelmTemplate) kubectlDeleteFile(ns string, file string) error {
 	log.Infof("Deleting helm hook sources from file: %s\n", file)
-	return h.runKubectl("kubectl", "delete", "-f", file, "--namespace", ns, "--wait")
+	return h.runKubectl("delete", "-f", file, "--namespace", ns, "--wait")
 }
 
 func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, versionText string, wait bool) error {
@@ -495,8 +495,6 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, version str
 				if err != nil {
 					log.Warnf("Failed to move helm hook template %s to %s: %s", path, newPath, err)
 					return err
-				} else {
-					log.Infof("Moved helm hook file from %s to %s\n", path, newPath)
 				}
 				helmDeletePolicy := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook-delete-policy")
 				helmHooks = append(helmHooks, NewHelmHook(newPath, helmHook, helmDeletePolicy))
@@ -680,7 +678,7 @@ func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) 
 func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, chart string, releaseName string, wait bool, create bool) error {
 	files := HookFiles(hooks, hookPhase, "")
 	for _, file := range files {
-		err := h.kubectlApplyFile(ns, chart, releaseName, wait, create, file)
+		err := h.kubectlApplyFile(ns, hookPhase, wait, create, file)
 		if err != nil {
 			return err
 		}
