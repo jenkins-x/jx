@@ -442,7 +442,7 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepos
 
 	if author.Email == "" {
 		// bitbucket makes this part difficult, there is no way to directly
-		// associate a username to an email through the api or vice versa
+		// associate a username to an email through the API or vice versa
 		// so our best attempt is to try to figure out the author email
 		// from the commits
 		commits, err := p.GetPullRequestCommits(owner, repoInfo, number)

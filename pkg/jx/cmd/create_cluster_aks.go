@@ -66,7 +66,7 @@ var (
 		Please use a location local to you: you can retrieve this from the Azure portal or by 
 		running "az provider list" in your terminal.
 
-		Important: You will need an account on azure, with a storage account (https://portal.azure.com/#create/Microsoft.StorageAccount-ARM)
+		Important: You will need an account on Azure, with a storage account (https://portal.azure.com/#create/Microsoft.StorageAccount-ARM)
         and network (https://portal.azure.com/#create/Microsoft.VirtualNetwork-ARM) - both linked to the resource group you use
 		to create the cluster in.
 `)

@@ -21,7 +21,7 @@ type StepPreBuildOptions struct {
 
 var (
 	StepPreBuildLong = templates.LongDesc(`
-		This pipeline step performs pre build actions such as ensuring that a docker registry is available in the cloud
+		This pipeline step performs pre build actions such as ensuring that a Docker registry is available in the cloud
 `)
 
 	StepPreBuildExample = templates.Examples(`

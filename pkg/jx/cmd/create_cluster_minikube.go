@@ -82,7 +82,7 @@ func NewCmdCreateClusterMinikube(f Factory, in terminal.FileReader, out terminal
 	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "s", "", fmt.Sprintf("Total amount of storage allocated to the Minikube VM. Defaults to %s", MinikubeDefaultDiskSize))
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [hyperkit hyperv kvm kvm2 virtualbox vmwarefusion xhyve]")
 	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with Minikube")
-	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "", "", "kubernetes version")
+	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "", "", "Kubernetes version")
 
 	return cmd
 }

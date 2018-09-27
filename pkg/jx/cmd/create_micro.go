@@ -58,7 +58,7 @@ func NewCmdCreateMicro(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:     "micro [github.com/myuser/myapp]",
-		Short:   "Create a new micro based application and import the generated code into git and Jenkins for CI/CD",
+		Short:   "Create a new micro based application and import the generated code into Git and Jenkins for CI/CD",
 		Long:    createMicroLong,
 		Example: createMicroExample,
 		Run: func(cmd *cobra.Command, args []string) {

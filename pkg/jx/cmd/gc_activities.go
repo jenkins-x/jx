@@ -128,7 +128,7 @@ func (o *GCActivitiesOptions) Run() error {
 
 	for _, a := range activities.Items {
 		if !prowEnabled {
-			// if activity has no job in jenkins delete it
+			// if activity has no job in Jenkins delete it
 			matched := false
 			for _, j := range jobNames {
 				if a.Spec.Pipeline == j {

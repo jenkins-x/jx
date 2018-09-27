@@ -20,7 +20,7 @@ type GetURLOptions struct {
 
 var (
 	get_url_long = templates.LongDesc(`
-		Display one or many URLs from the running services.
+		Display one or more URLs from the running services.
 
 `)
 
@@ -46,7 +46,7 @@ func NewCmdGetURL(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 	cmd := &cobra.Command{
 		Use:     "urls [flags]",
-		Short:   "Display one or many URLs",
+		Short:   "Display one or more URLs",
 		Long:    get_url_long,
 		Example: get_url_example,
 		Aliases: []string{"url"},

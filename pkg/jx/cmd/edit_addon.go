@@ -25,7 +25,7 @@ var (
 `)
 
 	editAddonExample = templates.Examples(`
-		# Enables or disbles an addon
+		# Enables or disables an addon
 		jx edit addon
 
 		# Enables or disables an addon

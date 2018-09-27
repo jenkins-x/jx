@@ -13,7 +13,7 @@ import (
 
 var (
 	createChatServer_long = templates.LongDesc(`
-		Adds a new Chat Server URL
+		Adds a new chat server URL
 `)
 
 	createChatServer_example = templates.Examples(`

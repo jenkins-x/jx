@@ -56,7 +56,7 @@ func NewCmdCreateJHipster(f Factory, in terminal.FileReader, out terminal.FileWr
 
 	cmd := &cobra.Command{
 		Use:     "jhipster",
-		Short:   "Create a new JHipster based application and import the generated code into git and Jenkins for CI/CD",
+		Short:   "Create a new JHipster based application and import the generated code into Git and Jenkins for CI/CD",
 		Long:    createJHipsterLong,
 		Example: createJHipsterExample,
 		Run: func(cmd *cobra.Command, args []string) {

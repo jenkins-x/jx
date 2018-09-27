@@ -27,7 +27,7 @@ func NewCmdCreateJenkins(f Factory, in terminal.FileReader, out terminal.FileWri
 
 	cmd := &cobra.Command{
 		Use:   "jenkins",
-		Short: "Creates a jenkins resource",
+		Short: "Creates a Jenkins resource",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

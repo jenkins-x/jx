@@ -157,7 +157,7 @@ func (o *CreateGitTokenOptions) Run() error {
 
 	err = o.updateGitCredentialsSecret(server, userAuth)
 	if err != nil {
-		log.Warnf("Failed to update jenkins Git credentials secret: %v\n", err)
+		log.Warnf("Failed to update Jenkins Git credentials secret: %v\n", err)
 	}
 
 	_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)

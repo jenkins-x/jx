@@ -26,7 +26,7 @@ func NewCmdDeleteGit(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	cmd := &cobra.Command{
 		Use:   "git",
-		Short: "Deletes one or many git resources",
+		Short: "Deletes one or more Git resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

@@ -653,7 +653,7 @@ func (o *PreviewOptions) waitForJob(kubeClient kubernetes.Interface, job *batchv
 	return err
 }
 
-// modifyJob adds the given enviroment variables into all the containers in the job
+// modifyJob adds the given environment variables into all the containers in the job
 func (o *PreviewOptions) modifyJob(originalJob *batchv1.Job, envVars map[string]string) *batchv1.Job {
 	job := *originalJob
 	for k, v := range envVars {
