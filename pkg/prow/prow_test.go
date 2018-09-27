@@ -24,6 +24,7 @@ func (o *TestOptions) Setup() {
 		KubeClient: testclient.NewSimpleClientset(),
 		Repos:      []string{"test/repo"},
 		NS:         "test",
+		DraftPack:  "maven",
 	}
 }
 
@@ -189,8 +190,8 @@ func TestReplaceProwConfig(t *testing.T) {
 	prowConfig := &config.Config{}
 	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
 
-	assert.Equal(t, 0, len(prowConfig.Tide.Queries[0].Repos))
-	assert.Equal(t, 1, len(prowConfig.Tide.Queries[1].Repos))
+	assert.Equal(t, 1, len(prowConfig.Tide.Queries[0].Repos))
+	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
 
 	p := prowConfig.Presubmits["test/repo"]
 	p[0].Agent = "foo"
@@ -230,8 +231,8 @@ func TestReplaceProwConfig(t *testing.T) {
 	prowConfig = &config.Config{}
 	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
 
-	assert.Equal(t, 0, len(prowConfig.Tide.Queries[0].Repos))
-	assert.Equal(t, 1, len(prowConfig.Tide.Queries[1].Repos))
+	assert.Equal(t, 1, len(prowConfig.Tide.Queries[0].Repos))
+	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
 
 	p = prowConfig.Presubmits["test/repo"]
 	assert.Equal(t, "knative-build", p[0].Agent)
@@ -249,8 +250,8 @@ func TestReplaceProwConfig(t *testing.T) {
 	prowConfig = &config.Config{}
 	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
 
-	assert.Equal(t, 1, len(prowConfig.Tide.Queries[0].Repos))
-	assert.Equal(t, 1, len(prowConfig.Tide.Queries[1].Repos))
+	assert.Equal(t, 2, len(prowConfig.Tide.Queries[0].Repos))
+	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
 
 	// add test/repo3
 	o.Options.Repos = []string{"test/repo3"}
@@ -265,6 +266,6 @@ func TestReplaceProwConfig(t *testing.T) {
 	prowConfig = &config.Config{}
 	yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
 
-	assert.Equal(t, 2, len(prowConfig.Tide.Queries[0].Repos))
-	assert.Equal(t, 1, len(prowConfig.Tide.Queries[1].Repos))
+	assert.Equal(t, 3, len(prowConfig.Tide.Queries[0].Repos))
+	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
 }
