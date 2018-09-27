@@ -18,7 +18,6 @@ const (
 	Hook                           = "hook"
 	DefaultProwReleaseName         = "jx-prow"
 	DefaultKnativeBuildReleaseName = "jx-knative-build"
-	KnativeBuildVersion            = "0.0.6"
 	ChartProw                      = "jenkins-x/prow"
 	ChartKnativeBuild              = "jenkins-x/knative-build"
 	JenkinsMasterTag               = "dev_18"
@@ -273,20 +272,20 @@ func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) er
 }
 
 func (o *Options) createTide() config.Tide {
-	// todo get the real URL, though we need to handle the multi cluster usecase where dev namespace may be another cluster, so pass it in as an arg?
+	// todo get the real URL, though we need to handle the multi cluster use case where dev namespace may be another cluster, so pass it in as an arg?
 	t := config.Tide{
 		TargetURL: "https://tide.foo.bar",
 	}
 
 	var qs []config.TideQuery
 	q := config.TideQuery{
-		Repos:         []string{},
+		Repos:         []string{"jenkins-x/dummy"},
 		Labels:        []string{"approved"},
 		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
 	}
 	qs = append(qs, q)
 	q = config.TideQuery{
-		Repos:         []string{},
+		Repos:         []string{"jenkins-x/dummy-environment"},
 		Labels:        []string{},
 		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
 	}
