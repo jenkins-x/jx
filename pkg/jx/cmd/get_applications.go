@@ -67,7 +67,7 @@ func NewCmdGetApplications(f Factory, in terminal.FileReader, out terminal.FileW
 	}
 	cmd := &cobra.Command{
 		Use:     "applications",
-		Short:   "Display one or many Applications and their versions",
+		Short:   "Display one or more Applications and their versions",
 		Aliases: []string{"app", "apps", "version", "versions"},
 		Long:    get_version_long,
 		Example: get_version_example,

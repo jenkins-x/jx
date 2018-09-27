@@ -83,7 +83,7 @@ var (
 )
 
 // NewCmdInit creates a command object for the generic "init" action, which
-// primes a Kubernetes cluster so it's ready for jenkins x to be installed
+// primes a Kubernetes cluster so it's ready for Jenkins X to be installed
 func NewCmdInit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &InitOptions{
 		CommonOptions: CommonOptions{
@@ -649,7 +649,7 @@ func (o *InitOptions) validateGit() error {
 			}
 		}
 		if userName == "" {
-			return fmt.Errorf("No git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
+			return fmt.Errorf("No Git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
 		}
 		err = o.Git().SetUsername("", userName)
 		if err != nil {
@@ -664,7 +664,7 @@ func (o *InitOptions) validateGit() error {
 			}
 		}
 		if userEmail == "" {
-			return fmt.Errorf("No git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
+			return fmt.Errorf("No Git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
 		}
 		err = o.Git().SetEmail("", userEmail)
 		if err != nil {

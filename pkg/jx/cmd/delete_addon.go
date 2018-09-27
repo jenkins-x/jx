@@ -34,7 +34,7 @@ func NewCmdDeleteAddon(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:   "addon",
-		Short: "Deletes one or many addons",
+		Short: "Deletes one or more addons",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

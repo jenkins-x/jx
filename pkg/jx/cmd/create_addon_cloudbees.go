@@ -180,7 +180,7 @@ To register to get your username/password to to: %s
 		log.Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
 		o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 		if err != nil {
-			return errors.Wrap(err, "retrieving the development namesapce")
+			return errors.Wrap(err, "retrieving the development namespace")
 		}
 		ingressConfig, err := kube.GetIngressConfig(o.KubeClientCached, o.devNamespace)
 		if err != nil {

@@ -32,7 +32,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		return fmt.Errorf("Failed to parse git URL %s due to: %s", gitURL, err)
+		return fmt.Errorf("Failed to parse Git URL %s due to: %s", gitURL, err)
 	}
 
 	if branchPattern == "" {
@@ -129,7 +129,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			err = jenk.CreateCredential(credentials, user.Username, user.ApiToken)
 
 			if err != nil {
-				return fmt.Errorf("error creating jenkins credential %s at %s %v", credentials, jenk.BaseURL(), err)
+				return fmt.Errorf("error creating Jenkins credential %s at %s %v", credentials, jenk.BaseURL(), err)
 			}
 			log.Infof("Created credential %s for host %s user %s\n", util.ColorInfo(credentials), util.ColorInfo(u), util.ColorInfo(user.Username))
 		}
@@ -143,7 +143,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			folderXml := jenkins.CreateFolderXml(jobUrl, org)
 			err = jenk.CreateJobWithXML(folderXml, org)
 			if err != nil {
-				return fmt.Errorf("Failed to create the %s folder in jenkins: %s", org, err)
+				return fmt.Errorf("Failed to create the %s folder in Jenkins: %s", org, err)
 			}
 		} else {
 			c := folder.Class

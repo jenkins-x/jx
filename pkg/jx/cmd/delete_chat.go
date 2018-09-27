@@ -26,7 +26,7 @@ func NewCmdDeleteChat(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 	cmd := &cobra.Command{
 		Use:     "chat",
-		Short:   "Deletes one or many chat services resources",
+		Short:   "Deletes one or more chat services resources",
 		Aliases: []string{"slack"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd

@@ -78,7 +78,7 @@ func (f *factory) WithBearerToken(token string) Factory {
 	return &copy
 }
 
-// CreateJenkinsClient creates a new jenkins client
+// CreateJenkinsClient creates a new Jenkins client
 func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
 
 	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns)
@@ -409,7 +409,7 @@ func (f *factory) CreateTable(out io.Writer) table.Table {
 }
 
 // IsInCDPIpeline we should only load the git / issue tracker API tokens if the current pod
-// is in a pipeline and running as the jenkins service account
+// is in a pipeline and running as the Jenkins service account
 func (f *factory) IsInCDPIpeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?

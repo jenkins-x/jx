@@ -587,7 +587,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 									}
 									gitInfo, err := gits.ParseGitURL(gitURL)
 									if err != nil {
-										log.Warnf("Failed to parse git URL %s for PipelineActivity %s so cannot comment on issues: %s", gitURL, activity.Name, err)
+										log.Warnf("Failed to parse Git URL %s for PipelineActivity %s so cannot comment on issues: %s", gitURL, activity.Name, err)
 										return
 									}
 									po.GitInfo = gitInfo
@@ -740,7 +740,7 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 	}
 	gitInfo, err := gits.ParseGitURL(gitUrl)
 	if err != nil {
-		log.Warnf("Failed to parse git URL %s: %s", gitUrl, err)
+		log.Warnf("Failed to parse Git URL %s: %s", gitUrl, err)
 		return nil
 	}
 	org := gitInfo.Organisation

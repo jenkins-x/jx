@@ -102,7 +102,7 @@ var (
 
 		*RBAC is enabled on the cluster
 
-		*Insecure docker registry is enabled for docker registries running locally inside Kubernetes on the service IP range. See the above documentation for more detail
+		*Insecure Docker registry is enabled for Docker registries running locally inside Kubernetes on the service IP range. See the above documentation for more detail
 
 `)
 
@@ -1039,7 +1039,7 @@ func (options *InstallOptions) getGitToken() (string, string, error) {
 			return username, os.Getenv(JX_GIT_TOKEN), nil
 		}
 	}
-	log.Infof("Lets set up a git username and API token to be able to perform CI/CD\n\n")
+	log.Infof("Lets set up a Git username and API token to be able to perform CI/CD\n\n")
 	userAuth, err := options.getGitUser("")
 	if err != nil {
 		return "", "", err
@@ -1236,7 +1236,7 @@ func (options *InstallOptions) ensureDefaultStorageClass(client kubernetes.Inter
 	return err
 }
 
-// returns the docker registry string for the given provider
+// returns the Docker registry string for the given provider
 func (options *InstallOptions) dockerRegistryValue() (string, error) {
 	if options.Flags.DockerRegistry != "" {
 		return options.Flags.DockerRegistry, nil

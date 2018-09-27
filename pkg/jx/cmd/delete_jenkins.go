@@ -26,7 +26,7 @@ func NewCmdDeleteJenkins(f Factory, in terminal.FileReader, out terminal.FileWri
 
 	cmd := &cobra.Command{
 		Use:   "jenkins",
-		Short: "Deletes one or many jenkins resources",
+		Short: "Deletes one or more Jenkins resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

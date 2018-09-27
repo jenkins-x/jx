@@ -99,7 +99,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 	}
 	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
-		return errors.Wrap(err, "retrieving the development namesapce")
+		return errors.Wrap(err, "retrieving the development namespace")
 	}
 
 	err = o.ensureCertmanager()
@@ -180,7 +180,7 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 	}
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(gits.GitHubURL)
-	userAuth, err := config.PickServerUserAuth(server, "git user name", true, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, "Git user name", true, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return nil, err
 	}

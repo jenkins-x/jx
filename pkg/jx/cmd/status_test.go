@@ -37,7 +37,7 @@ func TestStatusRun(t *testing.T) {
 	labels := make(map[string]string)
 	labels["app"] = "ians-app"
 
-	// Create a fake jenkins deployment
+	// Create a fake Jenkins deployment
 	deployment := &appsv1.Deployment{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "jenkins",
@@ -86,7 +86,7 @@ func TestStatusRun(t *testing.T) {
 	annotations := make(map[string]string)
 	annotations["fabric8.io/exposeUrl"] = "http://jenkins.testorama.com"
 
-	// Create a fake jenkins service
+	// Create a fake Jenkins service
 	service := &v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        "jenkins",

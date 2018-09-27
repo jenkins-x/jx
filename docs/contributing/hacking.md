@@ -1,7 +1,7 @@
 
 # Hacking on JX
 
-This guide is for developers who want to improve the jenkins-x jx CLI. These instructions will help you set up a
+This guide is for developers who want to improve the Jenkins X jx CLI. These instructions will help you set up a
 development environment for working on the jx source code.
 
 ## Prerequisites

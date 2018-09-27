@@ -48,7 +48,7 @@ const (
 	// PlaceHolderDockerRegistryOrg placeholder for docker registry
 	PlaceHolderDockerRegistryOrg = "REPLACE_ME_DOCKER_REGISTRY_ORG"
 
-	// JenkinsfileBackupSuffix the suffix used by jenkins for backups
+	// JenkinsfileBackupSuffix the suffix used by Jenkins for backups
 	JenkinsfileBackupSuffix = ".backup"
 
 	minimumMavenDeployVersion = "2.8.2"
@@ -271,7 +271,7 @@ func (options *ImportOptions) Run() error {
 		}
 		// Get the org in case there is more than one user auth on the server and batchMode is true
 		org := options.getOrganisationOrCurrentUser()
-		userAuth, err = config.PickServerUserAuth(server, "git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
+		userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
 		if err != nil {
 			return err
 		}
@@ -465,6 +465,7 @@ func (options *ImportOptions) DraftCreate() error {
 	pomName := filepath.Join(dir, "pom.xml")
 	gradleName := filepath.Join(dir, "build.gradle")
 	jenkinsPluginsName := filepath.Join(dir, "plugins.txt")
+	packagerConfigName := filepath.Join(dir, "packager-config.yml")
 	lpack := ""
 	customDraftPack := options.DraftPack
 	if len(customDraftPack) == 0 {
@@ -517,6 +518,8 @@ func (options *ImportOptions) DraftCreate() error {
 			lpack = filepath.Join(packsDir, "gradle")
 		} else if exists, err := util.FileExists(jenkinsPluginsName); err == nil && exists {
 			lpack = filepath.Join(packsDir, "jenkins")
+		} else if exists, err := util.FileExists(packagerConfigName); err == nil && exists {
+			lpack = filepath.Join(packsDir, "cwp")
 		} else {
 			// pack detection time
 			lpack, err = jxdraft.DoPackDetection(draftHome, options.Out, dir)
@@ -753,7 +756,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 		// Create a new provider for the pipeline user
 		pipelineUserAuth := config.FindUserAuth(config.CurrentServer, config.PipeLineUsername)
 		if pipelineUserAuth == nil {
-			log.Warnf("Pipeline git user credentials not found. %s will need to accept the invitation to collaborate\n"+
+			log.Warnf("Pipeline Git user credentials not found. %s will need to accept the invitation to collaborate\n"+
 				"on %s if %s is not part of %s.\n\n",
 				config.PipeLineUsername, details.RepoName, config.PipeLineUsername, details.Organisation)
 		} else {
@@ -802,7 +805,7 @@ func (options *ImportOptions) CloneRepository() error {
 	}
 	gitInfo, err := gits.ParseGitURL(url)
 	if err != nil {
-		return fmt.Errorf("failed to parse git URL %s due to: %s", url, err)
+		return fmt.Errorf("failed to parse Git URL %s due to: %s", url, err)
 	}
 	if gitInfo.Host == gits.GitHubHost && strings.HasPrefix(gitInfo.Scheme, "http") {
 		if !strings.HasSuffix(url, ".git") {
@@ -1061,7 +1064,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 func (options *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerRegistryOrg string) error {
 	gitOrg = kube.ToValidName(strings.ToLower(gitOrg))
 	log.Infof("replacing placeholders in directory %s\n", options.Dir)
-	log.Infof("app name: %s, git server: %s, org: %s, docker registry org: %s\n", options.AppName, gitServerName, gitOrg, dockerRegistryOrg)
+	log.Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s\n", options.AppName, gitServerName, gitOrg, dockerRegistryOrg)
 
 	ignore, err := gitignore.NewRepository(options.Dir)
 	if err != nil {
@@ -1169,7 +1172,7 @@ func (options *ImportOptions) checkChartmuseumCredentialExists() error {
 		})
 
 		if err != nil {
-			return fmt.Errorf("error creating jenkins credential %s %v", name, err)
+			return fmt.Errorf("error creating Jenkins credential %s %v", name, err)
 		}
 	}
 	return nil
@@ -1181,7 +1184,7 @@ func (options *ImportOptions) renameChartToMatchAppName() error {
 	chartsDir := filepath.Join(dir, "charts")
 	files, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
-		return fmt.Errorf("error matching a jenkins x draft pack name with chart folder %v", err)
+		return fmt.Errorf("error matching a Jenkins X draft pack name with chart folder %v", err)
 	}
 	for _, fi := range files {
 		if fi.IsDir() {
@@ -1244,7 +1247,7 @@ func (options *ImportOptions) fixDockerIgnoreFile() error {
 	return nil
 }
 
-// CreateProwOwnersFile creates an OWNERS file in the root of the project assigning the current git user as an approver and a reviewer. If the file already exists, does nothing.
+// CreateProwOwnersFile creates an OWNERS file in the root of the project assigning the current Git user as an approver and a reviewer. If the file already exists, does nothing.
 func (options *ImportOptions) CreateProwOwnersFile() error {
 	filename := filepath.Join(options.Dir, "OWNERS")
 	exists, err := util.FileExists(filename)
@@ -1275,7 +1278,7 @@ func (options *ImportOptions) CreateProwOwnersFile() error {
 	return errors.New("GitUserAuth.Username not set")
 }
 
-// CreateProwOwnersAliasesFile creates an OWNERS_ALIASES file in the root of the project assigning the current git user as an approver and a reviewer.
+// CreateProwOwnersAliasesFile creates an OWNERS_ALIASES file in the root of the project assigning the current Git user as an approver and a reviewer.
 func (options *ImportOptions) CreateProwOwnersAliasesFile() error {
 	filename := filepath.Join(options.Dir, "OWNERS_ALIASES")
 	exists, err := util.FileExists(filename)
