@@ -319,7 +319,8 @@ func (options *InstallOptions) Run() error {
 	}
 	options.devNamespace = ns
 
-	err = kube.EnsureNamespaceCreated(client, ns, map[string]string{kube.LabelTeam: ns}, nil)
+	namespaceLabels := map[string]string{kube.LabelTeam: ns, kube.LabelEnvironment: kube.LabelValueDevEnvironment}
+	err = kube.EnsureNamespaceCreated(client, ns, namespaceLabels, nil)
 	if err != nil {
 		return fmt.Errorf("Failed to ensure the namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ns, err)
 	}
