@@ -122,7 +122,7 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 				Args:       []string{"jx", "step", "helm", "apply"},
 				WorkingDir: "/workspace/env",
 				Env: []v1.EnvVar{
-					{Name: "DEPLOY_NAMESPACE", Value: "jx-staging"},
+					{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
 					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
 					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
 					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
