@@ -77,6 +77,16 @@ func (o *ControllerTeamOptions) Run() error {
 		return err
 	}
 
+	// lets default the team settings based on the current team settings
+	settings, err := o.ControllerOptions.TeamSettings()
+	if settings.HelmTemplate {
+		o.InstallOptions.InitOptions.Flags.HelmTemplate = true
+	} else if settings.NoTiller {
+		o.InstallOptions.InitOptions.Flags.Tiller = false
+	} else if settings.HelmBinary == "helm3" {
+		o.InstallOptions.InitOptions.Flags.Helm3 = true
+	}
+
 	log.Infof("Watching for teams in all namespaces\n")
 
 	stop := make(chan struct{})
