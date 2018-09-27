@@ -488,11 +488,9 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, version str
 					log.Warnf("Failed to move helm hook template %s to %s: %s", path, newPath, err)
 					return err
 				} else {
-					log.Infof("Moved helm hook file from %s to %s%s\n", path, newPath)
+					log.Infof("Moved helm hook file from %s to %s\n", path, newPath)
 				}
-				// TODO
 				helmDeletePolicy := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook-delete-policy")
-
 				helmHooks = append(helmHooks, NewHelmHook(newPath, helmHook, helmDeletePolicy))
 				return nil
 			}
