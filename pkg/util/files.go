@@ -291,3 +291,19 @@ func DeleteDirContents(dir string) error {
 	}
 	return nil
 }
+
+// DeleteDirContents removes all the contents of the given directory
+func RecreateDirs(dirs ...string) error {
+	for _, dir := range dirs {
+		err := os.RemoveAll(dir)
+		if err != nil {
+			return err
+		}
+		err = os.MkdirAll(dir, DefaultWritePermissions)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
