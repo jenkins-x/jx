@@ -273,3 +273,21 @@ func DeleteFile(fileName string) (err error) {
 	}
 	return nil
 }
+
+// DeleteDirContents removes all the contents of the given directory
+func DeleteDirContents(dir string) error {
+	files, err := filepath.Glob(filepath.Join(dir, "*", ".*"))
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		// lets ignore the top level dir
+		if dir != file {
+			err = os.RemoveAll(file)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
