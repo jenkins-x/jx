@@ -16,23 +16,25 @@ import (
 func TestAddYamlLabels(t *testing.T) {
 	t.Parallel()
 
-	f, err := ioutil.TempDir("", "test-add-yaml-labels")
+	baseDir, err := ioutil.TempDir("", "test-add-yaml-labels")
 	assert.NoError(t, err)
 
 	testData := path.Join("test_data", "set_labels")
 	_, err = os.Stat(testData)
 	assert.NoError(t, err)
 
-	err = util.CopyDir(testData, f, true)
+	outDir := path.Join(baseDir, "output")
+	hooksDir := path.Join(baseDir, "hooks")
+	err = util.CopyDir(testData, outDir, true)
 	assert.NoError(t, err)
 
 	expectedChartName := "cheese"
 	expectedChartVersion := "1.2.3"
 
-	err = addLabelsToChartYaml(f, expectedChartName, expectedChartVersion)
+	helmHooks, err := addLabelsToChartYaml(outDir, hooksDir, expectedChartName, expectedChartVersion)
 	assert.NoError(t, err, "Failed to add labels to YAML")
 
-	err = filepath.Walk(f, func(path string, f os.FileInfo, err error) error {
+	err = filepath.Walk(outDir, func(path string, f os.FileInfo, err error) error {
 		ext := filepath.Ext(path)
 		if ext == ".yaml" {
 			file := path
@@ -60,5 +62,16 @@ func TestAddYamlLabels(t *testing.T) {
 		}
 		return nil
 	})
+
+	assert.FileExists(t, filepath.Join(hooksDir, "post-install-job.yaml"), "Should have moved this YAML into the hooks dir!")
+
+	if assert.Equal(t, 1, len(helmHooks), "number of helm hooks") {
+		hook := helmHooks[0]
+		if assert.NotNil(t, hook, "helm hook") {
+			assert.Equal(t, []string{"post-install", "post-upgrade"}, hook.Hooks, "hooks")
+			assert.Equal(t, []string{"hook-succeeded"}, hook.HookDeletePolicies, "hook delete policies")
+			assert.FileExists(t, hook.File, "should have a helm hook template file")
+		}
+	}
 	assert.NoError(t, err, "Failed to walk folders")
 }
