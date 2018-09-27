@@ -111,6 +111,17 @@ func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return answer, nil
 }
 
+func (p *GitHubProvider) IsUserInOrganisation(user string, org string) (bool, error) {
+	membership, _, err := p.Client.Organizations.GetOrgMembership(p.Context, user, org)
+	if err != nil {
+		return false, err
+	}
+	if membership != nil {
+		return true, nil
+	}
+	return false, nil
+}
+
 func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) {
 	owner := org
 	answer := []*GitRepository{}

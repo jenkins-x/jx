@@ -15,7 +15,13 @@ type OrganisationLister interface {
 	ListOrganisations() ([]GitOrganisation, error)
 }
 
-// GitProvider is the interface for abstracting use of different Git provider APIs
+// OrganisationChecker verifies if an user is member of an organization
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationChecker -o mocks/organisation_checker.go
+type OrganisationChecker interface {
+	IsUserInOrganisation(user string, organisation string) (bool, error)
+}
+
+// GitProvider is the interface for abstracting use of different git provider APIs
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits GitProvider -o mocks/git_provider.go
 type GitProvider interface {
 	OrganisationLister
