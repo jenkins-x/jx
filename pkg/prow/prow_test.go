@@ -24,7 +24,7 @@ func (o *TestOptions) Setup() {
 		KubeClient: testclient.NewSimpleClientset(),
 		Repos:      []string{"test/repo"},
 		NS:         "test",
-		DraftPack: "maven",
+		DraftPack:  "maven",
 	}
 }
 

@@ -246,8 +246,10 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 	switch o.Kind {
 	case Application:
+		found := false
 		for index, q := range t.Queries {
 			if util.Contains(q.Labels, "approved") {
+				found = true
 				repos := t.Queries[index].Repos
 				if !util.Contains(repos, repo) {
 					repos = append(repos, repo)
@@ -255,20 +257,48 @@ func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) er
 				}
 			}
 		}
+
+		if !found {
+			log.Infof("Failed to find 'application' tide config, adding...\n")
+			t.Queries = append(t.Queries, o.createApplicationTideQuery())
+		}
 	case Environment:
+		found := false
 		for index, q := range t.Queries {
 			if !util.Contains(q.Labels, "approved") {
+				found = true
 				repos := t.Queries[index].Repos
 				if !util.Contains(repos, repo) {
 					repos = append(repos, repo)
 					t.Queries[index].Repos = repos
 				}
 			}
+		}
+
+		if !found {
+			log.Infof("Failed to find 'environment' tide config, adding...\n")
+			t.Queries = append(t.Queries, o.createEnvironmentTideQuery())
 		}
 	default:
 		return fmt.Errorf("unknown prow config kind %s", o.Kind)
 	}
 	return nil
+}
+
+func (o *Options) createApplicationTideQuery() config.TideQuery {
+	return config.TideQuery{
+		Repos:         []string{"jenkins-x/dummy"},
+		Labels:        []string{"approved"},
+		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
+	}
+}
+
+func (o *Options) createEnvironmentTideQuery() config.TideQuery {
+	return config.TideQuery{
+		Repos:         []string{"jenkins-x/dummy-environment"},
+		Labels:        []string{},
+		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
+	}
 }
 
 func (o *Options) createTide() config.Tide {
@@ -278,18 +308,8 @@ func (o *Options) createTide() config.Tide {
 	}
 
 	var qs []config.TideQuery
-	q := config.TideQuery{
-		Repos:         []string{"jenkins-x/dummy"},
-		Labels:        []string{"approved"},
-		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
-	}
-	qs = append(qs, q)
-	q = config.TideQuery{
-		Repos:         []string{"jenkins-x/dummy-environment"},
-		Labels:        []string{},
-		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
-	}
-	qs = append(qs, q)
+	qs = append(qs, o.createApplicationTideQuery())
+	qs = append(qs, o.createEnvironmentTideQuery())
 	t.Queries = qs
 
 	// todo JR not sure if we need the contexts if we add the branch protection plugin
