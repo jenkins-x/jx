@@ -388,9 +388,17 @@ func (h *HelmTemplate) getOutputDir() (string, string, error) {
 		}
 		if h.OutputDir == "" {
 			h.OutputDir = filepath.Join(d, "output")
+			err = os.MkdirAll(h.OutputDir, util.DefaultWritePermissions)
+			if err != nil {
+				return "", "", err
+			}
 		}
 		if h.HelmHookDir == "" {
 			h.HelmHookDir = filepath.Join(d, "helmHooks")
+			err = os.MkdirAll(h.HelmHookDir, util.DefaultWritePermissions)
+			if err != nil {
+				return "", "", err
+			}
 		}
 	}
 	return h.OutputDir, h.HelmHookDir, nil
