@@ -99,7 +99,7 @@ func (o *CommonOptions) installChart(releaseName string, chart string, version s
 
 // installChartAt installs the given chart
 func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
-	return o.installChartOptions(InstallChartOptions{ Dir: dir, ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues})
+	return o.installChartOptions(InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues})
 }
 
 type InstallChartOptions struct {

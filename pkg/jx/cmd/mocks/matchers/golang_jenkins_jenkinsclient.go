@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
-	"github.com/petergtz/pegomock"
 	golang_jenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/petergtz/pegomock"
+	"reflect"
 )
 
 func AnyGolangJenkinsJenkinsClient() golang_jenkins.JenkinsClient {
