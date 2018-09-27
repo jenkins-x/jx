@@ -76,7 +76,7 @@ func (o *DeletePreviewOptions) Run() error {
 				return err
 			}
 			deletePreviews := strings.Join(selected, ", ")
-			if !util.Confirm("You are about to delete the Preview environments: "+deletePreviews, false, "The list of Preview Enviroments to be deleted", o.In, o.Out, o.Err) {
+			if !util.Confirm("You are about to delete the Preview environments: "+deletePreviews, false, "The list of Preview Environments to be deleted", o.In, o.Out, o.Err) {
 				return nil
 			}
 

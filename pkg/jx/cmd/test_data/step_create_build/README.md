@@ -6,7 +6,7 @@ This folder contains a collection of example `jenkins-x.yml` files which show ho
 
 ### Defaulting environment variables and volumes from pod templates
 
-Its very common to require lots of common environment variables or volumes (e.g. for the docker socket or binding `Secrets`)
+Its very common to require lots of common environment variables or volumes (e.g. for the Docker socket or binding `Secrets`)
 
 By default if you specify a build pack Jenkins X will default the build pack environment variables and volumes from the [Pod Template](https://jenkins-x.io/architecture/pod-templates/) for your build pack:
 
@@ -30,7 +30,7 @@ i.e. a maven build pack pipeline will default the OOTB container image from Jenk
 
 * [jenkins-x.xml](default_image_from_pod_templates/jenkins-x.yml#L12) generates [build.yaml](default_image_from_pod_templates/expected-build-release.yml)
 
-### Define common enviroment variables
+### Define common environment variables
 
 Its very handy to be able to define common environment variables and have them added to each stem:
 

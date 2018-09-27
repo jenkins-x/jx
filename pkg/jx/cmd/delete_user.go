@@ -27,7 +27,7 @@ type DeleteUserOptions struct {
 
 var (
 	deleteUserLong = templates.LongDesc(`
-		Deletes one or many users 
+		Deletes one or more users 
 `)
 
 	deleteUserExample = templates.Examples(`
@@ -51,7 +51,7 @@ func NewCmdDeleteUser(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 	cmd := &cobra.Command{
 		Use:     "user",
-		Short:   "Deletes one or many users",
+		Short:   "Deletes one or more users",
 		Long:    deleteUserLong,
 		Example: deleteUserExample,
 		Aliases: []string{"users"},

@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/binaries"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -169,11 +170,8 @@ func (o *CommonOptions) installBrew() error {
 }
 
 func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileName string, download bool, err error) {
-	fileName = name
+	fileName = binaries.BinaryWithExtension(name)
 	download = false
-	if runtime.GOOS == "windows" {
-		fileName += ".exe"
-	}
 	pgmPath, err := exec.LookPath(fileName)
 	if err == nil {
 		log.Warnf("%s is already available on your PATH at %s\n", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
@@ -232,13 +230,22 @@ func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
 	return nil
 }
 
-func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization string, downloadUrlTemplate string, version string, skipPathScan bool) error {
-	binaries := map[string]string{}
+func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization string, downloadUrlTemplate string, version string,
+	skipPathScan bool, versionExtractor binaries.VersionExtractor) error {
+	shouldInstallBinary, err := binaries.ShouldInstallBinary(binary, version, versionExtractor)
+	if err != nil {
+		return err
+	}
+	if !shouldInstallBinary {
+		return nil
+	}
+
 	configDir, err := util.ConfigDir()
 	if err != nil {
 		return err
 	}
 	binariesConfiguration := filepath.Join(configDir, "/binaries.yml")
+	binaries := map[string]string{}
 	if _, err := os.Stat(binariesConfiguration); err == nil {
 		binariesBytes, err := ioutil.ReadFile(binariesConfiguration)
 		if err != nil {
@@ -1198,7 +1205,7 @@ func (o *CommonOptions) installMinishift() error {
 
 func (o *CommonOptions) installGcloud() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
-		return errors.New("please install missing gloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
+		return errors.New("please install missing gcloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
 	}
 	err := o.RunCommand("brew", "tap", "caskroom/cask")
 	if err != nil {
@@ -1244,7 +1251,7 @@ func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bo
 	return o.installOrUpdateBinary("eksctl",
 		"weaveworks",
 		"https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
-		version, skipPathScan)
+		version, skipPathScan, nil)
 }
 
 func (o *CommonOptions) installHeptioAuthenticatorAws() error {

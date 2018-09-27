@@ -143,7 +143,7 @@ func ParseGitURL(text string) (*GitRepositoryInfo, error) {
 			return &answer, nil
 		}
 	}
-	return nil, fmt.Errorf("Could not parse git url %s", text)
+	return nil, fmt.Errorf("Could not parse Git URL %s", text)
 }
 
 func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error) {

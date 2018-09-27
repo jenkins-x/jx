@@ -62,7 +62,7 @@ func LazyCreateRegistry(orgName string, appName string) error {
 		repoName = orgName + "/" + appName
 	}
 	repoName = strings.ToLower(repoName)
-	log.Infof("Let's ensure that we have an ECR repository for the docker image %s\n", util.ColorInfo(repoName))
+	log.Infof("Let's ensure that we have an ECR repository for the Docker image %s\n", util.ColorInfo(repoName))
 	sess, _, err := NewAwsSession()
 	if err != nil {
 		return err

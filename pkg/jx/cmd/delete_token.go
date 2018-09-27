@@ -26,7 +26,7 @@ func NewCmdDeleteToken(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:     "token",
-		Short:   "Deletes one or many issue token resources",
+		Short:   "Deletes one or more issue token resources",
 		Aliases: []string{"api-token"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd

@@ -18,7 +18,7 @@ type GetBuildOptions struct {
 
 var (
 	get_build_long = templates.LongDesc(`
-		Display one or many resources.
+		Display one or more resources.
 
 		` + valid_resources + `
 
@@ -46,7 +46,7 @@ func NewCmdGetBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 
 	cmd := &cobra.Command{
 		Use:     "build [flags]",
-		Short:   "Display one or many build resources",
+		Short:   "Display one or more build resources",
 		Long:    get_build_long,
 		Example: get_build_example,
 		Run: func(cmd *cobra.Command, args []string) {

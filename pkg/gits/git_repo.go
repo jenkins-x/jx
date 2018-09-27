@@ -92,7 +92,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.AuthConfi
 				}
 				userAuth = ua
 			} else {
-				userAuth, err = config.PickServerUserAuth(server, "git user name?", batchMode, "", in, out, errOut)
+				userAuth, err = config.PickServerUserAuth(server, "Git user name?", batchMode, "", in, out, errOut)
 				if err != nil {
 					return nil, err
 				}

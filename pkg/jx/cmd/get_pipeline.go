@@ -22,7 +22,7 @@ type GetPipelineOptions struct {
 
 var (
 	get_pipeline_long = templates.LongDesc(`
-		Display one or many pipelines.
+		Display one or more pipelines.
 
 `)
 
@@ -47,7 +47,7 @@ func NewCmdGetPipeline(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:     "pipelines [flags]",
-		Short:   "Display one or many Pipelines",
+		Short:   "Display one or more Pipelines",
 		Long:    get_pipeline_long,
 		Example: get_pipeline_example,
 		Aliases: []string{"pipe", "pipes", "pipeline"},
