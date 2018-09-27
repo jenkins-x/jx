@@ -52,13 +52,13 @@ func TestSaveAsConfigMapExistingCM(t *testing.T) {
 	// Build a config map from our JXInstallConfig struct and a ns string
 	cm := buildConfigMap(jxInstallConfig, ns)
 
-	// Setup mock kubernetes client api (pass objects to set as existing resources)
+	// Setup mock Kubernetes client api (pass objects to set as existing resources)
 	kubernetesInterface := mock.NewSimpleClientset(cm)
 
 	// Run our method
 	_, err := kube.SaveAsConfigMap(kubernetesInterface, kube.ConfigMapNameJXInstallConfig, ns, jxInstallConfig)
 
-	// Get kubernetes client api actions
+	// Get Kubernetes client api actions
 	actions := kubernetesInterface.Actions()
 
 	assert.NoError(t, err)

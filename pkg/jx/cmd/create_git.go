@@ -27,7 +27,7 @@ func NewCmdCreateGit(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	cmd := &cobra.Command{
 		Use:     "git",
-		Short:   "Creates a git resource",
+		Short:   "Creates a Git resource",
 		Aliases: []string{"scm"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd

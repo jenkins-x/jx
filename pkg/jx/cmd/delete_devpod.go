@@ -52,7 +52,7 @@ func NewCmdDeleteDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 
 	cmd := &cobra.Command{
 		Use:     "devpod",
-		Short:   "Deletes one or many DevPods",
+		Short:   "Deletes one or more DevPods",
 		Long:    deleteDevPodLong,
 		Example: deleteDevPodExample,
 		Aliases: []string{"buildpod", "buildpods", "devpods"},

@@ -32,7 +32,7 @@ func NewCmdUpdateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 
 	cmd := &cobra.Command{
 		Use:     "gke",
-		Short:   "Updates an existing kubernetes cluster on GKE: Runs on Google Cloud",
+		Short:   "Updates an existing Kubernetes cluster on GKE: Runs on Google Cloud",
 		Long:    updateClusterGKELong,
 		Example: updateClusterGKEExample,
 		Run: func(cmd *cobra.Command, args []string) {

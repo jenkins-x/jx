@@ -53,7 +53,7 @@ func NewCmdStepRelease(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:   "release",
-		Short: "performs a release on the current git repository",
+		Short: "performs a release on the current Git repository",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -62,11 +62,11 @@ func NewCmdStepRelease(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "r", "", "the docker registry host or host:port to use. If not specified it is loaded from the `docker-registry` ConfigMap")
-	cmd.Flags().StringVarP(&options.Organisation, "organisation", "o", "", "the docker organisation for the generated docker image")
-	cmd.Flags().StringVarP(&options.Application, "application", "a", "", "the docker application image name")
-	cmd.Flags().StringVarP(&options.GitUsername, "git-username", "u", "", "The git username to configure if there is none already setup")
-	cmd.Flags().StringVarP(&options.GitEmail, "git-email", "e", "", "The git email address to configure if there is none already setup")
+	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "r", "", "the Docker registry host or host:port to use. If not specified it is loaded from the `docker-registry` ConfigMap")
+	cmd.Flags().StringVarP(&options.Organisation, "organisation", "o", "", "the Docker organisation for the generated Docker image")
+	cmd.Flags().StringVarP(&options.Application, "application", "a", "", "the Docker application image name")
+	cmd.Flags().StringVarP(&options.GitUsername, "git-username", "u", "", "The Git username to configure if there is none already setup")
+	cmd.Flags().StringVarP(&options.GitEmail, "git-email", "e", "", "The Git email address to configure if there is none already setup")
 	cmd.Flags().StringVarP(&options.XdgConfigHome, "xdg-config-home", "", "/home/jenkins", "The home directory where git config is setup")
 	cmd.Flags().BoolVarP(&options.NoBatch, "no-batch", "", false, "Whether to disable batch mode")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
@@ -99,7 +99,7 @@ func (o *StepReleaseOptions) Run() error {
 	}
 	err = stepGitCredentialsOptions.Run()
 	if err != nil {
-		return fmt.Errorf("Failed to setup git credentials: %s", err)
+		return fmt.Errorf("Failed to setup Git credentials: %s", err)
 	}
 	dir := o.Dir
 	gitUser, err := o.Git().Username(dir)
@@ -116,7 +116,7 @@ func (o *StepReleaseOptions) Run() error {
 		}
 		err = o.Git().SetUsername(dir, gitUser)
 		if err != nil {
-			return fmt.Errorf("Failed to set git user %s: %s", gitUser, err)
+			return fmt.Errorf("Failed to set Git user %s: %s", gitUser, err)
 		}
 	}
 	gitEmail, err := o.Git().Email(dir)
@@ -127,7 +127,7 @@ func (o *StepReleaseOptions) Run() error {
 		}
 		err = o.Git().SetEmail(dir, gitEmail)
 		if err != nil {
-			return fmt.Errorf("Failed to set git email %s: %s", gitEmail, err)
+			return fmt.Errorf("Failed to set Git email %s: %s", gitEmail, err)
 		}
 	}
 

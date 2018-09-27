@@ -31,15 +31,15 @@ type StepGitCredentialsOptions struct {
 
 var (
 	StepGitCredentialsLong = templates.LongDesc(`
-		This pipeline step generates a git credentials file for the current Git provider pipeline Secrets
+		This pipeline step generates a Git credentials file for the current Git provider pipeline Secrets
 
 `)
 
 	StepGitCredentialsExample = templates.Examples(`
-		# generate the git credentials file in the canonical location
+		# generate the Git credentials file in the canonical location
 		jx step git credentials
 
-		# generate the git credentials to a output file
+		# generate the Git credentials to a output file
 		jx step git credentials -o /tmp/mycreds
 
 `)
@@ -58,7 +58,7 @@ func NewCmdStepGitCredentials(f Factory, in terminal.FileReader, out terminal.Fi
 	}
 	cmd := &cobra.Command{
 		Use:     "credentials",
-		Short:   "Creates the git credentials file for the current pipeline git credentials",
+		Short:   "Creates the Git credentials file for the current pipeline Git credentials",
 		Aliases: []string{"nexus_stage"},
 		Long:    StepGitCredentialsLong,
 		Example: StepGitCredentialsExample,
@@ -108,7 +108,7 @@ func (o *StepGitCredentialsOptions) createGitCredentialsFile(fileName string, se
 	if err != nil {
 		return fmt.Errorf("Failed to write to %s: %s", fileName, err)
 	}
-	log.Infof("Generated git credentials file %s\n", util.ColorInfo(fileName))
+	log.Infof("Generated Git credentials file %s\n", util.ColorInfo(fileName))
 	return nil
 }
 
@@ -128,7 +128,7 @@ func (o *StepGitCredentialsOptions) CreateGitCredentialsFromSecrets(secretList *
 					if len(username) > 0 && len(pwd) > 0 {
 						u2, err := url.Parse(u)
 						if err != nil {
-							log.Warnf("Ignoring invalid git service URL %s for pipeline credential %s\n", u, secret.Name)
+							log.Warnf("Ignoring invalid Git service URL %s for pipeline credential %s\n", u, secret.Name)
 						} else {
 							u2.User = url.UserPassword(string(username), string(pwd))
 							buffer.WriteString(u2.String() + "\n")

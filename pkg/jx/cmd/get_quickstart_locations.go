@@ -27,7 +27,7 @@ var (
 	}
 
 	getQuickstartLocationLong = templates.LongDesc(`
-		Display one or many Quickstart Locations for the current Team.
+		Display one or more Quickstart Locations for the current Team.
 
 		For more documentation see: [https://jenkins-x.io/developing/create-quickstart/#customising-your-teams-quickstarts](https://jenkins-x.io/developing/create-quickstart/#customising-your-teams-quickstarts)
 
@@ -58,7 +58,7 @@ func NewCmdGetQuickstartLocation(f Factory, in terminal.FileReader, out terminal
 	}
 	cmd := &cobra.Command{
 		Use:     quickstartLocations,
-		Short:   "Display one or many Quickstart Locations",
+		Short:   "Display one or more Quickstart Locations",
 		Aliases: quickstartLocationsAliases,
 		Long:    getQuickstartLocationLong,
 		Example: getQuickstartLocationExample,

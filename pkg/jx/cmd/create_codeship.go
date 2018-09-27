@@ -90,7 +90,7 @@ func NewCmdCreateCodeship(f Factory, in terminal.FileReader, out terminal.FileWr
 
 	cmd := &cobra.Command{
 		Use:     "codeship",
-		Short:   "Creates a build on CodeShip to create/update JX clusters",
+		Short:   "Creates a build on Codeship to create/update JX clusters",
 		Example: createCodeshipExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
@@ -117,7 +117,7 @@ func (options *CreateCodeshipOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.CodeshipPassword, "codeship-password", "", "", "The password to login to Codeship with, this will not be stored anywhere")
 	cmd.Flags().StringVarP(&options.Flags.CodeshipOrganisation, "codeship-organisation", "", "", "The Codeship organisation to use, this will not be stored anywhere")
 
-	cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultOrganisationGitRepoURL, "The Git repository used as the fork when creating new Organisation git repos")
+	cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultOrganisationGitRepoURL, "The Git repository used as the fork when creating new Organisation Git repos")
 
 	cmd.Flags().StringVarP(&options.Flags.GitUser, "git-user", "", "Codeship", "The name to use for any git commits")
 	cmd.Flags().StringVarP(&options.Flags.GitEmail, "git-email", "", "codeship@jenkins-x.io", "The email to use for any git commits")
@@ -132,7 +132,7 @@ func (o *CreateCodeshipOptions) validate() error {
 
 	// TODO we should only do this if a GKE cluster has been specified
 	if o.Flags.GKEServiceAccount == "" {
-		return errors.New("No gke service account has been set")
+		return errors.New("No GKE service account has been set")
 	}
 	return nil
 }
@@ -228,7 +228,7 @@ func (o *CreateCodeshipOptions) Run() error {
 	var dir string
 
 	if !remoteRepoExists {
-		fmt.Fprintf(o.Out, "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(o.Out, "Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		repo, err = details.CreateRepository()
 		if err != nil {
@@ -257,7 +257,7 @@ func (o *CreateCodeshipOptions) Run() error {
 			return err
 		}
 	} else {
-		fmt.Fprintf(o.Out, "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(o.Out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		dir = path.Join(organisationDir, details.RepoName)
 		localDirExists, err := util.FileExists(dir)
@@ -366,7 +366,7 @@ func (o *CreateCodeshipOptions) Run() error {
 		project, _, err := csOrg.CreateProject(ctx, createProjectRequest)
 
 		if err != nil {
-			return fmt.Errorf("failed to create project, check CodeShip is configured to authenticate against your git provider https://app.codeship.com/authentications.  error: %v", err)
+			return fmt.Errorf("failed to create project, check Codeship is configured to authenticate against your Git provider https://app.codeship.com/authentications.  error: %v", err)
 		}
 
 		uuid = project.UUID

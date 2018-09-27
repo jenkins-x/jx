@@ -22,7 +22,7 @@ type GetPreviewOptions struct {
 
 var (
 	getPreviewLong = templates.LongDesc(`
-		Display one or many environments.
+		Display one or more environments.
 `)
 
 	getPreviewExample = templates.Examples(`
@@ -52,7 +52,7 @@ func NewCmdGetPreview(f Factory, in terminal.FileReader, out terminal.FileWriter
 	}
 	cmd := &cobra.Command{
 		Use:     "previews",
-		Short:   "Display one or many Preview Environments",
+		Short:   "Display one or more Preview Environments",
 		Aliases: []string{"preview"},
 		Long:    getPreviewLong,
 		Example: getPreviewExample,

@@ -27,7 +27,7 @@ type DeleteTeamOptions struct {
 
 var (
 	deleteTeamLong = templates.LongDesc(`
-		Deletes one or many teams and their associated resources (Environments, Jenkins etc)
+		Deletes one or more teams and their associated resources (Environments, Jenkins etc)
 `)
 
 	deleteTeamExample = templates.Examples(`
@@ -54,7 +54,7 @@ func NewCmdDeleteTeam(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 	cmd := &cobra.Command{
 		Use:     "team",
-		Short:   "Deletes one or many teams and their associated resources (Environments, Jenkins etc)",
+		Short:   "Deletes one or more teams and their associated resources (Environments, Jenkins etc)",
 		Long:    deleteTeamLong,
 		Example: deleteTeamExample,
 		Aliases: []string{"teams"},
@@ -68,7 +68,7 @@ func NewCmdDeleteTeam(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 	options.addCommonFlags(cmd)
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Should we default to selecting all the matched teams for deletion")
-	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Fitlers the list of teams you can pick from")
+	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filters the list of teams you can pick from")
 	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
 	return cmd
 }
@@ -106,12 +106,12 @@ func (o *DeleteTeamOptions) Run() error {
 			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
 		}
 	} else {
-		log.Warnf("You are about to delete these teams '%s' on the git provider. This operation CANNOT be undone!",
+		log.Warnf("You are about to delete the following teams '%s' on the Git provider. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false
 		prompt := &survey.Confirm{
-			Message: "Are you sure you want to delete these all these teams?",
+			Message: "Are you sure you want to delete all these teams?",
 			Default: false,
 		}
 		err = survey.AskOne(prompt, &flag, nil, surveyOpts)

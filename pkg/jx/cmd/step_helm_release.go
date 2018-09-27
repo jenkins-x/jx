@@ -130,10 +130,10 @@ func (o *StepHelmReleaseOptions) Run() error {
 		}
 	}
 	if userName == "" {
-		return fmt.Errorf("No enviroment variable $CHARTMUSEUM_CREDS_USR defined")
+		return fmt.Errorf("No environment variable $CHARTMUSEUM_CREDS_USR defined")
 	}
 	if password == "" {
-		return fmt.Errorf("No enviroment variable CHARTMUSEUM_CREDS_PSW defined")
+		return fmt.Errorf("No environment variable CHARTMUSEUM_CREDS_PSW defined")
 	}
 
 	// post the tarball to the chart repository

@@ -35,7 +35,7 @@ type GetActivityOptions struct {
 
 var (
 	get_activity_long = templates.LongDesc(`
-		Display the current activities for one more more projects.
+		Display the current activities for one or more projects.
 `)
 
 	get_activity_example = templates.Examples(`
@@ -45,7 +45,7 @@ var (
 		# List the current activities for application 'foo'
 		jx get act -f foo
 
-		# Watch the  activities for application 'foo'
+		# Watch the activities for application 'foo'
 		jx get act -f foo -w
 	`)
 )
@@ -62,7 +62,7 @@ func NewCmdGetActivity(f Factory, in terminal.FileReader, out terminal.FileWrite
 	}
 	cmd := &cobra.Command{
 		Use:     "activities",
-		Short:   "Display one or many Activities on projects",
+		Short:   "Display one or more Activities on projects",
 		Aliases: []string{"activity", "act"},
 		Long:    get_activity_long,
 		Example: get_activity_example,

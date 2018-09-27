@@ -40,7 +40,7 @@ type CreateClusterMinikubeFlags struct {
 
 var (
 	createClusterMinikubeLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster, installing required local dependencies and provisions the
 		Jenkins X platform
 
 		Minikube is a tool that makes it easy to run Kubernetes locally. Minikube runs a single-node Kubernetes
@@ -56,14 +56,14 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterMinikube(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinikubeOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, MINIKUBE),
 	}
 	cmd := &cobra.Command{
 		Use:     "minikube",
-		Short:   "Create a new kubernetes cluster with minikube: Runs locally",
+		Short:   "Create a new Kubernetes cluster with Minikube: Runs locally",
 		Long:    createClusterMinikubeLong,
 		Example: createClusterMinikubeExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -77,12 +77,12 @@ func NewCmdCreateClusterMinikube(f Factory, in terminal.FileReader, out terminal
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "", fmt.Sprintf("Amount of RAM allocated to the minikube VM in MB. Defaults to %s MB.", MinikubeDefaultMemory))
-	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "", fmt.Sprintf("Number of CPUs allocated to the minikube VM. Defaults to %s.", MinikubeDefaultCpu))
-	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "s", "", fmt.Sprintf("Total amount of storage allocated to the minikube VM. Defaults to %s", MinikubeDefaultDiskSize))
+	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "", fmt.Sprintf("Amount of RAM allocated to the Minikube VM in MB. Defaults to %s MB.", MinikubeDefaultMemory))
+	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "", fmt.Sprintf("Number of CPUs allocated to the Minikube VM. Defaults to %s.", MinikubeDefaultCpu))
+	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "s", "", fmt.Sprintf("Total amount of storage allocated to the Minikube VM. Defaults to %s", MinikubeDefaultDiskSize))
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [hyperkit hyperv kvm kvm2 virtualbox vmwarefusion xhyve]")
-	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with minikube")
-	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "", "", "kubernetes version")
+	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with Minikube")
+	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "", "", "Kubernetes version")
 
 	return cmd
 }
@@ -101,7 +101,7 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 	}
 
 	if o.isExistingMinikubeRunning() {
-		log.Error("an existing minikube cluster is already running, perhaps use `jx install`.\nNote existing minikube must have RBAC enabled, running `minikube delete` and `jx create cluster minikube` creates a new VM with RBAC enabled")
+		log.Error("an existing Minikube cluster is already running, perhaps use `jx install`.\nNote existing Minikube must have RBAC enabled, running `minikube delete` and `jx create cluster minikube` creates a new VM with RBAC enabled")
 		os.Exit(-1)
 	}
 
@@ -149,7 +149,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	prompt := &survey.Input{
 		Message: "memory (MB)",
 		Default: MinikubeDefaultMemory,
-		Help:    "Amount of RAM allocated to the minikube VM in MB",
+		Help:    "Amount of RAM allocated to the Minikube VM in MB",
 	}
 	showPromptIfOptionNotSet(&mem, prompt, o.In, o.Out, o.Err)
 
@@ -157,7 +157,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	prompt = &survey.Input{
 		Message: "cpu (cores)",
 		Default: MinikubeDefaultCpu,
-		Help:    "Number of CPUs allocated to the minikube VM",
+		Help:    "Number of CPUs allocated to the Minikube VM",
 	}
 	showPromptIfOptionNotSet(&cpu, prompt, o.In, o.Out, o.Err)
 
@@ -165,7 +165,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	prompt = &survey.Input{
 		Message: "disk-size (MB)",
 		Default: MinikubeDefaultDiskSize,
-		Help:    "Total amount of storage allocated to the minikube VM in MB",
+		Help:    "Total amount of storage allocated to the Minikube VM in MB",
 	}
 	showPromptIfOptionNotSet(&disksize, prompt, o.In, o.Out, o.Err)
 
