@@ -771,11 +771,11 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 		releaseName := editNs + "-es"
 		err = o.installChartOptions(InstallChartOptions{
 			ReleaseName: releaseName,
-			Chart: kube.ChartExposecontrollerService,
-			Version: "",
-			Ns: editNs,
-			HelmUpdate: true,
-			SetValues: nil,
+			Chart:       kube.ChartExposecontrollerService,
+			Version:     "",
+			Ns:          editNs,
+			HelmUpdate:  true,
+			SetValues:   nil,
 		})
 	}
 	return env, err

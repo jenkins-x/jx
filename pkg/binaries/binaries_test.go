@@ -16,6 +16,7 @@ func TestInstallIfExtractorIsEmpty(t *testing.T) {
 
 type mockedCatVersionExtractor struct {
 }
+
 func (mockedCatVersionExtractor) arguments() []string {
 	return []string{"--version"}
 }
@@ -39,6 +40,7 @@ func TestShouldInstall(t *testing.T) {
 
 type catVersionExtractor struct {
 }
+
 func (catVersionExtractor) arguments() []string {
 	return []string{"--version"}
 }

@@ -24,7 +24,7 @@ type CreateClusterEKSOptions struct {
 
 type CreateClusterEKSFlags struct {
 	ClusterName         string
-	NodeType           string
+	NodeType            string
 	NodeCount           int
 	NodesMin            int
 	NodesMax            int

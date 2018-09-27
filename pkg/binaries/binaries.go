@@ -22,31 +22,29 @@ func LookupForBinary(binary string) (string, error) {
 }
 
 type VersionExtractor interface {
-
 	arguments() []string
 
 	extractVersion(command string, arguments []string) (string, error)
-
 }
 
 func ShouldInstallBinary(binary string, expectedVersion string, versionExtractor VersionExtractor) (bool, error) {
-		if versionExtractor == nil {
-			return true, nil
-		}
+	if versionExtractor == nil {
+		return true, nil
+	}
 
-		binaryPath, err := LookupForBinary(binary)
+	binaryPath, err := LookupForBinary(binary)
+	if err != nil {
+		return true, err
+	}
+	if binaryPath != "" {
+		currentVersion, err := versionExtractor.extractVersion(binaryPath, versionExtractor.arguments())
 		if err != nil {
 			return true, err
 		}
-		if binaryPath != "" {
-			currentVersion, err := versionExtractor.extractVersion(binaryPath, versionExtractor.arguments())
-			if err != nil {
-				return true, err
-			}
-			if currentVersion == expectedVersion {
-				return false, nil
-			}
-
+		if currentVersion == expectedVersion {
+			return false, nil
 		}
-		return true, nil
+
+	}
+	return true, nil
 }
