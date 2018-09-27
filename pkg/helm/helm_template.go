@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -54,6 +56,8 @@ func NewHelmTemplate(client *HelmCLI, workDir string, kubeClient kubernetes.Inte
 }
 
 type HelmHook struct {
+	Kind               string
+	Name               string
 	File               string
 	Hooks              []string
 	HookDeletePolicies []string
@@ -496,8 +500,10 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, version str
 					log.Warnf("Failed to move helm hook template %s to %s: %s", path, newPath, err)
 					return err
 				}
+				name := getYamlValueString(&m, "metadata", "name")
+				kind := getYamlValueString(&m, "kind")
 				helmDeletePolicy := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook-delete-policy")
-				helmHooks = append(helmHooks, NewHelmHook(newPath, helmHook, helmDeletePolicy))
+				helmHooks = append(helmHooks, NewHelmHook(kind, name, newPath, helmHook, helmDeletePolicy))
 				return nil
 			}
 			err = setYamlValue(&m, chart, "metadata", "labels", LabelReleaseName)
@@ -676,9 +682,9 @@ func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) 
 }
 
 func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, chart string, releaseName string, wait bool, create bool) error {
-	files := HookFiles(hooks, hookPhase, "")
-	for _, file := range files {
-		err := h.kubectlApplyFile(ns, hookPhase, wait, create, file)
+	matchingHooks := MatchingHooks(hooks, hookPhase, "")
+	for _, hook := range matchingHooks {
+		err := h.kubectlApplyFile(ns, hookPhase, wait, create, hook.File)
 		if err != nil {
 			return err
 		}
@@ -687,9 +693,21 @@ func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, 
 }
 
 func (h *HelmTemplate) deleteHooks(hooks []*HelmHook, hookPhase string, hookDeletePolicy string, ns string) error {
-	files := HookFiles(hooks, hookPhase, hookDeletePolicy)
-	for _, file := range files {
-		err := h.kubectlDeleteFile(ns, file)
+	matchingHooks := MatchingHooks(hooks, hookPhase, hookDeletePolicy)
+	for _, hook := range matchingHooks {
+		kind := hook.Kind
+		name := hook.Name
+		if kind == "Job" && name != "" {
+			log.Infof("Waiting for helm %s hook Job %s to complete before removing it\n", hookPhase, name)
+			err := kube.WaitForJobToTerminate(h.KubeClient, ns, name, time.Minute*10)
+			if err != nil {
+				log.Warnf("Job %s has not yet terminated for helm hook phase %s due to: %s so removing it anyway\n", name, hookPhase, err)
+			}
+		} else {
+			log.Warnf("Could not wait for hook resource to complete as it is kind %s and name %s for phase %s\n", kind, name, hookPhase)
+		}
+		// TODO wait for job to be complete
+		err := h.kubectlDeleteFile(ns, hook.File)
 		if err != nil {
 			return err
 		}
@@ -698,21 +716,23 @@ func (h *HelmTemplate) deleteHooks(hooks []*HelmHook, hookPhase string, hookDele
 }
 
 // NewHelmHook returns a newly created HelmHook
-func NewHelmHook(file string, hook string, hookDeletePolicy string) *HelmHook {
+func NewHelmHook(kind string, name string, file string, hook string, hookDeletePolicy string) *HelmHook {
 	return &HelmHook{
+		Kind:               kind,
+		Name:               name,
 		File:               file,
 		Hooks:              strings.Split(hook, ","),
 		HookDeletePolicies: strings.Split(hookDeletePolicy, ","),
 	}
 }
 
-// HookFiles returns the matching files which have the given hook name and if hookPolicy is not blank the hook policy too
-func HookFiles(hooks []*HelmHook, hook string, hookDeletePolicy string) []string {
-	answer := []string{}
+// MatchingHooks returns the matching files which have the given hook name and if hookPolicy is not blank the hook policy too
+func MatchingHooks(hooks []*HelmHook, hook string, hookDeletePolicy string) []*HelmHook {
+	answer := []*HelmHook{}
 	for _, h := range hooks {
 		if util.StringArrayIndex(h.Hooks, hook) >= 0 &&
 			(hookDeletePolicy == "" || util.StringArrayIndex(h.HookDeletePolicies, hookDeletePolicy) >= 0) {
-			answer = append(answer, h.File)
+			answer = append(answer, h)
 		}
 	}
 	return answer
