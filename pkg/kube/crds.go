@@ -58,7 +58,7 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 		{
 			Name:        "Git URL",
 			Type:        "string",
-			Description: "The git repository URL for the source of the environment configuration",
+			Description: "The Git repository URL for the source of the environment configuration",
 			JSONPath:    ".spec.source.url",
 		},
 		{
@@ -113,7 +113,7 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 		{
 			Name:        "Git URL",
 			Type:        "string",
-			Description: "The URL of the git repository",
+			Description: "The URL of the Git repository",
 			JSONPath:    ".spec.gitUrl",
 		},
 		{
@@ -152,7 +152,7 @@ func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 		{
 			Name:        "Git URL",
 			Type:        "string",
-			Description: "The URL of the git repository",
+			Description: "The URL of the Git repository",
 			JSONPath:    ".spec.gitHttpUrl",
 		},
 	}

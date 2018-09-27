@@ -73,7 +73,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 			// if no config file is being used lets grab the git server from the current directory
 			server, err := o.Git().Server("")
 			if err != nil {
-				log.Warnf("WARNING: unable to get remote git repo server, %v\n", err)
+				log.Warnf("WARNING: unable to get remote Git repo server, %v\n", err)
 				server = "https://github.com"
 			}
 			config.Servers = []*auth.AuthServer{
@@ -104,7 +104,7 @@ func (o *CommonOptions) LoadPipelineSecrets(kind, serviceKind string) (*corev1.S
 	// TODO return empty list if not inside a pipeline?
 	kubeClient, curNs, err := o.KubeClient()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create a kubernetes client %s", err)
+		return nil, fmt.Errorf("Failed to create a Kubernetes client %s", err)
 	}
 	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
 	if err != nil {

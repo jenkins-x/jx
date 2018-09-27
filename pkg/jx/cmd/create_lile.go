@@ -22,21 +22,21 @@ const (
 
 var (
 	createLileLong = templates.LongDesc(`
-		Creates a new lile application and then optionally setups CI/CD pipelines and GitOps promotion.
+		Creates a new Lile application and then optionally setups CI/CD pipelines and GitOps promotion.
 
 		Lile is an application generator for gRPC services in Go with a set of tools/libraries.
 
 		This command is expected to be run within your '$GOHOME' directory. e.g. at '$GOHOME/src/github.com/myOrgOrUser/'
 
-		For more documentation about lile see: [https://github.com/lileio/lile](https://github.com/lileio/lile)
+		For more documentation about Lile see: [https://github.com/lileio/lile](https://github.com/lileio/lile)
 
 	`)
 
 	createLileExample = templates.Examples(`
-		# Create a lile application and be prompted for the folder name
+		# Create a Lile application and be prompted for the folder name
 		jx create lile 
 
-		# Create a lile application under test1
+		# Create a Lile application under test1
 		jx create lile -o test1
 	`)
 )
@@ -64,7 +64,7 @@ func NewCmdCreateLile(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 	cmd := &cobra.Command{
 		Use:     "lile",
-		Short:   "Create a new lile based application and import the generated code into git and Jenkins for CI/CD",
+		Short:   "Create a new Lile based application and import the generated code into Git and Jenkins for CI/CD",
 		Long:    createLileLong,
 		Example: createLileExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -83,7 +83,7 @@ func NewCmdCreateLile(f Factory, in terminal.FileReader, out terminal.FileWriter
 func (o CreateLileOptions) checkLileInstalled() error {
 	_, err := o.getCommandOutput("", "lile", "help")
 	if err != nil {
-		log.Infoln("Installing lile's dependencies...")
+		log.Infoln("Installing Lile's dependencies...")
 		// lets install lile
 		err = o.installBrewIfRequired()
 		if err != nil {
@@ -96,16 +96,16 @@ func (o CreateLileOptions) checkLileInstalled() error {
 			}
 		}
 
-		log.Infoln("Downloading and building lile - this can take a while...")
+		log.Infoln("Downloading and building Lile - this can take a while...")
 		err = o.RunCommand("go", "get", "-u", "github.com/lileio/lile/...")
 		if err == nil {
-			log.Infoln("Installed lile and its dependencies!")
+			log.Infoln("Installed Lile and its dependencies!")
 		}
 	}
 	return err
 }
 
-// GenerateLile creates a fresh lile project by running lile on local shell
+// GenerateLile creates a fresh Lile project by running lile on local shell
 func (o CreateLileOptions) GenerateLile(dir string) error {
 	var cmdOut bytes.Buffer
 	e := exec.Command("lile", "new", dir)
@@ -138,13 +138,13 @@ func (o *CreateLileOptions) Run() error {
 		}
 	}
 
-	// generate lile project
+	// generate Lile project
 	err = o.GenerateLile(dir)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Created lile project at %s\n\n", util.ColorInfo(dir))
+	log.Infof("Created Lile project at %s\n\n", util.ColorInfo(dir))
 
 	return o.ImportCreatedProject(dir)
 }

@@ -54,7 +54,7 @@ type CreateClusterOKEFlags struct {
 
 var (
 	createClusterOKELong = templates.LongDesc(`
-		This command creates a new kubernetes cluster on OKE, installs required local dependencies and provisions the
+		This command creates a new Kubernetes cluster on OKE, installs required local dependencies and provisions the
 		Jenkins X platform
 
         Please add your $HOME/bin to $PATH otherwise jx will have issue invoking OCI CLI command. If you have already
@@ -76,14 +76,14 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterOKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterOKEOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, OKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "oke",
-		Short:   "Create a new kubernetes cluster on OKE: Runs on Oracle Cloud",
+		Short:   "Create a new Kubernetes cluster on OKE: Runs on Oracle Cloud",
 		Long:    createClusterOKELong,
 		Example: createClusterOKEExample,
 		Run: func(cmd *cobra.Command, args []string) {

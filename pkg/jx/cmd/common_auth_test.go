@@ -53,7 +53,7 @@ func TestAuthLoadFromPipelineGitCredentials(t *testing.T) {
 		url := td.URL
 		user := td.User
 		server := config.GetServer(url)
-		assert.NotNil(t, server, "Could not find a git server for url %s", url)
+		assert.NotNil(t, server, "Could not find a Git server for url %s", url)
 		assert.Equal(t, td.Name, server.Name)
 		assert.Equal(t, td.Kind, server.Kind, "Kinds don't match for %s", url)
 		assert.Equal(t, url, server.URL)

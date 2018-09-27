@@ -36,11 +36,11 @@ type Login struct {
 
 // UserLoginInfo user login information
 type UserLoginInfo struct {
-	// The kubernetes api server public CA data
+	// The Kubernetes API server public CA data
 	Ca string `form:"ca,omitempty" json:"ca,omitempty" yaml:"ca,omitempty" xml:"ca,omitempty"`
 	// The login username of the user
 	Login string `form:"login,omitempty" json:"login,omitempty" yaml:"login,omitempty" xml:"login,omitempty"`
-	// The kubernetes api server address
+	// The Kubernetes API server address
 	Server string `form:"server,omitempty" json:"server,omitempty" yaml:"server,omitempty" xml:"server,omitempty"`
 	// The login token of the user
 	Token string `form:"token,omitempty" json:"token,omitempty" yaml:"token,omitempty" xml:"token,omitempty"`
@@ -197,7 +197,7 @@ func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 
 func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 	client := http.Client{}
-	req, err := http.NewRequest("POST", o.onboardingURL(), nil)
+	req, err := http.NewRequest(http.MethodPost, o.onboardingURL(), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "building onboarding request")
 	}
@@ -232,8 +232,8 @@ func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 
 func (o *LoginOptions) onboardingURL() string {
 	url := o.URL
-	if strings.HasPrefix(url, "/") {
-		url = strings.TrimPrefix(url, "/")
+	if strings.HasSuffix(url, "/") {
+		url = strings.TrimSuffix(url, "/")
 	}
 	return url + UserOnboardingEndpoint
 }

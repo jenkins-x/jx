@@ -23,9 +23,9 @@ var (
 	}
 
 	getHelmBinLong = templates.LongDesc(`
-		Display the helm binary name used in pipelines.
+		Display the Helm binary name used in pipelines.
 
-		This setting lets you switch from the stable release to early access releases (e.g. from helm 2 <-> 3)
+		This setting lets you switch from the stable release to early access releases (e.g. from Helm 2 <-> 3)
 `)
 
 	getHelmBinExample = templates.Examples(`
@@ -48,7 +48,7 @@ func NewCmdGetHelmBin(f Factory, in terminal.FileReader, out terminal.FileWriter
 	}
 	cmd := &cobra.Command{
 		Use:     "helmbin",
-		Short:   "Display the helm binary name used in the pipelines",
+		Short:   "Display the Helm binary name used in the pipelines",
 		Aliases: []string{"helm"},
 		Long:    getHelmBinLong,
 		Example: getHelmBinExample,
@@ -66,11 +66,11 @@ func NewCmdGetHelmBin(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements this command
 func (o *GetHelmBinOptions) Run() error {
-	helm, _, err := o.TeamHelmBin()
+	helm, _, _, err := o.TeamHelmBin()
 	if err != nil {
 		return err
 	}
-	log.Infof("You team uses the helm binary: %s\n", util.ColorInfo(helm))
+	log.Infof("Your team uses the helm binary: %s\n", util.ColorInfo(helm))
 	log.Infof("To change this value use: %s\n", util.ColorInfo("jx edit helmbin helm3"))
 	return nil
 }

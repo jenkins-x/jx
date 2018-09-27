@@ -26,7 +26,7 @@ func NewCmdDiagnose(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 	}
 	cmd := &cobra.Command{
 		Use:   "diagnose",
-		Short: "Print diagnostic information about the Jenkins-X installation",
+		Short: "Print diagnostic information about the Jenkins X installation",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -51,12 +51,12 @@ func (o *DiagnoseOptions) Run() error {
 	}
 	log.Infof("Running in namespace: %s", util.ColorInfo(ns))
 
-	err := printStatus(o, "Jenkins-X Version", "jx", "version", "--no-version-check")
+	err := printStatus(o, "Jenkins X Version", "jx", "version", "--no-version-check")
 	if err != nil {
 		return err
 	}
 
-	err = printStatus(o, "Jenkins-X Status", "jx", "status")
+	err = printStatus(o, "Jenkins X Status", "jx", "status")
 	if err != nil {
 		return err
 	}

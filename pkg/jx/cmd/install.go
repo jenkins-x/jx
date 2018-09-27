@@ -102,7 +102,7 @@ var (
 
 		*RBAC is enabled on the cluster
 
-		*Insecure docker registry is enabled for docker registries running locally inside kubernetes on the service IP range. See the above documentation for more detail
+		*Insecure Docker registry is enabled for Docker registries running locally inside Kubernetes on the service IP range. See the above documentation for more detail
 
 `)
 
@@ -119,7 +119,7 @@ var (
 )
 
 // NewCmdInstall creates a command object for the generic "install" action, which
-// installs the jenkins-x platform on a kubernetes cluster.
+// installs the jenkins-x platform on a Kubernetes cluster.
 func NewCmdInstall(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 
 	options := CreateInstallOptions(f, in, out, errOut)
@@ -205,10 +205,10 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	flags.addCloudEnvOptions(cmd)
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
 	cmd.Flags().BoolVarP(&flags.NoDefaultEnvironments, "no-default-environments", "", false, "Disables the creation of the default Staging and Production environments")
-	cmd.Flags().StringVarP(&flags.DefaultEnvironmentPrefix, "default-environment-prefix", "", "", "Default environment repo prefix, your git repos will be of the form 'environment-$prefix-$envName'")
+	cmd.Flags().StringVarP(&flags.DefaultEnvironmentPrefix, "default-environment-prefix", "", "", "Default environment repo prefix, your Git repos will be of the form 'environment-$prefix-$envName'")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
-	cmd.Flags().StringVarP(&flags.EnvironmentGitOwner, "environment-git-owner", "", "", "The git provider organisation to create the environment git repositories in")
+	cmd.Flags().StringVarP(&flags.EnvironmentGitOwner, "environment-git-owner", "", "", "The Git provider organisation to create the environment Git repositories in")
 	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
@@ -225,7 +225,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 }
 
 func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments git repo")
+	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments Git repo")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }
 
@@ -242,6 +242,20 @@ func (options *InstallOptions) Run() error {
 
 	// configure the helm binary
 	options.Helm().SetHelmBinary(helmBinary)
+	if initOpts.Flags.HelmTemplate {
+		helmer := options.Helm()
+		helmCli, ok := helmer.(*helm.HelmCLI)
+		if ok && helmCli != nil {
+			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client)
+		} else {
+			helmTemplate, ok := helmer.(*helm.HelmTemplate)
+			if ok {
+				options.helm = helmTemplate
+			} else {
+				log.Warnf("Helm facade is not a *helm.HelmCLI or *helm.HelmTemplate: %#v\n", helmer)
+			}
+		}
+	}
 
 	dependencies := []string{}
 	if !initOpts.Flags.Tiller {
@@ -358,7 +372,7 @@ func (options *InstallOptions) Run() error {
 		}
 		ip, err := options.getCommandOutput("", "minikube", "ip")
 		if err != nil {
-			return errors.Wrap(err, "failed to get the IP from minikube")
+			return errors.Wrap(err, "failed to get the IP from Minikube")
 		}
 		options.Flags.Domain = ip + ".nip.io"
 	}
@@ -385,6 +399,19 @@ func (options *InstallOptions) Run() error {
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
 		}
+	}
+
+	if initOpts.Flags.HelmTemplate {
+		callback := func(env *v1.Environment) error {
+			env.Spec.TeamSettings.HelmTemplate = true
+			log.Info("Enabling helm template mode in the TeamSettings\n")
+			return nil
+		}
+		err = options.ModifyDevEnvironment(callback)
+		if err != nil {
+			return err
+		}
+		initOpts.helm = nil
 	}
 
 	if !initOpts.Flags.Tiller {
@@ -457,7 +484,7 @@ func (options *InstallOptions) Run() error {
 	}
 	err = options.addGitServersToJenkinsConfig(helmConfig, gitAuthCfg)
 	if err != nil {
-		return errors.Wrap(err, "failed to add the git servers to Jenkins config")
+		return errors.Wrap(err, "failed to add the Git servers to Jenkins config")
 	}
 
 	config, err := helmConfig.String()
@@ -473,7 +500,7 @@ func (options *InstallOptions) Run() error {
 
 	// run  helm install setting the token and domain values
 	if options.Flags.Provider == "" {
-		return fmt.Errorf("no kubernetes provider found to match cloud-environment with")
+		return fmt.Errorf("no Kubernetes provider found to match cloud-environment with")
 	}
 
 	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(options.Flags.Provider)))
@@ -484,7 +511,7 @@ func (options *InstallOptions) Run() error {
 	// create a temporary file that's used to pass current git creds to helm in order to create a secret for pipelines to tag releases
 	dir, err := util.ConfigDir()
 	if err != nil {
-		return errors.Wrap(err, "failed to create a temporary config dir for git credentials")
+		return errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
 	}
 
 	secretsFileName := filepath.Join(dir, GitSecretsFile)
@@ -794,7 +821,7 @@ func (options *InstallOptions) Run() error {
 
 	options.logAdminPassword()
 
-	log.Infof("\nYour kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
+	log.Infof("\nYour Kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
 	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx ns "+originalNs))
 	log.Infof("For help on switching contexts see: %s\n\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
 
@@ -864,7 +891,7 @@ func (options *InstallOptions) logAdminPassword() {
 	********************************************************
 	
 	`
-	log.Infof(astrix, fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
+	log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
 }
 
 // LoadVersionFromCloudEnvironmentsDir loads a version from the cloud environments directory
@@ -1012,7 +1039,7 @@ func (options *InstallOptions) getGitToken() (string, string, error) {
 			return username, os.Getenv(JX_GIT_TOKEN), nil
 		}
 	}
-	log.Infof("Lets set up a git username and API token to be able to perform CI/CD\n\n")
+	log.Infof("Lets set up a Git username and API token to be able to perform CI/CD\n\n")
 	userAuth, err := options.getGitUser("")
 	if err != nil {
 		return "", "", err
@@ -1081,7 +1108,7 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 		kind := gits.SaasGitKind(gitProvider)
 		server = config.GetOrCreateServerName(gitProvider, "", kind)
 	} else {
-		server, err = config.PickServer("Which git provider?", options.BatchMode, options.In, options.Out, options.Err)
+		server, err = config.PickServer("Which Git provider?", options.BatchMode, options.In, options.Out, options.Err)
 		if err != nil {
 			return userAuth, err
 		}
@@ -1209,7 +1236,7 @@ func (options *InstallOptions) ensureDefaultStorageClass(client kubernetes.Inter
 	return err
 }
 
-// returns the docker registry string for the given provider
+// returns the Docker registry string for the given provider
 func (options *InstallOptions) dockerRegistryValue() (string, error) {
 	if options.Flags.DockerRegistry != "" {
 		return options.Flags.DockerRegistry, nil

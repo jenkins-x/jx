@@ -15,7 +15,7 @@ type OrganisationLister interface {
 	ListOrganisations() ([]GitOrganisation, error)
 }
 
-// GitProvider is the interface for abstracting use of different git provider APIs
+// GitProvider is the interface for abstracting use of different Git provider APIs
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits GitProvider -o mocks/git_provider.go
 type GitProvider interface {
 	OrganisationLister
@@ -104,10 +104,10 @@ type GitProvider interface {
 
 	JenkinsWebHookPath(gitURL string, secret string) string
 
-	// Label returns the git service label or name
+	// Label returns the Git service label or name
 	Label() string
 
-	// ServerURL returns the git server URL
+	// ServerURL returns the Git server URL
 	ServerURL() string
 
 	// BranchArchiveURL returns a URL to the ZIP archive for the git branch
@@ -122,7 +122,7 @@ type GitProvider interface {
 	// Returns user info, if possible
 	UserInfo(username string) *GitUser
 
-	AddCollaborator(string, string) error
+	AddCollaborator(string, string, string) error
 	// TODO Refactor to remove bespoke types when we implement another provider
 	ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error)
 	// TODO Refactor to remove bespoke types when we implement another provider

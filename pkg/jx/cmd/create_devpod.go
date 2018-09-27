@@ -109,7 +109,7 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 
 	cmd := &cobra.Command{
 		Use:     "devpod",
-		Short:   "Creates a Developer Pod for running builds and tests inside the cluster",
+		Short:   "Creates a DevPod for running builds and tests inside the cluster",
 		Aliases: []string{"dpod", "buildpod"},
 		Long:    createDevPodLong,
 		Example: createDevPodExample,
@@ -123,8 +123,8 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 
 	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template to use")
 	cmd.Flags().StringVarP(&options.Suffix, "suffix", "s", "", "The suffix to append the pod name")
-	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the dev pod")
-	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1", "The request CPU of the dev pod")
+	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the DevPod")
+	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1", "The request CPU of the DevPod")
 	cmd.Flags().BoolVarP(&options.Reuse, "reuse", "", true, "Reuse an existing DevPod if a suitable one exists. The DevPod will be selected based on the label (or current working directory)")
 	cmd.Flags().BoolVarP(&options.Sync, "sync", "", false, "Also synchronise the local file system into the DevPod")
 	cmd.Flags().IntSliceVarP(&options.Ports, "ports", "p", []int{}, "Container ports exposed by the DevPod")
@@ -134,7 +134,7 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
 	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
 	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
-	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
+	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
 
 	options.addCommonFlags(cmd)
 	return cmd
@@ -187,7 +187,7 @@ func (o *CreateDevPodOptions) Run() error {
 		label = o.guessDevPodLabel(dir, labels)
 	}
 	if label == "" {
-		label, err = util.PickName(labels, "Pick which kind of dev pod you wish to create: ", o.In, o.Out, o.Err)
+		label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -459,7 +459,7 @@ func (o *CreateDevPodOptions) Run() error {
 
 	theiaServiceName := name + "-theia"
 	if create {
-		log.Infof("Creating a dev pod of label: %s\n", util.ColorInfo(label))
+		log.Infof("Creating a DevPod of label: %s\n", util.ColorInfo(label))
 		_, err = podResources.Create(pod)
 		if err != nil {
 			if o.Verbose {
@@ -691,7 +691,7 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 	if !o.Sync {
-		// Try to clone the right git repo into the DevPod
+		// Try to clone the right Git repo into the DevPod
 
 		// First configure git credentials
 		rshExec = append(rshExec, "jx step git credentials", "git config --global credential.helper store")
@@ -769,7 +769,14 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if !flag || err != nil {
 		log.Infof("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
-		err = o.installChart(releaseName, kube.ChartExposecontrollerService, "", editNs, true, nil)
+		err = o.installChartOptions(InstallChartOptions{
+			ReleaseName: releaseName,
+			Chart: kube.ChartExposecontrollerService,
+			Version: "",
+			Ns: editNs,
+			HelmUpdate: true,
+			SetValues: nil,
+		})
 	}
 	return env, err
 }

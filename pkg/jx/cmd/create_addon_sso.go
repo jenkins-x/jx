@@ -95,11 +95,11 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 func (o *CreateAddonSSOOptions) Run() error {
 	_, _, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
+		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
 	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
-		return errors.Wrap(err, "retrieving the development namesapce")
+		return errors.Wrap(err, "retrieving the development namespace")
 	}
 
 	err = o.ensureCertmanager()
@@ -180,7 +180,7 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 	}
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(gits.GitHubURL)
-	userAuth, err := config.PickServerUserAuth(server, "git user name", true, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, "Git user name", true, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return nil, err
 	}
@@ -190,6 +190,9 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 	}
 
 	orgs := gits.GetOrganizations(provider, userAuth.Username)
+	if len(orgs) == 0 {
+		return nil, fmt.Errorf("user %s is not member of any GitHub organizations", userAuth.Username)
+	}
 	sort.Strings(orgs)
 	promt := &survey.MultiSelect{
 		Message: "Select GitHub organizations to authorize users from:",

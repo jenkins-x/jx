@@ -155,7 +155,7 @@ func (suite *GitlabProviderSuite) TestGetRepository() {
 }
 
 func (suite *GitlabProviderSuite) TestAddCollaborator() {
-	err := suite.provider.AddCollaborator("derek", "repo")
+	err := suite.provider.AddCollaborator("derek", orgName, "repo")
 	suite.Require().Nil(err)
 }
 

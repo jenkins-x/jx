@@ -1205,7 +1205,7 @@ func (o *CommonOptions) installMinishift() error {
 
 func (o *CommonOptions) installGcloud() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
-		return errors.New("please install missing gloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
+		return errors.New("please install missing gcloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
 	}
 	err := o.RunCommand("brew", "tap", "caskroom/cask")
 	if err != nil {
@@ -1276,7 +1276,7 @@ func (o *CommonOptions) installHeptioAuthenticatorAws() error {
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if p == "" {
-		// lets detect minikube
+		// lets detect Minikube
 		currentContext, err := o.getCommandOutput("", "kubectl", "config", "current-context")
 		if err == nil && currentContext == "minikube" {
 			p = MINIKUBE
@@ -1293,7 +1293,7 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 			Message: "Cloud Provider",
 			Options: KUBERNETES_PROVIDERS,
 			Default: MINIKUBE,
-			Help:    "Cloud service providing the kubernetes cluster, local VM (minikube), Google (GKE), Oracle (OKE), Azure (AKS)",
+			Help:    "Cloud service providing the Kubernetes cluster, local VM (Minikube), Google (GKE), Oracle (OKE), Azure (AKS)",
 		}
 
 		survey.AskOne(prompt, &p, nil, surveyOpts)
@@ -1483,15 +1483,15 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 		return username, err
 	}
 	if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
-		return username, fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
+		return username, fmt.Errorf("No Kubernetes contexts available! Try create or connect to cluster?")
 	}
 	contextName := config.CurrentContext
 	if contextName == "" {
-		return username, fmt.Errorf("No kuberentes context selected. Please select one (e.g. via jx context) first")
+		return username, fmt.Errorf("No Kubernetes context selected. Please select one (e.g. via jx context) first")
 	}
 	context := config.Contexts[contextName]
 	if context == nil {
-		return username, fmt.Errorf("No kuberentes context available for context %s", contextName)
+		return username, fmt.Errorf("No Kubernetes context available for context %s", contextName)
 	}
 	username = context.AuthInfo
 

@@ -320,7 +320,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Config: config,
 		Events: []string{"*"},
 	}
-	log.Infof("Creating github webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
+	log.Infof("Creating GitHub webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
 	_, _, err = p.Client.Repositories.CreateHook(p.Context, owner, repo, hook)
 	return err
 }
@@ -895,9 +895,9 @@ func (p *GitHubProvider) UserInfo(username string) *GitUser {
 	}
 }
 
-func (p *GitHubProvider) AddCollaborator(user string, repo string) error {
+func (p *GitHubProvider) AddCollaborator(user string, organisation string, repo string) error {
 	log.Infof("Automatically adding the pipeline user: %v as a collaborator.\n", user)
-	_, err := p.Client.Repositories.AddCollaborator(p.Context, p.Username, repo, user, &github.RepositoryAddCollaboratorOptions{})
+	_, err := p.Client.Repositories.AddCollaborator(p.Context, organisation, repo, user, &github.RepositoryAddCollaboratorOptions{})
 	if err != nil {
 		return err
 	}

@@ -51,7 +51,7 @@ type CreateClusterGKETerraformFlags struct {
 
 var (
 	createClusterGKETerraformLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster on GKE, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster on GKE, installing required local dependencies and provisions the
 		Jenkins X platform
 
 		You can see a demo of this command here: [https://jenkins-x.io/demos/create_cluster_gke/](https://jenkins-x.io/demos/create_cluster_gke/)
@@ -79,14 +79,14 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKETerraformOptions{
 		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "terraform",
-		Short:   "Create a new kubernetes cluster on GKE using Terraform: Runs on Google Cloud",
+		Short:   "Create a new Kubernetes cluster on GKE using Terraform: Runs on Google Cloud",
 		Long:    createClusterGKETerraformLong,
 		Example: createClusterGKETerraformExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -116,7 +116,7 @@ func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 }
 
 func (o *CreateClusterGKETerraformOptions) addAuthFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&o.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
+	cmd.Flags().BoolVarP(&o.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	cmd.Flags().StringVarP(&o.ServiceAccount, "service-account", "", "", "Use a service account to login to GCE")
 }
 
@@ -140,7 +140,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	if !o.BatchMode {
 		confirm := false
 		prompt := &survey.Confirm{
-			Message: "Creating a GKE cluster with terraform is an experimental feature in jx.  Would you like to continue?",
+			Message: "Creating a GKE cluster with Terraform is an experimental feature in jx.  Would you like to continue?",
 		}
 		survey.AskOne(prompt, &confirm, nil, surveyOpts)
 

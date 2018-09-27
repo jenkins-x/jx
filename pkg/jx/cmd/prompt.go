@@ -41,7 +41,7 @@ type PromptOptions struct {
 
 var (
 	get_prompt_long = templates.LongDesc(`
-		Generate a command prompt for the current namespace and kubernetes context.
+		Generate a command prompt for the current namespace and Kubernetes context.
 `)
 
 	get_prompt_example = templates.Examples(`
@@ -87,7 +87,7 @@ func NewCmdPrompt(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 	cmd.Flags().StringArrayVarP(&options.LabelColor, optionLabelColor, "", []string{"blue"}, "The color for the label")
 	cmd.Flags().StringArrayVarP(&options.NamespaceColor, optionNamespaceColor, "", []string{"green"}, "The color for the namespace")
-	cmd.Flags().StringArrayVarP(&options.ContextColor, optionContextColor, "", []string{"cyan"}, "The color for the kubernetes context")
+	cmd.Flags().StringArrayVarP(&options.ContextColor, optionContextColor, "", []string{"cyan"}, "The color for the Kubernetes context")
 
 	cmd.Flags().BoolVarP(&options.NoLabel, "no-label", "", false, "Disables the use of the label in the prompt")
 	cmd.Flags().BoolVarP(&options.ShowIcon, "icon", "i", false, "Uses an icon for the label in the prompt")

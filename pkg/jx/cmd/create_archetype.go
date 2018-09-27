@@ -20,7 +20,7 @@ var (
 	create_archetype_long = templates.LongDesc(`
 		Creates a new Maven project using an Archetype
 
-		You then get the option to import the generated source code into a git repository and Jenkins for CI/CD
+		You then get the option to import the generated source code into a Git repository and Jenkins for CI/CD
 
 `)
 
@@ -64,7 +64,7 @@ func NewCmdCreateArchetype(f Factory, in terminal.FileReader, out terminal.FileW
 
 	cmd := &cobra.Command{
 		Use:     "archetype",
-		Short:   "Create a new app from a Maven Archetype and import the generated code into git and Jenkins for CI/CD",
+		Short:   "Create a new app from a Maven Archetype and import the generated code into Git and Jenkins for CI/CD",
 		Long:    create_archetype_long,
 		Example: create_archetype_example,
 		Aliases: []string{"arch"},
