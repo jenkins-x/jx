@@ -650,6 +650,7 @@ func (o *CreateDevPodOptions) Run() error {
 		log.Infof("Installing Bash Completion into DevPod\n")
 		rshExec = append(rshExec, "yum install -q -y bash-completion bash-completion-extra", "mkdir -p ~/.jx", "jx completion bash > ~/.jx/bash", "echo \"source ~/.jx/bash\" >> ~/.bashrc")
 
+		// Only add git secrets to the Theia container when sync flag is missing (otherwise Theia container won't exist)
 		if !o.Sync {
 			// Add Git Secrets to Theia container
 			secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
