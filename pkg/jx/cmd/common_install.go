@@ -34,8 +34,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const eksctlVersion = "0.1.1"
-
 var (
 	groovy = `
 // imports
@@ -1244,7 +1242,7 @@ func (o *CommonOptions) installAws() error {
 }
 
 func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
-	return o.installEksCtlWithVersion(eksctlVersion, skipPathScan)
+	return o.installEksCtlWithVersion(binaries.EksctlVersion, skipPathScan)
 }
 
 func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bool) error {
