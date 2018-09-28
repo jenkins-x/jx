@@ -164,6 +164,7 @@ type Gitter interface {
 	ForcePushBranch(dir string, localBranch string, remoteBranch string) error
 	CloneOrPull(url string, directory string) error
 	Pull(dir string) error
+	PullRemoteBranches(dir string) error
 	PullUpstream(dir string) error
 
 	AddRemote(dir string, name string, url string) error
@@ -199,4 +200,5 @@ type Gitter interface {
 
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
+	DeleteRemoteBranch(dir string, remoteName string, branch string) error
 }
