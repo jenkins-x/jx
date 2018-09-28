@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,29 +63,41 @@ func NewCmdControllerTeam(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements this command
 func (o *ControllerTeamOptions) Run() error {
-	err := o.ControllerOptions.registerTeamCRD()
+	co := &o.ControllerOptions
+	err := co.registerTeamCRD()
 	if err != nil {
 		return err
 	}
 
-	jxClient, _, err := o.ControllerOptions.JXClientAndDevNamespace()
+	jxClient, devNs, err := co.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
 
-	client, _, err := o.ControllerOptions.KubeClient()
+	client, _, err := co.KubeClient()
 	if err != nil {
 		return err
 	}
 
 	// lets default the team settings based on the current team settings
-	settings, err := o.ControllerOptions.TeamSettings()
+	settings, err := co.TeamSettings()
 	if settings.HelmTemplate {
 		o.InstallOptions.InitOptions.Flags.NoTiller = true
 	} else if settings.NoTiller {
 		o.InstallOptions.InitOptions.Flags.RemoteTiller = false
 	} else if settings.HelmBinary == "helm3" {
 		o.InstallOptions.InitOptions.Flags.Helm3 = true
+	}
+	if settings.PromotionEngine == v1.PromotionEngineProw {
+		o.InstallOptions.Flags.Prow = true
+	}
+
+	// lets default the login/pwd for Jenkins from the admin cluster
+	if o.InstallOptions.Password == "" {
+		o.InstallOptions.Password, err = co.getDefaultAdminPassword(devNs)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to load the default admin password from namespace %s", devNs)
+		}
 	}
 
 	log.Infof("Watching for teams in all namespaces\n")
@@ -150,8 +163,12 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		}
 
 		o.InstallOptions.BatchMode = true
+		o.InstallOptions.InitOptions.Flags.SkipIngress = true
+
+		// TODO lets load this from the current team
 		o.InstallOptions.Flags.Provider = "gke"
-		o.InstallOptions.Flags.NoDefaultEnvironments = true
+
+		//o.InstallOptions.Flags.NoDefaultEnvironments = true
 		o.InstallOptions.Flags.Namespace = team.Name
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = team.Name
 		o.InstallOptions.CommonOptions.InstallDependencies = true
