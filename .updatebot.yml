@@ -2,8 +2,9 @@ github:
   organisations:
   - name: jenkins-x
     repositories:
-    - name: homebrew-jx
     - name: builder-base
+      excludeUpdateLoop: true
+    - name: homebrew-jx
     - name: jx-docs
     - name: jenkins-x-platform
     - name: jx-tutorial
