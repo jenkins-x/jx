@@ -175,10 +175,10 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		ec.Config.Domain = ingressConfig.Domain
 		ec.Config.Exposer = ingressConfig.Exposer
 		if ingressConfig.TLS {
-			ec.Config.HTTP = "true"
+			ec.Config.HTTP = "false"
 			ec.Config.TLSAcme = "true"
 		} else {
-			ec.Config.HTTP = "false"
+			ec.Config.HTTP = "true"
 			ec.Config.TLSAcme = "false"
 		}
 
