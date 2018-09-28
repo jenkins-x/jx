@@ -7,9 +7,9 @@ import (
 
 // CreateS3Bucket creates a new S3 bucket in the default region with the given bucket name
 // returning the location string
-func CreateS3Bucket(bucketName string, region string) (string, error) {
+func CreateS3Bucket(bucketName string, profile string, region string) (string, error) {
 	location := ""
-	sess, err := NewAwsSession("", region)
+	sess, err := NewAwsSession(profile, region)
 	if err != nil {
 		return location, err
 	}

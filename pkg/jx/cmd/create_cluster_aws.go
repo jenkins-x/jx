@@ -32,6 +32,8 @@ type CreateClusterAWSOptions struct {
 }
 
 type CreateClusterAWSFlags struct {
+	Profile                string
+	Region                 string
 	ClusterName            string
 	NodeCount              string
 	KubeVersion            string
@@ -89,6 +91,8 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
 
+	cmd.Flags().StringVarP(&options.Flags.Profile, "profile", "", "", "AWS profile to use.")
+	cmd.Flags().StringVarP(&options.Flags.Region, "region", "", "", "AWS region to use. Default: " + amazon.DefaultRegion)
 	cmd.Flags().BoolVarP(&options.Flags.UseRBAC, "rbac", "r", true, "whether to enable RBAC on the Kubernetes cluster")
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "aws1", "The name of this cluster.")
 	cmd.Flags().StringVarP(&options.Flags.NodeCount, optionNodes, "o", "", "node count")
@@ -172,7 +176,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	if zones == "" {
 		return fmt.Errorf("No Availability Zones provided!")
 	}
-	accountId, defaultRegion, err := amazon.GetAccountIDAndRegion()
+	accountId, _, err := amazon.GetAccountIDAndRegion(o.Flags.Profile, o.Flags.Region)
 	if err != nil {
 		return err
 	}
@@ -189,7 +193,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			bucketName := "kops-state-" + accountId + "-" + string(uuid.NewUUID())
 			log.Infof("Creating S3 bucket %s to store kops state\n", util.ColorInfo(bucketName))
 
-			location, err := amazon.CreateS3Bucket(bucketName, defaultRegion)
+			location, err := amazon.CreateS3Bucket(bucketName, o.Flags.Profile, o.Flags.Region)
 			if err != nil {
 				return err
 			}
