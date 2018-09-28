@@ -7,7 +7,7 @@ import (
 func AvailabilityZones() ([]string, error) {
 	answer := []string{}
 
-	sess, _, err := NewAwsSession()
+	sess, err := NewAwsSessionWithoutOptions()
 	if err != nil {
 		return answer, err
 	}

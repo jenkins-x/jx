@@ -123,9 +123,13 @@ func (o *CreateClusterEKSOptions) Run() error {
 	if flags.ClusterName != "" {
 		args = append(args, "--name", flags.ClusterName)
 	}
-	if flags.Region != "" {
-		args = append(args, "--region", amazon.ResolveRegionIfOptionEmpty(flags.Region))
+
+	region, err := amazon.ResolveRegion("", flags.Region)
+	if err != nil {
+		return err
 	}
+	args = append(args, "--region", region)
+
 	if zones != "" {
 		args = append(args, "--zones", zones)
 	}
