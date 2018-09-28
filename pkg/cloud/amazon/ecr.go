@@ -13,9 +13,9 @@ import (
 )
 
 // GetAccountID returns the current account ID
-func GetAccountIDAndRegion() (string, string, error) {
-	sess, err := NewAwsSessionWithoutOptions()
-	region := *sess.Config.Region
+func GetAccountIDAndRegion(profile string, region string) (string, string, error) {
+	sess, err := NewAwsSession(profile, region)
+	region = *sess.Config.Region
 	if err != nil {
 		return "", region, err
 	}
@@ -35,7 +35,7 @@ func GetAccountIDAndRegion() (string, string, error) {
 
 // GetContainerRegistryHost
 func GetContainerRegistryHost() (string, error) {
-	accountId, region, err := GetAccountIDAndRegion()
+	accountId, region, err := GetAccountIDAndRegion("", "")
 	if err != nil {
 		return "", err
 	}
