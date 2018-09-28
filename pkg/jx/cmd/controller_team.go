@@ -211,6 +211,19 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			return
 		}
 
+		adminTeamSettings, _ := o.ControllerOptions.TeamSettings()
+		if adminTeamSettings != nil {
+			callback := func(env *v1.Environment) error {
+				env.Spec.TeamSettings.BuildPackRef = adminTeamSettings.BuildPackRef
+				env.Spec.TeamSettings.BuildPackURL = adminTeamSettings.BuildPackURL
+				return nil
+			}
+			err = o.ControllerOptions.modifyDevEnvironment(jxClient, team.Name, callback)
+			if err != nil {
+				log.Errorf("Failed to update team settings in namespace %s: %s\n", team.Name, err)
+			}
+		}
+
 		err = o.ControllerOptions.ModifyTeam(team.Name, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusComplete
 			team.Status.Message = "Installation complete"
