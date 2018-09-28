@@ -1149,6 +1149,7 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 			teamSettings.GitServer = url
 			teamSettings.PipelineUsername = userAuth.Username
 			teamSettings.Organisation = options.Owner
+			teamSettings.GitPrivate = options.GitRepositoryOptions.Private
 			return nil
 		}
 		err = options.ModifyDevEnvironment(callback)
