@@ -353,30 +353,40 @@ func (config *AuthConfig) GetServerURLs() []string {
 }
 
 // PickOrCreateServer picks the server to use defaulting to the current server
-func (config *AuthConfig) PickOrCreateServer(defaultServerURL string, message string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*AuthServer, error) {
+func (config *AuthConfig) PickOrCreateServer(fallbackServerURL string, serverURL string, message string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*AuthServer, error) {
 	servers := config.Servers
-	if len(servers) == 1 {
-		return servers[0], nil
-	}
 	if len(servers) == 0 {
-		return config.GetOrCreateServer(defaultServerURL), nil
+		if serverURL != "" {
+			return config.GetOrCreateServer(serverURL), nil
+		}
+		return config.GetOrCreateServer(fallbackServerURL), nil
 	}
 	// lets let the user pick which server to use defaulting to the current server
 	names := []string{}
+	teamServerMissing := true
 	for _, s := range servers {
 		u := s.URL
 		if u != "" {
 			names = append(names, u)
 		}
+		if u == serverURL {
+			teamServerMissing = false
+		}
 	}
-	defaultValue := config.CurrentServer
+	if teamServerMissing && serverURL != "" {
+		names = append(names, serverURL)
+	}
+	if len(names) == 1 {
+		return config.GetOrCreateServer(names[0]), nil
+	}
+	defaultValue := serverURL
+	if defaultValue == "" {
+		defaultValue = config.CurrentServer
+	}
 	if defaultValue == "" {
 		defaultValue = names[0]
 	}
 	if batchMode {
-		if defaultValue == "" {
-			return nil, fmt.Errorf("No current server defined for git in batch mode")
-		}
 		return config.GetOrCreateServer(defaultValue), nil
 	}
 	name, err := util.PickRequiredNameWithDefault(names, message, defaultValue, in, out, outErr)

@@ -144,6 +144,10 @@ type TeamSettings struct {
 	PromotionEngine     PromotionEngineType  `json:"promotionEngine,omitempty" protobuf:"bytes,10,opt,name=promotionEngine"`
 	NoTiller            bool                 `json:"noTiller,omitempty" protobuf:"bytes,11,opt,name=noTiller"`
 	HelmTemplate        bool                 `json:"helmTemplate,omitempty" protobuf:"bytes,12,opt,name=helmTemplate"`
+	GitServer           string               `json:"gitServer,omitempty" protobuf:"bytes,13,opt,name=gitServer" command:"gitserver" commandUsage:"Default git server for new repositories"`
+	Organisation        string               `json:"organisation,omitempty" protobuf:"bytes,14,opt,name=organisation" command:"organisation" commandUsage:"Default git organisation for new repositories"`
+	PipelineUsername    string               `json:"pipelineUsername,omitempty" protobuf:"bytes,15,opt,name=pipelineUsername" command:"pipelineusername" commandUsage:"User used by pipeline. Is given write permission on new repositories."`
+	DockerRegistryOrg   string               `json:"dockerRegistryOrg,omitempty" protobuf:"bytes,16,opt,name=dockerRegistryOrg" command:"dockerregistryorg" commandUsage:"Docker registry organisation used for new projects in Jenkins X."`
 }
 
 // QuickStartLocation
