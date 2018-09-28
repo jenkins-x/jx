@@ -80,9 +80,9 @@ func (o *ControllerTeamOptions) Run() error {
 	// lets default the team settings based on the current team settings
 	settings, err := o.ControllerOptions.TeamSettings()
 	if settings.HelmTemplate {
-		o.InstallOptions.InitOptions.Flags.HelmTemplate = true
+		o.InstallOptions.InitOptions.Flags.NoTiller = true
 	} else if settings.NoTiller {
-		o.InstallOptions.InitOptions.Flags.Tiller = false
+		o.InstallOptions.InitOptions.Flags.RemoteTiller = false
 	} else if settings.HelmBinary == "helm3" {
 		o.InstallOptions.InitOptions.Flags.Helm3 = true
 	}

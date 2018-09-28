@@ -242,7 +242,7 @@ func (options *InstallOptions) Run() error {
 
 	// configure the helm binary
 	options.Helm().SetHelmBinary(helmBinary)
-	if initOpts.Flags.HelmTemplate {
+	if initOpts.Flags.NoTiller {
 		helmer := options.Helm()
 		helmCli, ok := helmer.(*helm.HelmCLI)
 		if ok && helmCli != nil {
@@ -258,7 +258,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	dependencies := []string{}
-	if !initOpts.Flags.Tiller {
+	if !initOpts.Flags.RemoteTiller {
 		binDir, err := util.JXBinLocation()
 		if err != nil {
 			return errors.Wrap(err, "reading jx bin location")
@@ -402,7 +402,7 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	if initOpts.Flags.HelmTemplate {
+	if initOpts.Flags.NoTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.HelmTemplate = true
 			log.Info("Enabling helm template mode in the TeamSettings\n")
@@ -415,7 +415,7 @@ func (options *InstallOptions) Run() error {
 		initOpts.helm = nil
 	}
 
-	if !initOpts.Flags.Tiller {
+	if !initOpts.Flags.RemoteTiller {
 		err = options.restartLocalTiller()
 		if err != nil {
 			return err
@@ -699,7 +699,7 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
-	if !initOpts.Flags.Tiller {
+	if !initOpts.Flags.RemoteTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.NoTiller = true
 			log.Info("Disabling the server side use of tiller in the TeamSettings\n")
