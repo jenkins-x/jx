@@ -6,11 +6,11 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,6 +74,8 @@ func (o *ControllerTeamOptions) Run() error {
 		return err
 	}
 
+	log.Infof("Using the admin namespace %s\n", devNs)
+
 	client, _, err := co.KubeClient()
 	if err != nil {
 		return err
@@ -90,14 +92,6 @@ func (o *ControllerTeamOptions) Run() error {
 	}
 	if settings.PromotionEngine == v1.PromotionEngineProw {
 		o.InstallOptions.Flags.Prow = true
-	}
-
-	// lets default the login/pwd for Jenkins from the admin cluster
-	if o.InstallOptions.Password == "" {
-		o.InstallOptions.Password, err = co.getDefaultAdminPassword(devNs)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to load the default admin password from namespace %s", devNs)
-		}
 	}
 
 	log.Infof("Watching for teams in all namespaces\n")
@@ -117,10 +111,10 @@ func (o *ControllerTeamOptions) Run() error {
 		time.Minute*30,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				o.onTeamChange(obj, client, jxClient)
+				o.onTeamChange(obj, client, jxClient, devNs)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				o.onTeamChange(newObj, client, jxClient)
+				o.onTeamChange(newObj, client, jxClient, devNs)
 			},
 			DeleteFunc: func(obj interface{}) {
 				// do nothing, already handled by 'jx delete team'
@@ -134,7 +128,7 @@ func (o *ControllerTeamOptions) Run() error {
 	select {}
 }
 
-func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface) {
+func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface, adminNs string) {
 	team, ok := obj.(*v1.Team)
 	if !ok {
 		log.Infof("Object is not a Team %#v\n", obj)
@@ -160,6 +154,32 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		if err != nil {
 			log.Errorf("Unable to create namespace %s: %s", util.ColorInfo(team.Name), err)
 			return
+		}
+
+		// lets default the login/pwd for Jenkins from the admin cluster
+		o.InstallOptions.AdminSecretsService.Flags.DefaultAdminPassword, err = o.ControllerOptions.getDefaultAdminPassword(adminNs)
+		if err != nil {
+			log.Warnf("Failed to load the default admin password from namespace %s: %s", adminNs, err)
+		}
+
+		if o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController == nil {
+			o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController = &config.ExposeController{}
+		}
+		ec := o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController
+		// lets load the exposecontroller configuration
+		ingressConfig, err := kube.GetIngressConfig(kubeClient, adminNs)
+		if err != nil {
+			log.Errorf("Failed to load the IngressConfig in namespace %s: %s", adminNs, err)
+			return
+		}
+		ec.Config.Domain = ingressConfig.Domain
+		ec.Config.Exposer = ingressConfig.Exposer
+		if ingressConfig.TLS {
+			ec.Config.HTTP = "true"
+			ec.Config.TLSAcme = "true"
+		} else {
+			ec.Config.HTTP = "false"
+			ec.Config.TLSAcme = "false"
 		}
 
 		o.InstallOptions.BatchMode = true
