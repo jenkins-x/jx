@@ -12,16 +12,16 @@ func TestCreateNewSessionWithDefaultRegion(t *testing.T) {
 	// TODO Refactor for encapsulation
 	os.Setenv("AWS_REGION", "")
 	os.Setenv("AWS_DEFAULT_REGION", "")
-	_, region, err := amazon.NewAwsSession()
+	sess, err := amazon.NewAwsSessionWithoutOptions()
 	assert.Nil(t, err)
-	assert.Equal(t, "us-west-2", region)
+	assert.Equal(t, "us-west-2", *sess.Config.Region)
 }
 
 func TestCreateNewSessionWithRegionFromAwsRegion(t *testing.T) {
 	// TODO Refactor for encapsulation
 	os.Setenv("AWS_REGION", "us-east-1")
 	os.Setenv("AWS_DEFAULT_REGION", "")
-	_, region, err := amazon.NewAwsSession()
+	sess, err := amazon.NewAwsSessionWithoutOptions()
 	assert.Nil(t, err)
-	assert.Equal(t, "us-east-1", region)
+	assert.Equal(t, "us-east-1", *sess.Config.Region)
 }

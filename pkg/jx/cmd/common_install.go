@@ -34,8 +34,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const eksctlVersion = "0.1.1"
-
 var (
 	groovy = `
 // imports
@@ -404,7 +402,7 @@ func (o *CommonOptions) installKustomize() error {
 		return fmt.Errorf("unable to get latest version for github.com/%s/%s %v", "kubernetes-sigs", "kustomize", err)
 	}
 
-	clientURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kustomize/releases/download/v%v/kustomize_%s_%s_%s", latestVersion,latestVersion, runtime.GOOS, runtime.GOARCH)
+	clientURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kustomize/releases/download/v%v/kustomize_%s_%s_%s", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
 	err = o.downloadFile(clientURL, tmpFile)
@@ -1244,7 +1242,7 @@ func (o *CommonOptions) installAws() error {
 }
 
 func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
-	return o.installEksCtlWithVersion(eksctlVersion, skipPathScan)
+	return o.installEksCtlWithVersion(binaries.EksctlVersion, skipPathScan)
 }
 
 func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bool) error {
