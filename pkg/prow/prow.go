@@ -18,10 +18,10 @@ const (
 	Hook                           = "hook"
 	DefaultProwReleaseName         = "jx-prow"
 	DefaultKnativeBuildReleaseName = "jx-knative-build"
-	KnativeBuildVersion            = "0.0.6"
 	ChartProw                      = "jenkins-x/prow"
 	ChartKnativeBuild              = "jenkins-x/knative-build"
 	JenkinsMasterTag               = "dev_18"
+	BuilderBaseImage               = "jenkinsxio/builder-base:0.0.604"
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"
@@ -86,7 +86,7 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image:      "jenkinsxio/builder-base:0.0.547",
+				Image:      BuilderBaseImage,
 				Args:       []string{"jx", "step", "helm", "build"},
 				WorkingDir: "/workspace/env",
 				Env: []v1.EnvVar{
@@ -119,11 +119,11 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image:      "jenkinsxio/builder-base:0.0.547",
+				Image:      BuilderBaseImage,
 				Args:       []string{"jx", "step", "helm", "apply"},
 				WorkingDir: "/workspace/env",
 				Env: []v1.EnvVar{
-					{Name: "DEPLOY_NAMESPACE", Value: "jx-staging"},
+					{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
 					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
 					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
 					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
@@ -247,8 +247,10 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 	switch o.Kind {
 	case Application:
+		found := false
 		for index, q := range t.Queries {
 			if util.Contains(q.Labels, "approved") {
+				found = true
 				repos := t.Queries[index].Repos
 				if !util.Contains(repos, repo) {
 					repos = append(repos, repo)
@@ -256,15 +258,27 @@ func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) er
 				}
 			}
 		}
+
+		if !found {
+			log.Infof("Failed to find 'application' tide config, adding...\n")
+			t.Queries = append(t.Queries, o.createApplicationTideQuery())
+		}
 	case Environment:
+		found := false
 		for index, q := range t.Queries {
 			if !util.Contains(q.Labels, "approved") {
+				found = true
 				repos := t.Queries[index].Repos
 				if !util.Contains(repos, repo) {
 					repos = append(repos, repo)
 					t.Queries[index].Repos = repos
 				}
 			}
+		}
+
+		if !found {
+			log.Infof("Failed to find 'environment' tide config, adding...\n")
+			t.Queries = append(t.Queries, o.createEnvironmentTideQuery())
 		}
 	default:
 		return fmt.Errorf("unknown prow config kind %s", o.Kind)
@@ -272,25 +286,31 @@ func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) er
 	return nil
 }
 
+func (o *Options) createApplicationTideQuery() config.TideQuery {
+	return config.TideQuery{
+		Repos:         []string{"jenkins-x/dummy"},
+		Labels:        []string{"approved"},
+		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
+	}
+}
+
+func (o *Options) createEnvironmentTideQuery() config.TideQuery {
+	return config.TideQuery{
+		Repos:         []string{"jenkins-x/dummy-environment"},
+		Labels:        []string{},
+		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
+	}
+}
+
 func (o *Options) createTide() config.Tide {
-	// todo get the real URL, though we need to handle the multi cluster usecase where dev namespace may be another cluster, so pass it in as an arg?
+	// todo get the real URL, though we need to handle the multi cluster use case where dev namespace may be another cluster, so pass it in as an arg?
 	t := config.Tide{
 		TargetURL: "https://tide.foo.bar",
 	}
 
 	var qs []config.TideQuery
-	q := config.TideQuery{
-		Repos:         []string{},
-		Labels:        []string{"approved"},
-		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
-	}
-	qs = append(qs, q)
-	q = config.TideQuery{
-		Repos:         []string{},
-		Labels:        []string{},
-		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
-	}
-	qs = append(qs, q)
+	qs = append(qs, o.createApplicationTideQuery())
+	qs = append(qs, o.createEnvironmentTideQuery())
 	t.Queries = qs
 
 	// todo JR not sure if we need the contexts if we add the branch protection plugin

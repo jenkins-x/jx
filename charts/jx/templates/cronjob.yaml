@@ -38,18 +38,6 @@ spec:
               {{- end }}
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-              ports:
-                - name: http
-                  containerPort: {{ .Values.internalPort }}
-                  protocol: TCP
-              livenessProbe:
-                httpGet:
-                  path: {{ .Values.probe.path }}
-                  port: http
-              readinessProbe:
-                httpGet:
-                  path: {{ .Values.probe.path }}
-                  port: http
     {{- if .Values.env }}
               env:
     {{- range $pkey, $pval := .Values.env }}
