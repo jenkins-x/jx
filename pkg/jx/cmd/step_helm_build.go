@@ -57,7 +57,7 @@ func NewCmdStepHelmBuild(f Factory, in terminal.FileReader, out terminal.FileWri
 			CheckErr(err)
 		},
 	}
-	
+
 	options.addStepHelmFlags(cmd)
 	options.addCommonFlags(cmd)
 
