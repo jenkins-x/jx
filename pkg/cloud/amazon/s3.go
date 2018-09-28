@@ -9,18 +9,15 @@ import (
 // returning the location string
 func CreateS3Bucket(bucketName string, region string) (string, error) {
 	location := ""
-	sess, defaultRegion, err := NewAwsSession()
+	sess, err := NewAwsSession("", region)
 	if err != nil {
 		return location, err
-	}
-	if region == "" {
-		region = defaultRegion
 	}
 
 	input := &s3.CreateBucketInput{
 		Bucket: aws.String(bucketName),
 		CreateBucketConfiguration: &s3.CreateBucketConfiguration{
-			LocationConstraint: aws.String(region),
+			LocationConstraint: sess.Config.Region,
 		},
 	}
 	svc := s3.New(sess)

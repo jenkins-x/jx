@@ -404,7 +404,7 @@ func (o *CommonOptions) installKustomize() error {
 		return fmt.Errorf("unable to get latest version for github.com/%s/%s %v", "kubernetes-sigs", "kustomize", err)
 	}
 
-	clientURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kustomize/releases/download/v%v/kustomize_%s_%s_%s", latestVersion,latestVersion, runtime.GOOS, runtime.GOARCH)
+	clientURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kustomize/releases/download/v%v/kustomize_%s_%s_%s", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
 	err = o.downloadFile(clientURL, tmpFile)

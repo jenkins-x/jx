@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"io"
 	"os"
 	"os/exec"
 
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -71,7 +71,11 @@ func (o *GetEksOptions) Run() error {
 		os.Exit(-1)
 	}
 
-	cmd := exec.Command("eksctl", "get", "cluster", "--region", amazon.ResolveRegion())
+	region, err := amazon.ResolveRegionWithoutOptions()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command("eksctl", "get", "cluster", "--region", region)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil

@@ -109,7 +109,7 @@ func UpdateConfig(namespace string, server string, caData string, user string, t
 
 	clusterName := "jx-cluster"
 	cluster := &api.Cluster{
-		Server: server,
+		Server:                   server,
 		CertificateAuthorityData: []byte(caData),
 	}
 
