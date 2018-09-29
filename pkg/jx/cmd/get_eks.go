@@ -15,6 +15,8 @@ import (
 
 type GetEksOptions struct {
 	GetOptions
+	Profile string
+	Region string
 }
 
 var (
@@ -50,6 +52,8 @@ func NewCmdGetEks(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 			CheckErr(err)
 		},
 	}
+	cmd.Flags().StringVarP(&options.Profile, "profile", "", "", "AWS profile to use.")
+	cmd.Flags().StringVarP(&options.Region, "region", "", "", "AWS region to use. Default: " + amazon.DefaultRegion)
 
 	options.addGetFlags(cmd)
 	return cmd
@@ -71,7 +75,7 @@ func (o *GetEksOptions) Run() error {
 		os.Exit(-1)
 	}
 
-	region, err := amazon.ResolveRegionWithoutOptions()
+	region, err := amazon.ResolveRegion(o.Profile, o.Region)
 	if err != nil {
 		return err
 	}

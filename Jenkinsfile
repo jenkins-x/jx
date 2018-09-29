@@ -63,7 +63,7 @@ pipeline {
 
                         sh "cp ./build/linux/jx /usr/bin"
 
-                        sh "jx install --namespace ${TEAM} --helm3 --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW --skip-auth-secrets-merge"
+                        sh "jx install --namespace ${TEAM} --no-tiller --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW --skip-auth-secrets-merge --no-default-environments"
 
                         // lets test we have the jenkins token setup
                         sh "jx get pipeline"
@@ -73,6 +73,8 @@ pipeline {
                         dir ('/home/jenkins/go/src/github.com/jenkins-x/godog-jx'){
                             git "https://github.com/jenkins-x/godog-jx"
                             sh "make configure-ghe"
+
+                            sh "jx create env -n staging -l Staging -b  --git-provider-url=https://github.beescloud.com -p Auto"
 
                             sh "make bdd-tests"
                         }

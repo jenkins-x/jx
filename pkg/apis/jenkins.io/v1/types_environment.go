@@ -144,6 +144,7 @@ type TeamSettings struct {
 	PromotionEngine     PromotionEngineType  `json:"promotionEngine,omitempty" protobuf:"bytes,10,opt,name=promotionEngine"`
 	NoTiller            bool                 `json:"noTiller,omitempty" protobuf:"bytes,11,opt,name=noTiller"`
 	HelmTemplate        bool                 `json:"helmTemplate,omitempty" protobuf:"bytes,12,opt,name=helmTemplate"`
+	KubeProvider        string               `json:"kubeProvider,omitempty" protobuf:"bytes,13,opt,name=kubeProvider"`
 }
 
 // QuickStartLocation
