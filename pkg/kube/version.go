@@ -63,8 +63,12 @@ func GetName(r *metav1.ObjectMeta) string {
 		if labels != nil {
 			name := labels["app"]
 			if name != "" {
-				// for helm deployments which prefix the namespace in the name lets strip it
 				prefix := ns + "-"
+				if !strings.HasPrefix(name, prefix) {
+					prefix = "jx-"
+				}
+
+				// for helm deployments which prefix the namespace in the name lets strip it
 				if strings.HasPrefix(name, prefix) {
 					name = strings.TrimPrefix(name, prefix)
 
@@ -83,8 +87,12 @@ func GetName(r *metav1.ObjectMeta) string {
 		name := r.Name
 
 		if ns != "" {
-			// for helm deployments which prefix the namespace in the name lets strip it
 			prefix := ns + "-"
+			if !strings.HasPrefix(name, prefix) {
+				prefix = "jx-"
+			}
+
+			// for helm deployments which prefix the namespace in the name lets strip it
 			if strings.HasPrefix(name, prefix) {
 				name = strings.TrimPrefix(name, prefix)
 				return name
