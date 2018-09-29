@@ -104,23 +104,25 @@ func (o *StepLinkServicesOptions) Run() error {
 				if util.StringMatchesAny(service.Name, o.Includes, o.Excludes) {
 					targetService, err := kubeClient.CoreV1().Services(targetNamespace).Get(service.GetName(), metav1.GetOptions{})
 					//Change the namespace in the service to target namespace
-					*targetService = service
-					targetService.Namespace = targetNamespace
-					// Reset the cluster IP, because this is dynamically allocated
-					targetService.Spec.ClusterIP = ""
-					targetService.ResourceVersion = ""
-					// We would create a new service if it doesn't already exist OR update if it already exists
-					if err == nil {
-						_, err := kubeClient.CoreV1().Services(targetNamespace).Update(targetService)
-						if err != nil {
-							log.Warnf("Failed to update the service '%s' in target namespace '%s'. Error: %s",
-								service.GetName(), targetNamespace, err)
-						}
-					} else {
-						_, err := kubeClient.CoreV1().Services(targetNamespace).Create(targetService)
-						if err != nil {
-							log.Warnf("Failed to create the service '%s' in target namespace '%s'. Error: %s",
-								service.GetName(), targetNamespace, err)
+					if targetService != nil {
+						*targetService = service
+						targetService.Namespace = targetNamespace
+						// Reset the cluster IP, because this is dynamically allocated
+						targetService.Spec.ClusterIP = ""
+						targetService.ResourceVersion = ""
+						// We would create a new service if it doesn't already exist OR update if it already exists
+						if err == nil {
+							_, err := kubeClient.CoreV1().Services(targetNamespace).Update(targetService)
+							if err != nil {
+								log.Warnf("Failed to update the service '%s' in target namespace '%s'. Error: %s",
+									service.GetName(), targetNamespace, err)
+							}
+						} else {
+							_, err := kubeClient.CoreV1().Services(targetNamespace).Create(targetService)
+							if err != nil {
+								log.Warnf("Failed to create the service '%s' in target namespace '%s'. Error: %s",
+									service.GetName(), targetNamespace, err)
+							}
 						}
 					}
 				}
