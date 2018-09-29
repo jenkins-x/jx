@@ -185,8 +185,18 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		o.InstallOptions.BatchMode = true
 		o.InstallOptions.InitOptions.Flags.SkipIngress = true
 
+		adminTeamSettings, _ := o.ControllerOptions.TeamSettings()
+
 		// TODO lets load this from the current team
-		o.InstallOptions.Flags.Provider = "gke"
+		provider := ""
+		if adminTeamSettings != nil {
+			provider = adminTeamSettings.KubeProvider
+		}
+		if provider == "" {
+			log.Warnf("No kube provider specified on admin team settings %s\n", adminNs)
+			provider = "gke"
+		}
+		o.InstallOptions.Flags.Provider = provider
 
 		//o.InstallOptions.Flags.NoDefaultEnvironments = true
 		o.InstallOptions.Flags.Namespace = team.Name
@@ -211,7 +221,6 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			return
 		}
 
-		adminTeamSettings, _ := o.ControllerOptions.TeamSettings()
 		if adminTeamSettings != nil {
 			callback := func(env *v1.Environment) error {
 				env.Spec.TeamSettings.BuildPackRef = adminTeamSettings.BuildPackRef
