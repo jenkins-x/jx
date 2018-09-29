@@ -63,7 +63,7 @@ pipeline {
 
                         sh "cp ./build/linux/jx /usr/bin"
 
-                        sh "jx install --namespace ${TEAM} --no-tiller --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW --skip-auth-secrets-merge"
+                        sh "jx install --namespace ${TEAM} --no-tiller --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW --skip-auth-secrets-merge --git-provider-url=https://github.beescloud.com"
 
                         // lets test we have the jenkins token setup
                         sh "jx get pipeline"
