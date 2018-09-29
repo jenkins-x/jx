@@ -115,5 +115,5 @@ func (o *UpgradePlatformOptions) Run() error {
 	if o.Set != "" {
 		values = append(values, o.Set)
 	}
-	return o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, nil, false, nil, false, false, values, valueFiles)
+	return o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &version, false, nil, false, false, values, valueFiles)
 }
