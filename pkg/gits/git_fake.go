@@ -153,6 +153,10 @@ func (g *GitFake) Pull(dir string) error {
 	return nil
 }
 
+func (g *GitFake) PullRemoteBranches(dir string) error {
+	return nil
+}
+
 func (g *GitFake) PullUpstream(dir string) error {
 	return nil
 }
@@ -191,6 +195,10 @@ func (g *GitFake) SetRemoteURL(dir string, name string, gitURL string) error {
 
 func (g *GitFake) UpdateRemote(dir string, url string) error {
 	return g.SetRemoteURL(dir, "origin", url)
+}
+
+func (g *GitFake) DeleteRemoteBranch(dir string, remoteName string, branch string) error {
+	return nil
 }
 
 func (g *GitFake) DiscoverRemoteGitURL(gitConf string) (string, error) {
