@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -101,16 +102,26 @@ func (o *StepLinkServicesOptions) Run() error {
 		} else {
 			for _, service := range serviceList.Items {
 				if util.StringMatchesAny(service.Name, o.Includes, o.Excludes) {
-					lookedUpServiceFromTargetNamespace, _ := kubeClient.CoreV1().Services(targetNamespace).Get(service.GetName(), metav1.GetOptions{})
+					targetService, err := kubeClient.CoreV1().Services(targetNamespace).Get(service.GetName(), metav1.GetOptions{})
 					//Change the namespace in the service to target namespace
-					targetService := service
+					*targetService = service
 					targetService.Namespace = targetNamespace
+					// Reset the cluster IP, because this is dynamically allocated
+					targetService.Spec.ClusterIP = ""
+					targetService.ResourceVersion = ""
 					// We would create a new service if it doesn't already exist OR update if it already exists
-					if lookedUpServiceFromTargetNamespace != nil {
-						kubeClient.CoreV1().Services(targetNamespace).Update(&targetService)
+					if err == nil {
+						_, err := kubeClient.CoreV1().Services(targetNamespace).Update(targetService)
+						if err != nil {
+							log.Warnf("Failed to update the service '%s' in target namespace '%s'. Error: %s",
+								service.GetName(), targetNamespace, err)
+						}
 					} else {
-
-						kubeClient.CoreV1().Services(targetNamespace).Create(&targetService)
+						_, err := kubeClient.CoreV1().Services(targetNamespace).Create(targetService)
+						if err != nil {
+							log.Warnf("Failed to create the service '%s' in target namespace '%s'. Error: %s",
+								service.GetName(), targetNamespace, err)
+						}
 					}
 				}
 			}
