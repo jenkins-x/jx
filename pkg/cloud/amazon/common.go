@@ -19,13 +19,13 @@ func NewAwsSession(profileOption string, regionOption string) (*session.Session,
 		config.Credentials = credentials.NewChainCredentials(
 			[]credentials.Provider{
 				&credentials.EnvProvider{},
-				&credentials.SharedCredentialsProvider{Filename:"", Profile:profileOption},
+				&credentials.SharedCredentialsProvider{Filename: "", Profile: profileOption},
 			})
 	}
 
 	sessionOptions := session.Options{
 		SharedConfigState: session.SharedConfigEnable,
-		Config: config,
+		Config:            config,
 	}
 
 	if profileOption != "" {
