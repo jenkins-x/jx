@@ -59,7 +59,7 @@ func NewCmdGetAWSInfo(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements this command
 func (o *GetAWSInfoOptions) Run() error {
-	id, region, err := amazon.GetAccountIDAndRegion()
+	id, region, err := amazon.GetAccountIDAndRegion("", "")
 	if err != nil {
 		return err
 	}

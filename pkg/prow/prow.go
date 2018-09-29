@@ -21,6 +21,7 @@ const (
 	ChartProw                      = "jenkins-x/prow"
 	ChartKnativeBuild              = "jenkins-x/knative-build"
 	JenkinsMasterTag               = "dev_18"
+	BuilderBaseImage               = "jenkinsxio/builder-base:0.0.604"
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"
@@ -85,7 +86,7 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image:      "jenkinsxio/builder-base:0.0.547",
+				Image:      BuilderBaseImage,
 				Args:       []string{"jx", "step", "helm", "build"},
 				WorkingDir: "/workspace/env",
 				Env: []v1.EnvVar{
@@ -118,7 +119,7 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	spec := &build.BuildSpec{
 		Steps: []v1.Container{
 			{
-				Image:      "jenkinsxio/builder-base:0.0.547",
+				Image:      BuilderBaseImage,
 				Args:       []string{"jx", "step", "helm", "apply"},
 				WorkingDir: "/workspace/env",
 				Env: []v1.EnvVar{
