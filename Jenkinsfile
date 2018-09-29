@@ -74,7 +74,7 @@ pipeline {
                             git "https://github.com/jenkins-x/godog-jx"
                             sh "make configure-ghe"
 
-                            sh "jx create env -n staging -l Staging -b  --git-provider-url=https://github.beescloud.com -p Auto"
+                            sh "jx create env -n staging -l Staging -b  --git-provider-url=https://github.beescloud.com -p Auto --prefix ${TEAM}"
 
                             sh "make bdd-tests"
                         }
