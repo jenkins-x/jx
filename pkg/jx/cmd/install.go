@@ -402,6 +402,17 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	callback := func(env *v1.Environment) error {
+		if env.Spec.TeamSettings.KubeProvider == "" {
+			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
+			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
+		}
+		return nil
+	}
+	err = options.ModifyDevEnvironment(callback)
+	if err != nil {
+		return err
+	}
 	if initOpts.Flags.NoTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.HelmTemplate = true

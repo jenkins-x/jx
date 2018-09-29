@@ -45,20 +45,21 @@ const (
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory              Factory
-	In                   terminal.FileReader
-	Out                  terminal.FileWriter
-	Err                  io.Writer
-	Cmd                  *cobra.Command
-	Args                 []string
-	BatchMode            bool
-	Verbose              bool
-	Headless             bool
-	NoBrew               bool
-	InstallDependencies  bool
-	SkipAuthSecretsMerge bool
-	ServiceAccount       string
-	Username             string
+	Factory                Factory
+	In                     terminal.FileReader
+	Out                    terminal.FileWriter
+	Err                    io.Writer
+	Cmd                    *cobra.Command
+	Args                   []string
+	BatchMode              bool
+	Verbose                bool
+	Headless               bool
+	NoBrew                 bool
+	InstallDependencies    bool
+	SkipAuthSecretsMerge   bool
+	ServiceAccount         string
+	Username               string
+	ExternalJenkinsBaseURL string
 
 	// common cached clients
 	KubeClientCached    kubernetes.Interface
