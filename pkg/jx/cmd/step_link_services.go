@@ -103,12 +103,15 @@ func (o *StepLinkServicesOptions) Run() error {
 			for _, service := range serviceList.Items {
 				if util.StringMatchesAny(service.Name, o.Includes, o.Excludes) {
 					targetService, err := kubeClient.CoreV1().Services(targetNamespace).Get(service.GetName(), metav1.GetOptions{})
-					//Change the namespace in the service to target namespace
-					*targetService = service
+					if targetService == nil {
+						copy := service
+						targetService = &copy
+					}
 					targetService.Namespace = targetNamespace
 					// Reset the cluster IP, because this is dynamically allocated
 					targetService.Spec.ClusterIP = ""
 					targetService.ResourceVersion = ""
+					//Change the namespace in the service to target namespace
 					// We would create a new service if it doesn't already exist OR update if it already exists
 					if err == nil {
 						_, err := kubeClient.CoreV1().Services(targetNamespace).Update(targetService)
