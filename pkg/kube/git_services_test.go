@@ -17,10 +17,10 @@ const serviceKind = "github"
 func createSecret(secretName string, labels map[string]string, annotations map[string]string) *v1.Secret {
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:                       secretName,
+			Name: secretName,
 			DeletionGracePeriodSeconds: nil,
-			Labels:                     labels,
-			Annotations:                annotations,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 	}
 }
