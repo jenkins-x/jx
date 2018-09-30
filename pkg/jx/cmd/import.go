@@ -91,7 +91,6 @@ type ImportOptions struct {
 	ImportGitCommitMessage  string
 	ListDraftPacks          bool
 	DraftPack               string
-	DefaultOwner            string
 	DockerRegistryOrg       string
 
 	DisableDotGitSearch   bool
@@ -103,6 +102,8 @@ type ImportOptions struct {
 	GitProvider           gits.GitProvider
 	PostDraftPackCallback CallbackFn
 	DisableMaven          bool
+	PipelineUserName      string
+	PipelineServer        string
 }
 
 var (
@@ -189,7 +190,6 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on")
 	cmd.Flags().BoolVarP(&options.ListDraftPacks, "list-packs", "", false, "list available draft packs")
 	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
-	cmd.Flags().StringVarP(&options.DefaultOwner, "default-owner", "", "someone", "The default user/organisation used if no user is found for the current Git repository being imported")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the Git provider organisation will be used")
 	cmd.Flags().StringVarP(&options.ExternalJenkinsBaseURL, "external-jenkins-url", "", "", "The jenkins url that an external git provider needs to use")
 
@@ -248,6 +248,10 @@ func (options *ImportOptions) Run() error {
 			}
 		}
 	}
+	err = options.DefaultsFromTeamSettings()
+	if err != nil {
+		return err
+	}
 
 	var userAuth *auth.UserAuth
 	if options.GitProvider == nil {
@@ -265,7 +269,7 @@ func (options *ImportOptions) Run() error {
 			serverURL := gitInfo.HostURLWithoutUser()
 			server = config.GetOrCreateServer(serverURL)
 		} else {
-			server, err = config.PickOrCreateServer(gits.GitHubURL, "Which Git service do you wish to use", options.BatchMode, options.In, options.Out, options.Err)
+			server, err = config.PickOrCreateServer(gits.GitHubURL, options.GitRepositoryOptions.ServerURL, "Which Git service do you wish to use", options.BatchMode, options.In, options.Out, options.Err)
 			if err != nil {
 				return err
 			}
@@ -665,10 +669,9 @@ func (options *ImportOptions) getDockerRegistryOrg() string {
 }
 
 func (options *ImportOptions) getOrganisationOrCurrentUser() string {
-	currentUser := options.getCurrentUser()
 	org := options.getOrganisation()
 	if org == "" {
-		org = currentUser
+		org = options.getCurrentUser()
 	}
 	return org
 }
@@ -676,9 +679,6 @@ func (options *ImportOptions) getOrganisationOrCurrentUser() string {
 func (options *ImportOptions) getCurrentUser() string {
 	//walk through every file in the given dir and update the placeholders
 	var currentUser string
-	if options.Organisation != "" {
-		return options.Organisation
-	}
 	if options.GitServer != nil {
 		currentUser = options.GitServer.CurrentUser
 		if currentUser == "" {
@@ -689,7 +689,7 @@ func (options *ImportOptions) getCurrentUser() string {
 	}
 	if currentUser == "" {
 		log.Warn("No username defined for the current Git server!")
-		currentUser = options.DefaultOwner
+		currentUser = options.GitRepositoryOptions.Username
 	}
 	return currentUser
 }
@@ -715,9 +715,8 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	dir := options.Dir
 	_, defaultRepoName := filepath.Split(dir)
 
-	if options.Organisation != "" {
-		options.GitRepositoryOptions.Owner = options.Organisation
-	}
+	options.GitRepositoryOptions.Owner = options.getOrganisation()
+
 	details, err := gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
 		options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
 	if err != nil {
@@ -745,23 +744,26 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 	// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
-	config := authConfigSvc.Config()
-	if config.PipeLineUsername != options.GitUserAuth.Username && config.CurrentServer == config.PipeLineServer {
+	if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer.URL == options.PipelineServer {
 		// Make the invitation
-		err := options.GitProvider.AddCollaborator(config.PipeLineUsername, details.Organisation, details.RepoName)
+		err := options.GitProvider.AddCollaborator(options.PipelineUserName, details.Organisation, details.RepoName)
 		if err != nil {
 			return err
 		}
 
 		// If repo is put in an organisation that the pipeline user is not part of an invitation needs to be accepted.
 		// Create a new provider for the pipeline user
-		pipelineUserAuth := config.FindUserAuth(config.CurrentServer, config.PipeLineUsername)
+		authConfig := authConfigSvc.Config()
+		if err != nil {
+			return err
+		}
+		pipelineUserAuth := authConfig.FindUserAuth(options.GitServer.URL, options.PipelineUserName)
 		if pipelineUserAuth == nil {
 			log.Warnf("Pipeline Git user credentials not found. %s will need to accept the invitation to collaborate\n"+
 				"on %s if %s is not part of %s.\n\n",
-				config.PipeLineUsername, details.RepoName, config.PipeLineUsername, details.Organisation)
+				options.PipelineUserName, details.RepoName, options.PipelineUserName, details.Organisation)
 		} else {
-			pipelineServerAuth := config.GetServer(config.CurrentServer)
+			pipelineServerAuth := authConfig.GetServer(authConfig.CurrentServer)
 			pipelineUserProvider, err := gits.CreateProvider(pipelineServerAuth, pipelineUserAuth, options.Git())
 			if err != nil {
 				return err
@@ -1366,6 +1368,26 @@ func (options *ImportOptions) fixMaven() error {
 			}
 		}
 	}
+	return nil
+}
+
+func (options *ImportOptions) DefaultsFromTeamSettings() error {
+	settings, err := options.TeamSettings()
+	if err != nil {
+		return err
+	}
+	if options.Organisation == "" {
+		options.Organisation = settings.Organisation
+	}
+	if options.DockerRegistryOrg == "" {
+		options.DockerRegistryOrg = settings.DockerRegistryOrg
+	}
+	if options.GitRepositoryOptions.ServerURL == "" {
+		options.GitRepositoryOptions.ServerURL = settings.GitServer
+	}
+	options.GitRepositoryOptions.Private = settings.GitPrivate || options.GitRepositoryOptions.Private
+	options.PipelineServer = settings.GitServer
+	options.PipelineUserName = settings.PipelineUsername
 	return nil
 }
 
