@@ -7,6 +7,8 @@ import (
 
 const EksctlVersion = "0.1.3"
 
+const HeptioAuthenticatorAwsVersion = "1.10.3"
+
 func BinaryWithExtension(binary string) string {
 	if runtime.GOOS == "windows" {
 		return binary + ".exe"
