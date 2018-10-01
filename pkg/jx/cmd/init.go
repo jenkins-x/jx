@@ -52,7 +52,8 @@ type InitFlags struct {
 	Helm3                      bool
 	HelmBin                    string
 	RecreateExistingDraftRepos bool
-	Tiller                     bool
+	NoTiller                   bool
+	RemoteTiller               bool
 	GlobalTiller               bool
 	SkipIngress                bool
 	SkipTiller                 bool
@@ -73,7 +74,7 @@ const (
 
 var (
 	initLong = templates.LongDesc(`
-		This command installs the Jenkins X platform on a connected kubernetes cluster
+		This command installs the Jenkins X platform on a connected Kubernetes cluster
 `)
 
 	initExample = templates.Examples(`
@@ -82,7 +83,7 @@ var (
 )
 
 // NewCmdInit creates a command object for the generic "init" action, which
-// primes a kubernetes cluster so it's ready for jenkins x to be installed
+// primes a Kubernetes cluster so it's ready for Jenkins X to be installed
 func NewCmdInit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &InitOptions{
 		CommonOptions: CommonOptions{
@@ -109,7 +110,7 @@ func NewCmdInit(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 
 	options.addCommonFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
+	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 	cmd.Flags().StringVarP(&options.Flags.Namespace, optionNamespace, "", "jx", "The namespace the Jenkins X platform should be installed into")
 	options.addInitFlags(cmd)
 	return cmd
@@ -117,7 +118,7 @@ func NewCmdInit(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 
 func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
-	cmd.Flags().StringVarP(&options.Username, optionUsername, "", "", "The kubernetes username used to initialise helm. Usually your email address for your kubernetes account")
+	cmd.Flags().StringVarP(&options.Username, optionUsername, "", "", "The Kubernetes username used to initialise helm. Usually your email address for your Kubernetes account")
 	cmd.Flags().StringVarP(&options.Flags.UserClusterRole, "user-cluster-role", "", "cluster-admin", "The cluster role for the current user to be able to administer helm")
 	cmd.Flags().StringVarP(&options.Flags.TillerClusterRole, "tiller-cluster-role", "", "cluster-admin", "The cluster role for Helm's tiller")
 	cmd.Flags().StringVarP(&options.Flags.TillerNamespace, optionTillerNamespace, "", "kube-system", "The namespace for the Tiller when using a gloabl tiller")
@@ -125,21 +126,22 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.IngressNamespace, "ingress-namespace", "", "kube-system", "The namespace for the Ingress controller")
 	cmd.Flags().StringVarP(&options.Flags.IngressService, "ingress-service", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Service")
 	cmd.Flags().StringVarP(&options.Flags.IngressDeployment, "ingress-deployment", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Deployment")
-	cmd.Flags().StringVarP(&options.Flags.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the kubernetes cluster. For bare metal on premise clusters this is often the IP of the kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
+	cmd.Flags().StringVarP(&options.Flags.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the Kubernetes cluster. For bare metal on premise clusters this is often the IP of the Kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
 	cmd.Flags().BoolVarP(&options.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
 	cmd.Flags().BoolVarP(&options.Flags.HelmClient, "helm-client-only", "", false, "Only install helm client")
 	cmd.Flags().BoolVarP(&options.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
 	cmd.Flags().BoolVarP(&options.Flags.GlobalTiller, "global-tiller", "", true, "Whether or not to use a cluster global tiller")
-	cmd.Flags().BoolVarP(&options.Flags.Tiller, "tiller", "", true, "Whether or not to use tiller at all. If no tiller is enabled then its ran as a local process instead")
-	cmd.Flags().BoolVarP(&options.Flags.SkipIngress, "skip-ingress", "", false, "Dont install an ingress controller")
-	cmd.Flags().BoolVarP(&options.Flags.SkipTiller, "skip-tiller", "", false, "Don't install a Helms Tiller service")
+	cmd.Flags().BoolVarP(&options.Flags.RemoteTiller, "remote-tiller", "", true, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
+	cmd.Flags().BoolVarP(&options.Flags.NoTiller, "no-tiller", "", false, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
+	cmd.Flags().BoolVarP(&options.Flags.SkipIngress, "skip-ingress", "", false, "Don't install an ingress controller")
+	cmd.Flags().BoolVarP(&options.Flags.SkipTiller, "skip-tiller", "", false, "Don't install a Helm Tiller service")
 	cmd.Flags().BoolVarP(&options.Flags.Helm3, "helm3", "", false, "Use helm3 to install Jenkins X which does not use Tiller")
-	cmd.Flags().BoolVarP(&options.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the kubernetes master IP address")
+	cmd.Flags().BoolVarP(&options.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the Kubernetes master IP address")
 }
 
 func (o *InitOptions) Run() error {
 	var err error
-	if !o.Flags.Tiller {
+	if !o.Flags.RemoteTiller || o.Flags.NoTiller {
 		o.Flags.HelmClient = true
 		o.Flags.SkipTiller = true
 		o.Flags.GlobalTiller = false
@@ -483,7 +485,7 @@ func (o *InitOptions) initIngress() error {
 		if err != nil {
 			return err
 		}
-		log.Success("nginx ingress controller now enabled on minikube")
+		log.Success("nginx ingress controller now enabled on Minikube")
 		return nil
 
 	}
@@ -588,7 +590,7 @@ controller:
 
 		externalIP := o.Flags.ExternalIP
 		if externalIP == "" && o.Flags.OnPremise {
-			// lets find the kubernetes master IP
+			// lets find the Kubernetes master IP
 			config, err := o.Factory.CreateKubeConfig()
 			if err != nil {
 				return err
@@ -599,7 +601,7 @@ controller:
 			} else {
 				externalIP, err = util.UrlHostNameWithoutPort(host)
 				if err != nil {
-					return fmt.Errorf("Could not parse kubernetes master URI: %s as got: %s\nTry specifying the external IP address directly via: --external-ip", host, err)
+					return fmt.Errorf("Could not parse Kubernetes master URI: %s as got: %s\nTry specifying the external IP address directly via: --external-ip", host, err)
 				}
 			}
 		}
@@ -647,7 +649,7 @@ func (o *InitOptions) validateGit() error {
 			}
 		}
 		if userName == "" {
-			return fmt.Errorf("No git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
+			return fmt.Errorf("No Git user.name is defined. Please run the command: git config --global --add user.name \"MyName\"")
 		}
 		err = o.Git().SetUsername("", userName)
 		if err != nil {
@@ -662,7 +664,7 @@ func (o *InitOptions) validateGit() error {
 			}
 		}
 		if userEmail == "" {
-			return fmt.Errorf("No git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
+			return fmt.Errorf("No Git user.email is defined. Please run the command: git config --global --add user.email \"me@acme.com\"")
 		}
 		err = o.Git().SetEmail("", userEmail)
 		if err != nil {
@@ -728,7 +730,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			err := amazon.RegisterAwsCustomDomain(domain, address)
 			return domain, err
 		}
-		log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your kubernetes cluster to ensure you can use all of your availability zones\n")
+		log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your Kubernetes cluster to ensure you can use all of your Availability Zones\n")
 		log.Infof("If you do not have a custom DNS name you can use yet you can register a new one here: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
 
 		for {

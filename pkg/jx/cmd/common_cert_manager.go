@@ -17,7 +17,14 @@ func (o *CommonOptions) ensureCertmanager() error {
 		if ok {
 
 			values := []string{"rbac.create=true", "ingressShim.extraArgs='{--default-issuer-name=letsencrypt-staging,--default-issuer-kind=Issuer}'"}
-			err = o.installChart("cert-manager", "stable/cert-manager", "", CertManagerNamespace, true, values)
+			err = o.installChartOptions(InstallChartOptions{
+				ReleaseName: "cert-manager",
+				Chart:       "stable/cert-manager",
+				Version:     "",
+				Ns:          CertManagerNamespace,
+				HelmUpdate:  true,
+				SetValues:   values,
+			})
 			if err != nil {
 				return fmt.Errorf("CertManager deployment failed: %v", err)
 			}

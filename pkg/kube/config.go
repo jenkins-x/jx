@@ -17,7 +17,7 @@ const (
 	PodNamespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
-// LoadConfig loads the kubernetes configuration
+// LoadConfig loads the Kubernetes configuration
 func LoadConfig() (*api.Config, *clientcmd.PathOptions, error) {
 	po := clientcmd.NewDefaultPathOptions()
 	if po == nil {

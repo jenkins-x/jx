@@ -46,7 +46,7 @@ func NewCmdDeleteChatToken(f Factory, in terminal.FileReader, out terminal.FileW
 
 	cmd := &cobra.Command{
 		Use:     "token",
-		Short:   "Deletes one or more api tokens for a user on a chat server",
+		Short:   "Deletes one or more API tokens for a user on a chat server",
 		Aliases: []string{"api-token"},
 		Long:    deleteChatTokenLong,
 		Example: deleteChatTokenExample,

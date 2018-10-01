@@ -17,10 +17,10 @@ var (
 `)
 
 	create_git_server_example = templates.Examples(`
-		# Add a new git server
+		# Add a new Git server
 		jx create git server bitbucket http://bitbucket.org
 
-		# Add a new git server with a name
+		# Add a new Git server with a name
 		jx create git server bitbucket http://bitbucket.org -n MyBitBucket 
 
 		For more documentation see: [https://jenkins-x.io/developing/git/](https://jenkins-x.io/developing/git/)
@@ -55,7 +55,7 @@ func NewCmdCreateGitServer(f Factory, in terminal.FileReader, out terminal.FileW
 
 	cmd := &cobra.Command{
 		Use:     "server kind [url]",
-		Short:   "Creates a new git server URL",
+		Short:   "Creates a new Git server URL",
 		Aliases: []string{"provider"},
 		Long:    create_git_server_long,
 		Example: create_git_server_example,
@@ -67,7 +67,7 @@ func NewCmdCreateGitServer(f Factory, in terminal.FileReader, out terminal.FileW
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name for the git server being created")
+	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name for the Git server being created")
 	return cmd
 }
 
@@ -91,7 +91,7 @@ func (o *CreateGitServerOptions) Run() error {
 		if serviceName != "" {
 			url, err := o.findService(serviceName)
 			if err != nil {
-				return fmt.Errorf("Failed to find %s git service %s: %s", kind, serviceName, err)
+				return fmt.Errorf("Failed to find %s Git service %s: %s", kind, serviceName, err)
 			}
 			gitUrl = url
 		}
@@ -111,10 +111,10 @@ func (o *CreateGitServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Added git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
+	log.Infof("Added Git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 	return nil
 }
 
 func missingGitServerArguments() error {
-	return fmt.Errorf("Missing git server URL arguments. Usage: jx create git server kind [url]")
+	return fmt.Errorf("Missing Git server URL arguments. Usage: jx create git server kind [url]")
 }

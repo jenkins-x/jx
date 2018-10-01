@@ -15,6 +15,12 @@ type OrganisationLister interface {
 	ListOrganisations() ([]GitOrganisation, error)
 }
 
+// OrganisationChecker verifies if an user is member of an organization
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationChecker -o mocks/organisation_checker.go
+type OrganisationChecker interface {
+	IsUserInOrganisation(user string, organisation string) (bool, error)
+}
+
 // GitProvider is the interface for abstracting use of different git provider APIs
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits GitProvider -o mocks/git_provider.go
 type GitProvider interface {
@@ -104,10 +110,10 @@ type GitProvider interface {
 
 	JenkinsWebHookPath(gitURL string, secret string) string
 
-	// Label returns the git service label or name
+	// Label returns the Git service label or name
 	Label() string
 
-	// ServerURL returns the git server URL
+	// ServerURL returns the Git server URL
 	ServerURL() string
 
 	// BranchArchiveURL returns a URL to the ZIP archive for the git branch
@@ -122,7 +128,7 @@ type GitProvider interface {
 	// Returns user info, if possible
 	UserInfo(username string) *GitUser
 
-	AddCollaborator(string, string) error
+	AddCollaborator(string, string, string) error
 	// TODO Refactor to remove bespoke types when we implement another provider
 	ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error)
 	// TODO Refactor to remove bespoke types when we implement another provider
@@ -158,6 +164,7 @@ type Gitter interface {
 	ForcePushBranch(dir string, localBranch string, remoteBranch string) error
 	CloneOrPull(url string, directory string) error
 	Pull(dir string) error
+	PullRemoteBranches(dir string) error
 	PullUpstream(dir string) error
 
 	AddRemote(dir string, name string, url string) error
@@ -193,4 +200,5 @@ type Gitter interface {
 
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
+	DeleteRemoteBranch(dir string, remoteName string, branch string) error
 }

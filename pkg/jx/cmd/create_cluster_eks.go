@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"io"
 	"os"
 	"strconv"
@@ -23,7 +24,7 @@ type CreateClusterEKSOptions struct {
 
 type CreateClusterEKSFlags struct {
 	ClusterName         string
-	NodeType           string
+	NodeType            string
 	NodeCount           int
 	NodesMin            int
 	NodesMax            int
@@ -37,15 +38,15 @@ type CreateClusterEKSFlags struct {
 
 var (
 	createClusterEKSLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster on Amazon Web Services (AWS) using EKS, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster on Amazon Web Services (AWS) using EKS, installing required local dependencies and provisions the
 		Jenkins X platform
 
-		EKS is a managed kubernetes service on AWS.
+		EKS is a managed Kubernetes service on AWS.
 
 `)
 
 	createClusterEKSExample = templates.Examples(`
-        # to create a new kubernetes cluster with Jenkins X in your default zones (from $EKS_AVAILABILITY_ZONES)
+        # to create a new Kubernetes cluster with Jenkins X in your default zones (from $EKS_AVAILABILITY_ZONES)
 		jx create cluster eks
 
 		# to specify the zones
@@ -60,7 +61,7 @@ func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.File
 	}
 	cmd := &cobra.Command{
 		Use:     "eks",
-		Short:   "Create a new kubernetes cluster on AWS using EKS",
+		Short:   "Create a new Kubernetes cluster on AWS using EKS",
 		Long:    createClusterEKSLong,
 		Example: createClusterEKSExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -81,8 +82,8 @@ func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().IntVarP(&options.Flags.NodesMax, "nodes-max", "", -1, "maximum number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.Verbose, "log-level", "", -1, "set log level, use 0 to silence, 4 for debugging and 5 for debugging with AWS debug logging (default 3)")
 	cmd.Flags().DurationVarP(&options.Flags.AWSOperationTimeout, "aws-api-timeout", "", 20*time.Minute, "Duration of AWS API timeout")
-	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "us-west-2", "The region to use.")
-	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability zones. Auto-select if not specified. If provided, this overrides the $EKS_AVAILABILITY_ZONES environment variable")
+	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "The region to use. Default: us-west-2")
+	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability Zones. Auto-select if not specified. If provided, this overrides the $EKS_AVAILABILITY_ZONES environment variable")
 	cmd.Flags().StringVarP(&options.Flags.Profile, "profile", "p", "", "AWS profile to use. If provided, this overrides the AWS_PROFILE environment variable")
 	cmd.Flags().StringVarP(&options.Flags.SshPublicKey, "ssh-public-key", "", "", "SSH public key to use for nodes (import from local path, or use existing EC2 key pair) (default \"~/.ssh/id_rsa.pub\")")
 	return cmd
@@ -122,9 +123,13 @@ func (o *CreateClusterEKSOptions) Run() error {
 	if flags.ClusterName != "" {
 		args = append(args, "--name", flags.ClusterName)
 	}
-	if flags.Region != "" {
-		args = append(args, "--region", flags.Region)
+
+	region, err := amazon.ResolveRegion("", flags.Region)
+	if err != nil {
+		return err
 	}
+	args = append(args, "--region", region)
+
 	if zones != "" {
 		args = append(args, "--zones", zones)
 	}

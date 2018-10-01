@@ -33,12 +33,12 @@ var (
 `)
 
 	createDockerAuthExample = templates.Examples(`
-		# Create/update docker auth entry in the config.json file
+		# Create/update Docker auth entry in the config.json file
 		jx create docker auth --host "foo.private.docker.registry" --user "foo" --secret "FooDockerHubToken" --email "fakeemail@gmail.com"
 	`)
 )
 
-// CreateDockerAuthOptions the options for the create docker auth command
+// CreateDockerAuthOptions the options for the create Docker auth command
 type CreateDockerAuthOptions struct {
 	CreateOptions
 
@@ -64,7 +64,7 @@ func NewCmdCreateDockerAuth(f Factory, in terminal.FileReader, out terminal.File
 
 	cmd := &cobra.Command{
 		Use:     "docker auth",
-		Short:   "Create/update docker auth for a given host and user in the config.json file",
+		Short:   "Create/update Docker auth for a given host and user in the config.json file",
 		Long:    createDockerAuthLong,
 		Example: createDockerAuthExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -75,7 +75,7 @@ func NewCmdCreateDockerAuth(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Host, host, "t", "", "The docker host")
+	cmd.Flags().StringVarP(&options.Host, host, "t", "", "The Docker host")
 	cmd.Flags().StringVarP(&options.User, username, "u", "", "The user to associate auth component of config.json")
 	cmd.Flags().StringVarP(&options.Secret, "secret", "s", "", "The secret to associate auth component of config.json")
 	cmd.Flags().StringVarP(&options.Email, "email", "e", "", "The email to associate auth component of config.json")

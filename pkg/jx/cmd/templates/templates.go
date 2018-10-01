@@ -83,11 +83,13 @@ func MainUsageTemplate() string {
 
 // OptionsHelpTemplate if the template for 'help' used by the 'options' command.
 func OptionsHelpTemplate() string {
-	return ""
+	return "Dispaly a list of global command-line options\n"
 }
 
 // OptionsUsageTemplate if the template for 'usage' used by the 'options' command.
 func OptionsUsageTemplate() string {
-	return `{{ if .HasInheritedFlags}}The following options can be passed to any command:
-{{flagsUsages .InheritedFlags}}{{end}}`
+	return `{{if .HasInheritedFlags}}The following options can be passed to any command:
+{{flagsUsages .InheritedFlags}}
+{{else}}No global options available
+{{end}}`
 }

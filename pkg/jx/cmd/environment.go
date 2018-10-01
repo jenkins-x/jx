@@ -54,7 +54,7 @@ func NewCmdEnvironment(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd := &cobra.Command{
 		Use:     "environment",
 		Aliases: []string{"env"},
-		Short:   "View or change the current environment in the current kubernetes cluster",
+		Short:   "View or change the current environment in the current Kubernetes cluster",
 		Long:    environment_long,
 		Example: environment_example,
 		Run: func(cmd *cobra.Command, args []string) {

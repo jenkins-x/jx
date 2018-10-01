@@ -162,6 +162,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmds.Version = version.GetVersion()
 	cmds.SetVersionTemplate("{{printf .Version}}\n")
 	cmds.AddCommand(NewCmdOptions(out))
+	cmds.AddCommand(NewCmdDiagnose(f, in, out, err))
 
 	return cmds
 }

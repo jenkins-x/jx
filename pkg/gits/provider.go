@@ -156,11 +156,11 @@ func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (G
 // GetHost returns the Git Provider hostname, e.g github.com
 func GetHost(gitProvider GitProvider) (string, error) {
 	if gitProvider == nil {
-		return "", fmt.Errorf("no git provider")
+		return "", fmt.Errorf("no Git provider")
 	}
 
 	if gitProvider.ServerURL() == "" {
-		return "", fmt.Errorf("no git provider server URL found")
+		return "", fmt.Errorf("no Git provider server URL found")
 	}
 	url, err := url.Parse(gitProvider.ServerURL())
 	if err != nil {
@@ -318,7 +318,7 @@ func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService,
 	return CreateProviderForURL(authConfigSvc, gitKind, hostUrl, git)
 }
 
-// CreateProviderForURL creates the git provider for the given git kind and host URL
+// CreateProviderForURL creates the Git provider for the given git kind and host URL
 func CreateProviderForURL(authConfigSvc auth.AuthConfigService, gitKind string, hostUrl string, git Gitter) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(hostUrl)

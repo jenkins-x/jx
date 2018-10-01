@@ -185,7 +185,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 	}
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		log.Warnf("Failed to parse git URL %s: %s", gitURL, err)
+		log.Warnf("Failed to parse Git URL %s: %s", gitURL, err)
 		return nil
 	}
 	org := gitInfo.Organisation

@@ -78,7 +78,7 @@ func NewCmdCreateQuickstart(f Factory, in terminal.FileReader, out terminal.File
 
 	cmd := &cobra.Command{
 		Use:     "quickstart",
-		Short:   "Create a new app from a Quickstart and import the generated code into git and Jenkins for CI/CD",
+		Short:   "Create a new app from a Quickstart and import the generated code into Git and Jenkins for CI/CD",
 		Long:    createQuickstartLong,
 		Example: createQuickstartExample,
 		Aliases: []string{"arch"},
@@ -91,7 +91,7 @@ func NewCmdCreateQuickstart(f Factory, in terminal.FileReader, out terminal.File
 	}
 	options.addCreateAppFlags(cmd)
 
-	cmd.Flags().StringArrayVarP(&options.GitHubOrganisations, "organisations", "g", []string{}, "The github organisations to query for quickstarts")
+	cmd.Flags().StringArrayVarP(&options.GitHubOrganisations, "organisations", "g", []string{}, "The GitHub organisations to query for quickstarts")
 	cmd.Flags().StringArrayVarP(&options.Filter.Tags, "tag", "t", []string{}, "The tags on the quickstarts to filter")
 	cmd.Flags().StringVarP(&options.Filter.Owner, "owner", "", "", "The owner to filter on")
 	cmd.Flags().StringVarP(&options.Filter.Language, "language", "l", "", "The language to filter on")
@@ -307,7 +307,7 @@ func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig
 			if err != nil {
 				return model, err
 			}
-			o.Debugf("Searching for repositories in git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
+			o.Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
 			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
 			if err != nil {
 				o.Debugf("Quickstart load error: %s\n", err.Error())

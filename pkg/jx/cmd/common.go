@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,8 +19,6 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"strconv"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -45,20 +44,21 @@ const (
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory              Factory
-	In                   terminal.FileReader
-	Out                  terminal.FileWriter
-	Err                  io.Writer
-	Cmd                  *cobra.Command
-	Args                 []string
-	BatchMode            bool
-	Verbose              bool
-	Headless             bool
-	NoBrew               bool
-	InstallDependencies  bool
-	SkipAuthSecretsMerge bool
-	ServiceAccount       string
-	Username             string
+	Factory                Factory
+	In                     terminal.FileReader
+	Out                    terminal.FileWriter
+	Err                    io.Writer
+	Cmd                    *cobra.Command
+	Args                   []string
+	BatchMode              bool
+	Verbose                bool
+	Headless               bool
+	NoBrew                 bool
+	InstallDependencies    bool
+	SkipAuthSecretsMerge   bool
+	ServiceAccount         string
+	Username               string
+	ExternalJenkinsBaseURL string
 
 	// common cached clients
 	KubeClientCached    kubernetes.Interface
@@ -84,6 +84,18 @@ func (f *ServerFlags) IsEmpty() bool {
 
 func (c *CommonOptions) CreateTable() table.Table {
 	return c.Factory.CreateTable(c.Out)
+}
+
+// NewCommonOptions a helper method to create a new CommonOptions instance
+// pre configured in a specific devNamespace
+func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
+	return CommonOptions{
+		Factory:          factory,
+		Out:              os.Stdout,
+		Err:              os.Stderr,
+		currentNamespace: devNamespace,
+		devNamespace:     devNamespace,
+	}
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
@@ -229,12 +241,25 @@ func (o *CommonOptions) Git() gits.Gitter {
 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
-		helmBinary, noTiller, err := o.TeamHelmBin()
+		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
 			helmBinary = defaultHelmBin
 		}
-		log.Infof("Using helmBinary %s, with noTiller %s\n", util.ColorInfo(helmBinary), util.ColorInfo(noTiller))
-		o.helm = helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
+		featureFlag := "none"
+		if helmTemplate {
+			featureFlag = "template-mode"
+		} else if noTiller {
+			featureFlag = "no-tiller-server"
+		}
+		log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+		helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
+		o.helm = helmCLI
+		if helmTemplate {
+			kubeClient, _, _ := o.KubeClient()
+			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient)
+		} else {
+			o.helm = helmCLI
+		}
 		if noTiller {
 			o.helm.SetHost(o.tillerAddress())
 			o.startLocalTillerIfNotRunning()
@@ -252,11 +277,11 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the git server to add a user")
-	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the Git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the Git server to add a user")
 }
 
-// findGitServer finds the git server from the given flags or returns an error
+// findGitServer finds the Git server from the given flags or returns an error
 func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
 	return o.findServer(config, serverFlags, "git", "Try creating one via: jx create git server", false)
 }
@@ -676,7 +701,7 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	return o.runExposecontroller(devNamespace, targetNamespace, ic)
 }
 
-func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig) error {
+func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 
 	o.CleanExposecontrollerReources(targetNamespace)
 
@@ -690,8 +715,27 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 		exValues = append(exValues, "config.http=true")
 	}
 
+	if len(services) > 0 {
+		serviceCfg := "config.extravalues='services: ["
+		for i, service := range services {
+			if i > 0 {
+				serviceCfg += ","
+			}
+			serviceCfg += service
+		}
+		serviceCfg += "]''"
+		exValues = append(exValues, serviceCfg)
+	}
+
 	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
-	err := o.installChart(helmRelease, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
+	err := o.installChartOptions(InstallChartOptions{
+		ReleaseName: helmRelease,
+		Chart:       exposecontrollerChart,
+		Version:     exposecontrollerVersion,
+		Ns:          targetNamespace,
+		HelmUpdate:  true,
+		SetValues:   exValues,
+	})
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}
@@ -699,7 +743,7 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	if err != nil {
 		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
 	}
-	return o.helm.DeleteRelease(helmRelease, true)
+	return o.helm.DeleteRelease(targetNamespace, helmRelease, true)
 
 }
 

@@ -25,7 +25,7 @@ type GetEnvOptions struct {
 
 var (
 	getEnvLong = templates.LongDesc(`
-		Display one or many environments.
+		Display one or more environments.
 `)
 
 	getEnvExample = templates.Examples(`
@@ -51,7 +51,7 @@ func NewCmdGetEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	}
 	cmd := &cobra.Command{
 		Use:     "environments",
-		Short:   "Display one or many Environments",
+		Short:   "Display one or more Environments",
 		Aliases: []string{"envs", "environment", "env"},
 		Long:    getEnvLong,
 		Example: getEnvExample,

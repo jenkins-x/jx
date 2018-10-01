@@ -16,7 +16,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -180,7 +180,7 @@ To register to get your username/password to to: %s
 		log.Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
 		o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 		if err != nil {
-			return errors.Wrap(err, "retrieving the development namesapce")
+			return errors.Wrap(err, "retrieving the development namespace")
 		}
 		ingressConfig, err := kube.GetIngressConfig(o.KubeClientCached, o.devNamespace)
 		if err != nil {
@@ -222,8 +222,17 @@ To register to get your username/password to to: %s
 		} else {
 			o.SetValues = strings.Join(values, ",")
 		}
+	} else {
+		// Disable SSO for basic auth
+		o.SetValues = strings.Join([]string{"sso.create=false"}, ",")
+	}
 
-	} else if o.Basic {
+	err = o.CreateAddon("cb")
+	if err != nil {
+		return err
+	}
+
+	if o.Basic {
 		devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 		if err != nil {
 			return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
@@ -236,9 +245,7 @@ To register to get your username/password to to: %s
 			}
 		}
 
-		o.SetValues = strings.Join([]string{"sso.disable=true"}, ",")
-
-		svc, err := c.CoreV1().Services(o.currentNamespace).Get(cbServiceName, meta_v1.GetOptions{})
+		svc, err := c.CoreV1().Services(o.currentNamespace).Get(cbServiceName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -257,30 +264,19 @@ To register to get your username/password to to: %s
 				return fmt.Errorf("failed to update service %s/%s", o.Namespace, cbServiceName)
 			}
 		}
-	}
+		_, _, err = o.KubeClient()
+		if err != nil {
+			return err
+		}
 
-	err = o.CreateAddon("cb")
-	if err != nil {
-		return err
-	}
+		log.Infof("using exposecontroller config from dev namespace %s\n", devNamespace)
+		log.Infof("target namespace %s\n", o.Namespace)
 
-	_, _, err = o.KubeClient()
-	if err != nil {
-		return err
-	}
-
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
-	if err != nil {
-		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
-	}
-
-	log.Infof("using exposecontroller config from dev namespace %s\n", devNamespace)
-	log.Infof("target namespace %s\n", o.Namespace)
-
-	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, o.Password)
-	if err != nil {
-		return err
+		// create the ingress rule
+		err = o.expose(devNamespace, o.Namespace, o.Password)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

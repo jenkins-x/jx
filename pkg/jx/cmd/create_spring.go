@@ -64,7 +64,7 @@ func NewCmdCreateSpring(f Factory, in terminal.FileReader, out terminal.FileWrit
 
 	cmd := &cobra.Command{
 		Use:     "spring",
-		Short:   "Create a new spring boot application and import the generated code into git and Jenkins for CI/CD",
+		Short:   "Create a new Spring Boot application and import the generated code into Git and Jenkins for CI/CD",
 		Long:    create_spring_long,
 		Example: create_spring_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -129,7 +129,7 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Created spring boot project at %s\n", util.ColorInfo(outDir))
+	log.Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
 
 	return o.ImportCreatedProject(outDir)
 }

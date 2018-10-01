@@ -15,7 +15,7 @@ type UpgradeOptions struct {
 
 var (
 	upgrade_long = templates.LongDesc(`
-		Upgrade a the whole Jenkins-X platform.
+		Upgrade the whole Jenkins X platform.
 `)
 
 	upgrade_example = templates.Examples(`

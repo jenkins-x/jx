@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -42,6 +43,7 @@ type UpgradeIngressOptions struct {
 	Namespaces       []string
 	Version          string
 	TargetNamespaces []string
+	Services         []string
 
 	IngressConfig kube.IngressConfig
 }
@@ -73,6 +75,7 @@ func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 	options.addFlags(cmd)
+	options.addCommonFlags(cmd)
 
 	return cmd
 }
@@ -81,6 +84,7 @@ func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.Cluster, "cluster", "", false, "Enable cluster wide Ingress upgrade")
 	cmd.Flags().StringArrayVarP(&o.Namespaces, "namespaces", "", []string{}, "Namespaces to upgrade")
 	cmd.Flags().BoolVarP(&o.SkipCertManager, "skip-certmanager", "", false, "Skips certmanager installation")
+	cmd.Flags().StringArrayVarP(&o.Services, "services", "", []string{}, "Services to upgrdde")
 }
 
 // Run implements the command
@@ -88,7 +92,7 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	_, _, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
+		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
 
 	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
@@ -109,7 +113,12 @@ func (o *UpgradeIngressOptions) Run() error {
 	}
 
 	// confirm values
-	util.Confirm(fmt.Sprintf("Using  config values %v, ok?", o.IngressConfig), true, "", o.In, o.Out, o.Err)
+	if !o.BatchMode {
+		if !util.Confirm(fmt.Sprintf("Using config values %v, ok?", o.IngressConfig), true, "", o.In, o.Out, o.Err) {
+			log.Infof("Terminating\n")
+			return nil
+		}
+	}
 
 	// save details to a configmap
 	_, err = kube.SaveAsConfigMap(o.KubeClientCached, kube.ConfigMapIngressConfig, o.devNamespace, o.IngressConfig)
@@ -117,7 +126,7 @@ func (o *UpgradeIngressOptions) Run() error {
 		return err
 	}
 
-	err = o.CleanServiceAnnotations()
+	err = o.CleanServiceAnnotations(o.Services...)
 	if err != nil {
 		return err
 	}
@@ -130,7 +139,7 @@ func (o *UpgradeIngressOptions) Run() error {
 		}
 	}
 	// annotate any service that has expose=true with correct certmanager staging / prod annotation
-	err = o.AnnotateExposedServicesWithCertManager()
+	err = o.AnnotateExposedServicesWithCertManager(o.Services...)
 	if err != nil {
 		return err
 	}
@@ -168,6 +177,29 @@ func (o *UpgradeIngressOptions) Run() error {
 	return nil
 }
 
+func (o *UpgradeIngressOptions) isIngressForServices(ingress *v1beta1.Ingress) bool {
+	services := o.Services
+	if len(services) == 0 {
+		// allow all ingresses if no services filter is defined
+		return true
+	}
+	rules := ingress.Spec.Rules
+	for _, rule := range rules {
+		http := rule.IngressRuleValue.HTTP
+		if http == nil {
+			continue
+		}
+		for _, path := range http.Paths {
+			service := path.Backend.ServiceName
+			i := util.StringArrayIndex(services, service)
+			if i >= 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	existingIngressNames := map[string]string{}
@@ -181,7 +213,9 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 		}
 		for _, i := range ings.Items {
 			if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
-				existingIngressNames[i.Name] = i.Namespace
+				if o.isIngressForServices(&i) {
+					existingIngressNames[i.Name] = i.Namespace
+				}
 			}
 		}
 
@@ -200,7 +234,9 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			}
 			for _, i := range ings.Items {
 				if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
-					existingIngressNames[i.Name] = i.Namespace
+					if o.isIngressForServices(&i) {
+						existingIngressNames[i.Name] = i.Namespace
+					}
 				}
 			}
 			o.TargetNamespaces = append(o.TargetNamespaces, n)
@@ -216,10 +252,16 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 		}
 		for _, i := range ings.Items {
 			if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
-				existingIngressNames[i.Name] = i.Namespace
+				if o.isIngressForServices(&i) {
+					existingIngressNames[i.Name] = i.Namespace
+				}
 			}
 		}
 		o.TargetNamespaces = append(o.TargetNamespaces, o.currentNamespace)
+	}
+
+	if len(existingIngressNames) == 0 {
+		return existingIngressNames, nil
 	}
 
 	confirm := &survey.Confirm{
@@ -314,7 +356,7 @@ func (o *UpgradeIngressOptions) recreateIngressRules() error {
 			return err
 		}
 
-		err = o.runExposecontroller(devNamespace, n, o.IngressConfig)
+		err = o.runExposecontroller(devNamespace, n, o.IngressConfig, o.Services...)
 		if err != nil {
 			return err
 		}
@@ -330,9 +372,9 @@ func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
 }
 
 // AnnotateExposedServicesWithCertManager annotates exposed service with cert manager
-func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager() error {
+func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(services ...string) error {
 	for _, n := range o.TargetNamespaces {
-		err := kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, n, o.IngressConfig.Issuer)
+		err := kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, n, o.IngressConfig.Issuer, services...)
 		if err != nil {
 			return err
 		}
@@ -341,9 +383,9 @@ func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager() error {
 }
 
 // CleanServiceAnnotations cleans service annotations
-func (o *UpgradeIngressOptions) CleanServiceAnnotations() error {
+func (o *UpgradeIngressOptions) CleanServiceAnnotations(services ...string) error {
 	for _, n := range o.TargetNamespaces {
-		err := kube.CleanServiceAnnotations(o.KubeClientCached, n)
+		err := kube.CleanServiceAnnotations(o.KubeClientCached, n, services...)
 		if err != nil {
 			return err
 		}

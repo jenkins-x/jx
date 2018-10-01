@@ -442,7 +442,7 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepos
 
 	if author.Email == "" {
 		// bitbucket makes this part difficult, there is no way to directly
-		// associate a username to an email through the api or vice versa
+		// associate a username to an email through the API or vice versa
 		// so our best attempt is to try to figure out the author email
 		// from the commits
 		commits, err := p.GetPullRequestCommits(owner, repoInfo, number)
@@ -904,7 +904,7 @@ func (p *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRe
 	return answer, nil
 }
 
-func (b *BitbucketCloudProvider) AddCollaborator(user string, repo string) error {
+func (b *BitbucketCloudProvider) AddCollaborator(user string, organisation string, repo string) error {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }

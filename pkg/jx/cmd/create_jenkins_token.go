@@ -24,7 +24,7 @@ import (
 
 var (
 	create_jenkins_user_long = templates.LongDesc(`
-		Creates a new user and API Token for the current Jenkins Server
+		Creates a new user and API Token for the current Jenkins server
 `)
 
 	create_jenkins_user_example = templates.Examples(`
@@ -33,7 +33,7 @@ var (
 		jx create jenkins token someUserName
 
 		# Add a new API Token for a user for the current Jenkins server
- 		# using browser automation to login to the git server
+ 		# using browser automation to login to the Git server
 		# with the username an password to find the API Token
 		jx create jenkins token -p somePassword someUserName	
 	`)
@@ -66,7 +66,7 @@ func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.Fil
 
 	cmd := &cobra.Command{
 		Use:     "token [username]",
-		Short:   "Adds a new username and api token for a Jenkins server",
+		Short:   "Adds a new username and API token for a Jenkins server",
 		Aliases: []string{"api-token"},
 		Long:    create_jenkins_user_long,
 		Example: create_jenkins_user_example,
@@ -98,7 +98,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 	kubeClient, ns, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("error connecting to kubernetes cluster: %v", err)
+		return fmt.Errorf("error connecting to Kubernetes cluster: %v", err)
 	}
 
 	authConfigSvc, err := o.Factory.CreateJenkinsAuthConfigService(kubeClient, ns)

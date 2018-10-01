@@ -2,6 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
 	"os/user"
 	"reflect"
 
@@ -75,25 +80,25 @@ func (o *CommonOptions) TeamBranchPatterns() (*BranchPatterns, error) {
 }
 
 // TeamHelmBin returns the helm binary used for a team and whether a remote tiller is disabled
-func (o *CommonOptions) TeamHelmBin() (string, bool, error) {
+func (o *CommonOptions) TeamHelmBin() (string, bool, bool, error) {
 	helmBin := defaultHelmBin
 	teamSettings, err := o.TeamSettings()
 	if err != nil {
-		return helmBin, false, err
+		return helmBin, false, false, err
 	}
 
 	helmBin = teamSettings.HelmBinary
 	if helmBin == "" {
 		helmBin = defaultHelmBin
 	}
-	return helmBin, teamSettings.NoTiller, nil
+	return helmBin, teamSettings.NoTiller, teamSettings.HelmTemplate, nil
 }
 
 // ModifyDevEnvironment modifies the development environment settings
 func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) error) error {
 	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to create the api extensions client")
+		return errors.Wrap(err, "failed to create the API extensions client")
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
 
@@ -307,4 +312,56 @@ func (o *CommonOptions) getUsername(userName string) (string, error) {
 		userName = u.Username
 	}
 	return userName, nil
+}
+
+func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, options *EditOptions) error {
+	teamSettings, err := options.TeamSettings()
+	if err != nil {
+		return err
+	}
+	value := reflect.ValueOf(teamSettings).Elem()
+	t := value.Type()
+	for i := 0; i < value.NumField(); i++ {
+		field := value.Field(i)
+		structField := t.Field(i)
+		tag := structField.Tag
+		command, ok := tag.Lookup("command")
+		if !ok {
+			continue
+		}
+		commandUsage, ok := tag.Lookup("commandUsage")
+		if !ok {
+			continue
+		}
+
+		cmd := &cobra.Command{
+			Use:   command,
+			Short: commandUsage,
+			Run: func(cmd *cobra.Command, args []string) {
+				var value string
+				if len(args) > 0 {
+					value = args[0]
+				} else if !options.BatchMode {
+					var err error
+					value, err = util.PickValue(commandUsage+":", field.String(), true, in, out, errOut)
+					CheckErr(err)
+				} else {
+					fatal(fmt.Sprintf("No value to set %s", command), 1)
+				}
+
+				callback := func(env *v1.Environment) error {
+					teamSettings := &env.Spec.TeamSettings
+					if value != "" {
+						reflect.ValueOf(teamSettings).Elem().FieldByName(structField.Name).SetString(value)
+					}
+					log.Infof("Setting the team %s to: %s\n", util.ColorInfo(command), util.ColorInfo(value))
+					return nil
+				}
+				CheckErr(options.ModifyDevEnvironment(callback))
+			},
+		}
+
+		baseCmd.AddCommand(cmd)
+	}
+	return nil
 }

@@ -23,7 +23,7 @@ type GetOptions struct {
 
 var (
 	get_long = templates.LongDesc(`
-		Display one or many resources.
+		Display one or more resources.
 
 		` + valid_resources + `
 
@@ -52,7 +52,7 @@ func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 
 	cmd := &cobra.Command{
 		Use:     "get TYPE [flags]",
-		Short:   "Display one or many resources",
+		Short:   "Display one or more resources",
 		Long:    get_long,
 		Example: get_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -75,6 +75,7 @@ func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 	cmd.AddCommand(NewCmdGetConfig(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetCVE(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetDevPod(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetEks(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetEnv(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetGit(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetHelmBin(f, in, out, errOut))

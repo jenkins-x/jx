@@ -109,7 +109,7 @@ func (o *GCReleasesOptions) Run() error {
 		owner := a.Spec.GitOwner
 		repo := a.Spec.GitRepository
 		pipeline := owner + "/" + repo + "/master"
-		// if activity has no job in jenkins delete it
+		// if activity has no job in Jenkins delete it
 		matched := true
 		if owner != "" && repo != "" {
 			matched = false

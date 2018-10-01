@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"os"
-
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
 
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/spf13/cobra"
@@ -49,20 +47,14 @@ func NewCmdDeleteAws(f Factory, in terminal.FileReader, out terminal.FileWriter,
 func (o *DeleteAwsOptions) Run() error {
 	vpcid := o.VpcId
 
-	region := o.Region
-	if region == "" {
-		region := os.Getenv("AWS_REGION")
-		if region == "" {
-			region = os.Getenv("AWS_DEFAULT_REGION")
-			if region == "" {
-				region = "us-west-2"
-			}
-		}
+	session, err := amazon.NewAwsSession("", o.Region)
+	if err != nil {
+		return err
 	}
-	svc := ec2.New(session.New(&aws.Config{Region: aws.String(region)}))
+	svc := ec2.New(session)
 
 	// Delete elastic load balancers assigned to VPC
-	elbSvc := elbv2.New(session.New(&aws.Config{Region: aws.String(o.Region)}))
+	elbSvc := elbv2.New(session)
 	loadBalancers, err := elbSvc.DescribeLoadBalancers(&elbv2.DescribeLoadBalancersInput{})
 	if err != nil {
 		return err
