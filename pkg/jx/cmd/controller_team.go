@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -145,10 +146,10 @@ func (o *ControllerTeamOptions) Run() error {
 
 	_, teamController := cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc: func(lo meta_v1.ListOptions) (runtime.Object, error) {
+			ListFunc: func(lo metav1.ListOptions) (runtime.Object, error) {
 				return jxClient.JenkinsV1().Teams("").List(lo)
 			},
-			WatchFunc: func(lo meta_v1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(lo metav1.ListOptions) (watch.Interface, error) {
 				return jxClient.JenkinsV1().Teams("").Watch(lo)
 			},
 		},
@@ -257,6 +258,22 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 				log.Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
 			} else {
 				installOpts.OAUTHToken = oauthToken
+			}
+		}
+
+		// lets copy the myvalues.yaml file from the ConfigMap
+		cm, err := kubeClient.CoreV1().ConfigMaps(adminNs).Get(kube.ConfigMapJenkinsTeamController, metav1.GetOptions{})
+		if err != nil {
+			log.Errorf("Failed to load the ConfigMap %s from namespace %s: %s", kube.ConfigMapJenkinsTeamController, adminNs, err)
+		} else {
+			if cm.Data != nil {
+				valuesYaml := cm.Data["myvalues.yaml"]
+				if valuesYaml != "" {
+					err = ioutil.WriteFile("myvalues.yaml", []byte(valuesYaml), util.DefaultWritePermissions)
+					if err != nil {
+						log.Errorf("Failed to write the myvalues.yaml file: %s", err)
+					}
+				}
 			}
 		}
 
