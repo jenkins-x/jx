@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -15,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -102,16 +104,52 @@ func (o *ControllerTeamOptions) Run() error {
 		o.InstallOptions.Flags.Prow = true
 	}
 
+	// lets validate we have git configured
+	gitter := co.Git()
+	userName, _ := gitter.Username("")
+	userEmail, _ := gitter.Email("")
+	if userName == "" {
+		userName = os.Getenv("GIT_AUTHOR_NAME")
+		if userName == "" {
+			userName = "jenkins-x-bot"
+		}
+		err = gitter.SetUsername("", userName)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to set the git username to %s", userName)
+		}
+	}
+	if userEmail == "" {
+		userEmail = os.Getenv("GIT_AUTHOR_EMAIL")
+		if userEmail == "" {
+			userEmail = "jenkins-x@googlegroups.com"
+		}
+		err = gitter.SetEmail("", userEmail)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to set the git email to %s", userEmail)
+		}
+	}
+
+	// now lets setup the git secrets
+	if co.Factory.IsInCluster() {
+		sgc := &StepGitCredentialsOptions{}
+		sgc.CommonOptions = co.CommonOptions
+		log.Info("Setting up git credentials\n")
+		err = sgc.Run()
+		if err != nil {
+			return errors.Wrapf(err, "Failed to run: jx step git credentials")
+		}
+	}
+
 	log.Infof("Watching for teams in all namespaces\n")
 
 	stop := make(chan struct{})
 
 	_, teamController := cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc: func(lo meta_v1.ListOptions) (runtime.Object, error) {
+			ListFunc: func(lo metav1.ListOptions) (runtime.Object, error) {
 				return jxClient.JenkinsV1().Teams("").List(lo)
 			},
-			WatchFunc: func(lo meta_v1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(lo metav1.ListOptions) (watch.Interface, error) {
 				return jxClient.JenkinsV1().Teams("").Watch(lo)
 			},
 		},
@@ -212,9 +250,34 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = team.Name
 		o.InstallOptions.CommonOptions.InstallDependencies = true
 
-		// call jx install
 		installOpts := &o.InstallOptions
 
+		if installOpts.Flags.Prow {
+			oauthToken, err := o.ControllerOptions.LoadProwOAuthConfig(adminNs)
+			if err != nil {
+				log.Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
+			} else {
+				installOpts.OAUTHToken = oauthToken
+			}
+		}
+
+		// lets copy the myvalues.yaml file from the ConfigMap
+		cm, err := kubeClient.CoreV1().ConfigMaps(adminNs).Get(kube.ConfigMapJenkinsTeamController, metav1.GetOptions{})
+		if err != nil {
+			log.Errorf("Failed to load the ConfigMap %s from namespace %s: %s", kube.ConfigMapJenkinsTeamController, adminNs, err)
+		} else {
+			if cm.Data != nil {
+				valuesYaml := cm.Data["myvalues.yaml"]
+				if valuesYaml != "" {
+					err = ioutil.WriteFile("myvalues.yaml", []byte(valuesYaml), util.DefaultWritePermissions)
+					if err != nil {
+						log.Errorf("Failed to write the myvalues.yaml file: %s", err)
+					}
+				}
+			}
+		}
+
+		// call jx install
 		err = installOpts.Run()
 		if err != nil {
 			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(team.Name), err)
@@ -252,4 +315,23 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			return
 		}
 	}
+}
+
+// LoadProwOAuthConfig returns the OAuth Token for Prow
+func (o *CommonOptions) LoadProwOAuthConfig(ns string) (string, error) {
+	options := *o
+	options.SetDevNamespace(ns)
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return "", err
+	}
+
+	config := authConfigSvc.Config()
+	// lets assume github.com for now so ignore config.CurrentServer
+	server := config.GetOrCreateServer("https://github.com")
+	userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", true, "", o.In, o.Out, o.Err)
+	if err != nil {
+		return "", err
+	}
+	return userAuth.ApiToken, nil
 }
