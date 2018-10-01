@@ -1,7 +1,5 @@
 # override the build pod images
 jenkins:
-  Master:
-    ImageTag: 0.0.34
   Agent:
     PodTemplates:
       Maven:
