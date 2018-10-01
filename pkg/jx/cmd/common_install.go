@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/binaries"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/binaries"
 
 	"gopkg.in/yaml.v2"
 
@@ -229,13 +230,13 @@ func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
 }
 
 type InstallOrUpdateBinaryOptions struct {
-	Binary string
-	GitHubOrganization string
+	Binary              string
+	GitHubOrganization  string
 	DownloadUrlTemplate string
-	Version string
-	SkipPathScan bool
-	VersionExtractor binaries.VersionExtractor
-	Archived bool
+	Version             string
+	SkipPathScan        bool
+	VersionExtractor    binaries.VersionExtractor
+	Archived            bool
 }
 
 func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
@@ -1261,13 +1262,13 @@ func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
 
 func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bool) error {
 	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
-		Binary: "eksctl",
-		GitHubOrganization: "weaveworks",
+		Binary:              "eksctl",
+		GitHubOrganization:  "weaveworks",
 		DownloadUrlTemplate: "https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
-		Version: version,
-		SkipPathScan: skipPathScan,
-		VersionExtractor: nil,
-		Archived: true,
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
+		Archived:            true,
 	})
 }
 
@@ -1277,12 +1278,12 @@ func (o *CommonOptions) installHeptioAuthenticatorAws(skipPathScan bool) error {
 
 func (o *CommonOptions) installHeptioAuthenticatorAwsWithVersion(version string, skipPathScan bool) error {
 	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
-		Binary: "heptio-authenticator-aws",
-		GitHubOrganization: "",
+		Binary:              "heptio-authenticator-aws",
+		GitHubOrganization:  "",
 		DownloadUrlTemplate: "https://amazon-eks.s3-us-west-2.amazonaws.com/{{.version}}/2018-06-05/bin/{{.os}}/{{.arch}}/heptio-authenticator-aws",
-		Version: version,
-		SkipPathScan: skipPathScan,
-		VersionExtractor: nil,
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
 	})
 }
 
@@ -1544,11 +1545,8 @@ func (o *CommonOptions) installProw() error {
 		}
 
 		config := authConfigSvc.Config()
-		if "" == config.CurrentServer {
-			config.CurrentServer = "https://github.com"
-		}
-
-		server := config.GetOrCreateServer(config.CurrentServer)
+		// lets assume github.com for now so ignore config.CurrentServer
+		server := config.GetOrCreateServer("https://github.com")
 		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
