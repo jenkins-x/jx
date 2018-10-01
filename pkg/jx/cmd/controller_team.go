@@ -249,9 +249,19 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = team.Name
 		o.InstallOptions.CommonOptions.InstallDependencies = true
 
-		// call jx install
 		installOpts := &o.InstallOptions
 
+		if installOpts.Flags.Prow {
+			oauthToken, err := o.ControllerOptions.LoadProwOAuthConfig(adminNs)
+			if err != nil {
+				log.Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
+			} else {
+				log.Infof("Loaded OAuth Token %s\n", oauthToken)
+				installOpts.OAUTHToken = oauthToken
+			}
+		}
+
+		// call jx install
 		err = installOpts.Run()
 		if err != nil {
 			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(team.Name), err)
@@ -289,4 +299,23 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			return
 		}
 	}
+}
+
+// LoadProwOAuthConfig returns the OAuth Token for Prow
+func (o *CommonOptions) LoadProwOAuthConfig(ns string) (string, error) {
+	options := *o
+	options.SetDevNamespace(ns)
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return "", err
+	}
+
+	config := authConfigSvc.Config()
+	// lets assume github.com for now so ignore config.CurrentServer
+	server := config.GetOrCreateServer("https://github.com")
+	userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", true, "", o.In, o.Out, o.Err)
+	if err != nil {
+		return "", err
+	}
+	return userAuth.ApiToken, nil
 }
