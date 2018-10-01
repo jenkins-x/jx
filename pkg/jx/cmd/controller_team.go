@@ -118,7 +118,7 @@ func (o *ControllerTeamOptions) Run() error {
 		}
 	}
 	if userEmail == "" {
-		userEmail = os.Getenv("GIT_AUTHOR_NAME")
+		userEmail = os.Getenv("GIT_AUTHOR_EMAIL")
 		if userEmail == "" {
 			userEmail = "jenkins-x@googlegroups.com"
 		}
