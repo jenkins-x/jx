@@ -86,7 +86,7 @@ func (o *ControllerBuildOptions) Run() error {
 		ns = devNs
 	}
 	pod := &corev1.Pod{}
-	log.Infof("Watching for knative build pods in namespace %s\n", util.ColorInfo(ns))
+	log.Infof("Watching for Knative build pods in namespace %s\n", util.ColorInfo(ns))
 	listWatch := cache.NewListWatchFromClient(client.CoreV1().RESTClient(), "pods", ns, fields.Everything())
 	kube.SortListWatchByName(listWatch)
 	_, controller := cache.NewInformer(
@@ -149,7 +149,7 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, jxClient versioned.Inter
 	}
 }
 
-// createPromoteStepActivityKey deduces the pipeline metadata from the knative build pod
+// createPromoteStepActivityKey deduces the pipeline metadata from the Knative build pod
 func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, pod *corev1.Pod) *kube.PromoteStepActivityKey {
 	branch := ""
 	lastCommitSha := ""
@@ -207,7 +207,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 
 func (o *ControllerBuildOptions) updatePipelineActivity(activity *v1.PipelineActivity, s string, pod *corev1.Pod) bool {
 	copy := *activity
-	// TODO update the steps based on the knative build pod's init containers
+	// TODO update the steps based on the Knative build pod's init containers
 	for _, c := range pod.Status.InitContainerStatuses {
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 		title := strings.Title(name)
