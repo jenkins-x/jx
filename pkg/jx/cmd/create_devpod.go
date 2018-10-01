@@ -718,12 +718,16 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 	}
-	shellCommand := o.ShellCmd
-	if shellCommand == "" {
-		shellCommand = defaultRshCommand
-	}
 
-	rshExec = append(rshExec, shellCommand)
+	// Only want to shell into the DevPod if the headless flag isn't set
+	if !o.Headless {
+		shellCommand := o.ShellCmd
+		if shellCommand == "" {
+			shellCommand = defaultRshCommand
+		}
+
+		rshExec = append(rshExec, shellCommand)
+	}
 
 	options := &RshOptions{
 		CommonOptions: o.CommonOptions,

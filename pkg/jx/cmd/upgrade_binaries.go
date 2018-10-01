@@ -69,6 +69,11 @@ func (o *UpgradeBinariesOptions) Run() error {
 			if err != nil {
 				return err
 			}
+		} else if binary.Name() == "heptio-authenticator-aws" {
+			err = o.installHeptioAuthenticatorAws(true)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
