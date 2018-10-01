@@ -205,6 +205,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			provider = "gke"
 		}
 		o.InstallOptions.Flags.Provider = provider
+		o.InstallOptions.Flags.DisableSetKubeContext = true
 
 		//o.InstallOptions.Flags.NoDefaultEnvironments = true
 		o.InstallOptions.Flags.Namespace = team.Name

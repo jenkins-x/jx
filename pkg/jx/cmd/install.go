@@ -67,6 +67,7 @@ type InstallFlags struct {
 	EnvironmentGitOwner      string
 	Version                  string
 	Prow                     bool
+	DisableSetKubeContext    bool
 }
 
 // Secrets struct for secrets
@@ -308,9 +309,12 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to install the platform requirements")
 	}
 
-	context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
+	context := ""
+	if !options.Flags.DisableSetKubeContext {
+		context, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		if err != nil {
+			return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
+		}
 	}
 
 	ns := options.Flags.Namespace
@@ -325,9 +329,11 @@ func (options *InstallOptions) Run() error {
 		return fmt.Errorf("Failed to ensure the namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ns, err)
 	}
 
-	err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
-	if err != nil {
-		return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
+	if !options.Flags.DisableSetKubeContext {
+		err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+		if err != nil {
+			return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
+		}
 	}
 
 	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
