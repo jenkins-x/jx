@@ -98,6 +98,12 @@ func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
 	}
 }
 
+// SetDevNamespace configures the current dev namespace
+func (c *CommonOptions) SetDevNamespace(ns string) {
+	c.devNamespace = ns
+	c.currentNamespace = ns
+}
+
 // Debugf outputs the given text to the console if verbose mode is enabled
 func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 	if c.Verbose {

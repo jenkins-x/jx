@@ -73,6 +73,9 @@ const (
 	// ConfigMapJenkinsPodTemplates is the ConfigMap containing all the Pod Templates available
 	ConfigMapJenkinsPodTemplates = "jenkins-x-pod-templates"
 
+	// ConfigMapJenkinsTeamController is the ConfigMap containing the TeamController config files
+	ConfigMapJenkinsTeamController = "jenkins-x-team-controller"
+
 	// ConfigMapJenkinsDockerRegistry is the ConfigMap containing the Docker Registry configuration
 	ConfigMapJenkinsDockerRegistry = "jenkins-x-docker-registry"
 
