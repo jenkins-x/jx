@@ -256,7 +256,6 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			if err != nil {
 				log.Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
 			} else {
-				log.Infof("Loaded OAuth Token %s\n", oauthToken)
 				installOpts.OAUTHToken = oauthToken
 			}
 		}
