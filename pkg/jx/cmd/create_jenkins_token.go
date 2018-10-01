@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
@@ -30,8 +31,11 @@ import (
 )
 
 const (
-	JenkinsCookieName = "JSESSIONID"
+	JenkinsCookieName    = "JSESSIONID"
+	JenkinsVersionHeader = "X-Jenkins"
 )
+
+var JenkinsReferenceVersion = semver.Version{Major: 2, Minor: 140, Patch: 0}
 
 var (
 	create_jenkins_user_long = templates.LongDesc(`
@@ -152,8 +156,17 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		log.Infof("Using url %s\n", tokenUrl)
 	}
 	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
-		newTokenUrl := jenkins.JenkinsNewTokenURL(server.URL)
-		err = o.tryFindAPITokenFromBrowser(tokenUrl, newTokenUrl, userAuth)
+		apiUrl := jenkins.JenkinsApiURL(server.URL)
+		version, err := o.getJenkinsVersion(apiUrl)
+		if err != nil {
+			return errors.Wrap(err, "getting Jenkins version")
+		}
+		if version.LT(JenkinsReferenceVersion) {
+			err = o.tryFindAPITokenFromBrowserOlderJenkins(tokenUrl, userAuth)
+		} else {
+			newTokenUrl := jenkins.JenkinsNewTokenURL(server.URL)
+			err = o.tryFindAPITokenFromBrowser(tokenUrl, newTokenUrl, userAuth)
+		}
 		if err != nil {
 			log.Warnf("Unable to automatically find API token with chromedp using URL %s\n", tokenUrl)
 			log.Warnf("Error: %v\n", err)
@@ -199,7 +212,122 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	return nil
 }
 
-// lets try use the users browser to find the API token
+func (o *CreateJenkinsUserOptions) getJenkinsVersion(apiUrl string) (*semver.Version, error) {
+	client := http.Client{}
+	req, err := http.NewRequest(http.MethodGet, apiUrl, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "building request to receive the Jenkins version")
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "execute get Jenkins version request")
+	}
+	versionHeader, ok := resp.Header[JenkinsVersionHeader]
+	if !ok || len(versionHeader) == 0 {
+		return nil, errors.New("jenkins version header missing from http response")
+	}
+	version := versionHeader[0]
+	v, err := semver.ParseTolerant(version)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse the Jenkins version")
+	}
+	return &v, nil
+}
+
+func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowserOlderJenkins(tokenUrl string, userAuth *auth.UserAuth) error {
+	var ctxt context.Context
+	var cancel context.CancelFunc
+	if o.Timeout != "" {
+		duration, err := time.ParseDuration(o.Timeout)
+		if err != nil {
+			return err
+		}
+		ctxt, cancel = context.WithTimeout(context.Background(), duration)
+	} else {
+		ctxt, cancel = context.WithCancel(context.Background())
+	}
+	defer cancel()
+
+	c, err := o.createChromeClient(ctxt)
+	if err != nil {
+		return err
+	}
+
+	err = c.Run(ctxt, chromedp.Tasks{
+		chromedp.Navigate(tokenUrl),
+	})
+	if err != nil {
+		return err
+	}
+
+	nodeSlice := []*cdp.Node{}
+	err = c.Run(ctxt, chromedp.Nodes("//input", &nodeSlice))
+	if err != nil {
+		return err
+	}
+
+	login := false
+	userNameInputName := "j_username"
+	passwordInputSelector := "//input[@name='j_password']"
+	for _, node := range nodeSlice {
+		name := node.AttributeValue("name")
+		if name == userNameInputName {
+			login = true
+		}
+	}
+
+	if login {
+		// disable screenshots to try and reduce errors when running headless
+		//o.captureScreenshot(ctxt, c, "screenshot-jenkins-login.png", "main-panel", chromedp.ByID)
+
+		log.Infoln("logging in")
+		err = c.Run(ctxt, chromedp.Tasks{
+			chromedp.WaitVisible(userNameInputName, chromedp.ByID),
+			chromedp.SendKeys(userNameInputName, userAuth.Username, chromedp.ByID),
+			chromedp.SendKeys(passwordInputSelector, o.Password+"\n"),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// disable screenshots to try and reduce errors when running headless
+	//o.captureScreenshot(ctxt, c, "screenshot-jenkins-api-token.png", "main-panel", chromedp.ByID)
+
+	getAPITokenButtonSelector := "//button[normalize-space(text())='Show API Token...']"
+	nodeSlice = []*cdp.Node{}
+
+	log.Infoln("Getting the API Token...")
+	err = c.Run(ctxt, chromedp.Tasks{
+		chromedp.Sleep(2 * time.Second),
+		chromedp.WaitVisible(getAPITokenButtonSelector),
+		chromedp.Click(getAPITokenButtonSelector),
+		//chromedp.WaitVisible("apiToken", chromedp.ByID),
+		chromedp.Nodes("apiToken", &nodeSlice, chromedp.ByID),
+	})
+	if err != nil {
+		return err
+	}
+	token := ""
+	for _, node := range nodeSlice {
+		text := node.AttributeValue("value")
+		if text != "" && token == "" {
+			token = text
+			break
+		}
+	}
+	log.Infoln("Found API Token")
+	if token != "" {
+		userAuth.ApiToken = token
+	}
+
+	err = c.Shutdown(ctxt)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, newTokenUrl string, userAuth *auth.UserAuth) error {
 	var ctx context.Context
 	var cancel context.CancelFunc

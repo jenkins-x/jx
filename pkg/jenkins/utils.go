@@ -103,6 +103,10 @@ func JenkinsNewTokenURL(url string) string {
 	return util.UrlJoin(url, "/me/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken")
 }
 
+func JenkinsApiURL(url string) string {
+	return util.UrlJoin(url, "/api")
+}
+
 func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (jenkauth.UserAuth, error) {
 
 	log.Infof("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
