@@ -1303,9 +1303,6 @@ func (o *CommonOptions) installIntoICP() error {
 	}
 
 	return os.Chmod(fullPath, 0755)
-	if err != nil {
-		return err
-	}
 }
 
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
