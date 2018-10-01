@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/binaries"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/binaries"
 
 	"gopkg.in/yaml.v2"
 
@@ -123,7 +124,7 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 		case "eksctl":
 			err = o.installEksCtl(false)
 		case "heptio-authenticator-aws":
-			err = o.installHeptioAuthenticatorAws()
+			err = o.installHeptioAuthenticatorAws(false)
 		case "kustomize":
 			err = o.installKustomize()
 		default:
@@ -228,9 +229,18 @@ func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
 	return nil
 }
 
-func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization string, downloadUrlTemplate string, version string,
-	skipPathScan bool, versionExtractor binaries.VersionExtractor) error {
-	shouldInstallBinary, err := binaries.ShouldInstallBinary(binary, version, versionExtractor)
+type InstallOrUpdateBinaryOptions struct {
+	Binary              string
+	GitHubOrganization  string
+	DownloadUrlTemplate string
+	Version             string
+	SkipPathScan        bool
+	VersionExtractor    binaries.VersionExtractor
+	Archived            bool
+}
+
+func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
+	shouldInstallBinary, err := binaries.ShouldInstallBinary(options.Binary, options.Version, options.VersionExtractor)
 	if err != nil {
 		return err
 	}
@@ -250,12 +260,12 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 			return err
 		}
 		yaml.Unmarshal(binariesBytes, &binaries)
-		if binaries[binary] == version {
+		if binaries[options.Binary] == options.Version {
 			return nil
 		}
 	}
 
-	urlTemplate, err := template.New(binary).Parse(downloadUrlTemplate)
+	urlTemplate, err := template.New(options.Binary).Parse(options.DownloadUrlTemplate)
 	if err != nil {
 		return err
 	}
@@ -263,16 +273,16 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 	if err != nil {
 		return err
 	}
-	fileName := binary
-	if !skipPathScan {
-		installFilename, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName := options.Binary
+	if !options.SkipPathScan {
+		installFilename, flag, err := o.shouldInstallBinary(binDir, options.Binary)
 		fileName = installFilename
 		if err != nil || !flag {
 			return err
 		}
 	}
-	if version == "" {
-		version, err = util.GetLatestVersionStringFromGitHub(gitHubOrganization, binary)
+	if options.Version == "" {
+		options.Version, err = util.GetLatestVersionStringFromGitHub(options.GitHubOrganization, options.Binary)
 		if err != nil {
 			return err
 		}
@@ -282,48 +292,53 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 		extension = "zip"
 	}
 	clientUrlBuffer := bytes.NewBufferString("")
-	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": version, "os": runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
+	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": options.Version, "os": runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
 	fullPath := filepath.Join(binDir, fileName)
-	tarFile := fullPath + "." + extension
+	tarFile := fullPath
+	if options.Archived {
+		tarFile = tarFile + "." + extension
+	}
 	err = o.downloadFile(clientUrlBuffer.String(), tarFile)
 	if err != nil {
 		return err
 	}
-	if extension == "zip" {
-		zipDir := filepath.Join(binDir, binary+"-tmp-"+uuid.NewUUID().String())
-		err = os.MkdirAll(zipDir, DefaultWritePermissions)
+	if options.Archived {
+		if extension == "zip" {
+			zipDir := filepath.Join(binDir, options.Binary+"-tmp-"+uuid.NewUUID().String())
+			err = os.MkdirAll(zipDir, DefaultWritePermissions)
+			if err != nil {
+				return err
+			}
+			err = util.Unzip(tarFile, zipDir)
+			if err != nil {
+				return err
+			}
+			f := filepath.Join(zipDir, fileName)
+			exists, err := util.FileExists(f)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				return fmt.Errorf("Could not find file %s inside the downloaded file!", f)
+			}
+			err = os.Rename(f, fullPath)
+			if err != nil {
+				return err
+			}
+			err = os.RemoveAll(zipDir)
+		} else {
+			err = util.UnTargz(tarFile, binDir, []string{options.Binary, fileName})
+		}
 		if err != nil {
 			return err
 		}
-		err = util.Unzip(tarFile, zipDir)
+		err = os.Remove(tarFile)
 		if err != nil {
 			return err
 		}
-		f := filepath.Join(zipDir, fileName)
-		exists, err := util.FileExists(f)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return fmt.Errorf("Could not find file %s inside the downloaded file!", f)
-		}
-		err = os.Rename(f, fullPath)
-		if err != nil {
-			return err
-		}
-		err = os.RemoveAll(zipDir)
-	} else {
-		err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
-	}
-	if err != nil {
-		return err
-	}
-	err = os.Remove(tarFile)
-	if err != nil {
-		return err
 	}
 
-	binaries[binary] = version
+	binaries[options.Binary] = options.Version
 	binariesBytes, err := yaml.Marshal(binaries)
 	if err != nil {
 		return err
@@ -1246,29 +1261,30 @@ func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
 }
 
 func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bool) error {
-	return o.installOrUpdateBinary("eksctl",
-		"weaveworks",
-		"https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
-		version, skipPathScan, nil)
+	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+		Binary:              "eksctl",
+		GitHubOrganization:  "weaveworks",
+		DownloadUrlTemplate: "https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
+		Archived:            true,
+	})
 }
 
-func (o *CommonOptions) installHeptioAuthenticatorAws() error {
-	awsUrl := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/heptio-authenticator-aws"
-	fileName := "heptio-authenticator-aws"
+func (o *CommonOptions) installHeptioAuthenticatorAws(skipPathScan bool) error {
+	return o.installHeptioAuthenticatorAwsWithVersion(binaries.HeptioAuthenticatorAwsVersion, skipPathScan)
+}
 
-	if runtime.GOOS == "darwin" {
-		awsUrl = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/darwin/amd64/heptio-authenticator-aws"
-	} else if runtime.GOOS == "windows" {
-		awsUrl = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/windows/amd64/heptio-authenticator-aws.exe"
-		fileName = "heptio-authenticator-aws.exe"
-	}
-	binDir, err := util.JXBinLocation()
-	fullPath := filepath.Join(binDir, fileName)
-	err = o.downloadFile(awsUrl, fullPath)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(fullPath, 0755)
+func (o *CommonOptions) installHeptioAuthenticatorAwsWithVersion(version string, skipPathScan bool) error {
+	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+		Binary:              "heptio-authenticator-aws",
+		GitHubOrganization:  "",
+		DownloadUrlTemplate: "https://amazon-eks.s3-us-west-2.amazonaws.com/{{.version}}/2018-06-05/bin/{{.os}}/{{.arch}}/heptio-authenticator-aws",
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
+	})
 }
 
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
@@ -1529,11 +1545,8 @@ func (o *CommonOptions) installProw() error {
 		}
 
 		config := authConfigSvc.Config()
-		if "" == config.CurrentServer {
-			config.CurrentServer = "https://github.com"
-		}
-
-		server := config.GetOrCreateServer(config.CurrentServer)
+		// lets assume github.com for now so ignore config.CurrentServer
+		server := config.GetOrCreateServer("https://github.com")
 		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
