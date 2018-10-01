@@ -362,7 +362,13 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// lets ignore errors getting the current context in case we are running inside a pod
-	currentContext, _ := options.getCommandOutput("", "kubectl", "config", "current-context")
+	currentContext := ""
+	if !options.Flags.DisableSetKubeContext {
+		currentContext, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		if err != nil {
+			return errors.Wrap(err, "failed to get the current context")
+		}
+	}
 	isAwsProvider := options.Flags.Provider == AWS || options.Flags.Provider == EKS
 	if isAwsProvider {
 		err = options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
