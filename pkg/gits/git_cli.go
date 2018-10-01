@@ -290,7 +290,7 @@ func (g *GitCLI) Server(dir string) (string, error) {
 func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
 	text, err := g.gitCmdWithOutput(dir, "status")
 	var rUrl string
-	if err != nil && strings.Contains(text, "Not a Git repository") {
+	if err != nil && strings.Contains(text, "Not a git repository") {
 		rUrl = os.Getenv("SOURCE_URL")
 		if rUrl == "" {
 			return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
