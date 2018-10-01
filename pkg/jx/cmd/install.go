@@ -361,10 +361,8 @@ func (options *InstallOptions) Run() error {
 		log.Success("created role cluster-admin")
 	}
 
-	currentContext, err := options.getCommandOutput("", "kubectl", "config", "current-context")
-	if err != nil {
-		return errors.Wrap(err, "failed to get the current context")
-	}
+	// lets ignore errors getting the current context in case we are running inside a pod
+	currentContext, _ := options.getCommandOutput("", "kubectl", "config", "current-context")
 	isAwsProvider := options.Flags.Provider == AWS || options.Flags.Provider == EKS
 	if isAwsProvider {
 		err = options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
@@ -668,27 +666,29 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// save cluster config CA and server url to a configmap
-	kubeConfig, _, err := kube.LoadConfig()
-	if err != nil {
-		return err
-	}
+	if !options.Flags.DisableSetKubeContext {
+		kubeConfig, _, err := kube.LoadConfig()
+		if err != nil {
+			return err
+		}
 
-	var jxInstallConfig *kube.JXInstallConfig
-	if kubeConfig != nil {
-		kubeConfigContext := kube.CurrentContext(kubeConfig)
-		if kubeConfigContext != nil {
-			server := kube.Server(kubeConfig, kubeConfigContext)
-			certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
-			jxInstallConfig = &kube.JXInstallConfig{
-				Server: server,
-				CA:     certificateAuthorityData,
+		var jxInstallConfig *kube.JXInstallConfig
+		if kubeConfig != nil {
+			kubeConfigContext := kube.CurrentContext(kubeConfig)
+			if kubeConfigContext != nil {
+				server := kube.Server(kubeConfig, kubeConfigContext)
+				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
+				jxInstallConfig = &kube.JXInstallConfig{
+					Server: server,
+					CA:     certificateAuthorityData,
+				}
 			}
 		}
-	}
 
-	_, err = kube.SaveAsConfigMap(options.KubeClientCached, kube.ConfigMapNameJXInstallConfig, ns, jxInstallConfig)
-	if err != nil {
-		return err
+		_, err = kube.SaveAsConfigMap(options.KubeClientCached, kube.ConfigMapNameJXInstallConfig, ns, jxInstallConfig)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = options.waitForInstallToBeReady(ns)
