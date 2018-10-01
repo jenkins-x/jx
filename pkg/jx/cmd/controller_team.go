@@ -128,6 +128,17 @@ func (o *ControllerTeamOptions) Run() error {
 		}
 	}
 
+	// now lets setup the git secrets
+	if co.Factory.IsInCluster() {
+		sgc := &StepGitCredentialsOptions{}
+		sgc.CommonOptions = co.CommonOptions
+		log.Info("Setting up git credentials\n")
+		err = sgc.Run()
+		if err != nil {
+			return errors.Wrapf(err, "Failed to run: jx step git credentials")
+		}
+	}
+
 	log.Infof("Watching for teams in all namespaces\n")
 
 	stop := make(chan struct{})
