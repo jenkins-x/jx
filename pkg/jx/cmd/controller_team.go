@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,6 +85,12 @@ func (o *ControllerTeamOptions) Run() error {
 
 	// lets default the team settings based on the current team settings
 	settings, err := co.TeamSettings()
+	if err != nil {
+		return errors.Wrapf(err, "Failed to get TeamSettings")
+	}
+	if settings == nil {
+		return fmt.Errorf("No TeamSettings found!")
+	}
 	if settings.HelmTemplate {
 		o.InstallOptions.InitOptions.Flags.NoTiller = true
 	} else if settings.NoTiller {
