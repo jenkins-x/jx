@@ -193,7 +193,11 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 
 	// register the webhook
 	suffix := gitProvider.JenkinsWebHookPath(gitURL, "")
-	webhookUrl := util.UrlJoin(jenk.BaseURL(), suffix)
+	jenkBaseURL := o.ExternalJenkinsBaseURL
+	if jenkBaseURL == "" {
+		jenkBaseURL = jenk.BaseURL()
+	}
+	webhookUrl := util.UrlJoin(jenkBaseURL, suffix)
 	webhook := &gits.GitWebHookArguments{
 		Owner: gitInfo.Organisation,
 		Repo:  gitInfo,

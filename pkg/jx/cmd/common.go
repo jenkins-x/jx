@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,8 +19,6 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"strconv"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -45,20 +44,21 @@ const (
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory              Factory
-	In                   terminal.FileReader
-	Out                  terminal.FileWriter
-	Err                  io.Writer
-	Cmd                  *cobra.Command
-	Args                 []string
-	BatchMode            bool
-	Verbose              bool
-	Headless             bool
-	NoBrew               bool
-	InstallDependencies  bool
-	SkipAuthSecretsMerge bool
-	ServiceAccount       string
-	Username             string
+	Factory                Factory
+	In                     terminal.FileReader
+	Out                    terminal.FileWriter
+	Err                    io.Writer
+	Cmd                    *cobra.Command
+	Args                   []string
+	BatchMode              bool
+	Verbose                bool
+	Headless               bool
+	NoBrew                 bool
+	InstallDependencies    bool
+	SkipAuthSecretsMerge   bool
+	ServiceAccount         string
+	Username               string
+	ExternalJenkinsBaseURL string
 
 	// common cached clients
 	KubeClientCached    kubernetes.Interface
@@ -84,6 +84,24 @@ func (f *ServerFlags) IsEmpty() bool {
 
 func (c *CommonOptions) CreateTable() table.Table {
 	return c.Factory.CreateTable(c.Out)
+}
+
+// NewCommonOptions a helper method to create a new CommonOptions instance
+// pre configured in a specific devNamespace
+func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
+	return CommonOptions{
+		Factory:          factory,
+		Out:              os.Stdout,
+		Err:              os.Stderr,
+		currentNamespace: devNamespace,
+		devNamespace:     devNamespace,
+	}
+}
+
+// SetDevNamespace configures the current dev namespace
+func (c *CommonOptions) SetDevNamespace(ns string) {
+	c.devNamespace = ns
+	c.currentNamespace = ns
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
@@ -718,11 +736,11 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
 	err := o.installChartOptions(InstallChartOptions{
 		ReleaseName: helmRelease,
-		Chart: exposecontrollerChart,
-		Version: exposecontrollerVersion,
-		Ns: targetNamespace,
-		HelmUpdate: true,
-		SetValues: exValues,
+		Chart:       exposecontrollerChart,
+		Version:     exposecontrollerVersion,
+		Ns:          targetNamespace,
+		HelmUpdate:  true,
+		SetValues:   exValues,
 	})
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)

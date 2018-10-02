@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -21,13 +23,16 @@ const (
 
 	// LabelReleaseChartVersion stores the version of a chart installation in a label
 	LabelReleaseChartVersion = "jenkins.io/version"
+
+	hookFailed    = "hook-failed"
+	hookSucceeded = "hook-succeeded"
 )
 
 // HelmTemplate implements common helm actions but purely as client side operations
 // delegating a separate Helmer such as HelmCLI for the client side operations
 type HelmTemplate struct {
 	Client          *HelmCLI
-	OutputDir       string
+	WorkDir         string
 	CWD             string
 	Binary          string
 	Runner          *util.Command
@@ -39,7 +44,7 @@ type HelmTemplate struct {
 func NewHelmTemplate(client *HelmCLI, workDir string, kubeClient kubernetes.Interface) *HelmTemplate {
 	cli := &HelmTemplate{
 		Client:          client,
-		OutputDir:       workDir,
+		WorkDir:         workDir,
 		Runner:          client.Runner,
 		Binary:          "kubectl",
 		CWD:             client.CWD,
@@ -47,6 +52,14 @@ func NewHelmTemplate(client *HelmCLI, workDir string, kubeClient kubernetes.Inte
 		KubeClient:      kubeClient,
 	}
 	return cli
+}
+
+type HelmHook struct {
+	Kind               string
+	Name               string
+	File               string
+	Hooks              []string
+	HookDeletePolicies []string
 }
 
 // SetHost is used to point at a locally running tiller
@@ -155,15 +168,17 @@ func (h *HelmTemplate) Version(tls bool) (string, error) {
 func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
 	values []string, valueFiles []string) error {
 
-	err := h.clearOutputDir()
+	err := h.clearOutputDir(releaseName)
 	if err != nil {
 		return err
 	}
-	chartDir, err := h.chartNameToFolder(chart)
+	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
+
+	chartDir, err := h.chartNameToFolder(chart, chartsDir)
 	if err != nil {
 		return err
 	}
-	err = h.Client.Template(chartDir, releaseName, ns, h.OutputDir, false, values, valueFiles)
+	err = h.Client.Template(chartDir, releaseName, ns, outputDir, false, values, valueFiles)
 	if err != nil {
 		return err
 	}
@@ -173,33 +188,53 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	err = h.addLabelsToFiles(releaseName, versionText)
+	helmHooks, err := h.addLabelsToFiles(releaseName, versionText)
 	if err != nil {
 		return err
 	}
-
+	helmPrePhase := "pre-install"
+	helmPostPhase := "post-install"
 	wait := true
+	create := true
 
-	err = h.kubectlApply(ns, chart, releaseName, false, true)
+	err = h.runHooks(helmHooks, helmPrePhase, ns, chart, releaseName, wait, create)
 	if err != nil {
 		return err
 	}
-	return h.deleteOldResources(ns, releaseName, versionText, wait)
+	err = h.kubectlApply(ns, chart, releaseName, wait, create, outputDir)
+	if err != nil {
+		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
+		return err
+	}
+	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
+
+	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create)
+	if err != nil {
+		h.deleteHooks(helmHooks, helmPostPhase, hookFailed, ns)
+		return err
+	}
+
+	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
+	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
+
+	return util.CombineErrors(err, err2)
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
 	timeout *int, force bool, wait bool, values []string, valueFiles []string) error {
 
-	err := h.clearOutputDir()
+	err := h.clearOutputDir(releaseName)
 	if err != nil {
 		return err
 	}
-	chartDir, err := h.chartNameToFolder(chart)
+	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
+
+	chartDir, err := h.chartNameToFolder(chart, chartsDir)
 	if err != nil {
 		return err
 	}
-	err = h.Client.Template(chartDir, releaseName, ns, h.OutputDir, false, values, valueFiles)
+	err = h.Client.Template(chartDir, releaseName, ns, outputDir, false, values, valueFiles)
 	if err != nil {
 		return err
 	}
@@ -209,27 +244,47 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	err = h.addLabelsToFiles(releaseName, versionText)
+	helmHooks, err := h.addLabelsToFiles(releaseName, versionText)
 	if err != nil {
 		return err
 	}
 
-	err = h.kubectlApply(ns, chart, releaseName, wait, false)
+	helmPrePhase := "pre-upgrade"
+	helmPostPhase := "post-upgrade"
+	create := false
+
+	err = h.runHooks(helmHooks, helmPrePhase, ns, chart, releaseName, wait, create)
 	if err != nil {
 		return err
 	}
 
-	return h.deleteOldResources(ns, releaseName, versionText, wait)
+	err = h.kubectlApply(ns, chart, releaseName, wait, create, outputDir)
+	if err != nil {
+		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
+		return err
+	}
+	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
+
+	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create)
+	if err != nil {
+		h.deleteHooks(helmHooks, helmPostPhase, hookFailed, ns)
+		return err
+	}
+
+	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
+	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
+
+	return util.CombineErrors(err, err2)
 }
 
-func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string, wait bool, create bool) error {
-	log.Infof("Applying generated chart %s YAML via kubectl in dir: %s\n", chart, h.OutputDir)
+func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string, wait bool, create bool, dir string) error {
+	log.Infof("Applying generated chart %s YAML via kubectl in dir: %s\n", chart, dir)
 
 	command := "apply"
 	if create {
 		command = "create"
 	}
-	args := []string{command, "--recursive", "-f", h.OutputDir, "-l", LabelReleaseName + "=" + releaseName}
+	args := []string{command, "--recursive", "-f", dir, "-l", LabelReleaseName + "=" + releaseName}
 	if ns != "" {
 		args = append(args, "--namespace", ns)
 	}
@@ -240,6 +295,31 @@ func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string,
 		args = append(args, "--validate=false")
 	}
 	return h.runKubectl(args...)
+}
+
+func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, file string) error {
+	log.Infof("Applying Helm hook %s YAML via kubectl in file: %s\n", helmHook, file)
+
+	command := "apply"
+	if create {
+		command = "create"
+	}
+	args := []string{command, "-f", file}
+	if ns != "" {
+		args = append(args, "--namespace", ns)
+	}
+	if wait && !create {
+		args = append(args, "--wait")
+	}
+	if !h.KubectlValidate {
+		args = append(args, "--validate=false")
+	}
+	return h.runKubectl(args...)
+}
+
+func (h *HelmTemplate) kubectlDeleteFile(ns string, file string) error {
+	log.Infof("Deleting helm hook sources from file: %s\n", file)
+	return h.runKubectl("delete", "-f", file, "--namespace", ns, "--wait")
 }
 
 func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, versionText string, wait bool) error {
@@ -307,38 +387,42 @@ func (h *HelmTemplate) StatusReleases(ns string) (map[string]string, error) {
 	return statusMap, nil
 }
 
-func (h *HelmTemplate) getOutputDir() (string, error) {
-	if h.OutputDir == "" {
-		d, err := ioutil.TempDir("", "helm-template-output-")
+func (h *HelmTemplate) getDirectories(releaseName string) (string, string, string, error) {
+	if releaseName == "" {
+		return "", "", "", fmt.Errorf("No release name specified!")
+	}
+	if h.WorkDir == "" {
+		var err error
+		h.WorkDir, err = ioutil.TempDir("", "helm-template-workdir-")
 		if err != nil {
-			return "", errors.Wrap(err, "Failed to create temporary directory for helm template output")
+			return "", "", "", errors.Wrap(err, "Failed to create temporary directory for helm template workdir")
 		}
-		h.OutputDir = d
 	}
-	dir := h.OutputDir
-	if dir == "" {
-		return dir, fmt.Errorf("No OutputDir specifeid for HelmTemplate")
+	workDir := h.WorkDir
+	outDir := filepath.Join(workDir, releaseName, "output")
+	helmHookDir := filepath.Join(workDir, releaseName, "helmHooks")
+	chartsDir := filepath.Join(workDir, releaseName, "chartFiles")
+
+	dirs := []string{outDir, helmHookDir, chartsDir}
+	for _, d := range dirs {
+		err := os.MkdirAll(d, util.DefaultWritePermissions)
+		if err != nil {
+			return "", "", "", err
+		}
 	}
-	return dir, nil
+	return outDir, helmHookDir, chartsDir, nil
 }
 
 // clearOutputDir removes all files in the helm output dir
-func (h *HelmTemplate) clearOutputDir() error {
-	dir, err := h.getOutputDir()
-	files, err := filepath.Glob(filepath.Join(dir, "*"))
+func (h *HelmTemplate) clearOutputDir(releaseName string) error {
+	dir, helmDir, chartsDir, err := h.getDirectories(releaseName)
 	if err != nil {
 		return err
 	}
-	for _, file := range files {
-		err = os.RemoveAll(file)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return util.RecreateDirs(dir, helmDir, chartsDir)
 }
 
-func (h *HelmTemplate) chartNameToFolder(chart string) (string, error) {
+func (h *HelmTemplate) chartNameToFolder(chart string, dir string) (string, error) {
 	exists, err := util.FileExists(chart)
 	if err != nil {
 		return "", err
@@ -346,12 +430,6 @@ func (h *HelmTemplate) chartNameToFolder(chart string) (string, error) {
 	if exists {
 		return chart, nil
 	}
-	safeChartName := strings.Replace(chart, string(os.PathSeparator), "-", -1)
-	dir, err := ioutil.TempDir("", safeChartName)
-	if err != nil {
-		return "", err
-	}
-
 	err = h.Client.runHelm("fetch", "-d", dir, "--untar", chart)
 	if err != nil {
 		return "", err
@@ -372,16 +450,18 @@ func (h *HelmTemplate) chartNameToFolder(chart string) (string, error) {
 	return answer, nil
 }
 
-func (h *HelmTemplate) addLabelsToFiles(chart string, version string) error {
-	dir, err := h.getOutputDir()
+func (h *HelmTemplate) addLabelsToFiles(releaseName string, version string) ([]*HelmHook, error) {
+	dir, helmHookDir, _, err := h.getDirectories(releaseName)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return addLabelsToChartYaml(dir, chart, version)
+	return addLabelsToChartYaml(dir, helmHookDir, releaseName, version)
 }
 
-func addLabelsToChartYaml(dir string, chart string, version string) error {
-	return filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+func addLabelsToChartYaml(dir string, hooksDir string, releaseName string, version string) ([]*HelmHook, error) {
+	helmHooks := []*HelmHook{}
+
+	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
 		ext := filepath.Ext(path)
 		if ext == ".yaml" {
 			file := path
@@ -395,18 +475,33 @@ func addLabelsToChartYaml(dir string, chart string, version string) error {
 				return errors.Wrapf(err, "Failed to parse YAML of file %s", file)
 			}
 			helmHook := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook")
-			if strings.HasSuffix(helmHook, "-delete") {
-				// lets remove any pre/post delete hooks...
-				err = os.Remove(path)
+			if helmHook != "" {
+				// lets move any helm hooks to the new path
+				relPath, err := filepath.Rel(dir, path)
 				if err != nil {
-					log.Warnf("Failed to remove helm hook template %s: %s", path, err)
-				} else {
-					log.Infof("Ignored helm delete hook file %s\n", path)
+					return err
 				}
+				if relPath == "" {
+					return fmt.Errorf("Failed to find relative path of dir %s and path %s", dir, path)
+				}
+				newPath := filepath.Join(hooksDir, relPath)
+				newDir, _ := filepath.Split(newPath)
+				err = os.MkdirAll(newDir, util.DefaultWritePermissions)
+				if err != nil {
+					return err
+				}
+				err = os.Rename(path, newPath)
+				if err != nil {
+					log.Warnf("Failed to move helm hook template %s to %s: %s", path, newPath, err)
+					return err
+				}
+				name := getYamlValueString(&m, "metadata", "name")
+				kind := getYamlValueString(&m, "kind")
+				helmDeletePolicy := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook-delete-policy")
+				helmHooks = append(helmHooks, NewHelmHook(kind, name, newPath, helmHook, helmDeletePolicy))
 				return nil
 			}
-
-			err = setYamlValue(&m, chart, "metadata", "labels", LabelReleaseName)
+			err = setYamlValue(&m, releaseName, "metadata", "labels", LabelReleaseName)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
 			}
@@ -426,6 +521,7 @@ func addLabelsToChartYaml(dir string, chart string, version string) error {
 		}
 		return nil
 	})
+	return helmHooks, err
 }
 
 func getYamlValueString(mapSlice *yaml.MapSlice, keys ...string) string {
@@ -578,4 +674,61 @@ func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) 
 		versionText = *version
 	}
 	return chartName, versionText, err
+}
+
+func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, chart string, releaseName string, wait bool, create bool) error {
+	matchingHooks := MatchingHooks(hooks, hookPhase, "")
+	for _, hook := range matchingHooks {
+		err := h.kubectlApplyFile(ns, hookPhase, wait, create, hook.File)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *HelmTemplate) deleteHooks(hooks []*HelmHook, hookPhase string, hookDeletePolicy string, ns string) error {
+	matchingHooks := MatchingHooks(hooks, hookPhase, hookDeletePolicy)
+	for _, hook := range matchingHooks {
+		kind := hook.Kind
+		name := hook.Name
+		if kind == "Job" && name != "" {
+			log.Infof("Waiting for helm %s hook Job %s to complete before removing it\n", hookPhase, name)
+			err := kube.WaitForJobToTerminate(h.KubeClient, ns, name, time.Minute*10)
+			if err != nil {
+				log.Warnf("Job %s has not yet terminated for helm hook phase %s due to: %s so removing it anyway\n", name, hookPhase, err)
+			}
+		} else {
+			log.Warnf("Could not wait for hook resource to complete as it is kind %s and name %s for phase %s\n", kind, name, hookPhase)
+		}
+		// TODO wait for job to be complete
+		err := h.kubectlDeleteFile(ns, hook.File)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// NewHelmHook returns a newly created HelmHook
+func NewHelmHook(kind string, name string, file string, hook string, hookDeletePolicy string) *HelmHook {
+	return &HelmHook{
+		Kind:               kind,
+		Name:               name,
+		File:               file,
+		Hooks:              strings.Split(hook, ","),
+		HookDeletePolicies: strings.Split(hookDeletePolicy, ","),
+	}
+}
+
+// MatchingHooks returns the matching files which have the given hook name and if hookPolicy is not blank the hook policy too
+func MatchingHooks(hooks []*HelmHook, hook string, hookDeletePolicy string) []*HelmHook {
+	answer := []*HelmHook{}
+	for _, h := range hooks {
+		if util.StringArrayIndex(h.Hooks, hook) >= 0 &&
+			(hookDeletePolicy == "" || util.StringArrayIndex(h.HookDeletePolicies, hookDeletePolicy) >= 0) {
+			answer = append(answer, h)
+		}
+	}
+	return answer
 }

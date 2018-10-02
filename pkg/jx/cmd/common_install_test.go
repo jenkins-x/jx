@@ -14,8 +14,8 @@ func TestInstallEksctl(t *testing.T) {
 	defer os.Setenv("PATH", oldPath)
 
 	defer os.Unsetenv("JX_HOME")
-	err = os.Setenv("JX_HOME", "/tmp/" + uuid.New())
+	err = os.Setenv("JX_HOME", "/tmp/"+uuid.New())
 	assert.Nil(t, err)
 	err = (&CommonOptions{}).installEksCtl(false)
-	assert.FileExists(t, os.Getenv("JX_HOME") + "/bin/eksctl")
+	assert.FileExists(t, os.Getenv("JX_HOME")+"/bin/eksctl")
 }

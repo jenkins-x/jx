@@ -67,6 +67,7 @@ type InstallFlags struct {
 	EnvironmentGitOwner      string
 	Version                  string
 	Prow                     bool
+	DisableSetKubeContext    bool
 }
 
 // Secrets struct for secrets
@@ -242,7 +243,7 @@ func (options *InstallOptions) Run() error {
 
 	// configure the helm binary
 	options.Helm().SetHelmBinary(helmBinary)
-	if initOpts.Flags.HelmTemplate {
+	if initOpts.Flags.NoTiller {
 		helmer := options.Helm()
 		helmCli, ok := helmer.(*helm.HelmCLI)
 		if ok && helmCli != nil {
@@ -258,7 +259,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	dependencies := []string{}
-	if !initOpts.Flags.Tiller {
+	if !initOpts.Flags.RemoteTiller {
 		binDir, err := util.JXBinLocation()
 		if err != nil {
 			return errors.Wrap(err, "reading jx bin location")
@@ -308,9 +309,12 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to install the platform requirements")
 	}
 
-	context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
+	context := ""
+	if !options.Flags.DisableSetKubeContext {
+		context, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		if err != nil {
+			return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
+		}
 	}
 
 	ns := options.Flags.Namespace
@@ -319,14 +323,17 @@ func (options *InstallOptions) Run() error {
 	}
 	options.devNamespace = ns
 
-	err = kube.EnsureNamespaceCreated(client, ns, map[string]string{kube.LabelTeam: ns}, nil)
+	namespaceLabels := map[string]string{kube.LabelTeam: ns, kube.LabelEnvironment: kube.LabelValueDevEnvironment}
+	err = kube.EnsureNamespaceCreated(client, ns, namespaceLabels, nil)
 	if err != nil {
 		return fmt.Errorf("Failed to ensure the namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ns, err)
 	}
 
-	err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
-	if err != nil {
-		return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
+	if !options.Flags.DisableSetKubeContext {
+		err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+		if err != nil {
+			return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
+		}
 	}
 
 	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
@@ -354,9 +361,13 @@ func (options *InstallOptions) Run() error {
 		log.Success("created role cluster-admin")
 	}
 
-	currentContext, err := options.getCommandOutput("", "kubectl", "config", "current-context")
-	if err != nil {
-		return errors.Wrap(err, "failed to get the current context")
+	// lets ignore errors getting the current context in case we are running inside a pod
+	currentContext := ""
+	if !options.Flags.DisableSetKubeContext {
+		currentContext, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		if err != nil {
+			return errors.Wrap(err, "failed to get the current context")
+		}
 	}
 	isAwsProvider := options.Flags.Provider == AWS || options.Flags.Provider == EKS
 	if isAwsProvider {
@@ -401,7 +412,18 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	if initOpts.Flags.HelmTemplate {
+	callback := func(env *v1.Environment) error {
+		if env.Spec.TeamSettings.KubeProvider == "" {
+			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
+			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
+		}
+		return nil
+	}
+	err = options.ModifyDevEnvironment(callback)
+	if err != nil {
+		return err
+	}
+	if initOpts.Flags.NoTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.HelmTemplate = true
 			log.Info("Enabling helm template mode in the TeamSettings\n")
@@ -414,7 +436,7 @@ func (options *InstallOptions) Run() error {
 		initOpts.helm = nil
 	}
 
-	if !initOpts.Flags.Tiller {
+	if !initOpts.Flags.RemoteTiller {
 		err = options.restartLocalTiller()
 		if err != nil {
 			return err
@@ -658,27 +680,29 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// save cluster config CA and server url to a configmap
-	kubeConfig, _, err := kube.LoadConfig()
-	if err != nil {
-		return err
-	}
+	if !options.Flags.DisableSetKubeContext {
+		kubeConfig, _, err := kube.LoadConfig()
+		if err != nil {
+			return err
+		}
 
-	var jxInstallConfig *kube.JXInstallConfig
-	if kubeConfig != nil {
-		kubeConfigContext := kube.CurrentContext(kubeConfig)
-		if kubeConfigContext != nil {
-			server := kube.Server(kubeConfig, kubeConfigContext)
-			certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
-			jxInstallConfig = &kube.JXInstallConfig{
-				Server: server,
-				CA:     certificateAuthorityData,
+		var jxInstallConfig *kube.JXInstallConfig
+		if kubeConfig != nil {
+			kubeConfigContext := kube.CurrentContext(kubeConfig)
+			if kubeConfigContext != nil {
+				server := kube.Server(kubeConfig, kubeConfigContext)
+				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
+				jxInstallConfig = &kube.JXInstallConfig{
+					Server: server,
+					CA:     certificateAuthorityData,
+				}
 			}
 		}
-	}
 
-	_, err = kube.SaveAsConfigMap(options.KubeClientCached, kube.ConfigMapNameJXInstallConfig, ns, jxInstallConfig)
-	if err != nil {
-		return err
+		_, err = kube.SaveAsConfigMap(options.KubeClientCached, kube.ConfigMapNameJXInstallConfig, ns, jxInstallConfig)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = options.waitForInstallToBeReady(ns)
@@ -706,7 +730,7 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
-	if !initOpts.Flags.Tiller {
+	if !initOpts.Flags.RemoteTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.NoTiller = true
 			log.Info("Disabling the server side use of tiller in the TeamSettings\n")
@@ -1152,7 +1176,22 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 		if userAuth.IsInvalid() {
 			return userAuth, fmt.Errorf("you did not properly define the user authentication")
 		}
+		callback := func(env *v1.Environment) error {
+			teamSettings := &env.Spec.TeamSettings
+			teamSettings.GitServer = url
+			teamSettings.PipelineUsername = userAuth.Username
+			teamSettings.Organisation = options.Owner
+			teamSettings.GitPrivate = options.GitRepositoryOptions.Private
+			return nil
+		}
+		err = options.ModifyDevEnvironment(callback)
+		if err != nil {
+			return userAuth, fmt.Errorf("failed to save team settings %s", err)
+		}
 	}
+	// TODO This API should be refactored/rethought as mixing OO and functional styles is error prone. If choosing an OO style, mutations should be carried out on the object data and then that data should be introspected as the source of truth in the operation. Alternatively, remove object state and pass values in a functional style.
+	options.GitRepositoryOptions.Username = userAuth.Username
+	options.GitRepositoryOptions.ApiToken = userAuth.ApiToken
 	return userAuth, nil
 }
 

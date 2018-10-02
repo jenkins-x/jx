@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -48,14 +47,14 @@ func NewCmdDeleteAws(f Factory, in terminal.FileReader, out terminal.FileWriter,
 func (o *DeleteAwsOptions) Run() error {
 	vpcid := o.VpcId
 
-	region := o.Region
-	if region == "" {
-		region = amazon.ResolveRegion()
+	session, err := amazon.NewAwsSession("", o.Region)
+	if err != nil {
+		return err
 	}
-	awsRegion := aws.String(region)
+	svc := ec2.New(session)
 
 	// Delete elastic load balancers assigned to VPC
-	elbSvc := elbv2.New(session.New(&aws.Config{Region: awsRegion}))
+	elbSvc := elbv2.New(session)
 	loadBalancers, err := elbSvc.DescribeLoadBalancers(&elbv2.DescribeLoadBalancersInput{})
 	if err != nil {
 		return err
@@ -70,9 +69,6 @@ func (o *DeleteAwsOptions) Run() error {
 			fmt.Printf("Load balancer %s deleted.\n", *loadBalancer.LoadBalancerName)
 		}
 	}
-
-	// Create generic EC2 service
-	svc := ec2.New(session.New(&aws.Config{Region: awsRegion}))
 
 	// Detached and delete internet gateways associated with given VPC
 	internetGateways, err := svc.DescribeInternetGateways(&ec2.DescribeInternetGatewaysInput{

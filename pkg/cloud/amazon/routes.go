@@ -13,7 +13,7 @@ import (
 // RegisterAwsCustomDomain registers a wildcard ALIAS for the custom domain
 // to point at the given ELB host name
 func RegisterAwsCustomDomain(customDomain string, elbAddress string) error {
-	sess, _, err := NewAwsSession()
+	sess, err := NewAwsSessionWithoutOptions()
 	if err != nil {
 		return err
 	}

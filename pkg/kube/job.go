@@ -14,7 +14,6 @@ import (
 
 // waits for the job to complete
 func WaitForJobToSucceeded(client kubernetes.Interface, namespace, jobName string, timeout time.Duration) error {
-
 	job, err := client.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -37,6 +36,34 @@ func WaitForJobToSucceeded(client kubernetes.Interface, namespace, jobName strin
 	_, err = watch.Until(timeout, w, condition)
 	if err == wait.ErrWaitTimeout {
 		return fmt.Errorf("job %s never succeeded", jobName)
+	}
+	return nil
+}
+
+// waits for the job to terminate
+func WaitForJobToTerminate(client kubernetes.Interface, namespace, jobName string, timeout time.Duration) error {
+	job, err := client.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	options := metav1.ListOptions{FieldSelector: fields.OneTermEqualSelector("metadata.name", job.Name).String()}
+
+	w, err := client.BatchV1().Jobs(namespace).Watch(options)
+	if err != nil {
+		return err
+	}
+
+	defer w.Stop()
+
+	condition := func(event watch.Event) (bool, error) {
+		job := event.Object.(*batchv1.Job)
+		return job.Status.Succeeded == 1 || job.Status.Failed == 1, nil
+	}
+
+	_, err = watch.Until(timeout, w, condition)
+	if err == wait.ErrWaitTimeout {
+		return fmt.Errorf("job %s never terminated", jobName)
 	}
 	return nil
 }

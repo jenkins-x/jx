@@ -68,11 +68,9 @@ func CreateAuthConfigService() auth.AuthConfigService {
 		Name:        "jx-testing-server",
 	}
 	authConfig := auth.AuthConfig{
-		Servers:          []*auth.AuthServer{&authServer},
-		DefaultUsername:  userAuth.Username,
-		PipeLineUsername: userAuth.Username,
-		CurrentServer:    authServer.URL,
-		PipeLineServer:   authServer.URL,
+		Servers:         []*auth.AuthServer{&authServer},
+		DefaultUsername: userAuth.Username,
+		CurrentServer:   authServer.URL,
 	}
 	authConfigSvc.SetConfig(&authConfig)
 	return authConfigSvc

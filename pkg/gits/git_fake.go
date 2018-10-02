@@ -153,6 +153,10 @@ func (g *GitFake) Pull(dir string) error {
 	return nil
 }
 
+func (g *GitFake) PullRemoteBranches(dir string) error {
+	return nil
+}
+
 func (g *GitFake) PullUpstream(dir string) error {
 	return nil
 }
@@ -191,6 +195,10 @@ func (g *GitFake) SetRemoteURL(dir string, name string, gitURL string) error {
 
 func (g *GitFake) UpdateRemote(dir string, url string) error {
 	return g.SetRemoteURL(dir, "origin", url)
+}
+
+func (g *GitFake) DeleteRemoteBranch(dir string, remoteName string, branch string) error {
+	return nil
 }
 
 func (g *GitFake) DiscoverRemoteGitURL(gitConf string) (string, error) {
@@ -260,6 +268,11 @@ func (g *GitFake) Checkout(dir string, branch string) error {
 	return nil
 }
 
+func (g *GitFake) CheckoutOrphan(dir string, branch string) error {
+	g.CurrentBranch = branch
+	return nil
+}
+
 func (g *GitFake) ConvertToValidBranchName(name string) string {
 	name = strings.TrimSuffix(name, "/")
 	name = strings.TrimSuffix(name, ".lock")
@@ -299,6 +312,14 @@ func (g *GitFake) Stash(dir string) error {
 }
 
 func (g *GitFake) Remove(dir string, fileName string) error {
+	return nil
+}
+
+func (g *GitFake) RemoveForce(dir string, fileName string) error {
+	return nil
+}
+
+func (g *GitFake) CleanForce(dir string, fileName string) error {
 	return nil
 }
 

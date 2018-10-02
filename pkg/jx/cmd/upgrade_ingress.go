@@ -75,6 +75,7 @@ func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 	options.addFlags(cmd)
+	options.addCommonFlags(cmd)
 
 	return cmd
 }
@@ -112,7 +113,12 @@ func (o *UpgradeIngressOptions) Run() error {
 	}
 
 	// confirm values
-	util.Confirm(fmt.Sprintf("Using  config values %v, ok?", o.IngressConfig), true, "", o.In, o.Out, o.Err)
+	if !o.BatchMode {
+		if !util.Confirm(fmt.Sprintf("Using config values %v, ok?", o.IngressConfig), true, "", o.In, o.Out, o.Err) {
+			log.Infof("Terminating\n")
+			return nil
+		}
+	}
 
 	// save details to a configmap
 	_, err = kube.SaveAsConfigMap(o.KubeClientCached, kube.ConfigMapIngressConfig, o.devNamespace, o.IngressConfig)
