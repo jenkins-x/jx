@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -83,25 +82,6 @@ func (o *ControllerTeamOptions) Run() error {
 	client, _, err := co.KubeClient()
 	if err != nil {
 		return err
-	}
-
-	// lets default the team settings based on the current team settings
-	settings, err := co.TeamSettings()
-	if err != nil {
-		return errors.Wrapf(err, "Failed to get TeamSettings")
-	}
-	if settings == nil {
-		return fmt.Errorf("No TeamSettings found!")
-	}
-	if settings.HelmTemplate {
-		o.InstallOptions.InitOptions.Flags.NoTiller = true
-	} else if settings.NoTiller {
-		o.InstallOptions.InitOptions.Flags.RemoteTiller = false
-	} else if settings.HelmBinary == "helm3" {
-		o.InstallOptions.InitOptions.Flags.Helm3 = true
-	}
-	if settings.PromotionEngine == v1.PromotionEngineProw {
-		o.InstallOptions.Flags.Prow = true
 	}
 
 	// lets validate we have git configured
@@ -187,7 +167,30 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 	if v1.TeamProvisionStatusNone == team.Status.ProvisionStatus {
 		// update first
 		oc := &o.ControllerOptions
-		err := oc.ModifyTeam(teamNs, func(team *v1.Team) error {
+		oc.SetDevNamespace(adminNs)
+
+		// lets default the team settings based on the current team settings
+		settings, err := oc.TeamSettings()
+		if err != nil {
+			log.Errorf("Failed to get TeamSettings: %s\n", err)
+		}
+		if settings == nil {
+			log.Errorf("No TeamSettings found!\n")
+		}
+		if err == nil && settings != nil {
+			if settings.HelmTemplate {
+				o.InstallOptions.InitOptions.Flags.NoTiller = true
+			} else if settings.NoTiller {
+				o.InstallOptions.InitOptions.Flags.RemoteTiller = false
+			} else if settings.HelmBinary == "helm3" {
+				o.InstallOptions.InitOptions.Flags.Helm3 = true
+			}
+			if settings.PromotionEngine == v1.PromotionEngineProw {
+				o.InstallOptions.Flags.Prow = true
+			}
+		}
+
+		err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusPending
 			team.Status.Message = "Installing resources"
 			return nil
@@ -262,6 +265,8 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 				log.Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
 			} else {
 				io.OAUTHToken = oauthToken
+				log.Infof("Loaded the Prow OAuth Token in namespace %s with %d digits\n", adminNs, len(oauthToken))
+
 			}
 		}
 
