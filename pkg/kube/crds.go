@@ -128,6 +128,33 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 	return registerCRD(apiClient, name, names, columns)
 }
 
+// RegisterExtensionCRD ensures that the CRD is registered for Extension
+func RegisterExtensionCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "extensions." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "Extension",
+		ListKind:   "ExtensionList",
+		Plural:     "extensions",
+		Singular:   "extensions",
+		ShortNames: []string{"extension", "ext"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Name",
+			Type:        "string",
+			Description: "The name of the extension",
+			JSONPath:    ".spec.name",
+		},
+		{
+			Name:        "Description",
+			Type:        "string",
+			Description: "A description of the extension",
+			JSONPath:    ".spec.description",
+		},
+	}
+	return registerCRD(apiClient, name, names, columns)
+}
+
 // RegisterReleaseCRD ensures that the CRD is registered for Release
 func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "releases." + jenkinsio.GroupName

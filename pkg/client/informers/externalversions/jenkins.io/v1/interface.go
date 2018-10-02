@@ -12,6 +12,8 @@ type Interface interface {
 	Environments() EnvironmentInformer
 	// EnvironmentRoleBindings returns a EnvironmentRoleBindingInformer.
 	EnvironmentRoleBindings() EnvironmentRoleBindingInformer
+	// Extensions returns a ExtensionInformer.
+	Extensions() ExtensionInformer
 	// GitServices returns a GitServiceInformer.
 	GitServices() GitServiceInformer
 	// PipelineActivities returns a PipelineActivityInformer.
@@ -45,6 +47,11 @@ func (v *version) Environments() EnvironmentInformer {
 // EnvironmentRoleBindings returns a EnvironmentRoleBindingInformer.
 func (v *version) EnvironmentRoleBindings() EnvironmentRoleBindingInformer {
 	return &environmentRoleBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Extensions returns a ExtensionInformer.
+func (v *version) Extensions() ExtensionInformer {
+	return &extensionInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // GitServices returns a GitServiceInformer.
