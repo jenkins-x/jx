@@ -15,11 +15,9 @@ import (
 )
 
 const (
-	Hook                           = "hook"
-	DefaultProwReleaseName         = "jx-prow"
-	DefaultKnativeBuildReleaseName = "jx-knative-build"
-	JenkinsMasterTag               = "dev_22"
-	BuilderBaseImage               = "jenkinsxio/builder-base:0.0.604"
+	Hook             = "hook"
+	JenkinsMasterTag = "dev_22"
+	BuilderBaseImage = "jenkinsxio/builder-base:0.0.604"
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"

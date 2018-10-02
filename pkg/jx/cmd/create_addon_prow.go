@@ -10,7 +10,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
@@ -67,7 +66,7 @@ func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileW
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, "", prow.DefaultProwReleaseName)
+	options.addFlags(cmd, "", kube.DefaultProwReleaseName)
 
 	cmd.Flags().StringVarP(&options.Version, "version", "v", options.ProwVersion, "The version of the Prow addon to use")
 	cmd.Flags().StringVarP(&options.Prow.Chart, optionChart, "c", kube.ChartProw, "The name of the chart to use")

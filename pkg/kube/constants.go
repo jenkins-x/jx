@@ -31,6 +31,9 @@ const (
 	// ChartKnative the default chart for knative
 	ChartKnativeBuild = "jenkins-x/knative-build"
 
+	DefaultProwReleaseName         = "jx-prow"
+	DefaultKnativeBuildReleaseName = "jx-knative-build"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
@@ -218,16 +221,16 @@ const (
 
 var (
 	AddonCharts = map[string]string{
-		"ambassador":       ChartAmbassador,
-		"anchore":          ChartAnchore,
-		"cb":               ChartCloudBees,
-		"gitea":            ChartGitea,
-		"istio":            ChartIstio,
-		"kubeless":         ChartKubeless,
-		"prometheus":       "stable/prometheus",
-		"grafana":          "stable/grafana",
-		"jx-prow":          ChartProw,
-		"jx-knative-build": ChartKnativeBuild,
+		"ambassador":                   ChartAmbassador,
+		"anchore":                      ChartAnchore,
+		"cb":                           ChartCloudBees,
+		"gitea":                        ChartGitea,
+		"istio":                        ChartIstio,
+		"kubeless":                     ChartKubeless,
+		"prometheus":                   "stable/prometheus",
+		"grafana":                      "stable/grafana",
+		DefaultProwReleaseName:         ChartProw,
+		DefaultKnativeBuildReleaseName: ChartKnativeBuild,
 	}
 
 	AddonServices = map[string]string{

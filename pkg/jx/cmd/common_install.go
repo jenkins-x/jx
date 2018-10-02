@@ -26,7 +26,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -1522,7 +1521,7 @@ func GetSafeUsername(username string) string {
 func (o *CommonOptions) installProw() error {
 
 	if o.ReleaseName == "" {
-		o.ReleaseName = prow.DefaultProwReleaseName
+		o.ReleaseName = kube.DefaultProwReleaseName
 	}
 
 	if o.Chart == "" {
@@ -1582,7 +1581,7 @@ func (o *CommonOptions) installProw() error {
 	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(prow.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values)
+		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values)
 		return nil
 	})
 
