@@ -103,7 +103,7 @@ func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	cmd.Flags().StringVarP(&options.ForkEnvironmentGitRepo, "fork-git-repo", "f", kube.DefaultEnvironmentGitRepoURL, "The Git repository used as the fork when creating new Environment Git repos")
 	cmd.Flags().StringVarP(&options.EnvJobCredentials, "env-job-credentials", "", "", "The Jenkins credentials used by the GitOps Job for this environment")
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on the environment Git repository")
-	cmd.Flags().StringVarP(&options.BranchPattern, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry)")
+	cmd.Flags().StringVarP(&options.PullSecrets, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry)")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a Git repository")
 	cmd.Flags().BoolVarP(&options.Prow, "prow", "", false, "Install and use Prow for environment promotion")
@@ -197,12 +197,14 @@ func (o *CreateEnvOptions) Run() error {
 		}
 	}
 
-	// It is the default service account in the namespace e.g. jx-staging
-	// todo should this be elsewhere?
-
-	err = serviceAccounts.PatchServiceAccount(kubeClient, jxClient, &env, env.Spec.Namespace, pullSecrets)
-	if err != nil {
-		return fmt.Errorf("failed to add pull secrets %s to service account default in namespace %s: %v", pullSecrets, env.Spec.Namespace, pullSecrets)
+	// This is useful if using a private registry. 
+	// The service account in the environment needs to be able to pull images from a private registry - may be multiple so iterate over it
+	pullSecrets := &options.PullSecrets
+	for _, secret := range pullSecrets) {
+		err = serviceAccounts.PatchServiceAccount(kubeClient, jxClient, &env, env.Spec.Namespace, secret)
+		if err != nil {
+			return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", pullSecrets, env.Spec.Namespace, secret)
+		}
 	}
 
 	if gitURL != "" {
