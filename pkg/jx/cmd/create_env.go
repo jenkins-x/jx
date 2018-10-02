@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -16,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/prow"
-	serviceAccounts "github.com/jenkins-x/jx/pkg/service_accounts"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -42,7 +42,7 @@ var (
 	`)
 )
 
-// CreateEnvOptions the options for the create spring command
+// CreateEnvOptions the options for the create env command
 type CreateEnvOptions struct {
 	CreateOptions
 
@@ -103,7 +103,6 @@ func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	cmd.Flags().StringVarP(&options.ForkEnvironmentGitRepo, "fork-git-repo", "f", kube.DefaultEnvironmentGitRepoURL, "The Git repository used as the fork when creating new Environment Git repos")
 	cmd.Flags().StringVarP(&options.EnvJobCredentials, "env-job-credentials", "", "", "The Jenkins credentials used by the GitOps Job for this environment")
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on the environment Git repository")
-	cmd.Flags().StringVarP(&options.PullSecrets, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry)")
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a Git repository")
 	cmd.Flags().BoolVarP(&options.Prow, "prow", "", false, "Install and use Prow for environment promotion")
@@ -197,13 +196,33 @@ func (o *CreateEnvOptions) Run() error {
 		}
 	}
 
-	// This is useful if using a private registry. 
+	// This is useful if using a private registry.
 	// The service account in the environment needs to be able to pull images from a private registry - may be multiple so iterate over it
-	pullSecrets := &options.PullSecrets
-	for _, secret := range pullSecrets) {
-		err = serviceAccounts.PatchServiceAccount(kubeClient, jxClient, &env, env.Spec.Namespace, secret)
+	pullSecretInput := o.CommonOptions.PullSecrets
+	hasMultiple := false
+
+	// Do a safe split here, incase we don't get a space separated list and we don't want to go panic
+	// todo may be overkill and need to remove some code duplication!
+
+	if pullSecretInput != "" {
+		if len(pullSecretInput) > 1 {
+			hasMultiple = true
+		}
+	}
+
+	splitSecrets := strings.Split(pullSecretInput, " ")
+
+	if hasMultiple {
+		for _, secret := range splitSecrets {
+			err = kube.PatchServiceAccount(kubeClient, jxClient, env.Spec.Namespace, secret)
+			if err != nil {
+				return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", pullSecretInput, env.Spec.Namespace, secret)
+			}
+		}
+	} else {
+		err = kube.PatchServiceAccount(kubeClient, jxClient, env.Spec.Namespace, pullSecretInput)
 		if err != nil {
-			return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", pullSecrets, env.Spec.Namespace, secret)
+			return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", pullSecretInput, env.Spec.Namespace, pullSecretInput)
 		}
 	}
 

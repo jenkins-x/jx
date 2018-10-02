@@ -882,3 +882,9 @@ func NewPreviewEnvironment(name string) *v1.Environment {
 		},
 	}
 }
+
+// PatchServiceAccount patches a given service account with a pull secret, for an environment
+func PatchServiceAccount(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns, pullSecret string) error {
+	fmt.Printf("todo impl, pull secret is %s, namespace is %s", ns, pullSecret)
+	return nil
+}

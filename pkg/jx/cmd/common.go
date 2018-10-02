@@ -59,6 +59,7 @@ type CommonOptions struct {
 	ServiceAccount         string
 	Username               string
 	ExternalJenkinsBaseURL string
+	PullSecrets            string
 
 	// common cached clients
 	KubeClientCached    kubernetes.Interface
@@ -118,6 +119,8 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install or upgrade command line dependencies")
 	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")
 	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, "skip-auth-secrets-merge", "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
+	cmd.Flags().StringVarP(&options.PullSecrets, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry)")
+
 	options.Cmd = cmd
 }
 
