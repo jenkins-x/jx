@@ -181,37 +181,41 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		return
 	}
 
-	log.Infof("Adding / Updating Team %s, Namespace %s, Status '%s'\n", util.ColorInfo(team.Name), util.ColorInfo(team.Namespace), util.ColorInfo(team.Status.ProvisionStatus))
+	teamNs := team.Name
+	log.Infof("Adding / Updating Team %s, Namespace %s, Status '%s'\n", util.ColorInfo(teamNs), util.ColorInfo(team.Namespace), util.ColorInfo(team.Status.ProvisionStatus))
 
 	if v1.TeamProvisionStatusNone == team.Status.ProvisionStatus {
 		// update first
-		err := o.ControllerOptions.ModifyTeam(team.Name, func(team *v1.Team) error {
+		err := o.ControllerOptions.ModifyTeam(teamNs, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusPending
 			team.Status.Message = "Installing resources"
 			return nil
 		})
 		if err != nil {
-			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(team.Name), v1.TeamProvisionStatusPending, err)
+			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusPending, err)
 			return
 		}
 
 		// ensure that the namespace exists
-		err = kube.EnsureNamespaceCreated(kubeClient, team.Name, nil, nil)
+		err = kube.EnsureNamespaceCreated(kubeClient, teamNs, nil, nil)
 		if err != nil {
-			log.Errorf("Unable to create namespace %s: %s", util.ColorInfo(team.Name), err)
+			log.Errorf("Unable to create namespace %s: %s", util.ColorInfo(teamNs), err)
 			return
 		}
 
 		// lets default the login/pwd for Jenkins from the admin cluster
-		o.InstallOptions.AdminSecretsService.Flags.DefaultAdminPassword, err = o.ControllerOptions.getDefaultAdminPassword(adminNs)
+		io := &o.InstallOptions
+		io.SetDevNamespace(teamNs)
+
+		io.AdminSecretsService.Flags.DefaultAdminPassword, err = o.ControllerOptions.getDefaultAdminPassword(adminNs)
 		if err != nil {
 			log.Warnf("Failed to load the default admin password from namespace %s: %s", adminNs, err)
 		}
 
-		if o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController == nil {
-			o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController = &config.ExposeController{}
+		if io.CreateEnvOptions.HelmValuesConfig.ExposeController == nil {
+			io.CreateEnvOptions.HelmValuesConfig.ExposeController = &config.ExposeController{}
 		}
-		ec := o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController
+		ec := io.CreateEnvOptions.HelmValuesConfig.ExposeController
 		// lets load the exposecontroller configuration
 		ingressConfig, err := kube.GetIngressConfig(kubeClient, adminNs)
 		if err != nil {
@@ -228,8 +232,8 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			ec.Config.TLSAcme = "false"
 		}
 
-		o.InstallOptions.BatchMode = true
-		o.InstallOptions.InitOptions.Flags.SkipIngress = true
+		io.BatchMode = true
+		io.InitOptions.Flags.SkipIngress = true
 
 		adminTeamSettings, _ := o.ControllerOptions.TeamSettings()
 
@@ -242,22 +246,20 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			log.Warnf("No kube provider specified on admin team settings %s\n", adminNs)
 			provider = "gke"
 		}
-		o.InstallOptions.Flags.Provider = provider
-		o.InstallOptions.Flags.DisableSetKubeContext = true
+		io.Flags.Provider = provider
+		io.Flags.DisableSetKubeContext = true
 
 		//o.InstallOptions.Flags.NoDefaultEnvironments = true
-		o.InstallOptions.Flags.Namespace = team.Name
-		o.InstallOptions.Flags.DefaultEnvironmentPrefix = team.Name
-		o.InstallOptions.CommonOptions.InstallDependencies = true
+		io.Flags.Namespace = teamNs
+		io.Flags.DefaultEnvironmentPrefix = teamNs
+		io.CommonOptions.InstallDependencies = true
 
-		installOpts := &o.InstallOptions
-
-		if installOpts.Flags.Prow {
+		if io.Flags.Prow {
 			oauthToken, err := o.ControllerOptions.LoadProwOAuthConfig(adminNs)
 			if err != nil {
 				log.Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
 			} else {
-				installOpts.OAUTHToken = oauthToken
+				io.OAUTHToken = oauthToken
 			}
 		}
 
@@ -278,16 +280,16 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		}
 
 		// call jx install
-		err = installOpts.Run()
+		err = io.Run()
 		if err != nil {
-			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(team.Name), err)
-			err = o.ControllerOptions.ModifyTeam(team.Name, func(team *v1.Team) error {
+			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(teamNs), err)
+			err = o.ControllerOptions.ModifyTeam(teamNs, func(team *v1.Team) error {
 				team.Status.ProvisionStatus = v1.TeamProvisionStatusError
 				team.Status.Message = err.Error()
 				return nil
 			})
 			if err != nil {
-				log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(team.Name), v1.TeamProvisionStatusError, err)
+				log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusError, err)
 				return
 			}
 			return
@@ -299,19 +301,19 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 				env.Spec.TeamSettings.BuildPackURL = adminTeamSettings.BuildPackURL
 				return nil
 			}
-			err = o.ControllerOptions.modifyDevEnvironment(jxClient, team.Name, callback)
+			err = o.ControllerOptions.modifyDevEnvironment(jxClient, teamNs, callback)
 			if err != nil {
-				log.Errorf("Failed to update team settings in namespace %s: %s\n", team.Name, err)
+				log.Errorf("Failed to update team settings in namespace %s: %s\n", teamNs, err)
 			}
 		}
 
-		err = o.ControllerOptions.ModifyTeam(team.Name, func(team *v1.Team) error {
+		err = o.ControllerOptions.ModifyTeam(teamNs, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusComplete
 			team.Status.Message = "Installation complete"
 			return nil
 		})
 		if err != nil {
-			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(team.Name), v1.TeamProvisionStatusComplete, err)
+			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusComplete, err)
 			return
 		}
 	}
