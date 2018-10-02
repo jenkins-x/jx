@@ -332,7 +332,8 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 func (o *CommonOptions) LoadProwOAuthConfig(ns string) (string, error) {
 	options := *o
 	options.SetDevNamespace(ns)
-	authConfigSvc, err := o.CreateGitAuthConfigService()
+	options.SkipAuthSecretsMerge = false
+	authConfigSvc, err := options.CreateGitAuthConfigService()
 	if err != nil {
 		return "", err
 	}
