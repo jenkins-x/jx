@@ -6,6 +6,8 @@ type EnvironmentExpansion interface{}
 
 type EnvironmentRoleBindingExpansion interface{}
 
+type ExtensionExpansion interface{}
+
 type GitServiceExpansion interface{}
 
 type PipelineActivityExpansion interface{}
