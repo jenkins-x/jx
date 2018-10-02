@@ -1526,7 +1526,7 @@ func (o *CommonOptions) installProw() error {
 	}
 
 	if o.Chart == "" {
-		o.Chart = prow.ChartProw
+		o.Chart = kube.ChartProw
 	}
 
 	var err error
@@ -1582,7 +1582,7 @@ func (o *CommonOptions) installProw() error {
 	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(prow.DefaultKnativeBuildReleaseName, prow.ChartKnativeBuild, "", devNamespace, true, values)
+		err = o.installChart(prow.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values)
 		return nil
 	})
 

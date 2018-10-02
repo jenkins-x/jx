@@ -18,8 +18,6 @@ const (
 	Hook                           = "hook"
 	DefaultProwReleaseName         = "jx-prow"
 	DefaultKnativeBuildReleaseName = "jx-knative-build"
-	ChartProw                      = "jenkins-x/prow"
-	ChartKnativeBuild              = "jenkins-x/knative-build"
 	JenkinsMasterTag               = "dev_18"
 	BuilderBaseImage               = "jenkinsxio/builder-base:0.0.604"
 

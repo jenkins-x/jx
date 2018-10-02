@@ -25,6 +25,12 @@ const (
 	// ChartKubeless the default chart for kubeless
 	ChartKubeless = "incubator/kubeless"
 
+	// ChartProw the default chart for prow
+	ChartProw = "jenkins-x/prow"
+
+	// ChartKnative the default chart for knative
+	ChartKnativeBuild = "jenkins-x/knative-build"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
@@ -212,14 +218,16 @@ const (
 
 var (
 	AddonCharts = map[string]string{
-		"ambassador": ChartAmbassador,
-		"anchore":    ChartAnchore,
-		"cb":         ChartCloudBees,
-		"gitea":      ChartGitea,
-		"istio":      ChartIstio,
-		"kubeless":   ChartKubeless,
-		"prometheus": "stable/prometheus",
-		"grafana":    "stable/grafana",
+		"ambassador":       ChartAmbassador,
+		"anchore":          ChartAnchore,
+		"cb":               ChartCloudBees,
+		"gitea":            ChartGitea,
+		"istio":            ChartIstio,
+		"kubeless":         ChartKubeless,
+		"prometheus":       "stable/prometheus",
+		"grafana":          "stable/grafana",
+		"jx-prow":          ChartProw,
+		"jx-knative-build": ChartKnativeBuild,
 	}
 
 	AddonServices = map[string]string{

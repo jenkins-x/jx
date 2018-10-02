@@ -70,7 +70,7 @@ func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileW
 	options.addFlags(cmd, "", prow.DefaultProwReleaseName)
 
 	cmd.Flags().StringVarP(&options.Version, "version", "v", options.ProwVersion, "The version of the Prow addon to use")
-	cmd.Flags().StringVarP(&options.Prow.Chart, optionChart, "c", prow.ChartProw, "The name of the chart to use")
+	cmd.Flags().StringVarP(&options.Prow.Chart, optionChart, "c", kube.ChartProw, "The name of the chart to use")
 	cmd.Flags().StringVarP(&options.Prow.HMACToken, "hmac-token", "", "", "OPTIONAL: The hmac-token is the token that you give to GitHub for validating webhooks. Generate it using any reasonable randomness-generator, eg openssl rand -hex 20")
 	cmd.Flags().StringVarP(&options.Prow.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")
 	cmd.Flags().StringVarP(&options.Password, "password", "", "", "Overwrite the default admin password used to login to the Deck UI")
