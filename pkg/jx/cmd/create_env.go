@@ -202,31 +202,38 @@ func (o *CreateEnvOptions) Run() error {
 
 	// This is useful if using a private registry.
 	// The service account in the environment needs to be able to pull images from a private registry - may be multiple so iterate over it
-	pullSecretInput := o.PullSecrets
-	hasMultiple := false
+	// Todo test and refactor, this is pretty ugly. Want to handle multiple pull secrets - patch the service accounts we create in the namespace we'll (eventually?) make.
+	// If the namespace doesn't yet exist we'll have to modify chart yaml to include the definition for image pull secret(s).
 
-	// Do a safe split here, incase we don't get a space separated list and we don't want to go panic
-	// todo may be overkill and need to remove some code duplication!
+	var secrets []string
 
-	if pullSecretInput != "" {
-		if len(pullSecretInput) > 1 {
-			hasMultiple = true
+	// Interactive mode?
+	if !o.BatchMode {
+		secrets, err = kube.PickPullSecrets(o.In, o.Out, o.Err)
+		if err != nil {
+			return err
 		}
 	}
 
-	splitSecrets := strings.Split(pullSecretInput, " ")
+	if len(o.PullSecrets) > 1 {
+		secrets = strings.Split(o.PullSecrets, " ")
+	}
 
-	if hasMultiple {
-		for _, secret := range splitSecrets {
-			err = kube.PatchServiceAccount(kubeClient, jxClient, env.Spec.Namespace, secret)
-			if err != nil {
-				return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", pullSecretInput, env.Spec.Namespace, secret)
-			}
-		}
-	} else {
-		err = kube.PatchServiceAccount(kubeClient, jxClient, env.Spec.Namespace, pullSecretInput)
+	for _, secret := range secrets {
+		// todo why is this a rune...
+		err = kube.PatchServiceAccount(kubeClient, jxClient, env.Spec.Namespace, string(secret))
 		if err != nil {
-			return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", pullSecretInput, env.Spec.Namespace, pullSecretInput)
+			return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", secret, env.Spec.Namespace, err)
+		}
+	}
+	// Provided it on the command line for create env?
+	if o.PullSecrets != "" {
+		for _, secret := range secrets {
+			// todo why is this a rune...
+			err = kube.PatchServiceAccount(kubeClient, jxClient, env.Spec.Namespace, string(secret))
+			if err != nil {
+				return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", secret, env.Spec.Namespace, err)
+			}
 		}
 	}
 

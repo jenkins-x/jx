@@ -883,8 +883,25 @@ func NewPreviewEnvironment(name string) *v1.Environment {
 	}
 }
 
+// PickPullSecrets prompts users to provide pull secret names for created service accounts to use
+func PickPullSecrets(in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) ([]string, error) {
+	fmt.Println("Todo impl, in pick pull secrets")
+	surveyOpts := survey.WithStdio(in, out, errOut)
+	secrets := ""
+	prompt := &survey.Select{
+		Message: "Registry secret names that the deployments should use (space separated):",
+		Default: "",
+	}
+	err := survey.AskOne(prompt, &secrets, nil, surveyOpts)
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split(secrets, " "), nil
+}
+
 // PatchServiceAccount patches a given service account with a pull secret, for an environment
 func PatchServiceAccount(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns, pullSecret string) error {
 	fmt.Printf("todo impl, pull secret is %s, namespace is %s", ns, pullSecret)
+
 	return nil
 }
