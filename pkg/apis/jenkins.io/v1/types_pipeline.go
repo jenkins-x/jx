@@ -1,9 +1,8 @@
 package v1
 
 import (
-	"strings"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // +genclient
@@ -46,6 +45,7 @@ type PipelineActivitySpec struct {
 	WorkflowMessage    string                         `json:"workflowMessage,omitempty" protobuf:"bytes,17,opt,name=workflowMessage"`
 	PostExtensions     map[string]ExecutableExtension `json:"postExtensions,omitempty" protobuf: "bytes,18,opt,name=postExtensions"`
 	Attachments        []Attachment                   `json:"attachments,omitempty" protobuf: "bytes,19,opt,name=attachments"`
+	Summaries          Summaries                      `json:"summaries,omitempty" protobuf: "bytes,20,opt,name=summaries"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity
@@ -167,6 +167,29 @@ const (
 type Attachment struct {
 	Name string   `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
 	URLs []string `json:"urls,omitempty"  protobuf:"bytes,2,opt,name=urls"`
+}
+
+// The various summary reports we can present for the pipeline
+type Summaries struct {
+	StaticProgramAnalysis StaticProgramAnalysis `json:"staticProgramAnalysis,omitempty" protobuf: "bytes,1,opt,name=staticProgramAnalysis"`
+}
+
+type StaticProgramAnalysis struct {
+	TotalBugs      int                             `json:"totalBugs,omitempty" protobuf: "bytes,1,opt,name=totalBugs"`
+	HighPriority   int                             `json:"highPriority,omitempty" protobuf: "bytes,1,opt,name=highPriority"`
+	NormalPriority int                             `json:"normalPriority,omitempty" protobuf: "bytes,1,opt,name=normalPriority"`
+	LowPriority    int                             `json:"lowPriority,omitempty" protobuf: "bytes,1,opt,name=lowPriority"`
+	Ignored        int                             `json:"ignored,omitempty" protobuf: "bytes,1,opt,name=ignored"`
+	TotalClasses   int                             `json:"totalClasses,omitempty" protobuf: "bytes,1,opt,name=totalClasses"`
+	Categories     []StaticProgramAnalysisCategory `json:"categories,omitempty" protobuf: "bytes,1,opt,name=categories"`
+}
+
+type StaticProgramAnalysisCategory struct {
+	Name           string `json:"name,omitempty" protobuf: "bytes,1,opt,name=name"`
+	HighPriority   int    `json:"highPriority,omitempty" protobuf: "bytes,1,opt,name=highPriority"`
+	NormalPriority int    `json:"normalPriority,omitempty" protobuf: "bytes,1,opt,name=normalPriority"`
+	LowPriority    int    `json:"lowPriority,omitempty" protobuf: "bytes,1,opt,name=lowPriority"`
+	Ignored        int    `json:"ignored,omitempty" protobuf: "bytes,1,opt,name=ignored"`
 }
 
 // IsTerminated returns true if this activity has stopped executing
