@@ -1272,37 +1272,41 @@ func (o *CommonOptions) installHeptioAuthenticatorAws() error {
 /* A user should have configured their kubectl client to point to an existing ICP cluster at this point */
 
 func (o *CommonOptions) installIntoICP() error {
-	/* TODO make this scriptable too with default values or from a parameter */
 	log.Info("Installing into IBM Cloud Private: ensure your Kubernetes context is already configured to point to the cluster jx will be installed into")
-
 	log.Info("You must have Helm 2.10 or later on your path and this user must be able to create namespaces, and set up a tiller, somewhere other than default and kube-system respectively")
+	log.Info("The cloud provider chart will assume docker-registry=mycluster.icp:8500/jx and a tiller namespace of jx by default.")
+	log.Info("These values can be configured with --docker-registry and --tiller-namespace. It is strongly advised you install into a namespace called jx by using the --namespace jx option.")
+	log.Info("The following parameters should also be provided: --skip-ingress --external-ip=9.something --domain=9.something.nip.io")
+	log.Info("IBM Cloud Private provides its own Ingress controller that we wish to use. You should set the external IP and domain according to your own cluster configuration.")
 
-	log.Info("This command should be done with --docker-registry=mycluster.icp:8500 --namespace jx --skip-ingress --external-ip=9.something --domain=9.something.nip.io")
-	log.Info("By default, --docker-registry will be set. to the above example, but your cluster name may differ and so change the value here accordingly")
+	/*
+		    This code is useful if we wish to download cloudctl as part of the install process as a dependency
 
-	icpDashURL := ""
-	promptIP := &survey.Input{Message: "ICP master IP address"}
-	survey.AskOne(promptIP, &icpDashURL, nil)
+			icpDashURL := ""
+			promptIP := &survey.Input{Message: "ICP master IP address"}
+			survey.AskOne(promptIP, &icpDashURL, nil)
 
-	username := ""
-	promptUser := &survey.Input{Message: "ICP username"}
-	survey.AskOne(promptUser, &username, nil)
+			username := ""
+			promptUser := &survey.Input{Message: "ICP username"}
+			survey.AskOne(promptUser, &username, nil)
 
-	password := ""
-	promptPass := &survey.Input{Message: "ICP password"}
-	survey.AskOne(promptPass, &password, nil)
+			password := ""
+			promptPass := &survey.Input{Message: "ICP password"}
+			survey.AskOne(promptPass, &password, nil)
 
-	fileName := fmt.Sprintf("cloudctl-%s-amd64", runtime.GOOS)
-	cloudctlURL := fmt.Sprintf("%s/api/cli/%s", icpDashURL, fileName)
-	binDir, err := util.JXBinLocation()
-	fullPath := filepath.Join(binDir, fileName)
-	err = o.downloadFile(cloudctlURL, fullPath)
+			fileName := fmt.Sprintf("cloudctl-%s-amd64", runtime.GOOS)
+			cloudctlURL := fmt.Sprintf("%s/api/cli/%s", icpDashURL, fileName)
+			binDir, err := util.JXBinLocation()
+			fullPath := filepath.Join(binDir, fileName)
+			err = o.downloadFile(cloudctlURL, fullPath)
 
-	if err != nil {
-		return err
-	}
+			if err != nil {
+				return err
+			}
 
-	return os.Chmod(fullPath, 0755)
+			return os.Chmod(fullPath, 0755)
+	*/
+	return nil
 }
 
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
