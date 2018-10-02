@@ -1,6 +1,9 @@
 package binaries
 
 import (
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"os/exec"
 	"runtime"
 )
@@ -51,4 +54,14 @@ func ShouldInstallBinary(binary string, expectedVersion string, versionExtractor
 
 	}
 	return true, nil
+}
+
+func DownloadFile(clientURL string, fullPath string) error {
+	log.Infof("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
+	err := util.DownloadFile(fullPath, clientURL)
+	if err != nil {
+		return fmt.Errorf("Unable to download file %s from %s due to: %v", fullPath, clientURL, err)
+	}
+	log.Infof("Downloaded %s\n", util.ColorInfo(fullPath))
+	return nil
 }
