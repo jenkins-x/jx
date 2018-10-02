@@ -92,6 +92,10 @@ func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	cmd.Flags().StringVarP(&options.Options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the Kubernetes name conventions like Services, Namespaces")
 	cmd.Flags().StringVarP(&options.Options.Spec.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
+
+	// todo should this be a common option as well? How do we write to that variable?
+	cmd.Flags().StringVarP(&options.PullSecrets, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry)")
+
 	cmd.Flags().StringVarP(&options.Options.Spec.Namespace, kube.OptionNamespace, "s", "", "The Kubernetes namespace for the Environment")
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
 	cmd.Flags().StringVarP(&options.Options.Spec.Source.URL, "git-url", "g", "", "The Git clone URL for the source code for GitOps based Environments")
@@ -198,7 +202,7 @@ func (o *CreateEnvOptions) Run() error {
 
 	// This is useful if using a private registry.
 	// The service account in the environment needs to be able to pull images from a private registry - may be multiple so iterate over it
-	pullSecretInput := o.CommonOptions.PullSecrets
+	pullSecretInput := o.PullSecrets
 	hasMultiple := false
 
 	// Do a safe split here, incase we don't get a space separated list and we don't want to go panic
