@@ -3,7 +3,9 @@ package kube
 import (
 	"fmt"
 	"reflect"
+	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/certmanager"
@@ -246,18 +248,27 @@ func registerCRD(apiClient apiextensionsclientset.Interface, name string, names 
 
 func register(apiClient apiextensionsclientset.Interface, name string, crd *v1beta1.CustomResourceDefinition) error {
 	crdResources := apiClient.ApiextensionsV1beta1().CustomResourceDefinitions()
-	old, err := crdResources.Get(name, metav1.GetOptions{})
-	if err == nil {
-		if !reflect.DeepEqual(&crd.Spec, old.Spec) {
-			old.Spec = crd.Spec
-			_, err = crdResources.Update(old)
-			return err
+
+	f := func() error {
+		old, err := crdResources.Get(name, metav1.GetOptions{})
+		if err == nil {
+			if !reflect.DeepEqual(&crd.Spec, old.Spec) {
+				old.Spec = crd.Spec
+				_, err = crdResources.Update(old)
+				return err
+			}
+			return nil
 		}
-		return nil
+
+		_, err = crdResources.Create(crd)
+		return err
 	}
 
-	_, err = crdResources.Create(crd)
-	return err
+	exponentialBackOff := backoff.NewExponentialBackOff()
+	timeout := 60 * time.Second
+	exponentialBackOff.MaxElapsedTime = timeout
+	exponentialBackOff.Reset()
+	return backoff.Retry(f, exponentialBackOff)
 }
 
 func CleanCertmanagerResources(c kubernetes.Interface, ns string, config IngressConfig) error {
