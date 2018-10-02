@@ -186,7 +186,8 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 
 	if v1.TeamProvisionStatusNone == team.Status.ProvisionStatus {
 		// update first
-		err := o.ControllerOptions.ModifyTeam(teamNs, func(team *v1.Team) error {
+		oc := &o.ControllerOptions
+		err := oc.ModifyTeam(teamNs, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusPending
 			team.Status.Message = "Installing resources"
 			return nil
@@ -206,8 +207,9 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		// lets default the login/pwd for Jenkins from the admin cluster
 		io := &o.InstallOptions
 		io.SetDevNamespace(teamNs)
+		oc.SetDevNamespace(teamNs)
 
-		io.AdminSecretsService.Flags.DefaultAdminPassword, err = o.ControllerOptions.getDefaultAdminPassword(adminNs)
+		io.AdminSecretsService.Flags.DefaultAdminPassword, err = oc.getDefaultAdminPassword(adminNs)
 		if err != nil {
 			log.Warnf("Failed to load the default admin password from namespace %s: %s", adminNs, err)
 		}
@@ -235,7 +237,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		io.BatchMode = true
 		io.InitOptions.Flags.SkipIngress = true
 
-		adminTeamSettings, _ := o.ControllerOptions.TeamSettings()
+		adminTeamSettings, _ := oc.TeamSettings()
 
 		// TODO lets load this from the current team
 		provider := ""
@@ -255,7 +257,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		io.CommonOptions.InstallDependencies = true
 
 		if io.Flags.Prow {
-			oauthToken, err := o.ControllerOptions.LoadProwOAuthConfig(adminNs)
+			oauthToken, err := oc.LoadProwOAuthConfig(adminNs)
 			if err != nil {
 				log.Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
 			} else {
@@ -280,10 +282,12 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		}
 
 		// call jx install
+		io.SetDevNamespace(teamNs)
+		io.CreateEnvOptions.SetDevNamespace(teamNs)
 		err = io.Run()
 		if err != nil {
 			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(teamNs), err)
-			err = o.ControllerOptions.ModifyTeam(teamNs, func(team *v1.Team) error {
+			err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
 				team.Status.ProvisionStatus = v1.TeamProvisionStatusError
 				team.Status.Message = err.Error()
 				return nil
@@ -301,13 +305,13 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 				env.Spec.TeamSettings.BuildPackURL = adminTeamSettings.BuildPackURL
 				return nil
 			}
-			err = o.ControllerOptions.modifyDevEnvironment(jxClient, teamNs, callback)
+			err = oc.modifyDevEnvironment(jxClient, teamNs, callback)
 			if err != nil {
 				log.Errorf("Failed to update team settings in namespace %s: %s\n", teamNs, err)
 			}
 		}
 
-		err = o.ControllerOptions.ModifyTeam(teamNs, func(team *v1.Team) error {
+		err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusComplete
 			team.Status.Message = "Installation complete"
 			return nil
