@@ -44,7 +44,7 @@ var (
 		# Tails the log of the container foo in the latest pod in deployment myapp
 		jx logs myapp -c foo
 
-		# Tails the log of the latest knative build pod
+		# Tails the log of the latest Knative build pod
 		jx logs -k
 `)
 )
@@ -77,7 +77,7 @@ func NewCmdLogs(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 	cmd.Flags().StringVarP(&options.Environment, "env", "e", "", "the Environment to look for the Deployment. Defaults to the current environment")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters the available deployments if no deployment argument is provided")
 	cmd.Flags().StringVarP(&options.Label, "label", "l", "", "The label to filter the pods if no deployment argument is provided")
-	cmd.Flags().BoolVarP(&options.KNativeBuild, "knative-build", "k", false, "View the logs of the latest knative build pod")
+	cmd.Flags().BoolVarP(&options.KNativeBuild, "knative-build", "k", false, "View the logs of the latest Knative build pod")
 	cmd.Flags().BoolVarP(&options.EditEnvironment, "edit", "d", false, "Use my Edit Environment to look for the Deployment pods")
 	return cmd
 }
@@ -145,7 +145,7 @@ func (o *LogsOptions) Run() error {
 		if o.KNativeBuild {
 			pod, err = o.waitForReadyKnativeBuildPod(client, ns, false)
 			if pod == "" {
-				return fmt.Errorf("No knative build pod found for namespace %s", ns)
+				return fmt.Errorf("No Knative build pod found for namespace %s", ns)
 			}
 		} else if o.Label != "" {
 			selector, err := parseSelector(o.Label)
@@ -220,7 +220,7 @@ func (o *CommonOptions) waitForReadyPodForSelectorLabels(c kubernetes.Interface,
 }
 
 func (o *CommonOptions) waitForReadyKnativeBuildPod(c kubernetes.Interface, ns string, readyOnly bool) (string, error) {
-	log.Warnf("Waiting for a running knative build pod in namespace %s\n", ns)
+	log.Warnf("Waiting for a running Knative build pod in namespace %s\n", ns)
 	lastPod := ""
 	for {
 		pods, err := builds.GetBuildPods(c, ns)

@@ -12,11 +12,11 @@ import (
 
 var (
 	createAddonKnativeBuildLong = templates.LongDesc(`
-		Creates the Knative Build addon
+		Creates the Knative build addon
 `)
 
 	createAddonKnativeBuildExample = templates.Examples(`
-		# Create the knative addon
+		# Create the Knative addon
 		jx create addon knative-build
 	`)
 )
@@ -43,7 +43,7 @@ func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out termin
 
 	cmd := &cobra.Command{
 		Use:     "knative-build",
-		Short:   "Create the Knative Build addon",
+		Short:   "Create the Knative build addon",
 		Aliases: []string{"env"},
 		Long:    createAddonKnativeBuildLong,
 		Example: createAddonKnativeBuildExample,
@@ -61,7 +61,7 @@ func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out termin
 
 // Create the addon
 func (o *CreateAddonKnativeBuildOptions) Run() error {
-	log.Info("Installing Knative Build addon\n\n")
+	log.Info("Installing Knative build addon\n\n")
 	err := o.runCommandVerbose("kubectl", "apply", "-f", "https://storage.googleapis.com/knative-releases/build/latest/release.yaml")
 
 	if err != nil {
