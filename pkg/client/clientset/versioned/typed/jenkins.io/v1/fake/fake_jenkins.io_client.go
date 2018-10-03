@@ -20,6 +20,10 @@ func (c *FakeJenkinsV1) EnvironmentRoleBindings(namespace string) v1.Environment
 	return &FakeEnvironmentRoleBindings{c, namespace}
 }
 
+func (c *FakeJenkinsV1) Extensions(namespace string) v1.ExtensionInterface {
+	return &FakeExtensions{c, namespace}
+}
+
 func (c *FakeJenkinsV1) GitServices(namespace string) v1.GitServiceInterface {
 	return &FakeGitServices{c, namespace}
 }
