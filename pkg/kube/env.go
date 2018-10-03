@@ -884,24 +884,30 @@ func NewPreviewEnvironment(name string) *v1.Environment {
 }
 
 // PickPullSecrets prompts users to provide pull secret names for created service accounts to use
-func PickPullSecrets(in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) ([]string, error) {
-	fmt.Println("Todo impl, in pick pull secrets")
+func PickPullSecrets(in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
 	surveyOpts := survey.WithStdio(in, out, errOut)
 	secrets := ""
-	prompt := &survey.Select{
-		Message: "Registry secret names that the deployments should use (space separated):",
+
+	q := &survey.Input{
+		Message: "Pull secrets?",
 		Default: "",
+		Help:    "The pull secrets required for applications in the created environment to function",
 	}
-	err := survey.AskOne(prompt, &secrets, nil, surveyOpts)
+	err := survey.AskOne(q, &secrets, nil, surveyOpts)
+
+	// Ideally we provide options: image pull secrets (so of type Docker secret) that sit in the installde into namespace
+	// Service accounts will then use this secret. May need to copy each secret into the environment namespace for that to work.
+	// For now, just accept user text input
+
 	if err != nil {
-		return nil, err
+		log.Error("An error occurred when prompting for the list of secrets to use")
+		return "", err
 	}
-	return strings.Split(secrets, " "), nil
+	return secrets, nil
 }
 
 // PatchServiceAccount patches a given service account with a pull secret, for an environment
 func PatchServiceAccount(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns, pullSecret string) error {
-	fmt.Printf("todo impl, pull secret is %s, namespace is %s", ns, pullSecret)
-
+	log.Infof("todo impl, pull secret listing is %s, namespace is %s", pullSecret, ns)
 	return nil
 }

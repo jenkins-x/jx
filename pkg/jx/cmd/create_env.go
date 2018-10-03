@@ -205,7 +205,8 @@ func (o *CreateEnvOptions) Run() error {
 	// Todo test and refactor, this is pretty ugly. Want to handle multiple pull secrets - patch the service accounts we create in the namespace we'll (eventually?) make.
 	// If the namespace doesn't yet exist we'll have to modify chart yaml to include the definition for image pull secret(s).
 
-	var secrets []string
+	secrets := ""
+	var secretsArray []string
 
 	// Interactive mode?
 	if !o.BatchMode {
@@ -213,24 +214,27 @@ func (o *CreateEnvOptions) Run() error {
 		if err != nil {
 			return err
 		}
+		secretsArray = strings.Split(o.PullSecrets, " ")
 	}
 
 	if len(o.PullSecrets) > 1 {
-		secrets = strings.Split(o.PullSecrets, " ")
+		secretsArray = strings.Split(o.PullSecrets, " ")
 	}
 
-	for _, secret := range secrets {
-		// todo why is this a rune...
-		err = kube.PatchServiceAccount(kubeClient, jxClient, env.Spec.Namespace, string(secret))
+	for _, secret := range secretsArray {
+		log.Infof("1, patching with secret name %s", secret)
+		err = kube.PatchImagePullSecret(kubeClient, env.Spec.Namespace, "default", secret)
 		if err != nil {
-			return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", secret, env.Spec.Namespace, err)
+			return fmt.Errorf("Failed to add pull secret %s to service account default in namespace %s: %v", secret, env.Spec.Namespace, err)
 		}
 	}
+
 	// Provided it on the command line for create env?
 	if o.PullSecrets != "" {
 		for _, secret := range secrets {
 			// todo why is this a rune...
-			err = kube.PatchServiceAccount(kubeClient, jxClient, env.Spec.Namespace, string(secret))
+			log.Infof("2, patching with secret name %s", secret)
+			err = kube.PatchImagePullSecret(kubeClient, env.Spec.Namespace, "default", string(secret))
 			if err != nil {
 				return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", secret, env.Spec.Namespace, err)
 			}
