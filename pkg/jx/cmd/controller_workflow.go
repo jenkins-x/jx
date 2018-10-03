@@ -704,7 +704,7 @@ func createPromoteStatus(pipeline *v1.PipelineActivity) map[string]*v1.PromoteAc
 	return answer
 }
 
-// createPromoteStepActivityKey deduces the pipeline metadata from the knative workflow pod
+// createPromoteStepActivityKey deduces the pipeline metadata from the Knative workflow pod
 func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName string, pod *corev1.Pod) *kube.PromoteStepActivityKey {
 	branch := ""
 	lastCommitSha := ""
