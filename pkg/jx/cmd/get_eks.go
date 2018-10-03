@@ -2,7 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 	"io"
 	"os"
 	"os/exec"
@@ -21,11 +25,18 @@ type GetEksOptions struct {
 
 var (
 	getEksLong = templates.LongDesc(`
-		List EKS clusters
+		Display one or many EKS cluster resources 
 `)
 
 	getEksExample = templates.Examples(`
+		# List EKS clusters available in AWS
 		jx get eks
+
+		# Displays someCluster EKS resource
+		jx get eks someCluster
+
+		# Displays someCluster resource in YAML format
+		jx get eks someCluster -oyaml
 	`)
 )
 
@@ -60,30 +71,67 @@ func NewCmdGetEks(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 }
 
 func (o *GetEksOptions) Run() error {
-	var deps []string
-	d := binaryShouldBeInstalled("eksctl")
-	if d != "" {
-		deps = append(deps, d)
-	}
-	d = binaryShouldBeInstalled("heptio-authenticator-aws")
-	if d != "" {
-		deps = append(deps, d)
-	}
-	err := o.installMissingDependencies(deps)
-	if err != nil {
-		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
-		os.Exit(-1)
-	}
+	if len(o.Args) == 0 {
+		var deps []string
+		d := binaryShouldBeInstalled("eksctl")
+		if d != "" {
+			deps = append(deps, d)
+		}
+		d = binaryShouldBeInstalled("heptio-authenticator-aws")
+		if d != "" {
+			deps = append(deps, d)
+		}
+		err := o.installMissingDependencies(deps)
+		if err != nil {
+			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+			os.Exit(-1)
+		}
 
-	region, err := amazon.ResolveRegion(o.Profile, o.Region)
-	if err != nil {
-		return err
-	}
-	cmd := exec.Command("eksctl", "get", "cluster", "--region", region)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
+		region, err := amazon.ResolveRegion(o.Profile, o.Region)
+		if err != nil {
+			return err
+		}
+		cmd := exec.Command("eksctl", "get", "cluster", "--region", region)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return nil
+		}
+		fmt.Print(string(output))
+		return nil
+	} else {
+		cluster := o.Args[0]
+		session, err := amazon.NewAwsSession(o.Profile, o.Region)
+		if err != nil {
+			return err
+		}
+		svc := ec2.New(session)
+		instances, err := svc.DescribeInstances(&ec2.DescribeInstancesInput{
+			Filters: []*ec2.Filter{
+				{
+					Name: aws.String("tag:eksctl.cluster.k8s.io/v1alpha1/cluster-name"),
+					Values: []*string{
+						aws.String(cluster),
+					},
+				},
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		if o.Output == "" {
+			fmt.Println("NAME")
+			fmt.Println(cluster)
+		} else if o.Output == "yaml" {
+			reservations, err := yaml.Marshal(instances.Reservations)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(reservations))
+		} else {
+			return errors.New("Invalid output format.")
+		}
+
 		return nil
 	}
-	fmt.Print(string(output))
-	return nil
 }
