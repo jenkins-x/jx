@@ -220,6 +220,12 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	}
 
 	args := []string{"start", "--memory", mem, "--cpus", cpu, "--disk-size", disksize, "--vm-driver", vmDriverValue, "--bootstrapper=kubeadm"}
+	// Show verbose output for minikube cluster creation if verbose flag is set
+	if o.Verbose {
+		args = append(args, "--logtostderr")
+		args = append(args, "--v=3")
+	}
+
 	hyperVVirtualSwitch := o.Flags.HyperVVirtualSwitch
 	if hyperVVirtualSwitch != "" {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
