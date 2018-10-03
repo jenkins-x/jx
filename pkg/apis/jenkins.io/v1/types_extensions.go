@@ -117,6 +117,10 @@ func (e *ExecutableExtension) Execute(verbose bool) (err error) {
 	if err != nil {
 		return err
 	}
+	err = scriptFile.Close()
+	if err != nil {
+		return err
+	}
 	if verbose {
 		log.Infof("Environment Variables:\n %s\n", e.EnvironmentVariables)
 		log.Infof("Script:\n %s\n", script)

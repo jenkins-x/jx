@@ -326,10 +326,11 @@ func (o *Options) createTide() config.Tide {
 	//orgPolicies[""] = orgPolicy
 
 	myTrue := true
+	myFalse := false
 	t.ContextOptions = config.TideContextPolicyOptions{
 		TideContextPolicy: config.TideContextPolicy{
 			FromBranchProtection: &myTrue,
-			SkipUnknownContexts:  &myTrue,
+			SkipUnknownContexts:  &myFalse,
 		},
 		//Orgs: orgPolicies,
 	}
@@ -375,6 +376,8 @@ func (o *Options) AddProwConfig() error {
 			prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
 		}
 	}
+	prowConfig.PodNamespace = o.NS
+	prowConfig.ProwJobNamespace = o.NS
 
 	for _, r := range o.Repos {
 		o.addRepoToTideConfig(&prowConfig.Tide, r, o.Kind)
