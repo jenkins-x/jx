@@ -1,9 +1,8 @@
 package v1
 
 import (
-	"strings"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // +genclient
@@ -25,25 +24,28 @@ type PipelineActivity struct {
 
 // PipelineActivitySpec is the specification of the pipeline activity
 type PipelineActivitySpec struct {
-	Pipeline           string                 `json:"pipeline,omitempty" protobuf:"bytes,1,opt,name=pipeline"`
-	Build              string                 `json:"build,omitempty" protobuf:"bytes,2,opt,name=build"`
-	Version            string                 `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
-	Status             ActivityStatusType     `json:"status,omitempty" protobuf:"bytes,4,opt,name=status"`
-	StartedTimestamp   *metav1.Time           `json:"startedTimestamp,omitempty" protobuf:"bytes,5,opt,name=startedTimestamp"`
-	CompletedTimestamp *metav1.Time           `json:"completedTimestamp,omitempty" protobuf:"bytes,6,opt,name=completedTimestamp"`
-	Steps              []PipelineActivityStep `json:"steps,omitempty" protobuf:"bytes,7,opt,name=steps"`
-	BuildURL           string                 `json:"buildUrl,omitempty" protobuf:"bytes,8,opt,name=buildUrl"`
-	BuildLogsURL       string                 `json:"buildLogsUrl,omitempty" protobuf:"bytes,9,opt,name=buildLogsUrl"`
-	GitURL             string                 `json:"gitUrl,omitempty" protobuf:"bytes,10,opt,name=gitUrl"`
-	GitRepository      string                 `json:"gitRepository,omitempty" protobuf:"bytes,10,opt,name=gitRepository"`
-	GitOwner           string                 `json:"gitOwner,omitempty" protobuf:"bytes,10,opt,name=gitOwner"`
-	ReleaseNotesURL    string                 `json:"releaseNotesURL,omitempty" protobuf:"bytes,11,opt,name=releaseNotesURL"`
-	LastCommitSHA      string                 `json:"lastCommitSHA,omitempty" protobuf:"bytes,12,opt,name=lastCommitSHA"`
-	LastCommitMessage  string                 `json:"lastCommitMessage,omitempty" protobuf:"bytes,13,opt,name=lastCommitMessage"`
-	LastCommitURL      string                 `json:"lastCommitURL,omitempty" protobuf:"bytes,14,opt,name=lastCommitURL"`
-	Workflow           string                 `json:"workflow,omitempty" protobuf:"bytes,15,opt,name=workflow"`
-	WorkflowStatus     ActivityStatusType     `json:"workflowStatus,omitempty" protobuf:"bytes,16,opt,name=workflowStatus"`
-	WorkflowMessage    string                 `json:"workflowMessage,omitempty" protobuf:"bytes,17,opt,name=workflowMessage"`
+	Pipeline           string                         `json:"pipeline,omitempty" protobuf:"bytes,1,opt,name=pipeline"`
+	Build              string                         `json:"build,omitempty" protobuf:"bytes,2,opt,name=build"`
+	Version            string                         `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
+	Status             ActivityStatusType             `json:"status,omitempty" protobuf:"bytes,4,opt,name=status"`
+	StartedTimestamp   *metav1.Time                   `json:"startedTimestamp,omitempty" protobuf:"bytes,5,opt,name=startedTimestamp"`
+	CompletedTimestamp *metav1.Time                   `json:"completedTimestamp,omitempty" protobuf:"bytes,6,opt,name=completedTimestamp"`
+	Steps              []PipelineActivityStep         `json:"steps,omitempty" protobuf:"bytes,7,opt,name=steps"`
+	BuildURL           string                         `json:"buildUrl,omitempty" protobuf:"bytes,8,opt,name=buildUrl"`
+	BuildLogsURL       string                         `json:"buildLogsUrl,omitempty" protobuf:"bytes,9,opt,name=buildLogsUrl"`
+	GitURL             string                         `json:"gitUrl,omitempty" protobuf:"bytes,10,opt,name=gitUrl"`
+	GitRepository      string                         `json:"gitRepository,omitempty" protobuf:"bytes,10,opt,name=gitRepository"`
+	GitOwner           string                         `json:"gitOwner,omitempty" protobuf:"bytes,10,opt,name=gitOwner"`
+	ReleaseNotesURL    string                         `json:"releaseNotesURL,omitempty" protobuf:"bytes,11,opt,name=releaseNotesURL"`
+	LastCommitSHA      string                         `json:"lastCommitSHA,omitempty" protobuf:"bytes,12,opt,name=lastCommitSHA"`
+	LastCommitMessage  string                         `json:"lastCommitMessage,omitempty" protobuf:"bytes,13,opt,name=lastCommitMessage"`
+	LastCommitURL      string                         `json:"lastCommitURL,omitempty" protobuf:"bytes,14,opt,name=lastCommitURL"`
+	Workflow           string                         `json:"workflow,omitempty" protobuf:"bytes,15,opt,name=workflow"`
+	WorkflowStatus     ActivityStatusType             `json:"workflowStatus,omitempty" protobuf:"bytes,16,opt,name=workflowStatus"`
+	WorkflowMessage    string                         `json:"workflowMessage,omitempty" protobuf:"bytes,17,opt,name=workflowMessage"`
+	PostExtensions     map[string]ExecutableExtension `json:"postExtensions,omitempty" protobuf: "bytes,18,opt,name=postExtensions"`
+	Attachments        []Attachment                   `json:"attachments,omitempty" protobuf: "bytes,19,opt,name=attachments"`
+	Summaries          Summaries                      `json:"summaries,omitempty" protobuf: "bytes,20,opt,name=summaries"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity
@@ -161,6 +163,34 @@ const (
 	// ActivityStatusTypeAborted if the workflow was aborted
 	ActivityStatusTypeAborted ActivityStatusType = "Aborted"
 )
+
+type Attachment struct {
+	Name string   `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
+	URLs []string `json:"urls,omitempty"  protobuf:"bytes,2,opt,name=urls"`
+}
+
+// The various summary reports we can present for the pipeline
+type Summaries struct {
+	StaticProgramAnalysis StaticProgramAnalysis `json:"staticProgramAnalysis,omitempty" protobuf: "bytes,1,opt,name=staticProgramAnalysis"`
+}
+
+type StaticProgramAnalysis struct {
+	TotalBugs      int                                      `json:"totalBugs,omitempty" protobuf: "bytes,1,opt,name=totalBugs"`
+	HighPriority   int                                      `json:"highPriority,omitempty" protobuf: "bytes,2,opt,name=highPriority"`
+	NormalPriority int                                      `json:"normalPriority,omitempty" protobuf: "bytes,3,opt,name=normalPriority"`
+	LowPriority    int                                      `json:"lowPriority,omitempty" protobuf: "bytes,4,opt,name=lowPriority"`
+	Ignored        int                                      `json:"ignored,omitempty" protobuf: "bytes,5,opt,name=ignored"`
+	TotalClasses   int                                      `json:"totalClasses,omitempty" protobuf: "bytes,6,opt,name=totalClasses"`
+	Categories     map[string]StaticProgramAnalysisCategory `json:"categories,omitempty" protobuf: "bytes,7,opt,name=categories"`
+	Name           string                                   `json:"name,omitempty" protobuf: "bytes,8,opt,name=name"`
+}
+
+type StaticProgramAnalysisCategory struct {
+	HighPriority   int `json:"highPriority,omitempty" protobuf: "bytes,2,opt,name=highPriority"`
+	NormalPriority int `json:"normalPriority,omitempty" protobuf: "bytes,3,opt,name=normalPriority"`
+	LowPriority    int `json:"lowPriority,omitempty" protobuf: "bytes,4,opt,name=lowPriority"`
+	Ignored        int `json:"ignored,omitempty" protobuf: "bytes,5,opt,name=ignored"`
+}
 
 // IsTerminated returns true if this activity has stopped executing
 func (s ActivityStatusType) IsTerminated() bool {
