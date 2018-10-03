@@ -180,11 +180,14 @@ type Gitter interface {
 	CreateBranch(dir string, branch string) error
 	CheckoutRemoteBranch(dir string, branch string) error
 	Checkout(dir string, branch string) error
+	CheckoutOrphan(dir string, branch string) error
 	ConvertToValidBranchName(name string) string
 
 	Stash(dir string) error
 
 	Remove(dir, fileName string) error
+	RemoveForce(dir, fileName string) error
+	CleanForce(dir, fileName string) error
 	Add(dir string, args ...string) error
 
 	CommitIfChanges(dir string, message string) error

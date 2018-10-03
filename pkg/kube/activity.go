@@ -95,12 +95,13 @@ func GenerateBuildNumber(activities typev1.PipelineActivityInterface, owner stri
 	for i := 0; i < attempts; i++ {
 		buildCounter := 0
 		pipelines, err := activities.List(metav1.ListOptions{})
+
 		if err != nil {
 			return "", nil, err
 		}
 
 		for _, pipeline := range pipelines.Items {
-			if pipeline.Spec.Pipeline == pipelineName {
+			if strings.EqualFold(pipeline.Spec.Pipeline, pipelineName) {
 				b := pipeline.Spec.Build
 				if b != "" {
 					bi, err := strconv.Atoi(b)
