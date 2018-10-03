@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
-	"github.com/petergtz/pegomock"
 	table "github.com/jenkins-x/jx/pkg/table"
+	"github.com/petergtz/pegomock"
+	"reflect"
 )
 
 func AnyTableTable() table.Table {
