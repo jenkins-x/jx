@@ -113,11 +113,11 @@ func (e *ExecutableExtension) Execute(verbose bool) (err error) {
 	if err != nil {
 		return err
 	}
-	err = scriptFile.Close()
+	err = scriptFile.Chmod(0755)
 	if err != nil {
 		return err
 	}
-	err = scriptFile.Chmod(0755)
+	err = scriptFile.Close()
 	if err != nil {
 		return err
 	}
