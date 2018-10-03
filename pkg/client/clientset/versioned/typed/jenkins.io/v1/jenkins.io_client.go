@@ -13,6 +13,7 @@ type JenkinsV1Interface interface {
 	RESTClient() rest.Interface
 	EnvironmentsGetter
 	EnvironmentRoleBindingsGetter
+	ExtensionsGetter
 	GitServicesGetter
 	PipelineActivitiesGetter
 	ReleasesGetter
@@ -32,6 +33,10 @@ func (c *JenkinsV1Client) Environments(namespace string) EnvironmentInterface {
 
 func (c *JenkinsV1Client) EnvironmentRoleBindings(namespace string) EnvironmentRoleBindingInterface {
 	return newEnvironmentRoleBindings(c, namespace)
+}
+
+func (c *JenkinsV1Client) Extensions(namespace string) ExtensionInterface {
+	return newExtensions(c, namespace)
 }
 
 func (c *JenkinsV1Client) GitServices(namespace string) GitServiceInterface {

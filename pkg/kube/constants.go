@@ -25,6 +25,15 @@ const (
 	// ChartKubeless the default chart for kubeless
 	ChartKubeless = "incubator/kubeless"
 
+	// ChartProw the default chart for prow
+	ChartProw = "jenkins-x/prow"
+
+	// ChartKnative the default chart for knative
+	ChartKnativeBuild = "jenkins-x/knative-build"
+
+	DefaultProwReleaseName         = "jx-prow"
+	DefaultKnativeBuildReleaseName = "jx-knative-build"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
@@ -72,6 +81,9 @@ const (
 
 	// ConfigMapJenkinsPodTemplates is the ConfigMap containing all the Pod Templates available
 	ConfigMapJenkinsPodTemplates = "jenkins-x-pod-templates"
+
+	// ConfigMapJenkinsTeamController is the ConfigMap containing the TeamController config files
+	ConfigMapJenkinsTeamController = "jenkins-x-team-controller"
 
 	// ConfigMapJenkinsDockerRegistry is the ConfigMap containing the Docker Registry configuration
 	ConfigMapJenkinsDockerRegistry = "jenkins-x-docker-registry"
@@ -209,14 +221,16 @@ const (
 
 var (
 	AddonCharts = map[string]string{
-		"ambassador": ChartAmbassador,
-		"anchore":    ChartAnchore,
-		"cb":         ChartCloudBees,
-		"gitea":      ChartGitea,
-		"istio":      ChartIstio,
-		"kubeless":   ChartKubeless,
-		"prometheus": "stable/prometheus",
-		"grafana":    "stable/grafana",
+		"ambassador":                   ChartAmbassador,
+		"anchore":                      ChartAnchore,
+		"cb":                           ChartCloudBees,
+		"gitea":                        ChartGitea,
+		"istio":                        ChartIstio,
+		"kubeless":                     ChartKubeless,
+		"prometheus":                   "stable/prometheus",
+		"grafana":                      "stable/grafana",
+		DefaultProwReleaseName:         ChartProw,
+		DefaultKnativeBuildReleaseName: ChartKnativeBuild,
 	}
 
 	AddonServices = map[string]string{

@@ -3,7 +3,9 @@ package kube
 import (
 	"fmt"
 	"reflect"
+	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/certmanager"
@@ -126,6 +128,33 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 	return registerCRD(apiClient, name, names, columns)
 }
 
+// RegisterExtensionCRD ensures that the CRD is registered for Extension
+func RegisterExtensionCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "extensions." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "Extension",
+		ListKind:   "ExtensionList",
+		Plural:     "extensions",
+		Singular:   "extensions",
+		ShortNames: []string{"extension", "ext"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Name",
+			Type:        "string",
+			Description: "The name of the extension",
+			JSONPath:    ".spec.name",
+		},
+		{
+			Name:        "Description",
+			Type:        "string",
+			Description: "A description of the extension",
+			JSONPath:    ".spec.description",
+		},
+	}
+	return registerCRD(apiClient, name, names, columns)
+}
+
 // RegisterReleaseCRD ensures that the CRD is registered for Release
 func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "releases." + jenkinsio.GroupName
@@ -233,10 +262,10 @@ func registerCRD(apiClient apiextensionsclientset.Interface, name string, names 
 			Name: name,
 		},
 		Spec: v1beta1.CustomResourceDefinitionSpec{
-			Group:   jenkinsio.GroupName,
-			Version: jenkinsio.Version,
-			Scope:   v1beta1.NamespaceScoped,
-			Names:   *names,
+			Group:                    jenkinsio.GroupName,
+			Version:                  jenkinsio.Version,
+			Scope:                    v1beta1.NamespaceScoped,
+			Names:                    *names,
 			AdditionalPrinterColumns: columns,
 		},
 	}
@@ -246,18 +275,27 @@ func registerCRD(apiClient apiextensionsclientset.Interface, name string, names 
 
 func register(apiClient apiextensionsclientset.Interface, name string, crd *v1beta1.CustomResourceDefinition) error {
 	crdResources := apiClient.ApiextensionsV1beta1().CustomResourceDefinitions()
-	old, err := crdResources.Get(name, metav1.GetOptions{})
-	if err == nil {
-		if !reflect.DeepEqual(&crd.Spec, old.Spec) {
-			old.Spec = crd.Spec
-			_, err = crdResources.Update(old)
-			return err
+
+	f := func() error {
+		old, err := crdResources.Get(name, metav1.GetOptions{})
+		if err == nil {
+			if !reflect.DeepEqual(&crd.Spec, old.Spec) {
+				old.Spec = crd.Spec
+				_, err = crdResources.Update(old)
+				return err
+			}
+			return nil
 		}
-		return nil
+
+		_, err = crdResources.Create(crd)
+		return err
 	}
 
-	_, err = crdResources.Create(crd)
-	return err
+	exponentialBackOff := backoff.NewExponentialBackOff()
+	timeout := 60 * time.Second
+	exponentialBackOff.MaxElapsedTime = timeout
+	exponentialBackOff.Reset()
+	return backoff.Retry(f, exponentialBackOff)
 }
 
 func CleanCertmanagerResources(c kubernetes.Interface, ns string, config IngressConfig) error {

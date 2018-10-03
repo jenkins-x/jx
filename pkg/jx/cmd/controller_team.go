@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"io"
+	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -11,9 +13,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -81,17 +84,40 @@ func (o *ControllerTeamOptions) Run() error {
 		return err
 	}
 
-	// lets default the team settings based on the current team settings
-	settings, err := co.TeamSettings()
-	if settings.HelmTemplate {
-		o.InstallOptions.InitOptions.Flags.NoTiller = true
-	} else if settings.NoTiller {
-		o.InstallOptions.InitOptions.Flags.RemoteTiller = false
-	} else if settings.HelmBinary == "helm3" {
-		o.InstallOptions.InitOptions.Flags.Helm3 = true
+	// lets validate we have git configured
+	gitter := co.Git()
+	userName, _ := gitter.Username("")
+	userEmail, _ := gitter.Email("")
+	if userName == "" {
+		userName = os.Getenv("GIT_AUTHOR_NAME")
+		if userName == "" {
+			userName = "jenkins-x-bot"
+		}
+		err = gitter.SetUsername("", userName)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to set the git username to %s", userName)
+		}
 	}
-	if settings.PromotionEngine == v1.PromotionEngineProw {
-		o.InstallOptions.Flags.Prow = true
+	if userEmail == "" {
+		userEmail = os.Getenv("GIT_AUTHOR_EMAIL")
+		if userEmail == "" {
+			userEmail = "jenkins-x@googlegroups.com"
+		}
+		err = gitter.SetEmail("", userEmail)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to set the git email to %s", userEmail)
+		}
+	}
+
+	// now lets setup the git secrets
+	if co.Factory.IsInCluster() {
+		sgc := &StepGitCredentialsOptions{}
+		sgc.CommonOptions = co.CommonOptions
+		log.Info("Setting up git credentials\n")
+		err = sgc.Run()
+		if err != nil {
+			return errors.Wrapf(err, "Failed to run: jx step git credentials")
+		}
 	}
 
 	log.Infof("Watching for teams in all namespaces\n")
@@ -100,10 +126,10 @@ func (o *ControllerTeamOptions) Run() error {
 
 	_, teamController := cache.NewInformer(
 		&cache.ListWatch{
-			ListFunc: func(lo meta_v1.ListOptions) (runtime.Object, error) {
+			ListFunc: func(lo metav1.ListOptions) (runtime.Object, error) {
 				return jxClient.JenkinsV1().Teams("").List(lo)
 			},
-			WatchFunc: func(lo meta_v1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(lo metav1.ListOptions) (watch.Interface, error) {
 				return jxClient.JenkinsV1().Teams("").Watch(lo)
 			},
 		},
@@ -135,37 +161,66 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		return
 	}
 
-	log.Infof("Adding / Updating Team %s, Namespace %s, Status '%s'\n", util.ColorInfo(team.Name), util.ColorInfo(team.Namespace), util.ColorInfo(team.Status.ProvisionStatus))
+	teamNs := team.Name
+	log.Infof("Adding / Updating Team %s, Namespace %s, Status '%s'\n", util.ColorInfo(teamNs), util.ColorInfo(team.Namespace), util.ColorInfo(team.Status.ProvisionStatus))
 
 	if v1.TeamProvisionStatusNone == team.Status.ProvisionStatus {
 		// update first
-		err := o.ControllerOptions.ModifyTeam(team.Name, func(team *v1.Team) error {
+		oc := &o.ControllerOptions
+		oc.SetDevNamespace(adminNs)
+
+		// lets default the team settings based on the current team settings
+		settings, err := oc.TeamSettings()
+		if err != nil {
+			log.Errorf("Failed to get TeamSettings: %s\n", err)
+		}
+		if settings == nil {
+			log.Errorf("No TeamSettings found!\n")
+		}
+		if err == nil && settings != nil {
+			if settings.HelmTemplate {
+				o.InstallOptions.InitOptions.Flags.NoTiller = true
+			} else if settings.NoTiller {
+				o.InstallOptions.InitOptions.Flags.RemoteTiller = false
+			} else if settings.HelmBinary == "helm3" {
+				o.InstallOptions.InitOptions.Flags.Helm3 = true
+			}
+			if settings.PromotionEngine == v1.PromotionEngineProw {
+				o.InstallOptions.Flags.Prow = true
+			}
+		}
+
+		err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusPending
 			team.Status.Message = "Installing resources"
 			return nil
 		})
 		if err != nil {
-			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(team.Name), v1.TeamProvisionStatusPending, err)
+			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusPending, err)
 			return
 		}
 
 		// ensure that the namespace exists
-		err = kube.EnsureNamespaceCreated(kubeClient, team.Name, nil, nil)
+		err = kube.EnsureNamespaceCreated(kubeClient, teamNs, nil, nil)
 		if err != nil {
-			log.Errorf("Unable to create namespace %s: %s", util.ColorInfo(team.Name), err)
+			log.Errorf("Unable to create namespace %s: %s", util.ColorInfo(teamNs), err)
 			return
 		}
 
 		// lets default the login/pwd for Jenkins from the admin cluster
-		o.InstallOptions.AdminSecretsService.Flags.DefaultAdminPassword, err = o.ControllerOptions.getDefaultAdminPassword(adminNs)
+		io := &o.InstallOptions
+		io.SetDevNamespace(teamNs)
+		oc.SetDevNamespace(teamNs)
+
+		io.AdminSecretsService.Flags.DefaultAdminPassword, err = oc.getDefaultAdminPassword(adminNs)
 		if err != nil {
 			log.Warnf("Failed to load the default admin password from namespace %s: %s", adminNs, err)
 		}
 
-		if o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController == nil {
-			o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController = &config.ExposeController{}
+		if io.CreateEnvOptions.HelmValuesConfig.ExposeController == nil {
+			io.CreateEnvOptions.HelmValuesConfig.ExposeController = &config.ExposeController{}
 		}
-		ec := o.InstallOptions.CreateEnvOptions.HelmValuesConfig.ExposeController
+		ec := io.CreateEnvOptions.HelmValuesConfig.ExposeController
 		// lets load the exposecontroller configuration
 		ingressConfig, err := kube.GetIngressConfig(kubeClient, adminNs)
 		if err != nil {
@@ -182,10 +237,10 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			ec.Config.TLSAcme = "false"
 		}
 
-		o.InstallOptions.BatchMode = true
-		o.InstallOptions.InitOptions.Flags.SkipIngress = true
+		io.BatchMode = true
+		io.InitOptions.Flags.SkipIngress = true
 
-		adminTeamSettings, _ := o.ControllerOptions.TeamSettings()
+		adminTeamSettings, _ := oc.TeamSettings()
 
 		// TODO lets load this from the current team
 		provider := ""
@@ -196,26 +251,54 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			log.Warnf("No kube provider specified on admin team settings %s\n", adminNs)
 			provider = "gke"
 		}
-		o.InstallOptions.Flags.Provider = provider
+		io.Flags.Provider = provider
+		io.Flags.DisableSetKubeContext = true
 
 		//o.InstallOptions.Flags.NoDefaultEnvironments = true
-		o.InstallOptions.Flags.Namespace = team.Name
-		o.InstallOptions.Flags.DefaultEnvironmentPrefix = team.Name
-		o.InstallOptions.CommonOptions.InstallDependencies = true
+		io.Flags.Namespace = teamNs
+		io.Flags.DefaultEnvironmentPrefix = teamNs
+		io.CommonOptions.InstallDependencies = true
+
+		if io.Flags.Prow {
+			oauthToken, err := oc.LoadProwOAuthConfig(adminNs)
+			if err != nil {
+				log.Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
+			} else {
+				io.OAUTHToken = oauthToken
+				log.Infof("Loaded the Prow OAuth Token in namespace %s with %d digits\n", adminNs, len(oauthToken))
+
+			}
+		}
+
+		// lets copy the myvalues.yaml file from the ConfigMap
+		cm, err := kubeClient.CoreV1().ConfigMaps(adminNs).Get(kube.ConfigMapJenkinsTeamController, metav1.GetOptions{})
+		if err != nil {
+			log.Errorf("Failed to load the ConfigMap %s from namespace %s: %s", kube.ConfigMapJenkinsTeamController, adminNs, err)
+		} else {
+			if cm.Data != nil {
+				valuesYaml := cm.Data["myvalues.yaml"]
+				if valuesYaml != "" {
+					err = ioutil.WriteFile("myvalues.yaml", []byte(valuesYaml), util.DefaultWritePermissions)
+					if err != nil {
+						log.Errorf("Failed to write the myvalues.yaml file: %s", err)
+					}
+				}
+			}
+		}
 
 		// call jx install
-		installOpts := &o.InstallOptions
-
-		err = installOpts.Run()
+		io.SetDevNamespace(teamNs)
+		io.CreateEnvOptions.SetDevNamespace(teamNs)
+		err = io.Run()
 		if err != nil {
-			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(team.Name), err)
-			err = o.ControllerOptions.ModifyTeam(team.Name, func(team *v1.Team) error {
+			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(teamNs), err)
+			err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
 				team.Status.ProvisionStatus = v1.TeamProvisionStatusError
 				team.Status.Message = err.Error()
 				return nil
 			})
 			if err != nil {
-				log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(team.Name), v1.TeamProvisionStatusError, err)
+				log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusError, err)
 				return
 			}
 			return
@@ -227,20 +310,40 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 				env.Spec.TeamSettings.BuildPackURL = adminTeamSettings.BuildPackURL
 				return nil
 			}
-			err = o.ControllerOptions.modifyDevEnvironment(jxClient, team.Name, callback)
+			err = oc.modifyDevEnvironment(jxClient, teamNs, callback)
 			if err != nil {
-				log.Errorf("Failed to update team settings in namespace %s: %s\n", team.Name, err)
+				log.Errorf("Failed to update team settings in namespace %s: %s\n", teamNs, err)
 			}
 		}
 
-		err = o.ControllerOptions.ModifyTeam(team.Name, func(team *v1.Team) error {
+		err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusComplete
 			team.Status.Message = "Installation complete"
 			return nil
 		})
 		if err != nil {
-			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(team.Name), v1.TeamProvisionStatusComplete, err)
+			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusComplete, err)
 			return
 		}
 	}
+}
+
+// LoadProwOAuthConfig returns the OAuth Token for Prow
+func (o *CommonOptions) LoadProwOAuthConfig(ns string) (string, error) {
+	options := *o
+	options.SetDevNamespace(ns)
+	options.SkipAuthSecretsMerge = false
+	authConfigSvc, err := options.CreateGitAuthConfigService()
+	if err != nil {
+		return "", err
+	}
+
+	config := authConfigSvc.Config()
+	// lets assume github.com for now so ignore config.CurrentServer
+	server := config.GetOrCreateServer("https://github.com")
+	userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", true, "", o.In, o.Out, o.Err)
+	if err != nil {
+		return "", err
+	}
+	return userAuth.ApiToken, nil
 }

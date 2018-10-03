@@ -67,6 +67,7 @@ type InstallFlags struct {
 	EnvironmentGitOwner      string
 	Version                  string
 	Prow                     bool
+	DisableSetKubeContext    bool
 }
 
 // Secrets struct for secrets
@@ -308,9 +309,12 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to install the platform requirements")
 	}
 
-	context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
+	context := ""
+	if !options.Flags.DisableSetKubeContext {
+		context, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		if err != nil {
+			return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
+		}
 	}
 
 	ns := options.Flags.Namespace
@@ -325,9 +329,11 @@ func (options *InstallOptions) Run() error {
 		return fmt.Errorf("Failed to ensure the namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ns, err)
 	}
 
-	err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
-	if err != nil {
-		return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
+	if !options.Flags.DisableSetKubeContext {
+		err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+		if err != nil {
+			return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
+		}
 	}
 
 	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
@@ -355,9 +361,13 @@ func (options *InstallOptions) Run() error {
 		log.Success("created role cluster-admin")
 	}
 
-	currentContext, err := options.getCommandOutput("", "kubectl", "config", "current-context")
-	if err != nil {
-		return errors.Wrap(err, "failed to get the current context")
+	// lets ignore errors getting the current context in case we are running inside a pod
+	currentContext := ""
+	if !options.Flags.DisableSetKubeContext {
+		currentContext, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		if err != nil {
+			return errors.Wrap(err, "failed to get the current context")
+		}
 	}
 	isAwsProvider := options.Flags.Provider == AWS || options.Flags.Provider == EKS
 	if isAwsProvider {
@@ -662,27 +672,29 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// save cluster config CA and server url to a configmap
-	kubeConfig, _, err := kube.LoadConfig()
-	if err != nil {
-		return err
-	}
+	if !options.Flags.DisableSetKubeContext {
+		kubeConfig, _, err := kube.LoadConfig()
+		if err != nil {
+			return err
+		}
 
-	var jxInstallConfig *kube.JXInstallConfig
-	if kubeConfig != nil {
-		kubeConfigContext := kube.CurrentContext(kubeConfig)
-		if kubeConfigContext != nil {
-			server := kube.Server(kubeConfig, kubeConfigContext)
-			certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
-			jxInstallConfig = &kube.JXInstallConfig{
-				Server: server,
-				CA:     certificateAuthorityData,
+		var jxInstallConfig *kube.JXInstallConfig
+		if kubeConfig != nil {
+			kubeConfigContext := kube.CurrentContext(kubeConfig)
+			if kubeConfigContext != nil {
+				server := kube.Server(kubeConfig, kubeConfigContext)
+				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
+				jxInstallConfig = &kube.JXInstallConfig{
+					Server: server,
+					CA:     certificateAuthorityData,
+				}
 			}
 		}
-	}
 
-	_, err = kube.SaveAsConfigMap(options.KubeClientCached, kube.ConfigMapNameJXInstallConfig, ns, jxInstallConfig)
-	if err != nil {
-		return err
+		_, err = kube.SaveAsConfigMap(options.KubeClientCached, kube.ConfigMapNameJXInstallConfig, ns, jxInstallConfig)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = options.waitForInstallToBeReady(ns)
@@ -802,7 +814,7 @@ func (options *InstallOptions) Run() error {
 			options.CreateEnvOptions.Options.Spec.Order = 100
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
-				return errors.Wrap(err, "failed to create staging environment")
+				return errors.Wrapf(err, "failed to create staging environment in namespace %s", options.devNamespace)
 			}
 			options.CreateEnvOptions.Options.Name = "production"
 			options.CreateEnvOptions.Options.Spec.Label = "Production"
@@ -812,7 +824,7 @@ func (options *InstallOptions) Run() error {
 
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
-				return errors.Wrap(err, "failed to create the production environment")
+				return errors.Wrapf(err, "failed to create the production environment in namespace %s", options.devNamespace)
 			}
 		}
 	}

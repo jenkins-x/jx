@@ -158,7 +158,12 @@ func (g *GitCLI) Checkout(dir string, branch string) error {
 	return g.gitCmd(dir, "checkout", branch)
 }
 
-// Init inits a Git repository into the given directory
+// Checkout checks out the given branch
+func (g *GitCLI) CheckoutOrphan(dir string, branch string) error {
+	return g.gitCmd(dir, "checkout", "--orphan", branch)
+}
+
+// Init inits a git repository into the given directory
 func (g *GitCLI) Init(dir string) error {
 	return g.gitCmd(dir, "init")
 }
@@ -168,7 +173,17 @@ func (g *GitCLI) Remove(dir, fileName string) error {
 	return g.gitCmd(dir, "rm", "-r", fileName)
 }
 
-// Status returns the status of the Git repository at the given directory
+// Remove force removes the given file from a git repository located at the given directory
+func (g *GitCLI) RemoveForce(dir, fileName string) error {
+	return g.gitCmd(dir, "rm", "-rf", fileName)
+}
+
+// Clean force cleans a git repository located at a given directory
+func (g *GitCLI) CleanForce(dir, fileName string) error {
+	return g.gitCmd(dir, "clean", "-fd", fileName)
+}
+
+// Status returns the status of the git repository at the given directory
 func (g *GitCLI) Status(dir string) error {
 	return g.gitCmd(dir, "status")
 }
@@ -290,7 +305,7 @@ func (g *GitCLI) Server(dir string) (string, error) {
 func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
 	text, err := g.gitCmdWithOutput(dir, "status")
 	var rUrl string
-	if err != nil && strings.Contains(text, "Not a Git repository") {
+	if err != nil && strings.Contains(text, "Not a git repository") {
 		rUrl = os.Getenv("SOURCE_URL")
 		if rUrl == "" {
 			return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")

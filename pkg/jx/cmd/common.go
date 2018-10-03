@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"os"
@@ -52,6 +53,7 @@ type CommonOptions struct {
 	Args                   []string
 	BatchMode              bool
 	Verbose                bool
+	LogLevel  	           string
 	Headless               bool
 	NoBrew                 bool
 	InstallDependencies    bool
@@ -98,6 +100,12 @@ func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
 	}
 }
 
+// SetDevNamespace configures the current dev namespace
+func (c *CommonOptions) SetDevNamespace(ns string) {
+	c.devNamespace = ns
+	c.currentNamespace = ns
+}
+
 // Debugf outputs the given text to the console if verbose mode is enabled
 func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 	if c.Verbose {
@@ -108,6 +116,7 @@ func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "In batch mode the command never prompts for user input")
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
+	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
 	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
 	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install or upgrade command line dependencies")
 	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")

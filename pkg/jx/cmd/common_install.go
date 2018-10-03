@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/binaries"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -15,6 +14,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/binaries"
+
 	"gopkg.in/yaml.v2"
 
 	"github.com/Pallinder/go-randomdata"
@@ -25,7 +26,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -229,13 +229,13 @@ func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
 }
 
 type InstallOrUpdateBinaryOptions struct {
-	Binary string
-	GitHubOrganization string
+	Binary              string
+	GitHubOrganization  string
 	DownloadUrlTemplate string
-	Version string
-	SkipPathScan bool
-	VersionExtractor binaries.VersionExtractor
-	Archived bool
+	Version             string
+	SkipPathScan        bool
+	VersionExtractor    binaries.VersionExtractor
+	Archived            bool
 }
 
 func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
@@ -1261,13 +1261,13 @@ func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
 
 func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bool) error {
 	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
-		Binary: "eksctl",
-		GitHubOrganization: "weaveworks",
+		Binary:              "eksctl",
+		GitHubOrganization:  "weaveworks",
 		DownloadUrlTemplate: "https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
-		Version: version,
-		SkipPathScan: skipPathScan,
-		VersionExtractor: nil,
-		Archived: true,
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
+		Archived:            true,
 	})
 }
 
@@ -1277,12 +1277,12 @@ func (o *CommonOptions) installHeptioAuthenticatorAws(skipPathScan bool) error {
 
 func (o *CommonOptions) installHeptioAuthenticatorAwsWithVersion(version string, skipPathScan bool) error {
 	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
-		Binary: "heptio-authenticator-aws",
-		GitHubOrganization: "",
+		Binary:              "heptio-authenticator-aws",
+		GitHubOrganization:  "",
 		DownloadUrlTemplate: "https://amazon-eks.s3-us-west-2.amazonaws.com/{{.version}}/2018-06-05/bin/{{.os}}/{{.arch}}/heptio-authenticator-aws",
-		Version: version,
-		SkipPathScan: skipPathScan,
-		VersionExtractor: nil,
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
 	})
 }
 
@@ -1521,11 +1521,11 @@ func GetSafeUsername(username string) string {
 func (o *CommonOptions) installProw() error {
 
 	if o.ReleaseName == "" {
-		o.ReleaseName = prow.DefaultProwReleaseName
+		o.ReleaseName = kube.DefaultProwReleaseName
 	}
 
 	if o.Chart == "" {
-		o.Chart = prow.ChartProw
+		o.Chart = kube.ChartProw
 	}
 
 	var err error
@@ -1544,11 +1544,8 @@ func (o *CommonOptions) installProw() error {
 		}
 
 		config := authConfigSvc.Config()
-		if "" == config.CurrentServer {
-			config.CurrentServer = "https://github.com"
-		}
-
-		server := config.GetOrCreateServer(config.CurrentServer)
+		// lets assume github.com for now so ignore config.CurrentServer
+		server := config.GetOrCreateServer("https://github.com")
 		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
@@ -1584,7 +1581,7 @@ func (o *CommonOptions) installProw() error {
 	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(prow.DefaultKnativeBuildReleaseName, prow.ChartKnativeBuild, "", devNamespace, true, values)
+		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values)
 		return nil
 	})
 
