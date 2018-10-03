@@ -5,12 +5,12 @@ import (
 	"io/ioutil"
 
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/yaml.v2"
 )
 
 func (s *AuthConfigService) Config() *AuthConfig {
 	if s.config == nil {
 		s.config = &AuthConfig{}
+		return nil
 	}
 	return s.config
 }

@@ -1,0 +1,3 @@
+# .lingo.yaml file
+tenets:
+  - import: codelingo/go
