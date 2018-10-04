@@ -201,7 +201,7 @@ func (o *CreateEnvOptions) Run() error {
 		err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, env.Spec.Namespace)
 		if err != nil {
 			// This can happen if, for whatever reason, the namespace takes a while to create. That shouldn't stop the entire process though
-			log.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s)\n", env.Spec.Namespace)
+			log.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) \n", env.Spec.Namespace)
 		}
 		// It's a common option, see addCommonFlags in common.go
 		imagePullSecrets := o.ParseImagePullSecrets()
@@ -211,8 +211,8 @@ func (o *CreateEnvOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to add pull secrets %s to service account %s in namespace %s: %v", imagePullSecrets, saName, env.Spec.Namespace, err)
 		} else {
-			log.Infof("Service account \"%s\" in namespace \"%s\" configured to use pull secret(s) %s\n", saName, env.Spec.Namespace, imagePullSecrets)
-			log.Infof("Pull secret(s) must exist in namespace %s before deploying your applications in this environment\n", env.Spec.Namespace)
+			log.Infof("Service account \"%s\" in namespace \"%s\" configured to use pull secret(s) %s \n", saName, env.Spec.Namespace, imagePullSecrets)
+			log.Infof("Pull secret(s) must exist in namespace %s before deploying your applications in this environment \n", env.Spec.Namespace)
 		}
 	}
 
