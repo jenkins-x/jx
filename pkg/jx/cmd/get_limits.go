@@ -6,10 +6,10 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
-			"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"fmt"
-	"net/http"
 	"encoding/json"
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"net/http"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"strconv"
@@ -21,8 +21,8 @@ type RateLimits struct {
 }
 
 type RateResources struct {
-	Core Rate `json:"core"`
-	Search Rate `json:"search"`
+	Core    Rate `json:"core"`
+	Search  Rate `json:"search"`
 	GraphQL Rate `json:"graphql"`
 }
 
@@ -120,8 +120,8 @@ func (o *GetLimitsOptions) Run() error {
 	return nil
 }
 
-func (o *GetLimitsOptions) GetLimits(server string, username string, apitoken string) (RateLimits,error) {
-	url := fmt.Sprintf("https://%s:%s@api.github.com/rate_limit" , username, apitoken)
+func (o *GetLimitsOptions) GetLimits(server string, username string, apitoken string) (RateLimits, error) {
+	url := fmt.Sprintf("https://%s:%s@api.github.com/rate_limit", username, apitoken)
 
 	// Build the request
 	req, err := http.NewRequest("GET", url, nil)
