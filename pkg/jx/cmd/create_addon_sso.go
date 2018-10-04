@@ -32,17 +32,19 @@ var (
 )
 
 const (
-	defaultSSONamesapce   = "jx"
-	defaultSSOReleaseName = "jx"
-	repoName              = "jenkinsxio"
-	repoURL               = "https://chartmuseum.jx.cd.jenkins-x.io"
-	dexChart              = "jenkinsxio/dex"
-	dexServiceName        = "dex"
-	dexChartVersion       = ""
-	operatorChart         = "jenkinsxio/sso-operator"
-	operatorChartVersion  = ""
-	operatorServiceName   = "sso-operator"
-	githubNewOAuthAppURL  = "https://github.com/settings/applications/new"
+	defaultSSONamesapce           = "jx"
+	defaultSSOReleaseNamePrefix   = "jx-sso"
+	repoName                      = "jenkinsxio"
+	repoURL                       = "https://chartmuseum.jx.cd.jenkins-x.io"
+	dexChart                      = "jenkinsxio/dex"
+	dexServiceName                = "dex"
+	dexChartVersion               = ""
+	operatorChart                 = "jenkinsxio/sso-operator"
+	operatorChartVersion          = ""
+	operatorServiceName           = "operator"
+	githubNewOAuthAppURL          = "https://github.com/settings/applications/new"
+	defaultSsoDexReleaseName      = "jx-sso-dex"
+	defaultSsoOperatorReleaseName = "jx-sso-operator"
 )
 
 // CreateAddonSSOptions the options for the create sso addon
@@ -86,7 +88,7 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseName)
+	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseNamePrefix)
 	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
@@ -235,7 +237,7 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	releaseName := o.ReleaseName + "-sso-" + dexServiceName
+	releaseName := o.ReleaseName + "-" + dexServiceName
 	return o.installChart(releaseName, dexChart, dexChartVersion, o.Namespace, true, values)
 }
 
