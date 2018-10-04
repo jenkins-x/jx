@@ -15,13 +15,9 @@ import (
 )
 
 const (
-	Hook                           = "hook"
-	DefaultProwReleaseName         = "jx-prow"
-	DefaultKnativeBuildReleaseName = "jx-knative-build"
-	ChartProw                      = "jenkins-x/prow"
-	ChartKnativeBuild              = "jenkins-x/knative-build"
-	JenkinsMasterTag               = "dev_18"
-	BuilderBaseImage               = "jenkinsxio/builder-base:0.0.604"
+	Hook             = "hook"
+	JenkinsMasterTag = "dev_22"
+	BuilderBaseImage = "jenkinsxio/builder-base:0.0.604"
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"
@@ -330,10 +326,11 @@ func (o *Options) createTide() config.Tide {
 	//orgPolicies[""] = orgPolicy
 
 	myTrue := true
+	myFalse := false
 	t.ContextOptions = config.TideContextPolicyOptions{
 		TideContextPolicy: config.TideContextPolicy{
 			FromBranchProtection: &myTrue,
-			SkipUnknownContexts:  &myTrue,
+			SkipUnknownContexts:  &myFalse,
 		},
 		//Orgs: orgPolicies,
 	}
@@ -379,6 +376,8 @@ func (o *Options) AddProwConfig() error {
 			prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
 		}
 	}
+	prowConfig.PodNamespace = o.NS
+	prowConfig.ProwJobNamespace = o.NS
 
 	for _, r := range o.Repos {
 		o.addRepoToTideConfig(&prowConfig.Tide, r, o.Kind)

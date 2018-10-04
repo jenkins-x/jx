@@ -1020,7 +1020,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 		return err
 	}
 
-	// todo lets create a knative build to auto optionally auto trigger initial release
+	// todo lets create a Knative build to auto optionally auto trigger initial release
 
 	options.logImportedProject(false, gitInfo)
 
