@@ -29,7 +29,7 @@ type DeleteAddonCDXOptions struct {
 
 // NewCmdDeleteAddonCloudBees defines the command
 func NewCmdDeleteAddonCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &DeleteAddonGiteaOptions{
+	options := &DeleteAddonCDXOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
