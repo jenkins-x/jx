@@ -182,6 +182,7 @@ type Gitter interface {
 	Checkout(dir string, branch string) error
 	CheckoutOrphan(dir string, branch string) error
 	ConvertToValidBranchName(name string) string
+	FetchBranch(dir string, repo string, refspec string) error
 
 	Stash(dir string) error
 

@@ -136,6 +136,10 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 	if err != nil {
 		return err
 	}
+	err = gitClient.FetchBranch("", "origin", "gh-pages")
+	if err != nil {
+		return err
+	}
 	remotes, err := gitClient.RemoteBranchNames("", "")
 	if err != nil {
 		return err
