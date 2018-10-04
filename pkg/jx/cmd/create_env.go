@@ -197,7 +197,7 @@ func (o *CreateEnvOptions) Run() error {
 	/* It is important this pull secret handling goes after any namespace creation code; the service account exists in the created namespace */
 
 	if o.PullSecrets != "" {
-		// We need the namespace to be created first
+		// We need the namespace to be created first - do the check
 		err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, env.Spec.Namespace)
 		if err != nil {
 			// This can happen if, for whatever reason, the namespace takes a while to create. That shouldn't stop the entire process though
@@ -205,13 +205,14 @@ func (o *CreateEnvOptions) Run() error {
 		}
 		// It's a common option, see addCommonFlags in common.go
 		imagePullSecrets := o.ParseImagePullSecrets()
-		log.Infof("Patching the secrets for the service account: %s\n", imagePullSecrets)
-		err = kube.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, "default", imagePullSecrets)
+		saName := "default"
+		//log.Infof("Patching the secrets %s for the service account %s\n", imagePullSecrets, saName)
+		err = kube.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, saName, imagePullSecrets)
 		if err != nil {
-			return fmt.Errorf("Failed to add pull secrets %s to service account default in namespace %s: %v", imagePullSecrets, env.Spec.Namespace, err)
+			return fmt.Errorf("Failed to add pull secrets %s to service account %s in namespace %s: %v", imagePullSecrets, saName, env.Spec.Namespace, err)
 		} else {
-			log.Infof("The created service account default in the namespace %s has been configured to use the pull secret(s) %s. "+
-				"Ensure secret(s) have been created in the same namespace before deploying your applications in this environment\n", env.Spec.Namespace, imagePullSecrets)
+			log.Infof("Service account \"%s\" in namespace \"%s\" configured to use pull secret(s) %s\n", saName, env.Spec.Namespace, imagePullSecrets)
+			log.Infof("Pull secret(s) must exist in namespace %s before deploying your applications in this environment\n", env.Spec.Namespace)
 		}
 	}
 
