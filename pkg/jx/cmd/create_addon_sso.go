@@ -28,6 +28,8 @@ const (
 	operatorChartVersion        = ""
 	operatorServiceName         = "operator"
 	githubNewOAuthAppURL        = "https://github.com/settings/applications/new"
+	defaultDexVersion           = ""
+	defaultOperatorVersion      = ""
 )
 
 var (
@@ -47,6 +49,7 @@ var (
 type CreateAddonSSOOptions struct {
 	CreateAddonOptions
 	UpgradeIngressOptions UpgradeIngressOptions
+	DexVersion            string
 }
 
 // NewCmdCreateAddonSSO creates a command object for the "create addon sso" command
@@ -84,7 +87,8 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseName, defaultVersion)
+	cmd.Flags().StringVarP(&options.DexVersion, "dex-version", "", defaultDexVersion, "The dex chart version to install)")
+	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseName, defaultOperatorVersion)
 	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
