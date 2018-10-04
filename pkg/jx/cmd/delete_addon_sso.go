@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -75,6 +76,8 @@ func (o *DeleteAddonSSOOptions) Run() error {
 			return errors.Wrapf(err, "deleteing the helm chart release '%s'", releaseName)
 		}
 	}
+
+	log.Infof("%s was succesfully deleted.\n", util.ColorInfo("sso addon"))
 
 	return nil
 }
