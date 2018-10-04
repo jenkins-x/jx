@@ -201,9 +201,9 @@ type StaticProgramAnalysisCategory struct {
 }
 
 type CodeCoverageAnalysis struct {
-	Tags     []string                        `json:"tags,omitempty" protobuf: "bytes,1,opt,name=tags"`
-	Original Original                        `json:"original,omitempty" protobuf: "bytes,2,opt,name=original"`
-	Counts   map[string]CodeCoverageAnalysis `json:"counts,omitempty" protobuf: "bytes,3,opt,name=counts"`
+	Tags     []string                             `json:"tags,omitempty" protobuf: "bytes,1,opt,name=tags"`
+	Original Original                             `json:"original,omitempty" protobuf: "bytes,2,opt,name=original"`
+	Counts   map[string]CodeCoverageAnalysisCount `json:"counts,omitempty" protobuf: "bytes,3,opt,name=counts"`
 }
 
 type CodeCoverageAnalysisCount struct {
