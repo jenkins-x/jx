@@ -71,6 +71,7 @@ func (options *CreateAddonOptions) addFlags(cmd *cobra.Command, defaultNamespace
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultOptionRelease, "The chart release name")
 	cmd.Flags().StringVarP(&options.SetValues, "set", "s", "", "The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	cmd.Flags().BoolVarP(&options.HelmUpdate, "helm-update", "", true, "Should we run helm update first to ensure we use the latest version")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The chart version to install)")
 }
 
 // Run implements this command
