@@ -53,7 +53,7 @@ type CommonOptions struct {
 	Args                   []string
 	BatchMode              bool
 	Verbose                bool
-	LogLevel  	           string
+	LogLevel               string
 	Headless               bool
 	NoBrew                 bool
 	InstallDependencies    bool
