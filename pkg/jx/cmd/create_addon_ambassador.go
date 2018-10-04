@@ -72,7 +72,6 @@ func NewCmdCreateAddonAmbassador(f Factory, in terminal.FileReader, out terminal
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd, "", defaultAmbassadorReleaseName)
 
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version of the ambassador addon to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartAmbassador, "The name of the chart to use")
 	return cmd
 }
