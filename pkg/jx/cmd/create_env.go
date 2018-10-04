@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"io"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -56,7 +55,6 @@ type CreateEnvOptions struct {
 	GitRepositoryOptions   gits.GitRepositoryOptions
 	Prefix                 string
 	BranchPattern          string
-	PullSecrets            string
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
@@ -92,9 +90,6 @@ func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	cmd.Flags().StringVarP(&options.Options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the Kubernetes name conventions like Services, Namespaces")
 	cmd.Flags().StringVarP(&options.Options.Spec.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
-
-	// todo should this be a common option as well? How do we write to that variable?
-	cmd.Flags().StringVarP(&options.PullSecrets, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry)")
 
 	cmd.Flags().StringVarP(&options.Options.Spec.Namespace, kube.OptionNamespace, "s", "", "The Kubernetes namespace for the Environment")
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
@@ -199,45 +194,12 @@ func (o *CreateEnvOptions) Run() error {
 			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
 		}
 	}
-
-	// This is useful if using a private registry.
-	// The service account in the environment needs to be able to pull images from a private registry - may be multiple so iterate over it
-	// Todo test and refactor, this is pretty ugly. Want to handle multiple pull secrets - patch the service accounts we create in the namespace we'll (eventually?) make.
-	// If the namespace doesn't yet exist we'll have to modify chart yaml to include the definition for image pull secret(s).
-
-	secrets := ""
-	var secretsArray []string
-
-	// Interactive mode?
-	if !o.BatchMode {
-		secrets, err = kube.PickPullSecrets(o.In, o.Out, o.Err)
-		if err != nil {
-			return err
-		}
-		secretsArray = strings.Split(o.PullSecrets, " ")
-	}
-
-	if len(o.PullSecrets) > 1 {
-		secretsArray = strings.Split(o.PullSecrets, " ")
-	}
-
-	for _, secret := range secretsArray {
-		log.Infof("1, patching with secret name %s", secret)
-		err = kube.PatchImagePullSecret(kubeClient, env.Spec.Namespace, "default", secret)
-		if err != nil {
-			return fmt.Errorf("Failed to add pull secret %s to service account default in namespace %s: %v", secret, env.Spec.Namespace, err)
-		}
-	}
-
-	// Provided it on the command line for create env?
 	if o.PullSecrets != "" {
-		for _, secret := range secrets {
-			// todo why is this a rune...
-			log.Infof("2, patching with secret name %s", secret)
-			err = kube.PatchImagePullSecret(kubeClient, env.Spec.Namespace, "default", string(secret))
-			if err != nil {
-				return fmt.Errorf("failed to add pull secret %s to service account default in namespace %s: %v", secret, env.Spec.Namespace, err)
-			}
+		imagePullSecrets := o.ParseImagePullSecrets()
+		log.Infof("Patching the secrets: %s\n", imagePullSecrets)
+		err = kube.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, "default", imagePullSecrets)
+		if err != nil {
+			return fmt.Errorf("Failed to add pull secrets %s to service account default in namespace %s: %v", imagePullSecrets, env.Spec.Namespace, err)
 		}
 	}
 
