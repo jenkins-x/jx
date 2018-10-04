@@ -13,37 +13,15 @@ const (
 	docsURL = "https://jenkins-x.io/documentation/"
 )
 
-type DocsOptions struct {
-	CommonOptions
-}
-
+/* open the docs - Jenkins X docs by default */
 func NewCmdDocs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &DocsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
-	}
-
 	cmd := &cobra.Command{
 		Use:   "docs",
-		Short: "open the docs",
+		Short: "Open the documentation in a browser",
 		Run: func(cmd *cobra.Command, args []string) {
-			options.Cmd = cmd
-			options.Args = args
-			err := options.Run()
+			err := browser.OpenURL(docsURL)
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
-
 	return cmd
-}
-
-func (o *DocsOptions) Run() error {
-	println("shizzle")
-	browser.OpenURL(docsURL)
-	return nil
 }
