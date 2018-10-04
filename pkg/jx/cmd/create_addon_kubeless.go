@@ -16,6 +16,7 @@ import (
 const (
 	defaultKubelessNamespace   = "kubeless"
 	defaultKubelessReleaseName = "kubeless"
+	defaultKubelessVersion     = ""
 )
 
 var (
@@ -69,7 +70,7 @@ func NewCmdCreateAddonKubeless(f Factory, in terminal.FileReader, out terminal.F
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultKubelessNamespace, defaultKubelessReleaseName)
+	options.addFlags(cmd, defaultKubelessNamespace, defaultKubelessReleaseName, defaultKubelessVersion)
 
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version of the kubeless addon to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartKubeless, "The name of the chart to use")
