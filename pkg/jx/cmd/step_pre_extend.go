@@ -118,12 +118,13 @@ func (o *StepPreExtendOptions) Run() error {
 			}
 			for k, v := range repoExtensions.Extensions {
 				e, err := extensionsClient.Get(strcase.KebabCase(k), metav1.GetOptions{})
+				name := strcase.KebabCase(k)
 				if err != nil {
 					// Extension can't be found
-					log.Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s", e.Name, availableExtensionsNames)
+					log.Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s", name, availableExtensionsNames)
 				} else {
 					if o.Verbose {
-						log.Infof("Adding extension %s", util.ColorInfo(e.Name))
+						log.Infof("Adding extension %s", util.ColorInfo(name))
 					}
 
 					if o.Contains(e.Spec.When, jenkinsv1.ExtensionWhenPost) || len(e.Spec.When) == 0 {
