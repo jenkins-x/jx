@@ -81,6 +81,7 @@ func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 	cmd.AddCommand(NewCmdGetHelmBin(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetIssue(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetIssues(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetLimits(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetPipeline(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetPostPreviewJob(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetPreview(f, in, out, errOut))
