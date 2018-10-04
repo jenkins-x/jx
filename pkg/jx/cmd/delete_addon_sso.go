@@ -4,9 +4,13 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
+
+const optionReleases = "releases"
 
 var (
 	deleteAddonSSOLong = templates.LongDesc(`
@@ -17,11 +21,15 @@ var (
 		# Deletes the SSO addon
 		jx delete addon sso
 	`)
+
+	defaultSsoReleaseNames = []string{defaultSsoOperatorReleaseName, defaultSsoDexReleaseName}
 )
 
 // DeleteAddonSSOOptions the options for delete addon sso command
 type DeleteAddonSSOOptions struct {
 	DeleteAddonOptions
+
+	ReleaseNames []string
 }
 
 // NewCmdDeleteAddonSSO defines the command
@@ -50,11 +58,23 @@ func NewCmdDeleteAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 			CheckErr(err)
 		},
 	}
+	cmd.Flags().StringArrayVarP(&options.ReleaseNames, optionReleases, "r", defaultSsoReleaseNames, "The relese names of sso charts")
 	options.addFlags(cmd)
 	return cmd
 }
 
 // Run implements the command
 func (o *DeleteAddonSSOOptions) Run() error {
+	if len(o.ReleaseNames) == 0 {
+		return util.MissingOption(optionReleases)
+	}
+
+	for _, releaseName := range o.ReleaseNames {
+		err := o.deleteChart(releaseName, o.Purge)
+		if err != nil {
+			return errors.Wrapf(err, "deleteing the helm chart release '%s'", releaseName)
+		}
+	}
+
 	return nil
 }

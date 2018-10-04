@@ -18,6 +18,20 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
+const (
+	defaultSSONamesapce         = "jx"
+	defaultSSOReleaseNamePrefix = "jx-sso"
+	repoName                    = "jenkinsxio"
+	repoURL                     = "https://chartmuseum.jx.cd.jenkins-x.io"
+	dexChart                    = "jenkinsxio/dex"
+	dexServiceName              = "dex"
+	dexChartVersion             = ""
+	operatorChart               = "jenkinsxio/sso-operator"
+	operatorChartVersion        = ""
+	operatorServiceName         = "operator"
+	githubNewOAuthAppURL        = "https://github.com/settings/applications/new"
+)
+
 var (
 	CreateAddonSSOLong = templates.LongDesc(`
 		Creates the Single Sign-On addon
@@ -29,22 +43,9 @@ var (
 		# Create the sso addon
 		jx create addon sso
 	`)
-)
 
-const (
-	defaultSSONamesapce           = "jx"
-	defaultSSOReleaseNamePrefix   = "jx-sso"
-	repoName                      = "jenkinsxio"
-	repoURL                       = "https://chartmuseum.jx.cd.jenkins-x.io"
-	dexChart                      = "jenkinsxio/dex"
-	dexServiceName                = "dex"
-	dexChartVersion               = ""
-	operatorChart                 = "jenkinsxio/sso-operator"
-	operatorChartVersion          = ""
-	operatorServiceName           = "operator"
-	githubNewOAuthAppURL          = "https://github.com/settings/applications/new"
-	defaultSsoDexReleaseName      = "jx-sso-dex"
-	defaultSsoOperatorReleaseName = "jx-sso-operator"
+	defaultSsoDexReleaseName      = defaultSSOReleaseNamePrefix + "-dex"
+	defaultSsoOperatorReleaseName = defaultSSOReleaseNamePrefix + "-operator"
 )
 
 // CreateAddonSSOptions the options for the create sso addon
