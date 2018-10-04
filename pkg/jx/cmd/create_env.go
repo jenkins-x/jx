@@ -194,12 +194,23 @@ func (o *CreateEnvOptions) Run() error {
 			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
 		}
 	}
+	/* It is important this pull secret handling goes after any namespace creation code; the service account exists in the created namespace */
+
 	if o.PullSecrets != "" {
+
+		err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, env.Spec.Namespace)
+		if err != nil {
+			// This can happen if, for whatever reason, the namespace takes a while to create. That shouldn't stop the entire process though
+			log.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s)\n", env.Spec.Namespace)
+		}
 		imagePullSecrets := o.ParseImagePullSecrets()
-		log.Infof("Patching the secrets: %s\n", imagePullSecrets)
+		log.Infof("Patching the secrets for the service account: %s\n", imagePullSecrets)
 		err = kube.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, "default", imagePullSecrets)
 		if err != nil {
 			return fmt.Errorf("Failed to add pull secrets %s to service account default in namespace %s: %v", imagePullSecrets, env.Spec.Namespace, err)
+		} else {
+			log.Infof("The created service account default in the namespace %s has been configured to use the pull secret(s) %s. "+
+				"Ensure secret(s) have been created in the same namespace before deploying your applications in this environment\n", env.Spec.Namespace, imagePullSecrets)
 		}
 	}
 
