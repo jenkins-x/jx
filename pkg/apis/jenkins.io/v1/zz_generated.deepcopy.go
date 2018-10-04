@@ -1044,8 +1044,10 @@ func (in *StaticProgramAnalysis) DeepCopyInto(out *StaticProgramAnalysis) {
 	*out = *in
 	if in.Categories != nil {
 		in, out := &in.Categories, &out.Categories
-		*out = make([]StaticProgramAnalysisCategory, len(*in))
-		copy(*out, *in)
+		*out = make(map[string]StaticProgramAnalysisCategory, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
 	}
 	return
 }
