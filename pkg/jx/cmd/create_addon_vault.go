@@ -1,16 +1,25 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
-	defaultVaultNamesapce   = "jx"
-	defaultVaultReleaseName = "vault-operator"
+	defaultVaultNamesapce     = "jx"
+	defaultVaultReleaseName   = "vault-operator"
+	jxRepoName                = "jenkinsxio"
+	jxRepoURL                 = "https://chartmuseum.jx.cd.jenkins-x.io"
+	vaultOperatorChart        = "jenkinsxio/vault-operator"
+	vaultOperatorChartVersion = ""
 )
 
 var (
@@ -63,4 +72,26 @@ func NewCmdCreateAddonVault(f Factory, in terminal.FileReader, out terminal.File
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultVaultNamesapce, defaultVaultReleaseName)
 	return cmd
+}
+
+// Run implements the command
+func (o *CreateAddonVaultOptions) Run() error {
+	_, _, err := o.KubeClient()
+	if err != nil {
+		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
+	}
+	err = o.ensureHelm()
+	if err != nil {
+		return errors.Wrap(err, "checking if helm is installed")
+	}
+
+	err = o.addHelmRepoIfMissing(jxRepoURL, jxRepoName)
+	if err != nil {
+		return errors.Wrapf(err, "adding '%s' helm charts repository", jxRepoURL)
+	}
+
+	log.Infof("Installing %s...\n", util.ColorInfo(o.ReleaseName))
+
+	values := strings.Split(o.SetValues, ",")
+	return o.installChart(o.ReleaseName, vaultOperatorChart, vaultOperatorChartVersion, o.Namespace, true, values)
 }
