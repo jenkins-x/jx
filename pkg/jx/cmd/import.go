@@ -328,14 +328,6 @@ func (options *ImportOptions) Run() error {
 			options.Dir = dir
 		}
 	}
-	if options.AppName == "" {
-		dir, err := filepath.Abs(options.Dir)
-		if err != nil {
-			return err
-		}
-		_, options.AppName = filepath.Split(dir)
-	}
-	options.AppName = kube.ToValidName(strings.ToLower(options.AppName))
 
 	checkForJenkinsfile := options.Jenkinsfile == "" && !options.DisableJenkinsfileCheck
 	shouldClone := checkForJenkinsfile || !options.DisableDraft
@@ -361,6 +353,25 @@ func (options *ImportOptions) Run() error {
 			}
 		}
 	}
+
+	if options.AppName == "" {
+		if options.RepoURL != "" {
+			info, err := gits.ParseGitURL(options.RepoURL)
+			if err != nil {
+				log.Warnf("Failed to parse git URL %s : %s\n", options.RepoURL, err)
+			} else {
+				options.AppName = info.Name
+			}
+		}
+	}
+	if options.AppName == "" {
+		dir, err := filepath.Abs(options.Dir)
+		if err != nil {
+			return err
+		}
+		_, options.AppName = filepath.Split(dir)
+	}
+	options.AppName = kube.ToValidName(strings.ToLower(options.AppName))
 
 	if !options.DisableDraft {
 		err = options.DraftCreate()
