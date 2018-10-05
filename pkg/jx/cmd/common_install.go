@@ -218,16 +218,6 @@ func (o *CommonOptions) UninstallBinary(binDir string, name string) error {
 	return nil
 }
 
-func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
-	log.Infof("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
-	err := util.DownloadFile(fullPath, clientURL)
-	if err != nil {
-		return fmt.Errorf("Unable to download file %s from %s due to: %v", fullPath, clientURL, err)
-	}
-	log.Infof("Downloaded %s\n", util.ColorInfo(fullPath))
-	return nil
-}
-
 type InstallOrUpdateBinaryOptions struct {
 	Binary              string
 	GitHubOrganization  string
@@ -252,14 +242,14 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 		return err
 	}
 	binariesConfiguration := filepath.Join(configDir, "/binaries.yml")
-	binaries := map[string]string{}
+	binariesVersions := map[string]string{}
 	if _, err := os.Stat(binariesConfiguration); err == nil {
 		binariesBytes, err := ioutil.ReadFile(binariesConfiguration)
 		if err != nil {
 			return err
 		}
-		yaml.Unmarshal(binariesBytes, &binaries)
-		if binaries[options.Binary] == options.Version {
+		yaml.Unmarshal(binariesBytes, &binariesVersions)
+		if binariesVersions[options.Binary] == options.Version {
 			return nil
 		}
 	}
@@ -297,7 +287,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	if options.Archived {
 		tarFile = tarFile + "." + extension
 	}
-	err = o.downloadFile(clientUrlBuffer.String(), tarFile)
+	err = binaries.DownloadFile(clientUrlBuffer.String(), tarFile)
 	if err != nil {
 		return err
 	}
@@ -337,8 +327,8 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 		}
 	}
 
-	binaries[options.Binary] = options.Version
-	binariesBytes, err := yaml.Marshal(binaries)
+	binariesVersions[options.Binary] = options.Version
+	binariesBytes, err := yaml.Marshal(binariesVersions)
 	if err != nil {
 		return err
 	}
@@ -387,7 +377,7 @@ func (o *CommonOptions) installKubectl() error {
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/%s/%s/%s", latestVersion, runtime.GOOS, runtime.GOARCH, fileName)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
 		return err
 	}
@@ -419,7 +409,7 @@ func (o *CommonOptions) installKustomize() error {
 	clientURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kustomize/releases/download/v%v/kustomize_%s_%s_%s", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
 		return err
 	}
@@ -470,7 +460,7 @@ func (o *CommonOptions) installOc() error {
 	if extension == ".zip" {
 		tarFile = filepath.Join(binDir, "oc.zip")
 	}
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -673,7 +663,7 @@ func (o *CommonOptions) installHelm() error {
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -714,7 +704,7 @@ func (o *CommonOptions) installTiller() error {
 	fullPath := filepath.Join(binDir, fileName)
 	helmFullPath := filepath.Join(binDir, "helm")
 	tarFile := fullPath + ".tgz"
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -858,7 +848,7 @@ func (o *CommonOptions) installHelm3() error {
 	}
 	fullPath := filepath.Join(binDir, binary)
 	tarFile := filepath.Join(tmpDir, fileName+".tgz")
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -944,7 +934,7 @@ func (o *CommonOptions) installMavenIfRequired() error {
 	}
 
 	log.Info("\ndownloadFile\n")
-	err = o.downloadFile(clientURL, zipFile)
+	err = binaries.DownloadFile(clientURL, zipFile)
 	if err != nil {
 		m.Unlock()
 		return err
@@ -1016,7 +1006,7 @@ func (o *CommonOptions) installTerraform() error {
 	clientURL := fmt.Sprintf("https://releases.hashicorp.com/terraform/%s/terraform_%s_%s_%s.zip", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	zipFile := fullPath + ".zip"
-	err = o.downloadFile(clientURL, zipFile)
+	err = binaries.DownloadFile(clientURL, zipFile)
 	if err != nil {
 		return err
 	}
@@ -1052,7 +1042,7 @@ func (o *CommonOptions) installKops() error {
 	clientURL := fmt.Sprintf("https://github.com/kubernetes/kops/releases/download/%s/kops-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
 		return err
 	}
@@ -1083,7 +1073,7 @@ func (o *CommonOptions) installKSync() (bool, error) {
 	}
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
 		return false, err
 	}
@@ -1132,7 +1122,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	clientURL := fmt.Sprintf("https://github.com/"+org+"/"+repo+"/releases/download/v%s/"+binary+"-%s-%s.tar.gz", version, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -1172,7 +1162,7 @@ func (o *CommonOptions) installMinikube() error {
 	clientURL := fmt.Sprintf("https://github.com/kubernetes/minikube/releases/download/v%s/minikube-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
 		return err
 	}
@@ -1204,7 +1194,7 @@ func (o *CommonOptions) installMinishift() error {
 	clientURL := fmt.Sprintf("https://github.com/minishift/minishift/releases/download/v%s/minishift-%s-%s-%s.tgz", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
