@@ -1,7 +1,9 @@
 package binaries
 
 import (
+	"github.com/pborman/uuid"
 	"os/exec"
+	"path"
 	"strings"
 	"testing"
 
@@ -58,3 +60,14 @@ func TestShouldInstallWhenVersionIsMismatched(t *testing.T) {
 	assert.True(t, shouldInstall)
 	assert.Nil(t, err)
 }
+
+// Test download
+
+
+func TestInstallIfExtractorIsEmptyX(t *testing.T) {
+	targetFile := path.Join("/tmp", uuid.New())
+	err := DownloadFile("https://raw.githubusercontent.com/jenkins-x/jx/master/README.md", targetFile)
+	assert.Nil(t, err)
+	assert.FileExists(t, targetFile)
+}
+
