@@ -136,7 +136,7 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 	if err != nil {
 		return err
 	}
-	err = gitClient.FetchBranch("", "origin", "gh-pages")
+	err = gitClient.FetchBranch("", "origin", "gh-pages:gh-pages")
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 	if options.Classifier == "" {
 		return errors.New("You must pass --classfier")
 	}
-	if !contains(remotes, "remotes/origin/gh-pages") {
+	if !contains(remotes, "gh-pages") {
 		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
 		err = gitClient.CheckoutOrphan("", "gh-pages")
 		if err != nil {
@@ -163,7 +163,7 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 			return err
 		}
 	}
-	err = gitClient.CheckoutRemoteBranch("", "gh-pages")
+	err = gitClient.Checkout("", "gh-pages")
 	if err != nil {
 		return err
 	}
