@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path"
+	"strings"
 )
 
 type CreateAddonPrometheusOptions struct {
@@ -24,6 +25,7 @@ type CreateAddonPrometheusOptions struct {
 	Version     string
 	ReleaseName string
 	HelmUpdate  bool
+	SetValues   string
 	Password    string
 }
 
@@ -64,6 +66,7 @@ func (options *CreateAddonPrometheusOptions) addFlags(cmd *cobra.Command, defaul
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", defaultNamespace, "The Namespace to install into")
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultOptionRelease, "The chart release name")
 	cmd.Flags().BoolVarP(&options.HelmUpdate, "helm-update", "", true, "Should we run helm update first to ensure we use the latest version")
+	cmd.Flags().StringVarP(&options.SetValues, "set", "s", "", "The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	cmd.Flags().StringVarP(&options.Password, "password", "", "admin", "Admin password to access Prometheus web UI.")
 }
 
@@ -116,6 +119,7 @@ func (o *CreateAddonPrometheusOptions) Run() error {
 		return err
 	}
 
+	setValues := strings.Split(o.SetValues, ",")
 	err = o.installChartOptions(InstallChartOptions{
 		ReleaseName: o.ReleaseName,
 		Chart: "stable/prometheus",
@@ -123,6 +127,7 @@ func (o *CreateAddonPrometheusOptions) Run() error {
 		Ns: o.Namespace,
 		HelmUpdate: o.HelmUpdate,
 		ValueFiles: []string{prometheusIngressConfig},
+		SetValues: setValues,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to install chart %s: %s", "prometheus", err)
