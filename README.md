@@ -312,7 +312,6 @@ jx open
 You'll see all the URLs of the form `http://$(minikube ip):somePortNumber` which then avoids going through [nip.io](http://nip.io/) - it just means the URLs are a little more cryptic using magic port numbers rather than simple host names.
 
 
-
  
 ### Other issues
 
