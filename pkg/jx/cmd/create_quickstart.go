@@ -50,7 +50,7 @@ var (
 	`)
 )
 
-// CreateQuickstartOptions the options for the create spring command
+// CreateQuickstartOptions the options for the create quickstart command
 type CreateQuickstartOptions struct {
 	CreateProjectOptions
 
