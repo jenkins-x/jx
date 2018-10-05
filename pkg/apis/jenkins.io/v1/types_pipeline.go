@@ -172,6 +172,13 @@ type Attachment struct {
 // The various summary reports we can present for the pipeline
 type Summaries struct {
 	StaticProgramAnalysis StaticProgramAnalysis `json:"staticProgramAnalysis,omitempty" protobuf: "bytes,1,opt,name=staticProgramAnalysis"`
+	CodeCoverageAnalysis  CodeCoverageAnalysis  `json:"codeCoverageAnalysis,omitempty" protobuf: "bytes,2,opt,name=codeCoverageAnalysis"`
+}
+
+type Original struct {
+	MimeType string   `json:"mimetype,omitempty" protobuf: "bytes,1,opt,name=mimetype"`
+	URL      string   `json:"mimetype,omitempty" protobuf: "bytes,1,opt,name=mimetype"`
+	Tags     []string `json:"tags,omitempty" protobuf: "bytes,8,opt,name=tags"`
 }
 
 type StaticProgramAnalysis struct {
@@ -182,7 +189,8 @@ type StaticProgramAnalysis struct {
 	Ignored        int                                      `json:"ignored,omitempty" protobuf: "bytes,5,opt,name=ignored"`
 	TotalClasses   int                                      `json:"totalClasses,omitempty" protobuf: "bytes,6,opt,name=totalClasses"`
 	Categories     map[string]StaticProgramAnalysisCategory `json:"categories,omitempty" protobuf: "bytes,7,opt,name=categories"`
-	Name           string                                   `json:"name,omitempty" protobuf: "bytes,8,opt,name=name"`
+	Tags           []string                                 `json:"tags,omitempty" protobuf: "bytes,8,opt,name=tags"`
+	Original       Original                                 `json:"original,omitempty" protobuf: "bytes,9,opt,name=original"`
 }
 
 type StaticProgramAnalysisCategory struct {
@@ -191,6 +199,28 @@ type StaticProgramAnalysisCategory struct {
 	LowPriority    int `json:"lowPriority,omitempty" protobuf: "bytes,4,opt,name=lowPriority"`
 	Ignored        int `json:"ignored,omitempty" protobuf: "bytes,5,opt,name=ignored"`
 }
+
+type CodeCoverageAnalysis struct {
+	Tags     []string                             `json:"tags,omitempty" protobuf: "bytes,1,opt,name=tags"`
+	Original Original                             `json:"original,omitempty" protobuf: "bytes,2,opt,name=original"`
+	Counts   map[string]CodeCoverageAnalysisCount `json:"counts,omitempty" protobuf: "bytes,3,opt,name=counts"`
+}
+
+type CodeCoverageAnalysisCount struct {
+	Total    int `json:"total,omitempty" protobuf: "bytes,2,opt,name=total"`
+	Missed   int `json:"missed,omitempty" protobuf: "bytes,3,opt,name=missed"`
+	Coverage int `json:"coverage,omitempty" protobuf: "bytes,4,opt,name=coverage"`
+}
+
+// Recommended types for code coverage count
+const (
+	CodeCoverageAnalysisCountTypeInstructions = "Instructions"
+	CodeCoverageAnalysisCountTypeBranches     = "Branches"
+	CodeCoverageAnalysisCountTypeComplexity   = "Complexity"
+	CodeCoverageAnalysisCountTypeLines        = "Lines"
+	CodeCoverageAnalysisCountTypeMethods      = "Methods"
+	CodeCoverageAnalysisCountTypeClasses      = "Classes"
+)
 
 // IsTerminated returns true if this activity has stopped executing
 func (s ActivityStatusType) IsTerminated() bool {

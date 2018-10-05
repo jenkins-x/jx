@@ -358,6 +358,10 @@ func (g *GitCLI) ConvertToValidBranchName(name string) string {
 	return buffer.String()
 }
 
+func (g *GitCLI) FetchBranch(dir string, repo string, refspec string) error {
+	return g.gitCmd(dir, "fetch", repo, refspec)
+}
+
 // GetAuthorEmailForCommit returns the author email from commit message with the given SHA
 func (g *GitCLI) GetAuthorEmailForCommit(dir string, sha string) (string, error) {
 	text, err := g.gitCmdWithOutput(dir, "show", "-s", "--format=%aE", sha)

@@ -134,18 +134,18 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 
 	if helmValues.ExposeController.Config.Domain == "" {
 
-		expose, err := GetTeamExposecontrollerConfig(kubeClient, ns)
+		ic, err := GetIngressConfig(kubeClient, ns)
 		if err != nil {
 			return nil, err
 		}
 
 		if batchMode {
-			log.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", expose["domain"])
-			helmValues.ExposeController.Config.Domain = expose["domain"]
+			log.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", ic.Domain)
+			helmValues.ExposeController.Config.Domain = ic.Domain
 		} else {
 			q := &survey.Input{
 				Message: "Domain:",
-				Default: expose["domain"],
+				Default: ic.Domain,
 				Help:    "Domain to expose ingress endpoints.  Example: jenkinsx.io, leave blank if no appplications are to be exposed via ingress rules",
 			}
 			err := survey.AskOne(q, &helmValues.ExposeController.Config.Domain, nil, surveyOpts)
@@ -317,25 +317,6 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 		}
 	}
 	return gitProvider, nil
-}
-
-func GetTeamExposecontrollerConfig(kubeClient kubernetes.Interface, ns string) (map[string]string, error) {
-	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get("exposecontroller", metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to find team environment exposecontroller config %v", err)
-	}
-
-	config := cm.Data["config.yml"]
-
-	lines := strings.Split(config, "\n")
-
-	m := make(map[string]string)
-	for _, pair := range lines {
-		z := strings.Split(pair, ":")
-		m[z[0]] = strings.TrimSpace(z[1])
-	}
-
-	return m, nil
 }
 
 func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string,
