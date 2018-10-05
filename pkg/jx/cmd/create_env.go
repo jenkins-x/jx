@@ -204,7 +204,7 @@ func (o *CreateEnvOptions) Run() error {
 			log.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) \n", env.Spec.Namespace)
 		}
 		// It's a common option, see addCommonFlags in common.go
-		imagePullSecrets := o.ParseImagePullSecrets()
+		imagePullSecrets := o.GetImagePullSecrets()
 		saName := "default"
 		//log.Infof("Patching the secrets %s for the service account %s\n", imagePullSecrets, saName)
 		err = kube.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, saName, imagePullSecrets)

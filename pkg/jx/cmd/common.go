@@ -289,7 +289,7 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 	return kube.GetDevNamespace(kubeClient, currentNs)
 }
 
-func (o *CommonOptions) ParseImagePullSecrets() []string {
+func (o *CommonOptions) GetImagePullSecrets() []string {
 	pullSecrets := strings.Fields(o.PullSecrets)
 	return pullSecrets
 }
