@@ -28,11 +28,12 @@ var (
 type UpgradePlatformOptions struct {
 	CreateOptions
 
-	Version     string
-	ReleaseName string
-	Chart       string
-	Namespace   string
-	Set         string
+	Version       string
+	ReleaseName   string
+	Chart         string
+	Namespace     string
+	Set           string
+	AlwaysUpgrade bool
 
 	InstallFlags InstallFlags
 }
@@ -68,6 +69,7 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to")
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading")
+	cmd.Flags().BoolVarP(&options.AlwaysUpgrade, "always-upgrade", "", false, "If set to true, jx will upgrade platform Helm chart even if requested version is already installed.")
 
 	options.addCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
@@ -128,6 +130,8 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	if targetVersion != currentVersion {
 		log.Infof("Upgrading platform from version %s to version %s\n", util.ColorInfo(currentVersion), util.ColorInfo(targetVersion))
+	} else if o.AlwaysUpgrade {
+		log.Infof("Rerunning platform version %s\n", util.ColorInfo(targetVersion))
 	} else {
 		log.Infof("Already installed platform version %s. Skipping upgrade process.\n", util.ColorInfo(targetVersion))
 		return nil

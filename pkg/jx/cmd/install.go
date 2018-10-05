@@ -711,9 +711,7 @@ func (options *InstallOptions) Run() error {
 			if settings.BuildPackURL == "" {
 				settings.BuildPackURL = JenkinsBuildPackURL
 			}
-			if settings.BuildPackRef == "" || settings.BuildPackRef == defaultBuildPackRef {
-				settings.BuildPackRef = defaultProwBuildPackRef
-			}
+			settings.BuildPackRef = defaultProwBuildPackRef
 			log.Info("Configuring the TeamSettings for Prow\n")
 			return nil
 		}
@@ -814,7 +812,7 @@ func (options *InstallOptions) Run() error {
 			options.CreateEnvOptions.Options.Spec.Order = 100
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
-				return errors.Wrap(err, "failed to create staging environment")
+				return errors.Wrapf(err, "failed to create staging environment in namespace %s", options.devNamespace)
 			}
 			options.CreateEnvOptions.Options.Name = "production"
 			options.CreateEnvOptions.Options.Spec.Label = "Production"
@@ -824,7 +822,7 @@ func (options *InstallOptions) Run() error {
 
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
-				return errors.Wrap(err, "failed to create the production environment")
+				return errors.Wrapf(err, "failed to create the production environment in namespace %s", options.devNamespace)
 			}
 		}
 	}

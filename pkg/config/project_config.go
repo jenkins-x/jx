@@ -64,7 +64,7 @@ type AddonConfig struct {
 type BranchBuild struct {
 	Build Build `yaml:"build,omitempty"`
 
-	// Jenkins X extensions to standard knative builds:
+	// Jenkins X extensions to standard Knative builds:
 
 	// which kind of pipeline - like release, pullRequest, feature
 	Kind string `yaml:"kind,omitempty"`

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/stoewer/go-strcase"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -10,8 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/stoewer/go-strcase"
 
 	"github.com/pkg/errors"
 
@@ -34,7 +33,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-const upstreamExtensionsRepositoryUrl = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.yaml"
+const upstreamExtensionsRepositoryUrl = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.lock.yaml"
 
 var (
 	upgradeExtensionsLong = templates.LongDesc(`
@@ -98,17 +97,17 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kube.RegisterExtensionCRD(apisClient)
-	extensionsRepository := ExtensionsRepository{}
-	var bytes []byte
-
+	err = kube.RegisterExtensionCRD(apisClient)
 	if err != nil {
 		return err
 	}
 
+	extensionsRepository := ExtensionsRepository{}
+	var bytes []byte
+
 	if strings.HasPrefix(o.ExtensionsRepository, "http://") || strings.HasPrefix(o.ExtensionsRepository, "https://") {
 		httpClient := &http.Client{Timeout: 10 * time.Second}
-		resp, err := httpClient.Get(o.ExtensionsRepository)
+		resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", o.ExtensionsRepository, time.Now().UnixNano()/int64(time.Millisecond)))
 
 		defer resp.Body.Close()
 
@@ -146,11 +145,24 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	}
 	log.Infof("Current Extension Repository version %s\n", util.ColorInfo(extensionsRepository.Version))
 	client, ns, err := o.Factory.CreateJXClient()
+	if err != nil {
+		return err
+	}
 	extensionsClient := client.JenkinsV1().Extensions(ns)
 	kubeClient, curNs, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
 	extensionsConfig, err := (&kube.ExtensionsConfig{}).LoadFromConfigMap(kubeClient, curNs)
+	if err != nil {
+		return err
+	}
+	installedExtensions, err := o.GetInstalledExtensions(extensionsClient)
+	if err != nil {
+		return err
+	}
 	for _, e := range extensionsRepository.Extensions {
-		_, _, err = o.UpsertExtension(e, extensionsClient, extensionsConfig.Extensions[e.Name])
+		_, _, err = o.UpsertExtension(e, extensionsClient, installedExtensions, extensionsConfig.Extensions[e.Name])
 		if err != nil {
 			return err
 		}
@@ -158,23 +170,22 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	return nil
 }
 
-func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.ExtensionDetails, extensions typev1.ExtensionInterface, extensionConfig kube.ExtensionConfig) (*jenkinsv1.Extension, bool, error) {
+func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.ExtensionDetails, extensions typev1.ExtensionInterface, installedExtensions map[string]jenkinsv1.Extension, extensionConfig kube.ExtensionConfig) (*jenkinsv1.Extension, bool, error) {
 	// TODO Validate extension
 	newVersion, err := semver.Parse(extension.Version)
 	if err != nil {
 		return nil, false, err
 	}
-	kname := strcase.KebabCase(extension.Name)
-	existing, err := extensions.Get(kname, metav1.GetOptions{})
-	if err != nil {
+	existing, ok := installedExtensions[extension.UUID]
+	if !ok {
 		// Doesn't exist
 		res, err := extensions.Create(&jenkinsv1.Extension{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: kname,
+				Name: fmt.Sprintf("%s.%s", strcase.KebabCase(extension.Namespace), strcase.KebabCase(extension.Name)),
 			},
 			Spec: extension,
 		})
-		log.Infof("Adding Extension %s version %s\n", util.ColorInfo(extension.Name), util.ColorInfo(newVersion))
+		log.Infof("Adding Extension %s version %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", extension.Namespace, extension.Name)), util.ColorInfo(newVersion))
 		if err != nil {
 			return res, true, err
 		}
@@ -183,14 +194,18 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 		}
 		return res, true, err
 	}
+	// TODO Handle uninstalling existing extension if name has changed but UUID hasn't
 	existingVersion, err := semver.Parse(existing.Spec.Version)
 	if existingVersion.LT(newVersion) {
 		existing.Spec = extension
-		res, err := extensions.Update(existing)
-		log.Infof("Upgrading Extension %s from %s to %s\n", util.ColorInfo(extension.Name), util.ColorInfo(existingVersion), util.ColorInfo(newVersion))
+		res, err := extensions.Update(&existing)
+		if o.Contains(extension.When, jenkinsv1.ExtensionWhenUpgrade) {
+			o.UpstallExtension(extension, extensionConfig)
+		}
+		log.Infof("Upgrading Extension %s from %s to %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", extension.Namespace, extension.Name)), util.ColorInfo(existingVersion), util.ColorInfo(newVersion))
 		return res, false, err
 	} else {
-		return existing, false, nil
+		return &existing, false, nil
 	}
 }
 
@@ -199,7 +214,7 @@ func (o *UpgradeExtensionsOptions) UpstallExtension(e jenkinsv1.ExtensionDetails
 	if err != nil {
 		return err
 	}
-	log.Infof("Installing Extension %s version %s to pipeline with environment variables [ %s ]\n", util.ColorInfo(e.Name), util.ColorInfo(e.Version), util.ColorInfo(envVarsFormatted))
+	log.Infof("Installing Extension %s version %s to pipeline with environment variables [ %s ]\n", util.ColorInfo(fmt.Sprintf("%s:%s", e.Namespace, e.Name)), util.ColorInfo(e.Version), util.ColorInfo(envVarsFormatted))
 	return ext.Execute(o.Verbose)
 }
 
@@ -210,4 +225,19 @@ func (o *UpgradeExtensionsOptions) Contains(whens []jenkinsv1.ExtensionWhen, whe
 		}
 	}
 	return false
+}
+
+func (o *UpgradeExtensionsOptions) GetInstalledExtensions(extensions typev1.ExtensionInterface) (installedExtensions map[string]jenkinsv1.Extension, err error) {
+	exts, err := extensions.List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	installedExtensions = make(map[string]jenkinsv1.Extension)
+	for _, ext := range exts.Items {
+		if ext.Spec.UUID == "" {
+			return nil, errors.New(fmt.Sprintf("Extension %s does not have a UUID", util.ColorInfo(fmt.Sprintf("%s:%s", ext.Namespace, ext.Name))))
+		}
+		installedExtensions[ext.Spec.UUID] = ext
+	}
+	return installedExtensions, nil
 }

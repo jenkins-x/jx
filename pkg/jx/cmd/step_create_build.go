@@ -23,14 +23,14 @@ import (
 
 var (
 	createBuildLong = templates.LongDesc(`
-		Creates a Knative Build resource for a project
+		Creates a Knative build resource for a project
 `)
 
 	createBuildExample = templates.Examples(`
-		# create a knative build and render to the console
+		# create a Knative build and render to the console
 		jx step create build
 
-		# create a knative build
+		# create a Knative build
 		jx step create build -o mybuild.yaml
 
 			`)
@@ -62,7 +62,7 @@ func NewCmdCreateBuild(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:     "create build",
-		Short:   "Creates a Knative Build resource for a project",
+		Short:   "Creates a Knative build resource for a project",
 		Long:    createBuildLong,
 		Example: createBuildExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -258,7 +258,7 @@ func (o *StepCreateBuildOptions) addCommonSettings(container *corev1.Container, 
 	return nil
 }
 
-// TODO replace with the actual knative build vendored ASAP!
+// TODO replace with the actual Knative build vendored ASAP!
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

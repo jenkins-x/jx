@@ -9,6 +9,7 @@ import (
 	"io"
 	"os/user"
 	"reflect"
+	"strconv"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -338,12 +339,21 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileRea
 			Use:   command,
 			Short: commandUsage,
 			Run: func(cmd *cobra.Command, args []string) {
-				var value string
+				var value interface{}
 				if len(args) > 0 {
-					value = args[0]
+					if structField.Type.String() == "string" {
+						value = args[0]
+					} else if structField.Type.String() == "bool" {
+						value, err = strconv.ParseBool(args[0])
+						CheckErr(err)
+					}
 				} else if !options.BatchMode {
 					var err error
-					value, err = util.PickValue(commandUsage+":", field.String(), true, in, out, errOut)
+					if structField.Type.String() == "string" {
+						value, err = util.PickValue(commandUsage+":", field.String(), true, in, out, errOut)
+					} else if structField.Type.String() == "bool" {
+						value = util.Confirm(commandUsage+":", field.Bool(), "", in, out, errOut)
+					}
 					CheckErr(err)
 				} else {
 					fatal(fmt.Sprintf("No value to set %s", command), 1)
@@ -351,8 +361,12 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileRea
 
 				callback := func(env *v1.Environment) error {
 					teamSettings := &env.Spec.TeamSettings
-					if value != "" {
-						reflect.ValueOf(teamSettings).Elem().FieldByName(structField.Name).SetString(value)
+					valueField := reflect.ValueOf(teamSettings).Elem().FieldByName(structField.Name)
+					switch value.(type) {
+					case string:
+						valueField.SetString(value.(string))
+					case bool:
+						valueField.SetBool(value.(bool))
 					}
 					log.Infof("Setting the team %s to: %s\n", util.ColorInfo(command), util.ColorInfo(value))
 					return nil
