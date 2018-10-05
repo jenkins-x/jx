@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
 	"github.com/petergtz/pegomock"
 	kubernetes "k8s.io/client-go/kubernetes"
+	"reflect"
 )
 
 func AnyKubernetesInterface() kubernetes.Interface {
