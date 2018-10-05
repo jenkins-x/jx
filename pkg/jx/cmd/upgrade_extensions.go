@@ -33,7 +33,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-const upstreamExtensionsRepositoryUrl = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.yaml"
+const upstreamExtensionsRepositoryUrl = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.lock.yaml"
 
 var (
 	upgradeExtensionsLong = templates.LongDesc(`
