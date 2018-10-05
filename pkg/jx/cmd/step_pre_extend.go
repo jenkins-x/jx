@@ -67,6 +67,15 @@ func (o *StepPreExtendOptions) Run() error {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
 
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterExtensionCRD(apisClient)
+	if err != nil {
+		return err
+	}
+
 	extensionsClient := client.JenkinsV1().Extensions(ns)
 	repoExtensions, err := (&kube.ExtensionsConfig{}).LoadFromFile()
 	if err != nil {

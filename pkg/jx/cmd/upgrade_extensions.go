@@ -97,13 +97,13 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kube.RegisterExtensionCRD(apisClient)
-	extensionsRepository := ExtensionsRepository{}
-	var bytes []byte
-
+	err = kube.RegisterExtensionCRD(apisClient)
 	if err != nil {
 		return err
 	}
+
+	extensionsRepository := ExtensionsRepository{}
+	var bytes []byte
 
 	if strings.HasPrefix(o.ExtensionsRepository, "http://") || strings.HasPrefix(o.ExtensionsRepository, "https://") {
 		httpClient := &http.Client{Timeout: 10 * time.Second}
