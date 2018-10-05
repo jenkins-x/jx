@@ -127,7 +127,7 @@ func (o *CreateAddonOptions) ExposeAddon(addon string) error {
 			return errors.Wrap(err, "updating the service annotations")
 		}
 	}
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.Namespace)
+	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the dev namespace")
 	}

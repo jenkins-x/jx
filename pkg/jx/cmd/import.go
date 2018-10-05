@@ -328,14 +328,6 @@ func (options *ImportOptions) Run() error {
 			options.Dir = dir
 		}
 	}
-	if options.AppName == "" {
-		dir, err := filepath.Abs(options.Dir)
-		if err != nil {
-			return err
-		}
-		_, options.AppName = filepath.Split(dir)
-	}
-	options.AppName = kube.ToValidName(strings.ToLower(options.AppName))
 
 	checkForJenkinsfile := options.Jenkinsfile == "" && !options.DisableJenkinsfileCheck
 	shouldClone := checkForJenkinsfile || !options.DisableDraft
@@ -361,6 +353,25 @@ func (options *ImportOptions) Run() error {
 			}
 		}
 	}
+
+	if options.AppName == "" {
+		if options.RepoURL != "" {
+			info, err := gits.ParseGitURL(options.RepoURL)
+			if err != nil {
+				log.Warnf("Failed to parse git URL %s : %s\n", options.RepoURL, err)
+			} else {
+				options.AppName = info.Name
+			}
+		}
+	}
+	if options.AppName == "" {
+		dir, err := filepath.Abs(options.Dir)
+		if err != nil {
+			return err
+		}
+		_, options.AppName = filepath.Split(dir)
+	}
+	options.AppName = kube.ToValidName(strings.ToLower(options.AppName))
 
 	if !options.DisableDraft {
 		err = options.DraftCreate()
@@ -669,7 +680,7 @@ func (options *ImportOptions) getDockerRegistryOrg() string {
 }
 
 func (options *ImportOptions) getOrganisationOrCurrentUser() string {
-	org := options.getOrganisation()
+	org := options.getOrPickOrganisation()
 	if org == "" {
 		org = options.getCurrentUser()
 	}
@@ -694,13 +705,16 @@ func (options *ImportOptions) getCurrentUser() string {
 	return currentUser
 }
 
-func (options *ImportOptions) getOrganisation() string {
+func (options *ImportOptions) getOrPickOrganisation() string {
 	org := ""
 	gitInfo, err := gits.ParseGitURL(options.RepoURL)
 	if err == nil && gitInfo.Organisation != "" {
 		org = gitInfo.Organisation
-	} else {
+	} else if options.Organisation != "" {
 		org = options.Organisation
+	} else if !options.BatchMode {
+		org, err = gits.PickOrganisation(options.GitProvider, options.getCurrentUser(), options.In, options.Out, options.Err)
+		options.Organisation = org
 	}
 	return org
 }
@@ -715,7 +729,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	dir := options.Dir
 	_, defaultRepoName := filepath.Split(dir)
 
-	options.GitRepositoryOptions.Owner = options.getOrganisation()
+	options.GitRepositoryOptions.Owner = options.getOrPickOrganisation()
 
 	details, err := gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
 		options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
@@ -1020,7 +1034,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 		return err
 	}
 
-	// todo lets create a knative build to auto optionally auto trigger initial release
+	// todo lets create a Knative build to auto optionally auto trigger initial release
 
 	options.logImportedProject(false, gitInfo)
 

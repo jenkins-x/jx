@@ -157,7 +157,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 	filters := []string{"options"}
 	templates.ActsAsRootCommand(cmds, filters, groups...)
-
+	cmds.AddCommand(NewCmdDocs(f, in, out, err))
 	cmds.AddCommand(NewCmdVersion(f, in, out, err))
 	cmds.Version = version.GetVersion()
 	cmds.SetVersionTemplate("{{printf .Version}}\n")
