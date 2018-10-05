@@ -229,7 +229,7 @@ func (o *CreateQuickstartOptions) Run() error {
 		}
 		o.GitServer = config.GetCurrentAuthServer()
 	}
-	if o.GitUserAuth == nil {
+	if o.GitUserAuth == nil && config != nil && o.GitServer != nil {
 		userAuth := config.FindUserAuth(o.GitServer.URL, o.GitServer.CurrentUser)
 		if userAuth == nil {
 			return errors.New("No user auth found")
