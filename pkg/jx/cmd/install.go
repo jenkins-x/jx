@@ -711,9 +711,7 @@ func (options *InstallOptions) Run() error {
 			if settings.BuildPackURL == "" {
 				settings.BuildPackURL = JenkinsBuildPackURL
 			}
-			if settings.BuildPackRef == "" || settings.BuildPackRef == defaultBuildPackRef {
-				settings.BuildPackRef = defaultProwBuildPackRef
-			}
+			settings.BuildPackRef = defaultProwBuildPackRef
 			log.Info("Configuring the TeamSettings for Prow\n")
 			return nil
 		}

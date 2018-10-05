@@ -1,6 +1,6 @@
 # Jenkins X Pipeline Test Suite
 
-This folder contains a collection of example `jenkins-x.yml` files which show how the `jenkins-x.yml` file is converted to a knative `Build` resources for different branch patterns.
+This folder contains a collection of example `jenkins-x.yml` files which show how the `jenkins-x.yml` file is converted to a Knative `build` resources for different branch patterns.
 
 ## Features
 

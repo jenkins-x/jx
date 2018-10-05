@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/stoewer/go-strcase"
 	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -118,12 +119,13 @@ func (o *StepPreExtendOptions) Run() error {
 			}
 			for k, v := range repoExtensions.Extensions {
 				e, err := extensionsClient.Get(strcase.KebabCase(k), metav1.GetOptions{})
+				name := strcase.KebabCase(k)
 				if err != nil {
 					// Extension can't be found
-					log.Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s", e.Name, availableExtensionsNames)
+					log.Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s\n", util.ColorInfo(fmt.Sprintf("%s", strcase.KebabCase(k))), util.ColorInfo(availableExtensionsNames))
 				} else {
 					if o.Verbose {
-						log.Infof("Adding extension %s", util.ColorInfo(e.Name))
+						log.Infof("Adding extension %s", util.ColorInfo(name))
 					}
 
 					if o.Contains(e.Spec.When, jenkinsv1.ExtensionWhenPost) || len(e.Spec.When) == 0 {
@@ -136,7 +138,7 @@ func (o *StepPreExtendOptions) Run() error {
 							return err
 						}
 						a.Spec.PostExtensions[e.Name] = ext
-						log.Infof("Adding Extension %s version %s to pipeline with environment variables [ %s ]\n", util.ColorInfo(e.Spec.Name), util.ColorInfo(e.Spec.Version), util.ColorInfo(envVarsFormatted))
+						log.Infof("Adding Extension %s version %s to pipeline with environment variables [ %s ]\n", util.ColorInfo(fmt.Sprintf("%s.%s", e.Spec.Namespace, e.Spec.Name)), util.ColorInfo(e.Spec.Version), util.ColorInfo(envVarsFormatted))
 					}
 				}
 			}

@@ -48,7 +48,8 @@ type ExtensionDetails struct {
 	Given       ExtensionGiven       `json:"given,omitempty"  protobuf:"bytes,6,opt,name=given"`
 	Type        ExtensionType        `json:"type,omitempty"  protobuf:"bytes,7,opt,name=type"`
 	Parameters  []ExtensionParameter `json:"parameters,omitempty"  protobuf:"bytes,8,opt,name=parameters"`
-
+	Namespace   string               `json:"namespace,omitempty"  protobuf:"bytes,9,opt,name=namespace"`
+	UUID        string               `json:"uuid,omitempty"  protobuf:"bytes,10,opt,name=uuid"`
 	// TODO Pre         ExtensionCondition   `json:"pre,omitempty"  protobuf:"bytes,4,opt,name=pre"`
 }
 
@@ -94,6 +95,8 @@ type ExecutableExtension struct {
 	EnvironmentVariables map[string]string `json:"environmentVariables,omitempty protobuf:"bytes,4,opt,name=environmentvariables"`
 	Given                ExtensionGiven    `json:"given,omitempty"  protobuf:"bytes,5,opt,name=given"`
 	Type                 ExtensionType     `json:"type,omitempty"  protobuf:"bytes,6,opt,name=type"`
+	Namespace            string            `json:"namespace,omitempty"  protobuf:"bytes,7,opt,name=namespace"`
+	UUID                 string            `json:"uuid,omitempty"  protobuf:"bytes,8,opt,name=uuid"`
 }
 
 func (e *ExecutableExtension) Execute(verbose bool) (err error) {
@@ -113,11 +116,11 @@ func (e *ExecutableExtension) Execute(verbose bool) (err error) {
 	if err != nil {
 		return err
 	}
-	err = scriptFile.Close()
+	err = scriptFile.Chmod(0755)
 	if err != nil {
 		return err
 	}
-	err = scriptFile.Chmod(0755)
+	err = scriptFile.Close()
 	if err != nil {
 		return err
 	}
@@ -129,7 +132,7 @@ func (e *ExecutableExtension) Execute(verbose bool) (err error) {
 		Name: scriptFile.Name(),
 		Env:  e.EnvironmentVariables,
 	}
-	log.Infof("Running Extension %s\n", util.ColorInfo(e.Name))
+	log.Infof("Running Extension %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", e.Namespace, e.Name)))
 	out, err := cmd.RunWithoutRetry()
 	log.Infoln(out)
 	if err != nil {
@@ -149,13 +152,15 @@ func (e *ExtensionDetails) ToExecutable(envVarValues map[string]string) (ext Exe
 		if value != "" {
 			envVarName := p.EnvironmentVariableName
 			if envVarName == "" {
-				envVarName = strings.ToUpper(strcase.SnakeCase(p.Name))
+				envVarName = strings.ToUpper(fmt.Sprintf("%s_%s_%s", strcase.SnakeCase(e.Namespace), strcase.SnakeCase(e.Name), strcase.SnakeCase(p.Name)))
 			}
 			envVars[envVarName] = value
 		}
 	}
 	res := ExecutableExtension{
 		Name:                 e.Name,
+		Namespace:            e.Namespace,
+		UUID:                 e.UUID,
 		Description:          e.Description,
 		Script:               e.Script,
 		Given:                e.Given,
