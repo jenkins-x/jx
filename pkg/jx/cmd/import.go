@@ -710,11 +710,8 @@ func (options *ImportOptions) getOrPickOrganisation() string {
 	gitInfo, err := gits.ParseGitURL(options.RepoURL)
 	if err == nil && gitInfo.Organisation != "" {
 		org = gitInfo.Organisation
-	} else if options.Organisation != "" {
+	} else {
 		org = options.Organisation
-	} else if !options.BatchMode {
-		org, err = gits.PickOrganisation(options.GitProvider, options.getCurrentUser(), options.In, options.Out, options.Err)
-		options.Organisation = org
 	}
 	return org
 }
