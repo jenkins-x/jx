@@ -680,7 +680,7 @@ func (options *ImportOptions) getDockerRegistryOrg() string {
 }
 
 func (options *ImportOptions) getOrganisationOrCurrentUser() string {
-	org := options.getOrPickOrganisation()
+	org := options.getOrganisation()
 	if org == "" {
 		org = options.getCurrentUser()
 	}
@@ -705,16 +705,13 @@ func (options *ImportOptions) getCurrentUser() string {
 	return currentUser
 }
 
-func (options *ImportOptions) getOrPickOrganisation() string {
+func (options *ImportOptions) getOrganisation() string {
 	org := ""
 	gitInfo, err := gits.ParseGitURL(options.RepoURL)
 	if err == nil && gitInfo.Organisation != "" {
 		org = gitInfo.Organisation
-	} else if options.Organisation != "" {
+	} else {
 		org = options.Organisation
-	} else if !options.BatchMode {
-		org, err = gits.PickOrganisation(options.GitProvider, options.getCurrentUser(), options.In, options.Out, options.Err)
-		options.Organisation = org
 	}
 	return org
 }
@@ -729,7 +726,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	dir := options.Dir
 	_, defaultRepoName := filepath.Split(dir)
 
-	options.GitRepositoryOptions.Owner = options.getOrPickOrganisation()
+	options.GitRepositoryOptions.Owner = options.getOrganisation()
 
 	details, err := gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
 		options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
