@@ -200,7 +200,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 // Run executes the command
 func (options *ImportOptions) Run() error {
 	if options.ListDraftPacks {
-		packs, err := allDraftPacks()
+		packs, err := options.allDraftPacks()
 		if err != nil {
 			log.Error(err.Error())
 			return err
@@ -1405,10 +1405,10 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	return nil
 }
 
-func allDraftPacks() ([]string, error) {
+func (o *ImportOptions) allDraftPacks() ([]string, error) {
 	// lets make sure we have the latest draft packs
 	initOpts := InitOptions{
-		CommonOptions: CommonOptions{},
+		CommonOptions: o.CommonOptions,
 	}
 	log.Info("Getting latest packs ...\n")
 	dir, err := initOpts.initBuildPacks()
