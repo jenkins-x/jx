@@ -8,4 +8,5 @@ github:
     - name: jx-docs
     - name: jenkins-x-platform
     - name: jenkins-x-builders
+    - name: jenkins-x-serverless
     - name: jx-tutorial
