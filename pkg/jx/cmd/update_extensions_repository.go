@@ -42,42 +42,58 @@ type ExtensionRepositoryLock struct {
 	Namespace   string   `json:"namespace"`
 	UUID        string   `json:"uuid"`
 	Version     string   `json:"version"`
-	Description string   `json:"description"`
+	Description string   `json:"description,omitempty"`
 	When        []string `json:"when,omitempty"`
 	Given       string   `json:"given,omitempty"`
 	Type        string   `json:"type,omitempty"`
-	Script      string   `json:"script"`
+	Script      string   `json:"script,omitempty"`
+	Children    []string `json:"children,omitempty"`
 	Parameters  []struct {
 		Name         string `json:"name"`
-		Description  string `json:"description"`
-		DefaultValue string `json:"defaultValue"`
+		Description  string `json:"description,omitempty"`
+		DefaultValue string `json:"defaultValue,omitempty"`
 	} `json:"parameters,omitempty"`
 }
 
 type ExtensionsRepositoryConstraints struct {
-	Extensions []struct {
-		Extension string `json:"extension"`
-		Version   string `json:"version"`
-	} `json:"extensions"`
+	Remotes []struct {
+		Remote string `json:"remote"`
+		Tag    string `json:"tag"`
+	} `json:"remotes"`
 }
 
 type ExtensionDefinitions struct {
-	Version    string `json:"version,omitempty"`
-	Extensions []struct {
-		Name        string   `json:"name"`
-		Namespace   string   `json:"namespace"`
-		UUID        string   `json:"uuid"`
-		Description string   `json:"description"`
-		When        []string `json:"when,omitempty"`
-		Given       string   `json:"given,omitempty"`
-		Type        string   `json:"type,omitempty"`
-		ScriptFile  string   `json:"scriptFile,omitempty"`
-		Parameters  []struct {
-			Name         string `json:"name"`
-			Description  string `json:"description"`
-			DefaultValue string `json:"defaultValue"`
-		} `json:"parameters"`
-	} `json:"extensions"`
+	Version    string                `json:"version,omitempty"`
+	Extensions []ExtensionDefinition `json:"extensions"`
+}
+
+type ExtensionDefinition struct {
+	Name        string   `json:"name"`
+	Namespace   string   `json:"namespace"`
+	UUID        string   `json:"uuid"`
+	Description string   `json:"description,omitempty"`
+	When        []string `json:"when,omitempty"`
+	Given       string   `json:"given,omitempty"`
+	Type        string   `json:"type,omitempty"`
+	Children    map[string]struct {
+		UUID   string `json:"uuid,omitempty"`
+		Remote string `json:"remote,omitempty"`
+	} `json:"children,omitempty"`
+	ScriptFile string `json:"scriptFile,omitempty"`
+	Parameters []struct {
+		Name         string `json:"name"`
+		Description  string `json:"description,omitempty"`
+		DefaultValue string `json:"defaultValue,omitempty"`
+	} `json:"parameters,omitempty"`
+}
+
+type httpError struct {
+	StatusCode int
+	Status     string
+}
+
+func (e *httpError) Error() string {
+	return e.Status
 }
 
 var (
@@ -148,25 +164,29 @@ func (o *UpdateExtensionsRepositoryOptions) Run() error {
 		Extensions: make([]ExtensionRepositoryLock, 0),
 	}
 	newLock.Version = oldVersion + 1
-	for _, c := range constraints.Extensions {
-		if strings.HasPrefix(c.Extension, "github.com") {
-			s := strings.Split(c.Extension, "/")
+
+	lookupByName := make(map[string]ExtensionRepositoryLock, 0)
+	lookupByUUID := make(map[string]ExtensionRepositoryLock, 0)
+	for _, c := range constraints.Remotes {
+		if strings.HasPrefix(c.Remote, "github.com") {
+			s := strings.Split(c.Remote, "/")
 			if len(s) != 3 {
-				errors.New(fmt.Sprintf("Cannot parse extension path %s", util.ColorInfo(c.Extension)))
+				errors.New(fmt.Sprintf("Cannot parse extension path %s", util.ColorInfo(c.Remote)))
 			}
 			org := s[1]
 			repo := s[2]
-			version := c.Version
-			if version == "latest" {
-				version, err = util.GetLatestVersionStringFromGitHub(org, repo)
+			tag := c.Tag
+			if tag == "latest" {
+				tag, err = util.GetLatestVersionStringFromGitHub(org, repo)
 				if err != nil {
 					return err
 				}
+				tag = fmt.Sprintf("v%s", tag)
 			}
-			definitionsUrl := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/v%s", org, repo, version)
+			definitionsUrl := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s", org, repo, tag)
 			definitionsFileUrl := fmt.Sprintf("%s/jenkins-x-extension-definitions.yaml", definitionsUrl)
 			extensionDefinitions := ExtensionDefinitions{}
-			extensionDefinitions.LoadFromURL(definitionsFileUrl, c.Extension, c.Version)
+			extensionDefinitions.LoadFromURL(definitionsFileUrl, c.Remote, c.Tag)
 			for _, ed := range extensionDefinitions.Extensions {
 				// It's best practice to assign a UUID to an extension, but if it doesn't have one we
 				// try to give it the one it had last
@@ -175,27 +195,42 @@ func (o *UpdateExtensionsRepositoryOptions) Run() error {
 					// Lazy initialize the oldLockNameMap
 					if len(oldLockNameMap) == 0 {
 						for _, l := range oldLock.Extensions {
-							oldLockNameMap[fmt.Sprintf("%s.%s", l.Namespace, l.Name)] = l
+							oldLockNameMap[l.FullyQualifiedName()] = l
 						}
 					}
-					UUID = oldLockNameMap[fmt.Sprintf("%s.%s", ed.Namespace, ed.Name)].UUID
+					UUID = oldLockNameMap[ed.FullyQualifiedName()].UUID
 				}
 				// If the UUID is still empty, generate one
 				if UUID == "" {
 					UUID = uuid.New()
+					log.Printf("No UUID found for %s. Generated UUID %s, please update your extension definition "+
+						"accordingly.", ed.FullyQualifiedName(), UUID)
 				}
-				scriptFile := ed.ScriptFile
-				if scriptFile == "" {
-					scriptFile = fmt.Sprintf("%s.sh", strings.ToLower(strcase.SnakeCase(ed.Name)))
-				}
-				script, err := o.LoadAsStringFromURL(fmt.Sprintf("%s/%s", definitionsUrl, scriptFile))
-				if err != nil {
-					return err
+				var script string
+				children := make([]string, 0)
+				// If the children is present, there is no script
+				if len(ed.Children) == 0 {
+					scriptFile := ed.ScriptFile
+					if scriptFile == "" {
+						scriptFile = fmt.Sprintf("%s.sh", strings.ToLower(strcase.SnakeCase(ed.Name)))
+					}
+					script, err = o.LoadAsStringFromURL(fmt.Sprintf("%s/%s", definitionsUrl, scriptFile))
+					if err != nil {
+						return err
+					}
+				} else {
+					for fqn, c := range ed.Children {
+						if c.UUID != "" {
+							children = append(children, c.UUID)
+						} else {
+							children = append(children, fqn)
+						}
+					}
 				}
 				eLock := ExtensionRepositoryLock{
 					Name:        ed.Name,
 					Namespace:   ed.Namespace,
-					Version:     version,
+					Version:     tag,
 					UUID:        UUID,
 					Description: ed.Description,
 					Parameters:  ed.Parameters,
@@ -203,12 +238,36 @@ func (o *UpdateExtensionsRepositoryOptions) Run() error {
 					Given:       ed.Given,
 					Type:        ed.Type,
 					Script:      script,
+					Children:    children,
 				}
+				lookupByName[eLock.FullyQualifiedName()] = eLock
+				lookupByUUID[eLock.UUID] = eLock
 				newLock.Extensions = append(newLock.Extensions, eLock)
 			}
 		} else {
 			return errors.New(fmt.Sprintf("Only github.com is supported, use a format like %s", util.ColorInfo("github.com/jenkins-x/ext-jacoco")))
 		}
+	}
+	uuidResolveErrors := make([]string, 0)
+	// Second pass over extensions to allow us to do things like resolve fqns into UUIDs
+	for i, lock := range newLock.Extensions {
+		newLock.Extensions[i].Children = o.recursivelyFixChildren(lock, lookupByName, lookupByUUID, &uuidResolveErrors)
+		log.Printf("Lock %s has children %s\n", lock.Name, newLock.Extensions[i].Children)
+	}
+	if len(uuidResolveErrors) > 0 {
+		bytes, err := yaml.Marshal(newLock)
+		if err != nil {
+			return err
+		}
+		errFile, err := ioutil.TempFile("", o.OutputFile)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(errFile.Name(), bytes, 0755)
+		if err != nil {
+			return err
+		}
+		return errors.New(fmt.Sprintf("Cannot resolve children %s in repository. Partial .lock file written to %s.", uuidResolveErrors, errFile.Name()))
 	}
 	bytes, err := yaml.Marshal(newLock)
 	if err != nil {
@@ -222,9 +281,56 @@ func (o *UpdateExtensionsRepositoryOptions) Run() error {
 	return nil
 }
 
+func (o *UpdateExtensionsRepositoryOptions) recursivelyFixChildren(lock ExtensionRepositoryLock, lookupByName map[string]ExtensionRepositoryLock, lookupByUUID map[string]ExtensionRepositoryLock, resolveErrors *[]string) (children []string) {
+	children = make([]string, 0)
+	log.Printf("Fixing child %s\n", lock.Name)
+	for _, u := range lock.Children {
+		if uuid.Parse(u) == nil {
+			if c, ok := lookupByName[u]; ok {
+				log.Printf("We recommend you explicitly specify the UUID for child %s on extension %s as this will stop the "+
+					"extension breaking if names are changed.\n"+
+					"If you are the maintainer of the extension definition add \n"+
+					"\n"+
+					"      UUID: %s\n"+
+					"\n"+
+					"to the child definition. \n"+
+					"If you aren't the maintainer of the extension definition we recommend you contact them and ask"+
+					"them to add the UUID.\n"+
+					"\n"+
+					"This does not stop you using the extension, as we have been able to discover and attach the "+
+					"UUID to the child based on the fully qualified name.\n", util.ColorWarning(u), util.ColorWarning(lock.FullyQualifiedName()), util.ColorWarning(c.UUID))
+				u = c.UUID
+			} else {
+				// Record the error in the loop, but don't error until end. This allows us to report all the errors
+				// up front
+				*resolveErrors = append(*resolveErrors, u)
+			}
+		}
+		if c, ok := lookupByUUID[u]; ok {
+			if len(c.Children) == 0 {
+				// Leaf, so add
+				children = append(children, u)
+			} else {
+				// Now we need to recursively resolve any children
+				children = append(children, o.recursivelyFixChildren(c, lookupByName, lookupByUUID, resolveErrors)...)
+			}
+		}
+	}
+	return children
+}
+
 func (o *UpdateExtensionsRepositoryOptions) LoadAsStringFromURL(url string) (result string, err error) {
 	httpClient := &http.Client{Timeout: 10 * time.Second}
 	resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", url, time.Now().UnixNano()/int64(time.Millisecond)))
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", &httpError{
+			Status:     resp.Status,
+			StatusCode: resp.StatusCode,
+		}
+	}
 
 	defer resp.Body.Close()
 	if err != nil {
@@ -275,7 +381,7 @@ func (lock *ExtensionDefinitions) LoadFromURL(definitionsUrl string, extension s
 	httpClient := &http.Client{Timeout: 10 * time.Second}
 	resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", definitionsUrl, time.Now().UnixNano()/int64(time.Millisecond)))
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		log.Printf("Unable to find Extension Definitions at %s for %s with version %s", util.ColorWarning(definitionsUrl), util.ColorWarning(extension), util.ColorWarning(version))
+		log.Printf("Unable to find Extension Definitions at %s for %s with version %s\n", util.ColorWarning(definitionsUrl), util.ColorWarning(extension), util.ColorWarning(version))
 		return nil
 	}
 	if err != nil {
@@ -295,4 +401,12 @@ func (lock *ExtensionDefinitions) LoadFromURL(definitionsUrl string, extension s
 		return err
 	}
 	return nil
+}
+
+func (e *ExtensionRepositoryLock) FullyQualifiedName() (fqn string) {
+	return fmt.Sprintf("%s.%s", e.Namespace, e.Name)
+}
+
+func (e *ExtensionDefinition) FullyQualifiedName() (fqn string) {
+	return fmt.Sprintf("%s.%s", e.Namespace, e.Name)
 }
