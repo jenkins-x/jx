@@ -34,6 +34,10 @@ const (
 	DefaultProwReleaseName         = "jx-prow"
 	DefaultKnativeBuildReleaseName = "jx-knative-build"
 
+	// ChartVaultOperator the default chart for vault opeator
+	ChartVaultOperator              = "jenkinsxio/vault-operator"
+	DefaultVaultOperatorReleaseName = "vault-operator"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
@@ -221,16 +225,17 @@ const (
 
 var (
 	AddonCharts = map[string]string{
-		"ambassador":                   ChartAmbassador,
-		"anchore":                      ChartAnchore,
-		"cb":                           ChartCloudBees,
-		"gitea":                        ChartGitea,
-		"istio":                        ChartIstio,
-		"kubeless":                     ChartKubeless,
-		"prometheus":                   "stable/prometheus",
-		"grafana":                      "stable/grafana",
-		DefaultProwReleaseName:         ChartProw,
-		DefaultKnativeBuildReleaseName: ChartKnativeBuild,
+		"ambassador":                    ChartAmbassador,
+		"anchore":                       ChartAnchore,
+		"cb":                            ChartCloudBees,
+		"gitea":                         ChartGitea,
+		"istio":                         ChartIstio,
+		"kubeless":                      ChartKubeless,
+		"prometheus":                    "stable/prometheus",
+		"grafana":                       "stable/grafana",
+		DefaultProwReleaseName:          ChartProw,
+		DefaultKnativeBuildReleaseName:  ChartKnativeBuild,
+		DefaultVaultOperatorReleaseName: ChartVaultOperator,
 	}
 
 	AddonServices = map[string]string{
