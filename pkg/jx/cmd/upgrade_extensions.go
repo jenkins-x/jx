@@ -212,7 +212,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 		if o.Contains(extension.When, jenkinsv1.ExtensionWhenUpgrade) {
 			o.UpstallExtension(extension, extensionConfig)
 		}
-		log.Infof("Upgrading Extension %s from %s to %s\n", extension.FullyQualifiedName(), util.ColorInfo(existingVersion), util.ColorInfo(newVersion))
+		log.Infof("Upgrading Extension %s from %s to %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(existingVersion), util.ColorInfo(newVersion))
 		return res, false, err
 	} else {
 		return &existing, false, nil
