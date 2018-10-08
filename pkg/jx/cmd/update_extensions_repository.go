@@ -252,7 +252,6 @@ func (o *UpdateExtensionsRepositoryOptions) Run() error {
 	// Second pass over extensions to allow us to do things like resolve fqns into UUIDs
 	for i, lock := range newLock.Extensions {
 		newLock.Extensions[i].Children = o.recursivelyFixChildren(lock, lookupByName, lookupByUUID, &uuidResolveErrors)
-		log.Printf("Lock %s has children %s\n", lock.Name, newLock.Extensions[i].Children)
 	}
 	if len(uuidResolveErrors) > 0 {
 		bytes, err := yaml.Marshal(newLock)
@@ -283,7 +282,6 @@ func (o *UpdateExtensionsRepositoryOptions) Run() error {
 
 func (o *UpdateExtensionsRepositoryOptions) recursivelyFixChildren(lock ExtensionRepositoryLock, lookupByName map[string]ExtensionRepositoryLock, lookupByUUID map[string]ExtensionRepositoryLock, resolveErrors *[]string) (children []string) {
 	children = make([]string, 0)
-	log.Printf("Fixing child %s\n", lock.Name)
 	for _, u := range lock.Children {
 		if uuid.Parse(u) == nil {
 			if c, ok := lookupByName[u]; ok {
