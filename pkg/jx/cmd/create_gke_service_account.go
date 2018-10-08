@@ -1,16 +1,17 @@
 package cmd
 
 import (
-	"io"
-
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type CreateGkeServiceAccountFlags struct {
@@ -35,11 +36,12 @@ var (
 )
 
 // NewCmdCreateGkeServiceAccount creates a command object for the "create" command
-func NewCmdCreateGkeServiceAccount(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGkeServiceAccount(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateGkeServiceAccountOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -67,11 +69,12 @@ func NewCmdCreateGkeServiceAccount(f Factory, out io.Writer, errOut io.Writer) *
 func (options *CreateGkeServiceAccountOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.Name, "name", "n", "", "The name of the service account to create")
 	cmd.Flags().StringVarP(&options.Flags.Project, "project", "p", "", "The GCP project to create the service account in")
-	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gloud auth")
+	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 }
 
 // Run implements this command
 func (o *CreateGkeServiceAccountOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if !o.Flags.SkipLogin {
 		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
@@ -90,7 +93,7 @@ func (o *CreateGkeServiceAccountOptions) Run() error {
 				return errors.New("Service Account name must be longer than 5 characters")
 			}
 			return nil
-		})
+		}, surveyOpts)
 
 		if err != nil {
 			return err
@@ -118,6 +121,7 @@ func (o *CreateGkeServiceAccountOptions) Run() error {
 
 // asks to chose from existing projects or optionally creates one if none exist
 func (o *CreateGkeServiceAccountOptions) getGoogleProjectId() (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	existingProjects, err := gke.GetGoogleProjects()
 	if err != nil {
 		return "", err
@@ -130,7 +134,7 @@ func (o *CreateGkeServiceAccountOptions) getGoogleProjectId() (string, error) {
 			Default: true,
 		}
 		flag := true
-		err = survey.AskOne(confirm, &flag, nil)
+		err = survey.AskOne(confirm, &flag, nil, surveyOpts)
 		if err != nil {
 			return "", err
 		}
@@ -151,7 +155,7 @@ func (o *CreateGkeServiceAccountOptions) getGoogleProjectId() (string, error) {
 			Help:    "Select a Google Project to create the cluster in",
 		}
 
-		err := survey.AskOne(prompts, &projectId, nil)
+		err := survey.AskOne(prompts, &projectId, nil, surveyOpts)
 		if err != nil {
 			return "", err
 		}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetBuildPackOptions containers the CLI options
@@ -22,7 +23,7 @@ var (
 	}
 
 	getBuildPackLong = templates.LongDesc(`
-		Display the teams build pack git repository and references used for the current Team used on creating and importing projects
+		Display the teams build pack Git repository and references used for the current Team used on creating and importing projects
 
 		For more documentation see: [https://jenkins-x.io/architecture/build-packs/](https://jenkins-x.io/architecture/build-packs/)
 `)
@@ -34,19 +35,21 @@ var (
 )
 
 // NewCmdGetBuildPack creates the new command for: jx get env
-func NewCmdGetBuildPack(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuildPack(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetBuildPackOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}
 	cmd := &cobra.Command{
 		Use:     buildPack,
-		Short:   "Display the teams build pack git repository and references used for the current Team used on creating and importing projects",
+		Short:   "Display the teams build pack Git repository and references used for the current Team used on creating and importing projects",
 		Aliases: buildPacksAliases,
 		Long:    getBuildPackLong,
 		Example: getBuildPackExample,

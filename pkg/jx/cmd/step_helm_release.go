@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,12 +40,13 @@ var (
 `)
 )
 
-func NewCmdStepHelmRelease(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmRelease(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepHelmReleaseOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -128,10 +130,10 @@ func (o *StepHelmReleaseOptions) Run() error {
 		}
 	}
 	if userName == "" {
-		return fmt.Errorf("No enviroment variable $CHARTMUSEUM_CREDS_USR defined")
+		return fmt.Errorf("No environment variable $CHARTMUSEUM_CREDS_USR defined")
 	}
 	if password == "" {
-		return fmt.Errorf("No enviroment variable CHARTMUSEUM_CREDS_PSW defined")
+		return fmt.Errorf("No environment variable CHARTMUSEUM_CREDS_PSW defined")
 	}
 
 	// post the tarball to the chart repository

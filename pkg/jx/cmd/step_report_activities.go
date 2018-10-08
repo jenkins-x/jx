@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"io"
-
 	"time"
 
 	"fmt"
@@ -14,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	pe "github.com/jenkins-x/jx/pkg/pipeline_events"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
@@ -36,14 +36,16 @@ var (
 `)
 )
 
-func NewCmdStepReportActivities(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepReportActivities(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepReportActivitiesOptions{
 		StepReportOptions: StepReportOptions{
 			StepOptions: StepOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
-					Out:     out,
-					Err:     errOut,
+					In:      in,
+
+					Out: out,
+					Err: errOut,
 				},
 			},
 		},
@@ -75,7 +77,7 @@ func (o *StepReportActivitiesOptions) Run() error {
 
 	_, _, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
+		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
 
 	jxClient, _, err := o.JXClient()

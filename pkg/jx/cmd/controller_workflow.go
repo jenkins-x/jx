@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -49,11 +50,12 @@ type ControllerWorkflowOptions struct {
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerWorkflow(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdControllerWorkflow(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ControllerWorkflowOptions{
 		ControllerOptions: ControllerOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -585,7 +587,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 									}
 									gitInfo, err := gits.ParseGitURL(gitURL)
 									if err != nil {
-										log.Warnf("Failed to parse git URL %s for PipelineActivity %s so cannot comment on issues: %s", gitURL, activity.Name, err)
+										log.Warnf("Failed to parse Git URL %s for PipelineActivity %s so cannot comment on issues: %s", gitURL, activity.Name, err)
 										return
 									}
 									po.GitInfo = gitInfo
@@ -702,7 +704,7 @@ func createPromoteStatus(pipeline *v1.PipelineActivity) map[string]*v1.PromoteAc
 	return answer
 }
 
-// createPromoteStepActivityKey deduces the pipeline metadata from the knative workflow pod
+// createPromoteStepActivityKey deduces the pipeline metadata from the Knative workflow pod
 func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName string, pod *corev1.Pod) *kube.PromoteStepActivityKey {
 	branch := ""
 	lastCommitSha := ""
@@ -738,7 +740,7 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 	}
 	gitInfo, err := gits.ParseGitURL(gitUrl)
 	if err != nil {
-		log.Warnf("Failed to parse git URL %s: %s", gitUrl, err)
+		log.Warnf("Failed to parse Git URL %s: %s", gitUrl, err)
 		return nil
 	}
 	org := gitInfo.Organisation
@@ -758,7 +760,7 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 	}
 }
 
-// PullRequestURLToNumber turns pull request URL to number
+// PullRequestURLToNumber turns Pull Request URL to number
 func PullRequestURLToNumber(text string) (int, error) {
 	paths := strings.Split(strings.TrimSuffix(text, "/"), "/")
 	lastPath := paths[len(paths)-1]

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -47,7 +48,7 @@ var (
 `)
 
 	sync_example = templates.Examples(`
-		# Starts synchonizing the current directory files to the users DevPod
+		# Starts synchronizing the current directory files to the users DevPod
 		jx sync 
 `)
 
@@ -62,17 +63,18 @@ node_modules
 `
 )
 
-func NewCmdSync(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdSync(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &SyncOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
 	}
 	cmd := &cobra.Command{
 		Use:     "sync",
-		Short:   "Synchronises your local files to a devpod",
+		Short:   "Synchronises your local files to a DevPod",
 		Long:    sync_long,
 		Example: sync_example,
 		Aliases: []string{"log"},

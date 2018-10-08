@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -61,12 +62,13 @@ type CreateQuickstartOptions struct {
 }
 
 // NewCmdCreateQuickstart creates a command object for the "create" command
-func NewCmdCreateQuickstart(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateQuickstart(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateQuickstartOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -76,7 +78,7 @@ func NewCmdCreateQuickstart(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 	cmd := &cobra.Command{
 		Use:     "quickstart",
-		Short:   "Create a new app from a Quickstart and import the generated code into git and Jenkins for CI/CD",
+		Short:   "Create a new app from a Quickstart and import the generated code into Git and Jenkins for CI/CD",
 		Long:    createQuickstartLong,
 		Example: createQuickstartExample,
 		Aliases: []string{"arch"},
@@ -89,7 +91,7 @@ func NewCmdCreateQuickstart(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	}
 	options.addCreateAppFlags(cmd)
 
-	cmd.Flags().StringArrayVarP(&options.GitHubOrganisations, "organisations", "g", []string{}, "The github organisations to query for quickstarts")
+	cmd.Flags().StringArrayVarP(&options.GitHubOrganisations, "organisations", "g", []string{}, "The GitHub organisations to query for quickstarts")
 	cmd.Flags().StringArrayVarP(&options.Filter.Tags, "tag", "t", []string{}, "The tags on the quickstarts to filter")
 	cmd.Flags().StringVarP(&options.Filter.Owner, "owner", "", "", "The owner to filter on")
 	cmd.Flags().StringVarP(&options.Filter.Language, "language", "l", "", "The language to filter on")
@@ -159,7 +161,7 @@ func (o *CreateQuickstartOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
-	q, err := model.CreateSurvey(&o.Filter, o.BatchMode)
+	q, err := model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -305,8 +307,11 @@ func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig
 			if err != nil {
 				return model, err
 			}
-			o.Debugf("Searching for repositories in git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
-			model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
+			o.Debugf("Searching for repositories in Git server %s owner %s includes %s excludes %s as user %s \n", gitProvider.ServerURL(), location.Owner, strings.Join(location.Includes, ", "), strings.Join(location.Excludes, ", "), gitProvider.CurrentUsername())
+			err = model.LoadGithubQuickstarts(gitProvider, location.Owner, location.Includes, location.Excludes)
+			if err != nil {
+				o.Debugf("Quickstart load error: %s\n", err.Error())
+			}
 		}
 	}
 	return model, nil

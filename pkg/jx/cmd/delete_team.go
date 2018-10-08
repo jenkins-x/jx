@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,7 +27,7 @@ type DeleteTeamOptions struct {
 
 var (
 	deleteTeamLong = templates.LongDesc(`
-		Deletes one or many teams and their associated resources (Environments, Jenkins etc)
+		Deletes one or more teams and their associated resources (Environments, Jenkins etc)
 `)
 
 	deleteTeamExample = templates.Examples(`
@@ -40,18 +41,20 @@ var (
 
 // NewCmdDeleteTeam creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteTeam(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteTeamOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 
 	cmd := &cobra.Command{
 		Use:     "team",
-		Short:   "Deletes one or many teams and their associated resources (Environments, Jenkins etc)",
+		Short:   "Deletes one or more teams and their associated resources (Environments, Jenkins etc)",
 		Long:    deleteTeamLong,
 		Example: deleteTeamExample,
 		Aliases: []string{"teams"},
@@ -65,13 +68,14 @@ func NewCmdDeleteTeam(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 	options.addCommonFlags(cmd)
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Should we default to selecting all the matched teams for deletion")
-	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Fitlers the list of teams you can pick from")
+	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filters the list of teams you can pick from")
 	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
 	return cmd
 }
 
 // Run implements this command
 func (o *DeleteTeamOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -91,7 +95,7 @@ func (o *DeleteTeamOptions) Run() error {
 		if o.BatchMode {
 			return fmt.Errorf("Missing team name argument")
 		}
-		names, err = util.SelectNamesWithFilter(teamNames, "Which teams do you want to delete: ", o.SelectAll, o.SelectFilter)
+		names, err = util.SelectNamesWithFilter(teamNames, "Which teams do you want to delete: ", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -102,15 +106,15 @@ func (o *DeleteTeamOptions) Run() error {
 			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
 		}
 	} else {
-		log.Warnf("You are about to delete these teams '%s' on the git provider. This operation CANNOT be undone!",
+		log.Warnf("You are about to delete the following teams '%s' on the Git provider. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false
 		prompt := &survey.Confirm{
-			Message: "Are you sure you want to delete these all these teams?",
+			Message: "Are you sure you want to delete all these teams?",
 			Default: false,
 		}
-		err = survey.AskOne(prompt, &flag, nil)
+		err = survey.AskOne(prompt, &flag, nil, surveyOpts)
 		if err != nil {
 			return err
 		}

@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,7 +25,7 @@ type GetEnvOptions struct {
 
 var (
 	getEnvLong = templates.LongDesc(`
-		Display one or many environments.
+		Display one or more environments.
 `)
 
 	getEnvExample = templates.Examples(`
@@ -37,11 +38,12 @@ var (
 )
 
 // NewCmdGetEnv creates the new command for: jx get env
-func NewCmdGetEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetEnvOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -49,7 +51,7 @@ func NewCmdGetEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:     "environments",
-		Short:   "Display one or many Environments",
+		Short:   "Display one or more Environments",
 		Aliases: []string{"envs", "environment", "env"},
 		Long:    getEnvLong,
 		Example: getEnvExample,

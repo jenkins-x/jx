@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"io"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -20,7 +22,7 @@ type GetPreviewOptions struct {
 
 var (
 	getPreviewLong = templates.LongDesc(`
-		Display one or many environments.
+		Display one or more environments.
 `)
 
 	getPreviewExample = templates.Examples(`
@@ -34,21 +36,23 @@ var (
 )
 
 // NewCmdGetPreview creates the new command for: jx get env
-func NewCmdGetPreview(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetPreviewOptions{
 		GetEnvOptions: GetEnvOptions{
 			GetOptions: GetOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
-					Out:     out,
-					Err:     errOut,
+					In:      in,
+
+					Out: out,
+					Err: errOut,
 				},
 			},
 		},
 	}
 	cmd := &cobra.Command{
 		Use:     "previews",
-		Short:   "Display one or many Preview Environments",
+		Short:   "Display one or more Preview Environments",
 		Aliases: []string{"preview"},
 		Long:    getPreviewLong,
 		Example: getPreviewExample,

@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -19,7 +20,7 @@ type GetURLOptions struct {
 
 var (
 	get_url_long = templates.LongDesc(`
-		Display one or many URLs from the running services.
+		Display one or more URLs from the running services.
 
 `)
 
@@ -30,20 +31,22 @@ var (
 )
 
 // NewCmdGetURL creates the command
-func NewCmdGetURL(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetURL(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetURLOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}
 
 	cmd := &cobra.Command{
 		Use:     "urls [flags]",
-		Short:   "Display one or many URLs",
+		Short:   "Display one or more URLs",
 		Long:    get_url_long,
 		Example: get_url_example,
 		Aliases: []string{"url"},

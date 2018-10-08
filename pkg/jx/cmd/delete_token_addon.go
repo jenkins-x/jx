@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -31,11 +32,12 @@ type DeleteTokenAddonOptions struct {
 }
 
 // NewCmdDeleteTokenAddon defines the command
-func NewCmdDeleteTokenAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTokenAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteTokenAddonOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -44,7 +46,7 @@ func NewCmdDeleteTokenAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 	cmd := &cobra.Command{
 		Use:     "addon",
-		Short:   "Deletes one or more api tokens for a user on an issue addon server",
+		Short:   "Deletes one or more API tokens for a user on an issue addon server",
 		Long:    deleteTokenAddonLong,
 		Example: deleteTokenAddonExample,
 		Run: func(cmd *cobra.Command, args []string) {

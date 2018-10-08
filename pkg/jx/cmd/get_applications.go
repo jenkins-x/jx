@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -55,17 +56,18 @@ var (
 )
 
 // NewCmdGetApplications creates the new command for: jx get version
-func NewCmdGetApplications(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetApplications(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetApplicationsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
 	}
 	cmd := &cobra.Command{
 		Use:     "applications",
-		Short:   "Display one or many Applications and their versions",
+		Short:   "Display one or more Applications and their versions",
 		Aliases: []string{"app", "apps", "version", "versions"},
 		Long:    get_version_long,
 		Example: get_version_example,

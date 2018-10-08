@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -23,7 +24,7 @@ type ContextOptions struct {
 
 var (
 	context_long = templates.LongDesc(`
-		Displays or changes the current kubernetes context (cluster).`)
+		Displays or changes the current Kubernetes context (cluster).`)
 	context_example = templates.Examples(`
 		# to select the context to switch to
 		jx context
@@ -38,18 +39,20 @@ var (
 		jx ctx minikube`)
 )
 
-func NewCmdContext(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdContext(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ContextOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{
 		Use:     "context",
 		Aliases: []string{"ctx"},
-		Short:   "View or change the current kubernetes context (kubernetes cluster)",
+		Short:   "View or change the current Kubernetes context (Kubernetes cluster)",
 		Long:    context_long,
 		Example: context_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -71,7 +74,7 @@ func (o *ContextOptions) Run() error {
 	}
 
 	if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
-		return fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
+		return fmt.Errorf("No Kubernetes contexts available! Try create or connect to cluster?")
 	}
 
 	contextNames := []string{}
@@ -105,7 +108,7 @@ func (o *ContextOptions) Run() error {
 	if ctxName != "" && ctxName != config.CurrentContext {
 		ctx := config.Contexts[ctxName]
 		if ctx == nil {
-			return fmt.Errorf("Could not find kubernetes context %s", ctxName)
+			return fmt.Errorf("Could not find Kubernetes context %s", ctxName)
 		}
 		newConfig := *config
 		newConfig.CurrentContext = ctxName
@@ -123,6 +126,7 @@ func (o *ContextOptions) Run() error {
 }
 
 func (o *ContextOptions) PickContext(names []string, defaultValue string) (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if len(names) == 0 {
 		return "", nil
 	}
@@ -131,10 +135,10 @@ func (o *ContextOptions) PickContext(names []string, defaultValue string) (strin
 	}
 	name := ""
 	prompt := &survey.Select{
-		Message: "Change kubernetes context:",
+		Message: "Change Kubernetes context:",
 		Options: names,
 		Default: defaultValue,
 	}
-	err := survey.AskOne(prompt, &name, nil)
+	err := survey.AskOne(prompt, &name, nil, surveyOpts)
 	return name, err
 }

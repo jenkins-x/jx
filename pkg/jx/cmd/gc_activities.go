@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/golang-jenkins"
@@ -22,7 +23,7 @@ type GCActivitiesOptions struct {
 	CommonOptions
 
 	RevisionHistoryLimit int
-	jclient              *gojenkins.Jenkins
+	jclient              gojenkins.JenkinsClient
 }
 
 var (
@@ -38,10 +39,11 @@ var (
 )
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCActivities(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGCActivities(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GCActivitiesOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -60,6 +62,7 @@ func NewCmdGCActivities(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 		},
 	}
 	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "l", 5, "Minimum number of Activities per application to keep")
+	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -125,7 +128,7 @@ func (o *GCActivitiesOptions) Run() error {
 
 	for _, a := range activities.Items {
 		if !prowEnabled {
-			// if activity has no job in jenkins delete it
+			// if activity has no job in Jenkins delete it
 			matched := false
 			for _, j := range jobNames {
 				if a.Spec.Pipeline == j {

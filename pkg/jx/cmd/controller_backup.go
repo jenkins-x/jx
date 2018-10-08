@@ -2,21 +2,23 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path"
+	"time"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"io"
-	"io/ioutil"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
-	"os"
-	"path"
-	"time"
 )
 
 // ControllerBackupOptions are the flags for the commands
@@ -31,11 +33,12 @@ type ControllerBackupOptions struct {
 
 // NewCmdControllerBackup creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerBackup(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdControllerBackup(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ControllerBackupOptions{
 		ControllerOptions: ControllerOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -257,7 +260,7 @@ func (o *ControllerBackupOptions) commitDirIfChanges(dir string, message string)
 			return
 		}
 
-		fmt.Fprintf(o.Stdout(), "Pushed update '%s' git repository %s\n", util.ColorInfo(message), util.ColorInfo(dir))
+		fmt.Fprintf(o.Out, "Pushed update '%s' Git repository %s\n", util.ColorInfo(message), util.ColorInfo(dir))
 	}
 }
 
@@ -274,8 +277,8 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 
 	defaultRepoName := fmt.Sprintf("organisation-%s-backup", o.Organisation)
 
-	details, err := gits.PickNewOrExistingGitRepository(o.Stdout(), o.BatchMode, authConfigSvc,
-		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git(), true)
+	details, err := gits.PickNewOrExistingGitRepository(o.BatchMode, authConfigSvc,
+		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git(), true, o.In, o.Out, o.Err)
 	if err != nil {
 		return "", err
 	}
@@ -291,7 +294,7 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 	var dir string
 
 	if !remoteRepoExists {
-		fmt.Fprintf(o.Stdout(), "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(o.Out, "Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		repo, err = details.CreateRepository()
 		if err != nil {
@@ -318,7 +321,7 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 			return "", err
 		}
 	} else {
-		fmt.Fprintf(o.Stdout(), "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(o.Out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		dir = path.Join(backupDir, details.RepoName)
 		localDirExists, err := util.FileExists(dir)
@@ -328,14 +331,14 @@ func (o *ControllerBackupOptions) getOrCreateBackupRepository() (string, error) 
 
 		if localDirExists {
 			// if remote repo does exist & local does exist, git pull the local repo
-			fmt.Fprintf(o.Stdout(), "local directory already exists\n")
+			fmt.Fprintf(o.Out, "local directory already exists\n")
 
 			err = o.Git().Pull(dir)
 			if err != nil {
 				return "", err
 			}
 		} else {
-			fmt.Fprintf(o.Stdout(), "cloning repository locally\n")
+			fmt.Fprintf(o.Out, "cloning repository locally\n")
 			err = os.MkdirAll(dir, os.FileMode(0755))
 			if err != nil {
 				return "", err

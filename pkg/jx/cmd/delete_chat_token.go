@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -31,11 +32,12 @@ type DeleteChatTokenOptions struct {
 }
 
 // NewCmdDeleteChatToken defines the command
-func NewCmdDeleteChatToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteChatToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteChatTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -44,7 +46,7 @@ func NewCmdDeleteChatToken(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	cmd := &cobra.Command{
 		Use:     "token",
-		Short:   "Deletes one or more api tokens for a user on a chat server",
+		Short:   "Deletes one or more API tokens for a user on a chat server",
 		Aliases: []string{"api-token"},
 		Long:    deleteChatTokenLong,
 		Example: deleteChatTokenExample,

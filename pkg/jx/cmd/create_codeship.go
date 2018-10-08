@@ -1,12 +1,16 @@
 package cmd
 
 import (
-	"io"
-
 	"fmt"
+	"io"
 
 	"context"
 	"errors"
+	"io/ioutil"
+	"os"
+	"path"
+	"strings"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/codeship/codeship-go"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -17,10 +21,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"io/ioutil"
-	"os"
-	"path"
-	"strings"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type CreateCodeshipFlags struct {
@@ -54,11 +55,12 @@ var (
 )
 
 // NewCmdCreateCodeship creates a command object for the "create" command
-func NewCmdCreateCodeship(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateCodeship(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateCodeshipOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -67,16 +69,18 @@ func NewCmdCreateCodeship(f Factory, out io.Writer, errOut io.Writer) *cobra.Com
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
 			},
-			InstallOptions: createInstallOptions(f, out, errOut),
+			InstallOptions: CreateInstallOptions(f, in, out, errOut),
 		},
 		CreateGkeServiceAccountOptions: CreateGkeServiceAccountOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -86,7 +90,7 @@ func NewCmdCreateCodeship(f Factory, out io.Writer, errOut io.Writer) *cobra.Com
 
 	cmd := &cobra.Command{
 		Use:     "codeship",
-		Short:   "Creates a build on CodeShip to create/update JX clusters",
+		Short:   "Creates a build on Codeship to create/update JX clusters",
 		Example: createCodeshipExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
@@ -113,7 +117,7 @@ func (options *CreateCodeshipOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Flags.CodeshipPassword, "codeship-password", "", "", "The password to login to Codeship with, this will not be stored anywhere")
 	cmd.Flags().StringVarP(&options.Flags.CodeshipOrganisation, "codeship-organisation", "", "", "The Codeship organisation to use, this will not be stored anywhere")
 
-	cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultOrganisationGitRepoURL, "The Git repository used as the fork when creating new Organisation git repos")
+	cmd.Flags().StringVarP(&options.Flags.ForkOrganisationGitRepo, "fork-git-repo", "f", kube.DefaultOrganisationGitRepoURL, "The Git repository used as the fork when creating new Organisation Git repos")
 
 	cmd.Flags().StringVarP(&options.Flags.GitUser, "git-user", "", "Codeship", "The name to use for any git commits")
 	cmd.Flags().StringVarP(&options.Flags.GitEmail, "git-email", "", "codeship@jenkins-x.io", "The email to use for any git commits")
@@ -128,13 +132,14 @@ func (o *CreateCodeshipOptions) validate() error {
 
 	// TODO we should only do this if a GKE cluster has been specified
 	if o.Flags.GKEServiceAccount == "" {
-		return errors.New("No gke service account has been set")
+		return errors.New("No GKE service account has been set")
 	}
 	return nil
 }
 
 // Run implements this command
 func (o *CreateCodeshipOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if o.Flags.OrganisationName == "" {
 		o.Flags.OrganisationName = strings.ToLower(randomdata.SillyName())
 	}
@@ -164,7 +169,7 @@ func (o *CreateCodeshipOptions) Run() error {
 			Help:    "This will not be stored anywhere",
 		}
 
-		err := survey.AskOne(prompt, &o.Flags.CodeshipUsername, nil)
+		err := survey.AskOne(prompt, &o.Flags.CodeshipUsername, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -176,7 +181,7 @@ func (o *CreateCodeshipOptions) Run() error {
 			Help:    "This will not be stored anywhere",
 		}
 
-		err := survey.AskOne(prompt, &o.Flags.CodeshipPassword, nil)
+		err := survey.AskOne(prompt, &o.Flags.CodeshipPassword, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -188,7 +193,7 @@ func (o *CreateCodeshipOptions) Run() error {
 			Help:    "This will not be stored anywhere",
 		}
 
-		err := survey.AskOne(prompt, &o.Flags.CodeshipOrganisation, nil)
+		err := survey.AskOne(prompt, &o.Flags.CodeshipOrganisation, nil, surveyOpts)
 		if err != nil {
 			return err
 		}
@@ -206,8 +211,8 @@ func (o *CreateCodeshipOptions) Run() error {
 
 	defaultRepoName := fmt.Sprintf("organisation-%s", o.Flags.OrganisationName)
 
-	details, err := gits.PickNewOrExistingGitRepository(o.Stdout(), o.BatchMode, authConfigSvc,
-		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git(), true)
+	details, err := gits.PickNewOrExistingGitRepository(o.BatchMode, authConfigSvc,
+		defaultRepoName, &o.GitRepositoryOptions, nil, nil, o.Git(), true, o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -223,7 +228,7 @@ func (o *CreateCodeshipOptions) Run() error {
 	var dir string
 
 	if !remoteRepoExists {
-		fmt.Fprintf(o.Stdout(), "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(o.Out, "Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		repo, err = details.CreateRepository()
 		if err != nil {
@@ -252,7 +257,7 @@ func (o *CreateCodeshipOptions) Run() error {
 			return err
 		}
 	} else {
-		fmt.Fprintf(o.Stdout(), "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(o.Out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		dir = path.Join(organisationDir, details.RepoName)
 		localDirExists, err := util.FileExists(dir)
@@ -262,14 +267,14 @@ func (o *CreateCodeshipOptions) Run() error {
 
 		if localDirExists {
 			// if remote repo does exist & local does exist, git pull the local repo
-			fmt.Fprintf(o.Stdout(), "local directory already exists\n")
+			fmt.Fprintf(o.Out, "local directory already exists\n")
 
 			err = o.Git().Pull(dir)
 			if err != nil {
 				return err
 			}
 		} else {
-			fmt.Fprintf(o.Stdout(), "cloning repository locally\n")
+			fmt.Fprintf(o.Out, "cloning repository locally\n")
 			err = os.MkdirAll(dir, os.FileMode(0755))
 			if err != nil {
 				return err
@@ -361,7 +366,7 @@ func (o *CreateCodeshipOptions) Run() error {
 		project, _, err := csOrg.CreateProject(ctx, createProjectRequest)
 
 		if err != nil {
-			return fmt.Errorf("failed to create project, check CodeShip is configured to authenticate against your git provider https://app.codeship.com/authentications.  error: %v", err)
+			return fmt.Errorf("failed to create project, check Codeship is configured to authenticate against your Git provider https://app.codeship.com/authentications.  error: %v", err)
 		}
 
 		uuid = project.UUID

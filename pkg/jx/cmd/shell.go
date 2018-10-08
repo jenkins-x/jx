@@ -19,6 +19,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -42,7 +43,7 @@ type ShellOptions struct {
 
 var (
 	shell_long = templates.LongDesc(`
-		Create a sub shell so that changes to the kubernetes context, namespace or environment remain local to the shell.`)
+		Create a sub shell so that changes to the Kubernetes context, namespace or environment remain local to the shell.`)
 	shell_example = templates.Examples(`
 		# create a new shell where the context changes are local to the shell only
 		jx shell
@@ -50,15 +51,16 @@ var (
 		# create a new shell using a specific named context
 		jx shell prod-cluster
 
-		# ends the current shell and returns to the previous kubernetes context
+		# ends the current shell and returns to the previous Kubernetes context
 		exit
 `)
 )
 
-func NewCmdShell(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdShell(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ShellOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -66,7 +68,7 @@ func NewCmdShell(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "shell",
 		Aliases: []string{"sh"},
-		Short:   "Create a sub shell so that changes to the kubernetes context, namespace or environment remain local to the shell",
+		Short:   "Create a sub shell so that changes to the Kubernetes context, namespace or environment remain local to the shell",
 		Long:    shell_long,
 		Example: shell_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -88,7 +90,7 @@ func (o *ShellOptions) Run() error {
 	}
 
 	if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
-		return fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
+		return fmt.Errorf("No Kubernetes contexts available! Try create or connect to cluster?")
 	}
 
 	contextNames := []string{}
@@ -151,9 +153,9 @@ func (o *ShellOptions) Run() error {
 	}
 
 	info := util.ColorInfo
-	log.Infof("Creating a new shell using the kubernetes context %s\n", info(ctxName))
+	log.Infof("Creating a new shell using the Kubernetes context %s\n", info(ctxName))
 	log.Infof("Bash RC file is %s\n\n", tmpRCfileName)
-	log.Infof("All changes to the kuberentes context like changing environment, namespace or context will be local to this shell\n")
+	log.Infof("All changes to the Kubernetes context like changing environment, namespace or context will be local to this shell\n")
 	log.Infof("To return to the global context use the command: exit\n\n")
 
 	e := exec.Command(shell, "-rcfile", tmpRCfileName, "-i")
@@ -164,6 +166,7 @@ func (o *ShellOptions) Run() error {
 }
 
 func (o *ShellOptions) PickContext(names []string, defaultValue string) (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if len(names) == 0 {
 		return "", nil
 	}
@@ -172,11 +175,11 @@ func (o *ShellOptions) PickContext(names []string, defaultValue string) (string,
 	}
 	name := ""
 	prompt := &survey.Select{
-		Message: "Change kubernetes context:",
+		Message: "Change Kubernetes context:",
 		Options: names,
 		Default: defaultValue,
 	}
-	err := survey.AskOne(prompt, &name, nil)
+	err := survey.AskOne(prompt, &name, nil, surveyOpts)
 	return name, err
 }
 

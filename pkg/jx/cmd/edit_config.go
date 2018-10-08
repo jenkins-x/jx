@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -49,11 +50,12 @@ type EditConfigOptions struct {
 }
 
 // NewCmdEditConfig creates a command object for the "create" command
-func NewCmdEditConfig(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEditConfig(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &EditConfigOptions{
 		EditOptions: EditOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -96,7 +98,7 @@ func (o *EditConfigOptions) Run() error {
 
 	kind := o.Kind
 	if kind == "" && !o.BatchMode {
-		kind, err = util.PickRequiredNameWithDefault(configKinds, "Which configuration do you want to edit", issueKind)
+		kind, err = util.PickRequiredNameWithDefault(configKinds, "Which configuration do you want to edit", issueKind, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -141,7 +143,7 @@ func (o *EditConfigOptions) EditIssueTracker(pc *config.ProjectConfig) (bool, er
 	if len(config.Servers) == 0 {
 		return answer, fmt.Errorf("No issue tracker servers available. Please add one via: jx create tracker server")
 	}
-	server, err := config.PickServer("Issue tracker service", o.BatchMode)
+	server, err := config.PickServer("Issue tracker service", o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}
@@ -154,7 +156,7 @@ func (o *EditConfigOptions) EditIssueTracker(pc *config.ProjectConfig) (bool, er
 	}
 	answer = true
 
-	it.Project, err = util.PickValue("Issue tracker project name: ", it.Project, true)
+	it.Project, err = util.PickValue("Issue tracker project name: ", it.Project, true, o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}
@@ -173,7 +175,7 @@ func (o *EditConfigOptions) EditChat(pc *config.ProjectConfig) (bool, error) {
 	if len(config.Servers) == 0 {
 		return answer, fmt.Errorf("No chat servers available. Please add one via: jx create chat server")
 	}
-	server, err := config.PickServer("Chat service", o.BatchMode)
+	server, err := config.PickServer("Chat service", o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}
@@ -186,11 +188,11 @@ func (o *EditConfigOptions) EditChat(pc *config.ProjectConfig) (bool, error) {
 	}
 	answer = true
 
-	it.DeveloperChannel, err = util.PickValue("Developer channel: ", it.DeveloperChannel, false)
+	it.DeveloperChannel, err = util.PickValue("Developer channel: ", it.DeveloperChannel, false, o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}
-	it.UserChannel, err = util.PickValue("User channel: ", it.UserChannel, false)
+	it.UserChannel, err = util.PickValue("User channel: ", it.UserChannel, false, o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}

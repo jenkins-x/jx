@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/fatih/color"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -40,7 +41,7 @@ type PromptOptions struct {
 
 var (
 	get_prompt_long = templates.LongDesc(`
-		Generate a command prompt for the current namespace and kubernetes context.
+		Generate a command prompt for the current namespace and Kubernetes context.
 `)
 
 	get_prompt_example = templates.Examples(`
@@ -56,12 +57,14 @@ var (
 )
 
 // NewCmdPrompt creates the new command for: jx get prompt
-func NewCmdPrompt(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdPrompt(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &PromptOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{
@@ -84,7 +87,7 @@ func NewCmdPrompt(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 	cmd.Flags().StringArrayVarP(&options.LabelColor, optionLabelColor, "", []string{"blue"}, "The color for the label")
 	cmd.Flags().StringArrayVarP(&options.NamespaceColor, optionNamespaceColor, "", []string{"green"}, "The color for the namespace")
-	cmd.Flags().StringArrayVarP(&options.ContextColor, optionContextColor, "", []string{"cyan"}, "The color for the kubernetes context")
+	cmd.Flags().StringArrayVarP(&options.ContextColor, optionContextColor, "", []string{"cyan"}, "The color for the Kubernetes context")
 
 	cmd.Flags().BoolVarP(&options.NoLabel, "no-label", "", false, "Disables the use of the label in the prompt")
 	cmd.Flags().BoolVarP(&options.ShowIcon, "icon", "i", false, "Uses an icon for the label in the prompt")

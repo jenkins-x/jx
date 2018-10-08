@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -27,11 +28,12 @@ type DeleteAddonCDXOptions struct {
 }
 
 // NewCmdDeleteAddonCloudBees defines the command
-func NewCmdDeleteAddonCloudBees(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
-	options := &DeleteAddonGiteaOptions{
+func NewCmdDeleteAddonCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := &DeleteAddonCDXOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

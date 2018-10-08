@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -28,7 +29,7 @@ var (
 		# Pick a quickstart location to delete for your team using an abbreviation
 		jx delete qsloc
 	
-		# Delete a github organisation 'myorg' for your team
+		# Delete a GitHub organisation 'myorg' for your team
 		jx delete qsloc --owner myorg
 		
 		# Delete a specific location for your team
@@ -46,10 +47,11 @@ type DeleteQuickstartLocationOptions struct {
 }
 
 // NewCmdDeleteQuickstartLocation defines the command
-func NewCmdDeleteQuickstartLocation(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteQuickstartLocation(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteQuickstartLocationOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -68,8 +70,8 @@ func NewCmdDeleteQuickstartLocation(f Factory, out io.Writer, errOut io.Writer) 
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.GitUrl, optionGitUrl, "u", gits.GitHubURL, "The URL of the git service")
-	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The owner is the user or organisation of the git provider")
+	cmd.Flags().StringVarP(&options.GitUrl, optionGitUrl, "u", gits.GitHubURL, "The URL of the Git service")
+	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The owner is the user or organisation of the Git provider")
 
 	options.addCommonFlags(cmd)
 	return cmd
@@ -109,7 +111,7 @@ func (o *DeleteQuickstartLocationOptions) Run() error {
 				names = append(names, key)
 			}
 
-			name, err := util.PickName(names, "Pick the quickstart git owner to remove from the team settings: ")
+			name, err := util.PickName(names, "Pick the quickstart git owner to remove from the team settings: ", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

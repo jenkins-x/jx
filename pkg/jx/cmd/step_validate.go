@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/util/errors"
 )
 
@@ -43,11 +44,12 @@ type StepValidateOptions struct {
 }
 
 // NewCmdStepValidate Creates a new Command object
-func NewCmdStepValidate(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepValidate(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepValidateOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -118,7 +120,12 @@ func (o *StepValidateOptions) verifyAddons() []error {
 	if len(config.Addons) == 0 {
 		return errs
 	}
-	statusMap, err := o.Helm().StatusReleases()
+	_, ns, err := o.KubeClient()
+	if err != nil {
+		errs = append(errs, err)
+		return errs
+	}
+	statusMap, err := o.Helm().StatusReleases(ns)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("Failed to load addons statuses: %s", err))
 		return errs
@@ -145,7 +152,7 @@ func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileN
 	if ch == "" {
 		return fmt.Errorf("No such addon name %s in %s: %s", name, fileName, util.InvalidArg(name, util.SortedMapKeys(kube.AddonCharts)))
 	}
-	status := statusMap[ch]
+	status := statusMap[name]
 	if status == "DEPLOYED" {
 		return nil
 	}

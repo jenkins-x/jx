@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/ghodss/yaml"
@@ -54,7 +55,7 @@ var (
 // CreateDevPodResults the results of running the command
 type CreateDevPodResults struct {
 	TheaServiceURL string
-	ExposeHost     string
+	ExposePortURLs []string
 	PodName        string
 }
 
@@ -62,39 +63,53 @@ type CreateDevPodResults struct {
 type CreateDevPodOptions struct {
 	CreateOptions
 
-	Label      string
-	Suffix     string
-	WorkingDir string
-	RequestCpu string
-	Dir        string
-	Reuse      bool
-	Sync       bool
-	Ports      []int
-	AutoExpose bool
-	Persist    bool
-	ImportUrl  string
-	Import     bool
-	ShellCmd   string
-	Username   string
+	Label          string
+	Suffix         string
+	WorkingDir     string
+	RequestCpu     string
+	Dir            string
+	Reuse          bool
+	Sync           bool
+	Ports          []int
+	AutoExpose     bool
+	Persist        bool
+	ImportUrl      string
+	Import         bool
+	ShellCmd       string
+	Username       string
+	DockerRegistry string
+
+	GitCredentials StepGitCredentialsOptions
 
 	Results CreateDevPodResults
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
-func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateDevPodOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
+			},
+		},
+		GitCredentials: StepGitCredentialsOptions{
+			StepOptions: StepOptions{
+				CommonOptions: CommonOptions{
+					Factory: f,
+					In:      in,
+					Out:     out,
+					Err:     errOut,
+				},
 			},
 		},
 	}
 
 	cmd := &cobra.Command{
 		Use:     "devpod",
-		Short:   "Creates a Developer Pod for running builds and tests inside the cluster",
+		Short:   "Creates a DevPod for running builds and tests inside the cluster",
 		Aliases: []string{"dpod", "buildpod"},
 		Long:    createDevPodLong,
 		Example: createDevPodExample,
@@ -108,8 +123,8 @@ func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 
 	cmd.Flags().StringVarP(&options.Label, optionLabel, "l", "", "The label of the pod template to use")
 	cmd.Flags().StringVarP(&options.Suffix, "suffix", "s", "", "The suffix to append the pod name")
-	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the dev pod")
-	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1", "The request CPU of the dev pod")
+	cmd.Flags().StringVarP(&options.WorkingDir, "working-dir", "w", "", "The working directory of the DevPod")
+	cmd.Flags().StringVarP(&options.RequestCpu, optionRequestCpu, "c", "1", "The request CPU of the DevPod")
 	cmd.Flags().BoolVarP(&options.Reuse, "reuse", "", true, "Reuse an existing DevPod if a suitable one exists. The DevPod will be selected based on the label (or current working directory)")
 	cmd.Flags().BoolVarP(&options.Sync, "sync", "", false, "Also synchronise the local file system into the DevPod")
 	cmd.Flags().IntSliceVarP(&options.Ports, "ports", "p", []int{}, "Container ports exposed by the DevPod")
@@ -119,6 +134,8 @@ func NewCmdCreateDevPod(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
 	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
 	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
+	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
+
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -149,6 +166,15 @@ func (o *CreateDevPodOptions) Run() error {
 		return err
 	}
 
+	devpodConfigYml, err := client.CoreV1().ConfigMaps(curNs).Get("jenkins-x-devpod-config", metav1.GetOptions{})
+	versions := &map[string]string{}
+	if devpodConfigYml != nil {
+		err = yaml.Unmarshal([]byte(devpodConfigYml.Data["versions"]), versions)
+		if err != nil {
+			return fmt.Errorf("Failed to parse versions from DevPod ConfigMap %s: %s", devpodConfigYml, err)
+		}
+	}
+
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsPodTemplates, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("Failed to find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsPodTemplates, ns, err)
@@ -161,7 +187,7 @@ func (o *CreateDevPodOptions) Run() error {
 		label = o.guessDevPodLabel(dir, labels)
 	}
 	if label == "" {
-		label, err = util.PickName(labels, "Pick which kind of dev pod you wish to create: ")
+		label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -267,9 +293,14 @@ func (o *CreateDevPodOptions) Run() error {
 		memoryRequest, _ := resource.ParseQuantity("128Mi")
 
 		// Add Theia - note Theia won't work in --sync mode as we can't share a volume
+
+		theiaVersion := "latest"
+		if val, ok := (*versions)["theia"]; ok {
+			theiaVersion = val
+		}
 		theiaContainer := corev1.Container{
 			Name:  "theia",
-			Image: "theiaide/theia-full:latest",
+			Image: fmt.Sprintf("theiaide/theia-full:%s", theiaVersion),
 			Ports: []corev1.ContainerPort{
 				corev1.ContainerPort{
 					ContainerPort: 3000,
@@ -316,11 +347,16 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	workingDir := o.WorkingDir
+	//Set the devpods gopath properly
+	container1.Env = append(container1.Env, corev1.EnvVar{
+		Name:  "GOPATH",
+		Value: devPodGoPath,
+	})
 	if workingDir == "" {
 		workingDir = "/workspace"
 
 		if o.Sync {
-			// lets check for gopath stuff if we are in --sync mode so that we sync into gopath
+			// lets check for GOPATH stuff if we are in --sync mode so that we sync into gopath
 			gopath := os.Getenv("GOPATH")
 			if gopath != "" {
 				rel, err := filepath.Rel(gopath, dir)
@@ -339,6 +375,14 @@ func (o *CreateDevPodOptions) Run() error {
 		Value: workingDir,
 	})
 	container1.Stdin = true
+
+	// If a Docker registry override was passed in, set it as an env var.
+	if o.DockerRegistry != "" {
+		container1.Env = append(container1.Env, corev1.EnvVar{
+			Name:  "DOCKER_REGISTRY",
+			Value: o.DockerRegistry,
+		})
+	}
 
 	if editEnv != nil {
 		container1.Env = append(container1.Env, corev1.EnvVar{
@@ -415,7 +459,7 @@ func (o *CreateDevPodOptions) Run() error {
 
 	theiaServiceName := name + "-theia"
 	if create {
-		log.Infof("Creating a dev pod of label: %s\n", util.ColorInfo(label))
+		log.Infof("Creating a DevPod of label: %s\n", util.ColorInfo(label))
 		_, err = podResources.Create(pod)
 		if err != nil {
 			if o.Verbose {
@@ -474,29 +518,28 @@ func (o *CreateDevPodOptions) Run() error {
 					Port:       int32(port),
 					TargetPort: intstr.FromInt(port),
 				})
-			}
+				service := corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							"fabric8.io/expose": "true",
+						},
+						Name: fmt.Sprintf("%s-port-%d", pod.Name, port),
+						OwnerReferences: []metav1.OwnerReference{
+							ownerRef(pod),
+						},
+					},
+					Spec: corev1.ServiceSpec{
+						Ports: servicePorts,
+						Selector: map[string]string{
+							"jenkins.io/devpod": pod.Name,
+						},
+					},
+				}
+				_, err = client.CoreV1().Services(curNs).Create(&service)
 
-			service := corev1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"fabric8.io/expose": "true",
-					},
-					Name: pod.Name,
-					OwnerReferences: []metav1.OwnerReference{
-						ownerRef(pod),
-					},
-				},
-				Spec: corev1.ServiceSpec{
-					Ports: servicePorts,
-					Selector: map[string]string{
-						"jenkins.io/devpod": pod.Name,
-					},
-				},
-			}
-			_, err = client.CoreV1().Services(curNs).Create(&service)
-
-			if err != nil {
-				return err
+				if err != nil {
+					return err
+				}
 			}
 			addedServices = true
 		}
@@ -551,34 +594,40 @@ func (o *CreateDevPodOptions) Run() error {
 	log.Infof("Pod %s is now ready!\n", util.ColorInfo(pod.Name))
 	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
 
-	theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
-	if err != nil {
-		return err
-	}
-	if theiaServiceURL != "" {
-		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
-		pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
-		pod, err = client.CoreV1().Pods(curNs).Update(pod)
+	if !o.Sync {
+		theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
 		if err != nil {
 			return err
 		}
-		log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
-		o.Results.TheaServiceURL = theiaServiceURL
-	} else {
-		log.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
+		if theiaServiceURL != "" {
+			pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
+			pod.Annotations["jenkins-x.io/devpodTheiaURL"] = theiaServiceURL
+			pod, err = client.CoreV1().Pods(curNs).Update(pod)
+			if err != nil {
+				return err
+			}
+			log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
+			o.Results.TheaServiceURL = theiaServiceURL
+		} else {
+			log.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
+		}
 	}
 
-	exposePortsServiceHost, err := kube.FindServiceHostname(client, curNs, name)
+	exposePortServices, err := kube.GetServiceNames(client, curNs, fmt.Sprintf("%s-port-", pod.Name))
 	if err != nil {
 		return err
 	}
-	if exposePortsServiceHost != "" {
-		exposePortsService, err := client.CoreV1().Services(curNs).Get(name, metav1.GetOptions{})
+	var exposePortURLs []string
+	for _, svcName := range exposePortServices {
+		u, err := kube.GetServiceURLFromName(client, svcName, curNs)
 		if err != nil {
 			return err
 		}
-		log.Infof("Ports %v are open on host %s\n", util.ColorInfo(exposePortsService.Spec.Ports), util.ColorInfo(exposePortsServiceHost))
-		o.Results.ExposeHost = exposePortsServiceHost
+		exposePortURLs = append(exposePortURLs, u)
+	}
+	if len(exposePortURLs) > 0 {
+		log.Infof("Port 80 is open on %s and forwarded to the devpod\n", util.ColorInfo(exposePortURLs))
+		o.Results.ExposePortURLs = exposePortURLs
 	}
 
 	if o.Sync {
@@ -600,9 +649,52 @@ func (o *CreateDevPodOptions) Run() error {
 		//  Let install bash-completion to make life better
 		log.Infof("Installing Bash Completion into DevPod\n")
 		rshExec = append(rshExec, "yum install -q -y bash-completion bash-completion-extra", "mkdir -p ~/.jx", "jx completion bash > ~/.jx/bash", "echo \"source ~/.jx/bash\" >> ~/.bashrc")
+
+		// Only add git secrets to the Theia container when sync flag is missing (otherwise Theia container won't exist)
+		if !o.Sync {
+			// Add Git Secrets to Theia container
+			secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "")
+			if err != nil {
+				return err
+			}
+			gitCredentials := o.GitCredentials.CreateGitCredentialsFromSecrets(secrets)
+			theiaRshExec := []string{
+				fmt.Sprintf("echo \"%s\" >> ~/.git-credentials", string(gitCredentials)),
+				"git config --global credential.helper store",
+			}
+
+			// Configure remote username and email for git
+			username, _ := o.Git().Username("")
+			email, _ := o.Git().Email("")
+
+			if username != "" {
+				theiaRshExec = append(theiaRshExec, fmt.Sprintf("git config --global user.name \"%s\"", username))
+			}
+			if email != "" {
+				theiaRshExec = append(theiaRshExec, fmt.Sprintf("git config --global user.email \"%s\"", email))
+			}
+
+			// remove annoying warning
+			theiaRshExec = append(theiaRshExec, " git config --global push.default simple")
+
+			options := &RshOptions{
+				CommonOptions: o.CommonOptions,
+				Namespace:     ns,
+				Pod:           pod.Name,
+				DevPod:        true,
+				ExecCmd:       strings.Join(theiaRshExec, "&&"),
+				Username:      userName,
+				Container:     "theia",
+			}
+			options.Args = []string{}
+			err = options.Run()
+			if err != nil {
+				return err
+			}
+		}
 	}
 	if !o.Sync {
-		// Try to clone the right git repo into the DevPod
+		// Try to clone the right Git repo into the DevPod
 
 		// First configure git credentials
 		rshExec = append(rshExec, "jx step git credentials", "git config --global credential.helper store")
@@ -626,12 +718,16 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 	}
-	shellCommand := o.ShellCmd
-	if shellCommand == "" {
-		shellCommand = defaultRshCommand
-	}
 
-	rshExec = append(rshExec, shellCommand)
+	// Only want to shell into the DevPod if the headless flag isn't set
+	if !o.Headless {
+		shellCommand := o.ShellCmd
+		if shellCommand == "" {
+			shellCommand = defaultRshCommand
+		}
+
+		rshExec = append(rshExec, shellCommand)
+	}
 
 	options := &RshOptions{
 		CommonOptions: o.CommonOptions,
@@ -680,7 +776,14 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if !flag || err != nil {
 		log.Infof("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
-		err = o.installChart(releaseName, kube.ChartExposecontrollerService, "", editNs, true, nil)
+		err = o.installChartOptions(InstallChartOptions{
+			ReleaseName: releaseName,
+			Chart:       kube.ChartExposecontrollerService,
+			Version:     "",
+			Ns:          editNs,
+			HelmUpdate:  true,
+			SetValues:   nil,
+		})
 	}
 	return env, err
 }

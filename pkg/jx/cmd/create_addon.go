@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,11 +25,12 @@ type CreateAddonOptions struct {
 }
 
 // NewCmdCreateAddon creates a command object for the "create" command
-func NewCmdCreateAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -47,17 +49,18 @@ func NewCmdCreateAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateAddonAmbassador(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonAnchore(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonCloudBees(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonGitea(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonIstio(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonKnativeBuild(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonKubeless(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonOwasp(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonProw(f, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonSSO(f, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonAmbassador(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonAnchore(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonCloudBees(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonGitea(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonIstio(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonKnativeBuild(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonKubeless(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonOwasp(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonProw(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonSSO(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonVault(f, in, out, errOut))
 
 	options.addFlags(cmd, kube.DefaultNamespace, "")
 	return cmd
@@ -124,7 +127,7 @@ func (o *CreateAddonOptions) ExposeAddon(addon string) error {
 			return errors.Wrap(err, "updating the service annotations")
 		}
 	}
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.Namespace)
+	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the dev namespace")
 	}

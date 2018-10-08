@@ -66,7 +66,7 @@ func TestSequentialWorkflow(t *testing.T) {
 			),
 		},
 		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""),
+		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 	o.GitClient = &gits.GitFake{}
 
@@ -178,7 +178,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
 		},
 		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""),
+		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 	o.GitClient = &gits.GitFake{}
 
@@ -350,7 +350,7 @@ func TestParallelWorkflow(t *testing.T) {
 			),
 		},
 		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""),
+		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 	o.GitClient = &gits.GitFake{}
 
@@ -493,7 +493,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 			),
 		},
 		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, ""),
+		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 	o.GitClient = &gits.GitFake{}
 
@@ -638,7 +638,7 @@ func assertSetPullRequestMerged(t *testing.T, provider *gits.FakeProvider, repos
 
 	log.Infof("PR %s is now merged\n", fakePR.PullRequest.URL)
 
-	// validate the fake git provider concurs
+	// validate the fake Git provider concurs
 	testGitInfo := &gits.GitRepositoryInfo{
 		Organisation: repository.Owner,
 		Name:         repository.Name(),
@@ -668,7 +668,7 @@ func assertSetPullRequestComplete(t *testing.T, provider *gits.FakeProvider, rep
 		log.Infof("PR %s has commit status success\n", fakePR.PullRequest.URL)
 	}
 
-	// validate the fake git provider concurs
+	// validate the fake Git provider concurs
 	repoOwner := repository.Owner
 	repoName := repository.Name()
 	testGitInfo := &gits.GitRepositoryInfo{

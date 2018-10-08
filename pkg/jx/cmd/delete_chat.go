@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // DeleteChatOptions are the flags for delete commands
@@ -13,10 +14,11 @@ type DeleteChatOptions struct {
 
 // NewCmdDeleteChat creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteChat(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteChat(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteChatOptions{
 		CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -24,7 +26,7 @@ func NewCmdDeleteChat(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 	cmd := &cobra.Command{
 		Use:     "chat",
-		Short:   "Deletes one or many chat services resources",
+		Short:   "Deletes one or more chat services resources",
 		Aliases: []string{"slack"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
@@ -34,8 +36,8 @@ func NewCmdDeleteChat(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 		},
 	}
 
-	cmd.AddCommand(NewCmdDeleteChatServer(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteChatToken(f, out, errOut))
+	cmd.AddCommand(NewCmdDeleteChatServer(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteChatToken(f, in, out, errOut))
 	return cmd
 }
 

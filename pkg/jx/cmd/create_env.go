@@ -4,8 +4,10 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -19,9 +21,9 @@ import (
 
 var (
 	env_description = `		
-	An Environment maps to a kubernetes cluster and namespace and is a place that your team's applications can be promoted to via Continous Delivery.
+	An Environment maps to a Kubernetes cluster and namespace and is a place that your team's applications can be promoted to via Continous Delivery.
 
-	You can optionally use GitOps to manage the configuration of an Environment by storing all configuration in a git repository and then only changing it via Pull Requests and CI/CD.
+	You can optionally use GitOps to manage the configuration of an Environment by storing all configuration in a Git repository and then only changing it via Pull Requests and CI/CD.
 
 	For more documentation on Environments see: [https://jenkins-x.io/about/features/#environments](https://jenkins-x.io/about/features/#environments)
 	`
@@ -56,7 +58,7 @@ type CreateEnvOptions struct {
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
-func NewCmdCreateEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateEnvOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
@@ -64,6 +66,7 @@ func NewCmdCreateEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command 
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -85,25 +88,27 @@ func NewCmdCreateEnv(f Factory, out io.Writer, errOut io.Writer) *cobra.Command 
 	}
 	//addCreateAppFlags(cmd, &options.CreateOptions)
 
-	cmd.Flags().StringVarP(&options.Options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the kubernetes name conventions like Services, Namespaces")
+	cmd.Flags().StringVarP(&options.Options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the Kubernetes name conventions like Services, Namespaces")
 	cmd.Flags().StringVarP(&options.Options.Spec.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
 	cmd.Flags().StringVarP(&options.Options.Spec.Namespace, kube.OptionNamespace, "s", "", "The Kubernetes namespace for the Environment")
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
 	cmd.Flags().StringVarP(&options.Options.Spec.Source.URL, "git-url", "g", "", "The Git clone URL for the source code for GitOps based Environments")
 	cmd.Flags().StringVarP(&options.Options.Spec.Source.Ref, "git-ref", "r", "", "The Git repo reference for the source code for GitOps based Environments")
 	cmd.Flags().Int32VarP(&options.Options.Spec.Order, "order", "o", 100, "The order weighting of the Environment so that they can be sorted by this order before name")
-	cmd.Flags().StringVarP(&options.Prefix, "prefix", "", "jx", "Environment repo prefix, your git repo will be of the form 'environment-$prefix-$envName'")
+	cmd.Flags().StringVarP(&options.Prefix, "prefix", "", "jx", "Environment repo prefix, your Git repo will be of the form 'environment-$prefix-$envName'")
 
 	cmd.Flags().StringVarP(&options.PromotionStrategy, "promotion", "p", "", "The promotion strategy")
-	cmd.Flags().StringVarP(&options.ForkEnvironmentGitRepo, "fork-git-repo", "f", kube.DefaultEnvironmentGitRepoURL, "The Git repository used as the fork when creating new Environment git repos")
+	cmd.Flags().StringVarP(&options.ForkEnvironmentGitRepo, "fork-git-repo", "f", kube.DefaultEnvironmentGitRepoURL, "The Git repository used as the fork when creating new Environment Git repos")
 	cmd.Flags().StringVarP(&options.EnvJobCredentials, "env-job-credentials", "", "", "The Jenkins credentials used by the GitOps Job for this environment")
-	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on the enivronment git repository")
+	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on the environment Git repository")
 
-	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a git repository")
+	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a Git repository")
 	cmd.Flags().BoolVarP(&options.Prow, "prow", "", false, "Install and use Prow for environment promotion")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
+
+	options.addCommonFlags(cmd)
 
 	return cmd
 }
@@ -114,6 +119,7 @@ func (o *CreateEnvOptions) Run() error {
 	if len(args) > 0 && o.Options.Name == "" {
 		o.Options.Name = args[0]
 	}
+	//_, currentNs, err := o.JXClientAndDevNamespace()
 	jxClient, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -128,19 +134,23 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	kube.RegisterEnvironmentCRD(apisClient)
 
+	//_, _, err = kube.GetDevNamespace(kubeClient, currentNs)
 	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
 		return err
 	}
+	_, err = util.EnvironmentsDir()
 	envDir, err := util.EnvironmentsDir()
 	if err != nil {
 		return err
 	}
+	//_, err = o.CreateGitAuthConfigService()
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
 	devEnv, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
+	//_, err = kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
 		return err
 	}
@@ -155,8 +165,8 @@ func (o *CreateEnvOptions) Run() error {
 
 	env := v1.Environment{}
 	o.Options.Spec.PromotionStrategy = v1.PromotionStrategyType(o.PromotionStrategy)
-	gitProvider, err := kube.CreateEnvironmentSurvey(o.Out, o.BatchMode, authConfigSvc, devEnv, &env, &o.Options, o.ForkEnvironmentGitRepo, ns,
-		jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git())
+	gitProvider, err := kube.CreateEnvironmentSurvey(o.BatchMode, authConfigSvc, devEnv, &env, &o.Options, o.ForkEnvironmentGitRepo, ns,
+		jxClient, kubeClient, envDir, &o.GitRepositoryOptions, o.HelmValuesConfig, o.Prefix, o.Git(), o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -180,13 +190,22 @@ func (o *CreateEnvOptions) Run() error {
 		repo := fmt.Sprintf("%s/environment-%s-%s", gitInfo.Organisation, o.Prefix, o.Options.Name)
 		err = prow.AddEnvironment(o.KubeClientCached, []string{repo}, devEnv.Spec.Namespace, env.Spec.Namespace)
 		if err != nil {
-			return fmt.Errorf("failed to add repo %s to prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
+			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
 		}
 	}
 
 	if gitURL != "" {
 		if gitProvider == nil {
-			p, err := o.gitProviderForURL(gitURL, "user name to create the git repository")
+			authConfigSvc, err := o.CreateGitAuthConfigService()
+			if err != nil {
+				return err
+			}
+			gitKind, err := o.GitServerKind(gitInfo)
+			if err != nil {
+				return err
+			}
+			message := "user name to create the Git repository"
+			p, err := o.CreateOptions.CommonOptions.Factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -204,7 +223,7 @@ func (o *CreateEnvOptions) Run() error {
 					u = gitInfo.Host
 				}
 			}
-			user, err := config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "")
+			user, err := config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -217,9 +236,8 @@ func (o *CreateEnvOptions) Run() error {
 			}
 			// register the webhook
 			return o.createWebhookProw(gitURL, gitProvider)
-		} else {
-			return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 		}
+		return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 	}
 
 	return nil

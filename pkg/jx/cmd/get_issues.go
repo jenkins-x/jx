@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -19,7 +20,7 @@ type GetIssuesOptions struct {
 
 var (
 	GetIssuesLong = templates.LongDesc(`
-		Display one or many issues for a project.
+		Display one or more issues for a project.
 
 `)
 
@@ -30,20 +31,22 @@ var (
 )
 
 // NewCmdGetIssues creates the command
-func NewCmdGetIssues(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetIssues(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetIssuesOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}
 
 	cmd := &cobra.Command{
 		Use:     "issues [flags]",
-		Short:   "Display one or many issues",
+		Short:   "Display one or more issues",
 		Long:    GetIssuesLong,
 		Example: GetIssuesExample,
 		Aliases: []string{"jira"},

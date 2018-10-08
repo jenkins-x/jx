@@ -14,6 +14,7 @@ import (
 	tbl "github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
@@ -34,7 +35,7 @@ type GetActivityOptions struct {
 
 var (
 	get_activity_long = templates.LongDesc(`
-		Display the current activities for one more more projects.
+		Display the current activities for one or more projects.
 `)
 
 	get_activity_example = templates.Examples(`
@@ -44,23 +45,24 @@ var (
 		# List the current activities for application 'foo'
 		jx get act -f foo
 
-		# Watch the  activities for application 'foo'
+		# Watch the activities for application 'foo'
 		jx get act -f foo -w
 	`)
 )
 
 // NewCmdGetActivity creates the new command for: jx get version
-func NewCmdGetActivity(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetActivity(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetActivityOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
 	}
 	cmd := &cobra.Command{
 		Use:     "activities",
-		Short:   "Display one or many Activities on projects",
+		Short:   "Display one or more Activities on projects",
 		Aliases: []string{"activity", "act"},
 		Long:    get_activity_long,
 		Example: get_activity_example,

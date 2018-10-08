@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterMinishiftOptions the flags for running create cluster
@@ -33,7 +34,7 @@ type CreateClusterMinishiftFlags struct {
 
 var (
 	createClusterMinishiftLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster, installing required local dependencies and provisions the
 		Jenkins X platform
 
 		Minishift is a tool that makes it easy to run OpenShift locally. Minishift runs a single-node OpenShift
@@ -49,14 +50,14 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterMinishift(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
+func NewCmdCreateClusterMinishift(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinishiftOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, MINISHIFT),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, MINISHIFT),
 	}
 	cmd := &cobra.Command{
 		Use:     "minishift",
-		Short:   "Create a new OpenShift cluster with minishift: Runs locally",
+		Short:   "Create a new OpenShift cluster with Minishift: Runs locally",
 		Long:    createClusterMinishiftLong,
 		Example: createClusterMinishiftExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -70,10 +71,10 @@ func NewCmdCreateClusterMinishift(f Factory, out io.Writer, errOut io.Writer) *c
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the minishift VM in MB")
-	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the minishift VM")
+	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the Minishift VM in MB")
+	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the Minishift VM")
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [virtualbox xhyve vmwarefusion hyperkit]")
-	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with minishift")
+	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with Minishift")
 
 	return cmd
 }
@@ -96,7 +97,7 @@ func (o *CreateClusterMinishiftOptions) Run() error {
 	}
 
 	if o.isExistingMinishiftRunning() {
-		log.Error("an existing minishift cluster is already running, perhaps use `jx install`.\nNote existing minishift musty have RBAC enabled, running `minishift delete` and `jx create cluster minishift` creates a new VM with RBAC enabled")
+		log.Error("an existing Minishift cluster is already running, perhaps use `jx install`.\nNote: existing Minishift must have RBAC enabled, running `minishift delete` and `jx create cluster minishift` creates a new VM with RBAC enabled")
 		os.Exit(-1)
 	}
 
@@ -133,21 +134,22 @@ func (o *CreateClusterMinishiftOptions) isExistingMinishiftRunning() bool {
 }
 
 func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	mem := o.Flags.Memory
 	prompt := &survey.Input{
 		Message: "memory (MB)",
 		Default: mem,
-		Help:    "Amount of RAM allocated to the minishift VM in MB",
+		Help:    "Amount of RAM allocated to the Minishift VM in MB",
 	}
-	survey.AskOne(prompt, &mem, nil)
+	survey.AskOne(prompt, &mem, nil, surveyOpts)
 
 	cpu := o.Flags.CPU
 	prompt = &survey.Input{
 		Message: "cpu (cores)",
 		Default: cpu,
-		Help:    "Number of CPUs allocated to the minishift VM",
+		Help:    "Number of CPUs allocated to the Minishift VM",
 	}
-	survey.AskOne(prompt, &cpu, nil)
+	survey.AskOne(prompt, &cpu, nil, surveyOpts)
 
 	vmDriverValue := o.Flags.Driver
 
@@ -186,7 +188,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		Help:    "VM driver, defaults to recommended native virtualisation",
 	}
 
-	err := survey.AskOne(prompts, &driver, nil)
+	err := survey.AskOne(prompts, &driver, nil, surveyOpts)
 	if err != nil {
 		return err
 	}

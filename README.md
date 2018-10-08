@@ -26,7 +26,7 @@ You can also browse the [jx command reference documentation](http://jenkins-x.io
 
 Please check out the [Getting Started Guide](http://jenkins-x.io/getting-started/) on how to 
 
-* [create new kubernetes clusters with Jenkins X](http://jenkins-x.io/getting-started/create-cluster/)
+* [create new Kubernetes clusters with Jenkins X](http://jenkins-x.io/getting-started/create-cluster/)
 * [install Jenkins X on existing clusters](http://jenkins-x.io/getting-started/install-on-cluster/)
 
 Then [what to do next when you have Jenkins X installed](http://jenkins-x.io/getting-started/next/)
@@ -53,7 +53,7 @@ If you do not know the name
 
 ## Tail logs
 
-To tail the logs of anything running on kubernetes (jenkins or your own applications) type
+To tail the logs of anything running on Kubernetes (jenkins or your own applications) type
 
     jx logs
     
@@ -139,7 +139,7 @@ Or if you wish to use a custom namespace
  
 ## Switching Environments
 
-The `jx` CLI tool uses the same kubernetes cluster and namespace context as `kubectl`. 
+The `jx` CLI tool uses the same Kubernetes cluster and namespace context as `kubectl`. 
 
 You can switch Environments via:
 
@@ -174,7 +174,7 @@ or
 
 ## Switching Clusters
 
-If you have multiple kubernetes clusters (e.g. you are using GKE and minikube together) then you can switch between them via
+If you have multiple Kubernetes clusters (e.g. you are using GKE and Minikube together) then you can switch between them via
 
     jx ctx
     
@@ -227,25 +227,25 @@ For more help try:
 
 We are adding a number of addon capabilities to Jenkins X. To add or remove addons use the `jx create addon` or `jx delete addon` commands
 
-For example to add the [gitea git server](https://gitea.io/en-US/) to your Jenkins X installation try:
+For example to add the [Gitea Git server](https://gitea.io/en-US/) to your Jenkins X installation try:
 
     jx create addon gitea
 
 This will: 
 
-* install the gitea helm chart
-* add gitea as a git server (via the `jx create git server gitea` command)
-* create a new user in gitea (via the `jx create git user -n gitea` command)
-* create a new git API token in gitea (via the `jx create git token -n gitea -p password username` command)
+* install the Gitea Helm chart
+* add Gitea as a Git server (via the `jx create git server gitea` command)
+* create a new user in Gitea (via the `jx create git user -n gitea` command)
+* create a new Git API token in Gitea (via the `jx create git token -n gitea -p password username` command)
      
 ## Troubleshooting
 
 We have tried to collate common issues here with work arounds. If your issue isn't listed here please [let us know](https://github.com/jenkins-x/jx/issues/new).
  
-### Cannot create cluster minikube
+### Cannot create cluster Minikube
 If you are using a Mac then `hyperkit` is the best VM driver to use - but does require you to install a recent [Docker for Mac](https://docs.docker.com/docker-for-mac/install/) first. Maybe try that then retry `jx create cluster minikube`?
 
-If your minikube is failing to startup then you could try:
+If your Minikube is failing to startup then you could try:
  
     minikube delete
     rm -rf ~/.minikube
@@ -258,14 +258,14 @@ Now try `jx create cluster minikube` again - did that help? Sometimes there are 
 
 Sometimes a reboot can help in cases where virtualisation goes wrong ;)
 
-Otherwise you could try follow the minikube instructions 
+Otherwise you could try follow the Minikube instructions 
 
-* [install minikube](https://github.com/kubernetes/minikube#installation)
-* [run minikube start](https://github.com/kubernetes/minikube#quickstart) 
+* [install Minikube](https://github.com/kubernetes/minikube#installation)
+* [run Minikube start](https://github.com/kubernetes/minikube#quickstart) 
 
-### Minkube and hyperkit: Could not find an IP address
+### Minikube and hyperkit: Could not find an IP address
 
-If you are using minikube on a mac with hyperkit and find minikube fails to start with a log like:
+If you are using Minikube on a mac with hyperkit and find Minikube fails to start with a log like:
 
 ```
 Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
@@ -274,7 +274,7 @@ Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
 Temporary Error: Could not find an IP address for 46:0:41:86:41:6e
 ```
 
-It could be you have hit [this issue in minikube and hyperkit](https://github.com/kubernetes/minikube/issues/1926#issuecomment-356378525).
+It could be you have hit [this issue in Minikube and hyperkit](https://github.com/kubernetes/minikube/issues/1926#issuecomment-356378525).
 
 The work around is to try the following:
 
@@ -284,9 +284,9 @@ rm ~/.minikube/machines/minikube/hyperkit.pid
 
 Then try again. Hopefully this time it will work!
 
-### Cannot access services on minikube
+### Cannot access services on Minikube
 
-When running minikube locally `jx` defaults to using [nip.io](http://nip.io/) as a way of using nice-isn DNS names for services and working around the fact that most laptops can't do wildcard DNS. However sometimes [nip.io](http://nip.io/) has issues and does not work.
+When running Minikube locally `jx` defaults to using [nip.io](http://nip.io/) as a way of using nice-isn DNS names for services and working around the fact that most laptops can't do wildcard DNS. However sometimes [nip.io](http://nip.io/) has issues and does not work.
 
 To avoid using [nip.io](http://nip.io/) you can do the following:
 
@@ -309,8 +309,7 @@ So if you type:
 jx open
 ```
 
-You'll see all the URs of the form `http://$(minikube ip):somePortNumber` which then avoids going through [nip.io](http://nip.io/) - it just means the URLs are a little more cryptic using magic port numbers rather than simple host names.
-
+You'll see all the URLs of the form `http://$(minikube ip):somePortNumber` which then avoids going through [nip.io](http://nip.io/) - it just means the URLs are a little more cryptic using magic port numbers rather than simple host names.
 
 
  

@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
@@ -17,7 +18,7 @@ type GetBuildOptions struct {
 
 var (
 	get_build_long = templates.LongDesc(`
-		Display one or many resources.
+		Display one or more resources.
 
 		` + valid_resources + `
 
@@ -33,10 +34,11 @@ var (
 )
 
 // NewCmdGetBuild creates the command object
-func NewCmdGetBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetBuildOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -44,7 +46,7 @@ func NewCmdGetBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "build [flags]",
-		Short:   "Display one or many build resources",
+		Short:   "Display one or more build resources",
 		Long:    get_build_long,
 		Example: get_build_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -56,7 +58,7 @@ func NewCmdGetBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		SuggestFor: []string{"list", "ps"},
 	}
 
-	cmd.AddCommand(NewCmdGetBuildLogs(f, out, errOut))
+	cmd.AddCommand(NewCmdGetBuildLogs(f, in, out, errOut))
 	return cmd
 }
 

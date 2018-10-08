@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -47,12 +48,13 @@ type CreateSpringOptions struct {
 }
 
 // NewCmdCreateSpring creates a command object for the "create" command
-func NewCmdCreateSpring(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateSpring(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateSpringOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -62,7 +64,7 @@ func NewCmdCreateSpring(f Factory, out io.Writer, errOut io.Writer) *cobra.Comma
 
 	cmd := &cobra.Command{
 		Use:     "spring",
-		Short:   "Create a new spring boot application and import the generated code into git and Jenkins for CI/CD",
+		Short:   "Create a new Spring Boot application and import the generated code into Git and Jenkins for CI/CD",
 		Long:    create_spring_long,
 		Example: create_spring_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -127,7 +129,7 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Created spring boot project at %s\n", util.ColorInfo(outDir))
+	log.Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
 
 	return o.ImportCreatedProject(outDir)
 }

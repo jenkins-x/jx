@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"fmt"
@@ -22,7 +23,7 @@ const (
 	defaultAnchoreName        = "anchore"
 	defaultAnchoreNamespace   = "anchore"
 	defaultAnchoreReleaseName = "anchore"
-	defaultAnchoreVersion     = "0.1.7"
+	defaultAnchoreVersion     = "0.2.3"
 	defaultAnchorePassword    = "anchore"
 	defaultAnchoreConfigDir   = "/anchore_service_dir"
 	anchoreDeploymentName     = "anchore-anchore-engine-core"
@@ -52,12 +53,13 @@ type CreateAddonAnchoreOptions struct {
 }
 
 // NewCmdCreateAddonAnchore creates a command object for the "create" command
-func NewCmdCreateAddonAnchore(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonAnchore(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonAnchoreOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},

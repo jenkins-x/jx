@@ -6,15 +6,16 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
 	delete_addon_gitea_long = templates.LongDesc(`
-		Deletes the gitea addon
+		Deletes the Gitea addon
 `)
 
 	delete_addon_gitea_example = templates.Examples(`
-		# Deletes the gitea addon
+		# Deletes the Gitea addon
 		jx delete addon gitea
 	`)
 )
@@ -27,11 +28,12 @@ type DeleteAddonGiteaOptions struct {
 }
 
 // NewCmdDeleteAddonGitea defines the command
-func NewCmdDeleteAddonGitea(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddonGitea(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteAddonGiteaOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -40,7 +42,7 @@ func NewCmdDeleteAddonGitea(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 	cmd := &cobra.Command{
 		Use:     "gitea",
-		Short:   "Deletes the gitea addon",
+		Short:   "Deletes the Gitea addon",
 		Long:    delete_addon_gitea_long,
 		Example: delete_addon_gitea_example,
 		Run: func(cmd *cobra.Command, args []string) {

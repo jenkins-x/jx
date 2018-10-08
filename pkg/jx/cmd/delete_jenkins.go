@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // DeleteJenkinsOptions are the flags for delete commands
@@ -13,10 +14,11 @@ type DeleteJenkinsOptions struct {
 
 // NewCmdDeleteJenkins creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteJenkins(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteJenkins(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteJenkinsOptions{
 		CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -24,7 +26,7 @@ func NewCmdDeleteJenkins(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 
 	cmd := &cobra.Command{
 		Use:   "jenkins",
-		Short: "Deletes one or many jenkins resources",
+		Short: "Deletes one or more Jenkins resources",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -34,7 +36,7 @@ func NewCmdDeleteJenkins(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 		SuggestFor: []string{"remove", "rm"},
 	}
 
-	cmd.AddCommand(NewCmdDeleteJenkinsUser(f, out, errOut))
+	cmd.AddCommand(NewCmdDeleteJenkinsUser(f, in, out, errOut))
 	return cmd
 }
 

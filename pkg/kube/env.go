@@ -19,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -28,10 +29,11 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment,
+func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment,
 	config *v1.Environment, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string,
-	gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter) (gits.GitProvider, error) {
+	gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
+	surveyOpts := survey.WithStdio(in, out, errOut)
 	name := data.Name
 	createMode := name == ""
 	if createMode {
@@ -53,16 +55,17 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 				}
 				str, ok := val.(string)
 				if !ok {
-					return fmt.Errorf("Expected string value!")
+					return fmt.Errorf("Expected string value")
 				}
-				return ValidateEnvironmentDoesNotExist(jxClient, ns, str)
+				v := ValidateEnvironmentDoesNotExist(jxClient, ns, str)
+				return v
 			}
 
 			q := &survey.Input{
 				Message: "Name:",
 				Help:    "The Environment name must be unique, lower case and a valid DNS name",
 			}
-			err := survey.AskOne(q, &data.Name, validator)
+			err := survey.AskOne(q, &data.Name, validator, surveyOpts)
 			if err != nil {
 				return nil, err
 			}
@@ -87,7 +90,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 			Default: defaultValue,
 			Help:    "The Environment label is a person friendly descriptive text like 'Staging' or 'Production'",
 		}
-		err := survey.AskOne(q, &data.Spec.Label, survey.Required)
+		err := survey.AskOne(q, &data.Spec.Label, survey.Required, surveyOpts)
 		if err != nil {
 			return nil, err
 		}
@@ -120,9 +123,9 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 			q := &survey.Input{
 				Message: "Namespace:",
 				Default: defaultValue,
-				Help:    "The kubernetes namespace name to use for this Environment",
+				Help:    "The Kubernetes namespace name to use for this Environment",
 			}
-			err := survey.AskOne(q, &data.Spec.Namespace, ValidateName)
+			err := survey.AskOne(q, &data.Spec.Namespace, ValidateName, surveyOpts)
 			if err != nil {
 				return nil, err
 			}
@@ -131,21 +134,21 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 
 	if helmValues.ExposeController.Config.Domain == "" {
 
-		expose, err := GetTeamExposecontrollerConfig(kubeClient, ns)
+		ic, err := GetIngressConfig(kubeClient, ns)
 		if err != nil {
 			return nil, err
 		}
 
 		if batchMode {
-			log.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", expose["domain"])
-			helmValues.ExposeController.Config.Domain = expose["domain"]
+			log.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", ic.Domain)
+			helmValues.ExposeController.Config.Domain = ic.Domain
 		} else {
 			q := &survey.Input{
 				Message: "Domain:",
-				Default: expose["domain"],
+				Default: ic.Domain,
 				Help:    "Domain to expose ingress endpoints.  Example: jenkinsx.io, leave blank if no appplications are to be exposed via ingress rules",
 			}
-			err := survey.AskOne(q, &helmValues.ExposeController.Config.Domain, nil)
+			err := survey.AskOne(q, &helmValues.ExposeController.Config.Domain, nil, surveyOpts)
 			if err != nil {
 				return nil, err
 			}
@@ -164,10 +167,10 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 				q := &survey.Input{
 					Message: "Cluster URL:",
 					Default: defaultValue,
-					Help:    "The kubernetes cluster URL to use to host this Environment",
+					Help:    "The Kubernetes cluster URL to use to host this Environment",
 				}
 				// TODO validate/transform to match valid kubnernetes cluster syntax
-				err := survey.AskOne(q, &data.Spec.Cluster, nil)
+				err := survey.AskOne(q, &data.Spec.Cluster, nil, surveyOpts)
 				if err != nil {
 					return nil, err
 				}
@@ -193,7 +196,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 			Help:    "Whether we promote to this Environment automatically, manually or never",
 		}
 		textValue := ""
-		err := survey.AskOne(q, &textValue, survey.Required)
+		err := survey.AskOne(q, &textValue, survey.Required, surveyOpts)
 		if err != nil {
 			return nil, err
 		}
@@ -219,7 +222,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 			Help:    "This number is used to sort Environments in sequential order, lowest first",
 		}
 		textValue := ""
-		err := survey.AskOne(q, &textValue, survey.Required)
+		err := survey.AskOne(q, &textValue, survey.Required, surveyOpts)
 		if err != nil {
 			return nil, err
 		}
@@ -242,7 +245,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 					Message: "Would you like to use GitOps to manage this environment? :",
 					Default: false,
 				}
-				err := survey.AskOne(confirm, &showUrlEdit, nil)
+				err := survey.AskOne(confirm, &showUrlEdit, nil, surveyOpts)
 				if err != nil {
 					return nil, err
 				}
@@ -259,7 +262,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 						Message: fmt.Sprintf("We will now create a Git repository to store your %s environment, ok? :", data.Name),
 						Default: true,
 					}
-					err := survey.AskOne(confirm, &createRepo, nil)
+					err := survey.AskOne(confirm, &createRepo, nil, surveyOpts)
 					if err != nil {
 						return nil, err
 					}
@@ -267,7 +270,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 
 				if createRepo {
 					showUrlEdit = false
-					url, p, err := createEnvironmentGitRepo(out, batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git)
+					url, p, err := createEnvironmentGitRepo(batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, in, out, errOut)
 					if err != nil {
 						return nil, err
 					}
@@ -283,7 +286,7 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 					Default: data.Spec.Source.URL,
 					Help:    "The git clone URL for the Environment's Helm charts source code and custom configuration",
 				}
-				err := survey.AskOne(q, &data.Spec.Source.URL, survey.Required)
+				err := survey.AskOne(q, &data.Spec.Source.URL, survey.Required, surveyOpts)
 				if err != nil {
 					return nil, err
 				}
@@ -304,9 +307,9 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 				q := &survey.Input{
 					Message: "Git branch for the Environment source code:",
 					Default: defaultBranch,
-					Help:    "The git release branch in the Environments git repository used to store Helm charts source code and custom configuration",
+					Help:    "The Git release branch in the Environments Git repository used to store Helm charts source code and custom configuration",
 				}
-				err := survey.AskOne(q, &data.Spec.Source.Ref, nil)
+				err := survey.AskOne(q, &data.Spec.Source.Ref, nil, surveyOpts)
 				if err != nil {
 					return nil, err
 				}
@@ -316,29 +319,10 @@ func CreateEnvironmentSurvey(out io.Writer, batchMode bool, authConfigSvc auth.A
 	return gitProvider, nil
 }
 
-func GetTeamExposecontrollerConfig(kubeClient kubernetes.Interface, ns string) (map[string]string, error) {
-	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get("exposecontroller", metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to find team environment exposecontroller config %v", err)
-	}
-
-	config := cm.Data["config.yml"]
-
-	lines := strings.Split(config, "\n")
-
-	m := make(map[string]string)
-	for _, pair := range lines {
-		z := strings.Split(pair, ":")
-		m[z[0]] = strings.TrimSpace(z[1])
-	}
-
-	return m, nil
-}
-
-func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string,
-	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter) (string, gits.GitProvider, error) {
+func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string,
+	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, gits.GitProvider, error) {
 	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
-	details, err := gits.PickNewGitRepository(out, batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil, git)
+	details, err := gits.PickNewGitRepository(batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil, git, in, out, outErr)
 	if err != nil {
 		return "", nil, err
 	}
@@ -352,7 +336,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 	provider := details.GitProvider
 	repo, err := provider.GetRepository(owner, repoName)
 	if err == nil {
-		fmt.Fprintf(out, "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 		// if the repo already exists then lets just modify it if required
 		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
@@ -378,9 +362,9 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 		if err != nil {
 			return "", nil, err
 		}
-		fmt.Fprintf(out, "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+		fmt.Fprintf(out, "Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	} else {
-		fmt.Fprintf(out, "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(out, "Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		if forkEnvGitURL != "" {
 			gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
@@ -393,15 +377,15 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 				// lets try fork the repository and rename it
 				repo, err := provider.ForkRepository(originalOrg, originalRepo, org)
 				if err != nil {
-					return "", nil, fmt.Errorf("Failed to fork github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
+					return "", nil, fmt.Errorf("Failed to fork GitHub repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
 				}
 				if repoName != originalRepo {
 					repo, err = provider.RenameRepository(owner, originalRepo, repoName)
 					if err != nil {
-						return "", nil, fmt.Errorf("Failed to rename github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
+						return "", nil, fmt.Errorf("Failed to rename GitHub repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
 					}
 				}
-				fmt.Fprintf(out, "Forked git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+				fmt.Fprintf(out, "Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 				dir, err := util.CreateUniqueDirectory(envDir, repoName, util.MaximumNewDirectoryAttempts)
 				if err != nil {
@@ -475,7 +459,7 @@ func createEnvironmentGitRepo(out io.Writer, batchMode bool, authConfigSvc auth.
 			if err != nil {
 				return "", nil, err
 			}
-			fmt.Fprintf(out, "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+			fmt.Fprintf(out, "Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
 	}
 	return repo.CloneURL, provider, nil
@@ -800,7 +784,8 @@ func GetTeams(kubeClient kubernetes.Interface) ([]*corev1.Namespace, []string, e
 	return answer, names, nil
 }
 
-func PickEnvironment(envNames []string, defaultEnv string) (string, error) {
+func PickEnvironment(envNames []string, defaultEnv string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+	surveyOpts := survey.WithStdio(in, out, errOut)
 	name := ""
 	if len(envNames) == 0 {
 		return "", nil
@@ -812,7 +797,7 @@ func PickEnvironment(envNames []string, defaultEnv string) (string, error) {
 			Options: envNames,
 			Default: defaultEnv,
 		}
-		err := survey.AskOne(prompt, &name, nil)
+		err := survey.AskOne(prompt, &name, nil, surveyOpts)
 		if err != nil {
 			return "", err
 		}

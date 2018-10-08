@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -19,7 +20,7 @@ var (
 `)
 
 	create_git_user_example = templates.Examples(`
-		# Creates a new user in the local gitea server
+		# Creates a new user in the local Gitea server
 		jx create git user -n local someUserName -p somepassword -e foo@bar.com
 	`)
 )
@@ -37,11 +38,12 @@ type CreateGitUserOptions struct {
 }
 
 // NewCmdCreateGitUser creates a command
-func NewCmdCreateGitUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGitUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateGitUserOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -50,7 +52,7 @@ func NewCmdCreateGitUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 
 	cmd := &cobra.Command{
 		Use:     "user [username]",
-		Short:   "Adds a new user to the git server",
+		Short:   "Adds a new user to the Git server",
 		Long:    create_git_user_long,
 		Example: create_git_user_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -129,7 +131,7 @@ func (o *CreateGitUserOptions) Run() error {
 		return nil
 	}
 
-	log.Infof("Created user %s API Token for git server %s at %s\n",
+	log.Infof("Created user %s API Token for Git server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

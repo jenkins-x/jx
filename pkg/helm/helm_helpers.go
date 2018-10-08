@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/helm/pkg/chartutil"
+	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
 const (
@@ -202,6 +203,32 @@ func LoadChartNameAndVersion(chartFile string) (string, string, error) {
 		return "", "", err
 	}
 	return chart.Name, chart.Version, nil
+}
+
+// ModifyChart modifies the given chart using a callback
+func ModifyChart(chartFile string, fn func(chart *chart.Metadata) error) error {
+	chart, err := chartutil.LoadChartfile(chartFile)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to load chart file %s", chartFile)
+	}
+	err = fn(chart)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to modify chart for file %s", chartFile)
+	}
+	err = chartutil.SaveChartfile(chartFile, chart)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to save modified chart file %s", chartFile)
+	}
+	return nil
+}
+
+// SetChartVersion modifies the given chart file to update the version
+func SetChartVersion(chartFile string, version string) error {
+	callback := func(chart *chart.Metadata) error {
+		chart.Version = version
+		return nil
+	}
+	return ModifyChart(chartFile, callback)
 }
 
 func AppendMyValues(valueFiles []string) ([]string, error) {

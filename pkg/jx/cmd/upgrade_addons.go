@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -35,11 +36,12 @@ type UpgradeAddonsOptions struct {
 }
 
 // NewCmdUpgradeAddons defines the command
-func NewCmdUpgradeAddons(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeAddons(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeAddonsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -92,7 +94,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 			addonEnabled[addon.Name] = true
 		}
 	}
-	statusMap, err := o.Helm().StatusReleases()
+	statusMap, err := o.Helm().StatusReleases(ns)
 	if err != nil {
 		log.Warnf("Failed to find helm installs: %s\n", err)
 	}

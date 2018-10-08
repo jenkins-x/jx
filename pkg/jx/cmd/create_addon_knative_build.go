@@ -7,15 +7,16 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
 	createAddonKnativeBuildLong = templates.LongDesc(`
-		Creates the Knative Build addon
+		Creates the Knative build addon
 `)
 
 	createAddonKnativeBuildExample = templates.Examples(`
-		# Create the knative addon
+		# Create the Knative addon
 		jx create addon knative-build
 	`)
 )
@@ -26,12 +27,13 @@ type CreateAddonKnativeBuildOptions struct {
 	Image        string
 }
 
-func NewCmdCreateAddonKnativeBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonKnativeBuildOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -41,7 +43,7 @@ func NewCmdCreateAddonKnativeBuild(f Factory, out io.Writer, errOut io.Writer) *
 
 	cmd := &cobra.Command{
 		Use:     "knative-build",
-		Short:   "Create the Knative Build addon",
+		Short:   "Create the Knative build addon",
 		Aliases: []string{"env"},
 		Long:    createAddonKnativeBuildLong,
 		Example: createAddonKnativeBuildExample,
@@ -59,7 +61,7 @@ func NewCmdCreateAddonKnativeBuild(f Factory, out io.Writer, errOut io.Writer) *
 
 // Create the addon
 func (o *CreateAddonKnativeBuildOptions) Run() error {
-	log.Info("Installing Knative Build addon\n\n")
+	log.Info("Installing Knative build addon\n\n")
 	err := o.runCommandVerbose("kubectl", "apply", "-f", "https://storage.googleapis.com/knative-releases/build/latest/release.yaml")
 
 	if err != nil {

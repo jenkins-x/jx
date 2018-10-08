@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
 
@@ -42,13 +43,15 @@ var (
 )
 
 // NewCmdGetCVE creates the command
-func NewCmdGetCVE(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetCVE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetCVEOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}
@@ -85,7 +88,7 @@ func (o *GetCVEOptions) Run() error {
 
 	_, _, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
+		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
 
 	jxClient, _, err := o.JXClient()

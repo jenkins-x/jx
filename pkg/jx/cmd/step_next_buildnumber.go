@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepNextBuildNumberOptions contains the command line flags
@@ -29,11 +30,12 @@ var (
 `)
 )
 
-func NewCmdStepNextBuildNumber(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepNextBuildNumber(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepNextBuildNumberOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -52,9 +54,9 @@ func NewCmdStepNextBuildNumber(f Factory, out io.Writer, errOut io.Writer) *cobr
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The git repository owner")
-	cmd.Flags().StringVarP(&options.Repository, optionRepo, "r", "", "The git repository name")
-	cmd.Flags().StringVarP(&options.Branch, "branch", "b", "master", "The git branch")
+	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The Git repository owner")
+	cmd.Flags().StringVarP(&options.Repository, optionRepo, "r", "", "The Git repository name")
+	cmd.Flags().StringVarP(&options.Branch, "branch", "b", "master", "The Git branch")
 	return cmd
 }
 

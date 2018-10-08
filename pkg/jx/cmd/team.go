@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -38,10 +39,11 @@ var (
 `)
 )
 
-func NewCmdTeam(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &TeamOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -49,7 +51,7 @@ func NewCmdTeam(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "team",
 		Aliases: []string{"env"},
-		Short:   "View or change the current team in the current kubernetes cluster",
+		Short:   "View or change the current team in the current Kubernetes cluster",
 		Long:    teamLong,
 		Example: teamExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -88,7 +90,7 @@ func (o *TeamOptions) Run() error {
 		team = args[0]
 	}
 	if team == "" && !o.BatchMode {
-		pick, err := util.PickName(teamNames, "Pick Team: ")
+		pick, err := util.PickName(teamNames, "Pick Team: ", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

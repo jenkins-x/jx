@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -45,11 +45,12 @@ type CreateDocsOptions struct {
 }
 
 // NewCmdCreateDocs creates a command object for the "create" command
-func NewCmdCreateDocs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDocs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateDocsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -77,7 +78,7 @@ func NewCmdCreateDocs(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 // Run implements the command
 func (o *CreateDocsOptions) Run() error {
-	jxcommand := NewJXCommand(o.Factory, os.Stdin, ioutil.Discard, ioutil.Discard)
+	jxcommand := NewJXCommand(o.Factory, o.In, o.Out, o.Err)
 	dir := o.Dir
 
 	exists, _ := util.FileExists(dir)

@@ -12,7 +12,7 @@ import (
 )
 
 func TestJXBinaryLocationSuccess(t *testing.T) {
-	t.Parallel()
+	//NOTE no parallel
 	commandInterface := mocks.NewMockCommander()
 	When(commandInterface.RunWithoutRetry()).ThenReturn("/test/something/bin/jx", nil)
 
@@ -22,7 +22,7 @@ func TestJXBinaryLocationSuccess(t *testing.T) {
 }
 
 func TestJXBinaryLocationFailure(t *testing.T) {
-	t.Parallel()
+	//NOTE no parallel
 	commandInterface := mocks.NewMockCommander()
 	When(commandInterface.RunWithoutRetry()).ThenReturn("", errors.New("Kaboom"))
 
@@ -32,6 +32,7 @@ func TestJXBinaryLocationFailure(t *testing.T) {
 }
 
 func TestJXBinaryLocationFromEnv(t *testing.T) {
+	//NOTE no parallel
 	os.Setenv("JX_BINARY", "/usr/bin")
 	defer os.Unsetenv("JX_BINARY")
 	res, err := util.JXBinaryLocation(&util.Command{})
@@ -40,6 +41,7 @@ func TestJXBinaryLocationFromEnv(t *testing.T) {
 }
 
 func TestJXBinaryLocationFromEnvWithPrefix(t *testing.T) {
+	//NOTE no parallel
 	os.Setenv("JX_BINARY", "/usr/bin/jx")
 	defer os.Unsetenv("JX_BINARY")
 	res, err := util.JXBinaryLocation(&util.Command{})

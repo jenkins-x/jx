@@ -15,6 +15,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -23,7 +24,7 @@ type NamespaceOptions struct {
 }
 
 const (
-	noContextDefinedError = "There is no context defined in your kubernetes configuration"
+	noContextDefinedError = "There is no context defined in your Kubernetes configuration"
 )
 
 var (
@@ -40,10 +41,11 @@ var (
 		jx ns cheese`)
 )
 
-func NewCmdNamespace(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &NamespaceOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -51,7 +53,7 @@ func NewCmdNamespace(f Factory, out io.Writer, errOut io.Writer) *cobra.Command 
 	cmd := &cobra.Command{
 		Use:     "namespace",
 		Aliases: []string{"ns"},
-		Short:   "View or change the current namespace context in the current kubernetes cluster",
+		Short:   "View or change the current namespace context in the current Kubernetes cluster",
 		Long:    namespace_long,
 		Example: namespace_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -152,6 +154,8 @@ func (o *NamespaceOptions) PickNamespace(names []string, defaultNamespace string
 		Options: names,
 		Default: defaultNamespace,
 	}
-	err := survey.AskOne(prompt, &name, nil)
+
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+	err := survey.AskOne(prompt, &name, nil, surveyOpts)
 	return name, err
 }

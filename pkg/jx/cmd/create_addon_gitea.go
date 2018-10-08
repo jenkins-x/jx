@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -23,11 +24,11 @@ const (
 
 var (
 	create_addon_gitea_long = templates.LongDesc(`
-		Creates the gitea addon (hosted git server)
+		Creates the Gitea addon (hosted Git server)
 `)
 
 	create_addon_gitea_example = templates.Examples(`
-		# Create the gitea addon 
+		# Create the Gitea addon 
 		jx create addon gitea
 	`)
 )
@@ -46,12 +47,13 @@ type CreateAddonGiteaOptions struct {
 }
 
 // NewCmdCreateAddonGitea creates a command object for the "create" command
-func NewCmdCreateAddonGitea(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonGitea(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonGiteaOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -61,7 +63,7 @@ func NewCmdCreateAddonGitea(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 	cmd := &cobra.Command{
 		Use:     "gitea",
-		Short:   "Create a gitea addon for hosting git repositories",
+		Short:   "Create a Gitea addon for hosting Git repositories",
 		Aliases: []string{"env"},
 		Long:    create_addon_gitea_long,
 		Example: create_addon_gitea_example,
@@ -76,19 +78,20 @@ func NewCmdCreateAddonGitea(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd, "", defaultGiteaReleaseName)
 
-	cmd.Flags().StringVarP(&options.Username, "username", "u", "", "The name for the user to create in gitea. Note that gitea tends to reject 'admin'")
-	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The password for the user to create in gitea. Note that gitea tends to reject passwords less than 6 characters")
-	cmd.Flags().StringVarP(&options.Email, "email", "e", "", "The email address of the new user to create in gitea")
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version of the gitea addon to use")
+	cmd.Flags().StringVarP(&options.Username, "username", "u", "", "The name for the user to create in Gitea. Note that Gitea tends to reject 'admin'")
+	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The password for the user to create in Gitea. Note that Gitea tends to reject passwords less than 6 characters")
+	cmd.Flags().StringVarP(&options.Email, "email", "e", "", "The email address of the new user to create in Gitea")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version of the Gitea addon to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartGitea, "The name of the chart to use")
-	cmd.Flags().BoolVarP(&options.IsAdmin, "admin", "", false, "Should the new user created be an admin of the gitea server")
-	cmd.Flags().BoolVarP(&options.NoUser, "no-user", "", false, "If true disable trying to create a new user in the gitea server")
-	cmd.Flags().BoolVarP(&options.NoToken, "no-token", "", false, "If true disable trying to create a new token in the gitea server")
+	cmd.Flags().BoolVarP(&options.IsAdmin, "admin", "", false, "Should the new user created be an admin of the Gitea server")
+	cmd.Flags().BoolVarP(&options.NoUser, "no-user", "", false, "If true disable trying to create a new user in the Gitea server")
+	cmd.Flags().BoolVarP(&options.NoToken, "no-token", "", false, "If true disable trying to create a new token in the Gitea server")
 	return cmd
 }
 
 // Run implements the command
 func (o *CreateAddonGiteaOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
 	}
@@ -110,13 +113,13 @@ func (o *CreateAddonGiteaOptions) Run() error {
 		return err
 	}
 	if !o.NoUser {
-		// now to add the git server + a user
+		// now to add the Git server + a user
 		if !o.BatchMode {
 			if o.Username == "" {
 				prompt := &survey.Input{
-					Message: "Enter the user name to create in gitea: ",
+					Message: "Enter the user name to create in Gitea: ",
 				}
-				err = survey.AskOne(prompt, &o.Username, nil)
+				err = survey.AskOne(prompt, &o.Username, nil, surveyOpts)
 				if err != nil {
 					return err
 				}
@@ -124,9 +127,9 @@ func (o *CreateAddonGiteaOptions) Run() error {
 			if o.Username != "" {
 				if o.Password == "" {
 					prompt := &survey.Password{
-						Message: "Enter the password for the new user in gitea: ",
+						Message: "Enter the password for the new user in Gitea: ",
 					}
-					err = survey.AskOne(prompt, &o.Password, nil)
+					err = survey.AskOne(prompt, &o.Password, nil, surveyOpts)
 					if err != nil {
 						return err
 					}
@@ -134,9 +137,9 @@ func (o *CreateAddonGiteaOptions) Run() error {
 				if o.Password != "" {
 					if o.Email == "" {
 						prompt := &survey.Input{
-							Message: "Enter the email address of the user to create in gitea: ",
+							Message: "Enter the email address of the user to create in Gitea: ",
 						}
-						err = survey.AskOne(prompt, &o.Email, nil)
+						err = survey.AskOne(prompt, &o.Email, nil, surveyOpts)
 						if err != nil {
 							return err
 						}

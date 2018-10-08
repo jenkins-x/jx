@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"os"
 	"path/filepath"
@@ -19,7 +20,7 @@ var (
 	create_archetype_long = templates.LongDesc(`
 		Creates a new Maven project using an Archetype
 
-		You then get the option to import the generated source code into a git repository and Jenkins for CI/CD
+		You then get the option to import the generated source code into a Git repository and Jenkins for CI/CD
 
 `)
 
@@ -46,14 +47,16 @@ type CreateArchetypeOptions struct {
 }
 
 // NewCmdCreateArchetype creates a command object for the "create" command
-func NewCmdCreateArchetype(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateArchetype(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateArchetypeOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
-					Out:     out,
-					Err:     errOut,
+					In:      in,
+
+					Out: out,
+					Err: errOut,
 				},
 			},
 		},
@@ -61,7 +64,7 @@ func NewCmdCreateArchetype(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	cmd := &cobra.Command{
 		Use:     "archetype",
-		Short:   "Create a new app from a Maven Archetype and import the generated code into git and Jenkins for CI/CD",
+		Short:   "Create a new app from a Maven Archetype and import the generated code into Git and Jenkins for CI/CD",
 		Long:    create_archetype_long,
 		Example: create_archetype_example,
 		Aliases: []string{"arch"},
@@ -105,7 +108,7 @@ func (o *CreateArchetypeOptions) Run() error {
 		return fmt.Errorf("Failed to load Spring Boot model %s", err)
 	}
 	form := &o.Form
-	err = model.CreateSurvey(&o.Filter, o.PickVersion, form)
+	err = model.CreateSurvey(&o.Filter, o.PickVersion, form, o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -142,21 +145,21 @@ func (o *CreateArchetypeOptions) CreateArchetype() error {
 		newline := false
 		if form.GroupId == "" {
 			newline = true
-			form.GroupId, err = util.PickValue("Group ID of the new application: ", "org.acme.demo", true)
+			form.GroupId, err = util.PickValue("Group ID of the new application: ", "org.acme.demo", true, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
 		}
 		if form.ArtifactId == "" {
 			newline = true
-			form.ArtifactId, err = util.PickValue("Artifact ID of the new application: ", "mydemo", true)
+			form.ArtifactId, err = util.PickValue("Artifact ID of the new application: ", "mydemo", true, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
 		}
 		if form.Version == "" {
 			newline = true
-			form.Version, err = util.PickValue("Snapshot Version of the new application: ", "1.0-SNAPSHOT", true)
+			form.Version, err = util.PickValue("Snapshot Version of the new application: ", "1.0-SNAPSHOT", true, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

@@ -11,16 +11,17 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
 	deleteGitServerLong = templates.LongDesc(`
-		Deletes one or more git servers from your local settings
+		Deletes one or more Git servers from your local settings
 `)
 
 	deleteGitServerExample = templates.Examples(`
-		# Deletes a git provider
+		# Deletes a Git provider
 		jx delete git server MyProvider
 	`)
 )
@@ -33,10 +34,11 @@ type DeleteGitServerOptions struct {
 }
 
 // NewCmdDeleteGitServer defines the command
-func NewCmdDeleteGitServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteGitServer(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteGitServerOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -44,7 +46,7 @@ func NewCmdDeleteGitServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 
 	cmd := &cobra.Command{
 		Use:     "server",
-		Short:   "Deletes one or more git servers",
+		Short:   "Deletes one or more Git servers",
 		Long:    deleteGitServerLong,
 		Example: deleteGitServerExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -54,7 +56,7 @@ func NewCmdDeleteGitServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.IgnoreMissingServer, "ignore-missing", "i", false, "Silently ignore attempts to remove a git server name that does not exist")
+	cmd.Flags().BoolVarP(&options.IgnoreMissingServer, "ignore-missing", "i", false, "Silently ignore attempts to remove a Git server name that does not exist")
 	return cmd
 }
 
@@ -62,7 +64,7 @@ func NewCmdDeleteGitServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Co
 func (o *DeleteGitServerOptions) Run() error {
 	args := o.Args
 	if len(args) == 0 {
-		return fmt.Errorf("Missing git server name argument")
+		return fmt.Errorf("Missing Git server name argument")
 	}
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
@@ -92,7 +94,7 @@ func (o *DeleteGitServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Deleted git servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
+	log.Infof("Deleted Git servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
 	return nil
 }
 

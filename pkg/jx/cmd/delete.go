@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
@@ -15,7 +16,7 @@ type DeleteOptions struct {
 
 var (
 	delete_long = templates.LongDesc(`
-		Deletes one or many resources.
+		Deletes one or more resources.
 
 `)
 
@@ -27,10 +28,11 @@ var (
 
 // NewCmdDelete creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDelete(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteOptions{
 		CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -38,7 +40,7 @@ func NewCmdDelete(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "delete TYPE [flags]",
-		Short:   "Deletes one or many resources",
+		Short:   "Deletes one or more resources",
 		Long:    delete_long,
 		Example: delete_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -50,23 +52,24 @@ func NewCmdDelete(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 		SuggestFor: []string{"remove", "rm", "del"},
 	}
 
-	cmd.AddCommand(NewCmdDeleteAddon(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteApp(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteChat(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteContext(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteDevPod(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteEnv(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteGit(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteJenkins(f, out, errOut))
-	cmd.AddCommand(NewCmdDeletePostPreviewJob(f, out, errOut))
-	cmd.AddCommand(NewCmdDeletePreview(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteQuickstartLocation(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteRepo(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteToken(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteTeam(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteTracker(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteUser(f, out, errOut))
-	cmd.AddCommand(NewCmdDeleteAws(f, out, errOut))
+	cmd.AddCommand(NewCmdDeleteAddon(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteApp(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteBranch(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteChat(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteContext(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteDevPod(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteEnv(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteGit(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteJenkins(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeletePostPreviewJob(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeletePreview(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteQuickstartLocation(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteRepo(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteToken(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteTeam(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteTracker(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteUser(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteAws(f, in, out, errOut))
 	return cmd
 }
 

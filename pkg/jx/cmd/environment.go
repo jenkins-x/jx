@@ -13,6 +13,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -41,10 +42,11 @@ var (
 `)
 )
 
-func NewCmdEnvironment(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEnvironment(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &EnvironmentOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -52,7 +54,7 @@ func NewCmdEnvironment(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 	cmd := &cobra.Command{
 		Use:     "environment",
 		Aliases: []string{"env"},
-		Short:   "View or change the current environment in the current kubernetes cluster",
+		Short:   "View or change the current environment in the current Kubernetes cluster",
 		Long:    environment_long,
 		Example: environment_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -100,7 +102,7 @@ func (o *EnvironmentOptions) Run() error {
 		env = args[0]
 	}
 	if env == "" && !o.BatchMode {
-		pick, err := kube.PickEnvironment(envNames, currentEnv)
+		pick, err := kube.PickEnvironment(envNames, currentEnv, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

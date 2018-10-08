@@ -17,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -30,6 +31,7 @@ type CreateClusterMinikubeOptions struct {
 type CreateClusterMinikubeFlags struct {
 	Memory              string
 	CPU                 string
+	DiskSize            string
 	Driver              string
 	HyperVVirtualSwitch string
 	Namespace           string
@@ -38,7 +40,7 @@ type CreateClusterMinikubeFlags struct {
 
 var (
 	createClusterMinikubeLong = templates.LongDesc(`
-		This command creates a new kubernetes cluster, installing required local dependencies and provisions the
+		This command creates a new Kubernetes cluster, installing required local dependencies and provisions the
 		Jenkins X platform
 
 		Minikube is a tool that makes it easy to run Kubernetes locally. Minikube runs a single-node Kubernetes
@@ -54,14 +56,14 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterMinikube(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
+func NewCmdCreateClusterMinikube(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinikubeOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, MINIKUBE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, MINIKUBE),
 	}
 	cmd := &cobra.Command{
 		Use:     "minikube",
-		Short:   "Create a new kubernetes cluster with minikube: Runs locally",
+		Short:   "Create a new Kubernetes cluster with Minikube: Runs locally",
 		Long:    createClusterMinikubeLong,
 		Example: createClusterMinikubeExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -75,11 +77,12 @@ func NewCmdCreateClusterMinikube(f Factory, out io.Writer, errOut io.Writer) *co
 	options.addCreateClusterFlags(cmd)
 	options.addCommonFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "", fmt.Sprintf("Amount of RAM allocated to the minikube VM in MB. Defaults to %s MB.", MinikubeDefaultMemory))
-	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "", fmt.Sprintf("Number of CPUs allocated to the minikube VM. Defaults to %s.", MinikubeDefaultCpu))
+	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "", fmt.Sprintf("Amount of RAM allocated to the Minikube VM in MB. Defaults to %s MB.", MinikubeDefaultMemory))
+	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "", fmt.Sprintf("Number of CPUs allocated to the Minikube VM. Defaults to %s.", MinikubeDefaultCpu))
+	cmd.Flags().StringVarP(&options.Flags.DiskSize, "disk-size", "s", "", fmt.Sprintf("Total amount of storage allocated to the Minikube VM. Defaults to %s", MinikubeDefaultDiskSize))
 	cmd.Flags().StringVarP(&options.Flags.Driver, "vm-driver", "d", "", "VM driver is one of: [hyperkit hyperv kvm kvm2 virtualbox vmwarefusion xhyve]")
-	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with minikube")
-	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "", "", "kubernetes version")
+	cmd.Flags().StringVarP(&options.Flags.HyperVVirtualSwitch, "hyperv-virtual-switch", "v", "", "Additional options for using HyperV with Minikube")
+	cmd.Flags().StringVarP(&options.Flags.ClusterVersion, optionKubernetesVersion, "", "", "Kubernetes version")
 
 	return cmd
 }
@@ -98,7 +101,7 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 	}
 
 	if o.isExistingMinikubeRunning() {
-		log.Error("an existing minikube cluster is already running, perhaps use `jx install`.\nNote existing minikube must have RBAC enabled, running `minikube delete` and `jx create cluster minikube` creates a new VM with RBAC enabled")
+		log.Error("an existing Minikube cluster is already running, perhaps use `jx install`.\nNote existing Minikube must have RBAC enabled, running `minikube delete` and `jx create cluster minikube` creates a new VM with RBAC enabled")
 		os.Exit(-1)
 	}
 
@@ -146,17 +149,25 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	prompt := &survey.Input{
 		Message: "memory (MB)",
 		Default: MinikubeDefaultMemory,
-		Help:    "Amount of RAM allocated to the minikube VM in MB",
+		Help:    "Amount of RAM allocated to the Minikube VM in MB",
 	}
-	showPromptIfOptionNotSet(&mem, prompt)
+	showPromptIfOptionNotSet(&mem, prompt, o.In, o.Out, o.Err)
 
 	cpu := o.Flags.CPU
 	prompt = &survey.Input{
 		Message: "cpu (cores)",
 		Default: MinikubeDefaultCpu,
-		Help:    "Number of CPUs allocated to the minikube VM",
+		Help:    "Number of CPUs allocated to the Minikube VM",
 	}
-	showPromptIfOptionNotSet(&cpu, prompt)
+	showPromptIfOptionNotSet(&cpu, prompt, o.In, o.Out, o.Err)
+
+	disksize := o.Flags.DiskSize
+	prompt = &survey.Input{
+		Message: "disk-size (MB)",
+		Default: MinikubeDefaultDiskSize,
+		Help:    "Total amount of storage allocated to the Minikube VM in MB",
+	}
+	showPromptIfOptionNotSet(&disksize, prompt, o.In, o.Out, o.Err)
 
 	vmDriverValue := o.Flags.Driver
 
@@ -198,7 +209,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		Help:    "VM driver, defaults to recommended native virtualisation",
 	}
 
-	showPromptIfOptionNotSet(&vmDriverValue, prompts)
+	showPromptIfOptionNotSet(&vmDriverValue, prompts, o.In, o.Out, o.Err)
 
 	if vmDriverValue != "none" {
 		err := o.doInstallMissingDependencies([]string{vmDriverValue})
@@ -208,7 +219,12 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		}
 	}
 
-	args := []string{"start", "--memory", mem, "--cpus", cpu, "--vm-driver", vmDriverValue, "--bootstrapper=kubeadm"}
+	args := []string{"start", "--memory", mem, "--cpus", cpu, "--disk-size", disksize, "--vm-driver", vmDriverValue, "--bootstrapper=kubeadm"}
+	// Show verbose output for minikube cluster creation if verbose flag is set
+	if o.Verbose {
+		args = append(args, "--logtostderr", "--v=3")
+	}
+
 	hyperVVirtualSwitch := o.Flags.HyperVVirtualSwitch
 	if hyperVVirtualSwitch != "" {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
@@ -271,9 +287,10 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	return nil
 }
 
-func showPromptIfOptionNotSet(option *string, p survey.Prompt) error {
+func showPromptIfOptionNotSet(option *string, p survey.Prompt, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) error {
+	surveyOpts := survey.WithStdio(in, out, errOut)
 	if *option == "" {
-		err := survey.AskOne(p, option, nil)
+		err := survey.AskOne(p, option, nil, surveyOpts)
 		if err != nil {
 			return err
 		}

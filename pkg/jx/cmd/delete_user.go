@@ -2,16 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"io"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
 )
 
 // DeleteUserOptions are the flags for delete commands
@@ -25,7 +27,7 @@ type DeleteUserOptions struct {
 
 var (
 	deleteUserLong = templates.LongDesc(`
-		Deletes one or many users 
+		Deletes one or more users 
 `)
 
 	deleteUserExample = templates.Examples(`
@@ -36,18 +38,20 @@ var (
 
 // NewCmdDeleteUser creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteUserOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 
 	cmd := &cobra.Command{
 		Use:     "user",
-		Short:   "Deletes one or many users",
+		Short:   "Deletes one or more users",
 		Long:    deleteUserLong,
 		Example: deleteUserExample,
 		Aliases: []string{"users"},
@@ -68,6 +72,7 @@ func NewCmdDeleteUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Command
 
 // Run implements this command
 func (o *DeleteUserOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	err := o.registerUserCRD()
 	if err != nil {
 		return err
@@ -88,7 +93,7 @@ func (o *DeleteUserOptions) Run() error {
 		if o.BatchMode {
 			return fmt.Errorf("Missing user login name argument")
 		}
-		names, err = util.SelectNamesWithFilter(userNames, "Which users do you want to delete: ", o.SelectAll, o.SelectFilter)
+		names, err = util.SelectNamesWithFilter(userNames, "Which users do you want to delete: ", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -99,7 +104,7 @@ func (o *DeleteUserOptions) Run() error {
 			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
 		}
 	} else {
-		log.Warnf("You are about to delete these users '%s' on the git provider. This operation CANNOT be undone!",
+		log.Warnf("You are about to delete these users '%s' on the Git provider. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false
@@ -107,7 +112,7 @@ func (o *DeleteUserOptions) Run() error {
 			Message: "Are you sure you want to delete these all these users?",
 			Default: false,
 		}
-		err = survey.AskOne(prompt, &flag, nil)
+		err = survey.AskOne(prompt, &flag, nil, surveyOpts)
 		if err != nil {
 			return err
 		}

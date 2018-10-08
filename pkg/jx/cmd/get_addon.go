@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -30,11 +31,12 @@ var (
 )
 
 // NewCmdGetAddon creates the command
-func NewCmdGetAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetAddonOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -71,9 +73,13 @@ func (o *GetAddonOptions) Run() error {
 			addonEnabled[addon.Name] = true
 		}
 	}
-	statusMap, err := o.Helm().StatusReleases()
+	_, ns, err := o.KubeClient()
 	if err != nil {
-		log.Warnf("Failed to find helm installs: %s\n", err)
+		return err
+	}
+	statusMap, err := o.Helm().StatusReleases(ns)
+	if err != nil {
+		log.Warnf("Failed to find Helm installs: %s\n", err)
 	}
 
 	charts := kube.AddonCharts

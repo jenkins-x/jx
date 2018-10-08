@@ -39,11 +39,11 @@ func (mock *MockGitProvider) AcceptInvitation(_param0 int64) (*github.Response, 
 	return ret0, ret1
 }
 
-func (mock *MockGitProvider) AddCollaborator(_param0 string, _param1 string) error {
+func (mock *MockGitProvider) AddCollaborator(_param0 string, _param1 string, _param2 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
 	}
-	params := []pegomock.Param{_param0, _param1}
+	params := []pegomock.Param{_param0, _param1, _param2}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("AddCollaborator", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 error
 	if len(result) != 0 {
@@ -771,8 +771,8 @@ func (c *GitProvider_AcceptInvitation_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
-func (verifier *VerifierGitProvider) AddCollaborator(_param0 string, _param1 string) *GitProvider_AddCollaborator_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1}
+func (verifier *VerifierGitProvider) AddCollaborator(_param0 string, _param1 string, _param2 string) *GitProvider_AddCollaborator_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "AddCollaborator", params)
 	return &GitProvider_AddCollaborator_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -782,12 +782,12 @@ type GitProvider_AddCollaborator_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_AddCollaborator_OngoingVerification) GetCapturedArguments() (string, string) {
-	_param0, _param1 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+func (c *GitProvider_AddCollaborator_OngoingVerification) GetCapturedArguments() (string, string, string) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_AddCollaborator_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *GitProvider_AddCollaborator_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -797,6 +797,10 @@ func (c *GitProvider_AddCollaborator_OngoingVerification) GetAllCapturedArgument
 		_param1 = make([]string, len(params[1]))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
+		}
+		_param2 = make([]string, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(string)
 		}
 	}
 	return

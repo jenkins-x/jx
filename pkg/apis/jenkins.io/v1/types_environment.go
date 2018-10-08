@@ -143,6 +143,13 @@ type TeamSettings struct {
 	PostPreviewJobs     []batchv1.Job        `json:"postPreviewJobs,omitempty" protobuf:"bytes,9,opt,name=postPreviewJobs"`
 	PromotionEngine     PromotionEngineType  `json:"promotionEngine,omitempty" protobuf:"bytes,10,opt,name=promotionEngine"`
 	NoTiller            bool                 `json:"noTiller,omitempty" protobuf:"bytes,11,opt,name=noTiller"`
+	HelmTemplate        bool                 `json:"helmTemplate,omitempty" protobuf:"bytes,12,opt,name=helmTemplate"`
+	GitServer           string               `json:"gitServer,omitempty" protobuf:"bytes,13,opt,name=gitServer" command:"gitserver" commandUsage:"Default git server for new repositories"`
+	Organisation        string               `json:"organisation,omitempty" protobuf:"bytes,14,opt,name=organisation" command:"organisation" commandUsage:"Default git organisation for new repositories"`
+	PipelineUsername    string               `json:"pipelineUsername,omitempty" protobuf:"bytes,15,opt,name=pipelineUsername" command:"pipelineusername" commandUsage:"User used by pipeline. Is given write permission on new repositories."`
+	DockerRegistryOrg   string               `json:"dockerRegistryOrg,omitempty" protobuf:"bytes,16,opt,name=dockerRegistryOrg" command:"dockerregistryorg" commandUsage:"Docker registry organisation used for new projects in Jenkins X."`
+	GitPrivate          bool                 `json:"gitPrivate,omitempty" protobuf:"bytes,17,opt,name=gitPrivate" command:"gitprivate" commandUsage:"Are new repositories private by default"`
+	KubeProvider        string               `json:"kubeProvider,omitempty" protobuf:"bytes,18,opt,name=kubeProvider"`
 }
 
 // QuickStartLocation
@@ -181,7 +188,7 @@ type UserSpec struct {
 // +k8s:openapi-gen=true
 
 // EnvironmentRoleBinding is like a vanilla RoleBinding but applies to a set of Namespaces based on an Environment filter
-// so that roles can be bound to multiple namespaces easil.
+// so that roles can be bound to multiple namespaces easily.
 //
 // For example to specify the binding of roles on all Preview environments or on all permanent environments.
 type EnvironmentRoleBinding struct {

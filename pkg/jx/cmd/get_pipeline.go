@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"strings"
 	"time"
@@ -21,7 +22,7 @@ type GetPipelineOptions struct {
 
 var (
 	get_pipeline_long = templates.LongDesc(`
-		Display one or many pipelines.
+		Display one or more pipelines.
 
 `)
 
@@ -32,11 +33,12 @@ var (
 )
 
 // NewCmdGetPipeline creates the command
-func NewCmdGetPipeline(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetPipeline(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetPipelineOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -45,7 +47,7 @@ func NewCmdGetPipeline(f Factory, out io.Writer, errOut io.Writer) *cobra.Comman
 
 	cmd := &cobra.Command{
 		Use:     "pipelines [flags]",
-		Short:   "Display one or many Pipelines",
+		Short:   "Display one or more Pipelines",
 		Long:    get_pipeline_long,
 		Example: get_pipeline_example,
 		Aliases: []string{"pipe", "pipes", "pipeline"},
@@ -93,7 +95,7 @@ func (o *GetPipelineOptions) Run() error {
 	return nil
 }
 
-func (o *GetPipelineOptions) dump(jenkins *gojenkins.Jenkins, name string, table *table.Table) error {
+func (o *GetPipelineOptions) dump(jenkins gojenkins.JenkinsClient, name string, table *table.Table) error {
 	job, err := jenkins.GetJob(name)
 	if err != nil {
 		return err

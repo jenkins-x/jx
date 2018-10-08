@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"strconv"
 
@@ -28,12 +29,13 @@ type StepPRCommentFlags struct {
 }
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPRComment(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepPRComment(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepPRCommentOptions{
 		StepPROptions: StepPROptions{
 			StepOptions: StepOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -53,9 +55,9 @@ func NewCmdStepPRComment(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 	}
 
 	cmd.Flags().StringVarP(&options.Flags.Comment, "comment", "c", "", "comment to add to the Pull Request")
-	cmd.Flags().StringVarP(&options.Flags.Owner, "owner", "o", "", "git organisation / owner")
-	cmd.Flags().StringVarP(&options.Flags.Repository, "repository", "r", "", "git repository")
-	cmd.Flags().StringVarP(&options.Flags.PR, "pull-request", "p", "", "git pull request number")
+	cmd.Flags().StringVarP(&options.Flags.Owner, "owner", "o", "", "Git organisation / owner")
+	cmd.Flags().StringVarP(&options.Flags.Repository, "repository", "r", "", "Git repository")
+	cmd.Flags().StringVarP(&options.Flags.PR, "pull-request", "p", "", "Git Pull Request number")
 
 	options.addCommonFlags(cmd)
 
@@ -65,13 +67,13 @@ func NewCmdStepPRComment(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 // Run implements this command
 func (o *StepPRCommentOptions) Run() error {
 	if o.Flags.PR == "" {
-		return fmt.Errorf("no pull request number provided")
+		return fmt.Errorf("no Pull Request number provided")
 	}
 	if o.Flags.Owner == "" {
-		return fmt.Errorf("no git owner provided")
+		return fmt.Errorf("no Git owner provided")
 	}
 	if o.Flags.Repository == "" {
-		return fmt.Errorf("no git repository provided")
+		return fmt.Errorf("no Git repository provided")
 	}
 	if o.Flags.Comment == "" {
 		return fmt.Errorf("no comment provided")
@@ -91,7 +93,7 @@ func (o *StepPRCommentOptions) Run() error {
 		return err
 	}
 
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit comment as", o.BatchMode, gitKind, o.Git())
+	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit comment as", o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}

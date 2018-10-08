@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -31,11 +32,12 @@ type ControllerBuildOptions struct {
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerBuild(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ControllerBuildOptions{
 		ControllerOptions: ControllerOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -84,7 +86,7 @@ func (o *ControllerBuildOptions) Run() error {
 		ns = devNs
 	}
 	pod := &corev1.Pod{}
-	log.Infof("Watching for knative build pods in namespace %s\n", util.ColorInfo(ns))
+	log.Infof("Watching for Knative build pods in namespace %s\n", util.ColorInfo(ns))
 	listWatch := cache.NewListWatchFromClient(client.CoreV1().RESTClient(), "pods", ns, fields.Everything())
 	kube.SortListWatchByName(listWatch)
 	_, controller := cache.NewInformer(
@@ -147,7 +149,7 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, jxClient versioned.Inter
 	}
 }
 
-// createPromoteStepActivityKey deduces the pipeline metadata from the knative build pod
+// createPromoteStepActivityKey deduces the pipeline metadata from the Knative build pod
 func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, pod *corev1.Pod) *kube.PromoteStepActivityKey {
 	branch := ""
 	lastCommitSha := ""
@@ -183,7 +185,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 	}
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		log.Warnf("Failed to parse git URL %s: %s", gitURL, err)
+		log.Warnf("Failed to parse Git URL %s: %s", gitURL, err)
 		return nil
 	}
 	org := gitInfo.Organisation
@@ -205,7 +207,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 
 func (o *ControllerBuildOptions) updatePipelineActivity(activity *v1.PipelineActivity, s string, pod *corev1.Pod) bool {
 	copy := *activity
-	// TODO update the steps based on the knative build pod's init containers
+	// TODO update the steps based on the Knative build pod's init containers
 	for _, c := range pod.Status.InitContainerStatuses {
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 		title := strings.Title(name)

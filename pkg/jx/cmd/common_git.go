@@ -57,7 +57,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind, o.Git())
+	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -91,7 +91,7 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 		kube.LabelServiceKind:     server.Kind,
 	}
 	annotations := map[string]string{
-		kube.AnnotationCredentialsDescription: fmt.Sprintf("API Token for acccessing %s git service inside pipelines", server.URL),
+		kube.AnnotationCredentialsDescription: fmt.Sprintf("API Token for acccessing %s Git service inside pipelines", server.URL),
 		kube.AnnotationURL:                    server.URL,
 		kube.AnnotationName:                   serverName,
 	}
@@ -227,10 +227,10 @@ func (o *CommonOptions) discoverGitURL(gitConf string) (string, error) {
 }
 
 func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitRepositoryOptions) {
-	cmd.Flags().StringVarP(&repositoryOptions.ServerURL, "git-provider-url", "", "", "The git server URL to create new git repositories inside")
-	cmd.Flags().StringVarP(&repositoryOptions.Username, "git-username", "", "", "The git username to use for creating new git repositories")
-	cmd.Flags().StringVarP(&repositoryOptions.ApiToken, "git-api-token", "", "", "The git API token to use for creating new git repositories")
-	cmd.Flags().BoolVarP(&repositoryOptions.Private, "git-private", "", false, "Create new git repositories as private")
+	cmd.Flags().StringVarP(&repositoryOptions.ServerURL, "git-provider-url", "", "", "The Git server URL to create new Git repositories inside")
+	cmd.Flags().StringVarP(&repositoryOptions.Username, "git-username", "", "", "The Git username to use for creating new Git repositories")
+	cmd.Flags().StringVarP(&repositoryOptions.ApiToken, "git-api-token", "", "", "The Git API token to use for creating new Git repositories")
+	cmd.Flags().BoolVarP(&repositoryOptions.Private, "git-private", "", false, "Create new Git repositories as private")
 }
 
 func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, error) {
@@ -263,14 +263,14 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 	}
 	if kind == "" {
 		if o.BatchMode {
-			return "", fmt.Errorf("No git server kind could be found for URL %s\nPlease try specify it via: jx create git server someKind %s", hostURL, hostURL)
+			return "", fmt.Errorf("No Git server kind could be found for URL %s\nPlease try specify it via: jx create git server someKind %s", hostURL, hostURL)
 		}
-		kind, err = util.PickName(gits.KindGits, fmt.Sprintf("Pick what kind of git server is: %s", hostURL))
+		kind, err = util.PickName(gits.KindGits, fmt.Sprintf("Pick what kind of Git server is: %s", hostURL), o.In, o.Out, o.Err)
 		if err != nil {
 			return "", err
 		}
 		if kind == "" {
-			return "", fmt.Errorf("No git kind chosen!")
+			return "", fmt.Errorf("No Git kind chosen!")
 		}
 	}
 	return kind, nil
@@ -290,14 +290,14 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git())
+	return gitInfo.PickOrCreateProvider(authConfigSvc, message, o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
 }
 
-// gitProviderForURL returns a GitProvider for the given git server URL
+// gitProviderForURL returns a GitProvider for the given Git server URL
 func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(authConfigSvc, gitKind, gitServiceUrl, o.Git())
+	return gits.CreateProviderForURL(authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 }

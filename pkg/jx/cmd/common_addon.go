@@ -20,7 +20,7 @@ func (o *CommonOptions) getAddonAuth(serviceURL string) (*auth.AuthServer, *auth
 	config := authConfigSvc.Config()
 
 	server := config.GetOrCreateServer(serviceURL)
-	userAuth, err := config.PickServerUserAuth(server, "user to access the addon service at "+serviceURL, o.BatchMode, "")
+	userAuth, err := config.PickServerUserAuth(server, "user to access the addon service at "+serviceURL, o.BatchMode, "", o.In, o.Out, o.Err)
 	return server, userAuth, err
 }
 
@@ -43,7 +43,7 @@ func (o *CommonOptions) getAddonAuthByKind(kind, serverURL string) (*auth.AuthSe
 		return nil, nil, fmt.Errorf("no server found for kind %s", kind)
 	}
 	message := "user to access the " + kind + " addon service at " + server.URL
-	userAuth, err := config.PickServerUserAuth(server, message, true, "")
+	userAuth, err := config.PickServerUserAuth(server, message, true, "", o.In, o.Out, o.Err)
 	return server, userAuth, err
 }
 

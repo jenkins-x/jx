@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -24,7 +25,7 @@ const (
 
 var (
 	createAddonIstioLong = templates.LongDesc(`
-		Creates the istio addon for service mesh on kubernetes
+		Creates the istio addon for service mesh on Kubernetes
 `)
 
 	createAddonIstioExample = templates.Examples(`
@@ -48,12 +49,13 @@ type CreateAddonIstioOptions struct {
 }
 
 // NewCmdCreateAddonIstio creates a command object for the "create" command
-func NewCmdCreateAddonIstio(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonIstio(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonIstioOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -110,7 +112,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 	}
 	err := o.ensureHelm()
 	if err != nil {
-		return errors.Wrap(err, "failed to ensure that helm is present")
+		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
 	_, _, err = o.KubeClient()
 	if err != nil {

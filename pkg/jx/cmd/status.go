@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,17 +25,19 @@ var (
 `)
 
 	StatusExample = templates.Examples(`
-		# displays the current status of the kubernetes cluster
+		# displays the current status of the Kubernetes cluster
 		jx status
 `)
 )
 
-func NewCmdStatus(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStatus(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StatusOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{

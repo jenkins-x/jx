@@ -12,15 +12,16 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
 	delete_jenkins_user_long = templates.LongDesc(`
-		Deletes one or more jenkins user tokens from your local settings
+		Deletes one or more Jenkins user tokens from your local settings
 `)
 
 	delete_jenkins_user_example = templates.Examples(`
-		# Deletes the current jenkins token
+		# Deletes the current Jenkins token
 		jx delete jenkins user admin
 	`)
 )
@@ -33,11 +34,12 @@ type DeleteJenkinsUserOptions struct {
 }
 
 // NewCmdDeleteJenkinsUser defines the command
-func NewCmdDeleteJenkinsUser(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteJenkinsUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteJenkinsUserOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -46,7 +48,7 @@ func NewCmdDeleteJenkinsUser(f Factory, out io.Writer, errOut io.Writer) *cobra.
 
 	cmd := &cobra.Command{
 		Use:     "user",
-		Short:   "Deletes one or more jenkins user api tokens",
+		Short:   "Deletes one or more Jenkins user API tokens",
 		Aliases: []string{"token"},
 		Long:    delete_jenkins_user_long,
 		Example: delete_jenkins_user_example,
@@ -65,7 +67,7 @@ func NewCmdDeleteJenkinsUser(f Factory, out io.Writer, errOut io.Writer) *cobra.
 func (o *DeleteJenkinsUserOptions) Run() error {
 	args := o.Args
 	if len(args) == 0 {
-		return fmt.Errorf("Missing jenkins user name")
+		return fmt.Errorf("Missing Jenkins user name")
 	}
 	kubeClient, ns, err := o.KubeClient()
 	if err != nil {
@@ -101,7 +103,7 @@ func (o *DeleteJenkinsUserOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Deleted API tokens for users: %s for git server %s at %s from local settings\n",
+	log.Infof("Deleted API tokens for users: %s for Git server %s at %s from local settings\n",
 		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

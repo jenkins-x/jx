@@ -111,6 +111,17 @@ func (p *GitHubProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return answer, nil
 }
 
+func (p *GitHubProvider) IsUserInOrganisation(user string, org string) (bool, error) {
+	membership, _, err := p.Client.Organizations.GetOrgMembership(p.Context, user, org)
+	if err != nil {
+		return false, err
+	}
+	if membership != nil {
+		return true, nil
+	}
+	return false, nil
+}
+
 func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) {
 	owner := org
 	answer := []*GitRepository{}
@@ -320,7 +331,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Config: config,
 		Events: []string{"*"},
 	}
-	log.Infof("Creating github webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
+	log.Infof("Creating GitHub webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
 	_, _, err = p.Client.Repositories.CreateHook(p.Context, owner, repo, hook)
 	return err
 }
@@ -895,9 +906,9 @@ func (p *GitHubProvider) UserInfo(username string) *GitUser {
 	}
 }
 
-func (p *GitHubProvider) AddCollaborator(user string, repo string) error {
+func (p *GitHubProvider) AddCollaborator(user string, organisation string, repo string) error {
 	log.Infof("Automatically adding the pipeline user: %v as a collaborator.\n", user)
-	_, err := p.Client.Repositories.AddCollaborator(p.Context, p.Username, repo, user, &github.RepositoryAddCollaboratorOptions{})
+	_, err := p.Client.Repositories.AddCollaborator(p.Context, organisation, repo, user, &github.RepositoryAddCollaboratorOptions{})
 	if err != nil {
 		return err
 	}

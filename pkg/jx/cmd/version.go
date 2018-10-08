@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -25,10 +26,11 @@ type VersionOptions struct {
 	NoVersionCheck bool
 }
 
-func NewCmdVersion(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &VersionOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -81,16 +83,16 @@ func (o *VersionOptions) Run() error {
 		}
 	}
 
-	// kubernetes version
+	// Kubernetes version
 	client, _, err := o.KubeClient()
 	if err != nil {
-		log.Warnf("Failed to connect to kubernetes: %s\n", err)
+		log.Warnf("Failed to connect to Kubernetes: %s\n", err)
 	} else {
 		serverVersion, err := client.Discovery().ServerVersion()
 		if err != nil {
-			log.Warnf("Failed to get kubernetes server version: %s\n", err)
+			log.Warnf("Failed to get Kubernetes server version: %s\n", err)
 		} else if serverVersion != nil {
-			table.AddRow("kubernetes cluster", info(serverVersion.String()))
+			table.AddRow("Kubernetes cluster", info(serverVersion.String()))
 		}
 	}
 
@@ -182,7 +184,7 @@ func (o *VersionOptions) VersionCheck() error {
 			log.Warnf("To upgrade to this new version use: %s\n", util.ColorInfo("jx upgrade cli"))
 		} else {
 			message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
-			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.") {
+			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
 				return o.UpgradeCli()
 			}
 		}

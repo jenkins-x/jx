@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -35,12 +36,13 @@ var (
 `)
 )
 
-func NewCmdStepHelmApply(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepHelmApplyOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -62,7 +64,7 @@ func NewCmdStepHelmApply(f Factory, out io.Writer, errOut io.Writer) *cobra.Comm
 	}
 	options.addStepHelmFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The kubernetes namespace to apply the helm chart to")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Kubernetes namespace to apply the helm chart to")
 	cmd.Flags().StringVarP(&options.ReleaseName, "name", "", "", "The name of the release")
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "", true, "Wait for Kubernetes readiness probe to confirm deployment")
 	cmd.Flags().BoolVarP(&options.Force, "force", "f", true, "Whether to to pass '--force' to helm to help deal with upgrading if a previous promote failed")
@@ -88,7 +90,12 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
-	helmBinary, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	if err != nil {
+		return err
+	}
+
+	helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 	if err != nil {
 		return err
 	}
@@ -103,9 +110,8 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	releaseName := o.ReleaseName
 	if releaseName == "" {
-		if helmBinary == "helm" {
-			releaseName = ns
-		} else {
+		releaseName = ns
+		if helmBinary != "helm" || noTiller || helmTemplate {
 			releaseName = "jx"
 		}
 	}

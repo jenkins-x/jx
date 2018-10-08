@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetTeamOptions containers the CLI options
@@ -32,13 +33,15 @@ var (
 )
 
 // NewCmdGetTeam creates the new command for: jx get env
-func NewCmdGetTeam(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdGetTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetTeamOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}

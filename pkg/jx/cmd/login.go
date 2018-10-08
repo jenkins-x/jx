@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -35,11 +36,11 @@ type Login struct {
 
 // UserLoginInfo user login information
 type UserLoginInfo struct {
-	// The kubernetes api server public CA data
+	// The Kubernetes API server public CA data
 	Ca string `form:"ca,omitempty" json:"ca,omitempty" yaml:"ca,omitempty" xml:"ca,omitempty"`
 	// The login username of the user
 	Login string `form:"login,omitempty" json:"login,omitempty" yaml:"login,omitempty" xml:"login,omitempty"`
-	// The kubernetes api server address
+	// The Kubernetes API server address
 	Server string `form:"server,omitempty" json:"server,omitempty" yaml:"server,omitempty" xml:"server,omitempty"`
 	// The login token of the user
 	Token string `form:"token,omitempty" json:"token,omitempty" yaml:"token,omitempty" xml:"token,omitempty"`
@@ -49,7 +50,8 @@ type UserLoginInfo struct {
 type LoginOptions struct {
 	CommonOptions
 
-	URL string
+	URL  string
+	Team string
 }
 
 var (
@@ -60,15 +62,21 @@ var (
 
 	login_example = templates.Examples(`
 		# Onboard into CloudBees application
-		jx login`)
+		jx login -u https://cloudbees-app-url 
+	
+		# Onboard into CloudBees application and switched to team 'cheese'
+		jx login -u https://cloudbees-app-url -t cheese
+		`)
 )
 
-func NewCmdLogin(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdLogin(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &LoginOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
-			Out:     out,
-			Err:     errOut,
+			In:      in,
+
+			Out: out,
+			Err: errOut,
 		},
 	}
 	cmd := &cobra.Command{
@@ -85,6 +93,7 @@ func NewCmdLogin(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.URL, "url", "u", "", "The URL of the CloudBees application")
+	cmd.Flags().StringVarP(&options.Team, "team", "t", "", "The team to use upon login")
 
 	return cmd
 }
@@ -103,7 +112,10 @@ func (o *LoginOptions) Run() error {
 	jxlog.Infof("You are %s. You credentials are stored in %s file.\n",
 		util.ColorInfo("successfully logged in"), util.ColorInfo("~/.kube/config"))
 
-	teamOptions := TeamOptions{}
+	teamOptions := TeamOptions{
+		CommonOptions: o.CommonOptions,
+	}
+	teamOptions.Args = []string{o.Team}
 	err = teamOptions.Run()
 	if err != nil {
 		return errors.Wrap(err, "switching team")
@@ -185,7 +197,7 @@ func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 
 func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 	client := http.Client{}
-	req, err := http.NewRequest("POST", o.onboardingURL(), nil)
+	req, err := http.NewRequest(http.MethodPost, o.onboardingURL(), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "building onboarding request")
 	}
@@ -220,8 +232,8 @@ func (o *LoginOptions) OnboardUser(cookie string) (*UserLoginInfo, error) {
 
 func (o *LoginOptions) onboardingURL() string {
 	url := o.URL
-	if strings.HasPrefix(url, "/") {
-		url = strings.TrimPrefix(url, "/")
+	if strings.HasSuffix(url, "/") {
+		url = strings.TrimSuffix(url, "/")
 	}
 	return url + UserOnboardingEndpoint
 }

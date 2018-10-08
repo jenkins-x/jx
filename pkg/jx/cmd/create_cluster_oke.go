@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -53,7 +54,7 @@ type CreateClusterOKEFlags struct {
 
 var (
 	createClusterOKELong = templates.LongDesc(`
-		This command creates a new kubernetes cluster on OKE, installs required local dependencies and provisions the
+		This command creates a new Kubernetes cluster on OKE, installs required local dependencies and provisions the
 		Jenkins X platform
 
         Please add your $HOME/bin to $PATH otherwise jx will have issue invoking OCI CLI command. If you have already
@@ -75,14 +76,14 @@ var (
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterOKE(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
+func NewCmdCreateClusterOKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterOKEOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, out, errOut, OKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, OKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "oke",
-		Short:   "Create a new kubernetes cluster on OKE: Runs on Oracle Cloud",
+		Short:   "Create a new Kubernetes cluster on OKE: Runs on Oracle Cloud",
 		Long:    createClusterOKELong,
 		Example: createClusterOKEExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -138,6 +139,7 @@ func (o *CreateClusterOKEOptions) Run() error {
 }
 
 func (o *CreateClusterOKEOptions) createClusterOKE() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	//we assume user has prepared the oci config file under ~/.oci/
 	imagesArray, kubeVersionsArray, shapesArray, latestKubeVersion, err := oke.GetOptionValues()
 	if err != nil {
@@ -152,7 +154,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			Help:    "This is required environment variable",
 		}
 
-		survey.AskOne(prompt, &endpoint, nil)
+		survey.AskOne(prompt, &endpoint, nil, surveyOpts)
 	}
 	fmt.Printf("Endpoint is %s\n", endpoint)
 	os.Setenv("ENDPOINT", endpoint)
@@ -170,7 +172,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			Help:    "This is required parameter",
 		}
 
-		survey.AskOne(prompt, &compartmentId, nil)
+		survey.AskOne(prompt, &compartmentId, nil, surveyOpts)
 	}
 
 	vcnId := o.Flags.VcnId
@@ -181,7 +183,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			Help:    "This is required parameter",
 		}
 
-		survey.AskOne(prompt, &vcnId, nil)
+		survey.AskOne(prompt, &vcnId, nil, surveyOpts)
 	}
 
 	kubernetesVersion := o.Flags.KubernetesVersion
@@ -193,7 +195,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			Help:    "This is required parameter",
 		}
 
-		survey.AskOne(prompt, &kubernetesVersion, nil)
+		survey.AskOne(prompt, &kubernetesVersion, nil, surveyOpts)
 	}
 
 	//Get node pool settings
@@ -212,7 +214,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			PageSize: 10,
 		}
 
-		survey.AskOne(prompt, &nodeImageName, nil)
+		survey.AskOne(prompt, &nodeImageName, nil, surveyOpts)
 	}
 
 	nodeShape := o.Flags.NodeShape
@@ -225,7 +227,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			PageSize: 10,
 		}
 
-		survey.AskOne(prompt, &nodeShape, nil)
+		survey.AskOne(prompt, &nodeShape, nil, surveyOpts)
 	}
 
 	nodePoolSubnetIds := o.Flags.NodePoolSubnetIds
@@ -236,7 +238,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			Help:    "This is required parameter",
 		}
 
-		survey.AskOne(prompt, &nodePoolSubnetIds, nil)
+		survey.AskOne(prompt, &nodePoolSubnetIds, nil, surveyOpts)
 	}
 	nodePoolSubnetIdsArray := strings.Split(nodePoolSubnetIds, ",")
 	for i := range nodePoolSubnetIdsArray {
@@ -266,7 +268,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			Help:    "This is optional parameter and nice to have it as Jenkins X will create ingress controller based on it",
 		}
 
-		survey.AskOne(prompt, &serviceLbSubnetIds, nil)
+		survey.AskOne(prompt, &serviceLbSubnetIds, nil, surveyOpts)
 	}
 
 	if serviceLbSubnetIds != "" {
@@ -293,7 +295,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			Help:    "This is optional parameter and nice to have it as user can access work nodes with it",
 		}
 
-		survey.AskOne(prompt, &sshPublicKeyValue, nil)
+		survey.AskOne(prompt, &sshPublicKeyValue, nil, surveyOpts)
 	}
 
 	isKubernetesDashboardEnabled := o.Flags.IsKubernetesDashboardEnabled

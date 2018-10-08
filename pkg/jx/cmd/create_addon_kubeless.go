@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -19,7 +20,7 @@ const (
 
 var (
 	createAddonKubelessLong = templates.LongDesc(`
-		Creates the kubeless addon for serverless on kubernetes
+		Creates the kubeless addon for serverless on Kubernetes
 `)
 
 	createAddonKubelessExample = templates.Examples(`
@@ -39,12 +40,13 @@ type CreateAddonKubelessOptions struct {
 }
 
 // NewCmdCreateAddonKubeless creates a command object for the "create" command
-func NewCmdCreateAddonKubeless(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonKubeless(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonKubelessOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
+					In:      in,
 					Out:     out,
 					Err:     errOut,
 				},
@@ -54,7 +56,7 @@ func NewCmdCreateAddonKubeless(f Factory, out io.Writer, errOut io.Writer) *cobr
 
 	cmd := &cobra.Command{
 		Use:     "kubeless",
-		Short:   "Create a kubeless addon for hosting git repositories",
+		Short:   "Create a kubeless addon for hosting Git repositories",
 		Aliases: []string{"env"},
 		Long:    createAddonKubelessLong,
 		Example: createAddonKubelessExample,
@@ -84,7 +86,7 @@ func (o *CreateAddonKubelessOptions) Run() error {
 	}
 	err := o.ensureHelm()
 	if err != nil {
-		return errors.Wrap(err, "failed to ensure that helm is present")
+		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
 	values := []string{"rbac.create=true"}
 	setValues := strings.Split(o.SetValues, ",")

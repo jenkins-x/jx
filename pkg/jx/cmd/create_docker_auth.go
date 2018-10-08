@@ -3,11 +3,13 @@ package cmd
 import (
 	b64 "encoding/base64"
 	"encoding/json"
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"io"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,12 +33,12 @@ var (
 `)
 
 	createDockerAuthExample = templates.Examples(`
-		# Create/update docker auth entry in the config.json file
+		# Create/update Docker auth entry in the config.json file
 		jx create docker auth --host "foo.private.docker.registry" --user "foo" --secret "FooDockerHubToken" --email "fakeemail@gmail.com"
 	`)
 )
 
-// CreateDockerAuthOptions the options for the create docker auth command
+// CreateDockerAuthOptions the options for the create Docker auth command
 type CreateDockerAuthOptions struct {
 	CreateOptions
 
@@ -47,20 +49,22 @@ type CreateDockerAuthOptions struct {
 }
 
 // NewCmdCreateIssue creates a command object for the "create" command
-func NewCmdCreateDockerAuth(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDockerAuth(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateDockerAuthOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
-				Out:     out,
-				Err:     errOut,
+				In:      in,
+
+				Out: out,
+				Err: errOut,
 			},
 		},
 	}
 
 	cmd := &cobra.Command{
 		Use:     "docker auth",
-		Short:   "Create/update docker auth for a given host and user in the config.json file",
+		Short:   "Create/update Docker auth for a given host and user in the config.json file",
 		Long:    createDockerAuthLong,
 		Example: createDockerAuthExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -71,7 +75,7 @@ func NewCmdCreateDockerAuth(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Host, host, "t", "", "The docker host")
+	cmd.Flags().StringVarP(&options.Host, host, "t", "", "The Docker host")
 	cmd.Flags().StringVarP(&options.User, username, "u", "", "The user to associate auth component of config.json")
 	cmd.Flags().StringVarP(&options.Secret, "secret", "s", "", "The secret to associate auth component of config.json")
 	cmd.Flags().StringVarP(&options.Email, "email", "e", "", "The email to associate auth component of config.json")
@@ -81,6 +85,7 @@ func NewCmdCreateDockerAuth(f Factory, out io.Writer, errOut io.Writer) *cobra.C
 
 // Run implements the command
 func (o *CreateDockerAuthOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if o.Host == "" {
 		return util.MissingOption(host)
 	}
@@ -92,14 +97,14 @@ func (o *CreateDockerAuthOptions) Run() error {
 		prompt := &survey.Password{
 			Message: "Please provide secret for the host: " + o.Host + "  and user: " + o.User,
 		}
-		survey.AskOne(prompt, &secret, nil)
+		survey.AskOne(prompt, &secret, nil, surveyOpts)
 	}
 	email := o.Email
 	if email == "" {
 		prompt := &survey.Input{
 			Message: "Please provide email ID for the host: " + o.Host + "  and user: " + o.User,
 		}
-		survey.AskOne(prompt, &secret, nil)
+		survey.AskOne(prompt, &email, nil, surveyOpts)
 	}
 	kubeClient, currentNs, err := o.KubeClient()
 	if err != nil {

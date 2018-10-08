@@ -8,11 +8,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
 	createChatServer_long = templates.LongDesc(`
-		Adds a new Chat Server URL
+		Adds a new chat server URL
 `)
 
 	createChatServer_example = templates.Examples(`
@@ -29,11 +30,12 @@ type CreateChatServerOptions struct {
 }
 
 // NewCmdCreateChatServer creates a command object for the "create" command
-func NewCmdCreateChatServer(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdCreateChatServer(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateChatServerOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},

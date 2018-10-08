@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -58,10 +59,11 @@ type DeleteAppOptions struct {
 }
 
 // NewCmdDeleteApp creates a command object for this command
-func NewCmdDeleteApp(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteAppOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
+			In:      in,
 			Out:     out,
 			Err:     errOut,
 		},
@@ -69,7 +71,7 @@ func NewCmdDeleteApp(f Factory, out io.Writer, errOut io.Writer) *cobra.Command 
 
 	cmd := &cobra.Command{
 		Use:     "application",
-		Short:   "Deletes one or many applications from Jenkins",
+		Short:   "Deletes one or more applications from Jenkins",
 		Long:    deleteAppLong,
 		Example: deleteAppExample,
 		Aliases: []string{"applications", "app", "apps"},
@@ -136,7 +138,7 @@ func (o *DeleteAppOptions) Run() error {
 	}
 
 	if len(args) == 0 {
-		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter)
+		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -153,7 +155,7 @@ func (o *DeleteAppOptions) Run() error {
 	deleteMessage := strings.Join(args, ", ")
 
 	if !o.BatchMode {
-		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins") {
+		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins", o.In, o.Out, o.Err) {
 			return nil
 		}
 	}
@@ -170,7 +172,7 @@ func (o *DeleteAppOptions) Run() error {
 	return nil
 }
 
-func (o *DeleteAppOptions) deleteApp(jenkinsClient *gojenkins.Jenkins, name string, job *gojenkins.Job) error {
+func (o *DeleteAppOptions) deleteApp(jenkinsClient gojenkins.JenkinsClient, name string, job *gojenkins.Job) error {
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
 	if err != nil {
 		return err

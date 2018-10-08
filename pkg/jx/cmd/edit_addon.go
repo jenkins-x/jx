@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -24,7 +25,7 @@ var (
 `)
 
 	editAddonExample = templates.Examples(`
-		# Enables or disbles an addon
+		# Enables or disables an addon
 		jx edit addon
 
 		# Enables or disables an addon
@@ -43,11 +44,12 @@ type EditAddonOptions struct {
 }
 
 // NewCmdEditAddon creates a command object for the "create" command
-func NewCmdEditAddon(f Factory, out io.Writer, errOut io.Writer) *cobra.Command {
+func NewCmdEditAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &EditAddonOptions{
 		EditOptions: EditOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
+				In:      in,
 				Out:     out,
 				Err:     errOut,
 			},
@@ -82,7 +84,7 @@ func (o *EditAddonOptions) Run() error {
 	charts := kube.AddonCharts
 	names := util.SortedMapKeys(charts)
 	if o.Name == "" {
-		o.Name, err = util.PickName(names, "Pick the addon to configure")
+		o.Name, err = util.PickName(names, "Pick the addon to configure", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -107,7 +109,7 @@ func (o *EditAddonOptions) Run() error {
 		}
 		config.Enabled = value
 	} else {
-		config.Enabled = util.Confirm("Enable addon "+o.Name, config.Enabled, "If an addon is enabled it is installed when using 'jx create cluster' or 'jx install'")
+		config.Enabled = util.Confirm("Enable addon "+o.Name, config.Enabled, "If an addon is enabled it is installed when using 'jx create cluster' or 'jx install'", o.In, o.Out, o.Err)
 	}
 
 	return addonConfig.Save()

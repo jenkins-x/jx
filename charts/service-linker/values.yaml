@@ -1,4 +1,4 @@
-gc-activities:
+service-linker:
   serviceaccount:
     enabled: true
   cronjob:

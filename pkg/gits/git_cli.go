@@ -65,9 +65,19 @@ func (g *GitCLI) Clone(url string, dir string) error {
 	return g.gitCmd(dir, "clone", url, ".")
 }
 
-// Pull pulls the git repository in the given directory
+// Pull pulls the Git repository in the given directory
 func (g *GitCLI) Pull(dir string) error {
 	return g.gitCmd(dir, "pull")
+}
+
+// PullRemoteBranches pulls the remote Git tags from the given given directory
+func (g *GitCLI) PullRemoteBranches(dir string) error {
+	return g.gitCmd(dir, "pull", "--all")
+}
+
+// DeleteRemoteBranch deletes the remote branch in the given given directory
+func (g *GitCLI) DeleteRemoteBranch(dir string, remoteName string, branch string) error {
+	return g.gitCmd(dir, "push", remoteName, "--delete", branch)
 }
 
 // CloneOrPull clones  the given git URL or pull if it already exists
@@ -148,14 +158,29 @@ func (g *GitCLI) Checkout(dir string, branch string) error {
 	return g.gitCmd(dir, "checkout", branch)
 }
 
+// Checkout checks out the given branch
+func (g *GitCLI) CheckoutOrphan(dir string, branch string) error {
+	return g.gitCmd(dir, "checkout", "--orphan", branch)
+}
+
 // Init inits a git repository into the given directory
 func (g *GitCLI) Init(dir string) error {
 	return g.gitCmd(dir, "init")
 }
 
-// Remove removes the given file from a git repository located at the given directory
+// Remove removes the given file from a Git repository located at the given directory
 func (g *GitCLI) Remove(dir, fileName string) error {
 	return g.gitCmd(dir, "rm", "-r", fileName)
+}
+
+// Remove force removes the given file from a git repository located at the given directory
+func (g *GitCLI) RemoveForce(dir, fileName string) error {
+	return g.gitCmd(dir, "rm", "-rf", fileName)
+}
+
+// Clean force cleans a git repository located at a given directory
+func (g *GitCLI) CleanForce(dir, fileName string) error {
+	return g.gitCmd(dir, "clean", "-fd", fileName)
 }
 
 // Status returns the status of the git repository at the given directory
@@ -245,7 +270,7 @@ func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
 	return cmd.RunWithoutRetry()
 }
 
-// CreatePushURL creates the git repository URL with the username and password encoded for HTTPS based URLs
+// CreatePushURL creates the Git repository URL with the username and password encoded for HTTPS based URLs
 func (g *GitCLI) CreatePushURL(cloneURL string, userAuth *auth.UserAuth) (string, error) {
 	u, err := url.Parse(cloneURL)
 	if err != nil {
@@ -267,7 +292,7 @@ func (g *GitCLI) RepoName(org, repoName string) string {
 	return repoName
 }
 
-// Server returns the git server of the repository at the given directory
+// Server returns the Git server of the repository at the given directory
 func (g *GitCLI) Server(dir string) (string, error) {
 	repo, err := g.Info(dir)
 	if err != nil {
@@ -292,7 +317,7 @@ func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
 
 	repo, err := ParseGitURL(rUrl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse git URL %s due to %s", rUrl, err)
+		return nil, fmt.Errorf("failed to parse Git URL %s due to %s", rUrl, err)
 	}
 	return repo, err
 }
@@ -331,6 +356,10 @@ func (g *GitCLI) ConvertToValidBranchName(name string) string {
 		last = ch
 	}
 	return buffer.String()
+}
+
+func (g *GitCLI) FetchBranch(dir string, repo string, refspec string) error {
+	return g.gitCmd(dir, "fetch", repo, refspec)
 }
 
 // GetAuthorEmailForCommit returns the author email from commit message with the given SHA
@@ -490,7 +519,7 @@ func (g *GitCLI) CreateTag(dir string, tag string, msg string) error {
 	return g.gitCmd("", "tag", "-fa", tag, "-m", msg)
 }
 
-// PrintCreateRepositoryGenerateAccessToken prints the access token URL of a git repository
+// PrintCreateRepositoryGenerateAccessToken prints the access token URL of a Git repository
 func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
 	tokenUrl := ProviderAccessTokenURL(server.Kind, server.URL, username)
 
@@ -560,7 +589,7 @@ func (g *GitCLI) SetEmail(dir string, email string) error {
 	return nil
 }
 
-// CreateBranch creates a branch with the given name in the git repository from the given directory
+// CreateBranch creates a branch with the given name in the Git repository from the given directory
 func (g *GitCLI) CreateBranch(dir string, branch string) error {
 	return g.gitCmd(dir, "branch", branch)
 }

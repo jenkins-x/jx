@@ -9,6 +9,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/util"
+
+	//. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,4 +38,18 @@ tutorial@bamboo-depth-206411.iam.gserviceaccount.com`
 
 	username = `tutorial@bamboo-depth-206411.iam.gserviceaccount.com`
 	assert.Equal(t, cmd.GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
+}
+
+func TestInstallRun(t *testing.T) {
+	// Create mocks...
+	//factory := cmd_mocks.NewMockFactory()
+	//kubernetesInterface := kube_mocks.NewSimpleClientset()
+	//// Override CreateClient to return mock Kubernetes interface
+	//When(factory.CreateClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
+
+	//options := cmd.CreateInstallOptions(factory, os.Stdin, os.Stdout, os.Stderr)
+
+	//err := options.Run()
+
+	//assert.NoError(t, err, "Should not error")
 }

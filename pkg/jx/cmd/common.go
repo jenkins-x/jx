@@ -3,9 +3,11 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,8 +21,6 @@ import (
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"strconv"
-
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -28,6 +28,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,19 +45,22 @@ const (
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory              Factory
-	Out                  io.Writer
-	Err                  io.Writer
-	Cmd                  *cobra.Command
-	Args                 []string
-	BatchMode            bool
-	Verbose              bool
-	Headless             bool
-	NoBrew               bool
-	InstallDependencies  bool
-	SkipAuthSecretsMerge bool
-	ServiceAccount       string
-	Username             string
+	Factory                Factory
+	In                     terminal.FileReader
+	Out                    terminal.FileWriter
+	Err                    io.Writer
+	Cmd                    *cobra.Command
+	Args                   []string
+	BatchMode              bool
+	Verbose                bool
+	LogLevel               string
+	Headless               bool
+	NoBrew                 bool
+	InstallDependencies    bool
+	SkipAuthSecretsMerge   bool
+	ServiceAccount         string
+	Username               string
+	ExternalJenkinsBaseURL string
 
 	// common cached clients
 	KubeClientCached    kubernetes.Interface
@@ -64,11 +68,24 @@ type CommonOptions struct {
 	currentNamespace    string
 	devNamespace        string
 	jxClient            versioned.Interface
-	jenkinsClient       *gojenkins.Jenkins
+	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
 
 	Prow
+}
+
+type ServerFlags struct {
+	ServerName string
+	ServerURL  string
+}
+
+func (f *ServerFlags) IsEmpty() bool {
+	return f.ServerName == "" && f.ServerURL == ""
+}
+
+func (c *CommonOptions) CreateTable() table.Table {
+	return c.Factory.CreateTable(c.Out)
 }
 
 // NewCommonOptions a helper method to create a new CommonOptions instance
@@ -83,24 +100,10 @@ func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
 	}
 }
 
-type ServerFlags struct {
-	ServerName string
-	ServerURL  string
-}
-
-func (f *ServerFlags) IsEmpty() bool {
-	return f.ServerName == "" && f.ServerURL == ""
-}
-
-func (c *CommonOptions) Stdout() io.Writer {
-	if c.Out != nil {
-		return c.Out
-	}
-	return os.Stdout
-}
-
-func (c *CommonOptions) CreateTable() table.Table {
-	return c.Factory.CreateTable(c.Stdout())
+// SetDevNamespace configures the current dev namespace
+func (c *CommonOptions) SetDevNamespace(ns string) {
+	c.devNamespace = ns
+	c.currentNamespace = ns
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
@@ -113,6 +116,7 @@ func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "In batch mode the command never prompts for user input")
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
+	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
 	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
 	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install or upgrade command line dependencies")
 	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")
@@ -212,14 +216,14 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 	return o.jxClient, o.devNamespace, nil
 }
 
-func (o *CommonOptions) JenkinsClient() (*gojenkins.Jenkins, error) {
+func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 	if o.jenkinsClient == nil {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
 		if err != nil {
 			return nil, err
 		}
 
-		jenkins, err := o.Factory.CreateJenkinsClient(kubeClient, ns)
+		jenkins, err := o.Factory.CreateJenkinsClient(kubeClient, ns, o.In, o.Out, o.Err)
 
 		if err != nil {
 			return nil, err
@@ -246,11 +250,25 @@ func (o *CommonOptions) Git() gits.Gitter {
 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
-		helmBinary, noTiller, err := o.TeamHelmBin()
+		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
 			helmBinary = defaultHelmBin
 		}
-		o.helm = helm.NewHelmCLI(helmBinary, helm.V2, "")
+		featureFlag := "none"
+		if helmTemplate {
+			featureFlag = "template-mode"
+		} else if noTiller {
+			featureFlag = "no-tiller-server"
+		}
+		log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+		helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
+		o.helm = helmCLI
+		if helmTemplate {
+			kubeClient, _, _ := o.KubeClient()
+			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient)
+		} else {
+			o.helm = helmCLI
+		}
 		if noTiller {
 			o.helm.SetHost(o.tillerAddress())
 			o.startLocalTillerIfNotRunning()
@@ -268,11 +286,11 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the git server to add a user")
-	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the Git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the Git server to add a user")
 }
 
-// findGitServer finds the git server from the given flags or returns an error
+// findGitServer finds the Git server from the given flags or returns an error
 func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
 	return o.findServer(config, serverFlags, "git", "Try creating one via: jx create git server", false)
 }
@@ -338,7 +356,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 				defaultServerName = s.Name
 			}
 		}
-		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName)
+		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, o.In, o.Out, o.Err)
 		if err != nil {
 			return nil, err
 		}
@@ -372,7 +390,7 @@ func (o *CommonOptions) findService(name string) (string, error) {
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ")
+			name, err = util.PickName(names, "Pick service to open: ", o.In, o.Out, o.Err)
 			if err != nil {
 				return "", err
 			}
@@ -435,7 +453,7 @@ func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, 
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ")
+			name, err = util.PickName(names, "Pick service to open: ", o.In, o.Out, o.Err)
 			if err != nil {
 				return "", err
 			}
@@ -609,10 +627,12 @@ func (o *CommonOptions) tailBuild(jobName string, build *gojenkins.Build) error 
 	}
 	buildPath := u.Path
 	log.Infof("%s %s\n", "tailing the log of", fmt.Sprintf("%s #%d", jobName, build.Number))
+	// TODO Logger
 	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour*100)
 }
 
 func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	urls := []string{}
 	if config.Remotes != nil {
 		for _, r := range config.Remotes {
@@ -632,7 +652,7 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 			Message: "Choose a remote git URL:",
 			Options: urls,
 		}
-		err := survey.AskOne(prompt, &url, nil)
+		err := survey.AskOne(prompt, &url, nil, surveyOpts)
 		if err != nil {
 			return "", err
 		}
@@ -690,7 +710,7 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	return o.runExposecontroller(devNamespace, targetNamespace, ic)
 }
 
-func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig) error {
+func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 
 	o.CleanExposecontrollerReources(targetNamespace)
 
@@ -704,8 +724,27 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 		exValues = append(exValues, "config.http=true")
 	}
 
+	if len(services) > 0 {
+		serviceCfg := "config.extravalues='services: ["
+		for i, service := range services {
+			if i > 0 {
+				serviceCfg += ","
+			}
+			serviceCfg += service
+		}
+		serviceCfg += "]''"
+		exValues = append(exValues, serviceCfg)
+	}
+
 	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
-	err := o.installChart(helmRelease, exposecontrollerChart, exposecontrollerVersion, targetNamespace, true, exValues)
+	err := o.installChartOptions(InstallChartOptions{
+		ReleaseName: helmRelease,
+		Chart:       exposecontrollerChart,
+		Version:     exposecontrollerVersion,
+		Ns:          targetNamespace,
+		HelmUpdate:  true,
+		SetValues:   exValues,
+	})
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}
@@ -713,7 +752,7 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	if err != nil {
 		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
 	}
-	return o.helm.DeleteRelease(helmRelease, true)
+	return o.helm.DeleteRelease(targetNamespace, helmRelease, true)
 
 }
 
