@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -15,10 +16,8 @@ import (
 
 const (
 	defaultVaultNamesapce     = "jx"
-	defaultVaultReleaseName   = "vault-operator"
 	jxRepoName                = "jenkinsxio"
 	jxRepoURL                 = "https://chartmuseum.jx.cd.jenkins-x.io"
-	vaultOperatorChart        = "jenkinsxio/vault-operator"
 	vaultOperatorChartVersion = ""
 )
 
@@ -70,7 +69,7 @@ func NewCmdCreateAddonVault(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultVaultNamesapce, defaultVaultReleaseName)
+	options.addFlags(cmd, defaultVaultNamesapce, kube.DefaultVaultOperatorReleaseName)
 	return cmd
 }
 
@@ -93,5 +92,5 @@ func (o *CreateAddonVaultOptions) Run() error {
 	log.Infof("Installing %s...\n", util.ColorInfo(o.ReleaseName))
 
 	values := strings.Split(o.SetValues, ",")
-	return o.installChart(o.ReleaseName, vaultOperatorChart, vaultOperatorChartVersion, o.Namespace, true, values)
+	return o.installChart(o.ReleaseName, kube.ChartVaultOperator, vaultOperatorChartVersion, o.Namespace, true, values)
 }
