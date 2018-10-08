@@ -376,3 +376,16 @@ func (extensionsConfig *ExtensionConfigList) LoadFromConfigMap(configMapName str
 	}
 	return extensionsConfig, nil
 }
+
+func (e *ExtensionSpec) IsPost() bool {
+	return e.Contains(e.When, ExtensionWhenPost) || len(e.When) == 0
+}
+
+func (e *ExtensionSpec) Contains(whens []ExtensionWhen, when ExtensionWhen) bool {
+	for _, w := range whens {
+		if when == w {
+			return true
+		}
+	}
+	return false
+}
