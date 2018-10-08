@@ -1131,13 +1131,13 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Remove(binDir + "/jx")
-	if err != nil && o.Verbose {
-		log.Infof("Skipping removal of old jx binary: %s\n", err)
-	}
 	err = os.Remove(tarFile)
 	if err != nil {
 		return err
+	}
+	err = os.Remove(binDir + "/jx")
+	if err != nil && o.Verbose {
+		log.Infof("Skipping removal of old jx binary: %s\n", err)
 	}
 	// Copy over the new binary
 	err = os.Rename(os.TempDir()+"/jx", binDir+"/jx")
