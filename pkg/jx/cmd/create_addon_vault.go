@@ -99,5 +99,11 @@ func (o *CreateAddonVaultOptions) Run() error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	return o.installChart(o.ReleaseName, kube.ChartVaultOperator, vaultOperatorChartVersion, o.Namespace, true, values)
+	err = o.installChart(o.ReleaseName, kube.ChartVaultOperator, vaultOperatorChartVersion, o.Namespace, true, values)
+	if err != nil {
+		return errors.Wrap(err, "installing vault-operator chart")
+	}
+
+	log.Infof("%s addon succesfully installed.\n", util.ColorInfo(o.ReleaseName))
+	return nil
 }
