@@ -49,7 +49,7 @@ type CreateAddonSSOOptions struct {
 	UpgradeIngressOptions UpgradeIngressOptions
 }
 
-// NewCmdCreateAddonSSO creates a command object for the "create sso" command
+// NewCmdCreateAddonSSO creates a command object for the "create addon sso" command
 func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	commonOptions := CommonOptions{
 		Factory: f,
