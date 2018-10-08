@@ -20,9 +20,6 @@ type CloudBeesOptions struct {
 }
 
 var (
-	// TODO this won't work yet as the ingress can't handle fake paths
-	appendTeam = false
-
 	cdx_long = templates.LongDesc(`
 		Opens the CloudBees app for Kubernetes in a browser.
 
@@ -60,38 +57,36 @@ func NewCmdCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter,
 			CheckErr(err)
 		},
 	}
+	cmd.AddCommand(NewCmdCloudBeesPipeline(f, in, out, errOut))
 	cmd.Flags().BoolVarP(&options.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
 	return cmd
 }
 
 func (o *CloudBeesOptions) Run() error {
-	client, ns, err := o.KubeClient()
+	url, err := o.GetBaseURL()
 	if err != nil {
 		return err
 	}
+	return o.OpenURL(url, "CloudBees")
+}
 
-	url, err := kube.GetServiceURLFromName(client, kube.ServiceCloudBees, defaultCloudBeesNamespace)
+func (o *CloudBeesOptions) GetBaseURL() (url string, err error) {
+	client, _, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("%s\n\nDid you install the CloudBees addon via: %s\n\nFor more information see: %s", err, util.ColorInfo("jx create addon cloudbees"), util.ColorInfo("https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x"))
+		return "", err
+	}
+	url, err = kube.GetServiceURLFromName(client, kube.ServiceCloudBees, defaultCloudBeesNamespace)
+	if err != nil {
+		return "", fmt.Errorf("%s\n\nDid you install the CloudBees addon via: %s\n\nFor more information see: %s", err, util.ColorInfo("jx create addon cloudbees"), util.ColorInfo("https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x"))
 	}
 
 	if url == "" {
 		url, err = kube.GetServiceURLFromName(client, fmt.Sprintf("sso-%s", kube.ServiceCloudBees), defaultCloudBeesNamespace)
 		if err != nil {
-			return fmt.Errorf("%s\n\nDid you install the CloudBees addon via: %s\n\nFor more information see: %s", err, util.ColorInfo("jx create addon cloudbees"), util.ColorInfo("https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x"))
+			return "", fmt.Errorf("%s\n\nDid you install the CloudBees addon via: %s\n\nFor more information see: %s", err, util.ColorInfo("jx create addon cloudbees"), util.ColorInfo("https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x"))
 		}
 	}
-
-	if appendTeam {
-		devNs, _, err := kube.GetDevNamespace(client, ns)
-		if err != nil {
-			return err
-		}
-		if devNs != "" {
-			url = util.UrlJoin(url, "teams", devNs)
-		}
-	}
-	return o.OpenURL(url, "CloudBees")
+	return url, nil
 }
 
 func (o *CloudBeesOptions) Open(name string, label string) error {
