@@ -3,13 +3,14 @@ package v1
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/stoewer/go-strcase"
-	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
 )
 
 // +genclient
@@ -172,4 +173,8 @@ func (e *ExtensionDetails) ToExecutable(envVarValues map[string]string) (ext Exe
 		fmt.Fprintf(envVarsFormatted, "%s=%s, ", key, value)
 	}
 	return res, strings.TrimSuffix(envVarsFormatted.String(), ", "), err
+}
+
+func (e *ExtensionDetails) FullyQualifiedName() (fqn string) {
+	return fmt.Sprintf("%s.%s", e.Namespace, e.Name)
 }
