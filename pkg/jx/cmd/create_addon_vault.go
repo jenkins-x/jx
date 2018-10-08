@@ -15,10 +15,12 @@ import (
 )
 
 const (
-	defaultVaultNamesapce     = "jx"
-	jxRepoName                = "jenkinsxio"
-	jxRepoURL                 = "https://chartmuseum.jx.cd.jenkins-x.io"
-	vaultOperatorChartVersion = ""
+	defaultVaultNamesapce        = "jx"
+	jxRepoName                   = "jenkinsxio"
+	jxRepoURL                    = "https://chartmuseum.jx.cd.jenkins-x.io"
+	vaultOperatorChartVersion    = ""
+	vaultOperatorImageRepository = "banzaicloud/vault-operator"
+	vaultOperatorImageTag        = "0.3.4"
 )
 
 var (
@@ -91,6 +93,11 @@ func (o *CreateAddonVaultOptions) Run() error {
 
 	log.Infof("Installing %s...\n", util.ColorInfo(o.ReleaseName))
 
-	values := strings.Split(o.SetValues, ",")
+	values := []string{
+		"image.repository=" + vaultOperatorImageRepository,
+		"image.tag=" + vaultOperatorImageTag,
+	}
+	setValues := strings.Split(o.SetValues, ",")
+	values = append(values, setValues...)
 	return o.installChart(o.ReleaseName, kube.ChartVaultOperator, vaultOperatorChartVersion, o.Namespace, true, values)
 }
