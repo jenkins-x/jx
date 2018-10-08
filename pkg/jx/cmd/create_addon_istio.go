@@ -21,6 +21,7 @@ const (
 	defaultIstioReleaseName = "istio"
 	defaultIstioPassword    = "istio"
 	defaultIstioConfigDir   = "/istio_service_dir"
+	defaultIstioVersion     = ""
 )
 
 var (
@@ -78,9 +79,8 @@ func NewCmdCreateAddonIstio(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultIstioNamespace, defaultIstioReleaseName)
+	options.addFlags(cmd, defaultIstioNamespace, defaultIstioReleaseName, defaultIstioVersion)
 
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version of the Istio chart to use")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", defaultIstioPassword, "The default password to use for Istio")
 	cmd.Flags().StringVarP(&options.ConfigDir, "config-dir", "d", defaultIstioConfigDir, "The config directory to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", "", "The name of the chart to use")

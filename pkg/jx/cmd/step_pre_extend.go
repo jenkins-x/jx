@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/stoewer/go-strcase"
 	"io"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -32,6 +32,8 @@ var (
 		jx step pre extend
 `)
 )
+
+const extensionsConfigDefaultFile = "jenkins-x-extensions.yaml"
 
 func NewCmdStepPreExtend(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepPreExtendOptions{
@@ -77,7 +79,7 @@ func (o *StepPreExtendOptions) Run() error {
 	}
 
 	extensionsClient := client.JenkinsV1().Extensions(ns)
-	repoExtensions, err := (&kube.ExtensionsConfig{}).LoadFromFile()
+	repoExtensions, err := (&jenkinsv1.ExtensionConfigList{}).LoadFromFile(extensionsConfigDefaultFile)
 	if err != nil {
 		return err
 	}
@@ -126,27 +128,25 @@ func (o *StepPreExtendOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			for k, v := range repoExtensions.Extensions {
-				e, err := extensionsClient.Get(strcase.KebabCase(k), metav1.GetOptions{})
-				name := strcase.KebabCase(k)
+			for _, v := range repoExtensions.Extensions {
+				e, err := extensionsClient.Get(v.FullyQualifiedKebabName(), metav1.GetOptions{})
 				if err != nil {
 					// Extension can't be found
-					log.Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s\n", util.ColorInfo(fmt.Sprintf("%s", strcase.KebabCase(k))), util.ColorInfo(availableExtensionsNames))
+					log.Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s\n", util.ColorInfo(fmt.Sprintf("%s", v.FullyQualifiedName())), util.ColorInfo(availableExtensionsNames))
 				} else {
 					if o.Verbose {
 						log.Infof("Adding extension %s", util.ColorInfo(name))
 					}
-
 					if o.Contains(e.Spec.When, jenkinsv1.ExtensionWhenPost) || len(e.Spec.When) == 0 {
 
 						if a.Spec.PostExtensions == nil {
-							a.Spec.PostExtensions = map[string]jenkinsv1.ExecutableExtension{}
+							a.Spec.PostExtensions = make([]jenkinsv1.ExtensionExecution, 0)
 						}
 						ext, envVarsFormatted, err := e.Spec.ToExecutable(v.Parameters)
 						if err != nil {
 							return err
 						}
-						a.Spec.PostExtensions[e.Name] = ext
+						a.Spec.PostExtensions = append(a.Spec.PostExtensions, ext)
 						log.Infof("Adding Extension %s version %s to pipeline with environment variables [ %s ]\n", util.ColorInfo(fmt.Sprintf("%s.%s", e.Spec.Namespace, e.Spec.Name)), util.ColorInfo(e.Spec.Version), util.ColorInfo(envVarsFormatted))
 					}
 				}

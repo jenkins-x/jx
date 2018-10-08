@@ -6,6 +6,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"os/exec"
 	"runtime"
+
+	"github.com/pkg/errors"
 )
 
 const EksctlVersion = "0.1.3"
@@ -41,12 +43,12 @@ func ShouldInstallBinary(binary string, expectedVersion string, versionExtractor
 
 	binaryPath, err := LookupForBinary(binary)
 	if err != nil {
-		return true, err
+		return true, errors.Wrap(err, "looking up the binary")
 	}
 	if binaryPath != "" {
 		currentVersion, err := versionExtractor.extractVersion(binaryPath, versionExtractor.arguments())
 		if err != nil {
-			return true, err
+			return true, errors.Wrap(err, "extracting the version")
 		}
 		if currentVersion == expectedVersion {
 			return false, nil
