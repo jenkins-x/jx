@@ -79,9 +79,8 @@ func NewCmdCreateAddonPipelineEvents(f Factory, in terminal.FileReader, out term
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultPENamespace, defaultPEReleaseName)
+	options.addFlags(cmd, defaultPENamespace, defaultPEReleaseName, defaultPEVersion)
 
-	cmd.Flags().StringVarP(&options.Version, "version", "v", defaultPEVersion, "The version of the pipeline events chart to use")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access pipeline-events services such as Kibana and Elasticsearch.  Defaults to default Jenkins X admin password.")
 	return cmd
 }
