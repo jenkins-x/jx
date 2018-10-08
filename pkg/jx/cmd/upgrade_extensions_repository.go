@@ -197,7 +197,7 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	uuidResolveErrors := make([]string, 0)
 	// Second pass over extensions to allow us to do things like resolve fqns into UUIDs
 	for i, lock := range newLock.Extensions {
-		newLock.Extensions[i].Children = o.recursivelyFixChildren(lock, lookupByName, lookupByUUID, &uuidResolveErrors)
+		newLock.Extensions[i].Children = o.FixChildren(lock, lookupByName, lookupByUUID, &uuidResolveErrors)
 	}
 	if len(uuidResolveErrors) > 0 {
 		bytes, err := yaml.Marshal(newLock)
@@ -226,7 +226,7 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	return nil
 }
 
-func (o *UpgradeExtensionsRepositoryOptions) recursivelyFixChildren(lock jenkinsv1.ExtensionSpec, lookupByName map[string]jenkinsv1.ExtensionSpec, lookupByUUID map[string]jenkinsv1.ExtensionSpec, resolveErrors *[]string) (children []string) {
+func (o *UpgradeExtensionsRepositoryOptions) FixChildren(lock jenkinsv1.ExtensionSpec, lookupByName map[string]jenkinsv1.ExtensionSpec, lookupByUUID map[string]jenkinsv1.ExtensionSpec, resolveErrors *[]string) (children []string) {
 	children = make([]string, 0)
 	for _, u := range lock.Children {
 		if uuid.Parse(u) == nil {
@@ -250,14 +250,8 @@ func (o *UpgradeExtensionsRepositoryOptions) recursivelyFixChildren(lock jenkins
 				*resolveErrors = append(*resolveErrors, u)
 			}
 		}
-		if c, ok := lookupByUUID[u]; ok {
-			if len(c.Children) == 0 {
-				// Leaf, so add
-				children = append(children, u)
-			} else {
-				// Now we need to recursively resolve any children
-				children = append(children, o.recursivelyFixChildren(c, lookupByName, lookupByUUID, resolveErrors)...)
-			}
+		if _, ok := lookupByUUID[u]; ok {
+			children = append(children, u)
 		}
 	}
 	return children

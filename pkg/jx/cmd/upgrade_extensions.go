@@ -195,7 +195,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 			},
 			Spec: extension,
 		})
-		log.Infof("Adding Extension %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(newVersion))
+		log.Infof("Adding %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(newVersion))
 		if err != nil {
 			return res, true, err
 		}
@@ -224,7 +224,7 @@ func (o *UpgradeExtensionsOptions) UpstallExtension(e jenkinsv1.ExtensionSpec, e
 	if err != nil {
 		return err
 	}
-	log.Infof("Installing Extension %s version %s to pipeline with environment variables [ %s ]\n", util.ColorInfo(fmt.Sprintf("%s:%s", e.Namespace, e.Name)), util.ColorInfo(e.Version), util.ColorInfo(envVarsFormatted))
+	log.Infof("Installing %s version %s with environment variables [ %s ]\n", util.ColorInfo(fmt.Sprintf("%s:%s", e.Namespace, e.Name)), util.ColorInfo(e.Version), util.ColorInfo(envVarsFormatted))
 	return ext.Execute(o.Verbose)
 }
 
