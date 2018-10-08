@@ -296,7 +296,7 @@ func (o *StepChangelogOptions) Run() error {
 
 	gitKind, err := o.GitServerKind(gitInfo)
 	foundGitProvider := true
-	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc, gitKind, o.Git())
+	gitProvider, err := o.State.GitInfo.CreateProvider(authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		foundGitProvider = false
 		log.Warnf("Could not create GitProvide so cannot update the release notes: %s\n", err)

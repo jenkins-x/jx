@@ -60,6 +60,7 @@ func NewCmdCreateAddon(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonProw(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonSSO(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonVault(f, in, out, errOut))
 
 	options.addFlags(cmd, kube.DefaultNamespace, "")
 	return cmd

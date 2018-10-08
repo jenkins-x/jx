@@ -219,7 +219,7 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 
-		gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind, o.Git())
+		gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 		if err != nil {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}

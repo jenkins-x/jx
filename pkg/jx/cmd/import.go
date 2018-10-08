@@ -200,7 +200,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 // Run executes the command
 func (options *ImportOptions) Run() error {
 	if options.ListDraftPacks {
-		packs, err := allDraftPacks()
+		packs, err := options.allDraftPacks()
 		if err != nil {
 			log.Error(err.Error())
 			return err
@@ -328,14 +328,6 @@ func (options *ImportOptions) Run() error {
 			options.Dir = dir
 		}
 	}
-	if options.AppName == "" {
-		dir, err := filepath.Abs(options.Dir)
-		if err != nil {
-			return err
-		}
-		_, options.AppName = filepath.Split(dir)
-	}
-	options.AppName = kube.ToValidName(strings.ToLower(options.AppName))
 
 	checkForJenkinsfile := options.Jenkinsfile == "" && !options.DisableJenkinsfileCheck
 	shouldClone := checkForJenkinsfile || !options.DisableDraft
@@ -361,6 +353,25 @@ func (options *ImportOptions) Run() error {
 			}
 		}
 	}
+
+	if options.AppName == "" {
+		if options.RepoURL != "" {
+			info, err := gits.ParseGitURL(options.RepoURL)
+			if err != nil {
+				log.Warnf("Failed to parse git URL %s : %s\n", options.RepoURL, err)
+			} else {
+				options.AppName = info.Name
+			}
+		}
+	}
+	if options.AppName == "" {
+		dir, err := filepath.Abs(options.Dir)
+		if err != nil {
+			return err
+		}
+		_, options.AppName = filepath.Split(dir)
+	}
+	options.AppName = kube.ToValidName(strings.ToLower(options.AppName))
 
 	if !options.DisableDraft {
 		err = options.DraftCreate()
@@ -1391,10 +1402,10 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	return nil
 }
 
-func allDraftPacks() ([]string, error) {
+func (o *ImportOptions) allDraftPacks() ([]string, error) {
 	// lets make sure we have the latest draft packs
 	initOpts := InitOptions{
-		CommonOptions: CommonOptions{},
+		CommonOptions: o.CommonOptions,
 	}
 	log.Info("Getting latest packs ...\n")
 	dir, err := initOpts.initBuildPacks()

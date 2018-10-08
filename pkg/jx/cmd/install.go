@@ -232,6 +232,23 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
+	if options.Flags.Provider == EKS {
+		var deps []string
+		d := binaryShouldBeInstalled("eksctl")
+		if d != "" {
+			deps = append(deps, d)
+		}
+		d = binaryShouldBeInstalled("heptio-authenticator-aws")
+		if d != "" {
+			deps = append(deps, d)
+		}
+		err := options.installMissingDependencies(deps)
+		if err != nil {
+			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+			os.Exit(-1)
+		}
+	}
+
 	client, originalNs, err := options.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the kube client")
