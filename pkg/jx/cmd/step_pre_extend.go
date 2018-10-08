@@ -157,7 +157,7 @@ func (o *StepPreExtendOptions) walk(extension jenkinsv1.ExtensionSpec, lookup ma
 	result := make([]jenkinsv1.ExtensionExecution, 0)
 	if len(extension.Children) > 0 {
 		if depth > 0 {
-			indent := ((depth - 1) * 3) + 7
+			indent := ((depth - 1) * 2) + 7
 			log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 		} else {
 			log.Infof("Adding %s version %s to pipeline\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
@@ -169,6 +169,8 @@ func (o *StepPreExtendOptions) walk(extension jenkinsv1.ExtensionSpec, lookup ma
 					return result, err
 				}
 				result = append(result, children...)
+			} else {
+				errors.New(fmt.Sprintf("Unable to locate extension %s", childRef))
 			}
 		}
 	} else {

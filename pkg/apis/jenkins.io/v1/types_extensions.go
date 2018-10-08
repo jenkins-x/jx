@@ -199,7 +199,6 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 		Name: scriptFile.Name(),
 		Env:  envVars,
 	}
-	log.Infof("Running Extension %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", e.Namespace, e.Name)))
 	out, err := cmd.RunWithoutRetry()
 	log.Infoln(out)
 	if err != nil {
@@ -208,6 +207,7 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 	return nil
 }
 
+// TODO remove the env vars formatting stuff from here and make it a function on ExtensionSpec
 func (e *ExtensionSpec) ToExecutable(envVarValues []ExtensionParameterValue) (ext ExtensionExecution, envVarsStr string, err error) {
 	envVars := make([]EnvironmentVariable, 0)
 	for _, p := range e.Parameters {
@@ -336,6 +336,14 @@ func (e *ExtensionConfig) FullyQualifiedKebabName() (fqn string) {
 	return fmt.Sprintf("%s.%s", strcase.KebabCase(e.Namespace), strcase.KebabCase(e.Name))
 }
 
+func (e *ExtensionExecution) FullyQualifiedName() (fqn string) {
+	return fmt.Sprintf("%s.%s", e.Namespace, e.Name)
+}
+
+func (e *ExtensionExecution) FullyQualifiedKebabName() (fqn string) {
+	return fmt.Sprintf("%s.%s", strcase.KebabCase(e.Namespace), strcase.KebabCase(e.Name))
+}
+
 func (extensionsConfig *ExtensionConfigList) LoadFromFile(inputFile string) (cfg *ExtensionConfigList, err error) {
 	extensionsYamlPath, err := filepath.Abs(inputFile)
 	if err != nil {
@@ -366,15 +374,13 @@ func (extensionsConfig *ExtensionConfigList) LoadFromConfigMap(configMapName str
 		}
 	}
 	extensionsConfig.Extensions = make([]ExtensionConfig, 0)
-	for _, v := range cm.Data {
-		extensionConfig := ExtensionConfig{}
-		err = yaml.Unmarshal([]byte(v), &extensionsConfig)
-		if err != nil {
-			return nil, err
-		}
-		extensionsConfig.Extensions = append(extensionsConfig.Extensions, extensionConfig)
+
+	extensionConfigList := ExtensionConfigList{}
+	err = yaml.Unmarshal([]byte(cm.Data["extensions"]), &extensionConfigList.Extensions)
+	if err != nil {
+		return nil, err
 	}
-	return extensionsConfig, nil
+	return &extensionConfigList, nil
 }
 
 func (e *ExtensionSpec) IsPost() bool {
