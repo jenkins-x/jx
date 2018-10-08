@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"os"
 	"strconv"
@@ -9,10 +11,9 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	logger "github.com/sirupsen/logrus"
 )
 
 // CreateClusterEKSOptions contains the CLI flags
@@ -89,15 +90,11 @@ func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.File
 	return cmd
 }
 
-// Run runs the command
+// Runs the command logic (including installing required binaries, parsing options and aggregating eksctl command)
 func (o *CreateClusterEKSOptions) Run() error {
+	log.ConfigureLog(o.LogLevel)
+
 	var deps []string
-	/*
-		d := binaryShouldBeInstalled("aws")
-			if d != "" {
-				deps = append(deps, d)
-			}
-	*/
 	d := binaryShouldBeInstalled("eksctl")
 	if d != "" {
 		deps = append(deps, d)
@@ -106,9 +103,10 @@ func (o *CreateClusterEKSOptions) Run() error {
 	if d != "" {
 		deps = append(deps, d)
 	}
+	logger.Debugf("Dependencies to be installed: %s", strings.Join(deps,", "))
 	err := o.installMissingDependencies(deps)
 	if err != nil {
-		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+		logger.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
 	}
 
@@ -154,16 +152,23 @@ func (o *CreateClusterEKSOptions) Run() error {
 	}
 	args = append(args, "--aws-api-timeout", flags.AWSOperationTimeout.String())
 
-	log.Info("Creating EKS cluster - this can take a while so please be patient...\n")
-	log.Infof("You can watch progress in the CloudFormation console: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/cloudformation/"))
+	logger.Info("Creating EKS cluster - this can take a while so please be patient...")
+	logger.Infof("You can watch progress in the CloudFormation console: %s", util.ColorInfo("https://console.aws.amazon.com/cloudformation/"))
 
-	log.Infof("running command: %s\n", util.ColorInfo("eksctl "+strings.Join(args, " ")))
-	err = o.runCommandVerbose("eksctl", args...)
-	if err != nil {
-		return err
+	logger.Debugf("Running command: %s", util.ColorInfo("eksctl "+strings.Join(args, " ")))
+	if logger.GetLevel() == logger.DebugLevel {
+		err = o.runCommandVerbose("eksctl", args...)
+		if err != nil {
+			return err
+		}
+		log.Blank()
+	} else {
+		err = o.runCommandQuietly("eksctl", args...)
+		if err != nil {
+			return err
+		}
 	}
-	log.Blank()
 
-	log.Info("Initialising cluster ...\n")
+	logger.Info("Initialising cluster ...\n")
 	return o.initAndInstall(EKS)
 }
