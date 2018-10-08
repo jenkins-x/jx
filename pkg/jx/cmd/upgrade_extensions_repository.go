@@ -230,7 +230,7 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 				eLock := ExtensionRepositoryLock{
 					Name:        ed.Name,
 					Namespace:   ed.Namespace,
-					Version:     tag,
+					Version:     strings.TrimPrefix(tag, "v"),
 					UUID:        UUID,
 					Description: ed.Description,
 					Parameters:  ed.Parameters,
