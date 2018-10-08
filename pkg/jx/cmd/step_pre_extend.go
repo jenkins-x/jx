@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -136,25 +137,11 @@ func (o *StepPreExtendOptions) Run() error {
 					// Extension can't be found
 					log.Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s\n", util.ColorInfo(fmt.Sprintf("%s", v.FullyQualifiedName())), util.ColorInfo(availableExtensionsNames))
 				} else {
-					if o.Verbose {
-						log.Infof("Adding extension %s", util.ColorInfo(name))
+					result, err := o.walk(e.Spec, availableExtensionsUUIDLookup, v.Parameters, 0)
+					if err != nil {
+						return err
 					}
-					if len(e.Spec.Children) > 0 {
-						log.Infof("Adding %s version %s to pipeline\n", util.ColorInfo(e.Spec.FullyQualifiedName()), util.ColorInfo(e.Spec.Version))
-						for _, childUUID := range e.Spec.Children {
-							if child, ok := availableExtensionsUUIDLookup[childUUID]; ok {
-								err = o.AddPipelineExtension(&a.Spec, child, v.Parameters, true)
-								if err != nil {
-									return err
-								}
-							}
-						}
-					} else {
-						err = o.AddPipelineExtension(&a.Spec, e.Spec, v.Parameters, false)
-						if err != nil {
-							return err
-						}
-					}
+					a.Spec.PostExtensions = result
 				}
 			}
 			a, err = activities.Update(a)
@@ -166,26 +153,42 @@ func (o *StepPreExtendOptions) Run() error {
 	return nil
 }
 
-func (o *StepPreExtendOptions) AddPipelineExtension(a *jenkinsv1.PipelineActivitySpec, e jenkinsv1.ExtensionSpec, parameters []jenkinsv1.ExtensionParameterValue, child bool) (err error) {
-	if e.IsPost() {
-
-		if a.PostExtensions == nil {
-			a.PostExtensions = make([]jenkinsv1.ExtensionExecution, 0)
-		}
-		ext, envVarsFormatted, err := e.ToExecutable(parameters)
-		if err != nil {
-			return err
-		}
-		a.PostExtensions = append(a.PostExtensions, ext)
-		envVarsStr := ""
-		if len(envVarsFormatted) > 0 {
-			envVarsStr = fmt.Sprintf("with environment variables [ %s ]", util.ColorInfo(envVarsFormatted))
-		}
-		if child {
-			log.Infof("       └ %s version %s %s\n", util.ColorInfo(e.FullyQualifiedName()), util.ColorInfo(e.Version), envVarsStr)
+func (o *StepPreExtendOptions) walk(extension jenkinsv1.ExtensionSpec, lookup map[string]jenkinsv1.ExtensionSpec, parameters []jenkinsv1.ExtensionParameterValue, depth int) (extensions []jenkinsv1.ExtensionExecution, err error) {
+	result := make([]jenkinsv1.ExtensionExecution, 0)
+	if len(extension.Children) > 0 {
+		if depth > 0 {
+			indent := ((depth - 1) * 3) + 7
+			log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 		} else {
-			log.Infof("Adding %s version %s to pipeline %s\n", util.ColorInfo(e.FullyQualifiedName()), util.ColorInfo(e.Version), envVarsStr)
+			log.Infof("Adding %s version %s to pipeline\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+		}
+		for _, childRef := range extension.Children {
+			if child, ok := lookup[childRef]; ok {
+				children, err := o.walk(child, lookup, parameters, depth+1)
+				if err != nil {
+					return result, err
+				}
+				result = append(result, children...)
+			}
+		}
+	} else {
+		if extension.IsPost() {
+			ext, envVarsFormatted, err := extension.ToExecutable(parameters)
+			if err != nil {
+				return result, err
+			}
+			envVarsStr := ""
+			if len(envVarsFormatted) > 0 {
+				envVarsStr = fmt.Sprintf("with environment variables [ %s ]", util.ColorInfo(envVarsFormatted))
+			}
+			if depth > 0 {
+				indent := ((depth - 1) * 2) + 7
+				log.Infof("%s└ %s version %s %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version), envVarsStr)
+			} else {
+				log.Infof("Adding %s version %s to pipeline %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version), envVarsStr)
+			}
+			result = append(result, ext)
 		}
 	}
-	return nil
+	return result, nil
 }
