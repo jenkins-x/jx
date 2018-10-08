@@ -166,7 +166,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		// TODO this is not very efficient probably
 		for _, c := range extensionsConfig.Extensions {
 			if c.Name == e.Name && c.Namespace == e.Namespace {
-				needsUpstalling, err = o.UpsertExtension(e, extensionsClient, installedExtensions, c, availableExtensionsUUIDLookup, 0)
+				needsUpstalling, err = o.UpsertExtension(e, extensionsClient, installedExtensions, c, availableExtensionsUUIDLookup, 0, 0)
 				if err != nil {
 					return err
 				}
@@ -191,10 +191,10 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	return nil
 }
 
-func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.ExtensionSpec, extensions typev1.ExtensionInterface, installedExtensions map[string]jenkinsv1.Extension, extensionConfig jenkinsv1.ExtensionConfig, lookup map[string]jenkinsv1.ExtensionSpec, depth int) (needsUpstalling []jenkinsv1.ExtensionExecution, err error) {
+func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.ExtensionSpec, extensions typev1.ExtensionInterface, installedExtensions map[string]jenkinsv1.Extension, extensionConfig jenkinsv1.ExtensionConfig, lookup map[string]jenkinsv1.ExtensionSpec, depth int, initialIndent int) (needsUpstalling []jenkinsv1.ExtensionExecution, err error) {
 	upserted := false
 	result := make([]jenkinsv1.ExtensionExecution, 0)
-	indent := ((depth - 1) * 2)
+	indent := ((depth - 1) * 2) + initialIndent
 
 	// TODO Validate extension
 	newVersion, err := semver.Parse(extension.Version)
@@ -220,9 +220,10 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 			Spec: extension,
 		})
 		if depth == 0 {
+			initialIndent = 7
 			log.Infof("Adding %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(newVersion))
 		} else {
-			log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent+7), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+			log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 		}
 		if err != nil {
 			return result, err
@@ -256,9 +257,10 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 				result = append(result, e)
 			}
 			if depth == 0 {
-				log.Infof("Upgrading Extension %s from %s to %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(existingVersion), util.ColorInfo(newVersion))
+				initialIndent = 10
+				log.Infof("Upgrading %s from %s to %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(existingVersion), util.ColorInfo(newVersion))
 			} else {
-				log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent+10), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+				log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 			}
 			upserted = true
 		}
@@ -267,7 +269,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 	if upserted {
 		for _, childRef := range extension.Children {
 			if child, ok := lookup[childRef]; ok {
-				e, err := o.UpsertExtension(child, extensions, installedExtensions, extensionConfig, lookup, depth+1)
+				e, err := o.UpsertExtension(child, extensions, installedExtensions, extensionConfig, lookup, depth+1, initialIndent)
 				if err != nil {
 					return result, err
 				}
