@@ -34,6 +34,12 @@ const (
 	DefaultProwReleaseName         = "jx-prow"
 	DefaultKnativeBuildReleaseName = "jx-knative-build"
 
+	// Charts Single Sign-On addon
+	ChartSsoOperator              = "jenkinsxio/sso-operator"
+	DefaultSsoOperatorReleaseName = "jx-sso-operator"
+	ChartSsoDex                   = "jenkinsxio/dex"
+	DefaultSsoDexReleaseName      = "jx-sso-dex"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
@@ -231,6 +237,8 @@ var (
 		"grafana":                      "stable/grafana",
 		DefaultProwReleaseName:         ChartProw,
 		DefaultKnativeBuildReleaseName: ChartKnativeBuild,
+		DefaultSsoDexReleaseName:       ChartSsoDex,
+		DefaultSsoOperatorReleaseName:  ChartSsoOperator,
 	}
 
 	AddonServices = map[string]string{

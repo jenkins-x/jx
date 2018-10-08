@@ -23,10 +23,8 @@ const (
 	defaultSSOReleaseNamePrefix = "jx-sso"
 	repoName                    = "jenkinsxio"
 	repoURL                     = "https://chartmuseum.jx.cd.jenkins-x.io"
-	dexChart                    = "jenkinsxio/dex"
 	dexServiceName              = "dex"
 	dexChartVersion             = ""
-	operatorChart               = "jenkinsxio/sso-operator"
 	operatorChartVersion        = ""
 	operatorServiceName         = "operator"
 	githubNewOAuthAppURL        = "https://github.com/settings/applications/new"
@@ -43,9 +41,6 @@ var (
 		# Create the sso addon
 		jx create addon sso
 	`)
-
-	defaultSsoDexReleaseName      = defaultSSOReleaseNamePrefix + "-dex"
-	defaultSsoOperatorReleaseName = defaultSSOReleaseNamePrefix + "-operator"
 )
 
 // CreateAddonSSOptions the options for the create sso addon
@@ -239,7 +234,7 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + dexServiceName
-	return o.installChart(releaseName, dexChart, dexChartVersion, o.Namespace, true, values)
+	return o.installChart(releaseName, kube.ChartSsoDex, dexChartVersion, o.Namespace, true, values)
 }
 
 func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error {
@@ -249,7 +244,7 @@ func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error 
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + operatorServiceName
-	return o.installChart(releaseName, operatorChart, operatorChartVersion, o.Namespace, true, values)
+	return o.installChart(releaseName, kube.ChartSsoOperator, operatorChartVersion, o.Namespace, true, values)
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {

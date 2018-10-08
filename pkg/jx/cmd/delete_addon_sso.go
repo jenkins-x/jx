@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -23,7 +24,7 @@ var (
 		jx delete addon sso
 	`)
 
-	defaultSsoReleaseNames = []string{defaultSsoOperatorReleaseName, defaultSsoDexReleaseName}
+	defaultSsoReleaseNames = []string{kube.DefaultSsoOperatorReleaseName, kube.DefaultSsoDexReleaseName}
 )
 
 // DeleteAddonSSOOptions the options for delete addon sso command
