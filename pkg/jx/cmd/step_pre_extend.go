@@ -140,7 +140,7 @@ func (o *StepPreExtendOptions) Run() error {
 						log.Infof("Adding extension %s", util.ColorInfo(name))
 					}
 					if len(e.Spec.Children) > 0 {
-						log.Infof("Adding Extension %s version %s to pipeline\n", util.ColorInfo(e.Spec.FullyQualifiedName()), util.ColorInfo(e.Spec.Version))
+						log.Infof("Adding %s version %s to pipeline\n", util.ColorInfo(e.Spec.FullyQualifiedName()), util.ColorInfo(e.Spec.Version))
 						for _, childUUID := range e.Spec.Children {
 							if child, ok := availableExtensionsUUIDLookup[childUUID]; ok {
 								err = o.AddPipelineExtension(&a.Spec, child, v.Parameters, true)
@@ -182,9 +182,9 @@ func (o *StepPreExtendOptions) AddPipelineExtension(a *jenkinsv1.PipelineActivit
 			envVarsStr = fmt.Sprintf("with environment variables [ %s ]", util.ColorInfo(envVarsFormatted))
 		}
 		if child {
-			log.Infof(" └ %s version %s %s\n", util.ColorInfo(e.FullyQualifiedName()), util.ColorInfo(e.Version), envVarsStr)
+			log.Infof("       └ %s version %s %s\n", util.ColorInfo(e.FullyQualifiedName()), util.ColorInfo(e.Version), envVarsStr)
 		} else {
-			log.Infof("Adding Extension %s version %s to pipeline %s\n", util.ColorInfo(e.FullyQualifiedName()), util.ColorInfo(e.Version), envVarsStr)
+			log.Infof("Adding %s version %s to pipeline %s\n", util.ColorInfo(e.FullyQualifiedName()), util.ColorInfo(e.Version), envVarsStr)
 		}
 	}
 	return nil
