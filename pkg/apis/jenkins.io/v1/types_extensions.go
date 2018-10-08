@@ -66,13 +66,13 @@ type ExtensionWhen string
 
 const (
 	// Executed before a pipeline starts
-	ExtensionWhenPre ExtensionWhen = "Pre"
+	ExtensionWhenPre ExtensionWhen = "pre"
 	// Executed after a pipeline completes
-	ExtensionWhenPost ExtensionWhen = "Post"
+	ExtensionWhenPost ExtensionWhen = "post"
 	// Executed when an extension installs
-	ExtensionWhenInstall ExtensionWhen = "OnInstall"
+	ExtensionWhenInstall ExtensionWhen = "onInstall"
 	// Executed when an extension upgrades
-	ExtensionWhenUpgrade ExtensionWhen = "OnUpgrade"
+	ExtensionWhenUpgrade ExtensionWhen = "onUpgrade"
 )
 
 // ExtensionGiven specifies the condition (if the extension is executing in a pipeline on which the extension should execute. By default Always.
