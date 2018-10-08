@@ -24,8 +24,6 @@ const (
 	repoName                    = "jenkinsxio"
 	repoURL                     = "https://chartmuseum.jx.cd.jenkins-x.io"
 	dexServiceName              = "dex"
-	dexChartVersion             = ""
-	operatorChartVersion        = ""
 	operatorServiceName         = "operator"
 	githubNewOAuthAppURL        = "https://github.com/settings/applications/new"
 	defaultDexVersion           = ""
@@ -88,7 +86,7 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 
 	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.DexVersion, "dex-version", "", defaultDexVersion, "The dex chart version to install)")
-	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseName, defaultOperatorVersion)
+	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseNamePrefix, defaultOperatorVersion)
 	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
@@ -238,7 +236,7 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + dexServiceName
-	return o.installChart(releaseName, kube.ChartSsoDex, o.Version, o.Namespace, true, values)
+	return o.installChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values)
 }
 
 func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error {
