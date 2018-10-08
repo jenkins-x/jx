@@ -16,7 +16,7 @@ import (
 
 const (
 	Hook             = "hook"
-	JenkinsMasterTag = "dev_22"
+	JenkinsMasterTag = "0.1.3"
 	BuilderBaseImage = "jenkinsxio/builder-base:0.0.604"
 
 	Application Kind = "APPLICATION"
