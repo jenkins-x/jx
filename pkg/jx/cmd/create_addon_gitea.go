@@ -20,6 +20,7 @@ const (
 	optionRelease = "release"
 
 	defaultGiteaReleaseName = "gitea"
+	defaultGiteaVersion     = ""
 )
 
 var (
@@ -76,12 +77,11 @@ func NewCmdCreateAddonGitea(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, "", defaultGiteaReleaseName)
+	options.addFlags(cmd, "", defaultGiteaReleaseName, defaultGiteaVersion)
 
 	cmd.Flags().StringVarP(&options.Username, "username", "u", "", "The name for the user to create in Gitea. Note that Gitea tends to reject 'admin'")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The password for the user to create in Gitea. Note that Gitea tends to reject passwords less than 6 characters")
 	cmd.Flags().StringVarP(&options.Email, "email", "e", "", "The email address of the new user to create in Gitea")
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version of the Gitea addon to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartGitea, "The name of the chart to use")
 	cmd.Flags().BoolVarP(&options.IsAdmin, "admin", "", false, "Should the new user created be an admin of the Gitea server")
 	cmd.Flags().BoolVarP(&options.NoUser, "no-user", "", false, "If true disable trying to create a new user in the Gitea server")

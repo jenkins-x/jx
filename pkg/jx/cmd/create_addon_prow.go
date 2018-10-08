@@ -28,12 +28,13 @@ var (
 	`)
 )
 
+const defaultProwVersion = ""
+
 // CreateAddonProwOptions the options for the create spring command
 type CreateAddonProwOptions struct {
 	CreateAddonOptions
-	Password    string
-	Chart       string
-	ProwVersion string
+	Password string
+	Chart    string
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
@@ -66,9 +67,8 @@ func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileW
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, "", kube.DefaultProwReleaseName)
+	options.addFlags(cmd, "", kube.DefaultProwReleaseName, defaultProwVersion)
 
-	cmd.Flags().StringVarP(&options.Version, "version", "v", options.ProwVersion, "The version of the Prow addon to use")
 	cmd.Flags().StringVarP(&options.Prow.Chart, optionChart, "c", kube.ChartProw, "The name of the chart to use")
 	cmd.Flags().StringVarP(&options.Prow.HMACToken, "hmac-token", "", "", "OPTIONAL: The hmac-token is the token that you give to GitHub for validating webhooks. Generate it using any reasonable randomness-generator, eg openssl rand -hex 20")
 	cmd.Flags().StringVarP(&options.Prow.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")

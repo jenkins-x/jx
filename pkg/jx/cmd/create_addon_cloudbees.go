@@ -26,6 +26,7 @@ const (
 	cbServiceName               = "cb-cdx"
 	cdxRepoUrl                  = "https://%s:%s@chartmuseum.jx.charts-demo.cloudbees.com"
 	serviceaccountsClusterAdmin = "serviceaccounts-cluster-admin"
+	defaultCloudBeesVersion     = ""
 )
 
 var (
@@ -84,7 +85,7 @@ func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 	cmd.Flags().BoolVarP(&options.Basic, "basic", "", false, "Enable basic auth")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access UI when using basic auth.  Defaults to default Jenkins X admin password.")
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName)
+	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName, defaultCloudBeesVersion)
 	return cmd
 }
 

@@ -24,10 +24,10 @@ const (
 	repoName                    = "jenkinsxio"
 	repoURL                     = "https://chartmuseum.jx.cd.jenkins-x.io"
 	dexServiceName              = "dex"
-	dexChartVersion             = ""
-	operatorChartVersion        = ""
 	operatorServiceName         = "operator"
 	githubNewOAuthAppURL        = "https://github.com/settings/applications/new"
+	defaultDexVersion           = ""
+	defaultOperatorVersion      = ""
 )
 
 var (
@@ -47,6 +47,7 @@ var (
 type CreateAddonSSOOptions struct {
 	CreateAddonOptions
 	UpgradeIngressOptions UpgradeIngressOptions
+	DexVersion            string
 }
 
 // NewCmdCreateAddonSSO creates a command object for the "create addon sso" command
@@ -84,7 +85,8 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseNamePrefix)
+	cmd.Flags().StringVarP(&options.DexVersion, "dex-version", "", defaultDexVersion, "The dex chart version to install)")
+	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseNamePrefix, defaultOperatorVersion)
 	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
@@ -234,7 +236,7 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + dexServiceName
-	return o.installChart(releaseName, kube.ChartSsoDex, dexChartVersion, o.Namespace, true, values)
+	return o.installChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values)
 }
 
 func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error {
@@ -244,7 +246,7 @@ func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error 
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + operatorServiceName
-	return o.installChart(releaseName, kube.ChartSsoOperator, operatorChartVersion, o.Namespace, true, values)
+	return o.installChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values)
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {
