@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -218,6 +219,25 @@ func (o *CreateQuickstartOptions) Run() error {
 	}
 	log.Infof("Created project at %s\n\n", util.ColorInfo(genDir))
 
+	if o.GitProvider == nil {
+		o.GitProvider = q.Quickstart.GitProvider
+	}
+	if o.GitServer == nil {
+		config := authConfigSvc.Config()
+		if config == nil {
+			return errors.New("No git auth config found")
+		}
+		o.GitServer = config.GetCurrentAuthServer()
+	}
+	if o.GitUserAuth == nil && config != nil && o.GitServer != nil {
+		userAuth := config.FindUserAuth(o.GitServer.URL, o.GitServer.CurrentUser)
+		if userAuth == nil {
+			return errors.New("No user auth found")
+		}
+		o.GitUserAuth = userAuth
+	}
+	o.CreateProjectOptions.ImportOptions.GitServer = o.GitServer
+	o.CreateProjectOptions.ImportOptions.GitUserAuth = o.GitUserAuth
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
 	return o.ImportCreatedProject(genDir)
 }
