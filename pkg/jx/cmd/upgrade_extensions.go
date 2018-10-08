@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/stoewer/go-strcase"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/stoewer/go-strcase"
 
 	"github.com/pkg/errors"
 
@@ -43,10 +44,8 @@ var (
 	upgradeExtensionsExample = templates.Examples(`
 		
 		# upgrade extensions
-		jx upgrade extensions 
+		jx upgrade extensions
 
-        # upgrade a particular extension
-		jx upgrade extensions -f hello-world
 	`)
 )
 
@@ -85,8 +84,8 @@ func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.Fil
 			CheckErr(err)
 		},
 	}
+	cmd.AddCommand(NewCmdUpgradeExtensionsRepository(f, in, out, errOut))
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
-	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filter the extensions to upgrade")
 	cmd.Flags().StringVarP(&options.ExtensionsRepository, "extensions-repository", "", upstreamExtensionsRepositoryUrl, "Specify the extensions repository yaml file to read from")
 	return cmd
 }
