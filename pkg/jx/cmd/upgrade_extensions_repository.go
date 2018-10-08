@@ -22,14 +22,14 @@ import (
 )
 
 // CreateExtensionsRepositoryOptions the flags for running create cluster
-type UpdateExtensionsRepositoryOptions struct {
-	UpdateExtensionsOptions
+type UpgradeExtensionsRepositoryOptions struct {
+	UpgradeExtensionsOptions
 	Flags      InitFlags
 	InputFile  string
 	OutputFile string
 }
 
-type UpdateExtensionsRepositoryFlags struct {
+type UpgradeExtensionsRepositoryFlags struct {
 }
 
 type ExtensionsRepositoryLock struct {
@@ -97,28 +97,28 @@ func (e *httpError) Error() string {
 }
 
 var (
-	updateExtensionsRepositoryLong = templates.LongDesc(`
-		This command updates the jenkins-x-extensions-repository.lock.yaml file from a jenkins-x-extensions-repository.yaml file
+	upgradeExtensionsRepositoryLong = templates.LongDesc(`
+		This command upgrades the jenkins-x-extensions-repository.lock.yaml file from a jenkins-x-extensions-repository.yaml file
 
 `)
 
-	updateExtensionsRepositoryExample = templates.Examples(`
+	upgradeExtensionsRepositoryExample = templates.Examples(`
 		
         # Updates a file called jenkins-x-extensions-repository.lock.yaml from a file called  jenkins-x-extensions-repository.yaml in the same directory
-        jx update extensions repository
+        jx upgrade extensions repository
       
         # Allows the input and output file to specified
-		jx update extensions repository -i my-repo.yaml -o my-repo.lock.yaml
+		jx upgrade extensions repository -i my-repo.yaml -o my-repo.lock.yaml
 
 `)
 )
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdUpdateExtensionsRepository(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &UpdateExtensionsRepositoryOptions{
-		UpdateExtensionsOptions: UpdateExtensionsOptions{
-			UpdateOptions: UpdateOptions{
+func NewCmdUpgradeExtensionsRepository(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := &UpgradeExtensionsRepositoryOptions{
+		UpgradeExtensionsOptions: UpgradeExtensionsOptions{
+			CreateOptions: CreateOptions{
 				CommonOptions: CommonOptions{
 					Factory: f,
 					In:      in,
@@ -133,8 +133,8 @@ func NewCmdUpdateExtensionsRepository(f Factory, in terminal.FileReader, out ter
 	cmd := &cobra.Command{
 		Use:     "repository",
 		Short:   "Updates an extension repository",
-		Long:    fmt.Sprintf(updateExtensionsRepositoryLong),
-		Example: updateExtensionsRepositoryExample,
+		Long:    fmt.Sprintf(upgradeExtensionsRepositoryLong),
+		Example: upgradeExtensionsRepositoryExample,
 		Run: func(cmd2 *cobra.Command, args []string) {
 			options.Cmd = cmd2
 			options.Args = args
@@ -147,7 +147,7 @@ func NewCmdUpdateExtensionsRepository(f Factory, in terminal.FileReader, out ter
 	return cmd
 }
 
-func (o *UpdateExtensionsRepositoryOptions) Run() error {
+func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	constraints := ExtensionsRepositoryConstraints{}
 	err := constraints.LoadFromFile(o.InputFile)
 	if err != nil {
@@ -280,7 +280,7 @@ func (o *UpdateExtensionsRepositoryOptions) Run() error {
 	return nil
 }
 
-func (o *UpdateExtensionsRepositoryOptions) recursivelyFixChildren(lock ExtensionRepositoryLock, lookupByName map[string]ExtensionRepositoryLock, lookupByUUID map[string]ExtensionRepositoryLock, resolveErrors *[]string) (children []string) {
+func (o *UpgradeExtensionsRepositoryOptions) recursivelyFixChildren(lock ExtensionRepositoryLock, lookupByName map[string]ExtensionRepositoryLock, lookupByUUID map[string]ExtensionRepositoryLock, resolveErrors *[]string) (children []string) {
 	children = make([]string, 0)
 	for _, u := range lock.Children {
 		if uuid.Parse(u) == nil {
@@ -317,7 +317,7 @@ func (o *UpdateExtensionsRepositoryOptions) recursivelyFixChildren(lock Extensio
 	return children
 }
 
-func (o *UpdateExtensionsRepositoryOptions) LoadAsStringFromURL(url string) (result string, err error) {
+func (o *UpgradeExtensionsRepositoryOptions) LoadAsStringFromURL(url string) (result string, err error) {
 	httpClient := &http.Client{Timeout: 10 * time.Second}
 	resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", url, time.Now().UnixNano()/int64(time.Millisecond)))
 	if err != nil {

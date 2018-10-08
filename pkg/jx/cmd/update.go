@@ -21,7 +21,6 @@ var (
 	update_resources = `Valid resource types include:
 
 	* cluster
-	* extensions
 	`
 
 	update_long = templates.LongDesc(`
@@ -55,7 +54,6 @@ func NewCmdUpdate(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	}
 
 	cmd.AddCommand(NewCmdUpdateCluster(f, in, out, errOut))
-	cmd.AddCommand(NewCmdUpdateExtensions(f, in, out, errOut))
 
 	return cmd
 }
