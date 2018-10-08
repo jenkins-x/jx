@@ -18,9 +18,9 @@ const (
 	defaultVaultNamesapce        = "jx"
 	jxRepoName                   = "jenkinsxio"
 	jxRepoURL                    = "https://chartmuseum.jx.cd.jenkins-x.io"
-	vaultOperatorChartVersion    = ""
 	vaultOperatorImageRepository = "banzaicloud/vault-operator"
 	vaultOperatorImageTag        = "0.3.4"
+	defaultVaultOperatorVersion  = ""
 )
 
 var (
@@ -71,7 +71,7 @@ func NewCmdCreateAddonVault(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultVaultNamesapce, kube.DefaultVaultOperatorReleaseName)
+	options.addFlags(cmd, defaultVaultNamesapce, kube.DefaultVaultOperatorReleaseName, defaultVaultOperatorVersion)
 	return cmd
 }
 
@@ -99,7 +99,7 @@ func (o *CreateAddonVaultOptions) Run() error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(o.ReleaseName, kube.ChartVaultOperator, vaultOperatorChartVersion, o.Namespace, true, values)
+	err = o.installChart(o.ReleaseName, kube.ChartVaultOperator, o.Version, o.Namespace, true, values)
 	if err != nil {
 		return errors.Wrap(err, "installing vault-operator chart")
 	}
