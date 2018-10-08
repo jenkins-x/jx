@@ -6,9 +6,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"time"
+
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
@@ -32,68 +33,14 @@ type UpgradeExtensionsRepositoryOptions struct {
 type UpgradeExtensionsRepositoryFlags struct {
 }
 
-type ExtensionsRepositoryLock struct {
-	Version    int                       `json:"version"`
-	Extensions []ExtensionRepositoryLock `json:"extensions"`
-}
-
-type ExtensionRepositoryLock struct {
-	Name        string   `json:"name"`
-	Namespace   string   `json:"namespace"`
-	UUID        string   `json:"uuid"`
-	Version     string   `json:"version"`
-	Description string   `json:"description,omitempty"`
-	When        []string `json:"when,omitempty"`
-	Given       string   `json:"given,omitempty"`
-	Type        string   `json:"type,omitempty"`
-	Script      string   `json:"script,omitempty"`
-	Children    []string `json:"children,omitempty"`
-	Parameters  []struct {
-		Name         string `json:"name"`
-		Description  string `json:"description,omitempty"`
-		DefaultValue string `json:"defaultValue,omitempty"`
-	} `json:"parameters,omitempty"`
-}
-
-type ExtensionsRepositoryConstraints struct {
-	Remotes []struct {
-		Remote string `json:"remote"`
-		Tag    string `json:"tag"`
-	} `json:"remotes"`
-}
-
-type ExtensionDefinitions struct {
-	Version    string                `json:"version,omitempty"`
-	Extensions []ExtensionDefinition `json:"extensions"`
-}
-
-type ExtensionDefinition struct {
-	Name        string   `json:"name"`
-	Namespace   string   `json:"namespace"`
-	UUID        string   `json:"uuid"`
-	Description string   `json:"description,omitempty"`
-	When        []string `json:"when,omitempty"`
-	Given       string   `json:"given,omitempty"`
-	Type        string   `json:"type,omitempty"`
-	Children    map[string]struct {
-		UUID   string `json:"uuid,omitempty"`
-		Remote string `json:"remote,omitempty"`
-	} `json:"children,omitempty"`
-	ScriptFile string `json:"scriptFile,omitempty"`
-	Parameters []struct {
-		Name         string `json:"name"`
-		Description  string `json:"description,omitempty"`
-		DefaultValue string `json:"defaultValue,omitempty"`
-	} `json:"parameters,omitempty"`
-}
-
 type httpError struct {
+	URL        string
 	StatusCode int
 	Status     string
 }
 
 func (e *httpError) Error() string {
-	return e.Status
+	return fmt.Sprintf("Error fetching %s. %s", util.ColorError(e.URL), util.ColorError(e.Status))
 }
 
 var (
@@ -148,25 +95,25 @@ func NewCmdUpgradeExtensionsRepository(f Factory, in terminal.FileReader, out te
 }
 
 func (o *UpgradeExtensionsRepositoryOptions) Run() error {
-	constraints := ExtensionsRepositoryConstraints{}
+	constraints := jenkinsv1.ExtensionDefinitionReferenceList{}
 	err := constraints.LoadFromFile(o.InputFile)
 	if err != nil {
 		return err
 	}
-	oldLock := ExtensionsRepositoryLock{}
+	oldLock := jenkinsv1.ExtensionRepositoryLockList{}
 	err = oldLock.LoadFromFile(o.OutputFile)
 	if err != nil {
 		return err
 	}
 	oldVersion := oldLock.Version
-	oldLockNameMap := make(map[string]ExtensionRepositoryLock, 0)
-	newLock := ExtensionsRepositoryLock{
-		Extensions: make([]ExtensionRepositoryLock, 0),
+	oldLockNameMap := make(map[string]jenkinsv1.ExtensionSpec, 0)
+	newLock := jenkinsv1.ExtensionRepositoryLockList{
+		Extensions: make([]jenkinsv1.ExtensionSpec, 0),
 	}
 	newLock.Version = oldVersion + 1
 
-	lookupByName := make(map[string]ExtensionRepositoryLock, 0)
-	lookupByUUID := make(map[string]ExtensionRepositoryLock, 0)
+	lookupByName := make(map[string]jenkinsv1.ExtensionSpec, 0)
+	lookupByUUID := make(map[string]jenkinsv1.ExtensionSpec, 0)
 	for _, c := range constraints.Remotes {
 		if strings.HasPrefix(c.Remote, "github.com") {
 			s := strings.Split(c.Remote, "/")
@@ -185,7 +132,7 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 			}
 			definitionsUrl := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s", org, repo, tag)
 			definitionsFileUrl := fmt.Sprintf("%s/jenkins-x-extension-definitions.yaml", definitionsUrl)
-			extensionDefinitions := ExtensionDefinitions{}
+			extensionDefinitions := jenkinsv1.ExtensionDefinitionList{}
 			extensionDefinitions.LoadFromURL(definitionsFileUrl, c.Remote, c.Tag)
 			for _, ed := range extensionDefinitions.Extensions {
 				// It's best practice to assign a UUID to an extension, but if it doesn't have one we
@@ -219,15 +166,15 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 						return err
 					}
 				} else {
-					for fqn, c := range ed.Children {
+					for _, c := range ed.Children {
 						if c.UUID != "" {
 							children = append(children, c.UUID)
 						} else {
-							children = append(children, fqn)
+							children = append(children, c.FullyQualifiedName())
 						}
 					}
 				}
-				eLock := ExtensionRepositoryLock{
+				eLock := jenkinsv1.ExtensionSpec{
 					Name:        ed.Name,
 					Namespace:   ed.Namespace,
 					Version:     strings.TrimPrefix(tag, "v"),
@@ -236,7 +183,6 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 					Parameters:  ed.Parameters,
 					When:        ed.When,
 					Given:       ed.Given,
-					Type:        ed.Type,
 					Script:      script,
 					Children:    children,
 				}
@@ -280,7 +226,7 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	return nil
 }
 
-func (o *UpgradeExtensionsRepositoryOptions) recursivelyFixChildren(lock ExtensionRepositoryLock, lookupByName map[string]ExtensionRepositoryLock, lookupByUUID map[string]ExtensionRepositoryLock, resolveErrors *[]string) (children []string) {
+func (o *UpgradeExtensionsRepositoryOptions) recursivelyFixChildren(lock jenkinsv1.ExtensionSpec, lookupByName map[string]jenkinsv1.ExtensionSpec, lookupByUUID map[string]jenkinsv1.ExtensionSpec, resolveErrors *[]string) (children []string) {
 	children = make([]string, 0)
 	for _, u := range lock.Children {
 		if uuid.Parse(u) == nil {
@@ -325,6 +271,7 @@ func (o *UpgradeExtensionsRepositoryOptions) LoadAsStringFromURL(url string) (re
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return "", &httpError{
+			URL:        url,
 			Status:     resp.Status,
 			StatusCode: resp.StatusCode,
 		}
@@ -341,70 +288,4 @@ func (o *UpgradeExtensionsRepositoryOptions) LoadAsStringFromURL(url string) (re
 		return "", err
 	}
 	return string(bytes), nil
-}
-
-func (constraints *ExtensionsRepositoryConstraints) LoadFromFile(inputFile string) (err error) {
-	path, err := filepath.Abs(inputFile)
-	if err != nil {
-		return err
-	}
-	y, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	err = yaml.Unmarshal(y, constraints)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (lock *ExtensionsRepositoryLock) LoadFromFile(inputFile string) (err error) {
-	path, err := filepath.Abs(inputFile)
-	if err != nil {
-		return err
-	}
-	y, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	err = yaml.Unmarshal(y, lock)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (lock *ExtensionDefinitions) LoadFromURL(definitionsUrl string, extension string, version string) (err error) {
-	httpClient := &http.Client{Timeout: 10 * time.Second}
-	resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", definitionsUrl, time.Now().UnixNano()/int64(time.Millisecond)))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		log.Printf("Unable to find Extension Definitions at %s for %s with version %s\n", util.ColorWarning(definitionsUrl), util.ColorWarning(extension), util.ColorWarning(version))
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	bytes, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		return err
-	}
-
-	err = yaml.Unmarshal(bytes, lock)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (e *ExtensionRepositoryLock) FullyQualifiedName() (fqn string) {
-	return fmt.Sprintf("%s.%s", e.Namespace, e.Name)
-}
-
-func (e *ExtensionDefinition) FullyQualifiedName() (fqn string) {
-	return fmt.Sprintf("%s.%s", e.Namespace, e.Name)
 }
