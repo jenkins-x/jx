@@ -126,7 +126,7 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installEksCtl(false)
 		case "heptio-authenticator-aws":
 			err = o.installHeptioAuthenticatorAws()
-		case "ibm-cloud-private":
+		case "icp":
 			err = o.installIntoICP()
 		case "kustomize":
 			err = o.installKustomize()

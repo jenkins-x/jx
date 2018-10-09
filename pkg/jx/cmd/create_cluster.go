@@ -37,7 +37,7 @@ const (
 	OPENSHIFT  = "openshift"
 	ORACLE     = "oracle"
 	IBM        = "ibm"
-	ICP        = "ibm-cloud-private"
+	ICP        = "icp"
 	JX_INFRA   = "jx-infra"
 
 	optionKubernetesVersion = "kubernetes-version"
