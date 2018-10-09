@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,8 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/stoewer/go-strcase"
 
 	"github.com/pkg/errors"
 
@@ -35,6 +34,7 @@ import (
 )
 
 const upstreamExtensionsRepositoryUrl = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.lock.yaml"
+const extensionsConfigDefaultConfigMap = "jenkins-x-extensions"
 
 var (
 	upgradeExtensionsLong = templates.LongDesc(`
@@ -53,11 +53,6 @@ type UpgradeExtensionsOptions struct {
 	CreateOptions
 	Filter               string
 	ExtensionsRepository string
-}
-
-type ExtensionsRepository struct {
-	Version    string                       `json:"version,omitempty"`
-	Extensions []jenkinsv1.ExtensionDetails `json:"extensions,omitempty"`
 }
 
 func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -101,8 +96,8 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 
-	extensionsRepository := ExtensionsRepository{}
-	var bytes []byte
+	extensionsRepository := jenkinsv1.ExtensionRepositoryLockList{}
+	var bs []byte
 
 	if strings.HasPrefix(o.ExtensionsRepository, "http://") || strings.HasPrefix(o.ExtensionsRepository, "https://") {
 		httpClient := &http.Client{Timeout: 10 * time.Second}
@@ -110,7 +105,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 
 		defer resp.Body.Close()
 
-		bytes, err = ioutil.ReadAll(resp.Body)
+		bs, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -124,21 +119,21 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			}
 		}
 		// Perhaps it's an absolute file path
-		bytes, err = ioutil.ReadFile(path)
+		bs, err = ioutil.ReadFile(path)
 		if err != nil {
 			// Perhaps it's a relative path
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
-			bytes, err = ioutil.ReadFile(filepath.Join(cwd, path))
+			bs, err = ioutil.ReadFile(filepath.Join(cwd, path))
 			if err != nil {
 				return errors.New(fmt.Sprintf("Unable to open Extensions Repository at %s", path))
 			}
 		}
 	}
 
-	err = yaml.Unmarshal(bytes, &extensionsRepository)
+	err = yaml.Unmarshal(bs, &extensionsRepository)
 	if err != nil {
 		return err
 	}
@@ -152,69 +147,147 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	extensionsConfig, err := (&kube.ExtensionsConfig{}).LoadFromConfigMap(kubeClient, curNs)
+	extensionsConfig, err := (&jenkinsv1.ExtensionConfigList{}).LoadFromConfigMap(extensionsConfigDefaultConfigMap, kubeClient, curNs)
 	if err != nil {
 		return err
 	}
+
+	availableExtensionsUUIDLookup := make(map[string]jenkinsv1.ExtensionSpec, 0)
+	for _, e := range extensionsRepository.Extensions {
+		availableExtensionsUUIDLookup[e.UUID] = e
+	}
+
 	installedExtensions, err := o.GetInstalledExtensions(extensionsClient)
 	if err != nil {
 		return err
 	}
+	needsUpstalling := make([]jenkinsv1.ExtensionExecution, 0)
 	for _, e := range extensionsRepository.Extensions {
-		_, _, err = o.UpsertExtension(e, extensionsClient, installedExtensions, extensionsConfig.Extensions[e.Name])
-		if err != nil {
-			return err
+		// TODO this is not very efficient probably
+		for _, c := range extensionsConfig.Extensions {
+			if c.Name == e.Name && c.Namespace == e.Namespace {
+				needsUpstalling, err = o.UpsertExtension(e, extensionsClient, installedExtensions, c, availableExtensionsUUIDLookup, 0, 0)
+				if err != nil {
+					return err
+				}
+				break
+			}
 		}
+	}
+	for _, n := range needsUpstalling {
+
+		envVars := ""
+		if len(n.EnvironmentVariables) > 0 {
+			envVarsFormatted := new(bytes.Buffer)
+			for _, envVar := range n.EnvironmentVariables {
+				fmt.Fprintf(envVarsFormatted, "%s=%s, ", envVar.Name, envVar.Value)
+			}
+			envVars = fmt.Sprintf("with environment variables [ %s ]", util.ColorInfo(envVarsFormatted.String()))
+		}
+
+		log.Infof("Installing %s %s\n", util.ColorInfo(n.FullyQualifiedName()), envVars)
+		n.Execute(o.Verbose)
 	}
 	return nil
 }
 
-func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.ExtensionDetails, extensions typev1.ExtensionInterface, installedExtensions map[string]jenkinsv1.Extension, extensionConfig kube.ExtensionConfig) (*jenkinsv1.Extension, bool, error) {
+func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.ExtensionSpec, extensions typev1.ExtensionInterface, installedExtensions map[string]jenkinsv1.Extension, extensionConfig jenkinsv1.ExtensionConfig, lookup map[string]jenkinsv1.ExtensionSpec, depth int, initialIndent int) (needsUpstalling []jenkinsv1.ExtensionExecution, err error) {
+	upserted := false
+	result := make([]jenkinsv1.ExtensionExecution, 0)
+	indent := ((depth - 1) * 2) + initialIndent
+
 	// TODO Validate extension
 	newVersion, err := semver.Parse(extension.Version)
 	if err != nil {
-		return nil, false, err
+		return result, err
 	}
 	existing, ok := installedExtensions[extension.UUID]
 	if !ok {
+		// Check for a name conflict
+		res, err := extensions.Get(extension.FullyQualifiedKebabName(), metav1.GetOptions{})
+		if err == nil {
+			return result, errors.New(fmt.Sprintf("Extension %s has changed UUID. It used to have UUID %s and now has UUID %s. If this is correct, then you should manually remove the extension using\n"+
+				"\n"+
+				"  kubectl delete ext %s\n"+
+				"\n"+
+				"If this is not correct, then contact the extension maintainer and inform them of this change.", util.ColorWarning(extension.FullyQualifiedName()), util.ColorWarning(res.Spec.UUID), util.ColorWarning(extension.UUID), extension.FullyQualifiedKebabName()))
+		}
 		// Doesn't exist
-		res, err := extensions.Create(&jenkinsv1.Extension{
+		res, err = extensions.Create(&jenkinsv1.Extension{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("%s.%s", strcase.KebabCase(extension.Namespace), strcase.KebabCase(extension.Name)),
+				Name: fmt.Sprintf(extension.FullyQualifiedKebabName()),
 			},
 			Spec: extension,
 		})
-		log.Infof("Adding Extension %s version %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", extension.Namespace, extension.Name)), util.ColorInfo(newVersion))
+		if depth == 0 {
+			initialIndent = 7
+			log.Infof("Adding %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(newVersion))
+		} else {
+			log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+		}
 		if err != nil {
-			return res, true, err
+			return result, err
 		}
 		if o.Contains(extension.When, jenkinsv1.ExtensionWhenInstall) {
-			o.UpstallExtension(extension, extensionConfig)
+			e, err := o.UpstallExtension(extension, extensionConfig)
+			if err != nil {
+				return result, err
+			}
+			result = append(result, e)
 		}
-		return res, true, err
+		upserted = true
 	}
 	// TODO Handle uninstalling existing extension if name has changed but UUID hasn't
-	existingVersion, err := semver.Parse(existing.Spec.Version)
-	if existingVersion.LT(newVersion) {
-		existing.Spec = extension
-		res, err := extensions.Update(&existing)
-		if o.Contains(extension.When, jenkinsv1.ExtensionWhenUpgrade) {
-			o.UpstallExtension(extension, extensionConfig)
+	if existing.Spec.Version != "" {
+		existingVersion, err := semver.Parse(existing.Spec.Version)
+		if err != nil {
+			return result, err
 		}
-		log.Infof("Upgrading Extension %s from %s to %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", extension.Namespace, extension.Name)), util.ColorInfo(existingVersion), util.ColorInfo(newVersion))
-		return res, false, err
-	} else {
-		return &existing, false, nil
+		if existingVersion.LT(newVersion) {
+			existing.Spec = extension
+			_, err := extensions.Update(&existing)
+			if err != nil {
+				return result, err
+			}
+			if o.Contains(extension.When, jenkinsv1.ExtensionWhenUpgrade) {
+				e, err := o.UpstallExtension(extension, extensionConfig)
+				if err != nil {
+					return result, err
+				}
+				result = append(result, e)
+			}
+			if depth == 0 {
+				initialIndent = 10
+				log.Infof("Upgrading %s from %s to %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(existingVersion), util.ColorInfo(newVersion))
+			} else {
+				log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+			}
+			upserted = true
+		}
 	}
+
+	if upserted {
+		for _, childRef := range extension.Children {
+			if child, ok := lookup[childRef]; ok {
+				e, err := o.UpsertExtension(child, extensions, installedExtensions, extensionConfig, lookup, depth+1, initialIndent)
+				if err != nil {
+					return result, err
+				}
+				result = append(result, e...)
+			} else {
+				errors.New(fmt.Sprintf("Unable to locate extension %s", childRef))
+			}
+		}
+	}
+	return result, nil
 }
 
-func (o *UpgradeExtensionsOptions) UpstallExtension(e jenkinsv1.ExtensionDetails, extensionConfig kube.ExtensionConfig) (err error) {
-	ext, envVarsFormatted, err := e.ToExecutable(extensionConfig.Parameters)
+func (o *UpgradeExtensionsOptions) UpstallExtension(e jenkinsv1.ExtensionSpec, extensionConfig jenkinsv1.ExtensionConfig) (extension jenkinsv1.ExtensionExecution, err error) {
+	ext, _, err := e.ToExecutable(extensionConfig.Parameters)
 	if err != nil {
-		return err
+		return ext, err
 	}
-	log.Infof("Installing Extension %s version %s to pipeline with environment variables [ %s ]\n", util.ColorInfo(fmt.Sprintf("%s:%s", e.Namespace, e.Name)), util.ColorInfo(e.Version), util.ColorInfo(envVarsFormatted))
-	return ext.Execute(o.Verbose)
+	return ext, nil
 }
 
 func (o *UpgradeExtensionsOptions) Contains(whens []jenkinsv1.ExtensionWhen, when jenkinsv1.ExtensionWhen) bool {

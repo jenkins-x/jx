@@ -152,7 +152,7 @@ func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileN
 	if ch == "" {
 		return fmt.Errorf("No such addon name %s in %s: %s", name, fileName, util.InvalidArg(name, util.SortedMapKeys(kube.AddonCharts)))
 	}
-	status := statusMap[ch]
+	status := statusMap[name]
 	if status == "DEPLOYED" {
 		return nil
 	}
