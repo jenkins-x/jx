@@ -61,6 +61,10 @@ type IngressBasicAuth struct {
 }
 
 type ChartMuseum struct {
+	ChartMuseumEnv ChartMuseumEnv `yaml:"env"`
+}
+
+type ChartMuseumEnv struct {
 	ChartMuseumSecret ChartMuseumSecret `yaml:"secret"`
 }
 
@@ -141,8 +145,8 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	}
 
 	s.Secrets.Jenkins.JenkinsSecret.Password = s.Flags.DefaultAdminPassword
-	s.Secrets.ChartMuseum.ChartMuseumSecret.User = "admin"
-	s.Secrets.ChartMuseum.ChartMuseumSecret.Password = s.Flags.DefaultAdminPassword
+	s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.User = "admin"
+	s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Grafana.GrafanaSecret.User = "admin"
 	s.Secrets.Grafana.GrafanaSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Nexus.DefaultAdminPassword = s.Flags.DefaultAdminPassword
