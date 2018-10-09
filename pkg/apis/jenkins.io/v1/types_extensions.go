@@ -146,6 +146,7 @@ type ExtensionDefinitionChildReference struct {
 	Name      string `json:"name,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 	Remote    string `json:"remote,omitempty"`
+	Tag       string `json:"tag,omitempty"`
 }
 
 type EnvironmentVariable struct {
