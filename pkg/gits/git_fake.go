@@ -400,3 +400,7 @@ func (g *GitFake) GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 func (g *GitFake) GetRevisionBeforeDateText(dir string, dateText string) (string, error) {
 	return g.Revision, nil
 }
+
+func (g *GitFake) Diff(dir string) (string, error) {
+	return "", nil
+}

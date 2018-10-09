@@ -593,3 +593,8 @@ func (g *GitCLI) SetEmail(dir string, email string) error {
 func (g *GitCLI) CreateBranch(dir string, branch string) error {
 	return g.gitCmd(dir, "branch", branch)
 }
+
+// Diff runs git diff
+func (g *GitCLI) Diff(dir string) (string, error) {
+	return g.gitCmdWithOutput(dir, "diff")
+}
