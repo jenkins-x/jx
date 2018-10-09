@@ -32,6 +32,7 @@ import (
 	"github.com/shirou/gopsutil/process"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logger "github.com/sirupsen/logrus"
 )
 
 var (
@@ -138,23 +139,12 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 
 // appends the binary to the deps array if it cannot be found on the $PATH
 func binaryShouldBeInstalled(d string) string {
-	_, err := exec.LookPath(d)
+	_, shouldInstall, err := shouldInstallBinary(d)
 	if err != nil {
-		// look for windows exec
-		if runtime.GOOS == "windows" {
-			d = d + ".exe"
-			_, err = exec.LookPath(d)
-			if err == nil {
-				return ""
-			}
-		}
-		binDir, err := util.JXBinLocation()
-		if err == nil {
-			exists, err := util.FileExists(filepath.Join(binDir, d))
-			if err == nil && exists {
-				return ""
-			}
-		}
+		log.Warnf("Error detecting if binary should be installed: %s", err.Error())
+		return ""
+	}
+	if shouldInstall {
 		return d
 	}
 	return ""
@@ -167,12 +157,17 @@ func (o *CommonOptions) installBrew() error {
 	return o.RunCommand("/usr/bin/ruby", "-e", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)")
 }
 
-func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileName string, download bool, err error) {
+func shouldInstallBinary(name string) (fileName string, download bool, err error) {
 	fileName = binaries.BinaryWithExtension(name)
 	download = false
 	pgmPath, err := exec.LookPath(fileName)
 	if err == nil {
-		log.Warnf("%s is already available on your PATH at %s\n", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
+		logger.Debugf("%s is already available on your PATH at %s", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
+		return
+	}
+
+	binDir, err := util.JXBinLocation()
+	if err != nil {
 		return
 	}
 
@@ -182,7 +177,7 @@ func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileNam
 		return
 	}
 	if exists {
-		log.Warnf("Please add %s to your PATH\n", util.ColorInfo(binDir))
+		logger.Debugf("Please add %s to your PATH", util.ColorInfo(binDir))
 		return
 	}
 	download = true
@@ -229,11 +224,11 @@ type InstallOrUpdateBinaryOptions struct {
 }
 
 func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
-	shouldInstallBinary, err := binaries.ShouldInstallBinary(options.Binary, options.Version, options.VersionExtractor)
+	shouldInstall, err := binaries.ShouldInstallBinary(options.Binary, options.Version, options.VersionExtractor)
 	if err != nil {
 		return err
 	}
-	if !shouldInstallBinary {
+	if !shouldInstall {
 		return nil
 	}
 
@@ -264,7 +259,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	}
 	fileName := options.Binary
 	if !options.SkipPathScan {
-		installFilename, flag, err := o.shouldInstallBinary(binDir, options.Binary)
+		installFilename, flag, err := shouldInstallBinary(options.Binary)
 		fileName = installFilename
 		if err != nil || !flag {
 			return err
@@ -345,11 +340,7 @@ func (o *CommonOptions) installBrewIfRequired() error {
 		return nil
 	}
 
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return err
-	}
-	_, flag, err := o.shouldInstallBinary(binDir, "brew")
+	_, flag, err := shouldInstallBinary("brew")
 	if err != nil || !flag {
 		return err
 	}
@@ -364,7 +355,7 @@ func (o *CommonOptions) installKubectl() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, "kubectl")
+	fileName, flag, err := shouldInstallBinary("kubectl")
 	if err != nil || !flag {
 		return err
 	}
@@ -396,7 +387,7 @@ func (o *CommonOptions) installKustomize() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, "kustomize")
+	fileName, flag, err := shouldInstallBinary("kustomize")
 	if err != nil || !flag {
 		return err
 	}
@@ -430,7 +421,7 @@ func (o *CommonOptions) installOc() error {
 		return err
 	}
 	binary := "oc"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -652,7 +643,7 @@ func (o *CommonOptions) installHelm() error {
 		return err
 	}
 	binary := "helm"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -823,7 +814,7 @@ func (o *CommonOptions) installHelm3() error {
 		return err
 	}
 	binary := "helm3"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -994,7 +985,7 @@ func (o *CommonOptions) installTerraform() error {
 		return err
 	}
 	binary := "terraform"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -1031,7 +1022,7 @@ func (o *CommonOptions) installKops() error {
 		return err
 	}
 	binary := "kops"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -1059,7 +1050,7 @@ func (o *CommonOptions) installKSync() (bool, error) {
 		return false, err
 	}
 	binary := "ksync"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return false, err
 	}
@@ -1104,7 +1095,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	binary := "jx"
 	fileName := binary
 	if !upgrade {
-		f, flag, err := o.shouldInstallBinary(binDir, binary)
+		f, flag, err := shouldInstallBinary(binary)
 		if err != nil || !flag {
 			return err
 		}
@@ -1151,7 +1142,7 @@ func (o *CommonOptions) installMinikube() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, "minikube")
+	fileName, flag, err := shouldInstallBinary("minikube")
 	if err != nil || !flag {
 		return err
 	}
@@ -1183,7 +1174,7 @@ func (o *CommonOptions) installMinishift() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}

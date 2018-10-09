@@ -281,7 +281,7 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "reading jx bin location")
 		}
-		_, install, err := options.shouldInstallBinary(binDir, "tiller")
+		_, install, err := shouldInstallBinary("tiller")
 		if !install && err == nil {
 			confirm := &survey.Confirm{
 				Message: "Uninstalling  existing tiller binary:",
@@ -299,7 +299,7 @@ func (options *InstallOptions) Run() error {
 			}
 		}
 
-		_, install, err = options.shouldInstallBinary(binDir, helmBinary)
+		_, install, err = shouldInstallBinary(helmBinary)
 		if !install && err == nil {
 			confirm := &survey.Confirm{
 				Message: "Uninstalling  existing helm binary:",
