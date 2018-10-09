@@ -171,6 +171,10 @@ type ExtensionParameterValue struct {
 	Value string `json:"value"`
 }
 
+const (
+	VersionGlobalParameterName string = "ExtVersion"
+)
+
 func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 	scriptFile, err := ioutil.TempFile("", fmt.Sprintf("%s-*", e.Name))
 	if err != nil {
@@ -209,21 +213,24 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 }
 
 // TODO remove the env vars formatting stuff from here and make it a function on ExtensionSpec
-func (e *ExtensionSpec) ToExecutable(envVarValues []ExtensionParameterValue) (ext ExtensionExecution, envVarsStr string, err error) {
+func (e *ExtensionSpec) ToExecutable(paramValues ...[]ExtensionParameterValue) (ext ExtensionExecution, envVarsStr string, err error) {
 	envVars := make([]EnvironmentVariable, 0)
+	paramValueLookup := make(map[string]string, 0)
+	for _, u := range paramValues {
+		for _, v := range u {
+			paramValueLookup[v.Name] = v.Value
+		}
+	}
 	for _, p := range e.Parameters {
 		value := p.DefaultValue
-		// TODO this is probably inefficient
-		for _, v := range envVarValues {
-			if p.Name == v.Name {
-				value = v.Value
-			}
+		if v, ok := paramValueLookup[p.Name]; ok {
+			value = v
 		}
 		// TODO Log any parameters from RepoExetensions NOT used
 		if value != "" {
 			envVarName := p.EnvironmentVariableName
 			if envVarName == "" {
-				envVarName = strings.ToUpper(fmt.Sprintf("%s_%s_%s", strcase.SnakeCase(e.Namespace), strcase.SnakeCase(e.Name), strcase.SnakeCase(p.Name)))
+				envVarName = e.EnvVarName(e.Namespace, e.Name, p.Name)
 			}
 			envVars = append(envVars, EnvironmentVariable{
 				Name:  envVarName,
@@ -231,6 +238,11 @@ func (e *ExtensionSpec) ToExecutable(envVarValues []ExtensionParameterValue) (ex
 			})
 		}
 	}
+	// Add Global vars
+	envVars = append(envVars, EnvironmentVariable{
+		Name:  e.EnvVarName(VersionGlobalParameterName),
+		Value: e.Version,
+	})
 	res := ExtensionExecution{
 		Name:                 e.Name,
 		Namespace:            e.Namespace,
@@ -245,6 +257,15 @@ func (e *ExtensionSpec) ToExecutable(envVarValues []ExtensionParameterValue) (ex
 		fmt.Fprintf(envVarsFormatted, "%s=%s, ", envVar.Name, envVar.Value)
 	}
 	return res, strings.TrimSuffix(envVarsFormatted.String(), ", "), err
+}
+
+func (e *ExtensionSpec) EnvVarName(names ...string) string {
+	format := strings.TrimPrefix(strings.Repeat("_%s", len(names)), "_")
+	vars := make([]interface{}, 0)
+	for _, a := range names {
+		vars = append(vars, strings.ToUpper(strcase.SnakeCase(a)))
+	}
+	return fmt.Sprintf(format, vars...)
 }
 
 func (constraints *ExtensionDefinitionReferenceList) LoadFromFile(inputFile string) (err error) {
