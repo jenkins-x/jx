@@ -14,6 +14,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/binaries"
+
 	"gopkg.in/yaml.v2"
 
 	"github.com/Pallinder/go-randomdata"
@@ -24,7 +26,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -32,8 +33,6 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-const eksctlVersion = "0.1.1"
 
 var (
 	groovy = `
@@ -125,7 +124,7 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 		case "eksctl":
 			err = o.installEksCtl(false)
 		case "heptio-authenticator-aws":
-			err = o.installHeptioAuthenticatorAws()
+			err = o.installHeptioAuthenticatorAws(false)
 		case "icp":
 			err = o.installIntoICP()
 		case "kustomize":
@@ -172,11 +171,8 @@ func (o *CommonOptions) installBrew() error {
 }
 
 func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileName string, download bool, err error) {
-	fileName = name
+	fileName = binaries.BinaryWithExtension(name)
 	download = false
-	if runtime.GOOS == "windows" {
-		fileName += ".exe"
-	}
 	pgmPath, err := exec.LookPath(fileName)
 	if err == nil {
 		log.Warnf("%s is already available on your PATH at %s\n", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
@@ -225,35 +221,43 @@ func (o *CommonOptions) UninstallBinary(binDir string, name string) error {
 	return nil
 }
 
-func (o *CommonOptions) downloadFile(clientURL string, fullPath string) error {
-	log.Infof("Downloading %s to %s...\n", util.ColorInfo(clientURL), util.ColorInfo(fullPath))
-	err := util.DownloadFile(fullPath, clientURL)
-	if err != nil {
-		return fmt.Errorf("Unable to download file %s from %s due to: %v", fullPath, clientURL, err)
-	}
-	log.Infof("Downloaded %s\n", util.ColorInfo(fullPath))
-	return nil
+type InstallOrUpdateBinaryOptions struct {
+	Binary              string
+	GitHubOrganization  string
+	DownloadUrlTemplate string
+	Version             string
+	SkipPathScan        bool
+	VersionExtractor    binaries.VersionExtractor
+	Archived            bool
 }
 
-func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization string, downloadUrlTemplate string, version string, skipPathScan bool) error {
-	binaries := map[string]string{}
+func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
+	shouldInstallBinary, err := binaries.ShouldInstallBinary(options.Binary, options.Version, options.VersionExtractor)
+	if err != nil {
+		return err
+	}
+	if !shouldInstallBinary {
+		return nil
+	}
+
 	configDir, err := util.ConfigDir()
 	if err != nil {
 		return err
 	}
 	binariesConfiguration := filepath.Join(configDir, "/binaries.yml")
+	binariesVersions := map[string]string{}
 	if _, err := os.Stat(binariesConfiguration); err == nil {
 		binariesBytes, err := ioutil.ReadFile(binariesConfiguration)
 		if err != nil {
 			return err
 		}
-		yaml.Unmarshal(binariesBytes, &binaries)
-		if binaries[binary] == version {
+		yaml.Unmarshal(binariesBytes, &binariesVersions)
+		if binariesVersions[options.Binary] == options.Version {
 			return nil
 		}
 	}
 
-	urlTemplate, err := template.New(binary).Parse(downloadUrlTemplate)
+	urlTemplate, err := template.New(options.Binary).Parse(options.DownloadUrlTemplate)
 	if err != nil {
 		return err
 	}
@@ -261,16 +265,16 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 	if err != nil {
 		return err
 	}
-	fileName := binary
-	if !skipPathScan {
-		installFilename, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName := options.Binary
+	if !options.SkipPathScan {
+		installFilename, flag, err := o.shouldInstallBinary(binDir, options.Binary)
 		fileName = installFilename
 		if err != nil || !flag {
 			return err
 		}
 	}
-	if version == "" {
-		version, err = util.GetLatestVersionStringFromGitHub(gitHubOrganization, binary)
+	if options.Version == "" {
+		options.Version, err = util.GetLatestVersionStringFromGitHub(options.GitHubOrganization, options.Binary)
 		if err != nil {
 			return err
 		}
@@ -280,49 +284,54 @@ func (o *CommonOptions) installOrUpdateBinary(binary string, gitHubOrganization 
 		extension = "zip"
 	}
 	clientUrlBuffer := bytes.NewBufferString("")
-	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": version, "os": runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
+	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": options.Version, "os": runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
 	fullPath := filepath.Join(binDir, fileName)
-	tarFile := fullPath + "." + extension
-	err = o.downloadFile(clientUrlBuffer.String(), tarFile)
+	tarFile := fullPath
+	if options.Archived {
+		tarFile = tarFile + "." + extension
+	}
+	err = binaries.DownloadFile(clientUrlBuffer.String(), tarFile)
 	if err != nil {
 		return err
 	}
-	if extension == "zip" {
-		zipDir := filepath.Join(binDir, binary+"-tmp-"+uuid.NewUUID().String())
-		err = os.MkdirAll(zipDir, DefaultWritePermissions)
+	if options.Archived {
+		if extension == "zip" {
+			zipDir := filepath.Join(binDir, options.Binary+"-tmp-"+uuid.NewUUID().String())
+			err = os.MkdirAll(zipDir, DefaultWritePermissions)
+			if err != nil {
+				return err
+			}
+			err = util.Unzip(tarFile, zipDir)
+			if err != nil {
+				return err
+			}
+			f := filepath.Join(zipDir, fileName)
+			exists, err := util.FileExists(f)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				return fmt.Errorf("Could not find file %s inside the downloaded file!", f)
+			}
+			err = os.Rename(f, fullPath)
+			if err != nil {
+				return err
+			}
+			err = os.RemoveAll(zipDir)
+		} else {
+			err = util.UnTargz(tarFile, binDir, []string{options.Binary, fileName})
+		}
 		if err != nil {
 			return err
 		}
-		err = util.Unzip(tarFile, zipDir)
+		err = os.Remove(tarFile)
 		if err != nil {
 			return err
 		}
-		f := filepath.Join(zipDir, fileName)
-		exists, err := util.FileExists(f)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return fmt.Errorf("Could not find file %s inside the downloaded file!", f)
-		}
-		err = os.Rename(f, fullPath)
-		if err != nil {
-			return err
-		}
-		err = os.RemoveAll(zipDir)
-	} else {
-		err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
-	}
-	if err != nil {
-		return err
-	}
-	err = os.Remove(tarFile)
-	if err != nil {
-		return err
 	}
 
-	binaries[binary] = version
-	binariesBytes, err := yaml.Marshal(binaries)
+	binariesVersions[options.Binary] = options.Version
+	binariesBytes, err := yaml.Marshal(binariesVersions)
 	if err != nil {
 		return err
 	}
@@ -371,7 +380,7 @@ func (o *CommonOptions) installKubectl() error {
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/%s/%s/%s", latestVersion, runtime.GOOS, runtime.GOARCH, fileName)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
 		return err
 	}
@@ -403,7 +412,7 @@ func (o *CommonOptions) installKustomize() error {
 	clientURL := fmt.Sprintf("https://github.com/kubernetes-sigs/kustomize/releases/download/v%v/kustomize_%s_%s_%s", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
 		return err
 	}
@@ -454,7 +463,7 @@ func (o *CommonOptions) installOc() error {
 	if extension == ".zip" {
 		tarFile = filepath.Join(binDir, "oc.zip")
 	}
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -657,7 +666,7 @@ func (o *CommonOptions) installHelm() error {
 	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -698,7 +707,7 @@ func (o *CommonOptions) installTiller() error {
 	fullPath := filepath.Join(binDir, fileName)
 	helmFullPath := filepath.Join(binDir, "helm")
 	tarFile := fullPath + ".tgz"
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -842,7 +851,7 @@ func (o *CommonOptions) installHelm3() error {
 	}
 	fullPath := filepath.Join(binDir, binary)
 	tarFile := filepath.Join(tmpDir, fileName+".tgz")
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -928,7 +937,7 @@ func (o *CommonOptions) installMavenIfRequired() error {
 	}
 
 	log.Info("\ndownloadFile\n")
-	err = o.downloadFile(clientURL, zipFile)
+	err = binaries.DownloadFile(clientURL, zipFile)
 	if err != nil {
 		m.Unlock()
 		return err
@@ -1000,7 +1009,7 @@ func (o *CommonOptions) installTerraform() error {
 	clientURL := fmt.Sprintf("https://releases.hashicorp.com/terraform/%s/terraform_%s_%s_%s.zip", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	zipFile := fullPath + ".zip"
-	err = o.downloadFile(clientURL, zipFile)
+	err = binaries.DownloadFile(clientURL, zipFile)
 	if err != nil {
 		return err
 	}
@@ -1036,7 +1045,7 @@ func (o *CommonOptions) installKops() error {
 	clientURL := fmt.Sprintf("https://github.com/kubernetes/kops/releases/download/%s/kops-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
 		return err
 	}
@@ -1067,7 +1076,7 @@ func (o *CommonOptions) installKSync() (bool, error) {
 	}
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
 		return false, err
 	}
@@ -1116,7 +1125,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	clientURL := fmt.Sprintf("https://github.com/"+org+"/"+repo+"/releases/download/v%s/"+binary+"-%s-%s.tar.gz", version, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -1156,7 +1165,7 @@ func (o *CommonOptions) installMinikube() error {
 	clientURL := fmt.Sprintf("https://github.com/kubernetes/minikube/releases/download/v%s/minikube-%s-%s", latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tmpFile := fullPath + ".tmp"
-	err = o.downloadFile(clientURL, tmpFile)
+	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
 		return err
 	}
@@ -1188,7 +1197,7 @@ func (o *CommonOptions) installMinishift() error {
 	clientURL := fmt.Sprintf("https://github.com/minishift/minishift/releases/download/v%s/minishift-%s-%s-%s.tgz", latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath + ".tgz"
-	err = o.downloadFile(clientURL, tarFile)
+	err = binaries.DownloadFile(clientURL, tarFile)
 	if err != nil {
 		return err
 	}
@@ -1201,7 +1210,7 @@ func (o *CommonOptions) installMinishift() error {
 
 func (o *CommonOptions) installGcloud() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
-		return errors.New("please install missing gloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
+		return errors.New("please install missing gcloud sdk - see https://cloud.google.com/sdk/downloads#interactive")
 	}
 	err := o.RunCommand("brew", "tap", "caskroom/cask")
 	if err != nil {
@@ -1240,33 +1249,34 @@ func (o *CommonOptions) installAws() error {
 }
 
 func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
-	return o.installEksCtlWithVersion(eksctlVersion, skipPathScan)
+	return o.installEksCtlWithVersion(binaries.EksctlVersion, skipPathScan)
 }
 
 func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bool) error {
-	return o.installOrUpdateBinary("eksctl",
-		"weaveworks",
-		"https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
-		version, skipPathScan)
+	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+		Binary:              "eksctl",
+		GitHubOrganization:  "weaveworks",
+		DownloadUrlTemplate: "https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
+		Archived:            true,
+	})
 }
 
-func (o *CommonOptions) installHeptioAuthenticatorAws() error {
-	awsUrl := "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/linux/amd64/heptio-authenticator-aws"
-	fileName := "heptio-authenticator-aws"
+func (o *CommonOptions) installHeptioAuthenticatorAws(skipPathScan bool) error {
+	return o.installHeptioAuthenticatorAwsWithVersion(binaries.HeptioAuthenticatorAwsVersion, skipPathScan)
+}
 
-	if runtime.GOOS == "darwin" {
-		awsUrl = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/darwin/amd64/heptio-authenticator-aws"
-	} else if runtime.GOOS == "windows" {
-		awsUrl = "https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/bin/windows/amd64/heptio-authenticator-aws.exe"
-		fileName = "heptio-authenticator-aws.exe"
-	}
-	binDir, err := util.JXBinLocation()
-	fullPath := filepath.Join(binDir, fileName)
-	err = o.downloadFile(awsUrl, fullPath)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(fullPath, 0755)
+func (o *CommonOptions) installHeptioAuthenticatorAwsWithVersion(version string, skipPathScan bool) error {
+	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+		Binary:              "heptio-authenticator-aws",
+		GitHubOrganization:  "",
+		DownloadUrlTemplate: "https://amazon-eks.s3-us-west-2.amazonaws.com/{{.version}}/2018-06-05/bin/{{.os}}/{{.arch}}/heptio-authenticator-aws",
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
+	})
 }
 
 /* A user should have configured their kubectl client to point to an existing ICP cluster at this point */
@@ -1312,7 +1322,7 @@ func (o *CommonOptions) installIntoICP() error {
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if p == "" {
-		// lets detect minikube
+		// lets detect Minikube
 		currentContext, err := o.getCommandOutput("", "kubectl", "config", "current-context")
 		if err == nil && currentContext == "minikube" {
 			p = MINIKUBE
@@ -1329,7 +1339,7 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 			Message: "Cloud Provider",
 			Options: KUBERNETES_PROVIDERS,
 			Default: MINIKUBE,
-			Help:    "Cloud service providing the kubernetes cluster, local VM (minikube), Google (GKE), Oracle (OKE), Azure (AKS)",
+			Help:    "Cloud service providing the Kubernetes cluster, local VM (Minikube), Google (GKE), Oracle (OKE), Azure (AKS)",
 		}
 
 		survey.AskOne(prompt, &p, nil, surveyOpts)
@@ -1521,15 +1531,15 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 		return username, err
 	}
 	if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
-		return username, fmt.Errorf("No kubernetes contexts available! Try create or connect to cluster?")
+		return username, fmt.Errorf("No Kubernetes contexts available! Try create or connect to cluster?")
 	}
 	contextName := config.CurrentContext
 	if contextName == "" {
-		return username, fmt.Errorf("No kuberentes context selected. Please select one (e.g. via jx context) first")
+		return username, fmt.Errorf("No Kubernetes context selected. Please select one (e.g. via jx context) first")
 	}
 	context := config.Contexts[contextName]
 	if context == nil {
-		return username, fmt.Errorf("No kuberentes context available for context %s", contextName)
+		return username, fmt.Errorf("No Kubernetes context available for context %s", contextName)
 	}
 	username = context.AuthInfo
 
@@ -1546,11 +1556,11 @@ func GetSafeUsername(username string) string {
 func (o *CommonOptions) installProw() error {
 
 	if o.ReleaseName == "" {
-		o.ReleaseName = prow.DefaultProwReleaseName
+		o.ReleaseName = kube.DefaultProwReleaseName
 	}
 
 	if o.Chart == "" {
-		o.Chart = prow.ChartProw
+		o.Chart = kube.ChartProw
 	}
 
 	var err error
@@ -1569,11 +1579,8 @@ func (o *CommonOptions) installProw() error {
 		}
 
 		config := authConfigSvc.Config()
-		if "" == config.CurrentServer {
-			config.CurrentServer = "https://github.com"
-		}
-
-		server := config.GetOrCreateServer(config.CurrentServer)
+		// lets assume github.com for now so ignore config.CurrentServer
+		server := config.GetOrCreateServer("https://github.com")
 		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
@@ -1609,12 +1616,12 @@ func (o *CommonOptions) installProw() error {
 	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(prow.DefaultKnativeBuildReleaseName, prow.ChartKnativeBuild, "", devNamespace, true, values)
+		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values)
 		return nil
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install knative build: %v", err)
+		return fmt.Errorf("failed to install Knative build: %v", err)
 	}
 
 	return nil

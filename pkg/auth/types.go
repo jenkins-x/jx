@@ -23,10 +23,8 @@ type UserAuth struct {
 type AuthConfig struct {
 	Servers []*AuthServer
 
-	DefaultUsername  string
-	PipeLineUsername string
-	CurrentServer    string
-	PipeLineServer   string
+	DefaultUsername string
+	CurrentServer   string
 }
 
 // AuthConfigService is a service for handing the config of auth tokens

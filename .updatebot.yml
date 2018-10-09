@@ -3,7 +3,8 @@ github:
   - name: jenkins-x
     repositories:
     - name: homebrew-jx
-    - name: builder-base
     - name: jx-docs
     - name: jenkins-x-platform
+    - name: jenkins-x-builders
+    - name: jenkins-x-serverless
     - name: jx-tutorial

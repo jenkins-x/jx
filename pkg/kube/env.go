@@ -123,7 +123,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 			q := &survey.Input{
 				Message: "Namespace:",
 				Default: defaultValue,
-				Help:    "The kubernetes namespace name to use for this Environment",
+				Help:    "The Kubernetes namespace name to use for this Environment",
 			}
 			err := survey.AskOne(q, &data.Spec.Namespace, ValidateName, surveyOpts)
 			if err != nil {
@@ -134,18 +134,18 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 
 	if helmValues.ExposeController.Config.Domain == "" {
 
-		expose, err := GetTeamExposecontrollerConfig(kubeClient, ns)
+		ic, err := GetIngressConfig(kubeClient, ns)
 		if err != nil {
 			return nil, err
 		}
 
 		if batchMode {
-			log.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", expose["domain"])
-			helmValues.ExposeController.Config.Domain = expose["domain"]
+			log.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", ic.Domain)
+			helmValues.ExposeController.Config.Domain = ic.Domain
 		} else {
 			q := &survey.Input{
 				Message: "Domain:",
-				Default: expose["domain"],
+				Default: ic.Domain,
 				Help:    "Domain to expose ingress endpoints.  Example: jenkinsx.io, leave blank if no appplications are to be exposed via ingress rules",
 			}
 			err := survey.AskOne(q, &helmValues.ExposeController.Config.Domain, nil, surveyOpts)
@@ -167,7 +167,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 				q := &survey.Input{
 					Message: "Cluster URL:",
 					Default: defaultValue,
-					Help:    "The kubernetes cluster URL to use to host this Environment",
+					Help:    "The Kubernetes cluster URL to use to host this Environment",
 				}
 				// TODO validate/transform to match valid kubnernetes cluster syntax
 				err := survey.AskOne(q, &data.Spec.Cluster, nil, surveyOpts)
@@ -307,7 +307,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 				q := &survey.Input{
 					Message: "Git branch for the Environment source code:",
 					Default: defaultBranch,
-					Help:    "The git release branch in the Environments git repository used to store Helm charts source code and custom configuration",
+					Help:    "The Git release branch in the Environments Git repository used to store Helm charts source code and custom configuration",
 				}
 				err := survey.AskOne(q, &data.Spec.Source.Ref, nil, surveyOpts)
 				if err != nil {
@@ -317,25 +317,6 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 		}
 	}
 	return gitProvider, nil
-}
-
-func GetTeamExposecontrollerConfig(kubeClient kubernetes.Interface, ns string) (map[string]string, error) {
-	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get("exposecontroller", metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to find team environment exposecontroller config %v", err)
-	}
-
-	config := cm.Data["config.yml"]
-
-	lines := strings.Split(config, "\n")
-
-	m := make(map[string]string)
-	for _, pair := range lines {
-		z := strings.Split(pair, ":")
-		m[z[0]] = strings.TrimSpace(z[1])
-	}
-
-	return m, nil
 }
 
 func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string,
@@ -355,7 +336,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigServi
 	provider := details.GitProvider
 	repo, err := provider.GetRepository(owner, repoName)
 	if err == nil {
-		fmt.Fprintf(out, "git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 		// if the repo already exists then lets just modify it if required
 		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
@@ -381,9 +362,9 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigServi
 		if err != nil {
 			return "", nil, err
 		}
-		fmt.Fprintf(out, "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+		fmt.Fprintf(out, "Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	} else {
-		fmt.Fprintf(out, "Creating git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
+		fmt.Fprintf(out, "Creating Git repository %s/%s\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 
 		if forkEnvGitURL != "" {
 			gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
@@ -396,15 +377,15 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigServi
 				// lets try fork the repository and rename it
 				repo, err := provider.ForkRepository(originalOrg, originalRepo, org)
 				if err != nil {
-					return "", nil, fmt.Errorf("Failed to fork github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
+					return "", nil, fmt.Errorf("Failed to fork GitHub repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
 				}
 				if repoName != originalRepo {
 					repo, err = provider.RenameRepository(owner, originalRepo, repoName)
 					if err != nil {
-						return "", nil, fmt.Errorf("Failed to rename github repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
+						return "", nil, fmt.Errorf("Failed to rename GitHub repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
 					}
 				}
-				fmt.Fprintf(out, "Forked git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+				fmt.Fprintf(out, "Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 				dir, err := util.CreateUniqueDirectory(envDir, repoName, util.MaximumNewDirectoryAttempts)
 				if err != nil {
@@ -478,7 +459,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigServi
 			if err != nil {
 				return "", nil, err
 			}
-			fmt.Fprintf(out, "Pushed git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+			fmt.Fprintf(out, "Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
 	}
 	return repo.CloneURL, provider, nil

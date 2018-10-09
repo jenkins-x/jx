@@ -26,6 +26,7 @@ const (
 	cbServiceName               = "cb-cdx"
 	cdxRepoUrl                  = "https://%s:%s@chartmuseum.jx.charts-demo.cloudbees.com"
 	serviceaccountsClusterAdmin = "serviceaccounts-cluster-admin"
+	defaultCloudBeesVersion     = ""
 )
 
 var (
@@ -84,7 +85,7 @@ func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 	cmd.Flags().BoolVarP(&options.Basic, "basic", "", false, "Enable basic auth")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access UI when using basic auth.  Defaults to default Jenkins X admin password.")
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName)
+	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName, defaultCloudBeesVersion)
 	return cmd
 }
 
@@ -180,7 +181,7 @@ To register to get your username/password to to: %s
 		log.Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
 		o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 		if err != nil {
-			return errors.Wrap(err, "retrieving the development namesapce")
+			return errors.Wrap(err, "retrieving the development namespace")
 		}
 		ingressConfig, err := kube.GetIngressConfig(o.KubeClientCached, o.devNamespace)
 		if err != nil {

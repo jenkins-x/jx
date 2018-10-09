@@ -17,7 +17,7 @@ const (
 	PodNamespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
-// LoadConfig loads the kubernetes configuration
+// LoadConfig loads the Kubernetes configuration
 func LoadConfig() (*api.Config, *clientcmd.PathOptions, error) {
 	po := clientcmd.NewDefaultPathOptions()
 	if po == nil {
@@ -109,7 +109,7 @@ func UpdateConfig(namespace string, server string, caData string, user string, t
 
 	clusterName := "jx-cluster"
 	cluster := &api.Cluster{
-		Server: server,
+		Server:                   server,
 		CertificateAuthorityData: []byte(caData),
 	}
 

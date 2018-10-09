@@ -156,11 +156,11 @@ func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (G
 // GetHost returns the Git Provider hostname, e.g github.com
 func GetHost(gitProvider GitProvider) (string, error) {
 	if gitProvider == nil {
-		return "", fmt.Errorf("no git provider")
+		return "", fmt.Errorf("no Git provider")
 	}
 
 	if gitProvider.ServerURL() == "" {
-		return "", fmt.Errorf("no git provider server URL found")
+		return "", fmt.Errorf("no Git provider server URL found")
 	}
 	url, err := url.Parse(gitProvider.ServerURL())
 	if err != nil {
@@ -313,13 +313,13 @@ func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user 
 	return CreateProvider(server, user, git)
 }
 
-func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService, gitKind string, git Gitter) (GitProvider, error) {
+func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService, gitKind string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	hostUrl := i.HostURLWithoutUser()
-	return CreateProviderForURL(authConfigSvc, gitKind, hostUrl, git)
+	return CreateProviderForURL(authConfigSvc, gitKind, hostUrl, git, batchMode, in, out, errOut)
 }
 
-// CreateProviderForURL creates the git provider for the given git kind and host URL
-func CreateProviderForURL(authConfigSvc auth.AuthConfigService, gitKind string, hostUrl string, git Gitter) (GitProvider, error) {
+// CreateProviderForURL creates the Git provider for the given git kind and host URL
+func CreateProviderForURL(authConfigSvc auth.AuthConfigService, gitKind string, hostUrl string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(hostUrl)
 	url := server.URL
@@ -345,5 +345,37 @@ func CreateProviderForURL(authConfigSvc auth.AuthConfigService, gitKind string, 
 		auth := userAuths[0]
 		return CreateProvider(server, auth, git)
 	}
-	return nil, fmt.Errorf("Could not create Git provider for host %s as no user auths could be found", hostUrl)
+	auth, err := createUserForServer(batchMode, authConfigSvc, server, git, in, out, errOut)
+	if err != nil {
+		return nil, err
+	}
+	return CreateProvider(server, auth, git)
+}
+
+func createUserForServer(batchMode bool, authConfigSvc auth.AuthConfigService, server *auth.AuthServer,
+	git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*auth.UserAuth, error) {
+	userAuth := &auth.UserAuth{}
+
+	f := func(username string) error {
+		git.PrintCreateRepositoryGenerateAccessToken(server, username, out)
+		return nil
+	}
+
+	// TODO could we guess this based on the users ~/.git for github?
+	defaultUserName := ""
+	err := authConfigSvc.Config().EditUserAuth(server.Label(), userAuth, defaultUserName, false, batchMode, f, in, out, errOut)
+	if err != nil {
+		return userAuth, err
+	}
+
+	// TODO lets verify the auth works
+
+	err = authConfigSvc.SaveUserAuth(server.URL, userAuth)
+	if err != nil {
+		return userAuth, fmt.Errorf("failed to store git auth configuration %s", err)
+	}
+	if userAuth.IsInvalid() {
+		return userAuth, fmt.Errorf("you did not properly define the user authentication")
+	}
+	return userAuth, nil
 }

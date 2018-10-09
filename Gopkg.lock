@@ -137,7 +137,7 @@
   version = "v1.5.0"
 
 [[projects]]
-  digest = "1:e255df1c1287ae5e991ac2f6c263ca8f366dd0370abeb147f0f84c90e34f1aed"
+  digest = "1:4275b06febbe183c492e3e93be073f1de42fe8a060e2b622b84723d0cd3d6e77"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -180,8 +180,8 @@
     "service/sts",
   ]
   pruneopts = "NUT"
-  revision = "80ad2657c5ff975b642b1febb11c3fcfd747c057"
-  version = "v1.15.28"
+  revision = "d8ab6d22cfd270ded73e7d59feba528ffd963edd"
+  version = "v1.15.40"
 
 [[projects]]
   digest = "1:f4298c81d8a94ab68d9e387eaf6e653387df5da17702f06c6d8718a7a8e549d0"
@@ -1209,6 +1209,14 @@
   version = "v1.3.0"
 
 [[projects]]
+  digest = "1:65c01b68bc4f813c18cdd48c98c38867dd0681b9584138c0403a0865b9bfdfb2"
+  name = "github.com/stoewer/go-strcase"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c8136b55823dc6af966d084a06056c5575f6400f"
+  version = "v1.0.1"
+
+[[projects]]
   digest = "1:b31059dac028ff111793a8345eacf0f99d0f1150ead34ebf32fdd2b7d54c2d45"
   name = "github.com/stretchr/testify"
   packages = [
@@ -1955,6 +1963,7 @@
     "github.com/andygrunwald/go-jira",
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/awserr",
+    "github.com/aws/aws-sdk-go/aws/credentials",
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/ec2",
     "github.com/aws/aws-sdk-go/service/ecr",
@@ -1967,6 +1976,7 @@
     "github.com/bouk/monkey",
     "github.com/cenkalti/backoff",
     "github.com/chromedp/cdproto/cdp",
+    "github.com/chromedp/cdproto/network",
     "github.com/chromedp/chromedp",
     "github.com/chromedp/chromedp/runner",
     "github.com/codeship/codeship-go",
@@ -2003,6 +2013,7 @@
     "github.com/spf13/cobra",
     "github.com/spf13/cobra/doc",
     "github.com/spf13/pflag",
+    "github.com/stoewer/go-strcase",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/suite",
     "github.com/wbrefvem/go-bitbucket",
@@ -2020,6 +2031,7 @@
     "k8s.io/api/apps/v1beta1",
     "k8s.io/api/batch/v1",
     "k8s.io/api/core/v1",
+    "k8s.io/api/extensions/v1beta1",
     "k8s.io/api/rbac/v1",
     "k8s.io/api/storage/v1",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
@@ -2055,6 +2067,7 @@
     "k8s.io/client-go/util/flowcontrol",
     "k8s.io/code-generator/cmd/client-gen",
     "k8s.io/helm/pkg/chartutil",
+    "k8s.io/helm/pkg/proto/hapi/chart",
     "k8s.io/metrics/pkg/apis/metrics/v1beta1",
     "k8s.io/metrics/pkg/client/clientset_generated/clientset",
     "k8s.io/test-infra/prow/config",

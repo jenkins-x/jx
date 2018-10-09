@@ -33,13 +33,13 @@ var (
 `)
 
 	create_git_token_example = templates.Examples(`
-		# Add a new API Token for a user for the local git server
+		# Add a new API Token for a user for the local Git server
         # prompting the user to find and enter the API Token
 		jx create git token -n local someUserName
 
-		# Add a new API Token for a user for the local git server 
- 		# using browser automation to login to the git server
-		# with the username an password to find the API Token
+		# Add a new API Token for a user for the local Git server 
+ 		# using browser automation to login to the Git server
+		# with the username and password to find the API Token
 		jx create git token -n local -p somePassword someUserName	
 	`)
 )
@@ -70,7 +70,7 @@ func NewCmdCreateGitToken(f Factory, in terminal.FileReader, out terminal.FileWr
 
 	cmd := &cobra.Command{
 		Use:     "token [username]",
-		Short:   "Adds a new API token for a user on a git server",
+		Short:   "Adds a new API token for a user on a Git server",
 		Aliases: []string{"api-token"},
 		Long:    create_git_token_long,
 		Example: create_git_token_example,
@@ -157,15 +157,15 @@ func (o *CreateGitTokenOptions) Run() error {
 
 	err = o.updateGitCredentialsSecret(server, userAuth)
 	if err != nil {
-		log.Warnf("Failed to update jenkins git credentials secret: %v\n", err)
+		log.Warnf("Failed to update Jenkins Git credentials secret: %v\n", err)
 	}
 
 	_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
 	if err != nil {
-		log.Warnf("Failed to update Jenkins X pipeline git credentials secret: %v\n", err)
+		log.Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v\n", err)
 	}
 
-	log.Infof("Created user %s API Token for git server %s at %s\n",
+	log.Infof("Created user %s API Token for Git server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 
 	return nil

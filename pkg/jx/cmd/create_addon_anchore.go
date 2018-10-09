@@ -23,7 +23,7 @@ const (
 	defaultAnchoreName        = "anchore"
 	defaultAnchoreNamespace   = "anchore"
 	defaultAnchoreReleaseName = "anchore"
-	defaultAnchoreVersion     = "0.1.7"
+	defaultAnchoreVersion     = "0.2.3"
 	defaultAnchorePassword    = "anchore"
 	defaultAnchoreConfigDir   = "/anchore_service_dir"
 	anchoreDeploymentName     = "anchore-anchore-engine-core"
@@ -82,9 +82,8 @@ func NewCmdCreateAddonAnchore(f Factory, in terminal.FileReader, out terminal.Fi
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultAnchoreNamespace, defaultAnchoreReleaseName)
+	options.addFlags(cmd, defaultAnchoreNamespace, defaultAnchoreReleaseName, defaultAnchoreVersion)
 
-	cmd.Flags().StringVarP(&options.Version, "version", "v", defaultAnchoreVersion, "The version of the Anchore chart to use")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", defaultAnchorePassword, "The default password to use for Anchore")
 	cmd.Flags().StringVarP(&options.ConfigDir, "config-dir", "d", defaultAnchoreConfigDir, "The config directory to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartAnchore, "The name of the chart to use")

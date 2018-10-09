@@ -54,9 +54,9 @@ func NewCmdStepNextBuildNumber(f Factory, in terminal.FileReader, out terminal.F
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The git repository owner")
-	cmd.Flags().StringVarP(&options.Repository, optionRepo, "r", "", "The git repository name")
-	cmd.Flags().StringVarP(&options.Branch, "branch", "b", "master", "The git branch")
+	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The Git repository owner")
+	cmd.Flags().StringVarP(&options.Repository, optionRepo, "r", "", "The Git repository name")
+	cmd.Flags().StringVarP(&options.Branch, "branch", "b", "master", "The Git branch")
 	return cmd
 }
 

@@ -2,6 +2,8 @@ package log
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"os"
 
 	"github.com/fatih/color"
 )
@@ -99,4 +101,21 @@ func posString(slice []string, element string) int {
 // containsString returns true iff slice contains element
 func containsString(slice []string, element string) bool {
 	return !(posString(slice, element) == -1)
+}
+
+type SimpleLogFormatter struct {
+}
+
+func (f *SimpleLogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	return []byte(fmt.Sprintf(entry.Message) + "\n"), nil
+}
+
+func ConfigureLog(level string) {
+	logrus.SetFormatter(&SimpleLogFormatter{})
+	lvl, err := logrus.ParseLevel(level)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(-1)
+	}
+	logrus.SetLevel(lvl)
 }

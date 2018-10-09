@@ -48,7 +48,7 @@ func ActsAsRootCommand(cmd *cobra.Command, filters []string, groups ...CommandGr
 
 func UseOptionsTemplates(cmd *cobra.Command) {
 	templater := &templater{
-		UsageTemplate: OptionsHelpTemplate(),
+		UsageTemplate: OptionsUsageTemplate(),
 		HelpTemplate:  OptionsHelpTemplate(),
 	}
 	cmd.SetUsageFunc(templater.UsageFunc())

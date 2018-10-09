@@ -26,7 +26,7 @@ func NewCmdDeleteTracker(f Factory, in terminal.FileReader, out terminal.FileWri
 
 	cmd := &cobra.Command{
 		Use:     "tracker",
-		Short:   "Deletes one or many issue tracker resources",
+		Short:   "Deletes one or more issue tracker resources",
 		Aliases: []string{"jra", "trello", "issue-tracker"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd

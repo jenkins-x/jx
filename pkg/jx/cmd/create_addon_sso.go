@@ -18,6 +18,18 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
+const (
+	defaultSSONamesapce         = "jx"
+	defaultSSOReleaseNamePrefix = "jx-sso"
+	repoName                    = "jenkinsxio"
+	repoURL                     = "https://chartmuseum.jx.cd.jenkins-x.io"
+	dexServiceName              = "dex"
+	operatorServiceName         = "operator"
+	githubNewOAuthAppURL        = "https://github.com/settings/applications/new"
+	defaultDexVersion           = ""
+	defaultOperatorVersion      = ""
+)
+
 var (
 	CreateAddonSSOLong = templates.LongDesc(`
 		Creates the Single Sign-On addon
@@ -31,27 +43,14 @@ var (
 	`)
 )
 
-const (
-	defaultSSONamesapce   = "jx"
-	defaultSSOReleaseName = "jx"
-	repoName              = "jenkinsxio"
-	repoURL               = "https://chartmuseum.jx.cd.jenkins-x.io"
-	dexChart              = "jenkinsxio/dex"
-	dexServiceName        = "dex"
-	dexChartVersion       = ""
-	operatorChart         = "jenkinsxio/sso-operator"
-	operatorChartVersion  = ""
-	operatorServiceName   = "sso-operator"
-	githubNewOAuthAppURL  = "https://github.com/settings/applications/new"
-)
-
 // CreateAddonSSOptions the options for the create sso addon
 type CreateAddonSSOOptions struct {
 	CreateAddonOptions
 	UpgradeIngressOptions UpgradeIngressOptions
+	DexVersion            string
 }
 
-// NewCmdCreateAddonSSO creates a command object for the "create sso" command
+// NewCmdCreateAddonSSO creates a command object for the "create addon sso" command
 func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	commonOptions := CommonOptions{
 		Factory: f,
@@ -86,7 +85,8 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseName)
+	cmd.Flags().StringVarP(&options.DexVersion, "dex-version", "", defaultDexVersion, "The dex chart version to install)")
+	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseNamePrefix, defaultOperatorVersion)
 	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
@@ -95,11 +95,11 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 func (o *CreateAddonSSOOptions) Run() error {
 	_, _, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("cannot connect to kubernetes cluster: %v", err)
+		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
 	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
-		return errors.Wrap(err, "retrieving the development namesapce")
+		return errors.Wrap(err, "retrieving the development namespace")
 	}
 
 	err = o.ensureCertmanager()
@@ -180,7 +180,7 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 	}
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(gits.GitHubURL)
-	userAuth, err := config.PickServerUserAuth(server, "git user name", true, "", o.In, o.Out, o.Err)
+	userAuth, err := config.PickServerUserAuth(server, "Git user name", true, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return nil, err
 	}
@@ -191,12 +191,33 @@ func (o *CreateAddonSSOOptions) getAuthorizedOrgs() ([]string, error) {
 
 	orgs := gits.GetOrganizations(provider, userAuth.Username)
 	if len(orgs) == 0 {
-		return nil, fmt.Errorf("user %s is not member of any GitHub organizations", userAuth.Username)
+		return nil, fmt.Errorf("user '%s' does not have any GitHub organizations", userAuth.Username)
 	}
-	sort.Strings(orgs)
+
+	orgChecker, ok := provider.(gits.OrganisationChecker)
+	if !ok || orgChecker == nil {
+		return nil, errors.New("failed to create the GitHub organisation checker")
+	}
+	orgsWithMembers := []string{}
+	for _, org := range orgs {
+		member, err := orgChecker.IsUserInOrganisation(userAuth.Username, org)
+		if err != nil {
+			continue
+		}
+		if member {
+			orgsWithMembers = append(orgsWithMembers, org)
+		}
+	}
+
+	if len(orgsWithMembers) == 0 {
+		return nil, fmt.Errorf("user '%s' is not member of any GitHub organizations", userAuth.Username)
+	}
+
+	sort.Strings(orgsWithMembers)
+
 	promt := &survey.MultiSelect{
 		Message: "Select GitHub organizations to authorize users from:",
-		Options: orgs,
+		Options: orgsWithMembers,
 	}
 
 	authorizedOrgs := []string{}
@@ -214,8 +235,8 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	releaseName := o.ReleaseName + "-sso-" + dexServiceName
-	return o.installChart(releaseName, dexChart, dexChartVersion, o.Namespace, true, values)
+	releaseName := o.ReleaseName + "-" + dexServiceName
+	return o.installChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values)
 }
 
 func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error {
@@ -225,7 +246,7 @@ func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error 
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + operatorServiceName
-	return o.installChart(releaseName, operatorChart, operatorChartVersion, o.Namespace, true, values)
+	return o.installChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values)
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {

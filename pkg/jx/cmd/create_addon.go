@@ -60,16 +60,18 @@ func NewCmdCreateAddon(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonProw(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonSSO(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonVault(f, in, out, errOut))
 
-	options.addFlags(cmd, kube.DefaultNamespace, "")
+	options.addFlags(cmd, kube.DefaultNamespace, "", "")
 	return cmd
 }
 
-func (options *CreateAddonOptions) addFlags(cmd *cobra.Command, defaultNamespace string, defaultOptionRelease string) {
+func (options *CreateAddonOptions) addFlags(cmd *cobra.Command, defaultNamespace string, defaultOptionRelease string, defaultVersion string) {
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", defaultNamespace, "The Namespace to install into")
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultOptionRelease, "The chart release name")
 	cmd.Flags().StringVarP(&options.SetValues, "set", "s", "", "The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	cmd.Flags().BoolVarP(&options.HelmUpdate, "helm-update", "", true, "Should we run helm update first to ensure we use the latest version")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", defaultVersion, "The chart version to install)")
 }
 
 // Run implements this command
@@ -126,7 +128,7 @@ func (o *CreateAddonOptions) ExposeAddon(addon string) error {
 			return errors.Wrap(err, "updating the service annotations")
 		}
 	}
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.Namespace)
+	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the dev namespace")
 	}

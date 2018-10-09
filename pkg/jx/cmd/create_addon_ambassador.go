@@ -17,6 +17,7 @@ const (
 	defaultAmbassadorReleaseName = "ambassador"
 	ambassadorRepoName           = "datawire"
 	ambassadorRepoUrl            = "https://www.getambassador.io"
+	defaultAmbassadorVersion     = ""
 )
 
 var (
@@ -70,9 +71,8 @@ func NewCmdCreateAddonAmbassador(f Factory, in terminal.FileReader, out terminal
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, "", defaultAmbassadorReleaseName)
+	options.addFlags(cmd, "", defaultAmbassadorReleaseName, defaultAmbassadorVersion)
 
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version of the ambassador addon to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartAmbassador, "The name of the chart to use")
 	return cmd
 }

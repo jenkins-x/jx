@@ -587,7 +587,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 									}
 									gitInfo, err := gits.ParseGitURL(gitURL)
 									if err != nil {
-										log.Warnf("Failed to parse git URL %s for PipelineActivity %s so cannot comment on issues: %s", gitURL, activity.Name, err)
+										log.Warnf("Failed to parse Git URL %s for PipelineActivity %s so cannot comment on issues: %s", gitURL, activity.Name, err)
 										return
 									}
 									po.GitInfo = gitInfo
@@ -704,7 +704,7 @@ func createPromoteStatus(pipeline *v1.PipelineActivity) map[string]*v1.PromoteAc
 	return answer
 }
 
-// createPromoteStepActivityKey deduces the pipeline metadata from the knative workflow pod
+// createPromoteStepActivityKey deduces the pipeline metadata from the Knative workflow pod
 func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName string, pod *corev1.Pod) *kube.PromoteStepActivityKey {
 	branch := ""
 	lastCommitSha := ""
@@ -740,7 +740,7 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 	}
 	gitInfo, err := gits.ParseGitURL(gitUrl)
 	if err != nil {
-		log.Warnf("Failed to parse git URL %s: %s", gitUrl, err)
+		log.Warnf("Failed to parse Git URL %s: %s", gitUrl, err)
 		return nil
 	}
 	org := gitInfo.Organisation
@@ -760,7 +760,7 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 	}
 }
 
-// PullRequestURLToNumber turns pull request URL to number
+// PullRequestURLToNumber turns Pull Request URL to number
 func PullRequestURLToNumber(text string) (int, error) {
 	paths := strings.Split(strings.TrimSuffix(text, "/"), "/")
 	lastPath := paths[len(paths)-1]

@@ -16,11 +16,12 @@ import (
 const (
 	defaultKubelessNamespace   = "kubeless"
 	defaultKubelessReleaseName = "kubeless"
+	defaultKubelessVersion     = ""
 )
 
 var (
 	createAddonKubelessLong = templates.LongDesc(`
-		Creates the kubeless addon for serverless on kubernetes
+		Creates the kubeless addon for serverless on Kubernetes
 `)
 
 	createAddonKubelessExample = templates.Examples(`
@@ -56,7 +57,7 @@ func NewCmdCreateAddonKubeless(f Factory, in terminal.FileReader, out terminal.F
 
 	cmd := &cobra.Command{
 		Use:     "kubeless",
-		Short:   "Create a kubeless addon for hosting git repositories",
+		Short:   "Create a kubeless addon for hosting Git repositories",
 		Aliases: []string{"env"},
 		Long:    createAddonKubelessLong,
 		Example: createAddonKubelessExample,
@@ -69,9 +70,8 @@ func NewCmdCreateAddonKubeless(f Factory, in terminal.FileReader, out terminal.F
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd, defaultKubelessNamespace, defaultKubelessReleaseName)
+	options.addFlags(cmd, defaultKubelessNamespace, defaultKubelessReleaseName, defaultKubelessVersion)
 
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version of the kubeless addon to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartKubeless, "The name of the chart to use")
 	return cmd
 }
@@ -86,7 +86,7 @@ func (o *CreateAddonKubelessOptions) Run() error {
 	}
 	err := o.ensureHelm()
 	if err != nil {
-		return errors.Wrap(err, "failed to ensure that helm is present")
+		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
 	values := []string{"rbac.create=true"}
 	setValues := strings.Split(o.SetValues, ",")

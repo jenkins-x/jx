@@ -1,15 +1,15 @@
 package cmd
 
 import (
-	"io"
-	"runtime"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
+	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
+	"runtime"
 )
 
 var (
@@ -58,15 +58,19 @@ func NewCmdUpgradeCLI(f Factory, in terminal.FileReader, out terminal.FileWriter
 	}
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific version to upgrade to")
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
+	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logger.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
 	return cmd
 }
 
 // Run implements the command
 func (o *UpgradeCLIOptions) Run() error {
+	log.ConfigureLog(o.LogLevel)
+
 	newVersion, err := o.GetLatestJXVersion()
 	if err != nil {
 		return err
 	}
+	logger.Debugf("Found the latest version of jx: %s", util.ColorInfo(newVersion))
 
 	currentVersion, err := version.GetSemverVersion()
 	if err != nil {
@@ -74,11 +78,11 @@ func (o *UpgradeCLIOptions) Run() error {
 	}
 
 	if newVersion.EQ(currentVersion) {
-		log.Infof("You are already on the latest version of jx %s\n", util.ColorInfo(currentVersion.String()))
+		logger.Infof("You are already on the latest version of jx %s", util.ColorInfo(currentVersion.String()))
 		return nil
 	}
 	if newVersion.LE(currentVersion) {
-		log.Infof("Your jx version %s is actually newer than the latest available version %s\n", util.ColorInfo(currentVersion.String()), util.ColorInfo(newVersion.String()))
+		logger.Infof("Your jx version %s is actually newer than the latest available version %s", util.ColorInfo(currentVersion.String()), util.ColorInfo(newVersion.String()))
 		return nil
 	}
 

@@ -48,7 +48,7 @@ var (
 `)
 
 	sync_example = templates.Examples(`
-		# Starts synchonizing the current directory files to the users DevPod
+		# Starts synchronizing the current directory files to the users DevPod
 		jx sync 
 `)
 
@@ -74,7 +74,7 @@ func NewCmdSync(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 	}
 	cmd := &cobra.Command{
 		Use:     "sync",
-		Short:   "Synchronises your local files to a devpod",
+		Short:   "Synchronises your local files to a DevPod",
 		Long:    sync_long,
 		Example: sync_example,
 		Aliases: []string{"log"},

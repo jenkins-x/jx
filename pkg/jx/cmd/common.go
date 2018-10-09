@@ -3,9 +3,11 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,8 +20,6 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"strconv"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -45,20 +45,22 @@ const (
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory              Factory
-	In                   terminal.FileReader
-	Out                  terminal.FileWriter
-	Err                  io.Writer
-	Cmd                  *cobra.Command
-	Args                 []string
-	BatchMode            bool
-	Verbose              bool
-	Headless             bool
-	NoBrew               bool
-	InstallDependencies  bool
-	SkipAuthSecretsMerge bool
-	ServiceAccount       string
-	Username             string
+	Factory                Factory
+	In                     terminal.FileReader
+	Out                    terminal.FileWriter
+	Err                    io.Writer
+	Cmd                    *cobra.Command
+	Args                   []string
+	BatchMode              bool
+	Verbose                bool
+	LogLevel               string
+	Headless               bool
+	NoBrew                 bool
+	InstallDependencies    bool
+	SkipAuthSecretsMerge   bool
+	ServiceAccount         string
+	Username               string
+	ExternalJenkinsBaseURL string
 
 	// common cached clients
 	KubeClientCached    kubernetes.Interface
@@ -86,6 +88,24 @@ func (c *CommonOptions) CreateTable() table.Table {
 	return c.Factory.CreateTable(c.Out)
 }
 
+// NewCommonOptions a helper method to create a new CommonOptions instance
+// pre configured in a specific devNamespace
+func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
+	return CommonOptions{
+		Factory:          factory,
+		Out:              os.Stdout,
+		Err:              os.Stderr,
+		currentNamespace: devNamespace,
+		devNamespace:     devNamespace,
+	}
+}
+
+// SetDevNamespace configures the current dev namespace
+func (c *CommonOptions) SetDevNamespace(ns string) {
+	c.devNamespace = ns
+	c.currentNamespace = ns
+}
+
 // Debugf outputs the given text to the console if verbose mode is enabled
 func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 	if c.Verbose {
@@ -96,6 +116,7 @@ func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "In batch mode the command never prompts for user input")
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
+	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
 	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
 	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install or upgrade command line dependencies")
 	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")
@@ -265,11 +286,11 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the git server to add a user")
-	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the Git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the Git server to add a user")
 }
 
-// findGitServer finds the git server from the given flags or returns an error
+// findGitServer finds the Git server from the given flags or returns an error
 func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
 	return o.findServer(config, serverFlags, "git", "Try creating one via: jx create git server", false)
 }
@@ -718,11 +739,11 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
 	err := o.installChartOptions(InstallChartOptions{
 		ReleaseName: helmRelease,
-		Chart: exposecontrollerChart,
-		Version: exposecontrollerVersion,
-		Ns: targetNamespace,
-		HelmUpdate: true,
-		SetValues: exValues,
+		Chart:       exposecontrollerChart,
+		Version:     exposecontrollerVersion,
+		Ns:          targetNamespace,
+		HelmUpdate:  true,
+		SetValues:   exValues,
 	})
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)

@@ -25,6 +25,26 @@ const (
 	// ChartKubeless the default chart for kubeless
 	ChartKubeless = "incubator/kubeless"
 
+	// ChartProw the default chart for prow
+	ChartProw = "jenkins-x/prow"
+
+	// ChartKnative the default chart for knative
+	ChartKnativeBuild = "jenkins-x/knative-build"
+
+	DefaultProwReleaseName         = "jx-prow"
+	DefaultKnativeBuildReleaseName = "jx-knative-build"
+
+
+	// Charts Single Sign-On addon
+	ChartSsoOperator              = "jenkinsxio/sso-operator"
+	DefaultSsoOperatorReleaseName = "jx-sso-operator"
+	ChartSsoDex                   = "jenkinsxio/dex"
+	DefaultSsoDexReleaseName      = "jx-sso-dex"
+
+	// ChartVaultOperator the default chart for vault opeator
+	ChartVaultOperator              = "jenkinsxio/vault-operator"
+	DefaultVaultOperatorReleaseName = "vault-operator"
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 
@@ -37,7 +57,7 @@ const (
 	// ServiceChartMuseum the service name of the Helm Chart Museum service
 	ServiceChartMuseum = "jenkins-x-chartmuseum"
 
-	// ServiceKubernetesDashboard the kubernetes dashboard
+	// ServiceKubernetesDashboard the Kubernetes dashboard
 	ServiceKubernetesDashboard = "jenkins-x-kubernetes-dashboard"
 
 	// SecretJenkinsGitCredentials the git credentials secret
@@ -72,6 +92,9 @@ const (
 
 	// ConfigMapJenkinsPodTemplates is the ConfigMap containing all the Pod Templates available
 	ConfigMapJenkinsPodTemplates = "jenkins-x-pod-templates"
+
+	// ConfigMapJenkinsTeamController is the ConfigMap containing the TeamController config files
+	ConfigMapJenkinsTeamController = "jenkins-x-team-controller"
 
 	// ConfigMapJenkinsDockerRegistry is the ConfigMap containing the Docker Registry configuration
 	ConfigMapJenkinsDockerRegistry = "jenkins-x-docker-registry"
@@ -179,7 +202,7 @@ const (
 	// AnnotationIngress tells exposecontroller to annotate generated ingress rule with values
 	AnnotationIngress = "fabric8.io/ingress.annotations"
 
-	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike kubernetes resources)
+	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike Kubernetes resources)
 	AnnotationName = "jenkins.io/name"
 
 	// AnnotationCredentialsDescription the description text for a Credential on a Secret
@@ -209,14 +232,19 @@ const (
 
 var (
 	AddonCharts = map[string]string{
-		"ambassador": ChartAmbassador,
-		"anchore":    ChartAnchore,
-		"cb":         ChartCloudBees,
-		"gitea":      ChartGitea,
-		"istio":      ChartIstio,
-		"kubeless":   ChartKubeless,
-		"prometheus": "stable/prometheus",
-		"grafana":    "stable/grafana",
+		"ambassador":                   ChartAmbassador,
+		"anchore":                      ChartAnchore,
+		"cb":                           ChartCloudBees,
+		"gitea":                        ChartGitea,
+		"istio":                        ChartIstio,
+		"kubeless":                     ChartKubeless,
+		"prometheus":                   "stable/prometheus",
+		"grafana":                      "stable/grafana",
+		DefaultProwReleaseName:         ChartProw,
+		DefaultKnativeBuildReleaseName: ChartKnativeBuild,
+		DefaultSsoDexReleaseName:       ChartSsoDex,
+		DefaultSsoOperatorReleaseName:  ChartSsoOperator,
+    DefaultVaultOperatorReleaseName: ChartVaultOperator,
 	}
 
 	AddonServices = map[string]string{

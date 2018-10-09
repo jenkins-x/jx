@@ -55,9 +55,9 @@ func NewCmdStepPRComment(f Factory, in terminal.FileReader, out terminal.FileWri
 	}
 
 	cmd.Flags().StringVarP(&options.Flags.Comment, "comment", "c", "", "comment to add to the Pull Request")
-	cmd.Flags().StringVarP(&options.Flags.Owner, "owner", "o", "", "git organisation / owner")
-	cmd.Flags().StringVarP(&options.Flags.Repository, "repository", "r", "", "git repository")
-	cmd.Flags().StringVarP(&options.Flags.PR, "pull-request", "p", "", "git pull request number")
+	cmd.Flags().StringVarP(&options.Flags.Owner, "owner", "o", "", "Git organisation / owner")
+	cmd.Flags().StringVarP(&options.Flags.Repository, "repository", "r", "", "Git repository")
+	cmd.Flags().StringVarP(&options.Flags.PR, "pull-request", "p", "", "Git Pull Request number")
 
 	options.addCommonFlags(cmd)
 
@@ -67,13 +67,13 @@ func NewCmdStepPRComment(f Factory, in terminal.FileReader, out terminal.FileWri
 // Run implements this command
 func (o *StepPRCommentOptions) Run() error {
 	if o.Flags.PR == "" {
-		return fmt.Errorf("no pull request number provided")
+		return fmt.Errorf("no Pull Request number provided")
 	}
 	if o.Flags.Owner == "" {
-		return fmt.Errorf("no git owner provided")
+		return fmt.Errorf("no Git owner provided")
 	}
 	if o.Flags.Repository == "" {
-		return fmt.Errorf("no git repository provided")
+		return fmt.Errorf("no Git repository provided")
 	}
 	if o.Flags.Comment == "" {
 		return fmt.Errorf("no comment provided")

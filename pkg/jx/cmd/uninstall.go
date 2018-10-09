@@ -27,7 +27,7 @@ type UninstallOptions struct {
 
 var (
 	uninstall_long = templates.LongDesc(`
-		Uninstalls the Jenkins X platform from a kubernetes cluster`)
+		Uninstalls the Jenkins X platform from a Kubernetes cluster`)
 	uninstall_example = templates.Examples(`
 		# Uninstall the Jenkins X platform
 		jx uninstall`)

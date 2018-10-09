@@ -25,7 +25,7 @@ var (
 `)
 
 	StatusExample = templates.Examples(`
-		# displays the current status of the kubernetes cluster
+		# displays the current status of the Kubernetes cluster
 		jx status
 `)
 )

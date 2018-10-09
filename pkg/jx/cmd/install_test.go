@@ -44,7 +44,7 @@ func TestInstallRun(t *testing.T) {
 	// Create mocks...
 	//factory := cmd_mocks.NewMockFactory()
 	//kubernetesInterface := kube_mocks.NewSimpleClientset()
-	//// Override CreateClient to return mock kubernetes interface
+	//// Override CreateClient to return mock Kubernetes interface
 	//When(factory.CreateClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
 
 	//options := cmd.CreateInstallOptions(factory, os.Stdin, os.Stdout, os.Stderr)
