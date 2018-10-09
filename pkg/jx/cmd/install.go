@@ -516,6 +516,14 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	if initOpts.Flags.TillerNamespace != "" {
+		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
+			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+		}
+		helmConfig.Jenkins.Servers.Global.EnvVars["TILLER_NAMESPACE"] = initOpts.Flags.TillerNamespace
+		os.Setenv("TILLER_NAMESPACE", initOpts.Flags.TillerNamespace)
+	}
+
 	// lets add any GitHub Enterprise servers
 	gitAuthCfg, err := options.CreateGitAuthConfigService()
 	if err != nil {
