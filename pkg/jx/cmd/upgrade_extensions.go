@@ -166,10 +166,11 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		// TODO this is not very efficient probably
 		for _, c := range extensionsConfig.Extensions {
 			if c.Name == e.Name && c.Namespace == e.Namespace {
-				needsUpstalling, err = o.UpsertExtension(e, extensionsClient, installedExtensions, c, availableExtensionsUUIDLookup, 0, 0)
+				n, err := o.UpsertExtension(e, extensionsClient, installedExtensions, c, availableExtensionsUUIDLookup, 0, 0)
 				if err != nil {
 					return err
 				}
+				needsUpstalling = append(needsUpstalling, n...)
 				break
 			}
 		}
@@ -182,7 +183,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			for _, envVar := range n.EnvironmentVariables {
 				fmt.Fprintf(envVarsFormatted, "%s=%s, ", envVar.Name, envVar.Value)
 			}
-			envVars = fmt.Sprintf("with environment variables [ %s ]", util.ColorInfo(envVarsFormatted.String()))
+			envVars = fmt.Sprintf("with environment variables [ %s ]", util.ColorInfo(strings.TrimSuffix(envVarsFormatted.String(), ", ")))
 		}
 
 		log.Infof("Installing %s %s\n", util.ColorInfo(n.FullyQualifiedName()), envVars)
@@ -192,7 +193,6 @@ func (o *UpgradeExtensionsOptions) Run() error {
 }
 
 func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.ExtensionSpec, extensions typev1.ExtensionInterface, installedExtensions map[string]jenkinsv1.Extension, extensionConfig jenkinsv1.ExtensionConfig, lookup map[string]jenkinsv1.ExtensionSpec, depth int, initialIndent int) (needsUpstalling []jenkinsv1.ExtensionExecution, err error) {
-	upserted := false
 	result := make([]jenkinsv1.ExtensionExecution, 0)
 	indent := ((depth - 1) * 2) + initialIndent
 
@@ -229,13 +229,12 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 			return result, err
 		}
 		if o.Contains(extension.When, jenkinsv1.ExtensionWhenInstall) {
-			e, err := o.UpstallExtension(extension, extensionConfig)
+			e, _, err := extension.ToExecutable(extensionConfig.Parameters)
 			if err != nil {
 				return result, err
 			}
 			result = append(result, e)
 		}
-		upserted = true
 	}
 	// TODO Handle uninstalling existing extension if name has changed but UUID hasn't
 	if existing.Spec.Version != "" {
@@ -250,7 +249,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 				return result, err
 			}
 			if o.Contains(extension.When, jenkinsv1.ExtensionWhenUpgrade) {
-				e, err := o.UpstallExtension(extension, extensionConfig)
+				e, _, err := extension.ToExecutable(extensionConfig.Parameters)
 				if err != nil {
 					return result, err
 				}
@@ -262,32 +261,21 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 			} else {
 				log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 			}
-			upserted = true
 		}
 	}
 
-	if upserted {
-		for _, childRef := range extension.Children {
-			if child, ok := lookup[childRef]; ok {
-				e, err := o.UpsertExtension(child, extensions, installedExtensions, extensionConfig, lookup, depth+1, initialIndent)
-				if err != nil {
-					return result, err
-				}
-				result = append(result, e...)
-			} else {
-				errors.New(fmt.Sprintf("Unable to locate extension %s", childRef))
+	for _, childRef := range extension.Children {
+		if child, ok := lookup[childRef]; ok {
+			e, err := o.UpsertExtension(child, extensions, installedExtensions, extensionConfig, lookup, depth+1, initialIndent)
+			if err != nil {
+				return result, err
 			}
+			result = append(result, e...)
+		} else {
+			errors.New(fmt.Sprintf("Unable to locate extension %s", childRef))
 		}
 	}
 	return result, nil
-}
-
-func (o *UpgradeExtensionsOptions) UpstallExtension(e jenkinsv1.ExtensionSpec, extensionConfig jenkinsv1.ExtensionConfig) (extension jenkinsv1.ExtensionExecution, err error) {
-	ext, _, err := e.ToExecutable(extensionConfig.Parameters)
-	if err != nil {
-		return ext, err
-	}
-	return ext, nil
 }
 
 func (o *UpgradeExtensionsOptions) Contains(whens []jenkinsv1.ExtensionWhen, when jenkinsv1.ExtensionWhen) bool {
