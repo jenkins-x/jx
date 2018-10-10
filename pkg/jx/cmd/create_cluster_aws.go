@@ -367,5 +367,5 @@ func (o *CreateClusterAWSOptions) runKops(args ...string) error {
 		args = append(args, "--state", o.Flags.State)
 	}
 	log.Infof("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
-	return o.runKops("update", "cluster", "--yes")
+	return o.runCommandVerbose("kops", args...)
 }
