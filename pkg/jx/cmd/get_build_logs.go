@@ -164,7 +164,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 		if defaultName == "" && strings.HasSuffix(pipeline, "/master") {
 			defaultName = pipeline
 		}
-		if pipeline == "" || build == "" {
+		if pipeline == "" || build == "" || (o.Filter != "" && strings.Index(pipeline, o.Filter) < 0) {
 			continue
 		}
 		buildNumber, err := strconv.Atoi(build)
