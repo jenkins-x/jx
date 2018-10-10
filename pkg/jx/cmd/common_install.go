@@ -1126,19 +1126,25 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Remove(binDir + "/jx")
-	if err != nil && o.Verbose {
-		log.Infof("Skipping removal of old jx binary: %s\n", err)
-	}
-	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	// Untar the new binary into a temp directory
+	err = util.UnTargz(tarFile, os.TempDir(), []string{binary, fileName})
 	if err != nil {
 		return err
 	}
-	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(binDir+"/jx"))
 	err = os.Remove(tarFile)
 	if err != nil {
 		return err
 	}
+	err = os.Remove(binDir + "/jx")
+	if err != nil && o.Verbose {
+		log.Infof("Skipping removal of old jx binary: %s\n", err)
+	}
+	// Copy over the new binary
+	err = os.Rename(os.TempDir()+"/jx", binDir+"/jx")
+	if err != nil {
+		return err
+	}
+	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(binDir+"/jx"))
 	return os.Chmod(fullPath, 0755)
 }
 
