@@ -121,7 +121,7 @@ func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.Username, optionUsername, "", "", "The Kubernetes username used to initialise helm. Usually your email address for your Kubernetes account")
 	cmd.Flags().StringVarP(&options.Flags.UserClusterRole, "user-cluster-role", "", "cluster-admin", "The cluster role for the current user to be able to administer helm")
 	cmd.Flags().StringVarP(&options.Flags.TillerClusterRole, "tiller-cluster-role", "", "cluster-admin", "The cluster role for Helm's tiller")
-	cmd.Flags().StringVarP(&options.Flags.TillerNamespace, optionTillerNamespace, "", "kube-system", "The namespace for the Tiller when using a gloabl tiller")
+	cmd.Flags().StringVarP(&options.Flags.TillerNamespace, optionTillerNamespace, "", "kube-system", "The namespace for the Tiller when using a global tiller")
 	cmd.Flags().StringVarP(&options.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
 	cmd.Flags().StringVarP(&options.Flags.IngressNamespace, "ingress-namespace", "", "kube-system", "The namespace for the Ingress controller")
 	cmd.Flags().StringVarP(&options.Flags.IngressService, "ingress-service", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Service")
