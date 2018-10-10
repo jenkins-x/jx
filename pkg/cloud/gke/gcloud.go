@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"time"
 )
 
 var (
@@ -70,7 +71,7 @@ func GetRegionFromZone(zone string) string {
 	return zone[0 : len(zone)-2]
 }
 
-func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterConfigDir string) (string, error) {
+func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterConfigDir string, roles []string) (string, error) {
 	if projectId == "" {
 		return "", errors.New("cannot get/create a service account without a projectId")
 	}
@@ -124,7 +125,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 		}
 
 		// assign roles to service account
-		for _, role := range REQUIRED_SERVICE_ACCOUNT_ROLES {
+		for _, role := range roles {
 			log.Infof("Assigning role %s\n", role)
 			args = []string{"projects",
 				"add-iam-policy-binding",
