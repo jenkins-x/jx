@@ -195,6 +195,7 @@ type Gitter interface {
 	CommitDir(dir string, message string) error
 	AddCommmit(dir string, msg string) error
 	HasChanges(dir string) (bool, error)
+	Diff(dir string) (string, error)
 
 	GetPreviousGitTagSHA(dir string) (string, error)
 	GetCurrentGitTagSHA(dir string) (string, error)
