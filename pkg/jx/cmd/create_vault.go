@@ -3,11 +3,14 @@ package cmd
 import (
 	"io"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
+
+const supportedKubeProvider = "gke"
 
 var (
 	createVaultLong = templates.LongDesc(`
@@ -58,5 +61,14 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 // Run implements the command
 func (o *CreateVaultOptions) Run() error {
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return errors.Wrap(err, "retrieving the team settings")
+	}
+
+	if teamSettings.KubeProvider != supportedKubeProvider {
+		return errors.Wrapf(err, "this command only supports the '%s' kubernetes provider", supportedKubeProvider)
+	}
+
 	return nil
 }
