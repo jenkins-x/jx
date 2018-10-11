@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -67,4 +68,24 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 	}
 
 	return projectId, nil
+}
+
+func (o *CommonOptions) getGoogleZone(projectId string) (string, error) {
+	availableZones, err := gke.GetGoogleZones(projectId)
+	if err != nil {
+		return "", err
+	}
+	prompts := &survey.Select{
+		Message:  "Google Cloud Zone:",
+		Options:  availableZones,
+		PageSize: 10,
+		Help:     "The compute zone (e.g. us-central1-a) for the cluster",
+	}
+	zone := ""
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+	err = survey.AskOne(prompts, &zone, nil, surveyOpts)
+	if err != nil {
+		return "", err
+	}
+	return zone, nil
 }

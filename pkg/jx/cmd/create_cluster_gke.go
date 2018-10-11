@@ -166,18 +166,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	zone := o.Flags.Zone
 	if zone == "" {
-		availableZones, err := gke.GetGoogleZones(projectId)
-		if err != nil {
-			return err
-		}
-		prompts := &survey.Select{
-			Message:  "Google Cloud Zone:",
-			Options:  availableZones,
-			PageSize: 10,
-			Help:     "The compute zone (e.g. us-central1-a) for the cluster",
-		}
-
-		err = survey.AskOne(prompts, &zone, nil, surveyOpts)
+		zone, err = o.getGoogleZone(projectId)
 		if err != nil {
 			return err
 		}
