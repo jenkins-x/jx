@@ -1,7 +1,6 @@
 package gke
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,7 +10,10 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
+
+const KmsLocation = "global"
 
 var (
 	REQUIRED_SERVICE_ACCOUNT_ROLES = []string{"roles/compute.instanceAdmin.v1",
@@ -340,4 +342,112 @@ func CheckPermission(perm string, projectId string) (bool, error) {
 	}
 
 	return strings.Contains(output, perm), nil
+}
+
+// CreateKmsKeyring creates a new KMS keyring
+func CreateKmsKeyring(keyringName string, projectId string) error {
+	if keyringName == "" {
+		return errors.New("provided keyring name is empty")
+	}
+
+	if IsKmsKeyringAvailable(keyringName, projectId) {
+		return nil
+	}
+
+	args := []string{"kms",
+		"keyrings",
+		"create",
+		keyringName,
+		"--location",
+		KmsLocation,
+		"--project",
+		projectId,
+	}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return errors.Wrap(err, "creating kms keyring")
+	}
+	return nil
+}
+
+// IsKmsKeyringAvailable checks if the KMS keyring is already available
+func IsKmsKeyringAvailable(keyringName string, projectId string) bool {
+	args := []string{"kms",
+		"keyrings",
+		"describe",
+		keyringName,
+		"--location",
+		KmsLocation,
+		"--project",
+		projectId,
+	}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// CreateKmsKey creates a new KMS key in the given keyring
+func CreateKmsKey(keyName string, keyringName string, projectId string) error {
+	if IsKmsKeyAvailable(keyName, keyringName, projectId) {
+		return nil
+	}
+	args := []string{"kms",
+		"keys",
+		"create",
+		keyName,
+		"--location",
+		KmsLocation,
+		"--keyring",
+		keyringName,
+		"--purpose",
+		"encryption",
+		"--project",
+		projectId,
+	}
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return errors.Wrapf(err, "creating kms key '%s' into keyring '%s'", keyName, keyringName)
+	}
+	return nil
+}
+
+// IsKmsKeyAvailable cheks if the KMS key is already available
+func IsKmsKeyAvailable(keyName string, keyringName string, projectId string) bool {
+	args := []string{"kms",
+		"keys",
+		"describe",
+		keyName,
+		"--location",
+		KmsLocation,
+		"--keyring",
+		keyringName,
+		"--project",
+		projectId,
+	}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return false
+	}
+	return true
 }
