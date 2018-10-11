@@ -155,12 +155,12 @@ func (o *CreateVaultOptions) createVaultGKE() error {
 	if err != nil {
 		return errors.Wrap(err, "creating Vault GCS data bucket")
 	}
-	log.Infof("GCS bucket %s was created for Vault backend", util.ColorInfo(vaultBucket))
+	log.Infof("GCS bucket %s was created for Vault backend\n", util.ColorInfo(vaultBucket))
 	vaultAuthServiceAccount, err := o.createVaultAuthServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "creating Vault auth service account")
 	}
-	log.Infof("Created service account %s which can be used to authenticate against vault", util.ColorInfo(vaultAuthServiceAccount))
+	log.Infof("Created service account %s which can be used to authenticate against vault\n", util.ColorInfo(vaultAuthServiceAccount))
 	return nil
 }
 
