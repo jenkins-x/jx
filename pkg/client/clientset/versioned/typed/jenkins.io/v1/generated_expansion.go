@@ -2,6 +2,8 @@
 
 package v1
 
+type ComplianceCheckExpansion interface{}
+
 type EnvironmentExpansion interface{}
 
 type EnvironmentRoleBindingExpansion interface{}

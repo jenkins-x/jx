@@ -37,6 +37,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=jenkins.io, Version=v1
+	case v1.SchemeGroupVersion.WithResource("compliancechecks"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Jenkins().V1().ComplianceChecks().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("environments"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Jenkins().V1().Environments().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("environmentrolebindings"):
