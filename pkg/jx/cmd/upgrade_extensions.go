@@ -161,6 +161,11 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	// This will cause o.devNamespace to be populated
+	_, _, err = o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
 	needsUpstalling := make([]jenkinsv1.ExtensionExecution, 0)
 	for _, e := range extensionsRepository.Extensions {
 		// TODO this is not very efficient probably
@@ -176,7 +181,6 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		}
 	}
 	for _, n := range needsUpstalling {
-
 		envVars := ""
 		if len(n.EnvironmentVariables) > 0 {
 			envVarsFormatted := new(bytes.Buffer)
@@ -186,7 +190,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			envVars = fmt.Sprintf("with environment variables [ %s ]", util.ColorInfo(strings.TrimSuffix(envVarsFormatted.String(), ", ")))
 		}
 
-		log.Infof("Installing %s %s\n", util.ColorInfo(n.FullyQualifiedName()), envVars)
+		log.Infof("Preparing %s %s\n", util.ColorInfo(n.FullyQualifiedName()), envVars)
 		n.Execute(o.Verbose)
 	}
 	return nil
@@ -229,7 +233,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 			return result, err
 		}
 		if o.Contains(extension.When, jenkinsv1.ExtensionWhenInstall) {
-			e, _, err := extension.ToExecutable(extensionConfig.Parameters)
+			e, _, err := extension.ToExecutable(extensionConfig.Parameters, o.devNamespace)
 			if err != nil {
 				return result, err
 			}
@@ -249,7 +253,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 				return result, err
 			}
 			if o.Contains(extension.When, jenkinsv1.ExtensionWhenUpgrade) {
-				e, _, err := extension.ToExecutable(extensionConfig.Parameters)
+				e, _, err := extension.ToExecutable(extensionConfig.Parameters, o.devNamespace)
 				if err != nil {
 					return result, err
 				}

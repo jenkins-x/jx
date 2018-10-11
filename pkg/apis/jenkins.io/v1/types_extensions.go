@@ -172,7 +172,8 @@ type ExtensionParameterValue struct {
 }
 
 const (
-	VersionGlobalParameterName string = "ExtVersion"
+	VersionGlobalParameterName       string = "extVersion"
+	TeamNamespaceGlobalParameterName string = "extTeamNamespace"
 )
 
 func (e *ExtensionExecution) Execute(verbose bool) (err error) {
@@ -213,13 +214,11 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 }
 
 // TODO remove the env vars formatting stuff from here and make it a function on ExtensionSpec
-func (e *ExtensionSpec) ToExecutable(paramValues ...[]ExtensionParameterValue) (ext ExtensionExecution, envVarsStr string, err error) {
+func (e *ExtensionSpec) ToExecutable(paramValues []ExtensionParameterValue, teamNamespace string) (ext ExtensionExecution, envVarsStr string, err error) {
 	envVars := make([]EnvironmentVariable, 0)
 	paramValueLookup := make(map[string]string, 0)
-	for _, u := range paramValues {
-		for _, v := range u {
-			paramValueLookup[v.Name] = v.Value
-		}
+	for _, v := range paramValues {
+		paramValueLookup[v.Name] = v.Value
 	}
 	for _, p := range e.Parameters {
 		value := p.DefaultValue
@@ -242,6 +241,9 @@ func (e *ExtensionSpec) ToExecutable(paramValues ...[]ExtensionParameterValue) (
 	envVars = append(envVars, EnvironmentVariable{
 		Name:  e.EnvVarName(VersionGlobalParameterName),
 		Value: e.Version,
+	}, EnvironmentVariable{
+		Name:  e.EnvVarName(TeamNamespaceGlobalParameterName),
+		Value: teamNamespace,
 	})
 	res := ExtensionExecution{
 		Name:                 e.Name,
