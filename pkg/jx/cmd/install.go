@@ -232,6 +232,10 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
+	originalGitUsername := options.GitRepositoryOptions.Username
+	originalGitServer := options.GitRepositoryOptions.ServerURL
+	originalGitToken := options.GitRepositoryOptions.ApiToken
+
 	if options.Flags.Provider == EKS {
 		var deps []string
 		d := binaryShouldBeInstalled("eksctl")
@@ -532,6 +536,24 @@ func (options *InstallOptions) Run() error {
 	err = options.addGitServersToJenkinsConfig(helmConfig, gitAuthCfg)
 	if err != nil {
 		return errors.Wrap(err, "failed to add the Git servers to Jenkins config")
+	}
+
+	username := originalGitUsername
+	if username == "" {
+		if os.Getenv(JX_GIT_USER) != "" {
+			username = os.Getenv(JX_GIT_USER)
+		}
+	}
+	if username != "" && originalGitToken != "" && originalGitServer != "" {
+		err = gitAuthCfg.SaveUserAuth(originalGitServer, &auth.UserAuth{
+			ApiToken: originalGitToken,
+			Username: username,
+		})
+		if err != nil {
+			return err
+		}
+		log.Infof("Saving Git token configuration for server %s and user name %s.\n",
+			util.ColorInfo(originalGitServer), util.ColorInfo(username))
 	}
 
 	config, err := helmConfig.String()
