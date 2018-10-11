@@ -63,11 +63,10 @@ func NewCmdStepPreExtend(f Factory, in terminal.FileReader, out terminal.FileWri
 }
 
 func (o *StepPreExtendOptions) Run() error {
-
-	f := o.Factory
-	client, ns, err := f.CreateJXClient()
+	// This will cause o.devNamespace to be populated
+	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
-		return errors.Wrap(err, "cannot create the JX client")
+		return err
 	}
 
 	apisClient, err := o.CreateApiExtensionsClient()
@@ -175,7 +174,7 @@ func (o *StepPreExtendOptions) walk(extension jenkinsv1.ExtensionSpec, lookup ma
 		}
 	} else {
 		if extension.IsPost() {
-			ext, envVarsFormatted, err := extension.ToExecutable(parameters)
+			ext, envVarsFormatted, err := extension.ToExecutable(parameters, o.devNamespace)
 			if err != nil {
 				return result, err
 			}
