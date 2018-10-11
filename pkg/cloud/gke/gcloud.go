@@ -351,8 +351,11 @@ func CreateKmsKeyring(keyringName string, projectId string) error {
 	}
 
 	if IsKmsKeyringAvailable(keyringName, projectId) {
+		log.Infof("KMS keyring %s already exists\n", util.ColorInfo(keyringName))
 		return nil
 	}
+
+	log.Infof("Creating KMS keyring %s\n", util.ColorInfo(keyringName))
 
 	args := []string{"kms",
 		"keyrings",
@@ -401,8 +404,10 @@ func IsKmsKeyringAvailable(keyringName string, projectId string) bool {
 // CreateKmsKey creates a new KMS key in the given keyring
 func CreateKmsKey(keyName string, keyringName string, projectId string) error {
 	if IsKmsKeyAvailable(keyName, keyringName, projectId) {
+		log.Infof("KMS key %s already exists in keyring %s\n", util.ColorInfo(keyName), util.ColorInfo(keyringName))
 		return nil
 	}
+	log.Infof("Creating KMS key %s into keyring %s\n", util.ColorInfo(keyName), util.ColorInfo(keyringName))
 	args := []string{"kms",
 		"keys",
 		"create",

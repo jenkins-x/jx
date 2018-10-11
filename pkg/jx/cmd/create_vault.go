@@ -12,6 +12,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -134,23 +137,30 @@ func (o *CreateVaultOptions) createVaultGKE() error {
 		o.GKEZone = zone
 	}
 
-	secretName, err := o.createVaultGCPServiceAccount()
+	log.Infof("Creating GCP service account for vault backend\n")
+	gcpServiceAccountSecretName, err := o.createVaultGCPServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "creating GCP service account")
 	}
-	fmt.Println(secretName)
+	log.Infof("%s service account created\n", util.ColorInfo(gcpServiceAccountSecretName))
 
+	log.Infof("Setting up GCP KMS configuration\n")
 	kmsConfig, err := o.createKmsConfig(team)
 	if err != nil {
 		return errors.Wrap(err, "creating KMS configuration")
 	}
-	fmt.Printf("%v\n", kmsConfig)
+	log.Infof("Key %s created in keying %s\n", util.ColorInfo(kmsConfig.key), util.ColorInfo(kmsConfig.keyring))
 
 	vaultBucket, err := o.createVaultBucket(team)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault GCS data bucket")
 	}
-	fmt.Printf("bucket: %s\n", vaultBucket)
+	log.Infof("GCS bucket %s was created for Vault backend", util.ColorInfo(vaultBucket))
+	vaultAuthServiceAccount, err := o.createVaultAuthServiceAccount()
+	if err != nil {
+		return errors.Wrap(err, "creating Vault auth service account")
+	}
+	log.Infof("Created service account %s which can be used to authenticate against vault", util.ColorInfo(vaultAuthServiceAccount))
 	return nil
 }
 
@@ -261,4 +271,18 @@ func (o *CreateVaultOptions) createVaultBucket(team string) (string, error) {
 		return "", errors.Wrap(err, "creating Vault GCS bucket")
 	}
 	return bucketName, nil
+}
+
+func (o *CreateVaultOptions) createVaultAuthServiceAccount() (string, error) {
+	client, team, err := o.KubeClient()
+	if err != nil {
+		return "", errors.Wrap(err, "creating kubernetes client")
+	}
+
+	serviceAccountName := fmt.Sprintf("%s-vault-auth-sa", team)
+	_, err = kube.CreateServiceAccount(client, o.Namespace, serviceAccountName)
+	if err != nil {
+		return "", errors.Wrap(err, "creating vault auth service account")
+	}
+	return serviceAccountName, nil
 }
