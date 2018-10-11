@@ -1565,6 +1565,8 @@ func (o *CommonOptions) installProw() error {
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 
+	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+
 	err = o.retry(2, time.Second, func() (err error) {
 		err = o.installChart(o.ReleaseName, o.Chart, "", devNamespace, true, values)
 		return nil
@@ -1574,7 +1576,7 @@ func (o *CommonOptions) installProw() error {
 		return fmt.Errorf("failed to install prow: %v", err)
 	}
 
-	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
 		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values)
@@ -1583,6 +1585,17 @@ func (o *CommonOptions) installProw() error {
 
 	if err != nil {
 		return fmt.Errorf("failed to install Knative build: %v", err)
+	}
+
+	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
+
+	err = o.retry(2, time.Second, func() (err error) {
+		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true, values)
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to install BuildTemplates: %v", err)
 	}
 
 	return nil
