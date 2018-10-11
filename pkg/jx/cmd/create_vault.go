@@ -45,6 +45,7 @@ type CreateVaultOptions struct {
 	CreateOptions
 
 	GKEProjectID string
+	GKEZone      string
 	Namespace    string
 }
 
@@ -75,6 +76,7 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 	}
 
 	cmd.Flags().StringVarP(&options.GKEProjectID, "gke-project-id", "", "", "Google Project ID to use for Vault backend")
+	cmd.Flags().StringVarP(&options.GKEZone, "gke-zone", "", "", "The zone (e.g. us-central1-a) where Vault will store the encrypted data")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace where the Vault is created")
 
 	options.addCommonFlags(cmd)
@@ -96,10 +98,6 @@ func (o *CreateVaultOptions) Run() error {
 }
 
 func (o *CreateVaultOptions) createVaultGKE() error {
-	if o.GKEProjectID == "" {
-		return errors.New("Google Project ID must be provided in 'gke-project-id' option")
-	}
-
 	_, team, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating kubernetes client")
@@ -114,6 +112,28 @@ func (o *CreateVaultOptions) createVaultGKE() error {
 		return errors.Wrap(err, "login into GCP")
 	}
 
+	if o.GKEProjectID == "" {
+		projectId, err := o.getGoogleProjectId()
+		if err != nil {
+			return err
+		}
+		o.GKEProjectID = projectId
+	}
+
+	err = o.CreateOptions.CommonOptions.runCommandVerbose(
+		"gcloud", "config", "set", "project", o.GKEProjectID)
+	if err != nil {
+		return err
+	}
+
+	if o.GKEZone == "" {
+		zone, err := o.getGoogleZone(o.GKEProjectID)
+		if err != nil {
+			return err
+		}
+		o.GKEZone = zone
+	}
+
 	secretName, err := o.createVaultGCPServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "creating GCP service account")
@@ -125,6 +145,12 @@ func (o *CreateVaultOptions) createVaultGKE() error {
 		return errors.Wrap(err, "creating KMS configuration")
 	}
 	fmt.Printf("%v\n", kmsConfig)
+
+	vaultBucket, err := o.createVaultBucket(team)
+	if err != nil {
+		return errors.Wrap(err, "creating Vault GCS data bucket")
+	}
+	fmt.Printf("bucket: %s\n", vaultBucket)
 	return nil
 }
 
@@ -214,4 +240,25 @@ func (o *CreateVaultOptions) createKmsConfig(team string) (*kmsConfig, error) {
 		return nil, errors.Wrapf(err, "crating the kms key '%s'", config.key)
 	}
 	return config, nil
+}
+
+func (o *CreateVaultOptions) createVaultBucket(team string) (string, error) {
+	bucketName := fmt.Sprintf("%s-vault-bucket", team)
+	exists, err := gke.BucketExists(o.GKEProjectID, bucketName)
+	if err != nil {
+		return "", errors.Wrap(err, "checking if Vault GCS bucket exists")
+	}
+	if exists {
+		return bucketName, nil
+	}
+
+	if o.GKEZone == "" {
+		return "", errors.New("GKE zone must be provided in 'gke-zone' option")
+	}
+	region := gke.GetRegionFromZone(o.GKEZone)
+	err = gke.CreateBucket(o.GKEProjectID, bucketName, region)
+	if err != nil {
+		return "", errors.Wrap(err, "creating Vault GCS bucket")
+	}
+	return bucketName, nil
 }
