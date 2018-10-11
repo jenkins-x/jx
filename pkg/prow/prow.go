@@ -16,11 +16,13 @@ import (
 
 const (
 	Hook             = "hook"
-	JenkinsMasterTag = "dev_22"
 	BuilderBaseImage = "jenkinsxio/builder-base:0.0.604"
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"
+
+	ServerlessJenins  = "serverless-jenkins"
+	KnativeBuildAgent = "knative-build"
 )
 
 type Kind string
@@ -141,44 +143,12 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps.Name = "release"
 	ps.Agent = "knative-build"
 
-	image := fmt.Sprintf("jenkinsxio/jenkins-%s:%s", o.DraftPack, JenkinsMasterTag)
-	log.Infof("generating prow config, using Jenkins image %s\n", image)
+	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
+	log.Infof("generating prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
-		Steps: []v1.Container{
-			{
-				Image: image,
-				Env: []v1.EnvVar{
-					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
-					{Name: "GIT_AUTHOR_EMAIL", Value: "jenkins-x@googlegroups.com"},
-					{Name: "GIT_AUTHOR_NAME", Value: "jenkins-x-bot"},
-					{Name: "GIT_COMMITTER_NAME", Value: "jenkins-x-bot"},
-					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
-					{Name: "DOCKER_CONFIG", Value: "/home/jenkins/.docker/"},
-					{Name: "DOCKER_REGISTRY", ValueFrom: &v1.EnvVarSource{
-
-						ConfigMapKeyRef: &v1.ConfigMapKeySelector{
-							LocalObjectReference: v1.LocalObjectReference{
-								Name: "jenkins-x-docker-registry",
-							},
-							Key: "docker.registry",
-						},
-					}},
-				},
-				VolumeMounts: []v1.VolumeMount{
-					{Name: "jenkins-docker-cfg", MountPath: "/home/jenkins/.docker"},
-					{Name: "docker-sock-volume", MountPath: "/var/run/docker.sock"},
-					{Name: "jenkins-maven-settings", MountPath: "/root/.m2/"},
-					{Name: "jenkins-release-gpg", MountPath: "/home/jenkins/.gnupg"},
-				},
-			},
-		},
-		ServiceAccountName: "jenkins",
-		Volumes: []v1.Volume{
-			{Name: "jenkins-docker-cfg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-docker-cfg"}}},
-			{Name: "docker-sock-volume", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
-			{Name: "jenkins-maven-settings", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-maven-settings"}}},
-			{Name: "jenkins-release-gpg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-release-gpg"}}},
+		Template: &build.TemplateInstantiationSpec{
+			Name: templateName,
 		},
 	}
 
@@ -189,47 +159,20 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps := config.Presubmit{}
 
-	ps.Context = "jenkins-engine-ci"
-	ps.Name = "jenkins-engine-ci"
+	ps.Context = ServerlessJenins
+	ps.Name = ServerlessJenins
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
 	ps.AlwaysRun = false
 	ps.SkipReport = false
-	ps.Agent = "knative-build"
+	ps.Agent = KnativeBuildAgent
 
-	image := fmt.Sprintf("jenkinsxio/jenkins-%s:%s", o.DraftPack, JenkinsMasterTag)
-	log.Infof("generating prow config, using Jenkins image %s\n", image)
+	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
+	log.Infof("generating prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
-		Steps: []v1.Container{
-			{
-				Image: image,
-				Env: []v1.EnvVar{
-					{Name: "DOCKER_CONFIG", Value: "/home/jenkins/.docker/"},
-					{Name: "DOCKER_REGISTRY", ValueFrom: &v1.EnvVarSource{
-
-						ConfigMapKeyRef: &v1.ConfigMapKeySelector{
-							LocalObjectReference: v1.LocalObjectReference{
-								Name: "jenkins-x-docker-registry",
-							},
-							Key: "docker.registry",
-						},
-					}},
-				},
-				VolumeMounts: []v1.VolumeMount{
-					{Name: "jenkins-docker-cfg", MountPath: "/home/jenkins/.docker"},
-					{Name: "docker-sock-volume", MountPath: "/var/run/docker.sock"},
-					{Name: "jenkins-maven-settings", MountPath: "/root/.m2/"},
-					{Name: "jenkins-release-gpg", MountPath: "/home/jenkins/.gnupg"},
-				},
-			},
-		},
-		ServiceAccountName: "jenkins",
-		Volumes: []v1.Volume{
-			{Name: "jenkins-docker-cfg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-docker-cfg"}}},
-			{Name: "docker-sock-volume", VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/var/run/docker.sock"}}},
-			{Name: "jenkins-maven-settings", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-maven-settings"}}},
-			{Name: "jenkins-release-gpg", VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: "jenkins-release-gpg"}}},
+		Template: &build.TemplateInstantiationSpec{
+			Name: templateName,
 		},
 	}
 
@@ -403,6 +346,7 @@ func (o *Options) AddProwConfig() error {
 	}
 
 	if create {
+		// replace with git repository version of a configmap
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
 	} else {
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
