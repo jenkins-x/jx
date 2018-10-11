@@ -46,7 +46,7 @@ type PipelineActivitySpec struct {
 	WorkflowMessage    string                 `json:"workflowMessage,omitempty" protobuf:"bytes,17,opt,name=workflowMessage"`
 	PostExtensions     []ExtensionExecution   `json:"postExtensions,omitempty" protobuf: "bytes,18,opt,name=postExtensions"`
 	Attachments        []Attachment           `json:"attachments,omitempty" protobuf: "bytes,19,opt,name=attachments"`
-	Summaries          Summaries              `json:"summaries,omitempty" protobuf: "bytes,20,opt,name=summaries"`
+	Facts              []Fact                 `json:"facts,omitempty" protobuf: "bytes,20,opt,name=facts"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity
@@ -170,10 +170,28 @@ type Attachment struct {
 	URLs []string `json:"urls,omitempty"  protobuf:"bytes,2,opt,name=urls"`
 }
 
-// The various summary reports we can present for the pipeline
-type Summaries struct {
-	StaticProgramAnalysis StaticProgramAnalysis `json:"staticProgramAnalysis,omitempty" protobuf: "bytes,1,opt,name=staticProgramAnalysis"`
-	CodeCoverageAnalysis  CodeCoverageAnalysis  `json:"codeCoverageAnalysis,omitempty" protobuf: "bytes,2,opt,name=codeCoverageAnalysis"`
+type Fact struct {
+	Name         string        `json:"name"  protobuf:"bytes,1,opt,name=name"`
+	ID           int           `json:"id"  protobuf:"bytes,2,opt,name=id"`
+	FactType     string        `json:"factType"  protobuf:"bytes,3,opt,name=factType"`
+	Measurements []Measurement `json:"measurements"  protobuf:"bytes,4,opt,name=measurements"`
+	Statements   []Statement   `json:"statements"  protobuf:"bytes,5,opt,name=statements"`
+	Original     Original      `json:"original,omitempty" protobuf: "bytes,6,opt,name=original"`
+	Tags         []string      `json:"tags,omitempty" protobuf: "bytes,7,opt,name=tags"`
+}
+
+type Measurement struct {
+	Name             string   `json:"name"  protobuf:"bytes,1,opt,name=name"`
+	MeasurementType  string   `json:"measurementType"  protobuf:"bytes,2,opt,name=measurementType"`
+	MeasurementValue int      `json:"measurementValue"  protobuf:"bytes,3,opt,name=measurementValue"`
+	Tags             []string `json:"tags,omitempty" protobuf: "bytes,4,opt,name=tags"`
+}
+
+type Statement struct {
+	Name             string   `json:"name"  protobuf:"bytes,1,opt,name=name"`
+	StatementType    string   `json:"statementType"  protobuf:"bytes,2,opt,name=statementType"`
+	MeasurementValue bool     `json:"measurementValue"  protobuf:"bytes,3,opt,name=measurementValue"`
+	Tags             []string `json:"tags,omitempty" protobuf: "bytes,4,opt,name=tags"`
 }
 
 type Original struct {
@@ -182,45 +200,31 @@ type Original struct {
 	Tags     []string `json:"tags,omitempty" protobuf: "bytes,8,opt,name=tags"`
 }
 
-type StaticProgramAnalysis struct {
-	TotalBugs      int                                      `json:"totalBugs,omitempty" protobuf: "bytes,1,opt,name=totalBugs"`
-	HighPriority   int                                      `json:"highPriority,omitempty" protobuf: "bytes,2,opt,name=highPriority"`
-	NormalPriority int                                      `json:"normalPriority,omitempty" protobuf: "bytes,3,opt,name=normalPriority"`
-	LowPriority    int                                      `json:"lowPriority,omitempty" protobuf: "bytes,4,opt,name=lowPriority"`
-	Ignored        int                                      `json:"ignored,omitempty" protobuf: "bytes,5,opt,name=ignored"`
-	TotalClasses   int                                      `json:"totalClasses,omitempty" protobuf: "bytes,6,opt,name=totalClasses"`
-	Categories     map[string]StaticProgramAnalysisCategory `json:"categories,omitempty" protobuf: "bytes,7,opt,name=categories"`
-	Tags           []string                                 `json:"tags,omitempty" protobuf: "bytes,8,opt,name=tags"`
-	Original       Original                                 `json:"original,omitempty" protobuf: "bytes,9,opt,name=original"`
-}
+// Recommended measurements for static program analysis
+const (
+	StaticProgramAnalysisTotalClasses   = "TotalClasses"
+	StaticProgramAnalysisTotalBugs      = "TotalBugs"
+	StaticProgramAnalysisHighPriority   = "High"
+	StaticProgramAnalysisNormalPriority = "Normal"
+	StaticProgramAnalysisLowPriority    = "Low"
+	StaticProgramAnalysisIgnored        = "Ignored"
+)
 
-type StaticProgramAnalysisCategory struct {
-	HighPriority   int `json:"highPriority,omitempty" protobuf: "bytes,2,opt,name=highPriority"`
-	NormalPriority int `json:"normalPriority,omitempty" protobuf: "bytes,3,opt,name=normalPriority"`
-	LowPriority    int `json:"lowPriority,omitempty" protobuf: "bytes,4,opt,name=lowPriority"`
-	Ignored        int `json:"ignored,omitempty" protobuf: "bytes,5,opt,name=ignored"`
-}
-
-type CodeCoverageAnalysis struct {
-	Tags     []string                             `json:"tags,omitempty" protobuf: "bytes,1,opt,name=tags"`
-	Original Original                             `json:"original,omitempty" protobuf: "bytes,2,opt,name=original"`
-	Counts   map[string]CodeCoverageAnalysisCount `json:"counts,omitempty" protobuf: "bytes,3,opt,name=counts"`
-}
-
-type CodeCoverageAnalysisCount struct {
-	Total    int `json:"total,omitempty" protobuf: "bytes,2,opt,name=total"`
-	Missed   int `json:"missed,omitempty" protobuf: "bytes,3,opt,name=missed"`
-	Coverage int `json:"coverage,omitempty" protobuf: "bytes,4,opt,name=coverage"`
-}
+// Recommended measurements for code coverage
+const (
+	CodeCoverageMeasurementTotal    = "Total"
+	CodeCoverageMeasurementMissed   = "Missed"
+	CodeCoverageMeasurementCoverage = "Coverage"
+)
 
 // Recommended types for code coverage count
 const (
-	CodeCoverageAnalysisCountTypeInstructions = "Instructions"
-	CodeCoverageAnalysisCountTypeBranches     = "Branches"
-	CodeCoverageAnalysisCountTypeComplexity   = "Complexity"
-	CodeCoverageAnalysisCountTypeLines        = "Lines"
-	CodeCoverageAnalysisCountTypeMethods      = "Methods"
-	CodeCoverageAnalysisCountTypeClasses      = "Classes"
+	CodeCoverageCountTypeInstructions = "Instructions"
+	CodeCoverageCountTypeBranches     = "Branches"
+	CodeCoverageCountTypeComplexity   = "Complexity"
+	CodeCoverageCountTypeLines        = "Lines"
+	CodeCoverageCountTypeMethods      = "Methods"
+	CodeCoverageCountTypeClasses      = "Classes"
 )
 
 // IsTerminated returns true if this activity has stopped executing
