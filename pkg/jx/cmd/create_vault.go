@@ -92,11 +92,21 @@ func (o *CreateVaultOptions) Run() error {
 		return errors.Wrapf(err, "this command only supports the '%s' kubernetes provider", gkeKubeProvider)
 	}
 
+	return o.createVaultGKE()
+}
+
+func (o *CreateVaultOptions) createVaultGKE() error {
+	if o.GKEProjectID == "" {
+		return errors.New("Google Project ID must be provided in 'gke-project-id' option")
+	}
+
+	_, team, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrap(err, "creating kubernetes client")
+	}
+
 	if o.Namespace == "" {
-		_, ns, err := o.KubeClient()
-		if err != nil {
-			o.Namespace = ns
-		}
+		o.Namespace = team
 	}
 
 	err = gke.Login("", false)
@@ -106,10 +116,15 @@ func (o *CreateVaultOptions) Run() error {
 
 	secretName, err := o.createVaultGCPServiceAccount()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating GCP service account")
 	}
 	fmt.Println(secretName)
 
+	kmsConfig, err := o.createKmsConfig(team)
+	if err != nil {
+		return errors.Wrap(err, "creating KMS configuration")
+	}
+	fmt.Printf("%v\n", kmsConfig)
 	return nil
 }
 
@@ -172,4 +187,31 @@ func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath
 		_, err = secrets.Update(secret)
 	}
 	return secretName, nil
+}
+
+type kmsConfig struct {
+	keyring  string
+	key      string
+	location string
+	project  string
+}
+
+func (o *CreateVaultOptions) createKmsConfig(team string) (*kmsConfig, error) {
+	config := &kmsConfig{
+		keyring:  fmt.Sprintf("%s-vault-keyring", team),
+		key:      fmt.Sprintf("%s-vault-key", team),
+		location: gke.KmsLocation,
+		project:  o.GKEProjectID,
+	}
+
+	err := gke.CreateKmsKeyring(config.keyring, config.project)
+	if err != nil {
+		return nil, errors.Wrapf(err, "creating kms keyring '%s'", config.keyring)
+	}
+
+	err = gke.CreateKmsKey(config.key, config.keyring, config.project)
+	if err != nil {
+		return nil, errors.Wrapf(err, "crating the kms key '%s'", config.key)
+	}
+	return config, nil
 }
