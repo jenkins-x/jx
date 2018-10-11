@@ -1127,7 +1127,11 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		return err
 	}
 	// Untar the new binary into a temp directory
-	err = util.UnTargz(tarFile, os.TempDir(), []string{binary, fileName})
+	jxHome, err := util.ConfigDir()
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, jxHome , []string{binary, fileName})
 	if err != nil {
 		return err
 	}
@@ -1140,7 +1144,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		log.Infof("Skipping removal of old jx binary: %s\n", err)
 	}
 	// Copy over the new binary
-	err = os.Rename(os.TempDir()+"/jx", binDir+"/jx")
+	err = os.Rename(jxHome+"/jx", binDir+"/jx")
 	if err != nil {
 		return err
 	}
