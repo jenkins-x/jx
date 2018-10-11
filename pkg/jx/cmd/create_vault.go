@@ -137,7 +137,7 @@ func (o *CreateVaultOptions) createVaultGKE() error {
 		o.GKEZone = zone
 	}
 
-	log.Infof("Creating GCP service account for vault backend\n")
+	log.Infof("Creating GCP service account for Vault backend\n")
 	gcpServiceAccountSecretName, err := o.createVaultGCPServiceAccount()
 	if err != nil {
 		return errors.Wrap(err, "creating GCP service account")
@@ -149,7 +149,7 @@ func (o *CreateVaultOptions) createVaultGKE() error {
 	if err != nil {
 		return errors.Wrap(err, "creating KMS configuration")
 	}
-	log.Infof("Key %s created in keying %s\n", util.ColorInfo(kmsConfig.key), util.ColorInfo(kmsConfig.keyring))
+	log.Infof("KMS Key %s created in keying %s\n", util.ColorInfo(kmsConfig.key), util.ColorInfo(kmsConfig.keyring))
 
 	vaultBucket, err := o.createVaultBucket(team)
 	if err != nil {
@@ -158,9 +158,9 @@ func (o *CreateVaultOptions) createVaultGKE() error {
 	log.Infof("GCS bucket %s was created for Vault backend\n", util.ColorInfo(vaultBucket))
 	vaultAuthServiceAccount, err := o.createVaultAuthServiceAccount()
 	if err != nil {
-		return errors.Wrap(err, "creating Vault auth service account")
+		return errors.Wrap(err, "creating Vault authentication service account")
 	}
-	log.Infof("Created service account %s which can be used to authenticate against vault\n", util.ColorInfo(vaultAuthServiceAccount))
+	log.Infof("Created service account %s for Vault authentication\n", util.ColorInfo(vaultAuthServiceAccount))
 	return nil
 }
 
