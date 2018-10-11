@@ -2,6 +2,7 @@ package gits
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -365,6 +366,10 @@ func (g *GitlabProvider) ListCommitStatus(org string, repo string, sha string) (
 	}
 
 	return statuses, nil
+}
+
+func (b *GitlabProvider) UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
+	return &GitRepoStatus{}, errors.New("TODO")
 }
 
 func fromCommitStatus(status *gitlab.CommitStatus) *GitRepoStatus {
