@@ -37,8 +37,8 @@ var (
 
 	gc_example = templates.Examples(`
 		jx gc activities
-		jx gc helm
 		jx gc gke
+		jx gc helm
 		jx gc previews
 		jx gc releases
 
