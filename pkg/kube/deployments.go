@@ -88,6 +88,27 @@ func WaitForAllDeploymentsToBeReady(client kubernetes.Interface, namespace strin
 	return nil
 }
 
+func WaitForDeploymentToBeCreatedAndReady(client kubernetes.Interface, name, namespace string, timeoutPerDeploy time.Duration) error {
+
+	options := metav1.ListOptions{FieldSelector: fmt.Sprintf("metadata.name=%s", name)}
+
+	w, err := client.AppsV1().Deployments(namespace).Watch(options)
+	if err != nil {
+		return err
+	}
+	defer w.Stop()
+
+	condition := func(event watch.Event) (bool, error) {
+		running, _ := IsDeploymentRunning(client, name, namespace)
+		return running, nil
+	}
+	_, err = watch.Until(timeoutPerDeploy, w, condition)
+	if err == wait.ErrWaitTimeout {
+		return fmt.Errorf("deployment %s never became ready", name)
+	}
+	return nil
+}
+
 // WaitForDeploymentToBeReady waits for the pods of a deployment to become ready
 func WaitForDeploymentToBeReady(client kubernetes.Interface, name, namespace string, timeout time.Duration) error {
 	d, err := client.AppsV1().Deployments(namespace).Get(name, metav1.GetOptions{})

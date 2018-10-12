@@ -2,10 +2,14 @@ package log
 
 import (
 	"fmt"
+<<<<<<< HEAD
 	"github.com/sirupsen/logrus"
+=======
+>>>>>>> acc99eebab0c43653bd9f0e7f86da8d351cd7490
 	"os"
 
 	"github.com/fatih/color"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 func Infof(msg string, args ...interface{}) {
@@ -13,11 +17,11 @@ func Infof(msg string, args ...interface{}) {
 }
 
 func Info(msg string) {
-	fmt.Print(msg)
+	fmt.Fprint(terminal.NewAnsiStdout(os.Stdout), msg)
 }
 
 func Infoln(msg string) {
-	fmt.Println(msg)
+	fmt.Fprintln(terminal.NewAnsiStdout(os.Stdout), msg)
 }
 
 func Blank() {
