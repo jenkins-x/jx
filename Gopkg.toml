@@ -226,8 +226,3 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/hinshun/vt10x"
-
-[[constraint]]
-  name = "github.com/banzaicloud/bank-vaults"
-  branch = "generate-client"
-  source = "github.com/ccojocar/bank-vaults"
