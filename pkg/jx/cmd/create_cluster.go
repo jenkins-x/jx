@@ -31,6 +31,7 @@ const (
 	AKS        = "aks"
 	AWS        = "aws"
 	PKS        = "pks"
+	IKS        = "iks"
 	MINIKUBE   = "minikube"
 	MINISHIFT  = "minishift"
 	KUBERNETES = "kubernetes"
@@ -44,7 +45,7 @@ const (
 	optionClusterName       = "cluster-name"
 )
 
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IBM, OPENSHIFT, MINISHIFT, JX_INFRA, PKS}
+var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IBM, IKS, OPENSHIFT, MINISHIFT, JX_INFRA, PKS}
 
 const (
 	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
@@ -54,9 +55,10 @@ const (
     * aks (Azure Container Service - https://docs.microsoft.com/en-us/azure/aks)
     * aws (Amazon Web Services via kops - https://github.com/aws-samples/aws-workshop-for-kubernetes/blob/master/readme.adoc)
     * eks (Amazon Web Services Elastic Container Service for Kubernetes - https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html)
-    * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
+	* gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
+	* iks (IBM Cloud Kubernetes Service - https://console.bluemix.net/docs/containers)
     * oke (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
-    * kubernetes for custom installations of Kubernetes
+	* kubernetes for custom installations of Kubernetes
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
 	* minishift (single-node OpenShift cluster inside a VM on your laptop)
 	* openshift for installing on 3.9.x or later clusters of OpenShift
@@ -85,6 +87,7 @@ var (
 		- gcloud (Google Cloud CLI)
 		- oci (Oracle Cloud Infrastructure CLI)
 		- az (Azure CLI)
+		- ibmcloud (IBM CLoud CLI)
 
 		For more documentation see: [https://jenkins-x.io/getting-started/create-cluster/](https://jenkins-x.io/getting-started/create-cluster/)
 
@@ -130,6 +133,7 @@ func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.AddCommand(NewCmdCreateClusterMinikube(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterMinishift(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterOKE(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterIKS(f, in, out, errOut))
 
 	return cmd
 }

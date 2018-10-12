@@ -88,6 +88,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installGcloud()
 		case "helm":
 			err = o.installHelm()
+		case "ibmcloud":
+			err = o.installIBMCloud(false)
 		case "tiller":
 			err = o.installTiller()
 		case "helm3":
@@ -142,8 +144,8 @@ func binaryShouldBeInstalled(d string) string {
 	if err != nil {
 		// look for windows exec
 		if runtime.GOOS == "windows" {
-			d = d + ".exe"
-			_, err = exec.LookPath(d)
+			//d = d + ".exe"
+			_, err = exec.LookPath(d + ".exe")
 			if err == nil {
 				return ""
 			}
@@ -226,6 +228,7 @@ type InstallOrUpdateBinaryOptions struct {
 	SkipPathScan        bool
 	VersionExtractor    binaries.VersionExtractor
 	Archived            bool
+	ArchiveDirectory    string
 }
 
 func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
@@ -270,6 +273,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 			return err
 		}
 	}
+
 	if options.Version == "" {
 		options.Version, err = util.GetLatestVersionStringFromGitHub(options.GitHubOrganization, options.Binary)
 		if err != nil {
@@ -291,6 +295,10 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	if err != nil {
 		return err
 	}
+	fileNameInArchive := fileName
+	if options.ArchiveDirectory != "" {
+		fileNameInArchive = filepath.Join(options.ArchiveDirectory, fileName)
+	}
 	if options.Archived {
 		if extension == "zip" {
 			zipDir := filepath.Join(binDir, options.Binary+"-tmp-"+uuid.NewUUID().String())
@@ -302,7 +310,8 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 			if err != nil {
 				return err
 			}
-			f := filepath.Join(zipDir, fileName)
+
+			f := filepath.Join(zipDir, fileNameInArchive)
 			exists, err := util.FileExists(f)
 			if err != nil {
 				return err
@@ -316,7 +325,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 			}
 			err = os.RemoveAll(zipDir)
 		} else {
-			err = util.UnTargz(tarFile, binDir, []string{options.Binary, fileName})
+			err = util.UnTargz(tarFile, binDir, []string{options.Binary, fileNameInArchive})
 		}
 		if err != nil {
 			return err
@@ -1366,6 +1375,8 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 func (o *CommonOptions) installRequirements(cloudProvider string, extraDependencies ...string) error {
 	var deps []string
 	switch cloudProvider {
+	case IKS:
+		deps = o.addRequiredBinary("ibmcloud", deps)
 	case AWS:
 		deps = o.addRequiredBinary("kops", deps)
 	case AKS:
@@ -1636,4 +1647,33 @@ func (o *CommonOptions) isProw() (bool, error) {
 	}
 
 	return env.Spec.TeamSettings.PromotionEngine == jenkinsv1.PromotionEngineProw, nil
+}
+
+func (o *CommonOptions) installIBMCloud(skipPathScan bool) error {
+	return o.installIBMCloudWithVersion(binaries.IBMCloudVersion, skipPathScan)
+}
+
+func (o *CommonOptions) installIBMCloudWithVersion(version string, skipPathScan bool) error {
+	if runtime.GOOS == "darwin" {
+		return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+			Binary:              "ibmcloud",
+			GitHubOrganization:  "",
+			DownloadUrlTemplate: "https://public.dhe.ibm.com/cloud/bluemix/cli/bluemix-cli/{{.version}}/binaries/IBM_Cloud_CLI_{{.version}}_macos.tgz",
+			Version:             version,
+			SkipPathScan:        skipPathScan,
+			VersionExtractor:    nil,
+			Archived:            true,
+			ArchiveDirectory:    "IBM_Cloud_CLI",
+		})
+	}
+	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+		Binary:              "ibmcloud",
+		GitHubOrganization:  "",
+		DownloadUrlTemplate: "https://public.dhe.ibm.com/cloud/bluemix/cli/bluemix-cli/{{.version}}/binaries/IBM_Cloud_CLI_{{.version}}_{{.os}}_{{.arch}}.{{.extension}}",
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
+		Archived:            true,
+		ArchiveDirectory:    "IBM_Cloud_CLI",
+	})
 }
