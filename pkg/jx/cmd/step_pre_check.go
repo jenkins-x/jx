@@ -7,8 +7,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// StepPreOptions defines the CLI arguments
-type StepPreOptions struct {
+// StepPreCheckOptions defines the CLI arguments
+type StepPreCheckOptions struct {
 	CommonOptions
 
 	DisableImport bool
@@ -18,8 +18,8 @@ type StepPreOptions struct {
 var ()
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPre(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &StepPreOptions{
+func NewCmdStepPreCheck(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := &StepPreCheckOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
 			In:      in,
@@ -29,8 +29,8 @@ func NewCmdStepPre(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	}
 
 	cmd := &cobra.Command{
-		Use:   "pre",
-		Short: "pre step actions",
+		Use:   "check",
+		Short: "pre step check",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -39,14 +39,12 @@ func NewCmdStepPre(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		},
 	}
 
-	cmd.AddCommand(NewCmdStepPreBuild(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepPreExtend(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepPreCheck(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepPreCheckCompliance(f, in, out, errOut))
 
 	return cmd
 }
 
 // Run implements this command
-func (o *StepPreOptions) Run() error {
+func (o *StepPreCheckOptions) Run() error {
 	return o.Cmd.Help()
 }

@@ -651,6 +651,25 @@ func (mock *MockGitProvider) ServerURL() string {
 	return ret0
 }
 
+func (mock *MockGitProvider) UpdateCommitStatus(_param0 string, _param1 string, _param2 string, _param3 *gits.GitRepoStatus) (*gits.GitRepoStatus, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("UpdateCommitStatus", params, []reflect.Type{reflect.TypeOf((**gits.GitRepoStatus)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *gits.GitRepoStatus
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(*gits.GitRepoStatus)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockGitProvider) UpdatePullRequestStatus(_param0 *gits.GitPullRequest) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
@@ -1765,6 +1784,45 @@ func (c *GitProvider_ServerURL_OngoingVerification) GetCapturedArguments() {
 }
 
 func (c *GitProvider_ServerURL_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierGitProvider) UpdateCommitStatus(_param0 string, _param1 string, _param2 string, _param3 *gits.GitRepoStatus) *GitProvider_UpdateCommitStatus_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpdateCommitStatus", params)
+	return &GitProvider_UpdateCommitStatus_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type GitProvider_UpdateCommitStatus_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *GitProvider_UpdateCommitStatus_OngoingVerification) GetCapturedArguments() (string, string, string, *gits.GitRepoStatus) {
+	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
+}
+
+func (c *GitProvider_UpdateCommitStatus_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []*gits.GitRepoStatus) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]string, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(string)
+		}
+		_param3 = make([]*gits.GitRepoStatus, len(params[3]))
+		for u, param := range params[3] {
+			_param3[u] = param.(*gits.GitRepoStatus)
+		}
+	}
+	return
 }
 
 func (verifier *VerifierGitProvider) UpdatePullRequestStatus(_param0 *gits.GitPullRequest) *GitProvider_UpdatePullRequestStatus_OngoingVerification {

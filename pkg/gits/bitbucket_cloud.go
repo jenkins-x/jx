@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -637,6 +639,10 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 		}
 	}
 	return statuses, nil
+}
+
+func (b *BitbucketCloudProvider) UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
+	return &GitRepoStatus{}, errors.New("TODO")
 }
 
 func (b *BitbucketCloudProvider) MergePullRequest(pr *GitPullRequest, message string) error {
