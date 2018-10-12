@@ -1126,19 +1126,25 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Remove(binDir + "/jx")
-	if err != nil && o.Verbose {
-		log.Infof("Skipping removal of old jx binary: %s\n", err)
-	}
-	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	// Untar the new binary into a temp directory
+	err = util.UnTargz(tarFile, os.TempDir(), []string{binary, fileName})
 	if err != nil {
 		return err
 	}
-	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(binDir+"/jx"))
 	err = os.Remove(tarFile)
 	if err != nil {
 		return err
 	}
+	err = os.Remove(binDir + "/jx")
+	if err != nil && o.Verbose {
+		log.Infof("Skipping removal of old jx binary: %s\n", err)
+	}
+	// Copy over the new binary
+	err = os.Rename(os.TempDir()+"/jx", binDir+"/jx")
+	if err != nil {
+		return err
+	}
+	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(binDir+"/jx"))
 	return os.Chmod(fullPath, 0755)
 }
 
@@ -1559,6 +1565,8 @@ func (o *CommonOptions) installProw() error {
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 
+	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+
 	err = o.retry(2, time.Second, func() (err error) {
 		err = o.installChart(o.ReleaseName, o.Chart, "", devNamespace, true, values)
 		return nil
@@ -1568,7 +1576,7 @@ func (o *CommonOptions) installProw() error {
 		return fmt.Errorf("failed to install prow: %v", err)
 	}
 
-	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
 		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values)
@@ -1577,6 +1585,17 @@ func (o *CommonOptions) installProw() error {
 
 	if err != nil {
 		return fmt.Errorf("failed to install Knative build: %v", err)
+	}
+
+	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
+
+	err = o.retry(2, time.Second, func() (err error) {
+		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true, values)
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to install BuildTemplates: %v", err)
 	}
 
 	return nil

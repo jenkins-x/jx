@@ -11,6 +11,7 @@ import (
 
 type JenkinsV1Interface interface {
 	RESTClient() rest.Interface
+	ComplianceChecksGetter
 	EnvironmentsGetter
 	EnvironmentRoleBindingsGetter
 	ExtensionsGetter
@@ -25,6 +26,10 @@ type JenkinsV1Interface interface {
 // JenkinsV1Client is used to interact with features provided by the jenkins.io group.
 type JenkinsV1Client struct {
 	restClient rest.Interface
+}
+
+func (c *JenkinsV1Client) ComplianceChecks(namespace string) ComplianceCheckInterface {
+	return newComplianceChecks(c, namespace)
 }
 
 func (c *JenkinsV1Client) Environments(namespace string) EnvironmentInterface {

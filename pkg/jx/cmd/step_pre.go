@@ -41,6 +41,7 @@ func NewCmdStepPre(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 
 	cmd.AddCommand(NewCmdStepPreBuild(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepPreExtend(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepPreCheck(f, in, out, errOut))
 
 	return cmd
 }

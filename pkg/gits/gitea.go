@@ -1,6 +1,7 @@
 package gits
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -225,7 +226,7 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Events: []string{"create", "push", "pull_request"},
 		Active: true,
 	}
-	log.Infof("Creating GitHub webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
+	log.Infof("Creating Gitea webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
 	_, err = p.Client.CreateRepoHook(owner, repo, hook)
 	if err != nil {
 		return fmt.Errorf("Failed to create webhook for %s/%s with %#v due to: %s", owner, repo, hook, err)
@@ -518,6 +519,10 @@ func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([
 		answer = append(answer, status)
 	}
 	return answer, nil
+}
+
+func (b *GiteaProvider) UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
+	return &GitRepoStatus{}, errors.New("TODO")
 }
 
 func (p *GiteaProvider) RenameRepository(org string, name string, newName string) (*GitRepository, error) {
