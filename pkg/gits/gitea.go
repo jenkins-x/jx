@@ -1,6 +1,7 @@
 package gits
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -518,6 +519,10 @@ func (p *GiteaProvider) ListCommitStatus(org string, repo string, sha string) ([
 		answer = append(answer, status)
 	}
 	return answer, nil
+}
+
+func (b *GiteaProvider) UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
+	return &GitRepoStatus{}, errors.New("TODO")
 }
 
 func (p *GiteaProvider) RenameRepository(org string, name string, newName string) (*GitRepository, error) {
