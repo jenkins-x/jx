@@ -34,4 +34,4 @@ myvalues.yml
 # vim swap files
 *.swp
 
-
+vendor/**
