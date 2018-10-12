@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,13 +34,24 @@ type ComplianceCheckList struct {
 
 // ComplianceCheckSpec provides details of a particular Compliance Check
 type ComplianceCheckSpec struct {
-	PipelineActivity ResourceReference     `json:"pipelineActivity,omitempty"  protobuf:"bytes,1,opt,name=pipelineActivity"`
-	Checks           []ComplianceCheckItem `json:"checks,omitempty"  protobuf:"bytes,2,opt,name=checks"`
-	Checked          bool                  `json:"checked,omitempty"  protobuf:"bytes,3,opt,name=checked"`
+	PipelineActivity ResourceReference              `json:"pipelineActivity"  protobuf:"bytes,1,opt,name=pipelineActivity"`
+	Checks           []ComplianceCheckItem          `json:"checks,omitempty"  protobuf:"bytes,2,opt,name=checks"`
+	Checked          bool                           `json:"checked"  protobuf:"bytes,3,opt,name=checked"`
+	Commit           ComplianceCheckCommitReference `json:"commit"  protobuf:"bytes,4,opt,name=commit"`
+}
+
+type ComplianceCheckCommitReference struct {
+	GitURL      string `json:"gitUrl,omitempty"  protobuf:"bytes,1,opt,name=gitUrl"`
+	PullRequest string `json:"pullRequest,omitempty"  protobuf:"bytes,2,opt,name=pullRequest"`
+	SHA         string `json:"sha,omitempty"  protobuf:"bytes,3,opt,name=sha"`
 }
 
 type ComplianceCheckItem struct {
 	Name        string `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
 	Description string `json:"description,omitempty"  protobuf:"bytes,2,opt,name=description"`
 	Pass        bool   `json:"pass,omitempty"  protobuf:"bytes,3,opt,name=pass"`
+}
+
+func (r *ComplianceCheckCommitReference) String() string {
+	return fmt.Sprintf("{ URL: %s; SHA: %s; PR#: %s }", r.GitURL, r.SHA, r.PullRequest)
 }

@@ -52,6 +52,8 @@ type GitProvider interface {
 
 	ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error)
 
+	UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error)
+
 	MergePullRequest(pr *GitPullRequest, message string) error
 
 	CreateWebHook(data *GitWebHookArguments) error
