@@ -26,6 +26,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -1565,10 +1566,18 @@ func (o *CommonOptions) installProw() error {
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 
-	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
+	_, err = o.KubeClientCached.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
+	if err != nil {
+		err = prow.AddApplication(o.KubeClientCached, []string{"jenkins-x/dummy"}, devNamespace, "base")
+		if err != nil {
+			return err
+		}
+	}
 
+	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(o.ReleaseName, o.Chart, "", devNamespace, true, values)
+		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
 		return nil
 	})
 
