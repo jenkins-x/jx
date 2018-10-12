@@ -58,6 +58,7 @@ func NewCmdCreateAddon(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.AddCommand(NewCmdCreateAddonKubeless(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonOwasp(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonPrometheus(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonProw(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonSSO(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonVault(f, in, out, errOut))

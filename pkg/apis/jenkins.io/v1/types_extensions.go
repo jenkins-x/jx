@@ -66,13 +66,13 @@ type ExtensionWhen string
 
 const (
 	// Executed before a pipeline starts
-	ExtensionWhenPre ExtensionWhen = "Pre"
+	ExtensionWhenPre ExtensionWhen = "pre"
 	// Executed after a pipeline completes
-	ExtensionWhenPost ExtensionWhen = "Post"
+	ExtensionWhenPost ExtensionWhen = "post"
 	// Executed when an extension installs
-	ExtensionWhenInstall ExtensionWhen = "OnInstall"
+	ExtensionWhenInstall ExtensionWhen = "onInstall"
 	// Executed when an extension upgrades
-	ExtensionWhenUpgrade ExtensionWhen = "OnUpgrade"
+	ExtensionWhenUpgrade ExtensionWhen = "onUpgrade"
 )
 
 // ExtensionGiven specifies the condition (if the extension is executing in a pipeline on which the extension should execute. By default Always.
@@ -146,6 +146,7 @@ type ExtensionDefinitionChildReference struct {
 	Name      string `json:"name,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 	Remote    string `json:"remote,omitempty"`
+	Tag       string `json:"tag,omitempty"`
 }
 
 type EnvironmentVariable struct {
@@ -169,6 +170,11 @@ type ExtensionParameterValue struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
+
+const (
+	VersionGlobalParameterName       string = "extVersion"
+	TeamNamespaceGlobalParameterName string = "extTeamNamespace"
+)
 
 func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 	scriptFile, err := ioutil.TempFile("", fmt.Sprintf("%s-*", e.Name))
@@ -199,7 +205,6 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 		Name: scriptFile.Name(),
 		Env:  envVars,
 	}
-	log.Infof("Running Extension %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", e.Namespace, e.Name)))
 	out, err := cmd.RunWithoutRetry()
 	log.Infoln(out)
 	if err != nil {
@@ -208,21 +213,23 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 	return nil
 }
 
-func (e *ExtensionSpec) ToExecutable(envVarValues []ExtensionParameterValue) (ext ExtensionExecution, envVarsStr string, err error) {
+// TODO remove the env vars formatting stuff from here and make it a function on ExtensionSpec
+func (e *ExtensionSpec) ToExecutable(paramValues []ExtensionParameterValue, teamNamespace string) (ext ExtensionExecution, envVarsStr string, err error) {
 	envVars := make([]EnvironmentVariable, 0)
+	paramValueLookup := make(map[string]string, 0)
+	for _, v := range paramValues {
+		paramValueLookup[v.Name] = v.Value
+	}
 	for _, p := range e.Parameters {
 		value := p.DefaultValue
-		// TODO this is probably inefficient
-		for _, v := range envVarValues {
-			if p.Name == v.Name {
-				value = v.Value
-			}
+		if v, ok := paramValueLookup[p.Name]; ok {
+			value = v
 		}
 		// TODO Log any parameters from RepoExetensions NOT used
 		if value != "" {
 			envVarName := p.EnvironmentVariableName
 			if envVarName == "" {
-				envVarName = strings.ToUpper(fmt.Sprintf("%s_%s_%s", strcase.SnakeCase(e.Namespace), strcase.SnakeCase(e.Name), strcase.SnakeCase(p.Name)))
+				envVarName = e.EnvVarName(e.Namespace, e.Name, p.Name)
 			}
 			envVars = append(envVars, EnvironmentVariable{
 				Name:  envVarName,
@@ -230,6 +237,14 @@ func (e *ExtensionSpec) ToExecutable(envVarValues []ExtensionParameterValue) (ex
 			})
 		}
 	}
+	// Add Global vars
+	envVars = append(envVars, EnvironmentVariable{
+		Name:  e.EnvVarName(VersionGlobalParameterName),
+		Value: e.Version,
+	}, EnvironmentVariable{
+		Name:  e.EnvVarName(TeamNamespaceGlobalParameterName),
+		Value: teamNamespace,
+	})
 	res := ExtensionExecution{
 		Name:                 e.Name,
 		Namespace:            e.Namespace,
@@ -244,6 +259,15 @@ func (e *ExtensionSpec) ToExecutable(envVarValues []ExtensionParameterValue) (ex
 		fmt.Fprintf(envVarsFormatted, "%s=%s, ", envVar.Name, envVar.Value)
 	}
 	return res, strings.TrimSuffix(envVarsFormatted.String(), ", "), err
+}
+
+func (e *ExtensionSpec) EnvVarName(names ...string) string {
+	format := strings.TrimPrefix(strings.Repeat("_%s", len(names)), "_")
+	vars := make([]interface{}, 0)
+	for _, a := range names {
+		vars = append(vars, strings.ToUpper(strcase.SnakeCase(a)))
+	}
+	return fmt.Sprintf(format, vars...)
 }
 
 func (constraints *ExtensionDefinitionReferenceList) LoadFromFile(inputFile string) (err error) {
@@ -336,6 +360,14 @@ func (e *ExtensionConfig) FullyQualifiedKebabName() (fqn string) {
 	return fmt.Sprintf("%s.%s", strcase.KebabCase(e.Namespace), strcase.KebabCase(e.Name))
 }
 
+func (e *ExtensionExecution) FullyQualifiedName() (fqn string) {
+	return fmt.Sprintf("%s.%s", e.Namespace, e.Name)
+}
+
+func (e *ExtensionExecution) FullyQualifiedKebabName() (fqn string) {
+	return fmt.Sprintf("%s.%s", strcase.KebabCase(e.Namespace), strcase.KebabCase(e.Name))
+}
+
 func (extensionsConfig *ExtensionConfigList) LoadFromFile(inputFile string) (cfg *ExtensionConfigList, err error) {
 	extensionsYamlPath, err := filepath.Abs(inputFile)
 	if err != nil {
@@ -366,13 +398,24 @@ func (extensionsConfig *ExtensionConfigList) LoadFromConfigMap(configMapName str
 		}
 	}
 	extensionsConfig.Extensions = make([]ExtensionConfig, 0)
-	for _, v := range cm.Data {
-		extensionConfig := ExtensionConfig{}
-		err = yaml.Unmarshal([]byte(v), &extensionsConfig)
-		if err != nil {
-			return nil, err
-		}
-		extensionsConfig.Extensions = append(extensionsConfig.Extensions, extensionConfig)
+
+	extensionConfigList := ExtensionConfigList{}
+	err = yaml.Unmarshal([]byte(cm.Data["extensions"]), &extensionConfigList.Extensions)
+	if err != nil {
+		return nil, err
 	}
-	return extensionsConfig, nil
+	return &extensionConfigList, nil
+}
+
+func (e *ExtensionSpec) IsPost() bool {
+	return e.Contains(e.When, ExtensionWhenPost) || len(e.When) == 0
+}
+
+func (e *ExtensionSpec) Contains(whens []ExtensionWhen, when ExtensionWhen) bool {
+	for _, w := range whens {
+		if when == w {
+			return true
+		}
+	}
+	return false
 }

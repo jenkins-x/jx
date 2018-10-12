@@ -139,16 +139,15 @@ func (pr *GitPullRequest) IsClosed() bool {
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
-	switch server.Kind {
-	case KindBitBucketCloud:
+	if (server.Kind == KindBitBucketCloud) || (server.Kind == "" && strings.HasPrefix(server.URL, "https://bitbucket.org")) {
 		return NewBitbucketCloudProvider(server, user, git)
-	case KindBitBucketServer:
+	} else if server.Kind == KindBitBucketServer {
 		return NewBitbucketServerProvider(server, user, git)
-	case KindGitea:
+	} else if server.Kind == KindGitea {
 		return NewGiteaProvider(server, user, git)
-	case KindGitlab:
+	} else if server.Kind == KindGitlab {
 		return NewGitlabProvider(server, user, git)
-	default:
+	} else {
 		return NewGitHubProvider(server, user, git)
 	}
 }
