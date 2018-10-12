@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/version"
-
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -207,24 +205,25 @@ func (o *Options) createPreSubmitCompliance() config.Presubmit {
 	ps.Name = ComplianceCheck
 	ps.RerunCommand = "/test compliance"
 	ps.Trigger = "(?m)^/test( compliance),?(\\s+|$)"
-	ps.AlwaysRun = false
+	ps.AlwaysRun = true
 	ps.SkipReport = false
 	ps.Agent = KubernetesAgent
 	ps.Spec = &corev1.PodSpec{
 		Containers: []corev1.Container{
 			corev1.Container{
-				Image: fmt.Sprintf("%s:%s", JXImage, version.GetVersion()),
+				Image: fmt.Sprintf("%s:%s", JXImage, "1.3.418"),
 				Command: []string{
 					"jx",
 				},
 				Args: []string{
 					"step",
 					"pre",
-					"compliance",
 					"check",
+					"compliance",
 				},
 			},
 		},
+		ServiceAccountName: "jenkins",
 	}
 	return ps
 }
