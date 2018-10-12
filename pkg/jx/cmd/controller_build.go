@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 	"unicode"
@@ -156,6 +157,10 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 	lastCommitMessage := ""
 	lastCommitURL := ""
 	build := DigitSuffix(buildName)
+	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
+	if err != nil {
+		log.Warnf("Failed to compile regexp because %s", err)
+	}
 	if build == "" {
 		build = "1"
 	}
@@ -172,9 +177,27 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 					gitURL = value
 				case "-revision":
 					branch = value
+					if shaRegexp.MatchString(value) {
+						lastCommitSha = value
+					}
 				}
 			}
 			break
+		}
+		var pullPullSha, pullBaseSha string
+		for _, v := range initContainer.Env {
+			if v.Name == "PULL_PULL_SHA" {
+				pullPullSha = v.Value
+			}
+			if v.Name == "PULL_BASE_SHA" {
+				pullBaseSha = v.Value
+			}
+		}
+		if lastCommitSha == "" && pullPullSha != "" {
+			lastCommitSha = pullPullSha
+		}
+		if lastCommitSha == "" && pullBaseSha != "" {
+			lastCommitSha = pullBaseSha
 		}
 	}
 	if gitURL == "" {
