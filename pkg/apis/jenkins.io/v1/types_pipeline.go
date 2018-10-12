@@ -227,6 +227,16 @@ const (
 	CodeCoverageCountTypeClasses      = "Classes"
 )
 
+const (
+	MeasurementPercent = "percent"
+	MeasurementCount   = "count"
+)
+
+const (
+	FactTypeCoverage              = "jx.coverage"
+	FactTypeStaticProgramAnalysis = "jx.staticProgramAnalysis"
+)
+
 // IsTerminated returns true if this activity has stopped executing
 func (s ActivityStatusType) IsTerminated() bool {
 	return s == ActivityStatusTypeSucceeded || s == ActivityStatusTypeFailed || s == ActivityStatusTypeError || s == ActivityStatusTypeAborted
