@@ -331,7 +331,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Config: config,
 		Events: []string{"*"},
 	}
-	log.Infof("Creating GitHub webhook for %s/%s for url %s\n", owner, repo, webhookUrl)
+	log.Infof("Creating GitHub webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
 	_, _, err = p.Client.Repositories.CreateHook(p.Context, owner, repo, hook)
 	return err
 }
@@ -579,7 +579,7 @@ func (p *GitHubProvider) ListCommitStatus(org string, repo string, sha string) (
 	}
 	for _, result := range results {
 		status := &GitRepoStatus{
-			ID:          string(*result.ID),
+			ID:          strconv.FormatInt(notNullInt64(result.ID), 10),
 			Context:     notNullString(result.Context),
 			URL:         notNullString(result.URL),
 			TargetURL:   notNullString(result.TargetURL),
@@ -589,6 +589,37 @@ func (p *GitHubProvider) ListCommitStatus(org string, repo string, sha string) (
 		answer = append(answer, status)
 	}
 	return answer, nil
+}
+
+func (p *GitHubProvider) UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
+	id64 := int64(0)
+	if status.ID != "" {
+		id, err := strconv.Atoi(status.ID)
+		if err != nil {
+			return &GitRepoStatus{}, err
+		}
+		id64 = int64(id)
+	}
+	repoStatus := github.RepoStatus{
+		Context:     &status.Context,
+		State:       &status.State,
+		Description: &status.Description,
+		TargetURL:   &status.TargetURL,
+		URL:         &status.URL,
+		ID:          &id64,
+	}
+	result, _, err := p.Client.Repositories.CreateStatus(p.Context, org, repo, sha, &repoStatus)
+	if err != nil {
+		return &GitRepoStatus{}, err
+	}
+	return &GitRepoStatus{
+		ID:          strconv.FormatInt(notNullInt64(result.ID), 10),
+		Context:     notNullString(result.Context),
+		URL:         notNullString(result.URL),
+		TargetURL:   notNullString(result.TargetURL),
+		State:       notNullString(result.State),
+		Description: notNullString(result.Description),
+	}, nil
 }
 
 func notNullInt64(n *int64) int64 {

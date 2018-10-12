@@ -3,6 +3,7 @@ package gits
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -620,6 +621,10 @@ func (b *BitbucketServerProvider) ListCommitStatus(org, repo, sha string) ([]*Gi
 	}
 
 	return statuses, nil
+}
+
+func (b *BitbucketServerProvider) UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
+	return &GitRepoStatus{}, errors.New("TODO")
 }
 
 func convertBitBucketBuildStatusToGitStatus(buildStatus *bitbucket.BuildStatus) *GitRepoStatus {
