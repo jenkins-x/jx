@@ -40,21 +40,12 @@ type UpgradePlatformOptions struct {
 	Namespace     string
 	Set           string
 	AlwaysUpgrade bool
-
-	InstallFlags InstallFlags
 }
 
 // NewCmdUpgradePlatform defines the command
 func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradePlatformOptions{
-		InstallOptions: InstallOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
-		},
+		InstallOptions: CreateInstallOptions(f, in, out, errOut),
 	}
 
 	cmd := &cobra.Command{
@@ -78,7 +69,7 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().BoolVarP(&options.AlwaysUpgrade, "always-upgrade", "", false, "If set to true, jx will upgrade platform Helm chart even if requested version is already installed.")
 
 	options.addCommonFlags(cmd)
-	options.InstallFlags.addCloudEnvOptions(cmd)
+	options.InstallOptions.Flags.addCloudEnvOptions(cmd)
 
 	return cmd
 }
@@ -97,14 +88,13 @@ func (o *UpgradePlatformOptions) Run() error {
 			return err
 		}
 	}
+
+	wrkDir, err := o.cloneJXCloudEnvironmentsRepo()
+	if err != nil {
+		return err
+	}
+
 	if targetVersion == "" {
-		io := &InstallOptions{}
-		io.CommonOptions = o.CommonOptions
-		io.Flags = o.InstallFlags
-		wrkDir, err := io.cloneJXCloudEnvironmentsRepo()
-		if err != nil {
-			return err
-		}
 		targetVersion, err = LoadVersionFromCloudEnvironmentsDir(wrkDir)
 		if err != nil {
 			return err
@@ -138,44 +128,67 @@ func (o *UpgradePlatformOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Using provider %s from team settings\n", util.ColorInfo(settings.KubeProvider))
+	log.Infof("Using provider '%s' from team settings\n", util.ColorInfo(settings.KubeProvider))
 
-	// get secrets to use in helm install
-	secrets, err := o.getGitSecrets()
-	if err != nil {
-		return errors.Wrap(err, "failed to read the git secrets from configuration")
+	if "" == settings.KubeProvider {
+		return errors.New("Unable to determine provider from team settings")
 	}
+
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return err
+	}
+
+	pipelineUser := authConfigSvc.Config().PipeLineUsername
+	log.Infof("Using pipeline user '%s' from team settings\n", util.ColorInfo(pipelineUser))
+
+	var gitSecrets string
+	if pipelineUser == "" {
+		// get gitSecrets to use in helm install
+		o.Debugf("Getting Git Secrets...\n")
+		gitSecrets, err = o.getGitSecrets()
+		if err != nil {
+			return errors.Wrap(err, "failed to read the git secrets from configuration")
+		}
+	} else {
+		gitSecrets, err = o.getGitSecretsForPipelineUser()
+		if err != nil {
+			return errors.Wrap(err, "failed to read the git secrets for pipeline user from configuration")
+		}
+	}
+
+	o.Debugf("Got Git Secrets: %s\n", gitSecrets)
 
 	err = o.AdminSecretsService.NewAdminSecretsConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the admin secret config service")
 	}
 
+	o.Debugf("Getting Admin Secrets...\n")
 	adminSecrets, err := o.AdminSecretsService.Secrets.String()
 	if err != nil {
 		return errors.Wrap(err, "failed to read the admin secrets")
 	}
+	o.Debugf("Got Admin Secrets: %s\n", adminSecrets)
 
 	helmConfig := &o.CreateEnvOptions.HelmValuesConfig
 	if helmConfig.ExposeController.Config.Domain == "" {
 		helmConfig.ExposeController.Config.Domain = o.InitOptions.Flags.Domain
 	}
+	o.Debugf("Got HelmValuesConfig: %s\n", helmConfig)
 
 	config, err := helmConfig.String()
 	if err != nil {
 		return errors.Wrap(err, "failed to get the helm config")
 	}
+	o.Debugf("Got Helm Config: %s\n", config)
 
-	// clone the environments repo
-	wrkDir, err := o.cloneJXCloudEnvironmentsRepo()
-	if err != nil {
-		return errors.Wrap(err, "failed to clone the jx cloud environments reppo")
-	}
-
+	o.Debugf("Using workDir: %s\n", wrkDir)
 	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(settings.KubeProvider)))
 	if _, err := os.Stat(wrkDir); os.IsNotExist(err) {
 		return fmt.Errorf("cloud environment dir %s not found", makefileDir)
 	}
+	o.Debugf("Using env dir: %s\n", makefileDir)
 
 	// create a temporary file that's used to pass current git creds to helm in order to create a secret for pipelines to tag releases
 	dir, err := util.ConfigDir()
@@ -184,15 +197,15 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	secretsFileName := filepath.Join(dir, GitSecretsFile)
-	err = ioutil.WriteFile(secretsFileName, []byte(secrets), 0644)
+	err = ioutil.WriteFile(secretsFileName, []byte(gitSecrets), 0644)
 	if err != nil {
-		return errors.Wrap(err, "failed to write the git secrets in the secrets file")
+		return errors.Wrap(err, "failed to write the git gitSecrets in the gitSecrets file")
 	}
 
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
 	err = ioutil.WriteFile(adminSecretsFileName, []byte(adminSecrets), 0644)
 	if err != nil {
-		return errors.Wrap(err, "failed to write the admin secrets in the secrets file")
+		return errors.Wrap(err, "failed to write the admin gitSecrets in the gitSecrets file")
 	}
 
 	configFileName := filepath.Join(dir, ExtraValuesFile)
@@ -204,7 +217,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	data := make(map[string][]byte)
 	data[ExtraValuesFile] = []byte(config)
 	data[AdminSecretsFile] = []byte(adminSecrets)
-	data[GitSecretsFile] = []byte(secrets)
+	data[GitSecretsFile] = []byte(gitSecrets)
 
 	jxSecrets := &core_v1.Secret{
 		Data: data,
@@ -249,4 +262,31 @@ func (o *UpgradePlatformOptions) Run() error {
 		values = append(values, o.Set)
 	}
 	return o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &targetVersion, false, nil, false, false, values, valueFiles)
+}
+
+func (o *UpgradePlatformOptions) getGitSecretsForPipelineUser() (string,error) {
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return "", err
+	}
+
+	config := authConfigSvc.Config()
+
+	userAuth := config.FindUserAuth(config.PipeLineServer, config.PipeLineUsername)
+
+	server := config.PipeLineServer
+	if server == "" {
+		return "", fmt.Errorf("No Git Server found")
+	}
+	server = strings.TrimPrefix(server, "https://")
+	server = strings.TrimPrefix(server, "http://")
+
+	url := fmt.Sprintf("%s:%s@%s", userAuth.Username, userAuth.ApiToken, server)
+
+	pipelineSecrets := `
+PipelineSecrets:
+  GitCreds: |-
+    https://%s
+    http://%s`
+	return fmt.Sprintf(pipelineSecrets, url, url), nil
 }
