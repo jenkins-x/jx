@@ -141,6 +141,10 @@ required = [
   name = "k8s.io/client-go"
   version = "kubernetes-1.11.0"
 
+[[override]]
+  name = "k8s.io/client-go"
+  version = "kubernetes-1.11.0"
+
 [[constraint]]
   name = "k8s.io/helm"
   source = "https://github.com/jenkins-x/helm.git"
@@ -222,3 +226,8 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/hinshun/vt10x"
+
+[[constraint]]
+  name = "github.com/banzaicloud/bank-vaults"
+  branch = "generate-client"
+  source = "github.com/ccojocar/bank-vaults"

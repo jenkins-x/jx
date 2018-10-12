@@ -11,7 +11,7 @@ import (
 
 type VaultV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	VaultListsGetter
+	VaultsGetter
 }
 
 // VaultV1alpha1Client is used to interact with features provided by the vault.banzaicloud.com group.
@@ -19,8 +19,8 @@ type VaultV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *VaultV1alpha1Client) VaultLists(namespace string) VaultListInterface {
-	return newVaultLists(c, namespace)
+func (c *VaultV1alpha1Client) Vaults(namespace string) VaultInterface {
+	return newVaults(c, namespace)
 }
 
 // NewForConfig creates a new VaultV1alpha1Client for the given config.

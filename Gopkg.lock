@@ -155,8 +155,8 @@
   version = "v1.15.50"
 
 [[projects]]
-  branch = "master_k8s_1.11"
-  digest = "1:81ead79b26f0135dabb49ffeacde05f0455af6a368c1714e7b80da7560fa1ffd"
+  branch = "generate-client"
+  digest = "1:a1d141bc59b0229ff0b969bf0a127c9700c66f6409e219360c44fae61d70ca1a"
   name = "github.com/banzaicloud/bank-vaults"
   packages = [
     "operator/pkg/apis/vault/v1alpha1",
@@ -165,7 +165,8 @@
     "operator/pkg/client/clientset/versioned/typed/vault/v1alpha1",
   ]
   pruneopts = "NUT"
-  revision = "4c4cfb82f485d679e8a6803d0492259574d9dd7c"
+  revision = "b267885f420dfc34c40edc2550e8dc434a558967"
+  source = "github.com/ccojocar/bank-vaults"
 
 [[projects]]
   digest = "1:f4298c81d8a94ab68d9e387eaf6e653387df5da17702f06c6d8718a7a8e549d0"
@@ -770,12 +771,12 @@
   version = "v1.4.1"
 
 [[projects]]
-  digest = "1:9fc63b51e22488e2050138a0ea52c3dce5441cb8b97ba609239976250f5cb6bf"
+  branch = "master"
+  digest = "1:bde6c3a610bd01ea7e2c8d9c7fd1116531fb6619f46f73f4f2ea16adb70da6be"
   name = "github.com/operator-framework/operator-sdk"
   packages = ["pkg/util/k8sutil"]
   pruneopts = "NUT"
-  revision = "31577c9d90b99b63043d2014de8fb2dd855aee78"
-  version = "v0.0.5"
+  revision = "913cbf711929f8227cf6077f2cd76f8d111b00ea"
 
 [[projects]]
   digest = "1:cce3a18fb0b96b5015cd8ca03a57d20a662679de03c4dc4b6ff5f17ea2050fa6"

@@ -49,3 +49,11 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
+
+// Resource returns the groups resouce for a given resource
+func Resource(resource string) schema.GroupResource {
+	return schema.GroupResource{
+		Group:    groupName,
+		Resource: resource,
+	}
+}

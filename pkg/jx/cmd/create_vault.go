@@ -161,6 +161,29 @@ func (o *CreateVaultOptions) createVaultGKE() error {
 		return errors.Wrap(err, "creating Vault authentication service account")
 	}
 	log.Infof("Created service account %s for Vault authentication\n", util.ColorInfo(vaultAuthServiceAccount))
+
+	log.Infof("Creating Vault...\n")
+	vaultOperatorClient, err := o.VaultOperatorClient()
+	if err != nil {
+		return errors.Wrap(err, "creating vault opeator client")
+	}
+
+	vaultName := fmt.Sprintf("%s-vault", team)
+	gcpConfig := &kube.GCPConfig{
+		ProjectId:   o.GKEProjectID,
+		KmsKeyring:  kmsConfig.keyring,
+		KmsKey:      kmsConfig.key,
+		KmsLocation: kmsConfig.location,
+		GcsBucket:   vaultBucket,
+	}
+	err = kube.CreateVault(vaultOperatorClient, vaultName, o.Namespace, gcpServiceAccountSecretName,
+		gcpConfig, vaultAuthServiceAccount, o.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "creating vault")
+	}
+
+	log.Infof("Vault %s created\n", util.ColorInfo(vaultName))
+
 	return nil
 }
 

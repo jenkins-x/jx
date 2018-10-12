@@ -27,15 +27,6 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 
-// VaultList represents a list of Vault Kubernetes objects
-type VaultList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata"`
-	Items           []Vault `json:"items"`
-}
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 // Vault represents a Vault Kubernetes object
 type Vault struct {
 	metav1.TypeMeta `json:",inline"`
@@ -47,12 +38,23 @@ type Vault struct {
 	Status            VaultStatus `json:"status,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// VaultList represents a list of Vault Kubernetes objects
+type VaultList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+	Items           []Vault `json:"items"`
+}
+
 // VaultSpec represents the Spec field of a Vault Kubernetes object
 type VaultSpec struct {
 	Size              int32                  `json:"size"`
 	Image             string                 `json:"image"`
 	BankVaultsImage   string                 `json:"bankVaultsImage"`
 	StatsDImage       string                 `json:"statsdImage"`
+	FluentDEnabled    bool                   `json:"fluentdEnabled"`
+	FluentDImage      string                 `json:"fluentdImage"`
 	Annotations       map[string]string      `json:"annotations"`
 	Config            map[string]interface{} `json:"config"`
 	ExternalConfig    map[string]interface{} `json:"externalConfig"`
@@ -171,6 +173,20 @@ func (spec *VaultSpec) GetAnnotations() map[string]string {
 	spec.Annotations["prometheus.io/path"] = "/metrics"
 	spec.Annotations["prometheus.io/port"] = "9102"
 	return spec.Annotations
+}
+
+// GetFluentDImage returns the FluentD image to use
+func (spec *VaultSpec) GetFluentDImage() string {
+	if spec.FluentDImage == "" {
+		return "fluent/fluentd:stable"
+	}
+	return spec.FluentDImage
+}
+
+// IsFluentDEnabled returns true if fluentd sidecar is to be deployed
+func (spec *VaultSpec) IsFluentDEnabled() bool {
+	// zero value for bool is false
+	return spec.FluentDEnabled
 }
 
 // ConfigJSON returns the Config field as a JSON string

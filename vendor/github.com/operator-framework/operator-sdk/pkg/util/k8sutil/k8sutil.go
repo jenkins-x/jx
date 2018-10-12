@@ -17,13 +17,16 @@ package k8sutil
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	intstr "k8s.io/apimachinery/pkg/util/intstr"
 	cgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -31,8 +34,9 @@ var (
 	// scheme tracks the type registry for the sdk
 	// This scheme is used to decode json data into the correct Go type based on the object's GVK
 	// All types that the operator watches must be added to this scheme
-	scheme = runtime.NewScheme()
-	codecs = serializer.NewCodecFactory(scheme)
+	scheme      = runtime.NewScheme()
+	codecs      = serializer.NewCodecFactory(scheme)
+	decoderFunc = decoder
 )
 
 func init() {
@@ -42,7 +46,17 @@ func init() {
 	cgoscheme.AddToScheme(scheme)
 }
 
-func decoder(gv schema.GroupVersion) runtime.Decoder {
+// UtilDecoderFunc retrieve the correct decoder from a GroupVersion
+// and the schemes codec factory.
+type UtilDecoderFunc func(schema.GroupVersion, serializer.CodecFactory) runtime.Decoder
+
+// SetDecoderFunc sets a non default decoder function
+// This is used as a work around to add support for unstructured objects
+func SetDecoderFunc(u UtilDecoderFunc) {
+	decoderFunc = u
+}
+
+func decoder(gv schema.GroupVersion, codecs serializer.CodecFactory) runtime.Decoder {
 	codec := codecs.UniversalDecoder(gv)
 	return codec
 }
@@ -55,40 +69,39 @@ func AddToSDKScheme(addToScheme addToSchemeFunc) {
 }
 
 // RuntimeObjectFromUnstructured converts an unstructured to a runtime object
-func RuntimeObjectFromUnstructured(u *unstructured.Unstructured) runtime.Object {
+func RuntimeObjectFromUnstructured(u *unstructured.Unstructured) (runtime.Object, error) {
 	gvk := u.GroupVersionKind()
-	decoder := decoder(gvk.GroupVersion())
+	decoder := decoderFunc(gvk.GroupVersion(), codecs)
 
 	b, err := u.MarshalJSON()
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("error running MarshalJSON on unstructured object: %v", err)
 	}
 	ro, _, err := decoder.Decode(b, &gvk, nil)
 	if err != nil {
-		err = fmt.Errorf("failed to decode json data with gvk(%v): %v", gvk.String(), err)
-		panic(err)
+		return nil, fmt.Errorf("failed to decode json data with gvk(%v): %v", gvk.String(), err)
 	}
-	return ro
+	return ro, nil
 }
 
 // UnstructuredFromRuntimeObject converts a runtime object to an unstructured
-func UnstructuredFromRuntimeObject(ro runtime.Object) *unstructured.Unstructured {
+func UnstructuredFromRuntimeObject(ro runtime.Object) (*unstructured.Unstructured, error) {
 	b, err := json.Marshal(ro)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("error running MarshalJSON on runtime object: %v", err)
 	}
 	var u unstructured.Unstructured
 	if err := json.Unmarshal(b, &u.Object); err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to unmarshal json into unstructured object: %v", err)
 	}
-	return &u
+	return &u, nil
 }
 
 // UnstructuredIntoRuntimeObject unmarshalls an unstructured into a given runtime object
 // TODO: https://github.com/operator-framework/operator-sdk/issues/127
 func UnstructuredIntoRuntimeObject(u *unstructured.Unstructured, into runtime.Object) error {
 	gvk := u.GroupVersionKind()
-	decoder := decoder(gvk.GroupVersion())
+	decoder := decoderFunc(gvk.GroupVersion(), codecs)
 
 	b, err := u.MarshalJSON()
 	if err != nil {
@@ -108,7 +121,7 @@ func RuntimeObjectIntoRuntimeObject(from runtime.Object, into runtime.Object) er
 		return err
 	}
 	gvk := from.GetObjectKind().GroupVersionKind()
-	decoder := decoder(gvk.GroupVersion())
+	decoder := decoderFunc(gvk.GroupVersion(), codecs)
 	_, _, err = decoder.Decode(b, &gvk, into)
 	if err != nil {
 		return fmt.Errorf("failed to decode json data with gvk(%v): %v", gvk.String(), err)
@@ -133,4 +146,63 @@ func GetNameAndNamespace(object runtime.Object) (string, string, error) {
 
 func ObjectInfo(kind, name, namespace string) string {
 	return kind + ": " + namespace + "/" + name
+}
+
+// GetWatchNamespace returns the namespace the operator should be watching for changes
+func GetWatchNamespace() (string, error) {
+	ns, found := os.LookupEnv(WatchNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", WatchNamespaceEnvVar)
+	}
+	return ns, nil
+}
+
+// GetOperatorName return the operator name
+func GetOperatorName() (string, error) {
+	operatorName, found := os.LookupEnv(OperatorNameEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", OperatorNameEnvVar)
+	}
+	if len(operatorName) == 0 {
+		return "", fmt.Errorf("%s must not be empty", OperatorNameEnvVar)
+	}
+	return operatorName, nil
+}
+
+// InitOperatorService return the static service which expose operator metrics
+func InitOperatorService() (*v1.Service, error) {
+	operatorName, err := GetOperatorName()
+	if err != nil {
+		return nil, err
+	}
+	namespace, err := GetWatchNamespace()
+	if err != nil {
+		return nil, err
+	}
+	service := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      operatorName,
+			Namespace: namespace,
+			Labels:    map[string]string{"name": operatorName},
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				{
+					Port:     PrometheusMetricsPort,
+					Protocol: v1.ProtocolTCP,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.String,
+						StrVal: PrometheusMetricsPortName,
+					},
+					Name: PrometheusMetricsPortName,
+				},
+			},
+			Selector: map[string]string{"name": operatorName},
+		},
+	}
+	return service, nil
 }
