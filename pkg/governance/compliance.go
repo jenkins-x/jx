@@ -1,6 +1,7 @@
 package governance
 
 import (
+	"fmt"
 	"strconv"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -12,6 +13,9 @@ const complianceCheckContext = "compliance-check"
 
 func NotifyComplianceState(commitRef jenkinsv1.ComplianceCheckCommitReference, state string, targetUrl string, description string, comment string, gitProvider gits.GitProvider, gitRepoInfo *gits.GitRepositoryInfo) (status *gits.GitRepoStatus, err error) {
 
+	if commitRef.SHA == "" {
+		return &gits.GitRepoStatus{}, fmt.Errorf("SHA cannot be empty on %v", commitRef)
+	}
 	if err != nil {
 		return &gits.GitRepoStatus{}, err
 	}

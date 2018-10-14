@@ -197,37 +197,6 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 
 	return ps
 }
-
-func (o *Options) createPreSubmitCompliance() config.Presubmit {
-	ps := config.Presubmit{}
-
-	ps.Context = ComplianceCheck
-	ps.Name = ComplianceCheck
-	ps.RerunCommand = "/test compliance"
-	ps.Trigger = "(?m)^/test( compliance),?(\\s+|$)"
-	ps.AlwaysRun = true
-	ps.SkipReport = false
-	ps.Agent = KubernetesAgent
-	ps.Spec = &corev1.PodSpec{
-		Containers: []corev1.Container{
-			corev1.Container{
-				Image: fmt.Sprintf("%s:%s", JXImage, "1.3.418"),
-				Command: []string{
-					"jx",
-				},
-				Args: []string{
-					"step",
-					"pre",
-					"check",
-					"compliance",
-				},
-			},
-		},
-		ServiceAccountName: "jenkins",
-	}
-	return ps
-}
-
 func (o *Options) createContextPolicyCompliance() config.ContextPolicy {
 	cp := config.ContextPolicy{
 		Contexts: []string{
@@ -382,7 +351,7 @@ func (o *Options) AddProwConfig() error {
 		preSubmit = o.createPreSubmitEnvironment()
 		postSubmit = o.createPostSubmitEnvironment()
 	case Compliance:
-		preSubmit = o.createPreSubmitCompliance()
+		// Nothing needed
 	default:
 		return fmt.Errorf("unknown prow config kind %s", o.Kind)
 	}
