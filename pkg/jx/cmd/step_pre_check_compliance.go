@@ -86,33 +86,38 @@ func (o *StepPreCheckComplianceOptions) Init(jxClient jenkinsv1client.Interface,
 
 	org := os.Getenv("REPO_OWNER")
 	repo := os.Getenv("REPO_NAME")
-	build := os.Getenv("BUILD_ID")
 	pullRequest := os.Getenv("PULL_REQUEST")
 	sha := os.Getenv("PULL_PULL_SHA")
 	// TODO Fix this once PROW supports other providers
 	url := fmt.Sprintf("https://github.com/%s/%s.git", org, repo)
 	pipeline := fmt.Sprintf("%s-%s", org, repo)
-	if pipeline != "" && build != "" {
-		name := kube.ToValidName(pipeline + "-" + build)
-		log.Infof("Creating compliance check for %s\n", name)
-		_, err := jxClient.JenkinsV1().ComplianceChecks(ns).Create(&jenkinsv1.ComplianceCheck{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-			},
-			Spec: jenkinsv1.ComplianceCheckSpec{
-				Checked: false,
-				Commit: jenkinsv1.ComplianceCheckCommitReference{
-					GitURL:      url,
-					PullRequest: pullRequest,
-					SHA:         sha,
-				},
-			},
-		})
+	if pipeline != "" && sha != "" {
+		name := kube.ToValidName(pipeline + "-" + sha)
+		_, err := jxClient.JenkinsV1().ComplianceChecks(ns).Get(name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			log.Infof("Creating compliance check for %s\n", name)
+			_, err := jxClient.JenkinsV1().ComplianceChecks(ns).Create(&jenkinsv1.ComplianceCheck{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+				},
+				Spec: jenkinsv1.ComplianceCheckSpec{
+					Checked: false,
+					Commit: jenkinsv1.ComplianceCheckCommitReference{
+						GitURL:      url,
+						PullRequest: pullRequest,
+						SHA:         sha,
+					},
+				},
+			})
+			if err != nil {
+				return err
+			}
+		} else {
+			log.Infof("Compliance Check already exists for %s\n", name)
 		}
+
 	} else {
-		log.Errorf("Cannot determine pipeline (found %s) and build number (found %s) for compliance check\n", pipeline, build)
+		log.Errorf("Cannot determine pipeline (found %s) and sha (found %s) for compliance check\n", pipeline, sha)
 	}
 	return nil
 }

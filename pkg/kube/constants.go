@@ -241,6 +241,7 @@ var (
 		"kubeless":                      ChartKubeless,
 		"prometheus":                    "stable/prometheus",
 		"grafana":                       "stable/grafana",
+		"jx-build-templates":            "jenkins-x/jx-build-templates",
 		DefaultProwReleaseName:          ChartProw,
 		DefaultKnativeBuildReleaseName:  ChartKnativeBuild,
 		DefaultSsoDexReleaseName:        ChartSsoDex,

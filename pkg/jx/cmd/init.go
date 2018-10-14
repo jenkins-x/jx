@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -163,6 +164,14 @@ func (o *InitOptions) Run() error {
 	err = o.enableClusterAdminRole()
 	if err != nil {
 		return err
+	}
+
+	// Needs to be done early as is an ingress availablility is an indicator of cluster readyness
+	if o.Flags.Provider == IKS {
+		err = o.initIKSIngress()
+		if err != nil {
+			return err
+		}
 	}
 
 	// helm init, this has been seen to fail intermittently on public clouds, so lets retry a couple of times
@@ -369,6 +378,11 @@ func (o *InitOptions) initHelm() error {
 			if err != nil {
 				return err
 			}
+			err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
+			if err != nil {
+				return err
+			}
+
 			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, true)
 			if err != nil {
 				return err
@@ -439,6 +453,28 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 	return filepath.Join(dir, "packs"), err
 }
 
+func (o *InitOptions) initIKSIngress() error {
+	log.Infoln("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
+	ingressNamespace := o.Flags.IngressNamespace
+
+	clusterID, err := iks.GetKubeClusterID(kubeClient)
+	if err != nil || clusterID == "" {
+		clusterID, err = iks.GetClusterID()
+		if err != nil {
+			return err
+		}
+	}
+	o.Flags.IngressDeployment = "public-cr" + strings.ToLower(clusterID) + "-alb1"
+	o.Flags.IngressService = "public-cr" + strings.ToLower(clusterID) + "-alb1"
+
+	return kube.WaitForDeploymentToBeCreatedAndReady(kubeClient, o.Flags.IngressDeployment, ingressNamespace, 30*time.Minute)
+}
+
 func (o *InitOptions) initIngress() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	client, _, err := o.KubeClient()
@@ -498,6 +534,7 @@ func (o *InitOptions) initIngress() error {
 		log.Infoln("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
 		return nil
 	}
+
 	podCount, err := kube.DeploymentPodCount(client, o.Flags.IngressDeployment, ingressNamespace)
 	if podCount == 0 {
 		installIngressController := false
@@ -755,6 +792,24 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			} else {
 				break
 			}
+		}
+	}
+
+	if provider == IKS {
+		if domain != "" {
+			log.Infof("\nIBM Kubernetes Service will use provided domain. Ensure name is registrered with DNS (ex. CIS) and pointing the cluster ingress IP: %s\n", util.ColorInfo(address))
+			return domain, nil
+		}
+		clusterName, err := iks.GetClusterName()
+		clusterRegion, err := iks.GetKubeClusterRegion(client)
+		if err == nil && clusterName != "" && clusterRegion != "" {
+			customDomain := clusterName + "." + clusterRegion + ".containers.appdomain.cloud"
+			log.Infof("\nIBM Kubernetes Service will use the default cluster domain: ")
+			log.Infof("%s\n", util.ColorInfo(customDomain))
+			return customDomain, nil
+		} else {
+			log.Infof("ERROR getting IBM Kubernetes Service will use the default cluster domain:")
+			log.Infof(err.Error())
 		}
 	}
 
