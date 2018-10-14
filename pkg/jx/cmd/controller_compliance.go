@@ -4,13 +4,25 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
+
+	"github.com/pkg/errors"
+
+	"github.com/jenkins-x/jx/pkg/builds"
+
+	corev1 "k8s.io/api/core/v1"
+
+	jenkinsv1client "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+
+	"k8s.io/client-go/tools/cache"
 
 	"github.com/jenkins-x/jx/pkg/governance"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 
@@ -18,10 +30,9 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// ControllerComplianceOptions the options for the create spring command
+// ControllerComplianceOptions the options for the controller compliance
 type ControllerComplianceOptions struct {
 	ControllerOptions
-	IsPre bool
 }
 
 // NewCmdControllerCompliance creates a command object for the "create" command
@@ -39,7 +50,7 @@ func NewCmdControllerCompliance(f Factory, in terminal.FileReader, out terminal.
 
 	cmd := &cobra.Command{
 		Use:   "compliance",
-		Short: "Updates a pull request with compliance status",
+		Short: "Enforces compliance",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -47,15 +58,16 @@ func NewCmdControllerCompliance(f Factory, in terminal.FileReader, out terminal.
 			CheckErr(err)
 		},
 	}
-
-	cmd.Flags().BoolVarP(&options.IsPre, "pre", "", false, "Run the pre-submit phase which creates a pending status")
-
 	return cmd
 }
 
 // Run implements this command
 func (o *ControllerComplianceOptions) Run() error {
 	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	kubeClient, _, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
@@ -71,32 +83,206 @@ func (o *ControllerComplianceOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	watch, err := jxClient.JenkinsV1().ComplianceChecks(ns).Watch(metav1.ListOptions{})
+
+	complianceListWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "compliancechecks", ns, fields.Everything())
+	kube.SortListWatchByName(complianceListWatch)
+	_, complianceController := cache.NewInformer(
+		complianceListWatch,
+		&jenkinsv1.ComplianceCheck{},
+		time.Minute*10,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				o.onComplianceCheckObj(obj, jxClient, ns)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				o.onComplianceCheckObj(newObj, jxClient, ns)
+			},
+			DeleteFunc: func(obj interface{}) {
+
+			},
+		},
+	)
+	stop := make(chan struct{})
+	go complianceController.Run(stop)
+
+	podListWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", ns, fields.Everything())
+	kube.SortListWatchByName(podListWatch)
+	_, podWatch := cache.NewInformer(
+		podListWatch,
+		&corev1.Pod{},
+		time.Minute*10,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				o.onPodObj(obj, jxClient, ns)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				o.onPodObj(newObj, jxClient, ns)
+			},
+			DeleteFunc: func(obj interface{}) {
+
+			},
+		},
+	)
+	stop = make(chan struct{})
+	podWatch.Run(stop)
+
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	for event := range watch.ResultChan() {
-		check, ok := event.Object.(*jenkinsv1.ComplianceCheck)
-		if !ok {
-			log.Fatalf("unexpected type %s\n", event)
-		}
-		err = o.Check(check.Spec)
+func (o *ControllerComplianceOptions) onComplianceCheckObj(obj interface{}, jxClient jenkinsv1client.Interface, ns string) {
+	check, ok := obj.(*jenkinsv1.ComplianceCheck)
+	if !ok {
+		log.Fatalf("compliance controller: unexpected type %v\n", obj)
+	} else {
+		err := o.onComplianceCheck(check, jxClient, ns)
 		if err != nil {
-			gitProvider, gitRepoInfo, err1 := o.createGitProviderForURLWithoutKind(check.Spec.Commit.GitURL)
-			if err1 != nil {
-				return err1
-			}
-			_, err1 = governance.NotifyComplianceState(check.Spec.Commit, "error", "", "Internal Error performing compliance checks", "", gitProvider, gitRepoInfo)
-			if err1 != nil {
-				log.Fatalf("Error updating git commit state on error %s\n", err1)
-			}
-			log.Fatalf("Error updating git commit state %s\n", err1)
+			log.Fatalf("compliance controller: %v\n", err)
 		}
 	}
+}
 
+func (o *ControllerComplianceOptions) onComplianceCheck(check *jenkinsv1.ComplianceCheck, jxClient jenkinsv1client.Interface, ns string) error {
+	err := o.Check(check.Spec)
 	if err != nil {
+		gitProvider, gitRepoInfo, err1 := o.createGitProviderForURLWithoutKind(check.Spec.Commit.GitURL)
+		if err1 != nil {
+			return err1
+		}
+		_, err1 = governance.NotifyComplianceState(check.Spec.Commit, "error", "", "Internal Error performing compliance checks", "", gitProvider, gitRepoInfo)
+		if err1 != nil {
+			return err
+		}
 		return err
+	}
+	return nil
+}
+
+func (o *ControllerComplianceOptions) onPodObj(obj interface{}, jxClient jenkinsv1client.Interface, ns string) {
+	check, ok := obj.(*corev1.Pod)
+	if !ok {
+		log.Fatalf("pod watcher: unexpected type %v\n", obj)
+	} else {
+		err := o.onPod(check, jxClient, ns)
+		if err != nil {
+			log.Fatalf("pod watcher: %v\n", err)
+		}
+	}
+}
+
+func (o *ControllerComplianceOptions) onPod(pod *corev1.Pod, jxClient jenkinsv1client.Interface, ns string) error {
+	if pod != nil {
+		labels := pod.Labels
+		if labels != nil {
+			buildName := labels[builds.LabelBuildName]
+			if buildName == "" {
+				buildName = labels[builds.LabelOldBuildName]
+			}
+			if buildName != "" {
+				log.Infof("pod watcher: Found build pod %s\n", pod.Name)
+				org := ""
+				repo := ""
+				pullRequest := ""
+				pullPullSha := ""
+				pullBaseSha := ""
+				buildNumber := ""
+				sourceUrl := ""
+				for _, initContainer := range pod.Spec.InitContainers {
+					for _, e := range initContainer.Env {
+						switch e.Name {
+						case "REPO_OWNER":
+							org = e.Value
+						case "REPO_NAME":
+							repo = e.Value
+						case "PULL_NUMBER":
+							pullRequest = fmt.Sprintf("PR-%s", e.Value)
+						case "PULL_PULL_SHA":
+							pullPullSha = e.Value
+						case "PULL_BASE_SHA":
+							pullBaseSha = e.Value
+						case "JX_BUILD_NUMBER":
+							buildNumber = e.Value
+						case "SOURCE_URL":
+							sourceUrl = e.Value
+						}
+					}
+				}
+				log.Infof("pod watcher: org: %s, repo: %s, buildNumber: %s, pullBaseSha: %s, pullPullSha: %s, pullRequest: %s, sourceUrl: %s\n", org, repo, buildNumber, pullBaseSha, pullPullSha, pullRequest, sourceUrl)
+				if org != "" && repo != "" && buildNumber != "" && (pullBaseSha != "" || pullPullSha != "") {
+					branch := "master"
+					sha := pullBaseSha
+					if pullRequest != "" {
+						branch = fmt.Sprintf("PR-%s", pullRequest)
+						sha = pullPullSha
+					}
+					name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
+					return o.UpsertComplianceCheck(name, sourceUrl, sha, pullRequest, jxClient, ns)
+				}
+			}
+
+		}
+
+	}
+	return nil
+}
+
+func (o *ControllerComplianceOptions) UpsertComplianceCheck(name string, url string, sha string, pullRequest string, jxClient jenkinsv1client.Interface, ns string) error {
+	if name != "" {
+
+		check, err := jxClient.JenkinsV1().ComplianceChecks(ns).Get(name, metav1.GetOptions{})
+		create := false
+		update := false
+		actRef := jenkinsv1.ResourceReference{}
+		if err != nil {
+			create = true
+		} else {
+			log.Infof("Compliance Check already exists for %s\n", name)
+		}
+		if create || check.Spec.PipelineActivity.UID == "" {
+			act, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(name, metav1.GetOptions{})
+			if err == nil {
+				update = true
+				actRef.Name = act.Name
+				actRef.Kind = act.Kind
+				actRef.UID = act.UID
+				actRef.APIVersion = act.APIVersion
+			}
+		}
+
+		if create {
+			log.Infof("Creating compliance check for %s\n", name)
+			_, err := jxClient.JenkinsV1().ComplianceChecks(ns).Create(&jenkinsv1.ComplianceCheck{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+					Labels: map[string]string{
+						"lastCommitSha": sha,
+					},
+				},
+				Spec: jenkinsv1.ComplianceCheckSpec{
+					Checked: false,
+					Commit: jenkinsv1.ComplianceCheckCommitReference{
+						GitURL:      url,
+						PullRequest: pullRequest,
+						SHA:         sha,
+					},
+					PipelineActivity: actRef,
+				},
+			})
+			if err != nil {
+				return err
+			}
+		} else if update {
+			check.Spec.PipelineActivity = actRef
+			_, err := jxClient.JenkinsV1().ComplianceChecks(ns).Update(check)
+			if err != nil {
+				return err
+			}
+		}
+
+	} else {
+		errors.New("compliance controller: Must supply name")
 	}
 	return nil
 }
