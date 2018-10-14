@@ -162,6 +162,7 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	log.Infof("generating prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
+		ServiceAccountName: "jenkins",
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
@@ -186,6 +187,7 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	log.Infof("generating prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
+		ServiceAccountName: "jenkins",
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
