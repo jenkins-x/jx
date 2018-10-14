@@ -58,6 +58,7 @@ func NewCmdControllerCompliance(f Factory, in terminal.FileReader, out terminal.
 			CheckErr(err)
 		},
 	}
+	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "v", false, "Enable verbose logging")
 	return cmd
 }
 
@@ -181,7 +182,6 @@ func (o *ControllerComplianceOptions) onPod(pod *corev1.Pod, jxClient jenkinsv1c
 				buildName = labels[builds.LabelOldBuildName]
 			}
 			if buildName != "" {
-				log.Infof("pod watcher: Found build pod %s\n", pod.Name)
 				org := ""
 				repo := ""
 				pullRequest := ""
@@ -209,16 +209,23 @@ func (o *ControllerComplianceOptions) onPod(pod *corev1.Pod, jxClient jenkinsv1c
 						}
 					}
 				}
-				log.Infof("pod watcher: org: %s, repo: %s, buildNumber: %s, pullBaseSha: %s, pullPullSha: %s, pullRequest: %s, sourceUrl: %s\n", org, repo, buildNumber, pullBaseSha, pullPullSha, pullRequest, sourceUrl)
 				if org != "" && repo != "" && buildNumber != "" && (pullBaseSha != "" || pullPullSha != "") {
+
 					branch := "master"
 					sha := pullBaseSha
 					if pullRequest != "" {
-						branch = fmt.Sprintf("PR-%s", pullRequest)
+						branch = pullRequest
 						sha = pullPullSha
 					}
-					name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
-					return o.UpsertComplianceCheck(name, sourceUrl, sha, pullRequest, jxClient, ns)
+					if o.Verbose {
+						log.Infof("pod watcher: build pod: %s, org: %s, repo: %s, buildNumber: %s, pullBaseSha: %s, pullPullSha: %s, pullRequest: %s, sourceUrl: %s\n", pod.Name, org, repo, buildNumber, pullBaseSha, pullPullSha, pullRequest, sourceUrl)
+					}
+					if sha == "" {
+						log.Warnf("No sha on %s, not upserting compliance check\n", pod.Name)
+					} else {
+						name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
+						return o.UpsertComplianceCheck(name, sourceUrl, sha, pullRequest, jxClient, ns)
+					}
 				}
 			}
 
@@ -238,7 +245,7 @@ func (o *ControllerComplianceOptions) UpsertComplianceCheck(name string, url str
 		if err != nil {
 			create = true
 		} else {
-			log.Infof("Compliance Check already exists for %s\n", name)
+			log.Infof("compliance controller: Compliance Check already exists for %s\n", name)
 		}
 		if create || check.Spec.PipelineActivity.UID == "" {
 			act, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(name, metav1.GetOptions{})
@@ -252,7 +259,7 @@ func (o *ControllerComplianceOptions) UpsertComplianceCheck(name string, url str
 		}
 
 		if create {
-			log.Infof("Creating compliance check for %s\n", name)
+			log.Infof("compliance controller: Creating compliance check for %s\n", name)
 			_, err := jxClient.JenkinsV1().ComplianceChecks(ns).Create(&jenkinsv1.ComplianceCheck{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
