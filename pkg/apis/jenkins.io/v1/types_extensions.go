@@ -106,7 +106,7 @@ type ExtensionExecution struct {
 
 // ExtensionRepositoryLockList contains a list of ExtensionRepositoryLock items
 type ExtensionRepositoryLockList struct {
-	Version    int             `json:"version"`
+	Version    string          `json:"version"`
 	Extensions []ExtensionSpec `json:"extensions"`
 }
 
