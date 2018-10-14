@@ -189,6 +189,7 @@ func (o *ControllerComplianceOptions) onPod(pod *corev1.Pod, jxClient jenkinsv1c
 				pullBaseSha := ""
 				buildNumber := ""
 				sourceUrl := ""
+				branch := ""
 				for _, initContainer := range pod.Spec.InitContainers {
 					for _, e := range initContainer.Env {
 						switch e.Name {
@@ -206,15 +207,15 @@ func (o *ControllerComplianceOptions) onPod(pod *corev1.Pod, jxClient jenkinsv1c
 							buildNumber = e.Value
 						case "SOURCE_URL":
 							sourceUrl = e.Value
+						case "PULL_BASE_REF":
+							branch = e.Value
 						}
 					}
 				}
 				if org != "" && repo != "" && buildNumber != "" && (pullBaseSha != "" || pullPullSha != "") {
 
-					branch := "master"
 					sha := pullBaseSha
 					if pullRequest != "" {
-						branch = pullRequest
 						sha = pullPullSha
 					}
 					if o.Verbose {
