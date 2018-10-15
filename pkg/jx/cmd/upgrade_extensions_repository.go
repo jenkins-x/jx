@@ -235,16 +235,17 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 			if UUID == "" {
 				UUID = uuid.New()
 				log.Infof("No UUID found for %s. Generated UUID %s, please update your extension definition "+
-					"accordingly.", ed.FullyQualifiedName(), UUID)
+					"accordingly.\n", ed.FullyQualifiedName(), UUID)
 			}
 			newVersion := strings.TrimPrefix(resolvedTag, "v")
 			oldSemanticVersion, err := semver.Parse(oldLookupByUUID[UUID].Version)
 			if err != nil {
-				return result, err
+				log.Infof("Cannot determine existing version for %s. Upgrading to %s anyway.\n", ed.FullyQualifiedName(), newVersion)
+				oldSemanticVersion = semver.Version{}
 			}
 			newSemanticVersion, err := semver.Parse(newVersion)
 			if err != nil {
-				return result, err
+				return result, fmt.Errorf("Unable to determine new version for %s. %v", ed.FullyQualifiedName(), err)
 			}
 			if oldSemanticVersion.LT(newSemanticVersion) || tag == "latest" {
 				var script string
