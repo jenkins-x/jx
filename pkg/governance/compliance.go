@@ -32,10 +32,12 @@ func NotifyComplianceState(commitRef jenkinsv1.ComplianceCheckCommitReference, s
 	if err != nil {
 		return &gits.GitRepoStatus{}, err
 	}
-	var oldStatus *gits.GitRepoStatus
+	oldStatus := &gits.GitRepoStatus{}
 	for _, o := range oldStatuses {
 		if o.Context == complianceCheckContext {
 			oldStatus = o
+			// List is sorted in reverse chronological order - most recent statuses first
+			break
 		}
 	}
 	if oldStatus.ID != "" {
