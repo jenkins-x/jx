@@ -108,7 +108,7 @@ func KubernetesProviderOptions() string {
 	return strings.Join(values, ", ")
 }
 
-// NewCmdGet creates a command object for the generic "init" action, which
+// NewCmdCreateCluster creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := createCreateClusterOptions(f, in, out, errOut, "")
@@ -138,6 +138,11 @@ func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWri
 	return cmd
 }
 
+func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
+	o.InstallOptions.addInstallFlags(cmd, true)
+	cmd.Flags().BoolVarP(&o.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
+}
+
 func createCreateClusterOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) CreateClusterOptions {
 	commonOptions := CommonOptions{
 		Factory: f,
@@ -161,13 +166,13 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 		log.Infof("%s cluster created. Skipping Jenkins X installation.\n", o.Provider)
 		return nil
 	}
-	// call jx init
+
 	o.InstallOptions.BatchMode = o.BatchMode
 	o.InstallOptions.Flags.Provider = provider
 
-	// call jx install
 	installOpts := &o.InstallOptions
 
+	// call jx install
 	err := installOpts.Run()
 	if err != nil {
 		return err
@@ -175,11 +180,7 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 	return nil
 }
 
+// Run returns help if function is run without any argument
 func (o *CreateClusterOptions) Run() error {
 	return o.Cmd.Help()
-}
-
-func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
-	o.InstallOptions.addInstallFlags(cmd, true)
-	cmd.Flags().BoolVarP(&o.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
 }
