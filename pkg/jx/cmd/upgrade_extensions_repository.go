@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -110,7 +111,6 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	oldVersion := oldLock.Version
 	oldLockNameMap := make(map[string]jenkinsv1.ExtensionSpec, 0)
 	oldLookupByUUID := make(map[string]jenkinsv1.ExtensionSpec, 0)
 	for _, l := range oldLock.Extensions {
@@ -120,7 +120,7 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	newLock := jenkinsv1.ExtensionRepositoryLockList{
 		Extensions: make([]jenkinsv1.ExtensionSpec, 0),
 	}
-	newLock.Version = oldVersion + 1
+	newLock.Version = os.Getenv("VERSION")
 
 	lookupByName := make(map[string]jenkinsv1.ExtensionSpec, 0)
 	lookupByUUID := make(map[string]jenkinsv1.ExtensionSpec, 0)
