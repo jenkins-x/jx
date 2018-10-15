@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"os"
+	"sort"
 	"strings"
 	"time"
+
+	"github.com/blang/semver"
+
+	"github.com/jenkins-x/jx/pkg/log"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
@@ -91,12 +96,13 @@ func NewCmdUpgradeExtensionsRepository(f Factory, in terminal.FileReader, out te
 	}
 	cmd.Flags().StringVarP(&options.InputFile, "input-file", "i", "jenkins-x-extensions-repository.yaml", "The input file to read to generate the .lock file")
 	cmd.Flags().StringVarP(&options.OutputFile, "output-file", "o", "jenkins-x-extensions-repository.lock.yaml", "The output .lock file")
+	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	return cmd
 }
 
 func (o *UpgradeExtensionsRepositoryOptions) Run() error {
-	constraints := jenkinsv1.ExtensionDefinitionReferenceList{}
-	err := constraints.LoadFromFile(o.InputFile)
+	defRef := jenkinsv1.ExtensionDefinitionReferenceList{}
+	err := defRef.LoadFromFile(o.InputFile)
 	if err != nil {
 		return err
 	}
@@ -105,100 +111,54 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	oldVersion := oldLock.Version
 	oldLockNameMap := make(map[string]jenkinsv1.ExtensionSpec, 0)
+	oldLookupByUUID := make(map[string]jenkinsv1.ExtensionSpec, 0)
+	for _, l := range oldLock.Extensions {
+		oldLockNameMap[l.FullyQualifiedName()] = l
+		oldLookupByUUID[l.UUID] = l
+	}
 	newLock := jenkinsv1.ExtensionRepositoryLockList{
 		Extensions: make([]jenkinsv1.ExtensionSpec, 0),
 	}
-	newLock.Version = oldVersion + 1
+	newLock.Version = os.Getenv("VERSION")
 
 	lookupByName := make(map[string]jenkinsv1.ExtensionSpec, 0)
 	lookupByUUID := make(map[string]jenkinsv1.ExtensionSpec, 0)
-	for _, c := range constraints.Remotes {
-		if strings.HasPrefix(c.Remote, "github.com") {
-			s := strings.Split(c.Remote, "/")
-			if len(s) != 3 {
-				errors.New(fmt.Sprintf("Cannot parse extension path %s", util.ColorInfo(c.Remote)))
-			}
-			org := s[1]
-			repo := s[2]
-			tag := c.Tag
-			if tag == "latest" {
-				tag, err = util.GetLatestVersionStringFromGitHub(org, repo)
-				if err != nil {
-					return err
-				}
-				tag = fmt.Sprintf("v%s", tag)
-			}
-			definitionsUrl := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s", org, repo, tag)
-			definitionsFileUrl := fmt.Sprintf("%s/jenkins-x-extension-definitions.yaml", definitionsUrl)
-			extensionDefinitions := jenkinsv1.ExtensionDefinitionList{}
-			extensionDefinitions.LoadFromURL(definitionsFileUrl, c.Remote, c.Tag)
-			for _, ed := range extensionDefinitions.Extensions {
-				// It's best practice to assign a UUID to an extension, but if it doesn't have one we
-				// try to give it the one it had last
-				UUID := ed.UUID
-				if UUID == "" {
-					// Lazy initialize the oldLockNameMap
-					if len(oldLockNameMap) == 0 {
-						for _, l := range oldLock.Extensions {
-							oldLockNameMap[l.FullyQualifiedName()] = l
-						}
-					}
-					UUID = oldLockNameMap[ed.FullyQualifiedName()].UUID
-				}
-				// If the UUID is still empty, generate one
-				if UUID == "" {
-					UUID = uuid.New()
-					log.Printf("No UUID found for %s. Generated UUID %s, please update your extension definition "+
-						"accordingly.", ed.FullyQualifiedName(), UUID)
-				}
-				var script string
-				children := make([]string, 0)
-				// If the children is present, there is no script
-				if len(ed.Children) == 0 {
-					scriptFile := ed.ScriptFile
-					if scriptFile == "" {
-						scriptFile = fmt.Sprintf("%s.sh", strings.ToLower(strcase.SnakeCase(ed.Name)))
-					}
-					script, err = o.LoadAsStringFromURL(fmt.Sprintf("%s/%s", definitionsUrl, scriptFile))
-					if err != nil {
-						return err
-					}
-				} else {
-					for _, c := range ed.Children {
-						if c.UUID != "" {
-							children = append(children, c.UUID)
-						} else {
-							children = append(children, c.FullyQualifiedName())
-						}
-					}
-				}
-				eLock := jenkinsv1.ExtensionSpec{
-					Name:        ed.Name,
-					Namespace:   ed.Namespace,
-					Version:     strings.TrimPrefix(tag, "v"),
-					UUID:        UUID,
-					Description: ed.Description,
-					Parameters:  ed.Parameters,
-					When:        ed.When,
-					Given:       ed.Given,
-					Script:      script,
-					Children:    children,
-				}
-				lookupByName[eLock.FullyQualifiedName()] = eLock
-				lookupByUUID[eLock.UUID] = eLock
-				newLock.Extensions = append(newLock.Extensions, eLock)
-			}
-		} else {
-			return errors.New(fmt.Sprintf("Only github.com is supported, use a format like %s", util.ColorInfo("github.com/jenkins-x/ext-jacoco")))
+	for _, c := range defRef.Remotes {
+		e, err := o.walkRemote(c.Remote, c.Tag, oldLockNameMap, oldLookupByUUID)
+		if err != nil {
+			return err
+		}
+		newLock.Extensions = append(newLock.Extensions, e...)
+		for _, r := range e {
+			lookupByName[r.FullyQualifiedName()] = r
+			lookupByUUID[r.UUID] = r
+		}
+	}
+	if o.Verbose {
+		log.Infof("Extension to UUID mapping:\n")
+		for k, v := range lookupByName {
+			log.Infof("  %s: %s\n", util.ColorInfo(k), util.ColorInfo(v.UUID))
 		}
 	}
 	uuidResolveErrors := make([]string, 0)
-	// Second pass over extensions to allow us to do things like resolve fqns into UUIDs
-	for i, lock := range newLock.Extensions {
-		newLock.Extensions[i].Children = o.recursivelyFixChildren(lock, lookupByName, lookupByUUID, &uuidResolveErrors)
+	seenExtensions := make(map[string]string, 0)
+	replacementLocks := newLock.Extensions[:0]
+	// Second pass over extensions to allow us to do things like resolve fqns into UUIDs, scan for dupes
+	for _, lock := range newLock.Extensions {
+		if v, seen := seenExtensions[lock.UUID]; !seen {
+			lock.Children, err = o.FixChildren(lock, lookupByName, lookupByUUID, &uuidResolveErrors)
+			if err != nil {
+				return err
+			}
+			seenExtensions[lock.UUID] = lock.Version
+			replacementLocks = append(replacementLocks, lock)
+		} else if seen && v != lock.Version {
+			return errors.New(fmt.Sprintf("Unable to add %s as two versions are available in the extension repository [ %s, %s ]", lock.FullyQualifiedName(), lock.Version, v))
+		}
+		// otherwise it's a duplicate and we can just ignore it
 	}
+	newLock.Extensions = replacementLocks
 	if len(uuidResolveErrors) > 0 {
 		bytes, err := yaml.Marshal(newLock)
 		if err != nil {
@@ -214,53 +174,186 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 		}
 		return errors.New(fmt.Sprintf("Cannot resolve children %s in repository. Partial .lock file written to %s.", uuidResolveErrors, errFile.Name()))
 	}
+	// Sort the lock file to give us better changelogs
+	sort.Slice(newLock.Extensions, func(i, j int) bool {
+		return newLock.Extensions[i].UUID < newLock.Extensions[j].UUID
+	})
 	bytes, err := yaml.Marshal(newLock)
 	if err != nil {
 		return err
 	}
-	log.Printf("Updating extensions repository from %s to %s. Changes are %s\n", util.ColorInfo(oldLock.Version), util.ColorInfo(newLock.Version), util.ColorInfo("Unknown"))
+	log.Infof("Updating extensions repository from %s to %s. ", util.ColorInfo(oldLock.Version), util.ColorInfo(newLock.Version))
 	err = ioutil.WriteFile(o.OutputFile, bytes, 0755)
 	if err != nil {
 		return err
 	}
+	diff, err := o.Git().Diff("")
+	if err != nil {
+		log.Warnf("Error finding diff %s", err.Error())
+	}
+
+	if o.Verbose && diff != "" {
+		log.Infof("Changes are \n\n%s\n\n", diff)
+	} else {
+		log.Infof("\n")
+	}
 	return nil
 }
 
-func (o *UpgradeExtensionsRepositoryOptions) recursivelyFixChildren(lock jenkinsv1.ExtensionSpec, lookupByName map[string]jenkinsv1.ExtensionSpec, lookupByUUID map[string]jenkinsv1.ExtensionSpec, resolveErrors *[]string) (children []string) {
+func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag string, oldLockNameMap map[string]jenkinsv1.ExtensionSpec, oldLookupByUUID map[string]jenkinsv1.ExtensionSpec) (extensions []jenkinsv1.ExtensionSpec, err error) {
+	result := make([]jenkinsv1.ExtensionSpec, 0)
+	if strings.HasPrefix(remote, "github.com") {
+		s := strings.Split(remote, "/")
+		if len(s) != 3 {
+			errors.New(fmt.Sprintf("Cannot parse extension path %s", util.ColorInfo(remote)))
+		}
+		org := s[1]
+		repo := s[2]
+		resolvedTag := tag
+		if resolvedTag == "" {
+			resolvedTag = "latest"
+		}
+		if resolvedTag == "latest" {
+			resolvedTag, err = util.GetLatestVersionStringFromGitHub(org, repo)
+			if err != nil {
+				return result, err
+			}
+			resolvedTag = fmt.Sprintf("v%s", resolvedTag)
+		}
+		definitionsUrl := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s", org, repo, resolvedTag)
+		definitionsFileUrl := fmt.Sprintf("%s/jenkins-x-extension-definitions.yaml", definitionsUrl)
+		extensionDefinitions := jenkinsv1.ExtensionDefinitionList{}
+		extensionDefinitions.LoadFromURL(definitionsFileUrl, remote, resolvedTag)
+		for _, ed := range extensionDefinitions.Extensions {
+			// It's best practice to assign a UUID to an extension, but if it doesn't have one we
+			// try to give it the one it had last
+			UUID := ed.UUID
+			if UUID == "" {
+				UUID = oldLockNameMap[ed.FullyQualifiedName()].UUID
+			}
+			// If the UUID is still empty, generate one
+			if UUID == "" {
+				UUID = uuid.New()
+				log.Infof("No UUID found for %s. Generated UUID %s, please update your extension definition "+
+					"accordingly.\n", ed.FullyQualifiedName(), UUID)
+			}
+			newVersion := strings.TrimPrefix(resolvedTag, "v")
+			oldSemanticVersion, err := semver.Parse(oldLookupByUUID[UUID].Version)
+			if err != nil {
+				log.Infof("Cannot determine existing version for %s. Upgrading to %s anyway.\n", ed.FullyQualifiedName(), newVersion)
+				oldSemanticVersion = semver.Version{}
+			}
+			newSemanticVersion, err := semver.Parse(newVersion)
+			if err != nil {
+				return result, fmt.Errorf("Unable to determine new version for %s. %v", ed.FullyQualifiedName(), err)
+			}
+			if oldSemanticVersion.LT(newSemanticVersion) || tag == "latest" {
+				var script string
+				children := make([]string, 0)
+				// If the children is present, there is no script
+				if len(ed.Children) == 0 {
+					scriptFile := ed.ScriptFile
+					if scriptFile == "" {
+						scriptFile = fmt.Sprintf("%s.sh", strings.ToLower(strcase.SnakeCase(ed.Name)))
+					}
+					script, err = o.LoadAsStringFromURL(fmt.Sprintf("%s/%s", definitionsUrl, scriptFile))
+					if err != nil {
+						return result, err
+					}
+				} else {
+					for _, c := range ed.Children {
+						if c.UUID != "" {
+							children = append(children, c.UUID)
+						} else {
+							children = append(children, c.FullyQualifiedName())
+						}
+						if c.Remote != "" {
+							r, err := o.walkRemote(c.Remote, c.Tag, oldLockNameMap, oldLookupByUUID)
+							if err != nil {
+								return result, err
+							}
+							result = append(result, r...)
+						}
+					}
+				}
+				extension := jenkinsv1.ExtensionSpec{
+					Name:        ed.Name,
+					Namespace:   ed.Namespace,
+					Version:     newVersion,
+					UUID:        UUID,
+					Description: ed.Description,
+					Parameters:  ed.Parameters,
+					When:        ed.When,
+					Given:       ed.Given,
+					Script:      strings.TrimSuffix(script, "\n"),
+					Children:    children,
+				}
+				if o.Verbose {
+					log.Infof("Found extension %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+				}
+				result = append(result, extension)
+			} else {
+				children, err := o.walkLock(oldLookupByUUID[UUID], oldLookupByUUID)
+				if err != nil {
+					return result, err
+				}
+				result = append(result, children...)
+			}
+		}
+		return result, nil
+	} else {
+		return result, errors.New(fmt.Sprintf("Only github.com is supported, use a format like %s", util.ColorInfo("github.com/jenkins-x/ext-jacoco")))
+	}
+}
+
+func (o *UpgradeExtensionsRepositoryOptions) walkLock(extension jenkinsv1.ExtensionSpec, lookupByUUID map[string]jenkinsv1.ExtensionSpec) (extensions []jenkinsv1.ExtensionSpec, err error) {
+	result := make([]jenkinsv1.ExtensionSpec, 0)
+	for _, childUUID := range extension.Children {
+		child, ok := lookupByUUID[childUUID]
+		if !ok {
+			return result, errors.New(fmt.Sprintf("Unable to find extension for UUID %s", util.ColorError(childUUID)))
+		}
+		children, err := o.walkLock(child, lookupByUUID)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, children...)
+	}
+	result = append(result, extension)
+	return result, nil
+}
+
+func (o *UpgradeExtensionsRepositoryOptions) FixChildren(extension jenkinsv1.ExtensionSpec, lookupByName map[string]jenkinsv1.ExtensionSpec, lookupByUUID map[string]jenkinsv1.ExtensionSpec, resolveErrors *[]string) (children []string, err error) {
 	children = make([]string, 0)
-	for _, u := range lock.Children {
-		if uuid.Parse(u) == nil {
-			if c, ok := lookupByName[u]; ok {
-				log.Printf("We recommend you explicitly specify the UUID for child %s on extension %s as this will stop the "+
+	for _, childUUID := range extension.Children {
+		if uuid.Parse(childUUID) == nil {
+			if c, ok := lookupByName[childUUID]; ok {
+				log.Infof("We recommend you explicitly specify the UUID for childUUID %s on extension %s as this will stop the "+
 					"extension breaking if names are changed.\n"+
 					"If you are the maintainer of the extension definition add \n"+
 					"\n"+
 					"      UUID: %s\n"+
 					"\n"+
-					"to the child definition. \n"+
+					"to the childUUID definition. \n"+
 					"If you aren't the maintainer of the extension definition we recommend you contact them and ask"+
 					"them to add the UUID.\n"+
 					"\n"+
 					"This does not stop you using the extension, as we have been able to discover and attach the "+
-					"UUID to the child based on the fully qualified name.\n", util.ColorWarning(u), util.ColorWarning(lock.FullyQualifiedName()), util.ColorWarning(c.UUID))
-				u = c.UUID
+					"UUID to the childUUID based on the fully qualified name.\n", util.ColorWarning(childUUID), util.ColorWarning(extension.FullyQualifiedName()), util.ColorWarning(c.UUID))
+				childUUID = c.UUID
 			} else {
 				// Record the error in the loop, but don't error until end. This allows us to report all the errors
 				// up front
-				*resolveErrors = append(*resolveErrors, u)
+				*resolveErrors = append(*resolveErrors, childUUID)
 			}
 		}
-		if c, ok := lookupByUUID[u]; ok {
-			if len(c.Children) == 0 {
-				// Leaf, so add
-				children = append(children, u)
-			} else {
-				// Now we need to recursively resolve any children
-				children = append(children, o.recursivelyFixChildren(c, lookupByName, lookupByUUID, resolveErrors)...)
-			}
+		if _, ok := lookupByUUID[childUUID]; ok {
+			children = append(children, childUUID)
+		} else {
+			return children, errors.New(fmt.Sprintf("Unable to find extension for UUID %s", util.ColorError(childUUID)))
 		}
 	}
-	return children
+	return children, nil
 }
 
 func (o *UpgradeExtensionsRepositoryOptions) LoadAsStringFromURL(url string) (result string, err error) {
