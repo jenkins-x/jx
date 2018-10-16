@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	"fmt"
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -12,6 +14,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -84,6 +88,11 @@ func (o *UpgradeAddonsOptions) Run() error {
 		}
 	}
 
+	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, ns)
+	if err != nil {
+		return err
+	}
+
 	addonConfig, err := addon.LoadAddonsConfig()
 	if err != nil {
 		return err
@@ -100,8 +109,19 @@ func (o *UpgradeAddonsOptions) Run() error {
 	}
 
 	charts := kube.AddonCharts
+	keys := []string{}
+	if len(o.Args) > 0 {
+		for _, k := range o.Args {
+			chart := charts[k]
+			if chart == "" {
+				return errors.Wrapf(err, "failed to match addon %s", k)
+			}
+			keys = append(keys, k)
+		}
+	} else {
+		keys = util.SortedMapKeys(charts)
+	}
 
-	keys := util.SortedMapKeys(charts)
 	for _, k := range keys {
 		chart := charts[k]
 		status := statusMap[k]
@@ -123,12 +143,62 @@ func (o *UpgradeAddonsOptions) Run() error {
 				values = append(values, o.Set)
 			}
 
+			config := &v1.ConfigMap{}
+			plugins := &v1.ConfigMap{}
+			if k == kube.DefaultProwReleaseName {
+				// lets backup any prow config as we should never replace this, eventually we'll move config to a git repo so this is temporary
+				config, plugins = o.backupConfigs()
+			}
 			err = o.Helm().UpgradeChart(chart, k, ns, nil, false, nil, false, false, values, valueFiles)
 			if err != nil {
-				return errors.Wrapf(err, "Failed to upgrade %s chart %s\n", name, chart)
+				log.Warnf("Failed to upgrade %s chart %s: %v\n", name, chart, err)
 			}
+
+			if k == kube.DefaultProwReleaseName {
+				err = o.restoreConfigs(config, plugins)
+				if err != nil {
+					return err
+				}
+			}
+
 			log.Infof("Upgraded %s chart %s\n", util.ColorInfo(name), util.ColorInfo(chart))
 		}
 	}
 	return nil
+}
+
+func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.ConfigMap) error {
+	var err error
+	var err1 error
+	if config != nil {
+		_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
+		if err != nil {
+			_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Create(config)
+			if err != nil {
+				b, _ := yaml.Marshal(config)
+				err1 = fmt.Errorf("error restoring config %s\n", string(b))
+			}
+		}
+	}
+	if plugins != nil {
+		_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+		if err != nil {
+			_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Create(plugins)
+			if err != nil {
+				b, _ := yaml.Marshal(plugins)
+				err = fmt.Errorf("%v/nerror restoring plugins %s\n", err1, string(b))
+			}
+		}
+	}
+	return err
+}
+
+func (o *UpgradeAddonsOptions) backupConfigs() (*v1.ConfigMap, *v1.ConfigMap) {
+	config, _ := o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
+	plugins, _ := o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+	config = config.DeepCopy()
+	config.ResourceVersion = ""
+	plugins = plugins.DeepCopy()
+	plugins.ResourceVersion = ""
+	return config, plugins
 }

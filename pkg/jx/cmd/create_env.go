@@ -228,7 +228,7 @@ func (o *CreateEnvOptions) Run() error {
 				return err
 			}
 			if user.Username == "" {
-				return fmt.Errorf("Could find a username for git server %s", u)
+				return fmt.Errorf("Could not find a username for git server %s", u)
 			}
 			_, err = o.updatePipelineGitCredentialsSecret(server, user)
 			if err != nil {
