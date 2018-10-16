@@ -206,6 +206,20 @@
   version = "v1.15.50"
 
 [[projects]]
+  branch = "generate-client"
+  digest = "1:a1d141bc59b0229ff0b969bf0a127c9700c66f6409e219360c44fae61d70ca1a"
+  name = "github.com/banzaicloud/bank-vaults"
+  packages = [
+    "operator/pkg/apis/vault/v1alpha1",
+    "operator/pkg/client/clientset/versioned",
+    "operator/pkg/client/clientset/versioned/scheme",
+    "operator/pkg/client/clientset/versioned/typed/vault/v1alpha1",
+  ]
+  pruneopts = "NUT"
+  revision = "b267885f420dfc34c40edc2550e8dc434a558967"
+  source = "github.com/ccojocar/bank-vaults"
+
+[[projects]]
   digest = "1:f4298c81d8a94ab68d9e387eaf6e653387df5da17702f06c6d8718a7a8e549d0"
   name = "github.com/beevik/etree"
   packages = ["."]
@@ -955,6 +969,14 @@
   pruneopts = "NUT"
   revision = "b6ea1ea48f981d0f615a154a45eabb9dd466556d"
   version = "v1.4.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:bde6c3a610bd01ea7e2c8d9c7fd1116531fb6619f46f73f4f2ea16adb70da6be"
+  name = "github.com/operator-framework/operator-sdk"
+  packages = ["pkg/util/k8sutil"]
+  pruneopts = "NUT"
+  revision = "913cbf711929f8227cf6077f2cd76f8d111b00ea"
 
 [[projects]]
   digest = "1:cce3a18fb0b96b5015cd8ca03a57d20a662679de03c4dc4b6ff5f17ea2050fa6"
