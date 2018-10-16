@@ -93,13 +93,13 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName stri
 }
 
 // installChart installs the given chart
-func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
-	return o.installChartOptions(InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues})
+func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string, valueFiles []string) error {
+	return o.installChartOptions(InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles})
 }
 
 // installChartAt installs the given chart
-func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
-	return o.installChartOptions(InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues})
+func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string, valueFiles []string) error {
+	return o.installChartOptions(InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles})
 }
 
 type InstallChartOptions struct {
