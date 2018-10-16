@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
@@ -289,7 +290,6 @@ func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
 		return nil, ns, err
 	}
 	return client, ns, err
-
 }
 
 func (f *factory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
@@ -436,4 +436,14 @@ func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 		return nil, errors.Wrap(err, "compliance dynamic client failed to be created")
 	}
 	return client.NewSonobuoyClient(config, skc)
+}
+
+// CreateVaultOpeatorClient creates a new vault operator client
+func (f *factory) CreateVaultOperatorClient() (vaultoperatorclient.Interface, error) {
+
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, err
+	}
+	return vaultoperatorclient.NewForConfig(config)
 }
