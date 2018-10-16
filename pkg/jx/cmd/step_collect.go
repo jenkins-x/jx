@@ -2,16 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/pkg/errors"
 
@@ -138,7 +139,8 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 	}
 	err = gitClient.FetchBranch("", "origin", "gh-pages:gh-pages")
 	if err != nil {
-		return err
+		// swallow the error
+		log.Infof("No existing gh-pages branch")
 	}
 	remotes, err := gitClient.RemoteBranchNames("", "")
 	if err != nil {
