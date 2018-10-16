@@ -2,6 +2,14 @@
 
 package v1
 
+// ComplianceCheckListerExpansion allows custom methods to be added to
+// ComplianceCheckLister.
+type ComplianceCheckListerExpansion interface{}
+
+// ComplianceCheckNamespaceListerExpansion allows custom methods to be added to
+// ComplianceCheckNamespaceLister.
+type ComplianceCheckNamespaceListerExpansion interface{}
+
 // EnvironmentListerExpansion allows custom methods to be added to
 // EnvironmentLister.
 type EnvironmentListerExpansion interface{}
