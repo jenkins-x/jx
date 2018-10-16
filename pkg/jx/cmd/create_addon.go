@@ -21,6 +21,7 @@ type CreateAddonOptions struct {
 	Version     string
 	ReleaseName string
 	SetValues   string
+	ValueFiles  []string
 	HelmUpdate  bool
 }
 
@@ -71,6 +72,7 @@ func (options *CreateAddonOptions) addFlags(cmd *cobra.Command, defaultNamespace
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", defaultNamespace, "The Namespace to install into")
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultOptionRelease, "The chart release name")
 	cmd.Flags().StringVarP(&options.SetValues, "set", "s", "", "The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
+	cmd.Flags().StringArrayVarP(&options.ValueFiles, "values", "f", []string{}, "List of locations for values files, can be local files or URLs")
 	cmd.Flags().BoolVarP(&options.HelmUpdate, "helm-update", "", true, "Should we run helm update first to ensure we use the latest version")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", defaultVersion, "The chart version to install)")
 }
@@ -102,7 +104,8 @@ func (o *CreateAddonOptions) CreateAddon(addon string) error {
 		return util.InvalidArg(addon, util.SortedMapKeys(charts))
 	}
 	setValues := strings.Split(o.SetValues, ",")
-	err = o.installChart(addon, chart, o.Version, o.Namespace, o.HelmUpdate, setValues)
+
+	err = o.installChart(addon, chart, o.Version, o.Namespace, o.HelmUpdate, setValues, o.ValueFiles)
 	if err != nil {
 		return fmt.Errorf("Failed to install chart %s: %s", chart, err)
 	}

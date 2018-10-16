@@ -118,7 +118,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values)
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil)
 	if err != nil {
 		return fmt.Errorf("anchore deployment failed: %v", err)
 	}

@@ -1579,7 +1579,7 @@ func (o *CommonOptions) installProw() error {
 
 	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
+		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil)
 		return nil
 	})
 
@@ -1590,7 +1590,7 @@ func (o *CommonOptions) installProw() error {
 	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values)
+		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values, nil)
 		return nil
 	})
 
@@ -1601,7 +1601,7 @@ func (o *CommonOptions) installProw() error {
 	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true, values)
+		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true, values, nil)
 		return nil
 	})
 
