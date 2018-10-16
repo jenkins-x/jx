@@ -2,6 +2,7 @@ package amazon
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -42,8 +43,17 @@ func GetContainerRegistryHost() (string, error) {
 	return accountId + ".dkr.ecr." + region + ".amazonaws.com", nil
 }
 
+func GetRegionFromContainerRegistryHost(dockerRegistry string) string {
+	submatch := regexp.MustCompile(`\.ecr\.(.*)\.amazonaws\.com$`).FindStringSubmatch(dockerRegistry)
+	if len(submatch) > 1 {
+		return submatch[1]
+	} else {
+		return ""
+	}
+}
+
 // LazyCreateRegistry lazily creates the ECR registry if it does not already exist
-func LazyCreateRegistry(orgName string, appName string) error {
+func LazyCreateRegistry(dockerRegistry string, orgName string, appName string) error {
 	// strip any tag/version from the app name
 	idx := strings.Index(appName, ":")
 	if idx > 0 {
@@ -55,7 +65,7 @@ func LazyCreateRegistry(orgName string, appName string) error {
 	}
 	repoName = strings.ToLower(repoName)
 	log.Infof("Let's ensure that we have an ECR repository for the Docker image %s\n", util.ColorInfo(repoName))
-	sess, err := NewAwsSessionWithoutOptions()
+	sess, err := NewAwsSession("", GetRegionFromContainerRegistryHost(dockerRegistry))
 	if err != nil {
 		return err
 	}
@@ -87,7 +97,12 @@ func LazyCreateRegistry(orgName string, appName string) error {
 	if repo != nil {
 		u := repo.RepositoryUri
 		if u != nil {
-			log.Infof("Created ECR repository: %s\n", util.ColorInfo(*u))
+			if !strings.HasPrefix(*u, dockerRegistry) {
+				log.Warnf("Created ECR repository (%s) doesn't match registry configured for team (%s)",
+					util.ColorInfo(*u), util.ColorInfo(dockerRegistry))
+			} else {
+				log.Infof("Created ECR repository: %s\n", util.ColorInfo(*u))
+			}
 		}
 	}
 	return nil
