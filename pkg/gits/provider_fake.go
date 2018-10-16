@@ -305,6 +305,25 @@ func (f *FakeProvider) ListCommitStatus(org string, repoName string, sha string)
 	return answer, nil
 }
 
+func (f *FakeProvider) UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
+	repoStatus, err := f.ListCommitStatus(org, repo, sha)
+	if err != nil {
+		return &GitRepoStatus{}, err
+	}
+	updated := false
+	for i, s := range repoStatus {
+		if s.ID == status.ID {
+			repoStatus[i] = status
+			updated = true
+		}
+	}
+	if !updated {
+		repoStatus = append(repoStatus, status)
+	}
+	return status, nil
+
+}
+
 func (f *FakeProvider) MergePullRequest(pr *GitPullRequest, message string) error {
 	owner := pr.Owner
 	repos, ok := f.Repositories[owner]

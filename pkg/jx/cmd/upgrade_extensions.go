@@ -33,7 +33,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-const upstreamExtensionsRepositoryUrl = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.lock.yaml"
+//const upstreamExtensionsRepositoryUrl = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.lock.yaml"
+const upstreamExtensionsRepositoryUrl = "github.com/jenkins-x/jenkins-x-extensions"
 const extensionsConfigDefaultConfigMap = "jenkins-x-extensions"
 
 var (
@@ -51,8 +52,9 @@ var (
 
 type UpgradeExtensionsOptions struct {
 	CreateOptions
-	Filter               string
-	ExtensionsRepository string
+	Filter                   string
+	ExtensionsRepository     string
+	ExtensionsRepositoryFile string
 }
 
 func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -81,7 +83,8 @@ func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.Fil
 	}
 	cmd.AddCommand(NewCmdUpgradeExtensionsRepository(f, in, out, errOut))
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
-	cmd.Flags().StringVarP(&options.ExtensionsRepository, "extensions-repository", "", upstreamExtensionsRepositoryUrl, "Specify the extensions repository yaml file to read from")
+	cmd.Flags().StringVarP(&options.ExtensionsRepository, "extensions-repository", "", "", "Specify the extensions repository git repo to read from. Accepts github.com/<org>/<repo>")
+	cmd.Flags().StringVarP(&options.ExtensionsRepositoryFile, "extensions-repository-file", "", "", "Specify the extensions repository yaml file to read from")
 	return cmd
 }
 
@@ -99,18 +102,8 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	extensionsRepository := jenkinsv1.ExtensionRepositoryLockList{}
 	var bs []byte
 
-	if strings.HasPrefix(o.ExtensionsRepository, "http://") || strings.HasPrefix(o.ExtensionsRepository, "https://") {
-		httpClient := &http.Client{Timeout: 10 * time.Second}
-		resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", o.ExtensionsRepository, time.Now().UnixNano()/int64(time.Millisecond)))
-
-		defer resp.Body.Close()
-
-		bs, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-	} else {
-		path := o.ExtensionsRepository
+	if o.ExtensionsRepositoryFile != "" {
+		path := o.ExtensionsRepositoryFile
 		// if it starts with a ~ it's the users homedir
 		if strings.HasPrefix(path, "~") {
 			usr, err := user.Current()
@@ -126,10 +119,37 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			if err != nil {
 				return err
 			}
+			log.Infof("Updating extensions from %s\n", path)
 			bs, err = ioutil.ReadFile(filepath.Join(cwd, path))
 			if err != nil {
 				return errors.New(fmt.Sprintf("Unable to open Extensions Repository at %s", path))
 			}
+		}
+	} else {
+		extensionsRepository := o.ExtensionsRepository
+		if extensionsRepository == "" {
+			extensionsRepository = "github.com/jenkins-x/jenkins-x-extensions"
+		}
+		if strings.HasPrefix(extensionsRepository, "github.com") {
+			_, repoInfo, err := o.createGitProviderForURLWithoutKind(extensionsRepository)
+			if err != nil {
+				return err
+			}
+			resolvedTag, err := util.GetLatestTagFromGitHub(repoInfo.Organisation, repoInfo.Name)
+			if err != nil {
+				return err
+			}
+			extensionsRepository = fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/jenkins-x-extensions-repository.lock.yaml", repoInfo.Organisation, repoInfo.Name, resolvedTag)
+		}
+		log.Infof("Updating extensions from %s\n", extensionsRepository)
+		httpClient := &http.Client{Timeout: 10 * time.Second}
+		resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", extensionsRepository, time.Now().UnixNano()/int64(time.Millisecond)))
+
+		defer resp.Body.Close()
+
+		bs, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -137,7 +157,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Current Extension Repository version %s\n", util.ColorInfo(extensionsRepository.Version))
+	log.Infof("Upgrading to Extension Repository version %s\n", util.ColorInfo(extensionsRepository.Version))
 	client, ns, err := o.Factory.CreateJXClient()
 	if err != nil {
 		return err
@@ -161,38 +181,42 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	// This will cause o.devNamespace to be populated
+	_, _, err = o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
 	needsUpstalling := make([]jenkinsv1.ExtensionExecution, 0)
 	for _, e := range extensionsRepository.Extensions {
 		// TODO this is not very efficient probably
 		for _, c := range extensionsConfig.Extensions {
 			if c.Name == e.Name && c.Namespace == e.Namespace {
-				needsUpstalling, err = o.UpsertExtension(e, extensionsClient, installedExtensions, c, availableExtensionsUUIDLookup, 0, 0)
+				n, err := o.UpsertExtension(e, extensionsClient, installedExtensions, c, availableExtensionsUUIDLookup, 0, 0)
 				if err != nil {
 					return err
 				}
+				needsUpstalling = append(needsUpstalling, n...)
 				break
 			}
 		}
 	}
 	for _, n := range needsUpstalling {
-
 		envVars := ""
 		if len(n.EnvironmentVariables) > 0 {
 			envVarsFormatted := new(bytes.Buffer)
 			for _, envVar := range n.EnvironmentVariables {
 				fmt.Fprintf(envVarsFormatted, "%s=%s, ", envVar.Name, envVar.Value)
 			}
-			envVars = fmt.Sprintf("with environment variables [ %s ]", util.ColorInfo(envVarsFormatted.String()))
+			envVars = fmt.Sprintf("with environment variables [ %s ]", util.ColorInfo(strings.TrimSuffix(envVarsFormatted.String(), ", ")))
 		}
 
-		log.Infof("Installing %s %s\n", util.ColorInfo(n.FullyQualifiedName()), envVars)
+		log.Infof("Preparing %s %s\n", util.ColorInfo(n.FullyQualifiedName()), envVars)
 		n.Execute(o.Verbose)
 	}
 	return nil
 }
 
 func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.ExtensionSpec, extensions typev1.ExtensionInterface, installedExtensions map[string]jenkinsv1.Extension, extensionConfig jenkinsv1.ExtensionConfig, lookup map[string]jenkinsv1.ExtensionSpec, depth int, initialIndent int) (needsUpstalling []jenkinsv1.ExtensionExecution, err error) {
-	upserted := false
 	result := make([]jenkinsv1.ExtensionExecution, 0)
 	indent := ((depth - 1) * 2) + initialIndent
 
@@ -229,13 +253,12 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 			return result, err
 		}
 		if o.Contains(extension.When, jenkinsv1.ExtensionWhenInstall) {
-			e, err := o.UpstallExtension(extension, extensionConfig)
+			e, _, err := extension.ToExecutable(extensionConfig.Parameters, o.devNamespace)
 			if err != nil {
 				return result, err
 			}
 			result = append(result, e)
 		}
-		upserted = true
 	}
 	// TODO Handle uninstalling existing extension if name has changed but UUID hasn't
 	if existing.Spec.Version != "" {
@@ -250,7 +273,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 				return result, err
 			}
 			if o.Contains(extension.When, jenkinsv1.ExtensionWhenUpgrade) {
-				e, err := o.UpstallExtension(extension, extensionConfig)
+				e, _, err := extension.ToExecutable(extensionConfig.Parameters, o.devNamespace)
 				if err != nil {
 					return result, err
 				}
@@ -262,32 +285,21 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 			} else {
 				log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 			}
-			upserted = true
 		}
 	}
 
-	if upserted {
-		for _, childRef := range extension.Children {
-			if child, ok := lookup[childRef]; ok {
-				e, err := o.UpsertExtension(child, extensions, installedExtensions, extensionConfig, lookup, depth+1, initialIndent)
-				if err != nil {
-					return result, err
-				}
-				result = append(result, e...)
-			} else {
-				errors.New(fmt.Sprintf("Unable to locate extension %s", childRef))
+	for _, childRef := range extension.Children {
+		if child, ok := lookup[childRef]; ok {
+			e, err := o.UpsertExtension(child, extensions, installedExtensions, extensionConfig, lookup, depth+1, initialIndent)
+			if err != nil {
+				return result, err
 			}
+			result = append(result, e...)
+		} else {
+			errors.New(fmt.Sprintf("Unable to locate extension %s", childRef))
 		}
 	}
 	return result, nil
-}
-
-func (o *UpgradeExtensionsOptions) UpstallExtension(e jenkinsv1.ExtensionSpec, extensionConfig jenkinsv1.ExtensionConfig) (extension jenkinsv1.ExtensionExecution, err error) {
-	ext, _, err := e.ToExecutable(extensionConfig.Parameters)
-	if err != nil {
-		return ext, err
-	}
-	return ext, nil
 }
 
 func (o *UpgradeExtensionsOptions) Contains(whens []jenkinsv1.ExtensionWhen, when jenkinsv1.ExtensionWhen) bool {

@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-const EksctlVersion = "0.1.3"
-
+const EksctlVersion = "0.1.5"
+const IBMCloudVersion = "0.10.1"
 const HeptioAuthenticatorAwsVersion = "1.10.3"
 
 func BinaryWithExtension(binary string) string {

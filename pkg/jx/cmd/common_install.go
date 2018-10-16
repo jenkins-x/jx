@@ -26,6 +26,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -89,6 +90,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installGcloud()
 		case "helm":
 			err = o.installHelm()
+		case "ibmcloud":
+			err = o.installIBMCloud(false)
 		case "tiller":
 			err = o.installTiller()
 		case "helm3":
@@ -221,6 +224,7 @@ type InstallOrUpdateBinaryOptions struct {
 	SkipPathScan        bool
 	VersionExtractor    binaries.VersionExtractor
 	Archived            bool
+	ArchiveDirectory    string
 }
 
 func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
@@ -265,6 +269,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 			return err
 		}
 	}
+
 	if options.Version == "" {
 		options.Version, err = util.GetLatestVersionStringFromGitHub(options.GitHubOrganization, options.Binary)
 		if err != nil {
@@ -286,6 +291,10 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	if err != nil {
 		return err
 	}
+	fileNameInArchive := fileName
+	if options.ArchiveDirectory != "" {
+		fileNameInArchive = filepath.Join(options.ArchiveDirectory, fileName)
+	}
 	if options.Archived {
 		if extension == "zip" {
 			zipDir := filepath.Join(binDir, options.Binary+"-tmp-"+uuid.NewUUID().String())
@@ -297,7 +306,8 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 			if err != nil {
 				return err
 			}
-			f := filepath.Join(zipDir, fileName)
+
+			f := filepath.Join(zipDir, fileNameInArchive)
 			exists, err := util.FileExists(f)
 			if err != nil {
 				return err
@@ -311,7 +321,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 			}
 			err = os.RemoveAll(zipDir)
 		} else {
-			err = util.UnTargz(tarFile, binDir, []string{options.Binary, fileName})
+			err = util.UnTargz(tarFile, binDir, []string{options.Binary, fileNameInArchive})
 		}
 		if err != nil {
 			return err
@@ -1117,19 +1127,25 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Remove(binDir + "/jx")
-	if err != nil && o.Verbose {
-		log.Infof("Skipping removal of old jx binary: %s\n", err)
-	}
-	err = util.UnTargz(tarFile, binDir, []string{binary, fileName})
+	// Untar the new binary into a temp directory
+	err = util.UnTargz(tarFile, os.TempDir(), []string{binary, fileName})
 	if err != nil {
 		return err
 	}
-	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(binDir+"/jx"))
 	err = os.Remove(tarFile)
 	if err != nil {
 		return err
 	}
+	err = os.Remove(binDir + "/jx")
+	if err != nil && o.Verbose {
+		log.Infof("Skipping removal of old jx binary: %s\n", err)
+	}
+	// Copy over the new binary
+	err = os.Rename(os.TempDir()+"/jx", binDir+"/jx")
+	if err != nil {
+		return err
+	}
+	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(binDir+"/jx"))
 	return os.Chmod(fullPath, 0755)
 }
 
@@ -1351,6 +1367,8 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 func (o *CommonOptions) installRequirements(cloudProvider string, extraDependencies ...string) error {
 	var deps []string
 	switch cloudProvider {
+	case IKS:
+		deps = o.addRequiredBinary("ibmcloud", deps)
 	case AWS:
 		deps = o.addRequiredBinary("kops", deps)
 	case AKS:
@@ -1550,8 +1568,18 @@ func (o *CommonOptions) installProw() error {
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 
+	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
+	_, err = o.KubeClientCached.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
+	if err != nil {
+		err = prow.AddApplication(o.KubeClientCached, []string{"jenkins-x/dummy"}, devNamespace, "base")
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(o.ReleaseName, o.Chart, "", devNamespace, true, values)
+		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values)
 		return nil
 	})
 
@@ -1559,7 +1587,7 @@ func (o *CommonOptions) installProw() error {
 		return fmt.Errorf("failed to install prow: %v", err)
 	}
 
-	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
 		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values)
@@ -1568,6 +1596,17 @@ func (o *CommonOptions) installProw() error {
 
 	if err != nil {
 		return fmt.Errorf("failed to install Knative build: %v", err)
+	}
+
+	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
+
+	err = o.retry(2, time.Second, func() (err error) {
+		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true, values)
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to install BuildTemplates: %v", err)
 	}
 
 	return nil
@@ -1608,4 +1647,33 @@ func (o *CommonOptions) isProw() (bool, error) {
 	}
 
 	return env.Spec.TeamSettings.PromotionEngine == jenkinsv1.PromotionEngineProw, nil
+}
+
+func (o *CommonOptions) installIBMCloud(skipPathScan bool) error {
+	return o.installIBMCloudWithVersion(binaries.IBMCloudVersion, skipPathScan)
+}
+
+func (o *CommonOptions) installIBMCloudWithVersion(version string, skipPathScan bool) error {
+	if runtime.GOOS == "darwin" {
+		return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+			Binary:              "ibmcloud",
+			GitHubOrganization:  "",
+			DownloadUrlTemplate: "https://public.dhe.ibm.com/cloud/bluemix/cli/bluemix-cli/{{.version}}/binaries/IBM_Cloud_CLI_{{.version}}_macos.tgz",
+			Version:             version,
+			SkipPathScan:        skipPathScan,
+			VersionExtractor:    nil,
+			Archived:            true,
+			ArchiveDirectory:    "IBM_Cloud_CLI",
+		})
+	}
+	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+		Binary:              "ibmcloud",
+		GitHubOrganization:  "",
+		DownloadUrlTemplate: "https://public.dhe.ibm.com/cloud/bluemix/cli/bluemix-cli/{{.version}}/binaries/IBM_Cloud_CLI_{{.version}}_{{.os}}_{{.arch}}.{{.extension}}",
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
+		Archived:            true,
+		ArchiveDirectory:    "IBM_Cloud_CLI",
+	})
 }

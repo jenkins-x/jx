@@ -64,6 +64,27 @@
   version = "v0.3.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:eafe0a70d77d19ac33e49178b4cc73925075857e40a314126e8af4c121c4c44e"
+  name = "github.com/IBM-Cloud/bluemix-go"
+  packages = [
+    ".",
+    "api/account/accountv2",
+    "api/container/containerv1",
+    "authentication",
+    "bmxerror",
+    "client",
+    "endpoints",
+    "helpers",
+    "http",
+    "rest",
+    "session",
+    "trace",
+  ]
+  pruneopts = "NUT"
+  revision = "d718d474c7c24bc45edbf62ff8a91645c9923af8"
+
+[[projects]]
   digest = "1:638c457cbc4894895add73f34bf5b7d3ba9a614e999826b3fad0aa9715d988b9"
   name = "github.com/Jeffail/gabs"
   packages = ["."]
@@ -137,7 +158,7 @@
   version = "v1.5.0"
 
 [[projects]]
-  digest = "1:4275b06febbe183c492e3e93be073f1de42fe8a060e2b622b84723d0cd3d6e77"
+  digest = "1:5212a05c0968de4fefb43c26ce5a0f8c9a1625fdd252b64b0a793e372c08df04"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -157,6 +178,7 @@
     "aws/request",
     "aws/session",
     "aws/signer/v4",
+    "internal/s3err",
     "internal/sdkio",
     "internal/sdkrand",
     "internal/sdkuri",
@@ -180,8 +202,22 @@
     "service/sts",
   ]
   pruneopts = "NUT"
-  revision = "d8ab6d22cfd270ded73e7d59feba528ffd963edd"
-  version = "v1.15.40"
+  revision = "dd947f47decb37a7c3bee72501bfc790701ab5ad"
+  version = "v1.15.50"
+
+[[projects]]
+  branch = "generate-client"
+  digest = "1:a1d141bc59b0229ff0b969bf0a127c9700c66f6409e219360c44fae61d70ca1a"
+  name = "github.com/banzaicloud/bank-vaults"
+  packages = [
+    "operator/pkg/apis/vault/v1alpha1",
+    "operator/pkg/client/clientset/versioned",
+    "operator/pkg/client/clientset/versioned/scheme",
+    "operator/pkg/client/clientset/versioned/typed/vault/v1alpha1",
+  ]
+  pruneopts = "NUT"
+  revision = "b267885f420dfc34c40edc2550e8dc434a558967"
+  source = "github.com/ccojocar/bank-vaults"
 
 [[projects]]
   digest = "1:f4298c81d8a94ab68d9e387eaf6e653387df5da17702f06c6d8718a7a8e549d0"
@@ -935,6 +971,14 @@
   version = "v1.4.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:bde6c3a610bd01ea7e2c8d9c7fd1116531fb6619f46f73f4f2ea16adb70da6be"
+  name = "github.com/operator-framework/operator-sdk"
+  packages = ["pkg/util/k8sutil"]
+  pruneopts = "NUT"
+  revision = "913cbf711929f8227cf6077f2cd76f8d111b00ea"
+
+[[projects]]
   digest = "1:cce3a18fb0b96b5015cd8ca03a57d20a662679de03c4dc4b6ff5f17ea2050fa6"
   name = "github.com/pborman/uuid"
   packages = ["."]
@@ -1333,7 +1377,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:416fe347569c8eaa3b91c877f8d1107ea4a23bbfff11c17b656cae327ced21a3"
+  digest = "1:7d3756a4c83d4e0d4b32b1cc140463bbc08550d674906d18ebe4d1bd7ecbe8c3"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -1344,6 +1388,7 @@
     "idna",
     "internal/timeseries",
     "trace",
+    "websocket",
   ]
   pruneopts = "NUT"
   revision = "a680a1efc54dd51c040b3b5ce4939ea3cf2ea0d1"
@@ -1954,6 +1999,17 @@
     "github.com/Azure/draft/pkg/draft/draftpath",
     "github.com/Azure/draft/pkg/draft/pack/repo",
     "github.com/Azure/draft/pkg/linguist",
+    "github.com/IBM-Cloud/bluemix-go",
+    "github.com/IBM-Cloud/bluemix-go/api/account/accountv2",
+    "github.com/IBM-Cloud/bluemix-go/api/container/containerv1",
+    "github.com/IBM-Cloud/bluemix-go/authentication",
+    "github.com/IBM-Cloud/bluemix-go/bmxerror",
+    "github.com/IBM-Cloud/bluemix-go/client",
+    "github.com/IBM-Cloud/bluemix-go/helpers",
+    "github.com/IBM-Cloud/bluemix-go/http",
+    "github.com/IBM-Cloud/bluemix-go/rest",
+    "github.com/IBM-Cloud/bluemix-go/session",
+    "github.com/IBM-Cloud/bluemix-go/trace",
     "github.com/Jeffail/gabs",
     "github.com/MakeNowJust/heredoc",
     "github.com/Netflix/go-expect",
@@ -2010,6 +2066,7 @@
     "github.com/pkg/errors",
     "github.com/russross/blackfriday",
     "github.com/shirou/gopsutil/process",
+    "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
     "github.com/spf13/cobra/doc",
     "github.com/spf13/pflag",

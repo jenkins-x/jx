@@ -2,9 +2,9 @@
 package matchers
 
 import (
+	"reflect"
 	"github.com/petergtz/pegomock"
 	clientset0 "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	"reflect"
 )
 
 func AnyClientset0Interface() clientset0.Interface {
