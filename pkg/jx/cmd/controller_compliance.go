@@ -215,8 +215,9 @@ func (o *ControllerComplianceOptions) onPod(pod *corev1.Pod, jxClient jenkinsv1c
 				if org != "" && repo != "" && buildNumber != "" && (pullBaseSha != "" || pullPullSha != "") {
 
 					sha := pullBaseSha
-					if pullRequest != "" {
+					if pullRequest != "PR-" {
 						sha = pullPullSha
+						branch = pullRequest
 					}
 					if o.Verbose {
 						log.Infof("pod watcher: build pod: %s, org: %s, repo: %s, buildNumber: %s, pullBaseSha: %s, pullPullSha: %s, pullRequest: %s, sourceUrl: %s\n", pod.Name, org, repo, buildNumber, pullBaseSha, pullPullSha, pullRequest, sourceUrl)

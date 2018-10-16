@@ -7,7 +7,7 @@ curl -L https://github.com/jenkins-x/jx/releases/download/v{{.Version}}/jx-linux
 sudo mv jx /usr/local/bin
 ```
 
-### macOs
+### macOS
 
 ```shell
 brew tap jenkins-x/jx
