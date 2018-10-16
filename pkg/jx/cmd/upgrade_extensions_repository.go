@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -110,7 +111,6 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	oldVersion := oldLock.Version
 	oldLockNameMap := make(map[string]jenkinsv1.ExtensionSpec, 0)
 	oldLookupByUUID := make(map[string]jenkinsv1.ExtensionSpec, 0)
 	for _, l := range oldLock.Extensions {
@@ -120,7 +120,7 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	newLock := jenkinsv1.ExtensionRepositoryLockList{
 		Extensions: make([]jenkinsv1.ExtensionSpec, 0),
 	}
-	newLock.Version = oldVersion + 1
+	newLock.Version = os.Getenv("VERSION")
 
 	lookupByName := make(map[string]jenkinsv1.ExtensionSpec, 0)
 	lookupByUUID := make(map[string]jenkinsv1.ExtensionSpec, 0)
@@ -235,16 +235,17 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 			if UUID == "" {
 				UUID = uuid.New()
 				log.Infof("No UUID found for %s. Generated UUID %s, please update your extension definition "+
-					"accordingly.", ed.FullyQualifiedName(), UUID)
+					"accordingly.\n", ed.FullyQualifiedName(), UUID)
 			}
 			newVersion := strings.TrimPrefix(resolvedTag, "v")
 			oldSemanticVersion, err := semver.Parse(oldLookupByUUID[UUID].Version)
 			if err != nil {
-				return result, err
+				log.Infof("Cannot determine existing version for %s. Upgrading to %s anyway.\n", ed.FullyQualifiedName(), newVersion)
+				oldSemanticVersion = semver.Version{}
 			}
 			newSemanticVersion, err := semver.Parse(newVersion)
 			if err != nil {
-				return result, err
+				return result, fmt.Errorf("Unable to determine new version for %s. %v", ed.FullyQualifiedName(), err)
 			}
 			if oldSemanticVersion.LT(newSemanticVersion) || tag == "latest" {
 				var script string
