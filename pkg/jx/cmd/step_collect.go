@@ -194,7 +194,7 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 				if err != nil {
 					return err
 				}
-				url := fmt.Sprintf("https://%s.github.com/%s/%s/%s", gitRepoInfo.Organisation, gitRepoInfo.Name, repoDir, rPath)
+				url := fmt.Sprintf("https://%s.github.com/%s/%s/%s/%s", gitRepoInfo.Organisation, gitRepoInfo.Name, cwb, repoDir, rPath)
 				log.Infof("Publishing %s\n", util.ColorInfo(url))
 				urls = append(urls, url)
 			}
