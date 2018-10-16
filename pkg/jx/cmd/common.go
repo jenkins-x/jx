@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"os"
@@ -11,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
+	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -71,6 +73,7 @@ type CommonOptions struct {
 	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
+	vaultOperatorClient vaultoperatorclient.Interface
 
 	Prow
 }
@@ -842,4 +845,18 @@ func (o *CommonOptions) getBuildNumber() string {
 		return buildID
 	}
 	return ""
+}
+
+func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, error) {
+	if o.Factory == nil {
+		return nil, errors.New("command factory is not initialized")
+	}
+	if o.vaultOperatorClient == nil {
+		vaultOperatorClient, err := o.Factory.CreateVaultOperatorClient()
+		if err != nil {
+			return nil, err
+		}
+		o.vaultOperatorClient = vaultOperatorClient
+	}
+	return o.vaultOperatorClient, nil
 }
