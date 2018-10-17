@@ -22,9 +22,9 @@ import (
 const (
 	defaultCloudBeesReleaseName = "cb"
 	defaultCloudBeesNamespace   = "jx"
-	cdxRepoName                 = "cb"
-	cbServiceName               = "cb-cdx"
-	cdxRepoUrl                  = "https://%s:%s@chartmuseum.jx.charts-demo.cloudbees.com"
+	coreRepoName                 = "cb"
+	cbServiceName               = "cb-core"
+	coreRepoUrl                  = "https://%s:%s@chartmuseum.jx.charts-demo.cloudbees.com"
 	serviceaccountsClusterAdmin = "serviceaccounts-cluster-admin"
 	defaultCloudBeesVersion     = ""
 )
@@ -70,7 +70,7 @@ func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 	cmd := &cobra.Command{
 		Use:     "cloudbees",
 		Short:   "Create the CloudBees app for Kubernetes (a web console for working with CI/CD, Environments and GitOps)",
-		Aliases: []string{"cloudbee", "cb", "cdx", "kubecd"},
+		Aliases: []string{"cloudbee", "cb", "core", "kubecd"},
 		Long:    CreateAddonCloudBeesLong,
 		Example: CreateAddonCloudBeesExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -102,7 +102,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 		return err
 	}
 
-	// todo add correct roles to cdx rather than make EVERY service account cluster admin
+	// todo add correct roles to core rather than make EVERY service account cluster admin
 	_, err = c.RbacV1().ClusterRoleBindings().Get(serviceaccountsClusterAdmin, v1.GetOptions{})
 	if err != nil {
 
@@ -116,7 +116,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 		survey.AskOne(prompt, &ok, nil, surveyOpts)
 
 		if !ok {
-			log.Info("aborting the cdx addon\n")
+			log.Info("aborting the core addon\n")
 			return nil
 		}
 
@@ -145,7 +145,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 
 	// check if helm repo is missing, the repo is authenticated and includes username/password so check with dummy values
 	// first as we wont need to prompt for username password if the host part of the URL matches an existing repo
-	missing, err := o.isHelmRepoMissing(fmt.Sprintf(cdxRepoUrl, "dummy", "dummy"))
+	missing, err := o.isHelmRepoMissing(fmt.Sprintf(coreRepoUrl, "dummy", "dummy"))
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ To register to get your username/password to to: %s
 		}
 		survey.AskOne(passPrompt, &password, nil, surveyOpts)
 
-		err := o.addHelmRepoIfMissing(fmt.Sprintf(cdxRepoUrl, username, password), cdxRepoName)
+		err := o.addHelmRepoIfMissing(fmt.Sprintf(coreRepoUrl, username, password), coreRepoName)
 		if err != nil {
 			return err
 		}

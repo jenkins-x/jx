@@ -8,7 +8,7 @@ const (
 	ChartAnchore = "stable/anchore-engine"
 
 	// ChartCloudBees the default name of the CloudBees addon chart
-	ChartCloudBees = "cb/cdx"
+	ChartCloudBees = "cb/core"
 
 	// ChartExposecontrollerService the default name of the Exposecontroller Service chart for Edit environments
 	ChartExposecontrollerService = "jenkins-x/exposecontroller-service"
@@ -53,7 +53,7 @@ const (
 	SecretJenkins = "jenkins"
 
 	// ServiceCloudBees the service name of the CloudBees app for Kubernetes
-	ServiceCloudBees = "cb-cdx"
+	ServiceCloudBees = "cb-core"
 
 	// ServiceChartMuseum the service name of the Helm Chart Museum service
 	ServiceChartMuseum = "jenkins-x-chartmuseum"

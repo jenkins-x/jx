@@ -26,7 +26,7 @@ import (
 const (
 	defaultNamespace       = "jx"
 	UserOnboardingEndpoint = "/api/v1/users"
-	SsoCookieName          = "sso-cdx"
+	SsoCookieName          = "sso-core"
 )
 
 // Login holds the login information
