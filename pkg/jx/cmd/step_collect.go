@@ -192,7 +192,7 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 				rPath := strings.TrimPrefix(strings.TrimPrefix(path, ghPagesDir), "/")
 
 				if rPath != "" {
-					url := fmt.Sprintf("https://%s.github.com/%s/%s", org, repoName, rPath)
+					url := fmt.Sprintf("https://%s.github.io/%s/%s", org, repoName, rPath)
 					log.Infof("Publishing %s\n", util.ColorInfo(url))
 					urls = append(urls, url)
 				}
