@@ -1,4 +1,4 @@
-module github.com/ccojocar/jx
+module github.com/jenkins-x/jx
 
 require (
 	cloud.google.com/go v0.25.0
@@ -72,7 +72,6 @@ require (
 	github.com/jenkins-x/chyle v0.0.0-20180226080600-68f7a93a63ec
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
-	github.com/jenkins-x/jx v1.3.440
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8
 	github.com/json-iterator/go v0.0.0-20180701071628-ab8a2e0c74be
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
