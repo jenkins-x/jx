@@ -241,7 +241,7 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 	pipeline := fmt.Sprintf("%s-%s-%s-%s", org, repoName, branchName, build)
 
 	if pipeline != "" && build != "" {
-		name := kube.ToValidName(pipeline + "-" + build)
+		name := kube.ToValidName(pipeline)
 		key := &kube.PromoteStepActivityKey{
 			PipelineActivityKey: kube.PipelineActivityKey{
 				Name:     name,
