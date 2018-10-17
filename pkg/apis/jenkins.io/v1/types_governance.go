@@ -49,7 +49,7 @@ type ComplianceCheckCommitReference struct {
 type ComplianceCheckItem struct {
 	Name        string `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
 	Description string `json:"description,omitempty"  protobuf:"bytes,2,opt,name=description"`
-	Pass        bool   `json:"pass,omitempty"  protobuf:"bytes,3,opt,name=pass"`
+	Pass        bool   `json:"pass"  protobuf:"bytes,3,opt,name=pass"`
 }
 
 func (r *ComplianceCheckCommitReference) String() string {

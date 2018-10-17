@@ -2,16 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/pkg/errors"
 
@@ -138,7 +139,8 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 	}
 	err = gitClient.FetchBranch("", "origin", "gh-pages:gh-pages")
 	if err != nil {
-		return err
+		// swallow the error
+		log.Infof("No existing gh-pages branch")
 	}
 	remotes, err := gitClient.RemoteBranchNames("", "")
 	if err != nil {
@@ -194,7 +196,7 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 				if err != nil {
 					return err
 				}
-				url := fmt.Sprintf("https://%s.github.com/%s/%s/%s", gitRepoInfo.Organisation, gitRepoInfo.Name, repoDir, rPath)
+				url := fmt.Sprintf("https://%s.github.com/%s/%s/%s/%s", gitRepoInfo.Organisation, gitRepoInfo.Name, cwb, repoDir, rPath)
 				log.Infof("Publishing %s\n", util.ColorInfo(url))
 				urls = append(urls, url)
 			}
