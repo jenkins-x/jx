@@ -55,7 +55,7 @@ func NotifyComplianceState(commitRef jenkinsv1.ComplianceCheckCommitReference, s
 		return &gits.GitRepoStatus{}, err
 	}
 	if comment != "" {
-		prn, err := strconv.Atoi(commitRef.PullRequest)
+		prn, err := strconv.Atoi(strings.TrimPrefix(commitRef.PullRequest, "PR-"))
 		if err != nil {
 			return &gits.GitRepoStatus{}, err
 		}
