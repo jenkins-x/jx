@@ -16,6 +16,9 @@ const HeptioAuthenticatorAwsVersion = "1.10.3"
 
 func BinaryWithExtension(binary string) string {
 	if runtime.GOOS == "windows" {
+		if binary == "gcloud" {
+			return binary + ".cmd"
+		}
 		return binary + ".exe"
 	}
 	return binary
