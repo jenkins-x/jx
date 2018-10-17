@@ -573,6 +573,9 @@ func (p *GitHubProvider) PullRequestLastCommitStatus(pr *GitPullRequest) (string
 
 func (p *GitHubProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
 	answer := []*GitRepoStatus{}
+	if sha == "" {
+		return answer, fmt.Errorf("Missing String for sha %s/%s", org, repo)
+	}
 	results, _, err := p.Client.Repositories.ListStatuses(p.Context, org, repo, sha, nil)
 	if err != nil {
 		return answer, fmt.Errorf("Could not find a status for repository %s/%s with ref %s", org, repo, sha)

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/version"
-
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -164,6 +162,7 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	log.Infof("generating prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
+		ServiceAccountName: "jenkins",
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
@@ -188,6 +187,7 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	log.Infof("generating prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
+		ServiceAccountName: "jenkins",
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
@@ -199,36 +199,6 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 
 	return ps
 }
-
-func (o *Options) createPreSubmitCompliance() config.Presubmit {
-	ps := config.Presubmit{}
-
-	ps.Context = ComplianceCheck
-	ps.Name = ComplianceCheck
-	ps.RerunCommand = "/test compliance"
-	ps.Trigger = "(?m)^/test( compliance),?(\\s+|$)"
-	ps.AlwaysRun = false
-	ps.SkipReport = false
-	ps.Agent = KubernetesAgent
-	ps.Spec = &corev1.PodSpec{
-		Containers: []corev1.Container{
-			corev1.Container{
-				Image: fmt.Sprintf("%s:%s", JXImage, version.GetVersion()),
-				Command: []string{
-					"jx",
-				},
-				Args: []string{
-					"step",
-					"pre",
-					"compliance",
-					"check",
-				},
-			},
-		},
-	}
-	return ps
-}
-
 func (o *Options) createContextPolicyCompliance() config.ContextPolicy {
 	cp := config.ContextPolicy{
 		Contexts: []string{
@@ -383,7 +353,7 @@ func (o *Options) AddProwConfig() error {
 		preSubmit = o.createPreSubmitEnvironment()
 		postSubmit = o.createPostSubmitEnvironment()
 	case Compliance:
-		preSubmit = o.createPreSubmitCompliance()
+		// Nothing needed
 	default:
 		return fmt.Errorf("unknown prow config kind %s", o.Kind)
 	}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -73,6 +74,7 @@ type CommonOptions struct {
 	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
+	vaultOperatorClient vaultoperatorclient.Interface
 
 	Prow
 }
@@ -120,7 +122,7 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
 	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
-	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on MacOS to install or upgrade command line dependencies")
+	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
 	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")
 	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, "skip-auth-secrets-merge", "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
 	cmd.Flags().StringVarP(&options.PullSecrets, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
@@ -851,4 +853,18 @@ func (o *CommonOptions) getBuildNumber() string {
 		return buildID
 	}
 	return ""
+}
+
+func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, error) {
+	if o.Factory == nil {
+		return nil, errors.New("command factory is not initialized")
+	}
+	if o.vaultOperatorClient == nil {
+		vaultOperatorClient, err := o.Factory.CreateVaultOperatorClient()
+		if err != nil {
+			return nil, err
+		}
+		o.vaultOperatorClient = vaultOperatorClient
+	}
+	return o.vaultOperatorClient, nil
 }
