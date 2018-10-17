@@ -29,11 +29,12 @@ const (
 	ChartProw = "jenkins-x/prow"
 
 	// ChartKnative the default chart for knative
-	ChartKnativeBuild = "jenkins-x/knative-build"
+	ChartKnativeBuild   = "jenkins-x/knative-build"
+	ChartBuildTemplates = "jenkins-x/jx-build-templates"
 
-	DefaultProwReleaseName         = "jx-prow"
-	DefaultKnativeBuildReleaseName = "jx-knative-build"
-
+	DefaultProwReleaseName           = "jx-prow"
+	DefaultKnativeBuildReleaseName   = "jx-knative-build"
+	DefaultBuildTemplatesReleaseName = "jx-build-templates"
 
 	// Charts Single Sign-On addon
 	ChartSsoOperator              = "jenkinsxio/sso-operator"
@@ -232,19 +233,20 @@ const (
 
 var (
 	AddonCharts = map[string]string{
-		"ambassador":                   ChartAmbassador,
-		"anchore":                      ChartAnchore,
-		"cb":                           ChartCloudBees,
-		"gitea":                        ChartGitea,
-		"istio":                        ChartIstio,
-		"kubeless":                     ChartKubeless,
-		"prometheus":                   "stable/prometheus",
-		"grafana":                      "stable/grafana",
-		DefaultProwReleaseName:         ChartProw,
-		DefaultKnativeBuildReleaseName: ChartKnativeBuild,
-		DefaultSsoDexReleaseName:       ChartSsoDex,
-		DefaultSsoOperatorReleaseName:  ChartSsoOperator,
-    DefaultVaultOperatorReleaseName: ChartVaultOperator,
+		"ambassador":                    ChartAmbassador,
+		"anchore":                       ChartAnchore,
+		"cb":                            ChartCloudBees,
+		"gitea":                         ChartGitea,
+		"istio":                         ChartIstio,
+		"kubeless":                      ChartKubeless,
+		"prometheus":                    "stable/prometheus",
+		"grafana":                       "stable/grafana",
+		"jx-build-templates":            "jenkins-x/jx-build-templates",
+		DefaultProwReleaseName:          ChartProw,
+		DefaultKnativeBuildReleaseName:  ChartKnativeBuild,
+		DefaultSsoDexReleaseName:        ChartSsoDex,
+		DefaultSsoOperatorReleaseName:   ChartSsoOperator,
+		DefaultVaultOperatorReleaseName: ChartVaultOperator,
 	}
 
 	AddonServices = map[string]string{

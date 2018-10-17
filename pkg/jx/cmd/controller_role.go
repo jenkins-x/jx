@@ -141,8 +141,8 @@ func (o *ControllerRoleOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	for _, binding := range bindings.Items {
-		o.upsertEnvironmentRoleBinding(&binding)
+	for i := range bindings.Items {
+		o.upsertEnvironmentRoleBinding(&bindings.Items[i])
 	}
 	envList, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
