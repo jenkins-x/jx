@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"math"
 	"os"
@@ -12,14 +13,14 @@ import (
 	ibmcloud "github.com/IBM-Cloud/bluemix-go"
 	"github.com/IBM-Cloud/bluemix-go/api/container/containerv1"
 	"github.com/IBM-Cloud/bluemix-go/session"
-	"github.com/Pallinder/go-randomdata"
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
@@ -219,12 +220,25 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 
 	if !o.Flags.SkipLogin {
 		// [-a API_ENDPOINT] [--sso] [-u USERNAME] [-p PASSWORD] [--apikey KEY | @KEY_FILE] [--no-iam] [-c ACCOUNT_ID | --no-account] [-g RESOURCE_GROUP] [-o ORG] [-s SPACE]
-		ibmLogin := []string{"login", "-a", "api." + c.Region + ".bluemix.net"}
+		var ibmLogin []string
+		if c.Region == "us-south" {
+			ibmLogin = []string{"login", "-a", "api.ng.bluemix.net"}
+		} else {
+			ibmLogin = []string{"login", "-a", "api." + c.Region + ".bluemix.net"}
+		}
 		if aPIKey != "" {
 			ibmLogin = append(ibmLogin, "--apikey", aPIKey)
 		} else if sSO {
 			ibmLogin = append(ibmLogin, "--sso")
 		} else {
+			if userName == "" {
+				err = fmt.Errorf("Missing username flag: --login")
+			} else if password == "" {
+				err = fmt.Errorf("Missing password flag: --password")
+			}
+			if err != nil {
+				return err
+			}
 			ibmLogin = append(ibmLogin, "-u", userName, "-p", password)
 		}
 		if o.Flags.Account != "" {
