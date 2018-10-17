@@ -77,6 +77,12 @@ func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
 		config.DefaultUsername = user
 	}
 
+	// Set Pipeline user once only.
+	if config.PipeLineUsername == "" {
+		config.PipeLineUsername = user
+		config.PipeLineServer = url
+	}
+
 	config.CurrentServer = url
 	return s.SaveConfig()
 }

@@ -26,12 +26,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/process"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logger "github.com/sirupsen/logrus"
 )
 
 var (
@@ -88,6 +90,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installGcloud()
 		case "helm":
 			err = o.installHelm()
+		case "ibmcloud":
+			err = o.installIBMCloud(false)
 		case "tiller":
 			err = o.installTiller()
 		case "helm3":
@@ -138,23 +142,12 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 
 // appends the binary to the deps array if it cannot be found on the $PATH
 func binaryShouldBeInstalled(d string) string {
-	_, err := exec.LookPath(d)
+	_, shouldInstall, err := shouldInstallBinary(d)
 	if err != nil {
-		// look for windows exec
-		if runtime.GOOS == "windows" {
-			d = d + ".exe"
-			_, err = exec.LookPath(d)
-			if err == nil {
-				return ""
-			}
-		}
-		binDir, err := util.JXBinLocation()
-		if err == nil {
-			exists, err := util.FileExists(filepath.Join(binDir, d))
-			if err == nil && exists {
-				return ""
-			}
-		}
+		log.Warnf("Error detecting if binary should be installed: %s", err.Error())
+		return ""
+	}
+	if shouldInstall {
 		return d
 	}
 	return ""
@@ -167,12 +160,17 @@ func (o *CommonOptions) installBrew() error {
 	return o.RunCommand("/usr/bin/ruby", "-e", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)")
 }
 
-func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileName string, download bool, err error) {
+func shouldInstallBinary(name string) (fileName string, download bool, err error) {
 	fileName = binaries.BinaryWithExtension(name)
 	download = false
 	pgmPath, err := exec.LookPath(fileName)
 	if err == nil {
-		log.Warnf("%s is already available on your PATH at %s\n", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
+		logger.Debugf("%s is already available on your PATH at %s", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
+		return
+	}
+
+	binDir, err := util.JXBinLocation()
+	if err != nil {
 		return
 	}
 
@@ -182,7 +180,7 @@ func (o *CommonOptions) shouldInstallBinary(binDir string, name string) (fileNam
 		return
 	}
 	if exists {
-		log.Warnf("Please add %s to your PATH\n", util.ColorInfo(binDir))
+		logger.Debugf("Please add %s to your PATH", util.ColorInfo(binDir))
 		return
 	}
 	download = true
@@ -226,14 +224,15 @@ type InstallOrUpdateBinaryOptions struct {
 	SkipPathScan        bool
 	VersionExtractor    binaries.VersionExtractor
 	Archived            bool
+	ArchiveDirectory    string
 }
 
 func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
-	shouldInstallBinary, err := binaries.ShouldInstallBinary(options.Binary, options.Version, options.VersionExtractor)
+	shouldInstall, err := binaries.ShouldInstallBinary(options.Binary, options.Version, options.VersionExtractor)
 	if err != nil {
 		return err
 	}
-	if !shouldInstallBinary {
+	if !shouldInstall {
 		return nil
 	}
 
@@ -264,12 +263,13 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	}
 	fileName := options.Binary
 	if !options.SkipPathScan {
-		installFilename, flag, err := o.shouldInstallBinary(binDir, options.Binary)
+		installFilename, flag, err := shouldInstallBinary(options.Binary)
 		fileName = installFilename
 		if err != nil || !flag {
 			return err
 		}
 	}
+
 	if options.Version == "" {
 		options.Version, err = util.GetLatestVersionStringFromGitHub(options.GitHubOrganization, options.Binary)
 		if err != nil {
@@ -291,6 +291,10 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	if err != nil {
 		return err
 	}
+	fileNameInArchive := fileName
+	if options.ArchiveDirectory != "" {
+		fileNameInArchive = filepath.Join(options.ArchiveDirectory, fileName)
+	}
 	if options.Archived {
 		if extension == "zip" {
 			zipDir := filepath.Join(binDir, options.Binary+"-tmp-"+uuid.NewUUID().String())
@@ -302,7 +306,8 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 			if err != nil {
 				return err
 			}
-			f := filepath.Join(zipDir, fileName)
+
+			f := filepath.Join(zipDir, fileNameInArchive)
 			exists, err := util.FileExists(f)
 			if err != nil {
 				return err
@@ -316,7 +321,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 			}
 			err = os.RemoveAll(zipDir)
 		} else {
-			err = util.UnTargz(tarFile, binDir, []string{options.Binary, fileName})
+			err = util.UnTargz(tarFile, binDir, []string{options.Binary, fileNameInArchive})
 		}
 		if err != nil {
 			return err
@@ -345,11 +350,7 @@ func (o *CommonOptions) installBrewIfRequired() error {
 		return nil
 	}
 
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return err
-	}
-	_, flag, err := o.shouldInstallBinary(binDir, "brew")
+	_, flag, err := shouldInstallBinary("brew")
 	if err != nil || !flag {
 		return err
 	}
@@ -364,7 +365,7 @@ func (o *CommonOptions) installKubectl() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, "kubectl")
+	fileName, flag, err := shouldInstallBinary("kubectl")
 	if err != nil || !flag {
 		return err
 	}
@@ -396,7 +397,7 @@ func (o *CommonOptions) installKustomize() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, "kustomize")
+	fileName, flag, err := shouldInstallBinary("kustomize")
 	if err != nil || !flag {
 		return err
 	}
@@ -430,7 +431,7 @@ func (o *CommonOptions) installOc() error {
 		return err
 	}
 	binary := "oc"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -652,7 +653,7 @@ func (o *CommonOptions) installHelm() error {
 		return err
 	}
 	binary := "helm"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -823,7 +824,7 @@ func (o *CommonOptions) installHelm3() error {
 		return err
 	}
 	binary := "helm3"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -994,7 +995,7 @@ func (o *CommonOptions) installTerraform() error {
 		return err
 	}
 	binary := "terraform"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -1031,7 +1032,7 @@ func (o *CommonOptions) installKops() error {
 		return err
 	}
 	binary := "kops"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -1059,7 +1060,7 @@ func (o *CommonOptions) installKSync() (bool, error) {
 		return false, err
 	}
 	binary := "ksync"
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return false, err
 	}
@@ -1104,7 +1105,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	binary := "jx"
 	fileName := binary
 	if !upgrade {
-		f, flag, err := o.shouldInstallBinary(binDir, binary)
+		f, flag, err := shouldInstallBinary(binary)
 		if err != nil || !flag {
 			return err
 		}
@@ -1157,7 +1158,7 @@ func (o *CommonOptions) installMinikube() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, "minikube")
+	fileName, flag, err := shouldInstallBinary("minikube")
 	if err != nil || !flag {
 		return err
 	}
@@ -1189,7 +1190,7 @@ func (o *CommonOptions) installMinishift() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := o.shouldInstallBinary(binDir, binary)
+	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -1366,6 +1367,8 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 func (o *CommonOptions) installRequirements(cloudProvider string, extraDependencies ...string) error {
 	var deps []string
 	switch cloudProvider {
+	case IKS:
+		deps = o.addRequiredBinary("ibmcloud", deps)
 	case AWS:
 		deps = o.addRequiredBinary("kops", deps)
 	case AKS:
@@ -1565,8 +1568,18 @@ func (o *CommonOptions) installProw() error {
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 
+	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
+	_, err = o.KubeClientCached.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
+	if err != nil {
+		err = prow.AddApplication(o.KubeClientCached, []string{"jenkins-x/dummy"}, devNamespace, "base")
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(o.ReleaseName, o.Chart, "", devNamespace, true, values)
+		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil)
 		return nil
 	})
 
@@ -1574,15 +1587,26 @@ func (o *CommonOptions) installProw() error {
 		return fmt.Errorf("failed to install prow: %v", err)
 	}
 
-	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values)
+		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values, nil)
 		return nil
 	})
 
 	if err != nil {
 		return fmt.Errorf("failed to install Knative build: %v", err)
+	}
+
+	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
+
+	err = o.retry(2, time.Second, func() (err error) {
+		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true, values, nil)
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to install BuildTemplates: %v", err)
 	}
 
 	return nil
@@ -1623,4 +1647,33 @@ func (o *CommonOptions) isProw() (bool, error) {
 	}
 
 	return env.Spec.TeamSettings.PromotionEngine == jenkinsv1.PromotionEngineProw, nil
+}
+
+func (o *CommonOptions) installIBMCloud(skipPathScan bool) error {
+	return o.installIBMCloudWithVersion(binaries.IBMCloudVersion, skipPathScan)
+}
+
+func (o *CommonOptions) installIBMCloudWithVersion(version string, skipPathScan bool) error {
+	if runtime.GOOS == "darwin" {
+		return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+			Binary:              "ibmcloud",
+			GitHubOrganization:  "",
+			DownloadUrlTemplate: "https://public.dhe.ibm.com/cloud/bluemix/cli/bluemix-cli/{{.version}}/binaries/IBM_Cloud_CLI_{{.version}}_macos.tgz",
+			Version:             version,
+			SkipPathScan:        skipPathScan,
+			VersionExtractor:    nil,
+			Archived:            true,
+			ArchiveDirectory:    "IBM_Cloud_CLI",
+		})
+	}
+	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+		Binary:              "ibmcloud",
+		GitHubOrganization:  "",
+		DownloadUrlTemplate: "https://public.dhe.ibm.com/cloud/bluemix/cli/bluemix-cli/{{.version}}/binaries/IBM_Cloud_CLI_{{.version}}_{{.os}}_{{.arch}}.{{.extension}}",
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
+		Archived:            true,
+		ArchiveDirectory:    "IBM_Cloud_CLI",
+	})
 }

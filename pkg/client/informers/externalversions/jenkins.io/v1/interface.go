@@ -8,6 +8,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// ComplianceChecks returns a ComplianceCheckInformer.
+	ComplianceChecks() ComplianceCheckInformer
 	// Environments returns a EnvironmentInformer.
 	Environments() EnvironmentInformer
 	// EnvironmentRoleBindings returns a EnvironmentRoleBindingInformer.
@@ -37,6 +39,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// ComplianceChecks returns a ComplianceCheckInformer.
+func (v *version) ComplianceChecks() ComplianceCheckInformer {
+	return &complianceCheckInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Environments returns a EnvironmentInformer.

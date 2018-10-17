@@ -91,7 +91,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			return err
 		}
 		if user.Username == "" {
-			return fmt.Errorf("Could find a username for Git server %s", u)
+			return fmt.Errorf("Could not find a username for Git server %s", u)
 		}
 
 		credentials, err = o.updatePipelineGitCredentialsSecret(server, user)
@@ -124,7 +124,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 				return err
 			}
 			if user.Username == "" {
-				return fmt.Errorf("Could find a username for Git server %s", u)
+				return fmt.Errorf("Could not find a username for Git server %s", u)
 			}
 			err = jenk.CreateCredential(credentials, user.Username, user.ApiToken)
 

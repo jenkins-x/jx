@@ -520,6 +520,8 @@ func (options *ImportOptions) DraftCreate() error {
 					lpack = filepath.Join(packsDir, "liberty")
 				} else if pack == util.APPSERVER {
 					lpack = filepath.Join(packsDir, "appserver")
+				} else if pack == util.DROPWIZARD {
+					lpack = filepath.Join(packsDir, "dropwizard")
 				} else {
 					log.Warn("Do not know how to handle pack: " + pack)
 				}

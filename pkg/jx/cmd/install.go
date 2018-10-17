@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -281,7 +282,7 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "reading jx bin location")
 		}
-		_, install, err := options.shouldInstallBinary(binDir, "tiller")
+		_, install, err := shouldInstallBinary("tiller")
 		if !install && err == nil {
 			confirm := &survey.Confirm{
 				Message: "Uninstalling  existing tiller binary:",
@@ -299,7 +300,7 @@ func (options *InstallOptions) Run() error {
 			}
 		}
 
-		_, install, err = options.shouldInstallBinary(binDir, helmBinary)
+		_, install, err = shouldInstallBinary(helmBinary)
 		if !install && err == nil {
 			confirm := &survey.Confirm{
 				Message: "Uninstalling  existing helm binary:",
@@ -473,6 +474,28 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	if options.Flags.Provider == IKS {
+		/**
+		* Add the IBM chart repo for the Block Storage Driver
+		 */
+		err = options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm")
+		if err != nil {
+			return errors.Wrap(err, "failed to add the IBM helm repo")
+		}
+		err = options.Helm().UpdateRepo()
+		if err != nil {
+			return errors.Wrap(err, "failed to update the helm repo")
+		}
+		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin", "default", nil, true, nil, false, false, nil, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
+		}
+		err = options.changeDefaultStorageClass(client, "ibmc-block-bronze")
+		if err != nil {
+			return err
+		}
+	}
+
 	// share the init domain option with the install options
 	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
 		options.Flags.Domain = initOpts.Flags.Domain
@@ -504,7 +527,11 @@ func (options *InstallOptions) Run() error {
 	}
 	dockerRegistry, err := options.dockerRegistryValue()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get the docker registry value")
+	}
+	if options.Flags.Provider == IKS {
+		dockerRegistry = iks.GetClusterRegistry(client)
+		helmConfig.PipelineSecrets.DockerConfig, err = iks.GetRegistryConfigJSON(dockerRegistry)
 	}
 	if dockerRegistry != "" {
 		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
@@ -542,7 +569,7 @@ func (options *InstallOptions) Run() error {
 	// clone the environments repo
 	wrkDir, err := options.cloneJXCloudEnvironmentsRepo()
 	if err != nil {
-		return errors.Wrap(err, "failed to clone the jx cloud environments reppo")
+		return errors.Wrap(err, "failed to clone the jx cloud environments repo")
 	}
 
 	// run  helm install setting the token and domain values
@@ -659,6 +686,22 @@ func (options *InstallOptions) Run() error {
 	jxRelName := "jenkins-x"
 
 	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
+	// Need to check the tiller pod is ready before proceeding
+	log.Infof("Waiting for %s pod to be ready\n", util.ColorInfo("tiller"))
+	serviceAccountName := "tiller"
+	tillerNamespace := options.InitOptions.Flags.TillerNamespace
+
+	clusterRoleBindingName := serviceAccountName
+	role := options.InitOptions.Flags.TillerClusterRole
+
+	err = options.ensureClusterRoleBinding(clusterRoleBindingName, role, tillerNamespace, serviceAccountName)
+	if err != nil {
+		return errors.Wrap(err, "tiller cluster role not defined")
+	}
+	err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
+	if err != nil {
+		return errors.Wrap(err, "tiller pod is not running after 10 minutes")
+	}
 
 	if !options.Flags.InstallOnly {
 		err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil, valueFiles)
@@ -981,19 +1024,22 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		return "", fmt.Errorf("error determining config dir %v", err)
 	}
 	wrkDir := filepath.Join(configDir, "cloud-environments")
-	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
-	if options.Flags.CloudEnvRepository == "" {
-		return wrkDir, fmt.Errorf("No cloud environment git URL")
-	}
+	log.Infof("Current configuration dir: %s\n", configDir)
+	log.Infof("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
+	log.Infof("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
 	if options.Flags.LocalCloudEnvironment {
 		currentDir, err := os.Getwd()
 		if err != nil {
 			return wrkDir, fmt.Errorf("error getting current working directory %v", err)
 		}
-		log.Infof("Copying local dir to %s\n", wrkDir)
+		log.Infof("Copying local dir %s to %s\n", currentDir, wrkDir)
 
 		return wrkDir, util.CopyDir(currentDir, wrkDir, true)
 	}
+	if options.Flags.CloudEnvRepository == "" {
+		return wrkDir, fmt.Errorf("No cloud environment git URL")
+	}
+	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
 	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           options.Flags.CloudEnvRepository,
 		ReferenceName: "refs/heads/master",
@@ -1298,7 +1344,33 @@ func (options *InstallOptions) ensureDefaultStorageClass(client kubernetes.Inter
 	return err
 }
 
-// returns the Docker registry string for the given provider
+func (options *InstallOptions) changeDefaultStorageClass(client kubernetes.Interface, defaultName string) error {
+	storageClassInterface := client.StorageV1().StorageClasses()
+	storageClasses, err := storageClassInterface.List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	var foundSc *storagev1.StorageClass
+	for idx, sc := range storageClasses.Items {
+		ann := sc.Annotations
+		foundSc = &storageClasses.Items[idx]
+		if sc.Name == defaultName {
+			if ann == nil {
+				foundSc.Annotations = map[string]string{}
+			}
+			foundSc.Annotations[kube.AnnotationIsDefaultStorageClass] = "true"
+			_, err = storageClassInterface.Update(foundSc)
+		} else {
+			if ann != nil && ann[kube.AnnotationIsDefaultStorageClass] == "true" {
+				foundSc.Annotations[kube.AnnotationIsDefaultStorageClass] = "false"
+				_, err = storageClassInterface.Update(foundSc)
+			}
+		}
+	}
+	return nil
+}
+
+// returns the docker registry string for the given provider
 func (options *InstallOptions) dockerRegistryValue() (string, error) {
 	if options.Flags.DockerRegistry != "" {
 		return options.Flags.DockerRegistry, nil
