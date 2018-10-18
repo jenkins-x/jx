@@ -2,9 +2,9 @@
 package matchers
 
 import (
+	"reflect"
 	"github.com/petergtz/pegomock"
 	v1 "k8s.io/api/core/v1"
-	"reflect"
 )
 
 func AnyPtrToV1SecretList() *v1.SecretList {

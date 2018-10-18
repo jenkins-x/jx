@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	cmd "github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/petergtz/pegomock"
 	"reflect"
+	"github.com/petergtz/pegomock"
+	cmd "github.com/jenkins-x/jx/pkg/jx/cmd"
 )
 
 func AnyCmdFactory() cmd.Factory {

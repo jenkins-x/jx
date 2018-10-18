@@ -13,6 +13,8 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20180814212900-124a37274874
 	github.com/Pallinder/go-randomdata v0.0.0-20180616180521-15df0648130a
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6
+	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
+	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
 	github.com/andygrunwald/go-gerrit v0.0.0-20171029143327-95b11af228a1
 	github.com/andygrunwald/go-jira v1.5.0
@@ -99,7 +101,7 @@ require (
 	github.com/pelletier/go-toml v1.2.0
 	github.com/petar/GoLLRB v0.0.0-20130427215148-53be0d36a84c
 	github.com/peterbourgon/diskv v2.0.1+incompatible
-	github.com/petergtz/pegomock v0.0.0-20180725144810-278dd9bee025
+	github.com/petergtz/pegomock v0.0.0-20181008215750-9750219ad78b
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
 	github.com/pkg/errors v0.8.0
 	github.com/pmezard/go-difflib v1.0.0
@@ -146,6 +148,7 @@ require (
 	google.golang.org/genproto v0.0.0-20180722052100-02b4e9547331
 	google.golang.org/grpc v1.13.0
 	gopkg.in/AlecAivazis/survey.v1 v1.6.2
+	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/inf.v0 v0.9.1
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
