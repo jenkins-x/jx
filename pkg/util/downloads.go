@@ -61,6 +61,17 @@ func GetLatestVersionFromGitHub(githubOwner, githubRepo string) (semver.Version,
 }
 
 func GetLatestVersionStringFromGitHub(githubOwner, githubRepo string) (string, error) {
+	latestVersionString, err := GetLatestTagFromGitHub(githubOwner, githubRepo)
+	if err != nil {
+		return "", err
+	}
+	if latestVersionString != "" {
+		return strings.TrimPrefix(latestVersionString, "v"), nil
+	}
+	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
+}
+
+func GetLatestTagFromGitHub(githubOwner, githubRepo string) (string, error) {
 	if githubClient == nil {
 		token := os.Getenv("GH_TOKEN")
 		var tc *http.Client
@@ -85,7 +96,7 @@ func GetLatestVersionStringFromGitHub(githubOwner, githubRepo string) (string, e
 	defer resp.Body.Close()
 	latestVersionString := release.TagName
 	if latestVersionString != nil {
-		return strings.TrimPrefix(*latestVersionString, "v"), nil
+		return *latestVersionString, nil
 	}
 	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
 }

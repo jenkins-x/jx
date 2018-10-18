@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/heptio/sonobuoy/pkg/dynamic"
 	"io"
 
 	"github.com/heptio/sonobuoy/pkg/client"
@@ -15,6 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
+	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 
@@ -56,6 +58,8 @@ type Factory interface {
 
 	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
 
+	CreateDynamicClient() (*dynamic.APIHelper, string, error)
+
 	CreateMetricsClient() (*metricsclient.Clientset, error)
 
 	CreateComplianceClient() (*client.SonobuoyClient, error)
@@ -69,4 +73,6 @@ type Factory interface {
 	IsInCDPIpeline() bool
 
 	AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error
+
+	CreateVaultOperatorClient() (vaultoperatorclient.Interface, error)
 }

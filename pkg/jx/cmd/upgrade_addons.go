@@ -121,6 +121,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 	} else {
 		keys = util.SortedMapKeys(charts)
 	}
+
 	for _, k := range keys {
 		chart := charts[k]
 		status := statusMap[k]
@@ -150,7 +151,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 			}
 			err = o.Helm().UpgradeChart(chart, k, ns, nil, false, nil, false, false, values, valueFiles)
 			if err != nil {
-				return errors.Wrapf(err, "Failed to upgrade %s chart %s\n", name, chart)
+				log.Warnf("Failed to upgrade %s chart %s: %v\n", name, chart, err)
 			}
 
 			if k == kube.DefaultProwReleaseName {
