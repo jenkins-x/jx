@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"math"
 	"os"
@@ -206,7 +205,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 			Options:  regionsarr,
 			Default:  "us-east",
 			PageSize: 10,
-			Help:     "IBM Cloud Region to authenicate with and create the cluster in:",
+			Help:     "IBM Cloud Region to authenticate with and create the cluster in:",
 		}
 		var regionstr string
 		err = survey.AskOne(prompt, &regionstr, nil)
@@ -231,14 +230,6 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		} else if sSO {
 			ibmLogin = append(ibmLogin, "--sso")
 		} else {
-			if userName == "" {
-				err = fmt.Errorf("Missing username flag: --login")
-			} else if password == "" {
-				err = fmt.Errorf("Missing password flag: --password")
-			}
-			if err != nil {
-				return err
-			}
 			ibmLogin = append(ibmLogin, "-u", userName, "-p", password)
 		}
 		if o.Flags.Account != "" {
