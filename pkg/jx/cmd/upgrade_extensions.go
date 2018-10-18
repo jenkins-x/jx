@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/extensions"
+
 	"github.com/pkg/errors"
 
 	"github.com/blang/semver"
@@ -191,7 +193,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		// TODO this is not very efficient probably
 		for _, c := range extensionsConfig.Extensions {
 			if c.Name == e.Name && c.Namespace == e.Namespace {
-				n, err := o.UpsertExtension(e, extensionsClient, installedExtensions, c, availableExtensionsUUIDLookup, 0, 0)
+				n, err := o.UpsertExtension(&e, extensionsClient, installedExtensions, c, availableExtensionsUUIDLookup, 0, 0)
 				if err != nil {
 					return err
 				}
@@ -216,7 +218,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	return nil
 }
 
-func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.ExtensionSpec, extensions typev1.ExtensionInterface, installedExtensions map[string]jenkinsv1.Extension, extensionConfig jenkinsv1.ExtensionConfig, lookup map[string]jenkinsv1.ExtensionSpec, depth int, initialIndent int) (needsUpstalling []jenkinsv1.ExtensionExecution, err error) {
+func (o *UpgradeExtensionsOptions) UpsertExtension(extension *jenkinsv1.ExtensionSpec, exts typev1.ExtensionInterface, installedExtensions map[string]jenkinsv1.Extension, extensionConfig jenkinsv1.ExtensionConfig, lookup map[string]jenkinsv1.ExtensionSpec, depth int, initialIndent int) (needsUpstalling []jenkinsv1.ExtensionExecution, err error) {
 	result := make([]jenkinsv1.ExtensionExecution, 0)
 	indent := ((depth - 1) * 2) + initialIndent
 
@@ -228,7 +230,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 	existing, ok := installedExtensions[extension.UUID]
 	if !ok {
 		// Check for a name conflict
-		res, err := extensions.Get(extension.FullyQualifiedKebabName(), metav1.GetOptions{})
+		res, err := exts.Get(extension.FullyQualifiedKebabName(), metav1.GetOptions{})
 		if err == nil {
 			return result, errors.New(fmt.Sprintf("Extension %s has changed UUID. It used to have UUID %s and now has UUID %s. If this is correct, then you should manually remove the extension using\n"+
 				"\n"+
@@ -237,11 +239,11 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 				"If this is not correct, then contact the extension maintainer and inform them of this change.", util.ColorWarning(extension.FullyQualifiedName()), util.ColorWarning(res.Spec.UUID), util.ColorWarning(extension.UUID), extension.FullyQualifiedKebabName()))
 		}
 		// Doesn't exist
-		res, err = extensions.Create(&jenkinsv1.Extension{
+		res, err = exts.Create(&jenkinsv1.Extension{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: fmt.Sprintf(extension.FullyQualifiedKebabName()),
 			},
-			Spec: extension,
+			Spec: *extension,
 		})
 		if depth == 0 {
 			initialIndent = 7
@@ -253,7 +255,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 			return result, err
 		}
 		if o.Contains(extension.When, jenkinsv1.ExtensionWhenInstall) {
-			e, _, err := extension.ToExecutable(extensionConfig.Parameters, o.devNamespace)
+			e, _, err := extensions.ToExecutable(extension, extensionConfig.Parameters, o.devNamespace, exts)
 			if err != nil {
 				return result, err
 			}
@@ -267,13 +269,13 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 			return result, err
 		}
 		if existingVersion.LT(newVersion) {
-			existing.Spec = extension
-			_, err := extensions.Update(&existing)
+			existing.Spec = *extension
+			_, err := exts.Update(&existing)
 			if err != nil {
 				return result, err
 			}
 			if o.Contains(extension.When, jenkinsv1.ExtensionWhenUpgrade) {
-				e, _, err := extension.ToExecutable(extensionConfig.Parameters, o.devNamespace)
+				e, _, err := extensions.ToExecutable(extension, extensionConfig.Parameters, o.devNamespace, exts)
 				if err != nil {
 					return result, err
 				}
@@ -290,7 +292,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension jenkinsv1.Extension
 
 	for _, childRef := range extension.Children {
 		if child, ok := lookup[childRef]; ok {
-			e, err := o.UpsertExtension(child, extensions, installedExtensions, extensionConfig, lookup, depth+1, initialIndent)
+			e, err := o.UpsertExtension(&child, exts, installedExtensions, extensionConfig, lookup, depth+1, initialIndent)
 			if err != nil {
 				return result, err
 			}

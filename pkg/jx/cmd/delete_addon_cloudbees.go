@@ -21,7 +21,7 @@ var (
 )
 
 // DeleteAddonGiteaOptions the options for the create spring command
-type DeleteAddonCDXOptions struct {
+type DeleteAddoncoreOptions struct {
 	DeleteAddonOptions
 
 	ReleaseName string
@@ -29,7 +29,7 @@ type DeleteAddonCDXOptions struct {
 
 // NewCmdDeleteAddonCloudBees defines the command
 func NewCmdDeleteAddonCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &DeleteAddonCDXOptions{
+	options := &DeleteAddoncoreOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -43,7 +43,7 @@ func NewCmdDeleteAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 	cmd := &cobra.Command{
 		Use:     "cloudbees",
 		Short:   "Deletes the CloudBees app for Kubernetes addon",
-		Aliases: []string{"cloudbee", "cb", "cdx"},
+		Aliases: []string{"cloudbee", "cb", "core"},
 		Long:    deleteAddonCloudBeesLong,
 		Example: deleteAddonCloudBeesExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -59,7 +59,7 @@ func NewCmdDeleteAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 }
 
 // Run implements the command
-func (o *DeleteAddonCDXOptions) Run() error {
+func (o *DeleteAddoncoreOptions) Run() error {
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
 	}
