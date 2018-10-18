@@ -17,7 +17,6 @@ import (
 	"github.com/IBM-Cloud/bluemix-go/session"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-
 )
 
 type Config struct {
@@ -46,7 +45,7 @@ type Registry interface {
 }
 
 var regionToEndpoint = map[string]string{
-	"us-south": "https://registry.ng.bluemix.net",	
+	"us-south": "https://registry.ng.bluemix.net",
 	"us-east":  "https://registry.ng.bluemix.net",
 	"global":   "https://registry.bluemix.net",
 	"eu-gb":    "https://registry.eu-gb.bluemix.net",
@@ -94,12 +93,12 @@ func GetRegistryConfigJSON(registry string) (string, error) {
 	c := new(ibmcloud.Config)
 	accountID, err := ConfigFromJSON(c)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 
 	s, err := session.New(c)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 
 	registryAPI, err := NewRegistryServiceAPI(s)
@@ -107,7 +106,7 @@ func GetRegistryConfigJSON(registry string) (string, error) {
 	clusterName, _ := GetClusterName()
 	token, err := registryIF.AddToken(accountID, fmt.Sprintf("%s Jenkins-X Token", clusterName), true, true)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 
 	newSecret := &Auth{}
@@ -120,7 +119,7 @@ func GetRegistryConfigJSON(registry string) (string, error) {
 
 	configBytes, err := json.Marshal(dockerConfig)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	return string(configBytes), nil
 }

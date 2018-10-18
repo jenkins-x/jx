@@ -1,10 +1,11 @@
 package iks
 
-import(
+import (
 	"fmt"
-	"strings"
 	"github.com/IBM-Cloud/bluemix-go/client"
+	"strings"
 )
+
 type MachineType struct {
 	Name                      string
 	Memory                    string
@@ -37,29 +38,28 @@ type VLAN struct {
 }
 
 type MachineTypes interface {
-	GetMachineTypes(zone Zone) ( []MachineType , error)
-	GetMachineType(machinetypearg string, zone Zone) ( *MachineType , error)
+	GetMachineTypes(zone Zone) ([]MachineType, error)
+	GetMachineType(machinetypearg string, zone Zone) (*MachineType, error)
 }
 
 type VLANs interface {
-	GetVLANs(zone Zone) ( []VLAN , error)
-	GetVLAN(vlanarg string, zone Zone) ( *VLAN , error)
+	GetVLANs(zone Zone) ([]VLAN, error)
+	GetVLAN(vlanarg string, zone Zone) (*VLAN, error)
 }
-
 
 type machineTypes struct {
 	*client.Client
-  machineTypes map[string][]MachineType
+	machineTypes map[string][]MachineType
 }
 
 type vLANs struct {
 	*client.Client
-  VLANs map[string][]VLAN
+	VLANs map[string][]VLAN
 }
 
 func newMachineTypesAPI(c *client.Client) MachineTypes {
 	return &machineTypes{
-		Client: c,
+		Client:       c,
 		machineTypes: nil,
 	}
 }
@@ -67,7 +67,7 @@ func newMachineTypesAPI(c *client.Client) MachineTypes {
 func newVLANsAPI(c *client.Client) VLANs {
 	return &vLANs{
 		Client: c,
-		VLANs: nil,
+		VLANs:  nil,
 	}
 }
 
@@ -80,11 +80,11 @@ func (v *machineTypes) fetch(zone Zone) error {
 		headers := map[string]interface{}{
 			"datacenter": zone.ID,
 		}
-		_, err := v.Client.Get("/v1/datacenters/" + zone.ID + "/machine-types", &machineTypes, headers)
+		_, err := v.Client.Get("/v1/datacenters/"+zone.ID+"/machine-types", &machineTypes, headers)
 		if err != nil {
 			return err
 		}
-		v.machineTypes[zone.ID] = machineTypes;
+		v.machineTypes[zone.ID] = machineTypes
 	}
 	return nil
 }
@@ -101,8 +101,8 @@ func (v *machineTypes) GetMachineType(machinetypearg string, zone Zone) (*Machin
 		return nil, err
 	}
 
-	for _, machineType:= range v.machineTypes[zone.ID] {
-		if strings.Compare(machinetypearg, machineType.Name ) == 0 {
+	for _, machineType := range v.machineTypes[zone.ID] {
+		if strings.Compare(machinetypearg, machineType.Name) == 0 {
 			return &machineType, nil
 		}
 	}
@@ -118,11 +118,11 @@ func (v *vLANs) fetch(zone Zone) error {
 		headers := map[string]interface{}{
 			"datacenter": zone.ID,
 		}
-		_, err := v.Client.Get("/v1/datacenters/" + zone.ID + "/vlans", &vLANs, headers)
+		_, err := v.Client.Get("/v1/datacenters/"+zone.ID+"/vlans", &vLANs, headers)
 		if err != nil {
 			return err
 		}
-		v.VLANs[zone.ID] = vLANs;
+		v.VLANs[zone.ID] = vLANs
 	}
 	return nil
 }
@@ -139,8 +139,8 @@ func (v *vLANs) GetVLAN(vlanarg string, zone Zone) (*VLAN, error) {
 		return nil, err
 	}
 
-	for _, vLAN:= range v.VLANs[zone.ID] {
-		if strings.Compare(vlanarg, vLAN.ID ) == 0 {
+	for _, vLAN := range v.VLANs[zone.ID] {
+		if strings.Compare(vlanarg, vLAN.ID) == 0 {
 			return &vLAN, nil
 		}
 	}
