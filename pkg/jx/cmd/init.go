@@ -163,7 +163,7 @@ func (o *InitOptions) Run() error {
 
 	// So a user doesn't need to specify ingress options if provider is ICP: we will use ICP's own ingress controller
 	if o.Flags.Provider == ICP {
-		o.useICPIngress()
+		o.useICPDefaults()
 	}
 
 	// helm init, this has been seen to fail intermittently on public clouds, so lets retry a couple of times
@@ -440,11 +440,12 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 	return filepath.Join(dir, "packs"), err
 }
 
-func (o *InitOptions) useICPIngress() {
-	log.Infoln("Specified to use IBM Cloud Private ingress")
+func (o *InitOptions) useICPDefaults() {
+	log.Infoln("Configuring defaults for IBM Cloud Private")
 	o.Flags.IngressNamespace = "kube-system"
 	o.Flags.IngressDeployment = "default-backend"
 	o.Flags.IngressService = "default-backend"
+	o.Flags.TillerNamespace = "default" // We don't want to set up at kube-system as we want to use own Helm 2.10 tiller at default
 }
 
 func (o *InitOptions) initIngress() error {
