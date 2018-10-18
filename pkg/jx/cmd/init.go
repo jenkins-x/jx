@@ -161,6 +161,11 @@ func (o *InitOptions) Run() error {
 		return err
 	}
 
+	// So a user doesn't need to specify ingress options if provider is ICP: we will use ICP's own ingress controller
+	if o.Flags.Provider == ICP {
+		o.useICPIngress()
+	}
+
 	// helm init, this has been seen to fail intermittently on public clouds, so lets retry a couple of times
 	err = o.retry(3, 2*time.Second, func() (err error) {
 		err = o.initHelm()
@@ -433,6 +438,13 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 		err = o.Git().CheckoutRemoteBranch(dir, packRef)
 	}
 	return filepath.Join(dir, "packs"), err
+}
+
+func (o *InitOptions) useICPIngress() {
+	log.Infoln("Specified to use IBM Cloud Private ingress")
+	o.Flags.IngressNamespace = "kube-system"
+	o.Flags.IngressDeployment = "default-backend"
+	o.Flags.IngressService = "default-backend"
 }
 
 func (o *InitOptions) initIngress() error {
