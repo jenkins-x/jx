@@ -121,9 +121,9 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 
 								BoundServiceAccountNames:      authServiceAccount,
 								BoundServiceAccountNamespaces: authServiceAccountNamespace,
-								Name:     authServiceAccount,
-								Policies: vaultRuleSecretsName,
-								Ttl:      vaultAuthTTL,
+								Name:                          authServiceAccount,
+								Policies:                      vaultRuleSecretsName,
+								Ttl:                           vaultAuthTTL,
 							},
 						},
 						Type: vaultAuthType,

@@ -7,8 +7,6 @@ import (
 	"github.com/IBM-Cloud/bluemix-go/api/container/containerv1"
 )
 
-
-
 func GetRegions(regions Regions) ([]string, error) {
 
 	regionarr, err := regions.GetRegions()
