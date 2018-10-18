@@ -42,30 +42,33 @@ func NotifyCommitStatus(commitRef jenkinsv1.ComplianceCheckCommitReference, stat
 	}
 	if oldStatus.ID != "" {
 		status.ID = oldStatus.ID
-		// check for for forbidden status transitions
-		if strings.HasPrefix(strings.ToLower(oldStatus.Description), strings.ToLower("Overridden")) {
-			// If the status has been overridden, then we should not automatically update it again
-			log.Infof("commit status is overridden for pull request %s (%s) on %s so not updating\n", commitRef.PullRequest, commitRef.SHA, commitRef.GitURL)
-			return oldStatus, nil
-		}
 	}
-	log.Infof("Status %s for commit status for pull request %s (%s) on %s\n", state, commitRef.PullRequest, commitRef.SHA, commitRef.GitURL)
-	_, err = gitProvider.UpdateCommitStatus(gitRepoInfo.Organisation, gitRepoInfo.Name, commitRef.SHA, status)
-	if err != nil {
-		return &gits.GitRepoStatus{}, err
+	// check for for forbidden status transitions
+	if strings.HasPrefix(strings.ToLower(oldStatus.Description), strings.ToLower("Overridden")) {
+		// If the status has been overridden, then we should not automatically update it again
+		log.Infof("commit status is overridden for pull request %s (%s) on %s so not updating\n", commitRef.PullRequest, commitRef.SHA, commitRef.GitURL)
+		return oldStatus, nil
 	}
-	if comment != "" {
-		prn, err := strconv.Atoi(strings.TrimPrefix(commitRef.PullRequest, "PR-"))
+	if oldStatus.Description != status.Description || oldStatus.State != status.State {
+
+		log.Infof("Status %s for commit status for pull request %s (%s) on %s\n", state, commitRef.PullRequest, commitRef.SHA, commitRef.GitURL)
+		_, err = gitProvider.UpdateCommitStatus(gitRepoInfo.Organisation, gitRepoInfo.Name, commitRef.SHA, status)
 		if err != nil {
 			return &gits.GitRepoStatus{}, err
 		}
-		pr, err := gitProvider.GetPullRequest(gitRepoInfo.Organisation, gitRepoInfo, prn)
-		if err != nil {
-			return &gits.GitRepoStatus{}, err
-		}
-		err = gitProvider.AddPRComment(pr, comment)
-		if err != nil {
-			return &gits.GitRepoStatus{}, err
+		if comment != "" {
+			prn, err := strconv.Atoi(strings.TrimPrefix(commitRef.PullRequest, "PR-"))
+			if err != nil {
+				return &gits.GitRepoStatus{}, err
+			}
+			pr, err := gitProvider.GetPullRequest(gitRepoInfo.Organisation, gitRepoInfo, prn)
+			if err != nil {
+				return &gits.GitRepoStatus{}, err
+			}
+			err = gitProvider.AddPRComment(pr, comment)
+			if err != nil {
+				return &gits.GitRepoStatus{}, err
+			}
 		}
 	}
 	return status, nil

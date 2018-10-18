@@ -2,9 +2,8 @@ package iks
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/IBM-Cloud/bluemix-go/client"
+	"strings"
 )
 
 type MachineType struct {
@@ -47,6 +46,7 @@ type VLANs interface {
 	GetVLANs(zone Zone) ([]VLAN, error)
 	GetVLAN(vlanarg string, zone Zone) (*VLAN, error)
 }
+
 type machineTypes struct {
 	*client.Client
 	machineTypes map[string][]MachineType
