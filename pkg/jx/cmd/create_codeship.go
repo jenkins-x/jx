@@ -403,7 +403,7 @@ func (o *CreateCodeshipOptions) Run() error {
 	return nil
 }
 
-func(o *CreateCodeshipOptions) CreateAdditionalArgs() []string {
+func (o *CreateCodeshipOptions) CreateAdditionalArgs() []string {
 	args := []string{}
 
 	// prow

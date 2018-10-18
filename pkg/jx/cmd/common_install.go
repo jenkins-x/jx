@@ -31,9 +31,9 @@ import (
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/process"
+	logger "github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	logger "github.com/sirupsen/logrus"
 )
 
 var (
