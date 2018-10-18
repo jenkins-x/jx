@@ -146,7 +146,7 @@ func (o *ControllerComplianceOptions) onComplianceCheckObj(obj interface{}, jxCl
 }
 
 func (o *ControllerComplianceOptions) onComplianceCheck(check *jenkinsv1.ComplianceCheck, jxClient jenkinsv1client.Interface, ns string) error {
-	err := o.Check(check.Spec)
+	err := o.Check(check, jxClient, ns)
 	if err != nil {
 		gitProvider, gitRepoInfo, err1 := o.createGitProviderForURLWithoutKind(check.Spec.Commit.GitURL)
 		if err1 != nil {
@@ -296,28 +296,27 @@ func (o *ControllerComplianceOptions) UpsertComplianceCheck(name string, url str
 	return nil
 }
 
-func (o *ControllerComplianceOptions) Check(check jenkinsv1.ComplianceCheckSpec) error {
-	gitProvider, gitRepoInfo, err := o.createGitProviderForURLWithoutKind(check.Commit.GitURL)
+func (o *ControllerComplianceOptions) Check(check *jenkinsv1.ComplianceCheck, jxClient jenkinsv1client.Interface, ns string) error {
+	gitProvider, gitRepoInfo, err := o.createGitProviderForURLWithoutKind(check.Spec.Commit.GitURL)
 	if err != nil {
 		return err
 	}
 	pass := false
-	if check.Checked {
+	if check.Spec.Checked {
 		var commentBuilder strings.Builder
 		pass = true
-		for _, c := range check.Checks {
+		for _, c := range check.Spec.Checks {
 			if !c.Pass {
 				pass = false
-				fmt.Fprintf(&commentBuilder, "%s | %s | %s | TODO | `/test this`\n", c.Name, c.Description, check.Commit.SHA)
+				fmt.Fprintf(&commentBuilder, "%s | %s | %s | TODO | `/test this`\n", c.Name, c.Description, check.Spec.Commit.SHA)
 			}
 		}
 		if pass {
-			_, err := governance.NotifyCommitStatus(check.Commit, "success", "", "Compliance checks completed successfully", "", gitProvider, gitRepoInfo)
+			_, err := governance.NotifyCommitStatus(check.Spec.Commit, "success", "", "Compliance checks completed successfully", "", gitProvider, gitRepoInfo)
 			if err != nil {
 				return err
 			}
 		} else {
-
 			comment := fmt.Sprintf(
 				"The following commit status checks **failed**, say `/retest` to rerun them all:\n"+
 					"\n"+
@@ -328,15 +327,29 @@ func (o *ControllerComplianceOptions) Check(check jenkinsv1.ComplianceCheckSpec)
 					"\n"+
 					"Instructions for interacting with me using PR comments are available [here](https://git.k8s.io/community/contributors/guide/pull-requests.md).  If you have questions or suggestions related to my behavior, please file an issue against the [kubernetes/test-infra](https://github.com/kubernetes/test-infra/issues/new?title=Prow%%20issue:) repository. I understand the commands that are listed [here](https://go.k8s.io/bot-commands).\n"+
 					"</details>", commentBuilder.String())
-			_, err := governance.NotifyCommitStatus(check.Commit, "failure", "", "Some commit status checks failed", comment, gitProvider, gitRepoInfo)
+			_, err := governance.NotifyCommitStatus(check.Spec.Commit, "failure", "", "Some commit status checks failed", comment, gitProvider, gitRepoInfo)
 			if err != nil {
 				return err
 			}
 		}
 	} else {
-		_, err := governance.NotifyCommitStatus(check.Commit, "pending", "", "Waiting for commit status checks to complete", "", gitProvider, gitRepoInfo)
+		latest := true
+		// TODO This could be improved with labels
+		checks, err := jxClient.JenkinsV1().ComplianceChecks(ns).List(metav1.ListOptions{})
 		if err != nil {
 			return err
+		}
+		for _, c := range checks.Items {
+			if c.Spec.Commit.GitURL == check.Spec.Commit.GitURL && c.Spec.Commit.PullRequest == check.Spec.Commit.PullRequest && c.CreationTimestamp.UnixNano() > check.CreationTimestamp.UnixNano() {
+				latest = false
+				break
+			}
+		}
+		if latest {
+			_, err = governance.NotifyCommitStatus(check.Spec.Commit, "pending", "", "Waiting for commit status checks to complete", "", gitProvider, gitRepoInfo)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
