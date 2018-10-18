@@ -49,23 +49,26 @@ func NotifyCommitStatus(commitRef jenkinsv1.ComplianceCheckCommitReference, stat
 			return oldStatus, nil
 		}
 	}
-	log.Infof("Status %s for commit status for pull request %s (%s) on %s\n", state, commitRef.PullRequest, commitRef.SHA, commitRef.GitURL)
-	_, err = gitProvider.UpdateCommitStatus(gitRepoInfo.Organisation, gitRepoInfo.Name, commitRef.SHA, status)
-	if err != nil {
-		return &gits.GitRepoStatus{}, err
-	}
-	if comment != "" {
-		prn, err := strconv.Atoi(strings.TrimPrefix(commitRef.PullRequest, "PR-"))
+	if oldStatus.Description != status.Description || oldStatus.State != status.State || oldStatus.URL != status.URL {
+
+		log.Infof("Status %s for commit status for pull request %s (%s) on %s\n", state, commitRef.PullRequest, commitRef.SHA, commitRef.GitURL)
+		_, err = gitProvider.UpdateCommitStatus(gitRepoInfo.Organisation, gitRepoInfo.Name, commitRef.SHA, status)
 		if err != nil {
 			return &gits.GitRepoStatus{}, err
 		}
-		pr, err := gitProvider.GetPullRequest(gitRepoInfo.Organisation, gitRepoInfo, prn)
-		if err != nil {
-			return &gits.GitRepoStatus{}, err
-		}
-		err = gitProvider.AddPRComment(pr, comment)
-		if err != nil {
-			return &gits.GitRepoStatus{}, err
+		if comment != "" {
+			prn, err := strconv.Atoi(strings.TrimPrefix(commitRef.PullRequest, "PR-"))
+			if err != nil {
+				return &gits.GitRepoStatus{}, err
+			}
+			pr, err := gitProvider.GetPullRequest(gitRepoInfo.Organisation, gitRepoInfo, prn)
+			if err != nil {
+				return &gits.GitRepoStatus{}, err
+			}
+			err = gitProvider.AddPRComment(pr, comment)
+			if err != nil {
+				return &gits.GitRepoStatus{}, err
+			}
 		}
 	}
 	return status, nil
