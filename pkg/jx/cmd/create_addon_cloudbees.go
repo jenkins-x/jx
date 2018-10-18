@@ -22,9 +22,9 @@ import (
 const (
 	defaultCloudBeesReleaseName = "cb"
 	defaultCloudBeesNamespace   = "jx"
-	coreRepoName                 = "cb"
+	coreRepoName                = "cb"
 	cbServiceName               = "cb-core"
-	coreRepoUrl                  = "https://%s:%s@chartmuseum.jx.charts-demo.cloudbees.com"
+	coreRepoUrl                 = "https://%s:%s@chartmuseum.jx.charts-demo.cloudbees.com"
 	serviceaccountsClusterAdmin = "serviceaccounts-cluster-admin"
 	defaultCloudBeesVersion     = ""
 )
