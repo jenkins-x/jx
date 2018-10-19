@@ -123,6 +123,9 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, jxClient versioned.Inter
 		labels := pod.Labels
 		if labels != nil {
 			buildName := labels[builds.LabelBuildName]
+			if buildName == "" {
+				buildName = labels[builds.LabelOldBuildName]
+			}
 			if buildName != "" {
 				log.Infof("Found build pod %s\n", pod.Name)
 
