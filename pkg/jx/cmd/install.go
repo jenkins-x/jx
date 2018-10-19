@@ -233,6 +233,10 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
+	originalGitUsername := options.GitRepositoryOptions.Username
+	originalGitServer := options.GitRepositoryOptions.ServerURL
+	originalGitToken := options.GitRepositoryOptions.ApiToken
+
 	if options.Flags.Provider == EKS {
 		var deps []string
 		d := binaryShouldBeInstalled("eksctl")
@@ -561,6 +565,24 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to add the Git servers to Jenkins config")
 	}
 
+	username := originalGitUsername
+	if username == "" {
+		if os.Getenv(JX_GIT_USER) != "" {
+			username = os.Getenv(JX_GIT_USER)
+		}
+	}
+	if username != "" && originalGitToken != "" && originalGitServer != "" {
+		err = gitAuthCfg.SaveUserAuth(originalGitServer, &auth.UserAuth{
+			ApiToken: originalGitToken,
+			Username: username,
+		})
+		if err != nil {
+			return err
+		}
+		log.Infof("Saving Git token configuration for server %s and user name %s.\n",
+			util.ColorInfo(originalGitServer), util.ColorInfo(username))
+	}
+
 	config, err := helmConfig.String()
 	if err != nil {
 		return errors.Wrap(err, "failed to get the helm config")
@@ -686,21 +708,23 @@ func (options *InstallOptions) Run() error {
 	jxRelName := "jenkins-x"
 
 	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
-	// Need to check the tiller pod is ready before proceeding
-	log.Infof("Waiting for %s pod to be ready\n", util.ColorInfo("tiller"))
-	serviceAccountName := "tiller"
-	tillerNamespace := options.InitOptions.Flags.TillerNamespace
+	if !initOpts.Flags.NoTiller {
+		// Need to check the tiller pod is ready before proceeding
+		log.Infof("Waiting for %s pod to be ready\n", util.ColorInfo("tiller"))
+		serviceAccountName := "tiller"
+		tillerNamespace := options.InitOptions.Flags.TillerNamespace
 
-	clusterRoleBindingName := serviceAccountName
-	role := options.InitOptions.Flags.TillerClusterRole
+		clusterRoleBindingName := serviceAccountName
+		role := options.InitOptions.Flags.TillerClusterRole
 
-	err = options.ensureClusterRoleBinding(clusterRoleBindingName, role, tillerNamespace, serviceAccountName)
-	if err != nil {
-		return errors.Wrap(err, "tiller cluster role not defined")
-	}
-	err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
-	if err != nil {
-		return errors.Wrap(err, "tiller pod is not running after 10 minutes")
+		err = options.ensureClusterRoleBinding(clusterRoleBindingName, role, tillerNamespace, serviceAccountName)
+		if err != nil {
+			return errors.Wrap(err, "tiller cluster role not defined")
+		}
+		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
+		if err != nil {
+			return errors.Wrap(err, "tiller pod is not running after 10 minutes")
+		}
 	}
 
 	if !options.Flags.InstallOnly {

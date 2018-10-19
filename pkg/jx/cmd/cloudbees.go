@@ -20,15 +20,15 @@ type CloudBeesOptions struct {
 }
 
 var (
-	cdx_long = templates.LongDesc(`
+	core_long = templates.LongDesc(`
 		Opens the CloudBees app for Kubernetes in a browser.
 
 		Which helps you visualise your CI/CD pipelines, apps, environments and teams.
 
 		For more information please see [https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x](https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x)
 `)
-	cdx_example = templates.Examples(`
-		# Open the CDX dashboard in a browser
+	core_example = templates.Examples(`
+		# Open the core dashboard in a browser
 		jx cloudbees
 
 		# Print the Jenkins X console URL but do not open a browser
@@ -47,9 +47,9 @@ func NewCmdCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	cmd := &cobra.Command{
 		Use:     "cloudbees",
 		Short:   "Opens the CloudBees app for Kubernetes for visualising CI/CD and your environments",
-		Long:    cdx_long,
-		Example: cdx_example,
-		Aliases: []string{"cloudbee", "cb", "cdx"},
+		Long:    core_long,
+		Example: core_example,
+		Aliases: []string{"cloudbee", "cb", "core"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

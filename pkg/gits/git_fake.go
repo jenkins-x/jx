@@ -117,6 +117,10 @@ func (g *GitFake) Clone(url string, directory string) error {
 	return nil
 }
 
+func (g *GitFake) ShallowCloneBranch(url string, branch string, directory string) error {
+	return nil
+}
+
 func (g *GitFake) Push(dir string) error {
 	return nil
 }
