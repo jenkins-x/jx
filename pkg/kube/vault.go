@@ -5,6 +5,7 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -93,6 +94,7 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 			Size:            defaultNumVaults,
 			Image:           vaultImage,
 			BankVaultsImage: bankVaultsImage,
+			ServiceType:     string(v1.ServiceTypeClusterIP),
 			Config: map[string]interface{}{
 				"api_addr":           fmt.Sprintf("http://%s.%s:8200", name, ns),
 				"disable_clustering": true,
