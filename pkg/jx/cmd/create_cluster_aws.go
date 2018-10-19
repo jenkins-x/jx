@@ -281,8 +281,8 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 
 	log.Blank()
-	log.Infoln("Validating kops cluster state...")
-	err = o.RunCommand("kops", "validate", "cluster")
+	log.Infoln("Waiting to for a valid kops cluster state...")
+	err = o.waitForClusterValidation()
 	if err != nil {
 		return fmt.Errorf("Failed to successfully validate kops cluster state: %s\n", err)
 	}
@@ -316,6 +316,19 @@ func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 		return o.runCommandQuietly("kubectl", "get", "node")
 	}
 	return o.retryQuiet(2000, time.Second*10, f)
+}
+
+// waitForClusterValidation retries running kops validate cluster, which is necessary
+// because it can take a while for all the machines and nodes to join the cluster and be ready.
+func (o *CreateClusterAWSOptions) waitForClusterValidation() error {
+	f := func() error {
+		args := []string{"validate", "cluster"}
+		if o.Flags.State != "" {
+			args = append(args, "--state", o.Flags.State)
+		}
+		return o.runCommandQuietly("kops", args...)
+	}
+	return o.retryQuiet(25, time.Second*15, f)
 }
 
 func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureRegistries string) error {
@@ -367,5 +380,5 @@ func (o *CreateClusterAWSOptions) runKops(args ...string) error {
 		args = append(args, "--state", o.Flags.State)
 	}
 	log.Infof("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
-	return o.runKops("update", "cluster", "--yes")
+	return o.runCommandVerbose("kops", args...)
 }
