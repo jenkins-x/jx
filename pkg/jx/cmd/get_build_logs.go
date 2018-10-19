@@ -28,9 +28,10 @@ import (
 type GetBuildLogsOptions struct {
 	GetOptions
 
-	Tail   bool
-	Filter string
-	Build  int
+	Tail    bool
+	Filter  string
+	Build   int
+	Pending bool
 }
 
 var (
@@ -73,6 +74,7 @@ func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", true, "Tails the build log to the current terminal")
+	cmd.Flags().BoolVarP(&options.Pending, "pending", "p", false, "Only display logs which are currently pending to choose from if no build name is supplied")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
 	cmd.Flags().IntVarP(&options.Build, "build", "b", 0, "The build number to view")
 
@@ -164,8 +166,14 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 		if defaultName == "" && strings.HasSuffix(pipeline, "/master") {
 			defaultName = pipeline
 		}
-		if pipeline == "" || build == "" {
+		if pipeline == "" || build == "" || (o.Filter != "" && strings.Index(pipeline, o.Filter) < 0) {
 			continue
+		}
+		if o.Pending {
+			status := activity.Spec.Status
+			if status != v1.ActivityStatusTypePending && status != v1.ActivityStatusTypeRunning && status != v1.ActivityStatusTypeWaitingForApproval {
+				continue
+			}
 		}
 		buildNumber, err := strconv.Atoi(build)
 		if err != nil {
