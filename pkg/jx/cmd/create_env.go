@@ -156,6 +156,13 @@ func (o *CreateEnvOptions) Run() error {
 		return err
 	}
 
+	prowFlag, err := o.isProw()
+	if err != nil {
+		return err
+	}
+	if prowFlag && !o.Prow {
+		o.Prow = true
+	}
 	if o.Prow {
 		devEnv.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
 		devEnv, err = jxClient.JenkinsV1().Environments(ns).Update(devEnv)
