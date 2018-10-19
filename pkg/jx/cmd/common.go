@@ -713,6 +713,24 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	return o.runExposecontroller(devNamespace, targetNamespace, ic)
 }
 
+func (o *CommonOptions) exposeService(service, devNamespace, targetNamespace string) error {
+	ic, err := kube.GetIngressConfig(o.KubeClientCached, devNamespace)
+	if err != nil {
+		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
+	}
+	err = kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer, service)
+	if err != nil {
+		return err
+	}
+
+	err = o.copyCertmanagerResources(targetNamespace, ic)
+	if err != nil {
+		return fmt.Errorf("failed to copy certmanager resources from %s to %s namespace: %v", devNamespace, targetNamespace, err)
+	}
+
+	return o.runExposecontroller(devNamespace, targetNamespace, ic, service)
+}
+
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 
 	o.CleanExposecontrollerReources(targetNamespace)
