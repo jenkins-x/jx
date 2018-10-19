@@ -16,7 +16,7 @@
 
 SHELL := /bin/bash
 NAME := jx
-GO := GO15VENDOREXPERIMENT=1 go
+GO := GO111MODULE=on GO15VENDOREXPERIMENT=1 go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 #ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
@@ -144,10 +144,6 @@ win: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME).exe cmd/jx/jx.go
 
 bootstrap: vendoring
-
-vendoring:
-	$(GO) get -u github.com/golang/dep/cmd/dep
-	GO15VENDOREXPERIMENT=1 dep ensure
 
 release: check
 	rm -rf build release && mkdir build release

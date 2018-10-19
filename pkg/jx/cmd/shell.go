@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -31,6 +32,15 @@ if [ -f /etc/bashrc ]; then
 fi
 if [ -f ~/.bashrc ]; then
     source ~/.bashrc
+fi
+`
+
+	zshRcFile = `
+if [ -f /etc/zshrc ]; then
+    source /etc/zshrc
+fi
+if [ -f ~/.zshrc ]; then
+    source ~/.zshrc
 fi
 `
 )
@@ -125,40 +135,56 @@ func (o *ShellOptions) Run() error {
 	}
 	newConfig := *config
 	newConfig.CurrentContext = ctxName
+	
+	//clean old folders
+	files, err := filepath.Glob("/tmp/.jx-shell-*")
+	if err != nil {
+		panic(err)
+	}
+	for _, f := range files {
+		if err := os.RemoveAll(f); err != nil {
+			panic(err)
+		}
+	}
+	tmpDirName, err := ioutil.TempDir("/tmp", ".jx-shell-")
+	if err != nil {
+		return err
+	}
+	tmpConfigFileName := tmpDirName + "/config"
+	err = clientcmd.WriteToFile(newConfig, tmpConfigFileName)
+	if err != nil {
+		return err
+	}
 
-	tmpfile, err := ioutil.TempFile("/tmp", "jx-kube-config-")
-	if err != nil {
-		return err
-	}
-	tmpFileName := tmpfile.Name()
-	err = clientcmd.WriteToFile(newConfig, tmpFileName)
-	if err != nil {
-		return err
-	}
-	shell := os.Getenv("SHELL")
-	if shell == "" {
-		shell = "bash"
-	}
+	shell := filepath.Base(os.Getenv("SHELL"))
 	prompt := o.createNewBashPrompt(os.Getenv("PS1"))
-	rcFile := defaultRcFile + "\nexport PS1=" + prompt + "\nexport KUBECONFIG=\"" + tmpFileName + "\"\n"
+	rcFile := defaultRcFile + "\nexport PS1=" + prompt + "\nexport KUBECONFIG=\"" + tmpConfigFileName + "\"\n"
+	tmpRCFileName := tmpDirName + "/.bashrc"
 
-	tmpRCfile, err := ioutil.TempFile("/tmp", "jx-shell-rcfile-")
-	if err != nil {
-		return err
+	if shell == "zsh" {
+		prompt = o.createNewZshPrompt(os.Getenv("PS1"))
+		rcFile = zshRcFile + "\nexport PS1=" + prompt + "\nexport KUBECONFIG=\"" + tmpConfigFileName + "\"\n"
+		tmpRCFileName = tmpDirName + "/.zshrc"
 	}
-	tmpRCfileName := tmpRCfile.Name()
-	err = ioutil.WriteFile(tmpRCfileName, []byte(rcFile), util.DefaultWritePermissions)
+	err = ioutil.WriteFile(tmpRCFileName, []byte(rcFile), util.DefaultWritePermissions)
 	if err != nil {
 		return err
 	}
 
 	info := util.ColorInfo
 	log.Infof("Creating a new shell using the Kubernetes context %s\n", info(ctxName))
-	log.Infof("Bash RC file is %s\n\n", tmpRCfileName)
+	log.Infof("Shell RC file is %s\n\n", tmpRCFileName)
 	log.Infof("All changes to the Kubernetes context like changing environment, namespace or context will be local to this shell\n")
 	log.Infof("To return to the global context use the command: exit\n\n")
 
-	e := exec.Command(shell, "-rcfile", tmpRCfileName, "-i")
+	e := exec.Command(shell, "-rcfile", tmpRCFileName, "-i")
+	if shell == "zsh" {
+		env := os.Environ()
+		env = append(env, fmt.Sprintf("ZDOTDIR=%s", tmpDirName))
+		e = exec.Command(shell, "-i")
+		e.Env = env
+	} 
+
 	e.Stdout = o.Out
 	e.Stderr = o.Err
 	e.Stdin = os.Stdin
@@ -198,3 +224,19 @@ func (o *ShellOptions) createNewBashPrompt(prompt string) string {
 	}
 	return "'$(jx prompt) " + prompt + "'"
 }
+
+	func (o *ShellOptions) createNewZshPrompt(prompt string) string {
+	if prompt == "" {
+		return "'[$(jx prompt) %n@%m %c]\\$ '"
+	}
+	if strings.Contains(prompt, "jx prompt") {
+		return prompt
+	}
+	if prompt[0] == '"' {
+		return prompt[0:1] + "$(jx prompt) " + prompt[1:]
+	}
+	if prompt[0] == '\'' {
+		return prompt[0:1] + "$(jx prompt) " + prompt[1:]
+	}
+	return "'$(jx prompt) " + prompt + "'"
+	}

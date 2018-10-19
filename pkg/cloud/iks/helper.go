@@ -7,7 +7,7 @@ import (
 	"github.com/IBM-Cloud/bluemix-go/api/container/containerv1"
 )
 
-
+const unsupportedMinorKubeVersion = 11
 
 func GetRegions(regions Regions) ([]string, error) {
 
@@ -40,6 +40,19 @@ func GetZones(region Region, zones Zones) ([]string, error) {
 
 	return strzones, nil
 }
+func Filter(vs []containerv1.KubeVersion, f func(containerv1.KubeVersion) bool) []containerv1.KubeVersion {
+	vsf := make([]containerv1.KubeVersion, 0)
+	for _, v := range vs {
+		if f(v) {
+			vsf = append(vsf, v)
+		}
+	}
+	return vsf
+}
+
+func isUnsupportedKubeVersion(version containerv1.KubeVersion) bool {
+	return version.Minor < unsupportedMinorKubeVersion
+}
 
 func GetKubeVersions(versions containerv1.KubeVersions) ([]string, string, error) {
 	target := containerv1.ClusterTargetHeader{}
@@ -50,9 +63,11 @@ func GetKubeVersions(versions containerv1.KubeVersions) ([]string, string, error
 		return nil, "", err
 	}
 
-	strversions := make([]string, len(versionarr))
+	// filter unsupported kube versions
+	filteredVersionarr := Filter(versionarr, isUnsupportedKubeVersion)
+	strversions := make([]string, len(filteredVersionarr))
 
-	for i, version := range versionarr {
+	for i, version := range filteredVersionarr {
 		strversions[i] = strconv.Itoa(version.Major) + "." + strconv.Itoa(version.Minor) + "." + strconv.Itoa(version.Patch)
 		if version.Default {
 			def = strversions[i]

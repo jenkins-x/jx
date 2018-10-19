@@ -113,7 +113,7 @@ func (o *CreateAddonPrometheusOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	prometheusIngressConfig  := path.Join("/tmp", "prometheusIngressConfig_" + uuid.New())
+	prometheusIngressConfig := path.Join("/tmp", "prometheusIngressConfig_"+uuid.New())
 	err = ioutil.WriteFile(prometheusIngressConfig, valuesBytes, 0644)
 	if err != nil {
 		return err
@@ -122,12 +122,12 @@ func (o *CreateAddonPrometheusOptions) Run() error {
 	setValues := strings.Split(o.SetValues, ",")
 	err = o.installChartOptions(InstallChartOptions{
 		ReleaseName: o.ReleaseName,
-		Chart: "stable/prometheus",
-		Version: o.Version,
-		Ns: o.Namespace,
-		HelmUpdate: o.HelmUpdate,
-		ValueFiles: []string{prometheusIngressConfig},
-		SetValues: setValues,
+		Chart:       "stable/prometheus",
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		HelmUpdate:  o.HelmUpdate,
+		ValueFiles:  []string{prometheusIngressConfig},
+		SetValues:   setValues,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to install chart %s: %s", "prometheus", err)
