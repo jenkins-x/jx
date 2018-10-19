@@ -68,35 +68,34 @@ func NewIAMAuthRepository(config *bluemix.Config, client *rest.Client) (*IAMAuth
 
 //AuthenticatePassword ...
 func (auth *IAMAuthRepository) AuthenticatePassword(username string, password string) error {
-	return auth.getToken(map[string]string{
-		"grant_type": "password",
-		"username":   username,
-		"password":   password,
-	})
+	data := make(map[string]string, 1)
+	data["grant_type"] = "password"
+	data["username"] = username
+	data["password"] = password
+	return auth.getToken(data)
 }
 
 //AuthenticateAPIKey ...
 func (auth *IAMAuthRepository) AuthenticateAPIKey(apiKey string) error {
-	return auth.getToken(map[string]string{
-		"grant_type": "urn:ibm:params:oauth:grant-type:apikey",
-		"apikey":     apiKey,
-	})
+	data := make(map[string]string, 1)
+	data["grant_type"] = "urn:ibm:params:oauth:grant-type:apikey"
+	data["apikey"] = apiKey
+	return auth.getToken(data)
 }
 
 //AuthenticateSSO ...
 func (auth *IAMAuthRepository) AuthenticateSSO(passcode string) error {
-	return auth.getToken(map[string]string{
-		"grant_type": "urn:ibm:params:oauth:grant-type:passcode",
-		"passcode":   passcode,
-	})
+	data := make(map[string]string, 1)
+	data["grant_type"] = "urn:ibm:params:oauth:grant-type:passcode"
+	data["passcode"] = passcode
+	return auth.getToken(data)
 }
 
 //RefreshToken ...
 func (auth *IAMAuthRepository) RefreshToken() (string, error) {
-	data := map[string]string{
-		"grant_type":    "refresh_token",
-		"refresh_token": auth.config.IAMRefreshToken,
-	}
+	data := make(map[string]string, 1)
+	data["grant_type"] = "refresh_token"
+	data["refresh_token"] = auth.config.IAMRefreshToken
 
 	err := auth.getToken(data)
 	if err != nil {
@@ -142,12 +141,11 @@ func (auth *IAMAuthRepository) getToken(data map[string]string) error {
 }
 
 func (auth *IAMAuthRepository) RefreshTokenToLinkAccounts(account *Account) error {
-	data := map[string]string{
-		"grant_type":    "refresh_token",
-		"refresh_token": auth.config.IAMRefreshToken,
-		"bss_account":   account.GUID,
-		"ims_account":   account.IMSAccountID,
-	}
+	data := make(map[string]string, 1)
+	data["grant_type"] = "refresh_token"
+	data["refresh_token"] = auth.config.IAMRefreshToken
+	data["bss_account"] = account.GUID
+	data["ims_account"] = account.IMSAccountID
 
 	err := auth.getToken(data)
 	if err != nil {
