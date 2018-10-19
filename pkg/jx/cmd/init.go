@@ -445,7 +445,7 @@ func (o *InitOptions) useICPDefaults() {
 	o.Flags.IngressNamespace = "kube-system"
 	o.Flags.IngressDeployment = "default-backend"
 	o.Flags.IngressService = "default-backend"
-	o.Flags.TillerNamespace = "default" // We don't want to set up at kube-system as we want to use own Helm 2.10 tiller at default
+	o.Flags.TillerNamespace = "jx" // We don't want to set up at kube-system as we want to use own Helm 2.10 tiller
 }
 
 func (o *InitOptions) initIngress() error {
