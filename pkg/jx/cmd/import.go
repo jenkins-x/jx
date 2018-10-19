@@ -39,14 +39,16 @@ import (
 )
 
 const (
+	// PlaceHolderPrefix is prefix for placeholders
+	PlaceHolderPrefix = "REPLACE_ME"
 	// PlaceHolderAppName placeholder for app name
-	PlaceHolderAppName = "REPLACE_ME_APP_NAME"
+	PlaceHolderAppName = PlaceHolderPrefix + "_APP_NAME"
 	// PlaceHolderGitProvider placeholder for git provider
-	PlaceHolderGitProvider = "REPLACE_ME_GIT_PROVIDER"
+	PlaceHolderGitProvider = PlaceHolderPrefix + "_GIT_PROVIDER"
 	// PlaceHolderOrg placeholder for org
-	PlaceHolderOrg = "REPLACE_ME_ORG"
+	PlaceHolderOrg = PlaceHolderPrefix + "_ORG"
 	// PlaceHolderDockerRegistryOrg placeholder for docker registry
-	PlaceHolderDockerRegistryOrg = "REPLACE_ME_DOCKER_REGISTRY_ORG"
+	PlaceHolderDockerRegistryOrg = PlaceHolderPrefix + "_DOCKER_REGISTRY_ORG"
 
 	// JenkinsfileBackupSuffix the suffix used by Jenkins for backups
 	JenkinsfileBackupSuffix = ".backup"
@@ -1076,7 +1078,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 	return nil
 }
 
-// ReplacePlaceholders replaces Git server name, git org, and docker registry org placeholders
+// ReplacePlaceholders replaces app name, git server name, git org, and docker registry org placeholders
 func (options *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerRegistryOrg string) error {
 	gitOrg = kube.ToValidName(strings.ToLower(gitOrg))
 	log.Infof("replacing placeholders in directory %s\n", options.Dir)
@@ -1087,45 +1089,23 @@ func (options *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerR
 		return err
 	}
 
+	replacer := strings.NewReplacer(
+		PlaceHolderAppName, strings.ToLower(options.AppName),
+		PlaceHolderGitProvider, strings.ToLower(gitServerName),
+		PlaceHolderOrg, strings.ToLower(gitOrg),
+		PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg))
+
+	pathsToRename := []string{} // Renaming must be done post-Walk
 	if err := filepath.Walk(options.Dir, func(f string, fi os.FileInfo, err error) error {
-		relPath, _ := filepath.Rel(options.Dir, f)
-		match := ignore.Relative(relPath, fi.IsDir())
-		matchIgnore := match != nil && match.Ignore() //Defaults to including if match == nil
-
-		if fi.IsDir() {
-			if matchIgnore || fi.Name() == ".git" {
-				log.Infof("skipping directory %q\n", f)
-				return filepath.SkipDir
-			}
-			return nil
+		if skip, err := options.skipPathForReplacement(f, fi, ignore); skip {
+			return err
 		}
-
-		// Don't process nor follow symlinks
-		if (fi.Mode() & os.ModeSymlink) == os.ModeSymlink {
-			log.Infof("skipping symlink file %q\n", f)
-			return nil
+		if strings.Contains(filepath.Base(f), PlaceHolderPrefix) {
+			// Prepend so children are renamed before their parents
+			pathsToRename = append([]string{f}, pathsToRename...)
 		}
-
-		if !matchIgnore {
-			input, err := ioutil.ReadFile(f)
-			if err != nil {
-				log.Errorf("failed to read file %s: %v", f, err)
-				return err
-			}
-
-			lines := strings.Split(string(input), "\n")
-
-			for i, line := range lines {
-				line = strings.Replace(line, PlaceHolderAppName, strings.ToLower(options.AppName), -1)
-				line = strings.Replace(line, PlaceHolderGitProvider, strings.ToLower(gitServerName), -1)
-				line = strings.Replace(line, PlaceHolderOrg, strings.ToLower(gitOrg), -1)
-				line = strings.Replace(line, PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg), -1)
-				lines[i] = line
-			}
-			output := strings.Join(lines, "\n")
-			err = ioutil.WriteFile(f, []byte(output), 0644)
-			if err != nil {
-				log.Errorf("failed to write file %s: %v", f, err)
+		if !fi.IsDir() {
+			if err := replacePlaceholdersInFile(replacer, f); err != nil {
 				return err
 			}
 		}
@@ -1135,6 +1115,65 @@ func (options *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerR
 		return fmt.Errorf("error replacing placeholders %v", err)
 	}
 
+	for _, path := range pathsToRename {
+		if err := replacePlaceholdersInPathBase(replacer, path); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (options *ImportOptions) skipPathForReplacement(path string, fi os.FileInfo, ignore gitignore.GitIgnore) (bool, error) {
+	relPath, _ := filepath.Rel(options.Dir, path)
+	match := ignore.Relative(relPath, fi.IsDir())
+	matchIgnore := match != nil && match.Ignore() //Defaults to including if match == nil
+	if fi.IsDir() {
+		if matchIgnore || fi.Name() == ".git" {
+			log.Infof("skipping directory %q\n", path)
+			return true, filepath.SkipDir
+		}
+	} else if matchIgnore {
+		log.Infof("skipping ignored file %q\n", path)
+		return true, nil
+	}
+	// Don't process nor follow symlinks
+	if (fi.Mode() & os.ModeSymlink) == os.ModeSymlink {
+		log.Infof("skipping symlink file %q\n", path)
+		return true, nil
+	}
+	return false, nil
+}
+
+func replacePlaceholdersInFile(replacer *strings.Replacer, file string) error {
+	input, err := ioutil.ReadFile(file)
+	if err != nil {
+		log.Errorf("failed to read file %s: %v", file, err)
+		return err
+	}
+
+	lines := string(input)
+	if strings.Contains(lines, PlaceHolderPrefix) { // Avoid unnecessarily rewriting files
+		output := replacer.Replace(lines)
+		err = ioutil.WriteFile(file, []byte(output), 0644)
+		if err != nil {
+			log.Errorf("failed to write file %s: %v", file, err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func replacePlaceholdersInPathBase(replacer *strings.Replacer, path string) error {
+	base := filepath.Base(path)
+	newBase := replacer.Replace(base)
+	if newBase != base {
+		newPath := filepath.Join(filepath.Dir(path), newBase)
+		if err := os.Rename(path, newPath); err != nil {
+			log.Errorf("failed to rename %q to %q: %v", path, newPath, err)
+			return err
+		}
+	}
 	return nil
 }
 
