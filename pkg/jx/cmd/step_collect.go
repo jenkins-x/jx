@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -39,6 +40,15 @@ type HttpStepCollectOptions struct {
 }
 
 type CollectProviderKind string
+
+const gitHubRepoPattern = `^https?:\/\/github.com\/([a-zA-Z1-9-]*)\/([a-zA-Z1-9-]*)\.git$`
+
+const (
+	envVarBranchName = "BRANCH_NAME"
+	envVarSourceUrl  = "SOURCE_URL"
+)
+
+const ghPagesBranchName = "gh-pages"
 
 const (
 	GitHubPagesCollectProviderKind CollectProviderKind = "GitHub"
@@ -106,99 +116,86 @@ func (o *StepCollectOptions) Run() error {
 }
 
 func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err error) {
-	gitRepoInfo, err := options.FindGitInfo("")
-	if err != nil {
-		return err
-	}
-	if !gitRepoInfo.IsGitHub() {
-		return errors.New(fmt.Sprintf("Git repo must be GitHub to use GitHub Pages but it is %s", gitRepoInfo))
+	// Can't assume we are in a git repo due to shallow clones etc.
+
+	sourceUrl := os.Getenv(envVarSourceUrl)
+	sourceUrlParts := regexp.MustCompile(gitHubRepoPattern).FindStringSubmatch(sourceUrl)
+
+	if len(sourceUrlParts) != 3 {
+		return errors.New(fmt.Sprintf("Git repo must be GitHub to use GitHub Pages but it is %s", sourceUrl))
 	}
 
-	// First copy files out of the way, as we're going to checkout a different git branch
-	collectedDir, err := ioutil.TempDir("", "jenkins-x-collect")
+	org := sourceUrlParts[1]
+	repoName := sourceUrlParts[2]
+
+	// First clone the git repo
+	ghPagesDir, err := ioutil.TempDir("", "jenkins-x-collect")
 	if err != nil {
 		return err
 	}
-	for _, p := range options.Pattern {
-		_, err = exec.Command("cp", "-r", p, collectedDir).Output()
+	gitClient := options.Git()
+
+	err = gitClient.ShallowCloneBranch(sourceUrl, ghPagesBranchName, ghPagesDir)
+	if err != nil {
+		log.Infof("error doing shallow clone of gh-pages %v", err)
+		// swallow the error
+		log.Infof("No existing %s branch\n", ghPagesBranchName)
+		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
+		err = gitClient.Clone(sourceUrl, ghPagesDir)
 		if err != nil {
 			return err
 		}
-	}
-
-	gitClient := options.Git()
-	cwb, err := gitClient.Branch("")
-	// TODO duplicated below
-	defer func() {
-		if gitClient.Checkout("", cwb) != nil {
-			log.Errorf("Error checking out original banch %s\n", cwb)
+		err = gitClient.CheckoutOrphan(ghPagesDir, ghPagesBranchName)
+		if err != nil {
+			return err
 		}
-	}()
-	if err != nil {
-		return err
-	}
-	err = gitClient.FetchBranch("", "origin", "gh-pages:gh-pages")
-	if err != nil {
-		// swallow the error
-		log.Infof("No existing gh-pages branch")
-	}
-	remotes, err := gitClient.RemoteBranchNames("", "")
-	if err != nil {
-		return err
+		err = gitClient.RemoveForce(ghPagesDir, ".")
+		if err != nil {
+			return err
+		}
+		err = os.Remove(filepath.Join(ghPagesDir, ".gitignore"))
+		if err != nil {
+			// Swallow the error, doesn't matter
+		}
 	}
 	buildNo := options.getBuildNumber()
 	if options.Classifier == "" {
 		return errors.New("You must pass --classfier")
 	}
-	if !contains(remotes, "gh-pages") {
-		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
-		err = gitClient.CheckoutOrphan("", "gh-pages")
-		if err != nil {
-			return err
-		}
-		err = gitClient.RemoveForce("", ".")
-		if err != nil {
-			return err
-		}
-		err = gitClient.Remove("", ".gitignore")
-		if err != nil {
-			return err
-		}
+
+	branchName := os.Getenv(envVarBranchName)
+	if branchName == "" {
+		return fmt.Errorf("Environment variable %s is empty", envVarBranchName)
 	}
-	err = gitClient.Checkout("", "gh-pages")
-	if err != nil {
-		return err
-	}
-	repoDir := filepath.Join("jenkins-x", buildNo, options.Classifier)
+
+	repoPath := filepath.Join("jenkins-x", branchName, buildNo, options.Classifier)
+	repoDir := filepath.Join(ghPagesDir, repoPath)
 	err = os.MkdirAll(repoDir, 0755)
 	if err != nil {
 		return err
 	}
 
+	for _, p := range options.Pattern {
+		_, err = exec.Command("cp", "-r", p, repoDir).Output()
+		if err != nil {
+			return err
+		}
+	}
+
 	urls := make([]string, 0)
-	err = filepath.Walk(collectedDir,
+	err = filepath.Walk(repoDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			rPath := strings.TrimPrefix(strings.TrimPrefix(path, collectedDir), "/")
-			rDir := filepath.Dir(rPath)
-			err = os.MkdirAll(filepath.Join(repoDir, rDir), 0755)
-			if err != nil {
-				return err
-			}
-			if rPath != "" {
-				cmd := util.Command{
-					Name: "cp",
-					Args: []string{path, fmt.Sprintf("%s/%s", repoDir, rPath)},
+			if !info.IsDir() {
+				rPath := strings.TrimPrefix(strings.TrimPrefix(path, ghPagesDir), "/")
+
+				if rPath != "" {
+					url := fmt.Sprintf("https://%s.github.io/%s/%s", org, repoName, rPath)
+					log.Infof("Publishing %s\n", util.ColorInfo(url))
+					urls = append(urls, url)
 				}
-				_, err := cmd.RunWithoutRetry()
-				if err != nil {
-					return err
-				}
-				url := fmt.Sprintf("https://%s.github.com/%s/%s/%s/%s", gitRepoInfo.Organisation, gitRepoInfo.Name, cwb, repoDir, rPath)
-				log.Infof("Publishing %s\n", util.ColorInfo(url))
-				urls = append(urls, url)
 			}
 			return nil
 		})
@@ -206,21 +203,16 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 		return err
 	}
 
-	err = gitClient.Add("", repoDir)
+	err = gitClient.Add(ghPagesDir, repoDir)
 	if err != nil {
 		return err
 	}
-	err = gitClient.CommitDir("", fmt.Sprintf("Collecting files for build %s", buildNo))
+	err = gitClient.CommitDir(ghPagesDir, fmt.Sprintf("Publishing files for build %s", buildNo))
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
-	err = gitClient.Push("")
-	if err != nil {
-		return err
-	}
-
-	err = gitClient.Checkout("", cwb)
+	err = gitClient.Push(ghPagesDir)
 	if err != nil {
 		return err
 	}
@@ -244,15 +236,12 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 	if err != nil {
 		return err
 	}
-	appName := ""
-	if gitRepoInfo != nil {
-		appName = gitRepoInfo.Name
-	}
-	pipeline := ""
 	build := options.getBuildNumber()
-	pipeline, build = options.getPipelineName(gitRepoInfo, pipeline, build, appName)
+	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it
+	pipeline := fmt.Sprintf("%s-%s-%s-%s", org, repoName, branchName, build)
+
 	if pipeline != "" && build != "" {
-		name := kube.ToValidName(pipeline + "-" + build)
+		name := kube.ToValidName(pipeline)
 		key := &kube.PromoteStepActivityKey{
 			PipelineActivityKey: kube.PipelineActivityKey{
 				Name:     name,
