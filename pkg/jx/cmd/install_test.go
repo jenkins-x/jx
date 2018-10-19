@@ -27,6 +27,7 @@ func TestInstall(t *testing.T) {
 }
 
 func TestGenerateProwSecret(t *testing.T) {
+	t.Parallel()
 	fmt.Println(util.RandStringBytesMaskImprSrc(41))
 }
 
@@ -41,6 +42,7 @@ tutorial@bamboo-depth-206411.iam.gserviceaccount.com`
 }
 
 func TestInstallRun(t *testing.T) {
+	t.Parallel()
 	// Create mocks...
 	//factory := cmd_mocks.NewMockFactory()
 	//kubernetesInterface := kube_mocks.NewSimpleClientset()

@@ -43,6 +43,7 @@ func configureEnv(region string, defaultRegion string, profile string) {
 // Region tests
 
 func TestResolvingDefaultRegion(t *testing.T) {
+	t.Parallel()
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
@@ -53,6 +54,7 @@ func TestResolvingDefaultRegion(t *testing.T) {
 }
 
 func TestResolvingRegionFromAwsRegionEnv(t *testing.T) {
+	t.Parallel()
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
@@ -63,6 +65,7 @@ func TestResolvingRegionFromAwsRegionEnv(t *testing.T) {
 }
 
 func TestResolvingRegionFromAwsDefaultRegionEnv(t *testing.T) {
+	t.Parallel()
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
@@ -73,6 +76,7 @@ func TestResolvingRegionFromAwsDefaultRegionEnv(t *testing.T) {
 }
 
 func TestReturnOption(t *testing.T) {
+	t.Parallel()
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
@@ -83,6 +87,7 @@ func TestReturnOption(t *testing.T) {
 }
 
 func TestReadingRegionFromConfigProfile(t *testing.T) {
+	t.Parallel()
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
@@ -93,6 +98,7 @@ func TestReadingRegionFromConfigProfile(t *testing.T) {
 }
 
 func TestReadingRegionFromEnvProfile(t *testing.T) {
+	t.Parallel()
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)

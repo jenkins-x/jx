@@ -11,6 +11,7 @@ import (
 )
 
 func TestRegisterEnvironmentCRD(t *testing.T) {
+	t.Parallel()
 	// mock factory
 	factory := cmd_mocks.NewMockFactory()
 

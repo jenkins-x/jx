@@ -76,6 +76,7 @@ func createHelm(expectedArgs string) (*helm.HelmCLI, error) {
 }
 
 func TestNewHelmCLI(t *testing.T) {
+	t.Parallel()
 	setup("")
 	cli := helm.NewHelmCLI(binary, helm.V2, cwd, true, "arg1 arg2 arg3", "and some", "more")
 	assert.Equal(t, []string{"arg1", "arg2", "arg3", "and", "some", "more"}, cli.Runner.Args)
@@ -89,6 +90,7 @@ func TestNewHelmCLI(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
+	t.Parallel()
 	setup("")
 	expectedArgs := fmt.Sprintf("init --client-only --service-account %s --tiller-namespace %s --upgrade",
 		serviceAccount, namespace)
@@ -100,6 +102,7 @@ func TestInit(t *testing.T) {
 }
 
 func TestAddRepo(t *testing.T) {
+	t.Parallel()
 	setup("")
 	expectedArgs := fmt.Sprintf("repo add %s %s", repo, repoURL)
 	helm, err := createHelm(expectedArgs)
@@ -108,6 +111,7 @@ func TestAddRepo(t *testing.T) {
 	assert.NoError(t, err, "should add helm repo without any error")
 }
 func TestRemoveRepo(t *testing.T) {
+	t.Parallel()
 	setup("")
 	expectedArgs := fmt.Sprintf("repo remove %s", repo)
 	helm, err := createHelm(expectedArgs)
@@ -117,6 +121,7 @@ func TestRemoveRepo(t *testing.T) {
 }
 
 func TestListRepos(t *testing.T) {
+	t.Parallel()
 	setup(listRepoOutput)
 	expectedArgs := "repo list"
 	helm, err := createHelm(expectedArgs)
@@ -135,6 +140,7 @@ func TestListRepos(t *testing.T) {
 }
 
 func TestIsRepoMissing(t *testing.T) {
+	t.Parallel()
 	setup(listRepoOutput)
 	expectedArgs := "repo list"
 	helm, _ := createHelm(expectedArgs)
@@ -149,6 +155,7 @@ func TestIsRepoMissing(t *testing.T) {
 }
 
 func TestUpdateRepo(t *testing.T) {
+	t.Parallel()
 	setup("")
 	expectedArgs := "repo update"
 	helm, err := createHelm(expectedArgs)
@@ -158,6 +165,7 @@ func TestUpdateRepo(t *testing.T) {
 }
 
 func TestRemoveRequirementsLock(t *testing.T) {
+	t.Parallel()
 	setup("")
 	dir, err := ioutil.TempDir("/tmp", "reqtest")
 	assert.NoError(t, err, "should be able to create a temporary dir")
@@ -172,6 +180,7 @@ func TestRemoveRequirementsLock(t *testing.T) {
 }
 
 func TestBuildDependency(t *testing.T) {
+	t.Parallel()
 	setup("")
 	expectedArgs := "dependency build"
 	helm, err := createHelm(expectedArgs)
@@ -181,6 +190,7 @@ func TestBuildDependency(t *testing.T) {
 }
 
 func TestInstallChart(t *testing.T) {
+	t.Parallel()
 	setup("")
 	value := []string{"test"}
 	valueFile := []string{"./myvalues.yaml"}
@@ -193,6 +203,7 @@ func TestInstallChart(t *testing.T) {
 }
 
 func TestUpgradeChart(t *testing.T) {
+	t.Parallel()
 	setup("")
 	value := []string{"test"}
 	valueFile := []string{"./myvalues.yaml"}
@@ -207,6 +218,7 @@ func TestUpgradeChart(t *testing.T) {
 }
 
 func TestDeleteRelaese(t *testing.T) {
+	t.Parallel()
 	setup("")
 	expectedArgs := fmt.Sprintf("delete --purge %s", releaseName)
 	helm, err := createHelm(expectedArgs)
@@ -217,6 +229,7 @@ func TestDeleteRelaese(t *testing.T) {
 }
 
 func TestStatusRelease(t *testing.T) {
+	t.Parallel()
 	setup("")
 	expectedArgs := fmt.Sprintf("status %s", releaseName)
 	helm, err := createHelm(expectedArgs)
@@ -227,6 +240,7 @@ func TestStatusRelease(t *testing.T) {
 }
 
 func TestStatusReleases(t *testing.T) {
+	t.Parallel()
 	setup(listReleasesOutput)
 	expectedArgs := "list"
 	expectedSatusMap := map[string]string{
@@ -246,6 +260,7 @@ func TestStatusReleases(t *testing.T) {
 }
 
 func TestLint(t *testing.T) {
+	t.Parallel()
 	expectedArgs := "lint"
 	expectedOutput := "test"
 	setup(expectedOutput)
@@ -256,6 +271,7 @@ func TestLint(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
+	t.Parallel()
 	expectedArgs := "version --short"
 	expectedOutput := "1.0.0"
 	setup(expectedOutput)
@@ -266,6 +282,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestSearchChartVersions(t *testing.T) {
+	t.Parallel()
 	expectedOutput := searchVersionOutput
 	expectedArgs := fmt.Sprintf("search %s --versions", chart)
 	setup(expectedOutput)
@@ -279,6 +296,7 @@ func TestSearchChartVersions(t *testing.T) {
 }
 
 func TestFindChart(t *testing.T) {
+	t.Parallel()
 	setup("")
 	chartFile := "Chart.yaml"
 	dir, err := ioutil.TempDir("/tmp", "charttest")
@@ -295,6 +313,7 @@ func TestFindChart(t *testing.T) {
 }
 
 func TestPackage(t *testing.T) {
+	t.Parallel()
 	setup("")
 	expectedArgs := fmt.Sprintf("package %s", cwd)
 	helm, err := createHelm(expectedArgs)

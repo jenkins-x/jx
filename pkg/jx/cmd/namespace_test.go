@@ -5,6 +5,7 @@ import (
 )
 
 func TestNamespace(t *testing.T) {
+	t.Parallel()
 	//	options := &cmd.NamespaceOptions{
 	//		CommonOptions: cmd.CommonOptions{
 	//			Factory: f,

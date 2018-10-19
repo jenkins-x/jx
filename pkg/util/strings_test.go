@@ -14,6 +14,7 @@ type regexSplitData struct {
 }
 
 func TestRegexpSplit(t *testing.T) {
+	t.Parallel()
 	testCases := []regexSplitData{
 		{
 			"foo/bar", ":|/", []string{"foo", "bar"},
@@ -30,6 +31,7 @@ func TestRegexpSplit(t *testing.T) {
 }
 
 func TestStringIndices(t *testing.T) {
+	t.Parallel()
 	assertStringIndices(t, "foo/bar", "/", []int{3})
 	assertStringIndices(t, "/foo/bar", "/", []int{0, 4})
 }

@@ -8,6 +8,7 @@ import (
 )
 
 func TestInstallEksctl(t *testing.T) {
+	t.Parallel()
 	oldPath := os.Getenv("PATH")
 	err := os.Setenv("PATH", "")
 	assert.Nil(t, err)

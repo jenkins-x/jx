@@ -7,6 +7,7 @@ import (
 )
 
 func TestInstallIfExtractorIsEmpty(t *testing.T) {
+	t.Parallel()
 	shouldInstall, err := ShouldInstallBinary("cat", "0.0", nil)
 	assert.True(t, shouldInstall)
 	assert.Nil(t, err)
@@ -23,12 +24,14 @@ func (mockedCatVersionExtractor) extractVersion(command string, arguments []stri
 }
 
 func TestShouldNotInstall(t *testing.T) {
+	t.Parallel()
 	shouldInstall, err := ShouldInstallBinary("cat", "0.0", mockedCatVersionExtractor{})
 	assert.False(t, shouldInstall)
 	assert.Nil(t, err)
 }
 
 func TestShouldInstall(t *testing.T) {
+	t.Parallel()
 	shouldInstall, err := ShouldInstallBinary("cat", "0.1", mockedCatVersionExtractor{})
 	assert.True(t, shouldInstall)
 	assert.Nil(t, err)

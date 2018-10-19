@@ -28,6 +28,7 @@ func init() {
 }
 
 func TestCreateEnvRun(t *testing.T) {
+	t.Parallel()
 	// namespace fixture
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

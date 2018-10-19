@@ -34,6 +34,7 @@ func setup(latestJXVersion semver.Version) {
 }
 
 func TestVersisonCheckWhenCurrentVersionIsGreaterThanReleaseVersion(t *testing.T) {
+	t.Parallel()
 	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
 	setup(jxVersion)
 	version.Map["version"] = "1.4.0"
@@ -43,6 +44,7 @@ func TestVersisonCheckWhenCurrentVersionIsGreaterThanReleaseVersion(t *testing.T
 }
 
 func TestVersisonCheckWhenCurrentVersionIsEqualToReleaseVersion(t *testing.T) {
+	t.Parallel()
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	setup(jxVersion)
 	version.Map["version"] = "1.2.3"
@@ -52,6 +54,7 @@ func TestVersisonCheckWhenCurrentVersionIsEqualToReleaseVersion(t *testing.T) {
 }
 
 func TestVersisonCheckWhenCurrentVersionIsLessThanReleaseVersion(t *testing.T) {
+	t.Parallel()
 	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
 	setup(jxVersion)
 	version.Map["version"] = "1.0.0"
@@ -61,6 +64,7 @@ func TestVersisonCheckWhenCurrentVersionIsLessThanReleaseVersion(t *testing.T) {
 }
 
 func TestVersisonCheckWhenCurrentVersionIsEqualToReleaseVersionWithPatch(t *testing.T) {
+	t.Parallel()
 	prVersions := []semver.PRVersion{}
 	prVersions = append(prVersions, semver.PRVersion{VersionStr: "dev"})
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3, Pre: prVersions, Build: []string(nil)}
@@ -73,6 +77,7 @@ func TestVersisonCheckWhenCurrentVersionIsEqualToReleaseVersionWithPatch(t *test
 
 // TODO Would be good to have standardised logging to make testing log output easier...
 func TestVersisonCheckWhenCurrentVersionWithPatchIsEqualToReleaseVersion(t *testing.T) {
+	t.Parallel()
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	setup(jxVersion)
 	version.Map["version"] = "1.2.3-dev+6a8285f4"
@@ -82,6 +87,7 @@ func TestVersisonCheckWhenCurrentVersionWithPatchIsEqualToReleaseVersion(t *test
 }
 
 func TestVersisonCheckWhenCurrentVersionWithPatchIsLessThanReleaseVersion(t *testing.T) {
+	t.Parallel()
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	setup(jxVersion)
 	version.Map["version"] = "1.2.2-dev+6a8285f4"

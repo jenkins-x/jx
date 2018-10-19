@@ -66,6 +66,7 @@ func (m *MockPipelineActivityInterface) Patch(name string, pt types.PatchType, d
 }
 
 func TestGenerateBuildNumber(t *testing.T) {
+	t.Parallel()
 	options := &cmd.CommonOptions{}
 	cmd.ConfigureTestOptions(options, options.Git(), options.Helm())
 
@@ -192,6 +193,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 }
 
 func TestCreatePipelineDetails(t *testing.T) {
+	t.Parallel()
 	expectedGitOwner := "jstrachan"
 	expectedGitRepo := "myapp"
 	expectedBranch := "master"

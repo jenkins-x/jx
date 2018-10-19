@@ -8,6 +8,7 @@ import (
 )
 
 func TestDigitSuffix(t *testing.T) {
+	t.Parallel()
 	testData := map[string]string{
 		"nosuffix": "",
 		"build1":   "1",

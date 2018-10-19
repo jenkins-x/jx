@@ -65,6 +65,7 @@ func TestAnnotateNoExisting(t *testing.T) {
 }
 
 func TestAnnotateWithExistingAnnotations(t *testing.T) {
+	t.Parallel()
 
 	o := TestOptions{}
 	o.Setup()

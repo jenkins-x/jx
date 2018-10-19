@@ -17,6 +17,7 @@ import (
 )
 
 func TestJXClient(t *testing.T) {
+	t.Parallel()
 	// mock factory
 	factory := cmd_mocks.NewMockFactory()
 	// mock versiond interface
@@ -38,6 +39,7 @@ func TestJXClient(t *testing.T) {
 }
 
 func TestJXClientAndDevNameSpace(t *testing.T) {
+	t.Parallel()
 	// namespace fixture
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

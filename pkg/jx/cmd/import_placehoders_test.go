@@ -12,6 +12,7 @@ import (
 )
 
 func TestReplacePlaceholders(t *testing.T) {
+	t.Parallel()
 	f, err := ioutil.TempDir("", "test-extract-domain")
 	assert.NoError(t, err)
 

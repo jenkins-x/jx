@@ -429,6 +429,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestAcceptInvitations() {
 }
 
 func TestBitbucketCloudProviderTestSuite(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("skipping BitbucketCloudProviderTestSuite in short mode")
 	} else {

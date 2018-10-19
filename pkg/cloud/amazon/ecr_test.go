@@ -9,6 +9,7 @@ import (
 )
 
 func TestCreateNewSessionWithDefaultRegion(t *testing.T) {
+	t.Parallel()
 	// TODO Refactor for encapsulation
 	os.Setenv("AWS_REGION", "")
 	os.Setenv("AWS_DEFAULT_REGION", "")
@@ -18,6 +19,7 @@ func TestCreateNewSessionWithDefaultRegion(t *testing.T) {
 }
 
 func TestCreateNewSessionWithRegionFromAwsRegion(t *testing.T) {
+	t.Parallel()
 	// TODO Refactor for encapsulation
 	os.Setenv("AWS_REGION", "us-east-1")
 	os.Setenv("AWS_DEFAULT_REGION", "")
