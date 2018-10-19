@@ -159,13 +159,15 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		apiUrl := jenkins.JenkinsApiURL(server.URL)
 		version, err := o.getJenkinsVersion(apiUrl)
 		if err != nil {
-			return errors.Wrap(err, "getting Jenkins version")
-		}
-		if version.LT(JenkinsReferenceVersion) {
+			// Fall back to old Jenkins if version cannot detect the verson
 			err = o.tryFindAPITokenFromBrowserOlderJenkins(tokenUrl, userAuth)
 		} else {
-			newTokenUrl := jenkins.JenkinsNewTokenURL(server.URL)
-			err = o.tryFindAPITokenFromBrowser(tokenUrl, newTokenUrl, userAuth)
+			if version.LT(JenkinsReferenceVersion) {
+				err = o.tryFindAPITokenFromBrowserOlderJenkins(tokenUrl, userAuth)
+			} else {
+				newTokenUrl := jenkins.JenkinsNewTokenURL(server.URL)
+				err = o.tryFindAPITokenFromBrowser(tokenUrl, newTokenUrl, userAuth)
+			}
 		}
 		if err != nil {
 			log.Warnf("Unable to automatically find API token with chromedp using URL %s\n", tokenUrl)
