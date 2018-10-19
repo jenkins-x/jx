@@ -18,8 +18,8 @@ type DeleteAwsOptions struct {
 	CommonOptions
 
 	Profile string
-	Region string
-	VpcId  string
+	Region  string
+	VpcId   string
 }
 
 func NewCmdDeleteAws(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {

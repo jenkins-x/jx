@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	logger "github.com/sirupsen/logrus"
 )
 
 // CreateClusterEKSOptions contains the CLI flags
@@ -103,7 +103,7 @@ func (o *CreateClusterEKSOptions) Run() error {
 	if d != "" {
 		deps = append(deps, d)
 	}
-	logger.Debugf("Dependencies to be installed: %s", strings.Join(deps,", "))
+	logger.Debugf("Dependencies to be installed: %s", strings.Join(deps, ", "))
 	err := o.installMissingDependencies(deps)
 	if err != nil {
 		logger.Errorf("%v\nPlease fix the error or install manually then try again", err)
