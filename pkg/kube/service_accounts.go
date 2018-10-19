@@ -2,12 +2,12 @@ package kube
 
 import (
 	"encoding/json"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"  
-  "fmt"
+	"fmt"
+
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -47,7 +47,7 @@ func PatchImagePullSecrets(kubeClient kubernetes.Interface, ns string, sa string
 		return err
 	}
 	return nil
-)
+}
 
 const (
 	subjectKind                  = "ServiceAccount"
