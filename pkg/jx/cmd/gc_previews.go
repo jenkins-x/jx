@@ -81,15 +81,17 @@ func (o *GCPreviewsOptions) Run() error {
 		return err
 	}
 	if len(envs.Items) == 0 {
-		// no preview environments found so lets return gracefully
+		// no environments found so lets return gracefully
 		if o.Verbose {
-			log.Info("no preview environments found\n")
+			log.Info("no environments found\n")
 		}
 		return nil
 	}
 
+	var previewFound bool
 	for _, e := range envs.Items {
 		if e.Spec.Kind == v1.EnvironmentKindTypePreview {
+			previewFound = true
 			gitInfo, err := gits.ParseGitURL(e.Spec.Source.URL)
 			if err != nil {
 				return err
@@ -115,7 +117,8 @@ func (o *GCPreviewsOptions) Run() error {
 			}
 			pullRequest, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNum)
 			if err != nil {
-				return err
+				log.Warnf("Can not get pull request %s, skipping: %s", e.Spec.PreviewGitSpec.Name, err)
+				continue
 			}
 
 			lowerState := strings.ToLower(*pullRequest.State)
@@ -133,6 +136,9 @@ func (o *GCPreviewsOptions) Run() error {
 				}
 			}
 		}
+	}
+	if o.Verbose && !previewFound {
+		log.Info("no preview environments found\n")
 	}
 	return nil
 }
