@@ -292,6 +292,23 @@ func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
 	return client, ns, err
 }
 
+func (f *factory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	kubeConfig, _, err := kube.LoadConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	ns := kube.CurrentNamespace(kubeConfig)
+	client, err := dynamic.NewAPIHelperFromRESTConfig(config)
+	if err != nil {
+		return nil, ns, err
+	}
+	return client, ns, err
+}
+
 func (f *factory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {

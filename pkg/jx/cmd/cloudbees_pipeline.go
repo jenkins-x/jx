@@ -48,7 +48,7 @@ func NewCmdCloudBeesPipeline(f Factory, in terminal.FileReader, out terminal.Fil
 		Short:   "Opens the CloudBees Pipeline page for visualising CI/CD",
 		Long:    cloudbees_pipeline_long,
 		Example: cloudbees_pipeline_example,
-		Aliases: []string{"cloudbee", "cb", "cdx"},
+		Aliases: []string{"cloudbee", "cb", "core"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
