@@ -31,12 +31,12 @@ const (
 	AKS        = "aks"
 	AWS        = "aws"
 	PKS        = "pks"
+	IKS        = "iks"
 	MINIKUBE   = "minikube"
 	MINISHIFT  = "minishift"
 	KUBERNETES = "kubernetes"
 	OPENSHIFT  = "openshift"
 	ORACLE     = "oracle"
-	IBM        = "ibm"
 	ICP        = "icp"
 	JX_INFRA   = "jx-infra"
 
@@ -45,7 +45,7 @@ const (
 	optionClusterName       = "cluster-name"
 )
 
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IBM, OPENSHIFT, MINISHIFT, JX_INFRA, PKS, ICP}
+var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, MINISHIFT, JX_INFRA, PKS, ICP}
 
 const (
 	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
@@ -57,7 +57,9 @@ const (
     * eks (Amazon Web Services Elastic Container Service for Kubernetes - https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html)
     * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
 	* oke (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
-	# ibm-cloud-private (IBM Cloud Private) - https://www.ibm.com/cloud/private
+	# icp (IBM Cloud Private) - https://www.ibm.com/cloud/private
+    * iks (IBM Cloud Kubernetes Service - https://console.bluemix.net/docs/containers)
+    * oke (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
     * kubernetes for custom installations of Kubernetes
     * minikube (single-node Kubernetes cluster inside a VM on your laptop)
 	* minishift (single-node OpenShift cluster inside a VM on your laptop)
@@ -87,7 +89,7 @@ var (
 		- gcloud (Google Cloud CLI)
 		- oci (Oracle Cloud Infrastructure CLI)
 		- az (Azure CLI)
-		- cloudctl (IBM Cloud Private)
+		- ibmcloud (IBM CLoud CLI)
 
 		For more documentation see: [https://jenkins-x.io/getting-started/create-cluster/](https://jenkins-x.io/getting-started/create-cluster/)
 
@@ -108,7 +110,7 @@ func KubernetesProviderOptions() string {
 	return strings.Join(values, ", ")
 }
 
-// NewCmdGet creates a command object for the generic "init" action, which
+// NewCmdCreateCluster creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := createCreateClusterOptions(f, in, out, errOut, "")
@@ -133,8 +135,14 @@ func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.AddCommand(NewCmdCreateClusterMinikube(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterMinishift(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateClusterOKE(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterIKS(f, in, out, errOut))
 
 	return cmd
+}
+
+func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
+	o.InstallOptions.addInstallFlags(cmd, true)
+	cmd.Flags().BoolVarP(&o.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
 }
 
 func createCreateClusterOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) CreateClusterOptions {
@@ -160,13 +168,13 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 		log.Infof("%s cluster created. Skipping Jenkins X installation.\n", o.Provider)
 		return nil
 	}
-	// call jx init
+
 	o.InstallOptions.BatchMode = o.BatchMode
 	o.InstallOptions.Flags.Provider = provider
 
-	// call jx install
 	installOpts := &o.InstallOptions
 
+	// call jx install
 	err := installOpts.Run()
 	if err != nil {
 		return err
@@ -174,11 +182,7 @@ func (o *CreateClusterOptions) initAndInstall(provider string) error {
 	return nil
 }
 
+// Run returns help if function is run without any argument
 func (o *CreateClusterOptions) Run() error {
 	return o.Cmd.Help()
-}
-
-func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
-	o.InstallOptions.addInstallFlags(cmd, true)
-	cmd.Flags().BoolVarP(&o.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
 }

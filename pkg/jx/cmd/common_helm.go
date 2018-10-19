@@ -93,13 +93,13 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName stri
 }
 
 // installChart installs the given chart
-func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
-	return o.installChartOptions(InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues})
+func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string, valueFiles []string) error {
+	return o.installChartOptions(InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles})
 }
 
 // installChartAt installs the given chart
-func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string) error {
-	return o.installChartOptions(InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues})
+func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string, valueFiles []string) error {
+	return o.installChartOptions(InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles})
 }
 
 type InstallChartOptions struct {
@@ -218,7 +218,7 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 		if requirements != nil {
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
-				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo && !strings.HasPrefix(repo, "file:") {
+				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") {
 					repoCounter++
 					// TODO we could provide some mechanism to customise the names of repos somehow?
 					err = o.addHelmBinaryRepoIfMissing(repo, "repo"+strconv.Itoa(repoCounter))

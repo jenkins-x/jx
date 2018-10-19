@@ -484,7 +484,7 @@ func (o *CreateDevPodOptions) Run() error {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: workspaceClaimName,
 					OwnerReferences: []metav1.OwnerReference{
-						ownerRef(pod),
+						kube.PodOwnerRef(pod),
 					},
 				},
 				Spec: corev1.PersistentVolumeClaimSpec{
@@ -525,7 +525,7 @@ func (o *CreateDevPodOptions) Run() error {
 						},
 						Name: fmt.Sprintf("%s-port-%d", pod.Name, port),
 						OwnerReferences: []metav1.OwnerReference{
-							ownerRef(pod),
+							kube.PodOwnerRef(pod),
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -553,7 +553,7 @@ func (o *CreateDevPodOptions) Run() error {
 					},
 					Name: theiaServiceName,
 					OwnerReferences: []metav1.OwnerReference{
-						ownerRef(pod),
+						kube.PodOwnerRef(pod),
 					},
 				},
 				Spec: corev1.ServiceSpec{
@@ -873,16 +873,5 @@ func uniquePodName(names []string, prefix string) string {
 			return name
 		}
 		count++
-	}
-}
-
-func ownerRef(pod *corev1.Pod) metav1.OwnerReference {
-	controller := true
-	return metav1.OwnerReference{
-		APIVersion: "v1",
-		Kind:       "Service",
-		Name:       pod.Name,
-		UID:        pod.UID,
-		Controller: &controller,
 	}
 }

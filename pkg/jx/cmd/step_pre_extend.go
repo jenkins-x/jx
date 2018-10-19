@@ -5,6 +5,10 @@ import (
 	"io"
 	"strings"
 
+	jenkinsv1client "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+
+	"github.com/jenkins-x/jx/pkg/extensions"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -63,11 +67,10 @@ func NewCmdStepPreExtend(f Factory, in terminal.FileReader, out terminal.FileWri
 }
 
 func (o *StepPreExtendOptions) Run() error {
-
-	f := o.Factory
-	client, ns, err := f.CreateJXClient()
+	// This will cause o.devNamespace to be populated
+	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
-		return errors.Wrap(err, "cannot create the JX client")
+		return err
 	}
 
 	apisClient, err := o.CreateApiExtensionsClient()
@@ -137,7 +140,7 @@ func (o *StepPreExtendOptions) Run() error {
 					// Extension can't be found
 					log.Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s\n", util.ColorInfo(fmt.Sprintf("%s", v.FullyQualifiedName())), util.ColorInfo(availableExtensionsNames))
 				} else {
-					result, err := o.walk(e.Spec, availableExtensionsUUIDLookup, v.Parameters, 0)
+					result, err := o.walk(&e.Spec, availableExtensionsUUIDLookup, v.Parameters, 0, client.JenkinsV1().Extensions(ns))
 					if err != nil {
 						return err
 					}
@@ -153,8 +156,8 @@ func (o *StepPreExtendOptions) Run() error {
 	return nil
 }
 
-func (o *StepPreExtendOptions) walk(extension jenkinsv1.ExtensionSpec, lookup map[string]jenkinsv1.ExtensionSpec, parameters []jenkinsv1.ExtensionParameterValue, depth int) (extensions []jenkinsv1.ExtensionExecution, err error) {
-	result := make([]jenkinsv1.ExtensionExecution, 0)
+func (o *StepPreExtendOptions) walk(extension *jenkinsv1.ExtensionSpec, lookup map[string]jenkinsv1.ExtensionSpec, parameters []jenkinsv1.ExtensionParameterValue, depth int, exts jenkinsv1client.ExtensionInterface) (result []jenkinsv1.ExtensionExecution, err error) {
+	result = make([]jenkinsv1.ExtensionExecution, 0)
 	if len(extension.Children) > 0 {
 		if depth > 0 {
 			indent := ((depth - 1) * 2) + 7
@@ -164,7 +167,7 @@ func (o *StepPreExtendOptions) walk(extension jenkinsv1.ExtensionSpec, lookup ma
 		}
 		for _, childRef := range extension.Children {
 			if child, ok := lookup[childRef]; ok {
-				children, err := o.walk(child, lookup, parameters, depth+1)
+				children, err := o.walk(&child, lookup, parameters, depth+1, exts)
 				if err != nil {
 					return result, err
 				}
@@ -175,7 +178,7 @@ func (o *StepPreExtendOptions) walk(extension jenkinsv1.ExtensionSpec, lookup ma
 		}
 	} else {
 		if extension.IsPost() {
-			ext, envVarsFormatted, err := extension.ToExecutable(parameters)
+			ext, envVarsFormatted, err := extensions.ToExecutable(extension, parameters, o.devNamespace, exts)
 			if err != nil {
 				return result, err
 			}

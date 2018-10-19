@@ -5,6 +5,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/log"
+	logger "github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 
@@ -15,8 +17,9 @@ import (
 type DeleteAwsOptions struct {
 	CommonOptions
 
-	VpcId  string
-	Region string
+	Profile string
+	Region  string
+	VpcId   string
 }
 
 func NewCmdDeleteAws(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -38,16 +41,22 @@ func NewCmdDeleteAws(f Factory, in terminal.FileReader, out terminal.FileWriter,
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.VpcId, "vpc-id", "", "", "ID of VPC to delete.")
+
+	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logger.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
+
+	cmd.Flags().StringVarP(&options.Profile, "profile", "", "", "AWS profile to use.")
 	cmd.Flags().StringVarP(&options.Region, "region", "", "", "AWS region to use.")
+	cmd.Flags().StringVarP(&options.VpcId, "vpc-id", "", "", "ID of VPC to delete.")
 
 	return cmd
 }
 
 func (o *DeleteAwsOptions) Run() error {
+	log.ConfigureLog(o.LogLevel)
+
 	vpcid := o.VpcId
 
-	session, err := amazon.NewAwsSession("", o.Region)
+	session, err := amazon.NewAwsSession(o.Profile, o.Region)
 	if err != nil {
 		return err
 	}

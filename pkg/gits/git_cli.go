@@ -65,6 +65,11 @@ func (g *GitCLI) Clone(url string, dir string) error {
 	return g.gitCmd(dir, "clone", url, ".")
 }
 
+// Clone clones a single branch of the given git URL into the given directory
+func (g *GitCLI) ShallowCloneBranch(url string, branch string, dir string) error {
+	return g.gitCmd(dir, "clone", "--depth", "1", "--single-branch", "--branch", branch, url, ".")
+}
+
 // Pull pulls the Git repository in the given directory
 func (g *GitCLI) Pull(dir string) error {
 	return g.gitCmd(dir, "pull")
@@ -592,4 +597,9 @@ func (g *GitCLI) SetEmail(dir string, email string) error {
 // CreateBranch creates a branch with the given name in the Git repository from the given directory
 func (g *GitCLI) CreateBranch(dir string, branch string) error {
 	return g.gitCmd(dir, "branch", branch)
+}
+
+// Diff runs git diff
+func (g *GitCLI) Diff(dir string) (string, error) {
+	return g.gitCmdWithOutput(dir, "diff")
 }

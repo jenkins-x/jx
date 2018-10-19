@@ -52,6 +52,8 @@ type GitProvider interface {
 
 	ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error)
 
+	UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error)
+
 	MergePullRequest(pr *GitPullRequest, message string) error
 
 	CreateWebHook(data *GitWebHookArguments) error
@@ -157,6 +159,7 @@ type Gitter interface {
 
 	Init(dir string) error
 	Clone(url string, directory string) error
+	ShallowCloneBranch(url string, branch string, directory string) error
 	Push(dir string) error
 	PushMaster(dir string) error
 	PushTag(dir string, tag string) error
@@ -195,6 +198,7 @@ type Gitter interface {
 	CommitDir(dir string, message string) error
 	AddCommmit(dir string, msg string) error
 	HasChanges(dir string) (bool, error)
+	Diff(dir string) (string, error)
 
 	GetPreviousGitTagSHA(dir string) (string, error)
 	GetCurrentGitTagSHA(dir string) (string, error)

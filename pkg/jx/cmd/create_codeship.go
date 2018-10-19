@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"strconv"
 )
 
 type CreateCodeshipFlags struct {
@@ -102,6 +103,7 @@ func NewCmdCreateCodeship(f Factory, in terminal.FileReader, out terminal.FileWr
 
 	options.addCommonFlags(cmd)
 	options.addFlags(cmd)
+	options.CreateTerraformOptions.InstallOptions.addInstallFlags(cmd, true)
 
 	options.CreateGkeServiceAccountOptions.addFlags(cmd)
 	options.CreateTerraformOptions.addFlags(cmd)
@@ -332,13 +334,12 @@ func (o *CreateCodeshipOptions) Run() error {
 		return err
 	}
 
+	createArgs := o.CreateAdditionalArgs()
+	helm3 := o.CreateTerraformOptions.InstallOptions.InitOptions.Flags.Helm3
+
 	serviceAccount := string(b)
 
 	if uuid == "" {
-		//m := make(map[string]interface{})
-		//m["type"] = "script_deployment"
-		//m["commands"] = []string{"./build.sh"}
-
 		createProjectRequest := codeship.ProjectCreateRequest{
 			Type:          codeship.ProjectTypeBasic,
 			RepositoryURL: fmt.Sprintf("git@github.com:%s/%s", owner, repoName),
@@ -353,14 +354,9 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
 				{Name: "BUILD_NUMBER", Value: "1"},
 				{Name: "ENVIRONMENTS", Value: strings.Join(clusters, ",")},
+				{Name: "CREATE_ARGS", Value: strings.Join(createArgs, " ")},
+				{Name: "HELM3", Value: strconv.FormatBool(helm3)},
 			},
-			//DeploymentPipelines: []codeship.DeploymentPipeline{
-			//	{
-			//		Branch: codeship.DeploymentBranch{ BranchName: "master", MatchMode: "exact"},
-			//		Config: m,
-			//		Position: 1,
-			//	},
-			//} ,
 		}
 
 		project, _, err := csOrg.CreateProject(ctx, createProjectRequest)
@@ -386,6 +382,8 @@ func (o *CreateCodeshipOptions) Run() error {
 				{Name: "GIT_EMAIL", Value: o.Flags.GitEmail},
 				{Name: "BUILD_NUMBER", Value: "1"},
 				{Name: "ENVIRONMENTS", Value: strings.Join(clusters, ",")},
+				{Name: "CREATE_ARGS", Value: strings.Join(createArgs, " ")},
+				{Name: "HELM3", Value: strconv.FormatBool(helm3)},
 			},
 		}
 
@@ -403,6 +401,25 @@ func (o *CreateCodeshipOptions) Run() error {
 	}
 
 	return nil
+}
+
+func (o *CreateCodeshipOptions) CreateAdditionalArgs() []string {
+	args := []string{}
+
+	// prow
+	if o.CreateTerraformOptions.InstallOptions.Flags.Prow {
+		args = append(args, "--prow")
+	}
+
+	if o.CreateTerraformOptions.InstallOptions.InitOptions.Flags.NoTiller {
+		args = append(args, "--no-tiller")
+	}
+
+	if o.CreateTerraformOptions.InstallOptions.InitOptions.Flags.Helm3 {
+		args = append(args, "--helm3")
+	}
+
+	return args
 }
 
 func ProjectExists(ctx context.Context, org *codeship.Organization, codeshipOrg string, codeshipRepo string) (bool, string, error) {

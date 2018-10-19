@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 func Infof(msg string, args ...interface{}) {
@@ -13,11 +14,11 @@ func Infof(msg string, args ...interface{}) {
 }
 
 func Info(msg string) {
-	fmt.Print(msg)
+	fmt.Fprint(terminal.NewAnsiStdout(os.Stdout), msg)
 }
 
 func Infoln(msg string) {
-	fmt.Println(msg)
+	fmt.Fprintln(terminal.NewAnsiStdout(os.Stdout), msg)
 }
 
 func Blank() {

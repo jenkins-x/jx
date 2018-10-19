@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -19,7 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -28,13 +29,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// InitOptions the flags for running init
+// InitOptions the options for running init
 type InitOptions struct {
 	CommonOptions
 	Client clientset.Clientset
 	Flags  InitFlags
 }
 
+// InitFlags the flags for running init
 type InitFlags struct {
 	Domain                     string
 	Provider                   string
@@ -66,9 +68,11 @@ const (
 	optionNamespace       = "namespace"
 	optionTillerNamespace = "tiller-namespace"
 
+	// JenkinsBuildPackURL URL of Draft packs for Jenkins X
 	JenkinsBuildPackURL = "https://github.com/jenkins-x/draft-packs.git"
-
-	INGRESS_SERVICE_NAME    = "jxing-nginx-ingress-controller"
+	// INGRESS_SERVICE_NAME service name for ingress controller
+	INGRESS_SERVICE_NAME = "jxing-nginx-ingress-controller"
+	// DEFAULT_CHARTMUSEUM_URL default URL for Jenkins X ChartMuseum
 	DEFAULT_CHARTMUSEUM_URL = "https://chartmuseum.build.cd.jenkins-x.io"
 )
 
@@ -116,29 +120,30 @@ func NewCmdInit(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 	return cmd
 }
 
-func (options *InitOptions) addInitFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&options.Flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
-	cmd.Flags().StringVarP(&options.Username, optionUsername, "", "", "The Kubernetes username used to initialise helm. Usually your email address for your Kubernetes account")
-	cmd.Flags().StringVarP(&options.Flags.UserClusterRole, "user-cluster-role", "", "cluster-admin", "The cluster role for the current user to be able to administer helm")
-	cmd.Flags().StringVarP(&options.Flags.TillerClusterRole, "tiller-cluster-role", "", "cluster-admin", "The cluster role for Helm's tiller")
-	cmd.Flags().StringVarP(&options.Flags.TillerNamespace, optionTillerNamespace, "", "kube-system", "The namespace for the Tiller when using a gloabl tiller")
-	cmd.Flags().StringVarP(&options.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
-	cmd.Flags().StringVarP(&options.Flags.IngressNamespace, "ingress-namespace", "", "kube-system", "The namespace for the Ingress controller")
-	cmd.Flags().StringVarP(&options.Flags.IngressService, "ingress-service", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Service")
-	cmd.Flags().StringVarP(&options.Flags.IngressDeployment, "ingress-deployment", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Deployment")
-	cmd.Flags().StringVarP(&options.Flags.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the Kubernetes cluster. For bare metal on premise clusters this is often the IP of the Kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
-	cmd.Flags().BoolVarP(&options.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
-	cmd.Flags().BoolVarP(&options.Flags.HelmClient, "helm-client-only", "", false, "Only install helm client")
-	cmd.Flags().BoolVarP(&options.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
-	cmd.Flags().BoolVarP(&options.Flags.GlobalTiller, "global-tiller", "", true, "Whether or not to use a cluster global tiller")
-	cmd.Flags().BoolVarP(&options.Flags.RemoteTiller, "remote-tiller", "", true, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
-	cmd.Flags().BoolVarP(&options.Flags.NoTiller, "no-tiller", "", false, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
-	cmd.Flags().BoolVarP(&options.Flags.SkipIngress, "skip-ingress", "", false, "Don't install an ingress controller")
-	cmd.Flags().BoolVarP(&options.Flags.SkipTiller, "skip-tiller", "", false, "Don't install a Helm Tiller service")
-	cmd.Flags().BoolVarP(&options.Flags.Helm3, "helm3", "", false, "Use helm3 to install Jenkins X which does not use Tiller")
-	cmd.Flags().BoolVarP(&options.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the Kubernetes master IP address")
+func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.Flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
+	cmd.Flags().StringVarP(&o.Username, optionUsername, "", "", "The Kubernetes username used to initialise helm. Usually your email address for your Kubernetes account")
+	cmd.Flags().StringVarP(&o.Flags.UserClusterRole, "user-cluster-role", "", "cluster-admin", "The cluster role for the current user to be able to administer helm")
+	cmd.Flags().StringVarP(&o.Flags.TillerClusterRole, "tiller-cluster-role", "", "cluster-admin", "The cluster role for Helm's tiller")
+	cmd.Flags().StringVarP(&o.Flags.TillerNamespace, optionTillerNamespace, "", "kube-system", "The namespace for the Tiller when using a global tiller")
+	cmd.Flags().StringVarP(&o.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
+	cmd.Flags().StringVarP(&o.Flags.IngressNamespace, "ingress-namespace", "", "kube-system", "The namespace for the Ingress controller")
+	cmd.Flags().StringVarP(&o.Flags.IngressService, "ingress-service", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Service")
+	cmd.Flags().StringVarP(&o.Flags.IngressDeployment, "ingress-deployment", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Deployment")
+	cmd.Flags().StringVarP(&o.Flags.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the Kubernetes cluster. For bare metal on premise clusters this is often the IP of the Kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
+	cmd.Flags().BoolVarP(&o.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
+	cmd.Flags().BoolVarP(&o.Flags.HelmClient, "helm-client-only", "", false, "Only install helm client")
+	cmd.Flags().BoolVarP(&o.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
+	cmd.Flags().BoolVarP(&o.Flags.GlobalTiller, "global-tiller", "", true, "Whether or not to use a cluster global tiller")
+	cmd.Flags().BoolVarP(&o.Flags.RemoteTiller, "remote-tiller", "", true, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
+	cmd.Flags().BoolVarP(&o.Flags.NoTiller, "no-tiller", "", false, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
+	cmd.Flags().BoolVarP(&o.Flags.SkipIngress, "skip-ingress", "", false, "Don't install an ingress controller")
+	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-tiller", "", false, "Don't install a Helm Tiller service")
+	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", false, "Use helm3 to install Jenkins X which does not use Tiller")
+	cmd.Flags().BoolVarP(&o.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the Kubernetes master IP address")
 }
 
+// Run performs initialization
 func (o *InitOptions) Run() error {
 	var err error
 	if !o.Flags.RemoteTiller || o.Flags.NoTiller {
@@ -162,11 +167,20 @@ func (o *InitOptions) Run() error {
 	}
 
 	// So a user doesn't need to specify ingress options if provider is ICP: we will use ICP's own ingress controller
+	// and by default, the tiller namespace "jx"
 	if o.Flags.Provider == ICP {
 		o.useICPDefaults()
 	}
 
-	// helm init, this has been seen to fail intermittently on public clouds, so lets retry a couple of times
+	// Needs to be done early as is an ingress availablility is an indicator of cluster readyness
+	if o.Flags.Provider == IKS {
+		err = o.initIKSIngress()
+		if err != nil {
+			return err
+		}
+	}
+
+	// helm init, this has been seen to fail intermittently on public clouds, so let's retry a couple of times
 	err = o.retry(3, 2*time.Second, func() (err error) {
 		err = o.initHelm()
 		return
@@ -237,7 +251,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 	return o.retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
-			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n: %v", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
+			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v\n", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
 
 			//args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
 
@@ -370,6 +384,11 @@ func (o *InitOptions) initHelm() error {
 			if err != nil {
 				return err
 			}
+			err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
+			if err != nil {
+				return err
+			}
+
 			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, true)
 			if err != nil {
 				return err
@@ -413,12 +432,12 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 		return "", err
 	}
 
-	packUrl := settings.BuildPackURL
+	packURL := settings.BuildPackURL
 	packRef := settings.BuildPackRef
 
-	u, err := url.Parse(strings.TrimSuffix(packUrl, ".git"))
+	u, err := url.Parse(strings.TrimSuffix(packURL, ".git"))
 	if err != nil {
-		return "", fmt.Errorf("Failed to parse build pack URL: %s: %s", packUrl, err)
+		return "", fmt.Errorf("Failed to parse build pack URL: %s: %s", packURL, err)
 	}
 
 	draftDir, err := util.DraftDir()
@@ -430,7 +449,7 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 		return "", fmt.Errorf("Could not create %s: %s", dir, err)
 	}
 
-	err = o.Git().CloneOrPull(packUrl, dir)
+	err = o.Git().CloneOrPull(packURL, dir)
 	if err != nil {
 		return "", err
 	}
@@ -446,6 +465,28 @@ func (o *InitOptions) useICPDefaults() {
 	o.Flags.IngressDeployment = "default-backend"
 	o.Flags.IngressService = "default-backend"
 	o.Flags.TillerNamespace = "jx" // We don't want to set up at kube-system as we want to use own Helm 2.10 tiller
+}
+
+func (o *InitOptions) initIKSIngress() error {
+	log.Infoln("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
+	ingressNamespace := o.Flags.IngressNamespace
+
+	clusterID, err := iks.GetKubeClusterID(kubeClient)
+	if err != nil || clusterID == "" {
+		clusterID, err = iks.GetClusterID()
+		if err != nil {
+			return err
+		}
+	}
+	o.Flags.IngressDeployment = "public-cr" + strings.ToLower(clusterID) + "-alb1"
+	o.Flags.IngressService = "public-cr" + strings.ToLower(clusterID) + "-alb1"
+
+	return kube.WaitForDeploymentToBeCreatedAndReady(kubeClient, o.Flags.IngressDeployment, ingressNamespace, 30*time.Minute)
 }
 
 func (o *InitOptions) initIngress() error {
@@ -507,6 +548,7 @@ func (o *InitOptions) initIngress() error {
 		log.Infoln("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
 		return nil
 	}
+
 	podCount, err := kube.DeploymentPodCount(client, o.Flags.IngressDeployment, ingressNamespace)
 	if podCount == 0 {
 		installIngressController := false
@@ -533,11 +575,11 @@ func (o *InitOptions) initIngress() error {
 		}
 		if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
 			// we can only enable one port for NLBs right now
-			enableHttp := "false"
-			enableHttps := "true"
+			enableHTTP := "false"
+			enableHTTPS := "true"
 			if o.Flags.Http {
-				enableHttp = "true"
-				enableHttps = "false"
+				enableHTTP = "true"
+				enableHTTPS = "false"
 			}
 			yamlText := `---
 rbac:
@@ -547,8 +589,8 @@ controller:
  service:
    annotations:
      service.beta.kubernetes.io/aws-load-balancer-type: nlb
-   enableHttp: ` + enableHttp + `
-   enableHttps: ` + enableHttps + `
+   enableHttp: ` + enableHTTP + `
+   enableHttps: ` + enableHTTPS + `
 `
 
 			f, err := ioutil.TempFile("", "ing-values-")
@@ -688,6 +730,7 @@ func (o *InitOptions) validateGit() error {
 	return nil
 }
 
+// HelmBinary returns name of configured Helm binary
 func (o *InitOptions) HelmBinary() string {
 	if o.Flags.Helm3 {
 		return "helm3"
@@ -699,6 +742,7 @@ func (o *InitOptions) HelmBinary() string {
 	return "helm"
 }
 
+// GetDomain returns the domain name, calculating it if possible else prompting the user
 func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, provider string, ingressNamespace string, ingressService string, externalIP string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	address := externalIP
@@ -762,6 +806,24 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			} else {
 				break
 			}
+		}
+	}
+
+	if provider == IKS {
+		if domain != "" {
+			log.Infof("\nIBM Kubernetes Service will use provided domain. Ensure name is registrered with DNS (ex. CIS) and pointing the cluster ingress IP: %s\n", util.ColorInfo(address))
+			return domain, nil
+		}
+		clusterName, err := iks.GetClusterName()
+		clusterRegion, err := iks.GetKubeClusterRegion(client)
+		if err == nil && clusterName != "" && clusterRegion != "" {
+			customDomain := clusterName + "." + clusterRegion + ".containers.appdomain.cloud"
+			log.Infof("\nIBM Kubernetes Service will use the default cluster domain: ")
+			log.Infof("%s\n", util.ColorInfo(customDomain))
+			return customDomain, nil
+		} else {
+			log.Infof("ERROR getting IBM Kubernetes Service will use the default cluster domain:")
+			log.Infof(err.Error())
 		}
 	}
 

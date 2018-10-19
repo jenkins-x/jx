@@ -1,12 +1,10 @@
 package v1
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
-	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -106,7 +104,7 @@ type ExtensionExecution struct {
 
 // ExtensionRepositoryLockList contains a list of ExtensionRepositoryLock items
 type ExtensionRepositoryLockList struct {
-	Version    int             `json:"version"`
+	Version    string          `json:"version"`
 	Extensions []ExtensionSpec `json:"extensions"`
 }
 
@@ -146,6 +144,7 @@ type ExtensionDefinitionChildReference struct {
 	Name      string `json:"name,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 	Remote    string `json:"remote,omitempty"`
+	Tag       string `json:"tag,omitempty"`
 }
 
 type EnvironmentVariable struct {
@@ -169,6 +168,12 @@ type ExtensionParameterValue struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
+
+const (
+	VersionGlobalParameterName        string = "extVersion"
+	TeamNamespaceGlobalParameterName  string = "extTeamNamespace"
+	OwnerReferenceGlobalParameterName string = "extOwnerReference"
+)
 
 func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 	scriptFile, err := ioutil.TempFile("", fmt.Sprintf("%s-*", e.Name))
@@ -205,45 +210,6 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 		return errors.Wrap(err, fmt.Sprintf("Error executing script %s", e.Name))
 	}
 	return nil
-}
-
-// TODO remove the env vars formatting stuff from here and make it a function on ExtensionSpec
-func (e *ExtensionSpec) ToExecutable(envVarValues []ExtensionParameterValue) (ext ExtensionExecution, envVarsStr string, err error) {
-	envVars := make([]EnvironmentVariable, 0)
-	for _, p := range e.Parameters {
-		value := p.DefaultValue
-		// TODO this is probably inefficient
-		for _, v := range envVarValues {
-			if p.Name == v.Name {
-				value = v.Value
-			}
-		}
-		// TODO Log any parameters from RepoExetensions NOT used
-		if value != "" {
-			envVarName := p.EnvironmentVariableName
-			if envVarName == "" {
-				envVarName = strings.ToUpper(fmt.Sprintf("%s_%s_%s", strcase.SnakeCase(e.Namespace), strcase.SnakeCase(e.Name), strcase.SnakeCase(p.Name)))
-			}
-			envVars = append(envVars, EnvironmentVariable{
-				Name:  envVarName,
-				Value: value,
-			})
-		}
-	}
-	res := ExtensionExecution{
-		Name:                 e.Name,
-		Namespace:            e.Namespace,
-		UUID:                 e.UUID,
-		Description:          e.Description,
-		Script:               e.Script,
-		Given:                e.Given,
-		EnvironmentVariables: envVars,
-	}
-	envVarsFormatted := new(bytes.Buffer)
-	for _, envVar := range envVars {
-		fmt.Fprintf(envVarsFormatted, "%s=%s, ", envVar.Name, envVar.Value)
-	}
-	return res, strings.TrimSuffix(envVarsFormatted.String(), ", "), err
 }
 
 func (constraints *ExtensionDefinitionReferenceList) LoadFromFile(inputFile string) (err error) {
