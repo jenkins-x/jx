@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -311,6 +312,10 @@ func (o *CreateVaultOptions) createVaultAuthServiceAccount() (string, error) {
 }
 
 func (o *CreateVaultOptions) exposeVault(vaultService string) error {
+	err := kube.WaitForService(o.KubeClientCached, vaultService, o.Namespace, 1*time.Minute)
+	if err != nil {
+		return errors.Wrap(err, "waiting for vault service")
+	}
 	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(vaultService, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "getting the vault service: %s", vaultService)
