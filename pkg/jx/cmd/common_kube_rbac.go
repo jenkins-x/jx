@@ -34,6 +34,7 @@ func (o *CommonOptions) ensureServiceAccount(ns string, serviceAccountName strin
 	return err
 }
 
+// Todo use permissions from somewhere, or provide common ones in a class that we can pass in here
 func (o *CommonOptions) ensureClusterRoleExists(roleName string, namespace string) error {
 	log.Infof("Ensuring cluster role exists, role name: %s, namespace: %s\n", roleName, namespace)
 

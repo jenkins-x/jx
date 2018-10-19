@@ -465,10 +465,8 @@ func (o *InitOptions) useICPDefaults() {
 	o.Flags.IngressNamespace = "kube-system"
 	o.Flags.IngressDeployment = "default-backend"
 	o.Flags.IngressService = "default-backend"
-	o.Flags.TillerNamespace = "jx" // We don't want to set up at kube-system as we want to use our own tiller
-	// Set up a tiller manually at jx first please
-	o.ensureClusterRoleExists("icp-jx-role", "jx")
-
+	o.Flags.TillerNamespace = "default"
+	o.Flags.Namespace = "jx"
 	//o.Flags.NoTiller = true // eventually desirable once ICP tiller version is 2.10 or better
 }
 
