@@ -121,7 +121,8 @@ func TestRemoveRepo(t *testing.T) {
 }
 
 func TestListRepos(t *testing.T) {
-	t.Parallel()
+	// TODO Parallel should be called, but test fails when we do.
+	// t.Parallel()
 	setup(listRepoOutput)
 	expectedArgs := "repo list"
 	helm, err := createHelm(expectedArgs)

@@ -11,7 +11,8 @@ import (
 )
 
 func TestExecuteCommand(t *testing.T) {
-	t.Parallel()
+	// TODO Parallel should be called, but test fails when we do.
+	// t.Parallel()
 	o := cmd.CommonOptions{}
 	err := o.RunCommand("echo", "foo")
 	assert.Nil(t, err)
@@ -25,7 +26,8 @@ func TestCommandError(t *testing.T) {
 }
 
 func TestVerboseOutput(t *testing.T) {
-	t.Parallel()
+	// TODO Parallel should be called, but test fails when we do.
+	// t.Parallel()
 	buf := new(bytes.Buffer)
 	c, err := expect.NewConsole(expect.WithStdout(buf))
 	assert.NoError(t, err, "Should not error")
@@ -49,7 +51,8 @@ func TestVerboseOutput(t *testing.T) {
 }
 
 func TestNonVerboseOutput(t *testing.T) {
-	t.Parallel()
+	// TODO Parallel should be called, but test fails when we do.
+	// t.Parallel()
 	c, state, term := tests.NewTerminal(t)
 	defer c.Close()
 	o := cmd.CommonOptions{Out: term.Out}
