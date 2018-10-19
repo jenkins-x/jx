@@ -78,7 +78,7 @@ func (o *ComplianceResultsOptions) Run() error {
 		return errors.Wrap(err, "failed to retrieve the compliance status")
 	}
 
-	if status.Status != aggregation.CompleteStatus {
+	if status.Status != aggregation.CompleteStatus && status.Status != aggregation.FailedStatus {
 		log.Infoln("Compliance results not ready. Run `jx compliance status` for status.")
 		return nil
 	}
