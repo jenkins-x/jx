@@ -20,7 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -395,6 +395,7 @@ func (o *InitOptions) initHelm() error {
 			}
 		}
 
+		log.Infof("Waiting for tiller-deploy to be ready in tiller namespace %s\n", tillerNamespace)
 		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
 		if err != nil {
 			return err
@@ -464,7 +465,11 @@ func (o *InitOptions) useICPDefaults() {
 	o.Flags.IngressNamespace = "kube-system"
 	o.Flags.IngressDeployment = "default-backend"
 	o.Flags.IngressService = "default-backend"
-	o.Flags.TillerNamespace = "jx" // We don't want to set up at kube-system as we want to use own Helm 2.10 tiller
+	o.Flags.TillerNamespace = "jx" // We don't want to set up at kube-system as we want to use our own tiller
+	// Set up a tiller manually at jx first please
+	o.ensureClusterRoleExists("icp-jx-role", "jx")
+
+	//o.Flags.NoTiller = true // eventually desirable once ICP tiller version is 2.10 or better
 }
 
 func (o *InitOptions) initIKSIngress() error {
@@ -621,7 +626,6 @@ controller:
 				break
 			}
 		}
-
 		err = kube.WaitForDeploymentToBeReady(client, o.Flags.IngressDeployment, ingressNamespace, 10*time.Minute)
 		if err != nil {
 			return err

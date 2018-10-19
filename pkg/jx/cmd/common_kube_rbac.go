@@ -34,6 +34,34 @@ func (o *CommonOptions) ensureServiceAccount(ns string, serviceAccountName strin
 	return err
 }
 
+func (o *CommonOptions) ensureClusterRoleExists(roleName string, namespace string) error {
+	log.Infof("Ensuring cluster role exists, role name: %s, namespace: %s\n", roleName, namespace)
+
+	client, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
+	_, err = client.RbacV1().ClusterRoles().Get(roleName, meta_v1.GetOptions{})
+	if err != nil {
+		log.Infof("Trying to create ClusterRole %s in namespace %s\n", roleName)
+
+		clusterRole := &rbacv1.ClusterRole{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Name:      roleName,
+				Namespace: namespace,
+			},
+		}
+
+		_, err = client.RbacV1().ClusterRoles().Create(clusterRole)
+		if err != nil {
+			return fmt.Errorf("Failed to create ClusterRole %s: %s", roleName, err)
+		}
+		log.Infof("Created ClusterRole %s in namespace %s\n", roleName, namespace)
+	}
+	return nil
+}
+
 func (o *CommonOptions) ensureClusterRoleBinding(clusterRoleBindingName string, role string, serviceAccountNamespace string, serviceAccountName string) error {
 	client, _, err := o.KubeClient()
 	if err != nil {
