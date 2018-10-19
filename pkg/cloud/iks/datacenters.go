@@ -77,9 +77,8 @@ func (v *machineTypes) fetch(zone Zone) error {
 	}
 	if _, ok := v.machineTypes[zone.ID]; !ok {
 		machineTypes := []MachineType{}
-		headers := map[string]interface{}{
-			"datacenter": zone.ID,
-		}
+		headers := make(map[string]string, 1)
+		headers["datacenter"] = zone.ID
 		_, err := v.Client.Get("/v1/datacenters/"+zone.ID+"/machine-types", &machineTypes, headers)
 		if err != nil {
 			return err
@@ -115,9 +114,8 @@ func (v *vLANs) fetch(zone Zone) error {
 	}
 	if _, ok := v.VLANs[zone.ID]; !ok {
 		vLANs := []VLAN{}
-		headers := map[string]interface{}{
-			"datacenter": zone.ID,
-		}
+		headers := make(map[string]string, 1)
+		headers["datacenter"] = zone.ID
 		_, err := v.Client.Get("/v1/datacenters/"+zone.ID+"/vlans", &vLANs, headers)
 		if err != nil {
 			return err
