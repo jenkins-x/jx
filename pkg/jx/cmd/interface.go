@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/heptio/sonobuoy/pkg/dynamic"
 	"io"
 
 	"github.com/heptio/sonobuoy/pkg/client"
@@ -56,6 +57,8 @@ type Factory interface {
 	CreateJXClient() (versioned.Interface, string, error)
 
 	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
+
+	CreateDynamicClient() (*dynamic.APIHelper, string, error)
 
 	CreateMetricsClient() (*metricsclient.Clientset, error)
 

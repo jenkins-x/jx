@@ -30,7 +30,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// ControllerComplianceOptions the options for the controller compliance
+// ControllerComplianceOptions the options for the controller
 type ControllerComplianceOptions struct {
 	ControllerOptions
 }
@@ -49,8 +49,8 @@ func NewCmdControllerCompliance(f Factory, in terminal.FileReader, out terminal.
 	}
 
 	cmd := &cobra.Command{
-		Use:   "compliance",
-		Short: "Enforces compliance",
+		Use:   "commitstatus",
+		Short: "Updates commit status",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -85,10 +85,10 @@ func (o *ControllerComplianceOptions) Run() error {
 		return err
 	}
 
-	complianceListWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "compliancechecks", ns, fields.Everything())
-	kube.SortListWatchByName(complianceListWatch)
-	_, complianceController := cache.NewInformer(
-		complianceListWatch,
+	commitStatusListWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "compliancechecks", ns, fields.Everything())
+	kube.SortListWatchByName(commitStatusListWatch)
+	_, commitStatusController := cache.NewInformer(
+		commitStatusListWatch,
 		&jenkinsv1.ComplianceCheck{},
 		time.Minute*10,
 		cache.ResourceEventHandlerFuncs{
@@ -104,7 +104,7 @@ func (o *ControllerComplianceOptions) Run() error {
 		},
 	)
 	stop := make(chan struct{})
-	go complianceController.Run(stop)
+	go commitStatusController.Run(stop)
 
 	podListWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", ns, fields.Everything())
 	kube.SortListWatchByName(podListWatch)
@@ -136,23 +136,23 @@ func (o *ControllerComplianceOptions) Run() error {
 func (o *ControllerComplianceOptions) onComplianceCheckObj(obj interface{}, jxClient jenkinsv1client.Interface, ns string) {
 	check, ok := obj.(*jenkinsv1.ComplianceCheck)
 	if !ok {
-		log.Fatalf("compliance controller: unexpected type %v\n", obj)
+		log.Fatalf("commit status controller: unexpected type %v\n", obj)
 	} else {
 		err := o.onComplianceCheck(check, jxClient, ns)
 		if err != nil {
-			log.Fatalf("compliance controller: %v\n", err)
+			log.Fatalf("commit status controller: %v\n", err)
 		}
 	}
 }
 
 func (o *ControllerComplianceOptions) onComplianceCheck(check *jenkinsv1.ComplianceCheck, jxClient jenkinsv1client.Interface, ns string) error {
-	err := o.Check(check.Spec)
+	err := o.Check(check, jxClient, ns)
 	if err != nil {
 		gitProvider, gitRepoInfo, err1 := o.createGitProviderForURLWithoutKind(check.Spec.Commit.GitURL)
 		if err1 != nil {
 			return err1
 		}
-		_, err1 = governance.NotifyComplianceState(check.Spec.Commit, "error", "", "Internal Error performing compliance checks", "", gitProvider, gitRepoInfo)
+		_, err1 = governance.NotifyCommitStatus(check.Spec.Commit, "error", "", "Internal Error performing compliance checks", "", gitProvider, gitRepoInfo)
 		if err1 != nil {
 			return err
 		}
@@ -223,7 +223,7 @@ func (o *ControllerComplianceOptions) onPod(pod *corev1.Pod, jxClient jenkinsv1c
 						log.Infof("pod watcher: build pod: %s, org: %s, repo: %s, buildNumber: %s, pullBaseSha: %s, pullPullSha: %s, pullRequest: %s, sourceUrl: %s\n", pod.Name, org, repo, buildNumber, pullBaseSha, pullPullSha, pullRequest, sourceUrl)
 					}
 					if sha == "" {
-						log.Warnf("No sha on %s, not upserting compliance check\n", pod.Name)
+						log.Warnf("No sha on %s, not upserting commit status\n", pod.Name)
 					} else {
 						name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
 						return o.UpsertComplianceCheck(name, sourceUrl, sha, pullRequest, jxClient, ns)
@@ -247,7 +247,7 @@ func (o *ControllerComplianceOptions) UpsertComplianceCheck(name string, url str
 		if err != nil {
 			create = true
 		} else {
-			log.Infof("compliance controller: Compliance Check already exists for %s\n", name)
+			log.Infof("commit status controller: Compliance Check already exists for %s\n", name)
 		}
 		if create || check.Spec.PipelineActivity.UID == "" {
 			act, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(name, metav1.GetOptions{})
@@ -261,7 +261,7 @@ func (o *ControllerComplianceOptions) UpsertComplianceCheck(name string, url str
 		}
 
 		if create {
-			log.Infof("compliance controller: Creating compliance check for %s\n", name)
+			log.Infof("commit status controller: Creating commit status for %s\n", name)
 			_, err := jxClient.JenkinsV1().ComplianceChecks(ns).Create(&jenkinsv1.ComplianceCheck{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
@@ -291,35 +291,34 @@ func (o *ControllerComplianceOptions) UpsertComplianceCheck(name string, url str
 		}
 
 	} else {
-		errors.New("compliance controller: Must supply name")
+		errors.New("commit status controller: Must supply name")
 	}
 	return nil
 }
 
-func (o *ControllerComplianceOptions) Check(check jenkinsv1.ComplianceCheckSpec) error {
-	gitProvider, gitRepoInfo, err := o.createGitProviderForURLWithoutKind(check.Commit.GitURL)
+func (o *ControllerComplianceOptions) Check(check *jenkinsv1.ComplianceCheck, jxClient jenkinsv1client.Interface, ns string) error {
+	gitProvider, gitRepoInfo, err := o.createGitProviderForURLWithoutKind(check.Spec.Commit.GitURL)
 	if err != nil {
 		return err
 	}
 	pass := false
-	if check.Checked {
+	if check.Spec.Checked {
 		var commentBuilder strings.Builder
 		pass = true
-		for _, c := range check.Checks {
+		for _, c := range check.Spec.Checks {
 			if !c.Pass {
 				pass = false
-				fmt.Fprintf(&commentBuilder, "%s | %s | %s | TODO | `/test this`\n", c.Name, c.Description, check.Commit.SHA)
+				fmt.Fprintf(&commentBuilder, "%s | %s | %s | TODO | `/test this`\n", c.Name, c.Description, check.Spec.Commit.SHA)
 			}
 		}
 		if pass {
-			_, err := governance.NotifyComplianceState(check.Commit, "success", "", "Compliance checks completed successfully", "", gitProvider, gitRepoInfo)
+			_, err := governance.NotifyCommitStatus(check.Spec.Commit, "success", "", "Compliance checks completed successfully", "", gitProvider, gitRepoInfo)
 			if err != nil {
 				return err
 			}
 		} else {
-
 			comment := fmt.Sprintf(
-				"The following compliance checks **failed**, say `/retest` to rerun them all:\n"+
+				"The following commit status checks **failed**, say `/retest` to rerun them all:\n"+
 					"\n"+
 					"Name | Description | Commit | Details | Rerun command\n"+
 					"--- | --- | --- | --- | --- \n"+
@@ -328,15 +327,29 @@ func (o *ControllerComplianceOptions) Check(check jenkinsv1.ComplianceCheckSpec)
 					"\n"+
 					"Instructions for interacting with me using PR comments are available [here](https://git.k8s.io/community/contributors/guide/pull-requests.md).  If you have questions or suggestions related to my behavior, please file an issue against the [kubernetes/test-infra](https://github.com/kubernetes/test-infra/issues/new?title=Prow%%20issue:) repository. I understand the commands that are listed [here](https://go.k8s.io/bot-commands).\n"+
 					"</details>", commentBuilder.String())
-			_, err := governance.NotifyComplianceState(check.Commit, "failure", "", "Some compliance checks failed", comment, gitProvider, gitRepoInfo)
+			_, err := governance.NotifyCommitStatus(check.Spec.Commit, "failure", "", "Some commit status checks failed", comment, gitProvider, gitRepoInfo)
 			if err != nil {
 				return err
 			}
 		}
 	} else {
-		_, err := governance.NotifyComplianceState(check.Commit, "pending", "", "Waiting for compliance checks to complete", "", gitProvider, gitRepoInfo)
+		latest := true
+		// TODO This could be improved with labels
+		checks, err := jxClient.JenkinsV1().ComplianceChecks(ns).List(metav1.ListOptions{})
 		if err != nil {
 			return err
+		}
+		for _, c := range checks.Items {
+			if c.Spec.Commit.GitURL == check.Spec.Commit.GitURL && c.Spec.Commit.PullRequest == check.Spec.Commit.PullRequest && c.CreationTimestamp.UnixNano() > check.CreationTimestamp.UnixNano() {
+				latest = false
+				break
+			}
+		}
+		if latest {
+			_, err = governance.NotifyCommitStatus(check.Spec.Commit, "pending", "", "Waiting for commit status checks to complete", "", gitProvider, gitRepoInfo)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

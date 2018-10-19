@@ -858,6 +858,21 @@ func (mock *MockGitter) SetUsername(_param0 string, _param1 string) error {
 	return ret0
 }
 
+func (mock *MockGitter) ShallowCloneBranch(_param0 string, _param1 string, _param2 string) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ShallowCloneBranch", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockGitter) Stash(_param0 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
@@ -2529,6 +2544,41 @@ func (c *Gitter_SetUsername_OngoingVerification) GetAllCapturedArguments() (_par
 		_param1 = make([]string, len(params[1]))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierGitter) ShallowCloneBranch(_param0 string, _param1 string, _param2 string) *Gitter_ShallowCloneBranch_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ShallowCloneBranch", params)
+	return &Gitter_ShallowCloneBranch_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Gitter_ShallowCloneBranch_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Gitter_ShallowCloneBranch_OngoingVerification) GetCapturedArguments() (string, string, string) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+}
+
+func (c *Gitter_ShallowCloneBranch_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]string, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(string)
 		}
 	}
 	return
