@@ -1069,7 +1069,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 		dockerRegistry := cm.Data["docker.registry"]
 		if dockerRegistry != "" {
 			if strings.HasSuffix(dockerRegistry, ".amazonaws.com") && strings.Index(dockerRegistry, ".ecr.") > 0 {
-				return amazon.LazyCreateRegistry(orgName, appName)
+				return amazon.LazyCreateRegistry(dockerRegistry, orgName, appName)
 			}
 		}
 	}
