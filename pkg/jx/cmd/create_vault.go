@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -184,7 +185,7 @@ func (o *CreateVaultOptions) createVaultGKE() error {
 
 	log.Infof("Vault %s created\n", util.ColorInfo(vaultName))
 
-	return nil
+	return o.exposeVault(vaultName)
 }
 
 func (o *CreateVaultOptions) createVaultGCPServiceAccount() (string, error) {
@@ -308,4 +309,30 @@ func (o *CreateVaultOptions) createVaultAuthServiceAccount() (string, error) {
 		return "", errors.Wrap(err, "creating vault auth service account")
 	}
 	return serviceAccountName, nil
+}
+
+func (o *CreateVaultOptions) exposeVault(vaultService string) error {
+	err := kube.WaitForService(o.KubeClientCached, vaultService, o.Namespace, 1*time.Minute)
+	if err != nil {
+		return errors.Wrap(err, "waiting for vault service")
+	}
+	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(vaultService, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "getting the vault service: %s", vaultService)
+	}
+	if svc.Annotations == nil {
+		svc.Annotations = map[string]string{}
+	}
+	if svc.Annotations[kube.AnnotationExpose] == "" {
+		svc.Annotations[kube.AnnotationExpose] = "true"
+		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
+		if err != nil {
+			return errors.Wrap(err, "updating the service annotations")
+		}
+	}
+	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	if err != nil {
+		return errors.Wrap(err, "retrieving the dev namespace")
+	}
+	return o.exposeService(vaultService, devNamespace, o.Namespace)
 }
