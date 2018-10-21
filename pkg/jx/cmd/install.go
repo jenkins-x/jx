@@ -669,7 +669,7 @@ func (options *InstallOptions) Run() error {
 			ServerlessJenkins,
 			StaticMasterJenkins,
 		}
-		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins Installtion Type:", StaticMasterJenkins,
+		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", StaticMasterJenkins,
 			options.In, options.Out, options.Err)
 		if err != nil {
 			return errors.Wrap(err, "picking Jenkins installation type")
