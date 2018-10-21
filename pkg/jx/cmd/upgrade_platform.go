@@ -4,6 +4,11 @@ import (
 	"io"
 	"strings"
 
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -11,10 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"fmt"
-	"path/filepath"
-	"os"
-	"io/ioutil"
 	core_v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -157,7 +158,8 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	helmConfig := &o.CreateEnvOptions.HelmValuesConfig
-	if helmConfig.ExposeController.Config.Domain == "" {
+	exposeController := helmConfig.ExposeController
+	if exposeController != nil && exposeController.Config.Domain == "" {
 		helmConfig.ExposeController.Config.Domain = o.InitOptions.Flags.Domain
 	}
 
