@@ -1061,7 +1061,7 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		return wrkDir, util.CopyDir(currentDir, wrkDir, true)
 	}
 	if options.Flags.CloudEnvRepository == "" {
-		return wrkDir, fmt.Errorf("No cloud environment git URL")
+		options.Flags.CloudEnvRepository = DEFAULT_CLOUD_ENVIRONMENTS_URL
 	}
 	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
 	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
