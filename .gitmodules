@@ -1,3 +1,0 @@
-[submodule "hack/code-generator"]
-	path = hack/code-generator
-	url = https://github.com/kubernetes/code-generator
