@@ -53,7 +53,7 @@ func NewCmdController(f Factory, in terminal.FileReader, out terminal.FileWriter
 	cmd.AddCommand(NewCmdControllerRole(f, in, out, errOut))
 	cmd.AddCommand(NewCmdControllerTeam(f, in, out, errOut))
 	cmd.AddCommand(NewCmdControllerWorkflow(f, in, out, errOut))
-	cmd.AddCommand(NewCmdControllerCompliance(f, in, out, errOut))
+	cmd.AddCommand(NewCmdControllerCommitStatus(f, in, out, errOut))
 	return cmd
 }
 

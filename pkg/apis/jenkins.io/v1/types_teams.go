@@ -41,7 +41,7 @@ type TeamList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Team `json:"items"`
+	Items []Team `json:"Items"`
 }
 
 // TeamKindType is the kind of an Team

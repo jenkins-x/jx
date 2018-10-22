@@ -59,7 +59,7 @@ type WorkflowList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Workflow `json:"items"`
+	Items []Workflow `json:"Items"`
 }
 
 // WorkflowStepKindType is a kind of step

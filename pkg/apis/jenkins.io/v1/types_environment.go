@@ -50,7 +50,7 @@ type EnvironmentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Environment `json:"items"`
+	Items []Environment `json:"Items"`
 }
 
 // PromotionStrategyType is the type of a promotion strategy
@@ -234,5 +234,5 @@ type EnvironmentRoleBindingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []EnvironmentRoleBinding `json:"items"`
+	Items []EnvironmentRoleBinding `json:"Items"`
 }

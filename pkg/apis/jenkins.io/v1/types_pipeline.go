@@ -126,7 +126,7 @@ type PipelineActivityList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []PipelineActivity `json:"items"`
+	Items []PipelineActivity `json:"Items"`
 }
 
 // ActivityStepKindType is a kind of step

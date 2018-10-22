@@ -30,7 +30,7 @@ type UserList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []User `json:"items"`
+	Items []User `json:"Items"`
 }
 
 // UserDetails containers details of a user

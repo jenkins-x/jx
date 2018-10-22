@@ -30,7 +30,7 @@ type ReleaseList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Release `json:"items"`
+	Items []Release `json:"Items"`
 }
 
 // ReleaseSpec is the specification of the Release
@@ -134,5 +134,5 @@ type GitServiceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []GitService `json:"items"`
+	Items []GitService `json:"Items"`
 }
