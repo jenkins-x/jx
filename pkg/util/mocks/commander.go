@@ -18,6 +18,21 @@ func NewMockCommander() *MockCommander {
 	return &MockCommander{fail: pegomock.GlobalFailHandler}
 }
 
+func (mock *MockCommander) CurrentArgs() []string {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockCommander().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CurrentArgs", params, []reflect.Type{reflect.TypeOf((*[]string)(nil)).Elem()})
+	var ret0 []string
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].([]string)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockCommander) CurrentDir() string {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockCommander().")
@@ -43,6 +58,21 @@ func (mock *MockCommander) CurrentEnv() map[string]string {
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(map[string]string)
+		}
+	}
+	return ret0
+}
+
+func (mock *MockCommander) CurrentName() string {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockCommander().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CurrentName", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem()})
+	var ret0 string
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
 		}
 	}
 	return ret0
@@ -205,6 +235,23 @@ type VerifierCommander struct {
 	inOrderContext         *pegomock.InOrderContext
 }
 
+func (verifier *VerifierCommander) CurrentArgs() *Commander_CurrentArgs_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentArgs", params)
+	return &Commander_CurrentArgs_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Commander_CurrentArgs_OngoingVerification struct {
+	mock              *MockCommander
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Commander_CurrentArgs_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *Commander_CurrentArgs_OngoingVerification) GetAllCapturedArguments() {
+}
+
 func (verifier *VerifierCommander) CurrentDir() *Commander_CurrentDir_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentDir", params)
@@ -237,6 +284,23 @@ func (c *Commander_CurrentEnv_OngoingVerification) GetCapturedArguments() {
 }
 
 func (c *Commander_CurrentEnv_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierCommander) CurrentName() *Commander_CurrentName_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentName", params)
+	return &Commander_CurrentName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Commander_CurrentName_OngoingVerification struct {
+	mock              *MockCommander
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Commander_CurrentName_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *Commander_CurrentName_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierCommander) DidError() *Commander_DidError_OngoingVerification {

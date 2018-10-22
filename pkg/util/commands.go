@@ -30,6 +30,11 @@ func (c *Command) SetName(name string) {
 	c.Name = name
 }
 
+// CurrentName returns the current name of the command
+func (c *Command) CurrentName() string {
+	return c.Name
+}
+
 // SetDir Setter method for Dir to enable use of interface instead of Command struct
 func (c *Command) SetDir(dir string) {
 	c.Dir = dir
@@ -43,6 +48,11 @@ func (c *Command) CurrentDir() string {
 // SetArgs Setter method for Args to enable use of interface instead of Command struct
 func (c *Command) SetArgs(args []string) {
 	c.Args = args
+}
+
+// CurrentArgs returns the current command arguments
+func (c *Command) CurrentArgs() []string {
+	return c.Args
 }
 
 // SetTimeout Setter method for Timeout to enable use of interface instead of Command struct

@@ -4,12 +4,12 @@
 package cmd_test
 
 import (
-	versioned "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	versioned0 "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	client "github.com/heptio/sonobuoy/pkg/client"
 	dynamic "github.com/heptio/sonobuoy/pkg/dynamic"
 	golang_jenkins "github.com/jenkins-x/golang-jenkins"
 	auth "github.com/jenkins-x/jx/pkg/auth"
-	versioned0 "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	versioned "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	gits "github.com/jenkins-x/jx/pkg/gits"
 	cmd "github.com/jenkins-x/jx/pkg/jx/cmd"
 	table "github.com/jenkins-x/jx/pkg/table"
@@ -245,18 +245,18 @@ func (mock *MockFactory) CreateIssueTrackerAuthConfigService(_param0 *v1.SecretL
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateJXClient() (versioned0.Interface, string, error) {
+func (mock *MockFactory) CreateJXClient() (versioned.Interface, string, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateJXClient", params, []reflect.Type{reflect.TypeOf((*versioned0.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 versioned0.Interface
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateJXClient", params, []reflect.Type{reflect.TypeOf((*versioned.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 versioned.Interface
 	var ret1 string
 	var ret2 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(versioned0.Interface)
+			ret0 = result[0].(versioned.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(string)
@@ -359,17 +359,17 @@ func (mock *MockFactory) CreateTable(_param0 io.Writer) table.Table {
 	return ret0
 }
 
-func (mock *MockFactory) CreateVaultOperatorClient() (versioned.Interface, error) {
+func (mock *MockFactory) CreateVaultOperatorClient() (versioned0.Interface, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateVaultOperatorClient", params, []reflect.Type{reflect.TypeOf((*versioned.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 versioned.Interface
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateVaultOperatorClient", params, []reflect.Type{reflect.TypeOf((*versioned0.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 versioned0.Interface
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(versioned.Interface)
+			ret0 = result[0].(versioned0.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)

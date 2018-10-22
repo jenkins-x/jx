@@ -21,6 +21,18 @@ type HelmCLI struct {
 	Debug      bool
 }
 
+// NewHelmCLIWithRunner creaets a new HelmCLI interface for the given runner
+func NewHelmCLIWithRunner(runner util.Commander, binary string, version Version, cwd string, debug bool) *HelmCLI {
+	cli := &HelmCLI{
+		Binary:     binary,
+		BinVersion: version,
+		CWD:        cwd,
+		Runner:     runner,
+		Debug:      debug,
+	}
+	return cli
+}
+
 // NewHelmCLI creates a new HelmCLI instance configured to use the provided helm CLI in
 // the given current working directory
 func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...string) *HelmCLI {
@@ -41,6 +53,7 @@ func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...
 		BinVersion: version,
 		CWD:        cwd,
 		Runner:     runner,
+		Debug:      debug,
 	}
 	return cli
 }
