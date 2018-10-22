@@ -69,10 +69,6 @@ func NewCmdGetRelease(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements this command
 func (o *GetReleaseOptions) Run() error {
-	err := o.registerReleaseCRD()
-	if err != nil {
-		return err
-	}
 	jxClient, curNs, err := o.JXClient()
 	if err != nil {
 		return err

@@ -102,11 +102,6 @@ func (o *CommonOptions) ModifyEnvironment(name string, callback func(env *v1.Env
 
 // defaultModifyDevEnvironment default implementation of modifying the Development environment settings
 func (o *CommonOptions) defaultModifyDevEnvironment(callback func(env *v1.Environment) error) error {
-	err := o.registerEnvironmentCRD()
-	if err != nil {
-		return errors.Wrap(err, "failed to register the environment CRD")
-	}
-
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the jx client")

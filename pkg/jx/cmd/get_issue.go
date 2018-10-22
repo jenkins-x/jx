@@ -93,15 +93,6 @@ func (o *GetIssueOptions) Run() error {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
 
-	apisClient, err := f.CreateApiExtensionsClient()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the Kube API extensions client")
-	}
-	err = kube.RegisterEnvironmentCRD(apisClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the Environment API")
-	}
-
 	envList, err := client.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "cannot list the environments")

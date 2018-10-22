@@ -762,14 +762,6 @@ func (o *CreateDevPodOptions) Run() error {
 
 func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, error) {
 	var env *v1.Environment
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
-	if err != nil {
-		return env, err
-	}
-	err = kube.RegisterEnvironmentCRD(apisClient)
-	if err != nil {
-		return env, err
-	}
 
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
