@@ -100,15 +100,6 @@ func (o *GetActivityOptions) Run() error {
 	}
 	kube.SortEnvironments(envList.Items)
 
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
-	if err != nil {
-		return err
-	}
-
 	table := o.CreateTable()
 	table.SetColumnAlign(1, util.ALIGN_RIGHT)
 	table.SetColumnAlign(2, util.ALIGN_RIGHT)

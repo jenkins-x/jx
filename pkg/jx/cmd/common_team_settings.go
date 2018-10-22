@@ -34,10 +34,6 @@ func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = o.registerEnvironmentCRD()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to register Environment CRD: %s", err)
-	}
 
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
