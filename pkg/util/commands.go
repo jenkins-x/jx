@@ -30,14 +30,29 @@ func (c *Command) SetName(name string) {
 	c.Name = name
 }
 
+// CurrentName returns the current name of the command
+func (c *Command) CurrentName() string {
+	return c.Name
+}
+
 // SetDir Setter method for Dir to enable use of interface instead of Command struct
 func (c *Command) SetDir(dir string) {
 	c.Dir = dir
 }
 
+// CurrentDir returns the current Dir
+func (c *Command) CurrentDir() string {
+	return c.Dir
+}
+
 // SetArgs Setter method for Args to enable use of interface instead of Command struct
 func (c *Command) SetArgs(args []string) {
 	c.Args = args
+}
+
+// CurrentArgs returns the current command arguments
+func (c *Command) CurrentArgs() []string {
+	return c.Args
 }
 
 // SetTimeout Setter method for Timeout to enable use of interface instead of Command struct
@@ -48,6 +63,24 @@ func (c *Command) SetTimeout(timeout time.Duration) {
 // SetExponentialBackOff Setter method for ExponentialBackOff to enable use of interface instead of Command struct
 func (c *Command) SetExponentialBackOff(backoff *backoff.ExponentialBackOff) {
 	c.ExponentialBackOff = backoff
+}
+
+// SetEnv Setter method for Env to enable use of interface instead of Command struct
+func (c *Command) SetEnv(env map[string]string) {
+	c.Env = env
+}
+
+// CurrentEnv returns the current envrionment variables
+func (c *Command) CurrentEnv() map[string]string {
+	return c.Env
+}
+
+// SetEnvVariable sets an environment variable into the environment
+func (c *Command) SetEnvVariable(name string, value string) {
+	if c.Env == nil {
+		c.Env = map[string]string{}
+	}
+	c.Env[name] = value
 }
 
 // Attempts The number of times the command has been executed
