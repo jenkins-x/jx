@@ -17,7 +17,7 @@ type HelmCLI struct {
 	Binary     string
 	BinVersion Version
 	CWD        string
-	Runner     *util.Command
+	Runner     util.Commander
 	Debug      bool
 }
 
@@ -47,13 +47,10 @@ func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...
 
 // SetHost is used to point at a locally running tiller
 func (h *HelmCLI) SetHost(tillerAddress string) {
-	if h.Runner.Env == nil {
-		h.Runner.Env = map[string]string{}
-	}
 	if h.Debug {
 		log.Infof("Setting tiller address to %s\n", util.ColorInfo(tillerAddress))
 	}
-	h.Runner.Env["HELM_HOST"] = tillerAddress
+	h.Runner.SetEnvVariable("HELM_HOST", tillerAddress)
 }
 
 // SetCWD configures the common working directory of helm CLI
@@ -72,17 +69,17 @@ func (h *HelmCLI) SetHelmBinary(binary string) {
 }
 
 func (h *HelmCLI) runHelm(args ...string) error {
-	h.Runner.Name = h.Binary
-	h.Runner.Dir = h.CWD
-	h.Runner.Args = args
+	h.Runner.SetDir(h.CWD)
+	h.Runner.SetName(h.Binary)
+	h.Runner.SetArgs(args)
 	_, err := h.Runner.RunWithoutRetry()
 	return err
 }
 
 func (h *HelmCLI) runHelmWithOutput(args ...string) (string, error) {
-	h.Runner.Dir = h.CWD
-	h.Runner.Name = h.Binary
-	h.Runner.Args = args
+	h.Runner.SetDir(h.CWD)
+	h.Runner.SetName(h.Binary)
+	h.Runner.SetArgs(args)
 	return h.Runner.RunWithoutRetry()
 }
 
@@ -408,7 +405,7 @@ func (h *HelmCLI) Lint() (string, error) {
 
 // Env returns the environment variables for the helmer
 func (h *HelmCLI) Env() map[string]string {
-	return h.Runner.Env
+	return h.Runner.CurrentEnv()
 }
 
 // Version executes the helm version command and returns its output

@@ -16,7 +16,11 @@ type Commander interface {
 	RunWithoutRetry() (string, error)
 	SetName(string)
 	SetDir(string)
+	CurrentDir() string
 	SetArgs([]string)
 	SetTimeout(time.Duration)
 	SetExponentialBackOff(*backoff.ExponentialBackOff)
+	SetEnv(map[string]string)
+	CurrentEnv() map[string]string
+	SetEnvVariable(string, string)
 }
