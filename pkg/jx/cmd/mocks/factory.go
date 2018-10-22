@@ -17,10 +17,10 @@ import (
 	terminal "gopkg.in/AlecAivazis/survey.v1/terminal"
 	io "io"
 	v1 "k8s.io/api/core/v1"
-	clientset0 "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
-	clientset "k8s.io/metrics/pkg/client/clientset_generated/clientset"
+	clientset0 "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 	"reflect"
 )
 
@@ -66,17 +66,17 @@ func (mock *MockFactory) CreateAddonAuthConfigService(_param0 *v1.SecretList) (a
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateApiExtensionsClient() (clientset0.Interface, error) {
+func (mock *MockFactory) CreateApiExtensionsClient() (clientset.Interface, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateApiExtensionsClient", params, []reflect.Type{reflect.TypeOf((*clientset0.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 clientset0.Interface
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateApiExtensionsClient", params, []reflect.Type{reflect.TypeOf((*clientset.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 clientset.Interface
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(clientset0.Interface)
+			ret0 = result[0].(clientset.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -325,17 +325,17 @@ func (mock *MockFactory) CreateKubeConfig() (*rest.Config, error) {
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateMetricsClient() (*clientset.Clientset, error) {
+func (mock *MockFactory) CreateMetricsClient() (*clientset0.Clientset, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateMetricsClient", params, []reflect.Type{reflect.TypeOf((**clientset.Clientset)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 *clientset.Clientset
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateMetricsClient", params, []reflect.Type{reflect.TypeOf((**clientset0.Clientset)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *clientset0.Clientset
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(*clientset.Clientset)
+			ret0 = result[0].(*clientset0.Clientset)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
