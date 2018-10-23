@@ -169,7 +169,7 @@ func (o *InitOptions) Run() error {
 	// So a user doesn't need to specify ingress options if provider is ICP: we will use ICP's own ingress controller
 	// and by default, the tiller namespace "jx"
 	if o.Flags.Provider == ICP {
-		o.useICPDefaults()
+		o.configureForICP()
 	}
 
 	// Needs to be done early as is an ingress availablility is an indicator of cluster readyness
@@ -460,14 +460,40 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 	return filepath.Join(dir, "packs"), err
 }
 
-func (o *InitOptions) useICPDefaults() {
-	log.Infoln("Configuring defaults for IBM Cloud Private")
+func (o *InitOptions) configureForICP() {
+	log.Infoln("Configuring Jenkins X options for IBM Cloud Private")
 	o.Flags.IngressNamespace = "kube-system"
 	o.Flags.IngressDeployment = "default-backend"
 	o.Flags.IngressService = "default-backend"
 	o.Flags.TillerNamespace = "default"
 	o.Flags.Namespace = "jx"
 	//o.Flags.NoTiller = true // eventually desirable once ICP tiller version is 2.10 or better
+
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+	ICPExternalIP := ""
+	ICPDomain := ""
+
+	if !(o.BatchMode) {
+		prompt := &survey.Input{
+			Message: "Provide the external IP Jenkins X should use: typically your IBM Cloud Private proxy node IP address",
+			Default: "",
+			Help:    "",
+		}
+		survey.AskOne(prompt, &ICPExternalIP, nil, surveyOpts)
+		o.Flags.ExternalIP = ICPExternalIP
+
+		prompt = &survey.Input{
+			Message: "Provide the domain Jenkins X should be available at: typically your IBM Cloud Private proxy node IP address but with a domain added to the end",
+			Default: ICPExternalIP + ".nip.io",
+			Help:    "",
+		}
+		survey.AskOne(prompt, &ICPDomain, nil, surveyOpts)
+
+		o.Flags.ExternalIP = ICPExternalIP
+		o.Flags.Domain = ICPDomain
+
+	}
+
 }
 
 func (o *InitOptions) initIKSIngress() error {
