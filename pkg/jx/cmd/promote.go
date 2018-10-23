@@ -70,11 +70,12 @@ type PromoteOptions struct {
 	// calculated fields
 	TimeoutDuration         *time.Duration
 	PullRequestPollDuration *time.Duration
-	Activities              typev1.PipelineActivityInterface
+	ActivitiesCache         *typev1.PipelineActivityInterface
 	GitInfo                 *gits.GitRepositoryInfo
 	jenkinsURL              string
 	releaseResource         *v1.Release
 	ReleaseInfo             *ReleaseInfo
+	ActivitiesUpdated       time.Time
 }
 
 type ReleaseInfo struct {
@@ -255,8 +256,6 @@ func (o *PromoteOptions) Run() error {
 		return err
 	}
 
-	o.Activities = jxClient.JenkinsV1().PipelineActivities(ns)
-
 	releaseName := o.ReleaseName
 	if releaseName == "" {
 		releaseName = targetNS + "-" + app
@@ -401,7 +400,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 					}
 					return nil
 				}
-				err = promoteKey.OnPromotePullRequest(o.Activities, startPromotePR)
+				err = promoteKey.OnPromotePullRequest(o.Activities(), startPromotePR)
 				if err != nil {
 					log.Warnf("Failed to update PipelineActivity: %s\n", err)
 				}
@@ -432,7 +431,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		}
 		return nil
 	}
-	promoteKey.OnPromoteUpdate(o.Activities, startPromote)
+	promoteKey.OnPromoteUpdate(o.Activities(), startPromote)
 
 	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil)
 	if err == nil {
@@ -440,9 +439,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		if err != nil {
 			log.Warnf("Failed to comment on issues for release %s: %s\n", releaseName, err)
 		}
-		err = promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
+		err = promoteKey.OnPromoteUpdate(o.Activities(), kube.CompletePromotionUpdate)
 	} else {
-		err = promoteKey.OnPromoteUpdate(o.Activities, kube.FailedPromotionUpdate)
+		err = promoteKey.OnPromoteUpdate(o.Activities(), kube.FailedPromotionUpdate)
 	}
 	return releaseInfo, err
 }
@@ -548,7 +547,7 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 		err := o.waitForGitOpsPullRequest(ns, env, releaseInfo, end, duration, promoteKey)
 		if err != nil {
 			// TODO based on if the PR completed or not fail the PR or the Promote?
-			promoteKey.OnPromotePullRequest(o.Activities, kube.FailedPromotionPullRequest)
+			promoteKey.OnPromotePullRequest(o.Activities(), kube.FailedPromotionPullRequest)
 			return err
 		}
 	}
@@ -591,7 +590,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 								p.MergeCommitSHA = mergeSha
 								return nil
 							}
-							promoteKey.OnPromotePullRequest(o.Activities, mergedPR)
+							promoteKey.OnPromotePullRequest(o.Activities(), mergedPR)
 
 							if o.NoWaitAfterMerge {
 								log.Infof("Pull requests are merged, No wait on promotion to complete")
@@ -599,7 +598,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							}
 						}
 
-						promoteKey.OnPromoteUpdate(o.Activities, kube.StartPromotionUpdate)
+						promoteKey.OnPromoteUpdate(o.Activities(), kube.StartPromotionUpdate)
 
 						statuses, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, mergeSha)
 						if err != nil {
@@ -649,7 +648,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(o.Activities, updateStatuses)
+								promoteKey.OnPromoteUpdate(o.Activities(), updateStatuses)
 
 								succeeded := true
 								for _, v := range urlStatusMap {
@@ -661,7 +660,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									log.Infoln("Merge status checks all passed so the promotion worked!")
 									err = o.commentOnIssues(ns, env, promoteKey)
 									if err == nil {
-										err = promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
+										err = promoteKey.OnPromoteUpdate(o.Activities(), kube.CompletePromotionUpdate)
 									}
 									return err
 								}
@@ -1149,4 +1148,16 @@ func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 	o.Version = chart.ChartVersion
 	o.HelmRepositoryURL = repoUrl
 	return appName, nil
+}
+
+// Fetches activities and caches for 0.2 seconds. Not thread safe.
+func (o *PromoteOptions) Activities() typev1.PipelineActivityInterface {
+	if o.ActivitiesCache == nil || time.Now().Sub(o.ActivitiesUpdated).Seconds() > 0.2 {
+		jxClient, ns, err := o.JXClientAndDevNamespace()
+		CheckErr(err)
+		activities := jxClient.JenkinsV1().PipelineActivities(ns)
+		o.ActivitiesCache = &activities
+		o.ActivitiesUpdated = time.Now()
+	}
+	return *o.ActivitiesCache
 }
