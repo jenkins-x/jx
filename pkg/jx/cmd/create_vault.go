@@ -185,6 +185,7 @@ func (o *CreateVaultOptions) createVaultGKE() error {
 
 	log.Infof("Vault %s created\n", util.ColorInfo(vaultName))
 
+	log.Infof("Exposing %s Vault...\n", util.ColorInfo(vaultName))
 	return o.exposeVault(vaultName)
 }
 
