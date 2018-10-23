@@ -20,6 +20,7 @@ set -o pipefail
 
 # update the code-genrator submodule
 echo "Installing the code-generator"
+git submodule init
 git submodule update --remote --merge
 
 export GO111MODULE=on 
