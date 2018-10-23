@@ -153,6 +153,7 @@ func (o *CreateCodeshipOptions) Run() error {
 		gkeServiceAccountPath := path.Join(util.HomeDir(), fmt.Sprintf("%s.key.json", o.Flags.OrganisationName))
 
 		o.CreateGkeServiceAccountOptions.Flags.Name = o.Flags.OrganisationName
+		o.CreateGkeServiceAccountOptions.Flags.SkipLogin = true
 		o.CreateGkeServiceAccountOptions.CommonOptions.BatchMode = o.CreateOptions.CommonOptions.BatchMode
 		err := o.CreateGkeServiceAccountOptions.Run()
 		if err != nil {
