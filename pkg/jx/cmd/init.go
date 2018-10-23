@@ -474,12 +474,18 @@ func (o *InitOptions) configureForICP() {
 	ICPDomain := ""
 
 	if !(o.BatchMode) {
+		if o.Flags.ExternalIP != "" {
+			log.Infoln("An external IP has already been specified: otherwise you will be prompted for one to use")
+			return
+		}
+
 		prompt := &survey.Input{
 			Message: "Provide the external IP Jenkins X should use: typically your IBM Cloud Private proxy node IP address",
-			Default: "",
+			Default: "", // Would be useful to set this as the public IP automatically
 			Help:    "",
 		}
 		survey.AskOne(prompt, &ICPExternalIP, nil, surveyOpts)
+
 		o.Flags.ExternalIP = ICPExternalIP
 
 		prompt = &survey.Input{
@@ -489,11 +495,8 @@ func (o *InitOptions) configureForICP() {
 		}
 		survey.AskOne(prompt, &ICPDomain, nil, surveyOpts)
 
-		o.Flags.ExternalIP = ICPExternalIP
 		o.Flags.Domain = ICPDomain
-
 	}
-
 }
 
 func (o *InitOptions) initIKSIngress() error {
