@@ -89,6 +89,9 @@ const (
 	CloudEnvValuesFile    = "myvalues.yaml"
 	CloudEnvSecretsFile   = "secrets.yaml"
 	defaultInstallTimeout = "6000"
+
+	ServerlessJenkins   = "Serverless Jenkins"
+	StaticMasterJenkins = "Static Master Jenkins"
 )
 
 var (
@@ -659,6 +662,21 @@ func (options *InstallOptions) Run() error {
 	timeout := options.Flags.Timeout
 	if timeout == "" {
 		timeout = defaultInstallTimeout
+	}
+
+	if !options.BatchMode && !options.Flags.Prow {
+		jenkinsInstallOptions := []string{
+			ServerlessJenkins,
+			StaticMasterJenkins,
+		}
+		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", StaticMasterJenkins,
+			options.In, options.Out, options.Err)
+		if err != nil {
+			return errors.Wrap(err, "picking Jenkins installation type")
+		}
+		if jenkinsInstallOption == ServerlessJenkins {
+			options.Flags.Prow = true
+		}
 	}
 
 	log.Infof("Installing Jenkins X platform helm chart from: %s\n", makefileDir)

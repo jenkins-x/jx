@@ -35,3 +35,4 @@ myvalues.yml
 *.swp
 
 vendor/**
+hack/code-generator/**
