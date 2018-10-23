@@ -35,7 +35,7 @@ type HelmTemplate struct {
 	WorkDir         string
 	CWD             string
 	Binary          string
-	Runner          *util.Command
+	Runner          util.Commander
 	KubectlValidate bool
 	KubeClient      kubernetes.Interface
 }
@@ -641,17 +641,17 @@ func setYamlValue(mapSlice *yaml.MapSlice, value string, keys ...string) error {
 }
 
 func (h *HelmTemplate) runKubectl(args ...string) error {
-	h.Runner.Name = h.Binary
-	h.Runner.Dir = h.CWD
-	h.Runner.Args = args
+	h.Runner.SetDir(h.CWD)
+	h.Runner.SetName(h.Binary)
+	h.Runner.SetArgs(args)
 	_, err := h.Runner.RunWithoutRetry()
 	return err
 }
 
 func (h *HelmTemplate) runKubectlWithOutput(args ...string) (string, error) {
-	h.Runner.Dir = h.CWD
-	h.Runner.Name = h.Binary
-	h.Runner.Args = args
+	h.Runner.SetDir(h.CWD)
+	h.Runner.SetName(h.Binary)
+	h.Runner.SetArgs(args)
 	return h.Runner.RunWithoutRetry()
 }
 
@@ -660,7 +660,7 @@ func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) 
 	versionText := ""
 	file := filepath.Join(chartDir, "Chart.yaml")
 	if !filepath.IsAbs(chartDir) {
-		file = filepath.Join(h.Runner.Dir, file)
+		file = filepath.Join(h.Runner.CurrentDir(), file)
 	}
 	exists, err := util.FileExists(file)
 	if err != nil {
