@@ -61,15 +61,17 @@ func NewCmdCreateGkeServiceAccount(f Factory, in terminal.FileReader, out termin
 	}
 
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd)
+	options.addFlags(cmd, true)
 
 	return cmd
 }
 
-func (options *CreateGkeServiceAccountOptions) addFlags(cmd *cobra.Command) {
+func (options *CreateGkeServiceAccountOptions) addFlags(cmd *cobra.Command, addSharedFlags bool) {
 	cmd.Flags().StringVarP(&options.Flags.Name, "name", "n", "", "The name of the service account to create")
 	cmd.Flags().StringVarP(&options.Flags.Project, "project", "p", "", "The GCP project to create the service account in")
-	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
+	if addSharedFlags {
+		cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
+	}
 }
 
 // Run implements this command
