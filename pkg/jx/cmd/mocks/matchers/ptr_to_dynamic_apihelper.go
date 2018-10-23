@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
-	"github.com/petergtz/pegomock"
 	dynamic "github.com/heptio/sonobuoy/pkg/dynamic"
+	"github.com/petergtz/pegomock"
+	"reflect"
 )
 
 func AnyPtrToDynamicAPIHelper() *dynamic.APIHelper {
