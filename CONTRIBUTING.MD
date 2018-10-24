@@ -93,7 +93,7 @@ To get a nice HTML report on the tests:
 
 ### Unit Tests
 
-Unit tests should be issolated (see what is an unencapsulated test), and should contain the `t.Parallel()` directive in order to keep things nice and speedy.
+Unit tests should be isolated (see what is an unencapsulated test), and should contain the `t.Parallel()` directive in order to keep things nice and speedy.
 
 If you add a slow running (more than a couple of seconds) test, it needs to be wrapped like so:
 ```
@@ -110,7 +110,7 @@ This encourages good package design and will enable you to define the exported p
 
 ### Integration Tests
 
-To add an integration test, create a separate file for your integration tests using the naming convention `mypackage_integration_test.go` Use the same package declaaration as your unit tests: `mypackage_test`. At the very top of the file before the package declaration add this custom build directive:
+To add an integration test, create a separate file for your integration tests using the naming convention `mypackage_integration_test.go` Use the same package declaration as your unit tests: `mypackage_test`. At the very top of the file before the package declaration add this custom build directive:
 
 ```
 // +build integration
@@ -122,7 +122,7 @@ This directive will ensure that integration tests are automatically separated fr
 You should NOT add `t.Parallel()` to an unencapsulated test as it may cause intermittent failures.
 
 ### What is an unencapsulated test?
-A test is unencapsulated (not issolated) if it cannot be run (with repeatable success) without a certain surrounding state. Relying on external binaries that may not be present, writing or reading from the filesystem without care to specifically avoid collisions, or relying on other tests to run in a specific sequence for your test to pass are all examples of a test that you should carefully consider before committing. If you would like to easily check that your test is issolated before committing simply run: `make docker-test`, or if your test is marked as slow: `make docker-test-slow`. This will mount the jx project folder into a golang docker container that does not include any of your host machines environment. If your test passes here, then you can be happy that the test is encapsulated.
+A test is unencapsulated (not isolated) if it cannot be run (with repeatable success) without a certain surrounding state. Relying on external binaries that may not be present, writing or reading from the filesystem without care to specifically avoid collisions, or relying on other tests to run in a specific sequence for your test to pass are all examples of a test that you should carefully consider before committing. If you would like to easily check that your test is isolated before committing simply run: `make docker-test`, or if your test is marked as slow: `make docker-test-slow`. This will mount the jx project folder into a golang docker container that does not include any of your host machines environment. If your test passes here, then you can be happy that the test is encapsulated.
 
 ### Mocking / Stubbing
 Mocking or stubbing methods in your unit tests will get you a long way towards test isolation. Coupled with the use of interface based APIs you should be able to make your methods easily testable and useful to other packages that may need to import them.
