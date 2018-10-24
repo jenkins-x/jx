@@ -34,7 +34,8 @@ func (o *CommonOptions) ensureServiceAccount(ns string, serviceAccountName strin
 	return err
 }
 
-// Todo use permissions from somewhere, or provide common ones in a class that we can pass in here
+// Todo: use permissions from somewhere, or provide common ones in a class that we can pass in here
+// this is an unimplemented and unused method for building upon that may eventually be of use
 func (o *CommonOptions) ensureClusterRoleExists(roleName string, namespace string) error {
 	log.Infof("Ensuring cluster role exists, role name: %s, namespace: %s\n", roleName, namespace)
 
@@ -45,7 +46,7 @@ func (o *CommonOptions) ensureClusterRoleExists(roleName string, namespace strin
 
 	_, err = client.RbacV1().ClusterRoles().Get(roleName, meta_v1.GetOptions{})
 	if err != nil {
-		log.Infof("Trying to create ClusterRole %s in namespace %s\n", roleName)
+		log.Infof("Trying to create ClusterRole %s in namespace %s\n", roleName, namespace)
 
 		clusterRole := &rbacv1.ClusterRole{
 			ObjectMeta: meta_v1.ObjectMeta{
