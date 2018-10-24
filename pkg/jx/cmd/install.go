@@ -81,7 +81,7 @@ const (
 	JX_GIT_TOKEN = "JX_GIT_TOKEN"
 	JX_GIT_USER  = "JX_GIT_USER"
 	// Want to use your own provider file? Change this line to point to your fork
-	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/a-roberts/cloud-environments"
+	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
 
 	GitSecretsFile        = "gitSecrets.yaml"
 	AdminSecretsFile      = "adminSecrets.yaml"
