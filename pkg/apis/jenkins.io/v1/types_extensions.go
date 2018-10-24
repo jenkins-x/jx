@@ -361,3 +361,50 @@ func (e *ExtensionSpec) Contains(whens []ExtensionWhen, when ExtensionWhen) bool
 	}
 	return false
 }
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+// CommitStatus represents the commit statuses for a particular pipeline run
+type CommitStatus struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	Spec CommitStatusSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// CommitStatusList is a structure used by k8s to store lists of commit statuses
+type CommitStatusList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []CommitStatus `json:"Items"`
+}
+
+// CommitStatusSpec provides details of a particular commit status
+type CommitStatusSpec struct {
+	PipelineActivity ResourceReference           `json:"pipelineActivity"  protobuf:"bytes,1,opt,name=pipelineActivity"`
+	Items            []CommitStatusItem          `json:"Items,omitempty"  protobuf:"bytes,2,opt,name=Items"`
+	Checked          bool                        `json:"checked"  protobuf:"bytes,3,opt,name=checked"`
+	Commit           CommitStatusCommitReference `json:"commit"  protobuf:"bytes,4,opt,name=commit"`
+	Context          string                      `json:"context"  protobuf:"bytes,5,opt,name=context"`
+}
+
+type CommitStatusCommitReference struct {
+	GitURL      string `json:"gitUrl,omitempty"  protobuf:"bytes,1,opt,name=gitUrl"`
+	PullRequest string `json:"pullRequest,omitempty"  protobuf:"bytes,2,opt,name=pullRequest"`
+	SHA         string `json:"sha,omitempty"  protobuf:"bytes,3,opt,name=sha"`
+}
+
+type CommitStatusItem struct {
+	Name        string `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
+	Description string `json:"description,omitempty"  protobuf:"bytes,2,opt,name=description"`
+	Pass        bool   `json:"pass"  protobuf:"bytes,3,opt,name=pass"`
+}
