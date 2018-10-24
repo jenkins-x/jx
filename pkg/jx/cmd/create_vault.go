@@ -23,6 +23,7 @@ import (
 const (
 	gkeKubeProvider            = "gke"
 	gkeServiceAccountSecretKey = "service-account.json"
+	exposedVaultPort           = "8200"
 )
 
 var (
@@ -340,6 +341,7 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	}
 	if svc.Annotations[kube.AnnotationExpose] == "" {
 		svc.Annotations[kube.AnnotationExpose] = "true"
+		svc.Annotations[kube.AnnotationExposePort] = exposedVaultPort
 		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
 		if err != nil {
 			return errors.Wrapf(err, "updating %s service annotations", vaultService)
