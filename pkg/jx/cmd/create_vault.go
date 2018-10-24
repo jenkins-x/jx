@@ -180,7 +180,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 	log.Infof("Creating Vault...\n")
 	vaultOperatorClient, err := o.VaultOperatorClient()
 	if err != nil {
-		return errors.Wrap(err, "creating vault opeator client")
+		return errors.Wrap(err, "creating vault operator client")
 	}
 
 	gcpConfig := &kube.GCPConfig{
@@ -198,6 +198,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 
 	log.Infof("Vault %s created\n", util.ColorInfo(vaultName))
 
+	log.Infof("Exposing Vault...\n")
 	err = o.exposeVault(vaultName)
 	if err != nil {
 		return errors.Wrap(err, "exposing vault")
@@ -230,7 +231,7 @@ func (o *CreateVaultOptions) createVaultGCPServiceAccount(vaultName string) (str
 }
 
 func (o *CreateVaultOptions) serviceAccountName(vaultName string) string {
-	return fmt.Sprintf("vault-%s", vaultName)
+	return fmt.Sprintf("%s-sa", vaultName)
 }
 
 func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath string, vaultName string) (string, error) {
@@ -243,7 +244,7 @@ func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath
 		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
 	}
 
-	secretName := fmt.Sprintf("vault-%s-gcp-sa", vaultName)
+	secretName := fmt.Sprintf("%s-gcp-sa", vaultName)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,
@@ -272,8 +273,8 @@ type kmsConfig struct {
 
 func (o *CreateVaultOptions) createKmsConfig(vaultName string) (*kmsConfig, error) {
 	config := &kmsConfig{
-		keyring:  fmt.Sprintf("vault-%s-keyring", vaultName),
-		key:      fmt.Sprintf("vault-%s-key", vaultName),
+		keyring:  fmt.Sprintf("%s-keyring", vaultName),
+		key:      fmt.Sprintf("%s-key", vaultName),
 		location: gke.KmsLocation,
 		project:  o.GKEProjectID,
 	}
@@ -291,7 +292,7 @@ func (o *CreateVaultOptions) createKmsConfig(vaultName string) (*kmsConfig, erro
 }
 
 func (o *CreateVaultOptions) createVaultBucket(vaultName string) (string, error) {
-	bucketName := fmt.Sprintf("vault-%s-bucket", vaultName)
+	bucketName := fmt.Sprintf("%s-bucket", vaultName)
 	exists, err := gke.BucketExists(o.GKEProjectID, bucketName)
 	if err != nil {
 		return "", errors.Wrap(err, "checking if Vault GCS bucket exists")
@@ -317,7 +318,7 @@ func (o *CreateVaultOptions) createVaultAuthServiceAccount(vaultName string) (st
 		return "", errors.Wrap(err, "creating kubernetes client")
 	}
 
-	serviceAccountName := fmt.Sprintf("vault-%s-auth-sa", vaultName)
+	serviceAccountName := fmt.Sprintf("%s-auth-sa", vaultName)
 	_, err = kube.CreateServiceAccount(client, o.Namespace, serviceAccountName)
 	if err != nil {
 		return "", errors.Wrap(err, "creating vault auth service account")
