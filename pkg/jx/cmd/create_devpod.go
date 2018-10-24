@@ -11,9 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -22,11 +19,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/client-go/kubernetes"
-
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -200,6 +198,15 @@ func (o *CreateDevPodOptions) Run() error {
 	editEnv, err := o.getOrCreateEditEnvironment()
 	if err != nil {
 		return err
+	}
+
+	// If the user passed in Image Pull Secrets, patch them in to the edit env's default service account
+	if o.PullSecrets != "" {
+		imagePullSecrets := o.GetImagePullSecrets()
+		err = kube.PatchImagePullSecrets(client, editEnv.Spec.Namespace, "default", imagePullSecrets)
+		if err != nil {
+			return fmt.Errorf("Failed to add pull secrets %s to service account default in namespace %s: %v", imagePullSecrets, editEnv.Spec.Namespace, err)
+		}
 	}
 
 	pod := &corev1.Pod{}

@@ -31,11 +31,12 @@ require (
 	github.com/codeship/codeship-go v0.0.0-20180717142545-7793ca823354
 	github.com/cpuguy83/go-md2man v1.0.8
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
-	github.com/davecgh/go-spew v1.1.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/denormal/go-gitignore v0.0.0-20180713143441-75ce8f3e513c
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/disintegration/imaging v1.4.2
 	github.com/docker/spdystream v0.0.0-20170912183627-bc6354cbbc29
+	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
 	github.com/emirpasic/gods v1.9.0
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.0.0
@@ -44,6 +45,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ini/ini v1.38.1
 	github.com/go-ole/go-ole v1.2.1
+	github.com/go-openapi/spec v0.17.1 // indirect
 	github.com/gobwas/glob v0.2.3
 	github.com/gogo/protobuf v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
@@ -83,7 +85,7 @@ require (
 	github.com/knq/sysutil v0.0.0-20180306023629-0218e141a794
 	github.com/kr/pty v1.1.2
 	github.com/magiconair/properties v1.8.0
-	github.com/mailru/easyjson v0.0.0-20180723221831-d5012789d665
+	github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329
 	github.com/mattn/go-colorable v0.0.9
 	github.com/mattn/go-isatty v0.0.3
 	github.com/matttproud/golang_protobuf_extensions v1.0.1
@@ -136,7 +138,7 @@ require (
 	go.opencensus.io v0.14.0
 	golang.org/x/crypto v0.0.0-20180723164146-c126467f60eb
 	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81
-	golang.org/x/net v0.0.0-20180719180050-a680a1efc54d
+	golang.org/x/net v0.0.0-20181005035420-146acd28ed58
 	golang.org/x/oauth2 v0.0.0-20180620175406-ef147856a6dd
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
 	golang.org/x/sys v0.0.0-20180715085529-ac767d655b30
@@ -161,7 +163,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.0.0-20180621085152-bbc52469f98b
 	k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d
 	k8s.io/client-go v8.0.0+incompatible
-	k8s.io/code-generator v0.0.0-20180621065459-6702109cc68e
+	k8s.io/code-generator v0.0.0-20181017053441-8c97d6ab64da
 	k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6
 	k8s.io/helm v2.7.2+incompatible
 	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4

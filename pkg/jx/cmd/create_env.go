@@ -41,7 +41,7 @@ var (
 	`)
 )
 
-// CreateEnvOptions the options for the create spring command
+// CreateEnvOptions the options for the create env command
 type CreateEnvOptions struct {
 	CreateOptions
 
@@ -90,6 +90,7 @@ func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	cmd.Flags().StringVarP(&options.Options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the Kubernetes name conventions like Services, Namespaces")
 	cmd.Flags().StringVarP(&options.Options.Spec.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
+
 	cmd.Flags().StringVarP(&options.Options.Spec.Namespace, kube.OptionNamespace, "s", "", "The Kubernetes namespace for the Environment")
 	cmd.Flags().StringVarP(&options.Options.Spec.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
 	cmd.Flags().StringVarP(&options.Options.Spec.Source.URL, "git-url", "g", "", "The Git clone URL for the source code for GitOps based Environments")
@@ -155,6 +156,13 @@ func (o *CreateEnvOptions) Run() error {
 		return err
 	}
 
+	prowFlag, err := o.isProw()
+	if err != nil {
+		return err
+	}
+	if prowFlag && !o.Prow {
+		o.Prow = true
+	}
 	if o.Prow {
 		devEnv.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
 		devEnv, err = jxClient.JenkinsV1().Environments(ns).Update(devEnv)
@@ -191,6 +199,27 @@ func (o *CreateEnvOptions) Run() error {
 		err = prow.AddEnvironment(o.KubeClientCached, []string{repo}, devEnv.Spec.Namespace, env.Spec.Namespace)
 		if err != nil {
 			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
+		}
+	}
+	/* It is important this pull secret handling goes after any namespace creation code; the service account exists in the created namespace */
+
+	if o.PullSecrets != "" {
+		// We need the namespace to be created first - do the check
+		err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, env.Spec.Namespace)
+		if err != nil {
+			// This can happen if, for whatever reason, the namespace takes a while to create. That shouldn't stop the entire process though
+			log.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) \n", env.Spec.Namespace)
+		}
+		// It's a common option, see addCommonFlags in common.go
+		imagePullSecrets := o.GetImagePullSecrets()
+		saName := "default"
+		//log.Infof("Patching the secrets %s for the service account %s\n", imagePullSecrets, saName)
+		err = kube.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, saName, imagePullSecrets)
+		if err != nil {
+			return fmt.Errorf("Failed to add pull secrets %s to service account %s in namespace %s: %v", imagePullSecrets, saName, env.Spec.Namespace, err)
+		} else {
+			log.Infof("Service account \"%s\" in namespace \"%s\" configured to use pull secret(s) %s \n", saName, env.Spec.Namespace, imagePullSecrets)
+			log.Infof("Pull secret(s) must exist in namespace %s before deploying your applications in this environment \n", env.Spec.Namespace)
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -238,6 +239,8 @@ func EnsureNamespaceCreated(kubeClient kubernetes.Interface, name string, labels
 	_, err = kubeClient.CoreV1().Namespaces().Create(namespace)
 	if err != nil {
 		return fmt.Errorf("Failed to create Namespace %s %s", name, err)
+	} else {
+		log.Infof("Namespace %s created \n ", name)
 	}
 	return err
 }

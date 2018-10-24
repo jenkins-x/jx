@@ -123,6 +123,9 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, jxClient versioned.Inter
 		labels := pod.Labels
 		if labels != nil {
 			buildName := labels[builds.LabelBuildName]
+			if buildName == "" {
+				buildName = labels[builds.LabelOldBuildName]
+			}
 			if buildName != "" {
 				log.Infof("Found build pod %s\n", pod.Name)
 
@@ -156,13 +159,10 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 	lastCommitSha := ""
 	lastCommitMessage := ""
 	lastCommitURL := ""
-	build := DigitSuffix(buildName)
+	build := ""
 	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
 	if err != nil {
 		log.Warnf("Failed to compile regexp because %s", err)
-	}
-	if build == "" {
-		build = "1"
 	}
 	gitURL := ""
 	for _, initContainer := range pod.Spec.InitContainers {
@@ -176,7 +176,6 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 				case "-url":
 					gitURL = value
 				case "-revision":
-					branch = value
 					if shaRegexp.MatchString(value) {
 						lastCommitSha = value
 					}
@@ -192,6 +191,19 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 			if v.Name == "PULL_BASE_SHA" {
 				pullBaseSha = v.Value
 			}
+			if v.Name == "BRANCH_NAME" || v.Name == "PULL_BASE_REF" {
+				branch = v.Value
+			}
+			if v.Name == "JX_BUILD_NUMBER" {
+				build = v.Value
+			}
+		}
+		if build == "" {
+			for _, v := range initContainer.Env {
+				if v.Name == "BUILD_NUMBER" {
+					build = v.Value
+				}
+			}
 		}
 		if lastCommitSha == "" && pullPullSha != "" {
 			lastCommitSha = pullPullSha
@@ -199,9 +211,13 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 		if lastCommitSha == "" && pullBaseSha != "" {
 			lastCommitSha = pullBaseSha
 		}
+
 	}
 	if gitURL == "" {
 		return nil
+	}
+	if build == "" {
+		build = "1"
 	}
 	if branch == "" {
 		branch = "master"

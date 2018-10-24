@@ -89,6 +89,9 @@ const (
 	CloudEnvValuesFile    = "myvalues.yaml"
 	CloudEnvSecretsFile   = "secrets.yaml"
 	defaultInstallTimeout = "6000"
+
+	ServerlessJenkins   = "Serverless Jenkins"
+	StaticMasterJenkins = "Static Master Jenkins"
 )
 
 var (
@@ -233,6 +236,10 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
+	originalGitUsername := options.GitRepositoryOptions.Username
+	originalGitServer := options.GitRepositoryOptions.ServerURL
+	originalGitToken := options.GitRepositoryOptions.ApiToken
+
 	if options.Flags.Provider == EKS {
 		var deps []string
 		d := binaryShouldBeInstalled("eksctl")
@@ -561,6 +568,24 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to add the Git servers to Jenkins config")
 	}
 
+	username := originalGitUsername
+	if username == "" {
+		if os.Getenv(JX_GIT_USER) != "" {
+			username = os.Getenv(JX_GIT_USER)
+		}
+	}
+	if username != "" && originalGitToken != "" && originalGitServer != "" {
+		err = gitAuthCfg.SaveUserAuth(originalGitServer, &auth.UserAuth{
+			ApiToken: originalGitToken,
+			Username: username,
+		})
+		if err != nil {
+			return err
+		}
+		log.Infof("Saving Git token configuration for server %s and user name %s.\n",
+			util.ColorInfo(originalGitServer), util.ColorInfo(username))
+	}
+
 	config, err := helmConfig.String()
 	if err != nil {
 		return errors.Wrap(err, "failed to get the helm config")
@@ -637,6 +662,21 @@ func (options *InstallOptions) Run() error {
 	timeout := options.Flags.Timeout
 	if timeout == "" {
 		timeout = defaultInstallTimeout
+	}
+
+	if !options.BatchMode && !options.Flags.Prow {
+		jenkinsInstallOptions := []string{
+			ServerlessJenkins,
+			StaticMasterJenkins,
+		}
+		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", StaticMasterJenkins,
+			options.In, options.Out, options.Err)
+		if err != nil {
+			return errors.Wrap(err, "picking Jenkins installation type")
+		}
+		if jenkinsInstallOption == ServerlessJenkins {
+			options.Flags.Prow = true
+		}
 	}
 
 	log.Infof("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
@@ -1039,7 +1079,7 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		return wrkDir, util.CopyDir(currentDir, wrkDir, true)
 	}
 	if options.Flags.CloudEnvRepository == "" {
-		return wrkDir, fmt.Errorf("No cloud environment git URL")
+		options.Flags.CloudEnvRepository = DEFAULT_CLOUD_ENVIRONMENTS_URL
 	}
 	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
 	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{

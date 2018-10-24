@@ -167,7 +167,7 @@ func FindServiceURLs(client kubernetes.Interface, namespace string) ([]ServiceUR
 	return urls, nil
 }
 
-// waits for the pods of a deployment to become ready
+// WaitForExternalIP waits for the pods of a deployment to become ready
 func WaitForExternalIP(client kubernetes.Interface, name, namespace string, timeout time.Duration) error {
 
 	options := meta_v1.ListOptions{
@@ -190,6 +190,29 @@ func WaitForExternalIP(client kubernetes.Interface, name, namespace string, time
 	if err == wait.ErrWaitTimeout {
 		return fmt.Errorf("service %s never became ready", name)
 	}
+	return nil
+}
+
+// WaitForService waits for a service to become ready
+func WaitForService(client kubernetes.Interface, name, namespace string, timeout time.Duration) error {
+	options := meta_v1.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
+	}
+	w, err := client.CoreV1().Services(namespace).Watch(options)
+	if err != nil {
+		return err
+	}
+	defer w.Stop()
+
+	condition := func(event watch.Event) (bool, error) {
+		svc := event.Object.(*v1.Service)
+		return svc.GetName() == name, nil
+	}
+	_, err = watch.Until(timeout, w, condition)
+	if err == wait.ErrWaitTimeout {
+		return fmt.Errorf("service %s never became ready", name)
+	}
+
 	return nil
 }
 
