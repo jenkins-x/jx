@@ -331,6 +331,20 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	if err != nil {
 		return errors.Wrap(err, "waiting for vault service")
 	}
+	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(vaultService, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "getting the vault service: %s", vaultService)
+	}
+	if svc.Annotations == nil {
+		svc.Annotations = map[string]string{}
+	}
+	if svc.Annotations[kube.AnnotationExpose] == "" {
+		svc.Annotations[kube.AnnotationExpose] = "true"
+		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
+		if err != nil {
+			return errors.Wrapf(err, "updating %s service annotations", vaultService)
+		}
+	}
 	options := &o.UpgradeIngressOptions
 	options.Namespaces = []string{o.Namespace}
 	options.Services = []string{vaultService}
