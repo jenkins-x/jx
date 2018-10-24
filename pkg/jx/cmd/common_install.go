@@ -1132,7 +1132,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	err = util.UnTargz(tarFile, jxHome , []string{binary, fileName})
+	err = util.UnTargz(tarFile, jxHome, []string{binary, fileName})
 	if err != nil {
 		return err
 	}
