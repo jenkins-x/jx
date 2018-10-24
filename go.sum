@@ -76,7 +76,6 @@ github.com/disintegration/imaging v1.4.2 h1:BSVxoYQ2NfLdvIGCDD8GHgBV5K0FCEsc0d/6
 github.com/disintegration/imaging v1.4.2/go.mod h1:9B/deIUIrliYkyMTuXJd6OUFLcrZ2tf+3Qlwnaf/CjU=
 github.com/docker/spdystream v0.0.0-20170912183627-bc6354cbbc29 h1:llBx5m8Gk0lrAaiLud2wktkX/e8haX7Ru0oVfQqtZQ4=
 github.com/docker/spdystream v0.0.0-20170912183627-bc6354cbbc29/go.mod h1:Qh8CwZgvJUkLughtfhJv5dyTYa91l1fOUCrgjqmcifM=
-github.com/emicklei/go-restful v2.8.0+incompatible h1:wN8GCRDPGHguIynsnBartv5GUgGUg1LAU7+xnSn1j7Q=
 github.com/emicklei/go-restful v2.8.0+incompatible/go.mod h1:otzb+WCGbkyDHkqmQmT5YD2WR4BBwUdeQoFo8l/7tVs=
 github.com/emirpasic/gods v1.9.0 h1:rUF4PuzEjMChMiNsVjdI+SyLu7rEqpQ5reNFnhC7oFo=
 github.com/emirpasic/gods v1.9.0/go.mod h1:YfzfFFoVP/catgzJb4IKIqXjX78Ha8FMSDh3ymbK86o=
@@ -345,11 +344,8 @@ k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d h1:MZjlsu9igBoVPZkXpIGoxI
 k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d/go.mod h1:ccL7Eh7zubPUSh9A3USN90/OzHNSVN6zxzde07TDCL0=
 k8s.io/client-go v8.0.0+incompatible h1:7Zl+OVXn0bobcsi4NEZGdoQDTE9ij1zPMfM21+yqQsM=
 k8s.io/client-go v8.0.0+incompatible/go.mod h1:7vJpHMYJwNQCWgzmNV+VYUl1zCObLyodBc8nIyt8L5s=
-k8s.io/code-generator v0.0.0-20180621065459-6702109cc68e/go.mod h1:MYiN+ZJZ9HkETbgVZdWw2AsuAi9PZ4V80cwfuf2axe8=
-k8s.io/code-generator v0.0.0-20180904193909-8c97d6ab64da h1:L6YB6ObZIbZlYikTQcCjzZGilwS3OVyQBA2esULs8VM=
-k8s.io/code-generator v0.0.0-20180904193909-8c97d6ab64da/go.mod h1:MYiN+ZJZ9HkETbgVZdWw2AsuAi9PZ4V80cwfuf2axe8=
-k8s.io/code-generator v0.0.0-20181017053441-40b92a94e6ad h1:4684EEW1q1OU2LgF0sbUuaJhRL7ckiUCwYFUYkzMkqE=
-k8s.io/code-generator v0.0.0-20181017053441-40b92a94e6ad/go.mod h1:MYiN+ZJZ9HkETbgVZdWw2AsuAi9PZ4V80cwfuf2axe8=
+k8s.io/code-generator v0.0.0-20181017053441-8c97d6ab64da h1:cXPq/bfLpnVG5ihFVDFyveNrPCUP0vGW2HP7mqPGbPI=
+k8s.io/code-generator v0.0.0-20181017053441-8c97d6ab64da/go.mod h1:MYiN+ZJZ9HkETbgVZdWw2AsuAi9PZ4V80cwfuf2axe8=
 k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6 h1:24nBVU2mLTluInk9yc+UzGJbjQj/Ment+BZdS0Sjqxs=
 k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8IAqLxYwwyPxAX1Pzy0ii0=
 k8s.io/helm v2.7.2+incompatible h1:WY8CVrvpd83Z0WdzDgl0GoIS0aP3o84zGulDOA4CRo8=
