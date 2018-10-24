@@ -49,6 +49,7 @@ var (
 // CreateVaultOptions the options for the create vault command
 type CreateVaultOptions struct {
 	CreateOptions
+	UpgradeIngressOptions UpgradeIngressOptions
 
 	GKEProjectID string
 	GKEZone      string
@@ -57,13 +58,19 @@ type CreateVaultOptions struct {
 
 // NewCmdCreateVault  creates a command object for the "create" command
 func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	commonOptions := CommonOptions{
+		Factory: f,
+		In:      in,
+		Out:     out,
+		Err:     errOut,
+	}
 	options := &CreateVaultOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
+			CommonOptions: commonOptions,
+		},
+		UpgradeIngressOptions: UpgradeIngressOptions{
+			CreateOptions: CreateOptions{
+				CommonOptions: commonOptions,
 			},
 		},
 	}
@@ -86,6 +93,7 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace where the Vault is created")
 
 	options.addCommonFlags(cmd)
+	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
 
@@ -322,23 +330,8 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	if err != nil {
 		return errors.Wrap(err, "waiting for vault service")
 	}
-	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(vaultService, metav1.GetOptions{})
-	if err != nil {
-		return errors.Wrapf(err, "getting the vault service: %s", vaultService)
-	}
-	if svc.Annotations == nil {
-		svc.Annotations = map[string]string{}
-	}
-	if svc.Annotations[kube.AnnotationExpose] == "" {
-		svc.Annotations[kube.AnnotationExpose] = "true"
-		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
-		if err != nil {
-			return errors.Wrap(err, "updating the service annotations")
-		}
-	}
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
-	if err != nil {
-		return errors.Wrap(err, "retrieving the dev namespace")
-	}
-	return o.exposeService(vaultService, devNamespace, o.Namespace)
+	options := &o.UpgradeIngressOptions
+	options.Namespaces = []string{o.Namespace}
+	options.Services = []string{vaultService}
+	return options.Run()
 }
