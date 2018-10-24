@@ -63,6 +63,7 @@ type CommonOptions struct {
 	ServiceAccount         string
 	Username               string
 	ExternalJenkinsBaseURL string
+	PullSecrets            string
 
 	// common cached clients
 	KubeClientCached    kubernetes.Interface
@@ -124,6 +125,8 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
 	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")
 	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, "skip-auth-secrets-merge", "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
+	cmd.Flags().StringVarP(&options.PullSecrets, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
+
 	options.Cmd = cmd
 }
 
@@ -286,6 +289,11 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 		return "", "", err
 	}
 	return kube.GetDevNamespace(kubeClient, currentNs)
+}
+
+func (o *CommonOptions) GetImagePullSecrets() []string {
+	pullSecrets := strings.Fields(o.PullSecrets)
+	return pullSecrets
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
@@ -711,6 +719,24 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	}
 
 	return o.runExposecontroller(devNamespace, targetNamespace, ic)
+}
+
+func (o *CommonOptions) exposeService(service, devNamespace, targetNamespace string) error {
+	ic, err := kube.GetIngressConfig(o.KubeClientCached, devNamespace)
+	if err != nil {
+		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
+	}
+	err = kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer, service)
+	if err != nil {
+		return err
+	}
+
+	err = o.copyCertmanagerResources(targetNamespace, ic)
+	if err != nil {
+		return fmt.Errorf("failed to copy certmanager resources from %s to %s namespace: %v", devNamespace, targetNamespace, err)
+	}
+
+	return o.runExposecontroller(devNamespace, targetNamespace, ic, service)
 }
 
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {

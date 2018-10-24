@@ -135,7 +135,7 @@ func (o *ShellOptions) Run() error {
 	}
 	newConfig := *config
 	newConfig.CurrentContext = ctxName
-	
+
 	//clean old folders
 	files, err := filepath.Glob("/tmp/.jx-shell-*")
 	if err != nil {
@@ -183,7 +183,7 @@ func (o *ShellOptions) Run() error {
 		env = append(env, fmt.Sprintf("ZDOTDIR=%s", tmpDirName))
 		e = exec.Command(shell, "-i")
 		e.Env = env
-	} 
+	}
 
 	e.Stdout = o.Out
 	e.Stderr = o.Err
@@ -225,7 +225,7 @@ func (o *ShellOptions) createNewBashPrompt(prompt string) string {
 	return "'$(jx prompt) " + prompt + "'"
 }
 
-	func (o *ShellOptions) createNewZshPrompt(prompt string) string {
+func (o *ShellOptions) createNewZshPrompt(prompt string) string {
 	if prompt == "" {
 		return "'[$(jx prompt) %n@%m %c]\\$ '"
 	}
@@ -239,4 +239,4 @@ func (o *ShellOptions) createNewBashPrompt(prompt string) string {
 		return prompt[0:1] + "$(jx prompt) " + prompt[1:]
 	}
 	return "'$(jx prompt) " + prompt + "'"
-	}
+}

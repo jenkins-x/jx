@@ -544,7 +544,7 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gi
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("could not find a values.yaml in %s\n", dir)
+		return fmt.Errorf("could not find a values.yaml in %s", dir)
 	}
 
 	f, err := os.OpenFile(file, os.O_APPEND|os.O_WRONLY, 0644)

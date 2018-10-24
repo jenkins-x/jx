@@ -2,13 +2,13 @@
 
 package v1
 
-// ComplianceCheckListerExpansion allows custom methods to be added to
-// ComplianceCheckLister.
-type ComplianceCheckListerExpansion interface{}
+// CommitStatusListerExpansion allows custom methods to be added to
+// CommitStatusLister.
+type CommitStatusListerExpansion interface{}
 
-// ComplianceCheckNamespaceListerExpansion allows custom methods to be added to
-// ComplianceCheckNamespaceLister.
-type ComplianceCheckNamespaceListerExpansion interface{}
+// CommitStatusNamespaceListerExpansion allows custom methods to be added to
+// CommitStatusNamespaceLister.
+type CommitStatusNamespaceListerExpansion interface{}
 
 // EnvironmentListerExpansion allows custom methods to be added to
 // EnvironmentLister.

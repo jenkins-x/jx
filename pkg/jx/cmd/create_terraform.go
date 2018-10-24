@@ -206,6 +206,7 @@ func (g *GKECluster) ParseTfVarsFile(path string) {
 type Flags struct {
 	Cluster                     []string
 	OrganisationName            string
+	SkipLogin                   bool
 	ForkOrganisationGitRepo     string
 	SkipTerraformApply          bool
 	IgnoreTerraformWarnings     bool
@@ -290,7 +291,7 @@ func NewCmdCreateTerraform(f Factory, in terminal.FileReader, out terminal.FileW
 
 	options.InstallOptions.addInstallFlags(cmd, true)
 	options.addCommonFlags(cmd)
-	options.addFlags(cmd)
+	options.addFlags(cmd, true)
 
 	cmd.Flags().StringVarP(&options.Flags.OrganisationName, "organisation-name", "o", "", "The organisation name that will be used as the Git repo containing cluster details, the repo will be organisation-<org name>")
 	cmd.Flags().StringVarP(&options.Flags.GKEServiceAccount, "gke-service-account", "", "", "The service account to use to connect to GKE")
@@ -299,8 +300,11 @@ func NewCmdCreateTerraform(f Factory, in terminal.FileReader, out terminal.FileW
 	return cmd
 }
 
-func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command) {
+func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFlags bool) {
 	// global flags
+	if addSharedFlags {
+		cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
+	}
 	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, "cluster", "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
 	cmd.Flags().BoolVarP(&options.Flags.SkipTerraformApply, "skip-terraform-apply", "", false, "Skip applying the generated Terraform plans")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTerraformWarnings, "ignore-terraform-warnings", "", false, "Ignore any warnings about the Terraform plan being potentially destructive")
@@ -330,8 +334,16 @@ func stringInValidProviders(a string) bool {
 
 // Run implements this command
 func (options *CreateTerraformOptions) Run() error {
+	var err error
+	if !options.Flags.SkipLogin {
+		err = options.runCommandVerbose("gcloud", "auth", "login", "--brief")
+		if err != nil {
+			return err
+		}
+	}
+
 	options.InstallOptions.Flags.Prow = true
-	err := options.installRequirements(GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
+	err = options.installRequirements(GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}

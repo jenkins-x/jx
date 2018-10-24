@@ -5,6 +5,7 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -49,7 +50,7 @@ type VaultRole struct {
 	BoundServiceAccountNamespaces string `json:"bound_service_account_namespaces"`
 	Name                          string `json:"name"`
 	Policies                      string `json:"policies"`
-	Ttl                           string `json:"ttl"`
+	TTL                           string `json:"ttl"`
 }
 
 type VaultPolicies []VaultPolicy
@@ -93,6 +94,7 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 			Size:            defaultNumVaults,
 			Image:           vaultImage,
 			BankVaultsImage: bankVaultsImage,
+			ServiceType:     string(v1.ServiceTypeClusterIP),
 			Config: map[string]interface{}{
 				"api_addr":           fmt.Sprintf("http://%s.%s:8200", name, ns),
 				"disable_clustering": true,
@@ -123,7 +125,7 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 								BoundServiceAccountNamespaces: authServiceAccountNamespace,
 								Name:                          authServiceAccount,
 								Policies:                      vaultRuleSecretsName,
-								Ttl:                           vaultAuthTTL,
+								TTL:                           vaultAuthTTL,
 							},
 						},
 						Type: vaultAuthType,

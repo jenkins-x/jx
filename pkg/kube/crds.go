@@ -155,15 +155,15 @@ func RegisterExtensionCRD(apiClient apiextensionsclientset.Interface) error {
 	return registerCRD(apiClient, name, names, columns)
 }
 
-// RegisterComplianceCheckCRD ensures that the CRD is registered for Extension
-func RegisterComplianceCheckCRD(apiClient apiextensionsclientset.Interface) error {
-	name := "compliancechecks." + jenkinsio.GroupName
+// RegisterCommitStatusCRD ensures that the CRD is registered for Extension
+func RegisterCommitStatusCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "commitstatuses." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{
-		Kind:       "ComplianceCheck",
-		ListKind:   "ComplianceCheckList",
-		Plural:     "compliancechecks",
-		Singular:   "compliancecheck",
-		ShortNames: []string{"compliancecheck"},
+		Kind:       "CommitStatus",
+		ListKind:   "CommitStatusList",
+		Plural:     "commitstatuses",
+		Singular:   "commitstatus",
+		ShortNames: []string{"commitstatus"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
 	return registerCRD(apiClient, name, names, columns)
