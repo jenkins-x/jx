@@ -1135,7 +1135,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	err = util.UnTargz(tarFile, jxHome , []string{binary, fileName})
+	err = util.UnTargz(tarFile, jxHome, []string{binary, fileName})
 	if err != nil {
 		return err
 	}
@@ -1426,8 +1426,11 @@ func (o *CommonOptions) installRequirements(cloudProvider string, extraDependenc
 		deps = o.addRequiredBinary("oci", deps)
 	case MINIKUBE:
 		deps = o.addRequiredBinary("minikube", deps)
-	case ICP:
-		deps = o.addRequiredBinary("cloudctl", deps)
+		/*
+			Eventually desireable
+			case ICP:
+				deps = o.addRequiredBinary("cloudctl", deps)
+		*/
 	}
 
 	for _, dep := range extraDependencies {
