@@ -587,7 +587,7 @@ func (b *BitbucketServerProvider) PullRequestLastCommitStatus(pr *GitPullRequest
 
 	mapstructure.Decode(apiResponse.Values, &buildStatusesPage)
 	if buildStatusesPage.Size == 0 {
-		return "SUCCESSFUL", nil
+		return "success", nil
 	}
 
 	for _, buildStatus := range buildStatusesPage.Values {
@@ -596,7 +596,7 @@ func (b *BitbucketServerProvider) PullRequestLastCommitStatus(pr *GitPullRequest
 		}
 	}
 
-	return "SUCCESSFUL", nil
+	return "success", nil
 }
 
 func (b *BitbucketServerProvider) ListCommitStatus(org, repo, sha string) ([]*GitRepoStatus, error) {
@@ -631,7 +631,7 @@ func convertBitBucketBuildStatusToGitStatus(buildStatus *bitbucket.BuildStatus) 
 	return &GitRepoStatus{
 		ID:          buildStatus.Key,
 		URL:         buildStatus.Url,
-		State:       buildStatus.State,
+		State:       stateMap[buildStatus.State],
 		TargetURL:   buildStatus.Url,
 		Description: buildStatus.Description,
 	}
