@@ -41,7 +41,7 @@ var (
 		# Create a new vault  with name my-vault
 		jx create vault my-vault
 
-		# Create a new vualt with name my-vault in namespace my-vault-namespace
+		# Create a new vault with name my-vault in namespace my-vault-namespace
 		jx create vault my-vault -n my-vault-namespace
 	`)
 )
@@ -77,7 +77,7 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:     "vault",
-		Short:   "Create a new Vault using the vault-opeator",
+		Short:   "Create a new Vault using the vault-operator",
 		Long:    createVaultLong,
 		Example: createVaultExample,
 		Run: func(cmd *cobra.Command, args []string) {
