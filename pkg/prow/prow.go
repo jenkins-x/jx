@@ -38,7 +38,7 @@ type Kind string
 
 const ProwConfigMapName = "config"
 
-// Options for prow
+// Options for Prow
 type Options struct {
 	KubeClient           kubernetes.Interface
 	Repos                []string
@@ -85,7 +85,7 @@ func AddCompliance(kubeClient kubernetes.Interface, repos []string, ns string) e
 // create Git repo?
 // get config and update / overwrite repos?
 // should we get the existing CM and do a diff?
-// should we just be using git for config and use prow to auto update via gitops?
+// should we just be using git for config and use Prow to auto update via gitops?
 
 func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	ps := config.Presubmit{}
@@ -159,7 +159,7 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps.Agent = "knative-build"
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-	log.Infof("generating prow config, using Knative BuildTemplate %s\n", templateName)
+	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
 		ServiceAccountName: "jenkins",
@@ -184,7 +184,7 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.Agent = KnativeBuildAgent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-	log.Infof("generating prow config, using Knative BuildTemplate %s\n", templateName)
+	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
 		ServiceAccountName: "jenkins",
@@ -247,7 +247,7 @@ func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) er
 	case Compliance:
 		// No Tide config needed for Compliance
 	default:
-		return fmt.Errorf("unknown prow config kind %s", o.Kind)
+		return fmt.Errorf("unknown Prow config kind %s", o.Kind)
 	}
 	return nil
 }
@@ -294,7 +294,7 @@ func (o *Options) addRepoToBranchProtection(bp *config.BranchProtection, repoSpe
 			contexts = append(contexts, ComplianceCheck)
 		}
 	default:
-		return fmt.Errorf("unknown prow config kind %s", o.Kind)
+		return fmt.Errorf("unknown Prow config kind %s", o.Kind)
 	}
 	bp.Orgs[requiredOrg].Repos[requiredRepo].Policy.RequiredStatusChecks.Contexts = contexts
 	return nil
@@ -340,7 +340,7 @@ func (o *Options) createTide() config.Tide {
 	return t
 }
 
-// AddProwConfig adds config to prow
+// AddProwConfig adds config to Prow
 func (o *Options) AddProwConfig() error {
 	var preSubmit config.Presubmit
 	var postSubmit config.Postsubmit
@@ -355,7 +355,7 @@ func (o *Options) AddProwConfig() error {
 	case Compliance:
 		// Nothing needed
 	default:
-		return fmt.Errorf("unknown prow config kind %s", o.Kind)
+		return fmt.Errorf("unknown Prow config kind %s", o.Kind)
 	}
 
 	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})

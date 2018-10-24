@@ -1581,14 +1581,14 @@ func (o *CommonOptions) installProw() error {
 		}
 	}
 
-	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
 		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil)
 		return nil
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install prow: %v", err)
+		return fmt.Errorf("failed to install Prow: %v", err)
 	}
 
 	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
