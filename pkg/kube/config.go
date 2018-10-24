@@ -50,6 +50,14 @@ func CurrentNamespace(config *api.Config) string {
 	return "default"
 }
 
+// CurrentContextName returns the current context name
+func CurrentContextName(config *api.Config) string {
+	if config != nil {
+		return config.CurrentContext
+	}
+	return ""
+}
+
 // CurrentContext returns the current context
 func CurrentContext(config *api.Config) *api.Context {
 	if config != nil {
