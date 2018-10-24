@@ -461,12 +461,40 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 }
 
 func (o *InitOptions) configureForICP() {
-	log.Infoln("Configuring Jenkins X options for IBM Cloud Private")
+	icpDefaultTillerNS := "default"
+	icpDefaultNS := "jx"
+
+	log.Infoln("")
+	log.Infoln(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
+	log.Infoln("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
+		"configured to point to the cluster jx will be installed into.")
+	log.Infoln("")
+
+	log.Infoln(util.ColorInfo("Permitting image repositories to be used"))
+	log.Infoln("If you have a clusterimagepolicy, ensure that this policy permits pulling from the following additional repositories: " +
+		"the scope of which can be narrowed down once you are sure only images from certain repositories are being used:")
+	log.Infoln("- name: docker.io/* \n" +
+		"- name: gcr.io/* \n" +
+		"- name: quay.io/* \n" +
+		"- name: k8s.gcr.io/* \n" +
+		"- name: <your ICP cluster name>:8500/* \n")
+
+	log.Infoln(util.ColorInfo("IBM Cloud Private defaults"))
+	log.Infoln("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
+		"where Jenkins X resources will be installed into is \"" + icpDefaultNS + "\".")
+	log.Infoln("")
+
+	log.Infoln(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
+	log.Infoln("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
+		"create a Docker registry secret and patch the default service account in the created namespace to use the secret, adding it as an ImagePullSecret. " +
+		"This is required so that pods in the created namespace can pull images from the registry.")
+	log.Infoln("")
+
 	o.Flags.IngressNamespace = "kube-system"
 	o.Flags.IngressDeployment = "default-backend"
 	o.Flags.IngressService = "default-backend"
-	o.Flags.TillerNamespace = "default"
-	o.Flags.Namespace = "jx"
+	o.Flags.TillerNamespace = icpDefaultTillerNS
+	o.Flags.Namespace = icpDefaultNS
 	//o.Flags.NoTiller = true // eventually desirable once ICP tiller version is 2.10 or better
 
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
@@ -493,6 +521,7 @@ func (o *InitOptions) configureForICP() {
 			Default: ICPExternalIP + ".nip.io",
 			Help:    "",
 		}
+
 		survey.AskOne(prompt, &ICPDomain, nil, surveyOpts)
 
 		o.Flags.Domain = ICPDomain

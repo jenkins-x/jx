@@ -81,7 +81,6 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 
 	for _, i := range install {
 		var err error
-		log.Infof("Handling missing dependencies for the cloud provider ", i)
 		switch i {
 		case "az":
 			err = o.installAzureCli()
@@ -129,8 +128,6 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installEksCtl(false)
 		case "heptio-authenticator-aws":
 			err = o.installHeptioAuthenticatorAws(false)
-		case "icp":
-			err = o.installIntoICP()
 		case "kustomize":
 			err = o.installKustomize()
 		default:
@@ -1290,46 +1287,6 @@ func (o *CommonOptions) installHeptioAuthenticatorAwsWithVersion(version string,
 	})
 }
 
-/* A user should have configured their kubectl client to point to an existing ICP cluster at this point */
-
-func (o *CommonOptions) installIntoICP() error {
-	log.Info("Installing into IBM Cloud Private: ensure your Kubernetes context is already configured to point to the cluster jx will be installed into")
-	log.Info("You must have Helm 2.10 or later on your path and this user must be able to create namespaces, and set up a tiller, somewhere other than default and kube-system respectively")
-	log.Info("The cloud provider chart will assume docker-registry=mycluster.icp:8500/jx and a tiller namespace of jx by default.")
-	log.Info("These values can be configured with --docker-registry and --tiller-namespace. It is strongly advised you install into a namespace called jx by using the --namespace jx option.")
-	log.Info("The following parameters should also be provided: --skip-ingress --external-ip=9.something --domain=9.something.nip.io")
-	log.Info("IBM Cloud Private provides its own Ingress controller that we wish to use. You should set the external IP and domain according to your own cluster configuration.")
-
-	/*
-		    This code is useful if we wish to download cloudctl as part of the install process as a dependency
-
-			icpDashURL := ""
-			promptIP := &survey.Input{Message: "ICP master IP address"}
-			survey.AskOne(promptIP, &icpDashURL, nil)
-
-			username := ""
-			promptUser := &survey.Input{Message: "ICP username"}
-			survey.AskOne(promptUser, &username, nil)
-
-			password := ""
-			promptPass := &survey.Input{Message: "ICP password"}
-			survey.AskOne(promptPass, &password, nil)
-
-			fileName := fmt.Sprintf("cloudctl-%s-amd64", runtime.GOOS)
-			cloudctlURL := fmt.Sprintf("%s/api/cli/%s", icpDashURL, fileName)
-			binDir, err := util.JXBinLocation()
-			fullPath := filepath.Join(binDir, fileName)
-			err = o.downloadFile(cloudctlURL, fullPath)
-
-			if err != nil {
-				return err
-			}
-
-			return os.Chmod(fullPath, 0755)
-	*/
-	return nil
-}
-
 func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if p == "" {
@@ -1426,11 +1383,6 @@ func (o *CommonOptions) installRequirements(cloudProvider string, extraDependenc
 		deps = o.addRequiredBinary("oci", deps)
 	case MINIKUBE:
 		deps = o.addRequiredBinary("minikube", deps)
-		/*
-			Eventually desireable
-			case ICP:
-				deps = o.addRequiredBinary("cloudctl", deps)
-		*/
 	}
 
 	for _, dep := range extraDependencies {
