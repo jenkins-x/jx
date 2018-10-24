@@ -214,7 +214,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
 	cmd.Flags().StringVarP(&flags.EnvironmentGitOwner, "environment-git-owner", "", "", "The Git provider organisation to create the environment Git repositories in")
-	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
+	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X ChartMuseum registry with your helm client [default false]")
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install command to fail if there is already an installation. Otherwise lets update the installation")
@@ -1212,7 +1212,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 		}
 		server = config.GetOrCreateServer(url)
 	} else {
-		server, err = options.findServer(config, &options.ServerFlags, "chartmuseum server", "Try installing one via: jx create team", false)
+		server, err = options.findServer(config, &options.ServerFlags, "ChartMuseum server", "Try installing one via: jx create team", false)
 		if err != nil {
 			return err
 		}
