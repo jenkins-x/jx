@@ -95,7 +95,7 @@ func GetEnrichedDevEnvironment(kubeClient kubernetes.Interface, jxClient version
 	return env, nil
 }
 
-// IsProwEnabled returns true if prow is enabled in the given development namespace
+// IsProwEnabled returns true if Prow is enabled in the given development namespace
 func IsProwEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
 	// lets try determine if its Jenkins or not via the deployments
 	_, err := kubeClient.AppsV1beta1().Deployments(ns).Get(DeploymentProwBuild, metav1.GetOptions{})

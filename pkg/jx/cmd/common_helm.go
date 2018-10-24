@@ -32,11 +32,11 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	}
 	u, err := kube.FindServiceURL(client, ns, kube.ServiceChartMuseum)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find the service URL of the chartmuseum")
+		return errors.Wrapf(err, "failed to find the service URL of the ChartMuseum")
 	}
 	u2, err := url.Parse(u)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse the chartmuseum URL")
+		return errors.Wrap(err, "failed to parse the ChartMuseum URL")
 	}
 	if u2.User == nil {
 		u2.User = url.UserPassword(username, password)

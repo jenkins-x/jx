@@ -64,7 +64,7 @@ func NewCmdStartCompliance(f Factory, in terminal.FileReader, out terminal.FileW
 			CheckErr(err)
 		},
 	}
-	// TODO once we support get pipelines for prow we can add support for a selector
+	// TODO once we support get pipelines for Prow we can add support for a selector
 	//cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
 
 	return cmd

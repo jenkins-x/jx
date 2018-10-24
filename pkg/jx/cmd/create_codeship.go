@@ -26,6 +26,7 @@ import (
 )
 
 type CreateCodeshipFlags struct {
+	SkipLogin               bool
 	OrganisationName        string
 	ForkOrganisationGitRepo string
 	CodeshipUsername        string
@@ -105,14 +106,15 @@ func NewCmdCreateCodeship(f Factory, in terminal.FileReader, out terminal.FileWr
 	options.addFlags(cmd)
 	options.CreateTerraformOptions.InstallOptions.addInstallFlags(cmd, true)
 
-	options.CreateGkeServiceAccountOptions.addFlags(cmd)
-	options.CreateTerraformOptions.addFlags(cmd)
+	options.CreateGkeServiceAccountOptions.addFlags(cmd, false)
+	options.CreateTerraformOptions.addFlags(cmd, false)
 
 	return cmd
 }
 
 func (options *CreateCodeshipOptions) addFlags(cmd *cobra.Command) {
 	// global flags
+	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	cmd.Flags().StringVarP(&options.Flags.OrganisationName, "organisation-name", "o", "", "The organisation name that will be used as the Git repo containing cluster details, the repo will be organisation-<org name>")
 
 	cmd.Flags().StringVarP(&options.Flags.CodeshipUsername, "codeship-username", "", "", "The username to login to Codeship with, this will not be stored anywhere")
@@ -151,6 +153,7 @@ func (o *CreateCodeshipOptions) Run() error {
 		gkeServiceAccountPath := path.Join(util.HomeDir(), fmt.Sprintf("%s.key.json", o.Flags.OrganisationName))
 
 		o.CreateGkeServiceAccountOptions.Flags.Name = o.Flags.OrganisationName
+		o.CreateGkeServiceAccountOptions.Flags.SkipLogin = true
 		o.CreateGkeServiceAccountOptions.CommonOptions.BatchMode = o.CreateOptions.CommonOptions.BatchMode
 		err := o.CreateGkeServiceAccountOptions.Run()
 		if err != nil {
@@ -300,6 +303,7 @@ func (o *CreateCodeshipOptions) Run() error {
 		o.CreateTerraformOptions.Flags.SkipTerraformApply = true
 		o.CreateTerraformOptions.Flags.GKEServiceAccount = o.Flags.GKEServiceAccount
 		o.CreateTerraformOptions.Flags.LocalOrganisationRepository = dir
+		o.CreateTerraformOptions.Flags.SkipLogin = true
 
 		err = o.CreateTerraformOptions.Run()
 		if err != nil {

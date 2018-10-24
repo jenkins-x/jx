@@ -82,7 +82,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
-	// if we're in a prow job we need to clone and change dir to find the Helm Chart.yaml
+	// if we're in a Prow job we need to clone and change dir to find the Helm Chart.yaml
 	if os.Getenv(PROW_JOB_ID) != "" {
 		dir, err = o.cloneProwPullRequest(dir, o.GitProvider)
 		if err != nil {

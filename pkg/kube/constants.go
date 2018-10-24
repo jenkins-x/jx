@@ -25,7 +25,7 @@ const (
 	// ChartKubeless the default chart for kubeless
 	ChartKubeless = "incubator/kubeless"
 
-	// ChartProw the default chart for prow
+	// ChartProw the default chart for Prow
 	ChartProw = "jenkins-x/prow"
 
 	// ChartKnative the default chart for knative
