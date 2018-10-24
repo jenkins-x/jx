@@ -592,7 +592,8 @@ func (b *BitbucketServerProvider) PullRequestLastCommitStatus(pr *GitPullRequest
 
 	for _, buildStatus := range buildStatusesPage.Values {
 		if time.Unix(buildStatus.DateAdded, 0).After(time.Unix(lastCommit.CommitterTimestamp, 0)) {
-			return buildStatus.State, nil
+			// var from BitBucketCloudProvider
+			return stateMap[buildStatus.State], nil
 		}
 	}
 
@@ -631,6 +632,7 @@ func convertBitBucketBuildStatusToGitStatus(buildStatus *bitbucket.BuildStatus) 
 	return &GitRepoStatus{
 		ID:          buildStatus.Key,
 		URL:         buildStatus.Url,
+		// var from BitBucketCloudProvider
 		State:       stateMap[buildStatus.State],
 		TargetURL:   buildStatus.Url,
 		Description: buildStatus.Description,
