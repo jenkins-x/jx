@@ -61,21 +61,22 @@ type CreateDevPodResults struct {
 type CreateDevPodOptions struct {
 	CreateOptions
 
-	Label          string
-	Suffix         string
-	WorkingDir     string
-	RequestCpu     string
-	Dir            string
-	Reuse          bool
-	Sync           bool
-	Ports          []int
-	AutoExpose     bool
-	Persist        bool
-	ImportUrl      string
-	Import         bool
-	ShellCmd       string
-	Username       string
-	DockerRegistry string
+	Label           string
+	Suffix          string
+	WorkingDir      string
+	RequestCpu      string
+	Dir             string
+	Reuse           bool
+	Sync            bool
+	Ports           []int
+	AutoExpose      bool
+	Persist         bool
+	ImportUrl       string
+	Import          bool
+	ShellCmd        string
+	Username        string
+	DockerRegistry  string
+	TillerNamespace string
 
 	GitCredentials StepGitCredentialsOptions
 
@@ -133,6 +134,7 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
 	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
+	cmd.Flags().StringVarP(&options.TillerNamespace, "tiller-namespace", "", "", "The optional tiller namespace to use within the DevPod.")
 
 	options.addCommonFlags(cmd)
 	return cmd
@@ -388,6 +390,14 @@ func (o *CreateDevPodOptions) Run() error {
 		container1.Env = append(container1.Env, corev1.EnvVar{
 			Name:  "DOCKER_REGISTRY",
 			Value: o.DockerRegistry,
+		})
+	}
+
+	// If a tiller namespace was passed in, set it as an env var.
+	if o.TillerNamespace != "" {
+		container1.Env = append(container1.Env, corev1.EnvVar{
+			Name:  "TILLER_NAMESPACE",
+			Value: o.TillerNamespace,
 		})
 	}
 
