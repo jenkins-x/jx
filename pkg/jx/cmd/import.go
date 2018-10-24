@@ -654,7 +654,7 @@ func (options *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	// Create prow owners file
+	// Create Prow owners file
 	err = options.CreateProwOwnersFile()
 	if err != nil {
 		return err

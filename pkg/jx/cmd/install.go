@@ -221,7 +221,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.DockerRegistry, "docker-registry", "", "", "The Docker Registry host or host:port which is used when tagging and pushing images. If not specified it defaults to the internal registry unless there is a better provider default (e.g. ECR on AWS/EKS)")
 	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
-	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable prow")
+	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -710,10 +710,10 @@ func (options *InstallOptions) Run() error {
 
 	options.currentNamespace = ns
 	if options.Flags.Prow {
-		// install prow into the new env
+		// install Prow into the new env
 		err = options.installProw()
 		if err != nil {
-			return fmt.Errorf("failed to install prow: %v", err)
+			return fmt.Errorf("failed to install Prow: %v", err)
 		}
 	}
 
@@ -1121,7 +1121,7 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 // returns secrets that are used as values during the helm install
 func (options *InstallOptions) getGitSecrets() (string, error) {
 
-	// TODO JR convert to a struct and add the equivelent of the below to the secrets to enable prow
+	// TODO JR convert to a struct and add the equivelent of the below to the secrets to enable Prow
 	//helmConfig.Prow.User = initOpts.Flags.Username
 	//helmConfig.Prow.HMACtoken, err = util.RandStringBytesMaskImprSrc(41)
 	//if err != nil {
