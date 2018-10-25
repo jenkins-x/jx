@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type DeleteVaultOptions struct {
@@ -103,6 +104,12 @@ func (o *DeleteVaultOptions) Run() error {
 	err = kube.DeleteServiceAccount(client, o.Namespace, authServiceAccountName)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the vault auth service account '%s'", authServiceAccountName)
+	}
+
+	gcpServiceAccountSecretName := kube.VaultGcpServiceAccountSecretName(vaultName)
+	err = client.CoreV1().Secrets(o.Namespace).Delete(gcpServiceAccountSecretName, &metav1.DeleteOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "deleteing the secret '%s' where GCP sesrvice account is stored", gcpServiceAccountSecretName)
 	}
 
 	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
