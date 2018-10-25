@@ -52,7 +52,7 @@ func NewCmdStart(f Factory, in terminal.FileReader, out terminal.FileWriter, err
 	}
 
 	cmd.AddCommand(NewCmdStartPipeline(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStartCompliance(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStartProtection(f, in, out, errOut))
 	return cmd
 }
 
