@@ -91,6 +91,13 @@ func (o *DeleteVaultOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "deleting the vault ingress '%s'", vaultName)
 	}
+
+	authServiceAccountName := kube.VaultAuthServiceAccountName(vaultName)
+	err = kube.DeleteServiceAccount(client, o.Namespace, authServiceAccountName)
+	if err != nil {
+		return errors.Wrapf(err, "deleting the vault auth service account '%s'", authServiceAccountName)
+	}
+
 	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
 
 	return nil
