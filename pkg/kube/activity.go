@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type PipelineActivityKey struct {
@@ -184,14 +186,18 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		a = defaultActivity
 	}
 	oldSpec := a.Spec
-	spec := &a.Spec
+	spec := &defaultActivity.Spec
 	updateActivitySpec(k, spec)
 	if create {
 		answer, err := activities.Create(a)
 		return answer, true, err
 	} else {
 		if !reflect.DeepEqual(&a.Spec, &oldSpec) {
-			answer, err := activities.Update(a)
+			patch, err := json.Marshal(defaultActivity)
+			if err != nil {
+				return defaultActivity, create, nil
+			}
+			answer, err := activities.Patch(a.Name, types.MergePatchType, patch)
 			return answer, false, err
 		}
 		return a, false, nil
