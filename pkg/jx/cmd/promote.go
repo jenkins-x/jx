@@ -234,26 +234,6 @@ func (o *PromoteOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterEnvironmentCRD(apisClient)
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterGitServiceCRD(apisClient)
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterUserCRD(apisClient)
-	if err != nil {
-		return err
-	}
 
 	o.Activities = jxClient.JenkinsV1().PipelineActivities(ns)
 

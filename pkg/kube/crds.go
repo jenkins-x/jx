@@ -2,6 +2,7 @@ package kube
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"reflect"
 	"time"
 
@@ -21,6 +22,50 @@ const (
 	CertmanagerIssuerProd         = "letsencrypt-prod"
 	CertmanagerIssuerStaging      = "letsencrypt-staging"
 )
+
+func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
+	err := RegisterCommitStatusCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Commit Status CRD")
+	}
+	err = RegisterEnvironmentCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Environment CRD")
+	}
+	err = RegisterExtensionCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Extension CRD")
+	}
+	err = RegisterEnvironmentRoleBindingCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Environment Role Binding CRD")
+	}
+	err = RegisterGitServiceCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Git Service CRD")
+	}
+	err = RegisterPipelineActivityCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Pipeline Activity CRD")
+	}
+	err = RegisterReleaseCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Release CRD")
+	}
+	err = RegisterTeamCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Team CRD")
+	}
+	err = RegisterUserCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the User CRD")
+	}
+	err = RegisterWorkflowCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Workflow CRD")
+	}
+	return nil
+}
 
 // RegisterEnvironmentCRD ensures that the CRD is registered for Environments
 func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
