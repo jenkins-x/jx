@@ -87,6 +87,11 @@ type Storage struct {
 	GCS GCSConfig `json:"gcs"`
 }
 
+// VaultGcpServiceAccountSecretName builds the secret name where the GCP service account is stored
+func VaultGcpServiceAccountSecretName(vaultName string) string {
+	return fmt.Sprintf("%s-gcp-sa", vaultName)
+}
+
 // CreateVault creates a new vault backed by GCP KMS and storage
 func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string,
 	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,

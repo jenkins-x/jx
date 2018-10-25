@@ -247,7 +247,7 @@ func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath
 		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
 	}
 
-	secretName := fmt.Sprintf("%s-gcp-sa", vaultName)
+	secretName := kube.VaultGcpServiceAccountSecretName(vaultName)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,
