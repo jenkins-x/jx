@@ -74,6 +74,7 @@ type CommonOptions struct {
 	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
+	Kuber               kube.Kuber
 	vaultOperatorClient vaultoperatorclient.Interface
 
 	Prow
@@ -281,6 +282,13 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		}
 	}
 	return o.helm
+}
+
+func (o *CommonOptions) Kube() kube.Kuber {
+	if o.Kuber == nil {
+		o.Kuber = kube.NewKubeConfig()
+	}
+	return o.Kuber
 }
 
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {

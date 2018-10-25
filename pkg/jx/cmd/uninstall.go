@@ -65,7 +65,7 @@ func NewCmdUninstall(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 func (o *UninstallOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	config, _, err := kube.LoadConfig()
+	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
 	}

@@ -783,7 +783,7 @@ func (options *InstallOptions) Run() error {
 
 	// save cluster config CA and server url to a configmap
 	if !options.Flags.DisableSetKubeContext {
-		kubeConfig, _, err := kube.LoadConfig()
+		kubeConfig, _, err := options.Kube().LoadConfig()
 		if err != nil {
 			return err
 		}
