@@ -61,7 +61,7 @@ func (o *DeleteVaultOptions) Run() error {
 	}
 	vaultName := o.Args[0]
 
-	_, ns, err := o.KubeClient()
+	client, ns, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating kubernetes client")
 	}
@@ -83,6 +83,11 @@ func (o *DeleteVaultOptions) Run() error {
 	err = kube.DeleteVault(vaultOperatorClient, vaultName, o.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "deleteing the vault resource")
+	}
+
+	err = kube.DeleteIngress(client, o.Namespace, vaultName)
+	if err != nil {
+		return errors.Wrapf(err, "deleteing the vault ingress '%s'", vaultName)
 	}
 	return nil
 }
