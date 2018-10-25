@@ -137,7 +137,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		return fmt.Errorf("Vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
 	}
 
-	err = gke.Login("", false)
+	err = gke.Login("", true)
 	if err != nil {
 		return errors.Wrap(err, "login into GCP")
 	}
