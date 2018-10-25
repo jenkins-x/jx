@@ -132,8 +132,8 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 	}
 
 	// Checks if the vault alrady exists
-	_, err = kube.GetVault(vaultOperatorClient, vaultName, o.Namespace)
-	if err == nil {
+	found := kube.FindVault(vaultOperatorClient, vaultName, o.Namespace)
+	if found {
 		return fmt.Errorf("Vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
 	}
 
@@ -221,7 +221,7 @@ func (o *CreateVaultOptions) createVaultGCPServiceAccount(vaultName string) (str
 	}
 	defer os.RemoveAll(serviceAccountDir)
 
-	serviceAccountName := o.serviceAccountName(vaultName)
+	serviceAccountName := gke.VaultServiceAccountName(vaultName)
 	if err != nil {
 		return "", err
 	}
@@ -235,10 +235,6 @@ func (o *CreateVaultOptions) createVaultGCPServiceAccount(vaultName string) (str
 		return "", errors.Wrap(err, "storing the service account into a secret")
 	}
 	return secretName, nil
-}
-
-func (o *CreateVaultOptions) serviceAccountName(vaultName string) string {
-	return fmt.Sprintf("%s-sa", vaultName)
 }
 
 func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath string, vaultName string) (string, error) {
@@ -299,7 +295,7 @@ func (o *CreateVaultOptions) createKmsConfig(vaultName string) (*kmsConfig, erro
 }
 
 func (o *CreateVaultOptions) createVaultBucket(vaultName string) (string, error) {
-	bucketName := fmt.Sprintf("%s-bucket", vaultName)
+	bucketName := gke.VaultBucketName(vaultName)
 	exists, err := gke.BucketExists(o.GKEProjectID, bucketName)
 	if err != nil {
 		return "", errors.Wrap(err, "checking if Vault GCS bucket exists")
