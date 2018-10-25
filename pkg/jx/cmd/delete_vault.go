@@ -109,7 +109,7 @@ func (o *DeleteVaultOptions) Run() error {
 	gcpServiceAccountSecretName := kube.VaultGcpServiceAccountSecretName(vaultName)
 	err = client.CoreV1().Secrets(o.Namespace).Delete(gcpServiceAccountSecretName, &metav1.DeleteOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "deleteing the secret '%s' where GCP sesrvice account is stored", gcpServiceAccountSecretName)
+		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", gcpServiceAccountSecretName)
 	}
 
 	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
