@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -16,7 +17,10 @@ import (
 type DeleteVaultOptions struct {
 	CommonOptions
 
-	Namespace string
+	Namespace            string
+	RemoveCloudResources bool
+	GKEProjectID         string
+	GKEZone              string
 }
 
 var (
@@ -54,6 +58,9 @@ func NewCmdDeleteVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 	}
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace from where to delete the vault")
+	cmd.Flags().BoolVarP(&options.RemoveCloudResources, "remove-cloud-resources", "r", false, "Remove all cloud resource allocated for the Vault")
+	cmd.Flags().StringVarP(&options.GKEProjectID, "gke-project-id", "", "", "Google Project ID to use for Vault backend")
+	cmd.Flags().StringVarP(&options.GKEZone, "gke-zone", "", "", "The zone (e.g. us-central1-a) where Vault will store the encrypted data")
 	return cmd
 }
 
@@ -99,6 +106,66 @@ func (o *DeleteVaultOptions) Run() error {
 	}
 
 	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
+
+	if o.RemoveCloudResources {
+		teamSettings, err := o.TeamSettings()
+		if err != nil {
+			return errors.Wrap(err, "retrieving the team settings")
+		}
+
+		if teamSettings.KubeProvider == gkeKubeProvider {
+			err := o.removeGCPResources(vaultName)
+			if err != nil {
+				return errors.Wrap(err, "removing GCP resource")
+			}
+			log.Infof("Cloud resources allocated for vault %s deleted\n", util.ColorInfo(vaultName))
+		}
+
+	}
+
+	return nil
+}
+
+func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
+	err := gke.Login("", true)
+	if err != nil {
+		return errors.Wrap(err, "login into GCP")
+	}
+
+	if o.GKEProjectID == "" {
+		projectId, err := o.getGoogleProjectId()
+		if err != nil {
+			return err
+		}
+		o.GKEProjectID = projectId
+	}
+	err = o.runCommandVerbose("gcloud", "config", "set", "project", o.GKEProjectID)
+	if err != nil {
+		return err
+	}
+
+	if o.GKEZone == "" {
+		zone, err := o.getGoogleZone(o.GKEProjectID)
+		if err != nil {
+			return err
+		}
+		o.GKEZone = zone
+	}
+
+	sa := gke.VaultServiceAccountName(vaultName)
+	err = gke.DeleteServiceAccount(sa, o.GKEProjectID)
+	if err != nil {
+		return errors.Wrapf(err, "deleting the GCP service account '%s'", sa)
+	}
+	log.Infof("GCP service account %s deleted\n", util.ColorInfo(sa))
+
+	bucket := gke.VaultBucketName(vaultName)
+	err = gke.DeleteAllObjectsInBucket(bucket)
+	if err != nil {
+		return errors.Wrapf(err, "deleting all objects in GCS bucket '%s'", bucket)
+	}
+
+	log.Infof("GCS bucket %s deleted\n", util.ColorInfo(bucket))
 
 	return nil
 }
