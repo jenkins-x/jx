@@ -127,7 +127,7 @@ func (o *UninstallOptions) Run() error {
 	o.Helm().DeleteRelease(namespace, "jx-prow", true)
 	err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
 	if err != nil {
-		errc := o.cleanupNamesapces(namespace, envNames)
+		errc := o.cleanupNamespaces(namespace, envNames)
 		if errc != nil {
 			errc = errors.Wrap(errc, "failed to cleanup the jenkins-x platform")
 			return errc
@@ -138,7 +138,7 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.cleanupNamesapces(namespace, envNames)
+	err = o.cleanupNamespaces(namespace, envNames)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func (o *UninstallOptions) Run() error {
 	return nil
 }
 
-func (o *UninstallOptions) cleanupNamesapces(namespace string, envNames []string) error {
+func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string) error {
 	client, _, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to get the kube client")
