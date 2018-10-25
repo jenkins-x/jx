@@ -77,7 +77,7 @@ type Storage struct {
 	GCS GCSConfig `json:"gcs"`
 }
 
-// CreateVault creates a new vault
+// CreateVault creates a new vault backed by GCP KMS and storage
 func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string,
 	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
 	authServiceAccountNamespace string) error {
@@ -157,4 +157,9 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 
 	_, err := vaultOperatorClient.Vault().Vaults(ns).Create(vault)
 	return err
+}
+
+// GetVault get a Vault object by name
+func GetVault(vaultOperatorClient versioned.Interface, name string, ns string) (*v1alpha1.Vault, error) {
+	return vaultOperatorClient.Vault().Vaults(ns).Get(name, metav1.GetOptions{})
 }
