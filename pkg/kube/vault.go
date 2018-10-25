@@ -5,8 +5,10 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -22,7 +24,15 @@ const (
 	vaultAuthName        = "auth"
 	vaultAuthType        = "kubernetes"
 	vaultAuthTTL         = "1h"
+	vaultAuthSaSuffix    = "auth-sa"
 )
+
+// Vault stores some details of a Vault resource
+type Vault struct {
+	Name                   string
+	URL                    string
+	AuthServiceAccountName string
+}
 
 // GCPConfig keeps the configuration for Google Cloud
 type GCPConfig struct {
@@ -162,4 +172,33 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 // GetVault get a Vault object by name
 func GetVault(vaultOperatorClient versioned.Interface, name string, ns string) (*v1alpha1.Vault, error) {
 	return vaultOperatorClient.Vault().Vaults(ns).Get(name, metav1.GetOptions{})
+}
+
+func authServiceAccountName(vaultName string) string {
+	return fmt.Sprintf("%s-%s", vaultName, vaultAuthSaSuffix)
+}
+
+// ListVaults list all vaults available in a given namespaces
+func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string) ([]Vault, error) {
+	vaultList, err := vaultOperatorClient.Vault().Vaults(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "listing vaults in namespace '%s'", ns)
+	}
+
+	vaults := []Vault{}
+	for _, v := range vaultList.Items {
+		vaultName := v.Name
+		vaultAuthSaName := authServiceAccountName(vaultName)
+		vaultURL, err := FindServiceURL(client, ns, vaultName)
+		if err != nil {
+			vaultURL = ""
+		}
+		vault := Vault{
+			Name:                   vaultName,
+			URL:                    vaultURL,
+			AuthServiceAccountName: vaultAuthSaName,
+		}
+		vaults = append(vaults, vault)
+	}
+	return vaults, nil
 }

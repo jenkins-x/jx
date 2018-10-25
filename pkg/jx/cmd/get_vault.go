@@ -4,6 +4,8 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -59,5 +61,30 @@ func NewCmdGetVault(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 
 // Run implements the command
 func (o *GetVaultOptions) Run() error {
+	client, ns, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrap(err, "creating kubernetes client")
+	}
+
+	if o.Namespace == "" {
+		o.Namespace = ns
+	}
+	vaultOperatorClient, err := o.VaultOperatorClient()
+	if err != nil {
+		return errors.Wrap(err, "creating vault opeator client")
+	}
+
+	vaults, err := kube.GetVaults(client, vaultOperatorClient, o.Namespace)
+	if err != nil {
+		return err
+	}
+
+	table := o.CreateTable()
+	table.AddRow("NAME", "URL", "AUTH-SERVICE-ACCOUNT")
+	for _, vault := range vaults {
+		table.AddRow(vault.Name, vault.URL, vault.AuthServiceAccountName)
+	}
+	table.Render()
+
 	return nil
 }
