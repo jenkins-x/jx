@@ -21,7 +21,7 @@ const (
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"
-	Compliance  Kind = "COMPLIANCE"
+	Protection  Kind = "PROTECTION"
 
 	ServerlessJenkins = "serverless-jenkins"
 	ComplianceCheck   = "compliance-check"
@@ -38,7 +38,7 @@ type Kind string
 
 const ProwConfigMapName = "config"
 
-// Options for prow
+// Options for Prow
 type Options struct {
 	KubeClient           kubernetes.Interface
 	Repos                []string
@@ -46,9 +46,10 @@ type Options struct {
 	Kind                 Kind
 	DraftPack            string
 	EnvironmentNamespace string
+	Context              string
 }
 
-func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, draftPack, environmentNamespace string) error {
+func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, draftPack, environmentNamespace string, context string) error {
 
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
@@ -60,6 +61,7 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, 
 		Kind:                 kind,
 		DraftPack:            draftPack,
 		EnvironmentNamespace: environmentNamespace,
+		Context:              context,
 	}
 
 	err := o.AddProwConfig()
@@ -71,21 +73,21 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, 
 }
 
 func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string) error {
-	return add(kubeClient, repos, ns, Environment, "", environmentNamespace)
+	return add(kubeClient, repos, ns, Environment, "", environmentNamespace, "")
 }
 
 func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPack string) error {
-	return add(kubeClient, repos, ns, Application, draftPack, "")
+	return add(kubeClient, repos, ns, Application, draftPack, "", "")
 }
 
-func AddCompliance(kubeClient kubernetes.Interface, repos []string, ns string) error {
-	return add(kubeClient, repos, ns, Compliance, "", "")
+func AddProtection(kubeClient kubernetes.Interface, repos []string, context string, ns string) error {
+	return add(kubeClient, repos, ns, Protection, "", "", context)
 }
 
 // create Git repo?
 // get config and update / overwrite repos?
 // should we get the existing CM and do a diff?
-// should we just be using git for config and use prow to auto update via gitops?
+// should we just be using git for config and use Prow to auto update via gitops?
 
 func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	ps := config.Presubmit{}
@@ -159,7 +161,7 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps.Agent = "knative-build"
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-	log.Infof("generating prow config, using Knative BuildTemplate %s\n", templateName)
+	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
 		ServiceAccountName: "jenkins",
@@ -184,7 +186,7 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.Agent = KnativeBuildAgent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-	log.Infof("generating prow config, using Knative BuildTemplate %s\n", templateName)
+	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
 		ServiceAccountName: "jenkins",
@@ -198,14 +200,6 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
 
 	return ps
-}
-func (o *Options) createContextPolicyCompliance() config.ContextPolicy {
-	cp := config.ContextPolicy{
-		Contexts: []string{
-			ComplianceCheck,
-		},
-	}
-	return cp
 }
 
 func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
@@ -244,15 +238,15 @@ func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) er
 			log.Infof("Failed to find 'environment' tide config, adding...\n")
 			t.Queries = append(t.Queries, o.createEnvironmentTideQuery())
 		}
-	case Compliance:
-		// No Tide config needed for Compliance
+	case Protection:
+		// No Tide config needed for Protection
 	default:
-		return fmt.Errorf("unknown prow config kind %s", o.Kind)
+		return fmt.Errorf("unknown Prow config kind %s", o.Kind)
 	}
 	return nil
 }
 
-func (o *Options) addRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, kind Kind) error {
+func (o *Options) addRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, context string, kind Kind) error {
 	bp.ProtectTested = true
 	if bp.Orgs == nil {
 		bp.Orgs = make(map[string]config.Org, 0)
@@ -289,12 +283,12 @@ func (o *Options) addRepoToBranchProtection(bp *config.BranchProtection, repoSpe
 		if !util.Contains(contexts, PromotionBuild) {
 			contexts = append(contexts, PromotionBuild)
 		}
-	case Compliance:
+	case Protection:
 		if !util.Contains(contexts, ComplianceCheck) {
-			contexts = append(contexts, ComplianceCheck)
+			contexts = append(contexts, context)
 		}
 	default:
-		return fmt.Errorf("unknown prow config kind %s", o.Kind)
+		return fmt.Errorf("unknown Prow config kind %s", o.Kind)
 	}
 	bp.Orgs[requiredOrg].Repos[requiredRepo].Policy.RequiredStatusChecks.Contexts = contexts
 	return nil
@@ -340,7 +334,7 @@ func (o *Options) createTide() config.Tide {
 	return t
 }
 
-// AddProwConfig adds config to prow
+// AddProwConfig adds config to Prow
 func (o *Options) AddProwConfig() error {
 	var preSubmit config.Presubmit
 	var postSubmit config.Postsubmit
@@ -352,35 +346,17 @@ func (o *Options) AddProwConfig() error {
 	case Environment:
 		preSubmit = o.createPreSubmitEnvironment()
 		postSubmit = o.createPostSubmitEnvironment()
-	case Compliance:
+	case Protection:
 		// Nothing needed
 	default:
-		return fmt.Errorf("unknown prow config kind %s", o.Kind)
+		return fmt.Errorf("unknown Prow config kind %s", o.Kind)
 	}
 
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
-	create := true
-	prowConfig := &config.Config{}
-	// config doesn't exist, creating
+	prowConfig, create, err := o.GetProwConfig()
 	if err != nil {
-		prowConfig.Presubmits = make(map[string][]config.Presubmit)
-		prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
-		prowConfig.BranchProtection = config.BranchProtection{}
-		prowConfig.Tide = o.createTide()
-	} else {
-		// config exists, updating
-		create = false
-		err = yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
-		if err != nil {
-			return err
-		}
-		if len(prowConfig.Presubmits) == 0 {
-			prowConfig.Presubmits = make(map[string][]config.Presubmit)
-		}
-		if len(prowConfig.Postsubmits) == 0 {
-			prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
-		}
+		return err
 	}
+
 	prowConfig.PodNamespace = o.NS
 	prowConfig.ProwJobNamespace = o.NS
 
@@ -389,7 +365,7 @@ func (o *Options) AddProwConfig() error {
 		if err != nil {
 			return err
 		}
-		err = o.addRepoToBranchProtection(&prowConfig.BranchProtection, r, o.Kind)
+		err = o.addRepoToBranchProtection(&prowConfig.BranchProtection, r, o.Context, o.Kind)
 		if err != nil {
 			return err
 		}
@@ -437,7 +413,7 @@ func (o *Options) AddProwConfig() error {
 
 	data := make(map[string]string)
 	data["config.yaml"] = string(configYAML)
-	cm = &corev1.ConfigMap{
+	cm := &corev1.ConfigMap{
 		Data: data,
 		ObjectMeta: metav1.ObjectMeta{
 			Name: ProwConfigMapName,
@@ -453,6 +429,73 @@ func (o *Options) AddProwConfig() error {
 
 	return err
 
+}
+
+func (o *Options) GetProwConfig() (*config.Config, bool, error) {
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
+	create := true
+	prowConfig := &config.Config{}
+	// config doesn't exist, creating
+	if err != nil {
+		prowConfig.Presubmits = make(map[string][]config.Presubmit)
+		prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
+		prowConfig.BranchProtection = config.BranchProtection{}
+		prowConfig.Tide = o.createTide()
+	} else {
+		// config exists, updating
+		create = false
+		err = yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
+		if err != nil {
+			return prowConfig, create, err
+		}
+		if len(prowConfig.Presubmits) == 0 {
+			prowConfig.Presubmits = make(map[string][]config.Presubmit)
+		}
+		if len(prowConfig.Postsubmits) == 0 {
+			prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
+		}
+		if prowConfig.BranchProtection.Orgs == nil {
+			prowConfig.BranchProtection.Orgs = make(map[string]config.Org, 0)
+		}
+	}
+	return prowConfig, create, nil
+}
+
+func (o *Options) GetAllBranchProtectionContexts(org string, repo string) ([]string, error) {
+	result := make([]string, 0)
+	prowConfig, _, err := o.GetProwConfig()
+	if err != nil {
+		return result, err
+	}
+	prowOrg, ok := prowConfig.BranchProtection.Orgs[org]
+	if !ok {
+		prowOrg = config.Org{}
+	}
+	if prowOrg.Repos == nil {
+		prowOrg.Repos = make(map[string]config.Repo, 0)
+	}
+	prowRepo, ok := prowOrg.Repos[repo]
+	if !ok {
+		prowRepo = config.Repo{}
+	}
+	if prowRepo.RequiredStatusChecks == nil {
+		prowRepo.RequiredStatusChecks = &config.ContextPolicy{}
+	}
+	return prowRepo.RequiredStatusChecks.Contexts, nil
+}
+
+func (o *Options) GetBranchProtectionContexts(org string, repo string) ([]string, error) {
+	result := make([]string, 0)
+	contexts, err := o.GetAllBranchProtectionContexts(org, repo)
+	if err != nil {
+		return result, err
+	}
+	for _, c := range contexts {
+		if c != ServerlessJenkins && c != PromotionBuild {
+			result = append(result, c)
+		}
+	}
+	return result, nil
 }
 
 // AddProwPlugins adds plugins to prow

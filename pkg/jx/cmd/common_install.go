@@ -1132,7 +1132,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	err = util.UnTargz(tarFile, jxHome , []string{binary, fileName})
+	err = util.UnTargz(tarFile, jxHome, []string{binary, fileName})
 	if err != nil {
 		return err
 	}
@@ -1353,7 +1353,7 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 		install = append(install, deps...)
 	} else {
 		if o.BatchMode {
-			return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
+			return errors.New(fmt.Sprintf("run without batch mode or manually install missing dependencies %v\n", deps))
 		}
 
 		prompt := &survey.MultiSelect{
@@ -1581,14 +1581,14 @@ func (o *CommonOptions) installProw() error {
 		}
 	}
 
-	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
 		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil)
 		return nil
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install prow: %v", err)
+		return fmt.Errorf("failed to install Prow: %v", err)
 	}
 
 	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))

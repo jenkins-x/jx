@@ -2,7 +2,7 @@
 
 package v1
 
-type ComplianceCheckExpansion interface{}
+type CommitStatusExpansion interface{}
 
 type EnvironmentExpansion interface{}
 

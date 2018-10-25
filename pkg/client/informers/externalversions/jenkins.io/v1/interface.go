@@ -8,8 +8,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// ComplianceChecks returns a ComplianceCheckInformer.
-	ComplianceChecks() ComplianceCheckInformer
+	// CommitStatuses returns a CommitStatusInformer.
+	CommitStatuses() CommitStatusInformer
 	// Environments returns a EnvironmentInformer.
 	Environments() EnvironmentInformer
 	// EnvironmentRoleBindings returns a EnvironmentRoleBindingInformer.
@@ -41,9 +41,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// ComplianceChecks returns a ComplianceCheckInformer.
-func (v *version) ComplianceChecks() ComplianceCheckInformer {
-	return &complianceCheckInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// CommitStatuses returns a CommitStatusInformer.
+func (v *version) CommitStatuses() CommitStatusInformer {
+	return &commitStatusInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Environments returns a EnvironmentInformer.
