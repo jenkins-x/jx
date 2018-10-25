@@ -27,13 +27,6 @@ const (
 )
 
 var (
-	vaultServiceAccountRoles = []string{"roles/storage.objectAdmin",
-		"roles/cloudkms.admin",
-		"roles/cloudkms.cryptoKeyEncrypterDecrypter",
-	}
-)
-
-var (
 	createVaultLong = templates.LongDesc(`
 		Creates a Vault using the vault-operator
 `)
@@ -225,7 +218,7 @@ func (o *CreateVaultOptions) createVaultGCPServiceAccount(vaultName string) (str
 	if err != nil {
 		return "", err
 	}
-	serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, o.GKEProjectID, serviceAccountDir, vaultServiceAccountRoles)
+	serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, o.GKEProjectID, serviceAccountDir, gke.VaultServiceAccountRoles)
 	if err != nil {
 		return "", errors.Wrap(err, "creating the service account")
 	}
@@ -247,7 +240,7 @@ func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath
 		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
 	}
 
-	secretName := fmt.Sprintf("%s-gcp-sa", vaultName)
+	secretName := kube.VaultGcpServiceAccountSecretName(vaultName)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,
