@@ -178,7 +178,8 @@ func FindVault(vaultOperatorClient versioned.Interface, name string, ns string) 
 	return true
 }
 
-func authServiceAccountName(vaultName string) string {
+// VaultAuthServiceAccountName returns the vault service account name
+func VaultAuthServiceAccountName(vaultName string) string {
 	return fmt.Sprintf("%s-%s", vaultName, vaultAuthSaSuffix)
 }
 
@@ -192,7 +193,7 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 	vaults := []Vault{}
 	for _, v := range vaultList.Items {
 		vaultName := v.Name
-		vaultAuthSaName := authServiceAccountName(vaultName)
+		vaultAuthSaName := VaultAuthServiceAccountName(vaultName)
 		vaultURL, err := FindServiceURL(client, ns, vaultName)
 		if err != nil {
 			vaultURL = ""
@@ -205,4 +206,9 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 		vaults = append(vaults, vault)
 	}
 	return vaults, nil
+}
+
+// DeleteVault delete a Vault resource
+func DeleteVault(vaultOperatorClient versioned.Interface, name string, ns string) error {
+	return vaultOperatorClient.Vault().Vaults(ns).Delete(name, &metav1.DeleteOptions{})
 }
