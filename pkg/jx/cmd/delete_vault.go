@@ -121,6 +121,7 @@ func (o *DeleteVaultOptions) Run() error {
 		}
 
 		if teamSettings.KubeProvider == gkeKubeProvider {
+			log.Infof("Removing GCP resources allocated for Vault...\n")
 			err := o.removeGCPResources(vaultName)
 			if err != nil {
 				return errors.Wrap(err, "removing GCP resource")
