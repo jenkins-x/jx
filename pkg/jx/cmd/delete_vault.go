@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type DeleteVaultOptions struct {
@@ -105,6 +106,12 @@ func (o *DeleteVaultOptions) Run() error {
 		return errors.Wrapf(err, "deleting the vault auth service account '%s'", authServiceAccountName)
 	}
 
+	gcpServiceAccountSecretName := kube.VaultGcpServiceAccountSecretName(vaultName)
+	err = client.CoreV1().Secrets(o.Namespace).Delete(gcpServiceAccountSecretName, &metav1.DeleteOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", gcpServiceAccountSecretName)
+	}
+
 	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
 
 	if o.RemoveCloudResources {
@@ -114,6 +121,7 @@ func (o *DeleteVaultOptions) Run() error {
 		}
 
 		if teamSettings.KubeProvider == gkeKubeProvider {
+			log.Infof("Removing GCP resources allocated for Vault...\n")
 			err := o.removeGCPResources(vaultName)
 			if err != nil {
 				return errors.Wrap(err, "removing GCP resource")
@@ -153,7 +161,7 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 	}
 
 	sa := gke.VaultServiceAccountName(vaultName)
-	err = gke.DeleteServiceAccount(sa, o.GKEProjectID)
+	err = gke.DeleteServiceAccount(sa, o.GKEProjectID, gke.VaultServiceAccountRoles)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the GCP service account '%s'", sa)
 	}
