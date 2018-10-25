@@ -6,6 +6,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -77,17 +79,19 @@ func (o *DeleteVaultOptions) Run() error {
 
 	found := kube.FindVault(vaultOperatorClient, vaultName, o.Namespace)
 	if !found {
-		return errors.Wrapf(err, "vault '%s' not found in namespace '%s'", vaultName, o.Namespace)
+		return fmt.Errorf("vault '%s' not found in namespace '%s'", vaultName, o.Namespace)
 	}
 
 	err = kube.DeleteVault(vaultOperatorClient, vaultName, o.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "deleteing the vault resource")
+		return errors.Wrap(err, "deleting the vault resource")
 	}
 
 	err = kube.DeleteIngress(client, o.Namespace, vaultName)
 	if err != nil {
-		return errors.Wrapf(err, "deleteing the vault ingress '%s'", vaultName)
+		return errors.Wrapf(err, "deleting the vault ingress '%s'", vaultName)
 	}
+	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
+
 	return nil
 }
