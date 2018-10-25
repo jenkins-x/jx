@@ -78,8 +78,9 @@ type Secrets struct {
 }
 
 const (
-	JX_GIT_TOKEN                   = "JX_GIT_TOKEN"
-	JX_GIT_USER                    = "JX_GIT_USER"
+	JX_GIT_TOKEN = "JX_GIT_TOKEN"
+	JX_GIT_USER  = "JX_GIT_USER"
+	// Want to use your own provider file? Change this line to point to your fork
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
 
 	GitSecretsFile        = "gitSecrets.yaml"
@@ -728,20 +729,28 @@ func (options *InstallOptions) Run() error {
 	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
 	if !initOpts.Flags.NoTiller {
 		// Need to check the tiller pod is ready before proceeding
-		log.Infof("Waiting for %s pod to be ready\n", util.ColorInfo("tiller"))
 		serviceAccountName := "tiller"
 		tillerNamespace := options.InitOptions.Flags.TillerNamespace
 
-		clusterRoleBindingName := serviceAccountName
+		log.Infof("Waiting for %s pod to be ready, service account name is %s, namespace is %s, tiller namespace is %s\n",
+			util.ColorInfo("tiller"), util.ColorInfo(serviceAccountName), util.ColorInfo(ns), util.ColorInfo(tillerNamespace))
+
+		clusterRoleBindingName := serviceAccountName + "-role-binding"
 		role := options.InitOptions.Flags.TillerClusterRole
 
-		err = options.ensureClusterRoleBinding(clusterRoleBindingName, role, tillerNamespace, serviceAccountName)
+		log.Infof("Waiting for cluster role binding to be defined, named %s in namespace %s\n ", util.ColorInfo(clusterRoleBindingName), util.ColorInfo(ns))
+		err = options.ensureClusterRoleBinding(clusterRoleBindingName, role, ns, serviceAccountName)
 		if err != nil {
 			return errors.Wrap(err, "tiller cluster role not defined")
+		} else {
+			log.Infof("tiller cluster role defined: %s in namespace %s\n", util.ColorInfo(role), util.ColorInfo(ns))
 		}
 		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
 		if err != nil {
-			return errors.Wrap(err, "tiller pod is not running after 10 minutes")
+			msg := fmt.Sprintf("tiller pod (tiller-deploy in namespace %s) is not running after 10 minutes", tillerNamespace)
+			return errors.Wrap(err, msg)
+		} else {
+			log.Infoln("tiller pod running")
 		}
 	}
 

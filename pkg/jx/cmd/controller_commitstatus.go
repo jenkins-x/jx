@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/prow"
 
 	"k8s.io/client-go/kubernetes"
 
@@ -229,27 +229,20 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 					if sha == "" {
 						log.Warnf("No sha on %s, not upserting commit status\n", pod.Name)
 					} else {
-						cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get("jenkins-x-extensions", metav1.GetOptions{})
+						prow := prow.Options{
+							KubeClient: kubeClient,
+							NS:         ns,
+						}
+						contexts, err := prow.GetBranchProtectionContexts(org, repo)
 						if err != nil {
 							return err
 						}
-						commitstatusContextsYaml, ok := cm.Data["commitstatusContexts"]
-						if ok {
-							commitStatusContexts := make([]string, 0)
-							err = yaml.Unmarshal([]byte(commitstatusContextsYaml), &commitStatusContexts)
+						for _, ctx := range contexts {
+							name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s-%s", org, repo, branch, buildNumber, ctx))
+							err = o.UpsertCommitStatusCheck(name, sourceUrl, sha, pullRequest, ctx, jxClient, ns)
 							if err != nil {
 								return err
 							}
-							for _, ctx := range commitStatusContexts {
-								name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s-%s", org, repo, branch, buildNumber, ctx))
-								err = o.UpsertCommitStatusCheck(name, sourceUrl, sha, pullRequest, ctx, jxClient, ns)
-								if err != nil {
-									return err
-								}
-							}
-						} else {
-							log.Infof("No contexts defined to upsert commit status for %s\n", pod.Name)
-							return nil
 						}
 
 					}
