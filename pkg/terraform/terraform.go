@@ -12,6 +12,12 @@ import (
 
 func Init(terraformDir string, serviceAccountPath string) error {
 	fmt.Println("Initialising Terraform")
+
+	if _, err := os.Stat(".terraform"); !os.IsNotExist(err) {
+		fmt.Println("Discovered local .terraform directory, removing...")
+		os.RemoveAll(".terraform")
+	}
+
 	os.Setenv("GOOGLE_CREDENTIALS", serviceAccountPath)
 	cmd := util.Command{
 		Name: "terraform",
