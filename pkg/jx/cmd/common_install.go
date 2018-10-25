@@ -1353,7 +1353,7 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 		install = append(install, deps...)
 	} else {
 		if o.BatchMode {
-			return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
+			return errors.New(fmt.Sprintf("run without batch mode or manually install missing dependencies %v\n", deps))
 		}
 
 		prompt := &survey.MultiSelect{
