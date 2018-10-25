@@ -21,7 +21,7 @@ const (
 type KubeConfig struct{}
 
 // NewKubeConfig creates a new KubeConfig struct to be used to interact with the underlying kube system
-func NewKubeConfig() *KubeConfig {
+func NewKubeConfig() Kuber {
 	return &KubeConfig{}
 }
 
