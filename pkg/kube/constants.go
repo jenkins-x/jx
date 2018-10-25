@@ -203,6 +203,10 @@ const (
 	// AnnotationIngress tells exposecontroller to annotate generated ingress rule with values
 	AnnotationIngress = "fabric8.io/ingress.annotations"
 
+	// AnnotationExposePort indicates to the exposecontroller which service port to expose
+	//in case a service has multiple prots
+	AnnotationExposePort = "fabric8.io/exposePort"
+
 	// AnnotationName indicates a service/server's textual name (can be mixed case, contain spaces unlike Kubernetes resources)
 	AnnotationName = "jenkins.io/name"
 
