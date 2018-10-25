@@ -126,6 +126,17 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		o.Namespace = team
 	}
 
+	vaultOperatorClient, err := o.VaultOperatorClient()
+	if err != nil {
+		return errors.Wrap(err, "creating vault operator client")
+	}
+
+	// Checks if the vault alrady exists
+	_, err = kube.GetVault(vaultOperatorClient, vaultName, o.Namespace)
+	if err == nil {
+		return fmt.Errorf("Vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
+	}
+
 	err = gke.Login("", false)
 	if err != nil {
 		return errors.Wrap(err, "login into GCP")
@@ -179,11 +190,6 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 	log.Infof("Created service account %s for Vault authentication\n", util.ColorInfo(vaultAuthServiceAccount))
 
 	log.Infof("Creating Vault...\n")
-	vaultOperatorClient, err := o.VaultOperatorClient()
-	if err != nil {
-		return errors.Wrap(err, "creating vault operator client")
-	}
-
 	gcpConfig := &kube.GCPConfig{
 		ProjectId:   o.GKEProjectID,
 		KmsKeyring:  kmsConfig.keyring,
