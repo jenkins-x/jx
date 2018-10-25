@@ -206,3 +206,8 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 	}
 	return vaults, nil
 }
+
+// DeleteVault delete a Vault resource
+func DeleteVault(vaultOperatorClient versioned.Interface, name string, ns string) error {
+	return vaultOperatorClient.Vault().Vaults(ns).Delete(name, &metav1.DeleteOptions{})
+}

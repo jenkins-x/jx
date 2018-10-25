@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -53,5 +56,33 @@ func NewCmdDeleteVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 }
 
 func (o *DeleteVaultOptions) Run() error {
+	if len(o.Args) != 1 {
+		return fmt.Errorf("Missing vault name")
+	}
+	vaultName := o.Args[0]
+
+	_, ns, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrap(err, "creating kubernetes client")
+	}
+
+	if o.Namespace == "" {
+		o.Namespace = ns
+	}
+
+	vaultOperatorClient, err := o.VaultOperatorClient()
+	if err != nil {
+		return errors.Wrap(err, "creating vault operator client")
+	}
+
+	found := kube.FindVault(vaultOperatorClient, vaultName, o.Namespace)
+	if !found {
+		return errors.Wrapf(err, "vault '%s' not found in namespace '%s'", vaultName, o.Namespace)
+	}
+
+	err = kube.DeleteVault(vaultOperatorClient, vaultName, o.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "deleteing the vault resource")
+	}
 	return nil
 }
