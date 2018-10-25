@@ -40,7 +40,7 @@ import (
 const (
 	optionServerName        = "name"
 	optionServerURL         = "url"
-	exposecontrollerVersion = "2.3.63"
+	exposecontrollerVersion = "2.3.79"
 	exposecontroller        = "exposecontroller"
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
@@ -754,14 +754,14 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	}
 
 	if len(services) > 0 {
-		serviceCfg := "config.extravalues='services: ["
+		serviceCfg := "config.extravalues.services={"
 		for i, service := range services {
 			if i > 0 {
 				serviceCfg += ","
 			}
 			serviceCfg += service
 		}
-		serviceCfg += "]''"
+		serviceCfg += "}"
 		exValues = append(exValues, serviceCfg)
 	}
 
