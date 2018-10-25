@@ -132,8 +132,8 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 	}
 
 	// Checks if the vault alrady exists
-	_, err = kube.GetVault(vaultOperatorClient, vaultName, o.Namespace)
-	if err == nil {
+	found := kube.FindVault(vaultOperatorClient, vaultName, o.Namespace)
+	if found {
 		return fmt.Errorf("Vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
 	}
 

@@ -169,16 +169,20 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 	return err
 }
 
-// GetVault get a Vault object by name
-func GetVault(vaultOperatorClient versioned.Interface, name string, ns string) (*v1alpha1.Vault, error) {
-	return vaultOperatorClient.Vault().Vaults(ns).Get(name, metav1.GetOptions{})
+// FindVault  checks if a vault is available
+func FindVault(vaultOperatorClient versioned.Interface, name string, ns string) bool {
+	_, err := vaultOperatorClient.Vault().Vaults(ns).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func authServiceAccountName(vaultName string) string {
 	return fmt.Sprintf("%s-%s", vaultName, vaultAuthSaSuffix)
 }
 
-// ListVaults list all vaults available in a given namespaces
+// GetVaults returns all vaults available in a given namespaces
 func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string) ([]Vault, error) {
 	vaultList, err := vaultOperatorClient.Vault().Vaults(ns).List(metav1.ListOptions{})
 	if err != nil {
