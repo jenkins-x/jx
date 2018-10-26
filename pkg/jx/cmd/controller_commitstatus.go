@@ -238,7 +238,7 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 							return err
 						}
 						for _, ctx := range contexts {
-							name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s-%s", org, repo, branch, buildNumber, ctx))
+							name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, ctx))
 							err = o.UpsertCommitStatusCheck(name, sourceUrl, sha, pullRequest, ctx, jxClient, ns)
 							if err != nil {
 								return err
