@@ -66,6 +66,7 @@ type PromoteOptions struct {
 
 	// for testing
 	FakePullRequests CreateEnvPullRequestFn
+	UseFakeHelm 		bool
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -411,9 +412,13 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 			return releaseInfo, err
 		}
 	}
-	err := o.verifyHelmConfigured()
-	if err != nil {
-		return releaseInfo, err
+
+	var err error
+	if !o.UseFakeHelm {
+		err := o.verifyHelmConfigured()
+		if err != nil {
+			return releaseInfo, err
+		}
 	}
 
 	// lets do a helm update to ensure we can find the latest version
