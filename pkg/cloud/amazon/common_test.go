@@ -1,13 +1,14 @@
 package amazon_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/pborman/uuid"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/pborman/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func switchHome() (string, error) {
@@ -98,7 +99,8 @@ func TestReadingRegionFromConfigProfile(t *testing.T) {
 }
 
 func TestReadingRegionFromEnvProfile(t *testing.T) {
-	t.Parallel()
+	// TODO Parallel should be called, but test fails when we do.
+	// t.Parallel()
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)

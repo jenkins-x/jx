@@ -19,7 +19,8 @@ func TestCreateNewSessionWithDefaultRegion(t *testing.T) {
 }
 
 func TestCreateNewSessionWithRegionFromAwsRegion(t *testing.T) {
-	t.Parallel()
+	// TODO Parallel should be called, but test fails when we do.
+	// t.Parallel()
 	// TODO Refactor for encapsulation
 	os.Setenv("AWS_REGION", "us-east-1")
 	os.Setenv("AWS_DEFAULT_REGION", "")
