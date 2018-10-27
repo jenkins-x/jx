@@ -242,20 +242,15 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 							return err
 						}
 						for _, ctx := range contexts {
-							name := ""
-							if pullRequest == "" {
-								name = kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s-%s", org, repo, branch, buildNumber, ctx))
-							} else {
-								name = kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, ctx))
-							}
-
-							pipelineActName := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
-							err = o.UpsertCommitStatusCheck(name, pipelineActName, sourceUrl, sha, pullRequest, ctx, jxClient, ns)
-							if err != nil {
-								return err
+							if pullRequest != "" {
+								name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, ctx))
+								pipelineActName := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
+								err = o.UpsertCommitStatusCheck(name, pipelineActName, sourceUrl, sha, pullRequest, ctx, jxClient, ns)
+								if err != nil {
+									return err
+								}
 							}
 						}
-
 					}
 				}
 			}
