@@ -94,6 +94,7 @@ func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 	cmd.AddCommand(NewCmdGetURL(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetUser(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetWorkflow(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetVault(f, in, out, errOut))
 	return cmd
 }
 

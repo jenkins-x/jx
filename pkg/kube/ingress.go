@@ -81,3 +81,8 @@ func GetIngressConfig(c kubernetes.Interface, ns string) (IngressConfig, error) 
 	}
 	return ic, nil
 }
+
+// DeleteIngress removes an ingress by name
+func DeleteIngress(client kubernetes.Interface, ns, name string) error {
+	return client.ExtensionsV1beta1().Ingresses(ns).Delete(name, &meta_v1.DeleteOptions{})
+}

@@ -15,7 +15,6 @@ import (
 	"github.com/chromedp/chromedp/runner"
 	"github.com/hpcloud/tail"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	jxlog "github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -104,7 +103,7 @@ func (o *LoginOptions) Run() error {
 		return errors.Wrap(err, "loging into the CloudBees application")
 	}
 
-	err = kube.UpdateConfig(defaultNamespace, userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
+	err = o.Kube().UpdateConfig(defaultNamespace, userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
 	if err != nil {
 		return errors.Wrap(err, "updating the ~/kube/config file")
 	}

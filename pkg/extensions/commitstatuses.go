@@ -1,4 +1,4 @@
-package governance
+package extensions
 
 import (
 	"fmt"
@@ -10,9 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
-const complianceCheckContext = "compliance-check"
-
-func NotifyCommitStatus(commitRef jenkinsv1.ComplianceCheckCommitReference, state string, targetUrl string, description string, comment string, gitProvider gits.GitProvider, gitRepoInfo *gits.GitRepositoryInfo) (status *gits.GitRepoStatus, err error) {
+func NotifyCommitStatus(commitRef jenkinsv1.CommitStatusCommitReference, state string, targetUrl string, description string, comment string, context string, gitProvider gits.GitProvider, gitRepoInfo *gits.GitRepositoryInfo) (status *gits.GitRepoStatus, err error) {
 
 	if commitRef.SHA == "" {
 		return &gits.GitRepoStatus{}, fmt.Errorf("SHA cannot be empty on %v", commitRef)
@@ -25,7 +23,7 @@ func NotifyCommitStatus(commitRef jenkinsv1.ComplianceCheckCommitReference, stat
 		Description: description,
 		State:       state,
 		TargetURL:   targetUrl,
-		Context:     complianceCheckContext,
+		Context:     context,
 	}
 
 	oldStatuses, err := gitProvider.ListCommitStatus(gitRepoInfo.Organisation, gitRepoInfo.Name, commitRef.SHA)
@@ -34,7 +32,7 @@ func NotifyCommitStatus(commitRef jenkinsv1.ComplianceCheckCommitReference, stat
 	}
 	oldStatus := &gits.GitRepoStatus{}
 	for _, o := range oldStatuses {
-		if o.Context == complianceCheckContext {
+		if o.Context == context {
 			oldStatus = o
 			// List is sorted in reverse chronological order - most recent statuses first
 			break

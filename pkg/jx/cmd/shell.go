@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -94,7 +93,7 @@ func NewCmdShell(f Factory, in terminal.FileReader, out terminal.FileWriter, err
 }
 
 func (o *ShellOptions) Run() error {
-	config, _, err := kube.LoadConfig()
+	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
 	}
@@ -135,7 +134,7 @@ func (o *ShellOptions) Run() error {
 	}
 	newConfig := *config
 	newConfig.CurrentContext = ctxName
-	
+
 	//clean old folders
 	files, err := filepath.Glob("/tmp/.jx-shell-*")
 	if err != nil {
@@ -183,7 +182,7 @@ func (o *ShellOptions) Run() error {
 		env = append(env, fmt.Sprintf("ZDOTDIR=%s", tmpDirName))
 		e = exec.Command(shell, "-i")
 		e.Env = env
-	} 
+	}
 
 	e.Stdout = o.Out
 	e.Stderr = o.Err
@@ -225,7 +224,7 @@ func (o *ShellOptions) createNewBashPrompt(prompt string) string {
 	return "'$(jx prompt) " + prompt + "'"
 }
 
-	func (o *ShellOptions) createNewZshPrompt(prompt string) string {
+func (o *ShellOptions) createNewZshPrompt(prompt string) string {
 	if prompt == "" {
 		return "'[$(jx prompt) %n@%m %c]\\$ '"
 	}
@@ -239,4 +238,4 @@ func (o *ShellOptions) createNewBashPrompt(prompt string) string {
 		return prompt[0:1] + "$(jx prompt) " + prompt[1:]
 	}
 	return "'$(jx prompt) " + prompt + "'"
-	}
+}

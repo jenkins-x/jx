@@ -40,7 +40,7 @@ import (
 const (
 	optionServerName        = "name"
 	optionServerURL         = "url"
-	exposecontrollerVersion = "2.3.63"
+	exposecontrollerVersion = "2.3.79"
 	exposecontroller        = "exposecontroller"
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
@@ -74,6 +74,7 @@ type CommonOptions struct {
 	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
+	Kuber               kube.Kuber
 	vaultOperatorClient vaultoperatorclient.Interface
 
 	Prow
@@ -281,6 +282,13 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		}
 	}
 	return o.helm
+}
+
+func (o *CommonOptions) Kube() kube.Kuber {
+	if o.Kuber == nil {
+		o.Kuber = kube.NewKubeConfig()
+	}
+	return o.Kuber
 }
 
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
@@ -721,6 +729,24 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	return o.runExposecontroller(devNamespace, targetNamespace, ic)
 }
 
+func (o *CommonOptions) exposeService(service, devNamespace, targetNamespace string) error {
+	ic, err := kube.GetIngressConfig(o.KubeClientCached, devNamespace)
+	if err != nil {
+		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
+	}
+	err = kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer, service)
+	if err != nil {
+		return err
+	}
+
+	err = o.copyCertmanagerResources(targetNamespace, ic)
+	if err != nil {
+		return fmt.Errorf("failed to copy certmanager resources from %s to %s namespace: %v", devNamespace, targetNamespace, err)
+	}
+
+	return o.runExposecontroller(devNamespace, targetNamespace, ic, service)
+}
+
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 
 	o.CleanExposecontrollerReources(targetNamespace)
@@ -736,14 +762,14 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	}
 
 	if len(services) > 0 {
-		serviceCfg := "config.extravalues='services: ["
+		serviceCfg := "config.extravalues.services={"
 		for i, service := range services {
 			if i > 0 {
 				serviceCfg += ","
 			}
 			serviceCfg += service
 		}
-		serviceCfg += "]''"
+		serviceCfg += "}"
 		exValues = append(exValues, serviceCfg)
 	}
 

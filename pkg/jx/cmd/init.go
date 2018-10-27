@@ -166,6 +166,12 @@ func (o *InitOptions) Run() error {
 		return err
 	}
 
+	// So a user doesn't need to specify ingress options if provider is ICP: we will use ICP's own ingress controller
+	// and by default, the tiller namespace "jx"
+	if o.Flags.Provider == ICP {
+		o.configureForICP()
+	}
+
 	// Needs to be done early as is an ingress availablility is an indicator of cluster readyness
 	if o.Flags.Provider == IKS {
 		err = o.initIKSIngress()
@@ -174,7 +180,7 @@ func (o *InitOptions) Run() error {
 		}
 	}
 
-	// helm init, this has been seen to fail intermittently on public clouds, so lets retry a couple of times
+	// helm init, this has been seen to fail intermittently on public clouds, so let's retry a couple of times
 	err = o.retry(3, 2*time.Second, func() (err error) {
 		err = o.initHelm()
 		return
@@ -389,6 +395,7 @@ func (o *InitOptions) initHelm() error {
 			}
 		}
 
+		log.Infof("Waiting for tiller-deploy to be ready in tiller namespace %s\n", tillerNamespace)
 		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
 		if err != nil {
 			return err
@@ -451,6 +458,74 @@ func (o *InitOptions) initBuildPacks() (string, error) {
 		err = o.Git().CheckoutRemoteBranch(dir, packRef)
 	}
 	return filepath.Join(dir, "packs"), err
+}
+
+func (o *InitOptions) configureForICP() {
+	icpDefaultTillerNS := "default"
+	icpDefaultNS := "jx"
+
+	log.Infoln("")
+	log.Infoln(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
+	log.Infoln("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
+		"configured to point to the cluster jx will be installed into.")
+	log.Infoln("")
+
+	log.Infoln(util.ColorInfo("Permitting image repositories to be used"))
+	log.Infoln("If you have a clusterimagepolicy, ensure that this policy permits pulling from the following additional repositories: " +
+		"the scope of which can be narrowed down once you are sure only images from certain repositories are being used:")
+	log.Infoln("- name: docker.io/* \n" +
+		"- name: gcr.io/* \n" +
+		"- name: quay.io/* \n" +
+		"- name: k8s.gcr.io/* \n" +
+		"- name: <your ICP cluster name>:8500/* \n")
+
+	log.Infoln(util.ColorInfo("IBM Cloud Private defaults"))
+	log.Infoln("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
+		"where Jenkins X resources will be installed into is \"" + icpDefaultNS + "\".")
+	log.Infoln("")
+
+	log.Infoln(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
+	log.Infoln("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
+		"create a Docker registry secret and patch the default service account in the created namespace to use the secret, adding it as an ImagePullSecret. " +
+		"This is required so that pods in the created namespace can pull images from the registry.")
+	log.Infoln("")
+
+	o.Flags.IngressNamespace = "kube-system"
+	o.Flags.IngressDeployment = "default-backend"
+	o.Flags.IngressService = "default-backend"
+	o.Flags.TillerNamespace = icpDefaultTillerNS
+	o.Flags.Namespace = icpDefaultNS
+	//o.Flags.NoTiller = true // eventually desirable once ICP tiller version is 2.10 or better
+
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+	ICPExternalIP := ""
+	ICPDomain := ""
+
+	if !(o.BatchMode) {
+		if o.Flags.ExternalIP != "" {
+			log.Infoln("An external IP has already been specified: otherwise you will be prompted for one to use")
+			return
+		}
+
+		prompt := &survey.Input{
+			Message: "Provide the external IP Jenkins X should use: typically your IBM Cloud Private proxy node IP address",
+			Default: "", // Would be useful to set this as the public IP automatically
+			Help:    "",
+		}
+		survey.AskOne(prompt, &ICPExternalIP, nil, surveyOpts)
+
+		o.Flags.ExternalIP = ICPExternalIP
+
+		prompt = &survey.Input{
+			Message: "Provide the domain Jenkins X should be available at: typically your IBM Cloud Private proxy node IP address but with a domain added to the end",
+			Default: ICPExternalIP + ".nip.io",
+			Help:    "",
+		}
+
+		survey.AskOne(prompt, &ICPDomain, nil, surveyOpts)
+
+		o.Flags.Domain = ICPDomain
+	}
 }
 
 func (o *InitOptions) initIKSIngress() error {
@@ -607,7 +682,6 @@ controller:
 				break
 			}
 		}
-
 		err = kube.WaitForDeploymentToBeReady(client, o.Flags.IngressDeployment, ingressNamespace, 10*time.Minute)
 		if err != nil {
 			return err

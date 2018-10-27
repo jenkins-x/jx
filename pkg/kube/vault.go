@@ -5,7 +5,10 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/pkg/errors"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -21,7 +24,15 @@ const (
 	vaultAuthName        = "auth"
 	vaultAuthType        = "kubernetes"
 	vaultAuthTTL         = "1h"
+	vaultAuthSaSuffix    = "auth-sa"
 )
+
+// Vault stores some details of a Vault resource
+type Vault struct {
+	Name                   string
+	URL                    string
+	AuthServiceAccountName string
+}
 
 // GCPConfig keeps the configuration for Google Cloud
 type GCPConfig struct {
@@ -49,7 +60,7 @@ type VaultRole struct {
 	BoundServiceAccountNamespaces string `json:"bound_service_account_namespaces"`
 	Name                          string `json:"name"`
 	Policies                      string `json:"policies"`
-	Ttl                           string `json:"ttl"`
+	TTL                           string `json:"ttl"`
 }
 
 type VaultPolicies []VaultPolicy
@@ -76,7 +87,12 @@ type Storage struct {
 	GCS GCSConfig `json:"gcs"`
 }
 
-// CreateVault creates a new vault
+// VaultGcpServiceAccountSecretName builds the secret name where the GCP service account is stored
+func VaultGcpServiceAccountSecretName(vaultName string) string {
+	return fmt.Sprintf("%s-gcp-sa", vaultName)
+}
+
+// CreateVault creates a new vault backed by GCP KMS and storage
 func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string,
 	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
 	authServiceAccountNamespace string) error {
@@ -93,6 +109,7 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 			Size:            defaultNumVaults,
 			Image:           vaultImage,
 			BankVaultsImage: bankVaultsImage,
+			ServiceType:     string(v1.ServiceTypeClusterIP),
 			Config: map[string]interface{}{
 				"api_addr":           fmt.Sprintf("http://%s.%s:8200", name, ns),
 				"disable_clustering": true,
@@ -123,7 +140,7 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 								BoundServiceAccountNamespaces: authServiceAccountNamespace,
 								Name:                          authServiceAccount,
 								Policies:                      vaultRuleSecretsName,
-								Ttl:                           vaultAuthTTL,
+								TTL:                           vaultAuthTTL,
 							},
 						},
 						Type: vaultAuthType,
@@ -155,4 +172,48 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 
 	_, err := vaultOperatorClient.Vault().Vaults(ns).Create(vault)
 	return err
+}
+
+// FindVault  checks if a vault is available
+func FindVault(vaultOperatorClient versioned.Interface, name string, ns string) bool {
+	_, err := vaultOperatorClient.Vault().Vaults(ns).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// VaultAuthServiceAccountName returns the vault service account name
+func VaultAuthServiceAccountName(vaultName string) string {
+	return fmt.Sprintf("%s-%s", vaultName, vaultAuthSaSuffix)
+}
+
+// GetVaults returns all vaults available in a given namespaces
+func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string) ([]Vault, error) {
+	vaultList, err := vaultOperatorClient.Vault().Vaults(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "listing vaults in namespace '%s'", ns)
+	}
+
+	vaults := []Vault{}
+	for _, v := range vaultList.Items {
+		vaultName := v.Name
+		vaultAuthSaName := VaultAuthServiceAccountName(vaultName)
+		vaultURL, err := FindServiceURL(client, ns, vaultName)
+		if err != nil {
+			vaultURL = ""
+		}
+		vault := Vault{
+			Name:                   vaultName,
+			URL:                    vaultURL,
+			AuthServiceAccountName: vaultAuthSaName,
+		}
+		vaults = append(vaults, vault)
+	}
+	return vaults, nil
+}
+
+// DeleteVault delete a Vault resource
+func DeleteVault(vaultOperatorClient versioned.Interface, name string, ns string) error {
+	return vaultOperatorClient.Vault().Vaults(ns).Delete(name, &metav1.DeleteOptions{})
 }
