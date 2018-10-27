@@ -58,6 +58,8 @@ github.com/c2h5oh/datasize v0.0.0-20171227191756-4eba002a5eae h1:2Zmk+8cNvAGuY8A
 github.com/c2h5oh/datasize v0.0.0-20171227191756-4eba002a5eae/go.mod h1:S/7n9copUssQ56c7aAgHqftWO4LTf4xY6CGWt8Bc+3M=
 github.com/cenkalti/backoff v2.0.0+incompatible h1:5IIPUHhlnUZbcHQsQou5k1Tn58nJkeJL9U+ig5CHJbY=
 github.com/cenkalti/backoff v2.0.0+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
+github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 h1:HD4PLRzjuCVW79mQ0/pdsalOLHJ+FaEoqJLxfltpb2U=
+github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1/go.mod h1:/iP1qXHoty45bqomnu2LM+VVyAEdWN+vtSHGlQgyxbw=
 github.com/chromedp/cdproto v0.0.0-20180703215205-c125a34ea3b3/go.mod h1:C2GPAraqdt1KfZU7aSmx1XUgarNq/3JmxevQkmCjOVs=
 github.com/chromedp/cdproto v0.0.0-20180720050708-57cf4773008d h1:u/5pA/xuVl0+OEeEgPgRa9AwxQ/0lbMBa8ZACmjzbAQ=
 github.com/chromedp/cdproto v0.0.0-20180720050708-57cf4773008d/go.mod h1:C2GPAraqdt1KfZU7aSmx1XUgarNq/3JmxevQkmCjOVs=
@@ -85,6 +87,8 @@ github.com/emicklei/go-restful v2.8.0+incompatible h1:wN8GCRDPGHguIynsnBartv5GUg
 github.com/emicklei/go-restful v2.8.0+incompatible/go.mod h1:otzb+WCGbkyDHkqmQmT5YD2WR4BBwUdeQoFo8l/7tVs=
 github.com/emirpasic/gods v1.9.0 h1:rUF4PuzEjMChMiNsVjdI+SyLu7rEqpQ5reNFnhC7oFo=
 github.com/emirpasic/gods v1.9.0/go.mod h1:YfzfFFoVP/catgzJb4IKIqXjX78Ha8FMSDh3ymbK86o=
+github.com/evanphx/json-patch v4.1.0+incompatible h1:K1MDoo4AZ4wU0GIU/fPmtZg7VpzLjCxu+UwBD1FvwOc=
+github.com/evanphx/json-patch v4.1.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/structs v1.0.0 h1:BrX964Rv5uQ3wwS+KRUAJCBBw5PQmgJfJ6v4yly5QwU=
@@ -375,6 +379,8 @@ k8s.io/apiextensions-apiserver v0.0.0-20180621085152-bbc52469f98b h1:q6seqITE2eU
 k8s.io/apiextensions-apiserver v0.0.0-20180621085152-bbc52469f98b/go.mod h1:IxkesAMoaCRoLrPJdZNZUQp9NfZnzqaVzLhb2VEQzXE=
 k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d h1:MZjlsu9igBoVPZkXpIGoxI6EonqNsXXZU7hhvfQLkd4=
 k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d/go.mod h1:ccL7Eh7zubPUSh9A3USN90/OzHNSVN6zxzde07TDCL0=
+k8s.io/cli-runtime v0.0.0-20181026155151-1ee5ba10d7e3 h1:2/aRLX2WiSKopCpIDrPkrtR+H42TfZ0OfWeChJwJSAI=
+k8s.io/cli-runtime v0.0.0-20181026155151-1ee5ba10d7e3/go.mod h1:qWnH3/b8sp/l7EvlDh7ulDU3UWA4P4N1NFbEEP791tM=
 k8s.io/client-go v8.0.0+incompatible h1:7Zl+OVXn0bobcsi4NEZGdoQDTE9ij1zPMfM21+yqQsM=
 k8s.io/client-go v8.0.0+incompatible/go.mod h1:7vJpHMYJwNQCWgzmNV+VYUl1zCObLyodBc8nIyt8L5s=
 k8s.io/code-generator v0.0.0-20181017053441-8c97d6ab64da h1:cXPq/bfLpnVG5ihFVDFyveNrPCUP0vGW2HP7mqPGbPI=
@@ -385,6 +391,8 @@ k8s.io/helm v2.7.2+incompatible h1:WY8CVrvpd83Z0WdzDgl0GoIS0aP3o84zGulDOA4CRo8=
 k8s.io/helm v2.7.2+incompatible/go.mod h1:LZzlS4LQBHfciFOurYBFkCMTaZ0D1l+p0teMg7TSULI=
 k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4 h1:C8xi0mJeE8wOFsLofmG7JVxRV2ZAgjYftRc9m2ypdmo=
 k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4/go.mod h1:BXM9ceUBTj2QnfH2MK1odQs778ajze1RxcmP6S8RVVc=
+k8s.io/kubernetes v1.12.2 h1:J94sY8nziFyzMNhnbD5CiSZTo7yWytir0ia+vJuwYfc=
+k8s.io/kubernetes v1.12.2/go.mod h1:ocZa8+6APFNC2tX1DZASIbocyYT5jHzqFVsY5aoB7Jk=
 k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b h1:LcRDe4wxlsysUmLVy0Oi1YOOMwMRfu1gRV7DO30FxWk=
 k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b/go.mod h1:a25VAbm3QT3xiVl1jtoF1ueAKQM149UdZ+L93ePfV3M=
 k8s.io/test-infra v0.0.0-20181016234544-2c26f647f17a h1:1F0vgEle+QfBbsxdY/EtFpBMBS4xWAPYctJyvygJS5Y=

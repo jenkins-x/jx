@@ -2,8 +2,9 @@ package log
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/fatih/color"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -39,6 +40,10 @@ func Errorf(msg string, args ...interface{}) {
 
 func Error(msg string) {
 	color.Red(msg)
+}
+
+func Errorln(msg string) {
+	Errorf("%v\n", msg)
 }
 
 func Fatalf(msg string, args ...interface{}) {
