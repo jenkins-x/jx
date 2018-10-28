@@ -1500,7 +1500,7 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 		return GetSafeUsername(username), nil
 	}
 
-	config, _, err := kube.LoadConfig()
+	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
 		return username, err
 	}
