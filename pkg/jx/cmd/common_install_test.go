@@ -1,23 +1,28 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 )
 
 func TestInstallEksctl(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	oldPath := os.Getenv("PATH")
 	err := os.Setenv("PATH", "")
 	assert.Nil(t, err)
 	defer os.Setenv("PATH", oldPath)
 
 	defer os.Unsetenv("JX_HOME")
-	err = os.Setenv("JX_HOME", "/tmp/"+uuid.New())
+	tempDir, err := ioutil.TempDir("", "common_install_test")
+	err = os.Setenv("JX_HOME", tempDir)
 	assert.Nil(t, err)
 	err = (&CommonOptions{}).installEksCtl(false)
-	assert.FileExists(t, os.Getenv("JX_HOME")+"/bin/eksctl")
+	eksctl := filepath.Join(os.Getenv("JX_HOME"), "/bin/eksctl")
+	if runtime.GOOS == "windows" {
+		eksctl += ".exe"
+	}
+	assert.FileExists(t, eksctl)
 }
