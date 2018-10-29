@@ -1,7 +1,7 @@
 package config_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/tests"
+	"gopkg.in/yaml.v2"
 	"testing"
 
 	"io/ioutil"
@@ -11,11 +11,12 @@ import (
 )
 
 func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	t.Parallel()
 
 	testFile, err := ioutil.ReadFile("helm_values_test.yaml")
 	assert.NoError(t, err)
+	helmValuesFromFile := config.HelmValuesConfig{}
+	err = yaml.Unmarshal(testFile, &helmValuesFromFile)
 
 	a := make(map[string]string)
 	a["helm.sh/hook"] = "post-install,post-upgrade"
@@ -30,7 +31,5 @@ func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
 	values.ExposeController.Config.Domain = "jenkinsx.io"
 	values.ExposeController.Config.HTTP = "false"
 	values.ExposeController.Config.TLSAcme = "false"
-	s, err := values.String()
-	assert.NoError(t, err)
-	assert.Equal(t, string(testFile), s, "expected exposecontroller helm values do not match")
+	assert.Equal(t, helmValuesFromFile, values, "expected exposecontroller helm values do not match")
 }

@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"testing"
 
@@ -10,20 +11,21 @@ import (
 )
 
 func TestAdminSecrets(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	t.Parallel()
 
 	testFile, err := ioutil.ReadFile("admin_secrets_test.yaml")
 	assert.NoError(t, err)
+	secretsFromFile := config.AdminSecretsConfig{}
+	err = yaml.Unmarshal(testFile, &secretsFromFile)
 
 	service := config.AdminSecretsService{}
 	service.Flags.DefaultAdminPassword = "mysecret"
 	err = service.NewAdminSecretsConfig()
 	assert.NoError(t, err)
 
-	s, err := service.Secrets.String()
-	tests.Debugf("%s", s)
+	secretsFromService := service.Secrets
+	tests.Debugf("%s", secretsFromService)
 	assert.NoError(t, err)
 
-	assert.Equal(t, string(testFile), s, "expected admin secret values do not match")
+	assert.Equal(t, secretsFromFile, secretsFromService, "expected admin secret values do not match")
 }
