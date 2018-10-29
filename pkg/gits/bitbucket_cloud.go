@@ -696,6 +696,15 @@ func (b *BitbucketCloudProvider) CreateWebHook(data *GitWebHookArguments) error 
 	return nil
 }
 
+func (p *BitbucketCloudProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, fmt.Errorf("not implemented!")
+}
+
+func (p *BitbucketCloudProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
+}
+
 func BitbucketIssueToGitIssue(bIssue bitbucket.Issue) *GitIssue {
 	id := int(bIssue.Id)
 	ownerAndRepo := strings.Split(bIssue.Repository.FullName, "/")
