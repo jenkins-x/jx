@@ -695,6 +695,15 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 	return err
 }
 
+func (p *BitbucketServerProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, fmt.Errorf("not implemented!")
+}
+
+func (p *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
+}
+
 func (b *BitbucketServerProvider) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {
 
 	gitIssues := []*GitIssue{}
