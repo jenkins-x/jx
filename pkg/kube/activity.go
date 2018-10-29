@@ -3,18 +3,17 @@ package kube
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/util"
+	"k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -182,24 +181,19 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 	}
 	a, err := activities.Get(name, metav1.GetOptions{})
 	if err != nil {
-		create = true
-		a = defaultActivity
+		if errors.IsNotFound(err) {
+			create = true
+			a = defaultActivity
+		} else {
+			return defaultActivity, create, err
+		}
 	}
-	oldSpec := a.Spec
-	spec := &defaultActivity.Spec
+	spec := &a.Spec
 	updateActivitySpec(k, spec)
 	if create {
 		answer, err := activities.Create(a)
 		return answer, true, err
 	} else {
-		if !reflect.DeepEqual(&a.Spec, &oldSpec) {
-			patch, err := json.Marshal(defaultActivity)
-			if err != nil {
-				return defaultActivity, create, nil
-			}
-			answer, err := activities.Patch(a.Name, types.MergePatchType, patch)
-			return answer, false, err
-		}
 		return a, false, nil
 	}
 }
@@ -413,6 +407,28 @@ func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(activities typev1.Pipe
 	return a, s, p, p.Update, created, err
 }
 
+// PatchRow is a json patch structure
+type PatchRow struct {
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value"`
+}
+
+// Almost making a full Update, but using Patch to work around problem with sometimes getting http status 409 back
+func patchSpec(activities typev1.PipelineActivityInterface, activity *v1.PipelineActivity) (err error) {
+	things := make([]PatchRow, 1)
+	things[0].Value = activity.Spec
+	things[0].Op = "add"
+	things[0].Path = "/spec"
+
+	patchBytes, err := json.Marshal(things)
+	if err != nil {
+		return
+	}
+	_, err = activities.Patch(activity.Name, types.JSONPatchType, patchBytes)
+	return
+}
+
 func (k *PromoteStepActivityKey) OnPromotePullRequest(activities typev1.PipelineActivityInterface, fn PromotePullRequestFn) error {
 	if !k.IsValid() {
 		return nil
@@ -421,21 +437,16 @@ func (k *PromoteStepActivityKey) OnPromotePullRequest(activities typev1.Pipeline
 		log.Warn("Warning: no PipelineActivities client available!")
 		return nil
 	}
-	a, s, ps, p, added, err := k.GetOrCreatePromotePullRequest(activities)
+	a, s, ps, p, _, err := k.GetOrCreatePromotePullRequest(activities)
 	if err != nil {
 		return err
 	}
-	p1 := *p
 	err = fn(a, s, ps, p)
 	if err != nil {
 		return err
 	}
-	p2 := *p
 
-	if added || !reflect.DeepEqual(p1, p2) {
-		_, err = activities.Update(a)
-	}
-	return err
+	return patchSpec(activities, a)
 }
 
 func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActivityInterface, fn PromoteUpdateFn) error {
@@ -446,11 +457,10 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActiv
 		log.Warn("Warning: no PipelineActivities client available!")
 		return nil
 	}
-	a, s, ps, p, added, err := k.GetOrCreatePromoteUpdate(activities)
+	a, s, ps, p, _, err := k.GetOrCreatePromoteUpdate(activities)
 	if err != nil {
 		return err
 	}
-	p1 := asYaml(a)
 	if k.ApplicationURL != "" {
 		ps.ApplicationURL = k.ApplicationURL
 	}
@@ -461,21 +471,7 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActiv
 	if k.ApplicationURL != "" {
 		ps.ApplicationURL = k.ApplicationURL
 	}
-	p2 := asYaml(a)
-
-	if added || p1 == "" || p1 != p2 {
-		_, err = activities.Update(a)
-	}
-	return err
-}
-
-func asYaml(activity *v1.PipelineActivity) string {
-	data, err := yaml.Marshal(activity)
-	if err == nil {
-		return string(data)
-	}
-	log.Warnf("Failed to marshal PipelineActivity to YAML %s: %s", activity.Name, err)
-	return ""
+	return patchSpec(activities, a)
 }
 
 func (k *PromoteStepActivityKey) matchesPreview(step *v1.PipelineActivityStep) bool {
