@@ -2,6 +2,7 @@ package gits_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -95,16 +96,32 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 		providerKind string
 		hostURL      string
 		git          gits.Gitter
+		numUsers     int
+		currUser     int
 		username     string
 		apiToken     string
 		batchMode    bool
 		wantError    error
 	}{
-		{"create GitHub provider",
+		{"create GitHub provider for one user",
 			"GitHub",
 			gits.KindGitHub,
 			"https://github.com",
 			git,
+			1,
+			0,
+			"test",
+			"test",
+			false,
+			nil,
+		},
+		{"create GitHub provider for multiple users",
+			"GitHub",
+			gits.KindGitHub,
+			"https://github.com",
+			git,
+			2,
+			1,
 			"test",
 			"test",
 			false,
@@ -114,11 +131,22 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			user := &auth.UserAuth{
-				Username: tc.username,
-				ApiToken: tc.apiToken,
+			users := []*auth.UserAuth{}
+			for u := 1; u <= tc.numUsers; u++ {
+				user := &auth.UserAuth{
+					Username: fmt.Sprintf("%s-%d", tc.username, u),
+					ApiToken: fmt.Sprintf("%s-%d", tc.apiToken, u),
+				}
+				users = append(users, user)
 			}
-			server := createAuthServer(tc.hostURL, tc.Name, tc.providerKind, user)
+			assert.True(t, len(users) > tc.currUser, "current user index should be smaller than number of users")
+			currUser := users[tc.currUser]
+			if len(users) > 1 {
+				users = append(users[:tc.currUser], users[tc.currUser+1:]...)
+			} else {
+				users = []*auth.UserAuth{}
+			}
+			server := createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
 			authSvc := createAuthConfigSvc(createAuthConfig(server))
 			result, err := gits.CreateProviderForURL(*authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, nil, nil, nil)
 			if tc.wantError == nil {
@@ -126,7 +154,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			} else {
 				assert.Equal(t, tc.wantError, err)
 			}
-			want := createGitProvider(t, tc.providerKind, server, user, tc.git)
+			want := createGitProvider(t, tc.providerKind, server, currUser, tc.git)
 			assertProvider(t, want, result)
 		})
 	}
