@@ -3,6 +3,8 @@ package gits_test
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -85,6 +87,24 @@ func createGitProvider(t *testing.T, kind string, server *auth.AuthServer, user 
 	}
 }
 
+func setUserAuthInEnv(kind string, username string, apiToken string) error {
+	prefix := strings.ToUpper(kind)
+	err := os.Setenv(prefix+"_USERNAME", username)
+	if err != nil {
+		return err
+	}
+	return os.Setenv(prefix+"_API_TOKEN", apiToken)
+}
+
+func unsetUserAuthInEnv(kind string) error {
+	prefix := strings.ToUpper(kind)
+	err := os.Unsetenv(prefix + "_USERNAME")
+	if err != nil {
+		return err
+	}
+	return os.Unsetenv(prefix + "_API_TOKEN")
+}
+
 func TestCreateGitProviderFromURL(t *testing.T) {
 	t.Parallel()
 
@@ -92,6 +112,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 
 	tests := []struct {
 		description  string
+		setup        func(t *testing.T)
+		cleanup      func(t *testing.T)
 		Name         string
 		providerKind string
 		hostURL      string
@@ -104,6 +126,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 		wantError    error
 	}{
 		{"create GitHub provider for one user",
+			nil,
+			nil,
 			"GitHub",
 			gits.KindGitHub,
 			"https://github.com",
@@ -116,6 +140,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			nil,
 		},
 		{"create GitHub provider for multiple users",
+			nil,
+			nil,
 			"GitHub",
 			gits.KindGitHub,
 			"https://github.com",
@@ -127,24 +153,55 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 			nil,
 		},
+		{"create GitHub provider for user from environment",
+			func(t *testing.T) {
+				err := setUserAuthInEnv(gits.KindGitHub, "test", "test")
+				assert.NoError(t, err, "should configure the user auth in environment")
+			},
+			func(t *testing.T) {
+				err := unsetUserAuthInEnv(gits.KindGitHub)
+				assert.NoError(t, err, "should reset the user auth in environment")
+			},
+			"GitHub",
+			gits.KindGitHub,
+			"https://no-github.com",
+			git,
+			0,
+			0,
+			"test",
+			"test",
+			false,
+			nil,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
-			users := []*auth.UserAuth{}
-			for u := 1; u <= tc.numUsers; u++ {
-				user := &auth.UserAuth{
-					Username: fmt.Sprintf("%s-%d", tc.username, u),
-					ApiToken: fmt.Sprintf("%s-%d", tc.apiToken, u),
-				}
-				users = append(users, user)
+			if tc.setup != nil {
+				tc.setup(t)
 			}
-			assert.True(t, len(users) > tc.currUser, "current user index should be smaller than number of users")
-			currUser := users[tc.currUser]
-			if len(users) > 1 {
-				users = append(users[:tc.currUser], users[tc.currUser+1:]...)
+			users := []*auth.UserAuth{}
+			var currUser *auth.UserAuth
+			if tc.numUsers > 0 {
+				for u := 1; u <= tc.numUsers; u++ {
+					user := &auth.UserAuth{
+						Username: fmt.Sprintf("%s-%d", tc.username, u),
+						ApiToken: fmt.Sprintf("%s-%d", tc.apiToken, u),
+					}
+					users = append(users, user)
+				}
+				assert.True(t, len(users) > tc.currUser, "current user index should be smaller than number of users")
+				currUser = users[tc.currUser]
+				if len(users) > 1 {
+					users = append(users[:tc.currUser], users[tc.currUser+1:]...)
+				} else {
+					users = []*auth.UserAuth{}
+				}
 			} else {
-				users = []*auth.UserAuth{}
+				currUser = &auth.UserAuth{
+					Username: tc.username,
+					ApiToken: tc.apiToken,
+				}
 			}
 			server := createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
 			authSvc := createAuthConfigSvc(createAuthConfig(server))
@@ -156,6 +213,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			}
 			want := createGitProvider(t, tc.providerKind, server, currUser, tc.git)
 			assertProvider(t, want, result)
+			if tc.cleanup != nil {
+				tc.cleanup(t)
+			}
 		})
 	}
 }
