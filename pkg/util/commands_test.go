@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/tests"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 )
 
 func TestRunPass(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	t.Parallel()
 
 	tmpFileName := "test_run_pass.txt"
@@ -21,17 +21,17 @@ func TestRunPass(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	exPath := startPath + "/test_data/scripts"
-	ex := "fail_iterator.sh"
-	args := []string{tmpFileName, "3"}
+	exPath := filepath.Join(startPath, "/test_data/scripts")
+	tempfile, err := os.Create(filepath.Join(exPath, tmpFileName))
+	tempfile.Close() // Close the file so that it can be edited by the script on windows
+	defer os.Remove(tempfile.Name())
 
-	os.Create(exPath + "/" + tmpFileName)
-
-	cmd := util.Command{}
-	cmd.SetName(ex)
-	cmd.SetDir(exPath)
-	cmd.SetArgs(args)
-	cmd.SetTimeout(15 * time.Second)
+	cmd := util.Command{
+		Name:    getFailIteratorScript(),
+		Dir:     exPath,
+		Args:    []string{tmpFileName, "3"},
+		Timeout: 15 * time.Second,
+	}
 
 	res, err := cmd.Run()
 
@@ -42,13 +42,9 @@ func TestRunPass(t *testing.T) {
 	assert.Equal(t, true, cmd.DidError())
 	assert.Equal(t, false, cmd.DidFail())
 	assert.NotEqual(t, nil, cmd.Error())
-
-	os.Remove(exPath + "/" + tmpFileName)
-
 }
 
 func TestRunPassFirstTime(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	t.Parallel()
 
 	tmpFileName := "test_run_pass_first_time.txt"
@@ -58,15 +54,14 @@ func TestRunPassFirstTime(t *testing.T) {
 		panic(err)
 	}
 	exPath := startPath + "/test_data/scripts"
-	ex := "fail_iterator.sh"
-	args := []string{tmpFileName, "1"}
-
-	os.Create(exPath + "/" + tmpFileName)
+	tempfile, err := os.Create(filepath.Join(exPath, tmpFileName))
+	tempfile.Close()
+	defer os.Remove(tempfile.Name())
 
 	cmd := util.Command{
-		Name: ex,
+		Name: getFailIteratorScript(),
 		Dir:  exPath,
-		Args: args,
+		Args: []string{tmpFileName, "1"},
 	}
 
 	res, err := cmd.Run()
@@ -78,8 +73,6 @@ func TestRunPassFirstTime(t *testing.T) {
 	assert.Equal(t, false, cmd.DidError())
 	assert.Equal(t, false, cmd.DidFail())
 	assert.Equal(t, nil, cmd.Error())
-
-	os.Remove(exPath + "/" + tmpFileName)
 
 }
 
@@ -93,15 +86,14 @@ func TestRunFailWithTimeout(t *testing.T) {
 		panic(err)
 	}
 	exPath := startPath + "/test_data/scripts"
-	ex := "fail_iterator.sh"
-	args := []string{tmpFileName, "100"}
-
-	os.Create(exPath + "/" + tmpFileName)
+	tempfile, err := os.Create(filepath.Join(exPath, tmpFileName))
+	tempfile.Close()
+	defer os.Remove(filepath.Join(exPath, tmpFileName))
 
 	cmd := util.Command{
-		Name:    ex,
+		Name:    getFailIteratorScript(),
 		Dir:     exPath,
-		Args:    args,
+		Args:    []string{tmpFileName, "100"},
 		Timeout: 1 * time.Second,
 	}
 
@@ -111,26 +103,20 @@ func TestRunFailWithTimeout(t *testing.T) {
 	assert.Equal(t, "", res)
 	assert.Equal(t, true, cmd.DidError())
 	assert.Equal(t, true, cmd.DidFail())
-
-	os.Remove(exPath + "/" + tmpFileName)
-
 }
 
 func TestRunThreadSafety(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
+	tests.SkipForWindows(t, "Pre-existing test. Windows doesn't have a decent sleep builtin to run no-interactively")
 	t.Parallel()
 	startPath, err := filepath.Abs("")
 	if err != nil {
 		panic(err)
 	}
-	exPath := startPath + "/test_data/scripts"
-	ex := "sleep.sh"
-	args := []string{"0.2"}
-
+	exPath := filepath.Join(startPath, "/test_data/scripts")
 	cmd := util.Command{
-		Name:    ex,
+		Name:    "sleep.sh",
 		Dir:     exPath,
-		Args:    args,
+		Args:    []string{"0.2"},
 		Timeout: 10000000 * time.Nanosecond,
 	}
 
@@ -144,7 +130,6 @@ func TestRunThreadSafety(t *testing.T) {
 }
 
 func TestRunWithoutRetry(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	t.Parallel()
 
 	tmpFileName := "test_run_without_retry.txt"
@@ -153,16 +138,14 @@ func TestRunWithoutRetry(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	exPath := startPath + "/test_data/scripts"
-	ex := "fail_iterator.sh"
-	args := []string{tmpFileName, "100"}
-
-	os.Create(exPath + "/" + tmpFileName)
+	tempfile, err := os.Create(filepath.Join(startPath, "/test_data/scripts", tmpFileName))
+	tempfile.Close()
+	defer os.Remove(tempfile.Name())
 
 	cmd := util.Command{
-		Name:    ex,
-		Dir:     exPath,
-		Args:    args,
+		Name:    getFailIteratorScript(),
+		Dir:     filepath.Join(startPath, "/test_data/scripts"),
+		Args:    []string{tmpFileName, "100"},
 		Timeout: 3 * time.Second,
 	}
 
@@ -175,12 +158,9 @@ func TestRunWithoutRetry(t *testing.T) {
 	assert.Equal(t, 1, len(cmd.Errors))
 	assert.Equal(t, 1, cmd.Attempts())
 
-	os.Remove(exPath + "/" + tmpFileName)
-
 }
 
 func TestRunVerbose(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	t.Parallel()
 
 	tmpFileName := "test_run_verbose.txt"
@@ -189,16 +169,14 @@ func TestRunVerbose(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	exPath := startPath + "/test_data/scripts"
-	ex := "fail_iterator.sh"
-	args := []string{tmpFileName, "100"}
-
-	os.Create(exPath + "/" + tmpFileName)
+	tempfile, err := os.Create(filepath.Join(startPath, "/test_data/scripts", tmpFileName))
+	tempfile.Close()
+	defer os.Remove(tempfile.Name())
 
 	cmd := util.Command{
-		Name:    ex,
-		Dir:     exPath,
-		Args:    args,
+		Name:    getFailIteratorScript(),
+		Dir:     filepath.Join(startPath, "/test_data/scripts"),
+		Args:    []string{tmpFileName, "100"},
 		Timeout: 3 * time.Second,
 	}
 
@@ -210,13 +188,9 @@ func TestRunVerbose(t *testing.T) {
 	assert.Equal(t, true, cmd.DidFail())
 	assert.Equal(t, 1, len(cmd.Errors))
 	assert.Equal(t, 1, cmd.Attempts())
-
-	os.Remove(exPath + "/" + tmpFileName)
-
 }
 
 func TestRunQuiet(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	t.Parallel()
 
 	tmpFileName := "test_run_quiet.txt"
@@ -225,16 +199,14 @@ func TestRunQuiet(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	exPath := startPath + "/test_data/scripts"
-	ex := "fail_iterator.sh"
-	args := []string{tmpFileName, "100"}
-
-	os.Create(exPath + "/" + tmpFileName)
+	tempfile, err := os.Create(filepath.Join(startPath, "/test_data/scripts", tmpFileName))
+	tempfile.Close()
+	defer os.Remove(tempfile.Name())
 
 	cmd := util.Command{
-		Name:    ex,
-		Dir:     exPath,
-		Args:    args,
+		Name:    getFailIteratorScript(),
+		Dir:     filepath.Join(startPath, "/test_data/scripts"),
+		Args:    []string{tmpFileName, "100"},
 		Timeout: 3 * time.Second,
 	}
 
@@ -246,7 +218,12 @@ func TestRunQuiet(t *testing.T) {
 	assert.Equal(t, true, cmd.DidFail())
 	assert.Equal(t, 1, len(cmd.Errors))
 	assert.Equal(t, 1, cmd.Attempts())
+}
 
-	os.Remove(exPath + "/" + tmpFileName)
-
+func getFailIteratorScript() string {
+	ex := "fail_iterator.sh"
+	if runtime.GOOS == "windows" {
+		ex = "fail_iterator.bat"
+	}
+	return ex
 }
