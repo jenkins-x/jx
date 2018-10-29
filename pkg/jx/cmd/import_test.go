@@ -8,9 +8,13 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 )
+
+const testUsername = "derek_zoolander"
 
 func TestCreateProwOwnersFileExistsDoNothing(t *testing.T) {
 	t.Parallel()
@@ -44,7 +48,7 @@ func TestCreateProwOwnersFileCreateWhenDoesNotExist(t *testing.T) {
 	cmd := cmd.ImportOptions{
 		Dir: path,
 		GitUserAuth: &auth.UserAuth{
-			Username: "derek_zoolander",
+			Username: testUsername,
 		},
 	}
 
@@ -55,6 +59,17 @@ func TestCreateProwOwnersFileCreateWhenDoesNotExist(t *testing.T) {
 	exists, err := util.FileExists(wantFile)
 	assert.NoError(t, err, "It should find the OWNERS file without error")
 	assert.True(t, exists, "It should create an OWNERS file")
+
+	wantOwners := prow.Owners{
+		Approvers: []string{testUsername},
+		Reviewers: []string{testUsername},
+	}
+	data, err := ioutil.ReadFile(wantFile)
+	assert.NoError(t, err, "It should read the OWNERS file without error")
+	owners := prow.Owners{}
+	err = yaml.Unmarshal(data, &owners)
+	assert.NoError(t, err, "It should unmarshal the OWNERS file without error")
+	assert.Equal(t, wantOwners, owners)
 }
 
 func TestCreateProwOwnersFileCreateWhenDoesNotExistAndNoGitUserSet(t *testing.T) {
@@ -104,7 +119,7 @@ func TestCreateProwOwnersAliasesFileCreateWhenDoesNotExist(t *testing.T) {
 	cmd := cmd.ImportOptions{
 		Dir: path,
 		GitUserAuth: &auth.UserAuth{
-			Username: "derek_zoolander",
+			Username: testUsername,
 		},
 	}
 
@@ -115,6 +130,18 @@ func TestCreateProwOwnersAliasesFileCreateWhenDoesNotExist(t *testing.T) {
 	exists, err := util.FileExists(wantFile)
 	assert.NoError(t, err, "It should find the OWNERS_ALIASES file without error")
 	assert.True(t, exists, "It should create an OWNERS_ALIASES file")
+
+	wantOwnersAliases := prow.OwnersAliases{
+		Aliases:       []string{testUsername},
+		BestApprovers: []string{testUsername},
+		BestReviewers: []string{testUsername},
+	}
+	data, err := ioutil.ReadFile(wantFile)
+	assert.NoError(t, err, "It should read the OWNERS_ALIASES file without error")
+	ownersAliases := prow.OwnersAliases{}
+	err = yaml.Unmarshal(data, &ownersAliases)
+	assert.NoError(t, err, "It should unmarshal the OWNERS_ALIASES file without error")
+	assert.Equal(t, wantOwnersAliases, ownersAliases)
 }
 
 func TestCreateProwOwnersAliasesFileCreateWhenDoesNotExistAndNoGitUserSet(t *testing.T) {
