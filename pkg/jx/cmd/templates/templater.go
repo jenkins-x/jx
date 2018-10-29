@@ -30,16 +30,17 @@ type FlagExposer interface {
 	ExposeFlags(cmd *cobra.Command, flags ...string) FlagExposer
 }
 
-func ActsAsRootCommand(cmd *cobra.Command, filters []string, groups ...CommandGroup) FlagExposer {
+func ActsAsRootCommand(cmd *cobra.Command, filters []string, pluginCommandGroups PluginCommandGroups, groups ...CommandGroup) FlagExposer {
 	if cmd == nil {
 		panic("nil root command")
 	}
 	templater := &templater{
-		RootCmd:       cmd,
-		UsageTemplate: MainUsageTemplate(),
-		HelpTemplate:  MainHelpTemplate(),
-		CommandGroups: groups,
-		Filtered:      filters,
+		RootCmd:             cmd,
+		UsageTemplate:       MainUsageTemplate(),
+		HelpTemplate:        MainHelpTemplate(),
+		CommandGroups:       groups,
+		PluginCommandGroups: pluginCommandGroups,
+		Filtered:            filters,
 	}
 	cmd.SetUsageFunc(templater.UsageFunc())
 	cmd.SetHelpFunc(templater.HelpFunc())
@@ -56,9 +57,10 @@ func UseOptionsTemplates(cmd *cobra.Command) {
 }
 
 type templater struct {
-	UsageTemplate string
-	HelpTemplate  string
-	RootCmd       *cobra.Command
+	UsageTemplate       string
+	HelpTemplate        string
+	PluginCommandGroups PluginCommandGroups
+	RootCmd             *cobra.Command
 	CommandGroups
 	Filtered []string
 }
@@ -168,18 +170,34 @@ func (t *templater) cmdGroupsString(c *cobra.Command) string {
 			}
 		}
 	}
+	for _, cmdGroup := range t.PluginCommandGroups {
+		for _, cmd := range cmdGroup.Commands {
+			l := len(cmd.SubCommand)
+			if l > maxLen {
+				maxLen = l
+			}
+		}
+	}
 	for _, cmdGroup := range t.cmdGroups(c, c.Commands()) {
 		cmds := []string{cmdGroup.Message}
 		for _, cmd := range cmdGroup.Commands {
 			if cmd.Runnable() {
 				path := t.groupPath(cmd)
 				//cmds = append(cmds, "  "+rpad(path, maxLen - len(path))+" "+cmd.Short)
-				cmds = append(cmds, "  "+util.PadRight(path, " ", maxLen)+" "+cmd.Short)
+				cmds = append(cmds, "  "+util.PadRight(util.ColorInfo(path), " ", maxLen)+" "+cmd.Short)
 			}
 		}
 		groups = append(groups, strings.Join(cmds, "\n"))
 	}
-	return strings.Join(groups, "\n\n")
+	for _, cmdGroup := range t.PluginCommandGroups {
+		cmds := []string{cmdGroup.Message}
+		for _, cmd := range cmdGroup.Commands {
+			//cmds = append(cmds, "  "+rpad(path, maxLen - len(path))+" "+cmd.Short)
+			cmds = append(cmds, "  "+util.PadRight(util.ColorInfo(cmd.SubCommand), " ", maxLen)+" "+fmt.Sprintf("%s (from plugin)", cmd.Description))
+		}
+		groups = append(groups, strings.Join(cmds, "\n"))
+	}
+	return fmt.Sprintf("%s\n", strings.Join(groups, "\n\n"))
 }
 
 func (t *templater) rootCmdName(c *cobra.Command) string {

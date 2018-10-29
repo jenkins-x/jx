@@ -25,6 +25,12 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/jenkins-x/jx/pkg/kube"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/jenkins-x/jx/pkg/extensions"
+
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -49,8 +55,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmds := &cobra.Command{
 		Use:   "jx",
 		Short: "jx is a command line tool for working with Jenkins X",
-		Long: `
- `,
+		//Long: ``,
 		Run: runHelp,
 		/*
 			BashCompletionFunction: bash_completion_func,
@@ -91,7 +96,6 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	addonCommands := []*cobra.Command{}
 	addonCommands = append(addonCommands, findCommands("addon", createCommands, deleteCommands)...)
 	addonCommands = append(addonCommands, findCommands("app", createCommands, deleteCommands, addCommands)...)
-	addonCommands = append(addonCommands, NewCmdPlugin(f, in, out, err))
 
 	environmentsCommands := []*cobra.Command{
 		NewCmdPreview(f, in, out, err),
@@ -183,7 +187,22 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	groups.Add(cmds)
 
 	filters := []string{"options"}
-	templates.ActsAsRootCommand(cmds, filters, groups...)
+
+	commonOptions := CommonOptions{
+		Factory: f,
+		In:      in,
+		Out:     out,
+		Err:     err,
+	}
+	verifier := &extensions.CommandOverrideVerifier{
+		Root:        cmds,
+		SeenPlugins: make(map[string]string, 0),
+	}
+	pluginCommandGroups, err1 := commonOptions.getPluginCommandGroups(verifier)
+	if err1 != nil {
+		log.Errorf("%v\n", err1)
+	}
+	templates.ActsAsRootCommand(cmds, filters, pluginCommandGroups, groups...)
 	cmds.AddCommand(NewCmdDocs(f, in, out, err))
 	cmds.AddCommand(NewCmdVersion(f, in, out, err))
 	cmds.Version = version.GetVersion()
@@ -191,7 +210,9 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmds.AddCommand(NewCmdOptions(out))
 	cmds.AddCommand(NewCmdDiagnose(f, in, out, err))
 
-	pluginHandler := &defaultPluginHandler{}
+	pluginHandler := &extensionPluginHandler{
+		CommonOptions: commonOptions,
+	}
 	args := os.Args
 
 	if len(args) > 1 {
@@ -259,10 +280,55 @@ type PluginHandler interface {
 	Execute(executablePath string, cmdArgs, environment []string) error
 }
 
-type defaultPluginHandler struct{}
+type extensionPluginHandler struct {
+	CommonOptions
+	localPluginHandler
+}
 
 // Lookup implements PluginHandler
-func (h *defaultPluginHandler) Lookup(filename string) (string, error) {
+func (h *extensionPluginHandler) Lookup(filename string) (string, error) {
+	jxClient, ns, err := h.JXClientAndDevNamespace()
+	if err != nil {
+		return "", err
+	}
+	apisClient, err := h.CreateApiExtensionsClient()
+	if err != nil {
+		return "", err
+	}
+	err = kube.RegisterPluginCRD(apisClient)
+	if err != nil {
+		return "", err
+	}
+
+	possibles, err := jxClient.JenkinsV1().Plugins(ns).List(metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", extensions.PluginCommandLabel, filename),
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(possibles.Items) > 0 {
+		found := possibles.Items[0]
+		if len(possibles.Items) > 1 {
+			// There is a warning about this when you install extensions as well
+			log.Warnf("More than one plugin installed for %s by extensions. Selecting the one installed by %s at random.\n", filename, found.Name)
+
+		}
+		return extensions.EnsurePluginInstalled(found)
+	} else {
+		return h.localPluginHandler.Lookup(filename)
+	}
+	return "", nil
+}
+
+// Execute implements PluginHandler
+func (h *extensionPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
+	return h.localPluginHandler.Execute(executablePath, cmdArgs, environment)
+}
+
+type localPluginHandler struct{}
+
+// Lookup implements PluginHandler
+func (h *localPluginHandler) Lookup(filename string) (string, error) {
 	// if on Windows, append the "exe" extension
 	// to the filename that we are looking up.
 	if runtime.GOOS == "windows" {
@@ -273,7 +339,7 @@ func (h *defaultPluginHandler) Lookup(filename string) (string, error) {
 }
 
 // Execute implements PluginHandler
-func (h *defaultPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
+func (h *localPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
 	return syscall.Exec(executablePath, cmdArgs, environment)
 }
 
@@ -293,6 +359,9 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string) err
 	for len(remainingArgs) > 0 {
 		path, err := pluginHandler.Lookup(fmt.Sprintf("jx-%s", strings.Join(remainingArgs, "-")))
 		if err != nil || len(path) == 0 {
+			if err != nil {
+				log.Errorf("Error installing plugin for command %s. %v\n", remainingArgs, err)
+			}
 			remainingArgs = remainingArgs[:len(remainingArgs)-1]
 			continue
 		}

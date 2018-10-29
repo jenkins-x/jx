@@ -185,11 +185,17 @@ func (p *GitHubProvider) ListReleases(org string, name string) ([]*GitRelease, e
 
 func toGitHubRelease(org string, name string, release *github.RepositoryRelease) *GitRelease {
 	totalDownloadCount := 0
+	assets := make([]GitReleaseAsset, 0)
 	for _, asset := range release.Assets {
 		p := asset.DownloadCount
 		if p != nil {
 			totalDownloadCount = totalDownloadCount + *p
 		}
+		assets = append(assets, GitReleaseAsset{
+			Name:               asText(asset.Name),
+			BrowserDownloadUrl: asText(asset.BrowserDownloadURL),
+			ContentType:        asText(asset.ContentType),
+		})
 	}
 	return &GitRelease{
 		Name:          asText(release.Name),
@@ -198,6 +204,7 @@ func toGitHubRelease(org string, name string, release *github.RepositoryRelease)
 		URL:           asText(release.URL),
 		HTMLURL:       asText(release.HTMLURL),
 		DownloadCount: totalDownloadCount,
+		Assets:        &assets,
 	}
 }
 

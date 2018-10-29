@@ -95,6 +95,13 @@ type GitRelease struct {
 	URL           string
 	HTMLURL       string
 	DownloadCount int
+	Assets        *[]GitReleaseAsset
+}
+
+type GitReleaseAsset struct {
+	BrowserDownloadUrl string
+	Name               string
+	ContentType        string
 }
 
 type GitLabel struct {

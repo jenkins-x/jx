@@ -96,8 +96,13 @@ func (p *GiteaProvider) ListReleases(org string, name string) ([]*GitRelease, er
 
 func toGiteaRelease(org string, name string, release *gitea.Release) *GitRelease {
 	totalDownloadCount := 0
+	assets := make([]GitReleaseAsset, 0)
 	for _, asset := range release.Attachments {
 		totalDownloadCount = totalDownloadCount + int(asset.DownloadCount)
+		assets = append(assets, GitReleaseAsset{
+			Name:               asset.Name,
+			BrowserDownloadUrl: asset.DownloadURL,
+		})
 	}
 	return &GitRelease{
 		Name:          release.Title,
@@ -106,6 +111,7 @@ func toGiteaRelease(org string, name string, release *gitea.Release) *GitRelease
 		URL:           release.URL,
 		HTMLURL:       release.URL,
 		DownloadCount: totalDownloadCount,
+		Assets:        &assets,
 	}
 }
 

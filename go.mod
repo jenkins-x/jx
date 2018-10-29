@@ -182,7 +182,7 @@ require (
 	k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6
 	k8s.io/helm v2.7.2+incompatible
 	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4
-	k8s.io/kubernetes v1.12.2 // indirect
+	k8s.io/kubernetes v1.11.3 // indirect
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b
 	k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9
 

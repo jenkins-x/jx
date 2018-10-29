@@ -1,8 +1,22 @@
 package templates
 
 import (
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
 	"github.com/spf13/cobra"
 )
+
+type PluginCommandGroup struct {
+	Message  string
+	Commands []*PluginCommand
+}
+
+type PluginCommand struct {
+	jenkinsv1.PluginSpec
+	Errors []error
+}
+
+type PluginCommandGroups []PluginCommandGroup
 
 type CommandGroup struct {
 	Message  string

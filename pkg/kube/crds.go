@@ -264,6 +264,33 @@ func RegisterAppCRD(apiClient apiextensionsclientset.Interface) error {
 	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
+// RegisterPluginCRD ensures that the CRD is registered for Plugin
+func RegisterPluginCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "plugins." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:     "Plugin",
+		ListKind: "PluginList",
+		Plural:   "plugins",
+		Singular: "plugin",
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Name",
+			Type:        "string",
+			Description: "The name of the plugin",
+			JSONPath:    ".spec.name",
+		},
+		{
+			Name:        "Description",
+			Type:        "string",
+			Description: "A description of the plugin",
+			JSONPath:    ".spec.description",
+		},
+	}
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+}
+
 // RegisterCommitStatusCRD ensures that the CRD is registered for CommitStatus
 func RegisterCommitStatusCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "commitstatuses." + jenkinsio.GroupName
