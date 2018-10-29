@@ -1,7 +1,10 @@
 package kube_test
 
 import (
+	"encoding/json"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"strconv"
 	"testing"
 	"time"
@@ -44,7 +47,7 @@ func (m *MockPipelineActivityInterface) Get(name string, options metav1.GetOptio
 	if ok {
 		return a, nil
 	}
-	return nil, fmt.Errorf("No such PipelineActivity %s", name)
+	return nil, errors.NewNotFound(schema.GroupResource{}, name)
 }
 
 func (m *MockPipelineActivityInterface) List(opts metav1.ListOptions) (*v1.PipelineActivityList, error) {
@@ -61,7 +64,25 @@ func (m *MockPipelineActivityInterface) Watch(opts metav1.ListOptions) (watch.In
 	return nil, fmt.Errorf("TODO")
 }
 
+// SpecPatchRow is a json patch structure
+type SpecPatchRow struct {
+	Op    string `json:"op"`
+	Path  string `json:"path"`
+	Value v1.PipelineActivitySpec `json:"value"`
+}
+
 func (m *MockPipelineActivityInterface) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.PipelineActivity, err error) {
+	if pt == types.JSONPatchType {
+		patch := make([]SpecPatchRow, 1)
+		err := json.Unmarshal(data, &patch)
+		if err != nil {
+			return nil, err
+		}
+		if len(patch) == 1 && patch[0].Op == "add" && patch[0].Path == "/spec" {
+			m.Activities[name].Spec = patch[0].Value
+			return m.Activities[name], nil
+		}
+	}
 	return nil, fmt.Errorf("TODO")
 }
 
