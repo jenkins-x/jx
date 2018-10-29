@@ -2,33 +2,41 @@ package amazon_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path"
+	"runtime"
 	"testing"
 )
 
 func switchHome() (string, error) {
-	oldHome := os.Getenv("HOME")
-	newHome := "/tmp/" + uuid.New()
-	os.Setenv("HOME", newHome)
+	oldHome := amazon.UserHomeDir()
+	newHome, err := ioutil.TempDir("", "common_test")
+	setUserHomeDir(newHome)
 	awsHome := path.Join(newHome, ".aws")
-	err := os.MkdirAll(awsHome, 0777)
+	err = os.MkdirAll(awsHome, 0777)
 	if err != nil {
 		return oldHome, err
 	}
 
 	awsConfigPath := path.Join(awsHome, "config")
-	ioutil.WriteFile(awsConfigPath, []byte(`[profile foo]
+	if err := ioutil.WriteFile(awsConfigPath, []byte(`[profile foo]
 region = bar
 [profile baz]
-region = qux
-`), 0644)
+region = qux`), 0644); err != nil {
+		panic(err)
+	}
 
 	return oldHome, nil
+}
+
+func setUserHomeDir(newHome string) {
+	if runtime.GOOS == "windows" {
+		os.Setenv("USERPROFILE", newHome)
+	}
+	// *nix
+	os.Setenv("HOME", newHome)
 }
 
 func restoreHome(oldHome string) {
@@ -44,7 +52,6 @@ func configureEnv(region string, defaultRegion string, profile string) {
 // Region tests
 
 func TestResolvingDefaultRegion(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
@@ -55,7 +62,6 @@ func TestResolvingDefaultRegion(t *testing.T) {
 }
 
 func TestResolvingRegionFromAwsRegionEnv(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
@@ -66,7 +72,6 @@ func TestResolvingRegionFromAwsRegionEnv(t *testing.T) {
 }
 
 func TestResolvingRegionFromAwsDefaultRegionEnv(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
@@ -77,7 +82,6 @@ func TestResolvingRegionFromAwsDefaultRegionEnv(t *testing.T) {
 }
 
 func TestReturnOption(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
@@ -88,7 +92,6 @@ func TestReturnOption(t *testing.T) {
 }
 
 func TestReadingRegionFromConfigProfile(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
@@ -99,7 +102,6 @@ func TestReadingRegionFromConfigProfile(t *testing.T) {
 }
 
 func TestReadingRegionFromEnvProfile(t *testing.T) {
-	tests.SkipForWindows(t, "Pre-existing test. Reason not investigated")
 	oldHome, err := switchHome()
 	defer restoreHome(oldHome)
 	assert.Nil(t, err)
