@@ -80,7 +80,7 @@ func (o *TeamOptions) Run() error {
 		return err
 	}
 
-	config, po, err := kube.LoadConfig()
+	config, po, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -80,7 +79,7 @@ func NewCmdDeleteContext(f Factory, in terminal.FileReader, out terminal.FileWri
 // Run implements the command
 func (o *DeleteContextOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	config, po, err := kube.LoadConfig()
+	config, po, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
 	}

@@ -92,7 +92,7 @@ func (o *EnvironmentOptions) Run() error {
 		return err
 	}
 
-	config, po, err := kube.LoadConfig()
+	config, po, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,8 @@ func (o *EnvironmentOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to update the kube config %s", err)
 		}
-		fmt.Fprintf(o.Out, "Now using environment '%s' in team '%s' on server '%s'.\n", info(env), info(devNs), info(kube.Server(config, ctx)))
+		fmt.Fprintf(o.Out, "Now using environment '%s' in team '%s' on server '%s'.\n",
+			info(env), info(devNs), info(kube.Server(config, ctx)))
 	} else {
 		ns := kube.CurrentNamespace(config)
 		server := kube.CurrentServer(config)

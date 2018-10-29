@@ -45,7 +45,8 @@ func GetClusterStatus(client kubernetes.Interface, namespace string) (ClusterSta
 		totalAllocatedMemory: resource.Quantity{},
 	}
 
-	config, _, err := LoadConfig()
+	kuber := NewKubeConfig()
+	config, _, err := kuber.LoadConfig()
 	if err != nil {
 		return clusterStatus, err
 	}

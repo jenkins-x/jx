@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -68,7 +68,7 @@ func NewCmdNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter,
 }
 
 func (o *NamespaceOptions) Run() error {
-	config, po, err := kube.LoadConfig()
+	config, po, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
 	}
