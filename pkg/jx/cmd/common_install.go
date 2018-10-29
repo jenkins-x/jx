@@ -1364,7 +1364,7 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 		survey.AskOne(prompt, &install, nil, surveyOpts)
 	}
 
-	return o.doInstallMissingDependencies(deps)
+	return o.doInstallMissingDependencies(install)
 }
 
 // installRequirements installs any requirements for the given provider kind
