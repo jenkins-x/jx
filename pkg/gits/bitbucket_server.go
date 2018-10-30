@@ -630,8 +630,8 @@ func (b *BitbucketServerProvider) UpdateCommitStatus(org string, repo string, sh
 
 func convertBitBucketBuildStatusToGitStatus(buildStatus *bitbucket.BuildStatus) *GitRepoStatus {
 	return &GitRepoStatus{
-		ID:          buildStatus.Key,
-		URL:         buildStatus.Url,
+		ID:  buildStatus.Key,
+		URL: buildStatus.Url,
 		// var from BitBucketCloudProvider
 		State:       stateMap[buildStatus.State],
 		TargetURL:   buildStatus.Url,
