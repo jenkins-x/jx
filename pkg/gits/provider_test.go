@@ -96,6 +96,10 @@ func createGitProvider(t *testing.T, kind string, server *auth.AuthServer, user 
 		giteaProvider, err := gits.NewGiteaProvider(server, user, git)
 		assert.NoError(t, err, "should create Gitea provider without error")
 		return giteaProvider
+	case gits.KindBitBucketServer:
+		bitbucketServerProvider, err := gits.NewBitbucketServerProvider(server, user, git)
+		assert.NoError(t, err, "should create Gitea provider without error")
+		return bitbucketServerProvider
 	default:
 		return nil
 	}
@@ -455,6 +459,114 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			"Gitea",
 			gits.KindGitea,
 			"https://gitea.com",
+			git,
+			0,
+			0,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create BitbucketServer provider for one user",
+			nil,
+			nil,
+			"BitbucketServer",
+			gits.KindBitBucketServer,
+			"https://bitbucket-server.com",
+			git,
+			1,
+			0,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create BitbucketServer provider for multiple users",
+			nil,
+			nil,
+			"BitbucketServer",
+			gits.KindBitBucketServer,
+			"https://bitbucket-server.com",
+			git,
+			2,
+			1,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create BitbucketServer provider for user from environment",
+			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+				err := setUserAuthInEnv(gits.KindBitBucketServer, "test", "test")
+				assert.NoError(t, err, "should configure the user auth in environment")
+				c, _, term := utiltests.NewTerminal(t)
+				donech := make(chan struct{})
+				go func() {
+					defer close(donech)
+				}()
+				return c, term, donech
+			},
+			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+				err := unsetUserAuthInEnv(gits.KindBitBucketServer)
+				assert.NoError(t, err, "should reset the user auth in environment")
+				err = c.Tty().Close()
+				assert.NoError(t, err, "should close the tty")
+				<-donech
+			},
+			"BitbucketServer",
+			gits.KindBitBucketServer,
+			"https://bitbucket-server.com",
+			git,
+			0,
+			0,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create BitbucketServer provider in barch mode ",
+			nil,
+			nil,
+			"BitbucketServer",
+			gits.KindBitBucketServer,
+			"https://bitbucket-server.com",
+			git,
+			0,
+			0,
+			"",
+			"",
+			true,
+			true,
+		},
+		{"create BitbucketServer provider in interactive mode",
+			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+				c, _, term := utiltests.NewTerminal(t)
+				assert.NotNil(t, c, "console should not be nil")
+				assert.NotNil(t, term, "term should not be nil")
+				donech := make(chan struct{})
+				go func() {
+					defer close(donech)
+					_, err := c.ExpectString("bitbucket-server.com user name:")
+					assert.NoError(t, err, "expect user name")
+					_, err = c.SendLine("test")
+					assert.NoError(t, err, "send user name")
+					_, err = c.ExpectString("API Token:")
+					assert.NoError(t, err, "expect API token")
+					_, err = c.SendLine("test")
+					assert.NoError(t, err, "send API token")
+					_, err = c.ExpectEOF()
+					assert.NoError(t, err, "expect EOF")
+				}()
+				return c, term, donech
+			},
+			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+				err := c.Tty().Close()
+				assert.NoError(t, err, "should close the tty")
+				<-donech
+			},
+			"BitbucketServer",
+			gits.KindBitBucketServer,
+			"https://bitbucket-server.com",
 			git,
 			0,
 			0,
