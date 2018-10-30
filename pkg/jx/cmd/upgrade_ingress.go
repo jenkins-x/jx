@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/pkg/errors"
 	"io"
 	"strings"
 
@@ -50,14 +51,16 @@ type UpgradeIngressOptions struct {
 
 // NewCmdUpgradeIngress defines the command
 func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	commonOptions := CommonOptions{
+		Factory: f,
+		In:      in,
+		Out:     out,
+		Err:     errOut,
+	}
+
 	options := &UpgradeIngressOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOptions,
 		},
 	}
 
@@ -96,6 +99,11 @@ func (o *UpgradeIngressOptions) Run() error {
 	}
 
 	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	if err != nil {
+		return err
+	}
+
+	previousWebHookEndpoint, err := o.getWebHookEndpoint()
 	if err != nil {
 		return err
 	}
@@ -171,7 +179,26 @@ func (o *UpgradeIngressOptions) Run() error {
 		log.Info("Use the following commands to diagnose any issues:\n")
 		log.Infof("jx logs %s -n %s\n", CertManagerDeployment, CertManagerNamespace)
 		log.Info("kubectl describe certificates\n")
-		log.Info("kubectl describe issuers\n")
+		log.Info("kubectl describe issuers\n\n")
+	}
+
+	updatedWebHookEndpoint, err := o.getWebHookEndpoint()
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Previous webhook endpoint %s\n", previousWebHookEndpoint)
+	log.Infof("Updated webhook endpoint %s\n", updatedWebHookEndpoint)
+
+	updateWebHooks := true
+	if !o.BatchMode {
+		if !util.Confirm("Do you want to update all existing webhooks?", true, "", o.In, o.Out, o.Err) {
+			updateWebHooks = false
+		}
+	}
+
+	if updateWebHooks {
+		o.updateWebHooks(previousWebHookEndpoint, updatedWebHookEndpoint)
 	}
 
 	return nil
@@ -409,3 +436,78 @@ func (o *UpgradeIngressOptions) cleanTLSSecrets(ns string) error {
 	}
 	return nil
 }
+
+func (o *UpgradeIngressOptions) getWebHookEndpoint() (string, error) {
+	_, _, err := o.JXClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get jxclient")
+	}
+
+	_, _, err = o.KubeClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kube client")
+	}
+
+	isProwEnabled, err := o.isProw()
+	if err != nil {
+		return "", err
+	}
+
+	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	if err != nil {
+		return "", err
+	}
+
+	var webHookUrl string
+
+	if isProwEnabled {
+		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "hook")
+	} else {
+		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "github-webhook/")
+	}
+
+	return webHookUrl, nil
+}
+
+func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEndpoint string) error {
+	log.Infof("Updating all webHooks from %s to %s\n", util.ColorInfo(oldHookEndpoint), util.ColorInfo(newHookEndpoint))
+
+	updateWebHook := UpdateWebhooksOptions{
+		CommonOptions: o.CommonOptions,
+	}
+
+	authConfigService, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return errors.Wrap(err, "failed to create git auth service")
+	}
+
+	gitServer := authConfigService.Config().CurrentServer
+	git, err := o.gitProviderForGitServerURL(gitServer, "github")
+	if err != nil {
+		return errors.Wrap(err, "unable to determine git provider")
+	}
+
+	// organisation
+	organisation, err := gits.PickOrganisation(git, "", o.In, o.Out, o.Err)
+	if err != nil {
+		return errors.Wrap(err, "unable to determine git provider")
+	}
+
+	updateWebHook.PreviousHookUrl = oldHookEndpoint
+	updateWebHook.Org = organisation
+	updateWebHook.DryRun = false
+
+	return updateWebHook.Run()
+}
+
+

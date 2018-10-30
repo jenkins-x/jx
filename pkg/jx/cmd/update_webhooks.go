@@ -21,6 +21,7 @@ type UpdateWebhooksOptions struct {
 	Org             string
 	ExactHookMatch  bool
 	PreviousHookUrl string
+	DryRun          bool
 }
 
 var (
@@ -141,7 +142,9 @@ func (options *UpdateWebhooksOptions) Run() error {
 
 					log.Infof("Updating WebHook with new args\n")
 
-					git.UpdateWebHook(webHookArgs)
+					if !options.DryRun {
+						git.UpdateWebHook(webHookArgs)
+					}
 				}
 			}
 		}
