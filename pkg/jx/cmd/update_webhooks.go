@@ -140,11 +140,10 @@ func (options *UpdateWebhooksOptions) Run() error {
 						Repo: &gits.GitRepositoryInfo{
 							Name: repo.Name,
 						},
-						URL:    webhookUrl,
-
+						URL: webhookUrl,
 					}
 
-					if isProwEnabled{
+					if isProwEnabled {
 						webHookArgs.Secret = string(hmacToken.Data["hmac"])
 					}
 
