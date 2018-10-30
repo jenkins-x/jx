@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"io"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
@@ -17,7 +18,9 @@ import (
 // UpdateWebhooks the flags for running create cluster
 type UpdateWebhooksOptions struct {
 	CommonOptions
-	Org string
+	Org             string
+	ExactHookMatch  bool
+	PreviousHookUrl string
 }
 
 var (
@@ -51,6 +54,8 @@ func NewCmdUpdateWebhooks(f Factory, in terminal.FileReader, out terminal.FileWr
 	}
 
 	cmd.Flags().StringVarP(&options.Org, "org", "o", "jenkins-x", "The name of the git organisation to query")
+	cmd.Flags().BoolVarP(&options.ExactHookMatch, "exact-hook-url-match", "", true, "Whether to exactly match the hook based on the URL")
+	cmd.Flags().StringVarP(&options.PreviousHookUrl, "previous-hook-url", "", "", "Whether to match based on an another URL")
 
 	return cmd
 }
@@ -83,7 +88,6 @@ func (options *UpdateWebhooksOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
 
 	baseURL, err := kube.GetServiceURLFromName(options.KubeClientCached, "hook", ns)
 	if err != nil {
@@ -122,13 +126,13 @@ func (options *UpdateWebhooksOptions) Run() error {
 		if len(webhooks) > 0 {
 			// find matching hook
 			for _, webHook := range webhooks {
-				if webhookUrl == webHook.URL {
+				if options.matches(webhookUrl, webHook) {
 					log.Infof("Found matching hook for url %s\n", util.ColorInfo(webHook.URL))
 
 					// update
 					webHookArgs := &gits.GitWebHookArguments{
-						Owner:  options.Org,
-						Repo:   &gits.GitRepositoryInfo{
+						Owner: options.Org,
+						Repo: &gits.GitRepositoryInfo{
 							Name: repo.Name,
 						},
 						URL:    webhookUrl,
@@ -143,6 +147,17 @@ func (options *UpdateWebhooksOptions) Run() error {
 		}
 	}
 
-
 	return nil
+}
+
+func (options *UpdateWebhooksOptions) matches(webhookUrl string, webHookArgs *gits.GitWebHookArguments) bool {
+	if "" != options.PreviousHookUrl {
+		return options.PreviousHookUrl == webHookArgs.URL
+	}
+
+	if options.ExactHookMatch {
+		return webhookUrl == webHookArgs.URL
+	} else {
+		return strings.Contains(webHookArgs.URL, "hook.jx")
+	}
 }

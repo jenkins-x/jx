@@ -127,13 +127,12 @@ type GitPullRequestArguments struct {
 }
 
 type GitWebHookArguments struct {
+	ID     int64
 	Owner  string
 	Repo   *GitRepositoryInfo
 	URL    string
 	Secret string
 }
-
-
 
 // IsClosed returns true if the PullRequest has been closed
 func (pr *GitPullRequest) IsClosed() bool {

@@ -356,9 +356,10 @@ func (p *GitHubProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookA
 		s, ok := c.(string)
 		if ok {
 			webHook := &GitWebHookArguments{
+				ID:    hook.GetID(),
 				Owner: owner,
 				Repo:  nil,
-				URL: s,
+				URL:   s,
 			}
 			webHooks = append(webHooks, webHook)
 		}
@@ -384,31 +385,38 @@ func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
 	if err != nil {
 		log.Errorf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
 	}
-	for _, hook := range hooks {
-		c := hook.Config["url"]
-		s, ok := c.(string)
-		if ok && s == webhookUrl {
-			log.Warnf("Found existing webhook for url %s\n", webhookUrl)
 
-			config := map[string]interface{}{
-				"url":          webhookUrl,
-				"content_type": "json",
+	dataId := data.ID
+	if dataId == 0 {
+		for _, hook := range hooks {
+			c := hook.Config["url"]
+			s, ok := c.(string)
+			if ok && s == webhookUrl {
+				log.Warnf("Found existing webhook for url %s\n", webhookUrl)
+				dataId = hook.GetID()
 			}
-			if data.Secret != "" {
-				config["secret"] = data.Secret
-			}
-
-			hook := &github.Hook{
-				Name:   github.String("web"),
-				Config: config,
-				Events: []string{"*"},
-			}
-
-			log.Infof("Updating GitHub webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
-			_, _, err = p.Client.Repositories.EditHook(p.Context, owner, repo, hook.GetID(), hook)
 		}
 	}
 
+	if dataId != 0 {
+		config := map[string]interface{}{
+			"url":          webhookUrl,
+			"content_type": "json",
+		}
+
+		if data.Secret != "" {
+			config["secret"] = data.Secret
+		}
+
+		hook := &github.Hook{
+			Name:   github.String("web"),
+			Config: config,
+			Events: []string{"*"},
+		}
+
+		log.Infof("Updating GitHub webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
+		_, _, err = p.Client.Repositories.EditHook(p.Context, owner, repo, dataId, hook)
+	}
 	return err
 }
 
