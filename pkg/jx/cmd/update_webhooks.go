@@ -90,12 +90,16 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return err
 	}
 
-	baseURL, err := kube.GetServiceURLFromName(options.KubeClientCached, "hook", ns)
+	webhookUrl, err := options.GetWebHookEndpoint()
 	if err != nil {
 		return err
 	}
 
-	webhookUrl := util.UrlJoin(baseURL, "hook")
+	isProwEnabled, err := options.isProw()
+	if err != nil {
+		return err
+	}
+
 	hmacToken, err := options.KubeClientCached.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -137,7 +141,11 @@ func (options *UpdateWebhooksOptions) Run() error {
 							Name: repo.Name,
 						},
 						URL:    webhookUrl,
-						Secret: string(hmacToken.Data["hmac"]),
+
+					}
+
+					if isProwEnabled{
+						webHookArgs.Secret = string(hmacToken.Data["hmac"])
 					}
 
 					log.Infof("Updating WebHook with new args\n")
