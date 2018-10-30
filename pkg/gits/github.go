@@ -336,6 +336,82 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return err
 }
 
+func (p *GitHubProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+
+	if owner == "" {
+		owner = p.Username
+	}
+	if repo == "" {
+		return webHooks, fmt.Errorf("Missing property Repo")
+	}
+
+	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
+	if err != nil {
+		log.Errorf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
+	}
+
+	for _, hook := range hooks {
+		c := hook.Config["url"]
+		s, ok := c.(string)
+		if ok {
+			webHook := &GitWebHookArguments{
+				Owner: owner,
+				Repo:  nil,
+				URL: s,
+			}
+			webHooks = append(webHooks, webHook)
+		}
+	}
+
+	return webHooks, nil
+}
+
+func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	owner := data.Owner
+	if owner == "" {
+		owner = p.Username
+	}
+	repo := data.Repo.Name
+	if repo == "" {
+		return fmt.Errorf("Missing property Repo")
+	}
+	webhookUrl := data.URL
+	if repo == "" {
+		return fmt.Errorf("Missing property URL")
+	}
+	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
+	if err != nil {
+		log.Errorf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
+	}
+	for _, hook := range hooks {
+		c := hook.Config["url"]
+		s, ok := c.(string)
+		if ok && s == webhookUrl {
+			log.Warnf("Found existing webhook for url %s\n", webhookUrl)
+
+			config := map[string]interface{}{
+				"url":          webhookUrl,
+				"content_type": "json",
+			}
+			if data.Secret != "" {
+				config["secret"] = data.Secret
+			}
+
+			hook := &github.Hook{
+				Name:   github.String("web"),
+				Config: config,
+				Events: []string{"*"},
+			}
+
+			log.Infof("Updating GitHub webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
+			_, _, err = p.Client.Repositories.EditHook(p.Context, owner, repo, hook.GetID(), hook)
+		}
+	}
+
+	return err
+}
+
 func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
 	owner := data.GitRepositoryInfo.Organisation
 	repo := data.GitRepositoryInfo.Name
