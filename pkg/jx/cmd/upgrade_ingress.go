@@ -103,7 +103,7 @@ func (o *UpgradeIngressOptions) Run() error {
 		return err
 	}
 
-	previousWebHookEndpoint, err := o.getWebHookEndpoint()
+	previousWebHookEndpoint, err := o.GetWebHookEndpoint()
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func (o *UpgradeIngressOptions) Run() error {
 		log.Info("kubectl describe issuers\n\n")
 	}
 
-	updatedWebHookEndpoint, err := o.getWebHookEndpoint()
+	updatedWebHookEndpoint, err := o.GetWebHookEndpoint()
 	if err != nil {
 		return err
 	}
@@ -447,48 +447,6 @@ func (o *UpgradeIngressOptions) cleanTLSSecrets(ns string) error {
 		}
 	}
 	return nil
-}
-
-func (o *UpgradeIngressOptions) getWebHookEndpoint() (string, error) {
-	_, _, err := o.JXClient()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get jxclient")
-	}
-
-	_, _, err = o.KubeClient()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get kube client")
-	}
-
-	isProwEnabled, err := o.isProw()
-	if err != nil {
-		return "", err
-	}
-
-	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
-	if err != nil {
-		return "", err
-	}
-
-	var webHookUrl string
-
-	if isProwEnabled {
-		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
-		if err != nil {
-			return "", err
-		}
-
-		webHookUrl = util.UrlJoin(baseURL, "hook")
-	} else {
-		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
-		if err != nil {
-			return "", err
-		}
-
-		webHookUrl = util.UrlJoin(baseURL, "github-webhook/")
-	}
-
-	return webHookUrl, nil
 }
 
 func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEndpoint string) error {
