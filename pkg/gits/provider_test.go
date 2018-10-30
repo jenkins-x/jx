@@ -7,10 +7,13 @@ import (
 	"strings"
 	"testing"
 
+	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	mocks "github.com/jenkins-x/jx/pkg/gits/mocks"
+	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type FakeOrgLister struct {
@@ -112,8 +115,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 
 	tests := []struct {
 		description  string
-		setup        func(t *testing.T)
-		cleanup      func(t *testing.T)
+		setup        func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{})
+		cleanup      func(t *testing.T, c *expect.Console, donech chan struct{})
 		Name         string
 		providerKind string
 		hostURL      string
@@ -123,7 +126,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 		username     string
 		apiToken     string
 		batchMode    bool
-		wantError    error
+		wantError    bool
 	}{
 		{"create GitHub provider for one user",
 			nil,
@@ -137,7 +140,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			"test",
 			"test",
 			false,
-			nil,
+			false,
 		},
 		{"create GitHub provider for multiple users",
 			nil,
@@ -151,34 +154,74 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			"test",
 			"test",
 			false,
-			nil,
+			false,
 		},
 		{"create GitHub provider for user from environment",
-			func(t *testing.T) {
+			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindGitHub, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
+				c, _, term := tests.NewTerminal(t)
+				donech := make(chan struct{})
+				go func() {
+					defer close(donech)
+				}()
+				return c, term, donech
 			},
-			func(t *testing.T) {
+			func(t *testing.T, c *expect.Console, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindGitHub)
 				assert.NoError(t, err, "should reset the user auth in environment")
+				err = c.Tty().Close()
+				assert.NoError(t, err, "should close the tty")
+				<-donech
 			},
 			"GitHub",
 			gits.KindGitHub,
-			"https://no-github.com",
+			"https://github.com",
 			git,
 			0,
 			0,
 			"test",
 			"test",
 			false,
+			false,
+		},
+		{"create GitHub provider in barch mode ",
 			nil,
+			nil,
+			"GitHub",
+			gits.KindGitHub,
+			"https://github.com",
+			git,
+			0,
+			0,
+			"",
+			"",
+			true,
+			true,
+		},
+		{"create GitHub provider in interactive mode ",
+			nil,
+			nil,
+			"GitHub",
+			gits.KindGitHub,
+			"https://github.com",
+			git,
+			0,
+			0,
+			"test",
+			"test",
+			true,
+			true,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
+			var console *expect.Console
+			var term *terminal.Stdio
+			var donech chan struct{}
 			if tc.setup != nil {
-				tc.setup(t)
+				console, term, donech = tc.setup(t)
 			}
 			users := []*auth.UserAuth{}
 			var currUser *auth.UserAuth
@@ -209,16 +252,26 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				server = createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
 				authSvc = &auth.AuthConfigService{}
 			}
-			result, err := gits.CreateProviderForURL(*authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, nil, nil, nil)
-			if tc.wantError == nil {
-				assert.NoError(t, err, "should create provider without error")
+
+			var result gits.GitProvider
+			var err error
+			if term != nil {
+				result, err = gits.CreateProviderForURL(*authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, term.In, term.Out, term.Err)
 			} else {
-				assert.Equal(t, tc.wantError, err)
+				result, err = gits.CreateProviderForURL(*authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, nil, nil, nil)
 			}
-			want := createGitProvider(t, tc.providerKind, server, currUser, tc.git)
-			assertProvider(t, want, result)
+			if tc.wantError {
+				assert.Error(t, err, "should fail to create provider")
+				assert.Nil(t, result, "created provider should be nil")
+			} else {
+				assert.NoError(t, err, "should create provider without error")
+				assert.NotNil(t, result, "created provider should not be nil")
+				want := createGitProvider(t, tc.providerKind, server, currUser, tc.git)
+				assert.NotNil(t, want, "expected provider should not be nil")
+				assertProvider(t, want, result)
+			}
 			if tc.cleanup != nil {
-				tc.cleanup(t)
+				tc.cleanup(t, console, donech)
 			}
 		})
 	}
