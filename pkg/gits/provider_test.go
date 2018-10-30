@@ -92,6 +92,10 @@ func createGitProvider(t *testing.T, kind string, server *auth.AuthServer, user 
 		gitlabProvider, err := gits.NewGitlabProvider(server, user, git)
 		assert.NoError(t, err, "should create Gitlab provider without error")
 		return gitlabProvider
+	case gits.KindGitea:
+		giteaProvider, err := gits.NewGiteaProvider(server, user, git)
+		assert.NoError(t, err, "should create Gitea provider without error")
+		return giteaProvider
 	default:
 		return nil
 	}
@@ -206,7 +210,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			true,
 			true,
 		},
-		{"create GitHub provider for in interactive mode",
+		{"create GitHub provider in interactive mode",
 			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
 				c, _, term := utiltests.NewTerminal(t)
 				assert.NotNil(t, c, "console should not be nil")
@@ -257,7 +261,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 			false,
 		},
-		{"create GitHub provider for multiple users",
+		{"create Gitlab provider for multiple users",
 			nil,
 			nil,
 			"Gitlab",
@@ -314,7 +318,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			true,
 			true,
 		},
-		{"create Gitlab provider for in interactive mode",
+		{"create Gitlab provider in interactive mode",
 			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
 				c, _, term := utiltests.NewTerminal(t)
 				assert.NotNil(t, c, "console should not be nil")
@@ -343,6 +347,114 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			"Gitlab",
 			gits.KindGitlab,
 			"https://gitlab.com",
+			git,
+			0,
+			0,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create Gitea provider for one user",
+			nil,
+			nil,
+			"Gitea",
+			gits.KindGitea,
+			"https://gitea.com",
+			git,
+			1,
+			0,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create Gitea provider for multiple users",
+			nil,
+			nil,
+			"Gitea",
+			gits.KindGitea,
+			"https://gitea.com",
+			git,
+			2,
+			1,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create Gitea provider for user from environment",
+			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+				err := setUserAuthInEnv(gits.KindGitea, "test", "test")
+				assert.NoError(t, err, "should configure the user auth in environment")
+				c, _, term := utiltests.NewTerminal(t)
+				donech := make(chan struct{})
+				go func() {
+					defer close(donech)
+				}()
+				return c, term, donech
+			},
+			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+				err := unsetUserAuthInEnv(gits.KindGitea)
+				assert.NoError(t, err, "should reset the user auth in environment")
+				err = c.Tty().Close()
+				assert.NoError(t, err, "should close the tty")
+				<-donech
+			},
+			"Gitea",
+			gits.KindGitea,
+			"https://gitea.com",
+			git,
+			0,
+			0,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create Gitea provider in barch mode ",
+			nil,
+			nil,
+			"Gitea",
+			gits.KindGitea,
+			"https://gitea.com",
+			git,
+			0,
+			0,
+			"",
+			"",
+			true,
+			true,
+		},
+		{"create Gitea provider in interactive mode",
+			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+				c, _, term := utiltests.NewTerminal(t)
+				assert.NotNil(t, c, "console should not be nil")
+				assert.NotNil(t, term, "term should not be nil")
+				donech := make(chan struct{})
+				go func() {
+					defer close(donech)
+					_, err := c.ExpectString("gitea.com user name:")
+					assert.NoError(t, err, "expect user name")
+					_, err = c.SendLine("test")
+					assert.NoError(t, err, "send user name")
+					_, err = c.ExpectString("API Token:")
+					assert.NoError(t, err, "expect API token")
+					_, err = c.SendLine("test")
+					assert.NoError(t, err, "send API token")
+					_, err = c.ExpectEOF()
+					assert.NoError(t, err, "expect EOF")
+				}()
+				return c, term, donech
+			},
+			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+				err := c.Tty().Close()
+				assert.NoError(t, err, "should close the tty")
+				<-donech
+			},
+			"Gitea",
+			gits.KindGitea,
+			"https://gitea.com",
 			git,
 			0,
 			0,
