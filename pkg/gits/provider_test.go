@@ -182,6 +182,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			}
 			users := []*auth.UserAuth{}
 			var currUser *auth.UserAuth
+			var server *auth.AuthServer
+			var authSvc *auth.AuthConfigService
 			if tc.numUsers > 0 {
 				for u := 1; u <= tc.numUsers; u++ {
 					user := &auth.UserAuth{
@@ -197,14 +199,16 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				} else {
 					users = []*auth.UserAuth{}
 				}
+				server = createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
+				authSvc = createAuthConfigSvc(createAuthConfig(server))
 			} else {
 				currUser = &auth.UserAuth{
 					Username: tc.username,
 					ApiToken: tc.apiToken,
 				}
+				server = createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
+				authSvc = &auth.AuthConfigService{}
 			}
-			server := createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
-			authSvc := createAuthConfigSvc(createAuthConfig(server))
 			result, err := gits.CreateProviderForURL(*authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, nil, nil, nil)
 			if tc.wantError == nil {
 				assert.NoError(t, err, "should create provider without error")
