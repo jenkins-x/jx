@@ -166,9 +166,21 @@ func (o *UpgradeIngressOptions) Run() error {
 		return err
 	}
 
-	err = o.updateJenkinsURL(o.TargetNamespaces)
+	_, _, err = o.JXClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to get jxclient")
+	}
+
+	isProwEnabled, err := o.isProw()
 	if err != nil {
 		return err
+	}
+
+	if !isProwEnabled {
+		err = o.updateJenkinsURL(o.TargetNamespaces)
+		if err != nil {
+			return err
+		}
 	}
 	// todo wait for certs secrets to update ingress rules?
 
