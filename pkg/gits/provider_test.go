@@ -3,6 +3,7 @@ package gits_test
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -11,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	mocks "github.com/jenkins-x/jx/pkg/gits/mocks"
-	"github.com/jenkins-x/jx/pkg/tests"
+	utiltests "github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -54,8 +55,10 @@ func Test_getOrganizations(t *testing.T) {
 	}
 }
 
-func createAuthConfigSvc(authConfig *auth.AuthConfig) *auth.AuthConfigService {
-	authConfigSvc := &auth.AuthConfigService{}
+func createAuthConfigSvc(authConfig *auth.AuthConfig, fileName string) *auth.AuthConfigService {
+	authConfigSvc := &auth.AuthConfigService{
+		FileName: fileName,
+	}
 	authConfigSvc.SetConfig(authConfig)
 	return authConfigSvc
 }
@@ -160,7 +163,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindGitHub, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				c, _, term := tests.NewTerminal(t)
+				c, _, term := utiltests.NewTerminal(t)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
@@ -199,9 +202,32 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			true,
 			true,
 		},
-		{"create GitHub provider in interactive mode ",
-			nil,
-			nil,
+		{"create GitHub provider for in interactive mode",
+			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+				c, _, term := utiltests.NewTerminal(t)
+				assert.NotNil(t, c, "console should not be nil")
+				assert.NotNil(t, term, "term should not be nil")
+				donech := make(chan struct{})
+				go func() {
+					defer close(donech)
+					_, err := c.ExpectString("github.com user name:")
+					assert.NoError(t, err, "expect user name")
+					_, err = c.SendLine("test")
+					assert.NoError(t, err, "send user name")
+					_, err = c.ExpectString("API Token:")
+					assert.NoError(t, err, "expect API token")
+					_, err = c.SendLine("test")
+					assert.NoError(t, err, "send API token")
+					_, err = c.ExpectEOF()
+					assert.NoError(t, err, "expect EOF")
+				}()
+				return c, term, donech
+			},
+			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+				err := c.Tty().Close()
+				assert.NoError(t, err, "should close the tty")
+				<-donech
+			},
 			"GitHub",
 			gits.KindGitHub,
 			"https://github.com",
@@ -210,8 +236,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			0,
 			"test",
 			"test",
-			true,
-			true,
+			false,
+			false,
 		},
 	}
 
@@ -227,6 +253,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			var currUser *auth.UserAuth
 			var server *auth.AuthServer
 			var authSvc *auth.AuthConfigService
+
+			configFile, err := ioutil.TempFile("", "test-config")
+			defer os.Remove(configFile.Name())
 			if tc.numUsers > 0 {
 				for u := 1; u <= tc.numUsers; u++ {
 					user := &auth.UserAuth{
@@ -243,18 +272,19 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 					users = []*auth.UserAuth{}
 				}
 				server = createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
-				authSvc = createAuthConfigSvc(createAuthConfig(server))
+				authSvc = createAuthConfigSvc(createAuthConfig(server), configFile.Name())
 			} else {
 				currUser = &auth.UserAuth{
 					Username: tc.username,
 					ApiToken: tc.apiToken,
 				}
 				server = createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
-				authSvc = &auth.AuthConfigService{}
+				authSvc = &auth.AuthConfigService{
+					FileName: configFile.Name(),
+				}
 			}
 
 			var result gits.GitProvider
-			var err error
 			if term != nil {
 				result, err = gits.CreateProviderForURL(*authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, term.In, term.Out, term.Err)
 			} else {
