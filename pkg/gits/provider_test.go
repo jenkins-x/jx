@@ -88,6 +88,10 @@ func createGitProvider(t *testing.T, kind string, server *auth.AuthServer, user 
 		gitHubProvider, err := gits.NewGitHubProvider(server, user, git)
 		assert.NoError(t, err, "should create GitHub provider without error")
 		return gitHubProvider
+	case gits.KindGitlab:
+		gitlabProvider, err := gits.NewGitlabProvider(server, user, git)
+		assert.NoError(t, err, "should create Gitlab provider without error")
+		return gitlabProvider
 	default:
 		return nil
 	}
@@ -231,6 +235,114 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			"GitHub",
 			gits.KindGitHub,
 			"https://github.com",
+			git,
+			0,
+			0,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create Gitlab provider for one user",
+			nil,
+			nil,
+			"Gitlab",
+			gits.KindGitlab,
+			"https://gitlab.com",
+			git,
+			1,
+			0,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create GitHub provider for multiple users",
+			nil,
+			nil,
+			"Gitlab",
+			gits.KindGitHub,
+			"https://gitlab.com",
+			git,
+			2,
+			1,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create Gitlab provider for user from environment",
+			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+				err := setUserAuthInEnv(gits.KindGitlab, "test", "test")
+				assert.NoError(t, err, "should configure the user auth in environment")
+				c, _, term := utiltests.NewTerminal(t)
+				donech := make(chan struct{})
+				go func() {
+					defer close(donech)
+				}()
+				return c, term, donech
+			},
+			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+				err := unsetUserAuthInEnv(gits.KindGitlab)
+				assert.NoError(t, err, "should reset the user auth in environment")
+				err = c.Tty().Close()
+				assert.NoError(t, err, "should close the tty")
+				<-donech
+			},
+			"Gitlab",
+			gits.KindGitlab,
+			"https://gitlab.com",
+			git,
+			0,
+			0,
+			"test",
+			"test",
+			false,
+			false,
+		},
+		{"create Gitlab provider in barch mode ",
+			nil,
+			nil,
+			"Gitlab",
+			gits.KindGitlab,
+			"https://gitlab.com",
+			git,
+			0,
+			0,
+			"",
+			"",
+			true,
+			true,
+		},
+		{"create Gitlab provider for in interactive mode",
+			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+				c, _, term := utiltests.NewTerminal(t)
+				assert.NotNil(t, c, "console should not be nil")
+				assert.NotNil(t, term, "term should not be nil")
+				donech := make(chan struct{})
+				go func() {
+					defer close(donech)
+					_, err := c.ExpectString("gitlab.com user name:")
+					assert.NoError(t, err, "expect user name")
+					_, err = c.SendLine("test")
+					assert.NoError(t, err, "send user name")
+					_, err = c.ExpectString("API Token:")
+					assert.NoError(t, err, "expect API token")
+					_, err = c.SendLine("test")
+					assert.NoError(t, err, "send API token")
+					_, err = c.ExpectEOF()
+					assert.NoError(t, err, "expect EOF")
+				}()
+				return c, term, donech
+			},
+			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+				err := c.Tty().Close()
+				assert.NoError(t, err, "should close the tty")
+				<-donech
+			},
+			"Gitlab",
+			gits.KindGitlab,
+			"https://gitlab.com",
 			git,
 			0,
 			0,
