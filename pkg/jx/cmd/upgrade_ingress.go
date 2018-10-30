@@ -521,5 +521,3 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 
 	return updateWebHook.Run()
 }
-
-
