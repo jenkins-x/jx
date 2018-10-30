@@ -8,7 +8,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/stretchr/testify/assert"
 
@@ -16,58 +15,80 @@ import (
 
 )
 
-func TestPromoteRun(t *testing.T) {
+func TestPromoteToProductionRun(t *testing.T) {
 
-	a, fakePullRequests, commonOptions, err := prepareInitialPromotionEnv(t, true)
+	// prepare the initial setup for testing
+	testEnv, err := prepareInitialPromotionEnv(t, true)
 	assert.NoError(t, err)
 
-	// jx promote -b --timeout 1h --version 1.0.0 --no-helm-update
+	// jx promote --batch-mode --app my-app --env production --version 1.2.0 --no-helm-update --no-poll
+
+	version := "1.2.0"
 
 	o := &cmd.PromoteOptions{
-		Namespace:          "production",
-		Environment:        "production",
-		Application:        "my-app",
+		Environment:        "production", // --env production
+		Application:        "my-app", // --app my-app
 		Pipeline:           "",
 		Build:              "",
-		Version:            "1.0.0", // --version 1.0.0
+		Version:            version, // --version 1.2.0
 		ReleaseName:        "",
 		LocalHelmRepoName:  "",
 		HelmRepositoryURL:  "",
 		NoHelmUpdate:       true, // --no-helm-update
-		AllAutomatic:       true, // --all-auto
+		AllAutomatic:       false,
 		NoMergePullRequest: false,
-		NoPoll:             true, // this needs provider_fake#UpdatePullRequestStatus to be implemented
+		NoPoll:             true, // to test "false" here provider_fake#UpdatePullRequestStatus needs to be implemented
 		NoWaitAfterMerge:   false,
 		IgnoreLocalFiles:   true,
-		Timeout:            "1h", // --timeout 1h
+		Timeout:            "1h",
 		PullRequestPollTime:"20s",
 		Filter:             "",
 		Alias:              "",
-		FakePullRequests:	*fakePullRequests,
-		CommonOptions: 		*commonOptions, // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+		FakePullRequests:	testEnv.FakePullRequests,
 
 		// test settings
 		UseFakeHelm: true,
 	}
+	o.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	o.BatchMode = true // --batch-mode
 
-	log.Infof("Promoting to production version 1.0.0 for app my-app\n",)
+	log.Infof("Promoting to production version %s for app my-app\n", version)
 	err = o.Run()
 	assert.NoError(t, err)
+
+	assert.Equal(t, o.ReleaseInfo.Version, version)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 
-	cmd.AssertHasPullRequestForEnv(t, activities, a.Name, "production")
-	cmd.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
+	cmd.AssertHasPullRequestForEnv(t, activities, testEnv.Activity.Name, "production")
+	cmd.AssertHasPipelineStatus(t, activities, testEnv.Activity.Name, v1.ActivityStatusTypeRunning)
 
-	// more checks
+	cmd.AssertSetPullRequestMerged(t, testEnv.FakeGitProvider, testEnv.ProdRepo, 1)
+	cmd.AssertSetPullRequestComplete(t, testEnv.FakeGitProvider, testEnv.ProdRepo, 1)
 
-	assert.Equal(t, o.ReleaseInfo.Version, "1.0.0")
+	// retry the workflow to actually check the PR was merged and the app is in production
+	cmd.PollGitStatusAndReactToPipelineChanges(t, testEnv.WorkflowOptions, jxClient, ns)
+	cmd.AssertHasPromoteStatus(t, activities, testEnv.Activity.Name, "production", v1.ActivityStatusTypeSucceeded)
 
 }
 
-// Prepares an initial configuration with a typical environment setup
-func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*v1.PipelineActivity, *cmd.CreateEnvPullRequestFn, *cmd.CommonOptions, error) {
+// Contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
+type TestEnv struct {
+	Activity *v1.PipelineActivity
+	FakePullRequests cmd.CreateEnvPullRequestFn
+	WorkflowOptions *cmd.ControllerWorkflowOptions
+	CommonOptions *cmd.CommonOptions
+	FakeGitProvider *gits.FakeProvider
+	DevRepo *gits.FakeRepository
+	StagingRepo *gits.FakeRepository
+	ProdRepo *gits.FakeRepository
+}
+
+// Prepares an initial configuration with a typical environment setup.
+// After a call to this function, version 1.0.0 of my-app is in staging, waiting to be promoted to production.
+// It also prepare fakes of kube, jxClient, etc.
+func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*TestEnv, error) {
 	testOrgName := "myorg"
 	testRepoName := "my-app"
 	stagingRepoName := "environment-staging"
@@ -110,34 +131,34 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 	a, err := cmd.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "1", workflowName)
 	assert.NoError(t, err)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
 	err = o.Run()
 	assert.NoError(t, err)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	cmd.AssertHasPullRequestForEnv(t, activities, a.Name, "staging")
 	cmd.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
 	// react to the new PR in staging
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	// lets make sure we don't create a PR for production as its manual
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	// merge PR in staging repo
 	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo, 1) {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	if !cmd.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 1) {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
 	// react to the PR merge in staging
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	// the pipeline activity succeeded
 	cmd.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
@@ -147,15 +168,17 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 
 	// Promote to staging suceeded...
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
-	// ...and all promote steps were successful
+	// ...and all promote-to-staging steps were successful
 	cmd.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
 
-	return a, &o.FakePullRequests, &o.CommonOptions, nil
-}
-
-func pollGitStatusAndReactToPipelineChanges(t *testing.T, o *cmd.ControllerWorkflowOptions, jxClient versioned.Interface, ns string) error {
-	o.ReloadAndPollGitPipelineStatuses(jxClient, ns)
-	err := o.Run()
-	assert.NoError(t, err, "Failed to react to PipelineActivity changes")
-	return err
+	return &TestEnv{
+		Activity: a,
+		FakePullRequests: o.FakePullRequests,
+		CommonOptions: &o.CommonOptions,
+		WorkflowOptions: o,
+		FakeGitProvider: fakeGitProvider,
+		DevRepo: fakeRepo,
+		StagingRepo: stagingRepo,
+		ProdRepo: prodRepo,
+	}, nil
 }

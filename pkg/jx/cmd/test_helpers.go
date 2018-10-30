@@ -102,7 +102,7 @@ func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) CreateEnvPullRequest
 			for _, repo := range repos {
 				cloneURL := repo.GitRepo.CloneURL
 				if cloneURL == envURL {
-					return createFakePullRequest(repo, env, modifyRequirementsFn, branchNameText, title, message, pullRequestInfo)
+					return createFakePullRequest(repo, env, modifyRequirementsFn, branchNameText, title, message, pullRequestInfo, provider)
 				}
 				values = append(values, cloneURL)
 			}
@@ -132,9 +132,13 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	return a, err
 }
 
-func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
+func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo, provider *gits.FakeProvider) (*ReleasePullRequestInfo, error) {
 	if pullRequestInfo == nil {
 		pullRequestInfo = &ReleasePullRequestInfo{}
+	}
+
+	if pullRequestInfo.GitProvider == nil {
+		pullRequestInfo.GitProvider = provider
 	}
 
 	if pullRequestInfo.PullRequest == nil {
@@ -385,6 +389,13 @@ func AssertPromoteStep(t *testing.T, step *v1.WorkflowStep, expectedEnvironment 
 	if promote != nil {
 		assert.Equal(t, expectedEnvironment, promote.Environment, "environment name")
 	}
+}
+
+func PollGitStatusAndReactToPipelineChanges(t *testing.T, o *ControllerWorkflowOptions, jxClient versioned.Interface, ns string) error {
+	o.ReloadAndPollGitPipelineStatuses(jxClient, ns)
+	err := o.Run()
+	assert.NoError(t, err, "Failed to react to PipelineActivity changes")
+	return err
 }
 
 func dumpActivity(t *testing.T, activities typev1.PipelineActivityInterface, name string) *v1.PipelineActivity {

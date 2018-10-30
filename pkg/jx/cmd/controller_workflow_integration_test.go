@@ -4,7 +4,6 @@ package cmd_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -98,7 +97,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	// still no PR merged so cannot create a PR for production
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	// test no PR on production until staging completed
@@ -106,7 +105,7 @@ func TestSequentialWorkflow(t *testing.T) {
 		return
 	}
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	if !cmd.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 1) {
@@ -114,7 +113,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	}
 
 	// now lets poll again due to change to the activity to detect the staging is complete
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPullRequestForEnv(t, activities, a.Name, "production")
@@ -128,7 +127,7 @@ func TestSequentialWorkflow(t *testing.T) {
 		return
 	}
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
@@ -191,7 +190,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 	cmd.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
 	// lets make sure we don't create a PR for production as its manual
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo, 1) {
@@ -201,7 +200,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		return
 	}
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	cmd.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
@@ -239,13 +238,13 @@ func TestWorkflowManualPromote(t *testing.T) {
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
 	cmd.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
 	cmd.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
@@ -255,13 +254,13 @@ func TestWorkflowManualPromote(t *testing.T) {
 		return
 	}
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
 	cmd.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
 	cmd.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
@@ -271,7 +270,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		return
 	}
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
@@ -373,7 +372,7 @@ func TestParallelWorkflow(t *testing.T) {
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
 
 	// still no PR merged so cannot create a PR for C until A and B complete
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
 
 	// test no PR on production until staging completed
@@ -381,7 +380,7 @@ func TestParallelWorkflow(t *testing.T) {
 		return
 	}
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
 
 	if !cmd.AssertSetPullRequestComplete(t, fakeGitProvider, repoA, 1) {
@@ -389,7 +388,7 @@ func TestParallelWorkflow(t *testing.T) {
 	}
 
 	// now lets poll again due to change to the activity to detect the staging is complete
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
@@ -403,7 +402,7 @@ func TestParallelWorkflow(t *testing.T) {
 		return
 	}
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	// C should have started now
 	cmd.AssertHasPullRequestForEnv(t, activities, a.Name, envNameC)
@@ -419,7 +418,7 @@ func TestParallelWorkflow(t *testing.T) {
 	}
 
 	// should be complete now
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, envNameA, v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeSucceeded)
@@ -511,19 +510,19 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	aOld := a
 	a, err = cmd.CreateTestPipelineActivity(jxClient, ns, testOrgName, testRepoName, "master", "2", myFlowName)
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	cmd.AssertHasPullRequestForEnv(t, activities, a.Name, "staging")
 	cmd.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
 	// lets make sure we don't create a PR for production as we have not completed the staging PR yet
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	cmd.AssertWorkflowStatus(t, activities, aOld.Name, v1.ActivityStatusTypeAborted)
 
 	// still no PR merged so cannot create a PR for production
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	// test no PR on production until staging completed
@@ -531,7 +530,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		return
 	}
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	if !cmd.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 2) {
@@ -539,7 +538,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	}
 
 	// now lets poll again due to change to the activity to detect the staging is complete
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPullRequestForEnv(t, activities, a.Name, "production")
@@ -553,7 +552,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		return
 	}
 
-	pollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
+	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeSucceeded)
@@ -579,11 +578,4 @@ func TestPullRequestNumber(t *testing.T) {
 			assert.Equal(t, expected, actual, "pullRequestURLToNumber() for %s", u)
 		}
 	}
-}
-
-func pollGitStatusAndReactToPipelineChanges(t *testing.T, o *cmd.ControllerWorkflowOptions, jxClient versioned.Interface, ns string) error {
-	o.ReloadAndPollGitPipelineStatuses(jxClient, ns)
-	err := o.Run()
-	assert.NoError(t, err, "Failed to react to PipelineActivity changes")
-	return err
 }
