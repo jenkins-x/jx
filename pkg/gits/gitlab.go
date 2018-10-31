@@ -410,6 +410,15 @@ func (g *GitlabProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return err
 }
 
+func (p *GitlabProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, fmt.Errorf("not implemented!")
+}
+
+func (p *GitlabProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
+}
+
 func (g *GitlabProvider) SearchIssues(org, repo, query string) ([]*GitIssue, error) {
 	opt := &gitlab.ListProjectIssuesOptions{Search: &query}
 	return g.searchIssuesWithOptions(org, repo, opt)

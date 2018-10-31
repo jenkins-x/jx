@@ -630,8 +630,8 @@ func (b *BitbucketServerProvider) UpdateCommitStatus(org string, repo string, sh
 
 func convertBitBucketBuildStatusToGitStatus(buildStatus *bitbucket.BuildStatus) *GitRepoStatus {
 	return &GitRepoStatus{
-		ID:          buildStatus.Key,
-		URL:         buildStatus.Url,
+		ID:  buildStatus.Key,
+		URL: buildStatus.Url,
 		// var from BitBucketCloudProvider
 		State:       stateMap[buildStatus.State],
 		TargetURL:   buildStatus.Url,
@@ -693,6 +693,15 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 	_, err = b.Client.DefaultApi.CreateWebhook(projectKey, repo, requestBody, []string{"application/json"})
 
 	return err
+}
+
+func (p *BitbucketServerProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, fmt.Errorf("not implemented!")
+}
+
+func (p *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
 }
 
 func (b *BitbucketServerProvider) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {

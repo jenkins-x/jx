@@ -2,7 +2,7 @@
 package matchers
 
 import (
-	versioned0 "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	versioned0 "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/petergtz/pegomock"
 	"reflect"
 )

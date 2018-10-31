@@ -122,8 +122,8 @@ func (o *VersionOptions) Run() error {
 	if err != nil {
 		log.Warnf("Failed to get helm version: %s\n", err)
 	} else {
-		helmBinary := o.Helm().HelmBinary()
-		if helmBinary == "helm3" {
+		helmBinary, noTiller, helmTemplate, _ := o.TeamHelmBin()
+		if helmBinary == "helm3" || noTiller || helmTemplate {
 			table.AddRow("helm client", info(output))
 		} else {
 			for i, line := range strings.Split(output, "\n") {

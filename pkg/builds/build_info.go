@@ -1,0 +1,171 @@
+package builds
+
+import (
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	corev1 "k8s.io/api/core/v1"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+)
+
+type BuildPodInfo struct {
+	PodName           string
+	Name              string
+	Organisation      string
+	Repository        string
+	Branch            string
+	Build             string
+	BuildNumber       int
+	Pipeline          string
+	LastCommitSHA     string
+	LastCommitMessage string
+	LastCommitURL     string
+	GitURL            string
+	FirstStepImage    string
+	CreatedTime       time.Time
+	GitInfo           *gits.GitRepositoryInfo
+}
+
+// CreateBuildPodInfo creates a BuildPodInfo from a Pod
+func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
+	branch := ""
+	lastCommitSha := ""
+	lastCommitMessage := ""
+	lastCommitURL := ""
+	build := ""
+	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
+	if err != nil {
+		log.Warnf("Failed to compile regexp because %s", err)
+	}
+	gitURL := ""
+	for _, initContainer := range pod.Spec.InitContainers {
+		if initContainer.Name == "build-step-git-source" {
+			args := initContainer.Args
+			for i := 0; i <= len(args)-2; i += 2 {
+				key := args[i]
+				value := args[i+1]
+
+				switch key {
+				case "-url":
+					gitURL = value
+				case "-revision":
+					if shaRegexp.MatchString(value) {
+						lastCommitSha = value
+					}
+				}
+			}
+		}
+		var pullPullSha, pullBaseSha string
+		for _, v := range initContainer.Env {
+			if v.Name == "PULL_PULL_SHA" {
+				pullPullSha = v.Value
+			}
+			if v.Name == "PULL_BASE_SHA" {
+				pullBaseSha = v.Value
+			}
+			if v.Name == "BRANCH_NAME" {
+				branch = v.Value
+			}
+			if v.Name == "JX_BUILD_NUMBER" {
+				build = v.Value
+			}
+		}
+		if branch == "" {
+			for _, v := range initContainer.Env {
+				if v.Name == "PULL_BASE_REF" {
+					build = v.Value
+				}
+			}
+		}
+		if build == "" {
+			for _, v := range initContainer.Env {
+				if v.Name == "BUILD_NUMBER" || v.Name == "BUILD_ID" {
+					build = v.Value
+				}
+			}
+		}
+		if lastCommitSha == "" && pullPullSha != "" {
+			lastCommitSha = pullPullSha
+		}
+		if lastCommitSha == "" && pullBaseSha != "" {
+			lastCommitSha = pullBaseSha
+		}
+	}
+	if build == "" {
+		build = "1"
+	}
+	if branch == "" {
+		branch = "master"
+	}
+	buildNumber, err := strconv.Atoi(build)
+	if err != nil {
+		buildNumber = 1
+	}
+	answer := &BuildPodInfo{
+		PodName:           pod.Name,
+		Build:             build,
+		BuildNumber:       buildNumber,
+		Branch:            branch,
+		GitURL:            gitURL,
+		LastCommitSHA:     lastCommitSha,
+		LastCommitMessage: lastCommitMessage,
+		LastCommitURL:     lastCommitURL,
+		CreatedTime:       pod.CreationTimestamp.Time,
+	}
+	if len(pod.Spec.InitContainers) > 2 {
+		answer.FirstStepImage = pod.Spec.InitContainers[2].Image
+	}
+
+	if gitURL != "" {
+		gitInfo, err := gits.ParseGitURL(gitURL)
+		if err != nil {
+			log.Warnf("Failed to parse Git URL %s: %s", gitURL, err)
+			return nil
+		}
+		org := gitInfo.Organisation
+		repo := gitInfo.Name
+		answer.GitInfo = gitInfo
+		answer.Organisation = org
+		answer.Repository = repo
+		answer.Pipeline = org + "/" + repo + "/" + branch
+		answer.Name = org + "-" + repo + "-" + branch + "-" + build
+	}
+	return answer
+}
+
+// MatchesPipeline returns true if this build info matches the given pipeline
+func (b *BuildPodInfo) MatchesPipeline(activity *v1.PipelineActivity) bool {
+	d := kube.CreatePipelineDetails(activity)
+	if d == nil {
+		return false
+	}
+	return d.GitOwner == b.Organisation && d.GitRepository == b.Repository && d.Build == b.Build && strings.ToLower(d.BranchName) == strings.ToLower(b.Branch)
+}
+
+type BuildPodInfoOrder []*BuildPodInfo
+
+func (a BuildPodInfoOrder) Len() int      { return len(a) }
+func (a BuildPodInfoOrder) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a BuildPodInfoOrder) Less(i, j int) bool {
+	b1 := a[i]
+	b2 := a[j]
+	if b1.Organisation != b2.Organisation {
+		return b1.Organisation < b2.Organisation
+	}
+	if b1.Repository != b2.Repository {
+		return b1.Repository < b2.Repository
+	}
+	if b1.Branch != b2.Branch {
+		return b1.Branch < b2.Branch
+	}
+	return b1.BuildNumber > b1.BuildNumber
+}
+
+func SortBuildPodInfos(buildPodInfos []*BuildPodInfo) {
+	sort.Sort(BuildPodInfoOrder(buildPodInfos))
+}
