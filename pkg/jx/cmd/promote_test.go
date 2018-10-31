@@ -8,11 +8,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/stretchr/testify/assert"
 
 	"k8s.io/apimachinery/pkg/runtime"
-
 )
 
 func TestPromoteToProductionRun(t *testing.T) {
@@ -25,7 +23,7 @@ func TestPromoteToProductionRun(t *testing.T) {
 
 	version := "1.2.0"
 
-	o := &cmd.PromoteOptions{
+	promoteOptions := &cmd.PromoteOptions{
 		Environment:        "production", // --env production
 		Application:        "my-app", // --app my-app
 		Pipeline:           "",
@@ -37,7 +35,7 @@ func TestPromoteToProductionRun(t *testing.T) {
 		NoHelmUpdate:       true, // --no-helm-update
 		AllAutomatic:       false,
 		NoMergePullRequest: false,
-		NoPoll:             true, // to test "false" here provider_fake#UpdatePullRequestStatus needs to be implemented
+		NoPoll:             true, // --no-poll
 		NoWaitAfterMerge:   false,
 		IgnoreLocalFiles:   true,
 		Timeout:            "1h",
@@ -49,28 +47,176 @@ func TestPromoteToProductionRun(t *testing.T) {
 		// test settings
 		UseFakeHelm: true,
 	}
-	o.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
-	o.BatchMode = true // --batch-mode
+	promoteOptions.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	promoteOptions.BatchMode = true // --batch-mode
 
-	log.Infof("Promoting to production version %s for app my-app\n", version)
-	err = o.Run()
+
+	// Check there is no PR for production env yet
+	jxClient, ns, err := promoteOptions.JXClientAndDevNamespace()
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	cmd.AssertHasNoPullRequestForEnv(t, activities, testEnv.Activity.Name, "production")
+
+	// Run the promotion
+	err = promoteOptions.Run()
 	assert.NoError(t, err)
 
-	assert.Equal(t, o.ReleaseInfo.Version, version)
-
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-
+	// The PR has been created
 	cmd.AssertHasPullRequestForEnv(t, activities, testEnv.Activity.Name, "production")
 	cmd.AssertHasPipelineStatus(t, activities, testEnv.Activity.Name, v1.ActivityStatusTypeRunning)
-
+	// merge
 	cmd.AssertSetPullRequestMerged(t, testEnv.FakeGitProvider, testEnv.ProdRepo, 1)
 	cmd.AssertSetPullRequestComplete(t, testEnv.FakeGitProvider, testEnv.ProdRepo, 1)
 
 	// retry the workflow to actually check the PR was merged and the app is in production
 	cmd.PollGitStatusAndReactToPipelineChanges(t, testEnv.WorkflowOptions, jxClient, ns)
 	cmd.AssertHasPromoteStatus(t, activities, testEnv.Activity.Name, "production", v1.ActivityStatusTypeSucceeded)
+	assert.Equal(t, version, promoteOptions.ReleaseInfo.Version)
 
+}
+
+func TestPromoteToProductionNoMergeRun(t *testing.T) {
+
+	// prepare the initial setup for testing
+	testEnv, err := prepareInitialPromotionEnv(t, true)
+	assert.NoError(t, err)
+
+	// jx promote --batch-mode --app my-app --env production --no-merge --no-helm-update
+
+	promoteOptions := &cmd.PromoteOptions{
+		Environment:        "production", // --env production
+		Application:        "my-app", // --app my-app
+		Pipeline:           "",
+		Build:              "",
+		Version:            "",
+		ReleaseName:        "",
+		LocalHelmRepoName:  "",
+		HelmRepositoryURL:  "",
+		NoHelmUpdate:       true, // --no-helm-update
+		AllAutomatic:       false,
+		NoMergePullRequest: true, // --no-merge
+		NoPoll:             false, // note polling enabled
+		NoWaitAfterMerge:   false,
+		IgnoreLocalFiles:   true,
+		Timeout:            "1h",
+		PullRequestPollTime:"20s",
+		Filter:             "",
+		Alias:              "",
+		FakePullRequests:	testEnv.FakePullRequests,
+
+		// test settings
+		UseFakeHelm: true,
+	}
+
+	promoteOptions.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	promoteOptions.BatchMode = true // --batch-mode
+
+	jxClient, ns, err := promoteOptions.JXClientAndDevNamespace()
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+
+	cmd.AssertHasNoPullRequestForEnv(t, activities, testEnv.Activity.Name, "production")
+
+	ch := make(chan int)
+
+	// run the promote command in parallel
+	go func() {
+		err = promoteOptions.Run()
+		assert.NoError(t, err)
+		close(ch)
+	}()
+
+
+	// wait for the PR the be created by the promote command
+	cmd.WaitForPullRequestForEnv(t, activities, testEnv.Activity.Name, "production")
+	cmd.AssertHasPipelineStatus(t, activities, testEnv.Activity.Name, v1.ActivityStatusTypeRunning)
+
+	// merge the PR created by promote command...
+	cmd.AssertSetPullRequestMerged(t, testEnv.FakeGitProvider, testEnv.ProdRepo, 1)
+	cmd.AssertSetPullRequestComplete(t, testEnv.FakeGitProvider, testEnv.ProdRepo, 1)
+
+	// ...and wait for the Run routine to finish (it was polling on the PR to be merged)
+	<-ch
+
+	// retry the workflow to actually check the PR was merged and the app is in production
+	cmd.PollGitStatusAndReactToPipelineChanges(t, testEnv.WorkflowOptions, jxClient, ns)
+	cmd.AssertHasPromoteStatus(t, activities, testEnv.Activity.Name, "production", v1.ActivityStatusTypeSucceeded)
+
+	//TODO: promoteOptions.ReleaseInfo.Version is empty here. Is this a bug?
+	//assert.Equal(t, "1.0.1", promoteOptions.ReleaseInfo.Version) // default next version
+
+	// however it looks like the activity contains the correct version...
+	assert.Equal(t, "1.0.1", testEnv.Activity.Spec.Version)
+}
+
+func TestPromoteToProductionPRPollingRun(t *testing.T) {
+
+	// prepare the initial setup for testing
+	testEnv, err := prepareInitialPromotionEnv(t, true)
+	assert.NoError(t, err)
+
+	// jx promote --batch-mode --app my-app --env production --no-helm-update
+
+	promoteOptions := &cmd.PromoteOptions{
+		Environment:        "production", // --env production
+		Application:        "my-app", // --app my-app
+		Pipeline:           "",
+		Build:              "",
+		Version:            "",
+		ReleaseName:        "",
+		LocalHelmRepoName:  "",
+		HelmRepositoryURL:  "",
+		NoHelmUpdate:       true, // --no-helm-update
+		AllAutomatic:       false,
+		NoMergePullRequest: false, // note auto-merge enabled
+		NoPoll:             false, // note polling enabled
+		NoWaitAfterMerge:   false,
+		IgnoreLocalFiles:   true,
+		Timeout:            "1h",
+		PullRequestPollTime:"20s",
+		Filter:             "",
+		Alias:              "",
+		FakePullRequests:	testEnv.FakePullRequests,
+
+		// test settings
+		UseFakeHelm: true,
+	}
+
+	promoteOptions.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	promoteOptions.BatchMode = true // --batch-mode
+
+	jxClient, ns, err := promoteOptions.JXClientAndDevNamespace()
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+
+	cmd.AssertHasNoPullRequestForEnv(t, activities, testEnv.Activity.Name, "production")
+
+	ch := make(chan int)
+
+	// run the promote command in parallel
+	go func() {
+		err = promoteOptions.Run()
+		assert.NoError(t, err)
+		close(ch)
+	}()
+
+
+	// wait for the PR the be created by the promote command
+	cmd.WaitForPullRequestForEnv(t, activities, testEnv.Activity.Name, "production")
+	cmd.AssertHasPipelineStatus(t, activities, testEnv.Activity.Name, v1.ActivityStatusTypeRunning)
+
+	// mark latest commit as success tu unblock the promotion (PR will be automatically merged)
+	cmd.AssertSetPullRequestComplete(t, testEnv.FakeGitProvider, testEnv.ProdRepo, 1)
+
+	// ...and wait for the Run routine to finish (it was polling on the PR last commit status success to auto-merge)
+	<-ch
+
+	// retry the workflow to actually check the PR was merged and the app is in production
+	cmd.PollGitStatusAndReactToPipelineChanges(t, testEnv.WorkflowOptions, jxClient, ns)
+	cmd.AssertHasPromoteStatus(t, activities, testEnv.Activity.Name, "production", v1.ActivityStatusTypeSucceeded)
+
+	//TODO: promoteOptions.ReleaseInfo.Version is empty here. Is this a bug?
+	//assert.Equal(t, "1.0.1", promoteOptions.ReleaseInfo.Version) // default next version
+
+	// however it looks like the activity contains the correct version...
+	assert.Equal(t, "1.0.1", testEnv.Activity.Spec.Version)
 }
 
 // Contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
@@ -86,7 +232,7 @@ type TestEnv struct {
 }
 
 // Prepares an initial configuration with a typical environment setup.
-// After a call to this function, version 1.0.0 of my-app is in staging, waiting to be promoted to production.
+// After a call to this function, version 1.0.1 of my-app is in staging, waiting to be promoted to production.
 // It also prepare fakes of kube, jxClient, etc.
 func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*TestEnv, error) {
 	testOrgName := "myorg"

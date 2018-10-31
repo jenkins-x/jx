@@ -222,6 +222,50 @@ func AssertHasPullRequestForEnv(t *testing.T, activities typev1.PipelineActivity
 	dumpFailedActivity(activity)
 }
 
+func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string) {
+	activity, err := activities.Get(name, metav1.GetOptions{})
+	if err != nil {
+		assert.NoError(t, err, "Could not find PipelineActivity %s", name)
+		return
+	}
+	waitTime,_ := time.ParseDuration("20s")
+	end := time.Now().Add(waitTime)
+	for {
+		for _, step := range activity.Spec.Steps {
+			promote := step.Promote
+			if promote != nil {
+				if promote.Environment == envName {
+					failed := false
+					pullRequestStep := promote.PullRequest
+					if pullRequestStep == nil {
+						failed = true
+					}
+					u := pullRequestStep.PullRequestURL
+					log.Infof("Found Promote PullRequest %s on PipelineActivity %s for Environment %s\n", u, name, envName)
+
+					if !assert.True(t, u != "", "No PullRequest URL on PipelineActivity %s for Promote step for Environment %s", name, envName) {
+						failed = true
+					}
+					if !failed {
+						return
+					}
+
+				}
+			}
+		}
+		if time.Now().After(end) {
+			log.Infof("No Promote PR found on PipelineActivity %s for Environment %s\n", name, envName)
+			//assert.Fail(t, "Missing Promote PR", "No Promote PR found on PipelineActivity %s for Environment %s", name, envName)
+			//dumpFailedActivity(activity)
+			return
+		}
+		log.Infof("Waiting 1s for PullRequest in Enviroment %s\n", envName)
+		v,_ := time.ParseDuration("2s")
+		time.Sleep(v)
+		activity, _ = activities.Get(name, metav1.GetOptions{})
+	}
+}
+
 func AssertWorkflowStatus(t *testing.T, activities typev1.PipelineActivityInterface, name string, status v1.ActivityStatusType) {
 	activity, err := activities.Get(name, metav1.GetOptions{})
 	if err != nil {
