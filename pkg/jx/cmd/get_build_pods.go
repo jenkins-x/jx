@@ -15,12 +15,8 @@ import (
 type GetBuildPodsOptions struct {
 	GetOptions
 
-	Namespace  string
-	Owner      string
-	Repository string
-	Branch     string
-	Build      string
-	Filter     string
+	Namespace   string
+	BuildFilter builds.BuildPodInfoFilter
 }
 
 var (
@@ -66,11 +62,12 @@ func NewCmdGetBuildPods(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to look for the build pods. Defaults to the current namespace")
-	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters the build name by the given text")
-	cmd.Flags().StringVarP(&options.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
-	cmd.Flags().StringVarP(&options.Repository, "repo", "r", "", "Filters the build repository")
-	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "Filters the branch")
-	cmd.Flags().StringVarP(&options.Build, "build", "b", "", "Filter a specific build number")
+	cmd.Flags().BoolVarP(&options.BuildFilter.Pending, "pending", "p", false, "Filter builds which are currently pending or running")
+	cmd.Flags().StringVarP(&options.BuildFilter.Filter, "filter", "f", "", "Filters the build name by the given text")
+	cmd.Flags().StringVarP(&options.BuildFilter.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
+	cmd.Flags().StringVarP(&options.BuildFilter.Repository, "repo", "r", "", "Filters the build repository")
+	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
+	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "b", "", "Filter a specific build number")
 	return cmd
 }
 
@@ -90,12 +87,12 @@ func (o *GetBuildPodsOptions) Run() error {
 	}
 
 	table := o.CreateTable()
-	table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "AGE", "STEP 1 IMAGE", "POD", "GIT URL")
+	table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "AGE", "STATUS", "STEP 1 IMAGE", "POD", "GIT URL")
 
 	buildInfos := []*builds.BuildPodInfo{}
 	for _, pod := range pods {
 		buildInfo := builds.CreateBuildPodInfo(pod)
-		if o.BuildMatches(buildInfo) {
+		if o.BuildFilter.BuildMatches(buildInfo) {
 			buildInfos = append(buildInfos, buildInfo)
 		}
 	}
@@ -105,27 +102,8 @@ func (o *GetBuildPodsOptions) Run() error {
 	for _, build := range buildInfos {
 		duration := strings.TrimSuffix(now.Sub(build.CreatedTime).Round(time.Minute).String(), "0s")
 
-		table.AddRow(build.Organisation, build.Repository, build.Branch, build.Build, duration, build.FirstStepImage, build.PodName, build.GitURL)
+		table.AddRow(build.Organisation, build.Repository, build.Branch, build.Build, duration, build.Status(), build.FirstStepImage, build.PodName, build.GitURL)
 	}
 	table.Render()
 	return nil
-}
-
-func (o *GetBuildPodsOptions) BuildMatches(info *builds.BuildPodInfo) bool {
-	if o.Owner != "" && o.Owner != info.Organisation {
-		return false
-	}
-	if o.Repository != "" && o.Repository != info.Repository {
-		return false
-	}
-	if o.Branch != "" && strings.ToLower(o.Branch) != strings.ToLower(info.Branch) {
-		return false
-	}
-	if o.Build != "" && o.Build != info.Build {
-		return false
-	}
-	if o.Filter != "" && !strings.Contains(info.Name, o.Filter) {
-		return false
-	}
-	return true
 }
