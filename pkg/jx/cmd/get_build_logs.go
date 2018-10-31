@@ -28,21 +28,24 @@ import (
 type GetBuildLogsOptions struct {
 	GetOptions
 
-	Tail    bool
-	Filter  string
-	Build   int
-	Pending bool
+	Tail       bool
+	Filter     string
+	Owner      string
+	Repository string
+	Branch     string
+	Build      int
+	Pending    bool
 }
 
 var (
 	get_build_log_long = templates.LongDesc(`
-		Display the Git server URLs.
+		Display a build log
 
 `)
 
 	get_build_log_example = templates.Examples(`
-		# List all registered Git server URLs
-		jx get git
+		# Display a build log
+		jx get build log
 	`)
 )
 
@@ -76,6 +79,9 @@ func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", true, "Tails the build log to the current terminal")
 	cmd.Flags().BoolVarP(&options.Pending, "pending", "p", false, "Only display logs which are currently pending to choose from if no build name is supplied")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
+	cmd.Flags().StringVarP(&options.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
+	cmd.Flags().StringVarP(&options.Repository, "repo", "r", "", "Filters the build repository")
+	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "Filters the branch")
 	cmd.Flags().IntVarP(&options.Build, "build", "b", 0, "The build number to view")
 
 	return cmd
@@ -161,16 +167,31 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 
 	defaultName := ""
 	for _, activity := range pipelineList.Items {
-		pipeline := activity.Spec.Pipeline
-		build := activity.Spec.Build
+		spec := &activity.Spec
+		pipeline := spec.Pipeline
+		build := spec.Build
+		paths := strings.Split(pipeline, "/")
+		branch := ""
+		if len(paths) > 0 {
+			branch = paths[len(paths)-1]
+		}
 		if defaultName == "" && strings.HasSuffix(pipeline, "/master") {
 			defaultName = pipeline
 		}
 		if pipeline == "" || build == "" || (o.Filter != "" && strings.Index(pipeline, o.Filter) < 0) {
 			continue
 		}
+		if o.Owner != "" && o.Owner != spec.GitOwner {
+			continue
+		}
+		if o.Repository != "" && o.Repository != spec.GitRepository {
+			continue
+		}
+		if o.Branch != "" && strings.ToLower(o.Branch) != strings.ToLower(branch) {
+			continue
+		}
 		if o.Pending {
-			status := activity.Spec.Status
+			status := spec.Status
 			if status != v1.ActivityStatusTypePending && status != v1.ActivityStatusTypeRunning && status != v1.ActivityStatusTypeWaitingForApproval {
 				continue
 			}
@@ -241,14 +262,12 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	}
 
 	for _, pod := range pods {
-		log.Infof("found pod %s\n", pod.Name)
 		initContainers := pod.Spec.InitContainers
 		if len(initContainers) > 0 {
 			lastInitC := initContainers[len(initContainers)-1]
-			params := BuildParams{}
-			params.DefaultValuesFromEnvVars(lastInitC.Env)
 
-			if params.MatchesPipeline(build) {
+			buildInfo := builds.CreateBuildPodInfo(pod)
+			if buildInfo.MatchesPipeline(build) {
 				return o.getPodLog(ns, pod, lastInitC)
 			}
 		}
@@ -260,44 +279,4 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {
 	log.Infof("Getting the pod log for pod %s and init container %s\n", pod.Name, container.Name)
 	return o.tailLogs(ns, pod.Name, container.Name)
-}
-
-type BuildParams struct {
-	GitOwner      string
-	GitRepository string
-	BranchName    string
-	BuildNumber   string
-}
-
-// DefaultValuesFromEnvVars defaults values from the environment variables
-func (p *BuildParams) DefaultValuesFromEnvVars(envVars []corev1.EnvVar) {
-	for _, buildNumberKey := range []string{"JX_BUILD_NUMBER", "BUILD_NUMBER", "BUILD_ID"} {
-		for _, env := range envVars {
-			value := env.Value
-			switch env.Name {
-			case "BRANCH_NAME":
-				p.BranchName = value
-			case "REPO_NAME":
-				p.GitRepository = value
-			case "REPO_OWNER":
-				p.GitOwner = value
-			case buildNumberKey:
-				if p.BuildNumber == "" {
-					p.BuildNumber = value
-				}
-			}
-		}
-	}
-}
-
-// MatchesPipeline returns true if the given pipeline matches the build parameters
-func (p *BuildParams) MatchesPipeline(activity *v1.PipelineActivity) bool {
-	if p.GitOwner == "" || p.GitRepository == "" || p.BranchName == "" || p.BuildNumber == "" {
-		return false
-	}
-	d := kube.CreatePipelineDetails(activity)
-	if d == nil {
-		return false
-	}
-	return d.GitOwner == p.GitOwner && d.GitRepository == p.GitRepository && d.Build == p.BuildNumber && d.BranchName == p.BranchName
 }

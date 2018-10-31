@@ -706,7 +706,9 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 					log.Infoln("Rebasing PullRequest due to conflict")
 
 					err = o.PromoteViaPullRequest(env, releaseInfo)
-					pullRequestInfo = releaseInfo.PullRequestInfo
+					if releaseInfo.PullRequestInfo != nil {
+						pullRequestInfo = releaseInfo.PullRequestInfo
+					}
 				}
 			}
 			if time.Now().After(end) {

@@ -58,6 +58,10 @@ type GitProvider interface {
 
 	CreateWebHook(data *GitWebHookArguments) error
 
+	ListWebHooks(org string, repo string) ([]*GitWebHookArguments, error)
+
+	UpdateWebHook(data *GitWebHookArguments) error
+
 	IsGitHub() bool
 
 	IsGitea() bool

@@ -234,6 +234,15 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return err
 }
 
+func (p *GiteaProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, fmt.Errorf("not implemented!")
+}
+
+func (p *GiteaProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
+}
+
 func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
 	owner := data.GitRepositoryInfo.Organisation
 	repo := data.GitRepositoryInfo.Name

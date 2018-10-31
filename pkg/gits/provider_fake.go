@@ -377,6 +377,15 @@ func (f *FakeProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return nil
 }
 
+func (p *FakeProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, nil
+}
+
+func (p *FakeProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
+}
+
 func (f *FakeProvider) IsGitHub() bool {
 	return f.Type == GitHub
 }
