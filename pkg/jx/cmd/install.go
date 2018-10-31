@@ -273,7 +273,7 @@ func (options *InstallOptions) Run() error {
 		helmer := options.Helm()
 		helmCli, ok := helmer.(*helm.HelmCLI)
 		if ok && helmCli != nil {
-			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client)
+			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client, originalNs)
 		} else {
 			helmTemplate, ok := helmer.(*helm.HelmTemplate)
 			if ok {

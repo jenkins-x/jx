@@ -101,6 +101,15 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 
+	kubeClient, curNs, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	extensionsConfig, err := (&jenkinsv1.ExtensionConfigList{}).LoadFromConfigMap(extensionsConfigDefaultConfigMap, kubeClient, curNs)
+	if err != nil {
+		return err
+	}
+
 	extensionsRepository := jenkinsv1.ExtensionRepositoryLockList{}
 	var bs []byte
 
@@ -130,7 +139,10 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	} else {
 		extensionsRepository := o.ExtensionsRepository
 		if extensionsRepository == "" {
-			extensionsRepository = "github.com/jenkins-x/jenkins-x-extensions"
+			extensionsRepository = extensionsConfig.RepositoryUrl
+		}
+		if extensionsRepository == "" {
+			extensionsRepository = upstreamExtensionsRepositoryUrl
 		}
 		if strings.HasPrefix(extensionsRepository, "github.com") {
 			_, repoInfo, err := o.createGitProviderForURLWithoutKind(extensionsRepository)
@@ -165,14 +177,6 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 	extensionsClient := client.JenkinsV1().Extensions(ns)
-	kubeClient, curNs, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	extensionsConfig, err := (&jenkinsv1.ExtensionConfigList{}).LoadFromConfigMap(extensionsConfigDefaultConfigMap, kubeClient, curNs)
-	if err != nil {
-		return err
-	}
 
 	availableExtensionsUUIDLookup := make(map[string]jenkinsv1.ExtensionSpec, 0)
 	for _, e := range extensionsRepository.Extensions {

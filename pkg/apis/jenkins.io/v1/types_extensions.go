@@ -154,7 +154,8 @@ type EnvironmentVariable struct {
 
 // ExtensionsConfigList contains a list of ExtensionConfig items
 type ExtensionConfigList struct {
-	Extensions []ExtensionConfig `json:"extensions"`
+	Extensions    []ExtensionConfig `json:"extensions"`
+	RepositoryUrl string            `json:"repositoryUrl"`
 }
 
 // ExtensionConfig is the configuration and enablement for an extension inside an app
