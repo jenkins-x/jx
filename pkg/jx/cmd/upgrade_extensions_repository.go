@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,6 +10,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/extensions"
 
 	"github.com/blang/semver"
 
@@ -200,15 +203,15 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	return nil
 }
 
-func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag string, oldLockNameMap map[string]jenkinsv1.ExtensionSpec, oldLookupByUUID map[string]jenkinsv1.ExtensionSpec) (extensions []jenkinsv1.ExtensionSpec, err error) {
-	result := make([]jenkinsv1.ExtensionSpec, 0)
+func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag string, oldLockNameMap map[string]jenkinsv1.ExtensionSpec, oldLookupByUUID map[string]jenkinsv1.ExtensionSpec) (result []jenkinsv1.ExtensionSpec, err error) {
+	result = make([]jenkinsv1.ExtensionSpec, 0)
 	if strings.HasPrefix(remote, "github.com") {
-		s := strings.Split(remote, "/")
-		if len(s) != 3 {
-			errors.New(fmt.Sprintf("Cannot parse extension path %s", util.ColorInfo(remote)))
+		gitProvider, repoInfo, err := o.createGitProviderForURLWithoutKind(remote)
+		if err != nil {
+			return result, err
 		}
-		org := s[1]
-		repo := s[2]
+		org := repoInfo.Organisation
+		repo := repoInfo.Name
 		resolvedTag := tag
 		if resolvedTag == "" {
 			resolvedTag = "latest"
@@ -220,10 +223,24 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 			}
 			resolvedTag = fmt.Sprintf("v%s", resolvedTag)
 		}
-		definitionsUrl := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s", org, repo, resolvedTag)
-		definitionsFileUrl := fmt.Sprintf("%s/jenkins-x-extension-definitions.yaml", definitionsUrl)
+
+		content, err := gitProvider.GetContent(org, repo, extensions.ExtensionsDefinitionFile, resolvedTag)
+		if err != nil {
+			return result, err
+		}
 		extensionDefinitions := jenkinsv1.ExtensionDefinitionList{}
-		extensionDefinitions.LoadFromURL(definitionsFileUrl, remote, resolvedTag)
+		if content != nil {
+			bs, err := base64.StdEncoding.DecodeString(content.Content)
+			if err != nil {
+				return result, err
+			}
+			err = yaml.Unmarshal(bs, &extensionDefinitions)
+			if err != nil {
+				return result, err
+			}
+		} else {
+			return result, fmt.Errorf("No content returned")
+		}
 		for _, ed := range extensionDefinitions.Extensions {
 			// It's best practice to assign a UUID to an extension, but if it doesn't have one we
 			// try to give it the one it had last
@@ -256,7 +273,18 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 					if scriptFile == "" {
 						scriptFile = fmt.Sprintf("%s.sh", strings.ToLower(strcase.SnakeCase(ed.Name)))
 					}
-					script, err = o.LoadAsStringFromURL(fmt.Sprintf("%s/%s", definitionsUrl, scriptFile))
+					content, err = gitProvider.GetContent(org, repo, scriptFile, resolvedTag)
+					if err != nil {
+						return result, err
+					}
+					if content != nil {
+						err = yaml.Unmarshal([]byte(content.Content), &script)
+						if err != nil {
+							return result, err
+						}
+					} else {
+						return result, fmt.Errorf("No content returned")
+					}
 					if err != nil {
 						return result, err
 					}

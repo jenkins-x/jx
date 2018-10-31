@@ -709,7 +709,38 @@ func (p *GitHubProvider) UpdateCommitStatus(org string, repo string, sha string,
 	}, nil
 }
 
+func (p *GitHubProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	fileContent, _, _, err := p.Client.Repositories.GetContents(p.Context, org, name, path, &github.RepositoryContentGetOptions{Ref: ref})
+	if err != nil {
+		return nil, err
+	}
+	if fileContent != nil {
+		return &GitFileContent{
+			Name:        notNullString(fileContent.Name),
+			Url:         notNullString(fileContent.URL),
+			Path:        notNullString(fileContent.Path),
+			Type:        notNullString(fileContent.Type),
+			Content:     notNullString(fileContent.Content),
+			DownloadUrl: notNullString(fileContent.DownloadURL),
+			Encoding:    notNullString(fileContent.Encoding),
+			GitUrl:      notNullString(fileContent.GitURL),
+			HtmlUrl:     notNullString(fileContent.HTMLURL),
+			Sha:         notNullString(fileContent.SHA),
+			Size:        notNullInt(fileContent.Size),
+		}, nil
+	} else {
+		return nil, fmt.Errorf("Directory Content not yet supported")
+	}
+}
+
 func notNullInt64(n *int64) int64 {
+	if n != nil {
+		return *n
+	}
+	return 0
+}
+
+func notNullInt(n *int) int {
 	if n != nil {
 		return *n
 	}
