@@ -21,6 +21,7 @@ type UpdateWebhooksOptions struct {
 	Org             string
 	ExactHookMatch  bool
 	PreviousHookUrl string
+	DryRun          bool
 }
 
 var (
@@ -89,12 +90,16 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return err
 	}
 
-	baseURL, err := kube.GetServiceURLFromName(options.KubeClientCached, "hook", ns)
+	webhookUrl, err := options.GetWebHookEndpoint()
 	if err != nil {
 		return err
 	}
 
-	webhookUrl := util.UrlJoin(baseURL, "hook")
+	isProwEnabled, err := options.isProw()
+	if err != nil {
+		return err
+	}
+
 	hmacToken, err := options.KubeClientCached.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -135,13 +140,18 @@ func (options *UpdateWebhooksOptions) Run() error {
 						Repo: &gits.GitRepositoryInfo{
 							Name: repo.Name,
 						},
-						URL:    webhookUrl,
-						Secret: string(hmacToken.Data["hmac"]),
+						URL: webhookUrl,
+					}
+
+					if isProwEnabled {
+						webHookArgs.Secret = string(hmacToken.Data["hmac"])
 					}
 
 					log.Infof("Updating WebHook with new args\n")
 
-					git.UpdateWebHook(webHookArgs)
+					if !options.DryRun {
+						git.UpdateWebHook(webHookArgs)
+					}
 				}
 			}
 		}
