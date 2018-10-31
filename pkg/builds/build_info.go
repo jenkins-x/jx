@@ -1,12 +1,15 @@
 package builds
 
 import (
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -133,6 +136,15 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		answer.Name = org + "-" + repo + "-" + branch + "-" + build
 	}
 	return answer
+}
+
+// MatchesPipeline returns true if this build info matches the given pipeline
+func (b *BuildPodInfo) MatchesPipeline(activity *v1.PipelineActivity) bool {
+	d := kube.CreatePipelineDetails(activity)
+	if d == nil {
+		return false
+	}
+	return d.GitOwner == b.Organisation && d.GitRepository == b.Repository && d.Build == b.Build && strings.ToLower(d.BranchName) == strings.ToLower(b.Branch)
 }
 
 type BuildPodInfoOrder []*BuildPodInfo
