@@ -896,6 +896,12 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 		Args: []string{"plugin", "install", "https://github.com/futuresimple/helm-secrets"},
 	}
 	_, err = cmd.RunWithoutRetry()
+	// Workaround for Helm install on Windows caused by https://github.com/helm/helm/issues/4418
+	if err != nil && runtime.GOOS == "windows" && strings.Contains(err.Error(), "Error: symlink") {
+		// The install _does_ seem to work, but we get an error - catch this on windows and lob it in the bin
+		return nil
+	}
+	// End of Workaround
 	return err
 }
 
@@ -1494,7 +1500,7 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 		return GetSafeUsername(username), nil
 	}
 
-	config, _, err := kube.LoadConfig()
+	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
 		return username, err
 	}

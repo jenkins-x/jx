@@ -27,7 +27,7 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.AuthConfigService, er
 		secrets, err = o.LoadPipelineSecrets(kube.ValueKindGit, "")
 		if err != nil {
 
-			kubeConfig, _, configLoadErr := kube.LoadConfig()
+			kubeConfig, _, configLoadErr := o.Kube().LoadConfig()
 			if configLoadErr != nil {
 				log.Warnf("WARNING: Could not load config: %s", configLoadErr)
 			}

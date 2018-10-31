@@ -50,6 +50,7 @@ const (
 type factory struct {
 	Batch bool
 
+	kubeConfig      kube.Kuber
 	impersonateUser string
 	bearerToken     string
 }
@@ -58,7 +59,9 @@ type factory struct {
 // if optionalClientConfig is nil, then flags will be bound to a new clientcmd.ClientConfig.
 // if optionalClientConfig is not nil, then this factory will make use of it.
 func NewFactory() Factory {
-	return &factory{}
+	f := &factory{}
+	f.kubeConfig = kube.NewKubeConfig()
+	return f
 }
 
 func (f *factory) SetBatch(batch bool) {
@@ -280,7 +283,7 @@ func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	kubeConfig, _, err := kube.LoadConfig()
+	kubeConfig, _, err := f.kubeConfig.LoadConfig()
 	if err != nil {
 		return nil, "", err
 	}
@@ -297,7 +300,7 @@ func (f *factory) CreateDynamicClient() (*dynamic.APIHelper, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	kubeConfig, _, err := kube.LoadConfig()
+	kubeConfig, _, err := f.kubeConfig.LoadConfig()
 	if err != nil {
 		return nil, "", err
 	}
@@ -338,7 +341,7 @@ func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
 		return nil, "", fmt.Errorf("Failed to create Kubernetes Client")
 	}
 	ns := ""
-	config, _, err := kube.LoadConfig()
+	config, _, err := f.kubeConfig.LoadConfig()
 	if err != nil {
 		return client, ns, err
 	}
