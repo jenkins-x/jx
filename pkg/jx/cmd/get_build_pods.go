@@ -118,7 +118,7 @@ func (o *GetBuildPodsOptions) BuildMatches(info *builds.BuildPodInfo) bool {
 	if o.Repository != "" && o.Repository != info.Repository {
 		return false
 	}
-	if o.Branch != "" && o.Branch != info.Branch {
+	if o.Branch != "" && strings.ToLower(o.Branch) != strings.ToLower(info.Branch) {
 		return false
 	}
 	if o.Build != "" && o.Build != info.Build {
