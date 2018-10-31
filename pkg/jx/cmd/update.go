@@ -54,6 +54,7 @@ func NewCmdUpdate(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	}
 
 	cmd.AddCommand(NewCmdUpdateCluster(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpdateWebhooks(f, in, out, errOut))
 
 	return cmd
 }

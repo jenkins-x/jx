@@ -74,6 +74,7 @@ func NewCmdGC(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut
 	cmd.AddCommand(NewCmdGCPreviews(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGCGKE(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGCHelm(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGCPods(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGCReleases(f, in, out, errOut))
 
 	return cmd

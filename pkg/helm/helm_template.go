@@ -1,10 +1,17 @@
 package helm
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/table"
 	"io/ioutil"
+	"k8s.io/helm/pkg/chartutil"
+	"k8s.io/helm/pkg/proto/hapi/chart"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,6 +25,11 @@ import (
 )
 
 const (
+	// AnnotationChartName stores the chart name
+	AnnotationChartName = "jenkins.io/chart"
+	// AnnotationAppVersion stores the chart's app version
+	AnnotationAppVersion = "jenkins.io/chart-app-version"
+
 	// LabelReleaseName stores the chart release name
 	LabelReleaseName = "jenkins.io/chart-release"
 
@@ -38,10 +50,23 @@ type HelmTemplate struct {
 	Runner          util.Commander
 	KubectlValidate bool
 	KubeClient      kubernetes.Interface
+	Namespace       string
+}
+
+type ChartListing struct {
+	Chart         string
+	Revision      string
+	Updated       string
+	Status        string
+	ChartFullName string
+	ChartVersion  string
+	ReleaseName   string
+	AppVersion    string
+	Namespace     string
 }
 
 // NewHelmTemplate creates a new HelmTemplate instance configured to the given client side Helmer
-func NewHelmTemplate(client *HelmCLI, workDir string, kubeClient kubernetes.Interface) *HelmTemplate {
+func NewHelmTemplate(client *HelmCLI, workDir string, kubeClient kubernetes.Interface, ns string) *HelmTemplate {
 	cli := &HelmTemplate{
 		Client:          client,
 		WorkDir:         workDir,
@@ -50,6 +75,7 @@ func NewHelmTemplate(client *HelmCLI, workDir string, kubeClient kubernetes.Inte
 		CWD:             client.CWD,
 		KubectlValidate: false,
 		KubeClient:      kubeClient,
+		Namespace:       ns,
 	}
 	return cli
 }
@@ -129,7 +155,60 @@ func (h *HelmTemplate) BuildDependency() error {
 
 // ListCharts execute the helm list command and returns its output
 func (h *HelmTemplate) ListCharts() (string, error) {
-	return h.Client.ListCharts()
+	ns := h.Namespace
+	list, _ := h.KubeClient.AppsV1beta1().Deployments(ns).List(metav1.ListOptions{})
+	var buffer bytes.Buffer
+	writer := bufio.NewWriter(&buffer)
+	t := table.CreateTable(writer)
+	t.Separator = "\t"
+	t.AddRow("NAME", "REVISION", "UPDATED", "STATUS", "CHART", "APP VERSION", "NAMESPACE")
+	if list != nil {
+		keys := []string{}
+		charts := map[string]*ChartListing{}
+		for _, deploy := range list.Items {
+			labels := deploy.Labels
+			ann := deploy.Annotations
+			if labels != nil && ann != nil {
+				status := "ERROR"
+				if deploy.Status.Replicas > 0 {
+					if deploy.Status.UnavailableReplicas > 0 {
+						status = "PENDING"
+					} else {
+						status = "DEPLOYED"
+					}
+				}
+				updated := deploy.CreationTimestamp.Format("Mon Jan 2 15:04:05 2006")
+				chartName := ann[AnnotationChartName]
+				chartVersion := labels[LabelReleaseChartVersion]
+				info := &ChartListing{
+					Chart:         chartName,
+					ChartFullName: chartName + "-" + chartVersion,
+					Revision:      strconv.FormatInt(deploy.Generation, 10),
+					Updated:       updated,
+					Status:        status,
+					ChartVersion:  chartVersion,
+					ReleaseName:   labels[LabelReleaseName],
+					AppVersion:    ann[AnnotationAppVersion],
+					Namespace:     ns,
+				}
+				key := info.ReleaseName
+				if charts[key] == nil {
+					charts[key] = info
+					keys = append(keys, key)
+				}
+			}
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			info := charts[key]
+			if info != nil {
+				t.AddRow(key, info.Revision, info.Updated, info.Status, info.ChartFullName, info.AppVersion, info.Namespace)
+			}
+		}
+	}
+	t.Render()
+	writer.Flush()
+	return buffer.String(), nil
 }
 
 // SearchChartVersions search all version of the given chart
@@ -183,12 +262,12 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	_, versionText, err := h.getChartNameAndVersion(chartDir, version)
+	metadata, versionText, err := h.getChart(chartDir, version)
 	if err != nil {
 		return err
 	}
 
-	helmHooks, err := h.addLabelsToFiles(releaseName, versionText)
+	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata)
 	if err != nil {
 		return err
 	}
@@ -239,12 +318,12 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	_, versionText, err := h.getChartNameAndVersion(chartDir, version)
+	metadata, versionText, err := h.getChart(chartDir, version)
 	if err != nil {
 		return err
 	}
 
-	helmHooks, err := h.addLabelsToFiles(releaseName, versionText)
+	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata)
 	if err != nil {
 		return err
 	}
@@ -450,15 +529,15 @@ func (h *HelmTemplate) chartNameToFolder(chart string, dir string) (string, erro
 	return answer, nil
 }
 
-func (h *HelmTemplate) addLabelsToFiles(releaseName string, version string) ([]*HelmHook, error) {
+func (h *HelmTemplate) addLabelsToFiles(chart string, releaseName string, version string, metadata *chart.Metadata) ([]*HelmHook, error) {
 	dir, helmHookDir, _, err := h.getDirectories(releaseName)
 	if err != nil {
 		return nil, err
 	}
-	return addLabelsToChartYaml(dir, helmHookDir, releaseName, version)
+	return addLabelsToChartYaml(dir, helmHookDir, chart, releaseName, version, metadata)
 }
 
-func addLabelsToChartYaml(dir string, hooksDir string, releaseName string, version string) ([]*HelmHook, error) {
+func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata) ([]*HelmHook, error) {
 	helmHooks := []*HelmHook{}
 
 	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
@@ -506,6 +585,25 @@ func addLabelsToChartYaml(dir string, hooksDir string, releaseName string, versi
 				return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
 			}
 			err = setYamlValue(&m, version, "metadata", "labels", LabelReleaseChartVersion)
+			if err != nil {
+				return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
+			}
+			chartName := ""
+
+			if metadata != nil {
+				chartName = metadata.GetName()
+				appVersion := metadata.GetAppVersion()
+				if appVersion != "" {
+					err = setYamlValue(&m, appVersion, "metadata", "annotations", AnnotationAppVersion)
+					if err != nil {
+						return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
+					}
+				}
+			}
+			if chartName == "" {
+				chartName = chart
+			}
+			err = setYamlValue(&m, chartName, "metadata", "annotations", AnnotationChartName)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
 			}
@@ -593,7 +691,7 @@ func setYamlValue(mapSlice *yaml.MapSlice, value string, keys ...string) error {
 				found = true
 				if last {
 					(*m)[i].Value = value
-				} else {
+				} else if i < len(*m) {
 					value := (*m)[i].Value
 					if value == nil {
 						v := &yaml.MapSlice{}
@@ -658,6 +756,9 @@ func (h *HelmTemplate) runKubectlWithOutput(args ...string) (string, error) {
 // getChartNameAndVersion returns the chart name and version for the current chart folder
 func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) (string, string, error) {
 	versionText := ""
+	if version != nil && *version != "" {
+		versionText = *version
+	}
 	file := filepath.Join(chartDir, "Chart.yaml")
 	if !filepath.IsAbs(chartDir) {
 		file = filepath.Join(h.Runner.CurrentDir(), file)
@@ -670,10 +771,31 @@ func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) 
 		return "", versionText, fmt.Errorf("No file %s found!", file)
 	}
 	chartName, versionText, err := LoadChartNameAndVersion(file)
+	return chartName, versionText, err
+}
+
+// getChart returns the chart metadata for the given dir
+func (h *HelmTemplate) getChart(chartDir string, version *string) (*chart.Metadata, string, error) {
+	versionText := ""
 	if version != nil && *version != "" {
 		versionText = *version
 	}
-	return chartName, versionText, err
+	file := filepath.Join(chartDir, "Chart.yaml")
+	if !filepath.IsAbs(chartDir) {
+		file = filepath.Join(h.Runner.CurrentDir(), file)
+	}
+	exists, err := util.FileExists(file)
+	if err != nil {
+		return nil, versionText, err
+	}
+	if !exists {
+		return nil, versionText, fmt.Errorf("No file %s found!", file)
+	}
+	metadata, err := chartutil.LoadChartfile(file)
+	if versionText == "" && metadata != nil {
+		versionText = metadata.GetVersion()
+	}
+	return metadata, versionText, err
 }
 
 func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, chart string, releaseName string, wait bool, create bool) error {
