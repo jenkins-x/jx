@@ -134,6 +134,20 @@ type GitWebHookArguments struct {
 	Secret string
 }
 
+type GitFileContent struct {
+	Type        string
+	Encoding    string
+	Size        int
+	Name        string
+	Path        string
+	Content     string
+	Sha         string
+	Url         string
+	GitUrl      string
+	HtmlUrl     string
+	DownloadUrl string
+}
+
 // IsClosed returns true if the PullRequest has been closed
 func (pr *GitPullRequest) IsClosed() bool {
 	return pr.ClosedAt != nil

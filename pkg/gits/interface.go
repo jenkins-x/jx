@@ -94,6 +94,8 @@ type GitProvider interface {
 
 	ListReleases(org string, name string) ([]*GitRelease, error)
 
+	GetContent(org string, name string, path string, ref string) (*GitFileContent, error)
+
 	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
 	//
 
