@@ -95,6 +95,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenForced(t *testing
 }
 
 func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotMatch(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
 	factory, kubeMock := setupUninstall("current-context")
 
 	// mock terminal
@@ -131,6 +132,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 }
 
 func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
 	factory, kubeMock := setupUninstall("correct-context-to-delete")
 
 	// mock terminal
