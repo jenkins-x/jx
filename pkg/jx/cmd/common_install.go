@@ -505,10 +505,15 @@ func (o *CommonOptions) installOc() error {
 // get the latest version from kubernetes, parse it and return it
 func (o *CommonOptions) getLatestVersionFromKubernetesReleaseUrl() (sem semver.Version, err error) {
 	response, err := http.Get(stableKubeCtlVersionURL)
+
 	if err != nil {
 		return semver.Version{}, fmt.Errorf("Cannot get url " + stableKubeCtlVersionURL)
 	}
 	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return semver.Version{}, fmt.Errorf("download of %s failed with return code %d", stableKubeCtlVersionURL, response.StatusCode)
+	}
+
 
 	bytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
