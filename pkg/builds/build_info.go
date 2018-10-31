@@ -29,6 +29,16 @@ type BuildPodInfo struct {
 	FirstStepImage    string
 	CreatedTime       time.Time
 	GitInfo           *gits.GitRepositoryInfo
+	Pod               *corev1.Pod
+}
+
+type BuildPodInfoFilter struct {
+	Owner      string
+	Repository string
+	Branch     string
+	Build      string
+	Filter     string
+	Pending    bool
 }
 
 // CreateBuildPodInfo creates a BuildPodInfo from a Pod
@@ -107,6 +117,7 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		buildNumber = 1
 	}
 	answer := &BuildPodInfo{
+		Pod:               pod,
 		PodName:           pod.Name,
 		Build:             build,
 		BuildNumber:       buildNumber,
@@ -138,6 +149,44 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 	return answer
 }
 
+// BuildMatches returns true if the build info matches the filter
+func (o *BuildPodInfoFilter) BuildMatches(info *BuildPodInfo) bool {
+	if o.Owner != "" && o.Owner != info.Organisation {
+		return false
+	}
+	if o.Repository != "" && o.Repository != info.Repository {
+		return false
+	}
+	if o.Branch != "" && strings.ToLower(o.Branch) != strings.ToLower(info.Branch) {
+		return false
+	}
+	if o.Build != "" && o.Build != info.Build {
+		return false
+	}
+	if o.Filter != "" && !strings.Contains(info.Name, o.Filter) {
+		return false
+	}
+	if o.Pending {
+		status := info.Status()
+		if status != "Pending" && status != "Running" {
+			return false
+		}
+	}
+	return true
+}
+
+// BuildNumber returns the integer build number filter if specified
+func (o *BuildPodInfoFilter) BuildNumber() int {
+	text := o.Build
+	if text != "" {
+		answer, err := strconv.Atoi(text)
+		if err != nil {
+			return answer
+		}
+	}
+	return 0
+}
+
 // MatchesPipeline returns true if this build info matches the given pipeline
 func (b *BuildPodInfo) MatchesPipeline(activity *v1.PipelineActivity) bool {
 	d := kube.CreatePipelineDetails(activity)
@@ -145,6 +194,15 @@ func (b *BuildPodInfo) MatchesPipeline(activity *v1.PipelineActivity) bool {
 		return false
 	}
 	return d.GitOwner == b.Organisation && d.GitRepository == b.Repository && d.Build == b.Build && strings.ToLower(d.BranchName) == strings.ToLower(b.Branch)
+}
+
+// Status returns the build status
+func (b *BuildPodInfo) Status() string {
+	pod := b.Pod
+	if pod == nil {
+		return "No Pod"
+	}
+	return string(pod.Status.Phase)
 }
 
 type BuildPodInfoOrder []*BuildPodInfo
