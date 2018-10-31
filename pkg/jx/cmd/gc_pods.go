@@ -1,46 +1,44 @@
 package cmd
 
 import (
-	"fmt"
-	"io"
-	"sort"
-	"strconv"
-	"strings"
-
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
-// GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
-// referencing the cmd.Flags()
-type GCActivitiesOptions struct {
+// GCPodsOptions containers the CLI options
+type GCPodsOptions struct {
 	CommonOptions
 
-	RevisionHistoryLimit int
-	jclient              gojenkins.JenkinsClient
+	Selector  string
+	Namespace string
+	Age       time.Duration
 }
 
 var (
-	GCActivitiesLong = templates.LongDesc(`
-		Garbage collect the Jenkins X Activity Custom Resource Definitions
-
+	GCPodsLong = templates.LongDesc(`
+		Garbage collect old Pods that have completed or failed
 `)
 
-	GCActivitiesExample = templates.Examples(`
-		jx garbage collect activities
-		jx gc activities
+	GCPodsExample = templates.Examples(`
+		# garbage collect old pods of the default age
+		jx gc pods
+
+		# garbage collect pods older than 10 minutes
+		jx gc pods -a 10m
+
 `)
 )
 
-// NewCmd s a command object for the "step" command
-func NewCmdGCActivities(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &GCActivitiesOptions{
+// NewCmdGCPods creates the command object
+func NewCmdGCPods(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := &GCPodsOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
 			In:      in,
@@ -50,10 +48,10 @@ func NewCmdGCActivities(f Factory, in terminal.FileReader, out terminal.FileWrit
 	}
 
 	cmd := &cobra.Command{
-		Use:     "activities",
-		Short:   "garbage collection for activities",
-		Long:    GCActivitiesLong,
-		Example: GCActivitiesExample,
+		Use:     "pods",
+		Short:   "garbage collection for pods",
+		Long:    GCPodsLong,
+		Example: GCPodsExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -61,117 +59,67 @@ func NewCmdGCActivities(f Factory, in terminal.FileReader, out terminal.FileWrit
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "l", 5, "Minimum number of Activities per application to keep")
+	cmd.Flags().StringVarP(&options.Selector, "selector", "s", "", "The selector to use to filter the pods")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to look for the pods. Defaults to the current namespace")
+	cmd.Flags().DurationVarP(&options.Age, "age", "a", time.Hour, "The minimum age of pods to garbage collect. Any newer pods will be kept")
 	options.addCommonFlags(cmd)
 	return cmd
 }
 
 // Run implements this command
-func (o *GCActivitiesOptions) Run() error {
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
+func (o *GCPodsOptions) Run() error {
+	kubeClient, ns, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
 
-	kubeClient, _, err := o.KubeClient()
+	if o.Namespace != "" {
+		ns = o.Namespace
+	}
+
+	opts := metav1.ListOptions{
+		LabelSelector: o.Selector,
+	}
+	podInterface := kubeClient.CoreV1().Pods(ns)
+	podList, err := podInterface.List(opts)
 	if err != nil {
 		return err
 	}
 
-	client, currentNs, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-
-	// cannot use field selectors like `spec.kind=Preview` on CRDs so list all environments
-	activities, err := client.JenkinsV1().PipelineActivities(currentNs).List(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	if len(activities.Items) == 0 {
-		// no preview environments found so lets return gracefully
-		if o.Verbose {
-			log.Info("no activities found\n")
-		}
-		return nil
-	}
-
-	prowEnabled, err := kube.IsProwEnabled(kubeClient, currentNs)
-	if err != nil {
-		return err
-	}
-
-	var jobNames []string
-	if !prowEnabled {
-		o.jclient, err = o.JenkinsClient()
-		if err != nil {
-			return err
-		}
-
-		jobs, err := o.jclient.GetJobs()
-		if err != nil {
-			return err
-		}
-		for _, j := range jobs {
-			err = o.getAllPipelineJobNames(o.jclient, &jobNames, j.Name)
+	deleteOptions := &metav1.DeleteOptions{}
+	errors := []error{}
+	for _, pod := range podList.Items {
+		matches, age := o.MatchesPod(&pod)
+		if matches {
+			err := podInterface.Delete(pod.Name, deleteOptions)
 			if err != nil {
-				return err
+				log.Warnf("Failed to delete pod %s in namespace %s: %s\n", pod.Name, ns, err)
+				errors = append(errors, err)
+			} else {
+				log.Infof("Deleted pod %s in namespace %s with phase %s as its age is: %s\n", pod.Name, ns, string(pod.Status.Phase), age.Round(time.Minute).String())
 			}
 		}
 	}
+	return util.CombineErrors(errors...)
+}
 
-	activityBuilds := make(map[string][]int)
+// MatchesPod returns true if this pod can be garbage collected
+func (o *GCPodsOptions) MatchesPod(pod *corev1.Pod) (bool, time.Duration) {
+	phase := pod.Status.Phase
+	now := time.Now()
 
-	for _, a := range activities.Items {
-		if !prowEnabled {
-			// if activity has no job in Jenkins delete it
-			matched := false
-			for _, j := range jobNames {
-				if a.Spec.Pipeline == j {
-					matched = true
-					break
-				}
+	finished := now.Add(-1000 * time.Hour)
+	for _, s := range pod.Status.ContainerStatuses {
+		terminated := s.State.Terminated
+		if terminated != nil {
+			if terminated.FinishedAt.After(finished) {
+				finished = terminated.FinishedAt.Time
 			}
-			if !matched {
-				err = client.JenkinsV1().PipelineActivities(currentNs).Delete(a.Name, metav1.NewDeleteOptions(0))
-				if err != nil {
-					return err
-				}
-			}
-		}
-
-		buildNumber, err := strconv.Atoi(a.Spec.Build)
-		if err != nil {
-			return err
-		}
-		// collect all activities for a pipeline
-		activityBuilds[a.Spec.Pipeline] = append(activityBuilds[a.Spec.Pipeline], buildNumber)
-	}
-
-	for pipeline, builds := range activityBuilds {
-
-		sort.Ints(builds)
-
-		// iterate over the build numbers and delete any while the activity is under the RevisionHistoryLimit
-		i := 0
-		for i < len(builds)-o.RevisionHistoryLimit {
-			activityName := fmt.Sprintf("%s-%v", pipeline, builds[i])
-			activityName = strings.Replace(activityName, "/", "-", -1)
-			activityName = strings.Replace(activityName, "_", "-", -1)
-			activityName = strings.ToLower(activityName)
-
-			err = client.JenkinsV1().PipelineActivities(currentNs).Delete(activityName, metav1.NewDeleteOptions(0))
-			if err != nil {
-				return fmt.Errorf("failed to delete activity %s: %v\n", activityName, err)
-			}
-
-			i++
 		}
 	}
-
-	return nil
+	age := now.Sub(finished)
+	if phase != corev1.PodSucceeded && phase != corev1.PodFailed {
+		return false, age
+	}
+	return age > o.Age, age
 }
