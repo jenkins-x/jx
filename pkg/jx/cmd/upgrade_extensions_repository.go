@@ -100,6 +100,7 @@ func NewCmdUpgradeExtensionsRepository(f Factory, in terminal.FileReader, out te
 	cmd.Flags().StringVarP(&options.InputFile, "input-file", "i", "jenkins-x-extensions-repository.yaml", "The input file to read to generate the .lock file")
 	cmd.Flags().StringVarP(&options.OutputFile, "output-file", "o", "jenkins-x-extensions-repository.lock.yaml", "The output .lock file")
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
+	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Enable batch mode")
 	return cmd
 }
 
