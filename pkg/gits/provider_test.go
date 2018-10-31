@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	mocks "github.com/jenkins-x/jx/pkg/gits/mocks"
 	utiltests "github.com/jenkins-x/jx/pkg/tests"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -125,6 +126,22 @@ func unsetUserAuthInEnv(kind string) error {
 		return err
 	}
 	return os.Unsetenv(prefix + "_API_TOKEN")
+}
+
+func getAndCleanEnviron(kind string) (map[string]string, error) {
+	prefix := strings.ToUpper(kind)
+	keys := []string{
+		prefix + "_USERNAME",
+		prefix + "_API_TOKEN",
+		"GIT_USERNAME",
+		"GIT_API_TOKEN",
+	}
+	return util.GetAndCleanEnviron(keys)
+}
+
+func restoreEnviron(t *testing.T, environ map[string]string) {
+	err := util.RestoreEnviron(environ)
+	assert.NoError(t, err, "should restore the env variable")
 }
 
 func TestCreateGitProviderFromURL(t *testing.T) {
@@ -691,17 +708,21 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
+			environ, err := getAndCleanEnviron(tc.providerKind)
+			assert.NoError(t, err, "should clean the env variables")
+			defer restoreEnviron(t, environ)
+
 			var console *expect.Console
 			var term *terminal.Stdio
 			var donech chan struct{}
 			if tc.setup != nil {
 				console, term, donech = tc.setup(t)
 			}
+
 			users := []*auth.UserAuth{}
 			var currUser *auth.UserAuth
 			var server *auth.AuthServer
 			var authSvc *auth.AuthConfigService
-
 			configFile, err := ioutil.TempFile("", "test-config")
 			defer os.Remove(configFile.Name())
 			if tc.numUsers > 0 {
@@ -748,6 +769,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				assert.NotNil(t, want, "expected provider should not be nil")
 				assertProvider(t, want, result)
 			}
+
 			if tc.cleanup != nil {
 				tc.cleanup(t, console, donech)
 			}
