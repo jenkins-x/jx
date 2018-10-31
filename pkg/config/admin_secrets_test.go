@@ -17,6 +17,7 @@ func TestAdminSecrets(t *testing.T) {
 	assert.NoError(t, err)
 	secretsFromFile := config.AdminSecretsConfig{}
 	err = yaml.Unmarshal(testFile, &secretsFromFile)
+	assert.NoError(t, err)
 
 	service := config.AdminSecretsService{}
 	service.Flags.DefaultAdminPassword = "mysecret"
@@ -25,7 +26,6 @@ func TestAdminSecrets(t *testing.T) {
 
 	secretsFromService := service.Secrets
 	tests.Debugf("%s", secretsFromService)
-	assert.NoError(t, err)
 
 	assert.Equal(t, secretsFromFile, secretsFromService, "expected admin secret values do not match")
 }

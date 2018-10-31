@@ -17,6 +17,7 @@ func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
 	assert.NoError(t, err)
 	helmValuesFromFile := config.HelmValuesConfig{}
 	err = yaml.Unmarshal(testFile, &helmValuesFromFile)
+	assert.NoError(t, err)
 
 	a := make(map[string]string)
 	a["helm.sh/hook"] = "post-install,post-upgrade"
