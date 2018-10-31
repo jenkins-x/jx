@@ -59,6 +59,7 @@ func NewCmdGetBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 	}
 
 	cmd.AddCommand(NewCmdGetBuildLogs(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetBuildPods(f, in, out, errOut))
 	return cmd
 }
 
