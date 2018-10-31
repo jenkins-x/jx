@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This scipt is intended to be used to simulate a long running execution. Currently used in command_test.go
+# This script is intended to be used to simulate a long running execution. Currently used in command_test.go
 
 set -e
 

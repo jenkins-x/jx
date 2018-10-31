@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"os"
 	"path"
+	"runtime"
 )
 
 const DefaultRegion = "us-west-2"
@@ -15,7 +16,7 @@ func NewAwsSession(profileOption string, regionOption string) (*session.Session,
 	if regionOption != "" {
 		config.Region = aws.String(regionOption)
 	}
-	if _, err := os.Stat(path.Join(os.Getenv("HOME"), ".aws", "credentials")); !os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(UserHomeDir(), ".aws", "credentials")); !os.IsNotExist(err) {
 		config.Credentials = credentials.NewChainCredentials(
 			[]credentials.Provider{
 				&credentials.EnvProvider{},
@@ -58,4 +59,16 @@ func ResolveRegion(profileOption string, regionOption string) (string, error) {
 
 func ResolveRegionWithoutOptions() (string, error) {
 	return ResolveRegion("", "")
+}
+
+// UserHomeDir returns the home directory for the user the process is running under.
+// This is a copy of shareddefaults.UserHomeDir in the internal AWS package.
+// We can't user user.Current().HomeDir as we want to override this during testing. :-|
+func UserHomeDir() string {
+	if runtime.GOOS == "windows" { // Windows
+		return os.Getenv("USERPROFILE")
+	}
+
+	// *nix
+	return os.Getenv("HOME")
 }
