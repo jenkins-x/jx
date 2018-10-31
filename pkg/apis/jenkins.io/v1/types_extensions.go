@@ -368,7 +368,7 @@ func (e *ExtensionSpec) Contains(whens []ExtensionWhen, when ExtensionWhen) bool
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 
-// CommitStatus represents the commit statuses for a particular pipeline run
+// CommitStatus represents the commit statuses for a particular pull request
 type CommitStatus struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
@@ -391,6 +391,10 @@ type CommitStatusList struct {
 
 // CommitStatusSpec provides details of a particular commit status
 type CommitStatusSpec struct {
+	Items []CommitStatusDetails `json:"items"  protobuf:"bytes,1,opt,name=items"`
+}
+
+type CommitStatusDetails struct {
 	PipelineActivity ResourceReference           `json:"pipelineActivity"  protobuf:"bytes,1,opt,name=pipelineActivity"`
 	Items            []CommitStatusItem          `json:"Items,omitempty"  protobuf:"bytes,2,opt,name=Items"`
 	Checked          bool                        `json:"checked"  protobuf:"bytes,3,opt,name=checked"`

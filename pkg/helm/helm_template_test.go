@@ -2,6 +2,7 @@ package helm
 
 import (
 	"io/ioutil"
+	"k8s.io/helm/pkg/proto/hapi/chart"
 	"os"
 	"path"
 	"path/filepath"
@@ -28,10 +29,16 @@ func TestAddYamlLabels(t *testing.T) {
 	err = util.CopyDir(testData, outDir, true)
 	assert.NoError(t, err)
 
-	expectedChartName := "cheese"
+	expectedChartName := "mychart"
+	expectedChartRelease := "cheese"
 	expectedChartVersion := "1.2.3"
 
-	helmHooks, err := addLabelsToChartYaml(outDir, hooksDir, expectedChartName, expectedChartVersion)
+	chartMetadata := &chart.Metadata{
+		Name:    expectedChartName,
+		Version: expectedChartVersion,
+	}
+
+	helmHooks, err := addLabelsToChartYaml(outDir, hooksDir, expectedChartName, expectedChartRelease, expectedChartVersion, chartMetadata)
 	assert.NoError(t, err, "Failed to add labels to YAML")
 
 	err = filepath.Walk(outDir, func(path string, f os.FileInfo, err error) error {
@@ -50,7 +57,7 @@ func TestAddYamlLabels(t *testing.T) {
 					if labels != nil {
 						key := LabelReleaseName
 						actual := labels[key]
-						assert.Equal(t, expectedChartName, actual, "Failed to find label %s on Service YAML %s", key, path)
+						assert.Equal(t, expectedChartRelease, actual, "Failed to find label %s on Service YAML %s", key, path)
 						//log.Infof("Found label %s = %s for file %s\n", key, actual, path)
 
 						key = LabelReleaseChartVersion
