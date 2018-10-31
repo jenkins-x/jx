@@ -37,8 +37,21 @@ var (
 `)
 
 	get_build_log_example = templates.Examples(`
-		# Display a build log
+		# Display a build log - with the user choosing which repo + build to view
 		jx get build log
+
+		# Pick a build to view the log based on the repo cheese
+		jx get build log --repo cheese
+
+		# Pick a pending knative build to view the log based 
+		jx get build log -p
+
+		# Pick a pending knative build to view the log based on the repo cheese
+		jx get build log --repo cheese -p
+
+		# Pick a knative build for the 1234 Pull Request on the repo cheese
+		jx get build log --repo cheese --branch PR-1234
+
 	`)
 )
 
