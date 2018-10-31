@@ -163,7 +163,7 @@ func (a BuildPodInfoOrder) Less(i, j int) bool {
 	if b1.Branch != b2.Branch {
 		return b1.Branch < b2.Branch
 	}
-	return b1.BuildNumber > b1.BuildNumber
+	return b1.BuildNumber > b2.BuildNumber
 }
 
 func SortBuildPodInfos(buildPodInfos []*BuildPodInfo) {
