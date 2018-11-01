@@ -10,7 +10,7 @@
 #### Submitter checklist
 
 - [ ] Change is code complete and matches issue description.
-- [ ] Change is covered by tests (new or existing).
+- [ ] Change is covered by existing or new tests.
 
 #### Description
 
