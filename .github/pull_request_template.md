@@ -9,8 +9,8 @@
 
 **What this PR does / Why we need it**:
 
-**Which issue this PR fixes** *(optional, in `fixes #<issue number>(, fixes #<issue_number>, ...)` format, will close that issue when PR gets merged)*: fixes #
-
-**Does your PR has tests**:
+**Does your PR have tests**:
 
 **Special notes for your reviewer**:
+
+**Which issue this PR fixes** *(optional, in `fixes #<issue number>(, fixes #<issue_number>, ...)` format, will close that issue when PR gets merged)*: fixes #
