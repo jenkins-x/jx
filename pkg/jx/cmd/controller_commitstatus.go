@@ -3,8 +3,11 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/jenkins-x/jx/pkg/prow"
 
@@ -68,6 +71,9 @@ func NewCmdControllerCommitStatus(f Factory, in terminal.FileReader, out termina
 
 // Run implements this command
 func (o *ControllerCommitStatusOptions) Run() error {
+	// Always run in batch mode as a controller is never run interactively
+	o.BatchMode = true
+
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -153,7 +159,7 @@ func (o *ControllerCommitStatusOptions) onCommitStatus(check *jenkinsv1.CommitSt
 	for _, v := range check.Spec.Items {
 		err := o.update(&v, jxClient, ns)
 		if err != nil {
-			gitProvider, gitRepoInfo, err1 := o.createGitProviderForURLWithoutKind(v.Commit.GitURL)
+			gitProvider, gitRepoInfo, err1 := o.getGitProvider(v.Commit.GitURL)
 			if err1 != nil {
 				return err1
 			}
@@ -240,6 +246,9 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 						contexts, err := prow.GetBranchProtectionContexts(org, repo)
 						if err != nil {
 							return err
+						}
+						if o.Verbose {
+							log.Infof("Using contexts %v\n", contexts)
 						}
 						for _, ctx := range contexts {
 							if pullRequest != "" {
@@ -347,7 +356,7 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 }
 
 func (o *ControllerCommitStatusOptions) update(statusDetails *jenkinsv1.CommitStatusDetails, jxClient jenkinsv1client.Interface, ns string) error {
-	gitProvider, gitRepoInfo, err := o.createGitProviderForURLWithoutKind(statusDetails.Commit.GitURL)
+	gitProvider, gitRepoInfo, err := o.getGitProvider(statusDetails.Commit.GitURL)
 	if err != nil {
 		return err
 	}
@@ -383,10 +392,43 @@ func (o *ControllerCommitStatusOptions) update(statusDetails *jenkinsv1.CommitSt
 			}
 		}
 	} else {
-		_, err = extensions.NotifyCommitStatus(statusDetails.Commit, "pending", "", "Waiting for commit statusDetails checks to complete", "", statusDetails.Context, gitProvider, gitRepoInfo)
+		_, err = extensions.NotifyCommitStatus(statusDetails.Commit, "pending", "", fmt.Sprintf("Waiting for %s to complete", statusDetails.Context), "", statusDetails.Context, gitProvider, gitRepoInfo)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (o *ControllerCommitStatusOptions) getGitProvider(url string) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
+	// TODO This is an epic hack to get the git stuff working
+	gitInfo, err := gits.ParseGitURL(url)
+	if err != nil {
+		return nil, nil, err
+	}
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, nil, err
+	}
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, server := range authConfigSvc.Config().Servers {
+		if server.Kind == gitKind && len(server.Users) >= 1 {
+			// Just grab the first user for now
+			username := server.Users[0].Username
+			apiToken := server.Users[0].ApiToken
+			err = os.Setenv("GIT_USERNAME", username)
+			if err != nil {
+				return nil, nil, err
+			}
+			err = os.Setenv("GIT_API_TOKEN", apiToken)
+			if err != nil {
+				return nil, nil, err
+			}
+			break
+		}
+	}
+	return o.createGitProviderForURLWithoutKind(url)
 }
