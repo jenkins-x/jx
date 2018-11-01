@@ -392,7 +392,7 @@ func (o *ControllerCommitStatusOptions) update(statusDetails *jenkinsv1.CommitSt
 			}
 		}
 	} else {
-		_, err = extensions.NotifyCommitStatus(statusDetails.Commit, "pending", "", "Waiting for commit statusDetails checks to complete", "", statusDetails.Context, gitProvider, gitRepoInfo)
+		_, err = extensions.NotifyCommitStatus(statusDetails.Commit, "pending", "", fmt.Sprintf("Waiting for %s to complete", statusDetails.Context), "", statusDetails.Context, gitProvider, gitRepoInfo)
 		if err != nil {
 			return err
 		}
