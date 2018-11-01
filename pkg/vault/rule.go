@@ -16,6 +16,14 @@ const (
 	ListCapability   = "list"
 	SudoCapability   = "sudo"
 	RootCapability   = "root"
+
+	PathRulesName  = "allow_secrets"
+	PathRulePrefix = "secrets/*"
+	PoliciesName   = "policies"
+)
+
+var (
+	DefaultSecretsCapabiltities = []string{CreateCapability, ReadCapability, UpdateCapability, DeleteCapability, ListCapability}
 )
 
 // PathRule defines a path rule
