@@ -71,7 +71,7 @@ func (o *GetVaultOptions) Run() error {
 	}
 	vaultOperatorClient, err := o.VaultOperatorClient()
 	if err != nil {
-		return errors.Wrap(err, "creating vault opeator client")
+		return errors.Wrap(err, "creating vault operator client")
 	}
 
 	vaults, err := kube.GetVaults(client, vaultOperatorClient, o.Namespace)
