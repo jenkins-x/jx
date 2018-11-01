@@ -23,7 +23,7 @@ echo "Installing the code-generator"
 VERSION='kubernetes-1.11.3'
 CODE_GENERATOR='./hack/code-generator'
 rm -rf ${CODE_GENERATOR} 2>/dev/null 
-git clone --branch ${VERSION} git@github.com:kubernetes/code-generator.git ${CODE_GENERATOR} 2>/dev/null 
+git clone --branch ${VERSION} https://github.com/kubernetes/code-generator.git ${CODE_GENERATOR} 2>/dev/null
 
 export GO111MODULE=on 
 SCRIPT_ROOT=$(dirname ${BASH_SOURCE})/..

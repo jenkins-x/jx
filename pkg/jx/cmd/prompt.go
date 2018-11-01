@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 	"os"
 	"strings"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -97,7 +97,7 @@ func NewCmdPrompt(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 // Run implements this command
 func (o *PromptOptions) Run() error {
-	config, _, err := kube.LoadConfig()
+	config, _, err := o.Kube().LoadConfig()
 
 	context := config.CurrentContext
 	namespace := kube.CurrentNamespace(config)

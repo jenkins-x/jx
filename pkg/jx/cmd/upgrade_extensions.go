@@ -35,9 +35,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-//const upstreamExtensionsRepositoryUrl = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.lock.yaml"
-const upstreamExtensionsRepositoryUrl = "github.com/jenkins-x/jenkins-x-extensions"
-const extensionsConfigDefaultConfigMap = "jenkins-x-extensions"
+//const upstreamExtensionsRepositoryGitHub = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.lock.yaml"
+const upstreamExtensionsRepositoryGitHub = "github.com/jenkins-x/jenkins-x-extensions"
 
 var (
 	upgradeExtensionsLong = templates.LongDesc(`
@@ -101,6 +100,15 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 
+	kubeClient, curNs, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	extensionsList, err := (&jenkinsv1.ExtensionConfigList{}).LoadFromConfigMap(extensions.ExtensionsConfigDefaultConfigMap, kubeClient, curNs)
+	if err != nil {
+		return err
+	}
+
 	extensionsRepository := jenkinsv1.ExtensionRepositoryLockList{}
 	var bs []byte
 
@@ -128,30 +136,51 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			}
 		}
 	} else {
-		extensionsRepository := o.ExtensionsRepository
-		if extensionsRepository == "" {
-			extensionsRepository = "github.com/jenkins-x/jenkins-x-extensions"
-		}
-		if strings.HasPrefix(extensionsRepository, "github.com") {
-			_, repoInfo, err := o.createGitProviderForURLWithoutKind(extensionsRepository)
-			if err != nil {
-				return err
-			}
-			resolvedTag, err := util.GetLatestTagFromGitHub(repoInfo.Organisation, repoInfo.Name)
-			if err != nil {
-				return err
-			}
-			extensionsRepository = fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/jenkins-x-extensions-repository.lock.yaml", repoInfo.Organisation, repoInfo.Name, resolvedTag)
-		}
-		log.Infof("Updating extensions from %s\n", extensionsRepository)
-		httpClient := &http.Client{Timeout: 10 * time.Second}
-		resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", extensionsRepository, time.Now().UnixNano()/int64(time.Millisecond)))
-
-		defer resp.Body.Close()
-
-		bs, err = ioutil.ReadAll(resp.Body)
+		extensionsConfig, err := extensions.GetOrCreateExtensionsConfig(kubeClient, curNs)
 		if err != nil {
 			return err
+		}
+		current := jenkinsv1.ExtensionRepositoryReference{}
+		err = yaml.Unmarshal([]byte(extensionsConfig.Data[jenkinsv1.ExtensionsConfigRepository]), &current)
+		if err != nil {
+			return err
+		}
+		if current.Chart.Name != "" {
+			unpackDir, err := ioutil.TempDir("", "jenkins-x-extensions-chart")
+			if err != nil {
+				return err
+			}
+			err = o.Helm().FetchChart(fmt.Sprintf("%s/%s", current.Chart.RepoName, current.Chart.Name), nil, true, unpackDir)
+			if err != nil {
+				return err
+			}
+			bs, err = ioutil.ReadFile(filepath.Join(unpackDir, current.Chart.Name, "repository", "jenkins-x-extensions-repository.lock.yaml"))
+			if err != nil {
+				return errors.New(fmt.Sprintf("Unable to fetch Extensions Repository Helm Chart %s/%s becasue %v", current.Chart.RepoName, current.Chart.Name, err))
+			}
+		} else {
+			extensionsRepositoryUrl := current.Url
+			if current.GitHub != "" {
+				_, repoInfo, err := o.createGitProviderForURLWithoutKind(fmt.Sprintf("github.com/%s", current.GitHub))
+				if err != nil {
+					return err
+				}
+				resolvedTag, err := util.GetLatestTagFromGitHub(repoInfo.Organisation, repoInfo.Name)
+				if err != nil {
+					return err
+				}
+				extensionsRepositoryUrl = fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/jenkins-x-extensions-repository.lock.yaml", repoInfo.Organisation, repoInfo.Name, resolvedTag)
+			}
+			log.Infof("Updating extensions from %s\n", extensionsRepositoryUrl)
+			httpClient := &http.Client{Timeout: 10 * time.Second}
+			resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", extensionsRepositoryUrl, time.Now().UnixNano()/int64(time.Millisecond)))
+
+			defer resp.Body.Close()
+
+			bs, err = ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -165,14 +194,6 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 	extensionsClient := client.JenkinsV1().Extensions(ns)
-	kubeClient, curNs, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	extensionsConfig, err := (&jenkinsv1.ExtensionConfigList{}).LoadFromConfigMap(extensionsConfigDefaultConfigMap, kubeClient, curNs)
-	if err != nil {
-		return err
-	}
 
 	availableExtensionsUUIDLookup := make(map[string]jenkinsv1.ExtensionSpec, 0)
 	for _, e := range extensionsRepository.Extensions {
@@ -191,7 +212,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 	needsUpstalling := make([]jenkinsv1.ExtensionExecution, 0)
 	for _, e := range extensionsRepository.Extensions {
 		// TODO this is not very efficient probably
-		for _, c := range extensionsConfig.Extensions {
+		for _, c := range extensionsList.Extensions {
 			if c.Name == e.Name && c.Namespace == e.Namespace {
 				n, err := o.UpsertExtension(&e, extensionsClient, installedExtensions, c, availableExtensionsUUIDLookup, 0, 0)
 				if err != nil {

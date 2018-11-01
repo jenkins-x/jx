@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 	"sort"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -68,7 +68,7 @@ func NewCmdContext(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 }
 
 func (o *ContextOptions) Run() error {
-	config, po, err := kube.LoadConfig()
+	config, po, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
 	}
@@ -116,11 +116,13 @@ func (o *ContextOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to update the kube config %s", err)
 		}
-		fmt.Fprintf(o.Out, "Now using namespace '%s' from context named '%s' on server '%s'.\n", info(ctx.Namespace), info(newConfig.CurrentContext), info(kube.Server(config, ctx)))
+		fmt.Fprintf(o.Out, "Now using namespace '%s' from context named '%s' on server '%s'.\n",
+			info(ctx.Namespace), info(newConfig.CurrentContext), info(kube.Server(config, ctx)))
 	} else {
 		ns := kube.CurrentNamespace(config)
 		server := kube.CurrentServer(config)
-		fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n", info(ns), info(config.CurrentContext), info(server))
+		fmt.Fprintf(o.Out, "Using namespace '%s' from context named '%s' on server '%s'.\n",
+			info(ns), info(config.CurrentContext), info(server))
 	}
 	return nil
 }

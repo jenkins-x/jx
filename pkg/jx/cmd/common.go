@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"net/url"
 	"os"
@@ -74,6 +74,7 @@ type CommonOptions struct {
 	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
+	Kuber               kube.Kuber
 	vaultOperatorClient vaultoperatorclient.Interface
 
 	Prow
@@ -270,8 +271,8 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
 		o.helm = helmCLI
 		if helmTemplate {
-			kubeClient, _, _ := o.KubeClient()
-			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient)
+			kubeClient, ns, _ := o.KubeClient()
+			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient, ns)
 		} else {
 			o.helm = helmCLI
 		}
@@ -281,6 +282,13 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		}
 	}
 	return o.helm
+}
+
+func (o *CommonOptions) Kube() kube.Kuber {
+	if o.Kuber == nil {
+		o.Kuber = kube.NewKubeConfig()
+	}
+	return o.Kuber
 }
 
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
@@ -885,4 +893,46 @@ func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, er
 		o.vaultOperatorClient = vaultOperatorClient
 	}
 	return o.vaultOperatorClient, nil
+}
+
+func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
+	_, _, err := o.JXClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get jxclient")
+	}
+
+	_, _, err = o.KubeClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kube client")
+	}
+
+	isProwEnabled, err := o.isProw()
+	if err != nil {
+		return "", err
+	}
+
+	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	if err != nil {
+		return "", err
+	}
+
+	var webHookUrl string
+
+	if isProwEnabled {
+		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "hook")
+	} else {
+		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "github-webhook/")
+	}
+
+	return webHookUrl, nil
 }

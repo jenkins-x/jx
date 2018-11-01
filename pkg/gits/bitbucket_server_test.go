@@ -246,7 +246,7 @@ func (suite *BitbucketServerProviderTestSuite) TestPullRequestLastCommitStatus()
 
 	suite.Require().Nil(err)
 	suite.Require().NotEmpty(lastCommitStatus)
-	suite.Require().Equal(lastCommitStatus, "INPROGRESS")
+	suite.Require().Equal(lastCommitStatus, "in-progress")
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestListCommitStatuses() {

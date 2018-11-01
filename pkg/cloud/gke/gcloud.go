@@ -23,7 +23,20 @@ var (
 		"roles/container.developer",
 		"roles/storage.objectAdmin",
 		"roles/editor"}
+
+	VaultServiceAccountRoles = []string{"roles/storage.objectAdmin",
+		"roles/cloudkms.admin",
+		"roles/cloudkms.cryptoKeyEncrypterDecrypter",
+	}
 )
+
+func VaultBucketName(vaultName string) string {
+	return fmt.Sprintf("%s-bucket", vaultName)
+}
+
+func VaultServiceAccountName(vaultName string) string {
+	return fmt.Sprintf("%s-sa", vaultName)
+}
 
 func BucketExists(projectId string, bucketName string) (bool, error) {
 	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
@@ -69,15 +82,64 @@ func CreateBucket(projectId string, bucketName string, location string) error {
 	return nil
 }
 
+func FindBucket(bucketName string) bool {
+	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
+	args := []string{"list", "-b", fullBucketName}
+
+	cmd := util.Command{
+		Name: "gsutil",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func DeleteAllObjectsInBucket(bucketName string) error {
+	found := FindBucket(bucketName)
+	if !found {
+		return nil // nothing to delete
+	}
+	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
+	args := []string{"-m", "rm", "-r", fullBucketName}
+
+	cmd := util.Command{
+		Name: "gsutil",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteBucket(bucketName string) error {
+	found := FindBucket(bucketName)
+	if !found {
+		return nil // nothing to delete
+	}
+	fullBucketName := fmt.Sprintf("gs://%s", bucketName)
+	args := []string{"rb", fullBucketName}
+
+	cmd := util.Command{
+		Name: "gsutil",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetRegionFromZone(zone string) string {
 	return zone[0 : len(zone)-2]
 }
 
-func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterConfigDir string, roles []string) (string, error) {
-	if projectId == "" {
-		return "", errors.New("cannot get/create a service account without a projectId")
-	}
-
+func FindServiceAccount(serviceAccount string, projectId string) bool {
 	args := []string{"iam",
 		"service-accounts",
 		"list",
@@ -92,10 +154,22 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 	}
 	output, err := cmd.RunWithoutRetry()
 	if err != nil {
-		return "", err
+		return false
 	}
 
 	if output == "Listed 0 items." {
+		return false
+	}
+	return true
+}
+
+func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterConfigDir string, roles []string) (string, error) {
+	if projectId == "" {
+		return "", errors.New("cannot get/create a service account without a projectId")
+	}
+
+	found := FindServiceAccount(serviceAccount, projectId)
+	if !found {
 		log.Infof("Unable to find service account %s, checking if we have enough permission to create\n", util.ColorInfo(serviceAccount))
 
 		// if it doesn't check to see if we have permissions to create (assign roles) to a service account
@@ -110,7 +184,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 
 		// create service
 		log.Infof("Creating service account %s\n", util.ColorInfo(serviceAccount))
-		args = []string{"iam",
+		args := []string{"iam",
 			"service-accounts",
 			"create",
 			serviceAccount,
@@ -158,7 +232,7 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
 		log.Info("Downloading service account key\n")
-		args = []string{"iam",
+		args := []string{"iam",
 			"service-accounts",
 			"keys",
 			"create",
@@ -181,6 +255,51 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 	}
 
 	return keyPath, nil
+}
+
+func DeleteServiceAccount(serviceAccount string, projectId string, roles []string) error {
+	found := FindServiceAccount(serviceAccount, projectId)
+	if !found {
+		return nil // nothing to delete
+	}
+	// remove roles to service account
+	for _, role := range roles {
+		log.Infof("Removing role %s\n", role)
+		args := []string{"projects",
+			"remove-iam-policy-binding",
+			projectId,
+			"--member",
+			fmt.Sprintf("serviceAccount:%s@%s.iam.gserviceaccount.com", serviceAccount, projectId),
+			"--role",
+			role,
+			"--project",
+			projectId}
+
+		cmd := util.Command{
+			Name: "gcloud",
+			Args: args,
+		}
+		_, err := cmd.RunWithoutRetry()
+		if err != nil {
+			return err
+		}
+	}
+	args := []string{"iam",
+		"service-accounts",
+		"delete",
+		fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccount, projectId),
+		"--project",
+		projectId}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func GetEnabledApis(projectId string) ([]string, error) {

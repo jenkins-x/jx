@@ -349,6 +349,15 @@ func (f *FakeProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return nil
 }
 
+func (p *FakeProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, nil
+}
+
+func (p *FakeProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
+}
+
 func (f *FakeProvider) IsGitHub() bool {
 	return f.Type == GitHub
 }
@@ -592,6 +601,10 @@ func (f *FakeProvider) ListInvitations() ([]*github.RepositoryInvitation, *githu
 func (f *FakeProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake.\n")
 	return &github.Response{}, nil
+}
+
+func (r *FakeProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, nil
 }
 
 func (r *FakeRepository) String() string {

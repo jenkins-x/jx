@@ -273,7 +273,7 @@ func (options *InstallOptions) Run() error {
 		helmer := options.Helm()
 		helmCli, ok := helmer.(*helm.HelmCLI)
 		if ok && helmCli != nil {
-			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client)
+			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client, originalNs)
 		} else {
 			helmTemplate, ok := helmer.(*helm.HelmTemplate)
 			if ok {
@@ -792,7 +792,7 @@ func (options *InstallOptions) Run() error {
 
 	// save cluster config CA and server url to a configmap
 	if !options.Flags.DisableSetKubeContext {
-		kubeConfig, _, err := kube.LoadConfig()
+		kubeConfig, _, err := options.Kube().LoadConfig()
 		if err != nil {
 			return err
 		}
@@ -880,21 +880,23 @@ func (options *InstallOptions) Run() error {
 
 	options.logAdminPassword()
 
-	log.Info("Getting Jenkins API Token\n")
-	err = options.retry(3, 2*time.Second, func() (err error) {
-		options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
-		options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
-		options.CreateJenkinsUserOptions.UseBrowser = true
-		if options.BatchMode {
-			options.CreateJenkinsUserOptions.BatchMode = true
-			options.CreateJenkinsUserOptions.Headless = true
-			log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
+	if !options.Flags.Prow {
+		log.Info("Getting Jenkins API Token\n")
+		err = options.retry(3, 2*time.Second, func() (err error) {
+			options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
+			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
+			options.CreateJenkinsUserOptions.UseBrowser = true
+			if options.BatchMode {
+				options.CreateJenkinsUserOptions.BatchMode = true
+				options.CreateJenkinsUserOptions.Headless = true
+				log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
+			}
+			err = options.CreateJenkinsUserOptions.Run()
+			return
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to get the Jenkins API token")
 		}
-		err = options.CreateJenkinsUserOptions.Run()
-		return
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to get the Jenkins API token")
 	}
 
 	jxClient, _, err := options.JXClient()
@@ -1075,9 +1077,11 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		return "", fmt.Errorf("error determining config dir %v", err)
 	}
 	wrkDir := filepath.Join(configDir, "cloud-environments")
-	log.Infof("Current configuration dir: %s\n", configDir)
-	log.Infof("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
-	log.Infof("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
+
+	options.Debugf("Current configuration dir: %s\n", configDir)
+	options.Debugf("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
+	options.Debugf("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
+
 	if options.Flags.LocalCloudEnvironment {
 		currentDir, err := os.Getwd()
 		if err != nil {

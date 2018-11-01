@@ -150,7 +150,7 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	uninstall := &UninstallOptions{
 		CommonOptions: o.CommonOptions,
 		Namespace:     name,
-		Confirm:       true,
+		Force:         true,
 	}
 	uninstall.BatchMode = true
 
