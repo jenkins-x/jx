@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"gopkg.in/yaml.v2"
 	"testing"
 
 	"io/ioutil"
@@ -13,6 +14,9 @@ func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
 	t.Parallel()
 
 	testFile, err := ioutil.ReadFile("helm_values_test.yaml")
+	assert.NoError(t, err)
+	helmValuesFromFile := config.HelmValuesConfig{}
+	err = yaml.Unmarshal(testFile, &helmValuesFromFile)
 	assert.NoError(t, err)
 
 	a := make(map[string]string)
@@ -28,7 +32,5 @@ func TestEnvironmentExposecontrollerHelmValues(t *testing.T) {
 	values.ExposeController.Config.Domain = "jenkinsx.io"
 	values.ExposeController.Config.HTTP = "false"
 	values.ExposeController.Config.TLSAcme = "false"
-	s, err := values.String()
-	assert.NoError(t, err)
-	assert.Equal(t, string(testFile), s, "expected exposecontroller helm values do not match")
+	assert.Equal(t, helmValuesFromFile, values, "expected exposecontroller helm values do not match")
 }

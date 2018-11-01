@@ -58,6 +58,10 @@ type GitProvider interface {
 
 	CreateWebHook(data *GitWebHookArguments) error
 
+	ListWebHooks(org string, repo string) ([]*GitWebHookArguments, error)
+
+	UpdateWebHook(data *GitWebHookArguments) error
+
 	IsGitHub() bool
 
 	IsGitea() bool
@@ -89,6 +93,8 @@ type GitProvider interface {
 	UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error
 
 	ListReleases(org string, name string) ([]*GitRelease, error)
+
+	GetContent(org string, name string, path string, ref string) (*GitFileContent, error)
 
 	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
 	//

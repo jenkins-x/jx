@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -43,7 +43,7 @@ func (o *DiagnoseOptions) Run() error {
 	// Get the namespace to run the diagnostics in, and output it
 	ns := o.Namespace
 	if ns == "" {
-		config, _, err := kube.LoadConfig()
+		config, _, err := o.Kube().LoadConfig()
 		if err != nil {
 			return err
 		}

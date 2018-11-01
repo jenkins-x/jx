@@ -234,6 +234,15 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return err
 }
 
+func (p *GiteaProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, fmt.Errorf("not implemented!")
+}
+
+func (p *GiteaProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
+}
+
 func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
 	owner := data.GitRepositoryInfo.Organisation
 	repo := data.GitRepositoryInfo.Name
@@ -678,4 +687,8 @@ func (p *GiteaProvider) ListInvitations() ([]*github.RepositoryInvitation, *gith
 func (p *GiteaProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea.\n")
 	return &github.Response{}, nil
+}
+
+func (p *GiteaProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, fmt.Errorf("Getting content not supported on gitea")
 }

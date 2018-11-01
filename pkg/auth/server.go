@@ -50,3 +50,16 @@ func (s *AuthServer) GetUsernames() []string {
 	sort.Strings(answer)
 	return answer
 }
+
+func (s *AuthServer) HasUserAuths() bool {
+	return len(s.Users) > 0
+}
+
+func (s *AuthServer) CurrentAuth() *UserAuth {
+	for _, user := range s.Users {
+		if user.Username == s.CurrentUser {
+			return user
+		}
+	}
+	return nil
+}

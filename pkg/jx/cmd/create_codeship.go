@@ -144,6 +144,13 @@ func (o *CreateCodeshipOptions) validate() error {
 // Run implements this command
 func (o *CreateCodeshipOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+	if !o.Flags.SkipLogin {
+		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
+		if err != nil {
+			return err
+		}
+	}
+
 	if o.Flags.OrganisationName == "" {
 		o.Flags.OrganisationName = strings.ToLower(randomdata.SillyName())
 	}
@@ -153,8 +160,8 @@ func (o *CreateCodeshipOptions) Run() error {
 		gkeServiceAccountPath := path.Join(util.HomeDir(), fmt.Sprintf("%s.key.json", o.Flags.OrganisationName))
 
 		o.CreateGkeServiceAccountOptions.Flags.Name = o.Flags.OrganisationName
-		o.CreateGkeServiceAccountOptions.Flags.SkipLogin = true
 		o.CreateGkeServiceAccountOptions.CommonOptions.BatchMode = o.CreateOptions.CommonOptions.BatchMode
+		o.CreateGkeServiceAccountOptions.Flags.SkipLogin = true
 		err := o.CreateGkeServiceAccountOptions.Run()
 		if err != nil {
 			return err
