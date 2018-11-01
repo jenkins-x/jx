@@ -7,10 +7,21 @@
 6. If the PR is unfinished, see how to mark it: https://git.k8s.io/community/contributors/guide/pull-requests.md#marking-unfinished-pull-requests
 -->
 
-**What this PR does / Why we need it**:
+#### Submitter checklist
 
-**Does your PR have tests**:
+- [ ] Change is code complete and matches issue description.
+- [ ] Change is covered by tests (new or existing).
 
-**Special notes for your reviewer**:
+#### Description
 
-**Which issue this PR fixes** *(optional, in `fixes #<issue number>(, fixes #<issue_number>, ...)` format, will close that issue when PR gets merged)*: fixes #
+
+#### Special notes for the reviewer(s)
+
+
+#### Which issue this PR fixes
+
+fixes #
+
+<!--
+optional, in `fixes #<issue number>(, fixes #<issue_number>, ...)` format, will close that issue when PR gets merged
+-->
