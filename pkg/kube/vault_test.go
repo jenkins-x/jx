@@ -18,6 +18,7 @@ func TestCreateVault(t *testing.T) {
 		gcpSecretName      string
 		gcpConfig          *kube.GCPConfig
 		authServiceAccount string
+		secretsPathPrefix  string
 		err                bool
 	}{
 		"create vault": {
@@ -32,6 +33,7 @@ func TestCreateVault(t *testing.T) {
 				GcsBucket:   "test",
 			},
 			authServiceAccount: "test-auth",
+			secretsPathPrefix:  "test/*",
 			err:                false,
 		},
 	}
@@ -39,7 +41,7 @@ func TestCreateVault(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			err := kube.CreateVault(client, tc.name, tc.namespace, tc.gcpSecretName,
-				tc.gcpConfig, tc.authServiceAccount, tc.namespace)
+				tc.gcpConfig, tc.authServiceAccount, tc.namespace, tc.secretsPathPrefix)
 			if tc.err {
 				assert.Error(t, err, "should create vault with an error")
 			} else {

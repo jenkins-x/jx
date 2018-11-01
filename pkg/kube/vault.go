@@ -93,11 +93,14 @@ func VaultGcpServiceAccountSecretName(vaultName string) string {
 // CreateVault creates a new vault backed by GCP KMS and storage
 func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string,
 	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
-	authServiceAccountNamespace string) error {
+	authServiceAccountNamespace string, secretsPathPrefix string) error {
 
+	if secretsPathPrefix == "" {
+		secretsPathPrefix = vault.DefaultSecretsPathPrefix
+	}
 	pathRule := &vault.PathRule{
 		Path: vault.PathPolicy{
-			Prefix:       vault.PathRulePrefix,
+			Prefix:       secretsPathPrefix,
 			Capabilities: vault.DefaultSecretsCapabiltities,
 		},
 	}

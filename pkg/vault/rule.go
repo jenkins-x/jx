@@ -17,9 +17,9 @@ const (
 	SudoCapability   = "sudo"
 	RootCapability   = "root"
 
-	PathRulesName  = "allow_secrets"
-	PathRulePrefix = "secrets/*"
-	PoliciesName   = "policies"
+	PathRulesName            = "allow_secrets"
+	DefaultSecretsPathPrefix = "secrets/*"
+	PoliciesName             = "policies"
 )
 
 var (
