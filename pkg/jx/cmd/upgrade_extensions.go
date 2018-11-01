@@ -54,7 +54,6 @@ var (
 type UpgradeExtensionsOptions struct {
 	CreateOptions
 	Filter                   string
-	ExtensionsRepository     string
 	ExtensionsRepositoryFile string
 }
 
@@ -84,7 +83,6 @@ func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.Fil
 	}
 	cmd.AddCommand(NewCmdUpgradeExtensionsRepository(f, in, out, errOut))
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
-	cmd.Flags().StringVarP(&options.ExtensionsRepository, "extensions-repository", "", "", "Specify the extensions repository git repo to read from. Accepts github.com/<org>/<repo>")
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryFile, "extensions-repository-file", "", "", "Specify the extensions repository yaml file to read from")
 	return cmd
 }
