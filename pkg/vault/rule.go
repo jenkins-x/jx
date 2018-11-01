@@ -18,7 +18,7 @@ const (
 	RootCapability   = "root"
 
 	PathRulesName            = "allow_secrets"
-	DefaultSecretsPathPrefix = "secrets/*"
+	DefaultSecretsPathPrefix = "secret/*"
 	PoliciesName             = "policies"
 )
 
