@@ -109,6 +109,18 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 
+	if len(extensionsList.Extensions) > 0 {
+		if o.Verbose {
+			log.Infof("These extensions are configured for the team:\n")
+			for _, e := range extensionsList.Extensions {
+				log.Infof("  %s\n", util.ColorInfo(e.FullyQualifiedName()))
+			}
+		}
+	} else {
+		log.Warnf("No extensions are configured for the team\n")
+
+	}
+
 	extensionsRepository := jenkinsv1.ExtensionRepositoryLockList{}
 	var bs []byte
 
@@ -150,16 +162,28 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			err = o.Helm().FetchChart(fmt.Sprintf("%s/%s", current.Chart.RepoName, current.Chart.Name), nil, true, unpackDir)
+			if o.Verbose {
+				log.Infof("Using %s to unpack Helm Charts\n", util.ColorInfo(unpackDir))
+			}
+			chart := fmt.Sprintf("%s/%s", current.Chart.RepoName, current.Chart.Name)
+			log.Infof("Updating extensions from Helm Chart %s repo %s \n", util.ColorInfo(chart), util.ColorInfo(current.Chart.Repo))
+			err = o.Helm().FetchChart(chart, nil, true, unpackDir)
 			if err != nil {
 				return err
 			}
-			bs, err = ioutil.ReadFile(filepath.Join(unpackDir, current.Chart.Name, "repository", "jenkins-x-extensions-repository.lock.yaml"))
+			path := filepath.Join(unpackDir, current.Chart.Name, "repository", "jenkins-x-extensions-repository.lock.yaml")
+			bs, err = ioutil.ReadFile(path)
+			if o.Verbose {
+				log.Infof("Extensions Repository Lock located at %s\n", util.ColorInfo(path))
+			}
 			if err != nil {
 				return errors.New(fmt.Sprintf("Unable to fetch Extensions Repository Helm Chart %s/%s becasue %v", current.Chart.RepoName, current.Chart.Name, err))
 			}
 		} else {
 			extensionsRepositoryUrl := current.Url
+			if extensionsRepositoryUrl == "" {
+				extensionsRepositoryUrl = upstreamExtensionsRepositoryGitHub
+			}
 			if current.GitHub != "" {
 				_, repoInfo, err := o.createGitProviderForURLWithoutKind(fmt.Sprintf("github.com/%s", current.GitHub))
 				if err != nil {
@@ -174,7 +198,9 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			log.Infof("Updating extensions from %s\n", extensionsRepositoryUrl)
 			httpClient := &http.Client{Timeout: 10 * time.Second}
 			resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", extensionsRepositoryUrl, time.Now().UnixNano()/int64(time.Millisecond)))
-
+			if err != nil {
+				return err
+			}
 			defer resp.Body.Close()
 
 			bs, err = ioutil.ReadAll(resp.Body)
