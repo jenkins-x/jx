@@ -223,7 +223,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 	}
 	if kubeDir != "" {
 
-		// now lets copy any Kubernetes YAML into helm charts in the apps
+		// now lets copy any Kubernetes YAML into Helm charts in the apps
 		matches, err = filepath.Glob(filepath.Join(dir, kubeDir, "*"))
 		if err != nil {
 			return err

@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"net/url"
 	"os"
@@ -893,4 +893,46 @@ func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, er
 		o.vaultOperatorClient = vaultOperatorClient
 	}
 	return o.vaultOperatorClient, nil
+}
+
+func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
+	_, _, err := o.JXClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get jxclient")
+	}
+
+	_, _, err = o.KubeClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kube client")
+	}
+
+	isProwEnabled, err := o.isProw()
+	if err != nil {
+		return "", err
+	}
+
+	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	if err != nil {
+		return "", err
+	}
+
+	var webHookUrl string
+
+	if isProwEnabled {
+		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "hook")
+	} else {
+		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "github-webhook/")
+	}
+
+	return webHookUrl, nil
 }

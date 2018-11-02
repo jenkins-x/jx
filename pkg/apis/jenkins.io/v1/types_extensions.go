@@ -3,9 +3,7 @@ package v1
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"path/filepath"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -154,8 +152,7 @@ type EnvironmentVariable struct {
 
 // ExtensionsConfigList contains a list of ExtensionConfig items
 type ExtensionConfigList struct {
-	Extensions    []ExtensionConfig `json:"extensions"`
-	RepositoryUrl string            `json:"repositoryUrl"`
+	Extensions []ExtensionConfig `json:"extensions"`
 }
 
 // ExtensionConfig is the configuration and enablement for an extension inside an app
@@ -163,6 +160,27 @@ type ExtensionConfig struct {
 	Name       string                    `json:"name"`
 	Namespace  string                    `json:"namespace"`
 	Parameters []ExtensionParameterValue `json: "parameters"`
+}
+
+const (
+	ExtensionsConfigKnownRepositories = "knownRepositories"
+	ExtensionsConfigRepository        = "repository"
+)
+
+type ExtensionRepositoryReferenceList struct {
+	Repositories []ExtensionRepositoryReference `json:"repositories,omitempty"`
+}
+
+type ExtensionRepositoryReference struct {
+	Url    string   `json:"url,omitempty"`
+	GitHub string   `json:"github,omitempty"`
+	Chart  ChartRef `json:"chart,omitempty"`
+}
+
+type ChartRef struct {
+	Repo     string `json:"repo,omitempty"`
+	RepoName string `json:"repoName,omitempty"`
+	Name     string `json:"name,omitempty"`
 }
 
 type ExtensionParameterValue struct {
@@ -239,32 +257,6 @@ func (lock *ExtensionRepositoryLockList) LoadFromFile(inputFile string) (err err
 		return err
 	}
 	err = yaml.Unmarshal(y, lock)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (lock *ExtensionDefinitionList) LoadFromURL(definitionsUrl string, extension string, version string) (err error) {
-	httpClient := &http.Client{Timeout: 10 * time.Second}
-	resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", definitionsUrl, time.Now().UnixNano()/int64(time.Millisecond)))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		log.Infof("Unable to find Extension Definitions at %s for %s with version %s\n", util.ColorWarning(definitionsUrl), util.ColorWarning(extension), util.ColorWarning(version))
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	bytes, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		return err
-	}
-
-	err = yaml.Unmarshal(bytes, lock)
 	if err != nil {
 		return err
 	}

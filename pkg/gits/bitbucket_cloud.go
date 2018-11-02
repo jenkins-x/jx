@@ -934,6 +934,10 @@ func (b *BitbucketCloudProvider) AcceptInvitation(ID int64) (*github.Response, e
 	return &github.Response{}, nil
 }
 
+func (b *BitbucketCloudProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, fmt.Errorf("Getting content not supported on bitbucket")
+}
+
 func BitBucketCloudAccessTokenURL(url string, username string) string {
 	// TODO with github we can default the scopes/flags we need on a token via adding
 	// ?scopes=repo,read:user,user:email,write:repo_hook

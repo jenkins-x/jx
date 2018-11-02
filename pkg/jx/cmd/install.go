@@ -267,7 +267,7 @@ func (options *InstallOptions) Run() error {
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
 
-	// configure the helm binary
+	// configure the Helm binary
 	options.Helm().SetHelmBinary(helmBinary)
 	if initOpts.Flags.NoTiller {
 		helmer := options.Helm()
@@ -1077,9 +1077,11 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		return "", fmt.Errorf("error determining config dir %v", err)
 	}
 	wrkDir := filepath.Join(configDir, "cloud-environments")
-	log.Infof("Current configuration dir: %s\n", configDir)
-	log.Infof("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
-	log.Infof("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
+
+	options.Debugf("Current configuration dir: %s\n", configDir)
+	options.Debugf("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
+	options.Debugf("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
+
 	if options.Flags.LocalCloudEnvironment {
 		currentDir, err := os.Getwd()
 		if err != nil {
