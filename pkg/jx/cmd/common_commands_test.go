@@ -25,6 +25,7 @@ func TestCommandError(t *testing.T) {
 }
 
 func TestVerboseOutput(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
 	buf := new(bytes.Buffer)
 	c, err := expect.NewConsole(expect.WithStdout(buf))
@@ -49,6 +50,7 @@ func TestVerboseOutput(t *testing.T) {
 }
 
 func TestNonVerboseOutput(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
 	c, state, term := tests.NewTerminal(t)
 	defer c.Close()

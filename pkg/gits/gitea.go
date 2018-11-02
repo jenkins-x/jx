@@ -688,3 +688,7 @@ func (p *GiteaProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea.\n")
 	return &github.Response{}, nil
 }
+
+func (p *GiteaProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, fmt.Errorf("Getting content not supported on gitea")
+}

@@ -603,6 +603,10 @@ func (f *FakeProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	return &github.Response{}, nil
 }
 
+func (r *FakeProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, nil
+}
+
 func (r *FakeRepository) String() string {
 	return r.Owner + "/" + r.Name()
 }

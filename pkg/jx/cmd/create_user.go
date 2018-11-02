@@ -24,18 +24,8 @@ var (
 `)
 
 	createUserExample = templates.Examples(`
-		# Create an issue in the current project
-		jx create issue -t "something we should do"
-
-
-		# Create an issue with a title and a body
-		jx create issue -t "something we should do" --body "	
-		some more
-		text
-		goes
-		here
-		""
-"
+		# Create a user
+		jx create user -e "user@email.com" --login username --name username"
 	`)
 )
 

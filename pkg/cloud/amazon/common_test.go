@@ -2,32 +2,41 @@ package amazon_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path"
+	"runtime"
 	"testing"
 )
 
 func switchHome() (string, error) {
-	oldHome := os.Getenv("HOME")
-	newHome := "/tmp/" + uuid.New()
-	os.Setenv("HOME", newHome)
+	oldHome := amazon.UserHomeDir()
+	newHome, err := ioutil.TempDir("", "common_test")
+	setUserHomeDir(newHome)
 	awsHome := path.Join(newHome, ".aws")
-	err := os.MkdirAll(awsHome, 0777)
+	err = os.MkdirAll(awsHome, 0777)
 	if err != nil {
 		return oldHome, err
 	}
 
 	awsConfigPath := path.Join(awsHome, "config")
-	ioutil.WriteFile(awsConfigPath, []byte(`[profile foo]
+	if err := ioutil.WriteFile(awsConfigPath, []byte(`[profile foo]
 region = bar
 [profile baz]
-region = qux
-`), 0644)
+region = qux`), 0644); err != nil {
+		panic(err)
+	}
 
 	return oldHome, nil
+}
+
+func setUserHomeDir(newHome string) {
+	if runtime.GOOS == "windows" {
+		os.Setenv("USERPROFILE", newHome)
+	}
+	// *nix
+	os.Setenv("HOME", newHome)
 }
 
 func restoreHome(oldHome string) {
