@@ -634,6 +634,10 @@ func (p *GitlabProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	return &github.Response{}, nil
 }
 
+func (p *GitlabProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, fmt.Errorf("Getting content not supported on gitlab")
+}
+
 // GitlabAccessTokenURL returns the URL to click on to generate a personal access token for the Git provider
 func GitlabAccessTokenURL(url string) string {
 	return util.UrlJoin(url, "/profile/personal_access_tokens")
