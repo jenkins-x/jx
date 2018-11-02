@@ -256,29 +256,9 @@ func (o *CommonOptions) Git() gits.Gitter {
 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
-		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
-		if err != nil {
-			helmBinary = defaultHelmBin
-		}
-		featureFlag := "none"
-		if helmTemplate {
-			featureFlag = "template-mode"
-		} else if noTiller {
-			featureFlag = "no-tiller-server"
-		}
-		log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
-		helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
-		o.helm = helmCLI
-		if helmTemplate {
-			kubeClient, _, _ := o.KubeClient()
-			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient)
-		} else {
-			o.helm = helmCLI
-		}
-		if noTiller {
-			o.helm.SetHost(o.tillerAddress())
-			o.startLocalTillerIfNotRunning()
-		}
+		kubeClient, _, _ := o.KubeClient()
+		teamSettings, _ := o.TeamSettings()
+		o.helm = o.Factory.GetHelm(o.Verbose, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate, kubeClient)
 	}
 	return o.helm
 }

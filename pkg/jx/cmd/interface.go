@@ -1,8 +1,10 @@
 package cmd
 
 import (
-	"github.com/heptio/sonobuoy/pkg/dynamic"
 	"io"
+
+	"github.com/heptio/sonobuoy/pkg/dynamic"
+	"github.com/jenkins-x/jx/pkg/helm"
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -75,4 +77,6 @@ type Factory interface {
 	AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error
 
 	CreateVaultOperatorClient() (vaultoperatorclient.Interface, error)
+
+	GetHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool, kubeClient kubernetes.Interface) helm.Helmer
 }
