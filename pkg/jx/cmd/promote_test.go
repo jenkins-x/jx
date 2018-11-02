@@ -203,7 +203,7 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 	cmd.AssertHasPipelineStatus(t, activities, testEnv.Activity.Name, v1.ActivityStatusTypeRunning)
 
 	// mark latest commit as success tu unblock the promotion (PR will be automatically merged)
-	cmd.AssertSetPullRequestComplete(t, testEnv.FakeGitProvider, testEnv.ProdRepo, 1)
+	cmd.SetSuccessCommitStatusInPR(t, testEnv.ProdRepo, 1)
 
 	// ...and wait for the Run routine to finish (it was polling on the PR last commit status success to auto-merge)
 	<-ch

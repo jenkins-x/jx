@@ -323,6 +323,16 @@ func AssertSetPullRequestComplete(t *testing.T, provider *gits.FakeProvider, rep
 	return false
 }
 
+func SetSuccessCommitStatusInPR(t *testing.T, repository *gits.FakeRepository, prNumber int) {
+	fakePR := repository.PullRequests[prNumber]
+	assert.NotNil(t, fakePR, "No PullRequest found on repository %s for number #%d", repository.String(), prNumber)
+
+	l := len(fakePR.Commits)
+	if l > 0 {
+		fakePR.Commits[l-1].Status = gits.CommitSatusSuccess
+	}
+}
+
 func AssertHasPromoteStatus(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string, status v1.ActivityStatusType) {
 	activity, err := activities.Get(name, metav1.GetOptions{})
 	if err != nil {
