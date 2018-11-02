@@ -3,9 +3,7 @@ package v1
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"path/filepath"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -164,6 +162,27 @@ type ExtensionConfig struct {
 	Parameters []ExtensionParameterValue `json: "parameters"`
 }
 
+const (
+	ExtensionsConfigKnownRepositories = "knownRepositories"
+	ExtensionsConfigRepository        = "repository"
+)
+
+type ExtensionRepositoryReferenceList struct {
+	Repositories []ExtensionRepositoryReference `json:"repositories,omitempty"`
+}
+
+type ExtensionRepositoryReference struct {
+	Url    string   `json:"url,omitempty"`
+	GitHub string   `json:"github,omitempty"`
+	Chart  ChartRef `json:"chart,omitempty"`
+}
+
+type ChartRef struct {
+	Repo     string `json:"repo,omitempty"`
+	RepoName string `json:"repoName,omitempty"`
+	Name     string `json:"name,omitempty"`
+}
+
 type ExtensionParameterValue struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
@@ -238,32 +257,6 @@ func (lock *ExtensionRepositoryLockList) LoadFromFile(inputFile string) (err err
 		return err
 	}
 	err = yaml.Unmarshal(y, lock)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (lock *ExtensionDefinitionList) LoadFromURL(definitionsUrl string, extension string, version string) (err error) {
-	httpClient := &http.Client{Timeout: 10 * time.Second}
-	resp, err := httpClient.Get(fmt.Sprintf("%s?version=%d", definitionsUrl, time.Now().UnixNano()/int64(time.Millisecond)))
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		log.Infof("Unable to find Extension Definitions at %s for %s with version %s\n", util.ColorWarning(definitionsUrl), util.ColorWarning(extension), util.ColorWarning(version))
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	bytes, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		return err
-	}
-
-	err = yaml.Unmarshal(bytes, lock)
 	if err != nil {
 		return err
 	}
@@ -360,4 +353,55 @@ func (e *ExtensionSpec) Contains(whens []ExtensionWhen, when ExtensionWhen) bool
 		}
 	}
 	return false
+}
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+// CommitStatus represents the commit statuses for a particular pull request
+type CommitStatus struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	Spec CommitStatusSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// CommitStatusList is a structure used by k8s to store lists of commit statuses
+type CommitStatusList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []CommitStatus `json:"Items"`
+}
+
+// CommitStatusSpec provides details of a particular commit status
+type CommitStatusSpec struct {
+	Items []CommitStatusDetails `json:"items"  protobuf:"bytes,1,opt,name=items"`
+}
+
+type CommitStatusDetails struct {
+	PipelineActivity ResourceReference           `json:"pipelineActivity"  protobuf:"bytes,1,opt,name=pipelineActivity"`
+	Items            []CommitStatusItem          `json:"Items,omitempty"  protobuf:"bytes,2,opt,name=Items"`
+	Checked          bool                        `json:"checked"  protobuf:"bytes,3,opt,name=checked"`
+	Commit           CommitStatusCommitReference `json:"commit"  protobuf:"bytes,4,opt,name=commit"`
+	Context          string                      `json:"context"  protobuf:"bytes,5,opt,name=context"`
+}
+
+type CommitStatusCommitReference struct {
+	GitURL      string `json:"gitUrl,omitempty"  protobuf:"bytes,1,opt,name=gitUrl"`
+	PullRequest string `json:"pullRequest,omitempty"  protobuf:"bytes,2,opt,name=pullRequest"`
+	SHA         string `json:"sha,omitempty"  protobuf:"bytes,3,opt,name=sha"`
+}
+
+type CommitStatusItem struct {
+	Name        string `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
+	Description string `json:"description,omitempty"  protobuf:"bytes,2,opt,name=description"`
+	Pass        bool   `json:"pass"  protobuf:"bytes,3,opt,name=pass"`
 }

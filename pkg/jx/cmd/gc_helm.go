@@ -186,7 +186,7 @@ func ExtractReleases(cms *v1.ConfigMapList) []string {
 		}
 	}
 
-	// Return a set of unique helm releases
+	// Return a set of unique Helm releases
 	releases := []string{}
 	for key, _ := range found {
 		releases = append(releases, key)

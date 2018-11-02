@@ -17,6 +17,7 @@
 SHELL := /bin/bash
 NAME := jx
 GO := GO111MODULE=on GO15VENDOREXPERIMENT=1 go
+GO_NOMOD :=GO111MODULE=off go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 #ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
@@ -56,8 +57,8 @@ build: $(GO_DEPENDENCIES) version
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDFLAGS) -o build/$(NAME) cmd/jx/jx.go
 
 get-test-deps:
-	@$(GO) get github.com/axw/gocov/gocov
-	@$(GO) get -u gopkg.in/matm/v1/gocov-html
+	$(GO_NOMOD) get github.com/axw/gocov/gocov
+	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
 test:
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast -short -parallel 12 ./...
@@ -248,7 +249,7 @@ docker-dev-all: build linux docker-pull docker-build-and-push
 
 # Generate go code using generate directives in files. Mocks etc...
 generate:
-	$(GO) get github.com/petergtz/pegomock/...
+	$(GO_NOMOD) get github.com/petergtz/pegomock/...
 	$(GO) generate ./...
 
 .PHONY: release clean arm
@@ -263,14 +264,14 @@ preview:
 
 FGT := $(GOPATH)/bin/fgt
 $(FGT):
-	go get github.com/GeertJohan/fgt
+	$(GO_NOMOD) get github.com/GeertJohan/fgt
 
 
 LINTFLAGS:=-min_confidence 1.1
 
 GOLINT := $(GOPATH)/bin/golint
 $(GOLINT):
-	go get github.com/golang/lint/golint
+	$(GO_NOMOD) get github.com/golang/lint/golint
 
 #	@echo "FORMATTING"
 #	@$(FGT) gofmt -l=true $(GOPATH)/src/$@/*.go
@@ -298,12 +299,12 @@ vet: tools.govet
 tools.govet:
 	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
 		echo "--> installing govet"; \
-		go get golang.org/x/tools/cmd/vet; \
+		$(GO_NOMOD) get golang.org/x/tools/cmd/vet; \
 	fi
 
 GOSEC := $(GOPATH)/bin/gosec
 $(GOSEC):
-	go get github.com/securego/gosec/cmd/gosec/...
+	$(GO_NOMOD) get github.com/securego/gosec/cmd/gosec/...
 
 .PHONY: sec
 sec: $(GOSEC)

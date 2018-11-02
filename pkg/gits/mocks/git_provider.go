@@ -220,6 +220,25 @@ func (mock *MockGitProvider) ForkRepository(_param0 string, _param1 string, _par
 	return ret0, ret1
 }
 
+func (mock *MockGitProvider) GetContent(_param0 string, _param1 string, _param2 string, _param3 string) (*gits.GitFileContent, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GetContent", params, []reflect.Type{reflect.TypeOf((**gits.GitFileContent)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *gits.GitFileContent
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(*gits.GitFileContent)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockGitProvider) GetIssue(_param0 string, _param1 string, _param2 int) (*gits.GitIssue, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
@@ -545,6 +564,25 @@ func (mock *MockGitProvider) ListRepositories(_param0 string) ([]*gits.GitReposi
 	return ret0, ret1
 }
 
+func (mock *MockGitProvider) ListWebHooks(_param0 string, _param1 string) ([]*gits.GitWebHookArguments, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0, _param1}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ListWebHooks", params, []reflect.Type{reflect.TypeOf((*[]*gits.GitWebHookArguments)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 []*gits.GitWebHookArguments
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].([]*gits.GitWebHookArguments)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockGitProvider) MergePullRequest(_param0 *gits.GitPullRequest, _param1 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
@@ -691,6 +729,21 @@ func (mock *MockGitProvider) UpdateRelease(_param0 string, _param1 string, _para
 	}
 	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("UpdateRelease", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
+func (mock *MockGitProvider) UpdateWebHook(_param0 *gits.GitWebHookArguments) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("UpdateWebHook", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 error
 	if len(result) != 0 {
 		if result[0] != nil {
@@ -1132,6 +1185,45 @@ func (c *GitProvider_ForkRepository_OngoingVerification) GetAllCapturedArguments
 		_param2 = make([]string, len(params[2]))
 		for u, param := range params[2] {
 			_param2[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierGitProvider) GetContent(_param0 string, _param1 string, _param2 string, _param3 string) *GitProvider_GetContent_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetContent", params)
+	return &GitProvider_GetContent_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type GitProvider_GetContent_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *GitProvider_GetContent_OngoingVerification) GetCapturedArguments() (string, string, string, string) {
+	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
+}
+
+func (c *GitProvider_GetContent_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]string, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(string)
+		}
+		_param3 = make([]string, len(params[3]))
+		for u, param := range params[3] {
+			_param3[u] = param.(string)
 		}
 	}
 	return
@@ -1606,6 +1698,37 @@ func (c *GitProvider_ListRepositories_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
+func (verifier *VerifierGitProvider) ListWebHooks(_param0 string, _param1 string) *GitProvider_ListWebHooks_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListWebHooks", params)
+	return &GitProvider_ListWebHooks_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type GitProvider_ListWebHooks_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *GitProvider_ListWebHooks_OngoingVerification) GetCapturedArguments() (string, string) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+}
+
+func (c *GitProvider_ListWebHooks_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+	}
+	return
+}
+
 func (verifier *VerifierGitProvider) MergePullRequest(_param0 *gits.GitPullRequest, _param1 string) *GitProvider_MergePullRequest_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "MergePullRequest", params)
@@ -1886,6 +2009,33 @@ func (c *GitProvider_UpdateRelease_OngoingVerification) GetAllCapturedArguments(
 		_param3 = make([]*gits.GitRelease, len(params[3]))
 		for u, param := range params[3] {
 			_param3[u] = param.(*gits.GitRelease)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierGitProvider) UpdateWebHook(_param0 *gits.GitWebHookArguments) *GitProvider_UpdateWebHook_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpdateWebHook", params)
+	return &GitProvider_UpdateWebHook_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type GitProvider_UpdateWebHook_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *GitProvider_UpdateWebHook_OngoingVerification) GetCapturedArguments() *gits.GitWebHookArguments {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *GitProvider_UpdateWebHook_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitWebHookArguments) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]*gits.GitWebHookArguments, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(*gits.GitWebHookArguments)
 		}
 	}
 	return

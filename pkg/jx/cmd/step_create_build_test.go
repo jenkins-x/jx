@@ -102,6 +102,7 @@ spec:
 )
 
 func TestStepCreateBuild(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
 	tempDir, err := ioutil.TempDir("", "test-step-create-build")
 	assert.NoError(t, err)

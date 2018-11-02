@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"net/url"
 	"os"
@@ -40,7 +40,7 @@ import (
 const (
 	optionServerName        = "name"
 	optionServerURL         = "url"
-	exposecontrollerVersion = "2.3.63"
+	exposecontrollerVersion = "2.3.79"
 	exposecontroller        = "exposecontroller"
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
@@ -63,6 +63,7 @@ type CommonOptions struct {
 	ServiceAccount         string
 	Username               string
 	ExternalJenkinsBaseURL string
+	PullSecrets            string
 
 	// common cached clients
 	KubeClientCached    kubernetes.Interface
@@ -73,6 +74,7 @@ type CommonOptions struct {
 	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
+	Kuber               kube.Kuber
 	vaultOperatorClient vaultoperatorclient.Interface
 
 	Prow
@@ -124,6 +126,8 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
 	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")
 	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, "skip-auth-secrets-merge", "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
+	cmd.Flags().StringVarP(&options.PullSecrets, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
+
 	options.Cmd = cmd
 }
 
@@ -267,8 +271,8 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
 		o.helm = helmCLI
 		if helmTemplate {
-			kubeClient, _, _ := o.KubeClient()
-			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient)
+			kubeClient, ns, _ := o.KubeClient()
+			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient, ns)
 		} else {
 			o.helm = helmCLI
 		}
@@ -280,12 +284,24 @@ func (o *CommonOptions) Helm() helm.Helmer {
 	return o.helm
 }
 
+func (o *CommonOptions) Kube() kube.Kuber {
+	if o.Kuber == nil {
+		o.Kuber = kube.NewKubeConfig()
+	}
+	return o.Kuber
+}
+
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 	kubeClient, currentNs, err := o.KubeClient()
 	if err != nil {
 		return "", "", err
 	}
 	return kube.GetDevNamespace(kubeClient, currentNs)
+}
+
+func (o *CommonOptions) GetImagePullSecrets() []string {
+	pullSecrets := strings.Fields(o.PullSecrets)
+	return pullSecrets
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
@@ -713,6 +729,24 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	return o.runExposecontroller(devNamespace, targetNamespace, ic)
 }
 
+func (o *CommonOptions) exposeService(service, devNamespace, targetNamespace string) error {
+	ic, err := kube.GetIngressConfig(o.KubeClientCached, devNamespace)
+	if err != nil {
+		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
+	}
+	err = kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer, service)
+	if err != nil {
+		return err
+	}
+
+	err = o.copyCertmanagerResources(targetNamespace, ic)
+	if err != nil {
+		return fmt.Errorf("failed to copy certmanager resources from %s to %s namespace: %v", devNamespace, targetNamespace, err)
+	}
+
+	return o.runExposecontroller(devNamespace, targetNamespace, ic, service)
+}
+
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 
 	o.CleanExposecontrollerReources(targetNamespace)
@@ -728,14 +762,14 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	}
 
 	if len(services) > 0 {
-		serviceCfg := "config.extravalues='services: ["
+		serviceCfg := "config.extravalues.services={"
 		for i, service := range services {
 			if i > 0 {
 				serviceCfg += ","
 			}
 			serviceCfg += service
 		}
-		serviceCfg += "]''"
+		serviceCfg += "}"
 		exValues = append(exValues, serviceCfg)
 	}
 
@@ -859,4 +893,46 @@ func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, er
 		o.vaultOperatorClient = vaultOperatorClient
 	}
 	return o.vaultOperatorClient, nil
+}
+
+func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
+	_, _, err := o.JXClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get jxclient")
+	}
+
+	_, _, err = o.KubeClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kube client")
+	}
+
+	isProwEnabled, err := o.isProw()
+	if err != nil {
+		return "", err
+	}
+
+	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	if err != nil {
+		return "", err
+	}
+
+	var webHookUrl string
+
+	if isProwEnabled {
+		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "hook")
+	} else {
+		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "github-webhook/")
+	}
+
+	return webHookUrl, nil
 }

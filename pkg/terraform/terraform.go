@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -12,6 +13,15 @@ import (
 
 func Init(terraformDir string, serviceAccountPath string) error {
 	fmt.Println("Initialising Terraform")
+
+	if _, err := os.Stat(".terraform"); !os.IsNotExist(err) {
+		fmt.Println("Discovered local .terraform directory, removing...")
+		err = os.RemoveAll(".terraform")
+		if err != nil {
+			return errors.Wrap(err, "unable to remove local .terraform directory")
+		}
+	}
+
 	os.Setenv("GOOGLE_CREDENTIALS", serviceAccountPath)
 	cmd := util.Command{
 		Name: "terraform",

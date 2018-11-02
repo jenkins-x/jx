@@ -78,7 +78,7 @@ pipeline {
                     }
 
                     sh "echo now tearing down the team ${TEAM}"
-                    sh "jx uninstall -b -y --namespace ${TEAM}"
+                    sh "jx uninstall -b --context `kubectl config current-context` --namespace ${TEAM}"
                 }
             }
         }

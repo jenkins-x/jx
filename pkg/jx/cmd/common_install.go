@@ -896,6 +896,12 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 		Args: []string{"plugin", "install", "https://github.com/futuresimple/helm-secrets"},
 	}
 	_, err = cmd.RunWithoutRetry()
+	// Workaround for Helm install on Windows caused by https://github.com/helm/helm/issues/4418
+	if err != nil && runtime.GOOS == "windows" && strings.Contains(err.Error(), "Error: symlink") {
+		// The install _does_ seem to work, but we get an error - catch this on windows and lob it in the bin
+		return nil
+	}
+	// End of Workaround
 	return err
 }
 
@@ -1132,7 +1138,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	err = util.UnTargz(tarFile, jxHome , []string{binary, fileName})
+	err = util.UnTargz(tarFile, jxHome, []string{binary, fileName})
 	if err != nil {
 		return err
 	}
@@ -1353,7 +1359,7 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 		install = append(install, deps...)
 	} else {
 		if o.BatchMode {
-			return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
+			return errors.New(fmt.Sprintf("run without batch mode or manually install missing dependencies %v\n", deps))
 		}
 
 		prompt := &survey.MultiSelect{
@@ -1494,7 +1500,7 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 		return GetSafeUsername(username), nil
 	}
 
-	config, _, err := kube.LoadConfig()
+	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
 		return username, err
 	}
@@ -1581,14 +1587,14 @@ func (o *CommonOptions) installProw() error {
 		}
 	}
 
-	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
 		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil)
 		return nil
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install prow: %v", err)
+		return fmt.Errorf("failed to install Prow: %v", err)
 	}
 
 	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
