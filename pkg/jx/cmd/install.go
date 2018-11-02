@@ -267,7 +267,7 @@ func (options *InstallOptions) Run() error {
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
 
-	// configure the helm binary
+	// configure the Helm binary
 	options.Helm().SetHelmBinary(helmBinary)
 	if initOpts.Flags.NoTiller {
 		helmer := options.Helm()
