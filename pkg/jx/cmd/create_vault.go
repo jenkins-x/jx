@@ -113,13 +113,18 @@ func (o *CreateVaultOptions) Run() error {
 }
 
 func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
-	_, team, err := o.KubeClient()
+	client, team, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating kubernetes client")
 	}
 
 	if o.Namespace == "" {
 		o.Namespace = team
+	}
+
+	err = kube.EnsureNamespaceCreated(client, o.Namespace, nil, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to ensure that provided namespace '%s' is created", o.Namespace)
 	}
 
 	vaultOperatorClient, err := o.VaultOperatorClient()
