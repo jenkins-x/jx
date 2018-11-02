@@ -257,8 +257,10 @@ func (o *CommonOptions) Git() gits.Gitter {
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
 		kubeClient, _, _ := o.KubeClient()
-		teamSettings, _ := o.TeamSettings()
-		o.helm = o.Factory.GetHelm(o.Verbose, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate, kubeClient)
+		//teamSettings, _ := o.TeamSettings()
+		//o.helm = o.Factory.GetHelm(o.Verbose, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate, kubeClient)
+		helmBinary, noTiller, helmTemplate, _ := o.TeamHelmBin()
+		o.helm = o.Factory.GetHelm(o.Verbose, helmBinary, noTiller, helmTemplate, kubeClient)
 	}
 	return o.helm
 }
