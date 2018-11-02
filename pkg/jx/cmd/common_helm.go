@@ -426,7 +426,7 @@ func (o *CommonOptions) ensureHelm() error {
 	}
 	err = o.installHelm()
 	if err != nil {
-		return errors.Wrap(err, "failed to install helm")
+		return errors.Wrap(err, "failed to install Helm")
 	}
 	initOpts := InitOptions{
 		CommonOptions: *o,
