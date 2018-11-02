@@ -1,16 +1,4 @@
 approvers:
-- rawlingsj
-- jstrachan
-- rajdavies
-- ccojocar
-- garethjevans
-- i0n
-- pmuir
+- @jenkins-x/committers
 reviewers:
-- rawlingsj
-- jstrachan
-- rajdavies
-- ccojocar
-- garethjevans
-- i0n
-- pmuir
+- @jenkins-x/committers
