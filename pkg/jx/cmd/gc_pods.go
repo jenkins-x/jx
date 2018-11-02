@@ -51,6 +51,7 @@ func NewCmdGCPods(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd := &cobra.Command{
 		Use:     "pods",
 		Short:   "garbage collection for pods",
+		Aliases: []string{"pod"},
 		Long:    GCPodsLong,
 		Example: GCPodsExample,
 		Run: func(cmd *cobra.Command, args []string) {
