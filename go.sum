@@ -241,6 +241,8 @@ github.com/prometheus/procfs v0.0.0-20180705121852-ae68e2d4c00f h1:c9M4CCa6g8WUR
 github.com/prometheus/procfs v0.0.0-20180705121852-ae68e2d4c00f/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
 github.com/rifflock/lfshook v0.0.0-20180227222202-bf539943797a h1:zOAPcZGA4TZZv8zEI+uqbYXgyjmXtMcRVSnR0T0J2t0=
 github.com/rifflock/lfshook v0.0.0-20180227222202-bf539943797a/go.mod h1:GEXHk5HgEKCvEIIrSpFI3ozzG5xOKA2DVlEX/gGnewM=
+github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930 h1:PIIrOsb96WXqgSgswkf0M0EfWkdkYwdCqP8w4xEC6dk=
+github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930/go.mod h1:hkWgI+PWPCjkVbx8rdk7GhVkpbc/zCLrY/9yF5xGSzI=
 github.com/russross/blackfriday v1.5.1 h1:B8ZN6pD4PVofmlDCDUdELeYrbsVIDM/bpjW3v3zgcRc=
 github.com/russross/blackfriday v1.5.1/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
 github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
