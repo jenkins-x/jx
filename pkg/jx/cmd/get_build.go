@@ -25,7 +25,7 @@ var (
 `)
 
 	get_build_example = templates.Examples(`
-		# List all pipeines
+		# List all pipelines
 		jx get pipeline
 
 		# List all URLs for services in the current namespace
