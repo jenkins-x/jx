@@ -13,11 +13,13 @@ type Table struct {
 	Rows         [][]string
 	ColumnWidths []int
 	ColumnAlign  []int
+	Separator    string
 }
 
 func CreateTable(out io.Writer) Table {
 	return Table{
-		Out: out,
+		Out:       out,
+		Separator: " ",
 	}
 }
 
@@ -48,7 +50,7 @@ func (t *Table) Render() {
 		lastColumn := len(row) - 1
 		for ci, col := range row {
 			if ci > 0 {
-				fmt.Fprint(out, " ")
+				fmt.Fprint(out, t.Separator)
 			}
 			l := t.ColumnWidths[ci]
 			align := t.GetColumnAlign(ci)

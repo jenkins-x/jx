@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,13 +25,6 @@ const (
 	gkeKubeProvider            = "gke"
 	gkeServiceAccountSecretKey = "service-account.json"
 	exposedVaultPort           = "8200"
-)
-
-var (
-	vaultServiceAccountRoles = []string{"roles/storage.objectAdmin",
-		"roles/cloudkms.admin",
-		"roles/cloudkms.cryptoKeyEncrypterDecrypter",
-	}
 )
 
 var (
@@ -52,9 +46,10 @@ type CreateVaultOptions struct {
 	CreateOptions
 	UpgradeIngressOptions UpgradeIngressOptions
 
-	GKEProjectID string
-	GKEZone      string
-	Namespace    string
+	GKEProjectID      string
+	GKEZone           string
+	Namespace         string
+	SecretsPathPrefix string
 }
 
 // NewCmdCreateVault  creates a command object for the "create" command
@@ -92,6 +87,7 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&options.GKEProjectID, "gke-project-id", "", "", "Google Project ID to use for Vault backend")
 	cmd.Flags().StringVarP(&options.GKEZone, "gke-zone", "", "", "The zone (e.g. us-central1-a) where Vault will store the encrypted data")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace where the Vault is created")
+	cmd.Flags().StringVarP(&options.SecretsPathPrefix, "secrets-path-prefix", "p", vault.DefaultSecretsPathPrefix, "Path prefix for secrets used for access control config")
 
 	options.addCommonFlags(cmd)
 	options.UpgradeIngressOptions.addFlags(cmd)
@@ -117,13 +113,18 @@ func (o *CreateVaultOptions) Run() error {
 }
 
 func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
-	_, team, err := o.KubeClient()
+	client, team, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating kubernetes client")
 	}
 
 	if o.Namespace == "" {
 		o.Namespace = team
+	}
+
+	err = kube.EnsureNamespaceCreated(client, o.Namespace, nil, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to ensure that provided namespace '%s' is created", o.Namespace)
 	}
 
 	vaultOperatorClient, err := o.VaultOperatorClient()
@@ -198,7 +199,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		GcsBucket:   vaultBucket,
 	}
 	err = kube.CreateVault(vaultOperatorClient, vaultName, o.Namespace, gcpServiceAccountSecretName,
-		gcpConfig, vaultAuthServiceAccount, o.Namespace)
+		gcpConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
 	}
@@ -225,7 +226,7 @@ func (o *CreateVaultOptions) createVaultGCPServiceAccount(vaultName string) (str
 	if err != nil {
 		return "", err
 	}
-	serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, o.GKEProjectID, serviceAccountDir, vaultServiceAccountRoles)
+	serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, o.GKEProjectID, serviceAccountDir, gke.VaultServiceAccountRoles)
 	if err != nil {
 		return "", errors.Wrap(err, "creating the service account")
 	}
@@ -247,7 +248,7 @@ func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath
 		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
 	}
 
-	secretName := fmt.Sprintf("%s-gcp-sa", vaultName)
+	secretName := kube.VaultGcpServiceAccountSecretName(vaultName)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,

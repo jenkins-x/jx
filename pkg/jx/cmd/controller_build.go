@@ -3,7 +3,6 @@ package cmd
 import (
 	"io"
 	"reflect"
-	"regexp"
 	"strings"
 	"time"
 	"unicode"
@@ -11,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -155,91 +153,20 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, jxClient versioned.Inter
 
 // createPromoteStepActivityKey deduces the pipeline metadata from the Knative build pod
 func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, pod *corev1.Pod) *kube.PromoteStepActivityKey {
-	branch := ""
-	lastCommitSha := ""
-	lastCommitMessage := ""
-	lastCommitURL := ""
-	build := ""
-	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
-	if err != nil {
-		log.Warnf("Failed to compile regexp because %s", err)
-	}
-	gitURL := ""
-	for _, initContainer := range pod.Spec.InitContainers {
-		if initContainer.Name == "build-step-git-source" {
-			args := initContainer.Args
-			for i := 0; i <= len(args)-2; i += 2 {
-				key := args[i]
-				value := args[i+1]
 
-				switch key {
-				case "-url":
-					gitURL = value
-				case "-revision":
-					if shaRegexp.MatchString(value) {
-						lastCommitSha = value
-					}
-				}
-			}
-			break
-		}
-		var pullPullSha, pullBaseSha string
-		for _, v := range initContainer.Env {
-			if v.Name == "PULL_PULL_SHA" {
-				pullPullSha = v.Value
-			}
-			if v.Name == "PULL_BASE_SHA" {
-				pullBaseSha = v.Value
-			}
-			if v.Name == "BRANCH_NAME" || v.Name == "PULL_BASE_REF" {
-				branch = v.Value
-			}
-			if v.Name == "JX_BUILD_NUMBER" {
-				build = v.Value
-			}
-		}
-		if build == "" {
-			for _, v := range initContainer.Env {
-				if v.Name == "BUILD_NUMBER" {
-					build = v.Value
-				}
-			}
-		}
-		if lastCommitSha == "" && pullPullSha != "" {
-			lastCommitSha = pullPullSha
-		}
-		if lastCommitSha == "" && pullBaseSha != "" {
-			lastCommitSha = pullBaseSha
-		}
-
-	}
-	if gitURL == "" {
+	buildInfo := builds.CreateBuildPodInfo(pod)
+	if buildInfo.GitURL == "" || buildInfo.GitInfo == nil {
 		return nil
 	}
-	if build == "" {
-		build = "1"
-	}
-	if branch == "" {
-		branch = "master"
-	}
-	gitInfo, err := gits.ParseGitURL(gitURL)
-	if err != nil {
-		log.Warnf("Failed to parse Git URL %s: %s", gitURL, err)
-		return nil
-	}
-	org := gitInfo.Organisation
-	repo := gitInfo.Name
-	name := org + "-" + repo + "-" + branch + "-" + build
-	pipeline := org + "/" + repo + "/" + branch
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
-			Name:              name,
-			Pipeline:          pipeline,
-			Build:             build,
-			LastCommitSHA:     lastCommitSha,
-			LastCommitMessage: lastCommitMessage,
-			LastCommitURL:     lastCommitURL,
-			GitInfo:           gitInfo,
+			Name:              buildInfo.Name,
+			Pipeline:          buildInfo.Pipeline,
+			Build:             buildInfo.Build,
+			LastCommitSHA:     buildInfo.LastCommitSHA,
+			LastCommitMessage: buildInfo.LastCommitMessage,
+			LastCommitURL:     buildInfo.LastCommitURL,
+			GitInfo:           buildInfo.GitInfo,
 		},
 	}
 }

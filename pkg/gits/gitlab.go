@@ -410,6 +410,15 @@ func (g *GitlabProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return err
 }
 
+func (p *GitlabProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, fmt.Errorf("not implemented!")
+}
+
+func (p *GitlabProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
+}
+
 func (g *GitlabProvider) SearchIssues(org, repo, query string) ([]*GitIssue, error) {
 	opt := &gitlab.ListProjectIssuesOptions{Search: &query}
 	return g.searchIssuesWithOptions(org, repo, opt)
@@ -623,6 +632,10 @@ func (p *GitlabProvider) ListInvitations() ([]*github.RepositoryInvitation, *git
 func (p *GitlabProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
 	return &github.Response{}, nil
+}
+
+func (p *GitlabProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, fmt.Errorf("Getting content not supported on gitlab")
 }
 
 // GitlabAccessTokenURL returns the URL to click on to generate a personal access token for the Git provider

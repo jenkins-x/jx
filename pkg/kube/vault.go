@@ -5,6 +5,7 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,13 +19,10 @@ const (
 	gcpServiceAccountEnv  = "GOOGLE_APPLICATION_CREDENTIALS"
 	gcpServiceAccountPath = "/etc/gcp/service-account.json"
 
-	vaultPoliciesName    = "policies"
-	vaultRuleSecretsName = "allow_secrets"
-	vaultRuleSecrets     = "path \"secret/*\" { capabilities = [\"create\", \"read\", \"update\", \"delete\", \"list\"] }"
-	vaultAuthName        = "auth"
-	vaultAuthType        = "kubernetes"
-	vaultAuthTTL         = "1h"
-	vaultAuthSaSuffix    = "auth-sa"
+	vaultAuthName     = "auth"
+	vaultAuthType     = "kubernetes"
+	vaultAuthTTL      = "1h"
+	vaultAuthSaSuffix = "auth-sa"
 )
 
 // Vault stores some details of a Vault resource
@@ -66,8 +64,8 @@ type VaultRole struct {
 type VaultPolicies []VaultPolicy
 
 type VaultPolicy struct {
-	Name  string
-	Rules string
+	Name  string `json:"name"`
+	Rules string `json:"rules"`
 }
 
 type Tcp struct {
@@ -87,10 +85,30 @@ type Storage struct {
 	GCS GCSConfig `json:"gcs"`
 }
 
+// VaultGcpServiceAccountSecretName builds the secret name where the GCP service account is stored
+func VaultGcpServiceAccountSecretName(vaultName string) string {
+	return fmt.Sprintf("%s-gcp-sa", vaultName)
+}
+
 // CreateVault creates a new vault backed by GCP KMS and storage
 func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string,
 	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
-	authServiceAccountNamespace string) error {
+	authServiceAccountNamespace string, secretsPathPrefix string) error {
+
+	if secretsPathPrefix == "" {
+		secretsPathPrefix = vault.DefaultSecretsPathPrefix
+	}
+	pathRule := &vault.PathRule{
+		Path: []vault.PathPolicy{{
+			Prefix:       secretsPathPrefix,
+			Capabilities: vault.DefaultSecretsCapabiltities,
+		}},
+	}
+	vaultRule, err := pathRule.String()
+	if err != nil {
+		return errors.Wrap(err, "encoding the polcies for secret path")
+	}
+
 	vault := &v1alpha1.Vault{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Vault",
@@ -134,17 +152,17 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 								BoundServiceAccountNames:      authServiceAccount,
 								BoundServiceAccountNamespaces: authServiceAccountNamespace,
 								Name:                          authServiceAccount,
-								Policies:                      vaultRuleSecretsName,
+								Policies:                      vault.PathRulesName,
 								TTL:                           vaultAuthTTL,
 							},
 						},
 						Type: vaultAuthType,
 					},
 				},
-				vaultPoliciesName: []VaultPolicy{
+				vault.PoliciesName: []VaultPolicy{
 					{
-						Name:  vaultRuleSecretsName,
-						Rules: vaultRuleSecrets,
+						Name:  vault.PathRulesName,
+						Rules: vaultRule,
 					},
 				},
 			},
@@ -165,7 +183,7 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 		},
 	}
 
-	_, err := vaultOperatorClient.Vault().Vaults(ns).Create(vault)
+	_, err = vaultOperatorClient.Vault().Vaults(ns).Create(vault)
 	return err
 }
 

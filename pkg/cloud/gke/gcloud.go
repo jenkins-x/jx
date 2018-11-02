@@ -23,6 +23,11 @@ var (
 		"roles/container.developer",
 		"roles/storage.objectAdmin",
 		"roles/editor"}
+
+	VaultServiceAccountRoles = []string{"roles/storage.objectAdmin",
+		"roles/cloudkms.admin",
+		"roles/cloudkms.cryptoKeyEncrypterDecrypter",
+	}
 )
 
 func VaultBucketName(vaultName string) string {
@@ -252,10 +257,32 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 	return keyPath, nil
 }
 
-func DeleteServiceAccount(serviceAccount string, projectId string) error {
+func DeleteServiceAccount(serviceAccount string, projectId string, roles []string) error {
 	found := FindServiceAccount(serviceAccount, projectId)
 	if !found {
 		return nil // nothing to delete
+	}
+	// remove roles to service account
+	for _, role := range roles {
+		log.Infof("Removing role %s\n", role)
+		args := []string{"projects",
+			"remove-iam-policy-binding",
+			projectId,
+			"--member",
+			fmt.Sprintf("serviceAccount:%s@%s.iam.gserviceaccount.com", serviceAccount, projectId),
+			"--role",
+			role,
+			"--project",
+			projectId}
+
+		cmd := util.Command{
+			Name: "gcloud",
+			Args: args,
+		}
+		_, err := cmd.RunWithoutRetry()
+		if err != nil {
+			return err
+		}
 	}
 	args := []string{"iam",
 		"service-accounts",
