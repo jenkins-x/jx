@@ -2,7 +2,6 @@ package kube
 
 import (
 	"fmt"
-
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
@@ -30,6 +29,7 @@ const (
 // Vault stores some details of a Vault resource
 type Vault struct {
 	Name                   string
+	Namespace              string
 	URL                    string
 	AuthServiceAccountName string
 }
@@ -189,13 +189,13 @@ func VaultAuthServiceAccountName(vaultName string) string {
 }
 
 // GetVaults returns all vaults available in a given namespaces
-func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string) ([]Vault, error) {
+func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string) ([]*Vault, error) {
 	vaultList, err := vaultOperatorClient.Vault().Vaults(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "listing vaults in namespace '%s'", ns)
 	}
 
-	vaults := []Vault{}
+	vaults := []*Vault{}
 	for _, v := range vaultList.Items {
 		vaultName := v.Name
 		vaultAuthSaName := VaultAuthServiceAccountName(vaultName)
@@ -205,10 +205,11 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 		}
 		vault := Vault{
 			Name:                   vaultName,
+			Namespace:              ns,
 			URL:                    vaultURL,
 			AuthServiceAccountName: vaultAuthSaName,
 		}
-		vaults = append(vaults, vault)
+		vaults = append(vaults, &vault)
 	}
 	return vaults, nil
 }

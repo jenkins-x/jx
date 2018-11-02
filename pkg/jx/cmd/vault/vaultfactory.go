@@ -1,0 +1,108 @@
+package vault
+
+import (
+	"errors"
+	"fmt"
+	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/hashicorp/vault/api"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+)
+
+type VaultClientFactory struct {
+	Options          common.NewCommonOptionsInterface
+	kubeClient       kubernetes.Interface
+	defaultNamespace string
+}
+
+// NewVaultClient creates a new api.Client
+// if namespace is nil, then the default namespace of the factory will be used
+func (v *VaultClientFactory) NewVaultClient(namespace string) (*api.Client, error) {
+	var err error
+	v.kubeClient, v.defaultNamespace, err = v.Options.KubeClient()
+	if err != nil {
+		return nil, err
+	}
+
+	selector, err := NewVaultSelector(v.Options)
+	if namespace == "" {
+		namespace = v.defaultNamespace
+	}
+	vlt, err := selector.GetVault(namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	serviceAccount, err := v.getServiceAccountFromVault(vlt)
+	secret, err := v.getSecretFromServiceAccount(serviceAccount, vlt.Namespace)
+	jwt := getJWTFromSecret(secret)
+
+	config := api.Config{Address: vlt.URL}
+	vaultClient, err := api.NewClient(&config)
+	token, err := getTokenFromVault(serviceAccount.Name, jwt, vaultClient)
+	vaultClient.SetToken(token)
+	return vaultClient, nil
+}
+
+func (v *VaultClientFactory) getServiceAccountFromVault(vault *kube.Vault) (*v1.ServiceAccount, error) {
+	return v.kubeClient.CoreV1().ServiceAccounts(vault.Namespace).Get(vault.AuthServiceAccountName, meta_v1.GetOptions{})
+}
+
+func (v *VaultClientFactory) getSecretFromServiceAccount(sa *v1.ServiceAccount, namespace string) (*v1.Secret, error) {
+	secretName := sa.Secrets[0].Name
+	return v.kubeClient.CoreV1().Secrets(namespace).Get(secretName, meta_v1.GetOptions{})
+}
+
+func getJWTFromSecret(secret *v1.Secret) string {
+	return string(secret.Data["token"])
+}
+
+func getTokenFromVault(role string, jwt string, vaultClient *api.Client) (string, error) {
+	m := map[string]interface{}{
+		"jwt":  jwt,
+		"role": role,
+	}
+	sec, err := vaultClient.Logical().Write("/auth/kubernetes/login", m)
+	return sec.Auth.ClientToken, err
+}
+
+type vaultSelectorImpl struct {
+	vaultOperatorClient versioned.Interface
+	kubeClient          kubernetes.Interface
+}
+
+func NewVaultSelector(o common.NewCommonOptionsInterface) (VaultSelector, error) {
+	operator, err := o.VaultOperatorClient()
+	if err != nil {
+		return nil, err
+	}
+	kubeclient, _, err := o.KubeClient()
+	if err != nil {
+		return nil, err
+	}
+	v := vaultSelectorImpl{
+		vaultOperatorClient: operator,
+		kubeClient:          kubeclient,
+	}
+	return v, nil
+}
+
+func (v vaultSelectorImpl) GetVault(namespace string) (*kube.Vault, error) {
+	vaults, err := kube.GetVaults(v.kubeClient, v.vaultOperatorClient, namespace)
+	if err != nil {
+		return nil, err
+	} else if len(vaults) == 0 {
+		return nil, errors.New(fmt.Sprintf("no vaults found in namespace '%s'", namespace))
+	}
+	if len(vaults) > 1 {
+		return selectVault(vaults)
+	}
+	return vaults[0], nil
+}
+
+func selectVault(vaults []*kube.Vault) (*kube.Vault, error) {
+	return vaults[0], nil // TODO - actually select the vault
+}

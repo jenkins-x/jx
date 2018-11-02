@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/vault"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
@@ -59,6 +59,24 @@ func NewCmdGetSecret(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 // Run implements the command
 func (o *GetSecretOptions) Run() error {
-	fmt.Fprintln(o.Out, "Hello")
+	clientFactory := vault.VaultClientFactory{
+		Options: o,
+	}
+	client, err := clientFactory.NewVaultClient(o.Namespace)
+	if err != nil {
+		return err
+	}
+	secrets, err := vault.GetSecrets(client)
+	if err != nil {
+		return err
+	}
+
+	table := o.CreateTable()
+	table.AddRow("KEY")
+	for _, secret := range secrets {
+		table.AddRow(secret)
+	}
+	table.Render()
+
 	return nil
 }
