@@ -99,10 +99,10 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 		secretsPathPrefix = vault.DefaultSecretsPathPrefix
 	}
 	pathRule := &vault.PathRule{
-		Path: vault.PathPolicy{
+		Path: []vault.PathPolicy{{
 			Prefix:       secretsPathPrefix,
 			Capabilities: vault.DefaultSecretsCapabiltities,
-		},
+		}},
 	}
 	vaultRule, err := pathRule.String()
 	if err != nil {

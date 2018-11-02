@@ -3,6 +3,7 @@ package vault_test
 import (
 	"testing"
 
+	"github.com/hashicorp/hcl"
 	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,23 +16,21 @@ func TestEncodeVaultPathRule(t *testing.T) {
 	}{
 		"marshal policy": {
 			rule: &vault.PathRule{
-				Path: vault.PathPolicy{
+				Path: []vault.PathPolicy{{
 					Prefix:       "secrets/*",
 					Capabilities: []string{vault.CreateCapability, vault.ReadCapability},
-				},
+				}},
 			},
-			err:  false,
-			want: "path \"secrets/*\" {  capabilities = [    \"create\",    \"read\",  ]}",
+			err: false,
 		},
 		"marshal empty policy": {
 			rule: &vault.PathRule{
-				Path: vault.PathPolicy{
+				Path: []vault.PathPolicy{{
 					Prefix:       "",
 					Capabilities: []string{},
-				},
+				}},
 			},
-			err:  false,
-			want: "path \"\" {  capabilities = []}",
+			err: false,
 		},
 		"marshal nil policy with error": {
 			rule: nil,
@@ -46,8 +45,11 @@ func TestEncodeVaultPathRule(t *testing.T) {
 				assert.Error(t, err, "should encode policy with an error")
 			} else {
 				assert.NoError(t, err, "should encode policy without error")
+				var rule vault.PathRule
+				err = hcl.Decode(&rule, output)
+				assert.NoError(t, err, "should decode policy without error")
+				assert.Equal(t, *tc.rule, rule)
 			}
-			assert.Equal(t, tc.want, output)
 		})
 	}
 }

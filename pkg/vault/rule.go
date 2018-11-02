@@ -28,7 +28,7 @@ var (
 
 // PathRule defines a path rule
 type PathRule struct {
-	Path PathPolicy `hcl:"path" hcle:"omitempty"`
+	Path []PathPolicy `hcl:"path" hcle:"omitempty"`
 }
 
 // PathPolicy defiens a vault path policy
