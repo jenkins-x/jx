@@ -30,7 +30,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/shirou/gopsutil/process"
 	logger "github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -681,51 +680,6 @@ func (o *CommonOptions) installHelm() error {
 		return err
 	}
 	return o.installHelmSecretsPlugin(fullPath, true)
-}
-
-func (o *CommonOptions) killProcesses(binary string) error {
-	processes, err := process.Processes()
-	if err != nil {
-		return err
-	}
-	m := map[int32]bool{}
-	_, err = o.killProcessesTree(binary, processes, m)
-	return err
-}
-
-func (o *CommonOptions) killProcessesTree(binary string, processes []*process.Process, m map[int32]bool) (bool, error) {
-	var answer error
-	done := false
-	for _, p := range processes {
-		pid := p.Pid
-		if pid > 0 && !m[pid] {
-			m[pid] = true
-			exe, err := p.Name()
-			if err == nil && exe != "" {
-				_, name := filepath.Split(exe)
-				// if windows lets remove .exe
-				name = strings.TrimSuffix(name, ".exe")
-				if name == binary {
-					log.Infof("killing %s process with pid %d\n", binary, int(pid))
-					err = p.Terminate()
-					if err != nil {
-						log.Warnf("Failed to terminate process with pid %d: %s", int(pid), err)
-					} else {
-						log.Infof("killed %s process with pid %d\n", binary, int(pid))
-					}
-					return true, err
-				}
-			}
-			children, err := p.Children()
-			if err == nil {
-				done, err = o.killProcessesTree(binary, children, m)
-				if done {
-					return done, err
-				}
-			}
-		}
-	}
-	return done, answer
 }
 
 func (o *CommonOptions) installTiller() error {
