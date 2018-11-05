@@ -26,8 +26,8 @@ func TestPromoteToProductionRun(t *testing.T) {
 	promoteOptions := &cmd.PromoteOptions{
 		Environment:        "production", // --env production
 		Application:        "my-app", // --app my-app
-		Pipeline:           "master", // needed for the CI build, otherwise it takes the actual build values (i.e. jenkins-x-jx-pr-2126-15)
-		Build:              "1",
+		Pipeline:           testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Build:              testEnv.Activity.Spec.Build, // needed for the test to pass on CI, otherwise it takes the actual CI build value
 		Version:            version, // --version 1.2.0
 		ReleaseName:        "",
 		LocalHelmRepoName:  "",
@@ -85,8 +85,8 @@ func TestPromoteToProductionNoMergeRun(t *testing.T) {
 	promoteOptions := &cmd.PromoteOptions{
 		Environment:        "production", // --env production
 		Application:        "my-app", // --app my-app
-		Pipeline:           "master", // needed for the CI build, otherwise it takes the actual build values (i.e. jenkins-x-jx-pr-2126-15)
-		Build:              "1",
+		Pipeline:           testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Build:              testEnv.Activity.Spec.Build, // needed for the test to pass on CI, otherwise it takes the actual CI build value
 		Version:            "",
 		ReleaseName:        "",
 		LocalHelmRepoName:  "",
@@ -158,8 +158,8 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 	promoteOptions := &cmd.PromoteOptions{
 		Environment:        "production", // --env production
 		Application:        "my-app", // --app my-app
-		Pipeline:           "master", // needed for the CI build, otherwise it takes the actual build values (i.e. jenkins-x-jx-pr-2126-15)
-		Build:              "1",
+		Pipeline:           testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Build:              testEnv.Activity.Spec.Build, // needed for the test to pass on CI, otherwise it takes the actual CI build value
 		Version:            "",
 		ReleaseName:        "",
 		LocalHelmRepoName:  "",
