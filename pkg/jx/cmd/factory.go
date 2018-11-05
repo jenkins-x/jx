@@ -7,9 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 
-	"github.com/jenkins-x/jx/pkg/binaries"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -499,51 +497,6 @@ func (f *factory) GetHelm(verbose bool,
 	}
 
 	return h
-}
-
-func (o *CommonOptions) installTiller() error {
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return err
-	}
-	binary := "tiller"
-	fileName := binary
-	if runtime.GOOS == "windows" {
-		fileName += ".exe"
-	}
-	// TODO workaround until 2.11.x GA is released
-	latestVersion := "2.11.0-rc.3"
-	/*
-		latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
-			if err != nil {
-				return err
-			}
-	*/
-	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
-	fullPath := filepath.Join(binDir, fileName)
-	helmFullPath := filepath.Join(binDir, "helm")
-	tarFile := fullPath + ".tgz"
-	err = binaries.DownloadFile(clientURL, tarFile)
-	if err != nil {
-		return err
-	}
-	err = util.UnTargz(tarFile, binDir, []string{binary, fileName, "helm"})
-	if err != nil {
-		return err
-	}
-	err = os.Remove(tarFile)
-	if err != nil {
-		return err
-	}
-	err = os.Chmod(fullPath, 0755)
-	if err != nil {
-		return err
-	}
-	err = startLocalTillerIfNotRunning()
-	if err != nil {
-		return err
-	}
-	return o.installHelmSecretsPlugin(helmFullPath, true)
 }
 
 // tillerAddress returns the address that tiller is listening on
