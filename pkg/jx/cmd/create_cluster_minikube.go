@@ -16,7 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
@@ -249,11 +249,15 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		return err
 	}
 
-	ip, err := o.getCommandOutput("", "minikube", "ip")
-	if err != nil {
-		return err
+	if o.CreateClusterOptions.InstallOptions.InitOptions.Flags.Domain == "" {
+		ip, err := o.getCommandOutput("", "minikube", "ip")
+		if err != nil {
+			return err
+		}
+		o.InstallOptions.Flags.Domain = ip + ".nip.io"
+	} else {
+		o.InstallOptions.Flags.Domain = o.CreateClusterOptions.InstallOptions.InitOptions.Flags.Domain
 	}
-	o.InstallOptions.Flags.Domain = ip + ".nip.io"
 
 	log.Info("Initialising cluster ...\n")
 	err = o.initAndInstall(MINIKUBE)
