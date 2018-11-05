@@ -3,6 +3,8 @@ package cmd_test
 import (
 	"reflect"
 
+	"github.com/jenkins-x/jx/pkg/auth"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	gits_matchers "github.com/jenkins-x/jx/pkg/gits/mocks/matchers"
@@ -145,6 +147,12 @@ func TestRun(t *testing.T) {
 		AnyInt(), // number
 	)).ThenReturn(mockGitPR, nil)
 
+	//TODO:	o.Factory.CreateAuthConfigService(fileName)
+	mockAuthConfigService := auth.AuthConfigService{}
+	When(factory.CreateAuthConfigService(cmd.GitAuthConfigFile)).ThenReturn(mockAuthConfigService, nil)
+	//TODO: o.Factory.IsInCDPIpeline()
+	When(factory.IsInCDPIpeline()).ThenReturn(true)
+
 	env := &jio_v1.Environment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-app-name",
@@ -180,6 +188,7 @@ func TestRun(t *testing.T) {
 	os.Setenv("GITHUB_BEARER_TOKEN", "abc123def")
 	os.Setenv(cmd.JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST, "MyOrganisation")
 	os.Setenv(cmd.JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT, "5000")
+	os.Setenv("JOB_NAME", "job")
 	os.Setenv("BUILD_NUMBER", "1")
 	os.Setenv(cmd.ORG, "MyOrganisation")
 	os.Setenv(cmd.APP_NAME, "MyApp")
