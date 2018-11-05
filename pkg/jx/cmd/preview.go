@@ -219,9 +219,8 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 
-		//CreateGitProvider(gitURL string, message string, authConfigSvc auth.AuthConfigService, gitKind string, batchMode bool, gitter gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
+		fmt.Println("gitproviders")
 		gitProvider, err := o.Factory.CreateGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
-		//gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 		if err != nil {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}
