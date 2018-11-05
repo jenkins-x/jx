@@ -1131,10 +1131,17 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		}
 		version = fmt.Sprintf("%s", latestVersion)
 	}
-	clientURL := fmt.Sprintf("https://github.com/"+org+"/"+repo+"/releases/download/v%s/"+binary+"-%s-%s.tar.gz", version, runtime.GOOS, runtime.GOARCH)
+	extension := "tar.gz"
+	if runtime.GOOS == "windows" {
+		extension = "zip"
+	}
+	clientURL := fmt.Sprintf("https://github.com/"+org+"/"+repo+"/releases/download/v%s/"+binary+"-%s-%s.%s", version, runtime.GOOS, runtime.GOARCH, extension)
 	fullPath := filepath.Join(binDir, fileName)
-	tarFile := fullPath + ".tgz"
-	err = binaries.DownloadFile(clientURL, tarFile)
+	if runtime.GOOS == "windows" {
+		fullPath += ".exe"
+	}
+	tmpArchiveFile := fullPath + ".tmp"
+	err = binaries.DownloadFile(clientURL, tmpArchiveFile)
 	if err != nil {
 		return err
 	}
@@ -1143,24 +1150,51 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	if err != nil {
 		return err
 	}
-	err = util.UnTargz(tarFile, jxHome, []string{binary, fileName})
-	if err != nil {
-		return err
+
+
+	if runtime.GOOS != "windows" {
+		err = util.UnTargz(tmpArchiveFile, jxHome, []string{binary, fileName})
+		if err != nil {
+			return err
+		}
+		err = os.Remove(tmpArchiveFile)
+		if err != nil {
+			return err
+		}
+		err = os.Remove(filepath.Join(binDir,"jx"))
+		if err != nil && o.Verbose {
+			log.Infof("Skipping removal of old jx binary: %s\n", err)
+		}
+		// Copy over the new binary
+		err = os.Rename(filepath.Join(jxHome,"jx"), filepath.Join(binDir, "jx"))
+		if err != nil {
+			return err
+		}
+	} else {  // windows
+		windowsBinaryFromArchive := "jx-windows-amd64.exe"
+		err = util.UnzipSpecificFiles(tmpArchiveFile, jxHome, windowsBinaryFromArchive)
+		if err != nil {
+			return err
+		}
+		err = os.Remove(tmpArchiveFile)
+		if err != nil {
+			return err
+		}
+		// A standard remove and rename will not work as the file will be locked as windows is running it
+		// the trick is to rename to a tempfile :-o
+		// this will leave old files around but well at least it updates.
+		err = os.Rename(filepath.Join(binDir,"jx.exe"), filepath.Join(binDir, "jx.exe.deleteme"))
+		// if we can not rename it this i pretty fatal as we won;t be able to overwrite either
+		if err != nil {
+			return err
+		}
+		// Copy over the new binary
+		err = os.Rename(filepath.Join(jxHome, windowsBinaryFromArchive), filepath.Join(binDir, "jx.exe"))
+		if err != nil {
+			return err
+		}
 	}
-	err = os.Remove(tarFile)
-	if err != nil {
-		return err
-	}
-	err = os.Remove(binDir + "/jx")
-	if err != nil && o.Verbose {
-		log.Infof("Skipping removal of old jx binary: %s\n", err)
-	}
-	// Copy over the new binary
-	err = os.Rename(jxHome+"/jx", binDir+"/jx")
-	if err != nil {
-		return err
-	}
-	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(binDir+"/jx"))
+	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(fullPath))
 	return os.Chmod(fullPath, 0755)
 }
 
