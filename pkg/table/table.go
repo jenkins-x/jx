@@ -3,6 +3,7 @@ package table
 import (
 	"fmt"
 	"io"
+	"unicode/utf8"
 
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -12,11 +13,13 @@ type Table struct {
 	Rows         [][]string
 	ColumnWidths []int
 	ColumnAlign  []int
+	Separator    string
 }
 
 func CreateTable(out io.Writer) Table {
 	return Table{
-		Out: out,
+		Out:       out,
+		Separator: " ",
 	}
 }
 
@@ -34,7 +37,7 @@ func (t *Table) Render() {
 	// lets figure out the max widths of each column
 	for _, row := range t.Rows {
 		for ci, col := range row {
-			l := len(col)
+			l := utf8.RuneCountInString(col)
 			t.ColumnWidths = ensureArrayCanContain(t.ColumnWidths, ci)
 			if l > t.ColumnWidths[ci] {
 				t.ColumnWidths[ci] = l
@@ -47,7 +50,7 @@ func (t *Table) Render() {
 		lastColumn := len(row) - 1
 		for ci, col := range row {
 			if ci > 0 {
-				fmt.Fprint(out, " ")
+				fmt.Fprint(out, t.Separator)
 			}
 			l := t.ColumnWidths[ci]
 			align := t.GetColumnAlign(ci)

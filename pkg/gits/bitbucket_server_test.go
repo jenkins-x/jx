@@ -246,7 +246,7 @@ func (suite *BitbucketServerProviderTestSuite) TestPullRequestLastCommitStatus()
 
 	suite.Require().Nil(err)
 	suite.Require().NotEmpty(lastCommitStatus)
-	suite.Require().Equal(lastCommitStatus, "INPROGRESS")
+	suite.Require().Equal(lastCommitStatus, "in-progress")
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestListCommitStatuses() {
@@ -257,9 +257,9 @@ func (suite *BitbucketServerProviderTestSuite) TestListCommitStatuses() {
 
 	for _, status := range buildStatuses {
 		if status.ID == "REPO-MASTER" {
-			suite.Require().Equal(status.State, "INPROGRESS")
+			suite.Require().Equal(status.State, "in-progress")
 		} else if status.ID == "Test-Master" {
-			suite.Require().Equal(status.State, "SUCCESSFUL")
+			suite.Require().Equal(status.State, "success")
 		}
 		suite.Require().NotEmpty(status.State)
 		suite.Require().NotEmpty(status.URL)

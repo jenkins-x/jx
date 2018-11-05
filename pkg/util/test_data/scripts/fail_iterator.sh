@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This scipt is intended to be used to match a pass attempt in a loop. Currently used in command_test.go
+# This script is intended to be used to match a pass attempt in a loop. Currently used in command_test.go
 
 set -e
 

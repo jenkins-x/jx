@@ -28,6 +28,7 @@ func init() {
 }
 
 func TestCreateEnvRun(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
 	// namespace fixture
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

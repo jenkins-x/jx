@@ -8,14 +8,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,7 +23,6 @@ const (
 	coreRepoName                = "cb"
 	cbServiceName               = "cb-core"
 	coreRepoUrl                 = "https://%s:%s@chartmuseum.jx.charts-demo.cloudbees.com"
-	serviceaccountsClusterAdmin = "serviceaccounts-cluster-admin"
 	defaultCloudBeesVersion     = ""
 )
 
@@ -102,48 +99,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 		return err
 	}
 
-	// todo add correct roles to core rather than make EVERY service account cluster admin
-	_, err = c.RbacV1().ClusterRoleBindings().Get(serviceaccountsClusterAdmin, v1.GetOptions{})
-	if err != nil {
-
-		ok := false
-		log.Warn("CloudBees app for Kubernetes is in preview and for now requires cluster admin to be granted to ALL service accounts in your cluster.  Check CLI help for more info.\n")
-		prompt := &survey.Confirm{
-			Message: "create cluster admin rolebinding?",
-			Default: false,
-			Help:    "a cluster admin role provides full privileges and therefore this action should not be run on anything other than a demo cluster that can be recreated",
-		}
-		survey.AskOne(prompt, &ok, nil, surveyOpts)
-
-		if !ok {
-			log.Info("aborting the core addon\n")
-			return nil
-		}
-
-		rb := rbacv1.ClusterRoleBinding{
-			ObjectMeta: v1.ObjectMeta{
-				Name: serviceaccountsClusterAdmin,
-			},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "ClusterRole",
-				Name:     "cluster-admin",
-			},
-			Subjects: []rbacv1.Subject{
-				{
-					APIGroup: "rbac.authorization.k8s.io",
-					Kind:     "Group",
-					Name:     "system:serviceaccounts",
-				},
-			},
-		}
-		_, err = c.RbacV1().ClusterRoleBindings().Create(&rb)
-		if err != nil {
-			return err
-		}
-	}
-
-	// check if helm repo is missing, the repo is authenticated and includes username/password so check with dummy values
+	// check if Helm repo is missing, the repo is authenticated and includes username/password so check with dummy values
 	// first as we wont need to prompt for username password if the host part of the URL matches an existing repo
 	missing, err := o.isHelmRepoMissing(fmt.Sprintf(coreRepoUrl, "dummy", "dummy"))
 	if err != nil {

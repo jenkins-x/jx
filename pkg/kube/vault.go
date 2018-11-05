@@ -5,8 +5,11 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -16,13 +19,18 @@ const (
 	gcpServiceAccountEnv  = "GOOGLE_APPLICATION_CREDENTIALS"
 	gcpServiceAccountPath = "/etc/gcp/service-account.json"
 
-	vaultPoliciesName    = "policies"
-	vaultRuleSecretsName = "allow_secrets"
-	vaultRuleSecrets     = "path \"secret/*\" { capabilities = [\"create\", \"read\", \"update\", \"delete\", \"list\"] }"
-	vaultAuthName        = "auth"
-	vaultAuthType        = "kubernetes"
-	vaultAuthTTL         = "1h"
+	vaultAuthName     = "auth"
+	vaultAuthType     = "kubernetes"
+	vaultAuthTTL      = "1h"
+	vaultAuthSaSuffix = "auth-sa"
 )
+
+// Vault stores some details of a Vault resource
+type Vault struct {
+	Name                   string
+	URL                    string
+	AuthServiceAccountName string
+}
 
 // GCPConfig keeps the configuration for Google Cloud
 type GCPConfig struct {
@@ -56,8 +64,8 @@ type VaultRole struct {
 type VaultPolicies []VaultPolicy
 
 type VaultPolicy struct {
-	Name  string
-	Rules string
+	Name  string `json:"name"`
+	Rules string `json:"rules"`
 }
 
 type Tcp struct {
@@ -77,10 +85,30 @@ type Storage struct {
 	GCS GCSConfig `json:"gcs"`
 }
 
-// CreateVault creates a new vault
+// VaultGcpServiceAccountSecretName builds the secret name where the GCP service account is stored
+func VaultGcpServiceAccountSecretName(vaultName string) string {
+	return fmt.Sprintf("%s-gcp-sa", vaultName)
+}
+
+// CreateVault creates a new vault backed by GCP KMS and storage
 func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string,
 	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
-	authServiceAccountNamespace string) error {
+	authServiceAccountNamespace string, secretsPathPrefix string) error {
+
+	if secretsPathPrefix == "" {
+		secretsPathPrefix = vault.DefaultSecretsPathPrefix
+	}
+	pathRule := &vault.PathRule{
+		Path: []vault.PathPolicy{{
+			Prefix:       secretsPathPrefix,
+			Capabilities: vault.DefaultSecretsCapabiltities,
+		}},
+	}
+	vaultRule, err := pathRule.String()
+	if err != nil {
+		return errors.Wrap(err, "encoding the polcies for secret path")
+	}
+
 	vault := &v1alpha1.Vault{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Vault",
@@ -124,17 +152,17 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 								BoundServiceAccountNames:      authServiceAccount,
 								BoundServiceAccountNamespaces: authServiceAccountNamespace,
 								Name:                          authServiceAccount,
-								Policies:                      vaultRuleSecretsName,
+								Policies:                      vault.PathRulesName,
 								TTL:                           vaultAuthTTL,
 							},
 						},
 						Type: vaultAuthType,
 					},
 				},
-				vaultPoliciesName: []VaultPolicy{
+				vault.PoliciesName: []VaultPolicy{
 					{
-						Name:  vaultRuleSecretsName,
-						Rules: vaultRuleSecrets,
+						Name:  vault.PathRulesName,
+						Rules: vaultRule,
 					},
 				},
 			},
@@ -155,6 +183,50 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 		},
 	}
 
-	_, err := vaultOperatorClient.Vault().Vaults(ns).Create(vault)
+	_, err = vaultOperatorClient.Vault().Vaults(ns).Create(vault)
 	return err
+}
+
+// FindVault  checks if a vault is available
+func FindVault(vaultOperatorClient versioned.Interface, name string, ns string) bool {
+	_, err := vaultOperatorClient.Vault().Vaults(ns).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// VaultAuthServiceAccountName returns the vault service account name
+func VaultAuthServiceAccountName(vaultName string) string {
+	return fmt.Sprintf("%s-%s", vaultName, vaultAuthSaSuffix)
+}
+
+// GetVaults returns all vaults available in a given namespaces
+func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string) ([]Vault, error) {
+	vaultList, err := vaultOperatorClient.Vault().Vaults(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "listing vaults in namespace '%s'", ns)
+	}
+
+	vaults := []Vault{}
+	for _, v := range vaultList.Items {
+		vaultName := v.Name
+		vaultAuthSaName := VaultAuthServiceAccountName(vaultName)
+		vaultURL, err := FindServiceURL(client, ns, vaultName)
+		if err != nil {
+			vaultURL = ""
+		}
+		vault := Vault{
+			Name:                   vaultName,
+			URL:                    vaultURL,
+			AuthServiceAccountName: vaultAuthSaName,
+		}
+		vaults = append(vaults, vault)
+	}
+	return vaults, nil
+}
+
+// DeleteVault delete a Vault resource
+func DeleteVault(vaultOperatorClient versioned.Interface, name string, ns string) error {
+	return vaultOperatorClient.Vault().Vaults(ns).Delete(name, &metav1.DeleteOptions{})
 }

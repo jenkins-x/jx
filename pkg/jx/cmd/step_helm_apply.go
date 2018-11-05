@@ -16,10 +16,11 @@ import (
 type StepHelmApplyOptions struct {
 	StepHelmOptions
 
-	Namespace   string
-	ReleaseName string
-	Wait        bool
-	Force       bool
+	Namespace          string
+	ReleaseName        string
+	Wait               bool
+	Force              bool
+	DisableHelmVersion bool
 }
 
 var (
@@ -68,6 +69,8 @@ func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().StringVarP(&options.ReleaseName, "name", "", "", "The name of the release")
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "", true, "Wait for Kubernetes readiness probe to confirm deployment")
 	cmd.Flags().BoolVarP(&options.Force, "force", "f", true, "Whether to to pass '--force' to helm to help deal with upgrading if a previous promote failed")
+	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version",false, "Don't set Chart version before applying")
+
 	return cmd
 }
 
@@ -82,7 +85,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
-	// if we're in a prow job we need to clone and change dir to find the Helm Chart.yaml
+	// if we're in a Prow job we need to clone and change dir to find the Helm Chart.yaml
 	if os.Getenv(PROW_JOB_ID) != "" {
 		dir, err = o.cloneProwPullRequest(dir, o.GitProvider)
 		if err != nil {
@@ -90,6 +93,9 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
+	if ! o.DisableHelmVersion {
+		(&StepHelmVersionOptions{}).Run()
+	}
 	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
 	if err != nil {
 		return err

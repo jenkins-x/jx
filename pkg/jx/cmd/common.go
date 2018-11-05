@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -9,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
 
@@ -40,7 +41,7 @@ import (
 const (
 	optionServerName        = "name"
 	optionServerURL         = "url"
-	exposecontrollerVersion = "2.3.63"
+	exposecontrollerVersion = "2.3.82"
 	exposecontroller        = "exposecontroller"
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
@@ -74,6 +75,7 @@ type CommonOptions struct {
 	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
+	Kuber               kube.Kuber
 	vaultOperatorClient vaultoperatorclient.Interface
 
 	Prow
@@ -256,13 +258,17 @@ func (o *CommonOptions) Git() gits.Gitter {
 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
-		kubeClient, _, _ := o.KubeClient()
-		//teamSettings, _ := o.TeamSettings()
-		//o.helm = o.Factory.GetHelm(o.Verbose, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate, kubeClient)
 		helmBinary, noTiller, helmTemplate, _ := o.TeamHelmBin()
-		o.helm = o.Factory.GetHelm(o.Verbose, helmBinary, noTiller, helmTemplate, kubeClient)
+		o.helm = o.Factory.GetHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
 	}
 	return o.helm
+}
+
+func (o *CommonOptions) Kube() kube.Kuber {
+	if o.Kuber == nil {
+		o.Kuber = kube.NewKubeConfig()
+	}
+	return o.Kuber
 }
 
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
@@ -736,14 +742,14 @@ func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string
 	}
 
 	if len(services) > 0 {
-		serviceCfg := "config.extravalues='services: ["
+		serviceCfg := "config.extravalues.services={"
 		for i, service := range services {
 			if i > 0 {
 				serviceCfg += ","
 			}
 			serviceCfg += service
 		}
-		serviceCfg += "]''"
+		serviceCfg += "}"
 		exValues = append(exValues, serviceCfg)
 	}
 
@@ -867,4 +873,46 @@ func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, er
 		o.vaultOperatorClient = vaultOperatorClient
 	}
 	return o.vaultOperatorClient, nil
+}
+
+func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
+	_, _, err := o.JXClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get jxclient")
+	}
+
+	_, _, err = o.KubeClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kube client")
+	}
+
+	isProwEnabled, err := o.isProw()
+	if err != nil {
+		return "", err
+	}
+
+	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	if err != nil {
+		return "", err
+	}
+
+	var webHookUrl string
+
+	if isProwEnabled {
+		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "hook")
+	} else {
+		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "github-webhook/")
+	}
+
+	return webHookUrl, nil
 }

@@ -78,8 +78,9 @@ type Secrets struct {
 }
 
 const (
-	JX_GIT_TOKEN                   = "JX_GIT_TOKEN"
-	JX_GIT_USER                    = "JX_GIT_USER"
+	JX_GIT_TOKEN = "JX_GIT_TOKEN"
+	JX_GIT_USER  = "JX_GIT_USER"
+	// Want to use your own provider file? Change this line to point to your fork
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
 
 	GitSecretsFile        = "gitSecrets.yaml"
@@ -214,14 +215,14 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", defaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
 	cmd.Flags().StringVarP(&flags.EnvironmentGitOwner, "environment-git-owner", "", "", "The Git provider organisation to create the environment Git repositories in")
-	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X chartmuseum registry with your helm client [default false]")
+	cmd.Flags().BoolVarP(&flags.RegisterLocalHelmRepo, "register-local-helmrepo", "", false, "Registers the Jenkins X ChartMuseum registry with your helm client [default false]")
 	cmd.Flags().BoolVarP(&flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install command to fail if there is already an installation. Otherwise lets update the installation")
 	cmd.Flags().StringVarP(&flags.DockerRegistry, "docker-registry", "", "", "The Docker Registry host or host:port which is used when tagging and pushing images. If not specified it defaults to the internal registry unless there is a better provider default (e.g. ECR on AWS/EKS)")
 	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
-	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable prow")
+	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -266,13 +267,13 @@ func (options *InstallOptions) Run() error {
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
 
-	// configure the helm binary
+	// configure the Helm binary
 	options.Helm().SetHelmBinary(helmBinary)
 	if initOpts.Flags.NoTiller {
 		helmer := options.Helm()
 		helmCli, ok := helmer.(*helm.HelmCLI)
 		if ok && helmCli != nil {
-			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client)
+			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client, originalNs)
 		} else {
 			helmTemplate, ok := helmer.(*helm.HelmTemplate)
 			if ok {
@@ -406,11 +407,13 @@ func (options *InstallOptions) Run() error {
 		if options.Flags.Provider == "" {
 			options.Flags.Provider = MINIKUBE
 		}
-		ip, err := options.getCommandOutput("", "minikube", "ip")
-		if err != nil {
-			return errors.Wrap(err, "failed to get the IP from Minikube")
+		if options.Flags.Domain == "" {
+			ip, err := options.getCommandOutput("", "minikube", "ip")
+			if err != nil {
+				return errors.Wrap(err, "failed to get the IP from Minikube")
+			}
+			options.Flags.Domain = ip + ".nip.io"
 		}
-		options.Flags.Domain = ip + ".nip.io"
 	}
 
 	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
@@ -710,10 +713,10 @@ func (options *InstallOptions) Run() error {
 
 	options.currentNamespace = ns
 	if options.Flags.Prow {
-		// install prow into the new env
+		// install Prow into the new env
 		err = options.installProw()
 		if err != nil {
-			return fmt.Errorf("failed to install prow: %v", err)
+			return fmt.Errorf("failed to install Prow: %v", err)
 		}
 	}
 
@@ -728,20 +731,28 @@ func (options *InstallOptions) Run() error {
 	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
 	if !initOpts.Flags.NoTiller {
 		// Need to check the tiller pod is ready before proceeding
-		log.Infof("Waiting for %s pod to be ready\n", util.ColorInfo("tiller"))
 		serviceAccountName := "tiller"
 		tillerNamespace := options.InitOptions.Flags.TillerNamespace
 
-		clusterRoleBindingName := serviceAccountName
+		log.Infof("Waiting for %s pod to be ready, service account name is %s, namespace is %s, tiller namespace is %s\n",
+			util.ColorInfo("tiller"), util.ColorInfo(serviceAccountName), util.ColorInfo(ns), util.ColorInfo(tillerNamespace))
+
+		clusterRoleBindingName := serviceAccountName + "-role-binding"
 		role := options.InitOptions.Flags.TillerClusterRole
 
-		err = options.ensureClusterRoleBinding(clusterRoleBindingName, role, tillerNamespace, serviceAccountName)
+		log.Infof("Waiting for cluster role binding to be defined, named %s in namespace %s\n ", util.ColorInfo(clusterRoleBindingName), util.ColorInfo(ns))
+		err = options.ensureClusterRoleBinding(clusterRoleBindingName, role, ns, serviceAccountName)
 		if err != nil {
 			return errors.Wrap(err, "tiller cluster role not defined")
+		} else {
+			log.Infof("tiller cluster role defined: %s in namespace %s\n", util.ColorInfo(role), util.ColorInfo(ns))
 		}
 		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
 		if err != nil {
-			return errors.Wrap(err, "tiller pod is not running after 10 minutes")
+			msg := fmt.Sprintf("tiller pod (tiller-deploy in namespace %s) is not running after 10 minutes", tillerNamespace)
+			return errors.Wrap(err, msg)
+		} else {
+			log.Infoln("tiller pod running")
 		}
 	}
 
@@ -783,7 +794,7 @@ func (options *InstallOptions) Run() error {
 
 	// save cluster config CA and server url to a configmap
 	if !options.Flags.DisableSetKubeContext {
-		kubeConfig, _, err := kube.LoadConfig()
+		kubeConfig, _, err := options.Kube().LoadConfig()
 		if err != nil {
 			return err
 		}
@@ -871,21 +882,23 @@ func (options *InstallOptions) Run() error {
 
 	options.logAdminPassword()
 
-	log.Info("Getting Jenkins API Token\n")
-	err = options.retry(3, 2*time.Second, func() (err error) {
-		options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
-		options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
-		options.CreateJenkinsUserOptions.UseBrowser = true
-		if options.BatchMode {
-			options.CreateJenkinsUserOptions.BatchMode = true
-			options.CreateJenkinsUserOptions.Headless = true
-			log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
+	if !options.Flags.Prow {
+		log.Info("Getting Jenkins API Token\n")
+		err = options.retry(3, 2*time.Second, func() (err error) {
+			options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
+			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
+			options.CreateJenkinsUserOptions.UseBrowser = true
+			if options.BatchMode {
+				options.CreateJenkinsUserOptions.BatchMode = true
+				options.CreateJenkinsUserOptions.Headless = true
+				log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
+			}
+			err = options.CreateJenkinsUserOptions.Run()
+			return
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to get the Jenkins API token")
 		}
-		err = options.CreateJenkinsUserOptions.Run()
-		return
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to get the Jenkins API token")
 	}
 
 	jxClient, _, err := options.JXClient()
@@ -1066,9 +1079,11 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		return "", fmt.Errorf("error determining config dir %v", err)
 	}
 	wrkDir := filepath.Join(configDir, "cloud-environments")
-	log.Infof("Current configuration dir: %s\n", configDir)
-	log.Infof("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
-	log.Infof("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
+
+	options.Debugf("Current configuration dir: %s\n", configDir)
+	options.Debugf("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
+	options.Debugf("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
+
 	if options.Flags.LocalCloudEnvironment {
 		currentDir, err := os.Getwd()
 		if err != nil {
@@ -1121,7 +1136,7 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 // returns secrets that are used as values during the helm install
 func (options *InstallOptions) getGitSecrets() (string, error) {
 
-	// TODO JR convert to a struct and add the equivelent of the below to the secrets to enable prow
+	// TODO JR convert to a struct and add the equivelent of the below to the secrets to enable Prow
 	//helmConfig.Prow.User = initOpts.Flags.Username
 	//helmConfig.Prow.HMACtoken, err = util.RandStringBytesMaskImprSrc(41)
 	//if err != nil {
@@ -1212,7 +1227,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 		}
 		server = config.GetOrCreateServer(url)
 	} else {
-		server, err = options.findServer(config, &options.ServerFlags, "chartmuseum server", "Try installing one via: jx create team", false)
+		server, err = options.findServer(config, &options.ServerFlags, "ChartMuseum server", "Try installing one via: jx create team", false)
 		if err != nil {
 			return err
 		}

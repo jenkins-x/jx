@@ -78,5 +78,5 @@ type Factory interface {
 
 	CreateVaultOperatorClient() (vaultoperatorclient.Interface, error)
 
-	GetHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool, kubeClient kubernetes.Interface) helm.Helmer
+	GetHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer
 }

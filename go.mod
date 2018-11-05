@@ -112,6 +112,7 @@ require (
 	github.com/prometheus/common v0.0.0-20180518154759-7600349dcfe1
 	github.com/prometheus/procfs v0.0.0-20180705121852-ae68e2d4c00f
 	github.com/rifflock/lfshook v0.0.0-20180227222202-bf539943797a
+	github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930
 	github.com/russross/blackfriday v1.5.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/sergi/go-diff v1.0.0

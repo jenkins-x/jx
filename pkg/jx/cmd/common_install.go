@@ -728,6 +728,51 @@ func (o *CommonOptions) killProcessesTree(binary string, processes []*process.Pr
 	return done, answer
 }
 
+func (o *CommonOptions) installTiller() error {
+	binDir, err := util.JXBinLocation()
+	if err != nil {
+		return err
+	}
+	binary := "tiller"
+	fileName := binary
+	if runtime.GOOS == "windows" {
+		fileName += ".exe"
+	}
+	// TODO workaround until 2.11.x GA is released
+	latestVersion := "2.11.0-rc.3"
+	/*
+		latestVersion, err := util.GetLatestVersionFromGitHub("kubernetes", "helm")
+			if err != nil {
+				return err
+			}
+	*/
+	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-helm/helm-v%s-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
+	fullPath := filepath.Join(binDir, fileName)
+	helmFullPath := filepath.Join(binDir, "helm")
+	tarFile := fullPath + ".tgz"
+	err = binaries.DownloadFile(clientURL, tarFile)
+	if err != nil {
+		return err
+	}
+	err = util.UnTargz(tarFile, binDir, []string{binary, fileName, "helm"})
+	if err != nil {
+		return err
+	}
+	err = os.Remove(tarFile)
+	if err != nil {
+		return err
+	}
+	err = os.Chmod(fullPath, 0755)
+	if err != nil {
+		return err
+	}
+	err = startLocalTillerIfNotRunning()
+	if err != nil {
+		return err
+	}
+	return o.installHelmSecretsPlugin(helmFullPath, true)
+}
+
 func (o *CommonOptions) installHelm3() error {
 	binDir, err := util.JXBinLocation()
 	if err != nil {
@@ -806,6 +851,12 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 		Args: []string{"plugin", "install", "https://github.com/futuresimple/helm-secrets"},
 	}
 	_, err = cmd.RunWithoutRetry()
+	// Workaround for Helm install on Windows caused by https://github.com/helm/helm/issues/4418
+	if err != nil && runtime.GOOS == "windows" && strings.Contains(err.Error(), "Error: symlink") {
+		// The install _does_ seem to work, but we get an error - catch this on windows and lob it in the bin
+		return nil
+	}
+	// End of Workaround
 	return err
 }
 
@@ -1263,7 +1314,7 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 		install = append(install, deps...)
 	} else {
 		if o.BatchMode {
-			return errors.New(fmt.Sprintf("run without batch mode or mannually install missing dependencies %v\n", deps))
+			return errors.New(fmt.Sprintf("run without batch mode or manually install missing dependencies %v\n", deps))
 		}
 
 		prompt := &survey.MultiSelect{
@@ -1404,7 +1455,7 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 		return GetSafeUsername(username), nil
 	}
 
-	config, _, err := kube.LoadConfig()
+	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
 		return username, err
 	}
@@ -1491,14 +1542,14 @@ func (o *CommonOptions) installProw() error {
 		}
 	}
 
-	log.Infof("Installing prow into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
 		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil)
 		return nil
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install prow: %v", err)
+		return fmt.Errorf("failed to install Prow: %v", err)
 	}
 
 	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))

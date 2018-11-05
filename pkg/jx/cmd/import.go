@@ -654,7 +654,7 @@ func (options *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	// Create prow owners file
+	// Create Prow owners file
 	err = options.CreateProwOwnersFile()
 	if err != nil {
 		return err
@@ -1313,10 +1313,7 @@ func (options *ImportOptions) CreateProwOwnersFile() error {
 		return nil
 	}
 	if options.GitUserAuth != nil && options.GitUserAuth.Username != "" {
-		data := struct {
-			Approvers []string `yaml:"approvers"`
-			Reviewers []string `yaml:"reviewers"`
-		}{
+		data := prow.Owners{
 			[]string{options.GitUserAuth.Username},
 			[]string{options.GitUserAuth.Username},
 		}
@@ -1348,11 +1345,7 @@ func (options *ImportOptions) CreateProwOwnersAliasesFile() error {
 	}
 	gitUser := options.GitUserAuth.Username
 	if gitUser != "" {
-		data := struct {
-			Aliases       []string `yaml:"aliases"`
-			BestApprovers []string `yaml:"best-approvers"`
-			BestReviewers []string `yaml:"best-reviewers"`
-		}{
+		data := prow.OwnersAliases{
 			[]string{gitUser},
 			[]string{gitUser},
 			[]string{gitUser},

@@ -30,6 +30,7 @@ type ControllerRoleOptions struct {
 
 	Roles           map[string]*rbacv1.Role
 	EnvRoleBindings map[string]*v1.EnvironmentRoleBinding
+	TeamNs          string
 }
 
 type ControllerRoleFlags struct {
@@ -105,11 +106,12 @@ func (o *ControllerRoleOptions) Run() error {
 		return err
 	}
 
-	jxClient, ns, err := o.JXClient()
+	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
 
+	o.TeamNs = ns
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -135,14 +137,14 @@ func (o *ControllerRoleOptions) Run() error {
 		return err
 	}
 	for _, role := range roles.Items {
-		o.upsertRole(&role)
+		o.UpsertRole(&role)
 	}
 	bindings, err := jxClient.JenkinsV1().EnvironmentRoleBindings(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	for i := range bindings.Items {
-		o.upsertEnvironmentRoleBinding(&bindings.Items[i])
+		o.UpsertEnvironmentRoleBinding(&bindings.Items[i])
 	}
 	envList, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
@@ -262,95 +264,108 @@ func (o *ControllerRoleOptions) onEnvironment(kubeClient kubernetes.Interface, n
 	}
 }
 
-func (o *ControllerRoleOptions) upsertEnvironment(kubeClient kubernetes.Interface, curNs string, env *v1.Environment) error {
-	var answer error
+func (o *ControllerRoleOptions) upsertEnvironment(kubeClient kubernetes.Interface, teamNs string, env *v1.Environment) error {
+	errors := []error{}
 	ns := env.Spec.Namespace
 	if ns != "" {
 		for _, binding := range o.EnvRoleBindings {
-			if kube.EnvironmentMatchesAny(env, binding.Spec.Environments) {
-				var err error
-				if ns != curNs {
-					roleName := binding.Spec.RoleRef.Name
-					role := o.Roles[roleName]
-					if role == nil {
-						log.Warnf("Cannot find role %s in namespace %s", roleName, curNs)
-					} else {
-						roles := kubeClient.RbacV1().Roles(ns)
-						var oldRole *rbacv1.Role
-						oldRole, err = roles.Get(roleName, metav1.GetOptions{})
-						if err == nil && oldRole != nil {
-							// lets update it
-							changed := false
-							if !reflect.DeepEqual(oldRole.Rules, role.Rules) {
-								oldRole.Rules = role.Rules
-								changed = true
-							}
-							if changed {
-								log.Infof("Updating Role %s in namespace %s\n", roleName, ns)
-								_, err = roles.Update(oldRole)
-							}
-						} else {
-							log.Infof("Creating Role %s in namespace %s\n", roleName, ns)
-							newRole := &rbacv1.Role{
-								ObjectMeta: metav1.ObjectMeta{
-									Name: roleName,
-									Labels: map[string]string{
-										kube.LabelCreatedBy: kube.ValueCreatedByJX,
-										kube.LabelTeam:      curNs,
-									},
-								},
-								Rules: role.Rules,
-							}
-							_, err = roles.Create(newRole)
-						}
-					}
-				}
+			err := o.upsertEnvironmentRoleBindingRolesInEnvironments(env, binding, teamNs, ns, kubeClient)
+			if err != nil {
+				errors = append(errors, err)
+			}
 
-				bindingName := binding.Name
-				roleBindings := kubeClient.RbacV1().RoleBindings(ns)
-				var old *rbacv1.RoleBinding
-				old, err = roleBindings.Get(bindingName, metav1.GetOptions{})
-				if err == nil && old != nil {
+		}
+	}
+	return util.CombineErrors(errors...)
+}
+
+// upsertEnvironmentRoleBindingRolesInEnvironments for the given environment and environment role binding lets update any role or role bindings if required
+func (o *ControllerRoleOptions) upsertEnvironmentRoleBindingRolesInEnvironments(env *v1.Environment, binding *v1.EnvironmentRoleBinding, teamNs string, ns string, kubeClient kubernetes.Interface) error {
+	errors := []error{}
+	if kube.EnvironmentMatchesAny(env, binding.Spec.Environments) {
+		var err error
+		if ns != teamNs {
+			roleName := binding.Spec.RoleRef.Name
+			role := o.Roles[roleName]
+			if role == nil {
+				log.Warnf("Cannot find role %s in namespace %s", roleName, teamNs)
+			} else {
+				roles := kubeClient.RbacV1().Roles(ns)
+				var oldRole *rbacv1.Role
+				oldRole, err = roles.Get(roleName, metav1.GetOptions{})
+				if err == nil && oldRole != nil {
 					// lets update it
 					changed := false
-
-					if !reflect.DeepEqual(old.RoleRef, binding.Spec.RoleRef) {
-						old.RoleRef = binding.Spec.RoleRef
-						changed = true
-					}
-					if !reflect.DeepEqual(old.Subjects, binding.Spec.Subjects) {
-						old.Subjects = binding.Spec.Subjects
+					if !reflect.DeepEqual(oldRole.Rules, role.Rules) {
+						oldRole.Rules = role.Rules
 						changed = true
 					}
 					if changed {
-						log.Infof("Updating RoleBinding %s in namespace %s\n", bindingName, ns)
-						_, err = roleBindings.Update(old)
+						log.Infof("Updating Role %s in namespace %s\n", roleName, ns)
+						_, err = roles.Update(oldRole)
 					}
 				} else {
-					log.Infof("Creating RoleBinding %s in namespace %s\n", bindingName, ns)
-					newBinding := &rbacv1.RoleBinding{
+					log.Infof("Creating Role %s in namespace %s\n", roleName, ns)
+					newRole := &rbacv1.Role{
 						ObjectMeta: metav1.ObjectMeta{
-							Name: bindingName,
+							Name: roleName,
 							Labels: map[string]string{
 								kube.LabelCreatedBy: kube.ValueCreatedByJX,
-								kube.LabelTeam:      curNs,
+								kube.LabelTeam:      teamNs,
 							},
 						},
-						Subjects: binding.Spec.Subjects,
-						RoleRef:  binding.Spec.RoleRef,
+						Rules: role.Rules,
 					}
-					_, err = roleBindings.Create(newBinding)
-				}
-				if err != nil {
-					log.Warnf("Failed: %s\n", err)
-					if answer == nil {
-						answer = err
-					}
+					_, err = roles.Create(newRole)
 				}
 			}
 		}
+		if err != nil {
+			log.Warnf("Failed: %s\n", err)
+			errors = append(errors, err)
+		}
+
+		bindingName := binding.Name
+		roleBindings := kubeClient.RbacV1().RoleBindings(ns)
+		var old *rbacv1.RoleBinding
+		old, err = roleBindings.Get(bindingName, metav1.GetOptions{})
+		if err == nil && old != nil {
+			// lets update it
+			changed := false
+
+			if !reflect.DeepEqual(old.RoleRef, binding.Spec.RoleRef) {
+				old.RoleRef = binding.Spec.RoleRef
+				changed = true
+			}
+			if !reflect.DeepEqual(old.Subjects, binding.Spec.Subjects) {
+				old.Subjects = binding.Spec.Subjects
+				changed = true
+			}
+			if changed {
+				log.Infof("Updating RoleBinding %s in namespace %s\n", bindingName, ns)
+				_, err = roleBindings.Update(old)
+			}
+		} else {
+			log.Infof("Creating RoleBinding %s in namespace %s\n", bindingName, ns)
+			newBinding := &rbacv1.RoleBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: bindingName,
+					Labels: map[string]string{
+						kube.LabelCreatedBy: kube.ValueCreatedByJX,
+						kube.LabelTeam:      teamNs,
+					},
+				},
+				Subjects: binding.Spec.Subjects,
+				RoleRef:  binding.Spec.RoleRef,
+			}
+			_, err = roleBindings.Create(newBinding)
+		}
+		if err != nil {
+			log.Warnf("Failed: %s\n", err)
+			errors = append(errors, err)
+		}
 	}
-	return answer
+	return util.CombineErrors(errors...)
 }
 
 func (o *ControllerRoleOptions) removeEnvironment(kubeClient kubernetes.Interface, curNs string, env *v1.Environment) error {
@@ -378,17 +393,44 @@ func (o *ControllerRoleOptions) onEnvironmentRoleBinding(oldObj interface{}, new
 	}
 	if newObj != nil {
 		newEnv := newObj.(*v1.EnvironmentRoleBinding)
-		o.upsertEnvironmentRoleBinding(newEnv)
+		o.UpsertEnvironmentRoleBinding(newEnv)
 	}
 }
 
-func (o *ControllerRoleOptions) upsertEnvironmentRoleBinding(newEnv *v1.EnvironmentRoleBinding) {
+// UpsertEnvironmentRoleBinding processes an insert/update of the EnvironmentRoleBinding resource
+// its public so that we can make testing easier
+func (o *ControllerRoleOptions) UpsertEnvironmentRoleBinding(newEnv *v1.EnvironmentRoleBinding) error {
 	if newEnv != nil {
 		if o.EnvRoleBindings == nil {
 			o.EnvRoleBindings = map[string]*v1.EnvironmentRoleBinding{}
 		}
 		o.EnvRoleBindings[newEnv.Name] = newEnv
 	}
+
+	ns := o.TeamNs
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return err
+	}
+
+	// now lets update any roles in any environment we may need to change
+	envList, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	errors := []error{}
+	for _, env := range envList.Items {
+		err = o.upsertEnvironmentRoleBindingRolesInEnvironments(&env, newEnv, ns, env.Spec.Namespace, kubeClient)
+		if err != nil {
+			errors = append(errors, err)
+		}
+	}
+	return util.CombineErrors(errors...)
 }
 
 func (o *ControllerRoleOptions) onRole(oldObj interface{}, newObj interface{}) {
@@ -403,19 +445,89 @@ func (o *ControllerRoleOptions) onRole(oldObj interface{}, newObj interface{}) {
 	}
 	if newObj != nil {
 		newRole := newObj.(*rbacv1.Role)
-		o.upsertRole(newRole)
+		o.UpsertRole(newRole)
 	}
 }
 
-func (o *ControllerRoleOptions) upsertRole(newRole *rbacv1.Role) {
-	if newRole != nil {
-		if o.Roles == nil {
-			o.Roles = map[string]*rbacv1.Role{}
+// UpsertRole processes the insert/update of a Role
+// this function is public for easier testing
+func (o *ControllerRoleOptions) UpsertRole(newRole *rbacv1.Role) error {
+	if newRole == nil {
+		return nil
+	}
+	if o.Roles == nil {
+		o.Roles = map[string]*rbacv1.Role{}
+	}
+	o.Roles[newRole.Name] = newRole
+
+	if newRole.Labels == nil || newRole.Labels[kube.LabelKind] != kube.ValueKindEnvironmentRole {
+		return nil
+	}
+
+	ns := o.TeamNs
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return err
+	}
+
+	// now lets update any roles in any environment we may need to change
+	envList, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	errors := []error{}
+	for _, env := range envList.Items {
+		err = o.upsertRoleInEnvironments(&env, newRole, ns, env.Spec.Namespace, kubeClient)
+		if err != nil {
+			errors = append(errors, err)
 		}
-		o.Roles[newRole.Name] = newRole
-
 	}
+	return util.CombineErrors(errors...)
 }
+
+// upsertRoleInEnvironments updates the Role in the team environment in the other environment namespaces if it has changed
+func (o *ControllerRoleOptions) upsertRoleInEnvironments(env *v1.Environment, role *rbacv1.Role, teamNs string, ns string, kubeClient kubernetes.Interface) error {
+	if ns == teamNs {
+		return nil
+	}
+	var err error
+	roleName := role.Name
+	roles := kubeClient.RbacV1().Roles(ns)
+	var oldRole *rbacv1.Role
+	oldRole, err = roles.Get(roleName, metav1.GetOptions{})
+	if err == nil && oldRole != nil {
+		// lets update it
+		changed := false
+		if !reflect.DeepEqual(oldRole.Rules, role.Rules) {
+			oldRole.Rules = role.Rules
+			changed = true
+		}
+		if changed {
+			log.Infof("Updating Role %s in namespace %s\n", roleName, ns)
+			_, err = roles.Update(oldRole)
+		}
+	} else {
+		log.Infof("Creating Role %s in namespace %s\n", roleName, ns)
+		newRole := &rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: roleName,
+				Labels: map[string]string{
+					kube.LabelCreatedBy: kube.ValueCreatedByJX,
+					kube.LabelTeam:      teamNs,
+				},
+			},
+			Rules: role.Rules,
+		}
+		_, err = roles.Create(newRole)
+	}
+	return err
+}
+
 func (o *ControllerRoleOptions) upsertRoleIntoEnvRole(ns string, jxClient versioned.Interface) {
 	foundRole := 0
 	for _, roleValue := range o.Roles {

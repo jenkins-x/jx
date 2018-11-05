@@ -6,7 +6,7 @@ pipeline {
         GH_CREDS            = credentials('jenkins-x-github')
         GHE_CREDS           = credentials('ghe-test-user')
         GKE_SA              = credentials('gke-sa')
-        BUILD_NUMBER        = "$JX_BUILD_NUMBER"
+        BUILD_NUMBER        = "${JX_BUILD_NUMBER ?: '1'}"
         GIT_USERNAME        = "$GH_CREDS_USR"
         GIT_API_TOKEN       = "$GH_CREDS_PSW"
         GITHUB_ACCESS_TOKEN = "$GH_CREDS_PSW"
@@ -34,6 +34,8 @@ pipeline {
             steps {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
                     checkout scm
+
+                    sh "echo building Pull Request for preview ${TEAM}"
 
                     sh "make linux"
                     sh "make test-slow-integration"
@@ -78,7 +80,7 @@ pipeline {
                     }
 
                     sh "echo now tearing down the team ${TEAM}"
-                    sh "jx uninstall -b -y --namespace ${TEAM}"
+                    sh "jx uninstall -b --context `kubectl config current-context` --namespace ${TEAM}"
                 }
             }
         }

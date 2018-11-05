@@ -12,8 +12,8 @@ type FakeJenkinsV1 struct {
 	*testing.Fake
 }
 
-func (c *FakeJenkinsV1) ComplianceChecks(namespace string) v1.ComplianceCheckInterface {
-	return &FakeComplianceChecks{c, namespace}
+func (c *FakeJenkinsV1) CommitStatuses(namespace string) v1.CommitStatusInterface {
+	return &FakeCommitStatuses{c, namespace}
 }
 
 func (c *FakeJenkinsV1) Environments(namespace string) v1.EnvironmentInterface {

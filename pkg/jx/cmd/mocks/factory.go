@@ -379,11 +379,11 @@ func (mock *MockFactory) CreateVaultOperatorClient() (versioned.Interface, error
 	return ret0, ret1
 }
 
-func (mock *MockFactory) GetHelm(_param0 bool, _param1 string, _param2 bool, _param3 bool, _param4 kubernetes.Interface) helm.Helmer {
+func (mock *MockFactory) GetHelm(_param0 bool, _param1 string, _param2 bool, _param3 bool) helm.Helmer {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("GetHelm", params, []reflect.Type{reflect.TypeOf((*helm.Helmer)(nil)).Elem()})
 	var ret0 helm.Helmer
 	if len(result) != 0 {
@@ -959,8 +959,8 @@ func (c *Factory_CreateVaultOperatorClient_OngoingVerification) GetCapturedArgum
 func (c *Factory_CreateVaultOperatorClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierFactory) GetHelm(_param0 bool, _param1 string, _param2 bool, _param3 bool, _param4 kubernetes.Interface) *Factory_GetHelm_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4}
+func (verifier *VerifierFactory) GetHelm(_param0 bool, _param1 string, _param2 bool, _param3 bool) *Factory_GetHelm_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetHelm", params)
 	return &Factory_GetHelm_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -970,12 +970,12 @@ type Factory_GetHelm_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Factory_GetHelm_OngoingVerification) GetCapturedArguments() (bool, string, bool, bool, kubernetes.Interface) {
-	_param0, _param1, _param2, _param3, _param4 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1]
+func (c *Factory_GetHelm_OngoingVerification) GetCapturedArguments() (bool, string, bool, bool) {
+	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *Factory_GetHelm_OngoingVerification) GetAllCapturedArguments() (_param0 []bool, _param1 []string, _param2 []bool, _param3 []bool, _param4 []kubernetes.Interface) {
+func (c *Factory_GetHelm_OngoingVerification) GetAllCapturedArguments() (_param0 []bool, _param1 []string, _param2 []bool, _param3 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]bool, len(params[0]))
@@ -993,10 +993,6 @@ func (c *Factory_GetHelm_OngoingVerification) GetAllCapturedArguments() (_param0
 		_param3 = make([]bool, len(params[3]))
 		for u, param := range params[3] {
 			_param3[u] = param.(bool)
-		}
-		_param4 = make([]kubernetes.Interface, len(params[4]))
-		for u, param := range params[4] {
-			_param4[u] = param.(kubernetes.Interface)
 		}
 	}
 	return

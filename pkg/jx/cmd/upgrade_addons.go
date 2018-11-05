@@ -66,7 +66,7 @@ func NewCmdUpgradeAddons(f Factory, in terminal.FileReader, out terminal.FileWri
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to")
-	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading")
+	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The Helm parameters to pass in while upgrading")
 
 	options.addCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
@@ -105,7 +105,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 	}
 	statusMap, err := o.Helm().StatusReleases(ns)
 	if err != nil {
-		log.Warnf("Failed to find helm installs: %s\n", err)
+		log.Warnf("Failed to find Helm installs: %s\n", err)
 	}
 
 	charts := kube.AddonCharts
@@ -146,7 +146,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 			config := &v1.ConfigMap{}
 			plugins := &v1.ConfigMap{}
 			if k == kube.DefaultProwReleaseName {
-				// lets backup any prow config as we should never replace this, eventually we'll move config to a git repo so this is temporary
+				// lets backup any Prow config as we should never replace this, eventually we'll move config to a git repo so this is temporary
 				config, plugins = o.backupConfigs()
 			}
 			err = o.Helm().UpgradeChart(chart, k, ns, nil, false, nil, false, false, values, valueFiles)

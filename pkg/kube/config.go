@@ -17,37 +17,20 @@ const (
 	PodNamespaceFile = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
 
-// LoadConfig loads the Kubernetes configuration
-func LoadConfig() (*api.Config, *clientcmd.PathOptions, error) {
-	po := clientcmd.NewDefaultPathOptions()
-	if po == nil {
-		return nil, po, fmt.Errorf("Could not find any default path options for the kubeconfig file usually found at ~/.kube/config")
-	}
-	config, err := po.GetStartingConfig()
-	if err != nil {
-		return nil, po, fmt.Errorf("Could not load the kube config file %s due to %s", po.GetDefaultFilename(), err)
-	}
-	return config, po, err
+// KubeConfig implements kube interactions
+type KubeConfig struct{}
+
+// NewKubeConfig creates a new KubeConfig struct to be used to interact with the underlying kube system
+func NewKubeConfig() Kuber {
+	return &KubeConfig{}
 }
 
-// CurrentNamespace returns the current namespace in the context
-func CurrentNamespace(config *api.Config) string {
-	ctx := CurrentContext(config)
-	if ctx != nil {
-		n := ctx.Namespace
-		if n != "" {
-			return n
-		}
+// CurrentContextName returns the current context name
+func CurrentContextName(config *api.Config) string {
+	if config != nil {
+		return config.CurrentContext
 	}
-	// if we are in a pod lets try load the pod namespace file
-	data, err := ioutil.ReadFile(PodNamespaceFile)
-	if err == nil {
-		n := string(data)
-		if n != "" {
-			return n
-		}
-	}
-	return "default"
+	return ""
 }
 
 // CurrentContext returns the current context
@@ -101,8 +84,8 @@ func CertificateAuthorityData(config *api.Config, context *api.Context) []byte {
 }
 
 // UpdateConfig defines new config entries for jx
-func UpdateConfig(namespace string, server string, caData string, user string, token string) error {
-	config, po, err := LoadConfig()
+func (k *KubeConfig) UpdateConfig(namespace string, server string, caData string, user string, token string) error {
+	config, po, err := k.LoadConfig()
 	if err != nil {
 		return errors.Wrap(err, "loading existing config")
 	}
@@ -160,4 +143,37 @@ func AddUserToConfig(user string, token string, config *api.Config) (*api.Config
 	config.CurrentContext = ctxName
 
 	return config, nil
+}
+
+// LoadConfig loads the Kubernetes configuration
+func (k *KubeConfig) LoadConfig() (*api.Config, *clientcmd.PathOptions, error) {
+	po := clientcmd.NewDefaultPathOptions()
+	if po == nil {
+		return nil, po, fmt.Errorf("Could not find any default path options for the kubeconfig file usually found at ~/.kube/config")
+	}
+	config, err := po.GetStartingConfig()
+	if err != nil {
+		return nil, po, fmt.Errorf("Could not load the kube config file %s due to %s", po.GetDefaultFilename(), err)
+	}
+	return config, po, err
+}
+
+// CurrentNamespace returns the current namespace in the context
+func CurrentNamespace(config *api.Config) string {
+	ctx := CurrentContext(config)
+	if ctx != nil {
+		n := ctx.Namespace
+		if n != "" {
+			return n
+		}
+	}
+	// if we are in a pod lets try load the pod namespace file
+	data, err := ioutil.ReadFile(PodNamespaceFile)
+	if err == nil {
+		n := string(data)
+		if n != "" {
+			return n
+		}
+	}
+	return "default"
 }

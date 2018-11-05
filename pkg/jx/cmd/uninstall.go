@@ -21,7 +21,8 @@ type UninstallOptions struct {
 	CommonOptions
 
 	Namespace        string
-	Confirm          bool
+	Context          string
+	Force            bool // Force uninstallation - programmatic use only - do not expose to the user
 	KeepEnvironments bool
 }
 
@@ -57,14 +58,14 @@ func NewCmdUninstall(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	}
 	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The team namespace to uninstall. Defaults to the current namespace.")
-	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
+	cmd.Flags().StringVarP(&options.Context, "context", "", "", "The kube context to uninstall JX from. This will be compared with the current context to prevent accidental uninstallation from the wrong cluster")
 	cmd.Flags().BoolVarP(&options.KeepEnvironments, "keep-environments", "", false, "Don't delete environments. Uninstall Jenkins X only.")
 	return cmd
 }
 
 func (o *UninstallOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	config, _, err := kube.LoadConfig()
+	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
 	}
@@ -72,29 +73,34 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	server := kube.CurrentServer(config)
+	currentContext := kube.CurrentContextName(config)
 	namespace := o.Namespace
 	if namespace == "" {
 		namespace = kube.CurrentNamespace(config)
 	}
-	if o.BatchMode {
-		if !o.Confirm {
-			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
+	var targetContext string
+	if !o.Force {
+		if o.BatchMode || o.Context != "" {
+			targetContext = o.Context
+		} else {
+			targetContext = ""
+			{
+				prompt := &survey.Input{
+					Message: fmt.Sprintf("Enter the current context name to confirm uninstalllation of the Jenkins X platform from the %s namespace:", util.ColorInfo(namespace)),
+					Default: "",
+					Help:    "To prevent accidental uninstallation from the wrong cluster, you must enter the current kubernetes context. This can be found with `kubectl config current-context`",
+				}
+				err := survey.AskOne(prompt, &targetContext, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
+			}
 		}
-	} else {
-		confirm := &survey.Confirm{
-			Message: fmt.Sprintf("Are you sure you wish to remove the Jenkins X platform from the '%s' namespace on cluster '%s'? :", namespace, server),
-			Default: false,
-		}
-		flag := false
-		err = survey.AskOne(confirm, &flag, nil, surveyOpts)
-		if err != nil {
-			return err
-		}
-		if !flag {
-			return nil
+		if targetContext != currentContext {
+			return fmt.Errorf("The context '%s' must match the current context to uninstall", targetContext)
 		}
 	}
+
 	log.Infof("Removing installation of Jenkins X in team namespace %s\n", util.ColorInfo(namespace))
 
 	err = o.cleanupConfig()
@@ -121,7 +127,7 @@ func (o *UninstallOptions) Run() error {
 	o.Helm().DeleteRelease(namespace, "jx-prow", true)
 	err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
 	if err != nil {
-		errc := o.cleanupNamesapces(namespace, envNames)
+		errc := o.cleanupNamespaces(namespace, envNames)
 		if errc != nil {
 			errc = errors.Wrap(errc, "failed to cleanup the jenkins-x platform")
 			return errc
@@ -132,7 +138,7 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.cleanupNamesapces(namespace, envNames)
+	err = o.cleanupNamespaces(namespace, envNames)
 	if err != nil {
 		return err
 	}
@@ -140,7 +146,7 @@ func (o *UninstallOptions) Run() error {
 	return nil
 }
 
-func (o *UninstallOptions) cleanupNamesapces(namespace string, envNames []string) error {
+func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string) error {
 	client, _, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to get the kube client")
