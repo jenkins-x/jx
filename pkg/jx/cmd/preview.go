@@ -490,6 +490,8 @@ func (o *PreviewOptions) Run() error {
 	pipeline := o.getJobName()
 	build := o.getBuildNumber()
 
+	fmt.Println("url", url != "")
+	fmt.Println("PullRequestURL", o.PullRequestURL != "")
 	if url != "" || o.PullRequestURL != "" {
 		if pipeline != "" && build != "" {
 			name := kube.ToValidName(pipeline + "-" + build)

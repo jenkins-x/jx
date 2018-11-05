@@ -1,12 +1,15 @@
 package cmd_test
 
 import (
-	gits_matchers "github.com/jenkins-x/jx/pkg/gits/mocks/matchers"
-	cmd_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/mocks/matchers"
+	"reflect"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/gits/mocks"
+	gits_matchers "github.com/jenkins-x/jx/pkg/gits/mocks/matchers"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	cmd_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/mocks/matchers"
 	"github.com/jenkins-x/jx/pkg/kube"
 	k8s_v1 "k8s.io/api/core/v1"
 	k8s_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -20,66 +23,76 @@ import (
 	//"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1/fake"
 
 	//"k8s.io/apimachinery/pkg/api/resource"
-	"github.com/petergtz/pegomock"
+	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
+
 	//apiexts_mock "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kube_mocks "k8s.io/client-go/kubernetes/fake"
 	"os"
 	"testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kube_mocks "k8s.io/client-go/kubernetes/fake"
 )
 
+func AnyPtrToString() *string {
+	RegisterMatcher(NewAnyMatcher(reflect.TypeOf((*(*string))(nil)).Elem()))
+	var nullValue *string
+	return nullValue
+}
+
+func AnyPtrToInt() *int {
+	RegisterMatcher(NewAnyMatcher(reflect.TypeOf((*(*int))(nil)).Elem()))
+	var nullValue *int
+	return nullValue
+}
 
 func TestRun(t *testing.T) {
 
 	//TODO: t.Parallel()
 
-	pegomock.RegisterMockTestingT(t)
+	RegisterMockTestingT(t)
 
 	// mock factory
 	factory := cmd_mocks.NewMockFactory()
 
 	//TODO: how are PullRequest & PullRequestName different? They get set to the same value when defaulting values; bug having both?
 	// -> PullRequest is the user provided value (poss. with PR- prefix). PullRequestName is the number. (normalise in options parsing?)
-	previewOpts := &cmd.PreviewOptions {
-			PromoteOptions: cmd.PromoteOptions{
-				CommonOptions: cmd.CommonOptions{
-					Factory: factory,
-					Out:     os.Stdout,
-					In:      os.Stdin,
-					//TODO: remove batch mode, just used to avoid stdin prompts.
-					BatchMode: true,
-				},
-				Application: "my-app",
+	previewOpts := &cmd.PreviewOptions{
+		PromoteOptions: cmd.PromoteOptions{
+			CommonOptions: cmd.CommonOptions{
+				Factory: factory,
+				Out:     os.Stdout,
+				In:      os.Stdin,
+				//TODO: remove batch mode, just used to avoid stdin prompts.
+				BatchMode: true,
 			},
-			Namespace:    "jx",
-			DevNamespace: "jx",
-			Name:         "my-app-name",
-			SourceURL:    "https://github.com/an-org/a-repo.git",
-			PullRequest:  "1",
+			Application: "my-app",
+		},
+		Namespace:    "jx",
+		DevNamespace: "jx",
+		Name:         "my-app-name",
+		SourceURL:    "https://github.com/an-org/a-repo.git",
+		PullRequest:  "1",
 	}
 
-
-	namespace := &k8s_v1.Namespace {
-		ObjectMeta: metav1.ObjectMeta {
+	namespace := &k8s_v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "jx-testing",
 		},
 	}
 
 	secret := &k8s_v1.Secret{
-		StringData: map[string]string {
+		StringData: map[string]string{
 			"a": "b",
-	        "c": "d",
-	    },
+			"c": "d",
+		},
 	}
 
-
-
 	ingressConfig := &k8s_v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta {
+		ObjectMeta: metav1.ObjectMeta{
 			Name: kube.ConfigMapIngressConfig,
 		},
-		Data: map[string]string { "key1": "value1", "domain": "test-domain", "config.yml": "" },
+		Data: map[string]string{"key1": "value1", "domain": "test-domain", "config.yml": ""},
 	}
 	/*exposeControllerConfig := &k8s_v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta {
@@ -94,48 +107,69 @@ func TestRun(t *testing.T) {
 	kubernetesInterface := kube_mocks.NewSimpleClientset(namespace, secret, ingressConfig)
 	kubernetesInterface.CoreV1().ConfigMaps("jx").Create(ingressConfig)
 
+	service := &k8s_v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "my-app",
+			Annotations: map[string]string{kube.ExposeURLAnnotation: "http://the-service-url/with/a/path"},
+		},
+	}
+	kubernetesInterface.CoreV1().Services("jx").Create(service)
+
+	//TODO: create mock ingresses.
+	//kubernetesInterface.ExtensionsV1beta1().Ingresses("jx").Create(ingress x 4)
+
 	//var _ clientset.Interface = kube_mocks.NewSimpleClientset(node)
 	var apiClient k8s_cs.Interface = &k8s_cs_fake.Clientset{}
 	// Override CreateClient to return mock Kubernetes interface
 
 	//Setup K8S mocks:
-	pegomock.When(factory.CreateClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
-	pegomock.When(factory.CreateApiExtensionsClient()).ThenReturn(apiClient, nil)
+	When(factory.CreateClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
+	When(factory.CreateApiExtensionsClient()).ThenReturn(apiClient, nil)
 
 	//Setup Git mocks:
 	mockGitProvider := gits_test.NewMockGitProvider()
-	pegomock.When(factory.CreateGitProvider(pegomock.AnyString(),	//gitURL
-		                                    pegomock.AnyString(),	//message
-		                                    cmd_matchers.AnyAuthAuthConfigService(),
-		                                    pegomock.AnyString(),		//gitKind
-		                                    pegomock.AnyBool(),			//batchMode,
-		                                    cmd_matchers.AnyGitsGitter(),
-		                                    cmd_matchers.AnyTerminalFileReader(),
-		                                    cmd_matchers.AnyTerminalFileWriter(),
-		                                    cmd_matchers.AnyIoWriter(),
+	When(factory.CreateGitProvider(AnyString(), //gitURL
+		AnyString(), //message
+		cmd_matchers.AnyAuthAuthConfigService(),
+		AnyString(), //gitKind
+		AnyBool(),   //batchMode,
+		cmd_matchers.AnyGitsGitter(),
+		cmd_matchers.AnyTerminalFileReader(),
+		cmd_matchers.AnyTerminalFileWriter(),
+		cmd_matchers.AnyIoWriter(),
 	)).ThenReturn(mockGitProvider, nil)
 	//TODO: fill in PR details.
-	mockGitPR := &gits.GitPullRequest{Owner:"owner1"}
-	pegomock.When(mockGitProvider.GetPullRequest(pegomock.AnyString(),	//owner
-	                                             gits_matchers.AnyPtrToGitsGitRepositoryInfo(),	//repo
-	                                             pegomock.AnyInt(),		// number
+	mockGitPR := &gits.GitPullRequest{Owner: "owner1"}
+	When(mockGitProvider.GetPullRequest(AnyString(), //owner
+		gits_matchers.AnyPtrToGitsGitRepositoryInfo(), //repo
+		AnyInt(), // number
 	)).ThenReturn(mockGitPR, nil)
 
-
 	env := &jio_v1.Environment{
-		ObjectMeta: metav1.ObjectMeta {
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-app-name",
 		},
 	}
 
 	cs := cs_fake.NewSimpleClientset(env)
-	pegomock.When(factory.CreateJXClient()).ThenReturn(cs, "jx", nil)
+	When(factory.CreateJXClient()).ThenReturn(cs, "jx", nil)
 
 	//TODO: check environment was created in environmentsResource (cs).
 
 	//TODO: assert CRD registrations?
 
-	//pegomock.When(mockGitProvider.CreateRepository())
+	mockHelmer := helm_test.NewMockHelmer()
+	When(factory.GetHelm(AnyBool(), AnyString(), AnyBool(), AnyBool())).ThenReturn(mockHelmer)
+	When(mockHelmer.UpgradeChart(AnyString(),
+		AnyString(),
+		AnyString(),
+		AnyPtrToString(),
+		AnyBool(),
+		AnyPtrToInt(),
+		AnyBool(),
+		AnyBool(),
+		AnyStringSlice(),
+		AnyStringSlice())).ThenReturn(nil) //err=nil
 
 	//TODO: work out how to fake out github environment (queried to get PR details). Use file url? return pre-built API responses (JSON?)?
 
@@ -146,6 +180,7 @@ func TestRun(t *testing.T) {
 	os.Setenv("GITHUB_BEARER_TOKEN", "abc123def")
 	os.Setenv(cmd.JENKINS_X_DOCKER_REGISTRY_SERVICE_HOST, "MyOrganisation")
 	os.Setenv(cmd.JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT, "5000")
+	os.Setenv("BUILD_NUMBER", "1")
 	os.Setenv(cmd.ORG, "MyOrganisation")
 	os.Setenv(cmd.APP_NAME, "MyApp")
 	os.Setenv(cmd.PREVIEW_VERSION, "v0.1.2")
@@ -222,12 +257,6 @@ func TestNewCmdPreview(t *testing.T) {
 //
 // Refactorings:
 //   Git detection stuff (currently in preview.go).
-
-
-
-
-
-
 
 /*
 func TestPreviewOptions_addPreviewOptions(t *testing.T) {
