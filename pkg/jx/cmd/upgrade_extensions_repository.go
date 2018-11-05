@@ -283,10 +283,7 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 						if err != nil {
 							return result, err
 						}
-						err = yaml.Unmarshal(bs, &script)
-						if err != nil {
-							return result, err
-						}
+						script = string(bs)
 					} else {
 						return result, fmt.Errorf("No content returned")
 					}
