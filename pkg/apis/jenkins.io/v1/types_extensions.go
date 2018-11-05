@@ -388,7 +388,7 @@ type CommitStatusSpec struct {
 
 type CommitStatusDetails struct {
 	PipelineActivity ResourceReference           `json:"pipelineActivity"  protobuf:"bytes,1,opt,name=pipelineActivity"`
-	Items            []CommitStatusItem          `json:"Items,omitempty"  protobuf:"bytes,2,opt,name=Items"`
+	Items            []CommitStatusItem          `json:"items,omitempty"  protobuf:"bytes,2,opt,name=items"`
 	Checked          bool                        `json:"checked"  protobuf:"bytes,3,opt,name=checked"`
 	Commit           CommitStatusCommitReference `json:"commit"  protobuf:"bytes,4,opt,name=commit"`
 	Context          string                      `json:"context"  protobuf:"bytes,5,opt,name=context"`
