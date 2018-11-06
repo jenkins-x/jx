@@ -26,7 +26,7 @@ const listRepoOutput = `
 NAME            URL
 stable          https://kubernetes-charts.storage.googleapis.com
 local           http://127.0.0.1:8879/charts
-jenkins-x       https://chartmuseum.build.cd.jenkins-x.io
+jenkins-x       http://chartmuseum.jenkins-x.io
 	`
 const searchVersionOutput = `
 NAME                            		CHART VERSION	APP VERSION		DESCRIPTION
@@ -112,7 +112,7 @@ func TestListRepos(t *testing.T) {
 	expectedRepos := map[string]string{
 		"stable":    "https://kubernetes-charts.storage.googleapis.com",
 		"local":     "http://127.0.0.1:8879/charts",
-		"jenkins-x": "https://chartmuseum.build.cd.jenkins-x.io",
+		"jenkins-x": "http://chartmuseum.jenkins-x.io",
 	}
 	assert.Equal(t, len(expectedRepos), len(repos), "should list the same number of repos")
 	for k, v := range repos {
@@ -124,7 +124,7 @@ func TestIsRepoMissing(t *testing.T) {
 	expectedArgs := []string{"repo", "list"}
 	helm, runner := createHelm(t, nil, listRepoOutput)
 
-	url := "https://chartmuseum.build.cd.jenkins-x.io"
+	url := "http://chartmuseum.jenkins-x.io"
 	missing, err := helm.IsRepoMissing(url)
 
 	assert.NoError(t, err, "should search missing repos without any error")
