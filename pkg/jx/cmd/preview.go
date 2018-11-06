@@ -685,30 +685,34 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	if o.SourceURL == "" {
 		o.SourceURL = os.Getenv("SOURCE_URL")
 		if o.SourceURL == "" {
-			// lets discover the git dir
-			if o.Dir == "" {
-				dir, err := os.Getwd()
-				if err != nil {
-					return err
-				}
-				o.Dir = dir
-			}
-			root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
-			if err != nil {
-				log.Warnf("Could not find a .git directory: %s\n", err)
-			} else {
-				if root != "" {
-					o.Dir = root
-					o.SourceURL, err = o.discoverGitURL(gitConf)
+			// Relevant in a Jenkins pipeline triggered by a PR
+			o.SourceURL = os.Getenv("CHANGE_URL")
+			if o.SourceURL == "" {
+				// lets discover the git dir
+				if o.Dir == "" {
+					dir, err := os.Getwd()
 					if err != nil {
-						log.Warnf("Could not find the remote git source URL:  %s\n", err)
-					} else {
-						if o.SourceRef == "" {
-							o.SourceRef, err = o.Git().Branch(root)
-							if err != nil {
-								log.Warnf("Could not find the remote git source ref:  %s\n", err)
-							}
+						return err
+					}
+					o.Dir = dir
+				}
+				root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
+				if err != nil {
+					log.Warnf("Could not find a .git directory: %s\n", err)
+				} else {
+					if root != "" {
+						o.Dir = root
+						o.SourceURL, err = o.discoverGitURL(gitConf)
+						if err != nil {
+							log.Warnf("Could not find the remote git source URL:  %s\n", err)
+						} else {
+							if o.SourceRef == "" {
+								o.SourceRef, err = o.Git().Branch(root)
+								if err != nil {
+									log.Warnf("Could not find the remote git source ref:  %s\n", err)
+								}
 
+							}
 						}
 					}
 				}
