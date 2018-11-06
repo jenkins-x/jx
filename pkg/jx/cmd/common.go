@@ -41,6 +41,14 @@ import (
 const (
 	optionServerName        = "name"
 	optionServerURL         = "url"
+	optionBatchMode         = "batch-mode"
+	optionVerbose           = "verbose"
+	optionLogLevel          = "log-level"
+	optionHeadless          = "headless"
+	optionNoBrew            = "no-brew"
+	optionInstallDeps       = "install-dependencies"
+	optionSkipAuthSecMerge  = "skip-auth-secrets-merge"
+	optionPullSecrets       = "pull-secrets"
 	exposecontrollerVersion = "2.3.82"
 	exposecontroller        = "exposecontroller"
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
@@ -120,14 +128,14 @@ func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 }
 
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "In batch mode the command never prompts for user input")
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
-	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
-	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
-	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
-	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")
-	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, "skip-auth-secrets-merge", "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
-	cmd.Flags().StringVarP(&options.PullSecrets, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
+	cmd.Flags().BoolVarP(&options.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
+	cmd.Flags().BoolVarP(&options.Verbose, optionVerbose, "", false, "Enable verbose logging")
+	cmd.Flags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
+	cmd.Flags().BoolVarP(&options.Headless, optionHeadless, "", false, "Enable headless operation if using browser automation")
+	cmd.Flags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
+	cmd.Flags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Should any required dependencies be installed automatically")
+	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
+	cmd.Flags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
 
 	options.Cmd = cmd
 }

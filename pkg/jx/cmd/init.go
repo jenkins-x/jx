@@ -73,7 +73,7 @@ const (
 	// INGRESS_SERVICE_NAME service name for ingress controller
 	INGRESS_SERVICE_NAME = "jxing-nginx-ingress-controller"
 	// DEFAULT_CHARTMUSEUM_URL default URL for Jenkins X ChartMuseum
-	DEFAULT_CHARTMUSEUM_URL = "https://chartmuseum.build.cd.jenkins-x.io"
+	DEFAULT_CHARTMUSEUM_URL = "http://chartmuseum.jenkins-x.io"
 )
 
 var (
