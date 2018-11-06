@@ -2,6 +2,7 @@ package gits
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	gerrit "github.com/andygrunwald/go-gerrit"
@@ -189,4 +190,8 @@ func (p *GerritProvider) ListInvitations() ([]*github.RepositoryInvitation, *git
 func (p *GerritProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gerrit.\n")
 	return &github.Response{}, nil
+}
+
+func (p *GerritProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, fmt.Errorf("Getting content not supported on gerrit")
 }

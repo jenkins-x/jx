@@ -29,8 +29,17 @@ var (
 		# List all the knative build pods
 		jx get build pods
 
+		# List all the pending knative build pods 
+		jx get build pods -p
+
 		# List all the knative build pods for a given repository
 		jx get build pods --repo cheese
+
+		# List all the pending knative build pods for a given repository
+		jx get build pods --repo cheese -p
+
+		# List all the knative build pods for a given Pull Request
+		jx get build pods --repo cheese --branch PR-1234
 	`)
 )
 
