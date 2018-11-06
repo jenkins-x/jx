@@ -273,7 +273,7 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 							act.Spec.LastCommitSHA = sha
 							act.Spec.GitURL = sourceUrl
 							if o.Verbose {
-								log.Infof("pod watcher:  Adding lastCommitSha: %s and gitUrl: %s to %s\n", act.Spec.LastCommitSHA, act.Spec.GitURL, pipelineActName)
+								log.Infof("pod watcher: Adding lastCommitSha: %s and gitUrl: %s to %s\n", act.Spec.LastCommitSHA, act.Spec.GitURL, pipelineActName)
 							}
 							_, err := jxClient.JenkinsV1().PipelineActivities(ns).Update(act)
 							if err != nil {
@@ -426,7 +426,7 @@ func (o *ControllerCommitStatusOptions) update(statusDetails *jenkinsv1.CommitSt
 					"\n"+
 					"Instructions for interacting with me using PR comments are available [here](https://git.k8s.io/community/contributors/guide/pull-requests.md).  If you have questions or suggestions related to my behavior, please file an issue against the [kubernetes/test-infra](https://github.com/kubernetes/test-infra/issues/new?title=Prow%%20issue:) repository. I understand the commands that are listed [here](https://go.k8s.io/bot-commands).\n"+
 					"</details>", commentBuilder.String())
-			_, err := extensions.NotifyCommitStatus(statusDetails.Commit, "failure", "", "Some commit statusDetails checks failed", comment, statusDetails.Context, gitProvider, gitRepoInfo)
+			_, err := extensions.NotifyCommitStatus(statusDetails.Commit, "failure", "", fmt.Sprintf("%s failed", statusDetails.Context), comment, statusDetails.Context, gitProvider, gitRepoInfo)
 			if err != nil {
 				return err
 			}

@@ -4,7 +4,7 @@ OS := $(shell uname)
 RELEASE_VERSION := $(shell cat ../../pkg/version/VERSION)
 
 setup:
-	helm repo add jenkins-x https://chartmuseum.build.cd.jenkins-x.io
+	helm repo add jenkins-x http://chartmuseum.jenkins-x.io
 
 build: setup clean
 	helm dependency build
