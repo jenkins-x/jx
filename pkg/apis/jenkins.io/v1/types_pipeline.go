@@ -196,7 +196,7 @@ type Statement struct {
 
 type Original struct {
 	MimeType string   `json:"mimetype,omitempty" protobuf: "bytes,1,opt,name=mimetype"`
-	URL      string   `json:"mimetype,omitempty" protobuf: "bytes,1,opt,name=mimetype"`
+	URL      string   `json:"url,omitempty" protobuf: "bytes,1,opt,name=url"`
 	Tags     []string `json:"tags,omitempty" protobuf: "bytes,8,opt,name=tags"`
 }
 
