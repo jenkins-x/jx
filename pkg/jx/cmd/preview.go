@@ -220,7 +220,7 @@ func (o *PreviewOptions) Run() error {
 		}
 
 		fmt.Println("gitproviders")
-		gitProvider, err := o.Factory.CreateGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
+		gitProvider, err := o.Factory.CreateGitProvider(o.GitInfo.URL, "Username to get pull request information as.", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
 		if err != nil {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}
