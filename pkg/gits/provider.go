@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -151,6 +152,15 @@ type GitFileContent struct {
 // IsClosed returns true if the PullRequest has been closed
 func (pr *GitPullRequest) IsClosed() bool {
 	return pr.ClosedAt != nil
+}
+
+// NumberString returns the string representation of the Pull Request number or blank if its missing
+func (pr *GitPullRequest) NumberString() string {
+	n := pr.Number
+	if n == nil {
+		return ""
+	}
+	return "#" + strconv.Itoa(*n)
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
