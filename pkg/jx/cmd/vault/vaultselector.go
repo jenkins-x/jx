@@ -1,0 +1,73 @@
+package vault
+
+import (
+	"errors"
+	"fmt"
+	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
+	"k8s.io/client-go/kubernetes"
+)
+
+type vaultSelectorImpl struct {
+	vaultOperatorClient versioned.Interface
+	kubeClient          kubernetes.Interface
+	In                  terminal.FileReader
+	Out                 terminal.FileWriter
+	Err                 io.Writer
+}
+
+func NewVaultSelector(o common.NewCommonOptionsInterface) (VaultSelector, error) {
+	operator, err := o.VaultOperatorClient()
+	if err != nil {
+		return nil, err
+	}
+	kubeclient, _, err := o.KubeClient()
+	if err != nil {
+		return nil, err
+	}
+	v := vaultSelectorImpl{
+		vaultOperatorClient: operator,
+		kubeClient:          kubeclient,
+	}
+	v.In, v.Out, v.Err = o.GetIn(), o.GetOut(), o.GetErr()
+	return v, nil
+}
+
+func (v vaultSelectorImpl) GetVault(namespace string) (*kube.Vault, error) {
+	vaults, err := kube.GetVaults(v.kubeClient, v.vaultOperatorClient, namespace)
+	if err != nil {
+		return nil, err
+	} else if len(vaults) == 0 {
+		return nil, errors.New(fmt.Sprintf("no vaults found in namespace '%s'", namespace))
+	}
+	if len(vaults) > 1 {
+		return v.selectVault(vaults)
+	}
+	return vaults[0], nil
+}
+
+func (v vaultSelectorImpl) selectVault(vaults []*kube.Vault) (*kube.Vault, error) {
+	surveyOpts := survey.WithStdio(v.In, v.Out, v.Err)
+	vaultMap, vaultNames := make(map[string]*kube.Vault, len(vaults)), make([]string, len(vaults))
+	for i, vault := range vaults {
+		vaultMap[vault.Name] = vault
+		vaultNames[i] = vault.Name
+	}
+	prompts := &survey.Select{
+		Message:  "Select Vault:",
+		Options:  vaultNames,
+		PageSize: len(vaults),
+		Help:     "The vault to use",
+	}
+
+	var selectedVault string
+	err := survey.AskOne(prompts, &selectedVault, nil, surveyOpts)
+	if err != nil {
+		return nil, err
+	}
+	return vaultMap[selectedVault], nil
+}

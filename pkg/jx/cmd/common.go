@@ -894,3 +894,15 @@ func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, er
 	}
 	return o.vaultOperatorClient, nil
 }
+
+func (o *CommonOptions) GetIn() terminal.FileReader {
+	return o.In
+}
+
+func (o *CommonOptions) GetOut() terminal.FileWriter {
+	return o.Out
+}
+
+func (o *CommonOptions) GetErr() io.Writer {
+	return o.Err
+}

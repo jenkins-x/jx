@@ -1,9 +1,6 @@
 package vault
 
 import (
-	"errors"
-	"fmt"
-	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -85,42 +82,4 @@ func getTokenFromVault(role string, jwt string, vaultClient *api.Client) (string
 	}
 	sec, err := vaultClient.Logical().Write("/auth/kubernetes/login", m)
 	return sec.Auth.ClientToken, err
-}
-
-type vaultSelectorImpl struct {
-	vaultOperatorClient versioned.Interface
-	kubeClient          kubernetes.Interface
-}
-
-func NewVaultSelector(o common.NewCommonOptionsInterface) (VaultSelector, error) {
-	operator, err := o.VaultOperatorClient()
-	if err != nil {
-		return nil, err
-	}
-	kubeclient, _, err := o.KubeClient()
-	if err != nil {
-		return nil, err
-	}
-	v := vaultSelectorImpl{
-		vaultOperatorClient: operator,
-		kubeClient:          kubeclient,
-	}
-	return v, nil
-}
-
-func (v vaultSelectorImpl) GetVault(namespace string) (*kube.Vault, error) {
-	vaults, err := kube.GetVaults(v.kubeClient, v.vaultOperatorClient, namespace)
-	if err != nil {
-		return nil, err
-	} else if len(vaults) == 0 {
-		return nil, errors.New(fmt.Sprintf("no vaults found in namespace '%s'", namespace))
-	}
-	if len(vaults) > 1 {
-		return selectVault(vaults)
-	}
-	return vaults[0], nil
-}
-
-func selectVault(vaults []*kube.Vault) (*kube.Vault, error) {
-	return vaults[0], nil // TODO - actually select the vault
 }
