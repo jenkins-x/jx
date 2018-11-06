@@ -1109,7 +1109,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		return err
 	}
 	// Check for jx binary in non standard path and install there instead if found...
-	nonStandardBinDir, err := util.JXBinaryLocation(&util.Command{})
+	nonStandardBinDir, err := util.JXBinaryLocation()
 	if err == nil && binDir != nonStandardBinDir {
 		binDir = nonStandardBinDir
 	}
