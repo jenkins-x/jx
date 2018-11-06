@@ -164,3 +164,50 @@ func UnTargz(tarball, target string, onlyFiles []string) error {
 	}
 	return nil
 }
+
+// untargz a tarball to a target including any folders inside the tarball
+// http://blog.ralch.com/tutorial/golang-working-with-tar-and-gzipf
+func UnTargzAll(tarball, target string) error {
+	zreader, err := os.Open(tarball)
+	if err != nil {
+		return err
+	}
+	defer zreader.Close()
+
+	reader, err := gzip.NewReader(zreader)
+	defer reader.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	tarReader := tar.NewReader(reader)
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+
+		path := filepath.Join(target, header.Name)
+		info := header.FileInfo()
+		if info.IsDir() {
+			if err = os.MkdirAll(path, info.Mode()); err != nil {
+				return err
+			}
+			continue
+		}
+
+		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		_, err = io.Copy(file, tarReader)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

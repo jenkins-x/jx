@@ -4,16 +4,17 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/table"
 	"io/ioutil"
-	"k8s.io/helm/pkg/chartutil"
-	"k8s.io/helm/pkg/proto/hapi/chart"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/table"
+	"k8s.io/helm/pkg/chartutil"
+	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -297,6 +298,11 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
 
 	return util.CombineErrors(err, err2)
+}
+
+// Fetch a Helm Chart
+func (h *HelmTemplate) FetchChart(chart string, version *string, untar bool, untardir string) error {
+	return fmt.Errorf("Not yet implemented")
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags

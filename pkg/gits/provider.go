@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -134,9 +135,32 @@ type GitWebHookArguments struct {
 	Secret string
 }
 
+type GitFileContent struct {
+	Type        string
+	Encoding    string
+	Size        int
+	Name        string
+	Path        string
+	Content     string
+	Sha         string
+	Url         string
+	GitUrl      string
+	HtmlUrl     string
+	DownloadUrl string
+}
+
 // IsClosed returns true if the PullRequest has been closed
 func (pr *GitPullRequest) IsClosed() bool {
 	return pr.ClosedAt != nil
+}
+
+// NumberString returns the string representation of the Pull Request number or blank if its missing
+func (pr *GitPullRequest) NumberString() string {
+	n := pr.Number
+	if n == nil {
+		return ""
+	}
+	return "#" + strconv.Itoa(*n)
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
@@ -322,18 +346,12 @@ func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService,
 func CreateProviderForURL(authConfigSvc auth.AuthConfigService, gitKind string, hostUrl string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(hostUrl)
+	url := server.URL
 	if gitKind != "" {
 		server.Kind = gitKind
 	}
-
-	var userAuth *auth.UserAuth
-	if server != nil {
-		userAuth = server.CurrentAuth()
-	}
-
-	if userAuth != nil && !userAuth.IsInvalid() {
-		return CreateProvider(server, userAuth, git)
-	} else {
+	userAuths := authConfigSvc.Config().FindUserAuths(url)
+	if len(userAuths) == 0 {
 		kind := server.Kind
 		if kind != "" {
 			userAuth := auth.CreateAuthUserFromEnvironment(strings.ToUpper(kind))
@@ -346,11 +364,16 @@ func CreateProviderForURL(authConfigSvc auth.AuthConfigService, gitKind string, 
 			return CreateProvider(server, &userAuth, git)
 		}
 	}
-	userAuth, err := createUserForServer(batchMode, authConfigSvc, server, git, in, out, errOut)
+	if len(userAuths) > 0 {
+		// TODO use default user???
+		auth := userAuths[0]
+		return CreateProvider(server, auth, git)
+	}
+	auth, err := createUserForServer(batchMode, authConfigSvc, server, git, in, out, errOut)
 	if err != nil {
 		return nil, err
 	}
-	return CreateProvider(server, userAuth, git)
+	return CreateProvider(server, auth, git)
 }
 
 func createUserForServer(batchMode bool, authConfigSvc auth.AuthConfigService, server *auth.AuthServer,
@@ -362,6 +385,7 @@ func createUserForServer(batchMode bool, authConfigSvc auth.AuthConfigService, s
 		return nil
 	}
 
+	// TODO could we guess this based on the users ~/.git for github?
 	defaultUserName := ""
 	err := authConfigSvc.Config().EditUserAuth(server.Label(), userAuth, defaultUserName, false, batchMode, f, in, out, errOut)
 	if err != nil {

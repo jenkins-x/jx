@@ -852,6 +852,10 @@ func (b *BitbucketServerProvider) AcceptInvitation(ID int64) (*github.Response, 
 	return &github.Response{}, nil
 }
 
+func (b *BitbucketServerProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, fmt.Errorf("Getting content not supported on bitbucket")
+}
+
 func BitBucketServerAccessTokenURL(url string) string {
 	// TODO with github we can default the scopes/flags we need on a token via adding
 	// ?scopes=repo,read:user,user:email,write:repo_hook
