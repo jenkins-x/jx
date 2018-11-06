@@ -18,33 +18,47 @@ type VaultClientFactory struct {
 	defaultNamespace string
 }
 
+func NewVaultClientFactory(options common.NewCommonOptionsInterface) (VaultClientFactory, error) {
+	factory := VaultClientFactory{
+		Options: options,
+	}
+	var err error
+	factory.kubeClient, factory.defaultNamespace, err = options.KubeClient()
+	if err != nil {
+		return factory, err
+	}
+	return factory, nil
+}
+
 // NewVaultClient creates a new api.Client
 // if namespace is nil, then the default namespace of the factory will be used
-func (v *VaultClientFactory) NewVaultClient(namespace string) (*api.Client, error) {
-	var err error
-	v.kubeClient, v.defaultNamespace, err = v.Options.KubeClient()
+func (v VaultClientFactory) NewVaultClient(namespace string) (*api.Client, error) {
+	config, jwt, role, err := v.GetConfigData(namespace)
 	if err != nil {
 		return nil, err
 	}
+	vaultClient, err := api.NewClient(config)
+	token, err := getTokenFromVault(role, jwt, vaultClient)
+	vaultClient.SetToken(token)
+	return vaultClient, nil
+}
 
+// GetConfigData generates the information necessary to configure an api.Client object
+// Returns the api.Config object, the JWT needed to create the auth user in vault, and an error if present
+func (v *VaultClientFactory) GetConfigData(namespace string) (config *api.Config, jwt string, saName string, err error) {
 	selector, err := NewVaultSelector(v.Options)
 	if namespace == "" {
 		namespace = v.defaultNamespace
 	}
 	vlt, err := selector.GetVault(namespace)
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 
 	serviceAccount, err := v.getServiceAccountFromVault(vlt)
 	secret, err := v.getSecretFromServiceAccount(serviceAccount, vlt.Namespace)
-	jwt := getJWTFromSecret(secret)
 
-	config := api.Config{Address: vlt.URL}
-	vaultClient, err := api.NewClient(&config)
-	token, err := getTokenFromVault(serviceAccount.Name, jwt, vaultClient)
-	vaultClient.SetToken(token)
-	return vaultClient, nil
+	return &api.Config{Address: vlt.URL}, getJWTFromSecret(secret), serviceAccount.Name, nil
 }
 
 func (v *VaultClientFactory) getServiceAccountFromVault(vault *kube.Vault) (*v1.ServiceAccount, error) {

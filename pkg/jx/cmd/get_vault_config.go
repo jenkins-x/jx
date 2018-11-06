@@ -13,7 +13,9 @@ import (
 type GetVaultConfigOptions struct {
 	GetOptions
 
-	Namespace string
+	namespace string
+	name      string
+	terminal  string
 }
 
 var (
@@ -55,26 +57,35 @@ func NewCmdGetVaultConfig(f Factory, in terminal.FileReader, out terminal.FileWr
 
 	options.addGetFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace from where to get the vault config")
-	cmd.Flags().StringVarP(&options.Namespace, "name", "m", "", "Name of the vault to get the config for")
+	cmd.Flags().StringVarP(&options.namespace, "namespace", "n", "", "Namespace from where to get the vault config")
+	cmd.Flags().StringVarP(&options.name, "name", "m", "", "Name of the vault to get the config for")
+	cmd.Flags().StringVarP(&options.terminal, "terminal", "t", "", "terminal type output override. Values: ['sh', 'cmd'].")
 	return cmd
 }
 
 // Run implements the command
 func (o *GetVaultConfigOptions) Run() error {
-	clientFactory := vault.VaultClientFactory{
-		Options: o,
+	clientFactory, err := vault.NewVaultClientFactory(o)
+	if err != nil {
+		return err
 	}
-	client, err := clientFactory.NewVaultClient(o.Namespace)
+	client, err := clientFactory.NewVaultClient(o.namespace)
 	if err != nil {
 		return err
 	}
 
 	// Echo the client config out to the command line to be piped into bash
-	if runtime.GOOS == "windows" {
-		fmt.Fprintf(o.Out, "set VAULT_ADDR=\"%s\"&&set VAULT_TOKEN=\"%s\"\n", client.Address(), client.Token())
+	if o.terminal == "" {
+		if runtime.GOOS == "windows" {
+			o.terminal = "cmd"
+		} else {
+			o.terminal = "sh"
+		}
+	}
+	if o.terminal == "cmd" {
+		_, _ = fmt.Fprintf(o.Out, "set VAULT_ADDR=%s\nset VAULT_TOKEN=%s\n", client.Address(), client.Token())
 	} else {
-		fmt.Fprintf(o.Out, "export VAULT_ADDR=%s && export VAULT_TOKEN=%s\n", client.Address(), client.Token())
+		_, _ = fmt.Fprintf(o.Out, "export VAULT_ADDR=%s\nexport VAULT_TOKEN=%s\n", client.Address(), client.Token())
 	}
 
 	return nil
