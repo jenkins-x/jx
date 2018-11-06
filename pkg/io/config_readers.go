@@ -15,20 +15,24 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+//ConfigReader interface for reading auth configuration
 type ConfigReader interface {
 	Read() (*auth.AuthConfig, error)
 }
 
+//FileConfigReader keeps the path to the configration file
 type FileConfigReader struct {
 	filename string
 }
 
+//NewFileConfigReader creates a new file config reader
 func NewFileConfigReader(filename string) *FileConfigReader {
 	return &FileConfigReader{
 		filename: filename,
 	}
 }
 
+//Read reads the configuration from a file
 func (f *FileConfigReader) Read() (*auth.AuthConfig, error) {
 	config := &auth.AuthConfig{}
 	if f.filename == "" {
@@ -52,13 +56,17 @@ func (f *FileConfigReader) Read() (*auth.AuthConfig, error) {
 	return config, nil
 }
 
+//ServerRetrieverFn retrives the server config
 type ServerRetrieverFn func() (name string, url string, kind string)
 
+//EventConfigReader keeps the prefix of the env variables where the user auth config is stored
+// and also a server config retriever
 type EnvConfigReader struct {
 	prefix          string
 	serverRetriever ServerRetrieverFn
 }
 
+//NewEnvConfigReader creates a new environment config reader
 func NewEnvConfigReader(envPrefix string, serverRetriever ServerRetrieverFn) *EnvConfigReader {
 	return &EnvConfigReader{
 		prefix:          envPrefix,
@@ -66,6 +74,7 @@ func NewEnvConfigReader(envPrefix string, serverRetriever ServerRetrieverFn) *En
 	}
 }
 
+//Read reads the configuration from environment
 func (e *EnvConfigReader) Read() (*auth.AuthConfig, error) {
 	if e.serverRetriever == nil {
 		return nil, errors.New("No server retriever function provider in env config reader")
@@ -85,6 +94,7 @@ func (e *EnvConfigReader) Read() (*auth.AuthConfig, error) {
 	return config, nil
 }
 
+//NewKubeSecretsConfigReader config reader for Kubernetes secrets
 type KubeSecretsConfigReader struct {
 	client      kubernetes.Interface
 	namespace   string
@@ -92,6 +102,7 @@ type KubeSecretsConfigReader struct {
 	serviceKind string
 }
 
+//NewKubeSecretsConfigReader creates a new Kubernetes config reader
 func NewKubeSecretsConfigReader(client kubernetes.Interface, namespace string,
 	kind string, serviceKind string) *KubeSecretsConfigReader {
 	return &KubeSecretsConfigReader{
@@ -102,6 +113,7 @@ func NewKubeSecretsConfigReader(client kubernetes.Interface, namespace string,
 	}
 }
 
+//Read reads the config from Kuberntes secrets
 func (k *KubeSecretsConfigReader) Read() (*auth.AuthConfig, error) {
 	secrets, err := k.secrets()
 	if err != nil {
