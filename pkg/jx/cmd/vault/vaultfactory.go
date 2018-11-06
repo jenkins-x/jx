@@ -14,6 +14,7 @@ import (
 
 type VaultClientFactory struct {
 	Options          common.NewCommonOptionsInterface
+	Selector         VaultSelector
 	kubeClient       kubernetes.Interface
 	defaultNamespace string
 }
@@ -24,6 +25,10 @@ func NewVaultClientFactory(options common.NewCommonOptionsInterface) (VaultClien
 	}
 	var err error
 	factory.kubeClient, factory.defaultNamespace, err = options.KubeClient()
+	if err != nil {
+		return factory, err
+	}
+	factory.Selector, err = NewVaultSelector(options)
 	if err != nil {
 		return factory, err
 	}
@@ -46,11 +51,10 @@ func (v VaultClientFactory) NewVaultClient(namespace string) (*api.Client, error
 // GetConfigData generates the information necessary to configure an api.Client object
 // Returns the api.Config object, the JWT needed to create the auth user in vault, and an error if present
 func (v *VaultClientFactory) GetConfigData(namespace string) (config *api.Config, jwt string, saName string, err error) {
-	selector, err := NewVaultSelector(v.Options)
 	if namespace == "" {
 		namespace = v.defaultNamespace
 	}
-	vlt, err := selector.GetVault(namespace)
+	vlt, err := v.Selector.GetVault(namespace)
 	if err != nil {
 		return nil, "", "", err
 	}
