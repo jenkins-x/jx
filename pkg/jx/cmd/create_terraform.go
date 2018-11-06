@@ -234,7 +234,7 @@ type CreateTerraformOptions struct {
 }
 
 var (
-	validTerraformClusterProviders = []string{"gke"}
+	validTerraformClusterProviders = []string{"gke", "jx-infra"}
 
 	createTerraformExample = templates.Examples(`
 		jx create terraform
@@ -639,7 +639,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 			os.MkdirAll(path, DefaultWritePermissions)
 
 			switch c.Provider() {
-			case "gke":
+			case "gke", "jx-infra":
 				options.Git().Clone(TerraformTemplatesGKE, path)
 				g := c.(*GKECluster)
 				//g := &GKECluster{}
@@ -666,7 +666,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 			options.Debugf("cluster %s already exists, loading...", c.Name())
 
 			switch c.Provider() {
-			case "gke":
+			case "gke", "jx-infra":
 				//g := &GKECluster{}
 				g := c.(*GKECluster)
 				terraformVars := filepath.Join(path, "terraform.tfvars")
