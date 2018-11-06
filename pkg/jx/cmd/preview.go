@@ -105,6 +105,10 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
+			//Default to batch-mode when running inside the pipeline (but user override wins).
+			if !cmd.Flag(optionBatchMode).Changed {
+				options.BatchMode = options.Factory.IsInCDPIpeline()
+			}
 			err := options.Run()
 			CheckErr(err)
 		},
