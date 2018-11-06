@@ -34,8 +34,8 @@ func NewVaultClientFactory(options common.NewCommonOptionsInterface) (VaultClien
 
 // NewVaultClient creates a new api.Client
 // if namespace is nil, then the default namespace of the factory will be used
-func (v VaultClientFactory) NewVaultClient(namespace string) (*api.Client, error) {
-	config, jwt, role, err := v.GetConfigData(namespace)
+func (v VaultClientFactory) NewVaultClient(name string, namespace string) (*api.Client, error) {
+	config, jwt, role, err := v.GetConfigData(name, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -47,11 +47,11 @@ func (v VaultClientFactory) NewVaultClient(namespace string) (*api.Client, error
 
 // GetConfigData generates the information necessary to configure an api.Client object
 // Returns the api.Config object, the JWT needed to create the auth user in vault, and an error if present
-func (v *VaultClientFactory) GetConfigData(namespace string) (config *api.Config, jwt string, saName string, err error) {
+func (v *VaultClientFactory) GetConfigData(name string, namespace string) (config *api.Config, jwt string, saName string, err error) {
 	if namespace == "" {
 		namespace = v.defaultNamespace
 	}
-	vlt, err := v.Selector.GetVault(namespace)
+	vlt, err := v.Selector.GetVault(name, namespace)
 	if err != nil {
 		return nil, "", "", err
 	}

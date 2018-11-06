@@ -37,16 +37,29 @@ func NewVaultSelector(o common.NewCommonOptionsInterface) (VaultSelector, error)
 	return v, nil
 }
 
-func (v vaultSelectorImpl) GetVault(namespace string) (*kube.Vault, error) {
+func (v vaultSelectorImpl) GetVault(name string, namespace string) (*kube.Vault, error) {
 	vaults, err := kube.GetVaults(v.kubeClient, v.vaultOperatorClient, namespace)
 	if err != nil {
 		return nil, err
-	} else if len(vaults) == 0 {
+	}
+
+	if name != "" {
+		// Return the vault that the user wanted (or an error if it doesn't exist)
+		for _, v := range vaults {
+			if v.Name == name {
+				return v, nil
+			}
+		}
+		return nil, errors.New(fmt.Sprintf("vault '%s' not found in namespace '%s'", name, namespace))
+	}
+
+	if len(vaults) == 0 {
 		return nil, errors.New(fmt.Sprintf("no vaults found in namespace '%s'", namespace))
 	}
-	if len(vaults) > 1 {
+	if len(vaults) > 1 { // Get the user to select the vault from the list
 		return v.selectVault(vaults)
 	}
+	// If there is only one vault, return that one
 	return vaults[0], nil
 }
 

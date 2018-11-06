@@ -12,6 +12,7 @@ type GetSecretOptions struct {
 	GetOptions
 
 	Namespace string
+	Name      string
 }
 
 var (
@@ -54,6 +55,7 @@ func NewCmdGetSecret(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	options.addGetFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace from where to list the secrets")
+	cmd.Flags().StringVarP(&options.Namespace, "name", "m", "", "The name of the Vault to use")
 	return cmd
 }
 
@@ -62,7 +64,7 @@ func (o *GetSecretOptions) Run() error {
 	clientFactory := vault.VaultClientFactory{
 		Options: o,
 	}
-	client, err := clientFactory.NewVaultClient(o.Namespace)
+	client, err := clientFactory.NewVaultClient(o.Name, o.Namespace)
 	if err != nil {
 		return err
 	}

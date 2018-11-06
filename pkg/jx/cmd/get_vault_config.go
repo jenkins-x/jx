@@ -69,7 +69,7 @@ func (o *GetVaultConfigOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	client, err := clientFactory.NewVaultClient(o.namespace)
+	client, err := clientFactory.NewVaultClient(o.name, o.namespace)
 	if err != nil {
 		return err
 	}
