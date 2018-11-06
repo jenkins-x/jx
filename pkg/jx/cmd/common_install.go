@@ -1180,9 +1180,11 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		if err != nil {
 			return err
 		}
-		// A standard remove and rename will not work as the file will be locked as windows is running it
+		// A standard remove and rename (or overwrite) will not work as the file will be locked as windows is running it
 		// the trick is to rename to a tempfile :-o
 		// this will leave old files around but well at least it updates.
+		// we could schedule the file for cleanup at next boot but....
+		// HKLM\System\CurrentControlSet\Control\Session Manager\PendingFileRenameOperations 
 		err = os.Rename(filepath.Join(binDir,"jx.exe"), filepath.Join(binDir, "jx.exe.deleteme"))
 		// if we can not rename it this i pretty fatal as we won;t be able to overwrite either
 		if err != nil {

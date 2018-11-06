@@ -124,8 +124,12 @@ func JXBinLocation() (string, error) {
 }
 
 // JXBinaryLocation Returns the path to the currently installed JX binary.
-func JXBinaryLocation(commandInterface Commander) (string, error) {
-	jxProcessBinary, err := os.Executable()
+func JXBinaryLocation() (string, error) {
+	return jXBinaryLocation(os.Executable)
+}
+
+func jXBinaryLocation(osExecutable func () (string, error)) (string, error) {
+	jxProcessBinary, err := osExecutable()
 	if err != nil {
 		logrus.Debugf("jxProcessBinary error %s", err)
 		return jxProcessBinary, err
@@ -145,6 +149,7 @@ func JXBinaryLocation(commandInterface Commander) (string, error) {
 		logrus.Debugf("jxProcessBinary error %s", err)
 		return jxProcessBinary, err
 	}
+
 	logrus.Debugf("jxProcessBinary %s", jxProcessBinary)
 	path := filepath.Dir(jxProcessBinary)
 	logrus.Debugf("dir from '%s' is '%s'", jxProcessBinary, path)
