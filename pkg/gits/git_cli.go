@@ -313,7 +313,11 @@ func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
 	if err != nil && strings.Contains(text, "Not a git repository") {
 		rUrl = os.Getenv("SOURCE_URL")
 		if rUrl == "" {
-			return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
+			// Relevant in a Jenkins pipeline triggered by a PR
+			rUrl = os.Getenv("CHANGE_URL")
+			if rUrl == "" {
+				return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
+			}
 		}
 	} else {
 		text, err = g.gitCmdWithOutput(dir, "config", "--get", "remote.origin.url")

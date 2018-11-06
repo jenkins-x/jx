@@ -106,7 +106,7 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			options.Cmd = cmd
 			options.Args = args
 			//Default to batch-mode when running inside the pipeline (but user override wins).
-			if !cmd.Flag("batch-mode").Changed {
+			if !cmd.Flag(optionBatchMode).Changed {
 				options.BatchMode = options.Factory.IsInCDPIpeline()
 			}
 			err := options.Run()
@@ -223,8 +223,7 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 
-		fmt.Println("gitproviders")
-		gitProvider, err := o.Factory.CreateGitProvider(o.GitInfo.URL, "Username to get pull request information as.", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
+		gitProvider, err := o.Factory.CreateGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
 		if err != nil {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}
@@ -493,8 +492,6 @@ func (o *PreviewOptions) Run() error {
 	pipeline := o.getJobName()
 	build := o.getBuildNumber()
 
-	fmt.Println("url", url != "")
-	fmt.Println("PullRequestURL", o.PullRequestURL != "")
 	if url != "" || o.PullRequestURL != "" {
 		if pipeline != "" && build != "" {
 			name := kube.ToValidName(pipeline + "-" + build)
@@ -691,30 +688,34 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	if o.SourceURL == "" {
 		o.SourceURL = os.Getenv("SOURCE_URL")
 		if o.SourceURL == "" {
-			// lets discover the git dir
-			if o.Dir == "" {
-				dir, err := os.Getwd()
-				if err != nil {
-					return err
-				}
-				o.Dir = dir
-			}
-			root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
-			if err != nil {
-				log.Warnf("Could not find a .git directory: %s\n", err)
-			} else {
-				if root != "" {
-					o.Dir = root
-					o.SourceURL, err = o.discoverGitURL(gitConf)
+			// Relevant in a Jenkins pipeline triggered by a PR
+			o.SourceURL = os.Getenv("CHANGE_URL")
+			if o.SourceURL == "" {
+				// lets discover the git dir
+				if o.Dir == "" {
+					dir, err := os.Getwd()
 					if err != nil {
-						log.Warnf("Could not find the remote git source URL:  %s\n", err)
-					} else {
-						if o.SourceRef == "" {
-							o.SourceRef, err = o.Git().Branch(root)
-							if err != nil {
-								log.Warnf("Could not find the remote git source ref:  %s\n", err)
-							}
+						return err
+					}
+					o.Dir = dir
+				}
+				root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
+				if err != nil {
+					log.Warnf("Could not find a .git directory: %s\n", err)
+				} else {
+					if root != "" {
+						o.Dir = root
+						o.SourceURL, err = o.discoverGitURL(gitConf)
+						if err != nil {
+							log.Warnf("Could not find the remote git source URL:  %s\n", err)
+						} else {
+							if o.SourceRef == "" {
+								o.SourceRef, err = o.Git().Branch(root)
+								if err != nil {
+									log.Warnf("Could not find the remote git source ref:  %s\n", err)
+								}
 
+							}
 						}
 					}
 				}

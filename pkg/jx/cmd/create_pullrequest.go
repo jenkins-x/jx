@@ -45,6 +45,14 @@ type CreatePullRequestOptions struct {
 	Body   string
 	Labels []string
 	Base   string
+
+	Results CreatePullRequestResults
+}
+
+type CreatePullRequestResults struct {
+	GitInfo     *gits.GitRepositoryInfo
+	GitProvider gits.GitProvider
+	PullRequest *gits.GitPullRequest
 }
 
 // NewCmdCreatePullRequest creates a command object for the "create" command
@@ -100,6 +108,9 @@ func (o *CreatePullRequestOptions) Run() error {
 		return err
 	}
 
+	o.Results.GitInfo = gitInfo
+	o.Results.GitProvider = provider
+
 	branchName, err := o.Git().Branch(o.Dir)
 	if err != nil {
 		return err
@@ -119,7 +130,10 @@ func (o *CreatePullRequestOptions) Run() error {
 		return err
 	}
 
+	o.Results.PullRequest = pr
+
 	log.Infof("\nCreated PullRequest %s at %s\n", util.ColorInfo(pr.NumberString()), util.ColorInfo(pr.URL))
+
 	return nil
 }
 
