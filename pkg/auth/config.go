@@ -172,6 +172,18 @@ func (c *AuthConfig) GetOrCreateServerName(url string, name string, kind string)
 	return s
 }
 
+func (c *AuthConfig) AddServer(server *AuthServer) {
+	s := c.GetServer(server.URL)
+	if s == nil {
+		if c.Servers == nil {
+			c.Servers = []*AuthServer{}
+		}
+		c.Servers = append(c.Servers, server)
+	} else {
+		s.Users = append(s.Users, server.Users...)
+	}
+}
+
 func urlHostName(rawUrl string) string {
 	u, err := url.Parse(rawUrl)
 	if err == nil {
