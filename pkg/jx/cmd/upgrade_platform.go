@@ -189,18 +189,21 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	secretsFileName := filepath.Join(dir, GitSecretsFile)
+	o.Debugf("Writing '%s' to %s\n", secrets, secretsFileName)
 	err = ioutil.WriteFile(secretsFileName, []byte(secrets), 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write the git secrets in the secrets file")
 	}
 
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
+	o.Debugf("Writing '%s' to %s\n", adminSecrets, adminSecretsFileName)
 	err = ioutil.WriteFile(adminSecretsFileName, []byte(adminSecrets), 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write the admin secrets in the secrets file")
 	}
 
 	configFileName := filepath.Join(dir, ExtraValuesFile)
+	o.Debugf("Writing '%s' to %s\n", config, configFileName)
 	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write the config file")
