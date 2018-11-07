@@ -31,4 +31,5 @@ type Helmer interface {
 	SearchCharts(filter string) ([]ChartSummary, error)
 	SetHost(host string)
 	Env() map[string]string
+	DecryptSecrets(location string) error
 }
