@@ -934,9 +934,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to create the jx client")
 	}
 
-	err = options.updateJenkinsURL([]string{ns})
-	if err != nil {
-		log.Warnf("failed to update the Jenkins external URL")
+	if !options.Flags.Prow {
+		err = options.updateJenkinsURL([]string{ns})
+		if err != nil {
+			log.Warnf("failed to update the Jenkins external URL")
+		}
 	}
 
 	if !options.Flags.NoDefaultEnvironments {
