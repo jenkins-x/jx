@@ -183,6 +183,10 @@ func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
 		log.Warnf("Kind of git server %s with URL %s is empty\n", server.Name, server.URL)
 		return nil
 	}
+	// lets lazily populate the name if its empty
+	if server.Name == "" {
+		server.Name = kind
+	}
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
 	if err != nil {
 		return err
