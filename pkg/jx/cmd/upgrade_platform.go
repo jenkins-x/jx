@@ -146,6 +146,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read the git secrets from configuration")
 	}
+	o.Debugf("Loaded git secrets '%s'\n", secrets)
 
 	err = o.AdminSecretsService.NewAdminSecretsConfig()
 	if err != nil {
@@ -156,6 +157,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read the admin secrets")
 	}
+	o.Debugf("Loaded admin secrets '%s'\n", adminSecrets)
 
 	helmConfig := &o.CreateEnvOptions.HelmValuesConfig
 	exposeController := helmConfig.ExposeController
@@ -167,6 +169,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get the helm config")
 	}
+	o.Debugf("Loaded helm config '%s'\n", config)
 
 	// clone the environments repo
 	wrkDir, err := o.cloneJXCloudEnvironmentsRepo()
