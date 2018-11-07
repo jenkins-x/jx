@@ -192,11 +192,11 @@ func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
 	if err != nil {
 		return err
 	}
-	err := kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, server.Name, server.URL, o.Out)
+	err = kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, server.Name, server.URL, o.Out)
 	if err != nil {
 	  return err
 	}
-	log.Infof("Ensured we have a GitService called %s for URL %s in namespace %s\n", server.Name, server.URL devNs)
+	log.Infof("Ensured we have a GitService called %s for URL %s in namespace %s\n", server.Name, server.URL, devNs)
 	return nil
 }
 
