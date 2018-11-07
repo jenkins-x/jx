@@ -64,7 +64,7 @@ pipeline {
                     sh "cp ./build/linux/jx /usr/bin"
 
                     // lets trigger the BDD tests in a new team and git provider
-                    sh "jx step bdd -b  --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-user dev1 --git-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo"
+                    sh "jx step bdd -b  --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo"
 
 /*
                     sh "jx install --namespace ${TEAM} --no-tiller --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW --skip-auth-secrets-merge --no-default-environments"
