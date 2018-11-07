@@ -176,7 +176,11 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 
 func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
 	kind := server.Kind
-	if kind == "" || (kind == "github" && server.URL == gits.GitHubURL) {
+	if kind == "github" && server.URL == gits.GitHubURL {
+		return nil
+	}
+	if kind == "" {
+		log.Warnf("Kind of git server %s with URL %s is empty\n", server.Name, server.URL)
 		return nil
 	}
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
