@@ -1,4 +1,4 @@
-package vault_test
+package test_utils
 
 import (
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
@@ -19,7 +19,7 @@ import (
 	"testing"
 )
 
-func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, vault.VaultClientFactory, error, kubernetes.Interface) {
+func SetupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, vault.VaultClientFactory, error, kubernetes.Interface) {
 	options := cmd.NewCommonOptions("", cmdMocks.NewMockFactory())
 	if term != nil {
 		options.In, options.Out, options.Err = term.In, term.Out, term.Err
@@ -33,7 +33,7 @@ func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, vault.Vaul
 	return vaultOperatorClient, f, err, kubeClient
 }
 
-func createMockedVault(vaultName string, namespace string, vaultUrl string, jwt string,
+func CreateMockedVault(vaultName string, namespace string, vaultUrl string, jwt string,
 	vaultOperatorClient *fake.Clientset, kubeClient kubernetes.Interface) v1alpha1.Vault {
 
 	v := v1alpha1.Vault{

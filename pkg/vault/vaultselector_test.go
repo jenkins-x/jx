@@ -4,13 +4,14 @@ import (
 	"github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/pkg/vault/test_utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func Test_GetVault_DoesNotPromptUserIfOnlyOneVaultInNamespace(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
-	createMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
+	vaultOperatorClient, factory, err, kubeClient := test_utils.SetupMocks(t, nil)
+	test_utils.CreateMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
 	selector, err := vault.NewVaultSelector(factory.Options)
 
@@ -24,8 +25,8 @@ func Test_GetVault_DoesNotPromptUserIfOnlyOneVaultInNamespace(t *testing.T) {
 }
 
 func Test_GetVault_ErrorsIfNoVaultsInNamespace(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
-	createMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
+	vaultOperatorClient, factory, err, kubeClient := test_utils.SetupMocks(t, nil)
+	test_utils.CreateMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
 	selector, err := vault.NewVaultSelector(factory.Options)
 
@@ -36,8 +37,8 @@ func Test_GetVault_ErrorsIfNoVaultsInNamespace(t *testing.T) {
 }
 
 func Test_GetVault_ErrorsIfRequestedVaultDoesNotExist(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
-	createMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
+	vaultOperatorClient, factory, err, kubeClient := test_utils.SetupMocks(t, nil)
+	test_utils.CreateMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
 	selector, err := vault.NewVaultSelector(factory.Options)
 
@@ -48,9 +49,9 @@ func Test_GetVault_ErrorsIfRequestedVaultDoesNotExist(t *testing.T) {
 }
 
 func Test_GetVault_GetExplicitVaultSucceedsWhenTwoVaultsAreDefined(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
-	createMockedVault("vault1", "myVaultNamespace", "one.ah.ah.ah", "Count", vaultOperatorClient, kubeClient)
-	createMockedVault("vault2", "myVaultNamespace", "two.ah.ah.ah", "Von-Count", vaultOperatorClient, kubeClient)
+	vaultOperatorClient, factory, err, kubeClient := test_utils.SetupMocks(t, nil)
+	test_utils.CreateMockedVault("vault1", "myVaultNamespace", "one.ah.ah.ah", "Count", vaultOperatorClient, kubeClient)
+	test_utils.CreateMockedVault("vault2", "myVaultNamespace", "two.ah.ah.ah", "Von-Count", vaultOperatorClient, kubeClient)
 
 	selector, err := vault.NewVaultSelector(factory.Options)
 
@@ -68,9 +69,9 @@ func Test_GetVault_PromptsUserIfMoreThanOneVaultInNamespace(t *testing.T) {
 
 	// mock terminal
 	console, state, term := tests.NewTerminal(t)
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, term)
-	createMockedVault("vault1", "myVaultNamespace", "one.ah.ah.ah", "Count", vaultOperatorClient, kubeClient)
-	createMockedVault("vault2", "myVaultNamespace", "two.ah.ah.ah", "Von-Count", vaultOperatorClient, kubeClient)
+	vaultOperatorClient, factory, err, kubeClient := test_utils.SetupMocks(t, term)
+	test_utils.CreateMockedVault("vault1", "myVaultNamespace", "one.ah.ah.ah", "Count", vaultOperatorClient, kubeClient)
+	test_utils.CreateMockedVault("vault2", "myVaultNamespace", "two.ah.ah.ah", "Von-Count", vaultOperatorClient, kubeClient)
 
 	selector, err := vault.NewVaultSelector(factory.Options)
 

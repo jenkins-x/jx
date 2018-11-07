@@ -3,15 +3,16 @@ package vault_test
 import (
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/pkg/vault/test_utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestGetConfigData(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, err, kubeClient := test_utils.SetupMocks(t, nil)
 
 	vaultName, namespace := "myVault", "myVaultNamespace"
-	createMockedVault(vaultName, namespace, "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
+	test_utils.CreateMockedVault(vaultName, namespace, "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
 	// Invoke the function under test
 	config, jwt, saName, err := factory.GetConfigData(vaultName, namespace)
@@ -23,10 +24,10 @@ func TestGetConfigData(t *testing.T) {
 }
 
 func TestGetConfigData_DefaultNamespacesUsed(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, err, kubeClient := test_utils.SetupMocks(t, nil)
 
 	vaultName, namespace := "myVault", "jx" // "jx" is the default namespace used by the kubeClient
-	createMockedVault(vaultName, namespace, "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
+	test_utils.CreateMockedVault(vaultName, namespace, "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
 	// Invoke the function under test
 	config, jwt, saName, err := factory.GetConfigData("", "")
@@ -38,10 +39,10 @@ func TestGetConfigData_DefaultNamespacesUsed(t *testing.T) {
 }
 
 func TestGetConfigData_ErrorsWhenNoVaultsInNamespace(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, err, kubeClient := test_utils.SetupMocks(t, nil)
 
 	vaultName, namespace := "myVault", "myVaultNamespace"
-	createMockedVault(vaultName, namespace, "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
+	test_utils.CreateMockedVault(vaultName, namespace, "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
 	// Invoke the function under test
 	config, jwt, saName, err := factory.GetConfigData("", "Nothing In This Namespace")
@@ -54,11 +55,11 @@ func TestGetConfigData_ErrorsWhenNoVaultsInNamespace(t *testing.T) {
 
 func TestGetConfigData_ConfigUsedFromVaultSelector(t *testing.T) {
 	// Two vaults are configured in the same namespace, the user specifies one with the -m flag
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, err, kubeClient := test_utils.SetupMocks(t, nil)
 
 	namespace := "myVaultNamespace"
-	_ = createMockedVault("vault1", namespace, "one.ah.ah.ah", "count", vaultOperatorClient, kubeClient)
-	vault2 := createMockedVault("vault2", namespace, "two.ah.ah.ah", "von-count", vaultOperatorClient, kubeClient)
+	_ = test_utils.CreateMockedVault("vault1", namespace, "one.ah.ah.ah", "count", vaultOperatorClient, kubeClient)
+	vault2 := test_utils.CreateMockedVault("vault2", namespace, "two.ah.ah.ah", "von-count", vaultOperatorClient, kubeClient)
 
 	// Create a mock Selector that just returns the second vault
 	factory.Selector = PredefinedVaultSelector{vaultToReturn: vault2, url: "http://two.ah.ah.ah"}
