@@ -70,7 +70,7 @@ type Factory interface {
 
 	IsInCluster() bool
 
-	IsInCDPIpeline() bool
+	IsInCDPipeline() bool
 
 	AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error
 

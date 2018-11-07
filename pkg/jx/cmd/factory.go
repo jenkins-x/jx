@@ -193,7 +193,7 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.IsInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.IsInCDPipeline())
 	}
 	return authConfigSvc, err
 }
@@ -208,7 +208,7 @@ func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.IsInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.IsInCDPipeline())
 	}
 	return authConfigSvc, err
 }
@@ -223,7 +223,7 @@ func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindAddon, f.IsInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindAddon, f.IsInCDPipeline())
 	}
 	return authConfigSvc, err
 }
@@ -429,9 +429,9 @@ func (f *factory) CreateTable(out io.Writer) table.Table {
 	return table.CreateTable(out)
 }
 
-// IsInCDPIpeline we should only load the git / issue tracker API tokens if the current pod
+// IsInCDPipeline we should only load the git / issue tracker API tokens if the current pod
 // is in a pipeline and running as the Jenkins service account
-func (f *factory) IsInCDPIpeline() bool {
+func (f *factory) IsInCDPipeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
 	return os.Getenv("BUILD_NUMBER") != "" || os.Getenv("JX_BUILD_NUMBER") != ""

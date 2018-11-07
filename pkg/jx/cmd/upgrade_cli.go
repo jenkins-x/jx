@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"io"
+	"runtime"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -8,8 +11,6 @@ import (
 	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"runtime"
 )
 
 var (
@@ -57,8 +58,7 @@ func NewCmdUpgradeCLI(f Factory, in terminal.FileReader, out terminal.FileWriter
 		},
 	}
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific version to upgrade to")
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
-	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logger.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
+	options.addCommonFlags(cmd)
 	return cmd
 }
 

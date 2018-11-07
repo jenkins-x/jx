@@ -89,7 +89,7 @@ func (g *GKECluster) SetProvider(provider string) string {
 
 // Context Get the context
 func (g GKECluster) Context() string {
-	return fmt.Sprintf("%s_%s_%s_%s", g.provider, g.ProjectID, g.Zone, g.ClusterName())
+	return fmt.Sprintf("%s_%s_%s_%s", "gke", g.ProjectID, g.Zone, g.ClusterName())
 }
 
 // Region Get the region

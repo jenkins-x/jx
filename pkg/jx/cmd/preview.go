@@ -108,7 +108,7 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			options.Args = args
 			//Default to batch-mode when running inside the pipeline (but user override wins).
 			if !cmd.Flag(optionBatchMode).Changed {
-				options.BatchMode = options.Factory.IsInCDPIpeline()
+				options.BatchMode = options.Factory.IsInCDPipeline()
 			}
 			err := options.Run()
 			CheckErr(err)
