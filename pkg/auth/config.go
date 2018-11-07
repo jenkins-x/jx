@@ -166,6 +166,9 @@ func (c *AuthConfig) GetOrCreateServerName(url string, name string, kind string)
 		}
 		c.Servers = append(c.Servers, s)
 	}
+	if s.Kind == "" {
+		s.Kind = kind
+	}
 	return s
 }
 
