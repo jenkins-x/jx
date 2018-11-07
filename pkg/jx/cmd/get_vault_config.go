@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/vault"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"io/ioutil"
 	"os"
@@ -474,7 +475,7 @@ func (o *PreviewOptions) Run() error {
 	url := ""
 	appNames := []string{o.Application, o.ReleaseName, o.Namespace + "-preview", o.ReleaseName + "-" + o.Application}
 	for _, n := range appNames {
-		url, err = kube.FindServiceURL(kubeClient, o.Namespace, n)
+		url, err = services.FindServiceURL(kubeClient, o.Namespace, n)
 		if url != "" {
 			writePreviewURL(o, url)
 			break

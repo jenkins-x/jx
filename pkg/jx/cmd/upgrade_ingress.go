@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 	"io"
 	"strings"
@@ -251,7 +252,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
+			if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
 				if o.isIngressForServices(&i) {
 					existingIngressNames[i.Name] = i.Namespace
 				}
@@ -272,7 +273,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 				return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 			}
 			for _, i := range ings.Items {
-				if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
+				if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
 					if o.isIngressForServices(&i) {
 						existingIngressNames[i.Name] = i.Namespace
 					}
@@ -290,7 +291,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
+			if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
 				if o.isIngressForServices(&i) {
 					existingIngressNames[i.Name] = i.Namespace
 				}
@@ -410,10 +411,10 @@ func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
 	return nil
 }
 
-// AnnotateExposedServicesWithCertManager annotates exposed service with cert manager
-func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(services ...string) error {
+// AnnotateExposedServicesWithCertManager annotates exposed services with cert manager
+func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(svcs ...string) error {
 	for _, n := range o.TargetNamespaces {
-		err := kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, n, o.IngressConfig.Issuer, services...)
+		err := services.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, n, o.IngressConfig.Issuer, svcs...)
 		if err != nil {
 			return err
 		}
@@ -422,9 +423,9 @@ func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(services 
 }
 
 // CleanServiceAnnotations cleans service annotations
-func (o *UpgradeIngressOptions) CleanServiceAnnotations(services ...string) error {
+func (o *UpgradeIngressOptions) CleanServiceAnnotations(svcs ...string) error {
 	for _, n := range o.TargetNamespaces {
-		err := kube.CleanServiceAnnotations(o.KubeClientCached, n, services...)
+		err := services.CleanServiceAnnotations(o.KubeClientCached, n, svcs...)
 		if err != nil {
 			return err
 		}

@@ -1,10 +1,10 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/vault"
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -74,7 +74,7 @@ func (o *GetVaultOptions) Run() error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	vaults, err := kube.GetVaults(client, vaultOperatorClient, o.Namespace)
+	vaults, err := vault.GetVaults(client, vaultOperatorClient, o.Namespace)
 	if err != nil {
 		return err
 	}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
@@ -37,8 +36,8 @@ func NewVaultSelector(o common.NewCommonOptionsInterface) (VaultSelector, error)
 	return v, nil
 }
 
-func (v vaultSelectorImpl) GetVault(name string, namespace string) (*kube.Vault, error) {
-	vaults, err := kube.GetVaults(v.kubeClient, v.vaultOperatorClient, namespace)
+func (v vaultSelectorImpl) GetVault(name string, namespace string) (*Vault, error) {
+	vaults, err := GetVaults(v.kubeClient, v.vaultOperatorClient, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -63,9 +62,9 @@ func (v vaultSelectorImpl) GetVault(name string, namespace string) (*kube.Vault,
 	return vaults[0], nil
 }
 
-func (v vaultSelectorImpl) selectVault(vaults []*kube.Vault) (*kube.Vault, error) {
+func (v vaultSelectorImpl) selectVault(vaults []*Vault) (*Vault, error) {
 	surveyOpts := survey.WithStdio(v.In, v.Out, v.Err)
-	vaultMap, vaultNames := make(map[string]*kube.Vault, len(vaults)), make([]string, len(vaults))
+	vaultMap, vaultNames := make(map[string]*Vault, len(vaults)), make([]string, len(vaults))
 	for i, vault := range vaults {
 		vaultMap[vault.Name] = vault
 		vaultNames[i] = vault.Name

@@ -1,10 +1,10 @@
-package kube
+package vault
 
 import (
 	"fmt"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,12 +96,12 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 	authServiceAccountNamespace string, secretsPathPrefix string) error {
 
 	if secretsPathPrefix == "" {
-		secretsPathPrefix = vault.DefaultSecretsPathPrefix
+		secretsPathPrefix = DefaultSecretsPathPrefix
 	}
-	pathRule := &vault.PathRule{
-		Path: []vault.PathPolicy{{
+	pathRule := &PathRule{
+		Path: []PathPolicy{{
 			Prefix:       secretsPathPrefix,
-			Capabilities: vault.DefaultSecretsCapabiltities,
+			Capabilities: DefaultSecretsCapabiltities,
 		}},
 	}
 	vaultRule, err := pathRule.String()
@@ -152,16 +152,16 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 								BoundServiceAccountNames:      authServiceAccount,
 								BoundServiceAccountNamespaces: authServiceAccountNamespace,
 								Name:                          authServiceAccount,
-								Policies:                      vault.PathRulesName,
+								Policies:                      PathRulesName,
 								TTL:                           vaultAuthTTL,
 							},
 						},
 						Type: vaultAuthType,
 					},
 				},
-				vault.PoliciesName: []VaultPolicy{
+				PoliciesName: []VaultPolicy{
 					{
-						Name:  vault.PathRulesName,
+						Name:  PathRulesName,
 						Rules: vaultRule,
 					},
 				},
@@ -212,7 +212,7 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 	for _, v := range vaultList.Items {
 		vaultName := v.Name
 		vaultAuthSaName := VaultAuthServiceAccountName(vaultName)
-		vaultURL, err := FindServiceURL(client, ns, vaultName)
+		vaultURL, err := services.FindServiceURL(client, ns, vaultName)
 		if err != nil {
 			vaultURL = ""
 		}

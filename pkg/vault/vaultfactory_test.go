@@ -8,7 +8,7 @@ package vault_test
 //	"github.com/jenkins-x/jx/pkg/helm/mocks"
 //	"github.com/jenkins-x/jx/pkg/jx/cmd"
 //	cmdMocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
-//	"github.com/jenkins-x/jx/pkg/jx/cmd/vault"
+//	"github.com/jenkins-x/jx/pkg/vault"
 //	"github.com/jenkins-x/jx/pkg/kube"
 //	"k8s.io/client-go/kubernetes"
 //

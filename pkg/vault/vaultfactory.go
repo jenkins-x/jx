@@ -3,7 +3,7 @@ package vault
 import (
 	"github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -57,12 +57,12 @@ func (v *VaultClientFactory) GetConfigData(name string, namespace string) (confi
 	}
 
 	serviceAccount, err := v.getServiceAccountFromVault(vlt)
-	token, err := kube.GetServiceAccountToken(v.kubeClient, namespace, serviceAccount.Name)
+	token, err := serviceaccount.GetServiceAccountToken(v.kubeClient, namespace, serviceAccount.Name)
 
 	return &api.Config{Address: vlt.URL}, token, serviceAccount.Name, err
 }
 
-func (v *VaultClientFactory) getServiceAccountFromVault(vault *kube.Vault) (*v1.ServiceAccount, error) {
+func (v *VaultClientFactory) getServiceAccountFromVault(vault *Vault) (*v1.ServiceAccount, error) {
 	return v.kubeClient.CoreV1().ServiceAccounts(vault.Namespace).Get(vault.AuthServiceAccountName, meta_v1.GetOptions{})
 }
 

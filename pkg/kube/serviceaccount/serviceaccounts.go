@@ -1,4 +1,4 @@
-package kube
+package serviceaccount
 
 import (
 	"encoding/json"
@@ -51,14 +51,14 @@ func PatchImagePullSecrets(kubeClient kubernetes.Interface, ns string, sa string
 
 const (
 	subjectKind                  = "ServiceAccount"
-	serviceAccountNameAnnotation = "kubernetes.io/service-account.name"
+	serviceAccountNameAnnotation = "kubernetes.io/services-account.name"
 	tokenDataKey                 = "token"
 )
 
-// CreateServiceAccount creates a new service account in the given namespace and returns the service account name
+// CreateServiceAccount creates a new services account in the given namespace and returns the service account name
 func CreateServiceAccount(kubeClient kubernetes.Interface, namespace string, name string) (*v1.ServiceAccount, error) {
 	sa, err := kubeClient.CoreV1().ServiceAccounts(namespace).Get(name, metav1.GetOptions{})
-	// If a service account already exists just re-use it
+	// If a services account already exists just re-use it
 	if err == nil {
 		return sa, nil
 	}
