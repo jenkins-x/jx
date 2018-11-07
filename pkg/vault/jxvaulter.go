@@ -1,7 +1,6 @@
 package vault
 
 import (
-	"fmt"
 	"github.com/hashicorp/vault/api"
 	"net/url"
 )
@@ -34,11 +33,10 @@ func (v *JxVaulter) Secrets() ([]string, error) {
 	}
 
 	out := make([]string, 0)
-	for key, value := range secrets.Data {
-		_ = key
-		_ = value
-		out = append(out, fmt.Sprintf("%v", value))
-		out = append(out, fmt.Sprintf("%T", value))
+	for _, s := range secrets.Data["keys"].([]interface{}) {
+		if orig, ok := s.(string); ok {
+			out = append(out, orig)
+		}
 	}
 
 	return out, nil
