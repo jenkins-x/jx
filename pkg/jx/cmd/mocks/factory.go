@@ -412,12 +412,12 @@ func (mock *MockFactory) ImpersonateUser(_param0 string) cmd.Factory {
 	return ret0
 }
 
-func (mock *MockFactory) IsInCDPIpeline() bool {
+func (mock *MockFactory) IsInCDPipeline() bool {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("IsInCDPIpeline", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("IsInCDPipeline", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
 	var ret0 bool
 	if len(result) != 0 {
 		if result[0] != nil {
@@ -1001,21 +1001,21 @@ func (c *Factory_ImpersonateUser_OngoingVerification) GetAllCapturedArguments() 
 	return
 }
 
-func (verifier *VerifierFactory) IsInCDPIpeline() *Factory_IsInCDPIpeline_OngoingVerification {
+func (verifier *VerifierFactory) IsInCDPipeline() *Factory_IsInCDPipeline_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsInCDPIpeline", params)
-	return &Factory_IsInCDPIpeline_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsInCDPipeline", params)
+	return &Factory_IsInCDPipeline_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Factory_IsInCDPIpeline_OngoingVerification struct {
+type Factory_IsInCDPipeline_OngoingVerification struct {
 	mock              *MockFactory
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Factory_IsInCDPIpeline_OngoingVerification) GetCapturedArguments() {
+func (c *Factory_IsInCDPipeline_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Factory_IsInCDPIpeline_OngoingVerification) GetAllCapturedArguments() {
+func (c *Factory_IsInCDPipeline_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierFactory) IsInCluster() *Factory_IsInCluster_OngoingVerification {
