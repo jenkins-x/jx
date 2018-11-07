@@ -244,6 +244,7 @@ func TestKubeSecretsConfigReader(t *testing.T) {
 							&auth.User{
 								Username: "test",
 								ApiToken: "test",
+								Kind:     auth.UserKindPipeline,
 							},
 						},
 						Name: "GitHub",
@@ -269,6 +270,7 @@ func TestKubeSecretsConfigReader(t *testing.T) {
 							&auth.User{
 								Username: "test",
 								ApiToken: "test",
+								Kind:     auth.UserKindPipeline,
 							},
 						},
 						Name: "GitHub",
@@ -294,6 +296,7 @@ func TestKubeSecretsConfigReader(t *testing.T) {
 							&auth.User{
 								Username: "test",
 								ApiToken: "test",
+								Kind:     auth.UserKindPipeline,
 							},
 						},
 						Name: "GitHub",
@@ -363,6 +366,7 @@ func TestKubeSecretsConfigReader(t *testing.T) {
 							&auth.User{
 								Username: "test",
 								ApiToken: "test",
+								Kind:     auth.UserKindPipeline,
 							},
 						},
 						Name: "",

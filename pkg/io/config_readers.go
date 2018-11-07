@@ -223,6 +223,7 @@ func (k *KubeSecretsConfigReader) userFromSecret(secret corev1.Secret) (*auth.Us
 	return &auth.User{
 		Username: string(username),
 		ApiToken: string(password),
+		Kind:     auth.UserKindPipeline,
 	}, nil
 }
 
