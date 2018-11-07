@@ -176,7 +176,7 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 
 func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
 	kind := server.Kind
-	if kind == "" || kind == "github" || server.URL == "" {
+	if kind == "" || (kind == "github" && server.URL == gits.GitHubURL) {
 		return nil
 	}
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
@@ -192,7 +192,12 @@ func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
 	if err != nil {
 		return err
 	}
-	return kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, server.Name, server.URL, o.Out)
+	err := kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, server.Name, server.URL, o.Out)
+	if err != nil {
+	  return err
+	}
+	log.Infof("Ensured we have a GitService called %s for URL %s in namespace %s\n", server.Name, server.URL devNs)
+	return nil
 }
 
 func (o *CommonOptions) discoverGitURL(gitConf string) (string, error) {
