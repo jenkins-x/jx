@@ -126,6 +126,5 @@ func (o *CreateGitServerOptions) Run() error {
 	if err != nil {
 	  return err
 	}
-	log.Infof("Created GitServer resource for server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 	return nil
 }

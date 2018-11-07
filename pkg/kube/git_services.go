@@ -2,6 +2,7 @@ package kube
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io"
 	"net/url"
 	"strings"
@@ -68,6 +69,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 		if err != nil {
 			return fmt.Errorf("Failed to create GitService with name %s: %s", gitSvc.Name, err)
 		}
+		log.Infof("GitService %s created in namespace %s for URL %s\n", gitSvc.Name, devNs, gitUrl)
 	} else if current != nil {
 		if current.Spec.URL != gitSvc.Spec.URL || current.Spec.GitKind != gitSvc.Spec.GitKind {
 			current.Spec.URL = gitSvc.Spec.URL
@@ -77,6 +79,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 			if err != nil {
 				return fmt.Errorf("Failed to update GitService with name %s: %s", gitSvc.Name, err)
 			}
+			log.Infof("GitService %s updated in namespace %s for URL %s\n", gitSvc.Name, devNs, gitUrl)
 		}
 	}
 	return nil
@@ -130,10 +133,10 @@ func getServiceKindFromGitServices(jxClient versioned.Interface, ns string, gitS
 	list, err := gitServices.List(metav1.ListOptions{})
 	if err == nil {
 		for _, gs := range list.Items {
-			if gs.Spec.URL == gitServiceURL {
+			if gs.Spec.URL == gitServiceURL || strings.TrimSuffix(gs.Spec.URL, "/") == strings.TrimSuffix(gitServiceURL, "/") {
 				return gs.Spec.GitKind, nil
 			}
 		}
 	}
-	return "", fmt.Errorf("no Git service resource found with URL '%s'", gitServiceURL)
+	return "", fmt.Errorf("no Git service resource found with URL '%s' in namespace %s", gitServiceURL, ns)
 }
