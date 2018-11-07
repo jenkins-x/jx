@@ -1,50 +1,41 @@
-package util_test
+package util
 
 import (
 	"errors"
+	"github.com/stretchr/testify/require"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/util"
-	mocks "github.com/jenkins-x/jx/pkg/util/mocks"
-	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestJXBinaryLocationSuccess(t *testing.T) {
-	//NOTE no parallel
-	commandInterface := mocks.NewMockCommander()
-	When(commandInterface.RunWithoutRetry()).ThenReturn("/test/something/bin/jx", nil)
+	t.Parallel()
+	tempDir, err := ioutil.TempDir("", "")
+	require.NoError(t, err, "[TEST SETUP] failed to create temp directory for test")
+	defer os.RemoveAll(tempDir)
+	jxpath := filepath.Join(tempDir, "jx")
+	// resolving symlinks requires that the file exists (at least on windows...
+	_ , err = os.Create(jxpath)
+	require.NoError(t, err, "[TEST SETUP] failed to create temp directory for test")
 
-	res, err := util.JXBinaryLocation(commandInterface)
-	assert.Equal(t, "/test/something/bin", res)
+	res, err := jXBinaryLocation(stubFunction(jxpath, nil))
+	assert.Equal(t, tempDir, res)
 	assert.NoError(t, err, "Should not error")
 }
 
 func TestJXBinaryLocationFailure(t *testing.T) {
-	//NOTE no parallel
-	commandInterface := mocks.NewMockCommander()
-	When(commandInterface.RunWithoutRetry()).ThenReturn("", errors.New("Kaboom"))
+	t.Parallel()
 
-	res, err := util.JXBinaryLocation(commandInterface)
+	res, err := jXBinaryLocation(stubFunction("", errors.New("Kaboom")))
 	assert.Equal(t, "", res)
 	assert.Error(t, err, "Should error")
 }
 
-func TestJXBinaryLocationFromEnv(t *testing.T) {
-	//NOTE no parallel
-	os.Setenv("JX_BINARY", "/usr/bin")
-	defer os.Unsetenv("JX_BINARY")
-	res, err := util.JXBinaryLocation(&util.Command{})
-	assert.Nil(t, err)
-	assert.Equal(t, "/usr/bin", res)
-}
-
-func TestJXBinaryLocationFromEnvWithPrefix(t *testing.T) {
-	//NOTE no parallel
-	os.Setenv("JX_BINARY", "/usr/bin/jx")
-	defer os.Unsetenv("JX_BINARY")
-	res, err := util.JXBinaryLocation(&util.Command{})
-	assert.Nil(t, err)
-	assert.Equal(t, "/usr/bin", res)
+func stubFunction(str string, err error) func () (string, error) {
+	return func () (string, error) {
+		return str, err
+	}
 }
