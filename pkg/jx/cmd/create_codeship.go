@@ -418,6 +418,8 @@ func (o *CreateCodeshipOptions) CreateAdditionalArgs() []string {
 	args := []string{}
 
 	// prow
+	args = append(args, "--skip-login")
+
 	if o.CreateTerraformOptions.InstallOptions.Flags.Prow {
 		args = append(args, "--prow")
 	}

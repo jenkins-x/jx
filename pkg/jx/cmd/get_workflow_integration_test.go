@@ -5,7 +5,6 @@ package cmd_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -52,10 +51,10 @@ func TestGetWorkflow(t *testing.T) {
 			spec := workflow.Spec
 			assert.Equal(t, 2, len(spec.Steps), "number of steps")
 			if len(spec.Steps) > 0 {
-				assertPromoteStep(t, &spec.Steps[0], "staging")
+				cmd.AssertPromoteStep(t, &spec.Steps[0], "staging")
 			}
 			if len(spec.Steps) > 1 {
-				assertPromoteStep(t, &spec.Steps[1], "production")
+				cmd.AssertPromoteStep(t, &spec.Steps[1], "production")
 			}
 		}
 	}
@@ -63,13 +62,4 @@ func TestGetWorkflow(t *testing.T) {
 	o.Name = myFlowName
 	err = o.Run()
 	assert.NoError(t, err)
-}
-
-func assertPromoteStep(t *testing.T, step *v1.WorkflowStep, expectedEnvironment string) {
-	promote := step.Promote
-	assert.True(t, promote != nil, "step is a promote step")
-
-	if promote != nil {
-		assert.Equal(t, expectedEnvironment, promote.Environment, "environment name")
-	}
 }
