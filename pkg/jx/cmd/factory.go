@@ -28,6 +28,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	build "github.com/knative/build/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
@@ -290,6 +291,23 @@ func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
 	}
 	ns := kube.CurrentNamespace(kubeConfig)
 	client, err := versioned.NewForConfig(config)
+	if err != nil {
+		return nil, ns, err
+	}
+	return client, ns, err
+}
+
+func (f *factory) CreateKnativeBuildClient() (build.Interface, string, error) {
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	kubeConfig, _, err := f.kubeConfig.LoadConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	ns := kube.CurrentNamespace(kubeConfig)
+	client, err := build.NewForConfig(config)
 	if err != nil {
 		return nil, ns, err
 	}
