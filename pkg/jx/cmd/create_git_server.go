@@ -114,12 +114,18 @@ func (o *CreateGitServerOptions) Run() error {
 		return err
 	}
 	config := authConfigSvc.Config()
-	config.GetOrCreateServerName(gitUrl, name, kind)
+	server := config.GetOrCreateServerName(gitUrl, name, kind)
 	config.CurrentServer = gitUrl
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
 		return err
 	}
 	log.Infof("Added Git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
+
+	err = o.ensureGitServiceCRD(server)
+	if err != nil {
+	  return err
+	}
+	log.Infof("Created GitServer resource for server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 	return nil
 }

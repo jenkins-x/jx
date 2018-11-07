@@ -185,6 +185,8 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 
 		defer o.deleteTeam(team)
 
+		defaultOptions.SetDevNamespace(team)
+
 		// now lets setup the git server
 		createGitServer := &CreateGitServerOptions{
 			CreateOptions: CreateOptions{
