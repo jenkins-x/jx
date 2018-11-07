@@ -32,7 +32,6 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_FailsWhenContextNamesDoNo
 
 	o := &cmd.UninstallOptions{
 		CommonOptions: cmd.CommonOptions{
-			//Factory: factory,
 			Kuber: kubeMock,
 		},
 		Namespace: "ns",
