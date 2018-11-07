@@ -286,7 +286,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	dependencies := []string{}
-	if !initOpts.Flags.RemoteTiller {
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
 		binDir, err := util.JXBinLocation()
 		if err != nil {
 			return errors.Wrap(err, "reading jx bin location")
@@ -294,7 +294,7 @@ func (options *InstallOptions) Run() error {
 		_, install, err := shouldInstallBinary("tiller")
 		if !install && err == nil {
 			confirm := &survey.Confirm{
-				Message: "Uninstalling  existing tiller binary:",
+				Message: "Uninstalling existing tiller binary:",
 				Default: true,
 			}
 			flag := true
@@ -312,7 +312,7 @@ func (options *InstallOptions) Run() error {
 		_, install, err = shouldInstallBinary(helmBinary)
 		if !install && err == nil {
 			confirm := &survey.Confirm{
-				Message: "Uninstalling  existing helm binary:",
+				Message: "Uninstalling existing helm binary:",
 				Default: true,
 			}
 			flag := true
@@ -465,7 +465,7 @@ func (options *InstallOptions) Run() error {
 		initOpts.helm = nil
 	}
 
-	if !initOpts.Flags.RemoteTiller {
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
 		err = options.restartLocalTiller()
 		if err != nil {
 			return err
