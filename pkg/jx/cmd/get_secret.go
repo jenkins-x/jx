@@ -15,6 +15,14 @@ type GetSecretOptions struct {
 	Name      string
 }
 
+func (o *GetSecretOptions) VaultName() string {
+	return o.Name
+}
+
+func (o *GetSecretOptions) VaultNamespace() string {
+	return o.Namespace
+}
+
 var (
 	getSecretLong = templates.LongDesc(`
 		Display one or more Vault Secrets	
@@ -55,20 +63,17 @@ func NewCmdGetSecret(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	options.addGetFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace from where to list the secrets")
-	cmd.Flags().StringVarP(&options.Namespace, "name", "m", "", "The name of the Vault to use")
+	cmd.Flags().StringVarP(&options.Name, "name", "m", "", "The name of the Vault to use")
 	return cmd
 }
 
 // Run implements the command
 func (o *GetSecretOptions) Run() error {
-	clientFactory := vault.VaultClientFactory{
-		Options: o,
-	}
-	client, err := clientFactory.NewVaultClient(o.Name, o.Namespace)
+	v, err := vault.NewVaulter(o)
 	if err != nil {
 		return err
 	}
-	secrets, err := vault.GetSecrets(client)
+	secrets, err := v.Secrets()
 	if err != nil {
 		return err
 	}

@@ -34,6 +34,8 @@ func NewVaultClientFactory(options common.NewCommonOptionsInterface) (VaultClien
 
 // NewVaultClient creates a new api.Client
 // if namespace is nil, then the default namespace of the factory will be used
+// if the name is nil, and only one vault is found, then that vault will be used. Otherwise the user will be prompted to
+// select a vault for the client.
 func (v VaultClientFactory) NewVaultClient(name string, namespace string) (*api.Client, error) {
 	config, jwt, role, err := v.GetConfigData(name, namespace)
 	if err != nil {

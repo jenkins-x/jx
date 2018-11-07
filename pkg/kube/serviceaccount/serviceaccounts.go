@@ -51,7 +51,7 @@ func PatchImagePullSecrets(kubeClient kubernetes.Interface, ns string, sa string
 
 const (
 	subjectKind                  = "ServiceAccount"
-	serviceAccountNameAnnotation = "kubernetes.io/services-account.name"
+	serviceAccountNameAnnotation = "kubernetes.io/service-account.name"
 	tokenDataKey                 = "token"
 )
 

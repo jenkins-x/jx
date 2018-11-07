@@ -18,6 +18,14 @@ type GetVaultConfigOptions struct {
 	terminal  string
 }
 
+func (o *GetVaultConfigOptions) VaultName() string {
+	return o.name
+}
+
+func (o *GetVaultConfigOptions) VaultNamespace() string {
+	return o.namespace
+}
+
 var (
 	getVaultConfigLong = templates.LongDesc(`
 		Echoes the configuration required for connecting to a vault using the official vault CLI client	
@@ -65,15 +73,12 @@ func NewCmdGetVaultConfig(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements the command
 func (o *GetVaultConfigOptions) Run() error {
-	clientFactory, err := vault.NewVaultClientFactory(o)
-	if err != nil {
-		return err
-	}
-	client, err := clientFactory.NewVaultClient(o.name, o.namespace)
+	client, err := vault.NewVaulter(o)
 	if err != nil {
 		return err
 	}
 
+	url, token, err := client.Config()
 	// Echo the client config out to the command line to be piped into bash
 	if o.terminal == "" {
 		if runtime.GOOS == "windows" {
@@ -83,10 +88,10 @@ func (o *GetVaultConfigOptions) Run() error {
 		}
 	}
 	if o.terminal == "cmd" {
-		_, _ = fmt.Fprintf(o.Out, "set VAULT_ADDR=%s\nset VAULT_TOKEN=%s\n", client.Address(), client.Token())
+		_, _ = fmt.Fprintf(o.Out, "set VAULT_ADDR=%s\nset VAULT_TOKEN=%s\n", url.String(), token)
 	} else {
-		_, _ = fmt.Fprintf(o.Out, "export VAULT_ADDR=%s\nexport VAULT_TOKEN=%s\n", client.Address(), client.Token())
+		_, _ = fmt.Fprintf(o.Out, "export VAULT_ADDR=%s\nexport VAULT_TOKEN=%s\n", url.String(), token)
 	}
 
-	return nil
+	return err
 }
