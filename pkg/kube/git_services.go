@@ -29,7 +29,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 		return err
 	}
 	for _, gs := range list.Items {
-		if gs.Spec.URL == gitUrl {
+		if gitUrlsEqual(gs.Spec.URL, gitUrl) {
 			oldKind := gs.Spec.GitKind
 			if oldKind != kind {
 				fmt.Fprintf(out, "Updating GitService %s as the kind has changed from %s to %s\n", gs.Name, oldKind, kind)
@@ -40,6 +40,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 				}
 				return err
 			} else {
+				log.Infof("already has GitService %s in namespace %s for URL %s\n", gs.Name, devNs, gitUrl)
 				return nil
 			}
 		}
@@ -114,7 +115,7 @@ func GetServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitSe
 			if !ok {
 				continue
 			}
-			if strings.TrimSuffix(url, "/") == strings.TrimSuffix(gitServiceURL, "/") {
+			if gitUrlsEqual(url, gitServiceURL) {
 				labels := secret.GetLabels()
 				serviceKind, ok := labels[LabelServiceKind]
 				if !ok {
@@ -133,10 +134,14 @@ func getServiceKindFromGitServices(jxClient versioned.Interface, ns string, gitS
 	list, err := gitServices.List(metav1.ListOptions{})
 	if err == nil {
 		for _, gs := range list.Items {
-			if gs.Spec.URL == gitServiceURL || strings.TrimSuffix(gs.Spec.URL, "/") == strings.TrimSuffix(gitServiceURL, "/") {
+			if gitUrlsEqual(gs.Spec.URL, gitServiceURL) {
 				return gs.Spec.GitKind, nil
 			}
 		}
 	}
 	return "", fmt.Errorf("no Git service resource found with URL '%s' in namespace %s", gitServiceURL, ns)
+}
+
+func gitUrlsEqual(url1 string, url2 string) bool {
+	return url1 == url2 || strings.TrimSuffix(url1, "/") == strings.TrimSuffix(url2, "/")
 }
