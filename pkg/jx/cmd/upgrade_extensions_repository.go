@@ -279,10 +279,11 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 						return result, err
 					}
 					if content != nil {
-						err = yaml.Unmarshal([]byte(content.Content), &script)
+						bs, err := base64.StdEncoding.DecodeString(content.Content)
 						if err != nil {
 							return result, err
 						}
+						script = string(bs)
 					} else {
 						return result, fmt.Errorf("No content returned")
 					}

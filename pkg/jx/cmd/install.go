@@ -267,7 +267,7 @@ func (options *InstallOptions) Run() error {
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
 
-	// configure the helm binary
+	// configure the Helm binary
 	options.Helm().SetHelmBinary(helmBinary)
 	if initOpts.Flags.NoTiller {
 		helmer := options.Helm()
@@ -407,11 +407,13 @@ func (options *InstallOptions) Run() error {
 		if options.Flags.Provider == "" {
 			options.Flags.Provider = MINIKUBE
 		}
-		ip, err := options.getCommandOutput("", "minikube", "ip")
-		if err != nil {
-			return errors.Wrap(err, "failed to get the IP from Minikube")
+		if options.Flags.Domain == "" {
+			ip, err := options.getCommandOutput("", "minikube", "ip")
+			if err != nil {
+				return errors.Wrap(err, "failed to get the IP from Minikube")
+			}
+			options.Flags.Domain = ip + ".nip.io"
 		}
-		options.Flags.Domain = ip + ".nip.io"
 	}
 
 	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
