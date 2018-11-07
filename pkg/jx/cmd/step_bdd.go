@@ -35,8 +35,6 @@ type StepBDDFlags struct {
 	Clusters            []string
 	GitProvider         string
 	GitOwner            string
-	GitUser             string
-	GitToken            string
 	UseCurrentTeam      bool
 	DeleteTeam          bool
 	DisableDeleteApp    bool
@@ -56,7 +54,7 @@ var (
 		jx step bdd --use-current-team --git-provider-url=https://my.git.server.com
 
         # create a new team for the tests, run the tests then tear everything down again 
-		jx step bdd -b --provider=gke --git-provider=ghe --git-provider-url=https://my.git.server.com --default-admin-password=myadminpwd --git-user myuser --git-token mygittoken
+		jx step bdd -b --provider=gke --git-provider=ghe --git-provider-url=https://my.git.server.com --default-admin-password=myadminpwd --git-username myuser --git-api-token mygittoken
 `)
 )
 
@@ -89,8 +87,6 @@ func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 
 	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Flags.GitProvider, "git-provider", "g", "", "the git provider kind")
-	cmd.Flags().StringVarP(&options.Flags.GitUser, optionGitUser, "", "", "the git user name")
-	cmd.Flags().StringVarP(&options.Flags.GitToken, optionGitToken, "", "", "the git token")
 	cmd.Flags().StringVarP(&options.Flags.GitOwner, "git-owner", "", "", "the git owner of new git repositories created by the tests")
 	cmd.Flags().StringVarP(&options.Flags.TestRepoGitCloneUrl, "test-git-repo", "r", "https://github.com/jenkins-x/bdd-jx.git", "the git repository to clone for the BDD tests")
 	cmd.Flags().StringArrayVarP(&options.Flags.Clusters, "clusters", "c", []string{}, "the list of cluster kinds to create")
@@ -148,13 +144,13 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 
 	gitProviderName := o.Flags.GitProvider
 	if gitProviderName != "" && !o.Flags.UseCurrentTeam {
-		gitUser := o.Flags.GitUser
+		gitUser := o.InstallOptions.GitRepositoryOptions.Username
 		if gitUser == "" {
-			return util.MissingOption(optionGitUser)
+			return util.MissingOption("git-username")
 		}
-		gitToken := o.Flags.GitToken
+		gitToken := o.InstallOptions.GitRepositoryOptions.ApiToken
 		if gitToken == "" {
-			return util.MissingOption(optionGitToken)
+			return util.MissingOption("git-api-token")
 		}
 
 		defaultAdminPassword := o.InstallOptions.AdminSecretsService.Flags.DefaultAdminPassword
