@@ -277,5 +277,10 @@ func (o *UpgradePlatformOptions) Run() error {
 	if o.Set != "" {
 		values = append(values, o.Set)
 	}
+
+	for _,v := range valueFiles {
+		log.Infof("Adding values file %s\n", util.ColorInfo(v))
+	}
+
 	return o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &targetVersion, false, nil, false, false, values, valueFiles)
 }
