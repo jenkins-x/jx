@@ -7,7 +7,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type NewCommonOptionsInterface interface {
+// OptionsInterface is an interface to allow passing around of a CommonOptions object without dependencies on the whole of the cmd package
+type OptionsInterface interface {
 	KubeClient() (kubernetes.Interface, string, error)
 	VaultOperatorClient() (versioned.Interface, error)
 	GetIn() terminal.FileReader

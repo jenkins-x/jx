@@ -22,7 +22,7 @@ type VaultSelector interface {
 }
 
 type VaultOptions interface {
-	common.NewCommonOptionsInterface
+	common.OptionsInterface
 	VaultName() string
 	VaultNamespace() string
 }

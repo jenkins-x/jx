@@ -10,13 +10,13 @@ import (
 )
 
 type VaultClientFactory struct {
-	Options          common.NewCommonOptionsInterface
+	Options          common.OptionsInterface
 	Selector         VaultSelector
 	kubeClient       kubernetes.Interface
 	defaultNamespace string
 }
 
-func NewVaultClientFactory(options common.NewCommonOptionsInterface) (VaultClientFactory, error) {
+func NewVaultClientFactory(options common.OptionsInterface) (VaultClientFactory, error) {
 	factory := VaultClientFactory{
 		Options: options,
 	}

@@ -19,7 +19,7 @@ type vaultSelectorImpl struct {
 	Err                 io.Writer
 }
 
-func NewVaultSelector(o common.NewCommonOptionsInterface) (VaultSelector, error) {
+func NewVaultSelector(o common.OptionsInterface) (VaultSelector, error) {
 	operator, err := o.VaultOperatorClient()
 	if err != nil {
 		return nil, err
