@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
-	"gopkg.in/AlecAivazis/survey.v1"
+	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"k8s.io/client-go/kubernetes"
@@ -63,23 +63,15 @@ func (v vaultSelectorImpl) GetVault(name string, namespace string) (*Vault, erro
 }
 
 func (v vaultSelectorImpl) selectVault(vaults []*Vault) (*Vault, error) {
-	surveyOpts := survey.WithStdio(v.In, v.Out, v.Err)
 	vaultMap, vaultNames := make(map[string]*Vault, len(vaults)), make([]string, len(vaults))
 	for i, vault := range vaults {
 		vaultMap[vault.Name] = vault
 		vaultNames[i] = vault.Name
 	}
-	prompts := &survey.Select{
-		Message:  "Select Vault:",
-		Options:  vaultNames,
-		PageSize: len(vaults),
-		Help:     "The vault to use",
-	}
 
-	var selectedVault string
-	err := survey.AskOne(prompts, &selectedVault, nil, surveyOpts)
+	vaultName, err := util.PickName(vaultNames, "Select Vault:", v.In, v.Out, v.Err)
 	if err != nil {
 		return nil, err
 	}
-	return vaultMap[selectedVault], nil
+	return vaultMap[vaultName], nil
 }
