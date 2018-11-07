@@ -3,6 +3,8 @@ package io
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -17,7 +19,7 @@ import (
 
 //ConfigReader interface for reading auth configuration
 type ConfigReader interface {
-	Read() (*auth.AuthConfig, error)
+	Read() (*auth.Config, error)
 }
 
 //FileConfigReader keeps the path to the configration file
@@ -33,8 +35,8 @@ func NewFileConfigReader(filename string) *FileConfigReader {
 }
 
 //Read reads the configuration from a file
-func (f *FileConfigReader) Read() (*auth.AuthConfig, error) {
-	config := &auth.AuthConfig{}
+func (f *FileConfigReader) Read() (*auth.Config, error) {
+	config := &auth.Config{}
 	if f.filename == "" {
 		return nil, errors.New("No config file name defined")
 	}
@@ -57,13 +59,38 @@ func (f *FileConfigReader) Read() (*auth.AuthConfig, error) {
 }
 
 //ServerRetrieverFn retrives the server config
-type ServerRetrieverFn func() (name string, url string, kind string)
+type ServerRetrieverFn func() (name string, url string, kind auth.ServerKind)
 
 //EventConfigReader keeps the prefix of the env variables where the user auth config is stored
 // and also a server config retriever
 type EnvConfigReader struct {
 	prefix          string
 	serverRetriever ServerRetrieverFn
+}
+
+const (
+	usernameSuffix    = "_USERNAME"
+	apiTokenSuffix    = "_API_TOKEN"
+	bearerTokenSuffix = "_BEARER_TOKEN"
+	DefaultUsername   = "dummy"
+)
+
+// UsernameEnv builds the username environment variable name
+func usernameEnv(prefix string) string {
+	prefix = strings.ToUpper(prefix)
+	return prefix + usernameSuffix
+}
+
+// ApiTokenEnv builds the api token environment variable name
+func apiTokenEnv(prefix string) string {
+	prefix = strings.ToUpper(prefix)
+	return prefix + apiTokenSuffix
+}
+
+// BearerTokenEnv builds the bearer token environment variable name
+func bearerTokenEnv(prefix string) string {
+	prefix = strings.ToUpper(prefix)
+	return prefix + bearerTokenSuffix
 }
 
 //NewEnvConfigReader creates a new environment config reader
@@ -75,46 +102,69 @@ func NewEnvConfigReader(envPrefix string, serverRetriever ServerRetrieverFn) *En
 }
 
 //Read reads the configuration from environment
-func (e *EnvConfigReader) Read() (*auth.AuthConfig, error) {
+func (e *EnvConfigReader) Read() (*auth.Config, error) {
 	if e.serverRetriever == nil {
 		return nil, errors.New("No server retriever function provider in env config reader")
 	}
-	config := &auth.AuthConfig{}
-	userAuth := auth.CreateAuthUserFromEnvironment(e.prefix)
-	if userAuth.IsInvalid() {
-		return nil, errors.New("Invalid user found in the environment variables")
+	config := &auth.Config{}
+	user := e.userFromEnv(e.prefix)
+	if err := user.Valid(); err != nil {
+		return nil, errors.Wrap(err, "validating user from environment")
 	}
 	servername, url, kind := e.serverRetriever()
-	config.Servers = []*auth.AuthServer{{
+	config.Servers = []*auth.Server{{
 		Name:  servername,
 		URL:   url,
 		Kind:  kind,
-		Users: []*auth.UserAuth{&userAuth},
+		Users: []*auth.User{&user},
 	}}
 	return config, nil
 }
 
+func (e *EnvConfigReader) userFromEnv(prefix string) auth.User {
+	user := auth.User{}
+	username, set := os.LookupEnv(usernameEnv(prefix))
+	if set {
+		user.Username = username
+	}
+	apiToken, set := os.LookupEnv(apiTokenEnv(prefix))
+	if set {
+		user.ApiToken = apiToken
+	}
+	bearerToken, set := os.LookupEnv(bearerTokenEnv(prefix))
+	if set {
+		user.BearerToken = bearerToken
+	}
+
+	if user.ApiToken != "" || user.Password != "" {
+		if user.Username == "" {
+			user.Username = DefaultUsername
+		}
+	}
+	return user
+}
+
 //NewKubeSecretsConfigReader config reader for Kubernetes secrets
 type KubeSecretsConfigReader struct {
-	client      kubernetes.Interface
-	namespace   string
-	kind        string
-	serviceKind string
+	client     kubernetes.Interface
+	namespace  string
+	kind       string
+	serverKind auth.ServerKind
 }
 
 //NewKubeSecretsConfigReader creates a new Kubernetes config reader
 func NewKubeSecretsConfigReader(client kubernetes.Interface, namespace string,
-	kind string, serviceKind string) *KubeSecretsConfigReader {
+	kind string, serviceKind auth.ServerKind) *KubeSecretsConfigReader {
 	return &KubeSecretsConfigReader{
-		client:      client,
-		namespace:   namespace,
-		kind:        kind,
-		serviceKind: serviceKind,
+		client:     client,
+		namespace:  namespace,
+		kind:       kind,
+		serverKind: serviceKind,
 	}
 }
 
 //Read reads the config from Kuberntes secrets
-func (k *KubeSecretsConfigReader) Read() (*auth.AuthConfig, error) {
+func (k *KubeSecretsConfigReader) Read() (*auth.Config, error) {
 	secrets, err := k.secrets()
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving config from k8s secrets")
@@ -122,38 +172,41 @@ func (k *KubeSecretsConfigReader) Read() (*auth.AuthConfig, error) {
 	if secrets == nil {
 		return nil, errors.New("No secrets found with config")
 	}
-	config := &auth.AuthConfig{}
+	config := &auth.Config{}
 	for _, secret := range secrets.Items {
 		labels := secret.Labels
 		annotations := secret.Annotations
 		if labels != nil && annotations != nil {
 			url := annotations[kube.AnnotationURL]
 			name := annotations[kube.AnnotationName]
-			serviceKind := labels[kube.LabelServiceKind]
+			kind := auth.ServerKind(labels[kube.LabelServiceKind])
 			if url != "" {
-				user, err := k.userAuthFromSecret(secret)
+				user, err := k.userFromSecret(secret)
 				if err != nil {
 					continue
 				}
-				if user.IsInvalid() {
+				if err := user.Valid(); err != nil {
 					continue
 				}
-				server := &auth.AuthServer{
+				server := &auth.Server{
 					URL:  url,
 					Name: name,
-					Kind: serviceKind,
-					Users: []*auth.UserAuth{
+					Kind: kind,
+					Users: []*auth.User{
 						user,
 					},
 				}
-				config.AddServer(server)
+				if config.Servers == nil {
+					config.Servers = []*auth.Server{}
+				}
+				config.Servers = append(config.Servers, server)
 			}
 		}
 	}
 	return config, nil
 }
 
-func (k *KubeSecretsConfigReader) userAuthFromSecret(secret corev1.Secret) (*auth.UserAuth, error) {
+func (k *KubeSecretsConfigReader) userFromSecret(secret corev1.Secret) (*auth.User, error) {
 	data := secret.Data
 	if data == nil {
 		return nil, fmt.Errorf("No user auth credentials found in secret '%s'", secret.Name)
@@ -167,7 +220,7 @@ func (k *KubeSecretsConfigReader) userAuthFromSecret(secret corev1.Secret) (*aut
 		return nil, fmt.Errorf("No password found in secret '%s'", secret.Name)
 	}
 
-	return &auth.UserAuth{
+	return &auth.User{
 		Username: string(username),
 		ApiToken: string(password),
 	}, nil
@@ -175,8 +228,8 @@ func (k *KubeSecretsConfigReader) userAuthFromSecret(secret corev1.Secret) (*aut
 
 func (k *KubeSecretsConfigReader) secrets() (*corev1.SecretList, error) {
 	selector := kube.LabelKind + "=" + k.kind
-	if k.serviceKind != "" {
-		selector = kube.LabelServiceKind + "=" + k.serviceKind
+	if k.serverKind != "" {
+		selector = kube.LabelServiceKind + "=" + string(k.serverKind)
 	}
 	opts := metav1.ListOptions{
 		LabelSelector: selector,

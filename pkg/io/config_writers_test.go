@@ -14,31 +14,30 @@ func TestFileConfigWriter(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		config auth.AuthConfig
+		config auth.Config
 		err    bool
 	}{
 		"write config to file": {
-			config: auth.AuthConfig{
-				Servers: []*auth.AuthServer{
-					&auth.AuthServer{
+			config: auth.Config{
+				Servers: []*auth.Server{
+					&auth.Server{
 						URL: "https://github.com",
-						Users: []*auth.UserAuth{
-							&auth.UserAuth{
+						Users: []*auth.User{
+							&auth.User{
 								Username: "test",
 								ApiToken: "test",
 							},
 						},
-						Name:        "GitHub",
-						Kind:        "github",
-						CurrentUser: "test",
+						Name: "GitHub",
+						Kind: "github",
 					},
 				},
 			},
 			err: false,
 		},
 		"write empty config to file": {
-			config: auth.AuthConfig{
-				Servers: []*auth.AuthServer{},
+			config: auth.Config{
+				Servers: []*auth.Server{},
 			},
 			err: false,
 		},

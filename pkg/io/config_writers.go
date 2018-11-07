@@ -14,7 +14,7 @@ const (
 
 //ConfigWriter interface for writing auth configuration
 type ConfigWriter interface {
-	Write(config *auth.AuthConfig) error
+	Write(config *auth.Config) error
 }
 
 //FileConfigWriter file config write which keeps the path to the configuration file
@@ -30,7 +30,7 @@ func NewFileConfigWriter(filename string) *FileConfigWriter {
 }
 
 //Write writes the auth configuration into a file
-func (f *FileConfigWriter) Write(config *auth.AuthConfig) error {
+func (f *FileConfigWriter) Write(config *auth.Config) error {
 	if f.filename == "" {
 		return errors.New("No config file name defined")
 	}

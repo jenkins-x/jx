@@ -22,7 +22,7 @@ type User struct {
 	Kind        UserKind `yaml:"kind"`
 }
 
-//ServerKind type of the server
+//ServerKind type for server kind
 type ServerKind string
 
 const (
