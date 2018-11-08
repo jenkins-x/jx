@@ -12,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -64,7 +63,6 @@ func NewCmdUninstall(f Factory, in terminal.FileReader, out terminal.FileWriter,
 }
 
 func (o *UninstallOptions) Run() error {
-	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
 		return err
@@ -83,17 +81,14 @@ func (o *UninstallOptions) Run() error {
 		if o.BatchMode || o.Context != "" {
 			targetContext = o.Context
 		} else {
-			targetContext = ""
-			{
-				prompt := &survey.Input{
-					Message: fmt.Sprintf("Enter the current context name to confirm uninstalllation of the Jenkins X platform from the %s namespace:", util.ColorInfo(namespace)),
-					Default: "",
-					Help:    "To prevent accidental uninstallation from the wrong cluster, you must enter the current kubernetes context. This can be found with `kubectl config current-context`",
-				}
-				err := survey.AskOne(prompt, &targetContext, nil, surveyOpts)
-				if err != nil {
-					return err
-				}
+			targetContext, err = util.PickValue(fmt.Sprintf("Enter the current context name to confirm "+
+				"uninstalllation of the Jenkins X platform from the %s namespace:", util.ColorInfo(namespace)),
+				"", true,
+				"To prevent accidental uninstallation from the wrong cluster, you must enter the current "+
+					"kubernetes context. This can be found with `kubectl config current-context`",
+				o.In, o.Out, o.Err)
+			if err != nil {
+				return err
 			}
 		}
 		if targetContext != currentContext {
