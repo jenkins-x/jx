@@ -136,7 +136,7 @@ func (o *GetBuildLogsOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -199,7 +199,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	}
 
 	if len(args) == 0 {
-		name, err := util.PickNameWithDefault(names, "Which build do you want to view the logs of?: ", defaultName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which build do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

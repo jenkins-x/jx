@@ -12,11 +12,12 @@ import (
 )
 
 // PickValue gets an answer to a prompt from a user's free-form input
-func PickValue(message string, defaultValue string, required bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
+func PickValue(message string, defaultValue string, required bool, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	answer := ""
 	prompt := &survey.Input{
 		Message: message,
 		Default: defaultValue,
+		Help:    help,
 	}
 	validator := survey.Required
 	if !required {
@@ -31,10 +32,11 @@ func PickValue(message string, defaultValue string, required bool, in terminal.F
 }
 
 // PickPassword gets a password (via hidden input) from a user's free-form input
-func PickPassword(message string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
+func PickPassword(message string, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	answer := ""
 	prompt := &survey.Password{
 		Message: message,
+		Help:    help,
 	}
 	validator := survey.Required
 	surveyOpts := survey.WithStdio(in, out, outErr)
@@ -46,7 +48,7 @@ func PickPassword(message string, in terminal.FileReader, out terminal.FileWrite
 }
 
 // PickNameWithDefault gets the user to pick an option from a list of options, with a default option specified
-func PickNameWithDefault(names []string, message string, defaultValue string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
+func PickNameWithDefault(names []string, message string, defaultValue string, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	name := ""
 	if len(names) == 0 {
 		return "", nil
@@ -68,7 +70,7 @@ func PickNameWithDefault(names []string, message string, defaultValue string, in
 }
 
 // PickRequiredNameWithDefault gets the user to pick an option from a list of options, with a default option specified
-func PickRequiredNameWithDefault(names []string, message string, defaultValue string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
+func PickRequiredNameWithDefault(names []string, message string, defaultValue string, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	name := ""
 	if len(names) == 0 {
 		return "", nil
@@ -79,6 +81,7 @@ func PickRequiredNameWithDefault(names []string, message string, defaultValue st
 			Message: message,
 			Options: names,
 			Default: defaultValue,
+			Help:    help,
 		}
 		surveyOpts := survey.WithStdio(in, out, outErr)
 		err := survey.AskOne(prompt, &name, survey.Required, surveyOpts)
@@ -90,12 +93,12 @@ func PickRequiredNameWithDefault(names []string, message string, defaultValue st
 }
 
 // PickName gets the user to pick an option from a list of options
-func PickName(names []string, message string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
-	return PickNameWithDefault(names, message, "", in, out, outErr)
+func PickName(names []string, message string, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
+	return PickNameWithDefault(names, message, "", help, in, out, outErr)
 }
 
 // PickNames gets the user to pick multiple selections from a list of options, with a default option specified
-func PickNames(names []string, message string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
+func PickNames(names []string, message string, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
 	picked := []string{}
 	if len(names) == 0 {
 		return picked, nil
@@ -105,6 +108,7 @@ func PickNames(names []string, message string, in terminal.FileReader, out termi
 		prompt := &survey.MultiSelect{
 			Message: message,
 			Options: names,
+			Help:    help,
 		}
 		surveyOpts := survey.WithStdio(in, out, outErr)
 		err := survey.AskOne(prompt, &picked, nil, surveyOpts)
@@ -116,7 +120,7 @@ func PickNames(names []string, message string, in terminal.FileReader, out termi
 }
 
 // SelectNamesWithFilter selects from a list of names with a given filter. Optionally selecting them all
-func SelectNamesWithFilter(names []string, message string, selectAll bool, filter string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
+func SelectNamesWithFilter(names []string, message string, selectAll bool, filter string, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
 	filtered := []string{}
 	for _, name := range names {
 		if filter == "" || strings.Index(name, filter) >= 0 {
@@ -126,11 +130,11 @@ func SelectNamesWithFilter(names []string, message string, selectAll bool, filte
 	if len(filtered) == 0 {
 		return nil, fmt.Errorf("No names match filter: %s", filter)
 	}
-	return SelectNames(filtered, message, selectAll, in, out, outErr)
+	return SelectNames(filtered, message, selectAll, help, in, out, outErr)
 }
 
 // SelectNames select which names from the list should be chosen
-func SelectNames(names []string, message string, selectAll bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
+func SelectNames(names []string, message string, selectAll bool, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
 	answer := []string{}
 	if len(names) == 0 {
 		return answer, fmt.Errorf("No names to choose from")
@@ -140,6 +144,7 @@ func SelectNames(names []string, message string, selectAll bool, in terminal.Fil
 	prompt := &survey.MultiSelect{
 		Message: message,
 		Options: names,
+		Help:    help,
 	}
 	if selectAll {
 		prompt.Default = names
