@@ -150,7 +150,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 
 		}
 		asks = append(asks, other)
-		r, err := util.PickName(asks, "Pick the repository to use", o.In, o.Out, o.Err)
+		r, err := util.PickName(asks, "Pick the repository to use", "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -159,7 +159,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 				"URL", "Helm", "GitHub",
 			}
 			current = jenkinsv1.ExtensionRepositoryReference{}
-			t, err := util.PickName(types, "What type of repository?", o.In, o.Out, o.Err)
+			t, err := util.PickName(types, "What type of repository?", "", o.In, o.Out, o.Err)
 			if t == "URL" {
 				prompt := &survey.Input{
 					Message: "Extensions Repository URL",

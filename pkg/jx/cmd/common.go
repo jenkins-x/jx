@@ -363,7 +363,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 				defaultServerName = s.Name
 			}
 		}
-		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return nil, err
 		}
@@ -397,7 +397,7 @@ func (o *CommonOptions) findService(name string) (string, error) {
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ", o.In, o.Out, o.Err)
+			name, err = util.PickName(names, "Pick service to open: ", "", o.In, o.Out, o.Err)
 			if err != nil {
 				return "", err
 			}
@@ -460,7 +460,7 @@ func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, 
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ", o.In, o.Out, o.Err)
+			name, err = util.PickName(names, "Pick service to open: ", "", o.In, o.Out, o.Err)
 			if err != nil {
 				return "", err
 			}

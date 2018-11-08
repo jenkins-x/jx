@@ -69,7 +69,7 @@ func (v vaultSelectorImpl) selectVault(vaults []*Vault) (*Vault, error) {
 		vaultNames[i] = vault.Name
 	}
 
-	vaultName, err := util.PickName(vaultNames, "Select Vault:", v.In, v.Out, v.Err)
+	vaultName, err := util.PickName(vaultNames, "Select Vault:", "", v.In, v.Out, v.Err)
 	if err != nil {
 		return nil, err
 	}

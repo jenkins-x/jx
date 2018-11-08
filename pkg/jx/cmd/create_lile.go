@@ -129,7 +129,7 @@ func (o *CreateLileOptions) Run() error {
 		if o.BatchMode {
 			return util.MissingOption(optionOutputDir)
 		}
-		dir, err = util.PickValue("Pick a name for the new project:", "myapp", true, o.In, o.Out, o.Err)
+		dir, err = util.PickValue("Pick a name for the new project:", "myapp", true, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
