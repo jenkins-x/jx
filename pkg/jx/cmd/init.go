@@ -759,7 +759,7 @@ func (o *InitOptions) validateGit() error {
 	var err error
 	if userName == "" {
 		if !o.BatchMode {
-			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, o.In, o.Out, o.Err)
+			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -774,7 +774,7 @@ func (o *InitOptions) validateGit() error {
 	}
 	if userEmail == "" {
 		if !o.BatchMode {
-			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, o.In, o.Out, o.Err)
+			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

@@ -138,7 +138,7 @@ func (o *DeleteAppOptions) Run() error {
 	}
 
 	if len(args) == 0 {
-		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
+		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
