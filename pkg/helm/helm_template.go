@@ -362,6 +362,11 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	return util.CombineErrors(err, err2)
 }
 
+func (h *HelmTemplate) DecryptSecrets(location string) error {
+	return h.Client.DecryptSecrets(location)
+}
+
+
 func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string, wait bool, create bool, dir string) error {
 	log.Infof("Applying generated chart %s YAML via kubectl in dir: %s\n", chart, dir)
 
