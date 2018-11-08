@@ -46,10 +46,10 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.kind",
 		},
 		{
-			Name:        "Promotion Strategy",
+			Name:        "Promotion",
 			Type:        "string",
 			Description: "The strategy used for promoting to this environment",
-			JSONPath:    ".spec.oromotionStrategy",
+			JSONPath:    ".spec.promotionStrategy",
 		},
 		{
 			Name:        "Order",
