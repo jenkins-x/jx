@@ -17,6 +17,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 
@@ -63,6 +64,8 @@ type Factory interface {
 	CreateMetricsClient() (*metricsclient.Clientset, error)
 
 	CreateComplianceClient() (*client.SonobuoyClient, error)
+
+	CreateKnativeBuildClient() (buildclient.Interface, string, error)
 
 	CreateTable(out io.Writer) table.Table
 

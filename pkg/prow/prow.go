@@ -29,14 +29,16 @@ const (
 
 	KnativeBuildAgent = "knative-build"
 	KubernetesAgent   = "kubernetes"
-
-	// TODO latest is the wrong thing to do here
-	JXImage = "jenkinsxio/jx"
 )
 
 type Kind string
 
-const ProwConfigMapName = "config"
+const (
+	ProwConfigMapName        = "config"
+	ProwPluginsConfigMapName = "plugins"
+	ProwConfigFilename       = "config.yaml"
+	ProwPluginsFilename      = "plugins.yaml"
+)
 
 // Options for Prow
 type Options struct {
@@ -412,7 +414,7 @@ func (o *Options) AddProwConfig() error {
 	}
 
 	data := make(map[string]string)
-	data["config.yaml"] = string(configYAML)
+	data[ProwConfigFilename] = string(configYAML)
 	cm := &corev1.ConfigMap{
 		Data: data,
 		ObjectMeta: metav1.ObjectMeta{
@@ -444,7 +446,7 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 	} else {
 		// config exists, updating
 		create = false
-		err = yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
+		err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
 		if err != nil {
 			return prowConfig, create, err
 		}
@@ -503,7 +505,7 @@ func (o *Options) AddProwPlugins() error {
 
 	pluginsList := []string{"config-updater", "approve", "assign", "blunderbuss", "help", "hold", "lgtm", "lifecycle", "size", "trigger", "wip", "heart", "cat", "override"}
 
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("plugins", metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwPluginsConfigMapName, metav1.GetOptions{})
 	create := true
 	pluginConfig := &plugins.Configuration{}
 	if err != nil {
@@ -512,11 +514,11 @@ func (o *Options) AddProwPlugins() error {
 
 		pluginConfig.ConfigUpdater.Maps = make(map[string]plugins.ConfigMapSpec)
 		pluginConfig.ConfigUpdater.Maps["prow/config.yaml"] = plugins.ConfigMapSpec{Name: ProwConfigMapName}
-		pluginConfig.ConfigUpdater.Maps["prow/plugins.yaml"] = plugins.ConfigMapSpec{Name: "plugins"}
+		pluginConfig.ConfigUpdater.Maps["prow/plugins.yaml"] = plugins.ConfigMapSpec{Name: ProwPluginsConfigMapName}
 
 	} else {
 		create = false
-		err = yaml.Unmarshal([]byte(cm.Data["plugins.yaml"]), &pluginConfig)
+		err = yaml.Unmarshal([]byte(cm.Data[ProwPluginsFilename]), &pluginConfig)
 		if err != nil {
 			return err
 		}
@@ -549,11 +551,11 @@ func (o *Options) AddProwPlugins() error {
 	}
 
 	data := make(map[string]string)
-	data["plugins.yaml"] = string(pluginYAML)
+	data[ProwPluginsFilename] = string(pluginYAML)
 	cm = &corev1.ConfigMap{
 		Data: data,
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "plugins",
+			Name: ProwPluginsConfigMapName,
 		},
 	}
 	if create {
@@ -563,4 +565,54 @@ func (o *Options) AddProwPlugins() error {
 	}
 
 	return err
+}
+
+func (o *Options) GetReleaseJobs() ([]string, error) {
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	prowConfig := &config.Config{}
+	err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
+	if err != nil {
+		return nil, err
+	}
+	var jobs []string
+
+	for repo, p := range prowConfig.Postsubmits {
+		for _, q := range p {
+			for _, b := range q.Branches {
+				repo = strings.Replace(repo, ":", "", -1)
+				jobName := fmt.Sprintf("%s/%s", repo, b)
+				jobs = append(jobs, jobName)
+			}
+		}
+	}
+	return jobs, nil
+}
+
+func (o *Options) GetBuildSpec(org, repo, branch string) (*build.BuildSpec, error) {
+
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	prowConfig := &config.Config{}
+	err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	key := fmt.Sprintf("%s/%s", org, repo)
+	for _, p := range prowConfig.Postsubmits[key] {
+
+		for _, a := range p.Branches {
+			if a == branch {
+				return p.BuildSpec, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("no prow config build spec found for %s/%s/%s", org, repo, branch)
 }
