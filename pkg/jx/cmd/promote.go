@@ -1130,7 +1130,7 @@ func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 		names = append(names, text)
 		m[text] = &charts[i]
 	}
-	name, err := util.PickName(names, "Pick chart to promote: ", o.In, o.Out, o.Err)
+	name, err := util.PickName(names, "Pick chart to promote: ", "", o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}

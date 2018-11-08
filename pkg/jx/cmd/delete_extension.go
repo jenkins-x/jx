@@ -138,7 +138,7 @@ func (o *DeleteExtensionOptions) Run() error {
 		args = names
 	}
 	if len(args) == 0 && !o.BatchMode {
-		args, err = util.PickNames(names, "Pick Extension(s):", o.In, o.Out, o.Err)
+		args, err = util.PickNames(names, "Pick Extension(s):", "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

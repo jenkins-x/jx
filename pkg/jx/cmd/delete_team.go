@@ -95,7 +95,7 @@ func (o *DeleteTeamOptions) Run() error {
 		if o.BatchMode {
 			return fmt.Errorf("Missing team name argument")
 		}
-		names, err = util.SelectNamesWithFilter(teamNames, "Which teams do you want to delete: ", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
+		names, err = util.SelectNamesWithFilter(teamNames, "Which teams do you want to delete: ", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
