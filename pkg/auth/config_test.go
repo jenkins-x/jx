@@ -134,3 +134,73 @@ func TestValidServer(t *testing.T) {
 		})
 	}
 }
+
+func TestPipelineUser(t *testing.T) {
+	t.Parallel()
+	tests := map[string]struct {
+		server *auth.Server
+		want   auth.User
+	}{
+		"pipeline user": {
+			server: &auth.Server{
+				URL:  "https://test",
+				Name: "test",
+				Users: []*auth.User{
+					&auth.User{
+						Username: "test1",
+						ApiToken: "test",
+						Kind:     auth.UserKindPipeline,
+					},
+					&auth.User{
+						Username: "test2",
+						ApiToken: "test",
+						Kind:     auth.UserKindLocal,
+					},
+				},
+			},
+			want: auth.User{
+				Username: "test1",
+				ApiToken: "test",
+				Kind:     auth.UserKindPipeline,
+			},
+		},
+		"pipeline user when no user available": {
+			server: &auth.Server{
+				URL:   "https://test",
+				Name:  "test",
+				Users: []*auth.User{},
+			},
+			want: auth.User{},
+		},
+		"pipeline user when no pipeline user available": {
+			server: &auth.Server{
+				URL:  "https://test",
+				Name: "test",
+				Users: []*auth.User{
+					&auth.User{
+						Username: "test1",
+						ApiToken: "test",
+						Kind:     auth.UserKindLocal,
+					},
+					&auth.User{
+						Username: "test2",
+						ApiToken: "test",
+						Kind:     auth.UserKindLocal,
+					},
+				},
+			},
+			want: auth.User{
+				Username: "test1",
+				ApiToken: "test",
+				Kind:     auth.UserKindLocal,
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.server.PipelineUser()
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
