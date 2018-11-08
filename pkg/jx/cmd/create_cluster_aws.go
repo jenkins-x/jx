@@ -153,7 +153,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			}
 			c := len(availabilityZones)
 			if c > 0 {
-				zones, err = util.PickNameWithDefault(availabilityZones, "Pick Availability Zone: ", availabilityZones[c-1], o.In, o.Out, o.Err)
+				zones, err = util.PickNameWithDefault(availabilityZones, "Pick Availability Zone: ", availabilityZones[c-1], "", o.In, o.Out, o.Err)
 				if err != nil {
 					return err
 				}

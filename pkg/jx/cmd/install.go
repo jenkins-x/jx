@@ -83,14 +83,14 @@ const (
 	// Want to use your own provider file? Change this line to point to your fork
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
 
-	GitSecretsFile        = "gitSecrets.yaml"
-	AdminSecretsFile      = "adminSecrets.yaml"
-	ExtraValuesFile       = "extraValues.yaml"
-	JXInstallConfig       = "jx-install-config"
-	CloudEnvValuesFile    = "myvalues.yaml"
-	CloudEnvSecretsFile   = "secrets.yaml"
+	GitSecretsFile         = "gitSecrets.yaml"
+	AdminSecretsFile       = "adminSecrets.yaml"
+	ExtraValuesFile        = "extraValues.yaml"
+	JXInstallConfig        = "jx-install-config"
+	CloudEnvValuesFile     = "myvalues.yaml"
+	CloudEnvSecretsFile    = "secrets.yaml"
 	CloudEnvSopsConfigFile = ".sops.yaml"
-	defaultInstallTimeout = "6000"
+	defaultInstallTimeout  = "6000"
 
 	ServerlessJenkins   = "Serverless Jenkins"
 	StaticMasterJenkins = "Static Master Jenkins"
@@ -286,7 +286,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	dependencies := []string{}
-	if !initOpts.Flags.RemoteTiller {
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
 		binDir, err := util.JXBinLocation()
 		if err != nil {
 			return errors.Wrap(err, "reading jx bin location")
@@ -294,7 +294,7 @@ func (options *InstallOptions) Run() error {
 		_, install, err := shouldInstallBinary("tiller")
 		if !install && err == nil {
 			confirm := &survey.Confirm{
-				Message: "Uninstalling  existing tiller binary:",
+				Message: "Uninstalling existing tiller binary:",
 				Default: true,
 			}
 			flag := true
@@ -312,7 +312,7 @@ func (options *InstallOptions) Run() error {
 		_, install, err = shouldInstallBinary(helmBinary)
 		if !install && err == nil {
 			confirm := &survey.Confirm{
-				Message: "Uninstalling  existing helm binary:",
+				Message: "Uninstalling existing helm binary:",
 				Default: true,
 			}
 			flag := true
@@ -465,7 +465,7 @@ func (options *InstallOptions) Run() error {
 		initOpts.helm = nil
 	}
 
-	if !initOpts.Flags.RemoteTiller {
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
 		err = options.restartLocalTiller()
 		if err != nil {
 			return err
@@ -673,8 +673,7 @@ func (options *InstallOptions) Run() error {
 			ServerlessJenkins,
 			StaticMasterJenkins,
 		}
-		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", StaticMasterJenkins,
-			options.In, options.Out, options.Err)
+		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", StaticMasterJenkins, "", options.In, options.Out, options.Err)
 		if err != nil {
 			return errors.Wrap(err, "picking Jenkins installation type")
 		}
@@ -710,7 +709,7 @@ func (options *InstallOptions) Run() error {
 
 	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
 	if err != nil {
-		return errors.Wrap(err, "failed to look for " + cloudEnvironmentSopsLocation)
+		return errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
 	}
 
 	if sopsFileExists {

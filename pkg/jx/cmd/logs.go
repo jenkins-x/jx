@@ -1,8 +1,12 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"os"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/builds"
@@ -127,7 +131,7 @@ func (o *LogsOptions) Run() error {
 	name := ""
 	if len(args) == 0 {
 		if o.Label == "" && !o.KNativeBuild {
-			n, err := util.PickName(names, "Pick Deployment:", o.In, o.Out, o.Err)
+			n, err := util.PickName(names, "Pick Deployment:", "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -189,9 +193,28 @@ func (o *CommonOptions) tailLogs(ns string, pod string, containerName string) er
 		args = append(args, "-c", containerName)
 	}
 	args = append(args, pod)
-	o.Verbose = true
-	return o.RunCommand("kubectl", args...)
+	name := "kubectl"
+	e := exec.Command(name, args...)
+	e.Stderr = o.Err
+	stdout, _ := e.StdoutPipe()
 
+	os.Setenv("PATH", util.PathWithBinary())
+	err := e.Start()
+	if err != nil {
+		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+	}
+
+	scanner := bufio.NewScanner(stdout)
+	scanner.Split(bufio.ScanLines)
+	for scanner.Scan() {
+		m := scanner.Text()
+		fmt.Fprintln(o.Out, m)
+		if m == "Finished: FAILURE" {
+			os.Exit(1)
+		}
+	}
+	e.Wait()
+	return err
 }
 
 // waitForReadyPodForDeployment waits for a ready pod in a Deployment in the given namespace with the given name
