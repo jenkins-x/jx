@@ -464,5 +464,5 @@ func (h *HelmCLI) PackageChart() error {
 }
 
 func (h *HelmCLI) DecryptSecrets(location string) error {
-	return h.runHelm("secrets" , "dec", location)
+	return h.runHelm("secrets", "dec", location)
 }
