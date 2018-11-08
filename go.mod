@@ -10,21 +10,14 @@ require (
 	github.com/Jeffail/gabs v1.1.0
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/Masterminds/semver v1.4.2
-	github.com/NYTimes/gziphandler v1.0.1 // indirect
 	github.com/Netflix/go-expect v0.0.0-20180814212900-124a37274874
-	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/Pallinder/go-randomdata v0.0.0-20180616180521-15df0648130a
-	github.com/SAP/go-hdb v0.13.1 // indirect
-	github.com/SermoDigital/jose v0.9.1 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
 	github.com/andygrunwald/go-gerrit v0.0.0-20171029143327-95b11af228a1
 	github.com/andygrunwald/go-jira v1.5.0
-	github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da // indirect
-	github.com/armon/go-radix v1.0.0 // indirect
-	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/aws/aws-sdk-go v1.15.50
 	github.com/banzaicloud/bank-vaults v0.0.0-20181015112421-ca15a6960a3a
 	github.com/beevik/etree v1.0.1
@@ -36,19 +29,13 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20180720050708-57cf4773008d
 	github.com/chromedp/chromedp v0.1.1
 	github.com/codeship/codeship-go v0.0.0-20180717142545-7793ca823354
-	github.com/containerd/continuity v0.0.0-20181027224239-bea7585dbfac // indirect
 	github.com/cpuguy83/go-md2man v1.0.8
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
 	github.com/davecgh/go-spew v1.1.1
-	github.com/denisenkom/go-mssqldb v0.0.0-20181014144952-4e0d7dc8888f // indirect
 	github.com/denormal/go-gitignore v0.0.0-20180713143441-75ce8f3e513c
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/disintegration/imaging v1.4.2
-	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.3.3 // indirect
 	github.com/docker/spdystream v0.0.0-20170912183627-bc6354cbbc29
-	github.com/duosecurity/duo_api_golang v0.0.0-20181024123116-92fea9203dbc // indirect
-	github.com/elazarl/go-bindata-assetfs v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
 	github.com/emirpasic/gods v1.9.0
 	github.com/fatih/color v1.7.0
@@ -59,13 +46,10 @@ require (
 	github.com/go-ini/ini v1.38.1
 	github.com/go-ole/go-ole v1.2.1
 	github.com/go-openapi/spec v0.17.1 // indirect
-	github.com/go-sql-driver/mysql v1.4.0 // indirect
 	github.com/gobwas/glob v0.2.3
-	github.com/gocql/gocql v0.0.0-20181106112037-68ae1e384be4 // indirect
 	github.com/gogo/protobuf v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/protobuf v1.2.0
-	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/golang/protobuf v1.1.0
 	github.com/google/btree v0.0.0-20180124185431-e89373fe6b4a
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135
@@ -79,19 +63,9 @@ require (
 	github.com/gorilla/sessions v1.1.1
 	github.com/gorilla/websocket v1.2.0
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7
-	github.com/hashicorp/go-cleanhttp v0.5.0 // indirect
-	github.com/hashicorp/go-hclog v0.0.0-20181001195459-61d530d6c27f // indirect
-	github.com/hashicorp/go-immutable-radix v1.0.0 // indirect
-	github.com/hashicorp/go-memdb v0.0.0-20180223233045-1289e7fffe71 // indirect
-	github.com/hashicorp/go-multierror v1.0.0 // indirect
-	github.com/hashicorp/go-plugin v0.0.0-20181030172320-54b6ff97d818 // indirect
-	github.com/hashicorp/go-retryablehttp v0.0.0-20180718195005-e651d75abec6 // indirect
-	github.com/hashicorp/go-rootcerts v0.0.0-20160503143440-6bb64b370b90 // indirect
-	github.com/hashicorp/go-sockaddr v0.0.0-20180320115054-6d291a969b86 // indirect
 	github.com/hashicorp/go-version v0.0.0-20180716215031-270f2f71b1ee
-	github.com/hashicorp/golang-lru v0.5.0
+	github.com/hashicorp/golang-lru v0.0.0-20180201235237-0fb14efe8c47
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
-	github.com/hashicorp/vault v0.11.4
 	github.com/heptio/sonobuoy v0.12.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/hpcloud/tail v1.0.0
@@ -99,7 +73,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99
 	github.com/jbrukh/bayesian v0.0.0-20161210175230-bf3f261f9a9c
-	github.com/jefferai/jsonx v0.0.0-20160721235117-9cc31c3135ee // indirect
 	github.com/jenkins-x/chyle v0.0.0-20180226080600-68f7a93a63ec
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
@@ -107,40 +80,30 @@ require (
 	github.com/json-iterator/go v0.0.0-20180701071628-ab8a2e0c74be
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55
-	github.com/keybase/go-crypto v0.0.0-20181031135447-f919bfda4fc1 // indirect
 	github.com/knative/build v0.0.0-20180906201914-846036c8b91d
 	github.com/knq/snaker v0.0.0-20180306023312-d9ad1e7f342a
 	github.com/knq/sysutil v0.0.0-20180306023629-0218e141a794
 	github.com/kr/pty v1.1.2
-	github.com/lib/pq v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.0
 	github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329
 	github.com/mattn/go-colorable v0.0.9
 	github.com/mattn/go-isatty v0.0.3
 	github.com/matttproud/golang_protobuf_extensions v1.0.1
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
-	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9
-	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v0.0.0-20180715050151-f15292f7a699
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742
 	github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30
 	github.com/onsi/ginkgo v1.6.0
 	github.com/onsi/gomega v1.4.1
-	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
-	github.com/opencontainers/image-spec v1.0.1 // indirect
-	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/operator-framework/operator-sdk v0.0.0-20181011175812-913cbf711929
-	github.com/ory/dockertest v3.3.2+incompatible // indirect
-	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/uuid v0.0.0-20170612153648-e790cca94e6c
 	github.com/pelletier/go-buffruneio v0.2.0
 	github.com/pelletier/go-toml v1.2.0
 	github.com/petar/GoLLRB v0.0.0-20130427215148-53be0d36a84c
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/petergtz/pegomock v0.0.0-20181008215750-9750219ad78b
-	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
 	github.com/pkg/errors v0.8.0
 	github.com/pmezard/go-difflib v1.0.0
@@ -151,7 +114,6 @@ require (
 	github.com/rifflock/lfshook v0.0.0-20180227222202-bf539943797a
 	github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930
 	github.com/russross/blackfriday v1.5.1
-	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/sergi/go-diff v1.0.0
 	github.com/shirou/gopsutil v0.0.0-20180901134234-eb1f1ab16f2e
@@ -186,13 +148,12 @@ require (
 	golang.org/x/tools v0.0.0-20180723204246-ded554d0681e
 	google.golang.org/api v0.0.0-20180724000608-2c45710c7f3f
 	google.golang.org/appengine v1.1.0
-	google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8
-	google.golang.org/grpc v1.14.0
+	google.golang.org/genproto v0.0.0-20180722052100-02b4e9547331
+	google.golang.org/grpc v1.13.0
 	gopkg.in/AlecAivazis/survey.v1 v1.6.2
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/inf.v0 v0.9.1
-	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce // indirect
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/src-d/go-billy.v4 v4.2.0
 	gopkg.in/src-d/go-git.v4 v4.5.0
