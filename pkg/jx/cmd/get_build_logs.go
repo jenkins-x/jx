@@ -188,7 +188,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 		}
 		if last.Url == "" {
 			if buildNumber > 0 {
-				return fmt.Errorf("No build found for name %s number %d", job, buildNumber)
+				return fmt.Errorf("No build found for name %s number %d", name, buildNumber)
 			} else {
 				return fmt.Errorf("No build found for name %s", name)
 			}
