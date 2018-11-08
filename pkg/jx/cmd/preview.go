@@ -770,7 +770,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 
 		o.Namespace = prefix + o.Name
 		if len(o.Namespace) > 63 {
-			max := 63 - len(prefix)
+			max := 62 - len(prefix)
 			size := len(o.Name)
 
 			o.Namespace = prefix + o.Name[size - max:]
