@@ -93,7 +93,7 @@ func (o *DeleteUserOptions) Run() error {
 		if o.BatchMode {
 			return fmt.Errorf("Missing user login name argument")
 		}
-		names, err = util.SelectNamesWithFilter(userNames, "Which users do you want to delete: ", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
+		names, err = util.SelectNamesWithFilter(userNames, "Which users do you want to delete: ", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

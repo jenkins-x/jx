@@ -99,7 +99,7 @@ func (o *StartPipelineOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to start: ", defaultName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to start: ", defaultName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

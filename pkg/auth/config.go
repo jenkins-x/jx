@@ -313,7 +313,7 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 	var err error
 
 	if editUser || auth.Username == "" {
-		auth.Username, err = util.PickValue(serverLabel+" user name:", auth.Username, true, in, out, outErr)
+		auth.Username, err = util.PickValue(serverLabel+" user name:", auth.Username, true, "", in, out, outErr)
 		if err != nil {
 			return err
 		}
@@ -324,7 +324,7 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 			return err
 		}
 	}
-	auth.ApiToken, err = util.PickPassword("API Token:", in, out, outErr)
+	auth.ApiToken, err = util.PickPassword("API Token:", "", in, out, outErr)
 	return err
 }
 
@@ -389,7 +389,7 @@ func (config *AuthConfig) PickOrCreateServer(fallbackServerURL string, serverURL
 	if batchMode {
 		return config.GetOrCreateServer(defaultValue), nil
 	}
-	name, err := util.PickRequiredNameWithDefault(names, message, defaultValue, in, out, outErr)
+	name, err := util.PickRequiredNameWithDefault(names, message, defaultValue, "", in, out, outErr)
 	if err != nil {
 		return nil, err
 	}
