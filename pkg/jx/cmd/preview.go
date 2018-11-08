@@ -418,7 +418,15 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	if o.ReleaseName == "" {
-		o.ReleaseName = o.Namespace
+		_, noTiller, helmTemplate, err := o.TeamHelmBin()
+		if err != nil {
+		  return err
+		}
+		if noTiller || helmTemplate {
+			o.ReleaseName = "preview"
+		} else {
+			o.ReleaseName = o.Namespace
+		}
 	}
 
 	domain, err := kube.GetCurrentDomain(kubeClient, ns)
