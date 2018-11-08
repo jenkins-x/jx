@@ -114,7 +114,6 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
-
 	// Current version
 	var currentVersion string
 	output, err := o.Helm().ListCharts()
@@ -234,7 +233,7 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
 	if err != nil {
-		return errors.Wrap(err, "failed to look for " + cloudEnvironmentSopsLocation)
+		return errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
 	}
 
 	if sopsFileExists {
@@ -268,7 +267,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		values = append(values, o.Set)
 	}
 
-	for _,v := range valueFiles {
+	for _, v := range valueFiles {
 		log.Infof("Adding values file %s\n", util.ColorInfo(v))
 	}
 
