@@ -515,7 +515,6 @@ func (o *CommonOptions) getLatestVersionFromKubernetesReleaseUrl() (sem semver.V
 		return semver.Version{}, fmt.Errorf("download of %s failed with return code %d", stableKubeCtlVersionURL, response.StatusCode)
 	}
 
-
 	bytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return semver.Version{}, fmt.Errorf("Cannot get url body")
@@ -1152,7 +1151,6 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		return err
 	}
 
-
 	if runtime.GOOS != "windows" {
 		err = util.UnTargz(tmpArchiveFile, jxHome, []string{binary, fileName})
 		if err != nil {
@@ -1162,16 +1160,16 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		if err != nil {
 			return err
 		}
-		err = os.Remove(filepath.Join(binDir,"jx"))
+		err = os.Remove(filepath.Join(binDir, "jx"))
 		if err != nil && o.Verbose {
 			log.Infof("Skipping removal of old jx binary: %s\n", err)
 		}
 		// Copy over the new binary
-		err = os.Rename(filepath.Join(jxHome,"jx"), filepath.Join(binDir, "jx"))
+		err = os.Rename(filepath.Join(jxHome, "jx"), filepath.Join(binDir, "jx"))
 		if err != nil {
 			return err
 		}
-	} else {  // windows
+	} else { // windows
 		windowsBinaryFromArchive := "jx-windows-amd64.exe"
 		err = util.UnzipSpecificFiles(tmpArchiveFile, jxHome, windowsBinaryFromArchive)
 		if err != nil {
@@ -1185,8 +1183,8 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		// the trick is to rename to a tempfile :-o
 		// this will leave old files around but well at least it updates.
 		// we could schedule the file for cleanup at next boot but....
-		// HKLM\System\CurrentControlSet\Control\Session Manager\PendingFileRenameOperations 
-		err = os.Rename(filepath.Join(binDir,"jx.exe"), filepath.Join(binDir, "jx.exe.deleteme"))
+		// HKLM\System\CurrentControlSet\Control\Session Manager\PendingFileRenameOperations
+		err = os.Rename(filepath.Join(binDir, "jx.exe"), filepath.Join(binDir, "jx.exe.deleteme"))
 		// if we can not rename it this i pretty fatal as we won;t be able to overwrite either
 		if err != nil {
 			return err
@@ -1641,8 +1639,11 @@ func (o *CommonOptions) installProw() error {
 
 	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
 
+	kvalues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
+	kvalues = append(kvalues, setValues...)
+
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values, nil)
+		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, kvalues, nil)
 		return nil
 	})
 
