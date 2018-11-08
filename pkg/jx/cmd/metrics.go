@@ -94,7 +94,7 @@ func (o *MetricsOptions) Run() error {
 			if len(names) == 0 {
 				return fmt.Errorf("There are no Deployments running")
 			}
-			n, err := util.PickName(names, "Pick Deployment:", o.In, o.Out, o.Err)
+			n, err := util.PickName(names, "Pick Deployment:", "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

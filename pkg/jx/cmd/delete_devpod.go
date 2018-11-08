@@ -96,7 +96,7 @@ func (o *DeleteDevPodOptions) Run() error {
 	}
 
 	if len(args) == 0 {
-		args, err = util.PickNames(names, "Pick DevPod:", o.In, o.Out, o.Err)
+		args, err = util.PickNames(names, "Pick DevPod:", "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

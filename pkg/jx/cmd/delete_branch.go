@@ -162,7 +162,7 @@ func (o *DeleteBranchOptions) Run() error {
 			return errors.Wrapf(err, "Failed to get remote branches for %s/%s", org, name)
 		}
 
-		branches, err := util.SelectNamesWithFilter(branchNames, "Which remote branches do you to to delete: ", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
+		branches, err := util.SelectNamesWithFilter(branchNames, "Which remote branches do you to to delete: ", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
