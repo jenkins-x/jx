@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"strings"
 
@@ -140,8 +141,8 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return err
 	}
 
-	// get the external anchore service URL
-	ing, err := kube.GetServiceURLFromName(o.KubeClientCached, anchoreServiceName, o.Namespace)
+	// get the external anchore services URL
+	ing, err := services.GetServiceURLFromName(o.KubeClientCached, anchoreServiceName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get external URL for service %s: %v", anchoreServiceName, err)
 	}
@@ -167,7 +168,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	_, err = o.KubeClientCached.CoreV1().Services(o.currentNamespace).Get(anchoreServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		// create a service link
-		err = kube.CreateServiceLink(o.KubeClientCached, o.currentNamespace, o.Namespace, anchoreServiceName, ing)
+		err = services.CreateServiceLink(o.KubeClientCached, o.currentNamespace, o.Namespace, anchoreServiceName, ing)
 		if err != nil {
 			return fmt.Errorf("failed creating a service link for %s in target namespace %s", anchoreServiceName, o.Namespace)
 		}

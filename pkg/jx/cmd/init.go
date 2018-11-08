@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"io/ioutil"
 	"net"
@@ -722,7 +723,7 @@ controller:
 		}
 
 		if externalIP == "" {
-			err = kube.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
+			err = services.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
 			if err != nil {
 				return err
 			}

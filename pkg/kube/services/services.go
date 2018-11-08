@@ -1,4 +1,4 @@
-package kube
+package services
 
 import (
 	"errors"

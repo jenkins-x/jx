@@ -38,7 +38,9 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	jxObjects []runtime.Object, git gits.Gitter, helm helm.Helmer) {
 	//o.Out = tests.Output()
 	o.BatchMode = true
-	o.Factory = NewFactory()
+	if o.Factory == nil {
+		o.Factory = NewFactory()
+	}
 	o.currentNamespace = "jx"
 
 	namespacesRequired := []string{o.currentNamespace}

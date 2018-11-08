@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"os"
 	"path/filepath"
@@ -66,7 +67,7 @@ type PromoteOptions struct {
 
 	// for testing
 	FakePullRequests CreateEnvPullRequestFn
-	UseFakeHelm 		bool
+	UseFakeHelm      bool
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -1039,7 +1040,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	appNames := []string{app, o.ReleaseName, ens + "-" + app}
 	url := ""
 	for _, n := range appNames {
-		url, err = kube.FindServiceURL(kubeClient, ens, n)
+		url, err = services.FindServiceURL(kubeClient, ens, n)
 		if url != "" {
 			break
 		}
