@@ -561,6 +561,15 @@ func (options *InstallOptions) Run() error {
 		helmConfig.Jenkins.Servers.Global.EnvVars["TILLER_NAMESPACE"] = initOpts.Flags.TillerNamespace
 		os.Setenv("TILLER_NAMESPACE", initOpts.Flags.TillerNamespace)
 	}
+	isProw, err := options.isProw()
+	if err != nil {
+		return fmt.Errorf("cannot work out if this is a prow based install: %v", err)
+	}
+
+	if isProw {
+		enableJenkins := false
+		helmConfig.Jenkins.Enabled = &enableJenkins
+	}
 
 	// lets add any GitHub Enterprise servers
 	gitAuthCfg, err := options.CreateGitAuthConfigService()
