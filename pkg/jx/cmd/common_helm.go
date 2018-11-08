@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -30,7 +31,7 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create the kube client")
 	}
-	u, err := kube.FindServiceURL(client, ns, kube.ServiceChartMuseum)
+	u, err := services.FindServiceURL(client, ns, kube.ServiceChartMuseum)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find the service URL of the ChartMuseum")
 	}
