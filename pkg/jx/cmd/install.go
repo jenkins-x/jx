@@ -466,7 +466,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		err = options.restartLocalTiller()
+		err = restartLocalTiller()
 		if err != nil {
 			return err
 		}
