@@ -11,6 +11,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
+// PickValue gets an answer to a prompt from a user's free-form input
 func PickValue(message string, defaultValue string, required bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	answer := ""
 	prompt := &survey.Input{
@@ -29,6 +30,7 @@ func PickValue(message string, defaultValue string, required bool, in terminal.F
 	return answer, nil
 }
 
+// PickPassword gets a password (via hidden input) from a user's free-form input
 func PickPassword(message string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	answer := ""
 	prompt := &survey.Password{
@@ -43,6 +45,7 @@ func PickPassword(message string, in terminal.FileReader, out terminal.FileWrite
 	return strings.TrimSpace(answer), nil
 }
 
+// PickNameWithDefault gets the user to pick an option from a list of options, with a default option specified
 func PickNameWithDefault(names []string, message string, defaultValue string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	name := ""
 	if len(names) == 0 {
@@ -64,6 +67,7 @@ func PickNameWithDefault(names []string, message string, defaultValue string, in
 	return name, nil
 }
 
+// PickRequiredNameWithDefault gets the user to pick an option from a list of options, with a default option specified
 func PickRequiredNameWithDefault(names []string, message string, defaultValue string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	name := ""
 	if len(names) == 0 {
@@ -85,10 +89,12 @@ func PickRequiredNameWithDefault(names []string, message string, defaultValue st
 	return name, nil
 }
 
+// PickName gets the user to pick an option from a list of options
 func PickName(names []string, message string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	return PickNameWithDefault(names, message, "", in, out, outErr)
 }
 
+// PickNames gets the user to pick multiple selections from a list of options, with a default option specified
 func PickNames(names []string, message string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
 	picked := []string{}
 	if len(names) == 0 {
