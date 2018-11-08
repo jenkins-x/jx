@@ -33,8 +33,10 @@ servers:
   - username: test
     apitoken: test
     bearertoken: ""
+    kind: pipeline
   name: GitHub
-  kind: github`,
+  kind: git
+  servicekind: github`,
 			createFile: true,
 			err:        false,
 			want: auth.Config{
@@ -45,10 +47,12 @@ servers:
 							&auth.User{
 								Username: "test",
 								ApiToken: "test",
+								Kind:     auth.UserKindPipeline,
 							},
 						},
-						Name: "GitHub",
-						Kind: "github",
+						Name:        "GitHub",
+						Kind:        "git",
+						ServiceKind: "github",
 					},
 				},
 			},
@@ -117,8 +121,8 @@ func TestEnvConfigReader(t *testing.T) {
 	}{
 		"read config from environment variables": {
 			prefix: prefix,
-			serverRetriever: func() (string, string, auth.ServerKind) {
-				return "GitHub", "https://github.com", auth.ServerKindGithub
+			serverRetriever: func() (string, string, auth.ServerKind, auth.ServiceKind) {
+				return "GitHub", "https://github.com", auth.ServerKindGit, auth.ServiceKindGithub
 			},
 			setup: func(t *testing.T) {
 				setEnvs(t, map[string]string{
@@ -140,10 +144,12 @@ func TestEnvConfigReader(t *testing.T) {
 							&auth.User{
 								Username: "test",
 								ApiToken: "test",
+								Kind:     auth.UserKindPipeline,
 							},
 						},
-						Name: "GitHub",
-						Kind: "github",
+						Name:        "GitHub",
+						Kind:        auth.ServerKindGit,
+						ServiceKind: auth.ServiceKindGithub,
 					},
 				},
 			},
@@ -151,8 +157,8 @@ func TestEnvConfigReader(t *testing.T) {
 		},
 		"read config from empty environment variables": {
 			prefix: prefix,
-			serverRetriever: func() (string, string, auth.ServerKind) {
-				return "GitHub", "https://github.com", auth.ServerKindGithub
+			serverRetriever: func() (string, string, auth.ServerKind, auth.ServiceKind) {
+				return "GitHub", "https://github.com", auth.ServerKindGit, auth.ServiceKindGithub
 			},
 			want: auth.Config{},
 			err:  true,
@@ -182,12 +188,13 @@ func TestEnvConfigReader(t *testing.T) {
 	}
 }
 
-func secret(name string, kind string, serviceKind auth.ServerKind, serviceName string, url string, username string, password string) *corev1.Secret {
+func secret(name string, serverKind auth.ServerKind, serviceKind auth.ServiceKind, createLabels bool,
+	serviceName string, url string, username string, password string) *corev1.Secret {
 	labels := map[string]string{}
-	if kind != "" {
-		labels[kube.LabelKind] = kind
+	if serverKind != "" || createLabels {
+		labels[kube.LabelKind] = string(serverKind)
 	}
-	if serviceKind != "" {
+	if serviceKind != "" || createLabels {
 		labels[kube.LabelServiceKind] = string(serviceKind)
 	}
 	annotations := map[string]string{
@@ -218,24 +225,26 @@ func TestKubeSecretsConfigReader(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		name       string
-		namespace  string
-		kind       string
-		serverKind auth.ServerKind
-		url        string
-		username   string
-		password   string
-		want       auth.Config
-		err        bool
+		name         string
+		namespace    string
+		serverKind   auth.ServerKind
+		serviceKind  auth.ServiceKind
+		createLabels bool
+		url          string
+		username     string
+		password     string
+		want         auth.Config
+		err          bool
 	}{
 		"read config from k8s secret": {
-			name:       "GitHub",
-			namespace:  "test",
-			kind:       "git",
-			serverKind: auth.ServerKindGithub,
-			url:        "https://github.com",
-			username:   "test",
-			password:   "test",
+			name:         "GitHub",
+			namespace:    "test",
+			serverKind:   auth.ServerKindGit,
+			serviceKind:  auth.ServiceKindGithub,
+			createLabels: true,
+			url:          "https://github.com",
+			username:     "test",
+			password:     "test",
 			want: auth.Config{
 				Servers: []*auth.Server{
 					&auth.Server{
@@ -247,21 +256,23 @@ func TestKubeSecretsConfigReader(t *testing.T) {
 								Kind:     auth.UserKindPipeline,
 							},
 						},
-						Name: "GitHub",
-						Kind: "github",
+						Name:        "GitHub",
+						Kind:        auth.ServerKindGit,
+						ServiceKind: auth.ServiceKindGithub,
 					},
 				},
 			},
 			err: false,
 		},
 		"read config from k8s secret without service kind": {
-			name:       "GitHub",
-			namespace:  "test",
-			kind:       "git",
-			serverKind: "",
-			url:        "https://github.com",
-			username:   "test",
-			password:   "test",
+			name:         "GitHub",
+			namespace:    "test",
+			serverKind:   auth.ServerKindGit,
+			serviceKind:  "",
+			createLabels: true,
+			url:          "https://github.com",
+			username:     "test",
+			password:     "test",
 			want: auth.Config{
 				Servers: []*auth.Server{
 					&auth.Server{
@@ -273,21 +284,23 @@ func TestKubeSecretsConfigReader(t *testing.T) {
 								Kind:     auth.UserKindPipeline,
 							},
 						},
-						Name: "GitHub",
-						Kind: "",
+						Name:        "GitHub",
+						Kind:        auth.ServerKindGit,
+						ServiceKind: "",
 					},
 				},
 			},
 			err: false,
 		},
 		"read config from k8s secret without kind": {
-			name:       "GitHub",
-			namespace:  "test",
-			kind:       "",
-			serverKind: auth.ServerKindGithub,
-			url:        "https://github.com",
-			username:   "test",
-			password:   "test",
+			name:         "GitHub",
+			namespace:    "test",
+			serverKind:   "",
+			serviceKind:  auth.ServiceKindGithub,
+			createLabels: true,
+			url:          "https://github.com",
+			username:     "test",
+			password:     "test",
 			want: auth.Config{
 				Servers: []*auth.Server{
 					&auth.Server{
@@ -299,65 +312,71 @@ func TestKubeSecretsConfigReader(t *testing.T) {
 								Kind:     auth.UserKindPipeline,
 							},
 						},
-						Name: "GitHub",
-						Kind: "github",
+						Name:        "GitHub",
+						Kind:        "",
+						ServiceKind: auth.ServiceKindGithub,
 					},
 				},
 			},
 			err: false,
 		},
 		"read config from k8s secret without kind labels": {
-			name:       "GitHub",
-			namespace:  "test",
-			kind:       "",
-			serverKind: "",
-			url:        "https://github.com",
-			username:   "test",
-			password:   "test",
-			want:       auth.Config{},
-			err:        false,
+			name:         "GitHub",
+			namespace:    "test",
+			serverKind:   "",
+			serviceKind:  "",
+			createLabels: false,
+			url:          "https://github.com",
+			username:     "test",
+			password:     "test",
+			want:         auth.Config{},
+			err:          false,
 		},
 		"read config from k8s secret without username": {
-			name:       "GitHub",
-			namespace:  "test",
-			kind:       "git",
-			serverKind: "github",
-			url:        "https://github.com",
-			username:   "",
-			password:   "test",
-			want:       auth.Config{},
-			err:        false,
+			name:         "GitHub",
+			namespace:    "test",
+			serverKind:   "git",
+			serviceKind:  "github",
+			createLabels: true,
+			url:          "https://github.com",
+			username:     "",
+			password:     "test",
+			want:         auth.Config{},
+			err:          false,
 		},
 		"read config from k8s secret without password": {
-			name:       "GitHub",
-			namespace:  "test",
-			kind:       "git",
-			serverKind: "github",
-			url:        "https://github.com",
-			username:   "test",
-			password:   "",
-			want:       auth.Config{},
-			err:        false,
+			name:         "GitHub",
+			namespace:    "test",
+			serverKind:   "git",
+			serviceKind:  "github",
+			createLabels: true,
+			url:          "https://github.com",
+			username:     "test",
+			password:     "",
+			want:         auth.Config{},
+			err:          false,
 		},
 		"read config from k8s secret without URL": {
-			name:       "GitHub",
-			namespace:  "test",
-			kind:       "git",
-			serverKind: "github",
-			url:        "",
-			username:   "test",
-			password:   "test",
-			want:       auth.Config{},
-			err:        false,
+			name:         "GitHub",
+			namespace:    "test",
+			serverKind:   "git",
+			serviceKind:  "github",
+			createLabels: true,
+			url:          "",
+			username:     "test",
+			password:     "test",
+			want:         auth.Config{},
+			err:          false,
 		},
 		"read config from k8s secret without name": {
-			name:       "",
-			namespace:  "test",
-			kind:       "git",
-			serverKind: auth.ServerKindGithub,
-			url:        "https://github.com",
-			username:   "test",
-			password:   "test",
+			name:         "",
+			namespace:    "test",
+			serverKind:   "git",
+			serviceKind:  auth.ServiceKindGithub,
+			createLabels: true,
+			url:          "https://github.com",
+			username:     "test",
+			password:     "test",
 			want: auth.Config{
 				Servers: []*auth.Server{
 					&auth.Server{
@@ -369,23 +388,52 @@ func TestKubeSecretsConfigReader(t *testing.T) {
 								Kind:     auth.UserKindPipeline,
 							},
 						},
-						Name: "",
-						Kind: "github",
+						Name:        "",
+						Kind:        auth.ServerKindGit,
+						ServiceKind: auth.ServiceKindGithub,
 					},
 				},
 			},
 			err: false,
 		},
 		"read config from k8s secret without labels and annotations": {
-			name:       "",
-			namespace:  "test",
-			kind:       "",
-			serverKind: "",
-			url:        "",
-			username:   "",
-			password:   "",
-			want:       auth.Config{},
-			err:        false,
+			name:        "",
+			namespace:   "test",
+			serverKind:  "",
+			serviceKind: "",
+			url:         "",
+			username:    "",
+			password:    "",
+			want:        auth.Config{},
+			err:         false,
+		},
+		"read config from k8s secret with empty kind": {
+			name:         "GitHub",
+			namespace:    "test",
+			serverKind:   "",
+			serviceKind:  "",
+			createLabels: true,
+			url:          "https://github.com",
+			username:     "test",
+			password:     "test",
+			want: auth.Config{
+				Servers: []*auth.Server{
+					&auth.Server{
+						URL: "https://github.com",
+						Users: []*auth.User{
+							&auth.User{
+								Username: "test",
+								ApiToken: "test",
+								Kind:     auth.UserKindPipeline,
+							},
+						},
+						Name:        "GitHub",
+						Kind:        "",
+						ServiceKind: "",
+					},
+				},
+			},
+			err: false,
 		},
 	}
 
@@ -393,11 +441,12 @@ func TestKubeSecretsConfigReader(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			client := k8sfake.NewSimpleClientset()
 			const secretName = "config-test"
-			secret := secret(secretName, tc.kind, tc.serverKind, tc.name, tc.url, tc.username, tc.password)
+			secret := secret(secretName, tc.serverKind, tc.serviceKind, tc.createLabels,
+				tc.name, tc.url, tc.username, tc.password)
 			_, err := client.CoreV1().Secrets(tc.namespace).Create(secret)
 			assert.NoError(t, err, "should create secret without error")
 
-			configReader := io.NewKubeSecretsConfigReader(client, tc.namespace, tc.kind, tc.serverKind)
+			configReader := io.NewKubeSecretsConfigReader(client, tc.namespace, tc.serverKind, tc.serviceKind)
 			config, err := configReader.Read()
 			if tc.err {
 				assert.Error(t, err, "should read config from secrete with error")

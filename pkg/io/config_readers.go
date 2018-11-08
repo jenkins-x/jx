@@ -28,7 +28,7 @@ type FileConfigReader struct {
 }
 
 //NewFileConfigReader creates a new file config reader
-func NewFileConfigReader(filename string) *FileConfigReader {
+func NewFileConfigReader(filename string) ConfigReader {
 	return &FileConfigReader{
 		filename: filename,
 	}
@@ -59,7 +59,8 @@ func (f *FileConfigReader) Read() (*auth.Config, error) {
 }
 
 //ServerRetrieverFn retrives the server config
-type ServerRetrieverFn func() (name string, url string, kind auth.ServerKind)
+type ServerRetrieverFn func() (name string, url string,
+	kind auth.ServerKind, serviceKind auth.ServiceKind)
 
 //EventConfigReader keeps the prefix of the env variables where the user auth config is stored
 // and also a server config retriever
@@ -94,7 +95,7 @@ func bearerTokenEnv(prefix string) string {
 }
 
 //NewEnvConfigReader creates a new environment config reader
-func NewEnvConfigReader(envPrefix string, serverRetriever ServerRetrieverFn) *EnvConfigReader {
+func NewEnvConfigReader(envPrefix string, serverRetriever ServerRetrieverFn) ConfigReader {
 	return &EnvConfigReader{
 		prefix:          envPrefix,
 		serverRetriever: serverRetriever,
@@ -111,18 +112,21 @@ func (e *EnvConfigReader) Read() (*auth.Config, error) {
 	if err := user.Valid(); err != nil {
 		return nil, errors.Wrap(err, "validating user from environment")
 	}
-	servername, url, kind := e.serverRetriever()
+	servername, url, kind, serviceKind := e.serverRetriever()
 	config.Servers = []*auth.Server{{
-		Name:  servername,
-		URL:   url,
-		Kind:  kind,
-		Users: []*auth.User{&user},
+		Name:        servername,
+		URL:         url,
+		Kind:        kind,
+		ServiceKind: serviceKind,
+		Users:       []*auth.User{&user},
 	}}
 	return config, nil
 }
 
 func (e *EnvConfigReader) userFromEnv(prefix string) auth.User {
-	user := auth.User{}
+	user := auth.User{
+		Kind: auth.UserKindPipeline,
+	}
 	username, set := os.LookupEnv(usernameEnv(prefix))
 	if set {
 		user.Username = username
@@ -146,20 +150,20 @@ func (e *EnvConfigReader) userFromEnv(prefix string) auth.User {
 
 //NewKubeSecretsConfigReader config reader for Kubernetes secrets
 type KubeSecretsConfigReader struct {
-	client     kubernetes.Interface
-	namespace  string
-	kind       string
-	serverKind auth.ServerKind
+	client      kubernetes.Interface
+	namespace   string
+	serverKind  auth.ServerKind
+	serviceKind auth.ServiceKind
 }
 
 //NewKubeSecretsConfigReader creates a new Kubernetes config reader
 func NewKubeSecretsConfigReader(client kubernetes.Interface, namespace string,
-	kind string, serviceKind auth.ServerKind) *KubeSecretsConfigReader {
+	serverKind auth.ServerKind, serviceKind auth.ServiceKind) ConfigReader {
 	return &KubeSecretsConfigReader{
-		client:     client,
-		namespace:  namespace,
-		kind:       kind,
-		serverKind: serviceKind,
+		client:      client,
+		namespace:   namespace,
+		serverKind:  serverKind,
+		serviceKind: serviceKind,
 	}
 }
 
@@ -179,7 +183,8 @@ func (k *KubeSecretsConfigReader) Read() (*auth.Config, error) {
 		if labels != nil && annotations != nil {
 			url := annotations[kube.AnnotationURL]
 			name := annotations[kube.AnnotationName]
-			kind := auth.ServerKind(labels[kube.LabelServiceKind])
+			serverKind := auth.ServerKind(labels[kube.LabelKind])
+			serviceKind := auth.ServiceKind(labels[kube.LabelServiceKind])
 			if url != "" {
 				user, err := k.userFromSecret(secret)
 				if err != nil {
@@ -189,9 +194,10 @@ func (k *KubeSecretsConfigReader) Read() (*auth.Config, error) {
 					continue
 				}
 				server := &auth.Server{
-					URL:  url,
-					Name: name,
-					Kind: kind,
+					URL:         url,
+					Name:        name,
+					Kind:        serverKind,
+					ServiceKind: serviceKind,
 					Users: []*auth.User{
 						user,
 					},
@@ -228,9 +234,9 @@ func (k *KubeSecretsConfigReader) userFromSecret(secret corev1.Secret) (*auth.Us
 }
 
 func (k *KubeSecretsConfigReader) secrets() (*corev1.SecretList, error) {
-	selector := kube.LabelKind + "=" + k.kind
-	if k.serverKind != "" {
-		selector = kube.LabelServiceKind + "=" + string(k.serverKind)
+	selector := kube.LabelKind + "=" + string(k.serverKind)
+	if k.serviceKind != "" {
+		selector = kube.LabelServiceKind + "=" + string(k.serviceKind)
 	}
 	opts := metav1.ListOptions{
 		LabelSelector: selector,
