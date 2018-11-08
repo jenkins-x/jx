@@ -248,15 +248,6 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		return "", err
 	}
 
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return "", err
-	}
-	err = kube.RegisterGitServiceCRD(apisClient)
-	if err != nil {
-		return "", err
-	}
-
 	kind, err := kube.GetGitServiceKind(jxClient, kubeClient, devNs, hostURL)
 	if err != nil {
 		return kind, err
