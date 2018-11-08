@@ -145,7 +145,7 @@ func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPull
 		if o.BatchMode {
 			return util.MissingOption(optionTitle)
 		}
-		title, err = util.PickValue("PullRequest title:", "", true, o.In, o.Out, o.Err)
+		title, err = util.PickValue("PullRequest title:", "", true, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

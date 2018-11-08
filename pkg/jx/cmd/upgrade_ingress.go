@@ -333,12 +333,12 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 		// carry on as it just means we dont have any defaults
 	}
 
-	o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer, o.In, o.Out, o.Err)
+	o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
 
-	o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true, o.In, o.Out, o.Err)
+	o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -349,7 +349,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 
 		if o.IngressConfig.TLS {
 			log.Infof("If testing LetsEncrypt you should use staging as you may be rate limited using production.")
-			clusterIssuer, err := util.PickNameWithDefault([]string{"staging", "production"}, "Use LetsEncrypt staging or production?", "production", o.In, o.Out, o.Err)
+			clusterIssuer, err := util.PickNameWithDefault([]string{"staging", "production"}, "Use LetsEncrypt staging or production?", "production", "", o.In, o.Out, o.Err)
 			// if the cluster issuer is production the string needed by letsencrypt is prod
 			if clusterIssuer == "production" {
 				clusterIssuer = "prod"
@@ -368,7 +368,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 				o.IngressConfig.Email = strings.TrimSpace(email1)
 			}
 
-			o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true, o.In, o.Out, o.Err)
+			o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
