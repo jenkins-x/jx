@@ -83,14 +83,14 @@ const (
 	// Want to use your own provider file? Change this line to point to your fork
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
 
-	GitSecretsFile        = "gitSecrets.yaml"
-	AdminSecretsFile      = "adminSecrets.yaml"
-	ExtraValuesFile       = "extraValues.yaml"
-	JXInstallConfig       = "jx-install-config"
-	CloudEnvValuesFile    = "myvalues.yaml"
-	CloudEnvSecretsFile   = "secrets.yaml"
+	GitSecretsFile         = "gitSecrets.yaml"
+	AdminSecretsFile       = "adminSecrets.yaml"
+	ExtraValuesFile        = "extraValues.yaml"
+	JXInstallConfig        = "jx-install-config"
+	CloudEnvValuesFile     = "myvalues.yaml"
+	CloudEnvSecretsFile    = "secrets.yaml"
 	CloudEnvSopsConfigFile = ".sops.yaml"
-	defaultInstallTimeout = "6000"
+	defaultInstallTimeout  = "6000"
 
 	ServerlessJenkins   = "Serverless Jenkins"
 	StaticMasterJenkins = "Static Master Jenkins"
@@ -710,7 +710,7 @@ func (options *InstallOptions) Run() error {
 
 	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
 	if err != nil {
-		return errors.Wrap(err, "failed to look for " + cloudEnvironmentSopsLocation)
+		return errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
 	}
 
 	if sopsFileExists {
