@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"io"
+	"io/ioutil"
 	"strings"
 
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	core_v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -98,11 +97,14 @@ func (o *UpgradePlatformOptions) Run() error {
 			return err
 		}
 	}
+
+	wrkDir := ""
+
 	if targetVersion == "" {
 		io := &InstallOptions{}
 		io.CommonOptions = o.CommonOptions
 		io.Flags = o.InstallFlags
-		wrkDir, err := io.cloneJXCloudEnvironmentsRepo()
+		wrkDir, err = io.cloneJXCloudEnvironmentsRepo()
 		if err != nil {
 			return err
 		}
@@ -111,6 +113,7 @@ func (o *UpgradePlatformOptions) Run() error {
 			return err
 		}
 	}
+
 
 	// Current version
 	var currentVersion string
@@ -141,40 +144,18 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 	log.Infof("Using provider %s from team settings\n", util.ColorInfo(settings.KubeProvider))
 
-	// get secrets to use in helm install
-	secrets, err := o.getGitSecrets()
-	if err != nil {
-		return errors.Wrap(err, "failed to read the git secrets from configuration")
-	}
-	o.Debugf("Loaded git secrets '%s'\n", secrets)
-
-	err = o.AdminSecretsService.NewAdminSecretsConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the admin secret config service")
-	}
-
-	adminSecrets, err := o.AdminSecretsService.Secrets.String()
-	if err != nil {
-		return errors.Wrap(err, "failed to read the admin secrets")
-	}
-	o.Debugf("Loaded admin secrets '%s'\n", adminSecrets)
-
 	helmConfig := &o.CreateEnvOptions.HelmValuesConfig
 	exposeController := helmConfig.ExposeController
 	if exposeController != nil && exposeController.Config.Domain == "" {
 		helmConfig.ExposeController.Config.Domain = o.InitOptions.Flags.Domain
 	}
 
-	config, err := helmConfig.String()
-	if err != nil {
-		return errors.Wrap(err, "failed to get the helm config")
-	}
-	o.Debugf("Loaded helm config '%s'\n", config)
-
 	// clone the environments repo
-	wrkDir, err := o.cloneJXCloudEnvironmentsRepo()
-	if err != nil {
-		return errors.Wrap(err, "failed to clone the jx cloud environments reppo")
+	if wrkDir == "" {
+		wrkDir, err = o.cloneJXCloudEnvironmentsRepo()
+		if err != nil {
+			return errors.Wrap(err, "failed to clone the jx cloud environments repo")
+		}
 	}
 
 	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(settings.KubeProvider)))
@@ -189,50 +170,17 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	secretsFileName := filepath.Join(dir, GitSecretsFile)
-	o.Debugf("Writing '%s' to %s\n", secrets, secretsFileName)
-	err = ioutil.WriteFile(secretsFileName, []byte(secrets), 0644)
-	if err != nil {
-		return errors.Wrap(err, "failed to write the git secrets in the secrets file")
-	}
-
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
-	o.Debugf("Writing '%s' to %s\n", adminSecrets, adminSecretsFileName)
-	err = ioutil.WriteFile(adminSecretsFileName, []byte(adminSecrets), 0644)
-	if err != nil {
-		return errors.Wrap(err, "failed to write the admin secrets in the secrets file")
-	}
-
 	configFileName := filepath.Join(dir, ExtraValuesFile)
-	o.Debugf("Writing '%s' to %s\n", config, configFileName)
-	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
-	if err != nil {
-		return errors.Wrap(err, "failed to write the config file")
-	}
 
-	data := make(map[string][]byte)
-	data[ExtraValuesFile] = []byte(config)
-	data[AdminSecretsFile] = []byte(adminSecrets)
-	data[GitSecretsFile] = []byte(secrets)
-
-	jxSecrets := &core_v1.Secret{
-		Data: data,
-		ObjectMeta: metav1.ObjectMeta{
-			Name: JXInstallConfig,
-		},
-	}
 	secretResources := o.KubeClientCached.CoreV1().Secrets(ns)
 	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
-	if oldSecret == nil || err != nil {
-		_, err = secretResources.Create(jxSecrets)
-		if err != nil {
-			return errors.Wrap(err, "failed to create the jx secret resource")
-		}
-	} else {
-		oldSecret.Data = jxSecrets.Data
-		_, err = secretResources.Update(oldSecret)
-		if err != nil {
-			return errors.Wrap(err, "failed to update the jx secret resource")
-		}
+	if err != nil {
+		return errors.Wrap(err, "failed to get the jx secret resource")
+	}
+
+	if oldSecret == nil {
+		return errors.Wrap(err, "old secret doesn't exist, aborting")
 	}
 
 	if targetVersion != currentVersion {
@@ -247,6 +195,42 @@ func (o *UpgradePlatformOptions) Run() error {
 	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
 	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
 	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
+
+	secretsFileNameExists, err := util.FileExists(secretsFileName)
+	if err != nil {
+		return errors.Wrapf(err, "unable to determine if %s exist", secretsFileName)
+	}
+	if !secretsFileNameExists {
+		log.Infof("Creating %s from %s", util.ColorInfo(secretsFileName), util.ColorInfo(JXInstallConfig))
+		err = ioutil.WriteFile(secretsFileName, oldSecret.Data[GitSecretsFile], 0644)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write the config file %s", secretsFileName)
+		}
+	}
+
+	adminSecretsFileNameExists, err := util.FileExists(adminSecretsFileName)
+	if err != nil {
+		return errors.Wrapf(err, "unable to determine if %s exist", adminSecretsFileName)
+	}
+	if !adminSecretsFileNameExists {
+		log.Infof("Creating %s from %s", util.ColorInfo(adminSecretsFileName), util.ColorInfo(JXInstallConfig))
+		err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[AdminSecretsFile], 0644)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
+		}
+	}
+
+	configFileNameExists, err := util.FileExists(configFileName)
+	if err != nil {
+		return errors.Wrapf(err, "unable to determine if %s exist", configFileName)
+	}
+	if !configFileNameExists {
+		log.Infof("Creating %s from %s", util.ColorInfo(configFileName), util.ColorInfo(JXInstallConfig))
+		err = ioutil.WriteFile(configFileName, oldSecret.Data[ExtraValuesFile], 0644)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write the config file %s", configFileName)
+		}
+	}
 
 	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
 	if err != nil {
