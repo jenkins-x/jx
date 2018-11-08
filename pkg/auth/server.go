@@ -61,5 +61,17 @@ func (s *AuthServer) CurrentAuth() *UserAuth {
 			return user
 		}
 	}
+	if len(s.Users) > 0 {
+		return s.Users[0]
+	}
+	return nil
+}
+
+func (s *AuthServer) GetUserAuth(username string) *UserAuth {
+	for _, user := range s.Users {
+		if username == user.Username {
+			return user
+		}
+	}
 	return nil
 }

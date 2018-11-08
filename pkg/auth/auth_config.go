@@ -142,6 +142,13 @@ func (c *AuthConfig) DeleteServer(url string) {
 	}
 }
 
+func (c *AuthConfig) CurrentUser(server *AuthServer, inCluster bool) *UserAuth {
+	if urlsEqual(c.PipeLineServer, server.URL) && inCluster {
+		return server.GetUserAuth(c.PipeLineUsername)
+	}
+	return server.CurrentAuth()
+}
+
 func (c *AuthConfig) GetOrCreateServer(url string) *AuthServer {
 	name := ""
 	kind := ""

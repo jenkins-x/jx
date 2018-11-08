@@ -64,11 +64,13 @@ func createAuthConfigSvc(authConfig *auth.AuthConfig, fileName string) *auth.Aut
 	return authConfigSvc
 }
 
-func createAuthConfig(currentServer *auth.AuthServer, servers ...*auth.AuthServer) *auth.AuthConfig {
+func createAuthConfig(currentServer *auth.AuthServer, piplineServer, pipelineUser string, servers ...*auth.AuthServer) *auth.AuthConfig {
 	servers = append(servers, currentServer)
 	return &auth.AuthConfig{
-		Servers:       servers,
-		CurrentServer: currentServer.URL,
+		Servers:          servers,
+		CurrentServer:    currentServer.URL,
+		PipeLineServer:   piplineServer,
+		PipeLineUsername: pipelineUser,
 	}
 }
 
@@ -159,9 +161,11 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 		git          gits.Gitter
 		numUsers     int
 		currUser     int
+		pipelineUser int
 		username     string
 		apiToken     string
 		batchMode    bool
+		inCluster    bool
 		wantError    bool
 	}{
 		{"create GitHub provider for one user",
@@ -173,8 +177,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			1,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -187,9 +193,27 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			2,
 			1,
+			1,
 			"test",
 			"test",
 			false,
+			false,
+			false,
+		},
+		{"create GitHub provider for pipline user when in cluster ",
+			nil,
+			nil,
+			"GitHub",
+			gits.KindGitHub,
+			"https://github.com",
+			git,
+			2,
+			1,
+			0,
+			"test",
+			"test",
+			false,
+			true,
 			false,
 		},
 		{"create GitHub provider for user from environment",
@@ -216,8 +240,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -230,9 +256,11 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"",
 			"",
 			true,
+			false,
 			true,
 		},
 		{"create GitHub provider in interactive mode",
@@ -267,8 +295,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -281,8 +311,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			1,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -295,8 +327,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			2,
 			1,
+			1,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -324,8 +358,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -338,9 +374,11 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"",
 			"",
 			true,
+			false,
 			true,
 		},
 		{"create Gitlab provider in interactive mode",
@@ -375,8 +413,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -389,8 +429,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			1,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -403,8 +445,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			2,
 			1,
+			1,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -432,8 +476,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -446,9 +492,11 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"",
 			"",
 			true,
+			false,
 			true,
 		},
 		{"create Gitea provider in interactive mode",
@@ -483,8 +531,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -497,8 +547,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			1,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -511,8 +563,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			2,
 			1,
+			1,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -540,8 +594,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -554,9 +610,11 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"",
 			"",
 			true,
+			false,
 			true,
 		},
 		{"create BitbucketServer provider in interactive mode",
@@ -591,8 +649,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -605,8 +665,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			1,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -619,8 +681,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			2,
 			1,
+			1,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -648,8 +712,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -662,9 +728,11 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"",
 			"",
 			true,
+			false,
 			true,
 		},
 		{"create BitbucketCloud provider in interactive mode",
@@ -699,8 +767,10 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			git,
 			0,
 			0,
+			0,
 			"test",
 			"test",
+			false,
 			false,
 			false,
 		},
@@ -721,6 +791,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 
 			users := []*auth.UserAuth{}
 			var currUser *auth.UserAuth
+			var pipelineUser *auth.UserAuth
 			var server *auth.AuthServer
 			var authSvc *auth.AuthConfigService
 			configFile, err := ioutil.TempFile("", "test-config")
@@ -735,13 +806,14 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 				}
 				assert.True(t, len(users) > tc.currUser, "current user index should be smaller than number of users")
 				currUser = users[tc.currUser]
+				pipelineUser = users[tc.pipelineUser]
 				if len(users) > 1 {
 					users = append(users[:tc.currUser], users[tc.currUser+1:]...)
 				} else {
 					users = []*auth.UserAuth{}
 				}
 				server = createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
-				authSvc = createAuthConfigSvc(createAuthConfig(server), configFile.Name())
+				authSvc = createAuthConfigSvc(createAuthConfig(server, server.URL, pipelineUser.Username), configFile.Name())
 			} else {
 				currUser = &auth.UserAuth{
 					Username: tc.username,
@@ -755,9 +827,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 
 			var result gits.GitProvider
 			if term != nil {
-				result, err = gits.CreateProviderForURL(*authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, term.In, term.Out, term.Err)
+				result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, term.In, term.Out, term.Err)
 			} else {
-				result, err = gits.CreateProviderForURL(*authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, nil, nil, nil)
+				result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, nil, nil, nil)
 			}
 			if tc.wantError {
 				assert.Error(t, err, "should fail to create provider")
@@ -765,9 +837,15 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			} else {
 				assert.NoError(t, err, "should create provider without error")
 				assert.NotNil(t, result, "created provider should not be nil")
-				want := createGitProvider(t, tc.providerKind, server, currUser, tc.git)
-				assert.NotNil(t, want, "expected provider should not be nil")
-				assertProvider(t, want, result)
+				if tc.inCluster {
+					want := createGitProvider(t, tc.providerKind, server, pipelineUser, tc.git)
+					assert.NotNil(t, want, "expected provider should not be nil")
+					assertProvider(t, want, result)
+				} else {
+					want := createGitProvider(t, tc.providerKind, server, currUser, tc.git)
+					assert.NotNil(t, want, "expected provider should not be nil")
+					assertProvider(t, want, result)
+				}
 			}
 
 			if tc.cleanup != nil {

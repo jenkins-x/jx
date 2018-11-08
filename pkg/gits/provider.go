@@ -337,24 +337,21 @@ func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user 
 	return CreateProvider(server, user, git)
 }
 
-func (i *GitRepositoryInfo) CreateProvider(authConfigSvc auth.AuthConfigService, gitKind string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
+func (i *GitRepositoryInfo) CreateProvider(inCluster bool, authConfigSvc auth.AuthConfigService, gitKind string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	hostUrl := i.HostURLWithoutUser()
-	return CreateProviderForURL(authConfigSvc, gitKind, hostUrl, git, batchMode, in, out, errOut)
+	return CreateProviderForURL(inCluster, authConfigSvc, gitKind, hostUrl, git, batchMode, in, out, errOut)
 }
 
 // CreateProviderForURL creates the Git provider for the given git kind and host URL
-func CreateProviderForURL(authConfigSvc auth.AuthConfigService, gitKind string, hostUrl string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
+func CreateProviderForURL(inCluster bool, authConfigSvc auth.AuthConfigService, gitKind string, hostUrl string, git Gitter, batchMode bool,
+	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(hostUrl)
 	if gitKind != "" {
 		server.Kind = gitKind
 	}
 
-	var userAuth *auth.UserAuth
-	if server != nil {
-		userAuth = server.CurrentAuth()
-	}
-
+	userAuth := config.CurrentUser(server, inCluster)
 	if userAuth != nil && !userAuth.IsInvalid() {
 		return CreateProvider(server, userAuth, git)
 	} else {
