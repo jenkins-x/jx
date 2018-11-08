@@ -1378,14 +1378,18 @@ func (options *ImportOptions) fixMaven() error {
 		// lets ensure the mvn plugins are ok
 		out, err := options.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
 		if err != nil {
-			return fmt.Errorf("Failed to update maven plugin: %s output: %s", err, out)
+			return fmt.Errorf("Failed to update maven deploy plugin: %s output: %s", err, out)
+		}
+		out, err = options.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-surefire-plugin", "-Dversion=3.0.0-M1")
+		if err != nil {
+			return fmt.Errorf("Failed to update maven surefire plugin: %s output: %s", err, out)
 		}
 		if !options.DryRun {
 			err = options.Git().Add(dir, "pom.xml")
 			if err != nil {
 				return err
 			}
-			err = options.Git().CommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
+			err = options.Git().CommitIfChanges(dir, "fix:(plugins) use a better version of maven plugins")
 			if err != nil {
 				return err
 			}
