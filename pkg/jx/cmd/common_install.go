@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -1510,7 +1511,7 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 	// loop over each namespace and update the Jenkins URL if a Jenkins service is found
 	for _, n := range namespaces {
-		externalURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "jenkins", n)
+		externalURL, err := services.GetServiceURLFromName(o.KubeClientCached, "jenkins", n)
 		if err != nil {
 			// skip namespace if no Jenkins service found
 			continue
@@ -1672,7 +1673,7 @@ func (o *CommonOptions) createWebhookProw(gitURL string, gitProvider gits.GitPro
 	if err != nil {
 		return err
 	}
-	baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+	baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
 	if err != nil {
 		return err
 	}

@@ -90,7 +90,7 @@ func (o *TeamOptions) Run() error {
 		team = args[0]
 	}
 	if team == "" && !o.BatchMode {
-		pick, err := util.PickName(teamNames, "Pick Team: ", o.In, o.Out, o.Err)
+		pick, err := util.PickName(teamNames, "Pick Team: ", "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
