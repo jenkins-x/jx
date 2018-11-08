@@ -118,6 +118,7 @@ func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
 func (c *CommonOptions) SetDevNamespace(ns string) {
 	c.devNamespace = ns
 	c.currentNamespace = ns
+	c.KubeClientCached = nil
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
