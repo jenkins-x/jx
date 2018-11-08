@@ -89,6 +89,7 @@ const (
 	JXInstallConfig       = "jx-install-config"
 	CloudEnvValuesFile    = "myvalues.yaml"
 	CloudEnvSecretsFile   = "secrets.yaml"
+	CloudEnvSopsConfigFile = ".sops.yaml"
 	defaultInstallTimeout = "6000"
 
 	ServerlessJenkins   = "Serverless Jenkins"
@@ -705,6 +706,33 @@ func (options *InstallOptions) Run() error {
 
 	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
 	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
+	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
+
+	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
+	if err != nil {
+		return errors.Wrap(err, "failed to look for " + cloudEnvironmentSopsLocation)
+	}
+
+	if sopsFileExists {
+		log.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
+		// need to decrypt secrets now
+		err = options.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
+		if err != nil {
+			return errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
+		}
+
+		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(makefileDir, CloudEnvSecretsFile+".dec")
+		decryptedSecretsFile, err := util.FileExists(cloudEnvironmentSecretsDecryptedLocation)
+		if err != nil {
+			return errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)
+		}
+
+		if decryptedSecretsFile {
+			log.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
+			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
+		}
+	}
+
 	valueFiles := []string{cloudEnvironmentValuesLocation, cloudEnvironmentSecretsLocation, secretsFileName, adminSecretsFileName, configFileName}
 	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
@@ -906,9 +934,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to create the jx client")
 	}
 
-	err = options.updateJenkinsURL([]string{ns})
-	if err != nil {
-		log.Warnf("failed to update the Jenkins external URL")
+	if !options.Flags.Prow {
+		err = options.updateJenkinsURL([]string{ns})
+		if err != nil {
+			log.Warnf("failed to update the Jenkins external URL")
+		}
 	}
 
 	if !options.Flags.NoDefaultEnvironments {

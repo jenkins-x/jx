@@ -3,6 +3,7 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"net/url"
 	"os"
@@ -105,7 +106,7 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create the kube client")
 	}
-	url, err := kube.FindServiceURL(client, ns, kube.ServiceJenkins)
+	url, err := services.FindServiceURL(client, ns, kube.ServiceJenkins)
 	if err != nil {
 		// lets try the real environment
 		realNS, _, err := kube.GetDevNamespace(client, ns)
@@ -113,7 +114,7 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 			return "", errors.Wrapf(err, "failed to get the dev namespace from '%s' namespace", ns)
 		}
 		if realNS != ns {
-			url, err = kube.FindServiceURL(client, realNS, kube.ServiceJenkins)
+			url, err = services.FindServiceURL(client, realNS, kube.ServiceJenkins)
 			if err != nil {
 				return "", fmt.Errorf("%s in namespaces %s and %s", err, realNS, ns)
 			}
@@ -151,7 +152,7 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 		if err != nil {
 			return authConfigSvc, err
 		}
-		svcURL := kube.GetServiceURL(svc)
+		svcURL := services.GetServiceURL(svc)
 		if svcURL == "" {
 			return authConfigSvc, fmt.Errorf("unable to find external URL annotation on service %s in namespace %s", svc.Name, ns)
 		}

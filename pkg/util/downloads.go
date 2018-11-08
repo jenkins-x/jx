@@ -35,6 +35,11 @@ func DownloadFile(filepath string, url string) (err error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		err := fmt.Errorf("download of %s failed with return code %d", url, resp.StatusCode)
+		return err
+	}
+
 	// Writer the body to file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
