@@ -732,7 +732,7 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	valueFiles := []string{cloudEnvironmentValuesLocation, cloudEnvironmentSecretsLocation, secretsFileName, adminSecretsFileName, configFileName}
+	valueFiles := []string{cloudEnvironmentValuesLocation, secretsFileName, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
 	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
 		return errors.Wrap(err, "failed to append the myvalues.yaml file")
@@ -1232,7 +1232,7 @@ func (options *InstallOptions) waitForInstallToBeReady(ns string) error {
 		return err
 	}
 
-	log.Warnf("waiting for install to be ready, if this is the first time then it will take a while to download images")
+	log.Warnf("waiting for install to be ready, if this is the first time then it will take a while to download images\n")
 
 	return kube.WaitForAllDeploymentsToBeReady(client, ns, 30*time.Minute)
 

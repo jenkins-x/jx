@@ -29,7 +29,7 @@ func TestUnzip(t *testing.T) {
 	// files are sorted by ReadDir
 	assert.Equal(t, "file1.txt", files[0].Name())
 	assert.Equal(t, "file2.txt", files[1].Name())
-	for _, f:= range files {
+	for _, f := range files {
 		assertFileContents(t, filepath.Join(dest, f.Name()), strings.TrimSuffix(f.Name(), filepath.Ext(f.Name())))
 	}
 }

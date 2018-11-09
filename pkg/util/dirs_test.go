@@ -18,7 +18,7 @@ func TestJXBinaryLocationSuccess(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 	jxpath := filepath.Join(tempDir, "jx")
 	// resolving symlinks requires that the file exists (at least on windows...
-	_ , err = os.Create(jxpath)
+	_, err = os.Create(jxpath)
 	require.NoError(t, err, "[TEST SETUP] failed to create temp directory for test")
 
 	res, err := jXBinaryLocation(stubFunction(jxpath, nil))
@@ -34,8 +34,8 @@ func TestJXBinaryLocationFailure(t *testing.T) {
 	assert.Error(t, err, "Should error")
 }
 
-func stubFunction(str string, err error) func () (string, error) {
-	return func () (string, error) {
+func stubFunction(str string, err error) func() (string, error) {
+	return func() (string, error) {
 		return str, err
 	}
 }

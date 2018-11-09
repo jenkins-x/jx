@@ -128,7 +128,7 @@ func JXBinaryLocation() (string, error) {
 	return jXBinaryLocation(os.Executable)
 }
 
-func jXBinaryLocation(osExecutable func () (string, error)) (string, error) {
+func jXBinaryLocation(osExecutable func() (string, error)) (string, error) {
 	jxProcessBinary, err := osExecutable()
 	if err != nil {
 		logrus.Debugf("jxProcessBinary error %s", err)

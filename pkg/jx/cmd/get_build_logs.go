@@ -157,7 +157,6 @@ func (o *GetBuildLogsOptions) Run() error {
 	return o.tailBuild(name, &last)
 }
 
-
 func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) (gojenkins.Build, error) {
 	var last gojenkins.Build
 
@@ -197,7 +196,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 	}
 
 	if o.Wait {
-		err := o.retry(60, time.Second * 2, f)
+		err := o.retry(60, time.Second*2, f)
 		return last, err
 	} else {
 		err := f()
