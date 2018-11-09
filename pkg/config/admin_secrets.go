@@ -2,13 +2,15 @@ package config
 
 import (
 	"fmt"
-
+	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
+	"io/ioutil"
 	"strings"
 
 	"crypto/sha1"
 	"encoding/base64"
 
-	"github.com/Pallinder/go-randomdata"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -118,13 +120,7 @@ type AdminSecretsFlags struct {
 }
 
 func (s *AdminSecretsService) AddAdminSecretsValues(cmd *cobra.Command) {
-
 	cmd.Flags().StringVarP(&s.Flags.DefaultAdminPassword, "default-admin-password", "", "", "the default admin password to access Jenkins, Kubernetes Dashboard, Chartmuseum and Nexus")
-
-	if s.Flags.DefaultAdminPassword == "" {
-		s.Flags.DefaultAdminPassword = strings.ToLower(randomdata.SillyName())
-	}
-
 }
 
 func (c AdminSecretsConfig) String() (string, error) {
@@ -144,6 +140,11 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 		Nexus:           &Nexus{},
 	}
 
+	if s.Flags.DefaultAdminPassword == "" {
+		log.Infof("No default password set, generating a random one\n")
+		s.Flags.DefaultAdminPassword = strings.ToLower(randomdata.SillyName())
+	}
+
 	s.Secrets.Jenkins.JenkinsSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.User = "admin"
 	s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.Password = s.Flags.DefaultAdminPassword
@@ -154,6 +155,24 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	hash := HashSha(s.Flags.DefaultAdminPassword)
 
 	s.Secrets.IngressBasicAuth = fmt.Sprintf("admin:{SHA}%s", hash)
+	return nil
+}
+
+func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecrets string) error {
+	a := AdminSecretsConfig{}
+
+	data, err := ioutil.ReadFile(decryptedSecrets)
+	if err != nil {
+		return errors.Wrap(err, "unable to read file")
+	}
+
+	err = yaml.Unmarshal([]byte(data), &a)
+	if err != nil {
+		return errors.Wrap(err, "unable to unmarshall secrets")
+	}
+
+	s.Secrets = a
+	s.Flags.DefaultAdminPassword = s.Secrets.Jenkins.JenkinsSecret.Password
 	return nil
 }
 
