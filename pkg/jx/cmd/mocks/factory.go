@@ -13,6 +13,7 @@ import (
 	gits "github.com/jenkins-x/jx/pkg/gits"
 	cmd "github.com/jenkins-x/jx/pkg/jx/cmd"
 	table "github.com/jenkins-x/jx/pkg/table"
+	versioned1 "github.com/knative/build/pkg/client/clientset/versioned"
 	pegomock "github.com/petergtz/pegomock"
 	terminal "gopkg.in/AlecAivazis/survey.v1/terminal"
 	io "io"
@@ -306,6 +307,29 @@ func (mock *MockFactory) CreateJenkinsClient(_param0 kubernetes.Interface, _para
 	return ret0, ret1
 }
 
+func (mock *MockFactory) CreateKnativeBuildClient() (versioned1.Interface, string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateKnativeBuildClient", params, []reflect.Type{reflect.TypeOf((*versioned1.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 versioned1.Interface
+	var ret1 string
+	var ret2 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(versioned1.Interface)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(string)
+		}
+		if result[2] != nil {
+			ret2 = result[2].(error)
+		}
+	}
+	return ret0, ret1, ret2
+}
+
 func (mock *MockFactory) CreateKubeConfig() (*rest.Config, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
@@ -412,12 +436,12 @@ func (mock *MockFactory) ImpersonateUser(_param0 string) cmd.Factory {
 	return ret0
 }
 
-func (mock *MockFactory) IsInCDPIpeline() bool {
+func (mock *MockFactory) IsInCDPipeline() bool {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("IsInCDPIpeline", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("IsInCDPipeline", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
 	var ret0 bool
 	if len(result) != 0 {
 		if result[0] != nil {
@@ -865,6 +889,23 @@ func (c *Factory_CreateJenkinsClient_OngoingVerification) GetAllCapturedArgument
 	return
 }
 
+func (verifier *VerifierFactory) CreateKnativeBuildClient() *Factory_CreateKnativeBuildClient_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateKnativeBuildClient", params)
+	return &Factory_CreateKnativeBuildClient_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Factory_CreateKnativeBuildClient_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Factory_CreateKnativeBuildClient_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *Factory_CreateKnativeBuildClient_OngoingVerification) GetAllCapturedArguments() {
+}
+
 func (verifier *VerifierFactory) CreateKubeConfig() *Factory_CreateKubeConfig_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateKubeConfig", params)
@@ -1001,21 +1042,21 @@ func (c *Factory_ImpersonateUser_OngoingVerification) GetAllCapturedArguments() 
 	return
 }
 
-func (verifier *VerifierFactory) IsInCDPIpeline() *Factory_IsInCDPIpeline_OngoingVerification {
+func (verifier *VerifierFactory) IsInCDPipeline() *Factory_IsInCDPipeline_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsInCDPIpeline", params)
-	return &Factory_IsInCDPIpeline_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsInCDPipeline", params)
+	return &Factory_IsInCDPipeline_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Factory_IsInCDPIpeline_OngoingVerification struct {
+type Factory_IsInCDPipeline_OngoingVerification struct {
 	mock              *MockFactory
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Factory_IsInCDPIpeline_OngoingVerification) GetCapturedArguments() {
+func (c *Factory_IsInCDPipeline_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Factory_IsInCDPIpeline_OngoingVerification) GetAllCapturedArguments() {
+func (c *Factory_IsInCDPipeline_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierFactory) IsInCluster() *Factory_IsInCluster_OngoingVerification {

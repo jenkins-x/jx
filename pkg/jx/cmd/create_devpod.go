@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"io/ioutil"
 	"os"
@@ -187,7 +189,7 @@ func (o *CreateDevPodOptions) Run() error {
 		label = o.guessDevPodLabel(dir, labels)
 	}
 	if label == "" {
-		label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", o.In, o.Out, o.Err)
+		label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -205,7 +207,7 @@ func (o *CreateDevPodOptions) Run() error {
 	// If the user passed in Image Pull Secrets, patch them in to the edit env's default service account
 	if o.PullSecrets != "" {
 		imagePullSecrets := o.GetImagePullSecrets()
-		err = kube.PatchImagePullSecrets(client, editEnv.Spec.Namespace, "default", imagePullSecrets)
+		err = serviceaccount.PatchImagePullSecrets(client, editEnv.Spec.Namespace, "default", imagePullSecrets)
 		if err != nil {
 			return fmt.Errorf("Failed to add pull secrets %s to service account default in namespace %s: %v", imagePullSecrets, editEnv.Spec.Namespace, err)
 		}
@@ -612,7 +614,7 @@ func (o *CreateDevPodOptions) Run() error {
 	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
 
 	if !o.Sync {
-		theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
+		theiaServiceURL, err := services.FindServiceURL(client, curNs, theiaServiceName)
 		if err != nil {
 			return err
 		}
@@ -630,13 +632,13 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	exposePortServices, err := kube.GetServiceNames(client, curNs, fmt.Sprintf("%s-port-", pod.Name))
+	exposePortServices, err := services.GetServiceNames(client, curNs, fmt.Sprintf("%s-port-", pod.Name))
 	if err != nil {
 		return err
 	}
 	var exposePortURLs []string
 	for _, svcName := range exposePortServices {
-		u, err := kube.GetServiceURLFromName(client, svcName, curNs)
+		u, err := services.GetServiceURLFromName(client, svcName, curNs)
 		if err != nil {
 			return err
 		}

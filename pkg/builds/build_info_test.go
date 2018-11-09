@@ -33,7 +33,7 @@ func TestCreateBuildPodInfo(t *testing.T) {
 	}
 }
 
-func AssertLoadPod(t *testing.T, fileName string) (*corev1.Pod) {
+func AssertLoadPod(t *testing.T, fileName string) *corev1.Pod {
 	if tests.AssertFileExists(t, fileName) {
 		pod := &corev1.Pod{}
 		data, err := ioutil.ReadFile(fileName)

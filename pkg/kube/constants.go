@@ -33,7 +33,7 @@ const (
 	ChartBuildTemplates = "jenkins-x/jx-build-templates"
 
 	DefaultProwReleaseName           = "jx-prow"
-	DefaultKnativeBuildReleaseName   = "jx-knative-build"
+	DefaultKnativeBuildReleaseName   = "knative-build"
 	DefaultBuildTemplatesReleaseName = "jx-build-templates"
 
 	// Charts Single Sign-On addon

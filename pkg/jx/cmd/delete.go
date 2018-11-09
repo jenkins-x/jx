@@ -72,6 +72,7 @@ func NewCmdDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd.AddCommand(NewCmdDeleteUser(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteAws(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteVault(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteExtension(f, in, out, errOut))
 	return cmd
 }
 

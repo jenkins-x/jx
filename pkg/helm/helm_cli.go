@@ -462,3 +462,7 @@ func (h *HelmCLI) VersionWithArgs(tls bool, extraArgs ...string) (string, error)
 func (h *HelmCLI) PackageChart() error {
 	return h.runHelm("package", h.CWD)
 }
+
+func (h *HelmCLI) DecryptSecrets(location string) error {
+	return h.runHelm("secrets", "dec", location)
+}
