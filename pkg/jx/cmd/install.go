@@ -783,6 +783,10 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	for _, v := range valueFiles {
+		log.Infof("Adding values file %s\n", util.ColorInfo(v))
+	}
+
 	if !options.Flags.InstallOnly {
 		err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil, valueFiles)
 	} else {
@@ -868,6 +872,7 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
+
 	if !initOpts.Flags.RemoteTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.NoTiller = true
@@ -879,6 +884,7 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
+
 	if helmBinary != "helm" {
 		// default apps to use helm3 too
 		helmOptions := EditHelmBinOptions{}

@@ -76,6 +76,7 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to")
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading")
 	cmd.Flags().BoolVarP(&options.AlwaysUpgrade, "always-upgrade", "", false, "If set to true, jx will upgrade platform Helm chart even if requested version is already installed.")
+	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 
 	options.addCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
@@ -271,5 +272,22 @@ func (o *UpgradePlatformOptions) Run() error {
 		log.Infof("Adding values file %s\n", util.ColorInfo(v))
 	}
 
-	return o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &targetVersion, false, nil, false, false, values, valueFiles)
+	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &targetVersion, false, nil, false, false, values, valueFiles)
+	if err != nil {
+		return errors.Wrap(err, "unable to upgrade helm chart")
+	}
+
+	if o.Flags.CleanupTempFiles {
+		err = os.Remove(secretsFileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to cleanup the secrets file")
+		}
+
+		err = os.Remove(configFileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to cleanup the config file")
+		}
+	}
+
+	return nil
 }
