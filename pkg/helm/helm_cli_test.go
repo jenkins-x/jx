@@ -280,7 +280,7 @@ func TestSearchChartVersions(t *testing.T) {
 }
 
 func TestFindChart(t *testing.T) {
-	chartFile := "Chart.yaml"
+	chartFile := ", "
 	dir, err := ioutil.TempDir("/tmp", "charttest")
 	assert.NoError(t, err, "should be able to create a temporary dir")
 	defer os.RemoveAll(dir)

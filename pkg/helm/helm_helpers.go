@@ -16,9 +16,10 @@ import (
 )
 
 const (
+	ChartFileName        = "Chart.yaml"
 	RequirementsFileName = "requirements.yaml"
-	SecretsFileName = "secrets.yaml"
-	ValuesFileName = "values.yaml"
+	SecretsFileName      = "secrets.yaml"
+	ValuesFileName       = "values.yaml"
 
 	DefaultHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
 
@@ -266,14 +267,13 @@ func AppendMyValues(valueFiles []string) ([]string, error) {
 	return valueFiles, nil
 }
 
-
 // iterates through the input files and combines them into a single Values object and then write it to the output file
 func CombineValueFilesToFile(outFile string, inputFiles []string) error {
 	answer := chartutil.Values{}
 	for _, input := range inputFiles {
 		values, err := chartutil.ReadValuesFile(input)
 		if err != nil {
-		  return errors.Wrapf(err, "Failed to read helm values YAML file %s", input)
+			return errors.Wrapf(err, "Failed to read helm values YAML file %s", input)
 		}
 		sourceMap := answer.AsMap()
 		CombineMapTrees(sourceMap, values.AsMap())
@@ -291,7 +291,7 @@ func CombineValueFilesToFile(outFile string, inputFiles []string) error {
 }
 
 // CombineMapTrees recursively copies all the values from the input map into the destination map preserving any missing entries in the destination
-func CombineMapTrees(destination map[string]interface{}, input map[string]interface{})  {
+func CombineMapTrees(destination map[string]interface{}, input map[string]interface{}) {
 	for k, v := range input {
 		old, exists := destination[k]
 		if exists {
@@ -308,5 +308,5 @@ func CombineMapTrees(destination map[string]interface{}, input map[string]interf
 		}
 		destination[k] = v
 	}
-	
+
 }

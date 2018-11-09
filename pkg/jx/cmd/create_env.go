@@ -49,6 +49,7 @@ type CreateEnvOptions struct {
 	HelmValuesConfig       config.HelmValuesConfig
 	PromotionStrategy      string
 	NoGitOps               bool
+	NoDevNamespaceInit     bool
 	Prow                   bool
 	ForkEnvironmentGitRepo string
 	EnvJobCredentials      string

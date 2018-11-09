@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"io"
 	"io/ioutil"
 	"os"
@@ -36,6 +37,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// ModifySecretCallback a callback for modifying a Secret for a given name
+type ModifySecretCallback func(string, func(*core_v1.Secret) error) (*core_v1.Secret, error)
+
+// ModifyConfigMapCallback a callback for modifying a ConfigMap for a given name
+type ModifyConfigMapCallback func(string, func(*core_v1.ConfigMap) error) (*core_v1.ConfigMap, error)
+
 // InstallOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type InstallOptions struct {
@@ -47,6 +54,9 @@ type InstallOptions struct {
 
 	InitOptions InitOptions
 	Flags       InstallFlags
+
+	modifyConfigMapCallback ModifyConfigMapCallback
+	modifySecretCallback    ModifySecretCallback
 }
 
 // InstallFlags flags for the install command
@@ -85,7 +95,8 @@ const (
 	JX_GIT_USER  = "JX_GIT_USER"
 	// Want to use your own provider file? Change this line to point to your fork
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
-	JENKINS_X_PLATFORM_CHART       = "jenkins-x/jenkins-x-platform"
+	JENKINS_X_PLATFORM_CHART_NAME  = "jenkins-x-platform"
+	JENKINS_X_PLATFORM_CHART       = "jenkins-x/" + JENKINS_X_PLATFORM_CHART_NAME
 
 	GitSecretsFile         = "gitSecrets.yaml"
 	AdminSecretsFile       = "adminSecrets.yaml"
@@ -98,6 +109,14 @@ const (
 
 	ServerlessJenkins   = "Serverless Jenkins"
 	StaticMasterJenkins = "Static Master Jenkins"
+
+	GitOpsChartYAML = `name: env
+version: 0.0.1
+description: GitOps Environment for this Environment 
+maintainers:
+  - name: Team
+icon: https://www.cloudbees.com/sites/default/files/Jenkins_8.png
+`
 )
 
 var (
@@ -265,7 +284,6 @@ func (options *InstallOptions) Run() error {
 	}
 	options.devNamespace = ns
 
-
 	// lets avoid changing the environments in k8s if GitOps mode...
 	gitOpsEnvDir := ""
 	if options.Flags.GitOpsMode {
@@ -290,8 +308,13 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 		options.InitOptions.modifyDefEnvironmentFn = options.modifyDefEnvironmentFn
+		options.modifyConfigMapCallback = func(name string, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+			return gitOpsModifyConfigMap(templatesDir, name, nil, callback)
+		}
+		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
+			return gitOpsModifySecret(templatesDir, name, nil, callback)
+		}
 	}
-
 
 	if options.Flags.Provider == EKS {
 		var deps []string
@@ -729,29 +752,10 @@ func (options *InstallOptions) Run() error {
 	data[AdminSecretsFile] = []byte(adminSecrets)
 	data[GitSecretsFile] = []byte(secrets)
 
-	jxSecrets := &core_v1.Secret{
-		Data: data,
-		ObjectMeta: metav1.ObjectMeta{
-			Name: JXInstallConfig,
-		},
-	}
-	secretResources := options.KubeClientCached.CoreV1().Secrets(ns)
-	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
-	if oldSecret == nil || err != nil {
-		log.Infof("Creating secret %s in namespace %s\n", util.ColorInfo(JXInstallConfig), util.ColorInfo(ns))
-		_, err = secretResources.Create(jxSecrets)
-		if err != nil {
-			return errors.Wrap(err, "failed to create the jx secret resource")
-		}
-	} else {
-		oldSecret.Data = jxSecrets.Data
-		log.Infof("Updating secret %s in namespace %s\n", util.ColorInfo(JXInstallConfig), util.ColorInfo(ns))
-		_, err = secretResources.Update(oldSecret)
-		if err != nil {
-			return errors.Wrap(err, "failed to update the jx secret resource")
-		}
-	}
-
+	options.ModifySecret(JXInstallConfig, func(secret *core_v1.Secret) error {
+		secret.Data = data
+		return nil
+	})
 	log.Infof("Generated helm values %s\n", util.ColorInfo(configFileName))
 
 	timeout := options.Flags.Timeout
@@ -855,7 +859,7 @@ func (options *InstallOptions) Run() error {
 		Exposer: exposeController.Config.Exposer,
 	}
 	// save ingress config details to a configmap
-	_, err = kube.SaveAsConfigMap(options.KubeClientCached, kube.IngressConfigConfigmap, ns, ic)
+	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)
 	if err != nil {
 		return err
 	}
@@ -880,16 +884,17 @@ func (options *InstallOptions) Run() error {
 			}
 		}
 
-		_, err = kube.SaveAsConfigMap(options.KubeClientCached, kube.ConfigMapNameJXInstallConfig, ns, jxInstallConfig)
+		_, err = options.saveAsConfigMap(kube.ConfigMapNameJXInstallConfig, jxInstallConfig)
 		if err != nil {
 			return err
 		}
 	}
 
 	if options.Flags.GitOpsMode {
+		options.CreateEnvOptions.NoDevNamespaceInit = true
 		deps := []*helm.Dependency{
 			{
-				Name:       jxChart,
+				Name:       JENKINS_X_PLATFORM_CHART_NAME,
 				Version:    version,
 				Repository: DEFAULT_CHARTMUSEUM_URL,
 			},
@@ -898,6 +903,7 @@ func (options *InstallOptions) Run() error {
 			Dependencies: deps,
 		}
 
+		chartFile := filepath.Join(gitOpsEnvDir, helm.ChartFileName)
 		requirementsFile := filepath.Join(gitOpsEnvDir, helm.RequirementsFileName)
 		secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)
 		valuesFile := filepath.Join(gitOpsEnvDir, helm.ValuesFileName)
@@ -907,6 +913,11 @@ func (options *InstallOptions) Run() error {
 		}
 
 		fmt.Printf("Generated %s\n", requirementsFile)
+
+		err = ioutil.WriteFile(chartFile, []byte(GitOpsChartYAML), util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to save file %s", chartFile)
+		}
 
 		secretFiles := []string{}
 		onlyValueFiles := []string{}
@@ -930,7 +941,6 @@ func (options *InstallOptions) Run() error {
 		}
 
 		// TODO add secrets.yaml to .gitignore
-
 
 	} else {
 		if !options.Flags.InstallOnly {
@@ -1119,6 +1129,120 @@ func (options *InstallOptions) Run() error {
 	return nil
 }
 
+func (o *InstallOptions) ModifySecret(name string, callback func(*core_v1.Secret) error) (*core_v1.Secret, error) {
+	if o.modifySecretCallback == nil {
+		o.modifySecretCallback = func(name string, callback func(*core_v1.Secret) error) (*core_v1.Secret, error) {
+			kubeClient, ns, err := o.KubeClientAndDevNamespace()
+			if err != nil {
+				return nil, err
+			}
+			return kube.DefaultModifySecret(kubeClient, ns, name, callback, nil)
+		}
+	}
+	return o.modifySecretCallback(name, callback)
+}
+
+func (o *InstallOptions) ModifyConfigMap(name string, callback func(*core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+	if o.modifyConfigMapCallback == nil {
+		o.modifyConfigMapCallback = func(name string, callback func(*core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+			kubeClient, ns, err := o.KubeClientAndDevNamespace()
+			if err != nil {
+				return nil, err
+			}
+			return kube.DefaultModifyConfigMap(kubeClient, ns, name, callback, nil)
+		}
+	}
+	return o.modifyConfigMapCallback(name, callback)
+}
+
+// gitOpsModifyConfigMap provides a helper function to lazily create, modify and save the YAML file in the given directory
+func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.ConfigMap, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+	answer := core_v1.ConfigMap{}
+	fileName := filepath.Join(dir, name+"-configmap.yaml")
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return &answer, errors.Wrapf(err, "Could not check if file exists %s", fileName)
+	}
+	if exists {
+		// lets unmarshall the data
+		data, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			return &answer, errors.Wrapf(err, "Could not load file %s", fileName)
+		}
+		err = yaml.Unmarshal(data, &answer)
+		if err != nil {
+			return &answer, errors.Wrapf(err, "Failed to unmarshall YAML file %s", fileName)
+		}
+	} else if defaultResource != nil {
+		answer = *defaultResource
+	} else {
+		answer.Name = name
+	}
+	err = callback(&answer)
+	if err != nil {
+		return &answer, err
+	}
+	if answer.APIVersion == "" {
+		answer.APIVersion = "v1"
+	}
+	if answer.Kind == "" {
+		answer.Kind = "ConfigMap"
+	}
+	data, err := yaml.Marshal(&answer)
+	if err != nil {
+		return &answer, errors.Wrap(err, "Failed to marshal the Environment to YAML")
+	}
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return &answer, errors.Wrapf(err, "Could not save file %s", fileName)
+	}
+	return &answer, nil
+}
+
+// gitOpsModifySecret provides a helper function to lazily create, modify and save the YAML file in the given directory
+func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
+	answer := core_v1.Secret{}
+	fileName := filepath.Join(dir, name+"-secret.yaml")
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return &answer, errors.Wrapf(err, "Could not check if file exists %s", fileName)
+	}
+	if exists {
+		// lets unmarshall the data
+		data, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			return &answer, errors.Wrapf(err, "Could not load file %s", fileName)
+		}
+		err = yaml.Unmarshal(data, &answer)
+		if err != nil {
+			return &answer, errors.Wrapf(err, "Failed to unmarshall YAML file %s", fileName)
+		}
+	} else if defaultResource != nil {
+		answer = *defaultResource
+	} else {
+		answer.Name = name
+	}
+	err = callback(&answer)
+	if err != nil {
+		return &answer, err
+	}
+	if answer.APIVersion == "" {
+		answer.APIVersion = "v1"
+	}
+	if answer.Kind == "" {
+		answer.Kind = "Secret"
+	}
+	data, err := yaml.Marshal(&answer)
+	if err != nil {
+		return &answer, errors.Wrap(err, "Failed to marshal the Environment to YAML")
+	}
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return &answer, errors.Wrapf(err, "Could not save file %s", fileName)
+	}
+	return &answer, nil
+}
+
 // gitOpsModifyEnvironment provides a helper function to lazily create, modify and save the YAML file in the given directory
 func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Environment, callback func(*v1.Environment) error) (*v1.Environment, error) {
 	answer := v1.Environment{}
@@ -1143,6 +1267,12 @@ func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Env
 	err = callback(&answer)
 	if err != nil {
 		return &answer, err
+	}
+	if answer.APIVersion == "" {
+		answer.APIVersion = jenkinsio.GroupAndVersion
+	}
+	if answer.Kind == "" {
+		answer.Kind = "Environment"
 	}
 	data, err := yaml.Marshal(&answer)
 	if err != nil {
@@ -1618,4 +1748,12 @@ func (options *InstallOptions) dockerRegistryValue() (string, error) {
 		return "docker-registry.default.svc:5000", nil
 	}
 	return "", nil
+}
+
+func (options *InstallOptions) saveAsConfigMap(name string, config interface{}) (*core_v1.ConfigMap, error) {
+	return options.ModifyConfigMap(name, func(cm *core_v1.ConfigMap) error {
+		data := util.ToStringMapStringFromStruct(config)
+		cm.Data = data
+		return nil
+	})
 }

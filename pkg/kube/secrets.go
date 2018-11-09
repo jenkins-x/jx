@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -26,4 +27,43 @@ func GetSecrets(kubeClient kubernetes.Interface, ns string) (map[string]*v1.Secr
 	}
 	sort.Strings(names)
 	return m, names, nil
+}
+
+// DefaultModifySecret default implementation of a function to modify 
+func DefaultModifySecret(kubeClient kubernetes.Interface, ns string, name string, fn func(env *v1.Secret) error, defaultSecret *v1.Secret) (*v1.Secret, error) {
+	secretInterface := kubeClient.CoreV1().Secrets(ns)
+
+	create := false
+	secret, err := secretInterface.Get(name, metav1.GetOptions{})
+	if err != nil {
+		create = true
+		initialSecret := v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   name,
+				Labels: map[string]string{},
+				Annotations: map[string]string{},
+			},
+			Data: map[string][]byte{},
+		}
+		if defaultSecret != nil {
+			initialSecret = *defaultSecret
+		}
+		secret = &initialSecret
+	}
+	err = fn(secret)
+	if err != nil {
+	  return secret, err
+	}
+	if create {
+		_, err = secretInterface.Create(secret)
+		if err != nil {
+			return secret, errors.Wrapf(err, "Failed to create Secret %s in namespace %s", name, ns)
+		}
+		return secret, err
+	}
+	_, err = secretInterface.Update(secret)
+	if err != nil {
+		return secret, errors.Wrapf(err, "Failed to update Secret %s in namespace %s", name, ns)
+	}
+	return secret, nil
 }

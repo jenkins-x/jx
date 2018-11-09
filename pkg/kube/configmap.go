@@ -100,3 +100,42 @@ func GetConfigMaps(kubeClient kubernetes.Interface, ns string) (map[string]*v1.C
 	sort.Strings(names)
 	return m, names, nil
 }
+
+// DefaultModifyConfigMap default implementation of a function to modify
+func DefaultModifyConfigMap(kubeClient kubernetes.Interface, ns string, name string, fn func(env *v1.ConfigMap) error, defaultConfigMap *v1.ConfigMap) (*v1.ConfigMap, error) {
+	configMapInterface := kubeClient.CoreV1().ConfigMaps(ns)
+
+	create := false
+	configMap, err := configMapInterface.Get(name, metav1.GetOptions{})
+	if err != nil {
+		create = true
+		initialConfigMap := v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   name,
+				Labels: map[string]string{},
+				Annotations: map[string]string{},
+			},
+			Data: map[string]string{},
+		}
+		if defaultConfigMap != nil {
+			initialConfigMap = *defaultConfigMap
+		}
+		configMap = &initialConfigMap
+	}
+	err = fn(configMap)
+	if err != nil {
+	  return configMap, err
+	}
+	if create {
+		_, err = configMapInterface.Create(configMap)
+		if err != nil {
+			return configMap, errors.Wrapf(err, "Failed to create ConfigMap %s in namespace %s", name, ns)
+		}
+		return configMap, err
+	}
+	_, err = configMapInterface.Update(configMap)
+	if err != nil {
+		return configMap, errors.Wrapf(err, "Failed to update ConfigMap %s in namespace %s", name, ns)
+	}
+	return configMap, nil
+}

@@ -90,13 +90,18 @@ func TestInstallGitOps(t *testing.T) {
 	t.Logf("Completed install to dir %s", tempDir)
 
 	envDir := filepath.Join(tempDir, "jenkins-x-dev-environment", "env")
+	chartFile := filepath.Join(envDir, helm.ChartFileName)
 	reqFile := filepath.Join(envDir, helm.RequirementsFileName)
 	secretsFile := filepath.Join(envDir, helm.SecretsFileName)
 	valuesFile := filepath.Join(envDir, helm.ValuesFileName)
 
+	assert.FileExists(t, chartFile)
 	assert.FileExists(t, reqFile)
 	assert.FileExists(t, secretsFile)
 	assert.FileExists(t, valuesFile)
+	for _, name := range []string{"dev-env.yaml", "ingress-config-configmap.yaml", "jx-install-config-configmap.yaml", "jx-install-config-secret.yaml"} {
+		assert.FileExists(t, filepath.Join(envDir, "templates", name))
+	}
 
 	req, err := helm.LoadRequirementsFile(reqFile)
 	require.NoError(t, err)
@@ -105,7 +110,7 @@ func TestInstallGitOps(t *testing.T) {
 	dep0 := req.Dependencies[0]
 	require.NotNil(t, dep0, "first dependency in file %s", reqFile)
 	assert.Equal(t, cmd.DEFAULT_CHARTMUSEUM_URL, dep0.Repository, "requirement.dependency[0].Repository")
-	assert.Equal(t, cmd.JENKINS_X_PLATFORM_CHART, dep0.Name, "requirement.dependency[0].Name")
+	assert.Equal(t, cmd.JENKINS_X_PLATFORM_CHART_NAME, dep0.Name, "requirement.dependency[0].Name")
 	assert.NotEmpty(t, dep0.Version, "requirement.dependency[0].Version")
 
 	values, err := chartutil.ReadValuesFile(valuesFile)
