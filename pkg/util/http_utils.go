@@ -7,7 +7,7 @@ import (
 )
 
 // currently mirrors the default http.Transport values
-var JxDefaultTransport http.RoundTripper = &http.Transport{
+var jxDefaultTransport http.RoundTripper = &http.Transport{
 	DialContext: (&net.Dialer{
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
@@ -19,8 +19,8 @@ var JxDefaultTransport http.RoundTripper = &http.Transport{
 	ExpectContinueTimeout: 1 * time.Second,
 }
 
-var DEFAULT_HTTP_REQUEST_TIMEOUT = 30
-var defaultClient = http.Client{Transport: JxDefaultTransport, Timeout: time.Duration(DEFAULT_HTTP_REQUEST_TIMEOUT) * time.Second}
+const DEFAULT_HTTP_REQUEST_TIMEOUT = 30
+var defaultClient = http.Client{Transport: jxDefaultTransport, Timeout: time.Duration(DEFAULT_HTTP_REQUEST_TIMEOUT) * time.Second}
 
 // returns a Client reference with our default configuration
 func GetClient() (*http.Client) {
@@ -30,7 +30,7 @@ func GetClient() (*http.Client) {
 // returns a client with JX default transport and user specified timeout (in seconds)
 func GetClientWithTimeout(timeout int) (*http.Client){
 	client := http.Client{}
-	client.Transport = JxDefaultTransport
+	client.Transport = jxDefaultTransport
 	client.Timeout = time.Duration(timeout) * time.Second
 	return &client
 }
