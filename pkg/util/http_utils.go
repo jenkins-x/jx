@@ -38,7 +38,7 @@ func GetClientWithTimeout(timeout int) (*http.Client) {
 }
 
 // returns a client with user specified transport and timeout (in seconds)
-func GetCustomClient(transport *http.Transport, timeout int) (*http.Client) {
+func GetCustomClient(transport http.RoundTripper, timeout int) (*http.Client) {
 	return &(http.Client{Transport: transport, Timeout: time.Duration(timeout) * time.Second})
 }
 
