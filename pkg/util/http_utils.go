@@ -20,17 +20,10 @@ var JxDefaultTransport http.RoundTripper = &http.Transport{
 }
 
 var DEFAULT_HTTP_REQUEST_TIMEOUT = 30
-var isInitialized bool = false
-var defaultClient = http.Client{}
+var defaultClient = http.Client{Transport: JxDefaultTransport, Timeout: time.Duration(DEFAULT_HTTP_REQUEST_TIMEOUT) * time.Second}
 
 // returns a Client reference with our default configuration
 func GetClient() (*http.Client) {
-	if (!isInitialized) {
-		// initialize client with our default values
-		defaultClient.Transport = JxDefaultTransport
-		defaultClient.Timeout = time.Duration(DEFAULT_HTTP_REQUEST_TIMEOUT) * time.Second
-		isInitialized = true
-	}
 	return &defaultClient
 }
 
