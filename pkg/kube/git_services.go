@@ -19,7 +19,7 @@ import (
 
 // EnsureGitServiceExistsForHost ensures that there is a GitService CRD for the given host and kind
 func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, kind string, name string, gitUrl string, out io.Writer) error {
-	if kind == "" || (kind == "github" && gitUrl == gits.GitHubURL)|| gitUrl == "" {
+	if kind == "" || (kind == "github" && gitUrl == gits.GitHubURL) || gitUrl == "" {
 		return nil
 	}
 

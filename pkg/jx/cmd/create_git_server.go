@@ -38,7 +38,7 @@ type CreateGitServerOptions struct {
 
 	Name string
 	Kind string
-	URL string
+	URL  string
 }
 
 // NewCmdCreateGitServer creates a command object for the "create" command
@@ -124,7 +124,7 @@ func (o *CreateGitServerOptions) Run() error {
 
 	err = o.ensureGitServiceCRD(server)
 	if err != nil {
-	  return err
+		return err
 	}
 	return nil
 }

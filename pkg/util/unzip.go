@@ -26,6 +26,7 @@ func Unzip(src, dest string) error {
 	}
 	return nil
 }
+
 // Unzips the specified files from the archive
 // returns an error if any of the specified files are not found or a general issue occurred unzipping the archive
 func UnzipSpecificFiles(src, dest string, onlyFiles ...string) error {
@@ -41,7 +42,7 @@ func UnzipSpecificFiles(src, dest string, onlyFiles ...string) error {
 	}
 
 	for _, f := range r.File {
-		name := f.Name;
+		name := f.Name
 		if _, matched := m[name]; matched {
 			err = extractFile(dest, f)
 			if err != nil {
@@ -65,7 +66,7 @@ func UnzipSpecificFiles(src, dest string, onlyFiles ...string) error {
 		}
 	}
 	if failed {
-		return fmt.Errorf("the specified files where not found within the zip [%s]" , errString)
+		return fmt.Errorf("the specified files where not found within the zip [%s]", errString)
 	}
 
 	return nil

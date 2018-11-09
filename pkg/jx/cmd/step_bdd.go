@@ -282,7 +282,6 @@ func (o *StepBDDOptions) deleteTeam(team string) error {
 
 }
 
-
 func (o *StepBDDOptions) createDefaultCommonOptions() CommonOptions {
 	defaultOptions := o.CommonOptions
 	defaultOptions.BatchMode = true
@@ -295,8 +294,7 @@ func (o *StepBDDOptions) gitProviderUrl() string {
 	return o.InstallOptions.GitRepositoryOptions.ServerURL
 }
 
-
-// teamNameSuffix returns a team name suffix using the current branch + 
+// teamNameSuffix returns a team name suffix using the current branch +
 func (o *StepBDDOptions) teamNameSuffix() string {
 	repo := os.Getenv("REPO_NAME")
 	branch := os.Getenv("BRANCH_NAME")

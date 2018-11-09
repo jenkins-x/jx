@@ -3,14 +3,14 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
-	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
@@ -230,7 +230,7 @@ func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityIn
 		assert.NoError(t, err, "Could not find PipelineActivity %s", name)
 		return
 	}
-	waitTime,_ := time.ParseDuration("20s")
+	waitTime, _ := time.ParseDuration("20s")
 	end := time.Now().Add(waitTime)
 	for {
 		for _, step := range activity.Spec.Steps {
@@ -262,7 +262,7 @@ func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityIn
 			return
 		}
 		log.Infof("Waiting 1s for PullRequest in Enviroment %s\n", envName)
-		v,_ := time.ParseDuration("2s")
+		v, _ := time.ParseDuration("2s")
 		time.Sleep(v)
 		activity, _ = activities.Get(name, metav1.GetOptions{})
 	}
@@ -406,7 +406,6 @@ func SetPullRequestClosed(pr *gits.FakePullRequest) {
 
 	log.Infof("PR %s is now closed\n", pr.PullRequest.URL)
 }
-
 
 func AssertSetPullRequestMerged(t *testing.T, provider *gits.FakeProvider, repository *gits.FakeRepository, prNumber int) bool {
 	fakePR := repository.PullRequests[prNumber]

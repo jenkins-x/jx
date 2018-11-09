@@ -420,7 +420,7 @@ func (o *PreviewOptions) Run() error {
 	if o.ReleaseName == "" {
 		_, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
-		  return err
+			return err
 		}
 		if noTiller || helmTemplate {
 			o.ReleaseName = "preview"
@@ -771,7 +771,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 		return fmt.Errorf("No name could be defaulted for the Preview Environment. Please supply one!")
 	}
 	if o.Namespace == "" {
-		prefix :=  ns + "-"
+		prefix := ns + "-"
 		if len(prefix) > 63 {
 			return fmt.Errorf("Team namespace prefix is too long to create previews %s is too long. Must be no more than 60 character", prefix)
 		}
@@ -781,7 +781,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 			max := 62 - len(prefix)
 			size := len(o.Name)
 
-			o.Namespace = prefix + o.Name[size - max:]
+			o.Namespace = prefix + o.Name[size-max:]
 			log.Warnf("Due the name of the organsation and repository being too long (%s) we are going to trim it to make the preview namespace: %s", o.Name, o.Namespace)
 		}
 	}
