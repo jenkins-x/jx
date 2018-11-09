@@ -518,16 +518,6 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to read the git secrets from configuration")
 	}
 
-	err = options.AdminSecretsService.NewAdminSecretsConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the admin secret config service")
-	}
-
-	adminSecrets, err := options.AdminSecretsService.Secrets.String()
-	if err != nil {
-		return errors.Wrap(err, "failed to read the admin secrets")
-	}
-
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	if helmConfig.ExposeController.Config.Domain == "" {
 		helmConfig.ExposeController.Config.Domain = options.InitOptions.Flags.Domain
@@ -626,6 +616,55 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
 	}
 
+	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
+	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
+	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
+
+	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
+	if err != nil {
+		return errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
+	}
+
+	adminSecretsServiceInit := false
+
+	if sopsFileExists {
+		log.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
+		// need to decrypt secrets now
+		err = options.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
+		if err != nil {
+			return errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
+		}
+
+		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(makefileDir, CloudEnvSecretsFile+".dec")
+		decryptedSecretsFile, err := util.FileExists(cloudEnvironmentSecretsDecryptedLocation)
+		if err != nil {
+			return errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)
+		}
+
+		if decryptedSecretsFile {
+			log.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
+			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
+
+			err = options.AdminSecretsService.NewAdminSecretsConfigFromSecret(cloudEnvironmentSecretsDecryptedLocation)
+			if err != nil {
+				return errors.Wrap(err, "failed to create the admin secret config service from the decrypted secrets file")
+			}
+			adminSecretsServiceInit = true
+		}
+	}
+
+	if !adminSecretsServiceInit {
+		err = options.AdminSecretsService.NewAdminSecretsConfig()
+		if err != nil {
+			return errors.Wrap(err, "failed to create the admin secret config service")
+		}
+	}
+
+	adminSecrets, err := options.AdminSecretsService.Secrets.String()
+	if err != nil {
+		return errors.Wrap(err, "failed to read the admin secrets")
+	}
+
 	secretsFileName := filepath.Join(dir, GitSecretsFile)
 	err = ioutil.WriteFile(secretsFileName, []byte(secrets), 0644)
 	if err != nil {
@@ -658,12 +697,14 @@ func (options *InstallOptions) Run() error {
 	secretResources := options.KubeClientCached.CoreV1().Secrets(ns)
 	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
 	if oldSecret == nil || err != nil {
+		log.Infof("Creating secret %s in namespace %s\n", util.ColorInfo(JXInstallConfig), util.ColorInfo(ns))
 		_, err = secretResources.Create(jxSecrets)
 		if err != nil {
 			return errors.Wrap(err, "failed to create the jx secret resource")
 		}
 	} else {
 		oldSecret.Data = jxSecrets.Data
+		log.Infof("Updating secret %s in namespace %s\n", util.ColorInfo(JXInstallConfig), util.ColorInfo(ns))
 		_, err = secretResources.Update(oldSecret)
 		if err != nil {
 			return errors.Wrap(err, "failed to update the jx secret resource")
@@ -710,35 +751,6 @@ func (options *InstallOptions) Run() error {
 	err = options.Helm().UpdateRepo()
 	if err != nil {
 		return errors.Wrap(err, "failed to update the helm repo")
-	}
-
-	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
-	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
-	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
-
-	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
-	if err != nil {
-		return errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
-	}
-
-	if sopsFileExists {
-		log.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
-		// need to decrypt secrets now
-		err = options.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
-		if err != nil {
-			return errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
-		}
-
-		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(makefileDir, CloudEnvSecretsFile+".dec")
-		decryptedSecretsFile, err := util.FileExists(cloudEnvironmentSecretsDecryptedLocation)
-		if err != nil {
-			return errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)
-		}
-
-		if decryptedSecretsFile {
-			log.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
-			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
-		}
 	}
 
 	valueFiles := []string{cloudEnvironmentValuesLocation, secretsFileName, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
@@ -790,6 +802,10 @@ func (options *InstallOptions) Run() error {
 		} else {
 			log.Infoln("tiller pod running")
 		}
+	}
+
+	for _, v := range valueFiles {
+		options.Debugf("Adding values file %s\n", util.ColorInfo(v))
 	}
 
 	if !options.Flags.InstallOnly {
@@ -877,6 +893,7 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
+
 	if !initOpts.Flags.RemoteTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.NoTiller = true
@@ -888,6 +905,7 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
+
 	if helmBinary != "helm" {
 		// default apps to use helm3 too
 		helmOptions := EditHelmBinOptions{}
