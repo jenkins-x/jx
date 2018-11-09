@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
+	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,6 +81,7 @@ type CommonOptions struct {
 	currentNamespace    string
 	devNamespace        string
 	jxClient            versioned.Interface
+	knbClient           buildclient.Interface
 	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
@@ -192,6 +194,23 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 		}
 	}
 	return o.jxClient, o.currentNamespace, nil
+}
+
+func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, error) {
+	if o.Factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
+	if o.knbClient == nil {
+		knbClient, ns, err := o.Factory.CreateKnativeBuildClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.knbClient = knbClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	return o.knbClient, o.currentNamespace, nil
 }
 
 func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string, error) {
