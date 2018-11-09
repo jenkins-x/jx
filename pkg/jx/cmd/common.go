@@ -37,6 +37,8 @@ import (
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
 )
 
 const (
@@ -54,6 +56,8 @@ const (
 	exposecontroller        = "exposecontroller"
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
+
+type ModifyDevEnviromentFn func(callback func(env *jenkinsv1.Environment) error) error
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
@@ -87,6 +91,7 @@ type CommonOptions struct {
 	helm                helm.Helmer
 	Kuber               kube.Kuber
 	vaultOperatorClient vaultoperatorclient.Interface
+	modifyDefEnvironmentFn ModifyDevEnviromentFn
 
 	Prow
 }

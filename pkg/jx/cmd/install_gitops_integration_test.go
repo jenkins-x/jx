@@ -3,8 +3,10 @@
 package cmd_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -46,6 +48,7 @@ func TestInstallGitOps(t *testing.T) {
 		Err: os.Stderr,
 	}
 	o := cmd.CreateInstallOptions(co.Factory, co.In, co.Out, co.Err)
+
 	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{
 			clusterAdminRole,
@@ -55,8 +58,20 @@ func TestInstallGitOps(t *testing.T) {
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
+
 	o.InitOptions.CommonOptions = o.CommonOptions
 	o.CreateEnvOptions.CommonOptions = o.CommonOptions
+
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	require.NoError(t, err, "failed to create JXClient")
+	kubeClient, _, err := o.KubeClient()
+	require.NoError(t, err, "failed to create KubeClient")
+
+	// lets remove the default generated Environment so we can assert that we don't create any environments
+	// via: jx import --gitops
+	jxClient.JenkinsV1().Environments(ns).Delete(kube.LabelValueDevEnvironment, nil)
+	assertNoEnvironments(t, jxClient, ns)
+
 	o.Flags.Provider = cmd.GKE
 	o.Flags.Dir = tempDir
 	o.Flags.GitOpsMode = true
@@ -100,6 +115,21 @@ func TestInstallGitOps(t *testing.T) {
 	secrets, err := chartutil.ReadValuesFile(secretsFile)
 	require.NoError(t, err, "Failed to load secrets file", secretsFile)
 	assertValuesHasPathValue(t, "secrets.yaml", secrets, "PipelineSecrets")
+
+
+	// lets verify that we don't have any created resources in the cluster - as everything should be created in the file system
+	assertNoEnvironments(t, jxClient, ns)
+
+	_, cmNames, _ := kube.GetConfigMaps(kubeClient, ns)
+	assert.Empty(t, cmNames, "Expected no ConfigMap names in namespace %s", ns)
+
+	_, secretNames, _ := kube.GetSecrets(kubeClient, ns)
+	assert.Empty(t, secretNames, "Expected no Secret names in namespace %s", ns)
+}
+
+func assertNoEnvironments(t *testing.T, jxClient versioned.Interface, ns string) {
+	_, envNames, _ := kube.GetEnvironments(jxClient, ns)
+	assert.Empty(t, envNames, "Expected no Environment names in namespace %s", ns)
 }
 
 // assertValuesHasPathValue asserts that the Values object has the given 

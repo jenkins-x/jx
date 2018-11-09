@@ -2,10 +2,9 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
-	"io"
-
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
 
 	"fmt"
 

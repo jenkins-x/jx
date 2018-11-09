@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -252,6 +253,46 @@ func (options *InstallOptions) Run() error {
 	originalGitServer := options.GitRepositoryOptions.ServerURL
 	originalGitToken := options.GitRepositoryOptions.ApiToken
 
+	client, originalNs, err := options.KubeClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the kube client")
+	}
+	options.KubeClientCached = client
+
+	ns := options.Flags.Namespace
+	if ns == "" {
+		ns = originalNs
+	}
+	options.devNamespace = ns
+
+
+	// lets avoid changing the environments in k8s if GitOps mode...
+	gitOpsEnvDir := ""
+	if options.Flags.GitOpsMode {
+		var err error
+		if options.Flags.Dir == "" {
+			options.Flags.Dir, err = os.Getwd()
+			if err != nil {
+				return err
+			}
+		}
+		gitOpsDir := filepath.Join(options.Flags.Dir, "jenkins-x-dev-environment")
+		gitOpsEnvDir = filepath.Join(gitOpsDir, "env")
+		templatesDir := filepath.Join(gitOpsEnvDir, "templates")
+		err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to make GitOps templates directory %s", templatesDir)
+		}
+
+		options.modifyDefEnvironmentFn = func(callback func(env *v1.Environment) error) error {
+			defaultEnv := kube.CreateDefaultDevEnvironment(ns)
+			_, err := gitOpsModifyEnvironment(templatesDir, kube.LabelValueDevEnvironment, defaultEnv, callback)
+			return err
+		}
+		options.InitOptions.modifyDefEnvironmentFn = options.modifyDefEnvironmentFn
+	}
+
+
 	if options.Flags.Provider == EKS {
 		var deps []string
 		d := binaryShouldBeInstalled("eksctl")
@@ -268,12 +309,6 @@ func (options *InstallOptions) Run() error {
 			os.Exit(-1)
 		}
 	}
-
-	client, originalNs, err := options.KubeClient()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the kube client")
-	}
-	options.KubeClientCached = client
 
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
@@ -352,18 +387,6 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
 		}
-	}
-
-	ns := options.Flags.Namespace
-	if ns == "" {
-		ns = originalNs
-	}
-	options.devNamespace = ns
-
-	namespaceLabels := map[string]string{kube.LabelTeam: ns, kube.LabelEnvironment: kube.LabelValueDevEnvironment}
-	err = kube.EnsureNamespaceCreated(client, ns, namespaceLabels, nil)
-	if err != nil {
-		return fmt.Errorf("Failed to ensure the namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ns, err)
 	}
 
 	if !options.Flags.DisableSetKubeContext {
@@ -864,19 +887,6 @@ func (options *InstallOptions) Run() error {
 	}
 
 	if options.Flags.GitOpsMode {
-		if options.Flags.Dir == "" {
-			options.Flags.Dir, err = os.Getwd()
-			if err != nil {
-				return err
-			}
-		}
-		gitOpsDir := filepath.Join(options.Flags.Dir, "jenkins-x-dev-environment")
-		envDir := filepath.Join(gitOpsDir, "env")
-		templatesDir := filepath.Join(envDir, "templates")
-		err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to make GitOps templates directory %s", templatesDir)
-		}
 		deps := []*helm.Dependency{
 			{
 				Name:       jxChart,
@@ -888,9 +898,9 @@ func (options *InstallOptions) Run() error {
 			Dependencies: deps,
 		}
 
-		requirementsFile := filepath.Join(envDir, helm.RequirementsFileName)
-		secretsFile := filepath.Join(envDir, helm.SecretsFileName)
-		valuesFile := filepath.Join(envDir, helm.ValuesFileName)
+		requirementsFile := filepath.Join(gitOpsEnvDir, helm.RequirementsFileName)
+		secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)
+		valuesFile := filepath.Join(gitOpsEnvDir, helm.ValuesFileName)
 		err = helm.SaveRequirementsFile(requirementsFile, requirements)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to save GitOps helm requirements file %s", requirementsFile)
@@ -920,6 +930,7 @@ func (options *InstallOptions) Run() error {
 		}
 
 		// TODO add secrets.yaml to .gitignore
+
 
 	} else {
 		if !options.Flags.InstallOnly {
@@ -1106,6 +1117,42 @@ func (options *InstallOptions) Run() error {
 	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
 	return nil
+}
+
+// gitOpsModifyEnvironment provides a helper function to lazily create, modify and save the YAML file in the given directory
+func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Environment, callback func(*v1.Environment) error) (*v1.Environment, error) {
+	answer := v1.Environment{}
+	fileName := filepath.Join(dir, name+"-env.yaml")
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return &answer, errors.Wrapf(err, "Could not check if file exists %s", fileName)
+	}
+	if exists {
+		// lets unmarshall the data
+		data, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			return &answer, errors.Wrapf(err, "Could not load file %s", fileName)
+		}
+		err = yaml.Unmarshal(data, &answer)
+		if err != nil {
+			return &answer, errors.Wrapf(err, "Failed to unmarshall YAML file %s", fileName)
+		}
+	} else {
+		answer = *defaultEnvironment
+	}
+	err = callback(&answer)
+	if err != nil {
+		return &answer, err
+	}
+	data, err := yaml.Marshal(&answer)
+	if err != nil {
+		return &answer, errors.Wrap(err, "Failed to marshal the Environment to YAML")
+	}
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return &answer, errors.Wrapf(err, "Could not save file %s", fileName)
+	}
+	return &answer, nil
 }
 
 func isOpenShiftProvider(provider string) bool {

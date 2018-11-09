@@ -31,31 +31,18 @@ const (
 
 // TeamSettings returns the team settings
 func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return nil, err
-	}
-	err = o.registerEnvironmentCRD()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to register Environment CRD: %s", err)
-	}
-
-	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to setup dev Environment in namespace %s: %s", ns, err)
-	}
-	if env == nil {
-		return nil, fmt.Errorf("No Development environment found for namespace %s", ns)
-	}
-
-	teamSettings := &env.Spec.TeamSettings
-	if teamSettings.BuildPackURL == "" {
-		teamSettings.BuildPackURL = JenkinsBuildPackURL
-	}
-	if teamSettings.BuildPackRef == "" {
-		teamSettings.BuildPackRef = defaultBuildPackRef
-	}
-	return teamSettings, nil
+	var teamSettings *v1.TeamSettings
+	err := o.ModifyDevEnvironment(func(env *v1.Environment) error {
+		teamSettings = &env.Spec.TeamSettings
+		if teamSettings.BuildPackURL == "" {
+			teamSettings.BuildPackURL = JenkinsBuildPackURL
+		}
+		if teamSettings.BuildPackRef == "" {
+			teamSettings.BuildPackRef = defaultBuildPackRef
+		}
+		return nil
+	})
+	return teamSettings, err
 }
 
 // TeamBranchPatterns returns the team branch patterns used to enable CI/CD on branches when creating/importing projects
@@ -98,19 +85,22 @@ func (o *CommonOptions) TeamHelmBin() (string, bool, bool, error) {
 
 // ModifyDevEnvironment modifies the development environment settings
 func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) error) error {
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the API extensions client")
+	if o.modifyDefEnvironmentFn == nil {
+		o.modifyDefEnvironmentFn = o.defaultModifyDevEnvironment
 	}
-	kube.RegisterEnvironmentCRD(apisClient)
+	return o.modifyDefEnvironmentFn(callback)
+}
+
+// ModifyDevEnvironment modifies the development environment settings
+func (o *CommonOptions) defaultModifyDevEnvironment(callback func(env *v1.Environment) error) error {
+	err := o.registerEnvironmentCRD()
+	if err != nil {
+		return errors.Wrap(err, "failed to register the environment CRD")
+	}
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the jx client")
-	}
-	err = o.registerEnvironmentCRD()
-	if err != nil {
-		return errors.Wrap(err, "failed to register the environment CRD")
 	}
 
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
