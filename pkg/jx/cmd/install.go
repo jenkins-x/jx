@@ -69,6 +69,8 @@ type InstallFlags struct {
 	Version                  string
 	Prow                     bool
 	DisableSetKubeContext    bool
+	GitOpsMode               bool
+	Dir                      string
 }
 
 // Secrets struct for secrets
@@ -82,6 +84,7 @@ const (
 	JX_GIT_USER  = "JX_GIT_USER"
 	// Want to use your own provider file? Change this line to point to your fork
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
+	JENKINS_X_PLATFORM_CHART       = "jenkins-x/jenkins-x-platform"
 
 	GitSecretsFile         = "gitSecrets.yaml"
 	AdminSecretsFile       = "adminSecrets.yaml"
@@ -177,7 +180,13 @@ func CreateInstallOptions(f Factory, in terminal.FileReader, out terminal.FileWr
 		CommonOptions:        commonOptions,
 		CreateEnvOptions: CreateEnvOptions{
 			HelmValuesConfig: config.HelmValuesConfig{
-				ExposeController: &config.ExposeController{},
+				ExposeController: &config.ExposeController{
+					Config: config.ExposeControllerConfig{
+						HTTP:    "true",
+						TLSAcme: "false",
+						Exposer: "Ingress",
+					},
+				},
 			},
 			Options: v1.Environment{
 				ObjectMeta: metav1.ObjectMeta{},
@@ -224,6 +233,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow")
+	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Sets up the local file system for GitOps so that the current installation can be configured or upgraded at any time via GitOps")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -781,7 +791,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to convert the helm install timeout value")
 	}
 	options.Helm().SetCWD(makefileDir)
-	jxChart := "jenkins-x/jenkins-x-platform"
+	jxChart := JENKINS_X_PLATFORM_CHART
 	jxRelName := "jenkins-x"
 
 	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
@@ -809,31 +819,6 @@ func (options *InstallOptions) Run() error {
 			return errors.Wrap(err, msg)
 		} else {
 			log.Infoln("tiller pod running")
-		}
-	}
-
-	for _, v := range valueFiles {
-		options.Debugf("Adding values file %s\n", util.ColorInfo(v))
-	}
-
-	if !options.Flags.InstallOnly {
-		err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil, valueFiles)
-	} else {
-		err = options.Helm().InstallChart(jxChart, jxRelName, ns, &version, &timeoutInt, nil, valueFiles)
-	}
-	if err != nil {
-		return errors.Wrap(err, "failed to install/upgrade the jenkins-x platform chart")
-	}
-
-	if options.Flags.CleanupTempFiles {
-		err = os.Remove(secretsFileName)
-		if err != nil {
-			return errors.Wrap(err, "failed to cleanup the secrets file")
-		}
-
-		err = os.Remove(configFileName)
-		if err != nil {
-			return errors.Wrap(err, "failed to cleanup the config file")
 		}
 	}
 
@@ -878,11 +863,92 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	err = options.waitForInstallToBeReady(ns)
-	if err != nil {
-		return errors.Wrap(err, "failed to wait for jenkinx-x chart installation to be ready")
+	if options.Flags.GitOpsMode {
+		if options.Flags.Dir == "" {
+			options.Flags.Dir, err = os.Getwd()
+			if err != nil {
+				return err
+			}
+		}
+		gitOpsDir := filepath.Join(options.Flags.Dir, "jenkins-x-dev-environment")
+		envDir := filepath.Join(gitOpsDir, "env")
+		templatesDir := filepath.Join(envDir, "templates")
+		err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to make GitOps templates directory %s", templatesDir)
+		}
+		deps := []*helm.Dependency{
+			{
+				Name:       jxChart,
+				Version:    version,
+				Repository: DEFAULT_CHARTMUSEUM_URL,
+			},
+		}
+		requirements := &helm.Requirements{
+			Dependencies: deps,
+		}
+
+		requirementsFile := filepath.Join(envDir, helm.RequirementsFileName)
+		secretsFile := filepath.Join(envDir, helm.SecretsFileName)
+		valuesFile := filepath.Join(envDir, helm.ValuesFileName)
+		err = helm.SaveRequirementsFile(requirementsFile, requirements)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to save GitOps helm requirements file %s", requirementsFile)
+		}
+
+		fmt.Printf("Generated %s\n", requirementsFile)
+
+		secretFiles := []string{}
+		onlyValueFiles := []string{}
+
+		for _, vf := range valueFiles {
+			if strings.HasSuffix(strings.ToLower(vf), "secrets.yaml") {
+				secretFiles = append(secretFiles, vf)
+			} else {
+				onlyValueFiles = append(onlyValueFiles, vf)
+			}
+		}
+
+		// lets combine the various values and secretes files
+		err = helm.CombineValueFilesToFile(secretsFile, secretFiles)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretFiles, ", "))
+		}
+		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(onlyValueFiles, ", "))
+		}
+
+		// TODO add secrets.yaml to .gitignore
+
+	} else {
+		if !options.Flags.InstallOnly {
+			err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil, valueFiles)
+		} else {
+			err = options.Helm().InstallChart(jxChart, jxRelName, ns, &version, &timeoutInt, nil, valueFiles)
+		}
+		if err != nil {
+			return errors.Wrap(err, "failed to install/upgrade the jenkins-x platform chart")
+		}
+
+		err = options.waitForInstallToBeReady(ns)
+		if err != nil {
+			return errors.Wrap(err, "failed to wait for jenkinx-x chart installation to be ready")
+		}
+		log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 	}
-	log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
+
+	if options.Flags.CleanupTempFiles {
+		err = os.Remove(secretsFileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to cleanup the secrets file")
+		}
+
+		err = os.Remove(configFileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to cleanup the config file")
+		}
+	}
 
 	if options.Flags.Prow {
 		callback := func(env *v1.Environment) error {
@@ -901,7 +967,6 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
-
 	if !initOpts.Flags.RemoteTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.NoTiller = true
@@ -913,7 +978,6 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
-
 	if helmBinary != "helm" {
 		// default apps to use helm3 too
 		helmOptions := EditHelmBinOptions{}
@@ -928,54 +992,58 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	addonConfig, err := addon.LoadAddonsConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to load the addons configuration")
-	}
+	if !options.Flags.GitOpsMode {
+		addonConfig, err := addon.LoadAddonsConfig()
+		if err != nil {
+			return errors.Wrap(err, "failed to load the addons configuration")
+		}
 
-	for _, ac := range addonConfig.Addons {
-		if ac.Enabled {
-			err = options.installAddon(ac.Name)
-			if err != nil {
-				return fmt.Errorf("failed to install addon %s: %s", ac.Name, err)
+		for _, ac := range addonConfig.Addons {
+			if ac.Enabled {
+				err = options.installAddon(ac.Name)
+				if err != nil {
+					return fmt.Errorf("failed to install addon %s: %s", ac.Name, err)
+				}
 			}
 		}
 	}
 
 	options.logAdminPassword()
 
-	if !options.Flags.Prow {
-		log.Info("Getting Jenkins API Token\n")
-		err = options.retry(3, 2*time.Second, func() (err error) {
-			options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
-			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
-			options.CreateJenkinsUserOptions.UseBrowser = true
-			if options.BatchMode {
-				options.CreateJenkinsUserOptions.BatchMode = true
-				options.CreateJenkinsUserOptions.Headless = true
-				log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
+	if !options.Flags.GitOpsMode {
+		if !options.Flags.Prow {
+			log.Info("Getting Jenkins API Token\n")
+			err = options.retry(3, 2*time.Second, func() (err error) {
+				options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
+				options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
+				options.CreateJenkinsUserOptions.UseBrowser = true
+				if options.BatchMode {
+					options.CreateJenkinsUserOptions.BatchMode = true
+					options.CreateJenkinsUserOptions.Headless = true
+					log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
+				}
+				err = options.CreateJenkinsUserOptions.Run()
+				return
+			})
+			if err != nil {
+				return errors.Wrap(err, "failed to get the Jenkins API token")
 			}
-			err = options.CreateJenkinsUserOptions.Run()
-			return
-		})
-		if err != nil {
-			return errors.Wrap(err, "failed to get the Jenkins API token")
+		}
+
+		if !options.Flags.Prow {
+			err = options.updateJenkinsURL([]string{ns})
+			if err != nil {
+				log.Warnf("failed to update the Jenkins external URL")
+			}
 		}
 	}
 
-	jxClient, _, err := options.JXClient()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the jx client")
-	}
-
-	if !options.Flags.Prow {
-		err = options.updateJenkinsURL([]string{ns})
+	if !options.Flags.NoDefaultEnvironments || !options.Flags.GitOpsMode {
+		jxClient, _, err := options.JXClient()
 		if err != nil {
-			log.Warnf("failed to update the Jenkins external URL")
+			return errors.Wrap(err, "failed to create the jx client")
 		}
-	}
 
-	if !options.Flags.NoDefaultEnvironments {
 		// lets only recreate the environments if its the first time we run this
 		_, envNames, err := kube.GetEnvironments(jxClient, ns)
 		if err != nil || len(envNames) <= 1 {
