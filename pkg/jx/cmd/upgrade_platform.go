@@ -283,9 +283,11 @@ func (o *UpgradePlatformOptions) Run() error {
 			return errors.Wrap(err, "failed to cleanup the secrets file")
 		}
 
-		err = os.Remove(configFileName)
-		if err != nil {
-			return errors.Wrap(err, "failed to cleanup the config file")
+		if !configFileNameExists {
+			err = os.Remove(configFileName)
+			if err != nil {
+				return errors.Wrap(err, "failed to cleanup the config file")
+			}
 		}
 	}
 
