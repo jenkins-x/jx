@@ -1639,11 +1639,8 @@ func (o *CommonOptions) installProw() error {
 
 	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
 
-	kvalues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
-	kvalues = append(kvalues, setValues...)
-
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, kvalues, nil)
+		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values, nil)
 		return nil
 	})
 
