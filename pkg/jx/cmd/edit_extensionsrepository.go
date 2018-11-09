@@ -87,7 +87,8 @@ func NewCmdEditExtensionsRepository(f Factory, in terminal.FileReader, out termi
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryHelmUsername, optionExtensionsRepositoryHelmUsername, "", "", "The extensions repository Helm Chart Username to use")
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryHelmPassword, optionExtensionsRepositoryHelmPassword, "", "", "The extensions repository Helm Chart Password to use")
 
-	options.addCommonFlags(cmd)
+	// TODO enable this
+	// options.addCommonFlags(cmd)
 	return cmd
 }
 
