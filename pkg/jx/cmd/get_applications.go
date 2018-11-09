@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"os/user"
 	"sort"
@@ -209,9 +210,9 @@ func (o *GetApplicationsOptions) Run() error {
 				row = append(row, pods)
 			}
 			if !o.HideUrl {
-				url, _ := kube.FindServiceURL(kubeClient, d.Namespace, appName)
+				url, _ := services.FindServiceURL(kubeClient, d.Namespace, appName)
 				if url == "" {
-					url, _ = kube.FindServiceURL(kubeClient, d.Namespace, d.Name)
+					url, _ = services.FindServiceURL(kubeClient, d.Namespace, d.Name)
 				}
 				if url == "" {
 					// handle helm3
@@ -221,7 +222,7 @@ func (o *GetApplicationsOptions) Run() error {
 						if idx > 0 {
 							svcName := chart[0:idx]
 							if svcName != appName && svcName != d.Name {
-								url, _ = kube.FindServiceURL(kubeClient, d.Namespace, svcName)
+								url, _ = services.FindServiceURL(kubeClient, d.Namespace, svcName)
 							}
 						}
 					}

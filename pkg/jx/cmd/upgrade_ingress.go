@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 	"io"
 	"strings"
@@ -251,7 +252,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
+			if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
 				if o.isIngressForServices(&i) {
 					existingIngressNames[i.Name] = i.Namespace
 				}
@@ -272,7 +273,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 				return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 			}
 			for _, i := range ings.Items {
-				if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
+				if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
 					if o.isIngressForServices(&i) {
 						existingIngressNames[i.Name] = i.Namespace
 					}
@@ -290,7 +291,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			if i.Annotations[kube.ExposeGeneratedByAnnotation] == Exposecontroller {
+			if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
 				if o.isIngressForServices(&i) {
 					existingIngressNames[i.Name] = i.Namespace
 				}
@@ -332,12 +333,12 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 		// carry on as it just means we dont have any defaults
 	}
 
-	o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer, o.In, o.Out, o.Err)
+	o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
 
-	o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true, o.In, o.Out, o.Err)
+	o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -348,7 +349,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 
 		if o.IngressConfig.TLS {
 			log.Infof("If testing LetsEncrypt you should use staging as you may be rate limited using production.")
-			clusterIssuer, err := util.PickNameWithDefault([]string{"staging", "production"}, "Use LetsEncrypt staging or production?", "production", o.In, o.Out, o.Err)
+			clusterIssuer, err := util.PickNameWithDefault([]string{"staging", "production"}, "Use LetsEncrypt staging or production?", "production", "", o.In, o.Out, o.Err)
 			// if the cluster issuer is production the string needed by letsencrypt is prod
 			if clusterIssuer == "production" {
 				clusterIssuer = "prod"
@@ -367,7 +368,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 				o.IngressConfig.Email = strings.TrimSpace(email1)
 			}
 
-			o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true, o.In, o.Out, o.Err)
+			o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -410,10 +411,10 @@ func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
 	return nil
 }
 
-// AnnotateExposedServicesWithCertManager annotates exposed service with cert manager
-func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(services ...string) error {
+// AnnotateExposedServicesWithCertManager annotates exposed services with cert manager
+func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(svcs ...string) error {
 	for _, n := range o.TargetNamespaces {
-		err := kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, n, o.IngressConfig.Issuer, services...)
+		err := services.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, n, o.IngressConfig.Issuer, svcs...)
 		if err != nil {
 			return err
 		}
@@ -422,9 +423,9 @@ func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(services 
 }
 
 // CleanServiceAnnotations cleans service annotations
-func (o *UpgradeIngressOptions) CleanServiceAnnotations(services ...string) error {
+func (o *UpgradeIngressOptions) CleanServiceAnnotations(svcs ...string) error {
 	for _, n := range o.TargetNamespaces {
-		err := kube.CleanServiceAnnotations(o.KubeClientCached, n, services...)
+		err := services.CleanServiceAnnotations(o.KubeClientCached, n, svcs...)
 		if err != nil {
 			return err
 		}

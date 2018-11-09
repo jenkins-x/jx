@@ -3,6 +3,7 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"net/url"
 	"os"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	build "github.com/knative/build/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
@@ -102,7 +104,7 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create the kube client")
 	}
-	url, err := kube.FindServiceURL(client, ns, kube.ServiceJenkins)
+	url, err := services.FindServiceURL(client, ns, kube.ServiceJenkins)
 	if err != nil {
 		// lets try the real environment
 		realNS, _, err := kube.GetDevNamespace(client, ns)
@@ -110,7 +112,7 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 			return "", errors.Wrapf(err, "failed to get the dev namespace from '%s' namespace", ns)
 		}
 		if realNS != ns {
-			url, err = kube.FindServiceURL(client, realNS, kube.ServiceJenkins)
+			url, err = services.FindServiceURL(client, realNS, kube.ServiceJenkins)
 			if err != nil {
 				return "", fmt.Errorf("%s in namespaces %s and %s", err, realNS, ns)
 			}
@@ -148,7 +150,7 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 		if err != nil {
 			return authConfigSvc, err
 		}
-		svcURL := kube.GetServiceURL(svc)
+		svcURL := services.GetServiceURL(svc)
 		if svcURL == "" {
 			return authConfigSvc, fmt.Errorf("unable to find external URL annotation on service %s in namespace %s", svc.Name, ns)
 		}
@@ -192,7 +194,7 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.IsInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.IsInCDPipeline())
 	}
 	return authConfigSvc, err
 }
@@ -207,7 +209,7 @@ func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.IsInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.IsInCDPipeline())
 	}
 	return authConfigSvc, err
 }
@@ -222,7 +224,7 @@ func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindAddon, f.IsInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindAddon, f.IsInCDPipeline())
 	}
 	return authConfigSvc, err
 }
@@ -289,6 +291,23 @@ func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
 	}
 	ns := kube.CurrentNamespace(kubeConfig)
 	client, err := versioned.NewForConfig(config)
+	if err != nil {
+		return nil, ns, err
+	}
+	return client, ns, err
+}
+
+func (f *factory) CreateKnativeBuildClient() (build.Interface, string, error) {
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	kubeConfig, _, err := f.kubeConfig.LoadConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	ns := kube.CurrentNamespace(kubeConfig)
+	client, err := build.NewForConfig(config)
 	if err != nil {
 		return nil, ns, err
 	}
@@ -428,9 +447,9 @@ func (f *factory) CreateTable(out io.Writer) table.Table {
 	return table.CreateTable(out)
 }
 
-// IsInCDPIpeline we should only load the git / issue tracker API tokens if the current pod
+// IsInCDPipeline we should only load the git / issue tracker API tokens if the current pod
 // is in a pipeline and running as the Jenkins service account
-func (f *factory) IsInCDPIpeline() bool {
+func (f *factory) IsInCDPipeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
 	return os.Getenv("BUILD_NUMBER") != "" || os.Getenv("JX_BUILD_NUMBER") != ""

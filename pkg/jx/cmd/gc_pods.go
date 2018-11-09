@@ -9,6 +9,7 @@ import (
 	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 	"time"
 )
 
@@ -50,6 +51,7 @@ func NewCmdGCPods(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd := &cobra.Command{
 		Use:     "pods",
 		Short:   "garbage collection for pods",
+		Aliases: []string{"pod"},
 		Long:    GCPodsLong,
 		Example: GCPodsExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -96,7 +98,8 @@ func (o *GCPodsOptions) Run() error {
 				log.Warnf("Failed to delete pod %s in namespace %s: %s\n", pod.Name, ns, err)
 				errors = append(errors, err)
 			} else {
-				log.Infof("Deleted pod %s in namespace %s with phase %s as its age is: %s\n", pod.Name, ns, string(pod.Status.Phase), age.Round(time.Minute).String())
+				ageText := strings.TrimSuffix(age.Round(time.Minute).String(), "0s")
+				log.Infof("Deleted pod %s in namespace %s with phase %s as its age is: %s\n", pod.Name, ns, string(pod.Status.Phase), ageText)
 			}
 		}
 	}

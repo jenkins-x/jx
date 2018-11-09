@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"os"
 	"path/filepath"
@@ -66,6 +67,7 @@ type PromoteOptions struct {
 
 	// for testing
 	FakePullRequests CreateEnvPullRequestFn
+	UseFakeHelm      bool
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -411,9 +413,13 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 			return releaseInfo, err
 		}
 	}
-	err := o.verifyHelmConfigured()
-	if err != nil {
-		return releaseInfo, err
+
+	var err error
+	if !o.UseFakeHelm {
+		err := o.verifyHelmConfigured()
+		if err != nil {
+			return releaseInfo, err
+		}
 	}
 
 	// lets do a helm update to ensure we can find the latest version
@@ -1034,7 +1040,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	appNames := []string{app, o.ReleaseName, ens + "-" + app}
 	url := ""
 	for _, n := range appNames {
-		url, err = kube.FindServiceURL(kubeClient, ens, n)
+		url, err = services.FindServiceURL(kubeClient, ens, n)
 		if url != "" {
 			break
 		}
@@ -1124,7 +1130,7 @@ func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 		names = append(names, text)
 		m[text] = &charts[i]
 	}
-	name, err := util.PickName(names, "Pick chart to promote: ", o.In, o.Out, o.Err)
+	name, err := util.PickName(names, "Pick chart to promote: ", "", o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}

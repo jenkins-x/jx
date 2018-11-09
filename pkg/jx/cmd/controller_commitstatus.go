@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -156,14 +157,35 @@ func (o *ControllerCommitStatusOptions) onCommitStatusObj(obj interface{}, jxCli
 }
 
 func (o *ControllerCommitStatusOptions) onCommitStatus(check *jenkinsv1.CommitStatus, jxClient jenkinsv1client.Interface, ns string) error {
+	groupedBySha := make(map[string][]jenkinsv1.CommitStatusDetails, 0)
 	for _, v := range check.Spec.Items {
-		err := o.update(&v, jxClient, ns)
+		if _, ok := groupedBySha[v.Commit.SHA]; !ok {
+			groupedBySha[v.Commit.SHA] = make([]jenkinsv1.CommitStatusDetails, 0)
+		}
+		groupedBySha[v.Commit.SHA] = append(groupedBySha[v.Commit.SHA], v)
+	}
+	for _, vs := range groupedBySha {
+		var last jenkinsv1.CommitStatusDetails
+		for _, v := range vs {
+			lastBuildNumber, err := strconv.Atoi(getBuildNumber(last.PipelineActivity.Name))
+			if err != nil {
+				return err
+			}
+			buildNumber, err := strconv.Atoi(getBuildNumber(v.PipelineActivity.Name))
+			if err != nil {
+				return err
+			}
+			if lastBuildNumber < buildNumber {
+				last = v
+			}
+		}
+		err := o.update(&last, jxClient, ns)
 		if err != nil {
-			gitProvider, gitRepoInfo, err1 := o.getGitProvider(v.Commit.GitURL)
+			gitProvider, gitRepoInfo, err1 := o.getGitProvider(last.Commit.GitURL)
 			if err1 != nil {
 				return err1
 			}
-			_, err1 = extensions.NotifyCommitStatus(v.Commit, "error", "", "Internal Error performing commit status updates", "", v.Context, gitProvider, gitRepoInfo)
+			_, err1 = extensions.NotifyCommitStatus(last.Commit, "error", "", "Internal Error performing commit status updates", "", last.Context, gitProvider, gitRepoInfo)
 			if err1 != nil {
 				return err
 			}
@@ -237,7 +259,7 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 						log.Infof("pod watcher: build pod: %s, org: %s, repo: %s, buildNumber: %s, pullBaseSha: %s, pullPullSha: %s, pullRequest: %s, sourceUrl: %s\n", pod.Name, org, repo, buildNumber, pullBaseSha, pullPullSha, pullRequest, sourceUrl)
 					}
 					if sha == "" {
-						log.Warnf("No sha on %s, not upserting commit status\n", pod.Name)
+						log.Warnf("pod watcher: No sha on %s, not upserting commit status\n", pod.Name)
 					} else {
 						prow := prow.Options{
 							KubeClient: kubeClient,
@@ -248,18 +270,40 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 							return err
 						}
 						if o.Verbose {
-							log.Infof("Using contexts %v\n", contexts)
+							log.Infof("pod watcher: Using contexts %v\n", contexts)
 						}
+						pipelineActName := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
 						for _, ctx := range contexts {
 							if pullRequest != "" {
 								name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, ctx))
-								pipelineActName := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
-								err = o.UpsertCommitStatusCheck(name, pipelineActName, sourceUrl, sha, pullRequest, ctx, jxClient, ns)
+
+								err = o.UpsertCommitStatusCheck(name, pipelineActName, sourceUrl, sha, pullRequest, ctx, pod.Status.Phase, jxClient, ns)
 								if err != nil {
 									return err
 								}
 							}
 						}
+						// PLM TODO This is a bit of hack, we need a working build controller
+						// Try to add the lastCommitSha and gitUrl to the PipelineActivity
+						act, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(pipelineActName, metav1.GetOptions{})
+						if err != nil {
+							// An error just means the activity doesn't exist yet
+							if o.Verbose {
+								log.Infof("pod watcher: Unable to find PipelineActivity for %s\n", pipelineActName)
+							}
+						} else {
+							act.Spec.LastCommitSHA = sha
+							act.Spec.GitURL = sourceUrl
+							if o.Verbose {
+								log.Infof("pod watcher: Adding lastCommitSha: %s and gitUrl: %s to %s\n", act.Spec.LastCommitSHA, act.Spec.GitURL, pipelineActName)
+							}
+							_, err := jxClient.JenkinsV1().PipelineActivities(ns).Update(act)
+							if err != nil {
+								// We can safely return this error as it will just get logged
+								return err
+							}
+						}
+
 					}
 				}
 			}
@@ -270,17 +314,17 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 	return nil
 }
 
-func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pipelineActName string, url string, sha string, pullRequest string, context string, jxClient jenkinsv1client.Interface, ns string) error {
+func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pipelineActName string, url string, sha string, pullRequest string, context string, phase corev1.PodPhase, jxClient jenkinsv1client.Interface, ns string) error {
 	if name != "" {
 
 		status, err := jxClient.JenkinsV1().CommitStatuses(ns).Get(name, metav1.GetOptions{})
 		create := false
-		update := false
+		insert := false
 		actRef := jenkinsv1.ResourceReference{}
 		if err != nil {
 			create = true
 		} else {
-			log.Infof("commit status controller: commit status already exists for %s\n", name)
+			log.Infof("pod watcher: commit status already exists for %s\n", name)
 		}
 		// Create the activity reference
 		act, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(pipelineActName, metav1.GetOptions{})
@@ -293,21 +337,25 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 
 		possibleStatusDetails := make([]int, 0)
 		for i, v := range status.Spec.Items {
-			if v.Commit.SHA == sha {
+			if v.Commit.SHA == sha && v.PipelineActivity.Name == pipelineActName {
 				possibleStatusDetails = append(possibleStatusDetails, i)
 			}
 		}
 		statusDetails := jenkinsv1.CommitStatusDetails{}
+		if o.Verbose {
+			log.Infof("pod watcher: Discovered possible status details %v\n", possibleStatusDetails)
+		}
 		if len(possibleStatusDetails) == 1 {
-			statusDetails = status.Spec.Items[possibleStatusDetails[0]]
-			if statusDetails.PipelineActivity.UID != actRef.UID {
-				update = true
+			if o.Verbose {
+				log.Infof("CommitStatus %s for pipeline %s already exists\n", name, pipelineActName)
 			}
-		} else if len(possibleStatusDetails) != 0 {
+		} else if len(possibleStatusDetails) == 0 {
+			insert = true
+		} else {
 			return fmt.Errorf("More than %d status detail for sha %s, should 1 or 0, found %v", len(possibleStatusDetails), sha, possibleStatusDetails)
 		}
 
-		if create || update {
+		if create || insert {
 			// This is not the same pipeline activity the status was created for,
 			// or there is no existing status, so we make a new one
 			statusDetails = jenkinsv1.CommitStatusDetails{
@@ -322,7 +370,7 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 			}
 		}
 		if create {
-			log.Infof("commit status controller: Creating commit status for pipeline activity %s\n", pipelineActName)
+			log.Infof("pod watcher: Creating commit status for pipeline activity %s\n", pipelineActName)
 			status = &jenkinsv1.CommitStatus{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
@@ -341,12 +389,16 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 				return err
 			}
 
-		} else if update {
-			status.Spec.Items[possibleStatusDetails[0]] = statusDetails
-			log.Infof("commit status controller: Resetting commit status for pipeline activity %s\n", pipelineActName)
+		} else if insert {
+			status.Spec.Items = append(status.Spec.Items, statusDetails)
+			log.Infof("pod watcher: Adding commit status for pipeline activity %s\n", pipelineActName)
 			_, err := jxClient.JenkinsV1().CommitStatuses(ns).Update(status)
 			if err != nil {
 				return err
+			}
+		} else {
+			if o.Verbose {
+				log.Infof("pod watcher: Not updating or creating pipeline activity %s\n", pipelineActName)
 			}
 		}
 	} else {
@@ -371,7 +423,7 @@ func (o *ControllerCommitStatusOptions) update(statusDetails *jenkinsv1.CommitSt
 			}
 		}
 		if pass {
-			_, err := extensions.NotifyCommitStatus(statusDetails.Commit, "success", "", "%s completed successfully", "", statusDetails.Context, gitProvider, gitRepoInfo)
+			_, err := extensions.NotifyCommitStatus(statusDetails.Commit, "success", "", "Completed successfully", "", statusDetails.Context, gitProvider, gitRepoInfo)
 			if err != nil {
 				return err
 			}
@@ -386,7 +438,7 @@ func (o *ControllerCommitStatusOptions) update(statusDetails *jenkinsv1.CommitSt
 					"\n"+
 					"Instructions for interacting with me using PR comments are available [here](https://git.k8s.io/community/contributors/guide/pull-requests.md).  If you have questions or suggestions related to my behavior, please file an issue against the [kubernetes/test-infra](https://github.com/kubernetes/test-infra/issues/new?title=Prow%%20issue:) repository. I understand the commands that are listed [here](https://go.k8s.io/bot-commands).\n"+
 					"</details>", commentBuilder.String())
-			_, err := extensions.NotifyCommitStatus(statusDetails.Commit, "failure", "", "Some commit statusDetails checks failed", comment, statusDetails.Context, gitProvider, gitRepoInfo)
+			_, err := extensions.NotifyCommitStatus(statusDetails.Commit, "failure", "", fmt.Sprintf("%s failed", statusDetails.Context), comment, statusDetails.Context, gitProvider, gitRepoInfo)
 			if err != nil {
 				return err
 			}
@@ -431,4 +483,17 @@ func (o *ControllerCommitStatusOptions) getGitProvider(url string) (gits.GitProv
 		}
 	}
 	return o.createGitProviderForURLWithoutKind(url)
+}
+
+func getBuildNumber(pipelineActName string) string {
+	if pipelineActName == "" {
+		return "-1"
+	}
+	pipelineParts := strings.Split(pipelineActName, "-")
+	if len(pipelineParts) > 3 {
+		return pipelineParts[len(pipelineParts)-1]
+	} else {
+		return ""
+	}
+
 }
