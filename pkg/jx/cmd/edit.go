@@ -59,7 +59,9 @@ func NewCmdEdit(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 	cmd.AddCommand(NewCmdEditHelmBin(f, in, out, errOut))
 	cmd.AddCommand(NewCmdEditUserRole(f, in, out, errOut))
 	cmd.AddCommand(NewCmdEditExtensionsRepository(f, in, out, errOut))
+	/* TODO cannot be done here as it tries to connect to the API server:
 	addTeamSettingsCommandsFromTags(cmd, in, out, errOut, options)
+        */
 	return cmd
 }
 
