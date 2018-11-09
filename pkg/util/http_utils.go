@@ -48,7 +48,7 @@ func getIntFromEnv(key string, fallback int) (int) {
 		if err == nil {
 			return int_value
 		} else {
-			log.Warnf("Unable to convert env var %s with value %s to integer, using default value of %s instead", key, value, fallback)
+			log.Warnf("Unable to convert env var %s with value %s to integer, using default value of %d instead", key, value, fallback)
 		}
 	}
 	return fallback
@@ -60,7 +60,7 @@ func getBoolFromEnv(key string, fallback bool) bool {
 		if err == nil {
 			return bool_value
 		} else {
-			log.Warnf("Unable to convert env var %s with value %s to boolean, using default value of %s instead", key, value, fallback)
+			log.Warnf("Unable to convert env var %s with value %s to boolean, using default value of %t instead", key, value, fallback)
 		}
 	}
 	return fallback
