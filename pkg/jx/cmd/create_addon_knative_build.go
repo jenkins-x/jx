@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -25,8 +24,6 @@ var (
 
 type CreateAddonKnativeBuildOptions struct {
 	CreateAddonOptions
-	username string
-	password string
 }
 
 func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -53,16 +50,12 @@ func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out termin
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.username, "username", "u", "", "The pipeline bot username")
-	cmd.Flags().StringVarP(&options.password, "password", "p", "", "The pipeline bot password")
 	return cmd
 }
 
 // Create the addon
 func (o *CreateAddonKnativeBuildOptions) Run() error {
 	log.Infof("Installing %s addon\n\n", kube.DefaultKnativeBuildReleaseName)
-
-	o.SetValues = strings.Join([]string{"build.auth.git.username=" + o.username, "build.auth.git.password=" + o.password}, ",")
 
 	err := o.CreateAddon(kube.DefaultKnativeBuildReleaseName)
 	if err != nil {
