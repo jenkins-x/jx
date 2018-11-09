@@ -420,3 +420,8 @@ func (config *AuthConfig) PickOrCreateServer(fallbackServerURL string, serverURL
 	}
 	return config.GetOrCreateServer(name), nil
 }
+
+func (config *AuthConfig) UpdatePipelineServer(server *AuthServer, user *UserAuth) {
+	config.PipeLineServer = server.URL
+	config.PipeLineUsername = user.Username
+}
