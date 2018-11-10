@@ -9,6 +9,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/dynamic"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -485,4 +488,86 @@ func (f *factory) CreateVaultOperatorClient() (vaultoperatorclient.Interface, er
 		return nil, err
 	}
 	return vaultoperatorclient.NewForConfig(config)
+}
+
+func (f *factory) GetHelm(verbose bool,
+	helmBinary string,
+	noTiller bool,
+	helmTemplate bool) helm.Helmer {
+
+	featureFlag := "none"
+	if helmTemplate {
+		featureFlag = "template-mode"
+	} else if noTiller {
+		featureFlag = "no-tiller-server"
+	}
+	log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+	helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", verbose)
+	var h helm.Helmer = helmCLI
+	if helmTemplate {
+		kubeClient, ns, _ := f.CreateClient()
+		h = helm.NewHelmTemplate(helmCLI, "", kubeClient, ns)
+	} else {
+		h = helmCLI
+	}
+	if noTiller {
+		h.SetHost(tillerAddress())
+		startLocalTillerIfNotRunning()
+	}
+
+	return h
+}
+
+// tillerAddress returns the address that tiller is listening on
+func tillerAddress() string {
+	tillerAddress := os.Getenv("TILLER_ADDR")
+	if tillerAddress == "" {
+		tillerAddress = ":44134"
+	}
+	return tillerAddress
+}
+
+func startLocalTillerIfNotRunning() error {
+	return startLocalTiller(true)
+}
+
+func startLocalTiller(lazy bool) error {
+	tillerAddress := getTillerAddress()
+	tillerArgs := os.Getenv("TILLER_ARGS")
+	args := []string{"-listen", tillerAddress, "-alsologtostderr"}
+	if tillerArgs != "" {
+		args = append(args, tillerArgs)
+	}
+	logsDir, err := util.LogsDir()
+	if err != nil {
+		return err
+	}
+	logFile := filepath.Join(logsDir, "tiller.log")
+	f, err := os.Create(logFile)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to create tiller log file %s: %s", logFile, err)
+	}
+	err = util.RunCommandBackground("tiller", f, !lazy, args...)
+	if err == nil {
+		log.Infof("running tiller locally and logging to file: %s\n", util.ColorInfo(logFile))
+	} else if lazy {
+		// lets assume its because the process is already running so lets ignore
+		return nil
+	}
+	return err
+}
+
+func restartLocalTiller() error {
+	log.Info("checking if we need to kill a local tiller process\n")
+	util.KillProcesses("tiller")
+	return startLocalTiller(false)
+}
+
+// tillerAddress returns the address that tiller is listening on
+func getTillerAddress() string {
+	tillerAddress := os.Getenv("TILLER_ADDR")
+	if tillerAddress == "" {
+		tillerAddress = ":44134"
+	}
+	return tillerAddress
 }

@@ -11,6 +11,7 @@ import (
 	auth "github.com/jenkins-x/jx/pkg/auth"
 	versioned0 "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	gits "github.com/jenkins-x/jx/pkg/gits"
+	helm "github.com/jenkins-x/jx/pkg/helm"
 	cmd "github.com/jenkins-x/jx/pkg/jx/cmd"
 	table "github.com/jenkins-x/jx/pkg/table"
 	versioned1 "github.com/knative/build/pkg/client/clientset/versioned"
@@ -400,6 +401,21 @@ func (mock *MockFactory) CreateVaultOperatorClient() (versioned.Interface, error
 		}
 	}
 	return ret0, ret1
+}
+
+func (mock *MockFactory) GetHelm(_param0 bool, _param1 string, _param2 bool, _param3 bool) helm.Helmer {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GetHelm", params, []reflect.Type{reflect.TypeOf((*helm.Helmer)(nil)).Elem()})
+	var ret0 helm.Helmer
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(helm.Helmer)
+		}
+	}
+	return ret0
 }
 
 func (mock *MockFactory) GetJenkinsURL(_param0 kubernetes.Interface, _param1 string) (string, error) {
@@ -982,6 +998,45 @@ func (c *Factory_CreateVaultOperatorClient_OngoingVerification) GetCapturedArgum
 }
 
 func (c *Factory_CreateVaultOperatorClient_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierFactory) GetHelm(_param0 bool, _param1 string, _param2 bool, _param3 bool) *Factory_GetHelm_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetHelm", params)
+	return &Factory_GetHelm_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Factory_GetHelm_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Factory_GetHelm_OngoingVerification) GetCapturedArguments() (bool, string, bool, bool) {
+	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
+}
+
+func (c *Factory_GetHelm_OngoingVerification) GetAllCapturedArguments() (_param0 []bool, _param1 []string, _param2 []bool, _param3 []bool) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]bool, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(bool)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]bool, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(bool)
+		}
+		_param3 = make([]bool, len(params[3]))
+		for u, param := range params[3] {
+			_param3[u] = param.(bool)
+		}
+	}
+	return
 }
 
 func (verifier *VerifierFactory) GetJenkinsURL(_param0 kubernetes.Interface, _param1 string) *Factory_GetJenkinsURL_OngoingVerification {
