@@ -224,13 +224,13 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 
-		gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+		gitProvider, err := o.Factory.CreateGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
 		if err != nil {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}
 
 		if prNum > 0 {
-			pullRequest, err := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
+			pullRequest, err = gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
 			if err != nil {
 				log.Warnf("issue getting pull request %s, %s, %v: %v\n", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
 			}
@@ -369,8 +369,7 @@ func (o *PreviewOptions) Run() error {
 				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}
 		}
-	}
-	if err != nil {
+	} else {
 		// lets create a new preview environment
 		previewGitSpec := v1.PreviewGitSpec{
 			ApplicationName: o.Application,

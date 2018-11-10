@@ -31,7 +31,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/shirou/gopsutil/process"
 	logger "github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -726,101 +725,11 @@ func (o *CommonOptions) installTiller() error {
 	if err != nil {
 		return err
 	}
-	err = o.startLocalTillerIfNotRunning()
+	err = startLocalTillerIfNotRunning()
 	if err != nil {
 		return err
 	}
 	return o.installHelmSecretsPlugin(helmFullPath, true)
-}
-
-func (o *CommonOptions) startLocalTillerIfNotRunning() error {
-	return o.startLocalTiller(true)
-}
-
-func (o *CommonOptions) restartLocalTiller() error {
-	log.Info("checking if we need to kill a local tiller process\n")
-	o.killProcesses("tiller")
-	return o.startLocalTiller(false)
-}
-
-func (o *CommonOptions) startLocalTiller(lazy bool) error {
-	tillerAddress := o.tillerAddress()
-	tillerArgs := os.Getenv("TILLER_ARGS")
-	args := []string{"-listen", tillerAddress, "-alsologtostderr"}
-	if tillerArgs != "" {
-		args = append(args, tillerArgs)
-	}
-	logsDir, err := util.LogsDir()
-	if err != nil {
-		return err
-	}
-	logFile := filepath.Join(logsDir, "tiller.log")
-	f, err := os.Create(logFile)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to create tiller log file %s: %s", logFile, err)
-	}
-	err = o.runCommandBackground("tiller", f, !lazy, args...)
-	if err == nil {
-		log.Infof("running tiller locally and logging to file: %s\n", util.ColorInfo(logFile))
-	} else if lazy {
-		// lets assume its because the process is already running so lets ignore
-		return nil
-	}
-	return err
-}
-
-func (o *CommonOptions) killProcesses(binary string) error {
-	processes, err := process.Processes()
-	if err != nil {
-		return err
-	}
-	m := map[int32]bool{}
-	_, err = o.killProcessesTree(binary, processes, m)
-	return err
-}
-
-func (o *CommonOptions) killProcessesTree(binary string, processes []*process.Process, m map[int32]bool) (bool, error) {
-	var answer error
-	done := false
-	for _, p := range processes {
-		pid := p.Pid
-		if pid > 0 && !m[pid] {
-			m[pid] = true
-			exe, err := p.Name()
-			if err == nil && exe != "" {
-				_, name := filepath.Split(exe)
-				// if windows lets remove .exe
-				name = strings.TrimSuffix(name, ".exe")
-				if name == binary {
-					log.Infof("killing %s process with pid %d\n", binary, int(pid))
-					err = p.Terminate()
-					if err != nil {
-						log.Warnf("Failed to terminate process with pid %d: %s", int(pid), err)
-					} else {
-						log.Infof("killed %s process with pid %d\n", binary, int(pid))
-					}
-					return true, err
-				}
-			}
-			children, err := p.Children()
-			if err == nil {
-				done, err = o.killProcessesTree(binary, children, m)
-				if done {
-					return done, err
-				}
-			}
-		}
-	}
-	return done, answer
-}
-
-// tillerAddress returns the address that tiller is listening on
-func (o *CommonOptions) tillerAddress() string {
-	tillerAddress := os.Getenv("TILLER_ADDR")
-	if tillerAddress == "" {
-		tillerAddress = ":44134"
-	}
-	return tillerAddress
 }
 
 func (o *CommonOptions) installHelm3() error {

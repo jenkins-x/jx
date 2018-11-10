@@ -328,7 +328,7 @@ func (options *InstallOptions) Run() error {
 		}
 
 		dependencies = append(dependencies, "tiller")
-		options.Helm().SetHost(options.tillerAddress())
+		options.Helm().SetHost(tillerAddress())
 	}
 	dependencies = append(dependencies, helmBinary)
 	err = options.installRequirements(options.Flags.Provider, dependencies...)
@@ -466,7 +466,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		err = options.restartLocalTiller()
+		err = restartLocalTiller()
 		if err != nil {
 			return err
 		}
