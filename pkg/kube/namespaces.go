@@ -26,19 +26,24 @@ func EnsureEnvironmentNamespaceSetup(kubeClient kubernetes.Interface, jxClient v
 		}
 	}
 
+	err := EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
+	if err != nil {
+		return err
+	}
+	_, err = EnsureDevEnvironmentSetup(jxClient, ns)
+	return err
+}
+
+// EnsureDevNamespaceCreatedWithoutEnvironment ensures that there is a development namespace created
+func EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient kubernetes.Interface, ns string) error {
 	// lets annotate the team namespace as being the developer environment
 	labels := map[string]string{
 		LabelTeam:        ns,
 		LabelEnvironment: LabelValueDevEnvironment,
 	}
 	annotations := map[string]string{}
-
 	// lets check that the current namespace is marked as the dev environment
 	err := EnsureNamespaceCreated(kubeClient, ns, labels, annotations)
-	if err != nil {
-		return err
-	}
-	_, err = EnsureDevEnvironmentSetup(jxClient, ns)
 	return err
 }
 

@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"os"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -35,6 +36,8 @@ var (
 		jx step helm apply --dir env --namespace jx-staging
 
 `)
+
+	defaultValueFileNames = []string{ "values.yaml", "myvalues.yaml", "secrets.yaml"}
 )
 
 func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -127,11 +130,23 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
+	// lets discover any local value files
+	valueFiles := []string{}
+	for _, name := range defaultValueFileNames {
+		file := filepath.Join(dir, name)
+		exists, err := util.FileExists(file)
+		if exists && err == nil {
+			valueFiles = append(valueFiles, file)
+		}
+	}
+
+	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
+	
 	if o.Wait {
 		timeout := 600
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, nil)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles)
 	} else {
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, nil)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles)
 	}
 	if err != nil {
 		return err
