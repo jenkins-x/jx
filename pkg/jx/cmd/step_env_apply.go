@@ -111,7 +111,14 @@ func (o *StepEnvApplyOptions) Run() error {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("There is no Environment chart file at %s\nPlease try specify the directory containing the chart with --dir", chartFile)
+		envDir := filepath.Join(dir, "env")
+		chartFile2 := filepath.Join(envDir, helm.ChartFileName)
+		exists2, err := util.FileExists(chartFile2)
+		if exists2 && err == nil {
+			dir = envDir
+		} else {
+			return fmt.Errorf("There is no Environment chart file at %s or %s\nPlease try specify the directory containing the Chart.yaml or env/Chart.yaml with --dir", chartFile, chartFile2)
+		}
 	}
 	devEnvFile := filepath.Join(dir, "templates", "dev-env.yaml")
 	exists, err = util.FileExists(chartFile)

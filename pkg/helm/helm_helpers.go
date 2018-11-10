@@ -268,7 +268,7 @@ func AppendMyValues(valueFiles []string) ([]string, error) {
 }
 
 // iterates through the input files and combines them into a single Values object and then write it to the output file
-func CombineValueFilesToFile(outFile string, inputFiles []string) error {
+func CombineValueFilesToFile(outFile string, inputFiles []string, chartName string) error {
 	answer := chartutil.Values{}
 	for _, input := range inputFiles {
 		values, err := chartutil.ReadValuesFile(input)
@@ -279,6 +279,11 @@ func CombineValueFilesToFile(outFile string, inputFiles []string) error {
 		CombineMapTrees(sourceMap, values.AsMap())
 		answer = chartutil.Values(sourceMap)
 	}
+	m := answer.AsMap()
+	answerMap := map[string]interface{}{
+		chartName: m,
+	}
+	answer = chartutil.Values(answerMap)
 	text, err := answer.YAML()
 	if err != nil {
 		return errors.Wrap(err, "Failed to marshal the combined values YAML files back to YAML")

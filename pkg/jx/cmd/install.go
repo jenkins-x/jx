@@ -931,11 +931,11 @@ func (options *InstallOptions) Run() error {
 		}
 
 		// lets combine the various values and secretes files
-		err = helm.CombineValueFilesToFile(secretsFile, secretFiles)
+		err = helm.CombineValueFilesToFile(secretsFile, secretFiles, JENKINS_X_PLATFORM_CHART_NAME)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretFiles, ", "))
 		}
-		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles)
+		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles, JENKINS_X_PLATFORM_CHART_NAME)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(onlyValueFiles, ", "))
 		}
