@@ -239,10 +239,6 @@ func (o *CommonOptions) getInstalledChartRepos(helmBinary string) (map[string]st
 
 func (o *CommonOptions) helmInit(dir string) error {
 	o.Helm().SetCWD(dir)
-	_, err := o.Helm().Version(false)
-	if err != nil {
-		return errors.Wrap(err, "failed to read the Helm version")
-	}
 	if o.Helm().HelmBinary() == "helm" {
 		// need to check the tiller settings at this point
 		_, noTiller, helmTemplate, err := o.TeamHelmBin()
@@ -266,12 +262,6 @@ func (o *CommonOptions) helmInitDependency(dir string, chartRepos map[string]str
 	if err != nil {
 		return o.Helm().HelmBinary(),
 			errors.Wrapf(err, "failed to remove requirements.lock file from chat '%s'", dir)
-	}
-
-	_, err = o.Helm().Version(false)
-	if err != nil {
-		return o.Helm().HelmBinary(),
-			errors.Wrap(err, "failed to read the Helm version")
 	}
 
 	if o.Helm().HelmBinary() == "helm" {
