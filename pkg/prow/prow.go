@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	Hook             = "hook"
-	BuilderBaseImage = "jenkinsxio/builder-base:0.0.604"
+	Hook = "hook"
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"
@@ -29,6 +28,9 @@ const (
 
 	KnativeBuildAgent = "knative-build"
 	KubernetesAgent   = "kubernetes"
+
+	applyTemplate = "environment-apply"
+	buildTemplate = "environment-build"
 )
 
 type Kind string
@@ -98,26 +100,12 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	ps.AlwaysRun = true
 	ps.SkipReport = false
 	ps.Context = PromotionBuild
-	ps.Agent = "knative-build"
+	ps.Agent = KnativeBuildAgent
 
 	spec := &build.BuildSpec{
-		Steps: []corev1.Container{
-			{
-				Image:      BuilderBaseImage,
-				Args:       []string{"jx", "step", "helm", "build"},
-				WorkingDir: "/workspace/env",
-				Env: []corev1.EnvVar{
-					{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
-					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
-					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
-					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
-					{Name: "GIT_AUTHOR_EMAIL", Value: "jenkins-x@googlegroups.com"},
-					{Name: "GIT_AUTHOR_NAME", Value: "jenkins-x-bot"},
-					{Name: "GIT_COMMITTER_NAME", Value: "jenkins-x-bot"},
-				},
-			},
+		Template: &build.TemplateInstantiationSpec{
+			Name: buildTemplate,
 		},
-		ServiceAccountName: "jenkins",
 	}
 
 	ps.BuildSpec = spec
@@ -130,27 +118,16 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Name = "promotion"
-	ps.Agent = "knative-build"
+	ps.Agent = KnativeBuildAgent
 	ps.Branches = []string{"master"}
 
 	spec := &build.BuildSpec{
-		Steps: []corev1.Container{
-			{
-				Image:      BuilderBaseImage,
-				Args:       []string{"jx", "step", "helm", "apply"},
-				WorkingDir: "/workspace/env",
-				Env: []corev1.EnvVar{
-					{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
-					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
-					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
-					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
-					{Name: "GIT_AUTHOR_EMAIL", Value: "jenkins-x@googlegroups.com"},
-					{Name: "GIT_AUTHOR_NAME", Value: "jenkins-x-bot"},
-					{Name: "GIT_COMMITTER_NAME", Value: "jenkins-x-bot"},
-				},
+		Template: &build.TemplateInstantiationSpec{
+			Name: applyTemplate,
+			Env: []corev1.EnvVar{
+				{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
 			},
 		},
-		ServiceAccountName: "jenkins",
 	}
 	ps.BuildSpec = spec
 	return ps
@@ -160,13 +137,12 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Branches = []string{"master"}
 	ps.Name = "release"
-	ps.Agent = "knative-build"
+	ps.Agent = KnativeBuildAgent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
 	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
-		ServiceAccountName: "jenkins",
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
@@ -191,7 +167,6 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
-		ServiceAccountName: "jenkins",
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
@@ -430,7 +405,6 @@ func (o *Options) AddProwConfig() error {
 	}
 
 	return err
-
 }
 
 func (o *Options) GetProwConfig() (*config.Config, bool, error) {
