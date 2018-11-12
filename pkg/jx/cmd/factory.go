@@ -382,7 +382,7 @@ func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, batchMode, gitKind, gitter, in, out, errOut)
+	return gitInfo.CreateProvider(f.IsInCluster(), authConfigSvc, gitKind, gitter, batchMode, in, out, errOut)
 }
 
 var kubeConfigCache *string
