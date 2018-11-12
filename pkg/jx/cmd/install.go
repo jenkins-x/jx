@@ -82,6 +82,7 @@ type InstallFlags struct {
 	DisableSetKubeContext    bool
 	GitOpsMode               bool
 	Dir                      string
+	NoGitOpsEnvApply         bool
 }
 
 // Secrets struct for secrets
@@ -100,7 +101,7 @@ const (
 	JenkinsXPlatformChartName = "jenkins-x-platform"
 
 	// the default full chart name with the default repository prefix
-	JenkinsXPlatformChart     = "jenkins-x/" + JenkinsXPlatformChartName
+	JenkinsXPlatformChart = "jenkins-x/" + JenkinsXPlatformChartName
 
 	GitSecretsFile         = "gitSecrets.yaml"
 	AdminSecretsFile       = "adminSecrets.yaml"
@@ -258,6 +259,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow")
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Sets up the local file system for GitOps so that the current installation can be configured or upgraded at any time via GitOps")
+	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -903,9 +905,13 @@ func (options *InstallOptions) Run() error {
 			}
 		}
 
-		_, err = options.saveAsConfigMap(kube.ConfigMapNameJXInstallConfig, jxInstallConfig)
+		_, err = options.ModifyConfigMap(kube.ConfigMapNameJXInstallConfig, func (cm *core_v1.ConfigMap) error {
+			data := util.ToStringMapStringFromStruct(jxInstallConfig)
+			cm.Data = data
+			return nil
+		})
 		if err != nil {
-			return err
+		  return err
 		}
 	}
 
@@ -1153,10 +1159,9 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	if options.Flags.GitOpsMode {
+	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvApply {
 		log.Infof("Generated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsEnvDir))
 		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n", util.ColorInfo("jx step env apply"))
-
 
 		applyEnv := true
 		if !options.BatchMode {
@@ -1169,15 +1174,15 @@ func (options *InstallOptions) Run() error {
 			envApplyOptions := &StepEnvApplyOptions{
 				StepEnvOptions: StepEnvOptions{
 					StepOptions: StepOptions{
-					  	CommonOptions: options.CommonOptions,
+						CommonOptions: options.CommonOptions,
 					},
 				},
-				Dir: gitOpsEnvDir,
+				Dir:       gitOpsEnvDir,
 				Namespace: ns,
 			}
 			err = envApplyOptions.Run()
 			if err != nil {
-			  return err
+				return err
 			}
 		}
 	}

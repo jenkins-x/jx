@@ -76,8 +76,9 @@ func TestInstallGitOps(t *testing.T) {
 	o.Flags.Provider = cmd.GKE
 	o.Flags.Dir = tempDir
 	o.Flags.GitOpsMode = true
-	// TODO fix
+	o.Flags.NoGitOpsEnvApply = true
 	o.Flags.NoDefaultEnvironments = true
+	o.Flags.DisableSetKubeContext = true
 	o.InitOptions.Flags.SkipTiller = true
 	o.InitOptions.Flags.NoTiller = true
 	o.InitOptions.Flags.SkipIngress = true
@@ -100,10 +101,14 @@ func TestInstallGitOps(t *testing.T) {
 	assert.FileExists(t, reqFile)
 	assert.FileExists(t, secretsFile)
 	assert.FileExists(t, valuesFile)
-	for _, name := range []string{"dev-env.yaml", "ingress-config-configmap.yaml", "jx-install-config-configmap.yaml", "jx-install-config-secret.yaml"} {
+	for _, name := range []string{"dev-env.yaml", "ingress-config-configmap.yaml", "jx-install-config-secret.yaml"} {
 		assert.FileExists(t, filepath.Join(envDir, "templates", name))
 	}
-
+	if !o.Flags.DisableSetKubeContext {
+		for _, name := range []string{ "jx-install-config-configmap.yaml"} {
+			assert.FileExists(t, filepath.Join(envDir, "templates", name))
+		}
+	}
 	req, err := helm.LoadRequirementsFile(reqFile)
 	require.NoError(t, err)
 
