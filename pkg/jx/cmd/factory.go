@@ -487,7 +487,6 @@ func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 
 // CreateVaultOpeatorClient creates a new vault operator client
 func (f *factory) CreateVaultOperatorClient() (vaultoperatorclient.Interface, error) {
-
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err
@@ -500,6 +499,9 @@ func (f *factory) GetHelm(verbose bool,
 	noTiller bool,
 	helmTemplate bool) helm.Helmer {
 
+	if helmBinary == "" {
+		helmBinary = "helm"
+	}
 	featureFlag := "none"
 	if helmTemplate {
 		featureFlag = "template-mode"
@@ -515,11 +517,10 @@ func (f *factory) GetHelm(verbose bool,
 	} else {
 		h = helmCLI
 	}
-	if noTiller {
+	if noTiller && !helmTemplate {
 		h.SetHost(tillerAddress())
 		startLocalTillerIfNotRunning()
 	}
-
 	return h
 }
 

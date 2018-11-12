@@ -138,7 +138,7 @@ func (o *StepEnvApplyOptions) Run() error {
 
 		teamSettings := &env.Spec.TeamSettings
 
-		o.createHelmer(teamSettings.HelmTemplate, teamSettings.NoTiller, teamSettings.HelmBinary)
+		o.Factory.GetHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
 
 		// ensure there's a development namespace setup
 		err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)

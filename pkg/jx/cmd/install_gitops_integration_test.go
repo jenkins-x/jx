@@ -15,6 +15,7 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -115,11 +116,11 @@ func TestInstallGitOps(t *testing.T) {
 
 	values, err := chartutil.ReadValuesFile(valuesFile)
 	require.NoError(t, err, "Failed to load values file", valuesFile)
-	assertValuesHasPathValue(t, "values.yaml", values, "expose")
+	assertValuesHasPathValue(t, "values.yaml", values, "jenkins-x-platform.expose")
 
 	secrets, err := chartutil.ReadValuesFile(secretsFile)
 	require.NoError(t, err, "Failed to load secrets file", secretsFile)
-	assertValuesHasPathValue(t, "secrets.yaml", secrets, "PipelineSecrets")
+	assertValuesHasPathValue(t, "secrets.yaml", secrets, "jenkins-x-platform.PipelineSecrets")
 
 
 	// lets verify that we don't have any created resources in the cluster - as everything should be created in the file system
@@ -139,15 +140,25 @@ func assertNoEnvironments(t *testing.T, jxClient versioned.Interface, ns string)
 
 // assertValuesHasPathValue asserts that the Values object has the given 
 func assertValuesHasPathValue(t *testing.T, message string, values chartutil.Values, key string) (interface{}, error) {
-	value, err := values.PathValue(key)
-	if err != nil && value == nil {
-		value = values.AsMap()[key]
-		if value != nil {
-			err = nil
+	keys := strings.Split(key, ".")
+	lastIdx := len(keys) - 1
+	for i, key := range keys {
+		value := values.AsMap()[key]
+		path := strings.Join(keys[0:i+1], ".")
+		if value == nil {
+			if !assert.NotNil(t, value, "%s values does not contain entry for key %s", message, path) {
+				return nil, nil
+			}
 		}
+		if i == lastIdx {
+			return value, nil
+		}
+		m, ok := value.(map[string]interface{})
+		if !ok {
+			assert.Failf(t, "%s value for key %s should be a a map [string]interface{} but was %#v", message, path, value)
+			return nil, nil
+		}
+		values = chartutil.Values(m)
 	}
-	assert.NoError(t, err)
-	assert.NotNil(t, value, "values does not contain entry for key", key, message)
-	//t.Logf("%s has key %s with value %#v\n", message, key, value)
-	return value, err
+	return nil, nil
 }

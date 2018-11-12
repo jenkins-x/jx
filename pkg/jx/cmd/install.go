@@ -615,9 +615,14 @@ func (options *InstallOptions) Run() error {
 		helmConfig.Jenkins.Servers.Global.EnvVars["TILLER_NAMESPACE"] = initOpts.Flags.TillerNamespace
 		os.Setenv("TILLER_NAMESPACE", initOpts.Flags.TillerNamespace)
 	}
-	isProw, err := options.isProw()
-	if err != nil {
-		return fmt.Errorf("cannot work out if this is a prow based install: %v", err)
+	isProw := false
+	if options.Flags.GitOpsMode {
+		isProw = options.Flags.Prow
+	} else {
+		isProw, err = options.isProw()
+		if err != nil {
+			return fmt.Errorf("cannot work out if this is a prow based install: %v", err)
+		}
 	}
 
 	if isProw {
@@ -943,6 +948,10 @@ func (options *InstallOptions) Run() error {
 		// TODO add secrets.yaml to .gitignore
 
 	} else {
+		for _, v := range valueFiles {
+			options.Debugf("Adding values file %s\n", util.ColorInfo(v))
+		}
+
 		if !options.Flags.InstallOnly {
 			err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil, valueFiles)
 		} else {
