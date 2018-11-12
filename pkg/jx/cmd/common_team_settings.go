@@ -317,10 +317,7 @@ func (o *CommonOptions) getUsername(userName string) (string, error) {
 }
 
 func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, options *EditOptions) error {
-	teamSettings, err := options.TeamSettings()
-	if err != nil {
-		return err
-	}
+	teamSettings := &v1.TeamSettings{}
 	value := reflect.ValueOf(teamSettings).Elem()
 	t := value.Type()
 	for i := 0; i < value.NumField(); i++ {
@@ -341,6 +338,7 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileRea
 			Short: commandUsage,
 			Run: func(cmd *cobra.Command, args []string) {
 				var value interface{}
+				var err error
 				if len(args) > 0 {
 					if structField.Type.String() == "string" {
 						value = args[0]
