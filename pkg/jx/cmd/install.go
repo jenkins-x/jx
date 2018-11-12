@@ -288,7 +288,7 @@ func (options *InstallOptions) Run() error {
 	if ns == "" {
 		ns = originalNs
 	}
-	options.devNamespace = ns
+	options.SetDevNamespace(ns)
 
 	// lets avoid changing the environments in k8s if GitOps mode...
 	gitOpsEnvDir := ""
@@ -635,9 +635,10 @@ func (options *InstallOptions) Run() error {
 	if options.Flags.GitOpsMode {
 		isProw = options.Flags.Prow
 	} else {
+		options.SetDevNamespace(ns)
 		isProw, err = options.isProw()
 		if err != nil {
-			return fmt.Errorf("cannot work out if this is a prow based install: %v", err)
+			return errors.Wrapf(err, "cannot work out if this is a prow based install in namespace %s", options.currentNamespace)
 		}
 	}
 
