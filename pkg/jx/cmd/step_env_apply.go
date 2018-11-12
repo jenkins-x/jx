@@ -139,7 +139,7 @@ func (o *StepEnvApplyOptions) Run() error {
 		teamSettings := &env.Spec.TeamSettings
 
 		// disable the modify of the Dev Environment lazily...
-		o.modifyDefEnvironmentFn = func(callback func(env *v1.Environment) error) error {
+		o.modifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
 			callback(&env)
 			return nil
 		}

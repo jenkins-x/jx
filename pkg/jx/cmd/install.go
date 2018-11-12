@@ -287,6 +287,9 @@ func (options *InstallOptions) Run() error {
 	// lets avoid changing the environments in k8s if GitOps mode...
 	gitOpsEnvDir := ""
 	if options.Flags.GitOpsMode {
+		// lets disable loading of Secrets from the jx namespace
+		options.SkipAuthSecretsMerge = true
+
 		var err error
 		if options.Flags.Dir == "" {
 			options.Flags.Dir, err = os.Getwd()
@@ -302,12 +305,16 @@ func (options *InstallOptions) Run() error {
 			return errors.Wrapf(err, "Failed to make GitOps templates directory %s", templatesDir)
 		}
 
-		options.modifyDefEnvironmentFn = func(callback func(env *v1.Environment) error) error {
+		options.modifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
 			defaultEnv := kube.CreateDefaultDevEnvironment(ns)
 			_, err := gitOpsModifyEnvironment(templatesDir, kube.LabelValueDevEnvironment, defaultEnv, callback)
 			return err
 		}
-		options.InitOptions.modifyDefEnvironmentFn = options.modifyDefEnvironmentFn
+		options.modifyEnvironmentFn = func(name string, callback func(env *v1.Environment) error) error {
+			_, err := gitOpsModifyEnvironment(templatesDir, name, nil, callback)
+			return err
+		}
+		options.InitOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
 		options.modifyConfigMapCallback = func(name string, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
 			return gitOpsModifyConfigMap(templatesDir, name, nil, callback)
 		}
@@ -997,7 +1004,7 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
-	if !initOpts.Flags.RemoteTiller {
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.NoTiller = true
 			log.Info("Disabling the server side use of tiller in the TeamSettings\n")
@@ -1068,16 +1075,31 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	if !options.Flags.NoDefaultEnvironments || !options.Flags.GitOpsMode {
-		jxClient, _, err := options.JXClient()
-		if err != nil {
-			return errors.Wrap(err, "failed to create the jx client")
+	if !options.Flags.NoDefaultEnvironments {
+		createEnvironments := true
+		if options.Flags.GitOpsMode {
+			// reuse the helm setup
+			options.SetDevNamespace(ns)
+			options.CreateEnvOptions.CommonOptions = options.CommonOptions
+			options.CreateEnvOptions.GitOpsMode = true
+			options.CreateEnvOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
+			options.CreateEnvOptions.modifyEnvironmentFn = options.modifyEnvironmentFn
+		} else {
+			createEnvironments = false
+
+			jxClient, _, err := options.JXClient()
+			if err != nil {
+				return errors.Wrap(err, "failed to create the jx client")
+			}
+
+			// lets only recreate the environments if its the first time we run this
+			_, envNames, err := kube.GetEnvironments(jxClient, ns)
+			if err != nil || len(envNames) <= 1 {
+				createEnvironments = true
+			}
+
 		}
-
-		// lets only recreate the environments if its the first time we run this
-		_, envNames, err := kube.GetEnvironments(jxClient, ns)
-		if err != nil || len(envNames) <= 1 {
-
+		if createEnvironments {
 			if options.Flags.DefaultEnvironmentPrefix == "" {
 				options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
 			}
@@ -1121,6 +1143,33 @@ func (options *InstallOptions) Run() error {
 		err = options.registerLocalHelmRepo(options.Flags.LocalHelmRepoName, ns)
 		if err != nil {
 			return errors.Wrapf(err, "failed to register the local helm repo '%s'", options.Flags.LocalHelmRepoName)
+		}
+	}
+
+	if options.Flags.GitOpsMode {
+		log.Infof("Generated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsEnvDir))
+		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n", util.ColorInfo("jx step env apply"))
+
+
+		applyEnv := true
+		if !options.BatchMode {
+			if !util.Confirm("Would you like to setup the Development Environment from the source code now?", true, "Do you want to apply the development environment helm charts now?", options.In, options.Out, options.Err) {
+				applyEnv = false
+			}
+		}
+
+		if applyEnv {
+			envApplyOptions := &StepEnvApplyOptions{
+				StepEnvOptions: StepEnvOptions{
+					StepOptions: StepOptions{
+					  	CommonOptions: options.CommonOptions,
+					},
+				},
+			}
+			err = envApplyOptions.Run()
+			if err != nil {
+			  return err
+			}
 		}
 	}
 
@@ -1270,7 +1319,7 @@ func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Env
 		if err != nil {
 			return &answer, errors.Wrapf(err, "Failed to unmarshall YAML file %s", fileName)
 		}
-	} else {
+	} else if defaultEnvironment != nil {
 		answer = *defaultEnvironment
 	}
 	err = callback(&answer)

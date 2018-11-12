@@ -57,7 +57,8 @@ const (
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
 
-type ModifyDevEnviromentFn func(callback func(env *jenkinsv1.Environment) error) error
+type ModifyDevEnvironmentFn func(callback func(env *jenkinsv1.Environment) error) error
+type ModifyEnvironmentFn func(name string, callback func(env *jenkinsv1.Environment) error) error
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
@@ -80,18 +81,19 @@ type CommonOptions struct {
 	PullSecrets            string
 
 	// common cached clients
-	KubeClientCached    kubernetes.Interface
-	apiExtensionsClient apiextensionsclientset.Interface
-	currentNamespace    string
-	devNamespace        string
-	jxClient            versioned.Interface
-	knbClient           buildclient.Interface
-	jenkinsClient       gojenkins.JenkinsClient
-	GitClient           gits.Gitter
-	helm                helm.Helmer
-	Kuber               kube.Kuber
-	vaultOperatorClient vaultoperatorclient.Interface
-	modifyDefEnvironmentFn ModifyDevEnviromentFn
+	KubeClientCached       kubernetes.Interface
+	apiExtensionsClient    apiextensionsclientset.Interface
+	currentNamespace       string
+	devNamespace           string
+	jxClient               versioned.Interface
+	knbClient              buildclient.Interface
+	jenkinsClient          gojenkins.JenkinsClient
+	GitClient              gits.Gitter
+	helm                   helm.Helmer
+	Kuber                  kube.Kuber
+	vaultOperatorClient    vaultoperatorclient.Interface
+	modifyDevEnvironmentFn ModifyDevEnvironmentFn
+	modifyEnvironmentFn    ModifyEnvironmentFn
 
 	Prow
 }

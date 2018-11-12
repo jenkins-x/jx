@@ -85,13 +85,22 @@ func (o *CommonOptions) TeamHelmBin() (string, bool, bool, error) {
 
 // ModifyDevEnvironment modifies the development environment settings
 func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) error) error {
-	if o.modifyDefEnvironmentFn == nil {
-		o.modifyDefEnvironmentFn = o.defaultModifyDevEnvironment
+	if o.modifyDevEnvironmentFn == nil {
+		o.modifyDevEnvironmentFn = o.defaultModifyDevEnvironment
 	}
-	return o.modifyDefEnvironmentFn(callback)
+	return o.modifyDevEnvironmentFn(callback)
 }
 
+
 // ModifyDevEnvironment modifies the development environment settings
+func (o *CommonOptions) ModifyEnvironment(name string, callback func(env *v1.Environment) error) error {
+	if o.modifyEnvironmentFn == nil {
+		o.modifyEnvironmentFn = o.defaultModifyEnvironment
+	}
+	return o.modifyEnvironmentFn(name, callback)
+}
+
+// defaultModifyDevEnvironment default implementation of modifying the Development environment settings
 func (o *CommonOptions) defaultModifyDevEnvironment(callback func(env *v1.Environment) error) error {
 	err := o.registerEnvironmentCRD()
 	if err != nil {
@@ -111,6 +120,40 @@ func (o *CommonOptions) defaultModifyDevEnvironment(callback func(env *v1.Enviro
 		return fmt.Errorf("No Development environment found for namespace %s", ns)
 	}
 	return o.modifyDevEnvironment(jxClient, ns, callback)
+}
+
+// defaultModifyEnvironment default implementation of modifying an environment
+func (o *CommonOptions) defaultModifyEnvironment(name string, callback func(env *v1.Environment) error) error {
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the jx client")
+	}
+
+	environmentInterface := jxClient.JenkinsV1().Environments(ns)
+	env, err := environmentInterface.Get(name, metav1.GetOptions{})
+	create := false
+	if err != nil || env == nil {
+		create = true
+		env = &v1.Environment{}
+	}
+
+	err = callback(env)
+	if err != nil {
+		return errors.Wrapf(err, "failed to call the callback function when modifying Environment %s", name)
+	}
+	if create {
+		_, err = environmentInterface.Create(env)
+		if err != nil {
+			return errors.Wrapf(err, "failed to update Environment %s in namespace %s: %s", name, ns)
+		}
+	} else {
+		_, err = environmentInterface.Update(env)
+		if err != nil {
+			return errors.Wrapf(err, "failed to update Environment %s in namespace %s: %s", name, ns)
+		}
+	}
+	log.Infof("Updated the team settings in namespace %s\n", ns)
+	return nil
 }
 
 func (o *CommonOptions) registerReleaseCRD() error {
