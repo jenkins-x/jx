@@ -189,6 +189,20 @@ func (o *CreateEnvOptions) Run() error {
 
 	err = o.ModifyEnvironment(env.Name, func(env2 *v1.Environment) error {
 		env2.Spec = env.Spec
+
+		// lets copy across any labels or annotations
+		if env2.Annotations == nil {
+			env2.Annotations = map[string]string{}
+		}
+		if env2.Labels == nil {
+			env2.Labels = map[string]string{}
+		}
+		for k, v := range env.Annotations {
+			env2.Annotations[k] = v
+		}
+		for k, v := range env.Labels {
+			env2.Labels[k] = v
+		}
 		return nil
 	})
 	log.Infof("Created environment %s\n", util.ColorInfo(env.Name))

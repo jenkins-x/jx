@@ -311,7 +311,9 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 		options.modifyEnvironmentFn = func(name string, callback func(env *v1.Environment) error) error {
-			_, err := gitOpsModifyEnvironment(templatesDir, name, nil, callback)
+			defaultEnv := &v1.Environment{}
+			defaultEnv.Labels = map[string]string{}
+			_, err := gitOpsModifyEnvironment(templatesDir, name, defaultEnv, callback)
 			return err
 		}
 		options.InitOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
@@ -1165,6 +1167,8 @@ func (options *InstallOptions) Run() error {
 					  	CommonOptions: options.CommonOptions,
 					},
 				},
+				Dir: gitOpsEnvDir,
+				Namespace: ns,
 			}
 			err = envApplyOptions.Run()
 			if err != nil {
@@ -1326,6 +1330,7 @@ func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Env
 	if err != nil {
 		return &answer, err
 	}
+	answer.Name = name
 	if answer.APIVersion == "" {
 		answer.APIVersion = jenkinsio.GroupAndVersion
 	}
