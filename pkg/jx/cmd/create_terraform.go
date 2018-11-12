@@ -348,7 +348,7 @@ func (options *CreateTerraformOptions) Run() error {
 		return err
 	}
 
-	err = terraform.CheckVersion(options.Out, options.Err)
+	err = terraform.CheckVersion()
 	if err != nil {
 		return err
 	}
