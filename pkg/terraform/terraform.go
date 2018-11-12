@@ -126,8 +126,6 @@ func CheckVersion(stdout io.Writer, stderr io.Writer) error {
 	cmd := util.Command{
 		Name: "terraform",
 		Args: []string{"-version"},
-		Out: stdout,
-		Err: stderr,
 	}
 	output, err := cmd.RunWithoutRetry()
 	if err != nil {
@@ -135,6 +133,8 @@ func CheckVersion(stdout io.Writer, stderr io.Writer) error {
 	}
 
 	version, err := extractVersionFromTerraformOutput(output)
+
+	fmt.Printf("Determined terraform version as %s\n", util.ColorInfo(version))
 
 	if err != nil {
 		return err
@@ -146,6 +146,8 @@ func CheckVersion(stdout io.Writer, stderr io.Writer) error {
 	if !r(v) {
 		return errors.New("terraform version appears to be too old, please install a newer version '>= 0.11.0'")
 	}
+
+	fmt.Printf("Terraform version appears to be valid\n")
 
 	return nil
 }
@@ -160,6 +162,6 @@ func extractVersionFromTerraformOutput(output string) (string, error) {
 		}
 	}
 
-	return "", errors.New("unable to extract version from output")
+	return "", errors.Errorf("unable to extract version from output '%s'", output)
 
 }
