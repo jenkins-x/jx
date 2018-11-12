@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -11,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,20 +26,15 @@ var (
 
 // DeleteGitServerOptions the options for the create spring command
 type DeleteGitServerOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	IgnoreMissingServer bool
 }
 
 // NewCmdDeleteGitServer defines the command
-func NewCmdDeleteGitServer(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteGitServer(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteGitServerOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{

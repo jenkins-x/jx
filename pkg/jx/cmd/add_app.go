@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -16,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // AddAppOptions the options for the create spring command
@@ -46,15 +44,10 @@ type AddAppOptions struct {
 }
 
 // NewCmdAddApp creates a command object for the "create" command
-func NewCmdAddApp(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdAddApp(commonOpts *CommonOptions) *cobra.Command {
 	options := &AddAppOptions{
 		AddOptions: AddOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

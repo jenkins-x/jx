@@ -2,10 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"io"
 	"io/ioutil"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -13,13 +10,15 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/jenkins-x/jx/pkg/gits"
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -41,15 +40,10 @@ type ControllerBuildOptions struct {
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerBuild(commonOpts *CommonOptions) *cobra.Command {
 	options := &ControllerBuildOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -104,7 +98,7 @@ func (o *ControllerBuildOptions) Run() error {
 		// lets validate we have git configured
 		_, _, err = gits.EnsureUserAndEmailSetup(o.Git())
 		if err != nil {
-		  return err
+			return err
 		}
 
 		err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
@@ -368,7 +362,7 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 
 	if initGitCredentials {
 		gc := &StepGitCredentialsOptions{}
-		gc.CommonOptions = *o
+		gc.CommonOptions = o
 		gc.BatchMode = true
 		log.Info("running: jx step git credentials\n")
 		err = gc.Run()

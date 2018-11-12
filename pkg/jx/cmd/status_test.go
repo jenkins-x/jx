@@ -102,7 +102,7 @@ func TestStatusRun(t *testing.T) {
 
 	// Setup options
 	options := &cmd.StatusOptions{
-		CommonOptions: cmd.CommonOptions{
+		CommonOptions: &cmd.CommonOptions{
 			Factory: factory,
 			Out:     os.Stdout,
 			Err:     os.Stderr,

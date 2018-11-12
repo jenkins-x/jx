@@ -4,8 +4,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 )
 
 // InstallDependenciesFlags flags for the install command
@@ -15,7 +13,7 @@ type InstallDependenciesFlags struct {
 
 // InstallDependenciesOptions options for install dependencies
 type InstallDependenciesOptions struct {
-	CommonOptions
+	*CommonOptions
 	Flags InstallDependenciesFlags
 }
 
@@ -60,9 +58,9 @@ var (
 )
 
 // NewCmdInstallDependencies creates a command object to install any required dependencies
-func NewCmdInstallDependencies(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdInstallDependencies(commonOpts *CommonOptions) *cobra.Command {
 
-	options := CreateInstallDependenciesOptions(f, in, out, errOut)
+	options := CreateInstallDependenciesOptions(commonOpts)
 
 	cmd := &cobra.Command{
 		Use:     "dependencies",
@@ -85,15 +83,9 @@ func NewCmdInstallDependencies(f Factory, in terminal.FileReader, out terminal.F
 }
 
 // CreateInstallDependenciesOptions creates the options for jx install dependencies
-func CreateInstallDependenciesOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) InstallDependenciesOptions {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
+func CreateInstallDependenciesOptions(commonOpts *CommonOptions) InstallDependenciesOptions {
 	options := InstallDependenciesOptions{
-		CommonOptions: commonOptions,
+		CommonOptions: commonOpts,
 	}
 	return options
 }

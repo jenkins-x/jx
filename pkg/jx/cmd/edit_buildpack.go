@@ -2,18 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/builds"
-	"io"
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/builds"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 var (
@@ -45,15 +43,10 @@ type EditBuildPackOptions struct {
 }
 
 // NewCmdEditBuildpack creates a command object for the "create" command
-func NewCmdEditBuildpack(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditBuildpack(commonOpts *CommonOptions) *cobra.Command {
 	options := &EditBuildPackOptions{
 		EditOptions: EditOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

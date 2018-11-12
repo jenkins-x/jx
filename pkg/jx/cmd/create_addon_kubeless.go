@@ -1,16 +1,13 @@
 package cmd
 
 import (
-	"io"
 	"strings"
-
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -41,16 +38,11 @@ type CreateAddonKubelessOptions struct {
 }
 
 // NewCmdCreateAddonKubeless creates a command object for the "create" command
-func NewCmdCreateAddonKubeless(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonKubeless(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonKubelessOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -69,7 +61,6 @@ func NewCmdCreateAddonKubeless(f Factory, in terminal.FileReader, out terminal.F
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultKubelessNamespace, defaultKubelessReleaseName, defaultKubelessVersion)
 
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartKubeless, "The name of the chart to use")

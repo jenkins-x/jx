@@ -1,15 +1,12 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepPreOptions defines the CLI arguments
 type StepPreOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	DisableImport bool
 	OutDir        string
@@ -18,14 +15,9 @@ type StepPreOptions struct {
 var ()
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPre(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPre(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepPreOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -39,8 +31,8 @@ func NewCmdStepPre(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		},
 	}
 
-	cmd.AddCommand(NewCmdStepPreBuild(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepPreExtend(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepPreBuild(commonOpts))
+	cmd.AddCommand(NewCmdStepPreExtend(commonOpts))
 
 	return cmd
 }

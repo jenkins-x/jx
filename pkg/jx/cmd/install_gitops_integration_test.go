@@ -46,16 +46,16 @@ func TestInstallGitOps(t *testing.T) {
 		},
 	}
 
-	co := cmd.CommonOptions{
+	co := &cmd.CommonOptions{
 		In:  os.Stdin,
 		Out: os.Stdout,
 		Err: os.Stderr,
 	}
-	o := cmd.CreateInstallOptions(co.Factory, co.In, co.Out, co.Err)
+	o := cmd.CreateInstallOptions(co)
 
 	gitter := gits.NewGitFake()
 	helmer := helm_test.NewFakeHelmer()
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			clusterAdminRole,
 			testkube.CreateFakeGitSecret(),

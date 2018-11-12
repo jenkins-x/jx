@@ -83,7 +83,7 @@ func MainUsageTemplate() string {
 
 // OptionsHelpTemplate if the template for 'help' used by the 'options' command.
 func OptionsHelpTemplate() string {
-	return "Dispaly a list of global command-line options\n"
+	return "Display a list of global command-line options\n"
 }
 
 // OptionsUsageTemplate if the template for 'usage' used by the 'options' command.

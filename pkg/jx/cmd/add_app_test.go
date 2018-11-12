@@ -22,7 +22,7 @@ func TestAddAppForGitOps(t *testing.T) {
 
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testEnv.CommonOptions,
+			CommonOptions: testEnv.CommonOptions,
 		},
 		FakePullRequests: testEnv.FakePullRequests,
 		Version:          "0.0.1",
@@ -62,6 +62,9 @@ func prepareDevEnv(t *testing.T, gitOps bool) (*AddAppTestEnv, error) {
 
 	o := cmd.AddAppOptions{
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
+		AddOptions: cmd.AddOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 	}
 
 	devEnv := kube.NewPermanentEnvironmentWithGit("dev", fmt.Sprintf("https://github.com/%s/%s.git", testOrgName,
@@ -71,7 +74,7 @@ func prepareDevEnv(t *testing.T, gitOps bool) (*AddAppTestEnv, error) {
 		devEnv.Spec.Source.Ref = "master"
 	}
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			devEnv,
@@ -81,7 +84,7 @@ func prepareDevEnv(t *testing.T, gitOps bool) (*AddAppTestEnv, error) {
 	)
 	return &AddAppTestEnv{
 		FakePullRequests: o.FakePullRequests,
-		CommonOptions:    &o.CommonOptions,
+		CommonOptions:    o.CommonOptions,
 		FakeGitProvider:  fakeGitProvider,
 		DevRepo:          fakeRepo,
 		DevEnvRepo:       devEnvRepo,

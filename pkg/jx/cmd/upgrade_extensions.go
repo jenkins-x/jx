@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -32,7 +31,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 //const upstreamExtensionsRepositoryGitHub = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.lock.yaml"
@@ -57,15 +55,10 @@ type UpgradeExtensionsOptions struct {
 	ExtensionsRepositoryFile string
 }
 
-func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeExtensions(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeExtensionsOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -81,7 +74,7 @@ func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.Fil
 			CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdUpgradeExtensionsRepository(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeExtensionsRepository(commonOpts))
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryFile, "extensions-repository-file", "", "", "Specify the extensions repository yaml file to read from")
 	return cmd

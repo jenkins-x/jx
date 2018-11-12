@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/kube"
-	"io"
 
 	"github.com/spf13/cobra"
 
@@ -15,12 +15,11 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 )
 
 type NamespaceOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 const (
@@ -41,14 +40,9 @@ var (
 		jx ns cheese`)
 )
 
-func NewCmdNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdNamespace(commonOpts *CommonOptions) *cobra.Command {
 	options := &NamespaceOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "namespace",
@@ -63,7 +57,6 @@ func NewCmdNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter,
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

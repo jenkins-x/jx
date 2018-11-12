@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 
 	"fmt"
@@ -23,7 +22,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -74,9 +72,9 @@ var (
 
 // NewCmdCreateClusterGKETerraform creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterGKETerraform(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterGKETerraformOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "terraform",
@@ -93,7 +91,6 @@ func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 
 	options.addAuthFlags(cmd)
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	//cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")

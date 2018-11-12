@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -14,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -33,15 +31,10 @@ type ControllerBackupOptions struct {
 
 // NewCmdControllerBackup creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerBackup(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerBackup(commonOpts *CommonOptions) *cobra.Command {
 	options := &ControllerBackupOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -60,7 +53,6 @@ func NewCmdControllerBackup(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().StringVarP(&options.Organisation, "organisation", "o", "", "The organisation to backup")
 
-	options.addCommonFlags(cmd)
 
 	return cmd
 }

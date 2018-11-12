@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
@@ -14,12 +13,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type UninstallOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Namespace        string
 	Context          string
@@ -35,15 +33,9 @@ var (
 		jx uninstall`)
 )
 
-func NewCmdUninstall(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUninstall(commonOpts *CommonOptions) *cobra.Command {
 	options := &UninstallOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "uninstall",
@@ -57,7 +49,6 @@ func NewCmdUninstall(f Factory, in terminal.FileReader, out terminal.FileWriter,
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The team namespace to uninstall. Defaults to the current namespace.")
 	cmd.Flags().StringVarP(&options.Context, "context", "", "", "The kube context to uninstall JX from. This will be compared with the current context to prevent accidental uninstallation from the wrong cluster")
 	cmd.Flags().BoolVarP(&options.KeepEnvironments, "keep-environments", "", false, "Don't delete environments. Uninstall Jenkins X only.")

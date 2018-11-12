@@ -1,6 +1,12 @@
 package cmd_test
 
 import (
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -12,12 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os"
-	"path"
-	"path/filepath"
-	"testing"
 )
 
 func TestStepBuildPackApply(t *testing.T) {
@@ -39,7 +40,7 @@ func TestStepBuildPackApply(t *testing.T) {
 
 	o := &cmd.StepBuildPackApplyOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: &cmd.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,
 				Err: os.Stderr,
@@ -48,12 +49,11 @@ func TestStepBuildPackApply(t *testing.T) {
 		Dir: tempDir,
 	}
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			testkube.CreateFakeGitSecret(),
 		},
-		[]runtime.Object{
-		},
+		[]runtime.Object{},
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)

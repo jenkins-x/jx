@@ -1,14 +1,17 @@
 package cmd
 
 import (
+	"fmt"
+	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"os"
-	"path/filepath"
 )
 
 var (
@@ -37,15 +40,10 @@ type StepBuildPackApplyOptions struct {
 }
 
 // NewCmdStepBuildPackApply Creates a new Command object
-func NewCmdStepBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepBuildPackApply(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepBuildPackApplyOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -61,7 +59,6 @@ func NewCmdStepBuildPackApply(f Factory, in terminal.FileReader, out terminal.Fi
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.Jenkinsfile, "jenkinsfile", "", "", "The name of the Jenkinsfile to use. If not specified then 'Jenkinsfile' will be used")
@@ -77,13 +74,13 @@ func (o *StepBuildPackApplyOptions) Run() error {
 	if dir == "" {
 		dir, err = os.Getwd()
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 
 	settings, err := o.CommonOptions.TeamSettings()
 	if err != nil {
-	  return err
+		return err
 	}
 	log.Infof("build pack is %s\n", settings.BuildPackURL)
 
@@ -112,4 +109,9 @@ func (o *StepBuildPackApplyOptions) Run() error {
 		return err
 	}
 	return nil
+}
+
+// resolveImportFile resolve an import name and file
+func (o *StepBuildPackApplyOptions) resolveImportFile(importFile *jenkinsfile.ImportFile) (string, error) {
+	return importFile.File, fmt.Errorf("not implemented")
 }

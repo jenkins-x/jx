@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -45,16 +43,11 @@ var (
 	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", helm.SecretsFileName}
 )
 
-func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmApply(commonOpts *CommonOptions) *cobra.Command {
 	options := StepHelmApplyOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}

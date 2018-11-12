@@ -1,17 +1,14 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // ControllerOptions contains the CLI options
 type ControllerOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 var (
@@ -25,14 +22,9 @@ var (
 )
 
 // NewCmdController creates the edit command
-func NewCmdController(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdController(commonOpts *CommonOptions) *cobra.Command {
 	options := &ControllerOptions{
-		CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -48,13 +40,13 @@ func NewCmdController(f Factory, in terminal.FileReader, out terminal.FileWriter
 		},
 	}
 
-	cmd.AddCommand(NewCmdControllerBackup(f, in, out, errOut))
-	cmd.AddCommand(NewCmdControllerBuild(f, in, out, errOut))
-	cmd.AddCommand(NewCmdControllerRole(f, in, out, errOut))
-	cmd.AddCommand(NewCmdControllerTeam(f, in, out, errOut))
-	cmd.AddCommand(NewCmdControllerWorkflow(f, in, out, errOut))
-	cmd.AddCommand(NewCmdControllerCommitStatus(f, in, out, errOut))
-	cmd.AddCommand(NewCmdSControllerBuildNumbers(f, in, out, errOut))
+	cmd.AddCommand(NewCmdControllerBackup(commonOpts))
+	cmd.AddCommand(NewCmdControllerBuild(commonOpts))
+	cmd.AddCommand(NewCmdControllerRole(commonOpts))
+	cmd.AddCommand(NewCmdControllerTeam(commonOpts))
+	cmd.AddCommand(NewCmdControllerWorkflow(commonOpts))
+	cmd.AddCommand(NewCmdControllerCommitStatus(commonOpts))
+	cmd.AddCommand(NewCmdControllerBuildNumbers(commonOpts))
 	return cmd
 }
 

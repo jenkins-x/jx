@@ -23,7 +23,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/reports"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -75,15 +74,10 @@ type StepBlogState struct {
 }
 
 // NewCmdStepBlog Creates a new Command object
-func NewCmdStepBlog(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepBlog(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepBlogOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -99,7 +93,6 @@ func NewCmdStepBlog(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.FromDate, "from-date", "f", "", "The date to create the charts from. Defaults to a week before the to date. Should be a format: "+util.DateFormat)

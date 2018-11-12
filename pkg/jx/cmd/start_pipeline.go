@@ -3,18 +3,17 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/prow"
-	"io"
-	"k8s.io/api/core/v1"
-	"k8s.io/test-infra/prow/kube"
-	"k8s.io/test-infra/prow/pjutil"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/prow"
+	"k8s.io/api/core/v1"
+	"k8s.io/test-infra/prow/kube"
+	"k8s.io/test-infra/prow/pjutil"
+
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -62,16 +61,10 @@ var (
 )
 
 // NewCmdStartPipeline creates the command
-func NewCmdStartPipeline(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStartPipeline(commonOpts *CommonOptions) *cobra.Command {
 	options := &StartPipelineOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

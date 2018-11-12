@@ -1,12 +1,10 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-
-	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -61,18 +59,13 @@ type CreateEnvOptions struct {
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
-func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateEnv(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateEnvOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
 		},
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -114,7 +107,6 @@ func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
 
-	options.addCommonFlags(cmd)
 
 	return cmd
 }
@@ -238,7 +230,6 @@ func (o *CreateEnvOptions) Run() error {
 				log.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) \n", env.Spec.Namespace)
 			}
 		}
-		// It's a common option, see addCommonFlags in common.go
 		imagePullSecrets := o.GetImagePullSecrets()
 		saName := "default"
 		//log.Infof("Patching the secrets %s for the service account %s\n", imagePullSecrets, saName)

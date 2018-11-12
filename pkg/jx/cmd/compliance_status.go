@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -10,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -26,19 +24,14 @@ var (
 
 // ComplianceStatusOptions options for "compliance status" command
 type ComplianceStatusOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 // NewCmdComplianceStatus creates a command object for the "compliance status" action, which
 // retrieve the status of E2E compliance tests
-func NewCmdComplianceStatus(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceStatus(commonOpts *CommonOptions) *cobra.Command {
 	options := &ComplianceStatusOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{

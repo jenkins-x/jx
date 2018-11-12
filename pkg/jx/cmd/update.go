@@ -1,49 +1,41 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
-// Update contains the command line options
+// Update contacommonOptss the command lcommonOptse options
 type UpdateOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	DisableImport bool
 	OutDir        string
 }
 
 var (
-	update_resources = `Valid resource types include:
+	update_resources = `Valid resource types commonOptsclude:
 
 	* cluster
 	`
 
 	update_long = templates.LongDesc(`
-		Updates an existing resource.
+		Updates an existcommonOptsg resource.
 
 		` + update_resources + `
 `)
 )
 
 // NewCmdUpdate creates a command object for the "update" command
-func NewCmdUpdate(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpdate(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpdateOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
 		Use:   "update",
-		Short: "Updates an existing resource",
+		Short: "Updates an existcommonOptsg resource",
 		Long:  update_long,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
@@ -53,8 +45,8 @@ func NewCmdUpdate(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 		},
 	}
 
-	cmd.AddCommand(NewCmdUpdateCluster(f, in, out, errOut))
-	cmd.AddCommand(NewCmdUpdateWebhooks(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpdateCluster(commonOpts))
+	cmd.AddCommand(NewCmdUpdateWebhooks(commonOpts))
 
 	return cmd
 }

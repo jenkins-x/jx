@@ -1,19 +1,17 @@
 package cmd
 
 import (
-	"io"
-
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"net/http"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/spf13/cobra"
+
 	"strconv"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 type RateLimits struct {
@@ -50,15 +48,10 @@ var (
 )
 
 // NewCmdGetLimits creates the command
-func NewCmdGetLimits(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetLimits(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetLimitsOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

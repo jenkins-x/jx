@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"io"
+	"fmt"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
-	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -50,16 +47,10 @@ type CreateIssueOptions struct {
 }
 
 // NewCmdCreateIssue creates a command object for the "create" command
-func NewCmdCreateIssue(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateIssue(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateIssueOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -82,7 +73,6 @@ func NewCmdCreateIssue(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&options.Body, "body", "", "", "The body of the issue")
 	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the issue")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

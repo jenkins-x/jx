@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 )
 
 // StepCreateOptions contains the command line flags
@@ -12,15 +10,10 @@ type StepCreateOptions struct {
 }
 
 // NewCmdStepCreate Steps a command object for the "step" command
-func NewCmdStepCreate(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepCreate(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepCreateOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -34,8 +27,8 @@ func NewCmdStepCreate(f Factory, in terminal.FileReader, out terminal.FileWriter
 			CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdStepCreateBuild(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepCreateBuildTemplate(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepCreateBuild(commonOpts))
+	cmd.AddCommand(NewCmdStepCreateBuildTemplate(commonOpts))
 	return cmd
 }
 

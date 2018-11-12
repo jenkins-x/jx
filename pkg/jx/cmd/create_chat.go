@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateChatOptions the options for the create spring command
@@ -13,15 +10,10 @@ type CreateChatOptions struct {
 }
 
 // NewCmdCreateChat creates a command object for the "create" command
-func NewCmdCreateChat(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateChat(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateChatOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -37,8 +29,8 @@ func NewCmdCreateChat(f Factory, in terminal.FileReader, out terminal.FileWriter
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateChatServer(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateChatToken(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateChatServer(commonOpts))
+	cmd.AddCommand(NewCmdCreateChatToken(commonOpts))
 	return cmd
 }
 

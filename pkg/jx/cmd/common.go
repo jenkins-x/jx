@@ -140,15 +140,14 @@ func (o *CommonOptions) Debugf(format string, a ...interface{}) {
 }
 
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&options.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
-	cmd.Flags().BoolVarP(&options.Verbose, optionVerbose, "", false, "Enable verbose logging")
-	cmd.Flags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
-	cmd.Flags().BoolVarP(&options.Headless, optionHeadless, "", false, "Enable headless operation if using browser automation")
-	cmd.Flags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
-	cmd.Flags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Should any required dependencies be installed automatically")
-	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
-	cmd.Flags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
-
+	cmd.PersistentFlags().BoolVarP(&options.BatchMode, optionBatchMode, "", false, "In batch mode the command never prompts for user input")
+	cmd.PersistentFlags().BoolVarP(&options.Verbose, optionVerbose, "", false, "Enable verbose logging")
+	cmd.PersistentFlags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
+	cmd.PersistentFlags().BoolVarP(&options.Headless, optionHeadless, "", false, "Enable headless operation if using browser automation")
+	cmd.PersistentFlags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
+	cmd.PersistentFlags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Should any required dependencies be installed automatically")
+	cmd.PersistentFlags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
+	cmd.PersistentFlags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
 	options.Cmd = cmd
 }
 
@@ -855,7 +854,7 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 //This is analogous to running `jx namespace cheese`.
 func (o *CommonOptions) ChangeNamespace(ns string) {
 	nsOptions := &NamespaceOptions{
-		CommonOptions: *o,
+		CommonOptions: o,
 	}
 	nsOptions.BatchMode = true
 	nsOptions.Args = []string{ns}

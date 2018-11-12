@@ -136,7 +136,7 @@ func TestCreateEnvRun(t *testing.T) {
 	options := cmd.CreateEnvOptions{
 		HelmValuesConfig: helmValuesConfig,
 		CreateOptions: cmd.CreateOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: &cmd.CommonOptions{
 				Factory: factory,
 				In:      console.In,
 				Out:     console.Out,

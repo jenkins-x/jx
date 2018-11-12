@@ -2,10 +2,11 @@ package cmd_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes"
-	"testing"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -23,6 +24,9 @@ import (
 func TestEnvironmentRoleBinding(t *testing.T) {
 	t.Parallel()
 	o := &cmd.ControllerRoleOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch: true,
 	}
 	roleName := "myrole"
@@ -87,7 +91,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 		},
 	}
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			role,
 			roleWithLabel,

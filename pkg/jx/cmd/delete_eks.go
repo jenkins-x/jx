@@ -3,15 +3,14 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"io"
 	"os"
 	"os/exec"
+
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type DeleteEksOptions struct {
@@ -31,15 +30,10 @@ var (
 	`)
 )
 
-func NewCmdDeleteEks(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteEks(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteEksOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{

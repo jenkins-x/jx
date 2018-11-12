@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"io"
+
 	"time"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+
 	"github.com/jenkins-x/jx/pkg/kube/services"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
@@ -53,20 +54,14 @@ type CreateVaultOptions struct {
 }
 
 // NewCmdCreateVault  creates a command object for the "create" command
-func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
+func NewCmdCreateVault(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateVaultOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: commonOptions,
+			CommonOptions: commonOpts,
 		},
 		UpgradeIngressOptions: UpgradeIngressOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: commonOptions,
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -89,7 +84,6 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace where the Vault is created")
 	cmd.Flags().StringVarP(&options.SecretsPathPrefix, "secrets-path-prefix", "p", vault.DefaultSecretsPathPrefix, "Path prefix for secrets used for access control config")
 
-	options.addCommonFlags(cmd)
 	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }

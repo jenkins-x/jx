@@ -2,14 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // DeletePreviewOptions are the flags for delete commands
@@ -18,16 +16,11 @@ type DeletePreviewOptions struct {
 }
 
 // NewCmdDeletePreview creates a command object
-func NewCmdDeletePreview(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeletePreview(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeletePreviewOptions{
 		PreviewOptions: PreviewOptions{
 			PromoteOptions: PromoteOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -43,7 +36,6 @@ func NewCmdDeletePreview(f Factory, in terminal.FileReader, out terminal.FileWri
 		},
 	}
 	options.addPreviewOptions(cmd)
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

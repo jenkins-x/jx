@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -11,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type CreateGkeServiceAccountFlags struct {
@@ -36,15 +34,10 @@ var (
 )
 
 // NewCmdCreateGkeServiceAccount creates a command object for the "create" command
-func NewCmdCreateGkeServiceAccount(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGkeServiceAccount(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateGkeServiceAccountOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -60,7 +53,6 @@ func NewCmdCreateGkeServiceAccount(f Factory, in terminal.FileReader, out termin
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, true)
 
 	return cmd

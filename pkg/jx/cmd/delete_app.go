@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/prow"
-	"github.com/pkg/errors"
-	"io"
 	"os/user"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
@@ -19,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -45,7 +44,7 @@ var (
 
 // DeleteApplicationOptions are the flags for this delete commands
 type DeleteApplicationOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	SelectAll           bool
 	SelectFilter        string
@@ -64,14 +63,9 @@ type DeleteApplicationOptions struct {
 }
 
 // NewCmdDeleteApplication creates a command object for this command
-func NewCmdDeleteApplication(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteApplication(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteApplicationOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{

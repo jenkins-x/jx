@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -16,15 +13,10 @@ type StepReportOptions struct {
 var ()
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepReport(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepReport(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepReportOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -39,8 +31,8 @@ func NewCmdStepReport(f Factory, in terminal.FileReader, out terminal.FileWriter
 		},
 	}
 
-	cmd.AddCommand(NewCmdStepReportActivities(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepReportReleases(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepReportActivities(commonOpts))
+	cmd.AddCommand(NewCmdStepReportReleases(commonOpts))
 
 	return cmd
 }

@@ -2,15 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"io"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -30,16 +29,11 @@ type CreateAddonKnativeBuildOptions struct {
 	token    string
 }
 
-func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonKnativeBuild(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonKnativeBuildOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}

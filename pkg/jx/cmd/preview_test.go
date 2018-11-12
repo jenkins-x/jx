@@ -172,7 +172,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	factory := cmd_mocks.NewMockFactory()
 	previewOpts := &cmd.PreviewOptions{
 		PromoteOptions: cmd.PromoteOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: &cmd.CommonOptions{
 				Factory:   factory,
 				Out:       os.Stdout,
 				In:        os.Stdin,

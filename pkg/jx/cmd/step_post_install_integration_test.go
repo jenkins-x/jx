@@ -3,6 +3,9 @@
 package cmd_test
 
 import (
+	"os"
+	"testing"
+
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -15,8 +18,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os"
-	"testing"
 )
 
 func TestStepPostInstall(t *testing.T) {
@@ -30,14 +31,14 @@ func TestStepPostInstall(t *testing.T) {
 
 	o := cmd.StepPostInstallOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: &cmd.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,
 				Err: os.Stderr,
 			},
 		},
 	}
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{

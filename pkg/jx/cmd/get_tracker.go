@@ -1,16 +1,13 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // GetTrackerOptions the command line options
@@ -34,15 +31,10 @@ var (
 )
 
 // NewCmdGetTracker creates the command
-func NewCmdGetTracker(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetTracker(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetTrackerOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

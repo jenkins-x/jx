@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -13,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -50,16 +48,11 @@ type CreateAddonCloudBeesOptions struct {
 }
 
 // NewCmdCreateAddonCloudBees creates a command object for the "create" command
-func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonCloudBees(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonCloudBeesOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -81,7 +74,6 @@ func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 	cmd.Flags().BoolVarP(&options.Sso, "sso", "", false, "Enable single sign-on")
 	cmd.Flags().BoolVarP(&options.Basic, "basic", "", false, "Enable basic auth")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access UI when using basic auth.  Defaults to default Jenkins X admin password.")
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName, defaultCloudBeesVersion)
 	return cmd
 }

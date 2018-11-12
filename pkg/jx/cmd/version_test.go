@@ -55,7 +55,9 @@ func TestVersisonCheckWhenCurrentVersionIsLessThanReleaseVersion(t *testing.T) {
 	jxVersion := semver.Version{Major: 1, Minor: 3, Patch: 153}
 	setup(jxVersion)
 	version.Map["version"] = "1.0.0"
-	opts := &cmd.VersionOptions{}
+	opts := &cmd.VersionOptions{
+		CommonOptions: &cmd.CommonOptions{},
+	}
 	err := opts.VersionCheck()
 	assert.Error(t, err, "VersionCheck should exit with failure")
 }
@@ -66,7 +68,9 @@ func TestVersisonCheckWhenCurrentVersionIsEqualToReleaseVersionWithPatch(t *test
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3, Pre: prVersions, Build: []string(nil)}
 	setup(jxVersion)
 	version.Map["version"] = "1.2.3"
-	opts := &cmd.VersionOptions{}
+	opts := &cmd.VersionOptions{
+		CommonOptions: &cmd.CommonOptions{},
+	}
 	err := opts.VersionCheck()
 	assert.NoError(t, err, "VersionCheck should exit without failure")
 }
@@ -76,7 +80,9 @@ func TestVersisonCheckWhenCurrentVersionWithPatchIsEqualToReleaseVersion(t *test
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	setup(jxVersion)
 	version.Map["version"] = "1.2.3-dev+6a8285f4"
-	opts := &cmd.VersionOptions{}
+	opts := &cmd.VersionOptions{
+		CommonOptions: &cmd.CommonOptions{},
+	}
 	err := opts.VersionCheck()
 	assert.NoError(t, err, "VersionCheck should exit without failure")
 }
@@ -85,7 +91,9 @@ func TestVersisonCheckWhenCurrentVersionWithPatchIsLessThanReleaseVersion(t *tes
 	jxVersion := semver.Version{Major: 1, Minor: 2, Patch: 3}
 	setup(jxVersion)
 	version.Map["version"] = "1.2.2-dev+6a8285f4"
-	opts := &cmd.VersionOptions{}
+	opts := &cmd.VersionOptions{
+		CommonOptions: &cmd.CommonOptions{},
+	}
 	err := opts.VersionCheck()
 	assert.NoError(t, err, "VersionCheck should exit without failure")
 }

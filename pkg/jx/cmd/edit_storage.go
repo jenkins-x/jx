@@ -2,13 +2,10 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -46,15 +43,10 @@ type EditStorageOptions struct {
 }
 
 // NewCmdEditStorage creates a command object for the "create" command
-func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditStorage(commonOpts *CommonOptions) *cobra.Command {
 	options := &EditStorageOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -84,7 +76,7 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 // Run implements the command
 func (o *EditStorageOptions) Run() error {
 	var err error
-	if o.Classifier == "" && ! o.BatchMode {
+	if o.Classifier == "" && !o.BatchMode {
 		o.Classifier, err = util.PickName(kube.Classifications, "Pick the content classification name", "The name is used as a key to store content in different locations", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
@@ -97,11 +89,11 @@ func (o *EditStorageOptions) Run() error {
 	if !o.BatchMode && (o.HttpURL == "" && o.GitURL == "") {
 		o.GitURL, err = util.PickValue("Git repository URL to store content:", o.GitURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
 		if err != nil {
-		  return err
+			return err
 		}
 		o.HttpURL, err = util.PickValue("HTTP URL to POST content to:", o.HttpURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 

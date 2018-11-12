@@ -1,16 +1,13 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // UpgradeOptions are the flags for delete commands
 type UpgradeOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 var (
@@ -31,16 +28,10 @@ var (
 )
 
 // NewCmdUpgrade creates the command
-func NewCmdUpgrade(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgrade(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeOptions{
-		CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
-
 	cmd := &cobra.Command{
 		Use:     "upgrade [flags]",
 		Short:   "Upgrades a resource",
@@ -55,14 +46,14 @@ func NewCmdUpgrade(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		SuggestFor: []string{"update"},
 	}
 
-	cmd.AddCommand(NewCmdUpgradeAddons(f, in, out, errOut))
-	cmd.AddCommand(NewCmdUpgradeCLI(f, in, out, errOut))
-	cmd.AddCommand(NewCmdUpgradeBinaries(f, in, out, errOut))
-	cmd.AddCommand(NewCmdUpgradeCluster(f, in, out, errOut))
-	cmd.AddCommand(NewCmdUpgradeIngress(f, in, out, errOut))
-	cmd.AddCommand(NewCmdUpgradePlatform(f, in, out, errOut))
-	cmd.AddCommand(NewCmdUpgradeExtensions(f, in, out, errOut))
-	cmd.AddCommand(NewCmdUpgradeApps(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeAddons(commonOpts))
+	cmd.AddCommand(NewCmdUpgradeCLI(commonOpts))
+	cmd.AddCommand(NewCmdUpgradeBinaries(commonOpts))
+	cmd.AddCommand(NewCmdUpgradeCluster(commonOpts))
+	cmd.AddCommand(NewCmdUpgradeIngress(commonOpts))
+	cmd.AddCommand(NewCmdUpgradePlatform(commonOpts))
+	cmd.AddCommand(NewCmdUpgradeExtensions(commonOpts))
+	cmd.AddCommand(NewCmdUpgradeApps(commonOpts))
 	return cmd
 }
 

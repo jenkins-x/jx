@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"regexp"
 	"strings"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util/system"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -19,7 +17,7 @@ const (
 )
 
 type VersionOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Container      string
 	Namespace      string
@@ -27,14 +25,9 @@ type VersionOptions struct {
 	NoVersionCheck bool
 }
 
-func NewCmdVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdVersion(commonOpts *CommonOptions) *cobra.Command {
 	options := &VersionOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -51,7 +44,6 @@ func NewCmdVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		cmd.Flags().BoolP("client", "c", false, "Client version only (no server required).")
 		cmd.Flags().BoolP("short", "", false, "Print just the version number.")
 	*/
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().MarkShorthandDeprecated("client", "please use --client instead.")
 	cmd.Flags().BoolVarP(&options.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")

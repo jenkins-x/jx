@@ -1,10 +1,11 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -23,7 +24,7 @@ type TestOptions struct {
 func (o *TestOptions) Setup() {
 	o.UpgradeIngressOptions = cmd.UpgradeIngressOptions{
 		CreateOptions: cmd.CreateOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: &cmd.CommonOptions{
 				KubeClientCached: testclient.NewSimpleClientset(),
 			},
 		},

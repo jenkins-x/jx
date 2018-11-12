@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -69,7 +67,7 @@ type CallbackFn func() error
 
 // ImportOptions options struct for jx import
 type ImportOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	RepoURL string
 
@@ -140,14 +138,9 @@ var (
 )
 
 // NewCmdImport the cobra command for jx import
-func NewCmdImport(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdImport(commonOpts *CommonOptions) *cobra.Command {
 	options := &ImportOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "import",
@@ -192,7 +185,6 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the Git provider organisation will be used")
 	cmd.Flags().StringVarP(&options.ExternalJenkinsBaseURL, "external-jenkins-url", "", "", "The jenkins url that an external git provider needs to use")
 
-	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
 
@@ -900,10 +892,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 
 	startBuildOptions := StartPipelineOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory:          options.Factory,
-				KubeClientCached: options.KubeClientCached,
-			},
+			CommonOptions: options.CommonOptions,
 		},
 	}
 	startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, masterBranch)}

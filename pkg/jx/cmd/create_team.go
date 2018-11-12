@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
@@ -34,15 +32,10 @@ type CreateTeamOptions struct {
 }
 
 // NewCmdCreateTeam creates a command object for the "create" command
-func NewCmdCreateTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateTeam(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateTeamOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -63,7 +56,6 @@ func NewCmdCreateTeam(f Factory, in terminal.FileReader, out terminal.FileWriter
 	cmd.Flags().StringVarP(&options.Name, optionName, "n", "", "The name of the new Team. Should be all lower case and no special characters other than '-'")
 	cmd.Flags().StringArrayVarP(&options.Members, "member", "m", []string{}, "The usernames of the members to add to the Team")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

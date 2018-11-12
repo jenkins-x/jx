@@ -3,6 +3,8 @@
 package cmd_test
 
 import (
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -12,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
-	"testing"
 )
 
 func TestSequentialWorkflow(t *testing.T) {
@@ -28,6 +29,9 @@ func TestSequentialWorkflow(t *testing.T) {
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
 	o := &cmd.ControllerWorkflowOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
@@ -43,7 +47,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	step1 := workflow.CreateWorkflowPromoteStep("staging")
 	step2 := workflow.CreateWorkflowPromoteStep("production", step1)
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -148,6 +152,9 @@ func TestWorkflowManualPromote(t *testing.T) {
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
 	o := &cmd.ControllerWorkflowOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
@@ -159,7 +166,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	workflowName := "default"
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -297,6 +304,9 @@ func TestParallelWorkflow(t *testing.T) {
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, repoA, repoB, repoC)
 
 	o := &cmd.ControllerWorkflowOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
@@ -312,7 +322,7 @@ func TestParallelWorkflow(t *testing.T) {
 	step2 := workflow.CreateWorkflowPromoteStep(envNameB)
 	step3 := workflow.CreateWorkflowPromoteStep(envNameC, step1, step2)
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			envA,
@@ -442,6 +452,9 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
 	o := &cmd.ControllerWorkflowOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
@@ -457,7 +470,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	step1 := workflow.CreateWorkflowPromoteStep("staging")
 	step2 := workflow.CreateWorkflowPromoteStep("production", step1)
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,

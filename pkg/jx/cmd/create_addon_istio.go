@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -16,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -53,16 +51,11 @@ type CreateAddonIstioOptions struct {
 }
 
 // NewCmdCreateAddonIstio creates a command object for the "create" command
-func NewCmdCreateAddonIstio(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonIstio(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonIstioOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -81,7 +74,6 @@ func NewCmdCreateAddonIstio(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultIstioNamespace, defaultIstioReleaseName, defaultIstioVersion)
 
 	cmd.Flags().StringVarP(&options.Password, "password", "p", defaultIstioPassword, "The default password to use for Istio")

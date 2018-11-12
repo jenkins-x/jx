@@ -1,14 +1,10 @@
 package cmd
 
 import (
-	"io"
-
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // GetTokenAddonOptions the command line options
@@ -29,16 +25,11 @@ var (
 )
 
 // NewCmdGetTokenAddon creates the command
-func NewCmdGetTokenAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetTokenAddon(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetTokenAddonOptions{
 		GetTokenOptions{
 			GetOptions: GetOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}

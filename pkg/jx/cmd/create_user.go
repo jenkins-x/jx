@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -11,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -36,15 +34,10 @@ type CreateUserOptions struct {
 }
 
 // NewCmdCreateUser creates a command object for the "create" command
-func NewCmdCreateUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateUser(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateUserOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -66,7 +59,6 @@ func NewCmdCreateUser(f Factory, in terminal.FileReader, out terminal.FileWriter
 	cmd.Flags().StringVarP(&options.UserSpec.Name, "name", "n", "", "The textual full name of the user")
 	cmd.Flags().StringVarP(&options.UserSpec.Email, "email", "e", "", "The users email address")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

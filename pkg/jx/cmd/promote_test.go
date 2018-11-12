@@ -1,8 +1,9 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
@@ -47,8 +48,8 @@ func TestPromoteToProductionRun(t *testing.T) {
 		// test settings
 		UseFakeHelm: true,
 	}
-	promoteOptions.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
-	promoteOptions.BatchMode = true                       // --batch-mode
+	promoteOptions.CommonOptions = testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	promoteOptions.BatchMode = true                      // --batch-mode
 
 	// Check there is no PR for production env yet
 	jxClient, ns, err := promoteOptions.JXClientAndDevNamespace()
@@ -106,8 +107,8 @@ func TestPromoteToProductionNoMergeRun(t *testing.T) {
 		UseFakeHelm: true,
 	}
 
-	promoteOptions.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
-	promoteOptions.BatchMode = true                       // --batch-mode
+	promoteOptions.CommonOptions = testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	promoteOptions.BatchMode = true                      // --batch-mode
 
 	jxClient, ns, err := promoteOptions.JXClientAndDevNamespace()
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
@@ -178,8 +179,8 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 		UseFakeHelm: true,
 	}
 
-	promoteOptions.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
-	promoteOptions.BatchMode = true                       // --batch-mode
+	promoteOptions.CommonOptions = testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
+	promoteOptions.BatchMode = true                      // --batch-mode
 
 	jxClient, ns, err := promoteOptions.JXClientAndDevNamespace()
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
@@ -244,6 +245,9 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
 	o := &cmd.ControllerWorkflowOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
@@ -257,7 +261,7 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 
 	workflowName := "default"
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -317,7 +321,7 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 	return &TestEnv{
 		Activity:         a,
 		FakePullRequests: o.FakePullRequests,
-		CommonOptions:    &o.CommonOptions,
+		CommonOptions:    o.CommonOptions,
 		WorkflowOptions:  o,
 		FakeGitProvider:  fakeGitProvider,
 		DevRepo:          fakeRepo,

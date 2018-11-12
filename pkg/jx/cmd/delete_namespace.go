@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
@@ -11,13 +10,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DeleteNamespaceOptions are the flags for delete commands
 type DeleteNamespaceOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	SelectAll    bool
 	SelectFilter string
@@ -40,15 +38,9 @@ var (
 
 // NewCmdDeleteNamespace creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteNamespace(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteNamespaceOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -65,7 +57,6 @@ func NewCmdDeleteNamespace(f Factory, in terminal.FileReader, out terminal.FileW
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Should we default to selecting all the matched namespaces for deletion")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filters the list of namespaces you can pick from")
 	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
@@ -82,7 +73,7 @@ func (o *DeleteNamespaceOptions) Run() error {
 	namespaceInterface := kubeClient.CoreV1().Namespaces()
 	nsList, err := namespaceInterface.List(metav1.ListOptions{})
 	if err != nil {
-	  return err
+		return err
 	}
 	namespaceNames := []string{}
 	for _, namespace := range nsList.Items {

@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"runtime"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type GetVaultConfigOptions struct {
@@ -38,15 +36,10 @@ var (
 )
 
 // NewCmdGetVaultConfig creates a new command for 'jx get secrets'
-func NewCmdGetVaultConfig(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetVaultConfig(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetVaultConfigOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

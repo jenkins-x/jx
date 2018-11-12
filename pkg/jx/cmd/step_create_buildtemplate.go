@@ -2,6 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -11,14 +16,8 @@ import (
 	buildapi "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -54,15 +53,10 @@ type StepCreateBuildTemplateOptions struct {
 }
 
 // NewCmdStepCreateBuildTemplate Creates a new Command object
-func NewCmdStepCreateBuildTemplate(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepCreateBuildTemplate(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepCreateBuildTemplateOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

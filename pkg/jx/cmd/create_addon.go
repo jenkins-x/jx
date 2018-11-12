@@ -2,14 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,15 +24,10 @@ type CreateAddonOptions struct {
 }
 
 // NewCmdCreateAddon creates a command object for the "create" command
-func NewCmdCreateAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddon(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -43,26 +36,26 @@ func NewCmdCreateAddon(f Factory, in terminal.FileReader, out terminal.FileWrite
 		Short:   "Creates an addon",
 		Aliases: []string{"scm"},
 		Run: func(cmd *cobra.Command, args []string) {
-			options.Cmd = cmd
-			options.Args = args
-			err := options.Run()
+			commonOpts.Cmd = cmd
+			commonOpts.Args = args
+			err := commonOpts.Run()
 			CheckErr(err)
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateAddonAmbassador(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonAnchore(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonCloudBees(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonGitea(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonIstio(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonKnativeBuild(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonKubeless(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonOwasp(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonPrometheus(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonProw(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonSSO(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateAddonVault(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonAmbassador(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonAnchore(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonCloudBees(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonGitea(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonIstio(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonKnativeBuild(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonKubeless(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonOwasp(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonPipelineEvents(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonPrometheus(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonProw(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonSSO(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonVault(commonOpts))
 
 	options.addFlags(cmd, kube.DefaultNamespace, "", "")
 	return cmd

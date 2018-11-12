@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"strconv"
 
@@ -29,16 +26,11 @@ type StepPRCommentFlags struct {
 }
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPRComment(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPRComment(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepPRCommentOptions{
 		StepPROptions: StepPROptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -59,7 +51,6 @@ func NewCmdStepPRComment(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().StringVarP(&options.Flags.Repository, "repository", "r", "", "Git repository")
 	cmd.Flags().StringVarP(&options.Flags.PR, "pull-request", "p", "", "Git Pull Request number")
 
-	options.addCommonFlags(cmd)
 
 	return cmd
 }

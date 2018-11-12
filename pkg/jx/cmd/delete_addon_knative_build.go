@@ -4,12 +4,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,15 +30,10 @@ type DeleteKnativeBuildOptions struct {
 }
 
 // NewCmdDeleteAddonKnativeBuild defines the command
-func NewCmdDeleteAddonKnativeBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddonKnativeBuild(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteKnativeBuildOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

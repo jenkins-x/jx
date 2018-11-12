@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
+
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/pkg/errors"
+
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 
 	osUser "os/user"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -47,7 +47,7 @@ type CreateClusterGKEFlags struct {
 	Namespace       string
 	Labels          string
 	Scopes          []string
-	Preemptible 	bool
+	Preemptible     bool
 }
 
 const clusterListHeader = "PROJECT_ID"
@@ -78,9 +78,9 @@ var (
 
 // NewCmdCreateClusterGKE creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterGKEOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -96,7 +96,6 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -115,7 +114,7 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, "preemptible", "", false, "Use preemptible VMs in the node-pool")
 
-	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterGKETerraform(commonOpts))
 
 	return cmd
 }
@@ -325,7 +324,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	// TODO - Reenable vault for GitOpsMode
 	//o.CreateClusterOptions.InstallOptions.GitOpsMode || o.CreateClusterOptions.InstallOptions.Vault {
 	if o.CreateClusterOptions.InstallOptions.Vault {
-		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
+		if err = InstallVaultOperator(o.CommonOptions, ""); err != nil {
 			return err
 		}
 		err = secrets.NewSecretLocation(kubeClient, ns).SetInVault(true)

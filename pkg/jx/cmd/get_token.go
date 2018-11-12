@@ -1,11 +1,8 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetTokenOptions the command line options
@@ -17,15 +14,10 @@ type GetTokenOptions struct {
 }
 
 // NewCmdGetToken creates the command
-func NewCmdGetToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetToken(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetTokenOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -40,7 +32,7 @@ func NewCmdGetToken(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 			CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdGetTokenAddon(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetTokenAddon(commonOpts))
 	return cmd
 }
 

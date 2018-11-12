@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-
 	"os"
 	"path/filepath"
 
@@ -13,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -45,8 +42,8 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := createUpdateClusterGKETerraformOptions(f, in, out, errOut, GKE)
+func NewCmdUpdateClusterGKETerraform(commonOpts *CommonOptions) *cobra.Command {
+	options := createUpdateClusterGKETerraformOptions(commonOpts, GKE)
 
 	cmd := &cobra.Command{
 		Use:     "terraform",
@@ -61,7 +58,6 @@ func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 		},
 	}
 
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
@@ -70,17 +66,11 @@ func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 	return cmd
 }
 
-func createUpdateClusterGKETerraformOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) UpdateClusterGKETerraformOptions {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
+func createUpdateClusterGKETerraformOptions(commonOpts *CommonOptions, cloudProvider string) UpdateClusterGKETerraformOptions {
 	options := UpdateClusterGKETerraformOptions{
 		UpdateClusterOptions: UpdateClusterOptions{
 			UpdateOptions: UpdateOptions{
-				CommonOptions: commonOptions,
+				CommonOptions: commonOpts,
 			},
 			Provider: cloudProvider,
 		},

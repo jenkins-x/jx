@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -15,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -53,17 +51,10 @@ type UpgradeIngressOptions struct {
 }
 
 // NewCmdUpgradeIngress defines the command
-func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
-
+func NewCmdUpgradeIngress(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeIngressOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: commonOptions,
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -81,7 +72,6 @@ func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 	options.addFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	return cmd
 }

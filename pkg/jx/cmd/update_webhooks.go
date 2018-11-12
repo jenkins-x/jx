@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -12,14 +11,13 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // UpdateWebhooks the flags for running create cluster
 type UpdateWebhooksOptions struct {
-	CommonOptions
+	*CommonOptions
 	Org             string
 	Repo            string
 	ExactHookMatch  bool
@@ -41,8 +39,10 @@ var (
 `)
 )
 
-func NewCmdUpdateWebhooks(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := createUpdateWebhooksOptions(f, in, out, errOut)
+func NewCmdUpdateWebhooks(commonOpts *CommonOptions) *cobra.Command {
+	options := UpdateWebhooksOptions{
+		CommonOptions: commonOpts,
+	}
 
 	cmd := &cobra.Command{
 		Use:     "webhooks",
@@ -63,19 +63,6 @@ func NewCmdUpdateWebhooks(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.PreviousHookUrl, "previous-hook-url", "", "", "Whether to match based on an another URL")
 
 	return cmd
-}
-
-func createUpdateWebhooksOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) UpdateWebhooksOptions {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
-	options := UpdateWebhooksOptions{
-		CommonOptions: commonOptions,
-	}
-	return options
 }
 
 func (options *UpdateWebhooksOptions) Run() error {

@@ -1,16 +1,13 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type StepOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	DisableImport bool
 	OutDir        string
@@ -19,14 +16,9 @@ type StepOptions struct {
 var ()
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStep(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStep(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -41,30 +33,30 @@ func NewCmdStep(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 		},
 	}
 
-	cmd.AddCommand(NewCmdStepBuildPack(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepBDD(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepBlog(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepChangelog(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepCreate(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepEnv(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepGit(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepGpgCredentials(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepHelm(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepLinkServices(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepNexus(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepNextVersion(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepNextBuildNumber(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepPre(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepPR(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepPost(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepReport(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepRelease(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepSplitMonorepo(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepTag(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepValidate(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepVerify(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepWaitForArtifact(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepCollect(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepBuildPack(commonOpts))
+	cmd.AddCommand(NewCmdStepBDD(commonOpts))
+	cmd.AddCommand(NewCmdStepBlog(commonOpts))
+	cmd.AddCommand(NewCmdStepChangelog(commonOpts))
+	cmd.AddCommand(NewCmdStepCreate(commonOpts))
+	cmd.AddCommand(NewCmdStepEnv(commonOpts))
+	cmd.AddCommand(NewCmdStepGit(commonOpts))
+	cmd.AddCommand(NewCmdStepGpgCredentials(commonOpts))
+	cmd.AddCommand(NewCmdStepHelm(commonOpts))
+	cmd.AddCommand(NewCmdStepLinkServices(commonOpts))
+	cmd.AddCommand(NewCmdStepNexus(commonOpts))
+	cmd.AddCommand(NewCmdStepNextVersion(commonOpts))
+	cmd.AddCommand(NewCmdStepNextBuildNumber(commonOpts))
+	cmd.AddCommand(NewCmdStepPre(commonOpts))
+	cmd.AddCommand(NewCmdStepPR(commonOpts))
+	cmd.AddCommand(NewCmdStepPost(commonOpts))
+	cmd.AddCommand(NewCmdStepReport(commonOpts))
+	cmd.AddCommand(NewCmdStepRelease(commonOpts))
+	cmd.AddCommand(NewCmdStepSplitMonorepo(commonOpts))
+	cmd.AddCommand(NewCmdStepTag(commonOpts))
+	cmd.AddCommand(NewCmdStepValidate(commonOpts))
+	cmd.AddCommand(NewCmdStepVerify(commonOpts))
+	cmd.AddCommand(NewCmdStepWaitForArtifact(commonOpts))
+	cmd.AddCommand(NewCmdStepCollect(commonOpts))
 
 	return cmd
 }

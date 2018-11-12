@@ -81,7 +81,7 @@ func TestImportProject(t *testing.T) {
 	When(jenkinsClientInterface.GetJob(AnyString())).ThenReturn(jenkinsJob, nil)
 
 	o := &cmd.ImportOptions{
-		CommonOptions: cmd.CommonOptions{
+		CommonOptions: &cmd.CommonOptions{
 			Factory: factory,
 			In:      console.In,
 			Out:     console.Out,

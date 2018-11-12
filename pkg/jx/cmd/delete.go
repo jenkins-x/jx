@@ -1,17 +1,14 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // DeleteOptions are the flags for delete commands
 type DeleteOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 var (
@@ -28,14 +25,9 @@ var (
 
 // NewCmdDelete creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDelete(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteOptions{
-		CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -52,28 +44,28 @@ func NewCmdDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 		SuggestFor: []string{"remove", "rm", "del"},
 	}
 
-	cmd.AddCommand(NewCmdDeleteAddon(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteApplication(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteBranch(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteChat(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteContext(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteDevPod(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteEks(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteEnv(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteGit(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteJenkins(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteNamespace(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeletePostPreviewJob(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeletePreview(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteQuickstartLocation(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteRepo(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteToken(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteTeam(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteTracker(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteUser(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteAws(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteVault(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteExtension(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteAddon(commonOpts))
+	cmd.AddCommand(NewCmdDeleteApplication(commonOpts))
+	cmd.AddCommand(NewCmdDeleteBranch(commonOpts))
+	cmd.AddCommand(NewCmdDeleteChat(commonOpts))
+	cmd.AddCommand(NewCmdDeleteContext(commonOpts))
+	cmd.AddCommand(NewCmdDeleteDevPod(commonOpts))
+	cmd.AddCommand(NewCmdDeleteEks(commonOpts))
+	cmd.AddCommand(NewCmdDeleteEnv(commonOpts))
+	cmd.AddCommand(NewCmdDeleteGit(commonOpts))
+	cmd.AddCommand(NewCmdDeleteJenkins(commonOpts))
+	cmd.AddCommand(NewCmdDeleteNamespace(commonOpts))
+	cmd.AddCommand(NewCmdDeletePostPreviewJob(commonOpts))
+	cmd.AddCommand(NewCmdDeletePreview(commonOpts))
+	cmd.AddCommand(NewCmdDeleteQuickstartLocation(commonOpts))
+	cmd.AddCommand(NewCmdDeleteRepo(commonOpts))
+	cmd.AddCommand(NewCmdDeleteToken(commonOpts))
+	cmd.AddCommand(NewCmdDeleteTeam(commonOpts))
+	cmd.AddCommand(NewCmdDeleteTracker(commonOpts))
+	cmd.AddCommand(NewCmdDeleteUser(commonOpts))
+	cmd.AddCommand(NewCmdDeleteAws(commonOpts))
+	cmd.AddCommand(NewCmdDeleteVault(commonOpts))
+	cmd.AddCommand(NewCmdDeleteExtension(commonOpts))
 	return cmd
 }
 

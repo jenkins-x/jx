@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/buildnum"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -18,7 +15,7 @@ const (
 
 // ServeBuildNumbersOptions holds the options for the build number service.
 type ServeBuildNumbersOptions struct {
-	CommonOptions
+	*CommonOptions
 	BindAddress string
 	Port        int
 }
@@ -31,14 +28,9 @@ var (
 )
 
 // NewCmdSControllerBuildNumbers builds a new command to serving build numbers over an HTTP interface.
-func NewCmdSControllerBuildNumbers(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerBuildNumbers(commonOpts *CommonOptions) *cobra.Command {
 	options := ServeBuildNumbersOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     command,

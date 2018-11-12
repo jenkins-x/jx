@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -41,15 +39,10 @@ type DeleteContextOptions struct {
 }
 
 // NewCmdDeleteContext creates a command object for the "delete repo" command
-func NewCmdDeleteContext(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteContext(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteContextOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

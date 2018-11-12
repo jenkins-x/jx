@@ -1,19 +1,18 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"io"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterEKSOptions contains the CLI flags
@@ -57,9 +56,9 @@ var (
 )
 
 // NewCmdCreateClusterEKS creates the command
-func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterEKS(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterEKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "eks",
@@ -75,7 +74,6 @@ func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster.")
 	cmd.Flags().StringVarP(&options.Flags.NodeType, "node-type", "", "m5.large", "node instance type")

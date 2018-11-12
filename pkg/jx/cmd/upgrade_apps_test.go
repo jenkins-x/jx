@@ -20,7 +20,7 @@ func TestUpgradeAppsForGitOps(t *testing.T) {
 
 	o := &cmd.UpgradeAppsOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testEnv.CommonOptions,
+			CommonOptions: testEnv.CommonOptions,
 		},
 		FakePullRequests: testEnv.FakePullRequests,
 		Version:          "0.0.1",

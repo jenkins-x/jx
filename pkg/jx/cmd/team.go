@@ -2,10 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -15,7 +13,7 @@ import (
 )
 
 type TeamOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 const ()
@@ -39,14 +37,9 @@ var (
 `)
 )
 
-func NewCmdTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdTeam(commonOpts *CommonOptions) *cobra.Command {
 	options := &TeamOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "team",
@@ -61,7 +54,6 @@ func NewCmdTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

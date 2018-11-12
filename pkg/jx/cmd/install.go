@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -37,7 +36,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	git "gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -54,7 +52,7 @@ type ModifyConfigMapCallback func(string, func(*core_v1.ConfigMap) error) (*core
 // InstallOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type InstallOptions struct {
-	CommonOptions
+	*CommonOptions
 	gits.GitRepositoryOptions
 	CreateJenkinsUserOptions
 	CreateEnvOptions
@@ -239,9 +237,9 @@ var (
 
 // NewCmdInstall creates a command object for the generic "install" action, which
 // installs the jenkins-x platform on a Kubernetes cluster.
-func NewCmdInstall(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdInstall(commonOpts *CommonOptions) *cobra.Command {
 
-	options := CreateInstallOptions(f, in, out, errOut)
+	options := CreateInstallOptions(commonOpts)
 
 	cmd := &cobra.Command{
 		Use:     "install [flags]",
@@ -256,39 +254,26 @@ func NewCmdInstall(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addInstallFlags(cmd, false)
 
 	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 
-	cmd.AddCommand(NewCmdInstallDependencies(f, in, out, errOut))
+	cmd.AddCommand(NewCmdInstallDependencies(commonOpts))
 
 	return cmd
 }
 
 // CreateInstallOptions creates the options for jx install
-func CreateInstallOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) InstallOptions {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
+func CreateInstallOptions(commonOpts *CommonOptions) InstallOptions {
 	options := InstallOptions{
 		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
 			Username: "admin",
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory:  f,
-					In:       in,
-					Out:      out,
-					Err:      errOut,
-					Headless: true,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 		GitRepositoryOptions: gits.GitRepositoryOptions{},
-		CommonOptions:        commonOptions,
+		CommonOptions:        commonOpts,
 		CreateEnvOptions: CreateEnvOptions{
 			HelmValuesConfig: config.HelmValuesConfig{
 				ExposeController: &config.ExposeController{
@@ -308,18 +293,11 @@ func CreateInstallOptions(f Factory, in terminal.FileReader, out terminal.FileWr
 			PromotionStrategy:      string(v1.PromotionStrategyTypeAutomatic),
 			ForkEnvironmentGitRepo: kube.DefaultEnvironmentGitRepoURL,
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory:   f,
-					In:        in,
-					Out:       out,
-					Err:       errOut,
-					Headless:  true,
-					BatchMode: true,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 		InitOptions: InitOptions{
-			CommonOptions: commonOptions,
+			CommonOptions: commonOpts,
 			Flags:         InitFlags{},
 		},
 		AdminSecretsService: config.AdminSecretsService{},
@@ -1752,7 +1730,7 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
-		err := InstallVaultOperator(&options.CommonOptions, "")
+		err := InstallVaultOperator(options.CommonOptions, "")
 		if err != nil {
 			return err
 		}

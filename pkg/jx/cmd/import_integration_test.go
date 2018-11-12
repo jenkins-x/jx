@@ -63,8 +63,10 @@ func testImportProject(t *testing.T, tempDir string, testcase string, srcDir str
 func assertImport(t *testing.T, testDir string, testcase string, withRename bool) error {
 	_, dirName := filepath.Split(testDir)
 	dirName = kube.ToValidName(dirName)
-	o := &cmd.ImportOptions{}
-	cmd.ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName, true))
+	o := &cmd.ImportOptions{
+		CommonOptions: &cmd.CommonOptions{},
+	}
+	cmd.ConfigureTestOptions(o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName, true))
 	o.Dir = testDir
 	o.DryRun = true
 	o.DisableMaven = true

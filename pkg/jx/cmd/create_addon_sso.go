@@ -2,14 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -51,22 +49,16 @@ type CreateAddonSSOOptions struct {
 }
 
 // NewCmdCreateAddonSSO creates a command object for the "create addon sso" command
-func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
+func NewCmdCreateAddonSSO(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonSSOOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: commonOptions,
+				CommonOptions: commonOpts,
 			},
 		},
 		UpgradeIngressOptions: UpgradeIngressOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: commonOptions,
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -84,7 +76,6 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.DexVersion, "dex-version", "", defaultDexVersion, "The dex chart version to install)")
 	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseNamePrefix, defaultOperatorVersion)
 	options.UpgradeIngressOptions.addFlags(cmd)

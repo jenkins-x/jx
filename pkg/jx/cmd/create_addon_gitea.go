@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -12,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -48,16 +46,11 @@ type CreateAddonGiteaOptions struct {
 }
 
 // NewCmdCreateAddonGitea creates a command object for the "create" command
-func NewCmdCreateAddonGitea(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonGitea(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonGiteaOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -76,7 +69,6 @@ func NewCmdCreateAddonGitea(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, "", defaultGiteaReleaseName, defaultGiteaVersion)
 
 	cmd.Flags().StringVarP(&options.Username, "username", "u", "", "The name for the user to create in Gitea. Note that Gitea tends to reject 'admin'")

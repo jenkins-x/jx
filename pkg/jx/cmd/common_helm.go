@@ -400,7 +400,7 @@ func (o *CommonOptions) ensureHelm() error {
 		return errors.Wrap(err, "failed to install Helm")
 	}
 	initOpts := InitOptions{
-		CommonOptions: *o,
+		CommonOptions: o,
 	}
 	return initOpts.initHelm()
 }

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"io/ioutil"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -32,17 +30,12 @@ type ControllerTeamOptions struct {
 
 // NewCmdControllerTeam creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerTeam(commonOpts *CommonOptions) *cobra.Command {
 	options := &ControllerTeamOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
-		InstallOptions: CreateInstallOptions(f, in, out, errOut),
+		InstallOptions: CreateInstallOptions(commonOpts),
 	}
 
 	cmd := &cobra.Command{
@@ -57,7 +50,6 @@ func NewCmdControllerTeam(f Factory, in terminal.FileReader, out terminal.FileWr
 		Aliases: []string{"team"},
 	}
 
-	options.ControllerOptions.addCommonFlags(cmd)
 	options.InstallOptions.addInstallFlags(cmd, true)
 
 	return cmd

@@ -4,7 +4,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	configio "github.com/jenkins-x/jx/pkg/io"
 
-	"io"
 	"io/ioutil"
 	"strings"
 
@@ -22,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,15 +50,10 @@ type UpgradePlatformOptions struct {
 }
 
 // NewCmdUpgradePlatform defines the command
-func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradePlatform(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradePlatformOptions{
 		InstallOptions: InstallOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -85,7 +78,6 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().BoolVarP(&options.AlwaysUpgrade, "always-upgrade", "", false, "If set to true, jx will upgrade platform Helm chart even if requested version is already installed.")
 	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
 
-	options.addCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
 
 	return cmd

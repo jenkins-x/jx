@@ -18,7 +18,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/extensions"
@@ -26,8 +25,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
 	"github.com/spf13/cobra"
 )
 
@@ -50,19 +47,14 @@ var (
 )
 
 type GetPluginsOptions struct {
-	CommonOptions
+	*CommonOptions
 	Verifier extensions.PathVerifier
 }
 
 // NewCmdGetPlugins provides a way to list all plugin executables visible to jx
-func NewCmdGetPlugins(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetPlugins(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetPluginsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{

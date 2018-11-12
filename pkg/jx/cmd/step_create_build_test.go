@@ -142,8 +142,12 @@ func testStepCreateBuild(t *testing.T, tempDir string, testcase string, srcDir s
 	}
 	jxObjects := []runtime.Object{}
 
-	o := &cmd.StepCreateBuildOptions{}
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName, true))
+	o := &cmd.StepCreateBuildOptions{
+		StepOptions: cmd.StepOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
+	}
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName, true))
 	o.Dir = testDir
 
 	actualFile := filepath.Join(testDir, actualBuildFileName)

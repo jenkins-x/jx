@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/log"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
@@ -112,8 +110,8 @@ func KubernetesProviderOptions() string {
 
 // NewCmdCreateCluster creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := createCreateClusterOptions(f, in, out, errOut, "")
+func NewCmdCreateCluster(commonOpts *CommonOptions) *cobra.Command {
+	options := createCreateClusterOptions(commonOpts, "")
 
 	cmd := &cobra.Command{
 		Use:     "cluster [kubernetes provider]",
@@ -128,14 +126,14 @@ func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWri
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateClusterAKS(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterAWS(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterEKS(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterGKE(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterMinikube(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterMinishift(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterOKE(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterIKS(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterAKS(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterAWS(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterEKS(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterGKE(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterMinikube(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterMinishift(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterOKE(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterIKS(commonOpts))
 
 	return cmd
 }
@@ -145,20 +143,13 @@ func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
 }
 
-func createCreateClusterOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) CreateClusterOptions {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-
-		Out: out,
-		Err: errOut,
-	}
+func createCreateClusterOptions(commonOpts *CommonOptions, cloudProvider string) CreateClusterOptions {
 	options := CreateClusterOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: commonOptions,
+			CommonOptions: commonOpts,
 		},
 		Provider:       cloudProvider,
-		InstallOptions: CreateInstallOptions(f, in, out, errOut),
+		InstallOptions: CreateInstallOptions(commonOpts),
 	}
 	return options
 }

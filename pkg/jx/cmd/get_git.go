@@ -1,12 +1,8 @@
 package cmd
 
 import (
-	"io"
-
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/spf13/cobra"
 )
 
 // GetGitOptions the command line options
@@ -27,15 +23,10 @@ var (
 )
 
 // NewCmdGetGit creates the command
-func NewCmdGetGit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetGit(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetGitOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

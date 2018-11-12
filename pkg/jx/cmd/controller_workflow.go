@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"reflect"
 	"strconv"
 	"strings"
@@ -18,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -50,15 +48,10 @@ type ControllerWorkflowOptions struct {
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerWorkflow(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerWorkflow(commonOpts *CommonOptions) *cobra.Command {
 	options := &ControllerWorkflowOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -74,7 +67,6 @@ func NewCmdControllerWorkflow(f Factory, in terminal.FileReader, out terminal.Fi
 		Aliases: []string{"workflows"},
 	}
 
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")

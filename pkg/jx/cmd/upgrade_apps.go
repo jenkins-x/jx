@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"io"
-
 	"fmt"
 
 	"github.com/ghodss/yaml"
@@ -15,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -62,15 +59,10 @@ type UpgradeAppsOptions struct {
 }
 
 // NewCmdUpgradeApps defines the command
-func NewCmdUpgradeApps(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeApps(commonOpts *CommonOptions) *cobra.Command {
 	o := &UpgradeAppsOptions{
 		AddOptions: AddOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
