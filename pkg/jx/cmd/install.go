@@ -1191,6 +1191,7 @@ func (options *InstallOptions) Run() error {
 	return nil
 }
 
+// ModifySecret modifies the Secret either live or via the file system if generating the GitOps source
 func (o *InstallOptions) ModifySecret(name string, callback func(*core_v1.Secret) error) (*core_v1.Secret, error) {
 	if o.modifySecretCallback == nil {
 		o.modifySecretCallback = func(name string, callback func(*core_v1.Secret) error) (*core_v1.Secret, error) {
@@ -1204,6 +1205,7 @@ func (o *InstallOptions) ModifySecret(name string, callback func(*core_v1.Secret
 	return o.modifySecretCallback(name, callback)
 }
 
+// ModifyConfigMap modifies the ConfigMap either live or via the file system if generating the GitOps source
 func (o *InstallOptions) ModifyConfigMap(name string, callback func(*core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
 	if o.modifyConfigMapCallback == nil {
 		o.modifyConfigMapCallback = func(name string, callback func(*core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {

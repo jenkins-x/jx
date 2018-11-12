@@ -57,7 +57,10 @@ const (
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
 
+// ModifyDevEnvironmentFn a callback to create/update the development Environment
 type ModifyDevEnvironmentFn func(callback func(env *jenkinsv1.Environment) error) error
+
+// ModifyEnvironmentFn a callback to create/update an Environment
 type ModifyEnvironmentFn func(name string, callback func(env *jenkinsv1.Environment) error) error
 
 // CommonOptions contains common options and helper methods

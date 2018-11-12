@@ -395,12 +395,12 @@ func (o *CommonOptions) helmInitRecursiveDependencyBuild(dir string, chartRepos 
 }
 
 func (o *CommonOptions) defaultReleaseCharts() map[string]string {
-	releasesUrl := o.releaseChartMuseumUrl()
+	releasesURL := o.releaseChartMuseumUrl()
 	answer := map[string]string{
 		"jenkins-x": DEFAULT_CHARTMUSEUM_URL,
 	}
-	if releasesUrl != "" {
-		answer["releases"] = releasesUrl
+	if releasesURL != "" {
+		answer["releases"] = releasesURL
 	}
 	return answer
 }

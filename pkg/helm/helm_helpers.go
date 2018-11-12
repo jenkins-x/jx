@@ -16,11 +16,16 @@ import (
 )
 
 const (
+	// ChartFileName file name for a chart
 	ChartFileName        = "Chart.yaml"
+	// RequirementsFileName the file name for helm requirements
 	RequirementsFileName = "requirements.yaml"
+	// SecretsFileName the file name for secrets
 	SecretsFileName      = "secrets.yaml"
+	// ValuesFileName the file name for values
 	ValuesFileName       = "values.yaml"
 
+	// DefaultHelmRepositoryURL is the default cluster local helm repo
 	DefaultHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
 
 	defaultEnvironmentChartDir = "env"
@@ -267,7 +272,8 @@ func AppendMyValues(valueFiles []string) ([]string, error) {
 	return valueFiles, nil
 }
 
-// iterates through the input files and combines them into a single Values object and then write it to the output file
+// CombineValueFilesToFile iterates through the input files and combines them into a single Values object and then
+// write it to the output file nested inside the chartName
 func CombineValueFilesToFile(outFile string, inputFiles []string, chartName string) error {
 	answer := chartutil.Values{}
 	for _, input := range inputFiles {

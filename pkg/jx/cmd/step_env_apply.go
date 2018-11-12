@@ -31,18 +31,22 @@ type StepEnvApplyOptions struct {
 }
 
 var (
-	StepEnvApplyLong = templates.LongDesc(`
+	
+	// stepEnvApplyLong long description
+	stepEnvApplyLong = templates.LongDesc(`
 		Applies the GitOps source code (by default in the current directory) to the Environment.
 
 		This command will lazily create an environment, setup Helm and build and apply any helm charts defined in the env/Chart.yaml
 `)
 
-	StepEnvApplyExample = templates.Examples(`
+	// StepEnvApplyExample example
+	stepEnvApplyExample = templates.Examples(`
 		# setup and/or update the helm charts for the environment
 		jx step env apply --namespace jx-staging
 `)
 )
 
+// NewCmdStepEnvApply registers the command
 func NewCmdStepEnvApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepEnvApplyOptions{
 		StepEnvOptions: StepEnvOptions{
@@ -60,8 +64,8 @@ func NewCmdStepEnvApply(f Factory, in terminal.FileReader, out terminal.FileWrit
 		Use:     "apply",
 		Short:   "Applies the GitOps source code to an environment",
 		Aliases: []string{""},
-		Long:    StepEnvApplyLong,
-		Example: StepEnvApplyExample,
+		Long:    stepEnvApplyLong,
+		Example: stepEnvApplyExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -80,6 +84,7 @@ func NewCmdStepEnvApply(f Factory, in terminal.FileReader, out terminal.FileWrit
 	return cmd
 }
 
+// Run performs the comamand
 func (o *StepEnvApplyOptions) Run() error {
 	var err error
 	dir := o.Dir
