@@ -293,6 +293,7 @@ func (options *InstallOptions) Run() error {
 	if options.Flags.GitOpsMode {
 		// lets disable loading of Secrets from the jx namespace
 		options.SkipAuthSecretsMerge = true
+		options.Flags.DisableSetKubeContext = true
 
 		var err error
 		if options.Flags.Dir == "" {
