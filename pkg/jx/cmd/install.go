@@ -97,10 +97,10 @@ const (
 	// Want to use your own provider file? Change this line to point to your fork
 	DefaultCloudEnvironmentsURL = "https://github.com/jenkins-x/cloud-environments"
 
-	// default chart name for Jenkins X platform
+	// JenkinsXPlatformChartName default chart name for Jenkins X platform
 	JenkinsXPlatformChartName = "jenkins-x-platform"
 
-	// the default full chart name with the default repository prefix
+	// JenkinsXPlatformChart the default full chart name with the default repository prefix
 	JenkinsXPlatformChart = "jenkins-x/" + JenkinsXPlatformChartName
 
 	GitSecretsFile         = "gitSecrets.yaml"
