@@ -16,7 +16,7 @@ func StringMapHasValue(m map[string]string, value string) bool {
 // MapKeys returns the keys of a given map
 func MapKeys(m map[string]string) []string {
 	keys := []string{}
-	for key, _ := range m {
+	for key := range m {
 		keys = append(keys, key)
 	}
 	return keys
