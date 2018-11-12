@@ -9,7 +9,9 @@ import (
 type UserKind string
 
 const (
-	UserKindLocal    UserKind = "local"
+	// UserKindLocal indicates a user of type local
+	UserKindLocal UserKind = "local"
+	// UserKindPipeline indicates a user of type pipeline (e.g. used by the build within the pipeline
 	UserKindPipeline UserKind = "pipeline"
 )
 
@@ -28,7 +30,7 @@ type ServerKind string
 const (
 	// ServerKindGit idicates a server configuration for git
 	ServerKindGit ServerKind = "git"
-	// ServerKindChat indicates a server configuration for issue
+	// ServerKindIssue indicates a server configuration for issue
 	ServerKindIssue ServerKind = "issue"
 	// ServerKindChat idicates a server configuration for chat
 	ServerKindChat ServerKind = "chat"

@@ -61,8 +61,8 @@ func (c *AuthConfig) FindUserAuth(serverURL string, username string) *UserAuth {
 	return nil
 }
 
-func (config *AuthConfig) IndexOfServerName(name string) int {
-	for i, server := range config.Servers {
+func (c *AuthConfig) IndexOfServerName(name string) int {
+	for i, server := range c.Servers {
 		if server.Name == name {
 			return i
 		}
@@ -303,19 +303,20 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 		}
 		answer := m[username]
 		if answer == nil {
-			return nil, fmt.Errorf("No username chosen!")
+			return nil, fmt.Errorf("no username chosen")
 		}
 		return answer, nil
 	}
 	return &UserAuth{}, nil
 }
 
+// PrintUserFn prints the use name
 type PrintUserFn func(username string) error
 
 // EditUserAuth Lets the user input/edit the user auth
-func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser, batchMode bool, fn PrintUserFn, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) error {
+func (c *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser, batchMode bool, fn PrintUserFn, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) error {
 	// default the user name if its empty
-	defaultUsername := config.DefaultUsername
+	defaultUsername := c.DefaultUsername
 	if defaultUsername == "" {
 		defaultUsername = defaultUserName
 	}
@@ -350,9 +351,10 @@ func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defau
 	return err
 }
 
-func (config *AuthConfig) GetServerNames() []string {
+// GetServerNames returns the name of the server currently in the configuration
+func (c *AuthConfig) GetServerNames() []string {
 	answer := []string{}
-	for _, server := range config.Servers {
+	for _, server := range c.Servers {
 		name := server.Name
 		if name != "" {
 			answer = append(answer, name)
@@ -362,9 +364,10 @@ func (config *AuthConfig) GetServerNames() []string {
 	return answer
 }
 
-func (config *AuthConfig) GetServerURLs() []string {
+// GetServerURLs returns the server URLs currently in the configuration
+func (c *AuthConfig) GetServerURLs() []string {
 	answer := []string{}
-	for _, server := range config.Servers {
+	for _, server := range c.Servers {
 		u := server.URL
 		if u != "" {
 			answer = append(answer, u)
@@ -375,13 +378,13 @@ func (config *AuthConfig) GetServerURLs() []string {
 }
 
 // PickOrCreateServer picks the server to use defaulting to the current server
-func (config *AuthConfig) PickOrCreateServer(fallbackServerURL string, serverURL string, message string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*AuthServer, error) {
-	servers := config.Servers
+func (c *AuthConfig) PickOrCreateServer(fallbackServerURL string, serverURL string, message string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*AuthServer, error) {
+	servers := c.Servers
 	if len(servers) == 0 {
 		if serverURL != "" {
-			return config.GetOrCreateServer(serverURL), nil
+			return c.GetOrCreateServer(serverURL), nil
 		}
-		return config.GetOrCreateServer(fallbackServerURL), nil
+		return c.GetOrCreateServer(fallbackServerURL), nil
 	}
 	// lets let the user pick which server to use defaulting to the current server
 	names := []string{}
@@ -399,29 +402,30 @@ func (config *AuthConfig) PickOrCreateServer(fallbackServerURL string, serverURL
 		names = append(names, serverURL)
 	}
 	if len(names) == 1 {
-		return config.GetOrCreateServer(names[0]), nil
+		return c.GetOrCreateServer(names[0]), nil
 	}
 	defaultValue := serverURL
 	if defaultValue == "" {
-		defaultValue = config.CurrentServer
+		defaultValue = c.CurrentServer
 	}
 	if defaultValue == "" {
 		defaultValue = names[0]
 	}
 	if batchMode {
-		return config.GetOrCreateServer(defaultValue), nil
+		return c.GetOrCreateServer(defaultValue), nil
 	}
 	name, err := util.PickRequiredNameWithDefault(names, message, defaultValue, "", in, out, outErr)
 	if err != nil {
 		return nil, err
 	}
 	if name == "" {
-		return nil, fmt.Errorf("No server URL chosen!")
+		return nil, fmt.Errorf("no server URL chosen")
 	}
-	return config.GetOrCreateServer(name), nil
+	return c.GetOrCreateServer(name), nil
 }
 
-func (config *AuthConfig) UpdatePipelineServer(server *AuthServer, user *UserAuth) {
-	config.PipeLineServer = server.URL
-	config.PipeLineUsername = user.Username
+// UpdatePipelineServer updates the pipeline server in the configuration
+func (c *AuthConfig) UpdatePipelineServer(server *AuthServer, user *UserAuth) {
+	c.PipeLineServer = server.URL
+	c.PipeLineUsername = user.Username
 }
