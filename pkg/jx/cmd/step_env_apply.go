@@ -138,7 +138,13 @@ func (o *StepEnvApplyOptions) Run() error {
 
 		teamSettings := &env.Spec.TeamSettings
 
-		o.Factory.GetHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
+		// disable the modify of the Dev Environment lazily...
+		o.modifyDefEnvironmentFn = func(callback func(env *v1.Environment) error) error {
+			callback(&env)
+			return nil
+		}
+
+		o.helm = o.Factory.GetHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
 
 		// ensure there's a development namespace setup
 		err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
