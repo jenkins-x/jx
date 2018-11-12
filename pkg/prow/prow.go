@@ -31,6 +31,9 @@ const (
 
 	applyTemplate = "environment-apply"
 	buildTemplate = "environment-build"
+
+	serviceAccountApply = "helm"
+	serviceAccountBuild = "knative-build-bot"
 )
 
 type Kind string
@@ -103,6 +106,7 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	ps.Agent = KnativeBuildAgent
 
 	spec := &build.BuildSpec{
+		ServiceAccountName: serviceAccountBuild,
 		Template: &build.TemplateInstantiationSpec{
 			Name: buildTemplate,
 		},
@@ -122,6 +126,7 @@ func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	ps.Branches = []string{"master"}
 
 	spec := &build.BuildSpec{
+		ServiceAccountName: serviceAccountApply,
 		Template: &build.TemplateInstantiationSpec{
 			Name: applyTemplate,
 			Env: []corev1.EnvVar{
@@ -143,6 +148,7 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
+		ServiceAccountName: serviceAccountBuild,
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
@@ -167,6 +173,7 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
+		ServiceAccountName: serviceAccountBuild,
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
