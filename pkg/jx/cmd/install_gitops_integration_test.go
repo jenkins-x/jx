@@ -82,6 +82,7 @@ func TestInstallGitOps(t *testing.T) {
 	o.InitOptions.Flags.SkipTiller = true
 	o.InitOptions.Flags.NoTiller = true
 	o.InitOptions.Flags.SkipIngress = true
+	o.InitOptions.Flags.NoGitValidate = true
 	o.InitOptions.Flags.UserClusterRole = clusterAdminRoleName
 	o.BatchMode = true
 	o.Headless = true
