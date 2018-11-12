@@ -111,7 +111,7 @@ func TestInstallGitOps(t *testing.T) {
 	dep0 := req.Dependencies[0]
 	require.NotNil(t, dep0, "first dependency in file %s", reqFile)
 	assert.Equal(t, cmd.DEFAULT_CHARTMUSEUM_URL, dep0.Repository, "requirement.dependency[0].Repository")
-	assert.Equal(t, cmd.JenkinsXPlatformChartNoPrefix, dep0.Name, "requirement.dependency[0].Name")
+	assert.Equal(t, cmd.JenkinsXPlatformChartName, dep0.Name, "requirement.dependency[0].Name")
 	assert.NotEmpty(t, dep0.Version, "requirement.dependency[0].Version")
 
 	values, err := chartutil.ReadValuesFile(valuesFile)

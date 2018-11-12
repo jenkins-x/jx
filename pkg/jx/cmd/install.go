@@ -97,10 +97,10 @@ const (
 	DefaultCloudEnvironmentsURL = "https://github.com/jenkins-x/cloud-environments"
 
 	// default chart name for Jenkins X platform
-	JenkinsXPlatformChartNoPrefix = "jenkins-x-platform"
+	JenkinsXPlatformChartName = "jenkins-x-platform"
 
 	// the default full chart name with the default repository prefix
-	JenkinsXPlatformChart     = "jenkins-x/" + JenkinsXPlatformChartNoPrefix
+	JenkinsXPlatformChart     = "jenkins-x/" + JenkinsXPlatformChartName
 
 	GitSecretsFile         = "gitSecrets.yaml"
 	AdminSecretsFile       = "adminSecrets.yaml"
@@ -913,7 +913,7 @@ func (options *InstallOptions) Run() error {
 		options.CreateEnvOptions.NoDevNamespaceInit = true
 		deps := []*helm.Dependency{
 			{
-				Name:       JenkinsXPlatformChartNoPrefix,
+				Name:       JenkinsXPlatformChartName,
 				Version:    version,
 				Repository: DEFAULT_CHARTMUSEUM_URL,
 			},
@@ -950,11 +950,11 @@ func (options *InstallOptions) Run() error {
 		}
 
 		// lets combine the various values and secretes files
-		err = helm.CombineValueFilesToFile(secretsFile, secretFiles, JenkinsXPlatformChartNoPrefix)
+		err = helm.CombineValueFilesToFile(secretsFile, secretFiles, JenkinsXPlatformChartName)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretFiles, ", "))
 		}
-		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles, JenkinsXPlatformChartNoPrefix)
+		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles, JenkinsXPlatformChartName)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(onlyValueFiles, ", "))
 		}
