@@ -144,12 +144,12 @@ func (o *CommonOptions) defaultModifyEnvironment(name string, callback func(env 
 	if create {
 		_, err = environmentInterface.Create(env)
 		if err != nil {
-			return errors.Wrapf(err, "failed to update Environment %s in namespace %s: %s", name, ns)
+			return errors.Wrapf(err, "failed to update Environment %s in namespace %s", name, ns)
 		}
 	} else {
 		_, err = environmentInterface.Update(env)
 		if err != nil {
-			return errors.Wrapf(err, "failed to update Environment %s in namespace %s: %s", name, ns)
+			return errors.Wrapf(err, "failed to update Environment %s in namespace %s", name, ns)
 		}
 	}
 	log.Infof("Updated the team settings in namespace %s\n", ns)
