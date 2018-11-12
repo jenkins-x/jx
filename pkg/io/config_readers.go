@@ -148,7 +148,7 @@ func (e *EnvConfigReader) userFromEnv(prefix string) auth.User {
 	return user
 }
 
-//NewKubeSecretsConfigReader config reader for Kubernetes secrets
+//KubeSecretsConfigReader config reader for Kubernetes secrets
 type KubeSecretsConfigReader struct {
 	client      kubernetes.Interface
 	namespace   string
