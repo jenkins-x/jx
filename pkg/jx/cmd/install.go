@@ -94,9 +94,13 @@ const (
 	JX_GIT_TOKEN = "JX_GIT_TOKEN"
 	JX_GIT_USER  = "JX_GIT_USER"
 	// Want to use your own provider file? Change this line to point to your fork
-	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
-	JENKINS_X_PLATFORM_CHART_NAME  = "jenkins-x-platform"
-	JENKINS_X_PLATFORM_CHART       = "jenkins-x/" + JENKINS_X_PLATFORM_CHART_NAME
+	DefaultCloudEnvironmentsURL = "https://github.com/jenkins-x/cloud-environments"
+
+	// default chart name for Jenkins X platform
+	JenkinsXPlatformChartName = "jenkins-x-platform"
+
+	// the default full chart name with the default repository prefix
+	JenkinsXPlatformChart     = "jenkins-x/" + JenkinsXPlatformChartName
 
 	GitSecretsFile         = "gitSecrets.yaml"
 	AdminSecretsFile       = "adminSecrets.yaml"
@@ -262,7 +266,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 }
 
 func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DEFAULT_CLOUD_ENVIRONMENTS_URL, "Cloud Environments Git repo")
+	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DefaultCloudEnvironmentsURL, "Cloud Environments Git repo")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }
 
@@ -832,7 +836,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to convert the helm install timeout value")
 	}
 	options.Helm().SetCWD(makefileDir)
-	jxChart := JENKINS_X_PLATFORM_CHART
+	jxChart := JenkinsXPlatformChart
 	jxRelName := "jenkins-x"
 
 	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
@@ -908,7 +912,7 @@ func (options *InstallOptions) Run() error {
 		options.CreateEnvOptions.NoDevNamespaceInit = true
 		deps := []*helm.Dependency{
 			{
-				Name:       JENKINS_X_PLATFORM_CHART_NAME,
+				Name:       JenkinsXPlatformChartName,
 				Version:    version,
 				Repository: DEFAULT_CHARTMUSEUM_URL,
 			},
@@ -945,11 +949,11 @@ func (options *InstallOptions) Run() error {
 		}
 
 		// lets combine the various values and secretes files
-		err = helm.CombineValueFilesToFile(secretsFile, secretFiles, JENKINS_X_PLATFORM_CHART_NAME)
+		err = helm.CombineValueFilesToFile(secretsFile, secretFiles, JenkinsXPlatformChartName)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretFiles, ", "))
 		}
-		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles, JENKINS_X_PLATFORM_CHART_NAME)
+		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles, JenkinsXPlatformChartName)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(onlyValueFiles, ", "))
 		}
@@ -1468,7 +1472,7 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		return wrkDir, util.CopyDir(currentDir, wrkDir, true)
 	}
 	if options.Flags.CloudEnvRepository == "" {
-		options.Flags.CloudEnvRepository = DEFAULT_CLOUD_ENVIRONMENTS_URL
+		options.Flags.CloudEnvRepository = DefaultCloudEnvironmentsURL
 	}
 	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
 	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
