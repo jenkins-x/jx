@@ -188,6 +188,7 @@ func (o *CreateEnvOptions) Run() error {
 	}
 
 	err = o.ModifyEnvironment(env.Name, func(env2 *v1.Environment) error {
+		env2.Name = env.Name
 		env2.Spec = env.Spec
 
 		// lets copy across any labels or annotations

@@ -146,23 +146,24 @@ func (o *CommonOptions) defaultModifyEnvironment(name string, callback func(env 
 		create = true
 		env = &v1.Environment{}
 	}
-
+	env.Name = name
 	err = callback(env)
 	if err != nil {
 		return errors.Wrapf(err, "failed to call the callback function when modifying Environment %s", name)
 	}
 	if create {
+		log.Infof("Creating %s Environment in namespace %s\n", env.Name, ns)
 		_, err = environmentInterface.Create(env)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update Environment %s in namespace %s", name, ns)
 		}
 	} else {
+		log.Infof("Updating %s Environment in namespace %s\n", env.Name, ns)
 		_, err = environmentInterface.Update(env)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update Environment %s in namespace %s", name, ns)
 		}
 	}
-	log.Infof("Updated the team settings in namespace %s\n", ns)
 	return nil
 }
 
