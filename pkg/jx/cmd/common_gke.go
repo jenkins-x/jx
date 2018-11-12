@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 // asks to chose from existing projects or optionally creates one if none exist
@@ -22,7 +22,7 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 	lines := strings.Split(string(out), "\n")
 	var existingProjects []string
 	for _, l := range lines {
-		if strings.Contains(l, CLUSTER_LIST_HEADER) {
+		if strings.Contains(l, clusterListHeader) {
 			continue
 		}
 		fields := strings.Fields(l)
