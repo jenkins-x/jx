@@ -46,7 +46,7 @@ func UrlHostNameWithoutPort(rawUri string) (string, error) {
 	return rawUri, nil
 }
 
-// UrlEqual verifies if URLs are equal
-func UrlEqual(url1, url2 string) bool {
+// URLEqual verifies if URLs are equal
+func URLEqual(url1, url2 string) bool {
 	return url1 == url2 || strings.TrimSuffix(url1, "/") == strings.TrimSuffix(url2, "/")
 }

@@ -354,14 +354,15 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.AuthConfigService, 
 	userAuth := config.CurrentUser(server, inCluster)
 	if userAuth != nil && !userAuth.IsInvalid() {
 		return CreateProvider(server, userAuth, git)
-	} else {
-		kind := server.Kind
-		if kind != "" {
-			userAuth := auth.CreateAuthUserFromEnvironment(strings.ToUpper(kind))
-			if !userAuth.IsInvalid() {
-				return CreateProvider(server, &userAuth, git)
-			}
+	}
+
+	kind := server.Kind
+	if kind != "" {
+		userAuth := auth.CreateAuthUserFromEnvironment(strings.ToUpper(kind))
+		if !userAuth.IsInvalid() {
+			return CreateProvider(server, &userAuth, git)
 		}
+	} else {
 		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
 		if !userAuth.IsInvalid() {
 			return CreateProvider(server, &userAuth, git)

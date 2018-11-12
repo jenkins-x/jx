@@ -69,7 +69,7 @@ func TestGetAndCleanEnviron(t *testing.T) {
 				assert.NoError(t, err, "should not return an error")
 			}
 			assert.Equal(t, tc.want, envs, "should contained the expected cleaned keys")
-			for key, _ := range envs {
+			for key := range envs {
 				_, set := os.LookupEnv(key)
 				assert.Falsef(t, set, "env variable '%s' should not be set", key)
 			}

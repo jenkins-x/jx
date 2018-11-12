@@ -62,7 +62,7 @@ func (f *FileConfigReader) Read() (*auth.Config, error) {
 type ServerRetrieverFn func() (name string, url string,
 	kind auth.ServerKind, serviceKind auth.ServiceKind)
 
-//EventConfigReader keeps the prefix of the env variables where the user auth config is stored
+//EnvConfigReader keeps the prefix of the env variables where the user auth config is stored
 // and also a server config retriever
 type EnvConfigReader struct {
 	prefix          string

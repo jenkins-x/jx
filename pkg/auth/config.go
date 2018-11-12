@@ -26,19 +26,27 @@ type User struct {
 type ServerKind string
 
 const (
-	ServerKindGit   ServerKind = "git"
+	// ServerKindGit idicates a server configuration for git
+	ServerKindGit ServerKind = "git"
+	// ServerKindChat indicates a server configuration for issue
 	ServerKindIssue ServerKind = "issue"
-	ServerKindChat  ServerKind = "chat"
+	// ServerKindChat idicates a server configuration for chat
+	ServerKindChat ServerKind = "chat"
 )
 
-//ServerKind type for service used by the server
+//ServiceKind type for service used by the server
 type ServiceKind string
 
 const (
-	ServiceKindGithub          ServiceKind = "github"
-	ServiceKindGitlab          ServiceKind = "gitlab"
-	ServiceKindGitea           ServiceKind = "gitea"
-	ServiceKindBitbucketCloud  ServiceKind = "bitbucketcloud"
+	// ServiceKindGithub indicates that the git server is using as service GitHub
+	ServiceKindGithub ServiceKind = "github"
+	// ServiceKindGitlab indicates that the git server is using as service Gitlab
+	ServiceKindGitlab ServiceKind = "gitlab"
+	// ServiceKindGitea indicates that the git server is using as service Gitea
+	ServiceKindGitea ServiceKind = "gitea"
+	// ServiceKindBitbucketCloud indicates that the git server is using as service Bitbucket Cloud
+	ServiceKindBitbucketCloud ServiceKind = "bitbucketcloud"
+	// ServiceKindBitbucketServer indicates that the git server is using as service Bitbuckst Server
 	ServiceKindBitbucketServer ServiceKind = "bitbucketserver"
 )
 
