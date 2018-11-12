@@ -152,6 +152,9 @@ func (o *StepEnvApplyOptions) Run() error {
 			return errors.Wrapf(err, "Failed to create Namespace %s for Development Environment", ns)
 		}
 
+		if o.ReleaseName == "" {
+			o.ReleaseName = "jenkins-x"
+		}
 		err = o.registerEnvironmentCRD()
 		if err != nil {
 		  return err
