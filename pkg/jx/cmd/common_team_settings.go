@@ -112,6 +112,16 @@ func (o *CommonOptions) defaultModifyDevEnvironment(callback func(env *v1.Enviro
 		return errors.Wrap(err, "failed to create the jx client")
 	}
 
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the kube client")
+	}
+
+	err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create the %s Dev namespace", ns)
+	}
+
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
 		return errors.Wrapf(err, "failed to setup the dev environment for namespace '%s'", ns)
