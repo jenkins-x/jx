@@ -73,7 +73,7 @@ const (
 	usernameSuffix    = "_USERNAME"
 	apiTokenSuffix    = "_API_TOKEN"
 	bearerTokenSuffix = "_BEARER_TOKEN"
-	DefaultUsername   = "dummy"
+	defaultUsername   = "dummy"
 )
 
 // UsernameEnv builds the username environment variable name
@@ -142,7 +142,7 @@ func (e *EnvConfigReader) userFromEnv(prefix string) auth.User {
 
 	if user.ApiToken != "" || user.Password != "" {
 		if user.Username == "" {
-			user.Username = DefaultUsername
+			user.Username = defaultUsername
 		}
 	}
 	return user
