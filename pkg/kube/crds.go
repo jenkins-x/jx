@@ -23,6 +23,7 @@ const (
 	CertmanagerIssuerStaging      = "letsencrypt-staging"
 )
 
+// RegisterAllCRDs ensures that all Jenkins-X CRDs are registered
 func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	err := RegisterCommitStatusCRD(apiClient)
 	if err != nil {
