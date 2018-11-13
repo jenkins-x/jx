@@ -196,7 +196,6 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 
 	AssertRoleBindingsInEnvironmentsNotContainsSubject(t, kubeClient, nsNames, roleBindingName, newUserKind, teamNs, newUser)
 
-
 	// lets assert that roles get updated in all the namespaces
 	AssertRolesInEnvironmentsNotContainsPolicyRule(t, kubeClient, nsNames, roleName, "", "get", "secrets")
 	role, err = kubeClient.RbacV1().Roles(teamNs).Get(roleName, metav1.GetOptions{})
@@ -210,7 +209,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 
 	// now lets simulate the watch...
 	err = o.UpsertRole(role)
-	
+
 	AssertRolesInEnvironmentsContainsPolicyRule(t, kubeClient, nsNames, roleName, "", "get", "secrets")
 }
 
@@ -276,7 +275,6 @@ func AssertNotContainsSubject(t *testing.T, subjects []rbacv1.Subject, message s
 	return true
 }
 
-
 // AssertRolesInEnvironmentsContainsPolicyRule asserts that all the environments contain a Role of the given name which contains the given policy rule
 func AssertRolesInEnvironmentsContainsPolicyRule(t *testing.T, kubeClient kubernetes.Interface, nsNames []string, roleName string, apiGroup string, verb string, resource string) {
 	for _, ns := range nsNames {
@@ -301,7 +299,6 @@ func AssertRolesInEnvironmentsNotContainsPolicyRule(t *testing.T, kubeClient kub
 	}
 }
 
-
 // AssertContainsPolicyRule asserts that the given array of policy rules contains the given apiGroup, verb and resource subject
 func AssertContainsPolicyRule(t *testing.T, rules []rbacv1.PolicyRule, message string, apiGroup string, verb string, resource string) bool {
 	for _, rule := range rules {
@@ -317,8 +314,8 @@ func AssertContainsPolicyRule(t *testing.T, rules []rbacv1.PolicyRule, message s
 func AssertNotContainsPolicyRule(t *testing.T, rules []rbacv1.PolicyRule, message string, apiGroup string, verb string, resource string) bool {
 	for _, rule := range rules {
 		if util.StringArrayIndex(rule.APIGroups, apiGroup) >= 0 && util.StringArrayIndex(rule.Verbs, verb) >= 0 && util.StringArrayIndex(rule.Resources, resource) >= 0 {
-			log.Warnf("Should not contain PolicyRule (%s,%s,%s) for %s - has rules %#v\n",  apiGroup, verb, resource, message, rules)
-			return assert.Fail(t, "Should not contain PolicyRule (%s,%s,%s) for %s - has rules %#v",  apiGroup, verb, resource, message, rules)
+			log.Warnf("Should not contain PolicyRule (%s,%s,%s) for %s - has rules %#v\n", apiGroup, verb, resource, message, rules)
+			return assert.Fail(t, "Should not contain PolicyRule (%s,%s,%s) for %s - has rules %#v", apiGroup, verb, resource, message, rules)
 		}
 	}
 	return true

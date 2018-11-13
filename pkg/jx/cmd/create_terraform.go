@@ -348,6 +348,11 @@ func (options *CreateTerraformOptions) Run() error {
 		return err
 	}
 
+	err = terraform.CheckVersion()
+	if err != nil {
+		return err
+	}
+
 	if len(options.Flags.Cluster) >= 1 {
 		err := options.ValidateClusterDetails()
 		if err != nil {

@@ -21,6 +21,7 @@ type ExposeController struct {
 
 type JenkinsValuesConfig struct {
 	Servers JenkinsServersValuesConfig `yaml:"Servers,omitempty"`
+	Enabled *bool                      `yaml:"enabled,omitempty"`
 }
 
 type ProwValuesConfig struct {

@@ -638,9 +638,31 @@ func (options *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	org := options.getOrganisationOrCurrentUser()
+	provider, err := gits.CreateProvider(options.GitServer, options.GitUserAuth, options.Git())
+	if err != nil {
+		return err
+	}
+
+	if options.Organisation == "" {
+		gitUsername := options.GitUserAuth.Username
+		options.Organisation, err = gits.GetOwner(options.BatchMode, provider, gitUsername, options.In, options.Out, options.Err)
+		if err != nil {
+			return err
+		}
+	}
+
+	if options.AppName == "" {
+		dir := options.Dir
+		_, defaultRepoName := filepath.Split(dir)
+
+		options.AppName, err = gits.GetRepoName(options.BatchMode, false, provider, defaultRepoName, options.Organisation, options.In, options.Out, options.Err)
+		if err != nil {
+			return err
+		}
+	}
+
 	dockerRegistryOrg := options.getDockerRegistryOrg()
-	err = options.ReplacePlaceholders(gitServerName, org, dockerRegistryOrg)
+	err = options.ReplacePlaceholders(gitServerName, dockerRegistryOrg)
 	if err != nil {
 		return err
 	}
@@ -1070,10 +1092,10 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 }
 
 // ReplacePlaceholders replaces app name, git server name, git org, and docker registry org placeholders
-func (options *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerRegistryOrg string) error {
-	gitOrg = kube.ToValidName(strings.ToLower(gitOrg))
+func (options *ImportOptions) ReplacePlaceholders(gitServerName, dockerRegistryOrg string) error {
+	options.Organisation = kube.ToValidName(strings.ToLower(options.Organisation))
 	log.Infof("replacing placeholders in directory %s\n", options.Dir)
-	log.Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s\n", options.AppName, gitServerName, gitOrg, dockerRegistryOrg)
+	log.Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s\n", options.AppName, gitServerName, options.Organisation, dockerRegistryOrg)
 
 	ignore, err := gitignore.NewRepository(options.Dir)
 	if err != nil {
@@ -1083,7 +1105,7 @@ func (options *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerR
 	replacer := strings.NewReplacer(
 		PlaceHolderAppName, strings.ToLower(options.AppName),
 		PlaceHolderGitProvider, strings.ToLower(gitServerName),
-		PlaceHolderOrg, strings.ToLower(gitOrg),
+		PlaceHolderOrg, strings.ToLower(options.Organisation),
 		PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg))
 
 	pathsToRename := []string{} // Renaming must be done post-Walk
@@ -1369,14 +1391,18 @@ func (options *ImportOptions) fixMaven() error {
 		// lets ensure the mvn plugins are ok
 		out, err := options.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
 		if err != nil {
-			return fmt.Errorf("Failed to update maven plugin: %s output: %s", err, out)
+			return fmt.Errorf("Failed to update maven deploy plugin: %s output: %s", err, out)
+		}
+		out, err = options.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-surefire-plugin", "-Dversion=3.0.0-M1")
+		if err != nil {
+			return fmt.Errorf("Failed to update maven surefire plugin: %s output: %s", err, out)
 		}
 		if !options.DryRun {
 			err = options.Git().Add(dir, "pom.xml")
 			if err != nil {
 				return err
 			}
-			err = options.Git().CommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
+			err = options.Git().CommitIfChanges(dir, "fix:(plugins) use a better version of maven plugins")
 			if err != nil {
 				return err
 			}

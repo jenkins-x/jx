@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 
 	"github.com/spf13/cobra"
@@ -93,7 +94,7 @@ func (o *DeleteAddonOptions) cleanupServiceLink(addonName string) error {
 		return err
 	}
 
-	svc, err := kube.FindService(client, serviceName)
+	svc, err := services.FindService(client, serviceName)
 	if err != nil {
 		return err
 	}

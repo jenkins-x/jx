@@ -70,6 +70,9 @@ const (
 	// SecretJenkinsReleaseGPG the GPG secrets for doing releases
 	SecretJenkinsReleaseGPG = "jenkins-release-gpg"
 
+	// SecretJenkinsPipelinePrefix prefix for a jenkins pipeline secret name
+	SecretJenkinsPipelinePrefix = "jx-pipeline-"
+
 	// SecretJenkinsPipelineAddonCredentials the chat credentials secret
 	SecretJenkinsPipelineAddonCredentials = "jx-pipeline-addon-"
 

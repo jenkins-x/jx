@@ -47,6 +47,21 @@ func (mock *MockHelmer) BuildDependency() error {
 	return ret0
 }
 
+func (mock *MockHelmer) DecryptSecrets(_param0 string) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockHelmer().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("DecryptSecrets", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockHelmer) DeleteRelease(_param0 string, _param1 string, _param2 bool) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockHelmer().")
@@ -486,6 +501,33 @@ func (c *Helmer_BuildDependency_OngoingVerification) GetCapturedArguments() {
 }
 
 func (c *Helmer_BuildDependency_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierHelmer) DecryptSecrets(_param0 string) *Helmer_DecryptSecrets_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DecryptSecrets", params)
+	return &Helmer_DecryptSecrets_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Helmer_DecryptSecrets_OngoingVerification struct {
+	mock              *MockHelmer
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Helmer_DecryptSecrets_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Helmer_DecryptSecrets_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
 }
 
 func (verifier *VerifierHelmer) DeleteRelease(_param0 string, _param1 string, _param2 bool) *Helmer_DeleteRelease_OngoingVerification {
