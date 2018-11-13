@@ -109,8 +109,8 @@ func (f *ServerFlags) IsEmpty() bool {
 	return f.ServerName == "" && f.ServerURL == ""
 }
 
-func (c *CommonOptions) CreateTable() table.Table {
-	return c.Factory.CreateTable(c.Out)
+func (o *CommonOptions) CreateTable() table.Table {
+	return o.Factory.CreateTable(o.Out)
 }
 
 // NewCommonOptions a helper method to create a new CommonOptions instance
@@ -126,15 +126,15 @@ func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
 }
 
 // SetDevNamespace configures the current dev namespace
-func (c *CommonOptions) SetDevNamespace(ns string) {
-	c.devNamespace = ns
-	c.currentNamespace = ns
-	c.KubeClientCached = nil
+func (o *CommonOptions) SetDevNamespace(ns string) {
+	o.devNamespace = ns
+	o.currentNamespace = ns
+	o.KubeClientCached = nil
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
-func (c *CommonOptions) Debugf(format string, a ...interface{}) {
-	if c.Verbose {
+func (o *CommonOptions) Debugf(format string, a ...interface{}) {
+	if o.Verbose {
 		log.Infof(format, a...)
 	}
 }
@@ -261,6 +261,7 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 	return o.jxClient, o.devNamespace, nil
 }
 
+// SetJenkinsClient sets the JenkinsClient - usually used in testing
 func (o *CommonOptions) SetJenkinsClient(jenkinsClient gojenkins.JenkinsClient) {
 	o.jenkinsClient = jenkinsClient
 }

@@ -110,17 +110,17 @@ func (j *FakeJenkins) Post(string, url.Values, interface{}) (err error) {
 
 // GetJobConfig gets the job config for the given name
 func (j *FakeJenkins) GetJobConfig(name string) (gojenkins.JobItem, error) {
-	return gojenkins.JobItem{}, fmt.Errorf("Not implemented!")
+	return gojenkins.JobItem{}, j.notImplemented()
 }
 
 // GetBuild gets the build for a specific job and build number
 func (j *FakeJenkins) GetBuild(gojenkins.Job, int) (gojenkins.Build, error) {
-	return gojenkins.Build{}, fmt.Errorf("Not implemented!")
+	return gojenkins.Build{}, j.notImplemented()
 }
 
 // GetLastBuild returns the last build of the job
 func (j *FakeJenkins) GetLastBuild(gojenkins.Job) (gojenkins.Build, error) {
-	return gojenkins.Build{}, fmt.Errorf("Not implemented!")
+	return gojenkins.Build{}, j.notImplemented()
 }
 
 // StopBuild stops the build
@@ -130,9 +130,10 @@ func (j *FakeJenkins) StopBuild(gojenkins.Job, int) error {
 
 // GetMultiBranchJob gets a multi branch job of the given name
 func (j *FakeJenkins) GetMultiBranchJob(string, string, string) (gojenkins.Job, error) {
-	return gojenkins.Job{}, fmt.Errorf("Not implemented!")
+	return gojenkins.Job{}, j.notImplemented()
 }
 
+// GetJobByPath fake
 func (j *FakeJenkins) GetJobByPath(names ...string) (gojenkins.Job, error) {
 	jobs := j.Jobs
 	lastIdx := len(names) - 1
@@ -157,7 +158,7 @@ func (j *FakeJenkins) GetJobByPath(names ...string) (gojenkins.Job, error) {
 
 // GetOrganizationScanResult returns the organisation scan result
 func (j *FakeJenkins) GetOrganizationScanResult(int, gojenkins.Job) (string, error) {
-	return "", fmt.Errorf("Not implemented!")
+	return "", j.notImplemented()
 }
 
 // CreateJob creates a job
@@ -187,7 +188,7 @@ func (j *FakeJenkins) QuietDown() error {
 
 // GetCredential get the credential of the given name
 func (j *FakeJenkins) GetCredential(string) (*gojenkins.Credentials, error) {
-	return nil, fmt.Errorf("Not implemented!")
+	return nil, j.notImplemented()
 }
 
 // CreateCredential creates a credential
@@ -227,17 +228,17 @@ func (j *FakeJenkins) Build(gojenkins.Job, url.Values) error {
 
 // GetBuildConsoleOutput get the console output
 func (j *FakeJenkins) GetBuildConsoleOutput(gojenkins.Build) ([]byte, error) {
-	return nil, fmt.Errorf("Not implemented!")
+	return nil, j.notImplemented()
 }
 
 // GetQueue gets the build queue
 func (j *FakeJenkins) GetQueue() (gojenkins.Queue, error) {
-	return gojenkins.Queue{}, fmt.Errorf("Not implemented!")
+	return gojenkins.Queue{}, j.notImplemented()
 }
 
 // GetArtifact gets an artifact
 func (j *FakeJenkins) GetArtifact(gojenkins.Build, gojenkins.Artifact) ([]byte, error) {
-	return nil, fmt.Errorf("Not implemented!")
+	return nil, j.notImplemented()
 }
 
 // SetBuildDescription sets the build description
@@ -247,17 +248,17 @@ func (j *FakeJenkins) SetBuildDescription(gojenkins.Build, string) error {
 
 // GetComputerObject gets the computer
 func (j *FakeJenkins) GetComputerObject() (gojenkins.ComputerObject, error) {
-	return gojenkins.ComputerObject{}, fmt.Errorf("Not implemented!")
+	return gojenkins.ComputerObject{}, j.notImplemented()
 }
 
 // GetComputers gets the computers
 func (j *FakeJenkins) GetComputers() ([]gojenkins.Computer, error) {
-	return nil, fmt.Errorf("Not implemented!")
+	return nil, j.notImplemented()
 }
 
 // GetComputer gets the computer
 func (j *FakeJenkins) GetComputer(string) (gojenkins.Computer, error) {
-	return gojenkins.Computer{}, fmt.Errorf("Not implemented!")
+	return gojenkins.Computer{}, j.notImplemented()
 }
 
 // GetBuildURL gets the build URL
@@ -283,6 +284,10 @@ func (j *FakeJenkins) TailLogFunc(string, io.Writer) gojenkins.ConditionFunc {
 // NewLogPoller creates a new log poller
 func (j *FakeJenkins) NewLogPoller(string, io.Writer) *gojenkins.LogPoller {
 	return nil
+}
+
+func (j *FakeJenkins) notImplemented() error {
+	return fmt.Errorf("not implemented")
 }
 
 func (j *FakeJenkins) notFound(message string) error {

@@ -164,12 +164,12 @@ func (o *StepPostInstallOptions) Run() (err error) {
 			}
 			// register the webhook
 			return o.createWebhookProw(gitURL, gitProvider)
-		} else {
-			err = o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, branchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
-			if err != nil {
-				log.Errorf("failed to import Environment %s with git URL %s due to: %s\n", name, gitURL, err)
-				errs = append(errs, errors.Wrapf(err, "failed to import Environment %s with git URL %s", name, gitURL))
-			}
+		}
+
+		err = o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, branchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
+		if err != nil {
+			log.Errorf("failed to import Environment %s with git URL %s due to: %s\n", name, gitURL, err)
+			errs = append(errs, errors.Wrapf(err, "failed to import Environment %s with git URL %s", name, gitURL))
 		}
 	}
 	return util.CombineErrors(errs...)
