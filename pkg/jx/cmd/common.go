@@ -105,10 +105,12 @@ type ServerFlags struct {
 	ServerURL  string
 }
 
+// IsEmpty returns true if the server flags and server URL are tempry
 func (f *ServerFlags) IsEmpty() bool {
 	return f.ServerName == "" && f.ServerURL == ""
 }
 
+// CreateTable creates a new Table
 func (o *CommonOptions) CreateTable() table.Table {
 	return o.Factory.CreateTable(o.Out)
 }

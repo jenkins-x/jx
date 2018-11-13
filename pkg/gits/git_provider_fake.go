@@ -200,7 +200,7 @@ func (g *GitFakeProvider) IsGitHub() bool {
 	return false
 }
 
-// IsGitHub returns true if gitea
+// IsGitea returns true if gitea
 func (g *GitFakeProvider) IsGitea() bool {
 	return false
 }

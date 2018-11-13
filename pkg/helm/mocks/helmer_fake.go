@@ -5,9 +5,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 )
 
+// FakeHelmer a fake Helmer
 type FakeHelmer struct {
 }
 
+// NewFakeHelmer creates a new fake Helmer
 func NewFakeHelmer() helm.Helmer {
 	return &FakeHelmer{}
 }

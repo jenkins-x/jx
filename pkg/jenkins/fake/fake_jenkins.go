@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/golang-jenkins"
 )
 
-// NewFakeJenkins contains the state of the fake JenkinsClient
+// FakeJenkins contains the state of the fake JenkinsClient
 type FakeJenkins struct {
 	baseURL string
 	Jobs    []gojenkins.Job
