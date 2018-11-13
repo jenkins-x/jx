@@ -37,31 +37,29 @@ func GetClientWithTimeout(timeout int) (*http.Client) {
 	return &client
 }
 
-// returns a client with user specified transport and timeout (in seconds)
+// GetCustomClient returns a client with user specified transport and timeout (in seconds)
 func GetCustomClient(transport http.RoundTripper, timeout int) (*http.Client) {
 	return &(http.Client{Transport: transport, Timeout: time.Duration(timeout) * time.Second})
 }
 
 func getIntFromEnv(key string, fallback int) (int) {
 	if value, ok := LookupEnv(key); ok {
-		int_value, err := strconv.Atoi(value)
+		intValue, err := strconv.Atoi(value)
 		if err == nil {
-			return int_value
-		} else {
-			log.Warnf("Unable to convert env var %s with value %s to integer, using default value of %d instead", key, value, fallback)
+			return intValue
 		}
+		log.Warnf("Unable to convert env var %s with value %s to integer, using default value of %d instead", key, value, fallback)
 	}
 	return fallback
 }
 
 func getBoolFromEnv(key string, fallback bool) bool {
 	if value, ok := LookupEnv(key); ok {
-		bool_value, err := strconv.ParseBool(value)
+		boolValue, err := strconv.ParseBool(value)
 		if err == nil {
-			return bool_value
-		} else {
-			log.Warnf("Unable to convert env var %s with value %s to boolean, using default value of %t instead", key, value, fallback)
+			return boolValue
 		}
+		log.Warnf("Unable to convert env var %s with value %s to boolean, using default value of %t instead", key, value, fallback)
 	}
 	return fallback
 }
