@@ -345,7 +345,6 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigServi
 	}
 	envDir := filepath.Join(environmentsDir, owner)
 	provider := details.GitProvider
-	log.Infof("Using git  provider %#v\n", provider)
 
 	repo, err := provider.GetRepository(owner, repoName)
 	if err == nil {
