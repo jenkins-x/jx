@@ -3,13 +3,13 @@ package cmd
 import (
 	"flag"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"net/url"
 	"os"
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/heptio/sonobuoy/pkg/client"
@@ -258,12 +258,17 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 						username := data[kube.SecretDataUsername]
 						pwd := data[kube.SecretDataPassword]
 						if len(username) > 0 && isCDPipeline {
-							userAuth := config.GetOrCreateUserAuth(u, string(username))
-							if userAuth != nil {
-								if len(pwd) > 0 {
-									userAuth.ApiToken = string(pwd)
+							userAuth := config.FindUserAuth(u, string(username))
+							if userAuth == nil {
+								userAuth = &auth.UserAuth{
+									Username: string(username),
+									ApiToken: string(pwd),
 								}
+							} else if len(pwd) > 0 {
+								userAuth.ApiToken = string(pwd)
 							}
+							config.SetUserAuth(u, userAuth)
+							config.UpdatePipelineServer(server, userAuth)
 						}
 					}
 				}
@@ -377,7 +382,7 @@ func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, batchMode, gitKind, gitter, in, out, errOut)
+	return gitInfo.CreateProvider(f.IsInCluster(), authConfigSvc, gitKind, gitter, batchMode, in, out, errOut)
 }
 
 var kubeConfigCache *string

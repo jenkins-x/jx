@@ -57,7 +57,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := gitInfo.CreateProvider(o.Factory.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -108,8 +108,8 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 			Data: map[string][]byte{},
 		}
 	} else {
-		secret.Annotations = kube.MergeMaps(secret.Annotations, annotations)
-		secret.Labels = kube.MergeMaps(secret.Labels, labels)
+		secret.Annotations = util.MergeMaps(secret.Annotations, annotations)
+		secret.Labels = util.MergeMaps(secret.Labels, labels)
 	}
 	if userAuth.Username != "" {
 		secret.Data["username"] = []byte(userAuth.Username)
@@ -312,5 +312,5 @@ func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 }
