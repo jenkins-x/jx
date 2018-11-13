@@ -234,6 +234,17 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 			data.Spec.Order = i
 		}
 	}
+	gitProvider2, err := CreateEnvGitRepository(batchMode, authConfigSvc, devEnv, data, config, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, in, out, errOut)
+	if gitProvider2 != nil {
+		gitProvider = gitProvider2
+	}
+	return gitProvider, err
+}
+
+// CreateEnvGitRepository creates the git repository for the given Environment
+func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
+	var gitProvider gits.GitProvider
+	surveyOpts := survey.WithStdio(in, out, errOut)
 	createRepo := false
 	if config.Spec.Source.URL != "" {
 		data.Spec.Source.URL = config.Spec.Source.URL
@@ -334,6 +345,8 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigServi
 	}
 	envDir := filepath.Join(environmentsDir, owner)
 	provider := details.GitProvider
+	log.Infof("Using git  provider %#v\n", provider)
+
 	repo, err := provider.GetRepository(owner, repoName)
 	if err == nil {
 		fmt.Fprintf(out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))

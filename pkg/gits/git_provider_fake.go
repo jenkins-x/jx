@@ -71,7 +71,7 @@ func (g *GitFakeProvider) ListRepositories(org string) ([]*GitRepository, error)
 func (g *GitFakeProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
 	organisation := g.Organisations[org]
 	if organisation == nil {
-		organisation := &FakeOrganisation{
+		organisation = &FakeOrganisation{
 			Organisation: GitOrganisation{
 				Login: org,
 			},
@@ -90,7 +90,7 @@ func (g *GitFakeProvider) CreateRepository(org string, name string, private bool
 func (g *GitFakeProvider) GetRepository(org string, name string) (*GitRepository, error) {
 	organisation := g.Organisations[org]
 	if organisation == nil {
-		return nil, nil
+		return nil, g.notFound()
 	}
 	for _, repo := range organisation.Repositories {
 		if repo.Name == name {

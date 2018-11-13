@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/Pallinder/go-randomdata"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
@@ -37,8 +38,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-
 )
 
 const (
@@ -304,6 +303,11 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		o.helm = o.Factory.GetHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
 	}
 	return o.helm
+}
+
+// SetHelm sets the helmer used for this object
+func (o *CommonOptions) SetHelm(helmer helm.Helmer) {
+	o.helm = helmer
 }
 
 func (o *CommonOptions) Kube() kube.Kuber {

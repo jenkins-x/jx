@@ -6,7 +6,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -50,15 +52,20 @@ func TestInstallGitOps(t *testing.T) {
 	}
 	o := cmd.CreateInstallOptions(co.Factory, co.In, co.Out, co.Err)
 
+	gitter := gits.NewGitFake()
+	helmer := helm_test.NewFakeHelmer()
 	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{
 			clusterAdminRole,
+			testkube.CreateFakeGitSecret(),
 		},
 		[]runtime.Object{
 		},
-		gits.NewGitCLI(),
-		helm.NewHelmCLI("helm", helm.V2, "", true),
+		gitter,
+		helmer,
 	)
+	o.CommonOptions.GitClient = gitter
+	o.CommonOptions.SetHelm(helmer)
 
 	o.InitOptions.CommonOptions = o.CommonOptions
 	o.CreateEnvOptions.CommonOptions = o.CommonOptions
@@ -86,6 +93,15 @@ func TestInstallGitOps(t *testing.T) {
 	o.InitOptions.Flags.UserClusterRole = clusterAdminRoleName
 	o.BatchMode = true
 	o.Headless = true
+
+	// lets use a fake git provider
+	testOrg := "mytestorg"
+	testDevRepo := "environment-dev-mytest"
+	o.GitRepositoryOptions.ServerURL = gits.FakeGitURL
+	o.GitRepositoryOptions.Owner = testOrg
+	o.GitRepositoryOptions.RepoName = testDevRepo
+	o.GitRepositoryOptions.Username = "mytestuser"
+	o.GitRepositoryOptions.ApiToken = "mytestoken"
 
 	err = o.Run()
 	require.NoError(t, err, "Failed to run jx install")
@@ -136,7 +152,7 @@ func TestInstallGitOps(t *testing.T) {
 	assert.Empty(t, cmNames, "Expected no ConfigMap names in namespace %s", ns)
 
 	_, secretNames, _ := kube.GetSecrets(kubeClient, ns)
-	assert.Empty(t, secretNames, "Expected no Secret names in namespace %s", ns)
+	assert.Equal(t, []string{"jx-pipeline-git-fake"}, secretNames, "Secret names in namespace %s", ns)
 }
 
 func assertNoEnvironments(t *testing.T, jxClient versioned.Interface, ns string) {

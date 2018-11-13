@@ -83,6 +83,7 @@ type InstallFlags struct {
 	GitOpsMode               bool
 	Dir                      string
 	NoGitOpsEnvApply         bool
+	NoGitOpsEnvRepo          bool
 }
 
 // Secrets struct for secrets
@@ -260,6 +261,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow")
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Sets up the local file system for GitOps so that the current installation can be configured or upgraded at any time via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
+	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -595,6 +597,7 @@ func (options *InstallOptions) Run() error {
 	// get secrets to use in helm install
 	secrets, err := options.getGitSecrets()
 	if err != nil {
+
 		return errors.Wrap(err, "failed to read the git secrets from configuration")
 	}
 
@@ -906,13 +909,13 @@ func (options *InstallOptions) Run() error {
 			}
 		}
 
-		_, err = options.ModifyConfigMap(kube.ConfigMapNameJXInstallConfig, func (cm *core_v1.ConfigMap) error {
+		_, err = options.ModifyConfigMap(kube.ConfigMapNameJXInstallConfig, func(cm *core_v1.ConfigMap) error {
 			data := util.ToStringMapStringFromStruct(jxInstallConfig)
 			cm.Data = data
 			return nil
 		})
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 
@@ -1160,10 +1163,39 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvApply {
+	if options.Flags.GitOpsMode {
 		log.Infof("Generated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsEnvDir))
 		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n", util.ColorInfo("jx step env apply"))
 
+		if !options.Flags.NoGitOpsEnvRepo {
+			authConfigSvc, err := options.CreateGitAuthConfigService()
+			if err != nil {
+				return err
+			}
+			config := &v1.Environment{}
+			var devEnv *v1.Environment
+			err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
+				devEnv = env
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+			envDir, err := util.EnvironmentsDir()
+			if err != nil {
+				return err
+			}
+			forkEnvGitURL := ""
+			prefix := "jenkins-x"
+
+			_, err = kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir, &options.GitRepositoryOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, options.Git(), options.In, options.Out, options.Err)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create git repository for the dev Environment source")
+			}
+		}
+	}
+
+	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvApply {
 		applyEnv := true
 		if !options.BatchMode {
 			if !util.Confirm("Would you like to setup the Development Environment from the source code now?", true, "Do you want to apply the development environment helm charts now?", options.In, options.Out, options.Err) {

@@ -43,6 +43,12 @@ type GitFake struct {
 	serverURL      string
 }
 
+
+// NewGitFake creates a new fake Gitter
+func NewGitFake() Gitter {
+	return &GitFake{}
+}
+
 // FindGitConfigDir finds the git config dir
 func (g *GitFake) FindGitConfigDir(dir string) (string, string, error) {
 	return dir, dir, nil
