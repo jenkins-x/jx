@@ -96,10 +96,10 @@ type SpringBootForm struct {
 
 type errorResponse struct {
 	Timestamp string `json:"timestamp,omitempty"`
-	Status int `json:"status,omitempty"`
-	Error string `json:"error,omitempty"`
-	Message string `json:"message,omitempty"`
-	Path string `json:"path,omitempty"`
+	Status    int    `json:"status,omitempty"`
+	Error     string `json:"error,omitempty"`
+	Message   string `json:"message,omitempty"`
+	Path      string `json:"path,omitempty"`
 }
 
 func LoadSpringBoot(cacheDir string) (*SpringBootModel, error) {
@@ -361,7 +361,6 @@ func (data *SpringBootForm) CreateProject(workDir string) (string, error) {
 		log.Infof("%s\n", util.ColorError(errorResponse.Message))
 		return answer, errors.New("unable to create spring quickstart")
 	}
-
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
