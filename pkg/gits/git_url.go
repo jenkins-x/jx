@@ -177,6 +177,7 @@ func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error)
 
 // SaasGitKind returns the kind for SaaS Git providers or "" if the URL could not be deduced
 func SaasGitKind(gitServiceUrl string) string {
+	gitServiceUrl = strings.TrimSuffix(gitServiceUrl, "/")
 	switch gitServiceUrl {
 	case "http://github.com":
 		return KindGitHub
@@ -188,6 +189,8 @@ func SaasGitKind(gitServiceUrl string) string {
 		return KindBitBucketCloud
 	case BitbucketCloudURL:
 		return KindBitBucketCloud
+	case "http://fake.git", FakeGitURL:
+		return KindGitFake
 	default:
 		return ""
 	}

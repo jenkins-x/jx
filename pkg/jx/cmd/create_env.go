@@ -131,12 +131,10 @@ func (o *CreateEnvOptions) Run() error {
 		return err
 	}
 
-	_, err = util.EnvironmentsDir()
 	envDir, err := util.EnvironmentsDir()
 	if err != nil {
 		return err
 	}
-	//_, err = o.CreateGitAuthConfigService()
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err

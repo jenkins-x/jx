@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/google/go-github/github"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io"
 	"net/url"
 	"strings"
@@ -32,11 +34,275 @@ type GitFake struct {
 	RepoInfo       GitRepositoryInfo
 	Fork           bool
 	GitVersion     string
-	UserInfo       GitUser
+	GitUser        GitUser
 	Commits        []GitCommit
 	Changes        bool
 	GitTags        []GitTag
 	Revision       string
+	serverURL      string
+	userAuth       auth.UserAuth
+
+	Organisations map[string]*FakeOrganisation
+	WebHooks      []*GitWebHookArguments
+}
+
+type FakeOrganisation struct {
+	Organisation GitOrganisation
+	Repositories []*GitRepository
+}
+
+// NewFakeGit creates a new fake git provider
+func NewFakeGit(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
+	gitUser := GitUser{}
+	if user != nil {
+		gitUser.Name = user.Username
+		gitUser.Login = user.Username
+	}
+	serverURL := FakeGitURL
+	if server != nil && server.URL != "" {
+		serverURL = server.URL
+	}
+	answer := &GitFake{
+		GitUser:       gitUser,
+		serverURL:     serverURL,
+		Organisations: map[string]*FakeOrganisation{},
+	}
+	if user != nil {
+		answer.userAuth = *user
+	}
+	return answer, nil
+}
+
+func (g *GitFake) ListOrganisations() ([]GitOrganisation, error) {
+	answer := []GitOrganisation{}
+	for _, org := range g.Organisations {
+		answer = append(answer, org.Organisation)
+	}
+	return answer, nil
+}
+
+func (g *GitFake) ListRepositories(org string) ([]*GitRepository, error) {
+	organisation := g.Organisations[org]
+	if organisation == nil {
+		return nil, nil
+	}
+	return organisation.Repositories, nil
+}
+
+func (g *GitFake) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
+	organisation := g.Organisations[org]
+	if organisation == nil {
+		organisation := &FakeOrganisation{
+			Organisation: GitOrganisation{
+				Login: org,
+			},
+			Repositories: []*GitRepository{},
+		}
+		g.Organisations[org] = organisation
+	}
+	answer := &GitRepository{
+		Name: name,
+	}
+	organisation.Repositories = append(organisation.Repositories, answer)
+	return answer, nil
+}
+
+func (g *GitFake) GetRepository(org string, name string) (*GitRepository, error) {
+	organisation := g.Organisations[org]
+	if organisation == nil {
+		return nil, nil
+	}
+	for _, repo := range organisation.Repositories {
+		if repo.Name == name {
+			return repo, nil
+		}
+	}
+	return nil, g.notFound()
+}
+
+func (g *GitFake) DeleteRepository(org string, name string) error {
+	organisation := g.Organisations[org]
+	if organisation == nil {
+		return g.notFound()
+	}
+	for idx, repo := range organisation.Repositories {
+		if repo.Name == name {
+			organisation.Repositories = append(organisation.Repositories[0:idx], organisation.Repositories[idx+1:]...)
+			return nil
+		}
+	}
+	return g.notFound()
+}
+
+func (g *GitFake) ForkRepository(originalOrg string, name string, destinationOrg string) (*GitRepository, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) RenameRepository(org string, name string, newName string) (*GitRepository, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) ValidateRepositoryName(org string, name string) error {
+	panic("implement me")
+}
+
+func (g *GitFake) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) UpdatePullRequestStatus(pr *GitPullRequest) error {
+	panic("implement me")
+}
+
+func (g *GitFake) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) GetPullRequestCommits(owner string, repo *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) PullRequestLastCommitStatus(pr *GitPullRequest) (string, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) MergePullRequest(pr *GitPullRequest, message string) error {
+	panic("implement me")
+}
+
+func (g *GitFake) CreateWebHook(data *GitWebHookArguments) error {
+	log.Infof("Created fake WebHook for %#v\n", data)
+	g.WebHooks = append(g.WebHooks, data)
+	return nil
+}
+
+func (g *GitFake) ListWebHooks(org string, repo string) ([]*GitWebHookArguments, error) {
+	return g.WebHooks, nil
+}
+
+func (g *GitFake) UpdateWebHook(data *GitWebHookArguments) error {
+	for idx, wh := range g.WebHooks {
+		if wh.URL == data.URL || wh.ID == data.ID {
+			g.WebHooks[idx] = data
+		}
+	}
+	return nil
+}
+
+func (g *GitFake) IsGitHub() bool {
+	return false
+}
+
+func (g *GitFake) IsGitea() bool {
+	return false
+}
+
+func (g *GitFake) IsBitbucketCloud() bool {
+	return false
+}
+
+func (g *GitFake) IsBitbucketServer() bool {
+	return false
+}
+
+func (g *GitFake) IsGerrit() bool {
+	return false
+}
+
+func (g *GitFake) Kind() string {
+	return KindGitFake
+}
+
+func (g *GitFake) GetIssue(org string, name string, number int) (*GitIssue, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) IssueURL(org string, name string, number int, isPull bool) string {
+	panic("implement me")
+}
+
+func (g *GitFake) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) HasIssues() bool {
+	panic("implement me")
+}
+
+func (g *GitFake) AddPRComment(pr *GitPullRequest, comment string) error {
+	panic("implement me")
+}
+
+func (g *GitFake) CreateIssueComment(owner string, repo string, number int, comment string) error {
+	panic("implement me")
+}
+
+func (g *GitFake) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
+	panic("implement me")
+}
+
+func (g *GitFake) ListReleases(org string, name string) ([]*GitRelease, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) JenkinsWebHookPath(gitURL string, secret string) string {
+	return "/fake-webhook/"
+}
+
+func (g *GitFake) Label() string {
+	return "fake"
+}
+
+func (g *GitFake) ServerURL() string {
+	return g.serverURL
+}
+
+func (g *GitFake) BranchArchiveURL(org string, name string, branch string) string {
+	panic("implement me")
+}
+
+func (g *GitFake) CurrentUsername() string {
+	return g.GitUser.Login
+}
+
+func (g *GitFake) UserAuth() auth.UserAuth {
+	return g.userAuth
+}
+
+func (g *GitFake) UserInfo(username string) *GitUser {
+	panic("implement me")
+}
+
+func (g *GitFake) AddCollaborator(string, string, string) error {
+	panic("implement me")
+}
+
+func (g *GitFake) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
+	panic("implement me")
+}
+
+func (g *GitFake) AcceptInvitation(int64) (*github.Response, error) {
+	panic("implement me")
 }
 
 func (g *GitFake) FindGitConfigDir(dir string) (string, string, error) {
@@ -83,20 +349,20 @@ func (g *GitFake) RepoName(org string, repoName string) string {
 }
 
 func (g *GitFake) Username(dir string) (string, error) {
-	return g.UserInfo.Name, nil
+	return g.GitUser.Name, nil
 }
 
 func (g *GitFake) SetUsername(dir string, username string) error {
-	g.UserInfo.Name = username
+	g.GitUser.Name = username
 	return nil
 }
 
 func (g *GitFake) Email(dir string) (string, error) {
-	return g.UserInfo.Email, nil
+	return g.GitUser.Email, nil
 }
 
 func (g *GitFake) SetEmail(dir string, email string) error {
-	g.UserInfo.Email = email
+	g.GitUser.Email = email
 	return nil
 }
 
@@ -339,10 +605,10 @@ func (g *GitFake) CommitIfChanges(dir string, message string) error {
 	commit := GitCommit{
 		SHA:       "",
 		Message:   message,
-		Author:    &g.UserInfo,
+		Author:    &g.GitUser,
 		URL:       g.RepoInfo.URL,
 		Branch:    g.CurrentBranch,
-		Committer: &g.UserInfo,
+		Committer: &g.GitUser,
 	}
 	g.Commits = append(g.Commits, commit)
 	return nil
@@ -407,4 +673,8 @@ func (g *GitFake) GetRevisionBeforeDateText(dir string, dateText string) (string
 
 func (g *GitFake) Diff(dir string) (string, error) {
 	return "", nil
+}
+
+func (g *GitFake) notFound() error {
+	return fmt.Errorf("Not found")
 }

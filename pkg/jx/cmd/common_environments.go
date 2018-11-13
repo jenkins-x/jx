@@ -196,7 +196,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 }
 
 func (o *CommonOptions) registerEnvironmentCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}
