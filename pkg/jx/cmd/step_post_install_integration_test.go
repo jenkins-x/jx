@@ -3,13 +3,14 @@
 package cmd_test
 
 import (
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins/fake"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/testkube"
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,21 +62,38 @@ func TestStepPostInstall(t *testing.T) {
 
 	err := o.Run()
 	require.NoError(t, err, "failed to run jx step post install")
+	
+	// assert we have a jenkins job for the staging env repo
+	AssertJenkinsJobExists(t, jenkinsClient, testOrg, testRepo)
 
-	for _, job := range jenkinsClient.Jobs {
+	// TODO assert we have a webhook for the staging env repo
+
+}
+
+// AssertJenkinsJobExists asserts that the job exists for the given organisation and repo
+func AssertJenkinsJobExists(t *testing.T, jenkinsClient *fake.FakeJenkins, testOrg string, testRepo string) {
+	job, err := jenkinsClient.GetJobByPath(testOrg, testRepo)
+	if !assert.NoError(t, err, "failed to query Jenkins Job for %s/%s", testOrg, testRepo) {
+		DumpJenkinsJobs(t, jenkinsClient)
+		return
+	}
+	if !assert.Equal(t, job.Name, testRepo, "job.Name") {
+		DumpJenkinsJobs(t, jenkinsClient)
+		return
+	}
+
+	t.Logf("Found Jenkins Job at URL: %s\n", job.Url)
+}
+
+// DumpJenkinsJobs dumps the current jenkins jobs in the given client to aid debugging a failing test
+func DumpJenkinsJobs(t *testing.T, jenkinsClient gojenkins.JenkinsClient) {
+	jobs, err := jenkinsClient.GetJobs()
+	require.NoError(t, err, "failed to get jobs")
+
+	for _, job := range jobs {
 		t.Logf("Jenkins Job: %s at %s\n", job.Name, job.Url)
 		for _, cj := range job.Jobs {
 			t.Logf("\t child Job: %s at %s\n", cj.Name, cj.Url)
 		}
 	}
-
-	// assert we have a jenkins job for the staging env repo
-	job, err := jenkinsClient.GetJobByPath(testOrg, testRepo)
-	require.NoError(t, err, "failed to query Jenkins Job for %s/%s", testOrg, testRepo)
-	assert.Equal(t, job.Name, testRepo, "job.Name")
-
-	t.Logf("Found Jenkins Job at URL: %s\n", job.Url)
-
-	// TODO assert we have a webhook for the staging env repo
-
 }
