@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/jenkins-x/jx/src/github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 	"net"
 	"net/http"
 	"net/http/httptest"
