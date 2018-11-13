@@ -4,7 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"net"
 	"net/http"
-	. "os"
+	"os"
 	"strconv"
 	"time"
 )
@@ -24,12 +24,12 @@ var jxDefaultTransport http.RoundTripper = &http.Transport{
 
 var defaultClient = http.Client{Transport: jxDefaultTransport, Timeout: time.Duration(getIntFromEnv("DEFAULT_HTTP_REQUEST_TIMEOUT", 30)) * time.Second}
 
-// returns a Client reference with our default configuration
+// GetClient returns a Client reference with our default configuration
 func GetClient() (*http.Client) {
 	return &defaultClient
 }
 
-// returns a client with JX default transport and user specified timeout (in seconds)
+// GetClientWithTimeout returns a client with JX default transport and user specified timeout (in seconds)
 func GetClientWithTimeout(timeout int) (*http.Client) {
 	client := http.Client{}
 	client.Transport = jxDefaultTransport
@@ -43,7 +43,7 @@ func GetCustomClient(transport http.RoundTripper, timeout int) (*http.Client) {
 }
 
 func getIntFromEnv(key string, fallback int) (int) {
-	if value, ok := LookupEnv(key); ok {
+	if value, ok := os.LookupEnv(key); ok {
 		intValue, err := strconv.Atoi(value)
 		if err == nil {
 			return intValue
@@ -54,7 +54,7 @@ func getIntFromEnv(key string, fallback int) (int) {
 }
 
 func getBoolFromEnv(key string, fallback bool) bool {
-	if value, ok := LookupEnv(key); ok {
+	if value, ok := os.LookupEnv(key); ok {
 		boolValue, err := strconv.ParseBool(value)
 		if err == nil {
 			return boolValue
